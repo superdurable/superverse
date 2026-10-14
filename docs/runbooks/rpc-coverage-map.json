@@ -1,0 +1,328 @@
+{
+  "methods": {
+    "/superverse.v2.AccountService/GetCurrentAccount": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.AccountService/Login": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.AccountService/Logout": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.AccountService/RegisterAccount": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.AgentService/AnswerQuestions": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.AgentService/DeleteQueuedMessage": [],
+    "/superverse.v2.AgentService/GetFlowDesign": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.AgentService/InterruptAgent": [],
+    "/superverse.v2.AgentService/ListMockScenarios": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.AgentService/ResolveToolApproval": [],
+    "/superverse.v2.AgentService/SendMessage": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.AgentService/SteerQueuedMessage": [],
+    "/superverse.v2.AgentService/UpdateSessionModel": [],
+    "/superverse.v2.ApplicationEnvironmentService/GetApplicationEnvironment": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ApplicationEnvironmentService/SaveApplicationEnvironment": [],
+    "/superverse.v2.ConnectorService/InvokeProviderCommand": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ConnectorService/ListConnections": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ConnectorService/ReleaseUnusedConnections": [],
+    "/superverse.v2.ConnectorService/SaveOperationConfiguration": [],
+    "/superverse.v2.ConnectorService/SaveTriggerBinding": [],
+    "/superverse.v2.ConnectorService/SelectTeamSpaceConnection": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ConnectorService/StartConnectorUiSession": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.DeploymentService/CancelDeployment": [],
+    "/superverse.v2.DeploymentService/GetDeployment": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.DeploymentService/ListDeployments": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.DeploymentService/StartDeployment": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.DeploymentService/WatchDeployment": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.FlowDiagnosticsService/DeleteFlowChannelMessage": [],
+    "/superverse.v2.FlowDiagnosticsService/GetFlowHistory": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.FlowDiagnosticsService/GetFlowState": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.FlowDiagnosticsService/GetFlowSummary": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.FlowDiagnosticsService/LoadFlowBlobs": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.FlowDiagnosticsService/ReadFlowStream": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.FlowDiagnosticsService/StopFlow": [],
+    "/superverse.v2.FlowDiagnosticsService/TimeTravelFlow": [],
+    "/superverse.v2.FlowDiagnosticsService/WaitFlowHistory": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.FlowRunService/GetFlowCatalog": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.FlowRunService/GetFlowDefinitions": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.FlowRunService/GetFlowDisplay": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.FlowRunService/InvokeFlowAction": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.FlowRunService/RecoverFlowStart": [],
+    "/superverse.v2.FlowRunService/SearchFlows": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.FlowRunService/StartFlow": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.FlowRunService/UpdateFlowDisplayField": [],
+    "/superverse.v2.PreviewService/GetPreview": [
+      "api-integration"
+    ],
+    "/superverse.v2.PreviewService/GetPreviewDefinitions": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.PreviewService/PreparePreviewSource": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.PreviewService/StartPreview": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.PreviewService/StopPreview": [],
+    "/superverse.v2.PreviewService/UpdatePreviewAutoDeploy": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ProjectMemberService/AddProjectMember": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ProjectMemberService/ListProjectMembers": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ProjectMemberService/RemoveProjectMember": [
+      "api-integration"
+    ],
+    "/superverse.v2.ProjectMemberService/SetProjectMemberRole": [],
+    "/superverse.v2.ProjectService/CreateProject": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ProjectService/DeleteProject": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ProjectService/GetProject": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ProjectService/GetProjectConfiguration": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ProjectService/ListEnvironmentEvents": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ProjectService/ListProjects": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ProjectService/ListRecentTriggerEvents": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ProjectService/RemoveLive": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ProjectService/ValidateProjectConfiguration": [],
+    "/superverse.v2.ProjectService/WatchProject": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ReleaseService/CancelReleaseBuild": [],
+    "/superverse.v2.ReleaseService/DeriveLiveConfiguration": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ReleaseService/GetRelease": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ReleaseService/GetReleaseBuildLog": [],
+    "/superverse.v2.ReleaseService/ListReleaseCandidates": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ReleaseService/ListReleases": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ReleaseService/PrepareRelease": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ReleaseService/RecoverReleaseBuild": [],
+    "/superverse.v2.ReleaseService/StartReleaseBuild": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.ReleaseService/WatchRelease": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.RemoteAgentService/CreateRemoteAgentPairing": [],
+    "/superverse.v2.RemoteAgentService/ListRemoteAgentConnections": [],
+    "/superverse.v2.RemoteAgentService/RevokeRemoteAgentConnection": [],
+    "/superverse.v2.RemoteAgentService/SetSessionExecutor": [],
+    "/superverse.v2.SessionService/GetSession": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.SessionService/ListArchivedMessages": [
+      "api-integration"
+    ],
+    "/superverse.v2.SessionService/RenewWorkspace": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.SessionService/WatchSession": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.TeamSpaceConnectionService/CompleteTeamSpaceConnectionOAuth": [],
+    "/superverse.v2.TeamSpaceConnectionService/CreateTeamSpaceConnection": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.TeamSpaceConnectionService/DeleteTeamSpaceConnection": [],
+    "/superverse.v2.TeamSpaceConnectionService/GetTeamSpaceConnection": [],
+    "/superverse.v2.TeamSpaceConnectionService/InvokeTeamSpaceConnectionCommand": [],
+    "/superverse.v2.TeamSpaceConnectionService/ListConnectorCatalog": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.TeamSpaceConnectionService/ListTeamSpaceConnections": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.TeamSpaceConnectionService/StartTeamSpaceConnectionOAuth": [],
+    "/superverse.v2.TeamSpaceConnectionService/StartTeamSpaceConnectionUiSession": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.TeamSpaceConnectionService/UpdateTeamSpaceConnection": [],
+    "/superverse.v2.TeamSpaceMemberService/AddTeamSpaceMember": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.TeamSpaceMemberService/ListTeamSpaceMembers": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.TeamSpaceMemberService/RemoveTeamSpaceMember": [
+      "api-integration"
+    ],
+    "/superverse.v2.TeamSpaceMemberService/SetTeamSpaceMemberRole": [],
+    "/superverse.v2.TeamSpaceService/CreateTeamSpace": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.TeamSpaceService/DeleteTeamSpace": [],
+    "/superverse.v2.TeamSpaceService/GetTeamSpace": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.TeamSpaceService/GetTeamSpaceOverview": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.TeamSpaceService/ListTeamSpaces": [
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.TeamSpaceService/RenameTeamSpace": []
+  }
+}

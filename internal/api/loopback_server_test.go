@@ -12,6 +12,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"os"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -28,6 +29,14 @@ func serveLoopback(ctx context.Context, t *testing.T, s *Server) *grpc.ClientCon
 		t.Fatal(err)
 	}
 	server := NewGRPCServer(s)
+	if path := os.Getenv("SUPERVERSE_TEST_RPC_COVERAGE_FILE"); path != "" {
+		recorder, err := NewRPCCoverage(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		s.RPCCoverage = recorder
+		server = NewGRPCServer(s)
+	}
 	served := make(chan error, 1)
 	go func() { served <- server.Serve(listener) }()
 	t.Cleanup(func() {

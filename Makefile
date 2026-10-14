@@ -3,7 +3,7 @@
 	check-web check-web-source check-web-build check-generated check-generated-web \
 	check-app-template check-app-template-source check-app-template-embedded \
 	check-deployment-names check-package-layers check-package-limits check-package-readmes check-go-file-length license-headers check-license-headers \
-	check-studio-server-boundary check-mock-scenarios check-flow-registry check-config check-exports check-proto-enums check-test-lanes check-terraform-inputs check-dex-versions check-proto-format check-proto check-generated-proto \
+	check-studio-server-boundary check-mock-scenarios check-rpc-coverage check-flow-registry check-config check-exports check-proto-enums check-test-lanes check-terraform-inputs check-dex-versions check-proto-format check-proto check-generated-proto \
 	check-flow-definition format-check check-agent-rules check-prelaunch-identities governance-check \
 	test test-integration test-e2e test-claude-live required-lanes affected-tests affected-specs studio-coverage-map check-local-full-evidence ci \
 	lint lint-go lint-web lint-workflows vulnerability-check audit-web \
@@ -102,7 +102,7 @@ ci: check-license-headers governance-check check-dex-versions lint-workflows che
 check-go: build vet compile-tests check-go-rules check-go-proto
 
 check-go-rules: check-studio-server-boundary check-package-layers \
-	check-package-limits check-package-readmes check-go-file-length check-mock-scenarios check-flow-registry check-config \
+	check-package-limits check-package-readmes check-go-file-length check-mock-scenarios check-rpc-coverage check-flow-registry check-config \
 	check-exports check-proto-enums check-test-lanes
 
 check-go-proto: check-proto-format check-generated-proto check-proto
@@ -167,6 +167,9 @@ check-studio-server-boundary:
 check-mock-scenarios:
 	@go run ./cmd/tools/check-mock-scenarios
 
+check-rpc-coverage:
+	@python3 scripts/rpc-coverage-map.py check
+
 # The Dex SDK registry of every server Flow, built as the server bootstrap builds it.
 check-flow-registry:
 	@go run ./cmd/tools/check-flow-registry
@@ -228,7 +231,9 @@ studio-coverage-map:
 	@python3 scripts/studio-coverage-map.py merge '$(COVERAGE)'
 
 test-integration:
-	$(WITH_CLAUDE_KEY) go test -tags=live -count=1 -p 1 -timeout '$(INTEGRATION_TEST_TIMEOUT)' $(GO_PACKAGES)
+	@coverage_dir="$$(mktemp -d)"; trap 'rm -rf "$$coverage_dir"' EXIT; \
+		SUPERVERSE_TEST_RPC_COVERAGE_FILE="$$coverage_dir/rpc-coverage.json" $(WITH_CLAUDE_KEY) go test -tags=live -count=1 -p 1 -timeout '$(INTEGRATION_TEST_TIMEOUT)' $(GO_PACKAGES) && \
+		python3 scripts/rpc-coverage-map.py merge api-integration "$$coverage_dir/rpc-coverage.json"
 
 test-e2e:
 	npm --prefix web/studio run test:e2e

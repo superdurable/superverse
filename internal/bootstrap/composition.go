@@ -10,6 +10,7 @@ package bootstrap
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -253,7 +254,15 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	}
 	remoteService := &remoteagent.Connections{DAO: remoteDAO, Sessions: sessionService, Endpoint: endpoint,
 		MinimumBridgeVersion: config.remoteAgent.MinimumBridgeVersion, AcceptDevBridge: config.remoteAgent.AcceptDevBridge, PlatformAdminEmail: config.platformAdminEmail}
+	var rpcCoverage *api.RPCCoverage
+	if config.rpcCoverageFile != "" {
+		rpcCoverage, err = api.NewRPCCoverage(config.rpcCoverageFile)
+		if err != nil {
+			return nil, fmt.Errorf("RPC coverage file: %w", err)
+		}
+	}
 	business := api.NewGRPCServer(&api.Server{
+		RPCCoverage:     rpcCoverage,
 		Boundary:        &boundary.Boundary{Logger: logger, Accounts: accountService, Dex: client, Cursors: config.cursors},
 		ProjectIDLength: config.projectIDLength, Sessions: sessionService, SessionAgents: sessionAgentClient, Subagents: sessionService.Subagents,
 		Projects: projectClient, TeamSpaces: teamSpaceClient, TeamSpaceReads: teamspacedao.New(db), Members: memberDAO, Setups: setupClient, Host: config.host, Configuration: configuration, Runs: flowRuns,

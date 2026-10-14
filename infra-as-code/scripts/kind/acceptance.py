@@ -7,21 +7,36 @@
 # SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 """Kind browser acceptance against the exact deployed components; its receipt is the release gate."""
+import json
 import os
 import time
 
 from acceptance.browser import acceptance_admission, acceptance_signals, browser_node_identity, run_browser_cases
 import build_inputs
+from commands import run
 import git_host
-from kind.cluster import CLUSTER, FORWARDS, GIT, state, verify_owner
+from kind.cluster import CLUSTER, FORWARDS, GIT, NAMESPACE, kind_nodes, kubectl, state, verify_owner
 from kind.deployment_identity import kind_deployment_identity
 from kind.locks import KIND_ACCEPTANCE_DIRECTORY
 from kind.server_config import model_target, require_unchanged
 from operator_errors import require
-from paths import STATE
-from private_files import write_private_json
+from paths import ROOT, STATE
+from private_files import write_private, write_private_json
 
 RECEIPT = STATE / "e2e-acceptance.json"
+
+
+def observed_rpc_coverage():
+    """Read the server's mounted /tmp from its owned Kind node; the distroless server has no cat binary."""
+    pods = json.loads(kubectl("get", "pods", "-n", NAMESPACE, "-o", "json", capture=True))["items"]
+    servers = [pod for pod in pods if pod["metadata"]["name"].startswith("superverse-v2-server-") and
+               pod["status"].get("phase") == "Running"]
+    require(len(servers) == 1, "Kind RPC coverage requires exactly one running server Pod")
+    pod = servers[0]
+    node = pod["spec"]["nodeName"]
+    require(node in kind_nodes(), "Kind RPC coverage server Pod runs on an unowned node")
+    file = "/var/lib/kubelet/pods/" + pod["metadata"]["uid"] + "/volumes/kubernetes.io~empty-dir/tmp/superverse-rpc-coverage.json"
+    return run(["docker", "exec", node, "cat", file], capture=True)
 
 
 def e2e(_args):
@@ -55,6 +70,10 @@ def e2e(_args):
                 current.get("runtimeIdentity") == runtime_identity and build_inputs.kind_behavior_fingerprint() == fingerprint and
                 kind_deployment_identity(profile, deployed_images) == runtime_identity,
                 "Source or deployed resource identity changed during E2E; no acceptance receipt emitted")
+        observed = observed_rpc_coverage()
+        coverage = STATE / "rpc-coverage.json"
+        write_private(coverage, observed)
+        print(run(["python3", ROOT / "scripts/rpc-coverage-map.py", "merge", "kind-e2e", coverage], capture=True))
         receipt = {"schema": 2, "runtimeIdentity": runtime_identity, "environment": "local-kind", "cluster": CLUSTER, "sourceFingerprint": fingerprint,
                    "commonSourceFingerprint": value["commonSourceFingerprint"], "images": deployed_images, "deploymentInputs": value["deploymentInputs"],
                    "serverConfiguration": value["deploymentInputs"]["config"]["profile"],

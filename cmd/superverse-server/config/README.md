@@ -81,6 +81,7 @@ define the slug.
 | `healthAddress` | Listener of `/healthz` and `/readyz` | `:8082` | |
 | `blobCacheDir` | Dex payload blob cache, exclusive to this process | `/tmp/superverse-blob-cache` | |
 | `projectIDLength` | Length of a new Project ID | `4` | `1` to the catalog's maximum for the environment |
+| `rpcCoverageFile` | Private file of business RPC methods served by a local test server | none | Absolute path in Local Native or Local Kind only; disabled in hosted profiles |
 
 ### `dex`
 

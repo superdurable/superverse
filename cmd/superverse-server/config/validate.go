@@ -67,6 +67,9 @@ func (c Config) Validate() error {
 	if adminErr != nil || parsedAdmin.Address != adminEmail || strings.ContainsAny(adminEmail, " <>\t\r\n") || strings.ToLower(adminEmail) != adminEmail {
 		fail("accounts.platformAdminEmail must be a canonical email address")
 	}
+	if c.Server.RPCCoverageFile != "" && (!c.LocalKind || !filepath.IsAbs(c.Server.RPCCoverageFile)) {
+		fail("server.rpcCoverageFile requires a local lane and an absolute path")
+	}
 	if runtimeErr := c.Runtime.Validate(); runtimeErr != nil {
 		fail("runtime: %v", runtimeErr)
 	}

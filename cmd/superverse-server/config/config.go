@@ -167,6 +167,8 @@ type RemoteAgentConfig struct {
 type ServerConfig struct {
 	GRPCAddress   string `yaml:"grpcAddress"`
 	HealthAddress string `yaml:"healthAddress"`
+	// RPCCoverageFile records served methods only in a local test lane.
+	RPCCoverageFile string `yaml:"rpcCoverageFile"`
 	// BlobCacheDir holds the Dex payload blob cache; it is exclusive to this process.
 	BlobCacheDir string `yaml:"blobCacheDir"`
 	// ProjectIDLength is the length of a new Project ID.

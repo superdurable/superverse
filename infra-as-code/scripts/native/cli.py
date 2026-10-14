@@ -199,7 +199,7 @@ def prepare(instance, record, topology, studio_mode, profile):
     record.update(binary=str(binary), binaryDigest=hashlib.sha256(binary.read_bytes()).hexdigest(), platform=platform.system().lower() + "/" + build_inputs.architecture())
     # The last layer is what only this run knows; every address is native.yaml's, which the server validates as Local Native's topology.
     layer = run_layer(directory, {**topology.layer(), "native": {**topology.layer()["native"], "runId": record["runId"], "stateDir": str(instance.root), "dockerSocket": docker_socket()},
-                                  "localgit": {**topology.layer()["localgit"], "dir": str(instance.git.repositories)}, "server": {**topology.layer()["server"], "blobCacheDir": str(directory / "blob-cache")},
+                                  "localgit": {**topology.layer()["localgit"], "dir": str(instance.git.repositories)}, "server": {**topology.layer()["server"], "blobCacheDir": str(directory / "blob-cache"), "rpcCoverageFile": str(directory / "rpc-coverage.json")},
                                   "sandbox": {"profile": record["profile"]}, "live": services.project_images()})
     operator = [Path(profile).resolve(strict=True)] if profile else []
     layers = [CONFIG, *operator, layer]
@@ -441,6 +441,7 @@ def acceptance(instance, topology, record, directory, browser_node, args):
         print("Three actual Native cases passed; receipt: " + str(instance.receipt) + ". It cannot authorize AWS publication")
         # The cases' spec coverage refreshes their entries of the committed map the evidence check reads.
         print(run(["python3", ROOT / "scripts/studio-coverage-map.py", "merge", coverage], capture=True))
+        print(run(["python3", ROOT / "scripts/rpc-coverage-map.py", "merge", "native-e2e", directory / "rpc-coverage.json"], capture=True))
 
 
 COMMANDS = {"start": start, "stop": stop, "recover": recover, "restart-server": restart_server, "status": status, "e2e": e2e, "delete": delete}

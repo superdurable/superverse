@@ -9,6 +9,14 @@
 package api
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
+	"sync"
+
 	pb "github.com/superdurable/superversev2/gen/superverse/v2"
 	"github.com/superdurable/superversev2/internal/agents"
 	remoteconnections "github.com/superdurable/superversev2/internal/agents/remoteagent"
@@ -35,6 +43,7 @@ import (
 // Boundary and only the clients it uses.
 type Server struct {
 	*boundary.Boundary
+	RPCCoverage     *RPCCoverage
 	ProjectIDLength int
 	Projects        *projects.ProjectFlowClient
 	TeamSpaces      *teamspaces.TeamSpaceFlowClient
@@ -61,10 +70,16 @@ type Server struct {
 
 // NewGRPCServer serves the business services behind panic recovery.
 func NewGRPCServer(s *Server) *grpc.Server {
+	unary := []grpc.UnaryServerInterceptor{s.LogUnaryFailure, s.RecoverUnary}
+	stream := []grpc.StreamServerInterceptor{s.LogStreamFailure, s.RecoverStream}
+	if s.RPCCoverage != nil {
+		unary = append(unary, s.RPCCoverage.unary)
+		stream = append(stream, s.RPCCoverage.stream)
+	}
 	server := grpc.NewServer(
 		grpc.MaxRecvMsgSize(8<<20),
-		grpc.ChainUnaryInterceptor(s.LogUnaryFailure, s.RecoverUnary),
-		grpc.ChainStreamInterceptor(s.LogStreamFailure, s.RecoverStream),
+		grpc.ChainUnaryInterceptor(unary...),
+		grpc.ChainStreamInterceptor(stream...),
 	)
 	b := s.Boundary
 	tenancy.Register(server, b, s.TeamSpaces, s.TeamSpaceReads, s.Members, s.Connections)
@@ -85,4 +100,95 @@ func NewGRPCServer(s *Server) *grpc.Server {
 	pb.RegisterConnectorServiceServer(server, &connectorServer{flowConfiguration: configuration, publishing: s.Publishing})
 	pb.RegisterApplicationEnvironmentServiceServer(server, &applicationEnvironmentServer{flowConfiguration: configuration})
 	return server
+}
+
+// RPCCoverage records only declared business method names in a local test file.
+type RPCCoverage struct {
+	mu    sync.Mutex
+	path  string
+	known map[string]bool
+	seen  map[string]bool
+}
+
+// NewRPCCoverage starts a new observation file for one local test server.
+func NewRPCCoverage(path string) (*RPCCoverage, error) {
+	known := make(map[string]bool)
+	services := pb.File_superverse_v2_superverse_proto.Services()
+	for i := 0; i < services.Len(); i++ {
+		service := services.Get(i)
+		methods := service.Methods()
+		for j := 0; j < methods.Len(); j++ {
+			known["/"+string(service.FullName())+"/"+string(methods.Get(j).Name())] = true
+		}
+	}
+	recorder := &RPCCoverage{path: path, known: known, seen: make(map[string]bool)}
+	if data, err := os.ReadFile(path); err == nil {
+		var previous struct {
+			Methods []string `json:"methods"`
+		}
+		if err := json.Unmarshal(data, &previous); err != nil {
+			return nil, err
+		}
+		for _, method := range previous.Methods {
+			if !known[method] {
+				return nil, fmt.Errorf("RPC coverage has undeclared method %q", method)
+			}
+			recorder.seen[method] = true
+		}
+	} else if !os.IsNotExist(err) {
+		return nil, err
+	}
+	if err := recorder.write(); err != nil {
+		return nil, err
+	}
+	return recorder, nil
+}
+
+func (r *RPCCoverage) unary(ctx context.Context, request any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	if err := r.record(info.FullMethod); err != nil {
+		return nil, err
+	}
+	return handler(ctx, request)
+}
+
+func (r *RPCCoverage) stream(server any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	if err := r.record(info.FullMethod); err != nil {
+		return err
+	}
+	return handler(server, stream)
+}
+
+func (r *RPCCoverage) record(method string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if !r.known[method] {
+		return fmt.Errorf("RPC coverage received undeclared method %q", method)
+	}
+	if r.seen[method] {
+		return nil
+	}
+	r.seen[method] = true
+	return r.write()
+}
+
+func (r *RPCCoverage) write() error {
+	methods := make([]string, 0, len(r.seen))
+	for method := range r.seen {
+		methods = append(methods, method)
+	}
+	sort.Strings(methods)
+	data, err := json.MarshalIndent(struct {
+		Methods []string `json:"methods"`
+	}{methods}, "", "  ")
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(r.path), 0700); err != nil {
+		return err
+	}
+	temporary := r.path + ".tmp"
+	if err := os.WriteFile(temporary, append(data, '\n'), 0600); err != nil {
+		return err
+	}
+	return os.Rename(temporary, r.path)
 }
