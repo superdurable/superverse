@@ -1,0 +1,77 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A new operation of an existing connector: the requirements card lists the
+# released newsapi connector with an operation it does not publish yet, and
+# after the user confirms it the main agent starts a connector_develop
+# subagent for newsapi with the contribution operation. The subagent changes
+# only the newsapi module, which leaves catalog.yaml as it is, and reports;
+# its finish commits and pushes the branch, and its task notification carries
+# the contribution.
+name: connector-develop-operation
+title: "Connector development: a new operation"
+description: "After the requirements are confirmed, a connector_develop subagent adds an operation to the existing newsapi connector on its library branch."
+category: project_feature
+arguments: {task: agent-aaaaaaaa}
+inputs:
+  - label: "Describe the application"
+    message: "Build a page that shows today's top headlines of a country."
+    replies:
+      - text: "The newsapi connector exists but has no headlines operation yet, so it is added upstream. Please confirm what I will build."
+        tool_uses:
+          - name: confirm_requirements
+            input:
+              title: "Top headlines"
+              summary: "A page with the top headlines of a chosen country."
+              features:
+                - {id: R1, text: "A visitor chooses a country and reads its ten top headlines."}
+              connections:
+                - need: "Read the top headlines of a country"
+                  connector: newsapi
+                  operations: [topHeadlines]
+                  status: new
+                  user_setup: "A NewsAPI key."
+              user_setup: ["Create a NewsAPI key."]
+              acceptance: ["The page shows ten headlines for the chosen country."]
+  - label: "Confirm the requirements"
+    requirements_confirm: true
+    replies:
+      - text: "Adding the operation upstream while I work on the page."
+        tool_uses:
+          - name: start_agent
+            input:
+              description: "Add topHeadlines to newsapi"
+              kind: connector_develop
+              slug: newsapi
+              contribution: operation
+              prompt: "Add a query operation topHeadlines to the newsapi connector that returns the top headlines of a country. [[subagent:connector-develop-operation/develop]]"
+        expect_result_contains:
+          - "\"branch\":\"superverse/"
+      - text: "A subagent adds the operation; I will tell you when its branch is ready."
+      - text: "The topHeadlines operation is on its branch of the connectors library; it is released with the next release of every connector."
+        notification: task
+subagents:
+  develop:
+    kind: connector_develop
+    replies:
+      - text: "Reading the connector's manifest."
+        tool_uses:
+          - name: grep
+            input: {pattern: "name: newsapi", path: connectors/newsapi/connector.yaml, output_mode: content}
+        expect_result_contains:
+          - "name: newsapi"
+      - text: "Documenting the new operation in the module."
+        tool_uses:
+          - name: bash
+            input:
+              command: "printf '\\n## topHeadlines\\n\\nReturns the top headlines of a country.\\n' >> connectors/newsapi/README.md && tail -3 connectors/newsapi/README.md"
+              description: "Describe the new operation in the connector's README"
+              timeout_seconds: 60
+        expect_result_contains:
+          - "topHeadlines"
+      - text: "I added the topHeadlines operation's documentation to connectors/newsapi and left the version and catalog.yaml unchanged. The library's checks did not run in this mock; the provider behavior is unverified."

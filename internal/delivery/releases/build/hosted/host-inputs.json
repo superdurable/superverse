@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "superverse.dev/hosted-build-host-inputs/v1",
+  "platform": "linux/arm64",
+  "verifiedAt": "2026-09-30",
+  "python": {
+    "version": "3.13.15-slim-bookworm",
+    "image": "docker.io/library/python:3.13.15-slim-bookworm@sha256:ad4c34ff79289506e235b40dce75d629e25f226b597a2455804220f037e07531",
+    "indexDigest": "sha256:2325bb286ec344af3e5898cc224b5844e2707ac6e26b1632516fd3edc84a5e26",
+    "sourceRevision": "688a0b86bb44289df16a363e9f41d90514c1a5f9"
+  },
+  "buildkit": {
+    "version": "v0.25.1",
+    "image": "docker.io/moby/buildkit:v0.25.1@sha256:8f251fda6057e9dffc54f7874b249920f15f1813e9b1406a0cebeca5e4ab1ad9",
+    "indexDigest": "sha256:79cc6476ab1a3371c9afd8b44e7c55610057c43e18d9b39b68e2b0c2475cc1b6",
+    "bundledRuncSourceVersion": "v1.3.1"
+  },
+  "docker": {
+    "version": "29.8.1",
+    "url": "https://download.docker.com/linux/static/stable/aarch64/docker-29.8.1.tgz",
+    "sha256": "667395fbffab52901b80181dfbb39ea76da2fbd7642c4fbddd24e42146b07b48",
+    "bytes": 77678230
+  },
+  "awsCLI": {
+    "version": "2.31.9",
+    "url": "https://awscli.amazonaws.com/awscli-exe-linux-aarch64-2.31.9.zip",
+    "sha256": "12c347c73cb150e96cb6450974b1a2998760a882740cd04a39426634a957f27f",
+    "bytes": 59665342
+  },
+  "debian": {
+    "snapshot": "https://snapshot.debian.org/archive/debian/20260915T000000Z",
+    "suite": "bookworm",
+    "component": "main",
+    "releaseSHA256": "abcf5882746e0f68171f41adbb4ac01b74b49d62d203379befb9265804311a4f"
+  },
+  "verification": "Official registry descriptor reads and official HTTPS archive downloads with locally computed SHA256; no binary execution or image publication in this record."
+}

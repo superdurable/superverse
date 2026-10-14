@@ -1,0 +1,330 @@
+/*
+ * Copyright (c) 2026 Super Durable, Inc.
+ *
+ * Licensed under the Sustainable Use License 1.0.
+ * You may not use this file except in compliance with the License.
+ * See the LICENSE file in the repository root.
+ *
+ * SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+ */
+
+/*
+ * Studio's one token set and the cascade every surface renders through. Components style themselves
+ * with utilities; this sheet and react-flow.css are the only CSS (scripts/check-styles.mjs).
+ *
+ * Layers, lowest first: Tailwind's theme and preflight, React Flow's own sheet (vendor), our React
+ * Flow internals (components), then utilities. The statement comes before the Tailwind import so
+ * Tailwind's own statement cannot reorder it, and a utility therefore beats React Flow's rules
+ * whatever their specificity.
+ */
+@layer theme, base, vendor, components, utilities;
+
+@import "tailwindcss";
+@import "@xyflow/react/dist/style.css" layer(vendor);
+@import "./react-flow.css" layer(components);
+
+/* The dark theme follows html[data-theme], which the root layout's bootstrap always sets. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+ * Palette D uses the Flow UI's measured ramps
+ * merged in, so one name means one colour on every surface.
+ *
+ * Two licences carry the system. GREEN is --color-cta: the primary button and the mark, nothing
+ * else, and it inverts between themes. BLUE is --color-accent: interactivity, so links, focus,
+ * hover and running. Green is never a state; done is --color-pass.
+ *
+ * Colour otherwise says WHO MUST ACT: amber (busy) a person, blue (accent) the machine running,
+ * green (pass) done, red (fail) failed, cyan (door) an outside actor's RPC, purple (child) a child
+ * Flow, slate (clock) a timer. Everything else is greyscale.
+ *
+ * Planes carry the brand hue as atmosphere at C <= 0.0091; marks (ink, line, band) are cool and
+ * near-achromatic, because a desaturated green at mark lightness reads as sage. Region planes,
+ * same order in both themes: well and canvas recess, bg holds content, panel and raised float.
+ *
+ * Light values live here; html[data-theme="dark"] below overrides them. A colour with no dark
+ * override (the -rule tier and --color-line) is SHARED on purpose: a mid-lightness line clears
+ * 3:1 against both a near-black and a near-white ground. Ratios were measured worst-case with
+ * dex-brand-palette/tools/oklch.py. `static` keeps every token emitted, because TSX reads some
+ * of them as var() strings that Tailwind cannot see.
+ */
+@theme static {
+  /* The sans stack names Geist, which is never downloaded; most readers see Helvetica Neue. */
+  --font-sans: Geist, "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  /* The Flow views' platform stack. */
+  --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif;
+
+  /* The one bar on top of every page, lined up with the sidebar's logo row. */
+  --spacing-header: 48px;
+  --breakpoint-xs: 30rem;
+
+  /* Planes. The only surfaces allowed any green, and only as a whisper. */
+  --color-well: #e9efeb; /* control panel, nav rail and every nested well     */
+  --color-canvas: #eef3f0; /* the Flow drawing ground                         */
+  --color-bg: #f2f8f4; /* content and the transcript                          */
+  --color-hover: #e9efeb; /* a hovered row on bg                              */
+  --color-raised: #f7fcf9; /* a chip or record lifted off its card            */
+  --color-panel: #ffffff; /* cards and the control stripe                     */
+
+  /* Lines. `line` bounds a control, `line-soft` draws structure, `line-faint` divides. */
+  --color-line: #7e8083; /* SHARED. 3.40 worst, both themes                   */
+  --color-line-soft: #d3d5d8; /* 1.26 -- decorative on purpose                */
+  --color-line-faint: #e4e6e9;
+
+  /* Ink: three text-safe steps, then two marks that are never text. */
+  --color-ink: #181a1c; /* 14.97                                              */
+  --color-ink-dim: #434547; /* 8.26                                           */
+  --color-ink-faint: #686a6d; /* 4.65, the tightest text pair                 */
+  --color-mark: #949699; /* glyphs, control edges, machine work               */
+  --color-mark-faint: #b9bbbd; /* idle marks and dividers                     */
+
+  /* Group bands: achromatic, because a region is not an actor. */
+  --color-band-0: #f2f4f7;
+  --color-band-1: #e9ebee;
+
+  /* The one brand green. Button and mark only; it is not a state. */
+  --color-cta: #008650; /* white on it, 4.64                                  */
+  --color-cta-hover: #007546; /* white on it, 5.78                            */
+  --color-cta-on: #ffffff; /* ink on a CTA or amber fill                      */
+
+  /* The one accent: interactivity, focus, running. */
+  --color-accent: #34659f; /* 5.13                                            */
+  --color-accent-hover: #22538c; /* white on it, 7.82                         */
+  --color-accent-rule: #5783b8; /* SHARED. 3.37                               */
+  --color-accent-subtle: #e4f0ff;
+  --color-accent-wash: rgba(52, 101, 159, 0.08);
+  --color-accent-wash-strong: rgba(52, 101, 159, 0.16);
+
+  /* Done. The CTA's hue at a lower lightness, 6.0 apart for a deuteranope. */
+  --color-pass: #1c754a; /* 4.88                                              */
+  --color-pass-rule: #4b9169; /* SHARED. 3.24                                 */
+  --color-pass-subtle: #ddf6e6;
+
+  /* Failure. One red for failed and removed; the glyph tells them apart. */
+  --color-fail: #9a4548; /* 5.43                                              */
+  --color-fail-rule: #b46767; /* SHARED. 3.55                                 */
+  --color-fail-subtle: #ffe8e8;
+
+  /* The one warm hue: a person must act. */
+  --color-busy: #845b00; /* 5.18                                              */
+  --color-busy-rule: #9f7938; /* SHARED. 3.42                                 */
+  --color-busy-subtle: #fbecd6;
+
+  /* The door in from outside: amber's complement, so gate and door read as a pair. */
+  --color-door: #007080; /* 5.16                                              */
+  --color-door-rule: #2e8ea0; /* SHARED. 3.41                                 */
+  --color-door-subtle: #d7f5fb;
+
+  /* A child Flow, and a timer. */
+  --color-child: #6a549c; /* 5.57                                             */
+  --color-child-subtle: #f0ebff;
+  --color-clock: #5a6475; /* 5.32                                             */
+  --color-clock-subtle: #ebeff5;
+
+  /*
+   * The environment the Builder shows: Preview is grey and only Live is green. They mark the
+   * selected environment tab, the process picker and the open tab's underline; the bar's
+   * data-environment="live" switches them to Live's below. Each follows its source in dark.
+   */
+  --color-env: var(--color-ink-dim);
+  --color-env-rule: var(--color-ink-dim);
+  --color-env-subtle: var(--color-well);
+
+  /* 0.75, not 0.35: at 0.35 a running dot fell to 1.5:1 and vanished for part of every cycle. */
+  --animate-pulse-soft: pulse-soft 1.4s ease-in-out infinite;
+  /* A marching dash along a highlighted edge or Timeline link. */
+  --animate-dash-flow: dash-flow 650ms linear infinite;
+  /* The canvas glides cards and its camera on this one curve (components/flow/canvas/camera). */
+  --ease-glide: cubic-bezier(0.33, 1, 0.68, 1);
+  /* A note that appears only if what it announces takes a moment. */
+  --animate-fade-in-late: fade-in 200ms ease 200ms backwards;
+  /* A panel or drawer beside the canvas slides in instead of appearing over it. */
+  --animate-panel-in: panel-in 200ms var(--ease-glide) backwards;
+
+  @keyframes pulse-soft {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.75;
+    }
+  }
+
+  @keyframes dash-flow {
+    to {
+      stroke-dashoffset: -13;
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes panel-in {
+    from {
+      opacity: 0.4;
+      translate: 10px 0;
+    }
+  }
+}
+
+/*
+ * Theme-varying shadows and the brand flats stay plain properties: a @theme shadow compiles into
+ * its utility as a literal, so a dark override would never be read. Consume them as
+ * shadow-(--shadow-lift) or focus-visible:shadow-(--focus-ring).
+ */
+@layer theme {
+  :root {
+    color-scheme: light;
+    /* The mark's two flats, read raw by components/shell/DexMark.tsx. Pair separation 3.07. */
+    --brand-track: #00321b;
+    --brand-head: #008650;
+    /* A ring first, a blur second. */
+    --shadow-lift: 0 0 0 1px var(--color-line-soft), 0 10px 28px -12px rgba(15, 23, 36, 0.22);
+    --focus-ring: 0 0 0 3px rgba(52, 101, 159, 0.32);
+  }
+
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --color-well: #070a08;
+    --color-canvas: #070a08;
+    --color-bg: #0e120f;
+    --color-hover: #272c29;
+    --color-raised: #212623;
+    --color-panel: #1a1c1e;
+
+    --color-line-soft: #303133;
+    --color-line-faint: #262729;
+
+    --color-ink: #f2f4f7; /* 15.51                                            */
+    --color-ink-dim: #c1c3c5; /* 9.67                                         */
+    --color-ink-faint: #8f9193; /* 5.40                                       */
+    --color-mark: #6e7072;
+    --color-mark-faint: #4b4d4f;
+
+    --color-band-0: #26282a;
+    --color-band-1: #2f3133;
+
+    /* dex-web's own --brand-head: the logo and the CTA are one green. */
+    --color-cta: #70eea9; /* near-black ink on it, 13.72                      */
+    --color-cta-hover: #6ee3a2; /* a bright fill darkens on hover. 12.47      */
+    --color-cta-on: #070a08;
+
+    --color-accent: #89beff; /* 8.85                                          */
+    --color-accent-hover: #b2d4ff;
+    --color-accent-subtle: #10253e;
+    --color-accent-wash: rgba(137, 190, 255, 0.1);
+    --color-accent-wash-strong: rgba(137, 190, 255, 0.22);
+
+    --color-pass: #7cd09f; /* 9.26                                            */
+    --color-pass-subtle: #072c19;
+    --color-fail: #fb9c9c; /* 8.41                                            */
+    --color-fail-subtle: #3c1719;
+    --color-busy: #e1b267; /* 8.76                                            */
+    --color-busy-subtle: #332000;
+    --color-door: #60cce1; /* 9.13                                            */
+    --color-door-subtle: #002a31;
+    --color-child: #c1abfb; /* 8.53                                           */
+    --color-child-subtle: #271e3d;
+    --color-clock: #b0bbce; /* 8.83                                           */
+    --color-clock-subtle: #20252c;
+
+    --shadow-lift: 0 0 0 1px var(--color-line-soft), 0 10px 28px -12px rgba(0, 0, 0, 0.78);
+    --focus-ring: 0 0 0 3px rgba(137, 190, 255, 0.3);
+    /* Both flats lift, or the track bottoms out at 1.20 on the dark card. */
+    --brand-track: #42845f;
+    --brand-head: #70eea9;
+  }
+
+  /* Live's environment colours, under the bar that shows Live. */
+  [data-environment="live"] {
+    --color-env: var(--color-pass);
+    --color-env-rule: var(--color-pass-rule);
+    --color-env-subtle: var(--color-pass-subtle);
+  }
+}
+
+@layer base {
+  /* Flat: the plane tint is the atmosphere. */
+  body {
+    background: var(--color-bg);
+    color: var(--color-ink);
+  }
+
+  button:not(:disabled),
+  select:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  /* Opaque, and the ink is set too, so selected-text contrast is a constant. */
+  ::selection {
+    background: var(--color-accent-subtle);
+    color: var(--color-ink);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background: var(--color-line);
+    background-clip: content-box;
+  }
+
+  /* The thumb is shared grey at rest, so hover moves lightness, not hue. */
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--color-ink-dim);
+    background-clip: content-box;
+  }
+
+  /*
+   * FlowFrame's element defaults (components/flow/frame/FlowFrame.tsx). They live in the base layer
+   * so that every utility a Flow view writes overrides them.
+   */
+  [data-flow-frame] h1 {
+    margin-bottom: 7px;
+    font-size: clamp(28px, 4vw, 42px);
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+  }
+
+  [data-flow-frame] h2 {
+    margin-bottom: 6px;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+  }
+
+  [data-flow-frame] h3 {
+    margin-bottom: 4px;
+    font-size: 15px;
+  }
+
+  /* The composer's element picker: anything that names itself with data-pick can be picked. */
+  body[data-picking="true"] [data-pick] {
+    cursor: crosshair;
+  }
+
+  body[data-picking="true"] [data-pick]:hover {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+
+  [data-flow-frame] button:disabled {
+    cursor: not-allowed;
+    opacity: 0.48;
+  }
+}

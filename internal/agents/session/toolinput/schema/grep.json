@@ -1,0 +1,60 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pattern"
+  ],
+  "properties": {
+    "pattern": {
+      "type": "string",
+      "description": "The regular expression to search for (ripgrep syntax).",
+      "minLength": 1,
+      "maxLength": 8192
+    },
+    "path": {
+      "type": "string",
+      "description": "The file or directory to search; the workspace root by default. It may also be a read-only root such as a Go module directory.",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "glob": {
+      "type": "string",
+      "description": "Only search files whose path matches this glob, such as *.go (a file name at any depth) or **/*.tsx. A pattern with a slash is matched against the whole path, relative to the workspace root or absolute in a read-only root.",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "output_mode": {
+      "type": "string",
+      "description": "files_with_matches lists the matching files, content prints the matching lines with their line numbers, count prints the number of matching lines per file.",
+      "enum": [
+        "files_with_matches",
+        "content",
+        "count"
+      ],
+      "default": "files_with_matches"
+    },
+    "context": {
+      "type": "integer",
+      "description": "Lines of context around each match in content mode, at most 20.",
+      "minimum": 0,
+      "maximum": 20,
+      "default": 0
+    },
+    "head_limit": {
+      "type": "integer",
+      "description": "Return at most this many result lines; all of them by default (the result is cut at 32 KiB).",
+      "minimum": 1
+    },
+    "offset": {
+      "type": "integer",
+      "description": "Skip this many result lines first, to read the next page.",
+      "minimum": 0,
+      "default": 0
+    },
+    "case_insensitive": {
+      "type": "boolean",
+      "description": "Ignore case.",
+      "default": false
+    }
+  }
+}

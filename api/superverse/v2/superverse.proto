@@ -1,0 +1,3335 @@
+// Copyright (c) 2026 Super Durable, Inc.
+//
+// Licensed under the Sustainable Use License 1.0.
+// You may not use this file except in compliance with the License.
+// See the LICENSE file in the repository root.
+//
+// SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+// The Superverse business protocol (docs/api/resource-grpc.md). Buf STANDARD lint and scripts/check-proto-services.py enforce these
+// conventions:
+//
+// - A service holds at most 10 RPCs of one domain. RPC names are unique across services, and a
+//   name starts with Watch exactly when the RPC streams from the server.
+// - Each RPC has its own <Rpc>Request and <Rpc>Response. A response that returns a shared DTO
+//   wraps it in one field named after the resource.
+// - A request names its resource with flat string IDs first, in hierarchy order. Every request
+//   except RegisterAccountRequest and LoginRequest carries `CallerContext caller = 100`, which
+//   only the Studio BFF sets; no other field is numbered 100 or higher.
+// - request_id identifies a deduplicated start or command. The fences are expected_revision (the
+//   addressed resource), generation with workspace_request_id (the Sandbox instance) and
+//   expected_live_revision (the Project's Live pointer). The BFF fills in no ID and no fence.
+// - Integer types follow the Go domain type: uint64 for revisions, generations and fences; int64
+//   for Agent sequences, todo list revisions, repository_id and after_event_id; int32
+//   where Go holds int32 (page sizes, exit codes, AgentEvent.attempt and the Dex numeric
+//   pass-through values); uint32 only for FlowApiDocument.http_status.
+// - Times are google.protobuf.Timestamp, except the RFC 3339 strings of the Agent DTOs (the Agent
+//   conversation contract).
+// - A request of a service the browser reaches through /api/rpc carries JSON in `string *_json`
+//   fields, which the server type-checks when it parses them, and reaches no bytes, map, Struct,
+//   Value, ListValue or Timestamp field.
+// - A closed status set is an enum whose value names are the enum prefix plus the persisted domain
+//   value, so Dex keyword3 search values stay unchanged; zero is UNSPECIFIED and means absent.
+//   Open sets (failure codes and phases, progress phases, model IDs, reasoning efforts) stay
+//   strings.
+// - A list request takes page_size (0 means 50, at most 100), page_token and repeated statuses,
+//   where a zero or undeclared status is invalid; its response returns the items and
+//   next_page_token.
+// - Watch<R>Response is `oneof event {snapshot 1; progress 2}` with resume_cursor 3, and the first
+//   frame is always a snapshot.
+// - A start returns only the ID of the resource it started. A command returns an empty response,
+//   or the snapshot the page renders next. No response echoes the caller's other inputs.
+// - Surviving fields keep their numbers. Before launch, removed fields are deleted without
+//   `reserved`. Fields are declared in ascending number order; a oneof sorts by its lowest member.
+// - AppManifestSnapshot, ObjectReference, ConnectorRequirement and ConnectorTriggerBinding are
+//   persisted in Dex Attributes as JSON keyed by their field names, so they are frozen.
+// - Acronyms are written as words (FlowApi, ConnectorUi); OAuth is the one exception.
+//
+// The browser reaches AccountService only through /api/auth, the four Flow API services only
+// through /dex/... and the other ten services only through /api/rpc/<Method>.
+syntax = "proto3";
+
+package superverse.v2;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/superdurable/superversev2/gen/superverse/v2;superversev2";
+
+// ---------------------------------------------------------------------------------------------
+// Common
+// ---------------------------------------------------------------------------------------------
+
+// The caller of an authenticated RPC. The BFF takes it from the signed login cookie; Go checks it
+// against its login session in the database on every call.
+message CallerContext {
+  string account_id = 1;
+  string canonical_email = 2;
+  string session_token = 3;
+}
+
+// A commit of the main branch as Studio shows it: "V{number} · {subject}"; number 0 is the root
+// commit. Absent where the commit is not recorded.
+message CommitVersion {
+  uint64 number = 1;
+  string subject = 2;
+}
+
+message Failure {
+  string code = 1;
+  string phase = 2;
+  string message = 3;
+  bool is_recoverable = 4;
+  FailureRemedy remedy = 5;
+  FailureOwner owner = 6;
+}
+
+// What the reader can do about a failure; declared with each failure code.
+enum FailureRemedy {
+  FAILURE_REMEDY_UNSPECIFIED = 0;
+  // Complete or fix Setup items.
+  FAILURE_REMEDY_OPEN_SETUP = 1;
+  // Start the Preview again or Apply.
+  FAILURE_REMEDY_APPLY_AGAIN = 2;
+  // The application's source must change.
+  FAILURE_REMEDY_ASK_AGENT = 3;
+  // A connection needs authorization.
+  FAILURE_REMEDY_REAUTHORIZE = 4;
+  // The workspace volume is full.
+  FAILURE_REMEDY_FREE_WORKSPACE = 5;
+  // Retry the build or deployment.
+  FAILURE_REMEDY_PUBLISH_AGAIN = 6;
+  // A platform defect or a terminal state.
+  FAILURE_REMEDY_CONTACT_OPERATOR = 7;
+  // Cancel the deployment the build started instead of the build.
+  FAILURE_REMEDY_CANCEL_DEPLOYMENT = 8;
+}
+
+// Who must act on a failure: the application's source, the user's configuration or the platform.
+enum FailureOwner {
+  FAILURE_OWNER_UNSPECIFIED = 0;
+  FAILURE_OWNER_APPLICATION = 1;
+  FAILURE_OWNER_CONFIGURATION = 2;
+  FAILURE_OWNER_PLATFORM = 3;
+}
+
+// How a Preview start or a deployment ended: RUNNING until it ends.
+enum StartOutcome {
+  START_OUTCOME_UNSPECIFIED = 0;
+  START_OUTCOME_RUNNING = 1;
+  START_OUTCOME_READY = 2;
+  START_OUTCOME_FAILED = 3;
+  START_OUTCOME_REFUSED = 4;
+  START_OUTCOME_CANCELLED = 5;
+}
+
+// Best-effort progress of a Project, Release or Deployment Watch. It never certifies a durable
+// commit; the next snapshot does.
+message ResourceProgress {
+  string phase = 1;
+  uint64 revision = 2;
+  google.protobuf.Timestamp created_at = 3;
+}
+
+// One measured phase of a lifecycle that a Flow records durably. phase is an open set of code
+// constants; a zero duration_ms marks the phase in progress.
+message PhaseTiming {
+  string phase = 1;
+  google.protobuf.Timestamp started_at = 2;
+  int64 duration_ms = 3;
+}
+
+message FlowDefinition {
+  string flow_type = 1;
+  google.protobuf.Struct definition = 2;
+  string source_path = 3;
+  string schema_version = 4;
+  string digest = 5;
+  bool valid = 6;
+}
+
+// The scope of a configuration or Flow API target, mapped to infra.Scope only by infra.ScopeOf.
+enum ProjectScope {
+  PROJECT_SCOPE_UNSPECIFIED = 0;
+  PROJECT_SCOPE_PREVIEW = 1;
+  PROJECT_SCOPE_LIVE = 2;
+}
+
+// Frozen: persisted in ProjectFlow, ProjectSetupFlow, ProjectReleaseFlow and PreviewFlow
+// Attributes and Step payloads as JSON keyed by these field names.
+message AppManifestSnapshot {
+  string source_commit = 1;
+  string manifest_digest = 2;
+  string connector_contract_digest = 3;
+  string environment_contract_digest = 4;
+  uint64 revision = 5;
+  repeated ConnectorRequirement connectors = 6;
+  google.protobuf.Struct environment = 7;
+  ObjectReference manifest_object = 8;
+  ObjectReference connector_contract_object = 9;
+  ObjectReference environment_contract_object = 10;
+}
+
+// Frozen with AppManifestSnapshot.
+message ObjectReference {
+  string key = 1;
+  string version = 2;
+  string digest = 3;
+  string media_type = 4;
+}
+
+// Frozen with AppManifestSnapshot.
+message ConnectorRequirement {
+  string connection_name = 1;
+  string connector_id = 2;
+  string version = 3;
+  string auth_method_id = 4;
+  repeated string operations = 5;
+  string module_path = 7;
+  repeated ConnectorTriggerBinding trigger_bindings = 8;
+}
+
+// Frozen with AppManifestSnapshot.
+message ConnectorTriggerBinding {
+  string trigger_name = 1;
+  string binding_name = 2;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Account
+// ---------------------------------------------------------------------------------------------
+
+// The browser reaches this service only through /api/auth, the only writer of the login cookie.
+service AccountService {
+  rpc RegisterAccount(RegisterAccountRequest) returns (RegisterAccountResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  rpc GetCurrentAccount(GetCurrentAccountRequest) returns (GetCurrentAccountResponse);
+}
+
+// Unauthenticated: registration has no caller yet.
+message RegisterAccountRequest {
+  string request_id = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message RegisterAccountResponse {
+  AccountLogin login = 1;
+}
+
+// Unauthenticated: login has no caller yet.
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  AccountLogin login = 1;
+}
+
+message LogoutRequest {
+  CallerContext caller = 100;
+}
+
+message LogoutResponse {}
+
+message GetCurrentAccountRequest {
+  CallerContext caller = 100;
+}
+
+message GetCurrentAccountResponse {
+  AccountSnapshot account = 1;
+}
+
+message AccountSnapshot {
+  string account_id = 1;
+  string email = 2;
+  bool is_admin = 3;
+}
+
+// A new login session; the BFF turns it into the signed HttpOnly cookie.
+message AccountLogin {
+  AccountSnapshot account = 1;
+  string session_token = 2;
+  google.protobuf.Timestamp expires_at = 3;
+}
+
+// ---------------------------------------------------------------------------------------------
+// TeamSpace
+// ---------------------------------------------------------------------------------------------
+
+// A TeamSpace holds a team's Projects, members and shared connections. TeamSpaceFlow owns it; reads
+// come from the read model.
+service TeamSpaceService {
+  rpc CreateTeamSpace(CreateTeamSpaceRequest) returns (CreateTeamSpaceResponse);
+  rpc ListTeamSpaces(ListTeamSpacesRequest) returns (ListTeamSpacesResponse);
+  rpc GetTeamSpace(GetTeamSpaceRequest) returns (GetTeamSpaceResponse);
+  rpc RenameTeamSpace(RenameTeamSpaceRequest) returns (RenameTeamSpaceResponse);
+  // Only the platform admin deletes a TeamSpace; its Projects and connections are deleted with it.
+  rpc DeleteTeamSpace(DeleteTeamSpaceRequest) returns (DeleteTeamSpaceResponse);
+  rpc GetTeamSpaceOverview(GetTeamSpaceOverviewRequest) returns (GetTeamSpaceOverviewResponse);
+}
+
+// The server derives the TeamSpace ID from the caller and request_id. The caller becomes its admin.
+message CreateTeamSpaceRequest {
+  string request_id = 1;
+  string name = 2;
+  CallerContext caller = 100;
+}
+
+// Accepts the start, including a matching retry. Get owns the TeamSpace's state.
+message CreateTeamSpaceResponse {
+  string team_space_id = 1;
+}
+
+// The caller's TeamSpaces; the platform admin lists every TeamSpace. DELETED is never listed.
+message ListTeamSpacesRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  repeated TeamSpaceStatus statuses = 3;
+  CallerContext caller = 100;
+}
+
+message ListTeamSpacesResponse {
+  repeated TeamSpaceSnapshot team_spaces = 1;
+  string next_page_token = 2;
+}
+
+message GetTeamSpaceRequest {
+  string team_space_id = 1;
+  CallerContext caller = 100;
+}
+
+message GetTeamSpaceResponse {
+  TeamSpaceSnapshot team_space = 1;
+}
+
+message RenameTeamSpaceRequest {
+  string team_space_id = 1;
+  uint64 expected_revision = 2;
+  string name = 3;
+  CallerContext caller = 100;
+}
+
+message RenameTeamSpaceResponse {
+  TeamSpaceSnapshot team_space = 1;
+}
+
+message DeleteTeamSpaceRequest {
+  string team_space_id = 1;
+  string request_id = 2;
+  CallerContext caller = 100;
+}
+
+message DeleteTeamSpaceResponse {
+  TeamSpaceSnapshot team_space = 1;
+}
+
+message GetTeamSpaceOverviewRequest {
+  string team_space_id = 1;
+  CallerContext caller = 100;
+}
+
+message GetTeamSpaceOverviewResponse {
+  TeamSpaceOverview overview = 1;
+}
+
+message TeamSpaceSnapshot {
+  string team_space_id = 1;
+  string name = 2;
+  TeamSpaceStatus status = 3;
+  uint64 revision = 4;
+  string creator_account_id = 5;
+  // The caller's role; UNSPECIFIED for the platform admin outside the TeamSpace. Studio uses it only
+  // to choose what to show.
+  TeamSpaceRole caller_role = 6;
+  // The failure of the last deletion, which the platform admin can request again.
+  Failure failure = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+// What a TeamSpace's Home shows besides its Projects, which ListProjects lists. DELETED Projects
+// are not counted.
+message TeamSpaceOverview {
+  TeamSpaceSnapshot team_space = 1;
+  int32 member_count = 2;
+  int32 project_count = 3;
+  int32 live_project_count = 4;
+  // The TeamSpace's ACTIVE connections.
+  int32 connection_count = 5;
+}
+
+// The TeamSpaceStatus Attribute of TeamSpaceFlow.
+enum TeamSpaceStatus {
+  TEAM_SPACE_STATUS_UNSPECIFIED = 0;
+  TEAM_SPACE_STATUS_READY = 1;
+  TEAM_SPACE_STATUS_DELETING = 2;
+  TEAM_SPACE_STATUS_DELETED = 3;
+}
+
+// The role of a TeamSpace member (TeamSpaceFlow's Members).
+enum TeamSpaceRole {
+  TEAM_SPACE_ROLE_UNSPECIFIED = 0;
+  TEAM_SPACE_ROLE_ADMIN = 1;
+  TEAM_SPACE_ROLE_MEMBER = 2;
+}
+
+// The members of a TeamSpace. Its admins and the platform admin change them; TeamSpaceFlow keeps at
+// least one admin.
+service TeamSpaceMemberService {
+  rpc ListTeamSpaceMembers(ListTeamSpaceMembersRequest) returns (ListTeamSpaceMembersResponse);
+  rpc AddTeamSpaceMember(AddTeamSpaceMemberRequest) returns (AddTeamSpaceMemberResponse);
+  rpc SetTeamSpaceMemberRole(SetTeamSpaceMemberRoleRequest) returns (SetTeamSpaceMemberRoleResponse);
+  // Refused while the member is the only owner of a Project of the TeamSpace.
+  rpc RemoveTeamSpaceMember(RemoveTeamSpaceMemberRequest) returns (RemoveTeamSpaceMemberResponse);
+}
+
+// Not paged: a TeamSpace holds at most 500 members, and every member change returns them all.
+message ListTeamSpaceMembersRequest {
+  string team_space_id = 1;
+  CallerContext caller = 100;
+}
+
+message ListTeamSpaceMembersResponse {
+  repeated TeamSpaceMemberSnapshot members = 1;
+}
+
+// email names a registered account.
+message AddTeamSpaceMemberRequest {
+  string team_space_id = 1;
+  string email = 2;
+  TeamSpaceRole role = 3;
+  CallerContext caller = 100;
+}
+
+message AddTeamSpaceMemberResponse {
+  repeated TeamSpaceMemberSnapshot members = 1;
+  // The TeamSpace's revision after the change, the fence of RenameTeamSpace.
+  uint64 revision = 2;
+  // The Projects of the TeamSpace in which a re-added member still holds a role, which counts again.
+  int32 regained_project_count = 3;
+}
+
+message SetTeamSpaceMemberRoleRequest {
+  string team_space_id = 1;
+  string account_id = 2;
+  TeamSpaceRole role = 3;
+  CallerContext caller = 100;
+}
+
+message SetTeamSpaceMemberRoleResponse {
+  repeated TeamSpaceMemberSnapshot members = 1;
+  // The TeamSpace's revision after the change, the fence of RenameTeamSpace.
+  uint64 revision = 2;
+}
+
+message RemoveTeamSpaceMemberRequest {
+  string team_space_id = 1;
+  string account_id = 2;
+  CallerContext caller = 100;
+}
+
+message RemoveTeamSpaceMemberResponse {
+  repeated TeamSpaceMemberSnapshot members = 1;
+  // The TeamSpace's revision after the change, the fence of RenameTeamSpace.
+  uint64 revision = 2;
+}
+
+message TeamSpaceMemberSnapshot {
+  string account_id = 1;
+  string email = 2;
+  TeamSpaceRole role = 3;
+  google.protobuf.Timestamp added_at = 4;
+  string added_by_account_id = 5;
+}
+
+// ---------------------------------------------------------------------------------------------
+// TeamSpace connections
+// ---------------------------------------------------------------------------------------------
+
+// The named connector configurations and credentials of one TeamSpace, one per connector major version.
+// The database owns them (internal/tenancy/connections); Projects select them per connection name and scope.
+service TeamSpaceConnectionService {
+  rpc ListConnectorCatalog(ListConnectorCatalogRequest) returns (ListConnectorCatalogResponse);
+  rpc ListTeamSpaceConnections(ListTeamSpaceConnectionsRequest) returns (ListTeamSpaceConnectionsResponse);
+  rpc GetTeamSpaceConnection(GetTeamSpaceConnectionRequest) returns (GetTeamSpaceConnectionResponse);
+  rpc CreateTeamSpaceConnection(CreateTeamSpaceConnectionRequest) returns (CreateTeamSpaceConnectionResponse);
+  rpc UpdateTeamSpaceConnection(UpdateTeamSpaceConnectionRequest) returns (UpdateTeamSpaceConnectionResponse);
+  rpc DeleteTeamSpaceConnection(DeleteTeamSpaceConnectionRequest) returns (DeleteTeamSpaceConnectionResponse);
+  rpc StartTeamSpaceConnectionOAuth(StartTeamSpaceConnectionOAuthRequest) returns (StartTeamSpaceConnectionOAuthResponse);
+  rpc CompleteTeamSpaceConnectionOAuth(CompleteTeamSpaceConnectionOAuthRequest) returns (CompleteTeamSpaceConnectionOAuthResponse);
+  rpc StartTeamSpaceConnectionUiSession(StartTeamSpaceConnectionUiSessionRequest) returns (StartTeamSpaceConnectionUiSessionResponse);
+  rpc InvokeTeamSpaceConnectionCommand(InvokeTeamSpaceConnectionCommandRequest) returns (InvokeTeamSpaceConnectionCommandResponse);
+}
+
+// connectiondao.ConnectionStatus.
+enum TeamSpaceConnectionStatus {
+  TEAM_SPACE_CONNECTION_STATUS_UNSPECIFIED = 0;
+  TEAM_SPACE_CONNECTION_STATUS_ACTIVE = 1;
+  TEAM_SPACE_CONNECTION_STATUS_DELETED = 2;
+}
+
+// connectiondao.CredentialStatus.
+enum CredentialStatus {
+  CREDENTIAL_STATUS_UNSPECIFIED = 0;
+  CREDENTIAL_STATUS_AUTHORIZING = 1;
+  CREDENTIAL_STATUS_READY = 2;
+  CREDENTIAL_STATUS_REAUTHORIZATION_REQUIRED = 3;
+}
+
+// connectiondao.ClientSource ("user", "platform").
+enum ConnectionClientSource {
+  CONNECTION_CLIENT_SOURCE_UNSPECIFIED = 0;
+  CONNECTION_CLIENT_SOURCE_USER = 1;
+  CONNECTION_CLIENT_SOURCE_PLATFORM = 2;
+}
+
+// A released connector at its latest release in the published catalog; never a release candidate.
+message ConnectorCatalogEntry {
+  string connector_id = 1;
+  string display_name = 2;
+  string description = 3;
+  string module_path = 4;
+  string version = 5;
+  string version_line = 6;
+  // The connector's logo as an SVG document from the library at version, empty when the release
+  // publishes none. Studio shows it as an image, never inline markup.
+  string logo_svg = 7;
+  // A connection of this connector is tied to one address (its provider signs inbound webhooks with
+  // a secret of one endpoint), so Live's next publish never follows Preview's connection of it;
+  // endpoint_bound_reason says why in a sentence.
+  bool endpoint_bound = 8;
+  string endpoint_bound_reason = 9;
+}
+
+// The whole catalog, one cached document of a few hundred entries at most, so it is not paged.
+message ListConnectorCatalogRequest {
+  CallerContext caller = 100;
+}
+
+message ListConnectorCatalogResponse {
+  repeated ConnectorCatalogEntry connectors = 1;
+}
+
+message TeamSpaceConnectionUsage {
+  string project_id = 1;
+  ProjectScope scope = 2;
+}
+
+message TeamSpaceConnectionSnapshot {
+  string team_space_id = 1;
+  string connection_id = 2;
+  string name = 3;
+  string connector_id = 4;
+  string module_path = 5;
+  string version_line = 6;
+  string manifest_version = 7;
+  string auth_method_id = 8;
+  ConnectionClientSource client_source = 9;
+  string settings_json = 10;
+  uint64 revision = 11;
+  CredentialStatus credential_status = 12;
+  uint64 credential_revision = 13;
+  google.protobuf.Timestamp credential_issued_at = 14;
+  google.protobuf.Timestamp credential_expires_at = 15;
+  TeamSpaceConnectionStatus status = 16;
+  Failure last_failure = 17;
+  string creator_account_id = 18;
+  string updated_by_account_id = 19;
+  google.protobuf.Timestamp created_at = 20;
+  google.protobuf.Timestamp updated_at = 21;
+  repeated TeamSpaceConnectionUsage usages = 22;
+  // Slack events of this connection's installation that found no route since the relay process
+  // started; absent for a connection without any.
+  UnroutedEvents unrouted_events = 23;
+}
+
+message UnroutedEvents {
+  uint64 count = 1;
+  google.protobuf.Timestamp last_at = 2;
+  string last_event_id = 3;
+}
+
+// connector_id filters to one connector; statuses default to ACTIVE.
+message ListTeamSpaceConnectionsRequest {
+  string team_space_id = 1;
+  string connector_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+  repeated TeamSpaceConnectionStatus statuses = 5;
+  CallerContext caller = 100;
+}
+
+message ListTeamSpaceConnectionsResponse {
+  repeated TeamSpaceConnectionSnapshot connections = 1;
+  string next_page_token = 2;
+}
+
+message GetTeamSpaceConnectionRequest {
+  string team_space_id = 1;
+  string connection_id = 2;
+  CallerContext caller = 100;
+}
+
+// stored_credential_fields names the stored values an edit may keep, never their contents.
+message GetTeamSpaceConnectionResponse {
+  TeamSpaceConnectionSnapshot connection = 1;
+  repeated string stored_credential_fields = 2;
+}
+
+// The ID derives from the caller and request_id. version is a release or release candidate of
+// module_path. copy_from_connection_id copies an ACTIVE connection of the same connector and another
+// major version: its settings unless settings_json is set, and its user OAuth client; the copy then
+// needs a new authorization. A connection of an OAuth method that copies none is created by its
+// authorization instead: StartTeamSpaceConnectionOAuthRequest.new_connection.
+message CreateTeamSpaceConnectionRequest {
+  string team_space_id = 1;
+  string request_id = 2;
+  string name = 3;
+  string connector_id = 4;
+  string module_path = 5;
+  string version = 6;
+  string auth_method_id = 7;
+  ConnectionClientSource client_source = 8;
+  string settings_json = 9;
+  string credentials_json = 10;
+  string copy_from_connection_id = 11;
+  CallerContext caller = 100;
+}
+
+message CreateTeamSpaceConnectionResponse {
+  string connection_id = 1;
+}
+
+// An empty settings_json keeps the settings. An empty credentials_json keeps the credential;
+// keep_credential_fields keeps single stored values under expected_credential_revision.
+message UpdateTeamSpaceConnectionRequest {
+  string team_space_id = 1;
+  string connection_id = 2;
+  uint64 expected_revision = 3;
+  string settings_json = 4;
+  string credentials_json = 5;
+  repeated string keep_credential_fields = 6;
+  uint64 expected_credential_revision = 7;
+  CallerContext caller = 100;
+}
+
+message UpdateTeamSpaceConnectionResponse {
+  TeamSpaceConnectionSnapshot connection = 1;
+}
+
+message DeleteTeamSpaceConnectionRequest {
+  string team_space_id = 1;
+  string connection_id = 2;
+  uint64 expected_revision = 3;
+  CallerContext caller = 100;
+}
+
+message DeleteTeamSpaceConnectionResponse {}
+
+// connection_id authorizes an existing connection; new_connection instead authorizes a connection
+// that the completion creates, so an abandoned or refused authorization leaves none. version
+// reauthorizes an existing connection to a newer release of its major version; empty keeps
+// manifest_version. An empty client_id reuses the stored user client; a platform connection takes no
+// client. The server derives the redirect URI from studio.publicOrigin; there is no credential fence.
+message StartTeamSpaceConnectionOAuthRequest {
+  string team_space_id = 1;
+  string connection_id = 2;
+  string version = 3;
+  string client_id = 4;
+  string client_secret = 5;
+  string credential_values_json = 6;
+  string credential_secrets_json = 7;
+  NewTeamSpaceConnection new_connection = 8;
+  CallerContext caller = 100;
+}
+
+// A connection of an OAuth method that its authorization creates once it completes, as
+// CreateTeamSpaceConnectionRequest describes one: its ID derives from the caller and request_id, and
+// its name must be free when the authorization starts and when it completes.
+message NewTeamSpaceConnection {
+  string request_id = 1;
+  string name = 2;
+  string connector_id = 3;
+  string module_path = 4;
+  string version = 5;
+  string auth_method_id = 6;
+  ConnectionClientSource client_source = 7;
+  string settings_json = 8;
+}
+
+message StartTeamSpaceConnectionOAuthResponse {
+  string authorization_url = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+// state carries the TeamSpace (tsc.<teamSpaceID>.<state>); a repeated callback answers the same connection.
+message CompleteTeamSpaceConnectionOAuthRequest {
+  string state = 1;
+  string code = 2;
+  string provider_error = 3;
+  CallerContext caller = 100;
+}
+
+message CompleteTeamSpaceConnectionOAuthResponse {
+  TeamSpaceConnectionSnapshot connection = 1;
+}
+
+// The form of an existing connection, or of a new one at connector_id, module_path and version: the
+// manifest, the session nonce, and the OAuth methods the platform's application can authorize (the
+// unnamed method's ID is empty).
+message StartTeamSpaceConnectionUiSessionRequest {
+  string team_space_id = 1;
+  string connection_id = 2;
+  string connector_id = 3;
+  string module_path = 4;
+  string version = 5;
+  CallerContext caller = 100;
+}
+
+message StartTeamSpaceConnectionUiSessionResponse {
+  string session_nonce = 1;
+  string manifest_json = 2;
+  repeated string platform_client_method_ids = 3;
+}
+
+message InvokeTeamSpaceConnectionCommandRequest {
+  string team_space_id = 1;
+  string session_nonce = 2;
+  string command_id = 3;
+  string parameters_json = 4;
+  CallerContext caller = 100;
+}
+
+message InvokeTeamSpaceConnectionCommandResponse {
+  string result_json = 1;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Project
+// ---------------------------------------------------------------------------------------------
+
+service ProjectService {
+  rpc CreateProject(CreateProjectRequest) returns (CreateProjectResponse);
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+  rpc GetProject(GetProjectRequest) returns (GetProjectResponse);
+  rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse);
+  // Also serves a DELETED Project, whose terminal snapshot ends the Watch.
+  rpc WatchProject(WatchProjectRequest) returns (stream WatchProjectResponse);
+  rpc GetProjectConfiguration(GetProjectConfigurationRequest) returns (GetProjectConfigurationResponse);
+  rpc ValidateProjectConfiguration(ValidateProjectConfigurationRequest) returns (ValidateProjectConfigurationResponse);
+  // Ends Live serving at the Live pointer the page observed.
+  rpc RemoveLive(RemoveLiveRequest) returns (RemoveLiveResponse);
+  rpc ListEnvironmentEvents(ListEnvironmentEventsRequest) returns (ListEnvironmentEventsResponse);
+  rpc ListRecentTriggerEvents(ListRecentTriggerEventsRequest) returns (ListRecentTriggerEventsResponse);
+}
+
+// The server derives the Project and Setup IDs from the caller and request_id. A request without
+// managed_repository is invalid.
+message CreateProjectRequest {
+  string request_id = 2;
+  string name = 3;
+  ManagedRepositorySource managed_repository = 6;
+  // The caller must be a member of the TeamSpace, which ProjectFlow's first Step confirms. Field 7
+  // was the retired imported_repository.
+  string team_space_id = 8;
+  CallerContext caller = 100;
+}
+
+// Accepts the start, including a matching retry. Get and Watch own the Project's state; acceptance
+// does not imply readiness.
+message CreateProjectResponse {
+  string project_id = 1;
+}
+
+message ListProjectsRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  repeated ProjectStatus statuses = 3;
+  // Every Project of the TeamSpace, with the caller's role in each.
+  string team_space_id = 4;
+  CallerContext caller = 100;
+}
+
+message ListProjectsResponse {
+  repeated ProjectSnapshot projects = 1;
+  string next_page_token = 2;
+}
+
+message GetProjectRequest {
+  string project_id = 1;
+  CallerContext caller = 100;
+}
+
+message GetProjectResponse {
+  ProjectSnapshot project = 1;
+}
+
+message DeleteProjectRequest {
+  string project_id = 1;
+  string request_id = 2;
+  uint64 expected_revision = 3;
+  CallerContext caller = 100;
+}
+
+message DeleteProjectResponse {
+  ProjectSnapshot project = 1;
+}
+
+message WatchProjectRequest {
+  string project_id = 1;
+  string resume_cursor = 2;
+  CallerContext caller = 100;
+}
+
+message WatchProjectResponse {
+  oneof event {
+    ProjectSnapshot snapshot = 1;
+    ResourceProgress progress = 2;
+  }
+  string resume_cursor = 3;
+}
+
+// The newest-first history of one environment: Preview from the bounded start records of the
+// Preview, Live from the Release and Deployment read model. Preview needs the builder
+// capability and Live the operator capability.
+message ListEnvironmentEventsRequest {
+  string project_id = 1;
+  ProjectScope scope = 2;
+  // At most 50.
+  uint32 page_size = 3;
+  string page_token = 4;
+  CallerContext caller = 100;
+}
+
+message ListEnvironmentEventsResponse {
+  repeated EnvironmentEvent events = 1;
+  string next_page_token = 2;
+}
+
+message EnvironmentEvent {
+  // The event kinds, each derived from existing state.
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    KIND_PREVIEW_CONFIGURATION_APPLIED = 1;
+    KIND_PREVIEW_STARTED = 2;
+    KIND_PREVIEW_START_RESULT = 3;
+    KIND_PUBLISHED = 4;
+    KIND_DEPLOYED_EXISTING_VERSION = 5;
+    // A person cancelled the publishing: its build or its deployment.
+    KIND_PUBLISH_CANCELLED = 6;
+  }
+  Kind kind = 1;
+  google.protobuf.Timestamp occurred_at = 2;
+  // Empty when the Agent or the platform acted.
+  string actor_account_id = 3;
+  // The display name; "a former member" for an account that left.
+  string actor_display = 4;
+  string commit = 5;
+  StartOutcome outcome = 6;
+  Failure failure = 7;
+  repeated PhaseTiming phase_timings = 8;
+  string release_id = 9;
+  string deployment_id = 10;
+  string build_revision_id = 11;
+  uint64 configuration_revision = 12;
+  string preview_skip_reason = 13;
+  CommitVersion version = 14;
+  // DEPLOYED_EXISTING_VERSION only: the deployment replaced a newer Live with an older version.
+  bool rolled_back = 15;
+}
+
+// The Slack events the relay recently routed to the scope, newest first, metadata only and memory
+// only. Preview needs the builder capability and Live the operator capability.
+message ListRecentTriggerEventsRequest {
+  string project_id = 1;
+  ProjectScope scope = 2;
+  CallerContext caller = 100;
+}
+
+message ListRecentTriggerEventsResponse {
+  repeated RecentTriggerEvent events = 1;
+  // When this process began recording; an empty list proves only that nothing arrived since.
+  google.protobuf.Timestamp buffer_started_at = 2;
+  // A random ID created when the superverse-server process owning the buffer started; neither a
+  // hostname nor a secret.
+  string buffer_instance_id = 3;
+}
+
+message RecentTriggerEvent {
+  // What became of the event; the relay's own decision (slackrelay.EventFate).
+  enum Fate {
+    FATE_UNSPECIFIED = 0;
+    FATE_RECORDED = 1;
+    FATE_NOT_RUNNING = 2;
+    FATE_APPLICATION_UNAVAILABLE = 3;
+    FATE_REFUSED = 4;
+    FATE_TIMED_OUT = 5;
+    FATE_TOKEN_UNAVAILABLE = 6;
+    FATE_QUEUE_FULL = 7;
+    FATE_EVENT_TOO_LARGE = 8;
+  }
+  google.protobuf.Timestamp received_at = 1;
+  string event_id = 2;
+  string event_type = 3;
+  string event_subtype = 4;
+  string team_id = 5;
+  string channel_id = 6;
+  string connection_name = 7;
+  Fate fate = 8;
+  // The application's answer; zero without one.
+  uint32 http_status = 9;
+  uint64 duration_ms = 10;
+}
+
+message GetProjectConfigurationRequest {
+  ProjectConfigurationTarget target = 1;
+  CallerContext caller = 100;
+}
+
+message GetProjectConfigurationResponse {
+  ProjectConfigurationSnapshot configuration = 1;
+}
+
+// expected_revision is the revision of the current configuration document; zero denotes an
+// absent document.
+message ValidateProjectConfigurationRequest {
+  ProjectConfigurationTarget target = 1;
+  string request_id = 2;
+  uint64 expected_revision = 3;
+  CallerContext caller = 100;
+}
+
+message ValidateProjectConfigurationResponse {
+  ProjectConfigurationSnapshot configuration = 1;
+}
+
+// deployment_id and expected_live_revision are ProjectSnapshot.live.deployment_id and .revision.
+message RemoveLiveRequest {
+  string project_id = 1;
+  string request_id = 2;
+  string deployment_id = 3;
+  uint64 expected_live_revision = 4;
+  CallerContext caller = 100;
+}
+
+message RemoveLiveResponse {
+  ProjectSnapshot project = 1;
+}
+
+// Setup creates the managed repository, so the caller names none.
+message ManagedRepositorySource {}
+
+message Repository {
+  int64 repository_id = 1;
+  string full_name = 2;
+  string url = 3;
+  string default_branch = 4;
+}
+
+message ProjectSnapshot {
+  string project_id = 1;
+  // The account that created the Project, a fact only; members and roles are ProjectMemberService's.
+  string creator_account_id = 2;
+  string name = 3;
+  ProjectStatus status = 4;
+  uint64 revision = 5;
+  Repository repository = 6;
+  SetupSnapshot setup = 7;
+  AppManifestSnapshot app_manifest = 8;
+  // The last committed serving pointer; absent without Live.
+  ProjectLive live = 10;
+  // The failure of the Project's last command.
+  Failure failure = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp updated_at = 14;
+  string template_revision = 15;
+  ActiveDeploymentReference active_deployment = 16;
+  // SESSION_START_FAILED while the READY Project has no Session; an operator
+  // starts it again, and the Session's admission clears it.
+  Failure session_start_failure = 17;
+  // The Project's TeamSpace.
+  string team_space_id = 19;
+  // The caller's effective role: its Project role while it is a member of the TeamSpace, OWNER for
+  // the platform admin, UNSPECIFIED otherwise. Studio uses it only to choose what to show. A
+  // ListProjects entry with UNSPECIFIED carries only project_id, name, status, setup.status, live
+  // and team_space_id.
+  ProjectRole caller_role = 20;
+}
+
+// The Project's Live pointer. It names the serving deployment, not a copy of its state;
+// GetDeployment reads that. revision is the fence of StartDeployment, StartReleaseBuild and
+// RemoveLive.
+message ProjectLive {
+  string deployment_id = 1;
+  string release_id = 2;
+  string build_revision_id = 3;
+  uint64 revision = 4;
+  string url = 5;
+  // An admitted RemoveLive is in progress or failed and awaits a retry.
+  bool is_removing = 6;
+  CommitVersion version = 7;
+}
+
+// An in-progress deployment owner reference, not a copy of Deployment state.
+message ActiveDeploymentReference {
+  string deployment_id = 1;
+  uint64 generation = 2;
+}
+
+message SetupSnapshot {
+  string setup_id = 1;
+  SetupStatus status = 2;
+  uint64 revision = 3;
+  string phase = 4;
+  Failure failure = 5;
+  string source_commit = 6;
+}
+
+// The configuration a request reads or validates: Live names a prepared Release; Preview is the
+// Project's one Preview. next_publish addresses Live's next-publish layer instead (scope LIVE), checked
+// against the source release_id names, current Live's Release on the Live tab, or, when it is empty,
+// the source the Preview prepared.
+message ProjectConfigurationTarget {
+  string project_id = 1;
+  ProjectScope scope = 2;
+  string release_id = 4;
+  bool next_publish = 5;
+}
+
+message ProjectConfigurationSnapshot {
+  string project_id = 1;
+  ProjectScope scope = 2;
+  ConfigurationStatus status = 4;
+  uint64 revision = 5;
+  string release_id = 6;
+  string source_commit = 7;
+  repeated string validation_errors = 10;
+  AppManifestSnapshot app_manifest = 12;
+  ProjectConfigurationValidation validation = 13;
+  uint64 app_manifest_revision = 14;
+  string manifest_digest = 15;
+  string connector_contract_digest = 16;
+  string environment_contract_digest = 17;
+  // Every requirement of the source that the configuration does not meet, names only; empty
+  // when the configuration is READY.
+  repeated ConfigurationRequirementGap requirement_gaps = 18;
+  // Every item of the scope's configuration compared with the applied Preview version (Preview)
+  // or with current Live and Preview (Live), names and states only.
+  repeated ConfigurationItem items = 19;
+  // Preview only: the items that differ between the head and the applied version.
+  uint32 unapplied_change_count = 20;
+  // A Live Release only: its frozen copy is absent, or was built before Live, Preview's applied
+  // version or the next-publish layer changed.
+  bool is_stale = 21;
+  // Live: the revision of the next-publish layer the items resolve from; zero while it is absent.
+  uint64 next_publish_revision = 22;
+  // Live: the configuration revision of the version the Preview applied that the items resolve from;
+  // zero before the first Apply.
+  uint64 preview_configuration_revision = 23;
+}
+
+// Names one configuration item; the names it does not concern are empty.
+message ConfigurationItemKey {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    KIND_CONNECTION = 1;
+    KIND_TRIGGER_BINDING = 2;
+    KIND_STEP_SETTING = 3;
+    KIND_ENVIRONMENT = 4;
+  }
+  Kind kind = 1;
+  string connector_id = 2;
+  string connection_name = 3;
+  string trigger_name = 4;
+  string binding_name = 5;
+  string operation_id = 6;
+  string flow_type = 7;
+  string step_type = 8;
+  string environment_name = 9;
+}
+
+// One item and how it compares. UNCHANGED, CHANGED, ADDED and REMOVED are Preview against the
+// applied version. On Live, FOLLOWS_PREVIEW is an item the next-publish layer does not hold, OWN one
+// it holds (or that cannot follow, which follow_refusal says), and NO_LONGER_USED one current Live
+// has that the source no longer declares.
+message ConfigurationItem {
+  enum State {
+    STATE_UNSPECIFIED = 0;
+    STATE_UNCHANGED = 1;
+    STATE_CHANGED = 2;
+    STATE_ADDED = 3;
+    STATE_REMOVED = 4;
+    STATE_NO_LONGER_USED = 8;
+    STATE_FOLLOWS_PREVIEW = 10;
+    STATE_OWN = 11;
+  }
+  ConfigurationItemKey key = 1;
+  State state = 2;
+  bool differs_from_live = 3;
+  bool differs_from_preview = 4;
+  repeated ConfigurationItemWarning warnings = 5;
+  // The name of the other Project for CHANNEL_SHARED when the caller holds a role in it; empty
+  // otherwise.
+  string warning_project_name = 6;
+  // Current Live's non-secret value as JSON, for a Live item that exists on Live; empty for a
+  // secret item and for an item absent from Live.
+  string live_value_json = 8;
+  // The non-secret value of the version the Preview applied as JSON, for a Live item it holds; empty
+  // for a secret item and for an item the applied version lacks.
+  string preview_value_json = 9;
+  // Live: why the item can never follow Preview; unspecified when it can.
+  ConfigurationFollowRefusal follow_refusal = 10;
+}
+
+// Why a Live item can never follow Preview: a secret environment value is never copied across
+// scopes, and a connection tied to one address cannot serve both scopes' addresses.
+enum ConfigurationFollowRefusal {
+  CONFIGURATION_FOLLOW_REFUSAL_UNSPECIFIED = 0;
+  CONFIGURATION_FOLLOW_REFUSAL_SECRET = 1;
+  CONFIGURATION_FOLLOW_REFUSAL_ENDPOINT_BOUND = 2;
+}
+
+enum ConfigurationItemWarning {
+  CONFIGURATION_ITEM_WARNING_UNSPECIFIED = 0;
+  // Another Project of the TeamSpace listens to the same channel through the same connection.
+  CONFIGURATION_ITEM_WARNING_CHANNEL_SHARED = 1;
+  // The item's selected TeamSpace connection is missing or no longer ACTIVE.
+  CONFIGURATION_ITEM_WARNING_CONNECTION_DELETED = 2;
+}
+
+// One requirement of a source that its configuration does not meet: a declared connection, its
+// authorization or its configuration, a trigger binding, a Step's operation use, or an environment
+// variable. It names what is missing and never holds a value; the names it does not concern are
+// empty.
+message ConfigurationRequirementGap {
+  // appmanifest.Gap*.
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    KIND_CONNECTION_REQUIRED = 1;
+    KIND_AUTHORIZATION_REQUIRED = 2;
+    KIND_CONNECTION_INCOMPLETE = 3;
+    KIND_TRIGGER_BINDING_REQUIRED = 4;
+    KIND_TRIGGER_BINDING_INVALID = 5;
+    KIND_ENVIRONMENT_REQUIRED = 6;
+    KIND_OPERATION_CONFIGURATION_REQUIRED = 7;
+  }
+  Kind kind = 1;
+  string connection_name = 2;
+  string connector_id = 3;
+  string trigger_name = 4;
+  string binding_name = 5;
+  string environment_name = 6;
+  // The label of the required Connector UI unit a trigger binding or a Step's operation use lacks.
+  string unit_label = 7;
+  // The Flow, Step and connector operation of an operation use that lacks a required unit.
+  string flow_name = 8;
+  string step_name = 9;
+  string operation_id = 10;
+  // A Live gap of an item that cannot follow Preview and has no value of Live's own.
+  ConfigurationFollowRefusal follow_refusal = 11;
+}
+
+// The receipt of a successful validation: the record itself proves success.
+message ProjectConfigurationValidation {
+  string request_id = 1;
+  uint64 configuration_revision = 5;
+}
+
+// The ProjectStatus Attribute (ProjectFlow keyword3).
+enum ProjectStatus {
+  PROJECT_STATUS_UNSPECIFIED = 0;
+  PROJECT_STATUS_CREATING = 1;
+  PROJECT_STATUS_READY = 2;
+  PROJECT_STATUS_SETUP_FAILED = 3;
+  PROJECT_STATUS_DELETING = 4;
+  PROJECT_STATUS_DELETED = 5;
+}
+
+// The SetupStatus Attribute (ProjectSetupFlow keyword3). The API also reports PENDING before the
+// Setup Flow exists.
+enum SetupStatus {
+  SETUP_STATUS_UNSPECIFIED = 0;
+  SETUP_STATUS_PENDING = 1;
+  SETUP_STATUS_RUNNING = 2;
+  SETUP_STATUS_COMPLETE = 3;
+  SETUP_STATUS_SETUP_FAILED = 4;
+  SETUP_STATUS_CANCELLED = 5;
+  SETUP_STATUS_CLEANING = 6;
+}
+
+enum ConfigurationStatus {
+  CONFIGURATION_STATUS_UNSPECIFIED = 0;
+  CONFIGURATION_STATUS_DRAFT = 1;
+  CONFIGURATION_STATUS_NEEDS_REVIEW = 2;
+  CONFIGURATION_STATUS_READY = 3;
+}
+
+// The members of a Project and their roles. Only its owners and the platform admin change them;
+// ProjectFlow keeps at least one owner. A member must belong to the Project's TeamSpace.
+service ProjectMemberService {
+  rpc ListProjectMembers(ListProjectMembersRequest) returns (ListProjectMembersResponse);
+  rpc AddProjectMember(AddProjectMemberRequest) returns (AddProjectMemberResponse);
+  rpc SetProjectMemberRole(SetProjectMemberRoleRequest) returns (SetProjectMemberRoleResponse);
+  rpc RemoveProjectMember(RemoveProjectMemberRequest) returns (RemoveProjectMemberResponse);
+}
+
+// Not paged: a Project holds at most 200 members, and every member change returns them all.
+message ListProjectMembersRequest {
+  string project_id = 1;
+  CallerContext caller = 100;
+}
+
+message ListProjectMembersResponse {
+  repeated ProjectMemberSnapshot members = 1;
+}
+
+// account_id names a member of the Project's TeamSpace.
+message AddProjectMemberRequest {
+  string project_id = 1;
+  string account_id = 2;
+  ProjectRole role = 3;
+  CallerContext caller = 100;
+}
+
+message AddProjectMemberResponse {
+  repeated ProjectMemberSnapshot members = 1;
+  // The Project's revision after the change, the fence of DeleteProject.
+  uint64 revision = 2;
+}
+
+message SetProjectMemberRoleRequest {
+  string project_id = 1;
+  string account_id = 2;
+  ProjectRole role = 3;
+  CallerContext caller = 100;
+}
+
+message SetProjectMemberRoleResponse {
+  repeated ProjectMemberSnapshot members = 1;
+  // The Project's revision after the change, the fence of DeleteProject.
+  uint64 revision = 2;
+}
+
+message RemoveProjectMemberRequest {
+  string project_id = 1;
+  string account_id = 2;
+  CallerContext caller = 100;
+}
+
+message RemoveProjectMemberResponse {
+  repeated ProjectMemberSnapshot members = 1;
+  // The Project's revision after the change, the fence of DeleteProject.
+  uint64 revision = 2;
+}
+
+message ProjectMemberSnapshot {
+  string account_id = 1;
+  string email = 2;
+  ProjectRole role = 3;
+  google.protobuf.Timestamp added_at = 4;
+  string added_by_account_id = 5;
+  // False once the account left the Project's TeamSpace: its role then grants nothing.
+  bool is_team_space_member = 6;
+}
+
+// The role of a Project member (ProjectFlow's Members): each holds everything the roles after it hold.
+enum ProjectRole {
+  PROJECT_ROLE_UNSPECIFIED = 0;
+  PROJECT_ROLE_OWNER = 1;
+  PROJECT_ROLE_BUILDER = 2;
+  PROJECT_ROLE_OPERATOR = 3;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Session
+// ---------------------------------------------------------------------------------------------
+
+// A Project has exactly one Session, which its ProjectFlow starts when the Project becomes READY
+// and which ends only with the Project's deletion; the Project addresses it. A Project that is not
+// READY yet has no Session (NOT_FOUND).
+service SessionService {
+  rpc GetSession(GetSessionRequest) returns (GetSessionResponse);
+  // Carries the Session's conversation, workspace and Preview.
+  rpc WatchSession(WatchSessionRequest) returns (stream WatchSessionResponse);
+  rpc ListArchivedMessages(ListArchivedMessagesRequest) returns (ListArchivedMessagesResponse);
+  // Keeps the Session's READY workspace running: its Sandbox deadline moves to at least seven
+  // days from now (Studio's "Keep running for 7 days").
+  rpc RenewWorkspace(RenewWorkspaceRequest) returns (RenewWorkspaceResponse);
+}
+
+message GetSessionRequest {
+  string project_id = 1;
+  CallerContext caller = 100;
+}
+
+message GetSessionResponse {
+  SessionSnapshot session = 1;
+}
+
+message WatchSessionRequest {
+  string project_id = 1;
+  string resume_cursor = 3;
+  CallerContext caller = 100;
+}
+
+message WatchSessionResponse {
+  oneof event {
+    SessionSnapshot snapshot = 1;
+    SessionProgress progress = 2;
+  }
+  string resume_cursor = 3;
+}
+
+// Pages back from before_sequence, a ten-message archive boundary; page_size is 10 to 200 in
+// steps of 10, and 0 means 10.
+message ListArchivedMessagesRequest {
+  string project_id = 1;
+  int64 before_sequence = 3;
+  int32 page_size = 4;
+  CallerContext caller = 100;
+}
+
+message RenewWorkspaceRequest {
+  string project_id = 1;
+  CallerContext caller = 100;
+}
+
+// renewed is false while the Session is not ACTIVE or its workspace is not READY; the deadline is
+// then unchanged.
+message RenewWorkspaceResponse {
+  bool renewed = 1;
+}
+
+message ListArchivedMessagesResponse {
+  AgentHistoryPage history = 1;
+}
+
+message SessionSnapshot {
+  string project_id = 1;
+  SessionStatus status = 3;
+  uint64 revision = 4;
+  string head_commit = 5;
+  AgentSnapshot agent = 6;
+  google.protobuf.Timestamp created_at = 7;
+  Failure failure = 8;
+  google.protobuf.Timestamp updated_at = 9;
+  // The Session's current Sandbox instance; absent until its first instance starts.
+  SessionWorkspaceSnapshot workspace = 10;
+  // Always present: NOT_STARTED without a Sandbox instance.
+  PreviewSnapshot preview = 11;
+  // The connectors the Session's develop subagents contributed to the connectors library, each read
+  // from its own contribution, in the order the Session named them.
+  repeated ConnectorContribution connector_contributions = 12;
+}
+
+// One connector a Project's Session contributes to the public connectors library: the branch a
+// connector_develop subagent committed as the Superverse GitHub App and its draft pull request.
+message ConnectorContribution {
+  // conversation.ContributionKind: a new connector, a new operation or a fix.
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    KIND_NEW = 1;
+    KIND_OPERATION = 2;
+    KIND_FIX = 3;
+  }
+  // contribution.Status: the pull request being opened, a server without an upstream library, an
+  // opening that failed, a draft pull request, or an ended contribution.
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_PULL_REQUEST_PENDING = 1;
+    STATUS_UNPUBLISHED = 2;
+    STATUS_PULL_REQUEST_FAILED = 3;
+    STATUS_DRAFT = 4;
+    STATUS_CLOSED = 5;
+  }
+  // connectorlibrary.Location: where the branch was pushed.
+  enum Location {
+    LOCATION_UNSPECIFIED = 0;
+    LOCATION_UPSTREAM = 1;
+    LOCATION_LOCAL_GIT_HOST = 2;
+    LOCATION_SANDBOX = 3;
+  }
+  // contribution.ReleaseCandidateStatus: the head's release candidate was published or failed.
+  enum ReleaseCandidateStatus {
+    RELEASE_CANDIDATE_STATUS_UNSPECIFIED = 0;
+    RELEASE_CANDIDATE_STATUS_PUBLISHED = 1;
+    RELEASE_CANDIDATE_STATUS_FAILED = 2;
+  }
+  string slug = 1;
+  string module = 2;
+  Kind kind = 3;
+  Status status = 4;
+  string branch = 5;
+  string head_commit = 6;
+  Location location = 7;
+  // The pull request in the upstream library; 0 and empty before it opened.
+  int64 pull_request_number = 8;
+  string pull_request_url = 9;
+  // Why the pull request could not be opened; empty otherwise.
+  string failure = 10;
+  string description = 11;
+  // The release candidate of the latest head the platform published or tried to, such as
+  // v0.1.0-rc.2; empty before the first.
+  string release_candidate_version = 12;
+  ReleaseCandidateStatus release_candidate_status = 13;
+  // Why the release candidate failed; empty otherwise.
+  string release_candidate_failure = 14;
+}
+
+message SessionWorkspaceSnapshot {
+  WorkspaceStatus status = 1;
+  uint64 generation = 2;
+  uint64 revision = 3;
+  WorkspaceState workspace_state = 4;
+  google.protobuf.Timestamp updated_at = 5;
+  Failure failure = 8;
+  google.protobuf.Timestamp expires_at = 9;
+  string workspace_request_id = 10;
+  // The phases of the provisioning that ended with this instance, in order (provision, checkout);
+  // empty while it provisions, and a new instance replaces them.
+  repeated PhaseTiming phase_timings = 11;
+}
+
+// One event of the Session Agent's reasoning, assistant or activity Stream, or of the activity of
+// one of its running subagents, which task_id names. Best effort: the next snapshot corrects a lost
+// or uncommitted event.
+message SessionProgress {
+  oneof content {
+    AgentEvent activity = 3;
+    string reasoning_summary = 7;
+    string assistant_text = 8;
+  }
+  google.protobuf.Timestamp created_at = 5;
+  string source = 6;
+  // The subagent whose live status line the activity is, such as agent-k3n8q5r1; empty for the
+  // Session Agent's own Streams.
+  string task_id = 9;
+}
+
+// agentloop.SessionStatus. The API derives FAILED from a stopped Agent execution; the Session
+// never records it.
+enum SessionStatus {
+  SESSION_STATUS_UNSPECIFIED = 0;
+  SESSION_STATUS_ACTIVE = 1;
+  SESSION_STATUS_ARCHIVED = 3;
+  SESSION_STATUS_FAILED = 4;
+}
+
+// sandbox.Status of the workspace instance.
+enum WorkspaceStatus {
+  WORKSPACE_STATUS_UNSPECIFIED = 0;
+  WORKSPACE_STATUS_INITIALIZING = 1;
+  WORKSPACE_STATUS_PROVISIONING = 2;
+  WORKSPACE_STATUS_READY = 3;
+  WORKSPACE_STATUS_CLOSING = 4;
+  WORKSPACE_STATUS_CLOSED = 5;
+  WORKSPACE_STATUS_FAILED = 6;
+}
+
+// The safety classification of the workspace contents, separate from its status.
+enum WorkspaceState {
+  WORKSPACE_STATE_UNSPECIFIED = 0;
+  WORKSPACE_STATE_ABSENT = 1;
+  WORKSPACE_STATE_CLEAN = 2;
+  WORKSPACE_STATE_DIRTY = 3;
+  WORKSPACE_STATE_UNKNOWN = 4;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Agent
+// ---------------------------------------------------------------------------------------------
+
+// Builder-managed connection credentials. Session executor writes are separate.
+service RemoteAgentService {
+  rpc CreateRemoteAgentPairing(CreateRemoteAgentPairingRequest) returns (CreateRemoteAgentPairingResponse);
+  rpc ListRemoteAgentConnections(ListRemoteAgentConnectionsRequest) returns (ListRemoteAgentConnectionsResponse);
+  rpc RevokeRemoteAgentConnection(RevokeRemoteAgentConnectionRequest) returns (RevokeRemoteAgentConnectionResponse);
+  // Return to the platform executor at the exact epoch shown by the Session.
+  rpc SetSessionExecutor(SetSessionExecutorRequest) returns (SetSessionExecutorResponse);
+}
+
+message CreateRemoteAgentPairingRequest {
+  string project_id = 1;
+  CallerContext caller = 100;
+}
+
+message CreateRemoteAgentPairingResponse {
+  string connection_id = 1;
+  // Returned once, never part of a connection list or stored in plaintext.
+  string code = 2;
+  google.protobuf.Timestamp expires_at = 3;
+  string endpoint = 4;
+  uint64 basis_epoch = 5;
+  string current_connection_id = 6;
+  Actor current_owner = 7;
+}
+
+message ListRemoteAgentConnectionsRequest {
+  string project_id = 1;
+  CallerContext caller = 100;
+}
+
+message ListRemoteAgentConnectionsResponse {
+  repeated RemoteAgentConnection connections = 1;
+  // These fields come from the Session, never credential row status.
+  uint64 epoch = 2;
+  string current_connection_id = 3;
+  Actor current_owner = 4;
+  string endpoint = 5;
+}
+
+message RevokeRemoteAgentConnectionRequest {
+  string project_id = 1;
+  string connection_id = 2;
+  CallerContext caller = 100;
+}
+
+message RevokeRemoteAgentConnectionResponse {}
+
+message SetSessionExecutorRequest {
+  string project_id = 1;
+  uint64 basis_epoch = 2;
+  CallerContext caller = 100;
+}
+
+message SetSessionExecutorResponse {}
+
+enum SessionExecutorMode {
+  SESSION_EXECUTOR_MODE_UNSPECIFIED = 0;
+  SESSION_EXECUTOR_MODE_PLATFORM = 1;
+  SESSION_EXECUTOR_MODE_REMOTE = 2;
+}
+
+// Session-owned authority; no credentials or delivery cursor are public.
+message SessionExecutor {
+  SessionExecutorMode mode = 1;
+  uint64 epoch = 2;
+  uint64 generation = 3;
+  RemoteSessionExecutor remote = 4;
+}
+
+message RemoteSessionExecutor {
+  string connection_id = 1;
+  Actor owner = 2;
+  RemoteAgentBinding binding = 3;
+  uint64 reported = 4;
+  google.protobuf.Timestamp activated_at = 5;
+  // SQL connection liveness, joined by the authorized resource read; never a Dex Attribute.
+  google.protobuf.Timestamp last_seen_at = 6;
+}
+
+// Credential admission only; PAIRED does not mean active executor.
+enum RemoteAgentConnectionStatus {
+  REMOTE_AGENT_CONNECTION_STATUS_UNSPECIFIED = 0;
+  REMOTE_AGENT_CONNECTION_STATUS_PAIRING = 1;
+  REMOTE_AGENT_CONNECTION_STATUS_PAIRED = 2;
+  REMOTE_AGENT_CONNECTION_STATUS_REVOKED = 3;
+}
+
+message RemoteAgentBinding {
+  string orca_version = 1;
+  string codex_version = 2;
+  string orca_session_id = 3;
+  string provider_thread_id = 4;
+  string host_label = 5;
+}
+
+message RemoteAgentConnection {
+  string connection_id = 1;
+  Actor owner = 2;
+  RemoteAgentConnectionStatus status = 3;
+  RemoteAgentBinding binding = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp last_seen_at = 6;
+}
+
+// Commands to the Session Agent, the mock model's scenarios and the read of a Flow design. Every
+// command request starts with the project_id of the Session, and every command response is empty:
+// success confirms admission, and the Session Watch owns the state that follows.
+service AgentService {
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
+  rpc AnswerQuestions(AnswerQuestionsRequest) returns (AnswerQuestionsResponse);
+  rpc UpdateSessionModel(UpdateSessionModelRequest) returns (UpdateSessionModelResponse);
+  rpc DeleteQueuedMessage(DeleteQueuedMessageRequest) returns (DeleteQueuedMessageResponse);
+  rpc SteerQueuedMessage(SteerQueuedMessageRequest) returns (SteerQueuedMessageResponse);
+  rpc ResolveToolApproval(ResolveToolApprovalRequest) returns (ResolveToolApprovalResponse);
+  rpc InterruptAgent(InterruptAgentRequest) returns (InterruptAgentResponse);
+  rpc ListMockScenarios(ListMockScenariosRequest) returns (ListMockScenariosResponse);
+  rpc GetFlowDesign(GetFlowDesignRequest) returns (GetFlowDesignResponse);
+}
+
+// The browser creates a new message_id for every send. The Agent does not deduplicate by it,
+// so retrying a send that was in fact admitted queues a second message.
+message SendMessageRequest {
+  string project_id = 1;
+  string message_id = 3;
+  string text = 4;
+  CallerContext caller = 100;
+}
+
+message SendMessageResponse {}
+
+message AnswerQuestionsRequest {
+  string project_id = 1;
+  AgentAnswerQuestionsInput input = 3;
+  CallerContext caller = 100;
+}
+
+message AnswerQuestionsResponse {}
+
+// Selects the Session's model; the next turn starts on it. expected_revision is
+// AgentDescription.model_revision; it is optional on the wire only so that an omission is
+// detected and rejected. A Claude model needs the server's Claude key (FAILED_PRECONDITION
+// without it). AGENT_MODEL_MOCK needs a server that offers the mock model (FAILED_PRECONDITION
+// otherwise, always in prod) and, outside Local Kind and Native, the administrator
+// (PERMISSION_DENIED for any other account).
+message UpdateSessionModelRequest {
+  string project_id = 1;
+  AgentModel model = 3;
+  optional uint64 expected_revision = 4;
+  CallerContext caller = 100;
+}
+
+message UpdateSessionModelResponse {}
+
+message DeleteQueuedMessageRequest {
+  string project_id = 1;
+  string message_id = 3;
+  CallerContext caller = 100;
+}
+
+message DeleteQueuedMessageResponse {}
+
+message SteerQueuedMessageRequest {
+  string project_id = 1;
+  string message_id = 3;
+  CallerContext caller = 100;
+}
+
+message SteerQueuedMessageResponse {}
+
+// Approves or denies the pending tool call; is_approved is optional on the wire only so that an
+// omission is detected and rejected.
+message ResolveToolApprovalRequest {
+  string project_id = 1;
+  string call_id = 3;
+  optional bool is_approved = 4;
+  CallerContext caller = 100;
+}
+
+message ResolveToolApprovalResponse {}
+
+// The Stop button: stops the running turn and every running background command. turn is
+// AgentDescription.turn of the Snapshot the user saw, so a Stop of an earlier turn, or one with
+// nothing running, is not admitted.
+message InterruptAgentRequest {
+  string project_id = 1;
+  int64 turn = 3;
+  CallerContext caller = 100;
+}
+
+message InterruptAgentResponse {}
+
+// The Flow design of a requirements card (slot PENDING) or of the confirmed requirements (slot
+// CONFIRMED), whose digest the caller read from the Snapshot's design reference. NOT_FOUND when
+// the slot holds no design; ABORTED with REVISION_CHANGED when it holds another digest, after
+// which the caller reads the Snapshot again.
+message GetFlowDesignRequest {
+  string project_id = 1;
+  AgentFlowDesignSlot slot = 3;
+  string digest = 4;
+  CallerContext caller = 100;
+}
+
+message GetFlowDesignResponse {
+  AgentFlowDesign design = 1;
+}
+
+enum AgentFlowDesignSlot {
+  AGENT_FLOW_DESIGN_SLOT_UNSPECIFIED = 0;
+  AGENT_FLOW_DESIGN_SLOT_PENDING = 1;
+  AGENT_FLOW_DESIGN_SLOT_CONFIRMED = 2;
+}
+
+// The mock model's scenarios for the caller. selectable says whether the caller may select
+// AGENT_MODEL_MOCK: the server offers the mock model, and the environment is Local Kind or
+// Native or the caller is the administrator. Studio shows the mock model only then; the
+// server still authorizes UpdateSessionModel. scenarios is the catalog compiled into the
+// server, in name order, and is empty when selectable is false.
+message ListMockScenariosRequest {
+  CallerContext caller = 100;
+}
+
+message ListMockScenariosResponse {
+  bool selectable = 1;
+  repeated AgentMockScenario scenarios = 2;
+}
+
+// One scenario of the mock model: what it shows, the category Studio lists it under, the
+// arguments a person may set and its user inputs in the order the mock model accepts them.
+message AgentMockScenario {
+  // The group of a scenario, in the order Studio lists them: a complete product application, a
+  // capability of the Agent itself, building the Project, a platform or provider failure, a
+  // mistake in the user's configuration or application source, and a mistake in the Agent's
+  // own call.
+  enum Category {
+    CATEGORY_UNSPECIFIED = 0;
+    CATEGORY_PRODUCT = 1;
+    CATEGORY_AGENT_FEATURE = 2;
+    CATEGORY_PROJECT_FEATURE = 3;
+    CATEGORY_PLATFORM_ERROR = 4;
+    CATEGORY_USER_ERROR = 5;
+    CATEGORY_AGENT_ERROR = 6;
+  }
+  string name = 1;
+  string title = 2;
+  string description = 3;
+  repeated AgentMockScenarioArgument arguments = 4;
+  repeated AgentMockScenarioInput inputs = 5;
+  Category category = 6;
+  // The scenario changes the Project: its source (an edit, a merge of a subagent's changes or a
+  // push) or its requirements (a confirmed card), so it expects a new Project and runs once per
+  // Project.
+  bool needs_new_project = 7;
+  // What only the scenario's Dex test can do between its inputs, such as removing the Session's
+  // instance; empty when a person can run it. Studio does not offer a scenario that has one.
+  string test_action = 8;
+}
+
+// A value of the scenario's replies. Studio sends it as [[scenario-arg:name=value]] with a
+// message input; a value holds letters, digits, space and ._:/- up to 128 characters.
+message AgentMockScenarioArgument {
+  string name = 1;
+  string default_value = 2;
+}
+
+// One user input, numbered from 1. content is exactly what Studio sends for KIND_MESSAGE
+// (SendMessage) and KIND_REQUIREMENTS_CHANGE (the requested changes), each with its
+// [[scenario:name#number]] marker; answers are the
+// answers to the pending questions in question order for KIND_ANSWERS. A confirmation carries
+// neither.
+message AgentMockScenarioInput {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    KIND_MESSAGE = 1;
+    KIND_REQUIREMENTS_CONFIRM = 2;
+    KIND_REQUIREMENTS_CHANGE = 3;
+    KIND_ANSWERS = 4;
+  }
+  int32 number = 1;
+  string label = 2;
+  Kind kind = 3;
+  string content = 4;
+  repeated string answers = 5;
+}
+
+// The models a Session can run on: the Claude models and the mock model, which serves scripted
+// scenarios in the server process for testing without model cost.
+enum AgentModel {
+  AGENT_MODEL_UNSPECIFIED = 0;
+  AGENT_MODEL_OPUS_5_5 = 1;
+  AGENT_MODEL_SONNET_5_5 = 2;
+  AGENT_MODEL_HAIKU_4_5 = 3;
+  AGENT_MODEL_MOCK = 4;
+}
+
+// Agent DTOs are transport-independent contracts shared by gRPC and Studio. Their date strings
+// keep the Agent conversation's RFC 3339 JSON contract, and their closed sets stay nested enums.
+message AgentSnapshot {
+  AgentHistoryPage history = 2;
+  AgentDescription description = 3;
+  repeated AgentPendingUserMessage queued = 4;
+  repeated AgentPendingUserMessage steered = 5;
+}
+
+message AgentHistoryPage {
+  repeated AgentSequencedMessage messages = 1;
+  optional int64 next_before_sequence = 2;
+}
+
+message AgentSequencedMessage {
+  int64 sequence = 1;
+  AgentMessage message = 2;
+}
+
+// The authenticated author of an action; absent on historical or automatic entries.
+message Actor {
+  string account_id = 1;
+  string email = 2;
+}
+
+// The public view of one conversation entry: user text, assistant text with its tool call
+// identities, a tool result's status (ROLE_TOOL, without its content), a Session notification
+// (ROLE_NOTIFICATION, whose content is its summary) or a divider marker (ROLE_SYSTEM, whose content
+// is the marker text). It never carries reasoning, tool arguments, tool results or a
+// notification's report.
+message AgentMessage {
+  enum Role {
+    ROLE_UNSPECIFIED = 0;
+    ROLE_SYSTEM = 1;
+    ROLE_USER = 2;
+    ROLE_ASSISTANT = 3;
+    ROLE_TOOL = 4;
+    ROLE_NOTIFICATION = 5;
+  }
+  Role role = 1;
+  string content = 2;
+  repeated AgentToolCall tool_calls = 3;
+  optional string tool_call_id = 4;
+  optional string tool_name = 5;
+  optional string answered_input_call_id = 6;
+  string created_at = 7;
+  optional string started_at = 8;
+  AgentModelCallMetrics model_call = 9;
+  AgentToolExecutionMetrics tool_execution = 10;
+  // Set for ROLE_NOTIFICATION only.
+  AgentNotification notification = 11;
+  Actor actor = 12;
+  // The collaborator who steered this message; its original author remains actor.
+  Actor steered_by = 13;
+  // The authenticated connection that reported this public entry.
+  optional string via = 14;
+  bool imported = 15;
+}
+
+// An automated report of something that happened outside the Agent's turn, such as a background
+// command that ended or a failed Preview or Live deployment. It is never a message of the user.
+// task_id and task_status are set for KIND_TASK, and outcome, owner, code, phase, commit,
+// resource_id, gaps, gap_count and message for KIND_DELIVERY; the report the model reads is not
+// projected.
+message AgentNotification {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    KIND_TASK = 1;
+    KIND_DELIVERY = 2;
+    KIND_CONNECTOR = 3;
+  }
+  enum Source {
+    SOURCE_UNSPECIFIED = 0;
+    SOURCE_SUBAGENT = 1;
+    SOURCE_COMMAND = 2;
+    SOURCE_PREVIEW = 3;
+    SOURCE_RELEASE = 4;
+    SOURCE_DEPLOYMENT = 5;
+    SOURCE_CONNECTOR = 6;
+  }
+  // How a task ended: a background command exited or was lost; a subagent completed, failed, was
+  // stopped or reached its time limit.
+  enum TaskStatus {
+    TASK_STATUS_UNSPECIFIED = 0;
+    TASK_STATUS_EXITED = 1;
+    TASK_STATUS_LOST = 2;
+    TASK_STATUS_COMPLETED = 3;
+    TASK_STATUS_FAILED = 4;
+    TASK_STATUS_STOPPED = 5;
+    TASK_STATUS_TIMED_OUT = 6;
+  }
+  // What a delivery reports: a deployment that serves, a failure the application owns, or a notice.
+  enum Outcome {
+    OUTCOME_UNSPECIFIED = 0;
+    OUTCOME_READY = 1;
+    OUTCOME_FAILURE = 2;
+    OUTCOME_NOTICE = 3;
+  }
+  // Who must act on a delivery failure: the application's source, the user's configuration or the
+  // platform.
+  enum Owner {
+    OWNER_UNSPECIFIED = 0;
+    OWNER_APPLICATION = 1;
+    OWNER_CONFIGURATION = 2;
+    OWNER_PLATFORM = 3;
+  }
+  string id = 1;
+  Kind kind = 2;
+  Source source = 3;
+  string occurred_at = 4;
+  string task_id = 5;
+  TaskStatus task_status = 6;
+  string summary = 7;
+  Outcome outcome = 8;
+  Owner owner = 9;
+  string code = 10;
+  // The step that failed, a Preview command kind or a Release or Deployment phase.
+  string phase = 11;
+  // The commit the delivery concerns, 40 lowercase hex.
+  string commit = 12;
+  // The Sandbox instance of a Preview, the build revision of a Release (empty for its source) or
+  // the Deployment.
+  string resource_id = 13;
+  // At most the first eight configuration gaps, names only, of gap_count.
+  repeated string gaps = 14;
+  int32 gap_count = 15;
+  // The bounded, redacted cause of the failure.
+  string message = 16;
+  // What a connector notification reports of the contribution of the connector slug.
+  enum ConnectorEvent {
+    CONNECTOR_EVENT_UNSPECIFIED = 0;
+    CONNECTOR_EVENT_PULL_REQUEST_FAILED = 1;
+    CONNECTOR_EVENT_RELEASE_CANDIDATE_PUBLISHED = 2;
+    CONNECTOR_EVENT_RELEASE_CANDIDATE_FAILED = 3;
+  }
+  string slug = 17;
+  ConnectorEvent connector_event = 18;
+  // The version of the commit a delivery notification concerns; absent when not recorded.
+  CommitVersion version = 19;
+  // The fix the reader can take for a failed delivery; unspecified otherwise.
+  FailureRemedy remedy = 20;
+}
+
+// An absent counter is unknown, not zero. model is the requested model; served_model the one that
+// completed the call, which differs after a server-side fallback. effort is the effort the call
+// was sent with.
+message AgentModelCallMetrics {
+  string model = 1;
+  string effort = 2;
+  int64 duration_ms = 3;
+  optional int64 first_event_ms = 4;
+  optional int64 input_tokens = 5;
+  optional int64 cache_read_input_tokens = 6;
+  optional int64 output_tokens = 7;
+  optional int64 thinking_tokens = 8;
+  optional int64 cache_creation_input_tokens = 9;
+  int64 dropped_thinking_blocks = 10;
+  string served_model = 11;
+}
+
+message AgentToolExecutionMetrics {
+  enum Outcome {
+    OUTCOME_UNSPECIFIED = 0;
+    OUTCOME_SUCCEEDED = 1;
+    OUTCOME_KNOWN_FAILURE = 2;
+    OUTCOME_UNKNOWN = 3;
+  }
+  Outcome outcome = 1;
+  optional int64 duration_ms = 2;
+  optional int32 exit_code = 3;
+  int64 result_bytes = 4;
+  optional int64 omitted_bytes = 5;
+  // What the UI shows of the result without its content: the failure code of a failed call, or
+  // for commit_and_push "pushed" or "blocked". Empty for other successful calls.
+  string result_code = 6;
+}
+
+// A tool call as the UI sees it: its identity and target (what it works on, at most 200
+// characters), never its arguments.
+message AgentToolCall {
+  string id = 1;
+  string name = 2;
+  string target = 4;
+}
+
+message AgentPendingUserMessage {
+  string message_id = 1;
+  AgentUserMessage value = 2;
+  Actor steered_by = 3;
+}
+
+message AgentUserMessage {
+  string content = 1;
+  Actor actor = 2;
+}
+
+message AgentDescription {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_INITIALIZING = 1;
+    STATUS_WAITING_FOR_MESSAGE = 2;
+    STATUS_COMPACTING_CONTEXT = 3;
+    STATUS_CALLING_MODEL = 4;
+    STATUS_ROUTING_TOOL = 5;
+    STATUS_WAITING_FOR_TOOL_APPROVAL = 6;
+    STATUS_EXECUTING_TOOL = 8;
+    STATUS_WAITING_FOR_TIMER = 9;
+  }
+  Status status = 1;
+  int64 waiting_input_round = 2;
+  // The user's selected model and its revision; context_model and effort are what the current
+  // context segment runs on, unspecified and empty before it opens.
+  AgentModel model = 3;
+  int64 first_retained_sequence = 5;
+  int64 last_sequence = 6;
+  AgentPendingApproval pending_approval = 8;
+  AgentPendingTimer pending_timer = 10;
+  AgentPendingUserInput pending_user_input = 11;
+  int64 pending_queued_message_count = 14;
+  int64 pending_steered_message_count = 15;
+  repeated string available_tools = 17;
+  uint64 model_revision = 19;
+  string effort = 20;
+  AgentTodoList todo_list = 21;
+  AgentModel context_model = 22;
+  // The version of the requirements the user last confirmed; unset until the first confirmation.
+  AgentConfirmedRequirements confirmed_requirements = 23;
+  // The current turn, which a Stop names (InterruptAgentRequest.turn).
+  int64 turn = 24;
+  // The background commands of the Session, in start order: the running ones and the latest ended.
+  repeated AgentBackgroundCommand background_commands = 25;
+  // Where the newest reply of the mock model left its scenario; unset before one.
+  AgentMockProgress mock_progress = 26;
+  // The subagents of the Session, in start order: the unfinished ones and the latest ended.
+  repeated AgentSubagent subagents = 27;
+  // Whether the Preview deploys each commit the Agent pushes after its turn; on for a new Session.
+  bool is_preview_auto_deploy_enabled = 28;
+  Actor model_changed_by = 29;
+  Actor preview_auto_deploy_changed_by = 30;
+  SessionExecutor executor = 31;
+}
+
+// The progress a mock model reply reports with itself: its scenario, the number of the input it
+// answers and the number of the input the scenario takes next, 0 once it received all of them.
+// The mock composer offers exactly next_input, or input 1 of another scenario.
+message AgentMockProgress {
+  string scenario = 1;
+  int32 input = 2;
+  int32 next_input = 3;
+}
+
+// A background command of the Agent: a task that runs on in the Sandbox, started with
+// run_in_background or moved there after its foreground timeout. end_reason is unspecified while it
+// runs. Its command text and output are never projected.
+message AgentBackgroundCommand {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_RUNNING = 1;
+    STATUS_EXITED = 2;
+    STATUS_STOPPED = 3;
+    STATUS_LOST = 4;
+  }
+  enum EndReason {
+    END_REASON_UNSPECIFIED = 0;
+    END_REASON_EXIT = 1;
+    END_REASON_LIFETIME_LIMIT = 2;
+    END_REASON_OUTPUT_LIMIT = 3;
+    END_REASON_STOPPED = 4;
+    END_REASON_LOST = 5;
+  }
+  string task_id = 1;
+  string description = 2;
+  Status status = 3;
+  EndReason end_reason = 4;
+  optional int32 exit_code = 5;
+  int64 output_bytes = 6;
+  string started_at = 7;
+  optional string ended_at = 8;
+}
+
+// A subagent of the Session: a background agent that works on one bounded task in its own git
+// worktree and reports with a task notification. It carries no prompt and no report; its live
+// status line arrives as SessionProgress with its task_id while it runs.
+message AgentSubagent {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    KIND_INVESTIGATE = 1;
+    KIND_CHANGE = 2;
+    KIND_CONNECTOR_SELECT = 3;
+    KIND_CONNECTOR_DEVELOP = 4;
+  }
+  // agenttasks.SubagentStatus: starting until its first Step was admitted, running, ended with the
+  // outcome it reported, and merged or discarded once the main agent took its changes.
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_STARTING = 1;
+    STATUS_RUNNING = 2;
+    STATUS_COMPLETED = 3;
+    STATUS_FAILED = 4;
+    STATUS_STOPPED = 5;
+    STATUS_TIMED_OUT = 6;
+    STATUS_MERGED = 7;
+    STATUS_DISCARDED = 8;
+  }
+  string task_id = 1;
+  Kind kind = 2;
+  string description = 3;
+  Status status = 4;
+  string started_at = 5;
+  optional string finished_at = 6;
+  // The line the user sees of its end; empty while it runs.
+  string summary = 7;
+  // The files its saved changes touch, with their added and deleted lines; 0 while it runs and
+  // when it saved none.
+  int32 changed_files = 8;
+  int32 insertions = 9;
+  int32 deletions = 10;
+  // The Session counts the subagent as lost: it has not reported within an hour after its kind's
+  // time limit. A lost subagent no longer runs for the Session, which neither waits for it nor
+  // stops it; a late report still ends it.
+  bool lost = 11;
+}
+
+message AgentPendingApproval {
+  string call_id = 1;
+  string tool_name = 2;
+  string arguments_json = 3;
+  optional string started_at = 4;
+}
+
+message AgentPendingTimer {
+  string call_id = 1;
+  int64 duration_seconds = 2;
+  string reason = 3;
+  optional string started_at = 4;
+}
+
+// What the Agent waits for the user to answer. KIND_QUESTION is a request_user_input batch: the
+// domain value of a question batch is empty, so this one value is the mapped exception to the
+// prefix-plus-domain-value rule. A requirements card has no questions; it carries requirements.
+message AgentPendingUserInput {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    KIND_QUESTION = 1;
+    KIND_REQUIREMENTS = 2;
+  }
+  string call_id = 1;
+  repeated AgentUserInputQuestion questions = 2;
+  optional string started_at = 3;
+  Kind kind = 4;
+  AgentRequirements requirements = 5;
+}
+
+// What a requirements card asks the user to confirm. Feature IDs are R<n> in increasing order and
+// keep their numbers in later versions; a removed feature's number is never reused, so they may
+// have gaps. The commit_and_push requirement trace names them.
+message AgentRequirements {
+  string title = 1;
+  string summary = 2;
+  repeated AgentRequirementFeature features = 3;
+  repeated AgentRequirementConnection connections = 4;
+  repeated string user_setup = 5;
+  repeated string acceptance = 6;
+  // The card's Flow design, absent for a card that changes no Flow. GetFlowDesign reads its body.
+  AgentFlowDesignReference design = 7;
+  // Set only in confirmed_requirements: whether a pushed, unblocked commit_and_push built the
+  // confirmed design.
+  bool design_built = 8;
+  // Set only in confirmed_requirements while design_built: the commit that push verified.
+  string design_built_commit = 9;
+}
+
+// What a card carries of its Flow design: the digest of its body, its summary and its outline,
+// one line per Flow with its main-story Steps and the number of its failure-handling Steps.
+message AgentFlowDesignReference {
+  string digest = 1;
+  string summary = 2;
+  string outline = 3;
+}
+
+// The Flows a card adds or changes, before any code. Names are the Go type names to implement.
+message AgentFlowDesign {
+  string digest = 1;
+  string summary = 2;
+  repeated AgentFlowDesignFlow flows = 3;
+  repeated string removed_flows = 4;
+}
+
+message AgentFlowDesignFlow {
+  string flow_type = 1;
+  string purpose = 2;
+  string start_step = 3;
+  repeated AgentFlowDesignStep steps = 4;
+  repeated AgentFlowDesignChannel channels = 5;
+  repeated AgentFlowDesignAction actions = 6;
+  repeated AgentFlowDesignAttribute attributes = 7;
+  repeated string starts = 8;
+}
+
+message AgentFlowDesignStep {
+  string step_type = 1;
+  string group = 2;
+  string explanation = 3;
+  AgentFlowDesignWait waits_for = 4;
+  repeated AgentFlowDesignTransition next = 5;
+  repeated string features = 6;
+}
+
+// What a Step waits for: an Action of its Flow (name is the Action's RPC), a Channel of its Flow
+// (name is the Channel) or a business time (name says it).
+message AgentFlowDesignWait {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    KIND_NONE = 1;
+    KIND_ACTION = 2;
+    KIND_CHANNEL = 3;
+    KIND_TIMER = 4;
+  }
+  Kind kind = 1;
+  string name = 2;
+}
+
+// One way out of a Step: to_step names a Step of the same Flow, or end names the end of the Flow.
+// A failure route is where the Step's failure leads, which the Flow canvas shows as failure
+// handling.
+message AgentFlowDesignTransition {
+  enum End {
+    END_UNSPECIFIED = 0;
+    END_COMPLETE = 1;
+    END_FAIL = 2;
+  }
+  string to_step = 1;
+  End end = 2;
+  string when = 3;
+  bool is_failure_route = 4;
+}
+
+message AgentFlowDesignChannel {
+  string name = 1;
+  string payload = 2;
+}
+
+message AgentFlowDesignAction {
+  string label = 1;
+  string rpc = 2;
+  string publishes = 3;
+  string permission = 4;
+}
+
+message AgentFlowDesignAttribute {
+  string name = 1;
+  string value = 2;
+  bool is_map = 3;
+  string key = 4;
+}
+
+message AgentRequirementFeature {
+  string id = 1;
+  string text = 2;
+}
+
+// One external system the application talks to. STATUS_NEW means the user must create it.
+message AgentRequirementConnection {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_EXISTING = 1;
+    STATUS_NEW = 2;
+  }
+  string need = 1;
+  string connector = 2;
+  repeated string operations = 3;
+  Status status = 4;
+  string user_setup = 5;
+}
+
+// The requirements the user confirmed. revision counts the confirmations: the card that is
+// pending confirms revision + 1.
+message AgentConfirmedRequirements {
+  int64 revision = 1;
+  AgentRequirements spec = 2;
+  string confirmed_at = 3;
+  Actor confirmed_by = 4;
+}
+
+message AgentUserInputQuestion {
+  string id = 1;
+  string header = 2;
+  string question = 3;
+  repeated AgentUserInputOption options = 4;
+}
+
+message AgentUserInputOption {
+  string label = 1;
+  string description = 2;
+}
+
+message AgentUserInputAnswer {
+  string question_id = 1;
+  string answer = 2;
+}
+
+// The Agent's own progress list, replaced as a whole by each write_todos call. It is never an
+// approval gate.
+message AgentTodoList {
+  int64 revision = 1;
+  repeated AgentTodoItem items = 2;
+}
+
+message AgentTodoItem {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_PENDING = 1;
+    STATUS_IN_PROGRESS = 2;
+    STATUS_COMPLETED = 3;
+  }
+  string content = 1;
+  Status status = 2;
+}
+
+// Optional fields keep meaningful zero values apart from absence.
+message AgentEvent {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    KIND_INPUT_CONSUMED = 4;
+    KIND_USER_INPUT_ANSWERED = 5;
+    KIND_USER_INPUT_CANCELLED = 6;
+    KIND_SNAPSHOT_REQUIRED = 7;
+    KIND_STEERING_APPLIED = 8;
+    KIND_COMPACTION_FAILED = 9;
+    KIND_COMPACTED = 10;
+    KIND_MODEL_STARTED = 11;
+    KIND_MODEL_FAILED = 12;
+    KIND_MODEL_COMPLETED = 13;
+    KIND_MODEL_TOOL_CALL = 14;
+    KIND_USER_INPUT_REQUESTED = 15;
+    KIND_TOOL_APPROVAL_REQUESTED = 16;
+    KIND_TOOL_APPROVAL_RESOLVED = 17;
+    KIND_TIMER_STARTED = 18;
+    KIND_TIMER_RESOLVED = 19;
+    KIND_TOOL_PROGRESS = 20;
+    KIND_TOOL_FAILED = 21;
+    KIND_TOOL_COMPLETED = 22;
+    KIND_MODEL_FALLBACK = 25;
+    KIND_AGENT_INTERRUPTED = 26;
+  }
+  Kind kind = 1;
+  string message = 2;
+  optional string call_id = 3;
+  optional string tool_name = 4;
+  optional int64 message_sequence = 5;
+  AgentInputConsumption input_consumption = 10;
+  optional int32 attempt = 11;
+  // What a tool call works on, at most 200 characters; empty when unknown.
+  string target = 12;
+}
+
+message AgentInputConsumption {
+  repeated string queued_message_ids = 1;
+  repeated string steered_message_ids = 2;
+}
+
+// Answers the pending input: one answer per question of a question batch, or the decision of a
+// requirements card with no answers. The two shapes never mix.
+message AgentAnswerQuestionsInput {
+  string call_id = 1;
+  repeated AgentUserInputAnswer answers = 2;
+  AgentRequirementsDecision requirements = 3;
+}
+
+// The decision on a requirements card: is_confirmed confirms it, otherwise requested_changes is
+// the user's text asking for changes.
+message AgentRequirementsDecision {
+  bool is_confirmed = 1;
+  string requested_changes = 2;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Preview
+// ---------------------------------------------------------------------------------------------
+
+// The Project's one Preview, served on its Session's current Sandbox instance. Every request
+// starts with project_id; a command also carries the instance the caller observed (generation,
+// workspace_request_id) and the Preview's expected_revision. The Session Watch carries Preview
+// progress.
+service PreviewService {
+  rpc GetPreview(GetPreviewRequest) returns (GetPreviewResponse);
+  rpc StartPreview(StartPreviewRequest) returns (StartPreviewResponse);
+  rpc StopPreview(StopPreviewRequest) returns (StopPreviewResponse);
+  rpc PreparePreviewSource(PreparePreviewSourceRequest) returns (PreparePreviewSourceResponse);
+  rpc GetPreviewDefinitions(GetPreviewDefinitionsRequest) returns (GetPreviewDefinitionsResponse);
+  rpc UpdatePreviewAutoDeploy(UpdatePreviewAutoDeployRequest) returns (UpdatePreviewAutoDeployResponse);
+}
+
+message GetPreviewRequest {
+  string project_id = 1;
+  CallerContext caller = 100;
+}
+
+message GetPreviewResponse {
+  PreviewSnapshot preview = 1;
+}
+
+// generation 0 with an empty workspace_request_id and expected_revision 0 is the first-demand
+// form, valid only while the Project has no Preview. A Preview that never acquired an instance,
+// such as one whose first command was refused, is observed with an empty workspace_request_id.
+message StartPreviewRequest {
+  string project_id = 1;
+  string request_id = 3;
+  uint64 expected_revision = 4;
+  uint64 generation = 5;
+  string workspace_request_id = 6;
+  // Freezes the configuration head and applies it; without it the start keeps the applied version.
+  bool apply_configuration = 7;
+  // The head revision the page applies, required when applying; a newer head refuses the start as
+  // PREVIEW_CONFIGURATION_CHANGED.
+  uint64 configuration_revision = 8;
+  CallerContext caller = 100;
+}
+
+message StartPreviewResponse {
+  PreviewSnapshot preview = 1;
+}
+
+message StopPreviewRequest {
+  string project_id = 1;
+  string request_id = 3;
+  uint64 expected_revision = 4;
+  uint64 generation = 5;
+  string workspace_request_id = 6;
+  CallerContext caller = 100;
+}
+
+message StopPreviewResponse {
+  PreviewSnapshot preview = 1;
+}
+
+message PreparePreviewSourceRequest {
+  string project_id = 1;
+  string request_id = 3;
+  uint64 expected_revision = 4;
+  uint64 generation = 5;
+  string workspace_request_id = 6;
+  CallerContext caller = 100;
+}
+
+// Accepts the preparation; the Session Watch carries its progress and outcome.
+message PreparePreviewSourceResponse {}
+
+message GetPreviewDefinitionsRequest {
+  string project_id = 1;
+  CallerContext caller = 100;
+}
+
+message GetPreviewDefinitionsResponse {
+  PreviewSnapshot preview = 1;
+  repeated FlowDefinition flow_definitions = 2;
+}
+
+// Turns the Preview's deployment of each commit the Agent pushes on or off for the Project's
+// Session; a new Session starts with it on. While it is off, a turn's pushed commit is never
+// deployed, also not after it is turned on again. is_enabled is optional on the wire only so that
+// an omission is detected and rejected. A Session that is not ACTIVE refuses it with
+// FAILED_PRECONDITION; AgentDescription.is_preview_auto_deploy_enabled reads it.
+message UpdatePreviewAutoDeployRequest {
+  string project_id = 1;
+  optional bool is_enabled = 2;
+  CallerContext caller = 100;
+}
+
+message UpdatePreviewAutoDeployResponse {}
+
+message PreviewSnapshot {
+  string project_id = 1;
+  PreviewStatus status = 3;
+  // The Sandbox command fence (expected_revision of the next command).
+  uint64 revision = 4;
+  uint64 generation = 5;
+  string url = 6;
+  Failure failure = 9;
+  PreparedPreviewSourceSnapshot prepared_source = 10;
+  string workspace_request_id = 11;
+  string source_commit = 12;
+  string definition_revision = 13;
+  // Changes only when the Preview is exposed or stopped.
+  uint64 serving_revision = 14;
+  // The automatic deployment of the Session's pushed commits; absent before the first request.
+  PreviewDeploymentSnapshot automatic_deployment = 15;
+  // What the configuration lacks for the commit that the last start or deployment it refused
+  // PREVIEW_CONFIGURATION_INCOMPATIBLE prepared, names only; an admitted start clears them.
+  repeated ConfigurationRequirementGap configuration_gaps = 16;
+  // The phases of the current or last start in order (configuration, environment, grant, application,
+  // route); an admitted start replaces them, and a zero duration_ms marks the phase in progress.
+  repeated PhaseTiming phase_timings = 17;
+  // The configuration version the last applying start froze; absent before the first start.
+  AppliedPreviewConfiguration applied_configuration = 18;
+  // The newest starts, newest last, at most 50.
+  repeated PreviewStartRecord recent_starts = 19;
+  // The version of the commit the Preview serves; absent when not recorded.
+  CommitVersion serving_version = 20;
+}
+
+message AppliedPreviewConfiguration {
+  uint64 configuration_revision = 1;
+  string source_commit = 2;
+  google.protobuf.Timestamp applied_at = 3;
+  // Empty when the Agent or the platform applied it.
+  string applied_by_account_id = 4;
+}
+
+// One Preview start or automatic deployment and how it ended; failure_code names the code and the
+// failure message stays in the snapshot's failure.
+message PreviewStartRecord {
+  string command_id = 1;
+  string actor_account_id = 2;
+  string source_commit = 3;
+  uint64 configuration_revision = 4;
+  bool applied = 5;
+  google.protobuf.Timestamp admitted_at = 6;
+  google.protobuf.Timestamp ended_at = 7;
+  StartOutcome outcome = 8;
+  string failure_code = 9;
+  repeated PhaseTiming phase_timings = 10;
+  CommitVersion version = 11;
+}
+
+// The newest deployment of a pushed commit that the Preview handled, with its failure once it
+// ended, and the commit of the newest request that waits while another Preview command runs.
+message PreviewDeploymentSnapshot {
+  string commit = 1;
+  PreviewDeploymentStatus status = 2;
+  Failure failure = 3;
+  google.protobuf.Timestamp updated_at = 4;
+  string queued_commit = 5;
+}
+
+// preview.Deployment*: RUNNING while it deploys, then READY, INCOMPATIBLE (the configuration lacks
+// what the commit declares: configuration_gaps), FAILED, SKIPPED (no READY Sandbox instance, which
+// it never wakes) or CANCELLED (a stop or a reclamation cleared it). UNSPECIFIED before the first.
+enum PreviewDeploymentStatus {
+  PREVIEW_DEPLOYMENT_STATUS_UNSPECIFIED = 0;
+  PREVIEW_DEPLOYMENT_STATUS_RUNNING = 1;
+  PREVIEW_DEPLOYMENT_STATUS_READY = 2;
+  PREVIEW_DEPLOYMENT_STATUS_INCOMPATIBLE = 3;
+  PREVIEW_DEPLOYMENT_STATUS_FAILED = 4;
+  PREVIEW_DEPLOYMENT_STATUS_SKIPPED = 5;
+  PREVIEW_DEPLOYMENT_STATUS_CANCELLED = 6;
+}
+
+message PreparedPreviewSourceSnapshot {
+  PreviewSourceStatus status = 1;
+  string request_id = 2;
+  string workspace_request_id = 3;
+  uint64 generation = 4;
+  string source_commit = 5;
+  ObjectReference definitions = 6;
+  string definition_revision = 7;
+  Failure failure = 8;
+  CommitVersion version = 9;
+}
+
+// sandbox.Preview*. A Sandbox without a Preview value reports UNSPECIFIED.
+enum PreviewStatus {
+  PREVIEW_STATUS_UNSPECIFIED = 0;
+  PREVIEW_STATUS_NOT_STARTED = 1;
+  PREVIEW_STATUS_STARTING = 2;
+  PREVIEW_STATUS_READY = 3;
+  PREVIEW_STATUS_STOPPING = 4;
+  PREVIEW_STATUS_STOPPED = 5;
+}
+
+// sandbox.PreviewSource*.
+enum PreviewSourceStatus {
+  PREVIEW_SOURCE_STATUS_UNSPECIFIED = 0;
+  PREVIEW_SOURCE_STATUS_NOT_PREPARED = 1;
+  PREVIEW_SOURCE_STATUS_PREPARING = 2;
+  PREVIEW_SOURCE_STATUS_READY = 3;
+  PREVIEW_SOURCE_STATUS_FAILED = 4;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Release
+// ---------------------------------------------------------------------------------------------
+
+// A Release is one main commit of a Project; its ID is the full lowercase commit SHA.
+// PrepareRelease reads its source, and each build revision builds it with one frozen
+// configuration.
+service ReleaseService {
+  rpc ListReleaseCandidates(ListReleaseCandidatesRequest) returns (ListReleaseCandidatesResponse);
+  rpc PrepareRelease(PrepareReleaseRequest) returns (PrepareReleaseResponse);
+  rpc StartReleaseBuild(StartReleaseBuildRequest) returns (StartReleaseBuildResponse);
+  rpc RecoverReleaseBuild(RecoverReleaseBuildRequest) returns (RecoverReleaseBuildResponse);
+  rpc ListReleases(ListReleasesRequest) returns (ListReleasesResponse);
+  rpc DeriveLiveConfiguration(DeriveLiveConfigurationRequest) returns (DeriveLiveConfigurationResponse);
+  rpc GetRelease(GetReleaseRequest) returns (GetReleaseResponse);
+  rpc WatchRelease(WatchReleaseRequest) returns (stream WatchReleaseResponse);
+  rpc CancelReleaseBuild(CancelReleaseBuildRequest) returns (CancelReleaseBuildResponse);
+  rpc GetReleaseBuildLog(GetReleaseBuildLogRequest) returns (GetReleaseBuildLogResponse);
+}
+
+// The latest 100 main commits; not paged.
+message ListReleaseCandidatesRequest {
+  string project_id = 1;
+  CallerContext caller = 100;
+}
+
+message ListReleaseCandidatesResponse {
+  repeated ReleaseCandidate candidates = 1;
+}
+
+message PrepareReleaseRequest {
+  string project_id = 1;
+  string request_id = 2;
+  string source_commit = 3;
+  CallerContext caller = 100;
+}
+
+message PrepareReleaseResponse {
+  string release_id = 1;
+}
+
+// configuration_revision is the validated draft revision the build freezes; expected_revision is
+// the Release's; expected_live_revision fences an auto_deploy on ProjectSnapshot.live.revision.
+message StartReleaseBuildRequest {
+  string project_id = 1;
+  string request_id = 2;
+  string release_id = 3;
+  string build_revision_id = 5;
+  uint64 configuration_revision = 6;
+  uint64 expected_revision = 7;
+  bool auto_deploy = 8;
+  uint64 expected_live_revision = 9;
+  // Why the build skips the Preview validation, at most 500 code points; empty when a READY Preview
+  // start of the commit validated it.
+  string preview_skip_reason = 10;
+  CallerContext caller = 100;
+}
+
+message StartReleaseBuildResponse {
+  string build_revision_id = 1;
+}
+
+// Resumes the exact failed build revision at its own expected_revision.
+message RecoverReleaseBuildRequest {
+  string project_id = 1;
+  string request_id = 2;
+  string release_id = 3;
+  string build_revision_id = 4;
+  uint64 expected_revision = 5;
+  CallerContext caller = 100;
+}
+
+message RecoverReleaseBuildResponse {}
+
+// Cancels the Release's active build until its artifacts commit. A build whose automatic deployment
+// may be admitted is refused with RELEASE_BUILD_DEPLOYING, whose message names that deployment to
+// cancel instead; a build that is not in progress with RELEASE_BUILD_NOT_CANCELLABLE. Any request
+// for a build already cancelled or cancelling is accepted unchanged.
+message CancelReleaseBuildRequest {
+  string project_id = 1;
+  string request_id = 2;
+  string release_id = 3;
+  string build_revision_id = 4;
+  CallerContext caller = 100;
+}
+
+message CancelReleaseBuildResponse {}
+
+// Reads the build's provider log from cursor, redacted and never stored; an empty cursor reads from
+// the start. Needs the builder capability, as WatchRelease does.
+message GetReleaseBuildLogRequest {
+  string project_id = 1;
+  string release_id = 2;
+  string build_revision_id = 3;
+  string cursor = 4;
+  CallerContext caller = 100;
+}
+
+// lines holds at most 64 KiB of redacted build output; next_cursor continues after it. complete is
+// true once the build ended and its log holds nothing after next_cursor. retry_after_ms is the
+// earliest time to read again: the log reads of a server are shared and rate limited, so under load
+// a page is empty, next_cursor is the cursor read and retry_after_ms grows.
+message GetReleaseBuildLogResponse {
+  repeated string lines = 1;
+  string next_cursor = 2;
+  bool complete = 3;
+  uint32 retry_after_ms = 4;
+}
+
+message ListReleasesRequest {
+  string project_id = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+  repeated ReleaseStatus statuses = 4;
+  CallerContext caller = 100;
+}
+
+message ListReleasesResponse {
+  repeated ReleaseSnapshot releases = 1;
+  string next_page_token = 2;
+}
+
+message GetReleaseRequest {
+  string project_id = 1;
+  string release_id = 2;
+  CallerContext caller = 100;
+}
+
+// flow_definitions holds the immutable Flow Definitions of the prepared source; it is empty until
+// release.prepared_source.status is READY.
+message GetReleaseResponse {
+  ReleaseSnapshot release = 1;
+  repeated FlowDefinition flow_definitions = 2;
+}
+
+message WatchReleaseRequest {
+  string project_id = 1;
+  string release_id = 2;
+  string resume_cursor = 3;
+  CallerContext caller = 100;
+}
+
+message WatchReleaseResponse {
+  oneof event {
+    ReleaseSnapshot snapshot = 1;
+    ResourceProgress progress = 2;
+  }
+  string resume_cursor = 3;
+}
+
+message ReleaseCandidate {
+  string source_commit = 1;
+  string subject = 2;
+  google.protobuf.Timestamp committed_at = 3;
+  CommitVersion version = 4;
+}
+
+message ReleaseSnapshot {
+  string project_id = 1;
+  string release_id = 2;
+  ReleaseStatus status = 3;
+  uint64 revision = 4;
+  string source_commit = 5;
+  string build_profile_version = 6;
+  Failure failure = 9;
+  google.protobuf.Timestamp created_at = 10;
+  PreparedReleaseSourceSnapshot prepared_source = 12;
+  string active_build_revision_id = 13;
+  string ready_build_revision_id = 14;
+  // The active and ready build revisions only.
+  repeated ReleaseBuildRevisionSnapshot build_revisions = 15;
+}
+
+message PreparedReleaseSourceSnapshot {
+  ReleaseStatus status = 1;
+  string source_commit = 2;
+  string definition_revision = 3;
+  AppManifestSnapshot app_manifest = 4;
+  Failure failure = 5;
+  // The phases the build provider measured while it prepared the source.
+  repeated PhaseTiming phase_timings = 6;
+  CommitVersion version = 7;
+}
+
+message ReleaseBuildRevisionSnapshot {
+  string build_revision_id = 1;
+  ReleaseStatus status = 2;
+  uint64 revision = 3;
+  // The frozen runtime configuration revision; draft_configuration_revision is the one requested.
+  uint64 configuration_revision = 4;
+  string image_digest = 5;
+  string build_profile_version = 6;
+  Failure failure = 7;
+  bool auto_deploy = 8;
+  AutoDeployStatus auto_deploy_status = 9;
+  string auto_deployment_id = 10;
+  Failure auto_deploy_failure = 11;
+  google.protobuf.Timestamp created_at = 12;
+  uint64 draft_configuration_revision = 13;
+  bool provider_settled = 14;
+  // The measured phases of the build, from configuration freezing to artifact publication.
+  repeated PhaseTiming phase_timings = 15;
+  // How the build met the publishing rule; absent for a build created before it was recorded.
+  PreviewValidation preview_validation = 16;
+  // A person's request to cancel the build; absent when none was made.
+  Cancellation cancellation = 17;
+}
+
+// A person's admitted request to cancel a build or a deployment, which ends CANCELLED.
+message Cancellation {
+  string actor_account_id = 1;
+  google.protobuf.Timestamp requested_at = 2;
+}
+
+message PreviewValidation {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    KIND_VALIDATED = 1;
+    KIND_SKIPPED = 2;
+    KIND_LIVE_CODE = 3;
+  }
+  Kind kind = 1;
+  // VALIDATED: the Preview start that validated it, and when it ended.
+  string start_command_id = 2;
+  google.protobuf.Timestamp started_at = 3;
+  // SKIPPED: the builder's reason.
+  string skip_reason = 4;
+  string actor_account_id = 5;
+}
+
+// Builds the frozen copy of the Release's version from Live's next-publish layer, which publishing
+// that version freezes: the items the version declares, resolved. expected_revision is the layer's
+// revision the caller showed (zero while it is absent) and expected_preview_configuration_revision
+// the configuration revision of the version the Preview applied (zero before the first Apply); the
+// request is refused when either moved.
+message DeriveLiveConfigurationRequest {
+  string project_id = 1;
+  string release_id = 2;
+  uint64 expected_revision = 4;
+  uint64 expected_preview_configuration_revision = 5;
+  CallerContext caller = 100;
+}
+
+message DeriveLiveConfigurationResponse {
+  ProjectConfigurationSnapshot configuration = 1;
+}
+
+// releases.Status, one set shared by a Release, its prepared source and each build revision.
+enum ReleaseStatus {
+  RELEASE_STATUS_UNSPECIFIED = 0;
+  RELEASE_STATUS_PENDING = 1;
+  RELEASE_STATUS_DRAFT = 2;
+  RELEASE_STATUS_BUILDING = 3;
+  RELEASE_STATUS_READY = 4;
+  RELEASE_STATUS_FAILED = 5;
+  RELEASE_STATUS_RECOVERING = 6;
+  RELEASE_STATUS_REMOVING = 7;
+  RELEASE_STATUS_REMOVED = 8;
+  // A build that a person cancelled, and a Release whose latest build was cancelled.
+  RELEASE_STATUS_CANCELLED = 9;
+}
+
+// The outcome of a build revision's automatic deployment; UNSPECIFIED when auto_deploy is false.
+enum AutoDeployStatus {
+  AUTO_DEPLOY_STATUS_UNSPECIFIED = 0;
+  AUTO_DEPLOY_STATUS_PENDING = 1;
+  AUTO_DEPLOY_STATUS_ACCEPTED = 2;
+  AUTO_DEPLOY_STATUS_REJECTED = 3;
+  AUTO_DEPLOY_STATUS_UNKNOWN = 4;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Deployment
+// ---------------------------------------------------------------------------------------------
+
+// A Deployment serves one READY Release build with its frozen configuration as the Project's Live
+// application. ProjectService.RemoveLive ends Live serving.
+service DeploymentService {
+  rpc StartDeployment(StartDeploymentRequest) returns (StartDeploymentResponse);
+  rpc GetDeployment(GetDeploymentRequest) returns (GetDeploymentResponse);
+  rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse);
+  rpc WatchDeployment(WatchDeploymentRequest) returns (stream WatchDeploymentResponse);
+  rpc CancelDeployment(CancelDeploymentRequest) returns (CancelDeploymentResponse);
+}
+
+// deployment_id is a caller-owned lowercase DNS label of 1 to 36 characters.
+message StartDeploymentRequest {
+  string project_id = 1;
+  string deployment_id = 2;
+  string request_id = 3;
+  string release_id = 4;
+  uint64 configuration_revision = 5;
+  uint64 expected_live_revision = 6;
+  string build_revision_id = 7;
+  CallerContext caller = 100;
+}
+
+message StartDeploymentResponse {
+  string deployment_id = 1;
+}
+
+// Cancels a deployment before it commits the new Live, or a FAILED one that never went live; the
+// running Live is untouched. A deployment that is live or chose to commit the new Live, retiring or
+// ended is refused with DEPLOYMENT_NOT_CANCELLABLE. Any request for a deployment already cancelled
+// or cancelling is accepted unchanged; a new one admits a failed cancellation's cleanup again.
+message CancelDeploymentRequest {
+  string project_id = 1;
+  string deployment_id = 2;
+  string request_id = 3;
+  CallerContext caller = 100;
+}
+
+message CancelDeploymentResponse {}
+
+message GetDeploymentRequest {
+  string project_id = 1;
+  string deployment_id = 2;
+  CallerContext caller = 100;
+}
+
+message GetDeploymentResponse {
+  DeploymentSnapshot deployment = 1;
+}
+
+message ListDeploymentsRequest {
+  string project_id = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+  repeated DeploymentStatus statuses = 4;
+  CallerContext caller = 100;
+}
+
+message ListDeploymentsResponse {
+  repeated DeploymentSnapshot deployments = 1;
+  string next_page_token = 2;
+}
+
+message WatchDeploymentRequest {
+  string project_id = 1;
+  string deployment_id = 2;
+  string resume_cursor = 3;
+  CallerContext caller = 100;
+}
+
+message WatchDeploymentResponse {
+  oneof event {
+    DeploymentSnapshot snapshot = 1;
+    ResourceProgress progress = 2;
+  }
+  string resume_cursor = 3;
+}
+
+message DeploymentSnapshot {
+  string project_id = 1;
+  string deployment_id = 2;
+  string release_id = 3;
+  DeploymentStatus status = 4;
+  uint64 revision = 5;
+  uint64 configuration_revision = 6;
+  string url = 7;
+  Failure failure = 8;
+  google.protobuf.Timestamp created_at = 9;
+  uint64 generation = 10;
+  string build_revision_id = 11;
+  // The phases that ran, the latest run of each.
+  repeated PhaseTiming phase_timings = 12;
+  CommitVersion version = 13;
+  // A person's request to cancel the deployment; absent when none was made.
+  Cancellation cancellation = 14;
+}
+
+// deployments.Status.
+enum DeploymentStatus {
+  DEPLOYMENT_STATUS_UNSPECIFIED = 0;
+  DEPLOYMENT_STATUS_PENDING = 1;
+  DEPLOYMENT_STATUS_DEPLOYING = 2;
+  DEPLOYMENT_STATUS_READY = 3;
+  DEPLOYMENT_STATUS_FAILED = 4;
+  DEPLOYMENT_STATUS_RECOVERING = 5;
+  // A deployment being cancelled: a person cancelled it, and it ends CANCELLED, or its Project is
+  // being deleted, and it ends REMOVED.
+  DEPLOYMENT_STATUS_CANCELLING = 6;
+  DEPLOYMENT_STATUS_REMOVED = 7;
+  // A generation that a newer one replaced as Live; it drains, then ends RETIRED.
+  DEPLOYMENT_STATUS_RETIRING = 8;
+  DEPLOYMENT_STATUS_RETIRED = 9;
+  // A deployment a person cancelled before it went live; its generation is removed.
+  DEPLOYMENT_STATUS_CANCELLED = 10;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Flow API
+// ---------------------------------------------------------------------------------------------
+
+// The Flow API is the API of the embedded Dex Flow UI: Runs, diagnostics, connectors and the
+// application environment of one served application. Studio reaches it only through /dex/...,
+// with CSRF and exact target binding. Each request is FlowApiContext context = 1, the fields of the
+// operation and the caller; each response is FlowApiDocument document = 1. Every RPC fixes its
+// operation: a caller cannot select an upstream, HTTP path, method or transport.
+
+service FlowRunService {
+  rpc GetFlowDefinitions(GetFlowDefinitionsRequest) returns (GetFlowDefinitionsResponse);
+  rpc GetFlowCatalog(GetFlowCatalogRequest) returns (GetFlowCatalogResponse);
+  rpc SearchFlows(SearchFlowsRequest) returns (SearchFlowsResponse);
+  rpc GetFlowDisplay(GetFlowDisplayRequest) returns (GetFlowDisplayResponse);
+  rpc UpdateFlowDisplayField(UpdateFlowDisplayFieldRequest) returns (UpdateFlowDisplayFieldResponse);
+  rpc InvokeFlowAction(InvokeFlowActionRequest) returns (InvokeFlowActionResponse);
+  rpc StartFlow(StartFlowRequest) returns (StartFlowResponse);
+  // Queries an uncertain StartFlow by its original identity.
+  rpc RecoverFlowStart(RecoverFlowStartRequest) returns (RecoverFlowStartResponse);
+}
+
+message GetFlowDefinitionsRequest {
+  FlowApiContext context = 1;
+  CallerContext caller = 100;
+}
+
+message GetFlowDefinitionsResponse {
+  FlowApiDocument document = 1;
+}
+
+message GetFlowCatalogRequest {
+  FlowApiContext context = 1;
+  CallerContext caller = 100;
+}
+
+message GetFlowCatalogResponse {
+  FlowApiDocument document = 1;
+}
+
+message SearchFlowsRequest {
+  FlowApiContext context = 1;
+  string flow_type = 2;
+  repeated FlowSearchFilter filters = 3;
+  int32 page_size = 4;
+  string page_token = 5;
+  bool work_queue_only = 6;
+  CallerContext caller = 100;
+}
+
+message SearchFlowsResponse {
+  FlowApiDocument document = 1;
+}
+
+message GetFlowDisplayRequest {
+  FlowApiContext context = 1;
+  string flow_type = 2;
+  string flow_id = 3;
+  CallerContext caller = 100;
+}
+
+message GetFlowDisplayResponse {
+  FlowApiDocument document = 1;
+}
+
+message UpdateFlowDisplayFieldRequest {
+  FlowApiContext context = 1;
+  string flow_type = 2;
+  string flow_id = 3;
+  string attribute_key = 4;
+  bytes value_json = 5;
+  CallerContext caller = 100;
+}
+
+message UpdateFlowDisplayFieldResponse {
+  FlowApiDocument document = 1;
+}
+
+message InvokeFlowActionRequest {
+  FlowApiContext context = 1;
+  string flow_type = 2;
+  string flow_id = 3;
+  string rpc_name = 4;
+  bytes input_json = 5;
+  bytes attribute_snapshot_json = 6;
+  CallerContext caller = 100;
+}
+
+message InvokeFlowActionResponse {
+  FlowApiDocument document = 1;
+}
+
+message StartFlowRequest {
+  FlowApiContext context = 1;
+  string flow_type = 2;
+  string flow_id = 3;
+  string request_id = 4;
+  string target_revision = 5;
+  bytes input_json = 6;
+  CallerContext caller = 100;
+}
+
+message StartFlowResponse {
+  FlowApiDocument document = 1;
+}
+
+message RecoverFlowStartRequest {
+  FlowApiContext context = 1;
+  string flow_type = 2;
+  string flow_id = 3;
+  string request_id = 4;
+  string target_revision = 5;
+  bytes input_json = 6;
+  CallerContext caller = 100;
+}
+
+message RecoverFlowStartResponse {
+  FlowApiDocument document = 1;
+}
+
+// Run IDs are diagnostic selectors only and never select a business resource or start target.
+service FlowDiagnosticsService {
+  rpc GetFlowSummary(GetFlowSummaryRequest) returns (GetFlowSummaryResponse);
+  rpc GetFlowState(GetFlowStateRequest) returns (GetFlowStateResponse);
+  rpc GetFlowHistory(GetFlowHistoryRequest) returns (GetFlowHistoryResponse);
+  // A unary long poll for history after after_event_id.
+  rpc WaitFlowHistory(WaitFlowHistoryRequest) returns (WaitFlowHistoryResponse);
+  rpc ReadFlowStream(ReadFlowStreamRequest) returns (ReadFlowStreamResponse);
+  rpc LoadFlowBlobs(LoadFlowBlobsRequest) returns (LoadFlowBlobsResponse);
+  rpc StopFlow(StopFlowRequest) returns (StopFlowResponse);
+  rpc DeleteFlowChannelMessage(DeleteFlowChannelMessageRequest) returns (DeleteFlowChannelMessageResponse);
+  // The Dex ResetFlow call.
+  rpc TimeTravelFlow(TimeTravelFlowRequest) returns (TimeTravelFlowResponse);
+}
+
+message GetFlowSummaryRequest {
+  FlowApiContext context = 1;
+  string flow_id = 2;
+  string run_id = 3;
+  CallerContext caller = 100;
+}
+
+message GetFlowSummaryResponse {
+  FlowApiDocument document = 1;
+}
+
+message GetFlowStateRequest {
+  FlowApiContext context = 1;
+  string flow_id = 2;
+  string run_id = 3;
+  CallerContext caller = 100;
+}
+
+message GetFlowStateResponse {
+  FlowApiDocument document = 1;
+}
+
+message GetFlowHistoryRequest {
+  FlowApiContext context = 1;
+  string flow_id = 2;
+  string run_id = 3;
+  string page_token = 4;
+  int32 page_size = 5;
+  int64 after_event_id = 6;
+  CallerContext caller = 100;
+}
+
+message GetFlowHistoryResponse {
+  FlowApiDocument document = 1;
+}
+
+message WaitFlowHistoryRequest {
+  FlowApiContext context = 1;
+  string flow_id = 2;
+  string run_id = 3;
+  int64 after_event_id = 6;
+  CallerContext caller = 100;
+}
+
+message WaitFlowHistoryResponse {
+  FlowApiDocument document = 1;
+}
+
+message ReadFlowStreamRequest {
+  FlowApiContext context = 1;
+  string flow_id = 2;
+  string stream_name = 3;
+  string resume_token = 4;
+  string flow_type = 5;
+  CallerContext caller = 100;
+}
+
+message ReadFlowStreamResponse {
+  FlowApiDocument document = 1;
+}
+
+message LoadFlowBlobsRequest {
+  FlowApiContext context = 1;
+  string flow_id = 2;
+  repeated FlowBlobReference values = 3;
+  CallerContext caller = 100;
+}
+
+message LoadFlowBlobsResponse {
+  FlowApiDocument document = 1;
+}
+
+message StopFlowRequest {
+  FlowApiContext context = 1;
+  string flow_id = 2;
+  string run_id = 3;
+  int32 stop_type = 4;
+  string reason = 5;
+  CallerContext caller = 100;
+}
+
+message StopFlowResponse {
+  FlowApiDocument document = 1;
+}
+
+message DeleteFlowChannelMessageRequest {
+  FlowApiContext context = 1;
+  string flow_id = 2;
+  string run_id = 3;
+  string channel_name = 4;
+  string message_id = 5;
+  CallerContext caller = 100;
+}
+
+message DeleteFlowChannelMessageResponse {
+  FlowApiDocument document = 1;
+}
+
+message TimeTravelFlowRequest {
+  FlowApiContext context = 1;
+  string flow_id = 2;
+  string run_id = 3;
+  int32 time_travel_type = 4;
+  string reason = 5;
+  string step_type = 6;
+  string step_execution_id = 7;
+  string history_event_time = 8;
+  int32 step_method = 9;
+  CallerContext caller = 100;
+}
+
+message TimeTravelFlowResponse {
+  FlowApiDocument document = 1;
+}
+
+// The connection names of the target's configuration scope: their TeamSpace connection selections,
+// connector UI sessions, trigger bindings and Step settings.
+service ConnectorService {
+  rpc ListConnections(ListConnectionsRequest) returns (ListConnectionsResponse);
+  rpc SelectTeamSpaceConnection(SelectTeamSpaceConnectionRequest) returns (SelectTeamSpaceConnectionResponse);
+  rpc ReleaseUnusedConnections(ReleaseUnusedConnectionsRequest) returns (ReleaseUnusedConnectionsResponse);
+  rpc StartConnectorUiSession(StartConnectorUiSessionRequest) returns (StartConnectorUiSessionResponse);
+  rpc InvokeProviderCommand(InvokeProviderCommandRequest) returns (InvokeProviderCommandResponse);
+  rpc SaveTriggerBinding(SaveTriggerBindingRequest) returns (SaveTriggerBindingResponse);
+  rpc SaveOperationConfiguration(SaveOperationConfigurationRequest) returns (SaveOperationConfigurationResponse);
+}
+
+message ListConnectionsRequest {
+  FlowApiContext context = 1;
+  CallerContext caller = 100;
+}
+
+message ListConnectionsResponse {
+  FlowApiDocument document = 1;
+}
+
+// Selects the TeamSpace connection of one connection name in the target's scope: the Preview head,
+// or Live's next-publish layer. follow_preview, on the layer only, removes Live's own selection so
+// the name follows Preview again; it names no connection, and a connection tied to one address is
+// refused with CONFIGURATION_ITEM_CANNOT_FOLLOW.
+message SelectTeamSpaceConnectionRequest {
+  FlowApiContext context = 1;
+  string connector_id = 2;
+  string connection_name = 3;
+  string team_space_connection_id = 4;
+  bool follow_preview = 5;
+  CallerContext caller = 100;
+}
+
+message SelectTeamSpaceConnectionResponse {
+  FlowApiDocument document = 1;
+}
+
+// Removes the Project's Live usages that the current Live version does not select; refused while a
+// deployment runs. The target is the Live scope.
+message ReleaseUnusedConnectionsRequest {
+  FlowApiContext context = 1;
+  CallerContext caller = 100;
+}
+
+message ReleaseUnusedConnectionsResponse {
+  FlowApiDocument document = 1;
+}
+
+message StartConnectorUiSessionRequest {
+  FlowApiContext context = 1;
+  string connector_id = 2;
+  string connection_name = 3;
+  CallerContext caller = 100;
+}
+
+message StartConnectorUiSessionResponse {
+  FlowApiDocument document = 1;
+}
+
+message InvokeProviderCommandRequest {
+  FlowApiContext context = 1;
+  string session_nonce = 2;
+  string command_id = 3;
+  map<string, string> parameters = 4;
+  CallerContext caller = 100;
+}
+
+message InvokeProviderCommandResponse {
+  FlowApiDocument document = 1;
+}
+
+// follow_preview, on Live's next-publish layer only, removes Live's own binding so it follows Preview.
+message SaveTriggerBindingRequest {
+  FlowApiContext context = 1;
+  string connector_id = 2;
+  string connection_name = 3;
+  string trigger_name = 4;
+  string binding_name = 5;
+  bytes configuration_json = 6;
+  bool follow_preview = 7;
+  CallerContext caller = 100;
+}
+
+message SaveTriggerBindingResponse {
+  FlowApiDocument document = 1;
+}
+
+// follow_preview, on Live's next-publish layer only, removes Live's own Step setting so it follows
+// Preview.
+message SaveOperationConfigurationRequest {
+  FlowApiContext context = 1;
+  string connector_id = 2;
+  string connection_name = 3;
+  string operation_id = 4;
+  string flow_type = 5;
+  string step_type = 6;
+  bytes configuration_json = 7;
+  bool follow_preview = 8;
+  CallerContext caller = 100;
+}
+
+message SaveOperationConfigurationResponse {
+  FlowApiDocument document = 1;
+}
+
+// The application environment of the target's configuration scope. It is a service of its own
+// because ConnectorService would exceed 10 RPCs and ProjectService serves the browser directly.
+service ApplicationEnvironmentService {
+  rpc GetApplicationEnvironment(GetApplicationEnvironmentRequest) returns (GetApplicationEnvironmentResponse);
+  rpc SaveApplicationEnvironment(SaveApplicationEnvironmentRequest) returns (SaveApplicationEnvironmentResponse);
+}
+
+message GetApplicationEnvironmentRequest {
+  FlowApiContext context = 1;
+  CallerContext caller = 100;
+}
+
+message GetApplicationEnvironmentResponse {
+  FlowApiDocument document = 1;
+}
+
+// follow_preview, on Live's next-publish layer only, names the variables whose own value Live drops
+// so that they follow Preview; a secret is refused with CONFIGURATION_ITEM_CANNOT_FOLLOW.
+message SaveApplicationEnvironmentRequest {
+  FlowApiContext context = 1;
+  map<string, string> values = 2;
+  map<string, string> secrets = 3;
+  repeated string remove = 4;
+  repeated string follow_preview = 5;
+  CallerContext caller = 100;
+}
+
+message SaveApplicationEnvironmentResponse {
+  FlowApiDocument document = 1;
+}
+
+// The served application a Flow API request addresses: Live Runs name a Deployment, Preview Runs
+// the Sandbox instance of the Project's Session (workspace_request_id and generation). A
+// configuration request names neither; its prepared source and the revisions its form was read at
+// fence it. next_publish addresses Live's next-publish layer, as ProjectConfigurationTarget does.
+message FlowApiTarget {
+  string project_id = 1;
+  ProjectScope scope = 2;
+  string release_id = 4;
+  string deployment_id = 5;
+  string workspace_request_id = 6;
+  uint64 generation = 7;
+  bool next_publish = 8;
+}
+
+// The target and the revisions the page observed; Go re-reads the target's authority and rejects
+// a stale revision.
+message FlowApiContext {
+  FlowApiTarget target = 1;
+  string definition_revision = 2;
+  uint64 app_manifest_revision = 3;
+  uint64 configuration_revision = 4;
+  uint64 credential_revision = 5;
+}
+
+// FDG and renderer payloads keep exact JSON numbers across the generated transport, so the
+// document is JSON bytes with the HTTP status the Flow UI expects.
+message FlowApiDocument {
+  bytes json = 1;
+  uint32 http_status = 2;
+}
+
+message FlowSearchFilter {
+  string field = 1;
+  string operator = 2;
+  bytes values_json = 3;
+}
+
+message FlowBlobReference {
+  string id = 1;
+  string kind = 2;
+}

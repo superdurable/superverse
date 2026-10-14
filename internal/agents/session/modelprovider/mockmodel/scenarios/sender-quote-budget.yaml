@@ -1,0 +1,52 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A finite real-API question continuation retains four same-turn requests.
+# Only the first and newest fit the quote budget after one forced compaction.
+name: sender-quote-budget
+title: "Bounded sender quote"
+description: "Retain the first and newest attributed requests, omit two older answers and preserve whole canonical envelopes."
+category: agent_feature
+test_action: "Send a70KiB first request and three96KiB answers through the business API."
+compaction_summary: "The first request and three answers were accepted; validate the bounded quote after compaction."
+inputs:
+  - label: "Start one request"
+    message: "Keep the first request and the newest answer."
+    replies:
+      - tool_uses:
+          - name: request_user_input
+            input:
+              questions:
+                - {id: detail, header: "Budget detail", question: "Supply the older answer.", options: [{label: "Supply detail", description: "Write the requested detail."}, {label: "No detail", description: "Leave the detail unspecified."}]}
+  - label: "Give the older answer"
+    answers: ["Older answer"]
+    replies:
+      - tool_uses:
+          - name: request_user_input
+            input:
+              questions:
+                - {id: detail, header: "Budget detail", question: "Supply the middle answer.", options: [{label: "Supply detail", description: "Write the requested detail."}, {label: "No detail", description: "Leave the detail unspecified."}]}
+  - label: "Give the middle answer"
+    answers: ["Middle answer"]
+    replies:
+      - tool_uses:
+          - name: request_user_input
+            input:
+              questions:
+                - {id: detail, header: "Budget detail", question: "Supply the newest answer.", options: [{label: "Supply detail", description: "Write the requested detail."}, {label: "No detail", description: "Leave the detail unspecified."}]}
+  - label: "Give the newest answer"
+    answers: ["Newest answer"]
+    replies:
+      - tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Validate the bounded sender quote", status: completed}
+        usage: {input_tokens: 850000, output_tokens: 200}
+      - expect_pending_request_budget: true
+        text: "The actual request retained the first and newest complete envelopes and explicitly omitted two older answers."

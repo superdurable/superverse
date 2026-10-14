@@ -1,0 +1,81 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# The control plane is cluster-scoped only while it bootstraps a session
+# namespace and the one fixed RoleBinding that delegates the namespaced
+# lifecycle permissions below. Admission policy constrains both writes.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "v2.product" $ }}-session-provisioner
+  labels:
+    app.kubernetes.io/part-of: {{ include "v2.product" $ }}
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["create", "delete", "get"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["rolebindings"]
+    verbs: ["create", "get"]
+  # Kubernetes's bind escalation check requires explicit permission to bind
+  # this ClusterRole even though the resulting grant is namespace-scoped.
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles"]
+    resourceNames: ["{{ include "v2.product" $ }}-session-manager"]
+    verbs: ["bind"]
+---
+# This role has no ClusterRoleBinding. It becomes effective only in a session
+# namespace through the fixed RoleBinding embedded in the coding profile.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "v2.product" $ }}-session-manager
+  labels:
+    app.kubernetes.io/part-of: {{ include "v2.product" $ }}
+rules:
+  - apiGroups: [""]
+    resources:
+      - "configmaps"
+      - "limitranges"
+      - "resourcequotas"
+      - "serviceaccounts"
+    verbs: ["create", "get"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["create", "delete", "get"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["create", "delete", "get"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["create", "get"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["create", "delete", "get"]
+  - apiGroups: ["gateway.networking.k8s.io"]
+    resources: ["httproutes"]
+    verbs: ["create", "delete", "get"]
+  - apiGroups: ["agents.x-k8s.io"]
+    resources: ["sandboxes"]
+    verbs: ["create", "delete", "get"]
+  {{- include "v2.podReadRule" . | nindent 2 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "v2.product" $ }}-session-provisioner
+  labels:
+    app.kubernetes.io/part-of: {{ include "v2.product" $ }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "v2.serverAccount" . }}
+    namespace: {{ include "v2.namespace" $ }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "v2.product" $ }}-session-provisioner

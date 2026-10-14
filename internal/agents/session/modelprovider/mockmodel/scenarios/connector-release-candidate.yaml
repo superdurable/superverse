@@ -1,0 +1,115 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A connector release candidate: after the user confirms a connection that
+# needs a new connector, a connector_develop subagent builds superversemock, a
+# complete connector copied from the library's hackernews module with its own
+# name, company, version v0.1.0 and catalog.yaml entry. Its finish commits and
+# pushes the branch and publishes the release candidate v0.1.0-rc.N of the
+# head; on the local Git host the Sandbox validates and builds it with the
+# library's own tooling at main. The task notification names the candidate,
+# which the main agent puts into the application: the generated API code that
+# go mod tidy needs, go get of that version, a blank import that keeps the
+# requirement, the connection in dex-app.yaml, and a push through the real
+# commit gate.
+name: connector-release-candidate
+title: "Connector release candidate"
+description: "A connector_develop subagent builds a complete new connector; its release candidate is published from the branch, and the main agent switches the application to that version and pushes it."
+category: project_feature
+arguments: {task: agent-aaaaaaaa, release_candidate: v0.1.0-rc.1}
+inputs:
+  - label: "Describe the application"
+    message: "Build a page that lists the top stories of our story feed."
+    replies:
+      - text: "No released connector reads the story feed, so a new one is built upstream. Please confirm what I will build."
+        tool_uses:
+          - name: confirm_requirements
+            input:
+              title: "Story page"
+              summary: "A page that lists the top stories of the feed."
+              features:
+                - {id: R1, text: "The page lists the IDs of the top stories."}
+              connections:
+                - need: "Read the top stories"
+                  connector: superversemock
+                  operations: [listStoryIDs]
+                  status: new
+                  user_setup: "Nothing: the feed is public."
+              user_setup: []
+              acceptance: ["The page shows the top stories."]
+  - label: "Confirm the requirements"
+    requirements_confirm: true
+    replies:
+      - text: "Building the superversemock connector upstream while I prepare the application."
+        tool_uses:
+          - name: start_agent
+            input:
+              description: "Build the superversemock connector"
+              kind: connector_develop
+              slug: superversemock
+              contribution: new
+              prompt: "Build a new connector superversemock that lists the top stories of a story feed. [[subagent:connector-release-candidate/develop]]"
+        expect_result_contains:
+          - "\"task_id\":\"agent-"
+          - "\"branch\":\"superverse/"
+      - text: "A subagent builds the connector; I will switch the application to its release candidate when it is published."
+      - text: "The connector's release candidate {{release_candidate}} is published. Restoring the application's dependencies and generating its API code, as the template's instructions say."
+        notification: task
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap && make generate", description: "Restore the dependencies and generate the API code", timeout_seconds: 600}
+      - text: "Switching the application to the release candidate {{release_candidate}}."
+        tool_uses:
+          - name: bash
+            input:
+              command: >-
+                go get github.com/superdurable/dex-connectors-library/connectors/superversemock@{{release_candidate}} &&
+                printf 'package process\n\n// The story feed connector of the story page.\nimport _ "github.com/superdurable/dex-connectors-library/connectors/superversemock"\n' > internal/process/story_feed.go &&
+                go mod tidy &&
+                python3 -c 'import json; m = json.load(open("dex-app.yaml")); m["connectors"].append({"connectionName": "story-feed", "connectorId": "superversemock", "modulePath": "github.com/superdurable/dex-connectors-library/connectors/superversemock", "version": "{{release_candidate}}", "authMethodId": "", "operations": ["listStoryIDs"]}); open("dex-app.yaml", "w").write(json.dumps(m, indent=2) + "\n")' &&
+                grep -c 'superversemock {{release_candidate}}' go.mod
+              description: "Use the connector's release candidate"
+              timeout_seconds: 600
+        expect_result_contains:
+          - "1"
+      - text: "Pushing the application on the release candidate."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Read the story feed through the superversemock release candidate {{release_candidate}}"
+              verification:
+                - "go.mod and dex-app.yaml name superversemock {{release_candidate}}"
+              requirements:
+                - {id: R1, evidence: [internal/process/story_feed.go, dex-app.yaml], untested_reason: "The page reads the story feed through the new connector, which has no mocks yet."}
+              requirements_revision: 1
+      - text: "The application uses the connector's release candidate {{release_candidate}}; a maintainer reviews and releases the connector later."
+subagents:
+  develop:
+    kind: connector_develop
+    replies:
+      - text: "Reading the library's rules first."
+        tool_uses:
+          - name: read
+            input: {path: AGENTS.md, limit: 40}
+      - text: "Building the connector from the library's hackernews module, with its own name, company, version and catalog entry."
+        tool_uses:
+          - name: bash
+            input:
+              command: >-
+                cp -R connectors/hackernews connectors/superversemock &&
+                rm -rf connectors/superversemock/examples &&
+                sed -i 's|^module github.com/superdurable/dex-connectors-library/connectors/hackernews$|module github.com/superdurable/dex-connectors-library/connectors/superversemock|' connectors/superversemock/go.mod &&
+                sed -i -e 's|^  name: hacker-news-daily$|  name: superversemock|' -e 's|^  company: Hacker News$|  company: Superversemock|' -e 's|^  version: v[0-9.]*$|  version: v0.1.0|' connectors/superversemock/connector.yaml &&
+                GOWORK=off go run ./cmd/connectorctl generate connectors/superversemock/connector.yaml &&
+                python3 -c 'import re; text = open("catalog.yaml").read(); head, _, rest = text.partition("directories:\n"); entries = sorted(set(re.findall(r"^  - (\S+)$", rest, re.M)) | {"connectors/superversemock"}); open("catalog.yaml", "w").write(head + "directories:\n" + "".join("  - %s\n" % entry for entry in entries))' &&
+                grep -c 'connectors/superversemock$' catalog.yaml
+              description: "Build the new connector superversemock"
+              timeout_seconds: 600
+        expect_result_contains:
+          - "1"
+      - text: "I built the module connectors/superversemock from the hackernews module, with metadata.name superversemock, company Superversemock, version v0.1.0, its generated code and its catalog.yaml entry. Live provider behavior is unverified."

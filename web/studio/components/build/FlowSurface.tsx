@@ -1,0 +1,250 @@
+// Copyright (c) 2026 Super Durable, Inc.
+//
+// Licensed under the Sustainable Use License 1.0.
+// You may not use this file except in compliance with the License.
+// See the LICENSE file in the repository root.
+//
+// SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+"use client";
+
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef } from "react";
+import { useProcessDefinitions } from "@/lib/project/ProcessDefinitionsProvider";
+import { useProjectResource } from "@/lib/project/ProjectResourceProvider";
+import { useWaitingRuns, waitingCount } from "@/lib/project/WaitingRunsProvider";
+import { useSessionResource } from "@/lib/session/SessionProvider";
+import { useDesignShown } from "@/lib/session/design/use-design-shown";
+import { useFlowDesign } from "@/lib/session/design/use-flow-design";
+import type { ProjectEnvironment } from "@/lib/shared/studio-routes";
+import { useQueryUpdate } from "@/lib/browser/use-query-update";
+import { useFlowCatalog } from "@/lib/flow/FlowCatalogProvider";
+import { useFlowHost } from "@/lib/flow/FlowHostProvider";
+import { LiveFlowScope, SessionFlowScope } from "@/components/flow/scope/FlowScope";
+import { FlowFrame } from "@/components/flow/scope/FlowSurfaces";
+import { LazyFlowCanvas, LazyProjectMap } from "@/components/flow/scope/LazyFlowViews";
+import { NotReady } from "@/components/ui/NotReady";
+import { Glyph } from "@/components/ui/Glyph";
+import { processName } from "@/lib/shared/format";
+import { versionNumber } from "@/lib/shared/version/version";
+import { DesignBar, DesignSurface } from "./DesignSurface";
+import { PreviewSourceControl } from "./PreviewSourceControl";
+
+/** The Flow of the picked Process, or the project map when none is picked. */
+function FlowView({ environment }: { environment: ProjectEnvironment }) {
+  const { catalog, definitions, error, ready } = useFlowCatalog();
+  const requested = useSearchParams().get("flowType");
+  const { queryHref } = useQueryUpdate();
+  const { changedSinceLive, moreStepsOnPreview } = useProcessDefinitions();
+  const waiting = useWaitingRuns();
+  const live = useProjectResource()?.snapshot?.live;
+  const validFlowTypes = useMemo(() => {
+    const valid = new Set((definitions?.definitions ?? []).filter((item) => item.valid).map((item) => item.flowName));
+    return [...new Set((catalog?.flows ?? []).map((item) => item.flowType).filter((type) => valid.has(type)))].sort();
+  }, [catalog, definitions]);
+  const processHref = (flowType: string | null) =>
+    queryHref((query) => {
+      if (flowType) query.set("flowType", flowType);
+      else query.delete("flowType");
+      query.delete("flowId");
+      query.delete("runId");
+    });
+  const onLive = environment === "live";
+  const liveBanner = onLive ? (
+    <span className="flex items-center gap-1.5 rounded-lg border border-line-soft bg-panel px-2.25 py-1 text-ink-dim">
+      <Glyph name="eye" className="size-3.5" />
+      Live{live ? ` ${versionNumber(live.version)}` : ""}, read only here.
+      <Link href={queryHref((query) => query.delete("v"))} className="text-accent hover:underline">
+        See Preview
+      </Link>
+    </span>
+  ) : null;
+
+  if (!ready)
+    return (
+      <NotReady kind="placeholder" heading="Loading the Flow">
+        Reading the Flow Definitions of this version.
+      </NotReady>
+    );
+  if (error)
+    return (
+      <NotReady kind="error" heading="The flow did not load" retry>
+        {error}
+      </NotReady>
+    );
+  if (!requested)
+    return (
+      <LazyProjectMap
+        names={processName}
+        hrefOf={processHref}
+        changed={changedSinceLive}
+        changedLabel={onLive ? "differs on Preview" : "changed"}
+        waiting={
+          waiting
+            ? (flowType) => {
+                const count = waiting.get(flowType) ?? 0;
+                const words =
+                  count === 0 ? "no runs waiting" : `${waitingCount(count)} open run${count > 1 ? "s" : ""} waiting`;
+                return `${words} · ${onLive ? "Live" : "Preview"}`;
+              }
+            : undefined
+        }
+        banner={liveBanner}
+      />
+    );
+  if (!validFlowTypes.includes(requested))
+    return (
+      <NotReady kind="unavailable" heading={`${processName(requested)} isn't in this version`}>
+        {onLive
+          ? "It exists only on Preview until someone publishes."
+          : `${requested} is absent from this source. Pick another process, or All processes.`}
+      </NotReady>
+    );
+  const more = onLive ? (moreStepsOnPreview.get(requested) ?? 0) : 0;
+  const changed = !onLive && changedSinceLive.has(requested);
+  // The bar's picker names the Process and leads back to all of them, so the canvas carries only what
+  // the picker does not say: how this Process differs between Preview and Live.
+  return (
+    <section
+      aria-label="Flow definition"
+      className="@container/canvas relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas"
+      data-pick-scope={processName(requested)}
+    >
+      {(changed || more > 0 || liveBanner) && (
+        <div className="pointer-events-none absolute top-2.5 left-3 z-5 flex max-w-[calc(100%-32rem)] flex-wrap items-center gap-2 text-[12.5px] text-ink-faint @max-[54rem]/canvas:top-14 @max-[54rem]/canvas:max-w-[calc(100%-1.5rem)]">
+          {changed && (
+            <span className="rounded-lg border border-line-soft bg-panel px-2.25 py-1 text-busy">
+              changed since Live
+            </span>
+          )}
+          {more > 0 && (
+            <span className="rounded-lg border border-line-soft bg-panel px-2.25 py-1">
+              Preview has {more} more step{more > 1 ? "s" : ""}
+            </span>
+          )}
+          {liveBanner && <span className="pointer-events-auto">{liveBanner}</span>}
+        </div>
+      )}
+      <LazyFlowCanvas flowType={requested} />
+    </section>
+  );
+}
+
+/**
+ * The current source's commit and its preparation, keyed so that a new source or Sandbox instance
+ * starts a new operation.
+ */
+export function PreviewSource({ projectId }: { projectId: string }) {
+  const resource = useSessionResource()?.resource;
+  if (!resource) return null;
+  const key = JSON.stringify([
+    projectId,
+    resource.workspace?.workspaceRequestId,
+    resource.workspace?.generation,
+    resource.headCommit,
+  ]);
+  return <PreviewSourceControl key={key} projectId={projectId} />;
+}
+
+/**
+ * The Flow: the Flow Definitions of the version the bar selects. On Preview they are the prepared
+ * current source of the Project's Session; on Live, the Live Release's, read-only. Before the Session
+ * exists there is no source to draw; only mock mode, which wraps this surface in its fixture catalog,
+ * still draws one. From a requirements card with a Flow design until its build is complete, Preview
+ * draws the designed Flows from the design instead, and shows them by itself once per card version.
+ */
+export function FlowSurface({
+  projectId,
+  environment,
+  fixtureCatalog = false,
+}: {
+  projectId: string;
+  environment: ProjectEnvironment;
+  fixtureCatalog?: boolean;
+}) {
+  const { queryHref, replaceQuery } = useQueryUpdate();
+  const requested = useSearchParams().get("flowType");
+  const session = useSessionResource();
+  const { canIntervene } = useFlowHost();
+  const design = useFlowDesign(environment === "preview" && canIntervene);
+  const designed = design?.body?.flows.map((flow) => flow.flowType) ?? [];
+  const firstDesigned = designed[0] ?? null;
+  const drawsDesign = requested !== null && designed.includes(requested);
+  const { shown, markShown } = useDesignShown(projectId, design?.body ? design.key : null);
+  // A card version's design shows here by itself once; the tab's marker goes once it has.
+  useEffect(() => {
+    if (shown || firstDesigned === null) return;
+    markShown();
+    if (!drawsDesign)
+      replaceQuery((query) => {
+        query.set("flowType", firstDesigned);
+        query.delete("flowId");
+        query.delete("runId");
+      });
+  }, [drawsDesign, firstDesigned, markShown, replaceQuery, shown]);
+  const live = useProjectResource()?.snapshot?.live;
+  const headCommit = session?.resource?.headCommit;
+  // A new pushed commit is a new source: drop the run selections that named the old one. The picked
+  // Process stays; the Flow says so when the new source lacks it.
+  const source = JSON.stringify([projectId, headCommit]);
+  const previousSource = useRef(headCommit ? source : null);
+  useEffect(() => {
+    if (!headCommit || previousSource.current === source) return;
+    const changed = previousSource.current !== null;
+    previousSource.current = source;
+    if (changed) replaceQuery((query) => ["flowId", "runId"].forEach((name) => query.delete(name)));
+  }, [headCommit, replaceQuery, source]);
+
+  const canvas = <FlowView environment={environment} />;
+  let body;
+  if (design && drawsDesign && requested)
+    body = (
+      <>
+        {session && <PreviewSource projectId={projectId} />}
+        <DesignSurface design={design} flowType={requested} />
+      </>
+    );
+  else if (fixtureCatalog) body = canvas;
+  else if (environment === "live")
+    body =
+      live && !live.isRemoving ? (
+        <LiveFlowScope key={`live:${live.deploymentId}:${live.revision}`} projectId={projectId} releaseId={null}>
+          {canvas}
+        </LiveFlowScope>
+      ) : (
+        <NotReady kind="empty" heading="Nothing is Live yet">
+          The Flow shows Live once a version is published. Publish from Tools, Publishing.
+        </NotReady>
+      );
+  else
+    body = session ? (
+      <>
+        <PreviewSource projectId={projectId} />
+        <SessionFlowScope projectId={projectId} source="prepared">
+          {canvas}
+        </SessionFlowScope>
+      </>
+    ) : (
+      <NotReady kind="placeholder" heading="Waiting for the project's agent">
+        The Flow opens once the project is ready and its agent has started.
+      </NotReady>
+    );
+  return (
+    <FlowFrame className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      {design && !requested && (
+        <DesignBar
+          design={design}
+          hrefOf={(flowType) =>
+            queryHref((query) => {
+              query.set("flowType", flowType);
+              query.delete("flowId");
+              query.delete("runId");
+            })
+          }
+        />
+      )}
+      {body}
+    </FlowFrame>
+  );
+}

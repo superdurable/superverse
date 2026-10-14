@@ -1,0 +1,58 @@
+{
+  "dex": {
+    "server": "1.6.1",
+    "cli": "1.6.4",
+    "goSDK": "1.5.0",
+    "serverImageDigest": "sha256:4938936477d82b4b8243f209d8555de7eaad5767adf89f38d513b8721ac14763",
+    "cliCommit": "e45b26026ed5f841f72946f5a9be4c963f5b5eb4"
+  },
+  "kind": "0.33.0",
+  "kindNodeImage": "kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5",
+  "localDependencies": {
+    "minio": {
+      "release": "RELEASE.2025-10-15T17-29-55Z",
+      "repository": "ghcr.io/coollabsio/minio",
+      "arm64": "sha256:7520deab26e83d3a36231bb449f86548a4b9ab2507eb388f87d1f70ef5e8c1f3",
+      "amd64": "sha256:4f75fd76598afa23919555d1363e1fb13c632d9bcd4ce8edcf21d3cca2ed0579"
+    },
+    "temporal": {
+      "version": "1.9.1",
+      "repository": "temporalio/temporal",
+      "arm64": "sha256:a64c02bf5cf894202e32267927e37e6141f182bb6d1a669a3bb85b83f09915d3",
+      "amd64": "sha256:150d6208d7b24371e4080f49780e6061611f6279cd6908236e9a34ae5746c1b5"
+    },
+    "traefik": {
+      "version": "v3.7.13",
+      "repository": "traefik",
+      "index": "sha256:24841fe2de7304c149343d877d2923b4c8800a38ba015dea9174c23b20e344a0"
+    },
+    "registry": {
+      "version": "3.0.0",
+      "repository": "registry",
+      "index": "sha256:6c5666b861f3505b116bb9aa9b25175e71210414bd010d92035ff64018f9457e"
+    },
+    "postgres": {
+      "version": "17.11",
+      "repository": "postgres",
+      "index": "sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3"
+    },
+    "keycloak": {
+      "version": "26.7.5",
+      "repository": "quay.io/keycloak/keycloak",
+      "index": "sha256:37dbaf6f0722c9ec246335f36e1ef8b2e6cb960f7c27e0d8c615121a3d475a85"
+    },
+    "browserNodeVersions": [
+      "22.22.0",
+      "24.19.0"
+    ]
+  },
+  "envoyGateway": {
+    "version": "v1.9.2",
+    "releasedAt": "2026-09-28",
+    "charts": "oci://docker.io/envoyproxy",
+    "chartDigest": "sha256:be034275b55deeddd6b7bc1f4da6eeb02b8efc418a4a29e2b1977851b24b1e63",
+    "crdsChartDigest": "sha256:940b88fe361cb22fb651e3075f649e9be885f35b1c8a990658c1a2acc2d2a678",
+    "controllerImage": "docker.io/envoyproxy/gateway:v1.9.2@sha256:9d67017c442a70e6ae9f1a358e6c80eb653c67c2e40823d9a991e0daf37ba926",
+    "proxyImage": "docker.io/envoyproxy/envoy:distroless-v1.39.1@sha256:eb2c01c13125d1629637cb4e4cce7207009fb7cc2c8027f9742758549d15b6f4"
+  }
+}

@@ -1,0 +1,92 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A new connector: the requirements card lists a connection that needs a new
+# connector, and after the user confirms it the main agent starts a
+# connector_develop subagent for the slug mockfeed. The subagent works in its
+# worktree of the connectors library on the branch of its connector: it reads
+# the library's rules, writes the module's go.mod, manifest and README and adds
+# the module's catalog.yaml entry, then reports. Its finish commits the change
+# as the library's committer and pushes the branch where this server's library
+# takes pushes; its task notification carries the contribution and opens an
+# automatic turn. The application workspace stays untouched.
+name: connector-develop-new
+title: "Connector development: a new connector"
+description: "After the requirements are confirmed, a connector_develop subagent builds the new connector mockfeed on its library branch, which the platform commits and pushes."
+category: project_feature
+arguments: {task: agent-aaaaaaaa}
+inputs:
+  - label: "Describe the application"
+    message: "Build a page that lists the newest items of our internal feed."
+    replies:
+      - text: "No released connector reads the feed, so a new one is built upstream. Please confirm what I will build."
+        tool_uses:
+          - name: confirm_requirements
+            input:
+              title: "Feed page"
+              summary: "A page that lists the newest items of the feed."
+              features:
+                - {id: R1, text: "The page lists the ten newest feed items with their titles."}
+              connections:
+                - need: "Read the newest feed items"
+                  connector: mockfeed
+                  operations: [listItems]
+                  status: new
+                  user_setup: "An API key of the feed."
+              user_setup: ["Create an API key of the feed."]
+              acceptance: ["The page shows the ten newest items."]
+  - label: "Confirm the requirements"
+    requirements_confirm: true
+    replies:
+      - text: "Building the mockfeed connector upstream while I work on the page."
+        tool_uses:
+          - name: start_agent
+            input:
+              description: "Build the mockfeed connector"
+              kind: connector_develop
+              slug: mockfeed
+              contribution: new
+              prompt: "Build a new connector mockfeed with one query operation listItems that lists the newest items of a feed. [[subagent:connector-develop-new/develop]]"
+        expect_result_contains:
+          - "\"task_id\":\"agent-"
+          - "\"branch\":\"superverse/"
+      - text: "A subagent builds the connector; I will tell you when its branch is ready."
+      - text: "The mockfeed connector is built on its branch of the connectors library; a maintainer reviews it before it is released."
+        notification: task
+subagents:
+  develop:
+    kind: connector_develop
+    replies:
+      - text: "Reading the library's rules first."
+        tool_uses:
+          - name: read
+            input: {path: AGENTS.md, limit: 40}
+      - text: "Writing the module."
+        tool_uses:
+          - name: write
+            input:
+              path: connectors/superverse-mock/mockfeed/go.mod
+              content: "module github.com/superdurable/dex-connectors-library/connectors/superverse-mock/mockfeed\n\ngo 1.25\n"
+          - name: write
+            input:
+              path: connectors/superverse-mock/mockfeed/connector.yaml
+              content: "apiVersion: connectors.dex.dev/v1alpha1\nkind: Connector\nmetadata:\n  name: mockfeed\n  displayName: Mock feed\n  description: Lists the newest items of a feed.\n  company: Superverse Mock\n  version: v0.21.0\n"
+          - name: write
+            input:
+              path: connectors/superverse-mock/mockfeed/README.md
+              content: "# Mock feed\n\nLists the newest items of a feed.\n"
+      - text: "Adding the catalog entry."
+        tool_uses:
+          - name: bash
+            input:
+              command: "sed -i 's|^directories:$|directories:\\n  - connectors/superverse-mock/mockfeed|' catalog.yaml && grep -c 'connectors/superverse-mock/mockfeed' catalog.yaml"
+              description: "Add the catalog entry of the new connector"
+              timeout_seconds: 60
+        expect_result_contains:
+          - "1"
+      - text: "I built the module connectors/superverse-mock/mockfeed with its go.mod, manifest and README and added its catalog.yaml entry. The library's checks did not run in this mock; the provider behavior is unverified."

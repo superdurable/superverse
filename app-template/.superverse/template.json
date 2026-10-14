@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "buildProfile": "go-react-v1",
+  "openapiSpec": "openapi/openapi.yaml",
+  "agentInstructions": "AGENTS.md",
+  "commands": {
+    "checkStatic": "make check-static",
+    "testApplication": "make test-app"
+  }
+}

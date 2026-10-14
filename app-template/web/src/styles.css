@@ -1,0 +1,16 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #1f2937;
+  background: #f8fafc;
+}
+body { margin: 0; }
+main { max-width: 48rem; margin: 4rem auto; padding: 0 1.5rem; }
+form { display: grid; gap: 0.75rem; }
+textarea { font: inherit; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; }
+button { justify-self: start; font: inherit; padding: 0.5rem 1.25rem; border: 0; border-radius: 0.5rem; background: #1d4ed8; color: #fff; cursor: pointer; }
+button:disabled { background: #94a3b8; cursor: default; }
+.summary { white-space: pre-wrap; padding: 1rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 0.5rem; }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; }
+dt { font-weight: 600; }
+dd { margin: 0; }
+[role="alert"] { color: #b91c1c; }

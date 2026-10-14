@@ -1,0 +1,12 @@
+.git
+.local
+.cache
+**/node_modules
+**/.next
+**/test-results
+**/.terraform
+**/.env
+**/.env.*
+**/*.tfstate*
+
+/bin

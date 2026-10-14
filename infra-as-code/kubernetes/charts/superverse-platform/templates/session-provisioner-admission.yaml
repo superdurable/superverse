@@ -1,0 +1,150 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+{{- if not .Values.localKind }}
+{{- $profile := (include "v2.sandboxProfiles" . | fromJson).codingProfile }}
+# This policy narrows the bootstrap identity's cluster-scoped namespace verbs
+# to the exact immutable coding profile namespace envelope. Other identities are
+# intentionally unaffected; cluster administrators and IaC retain authority.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: {{ include "v2.product" $ }}-session-namespace
+  labels:
+    app.kubernetes.io/part-of: {{ include "v2.product" $ }}
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "DELETE"]
+        resources: ["namespaces"]
+        scope: Cluster
+  matchConditions:
+    {{- include "v2.serverOnlyMatch" $ | nindent 4 }}
+    - name: coding-session-namespace-only
+      expression: >-
+        (request.operation == 'DELETE' ? oldObject.metadata.name : object.metadata.name)
+          .matches('{{ include "v2.sessionNamespacePattern" $ }}')
+  variables:
+    - name: target
+      expression: "request.operation == 'DELETE' ? oldObject : object"
+    - name: ownershipLabels
+      expression: >-
+        {'app.kubernetes.io/name': '{{ include "v2.product" $ }}-agent-sandbox-session-baseline',
+         'app.kubernetes.io/managed-by': '{{ include "v2.product" $ }}',
+         'app.kubernetes.io/part-of': '{{ include "v2.product" $ }}',
+         'superdurable.io/purpose': 'coding-sandbox-sessions',
+         'superdurable.io/sandbox-profile': '{{ $profile.name }}'}
+    - name: podSecurityLabels
+      expression: >-
+        {'pod-security.kubernetes.io/enforce': 'restricted', 'pod-security.kubernetes.io/enforce-version': 'v1.35',
+         'pod-security.kubernetes.io/audit': 'restricted', 'pod-security.kubernetes.io/audit-version': 'v1.35',
+         'pod-security.kubernetes.io/warn': 'restricted', 'pod-security.kubernetes.io/warn-version': 'v1.35'}
+  validations:
+    - expression: >-
+        has(variables.target.metadata.labels) &&
+        variables.ownershipLabels.all(key, variables.target.metadata.labels[key] == variables.ownershipLabels[key]) &&
+        variables.target.metadata.labels['superdurable.io/generation'].matches('^[1-9][0-9]*$')
+      message: Superverse session namespaces require the {{ $profile.name }} ownership labels.
+    - expression: >-
+        has(variables.target.metadata.labels) &&
+        variables.podSecurityLabels.all(key, variables.target.metadata.labels[key] == variables.podSecurityLabels[key])
+      message: Superverse session namespaces must enforce the pinned restricted Pod Security profile.
+    - expression: >-
+        has(variables.target.metadata.labels) &&
+        variables.target.metadata.labels['superdurable.io/scope'] == 'preview' &&
+        variables.target.metadata.name == '{{ include "v2.sessionNamespacePrefix" $ }}' + variables.target.metadata.labels['superdurable.io/project-id'] &&
+        variables.target.metadata.labels['superdurable.io/project-id'].matches(
+          '^[a-z0-9]{1,32}$')
+      message: Superverse session namespaces require the canonical project identifier and the Preview scope.
+    # The API server adds kubernetes.io/metadata.name to Namespaces. Accept the
+    # object on either side of that built-in mutation, but no caller-supplied
+    # label beyond the fourteen profile labels. This prevents namespace labels
+    # such as sidecar-injection selectors from mutating the eventual Sandbox Pod.
+    - expression: >-
+        has(variables.target.metadata.labels) &&
+        (size(variables.target.metadata.labels) == 14 ||
+          (size(variables.target.metadata.labels) == 15 &&
+           'kubernetes.io/metadata.name' in variables.target.metadata.labels &&
+           variables.target.metadata.labels['kubernetes.io/metadata.name'] ==
+             variables.target.metadata.name))
+      message: Superverse session namespaces may have only the exact {{ $profile.name }} labels.
+    - expression: >-
+        request.operation != 'CREATE' ||
+        ((!has(variables.target.metadata.annotations) ||
+           size(variables.target.metadata.annotations) == 0) &&
+         (!has(variables.target.metadata.generateName) ||
+           variables.target.metadata.generateName == '') &&
+         (!has(variables.target.metadata.ownerReferences) ||
+           size(variables.target.metadata.ownerReferences) == 0) &&
+         (!has(variables.target.metadata.finalizers) ||
+           size(variables.target.metadata.finalizers) == 0))
+      message: Superverse session namespaces may not carry caller-supplied metadata hooks.
+---
+{{ include "v2.policyBinding" (dict "root" $ "name" "session-namespace") }}
+---
+# Creating this exact RoleBinding is the sole bridge from cluster-scoped
+# bootstrap authority to the static namespaced session-manager permissions.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: {{ include "v2.product" $ }}-session-manager-binding
+  labels:
+    app.kubernetes.io/part-of: {{ include "v2.product" $ }}
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["rbac.authorization.k8s.io"]
+        apiVersions: ["v1"]
+        operations: ["CREATE"]
+        resources: ["rolebindings"]
+        scope: Namespaced
+  matchConditions:
+    {{- include "v2.serverOnlyMatch" $ | nindent 4 }}
+    - name: coding-session-namespace-only
+      expression: request.namespace.matches('{{ include "v2.sessionNamespacePattern" $ }}')
+  variables:
+    - name: ownershipLabels
+      expression: >-
+        {'app.kubernetes.io/name': '{{ include "v2.product" $ }}-agent-sandbox-session-baseline',
+         'app.kubernetes.io/managed-by': '{{ include "v2.product" $ }}',
+         'app.kubernetes.io/part-of': '{{ include "v2.product" $ }}',
+         'superdurable.io/sandbox-profile': '{{ $profile.name }}'}
+  validations:
+    - expression: object.metadata.name == '{{ include "v2.product" $ }}-session-manager'
+      message: Superverse may manage only the fixed RoleBinding in canonical session namespaces.
+    - expression: >-
+        object.roleRef.apiGroup == 'rbac.authorization.k8s.io' &&
+        object.roleRef.kind == 'ClusterRole' &&
+        object.roleRef.name == '{{ include "v2.product" $ }}-session-manager'
+      message: The session RoleBinding must bind only the static session-manager ClusterRole.
+    - expression: >-
+        has(object.subjects) &&
+        size(object.subjects) == 1 &&
+        object.subjects[0].kind == 'ServiceAccount' &&
+        object.subjects[0].name == '{{ include "v2.serverAccount" . }}' &&
+        object.subjects[0].namespace == '{{ include "v2.namespace" $ }}' &&
+        (!has(object.subjects[0].apiGroup) ||
+          object.subjects[0].apiGroup == '')
+      message: The session RoleBinding must target only the Superverse control-plane ServiceAccount.
+    - expression: >-
+        has(object.metadata.labels) &&
+        size(object.metadata.labels) == 7 &&
+        variables.ownershipLabels.all(key, object.metadata.labels[key] == variables.ownershipLabels[key]) &&
+        object.metadata.labels['superdurable.io/generation'].matches('^[1-9][0-9]*$') &&
+        object.metadata.labels['superdurable.io/scope'] == 'preview' &&
+        object.metadata.labels['superdurable.io/project-id'].matches(
+          '^[a-z0-9]{1,32}$')
+      message: The session RoleBinding requires canonical Superverse ownership labels.
+---
+{{ include "v2.policyBinding" (dict "root" $ "name" "session-manager-binding") }}
+
+{{- end }}

@@ -1,0 +1,81 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "operation"
+  ],
+  "properties": {
+    "operation": {
+      "type": "string",
+      "enum": ["search", "summary", "state", "history", "logs"],
+      "description": "search: one page of flow_type's runs, newest first; for the next page, filter startTime lt the oldest start_time shown. summary, state, history: one run of flow_id. logs: the end of the Live application container's log."
+    },
+    "flow_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "search only: a Flow type of the deployed application."
+    },
+    "flow_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "description": "summary, state and history: the FlowID of an application run."
+    },
+    "filters": {
+      "type": "array",
+      "maxItems": 8,
+      "description": "search only: conditions on flowId, executionStatus, startTime, closeTime or an indexed Attribute key of flow_type.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "field",
+          "values"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "operator": {
+            "type": "string",
+            "enum": ["eq", "in", "gt", "gte", "lt", "lte", "contains"],
+            "default": "eq"
+          },
+          "values": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "description": "Values as text; numbers and booleans are written as text too.",
+            "items": {
+              "type": "string",
+              "maxLength": 1024
+            }
+          }
+        }
+      }
+    },
+    "after_event_id": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "history only: return events after this event ID; use next_after_event_id of the previous page."
+    },
+    "page_size": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 50,
+      "default": 20,
+      "description": "search and history: the most runs or events to return."
+    },
+    "tail_lines": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200,
+      "default": 100,
+      "description": "logs only: the most log lines to return."
+    }
+  }
+}

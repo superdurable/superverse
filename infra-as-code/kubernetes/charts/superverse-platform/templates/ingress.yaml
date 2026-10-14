@@ -1,0 +1,82 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+{{- if not .Values.localKind }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "v2.product" $ }}-studio
+  namespace: {{ include "v2.namespace" $ }}
+  annotations:
+    # Studio, Slack events, the test/staging Dex debug surfaces and the one wildcard rule of the
+    # project routes (templates/project-gateway.yaml) share one ALB. No per-Project object ever joins
+    # the group, so no Project's route can block the platform's.
+    alb.ingress.kubernetes.io/group.name: {{ include "v2.product" $ }}-platform
+    # Studio's "/" prefix is evaluated after Slack events and Bridge routes.
+    alb.ingress.kubernetes.io/group.order: "20"
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: {{ .Values.ingress.certificateArn | quote }}
+    external-dns.alpha.kubernetes.io/hostname: {{ include "v2.domain" . | quote }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: {{ include "v2.domain" . }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: {service: {name: {{ include "v2.product" $ }}-studio, port: {number: 3000}}}
+---
+# Bridge requests and Slack Events deliveries reach their separate server listeners
+# on the same load balancer, without passing through Studio. Slack keeps its signed
+# raw body; both targets use the server health port for the ALB health check.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "v2.product" $ }}-slack-events
+  namespace: {{ include "v2.namespace" $ }}
+  annotations:
+    alb.ingress.kubernetes.io/group.name: {{ include "v2.product" $ }}-platform
+    alb.ingress.kubernetes.io/group.order: "10"
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: {{ .Values.ingress.certificateArn | quote }}
+    alb.ingress.kubernetes.io/healthcheck-port: "8082"
+    alb.ingress.kubernetes.io/healthcheck-path: /readyz
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: {{ include "v2.domain" . }}
+      http:
+        paths:
+          - path: /api/slack/events
+            pathType: Exact
+            backend: {service: {name: {{ include "v2.product" $ }}-server, port: {number: {{ include "v2.slackEvents.port" . }}}}}
+          - path: /remote-agent/
+            pathType: Prefix
+            backend: {service: {name: {{ include "v2.product" $ }}-server, port: {number: {{ include "v2.remoteAgent.port" . }}}}}
+---
+# The ALB checks the server listener targets' health on the server's health port, from its own subnets.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "v2.product" $ }}-slack-events-health
+  namespace: {{ include "v2.namespace" $ }}
+spec:
+  podSelector: {matchLabels: {app: {{ include "v2.product" $ }}-server}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        {{- range .Values.ingress.targetCIDRs }}
+        - ipBlock: {cidr: {{ . | quote }}}
+        {{- end }}
+      ports: [{port: 8082, protocol: TCP}]
+{{- end }}

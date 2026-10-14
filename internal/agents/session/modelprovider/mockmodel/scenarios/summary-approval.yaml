@@ -1,0 +1,259 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# The template-approval case: add a human approval Step between GenerateSummary and
+# SaveSummaryResult of the template's TextSummaryFlow, as the case's prompt asks. The
+# Step waits on a new Channel and shows summary-status awaiting-approval; an Action RPC
+# ApproveSummary rechecks that status and publishes to the Channel. Each edit's old_string
+# is the template's own text, exactly once, which the mock model checks at startup, and the
+# template's gate passes the result (go build, strict FDG 2.0 with the Action, vet, gofmt). A fresh workspace
+# has no web dependencies and no generated API code, so the script runs make bootstrap and
+# make generate first, as the template's AGENTS.md says. A new human approval is a change
+# the user confirms first, so input 1 ends at the requirements card, input 2 confirms it, and
+# the commit_and_push traces R1 and R2 at version 1, each with an untested_reason: a person
+# approves in Studio, which the API tests do not drive. The generated branch's API test now
+# proves that the summary reaches the approval Step instead of completing. The card carries
+# the design of TextSummaryFlow with the approval: the template's Steps, groups and
+# transitions as the analyzer renders them, the lost model response as a failure route, plus
+# the new Step, Channel and Action. That is exactly what the script then implements, so its
+# final reply says the design was built as confirmed.
+name: summary-approval
+title: "Summary approval"
+description: "Adds a human approval Step and an Approve summary Action to the template's TextSummaryFlow after a confirmed requirements card, and pushes it."
+category: product
+inputs:
+  - label: "Describe the change"
+    message: "Add a human approval before the summary is saved."
+    replies:
+      - thinking: "A human approval changes how the process runs, so the user confirms the requirements before I write any code."
+        text: "Here is what I plan to build. Please confirm it, or tell me what to change."
+        tool_uses:
+          - name: confirm_requirements
+            input:
+              title: "Summary approval"
+              summary: "A person approves each generated summary in Studio before it is saved."
+              features:
+                - {id: R1, text: "A Step AwaitSummaryApproval holds the generated summary and shows awaiting-approval until a person decides."}
+                - {id: R2, text: "An Approve summary Action releases that Step, which then saves the summary."}
+              connections: []
+              user_setup: []
+              acceptance: ["The summary is saved only after Approve summary is chosen in a Studio run."]
+              design:
+                summary: "The summary run waits after generation until a person approves it in Studio; then it is saved."
+                flows:
+                  - flow_type: TextSummaryFlow
+                    purpose: "Summarizes a text with a model and saves it once a person approves."
+                    start_step: PrepareSummary
+                    steps:
+                      - {step_type: PrepareSummary, group: Text intake, explanation: "Validate and keep the text before any paid model request.",
+                         next: [{to: GenerateSummary, when: "the text is valid"}, {to: complete, when: "the text is empty, too long or not UTF-8"}]}
+                      - {step_type: GenerateSummary, group: Summary, explanation: "Ask the configured model for a short factual summary.",
+                         next: [{to: AwaitSummaryApproval, when: "generated"}, {to: SaveSummaryResult, when: "truncated"},
+                                {to: RecordSummaryFailure, when: "blocked, rejected, invalid or a defect"},
+                                {to: RecordSummaryUncertainty, when: "the model response was lost", is_failure_route: true}]}
+                      - {step_type: AwaitSummaryApproval, group: Result, explanation: "Wait for a person to approve the generated summary before it is saved.",
+                         waits_for: {kind: action, name: ApproveSummary}, next: [{to: SaveSummaryResult}], features: [R1, R2]}
+                      - {step_type: SaveSummaryResult, group: Result, explanation: "Save the summary, the model and the token usage.", next: [{to: complete}]}
+                      - {step_type: RecordSummaryFailure, group: Result, explanation: "Record why the model returned no usable summary.", next: [{to: complete}]}
+                      - {step_type: RecordSummaryUncertainty, group: Result, explanation: "Record a lost model response without sending the paid request again.", next: [{to: complete}]}
+                    channels: [{name: SummaryApprovals, payload: "the approval"}]
+                    actions: [{label: "Approve summary", rpc: ApproveSummary, publishes: SummaryApprovals, permission: summary.approve}]
+                    attributes: [{name: SummaryStatus, value: "pending, awaiting-approval, approved, completed or failed"}, {name: SummaryText, value: "the saved summary"}]
+  - label: "Confirm the requirements"
+    requirements_confirm: true
+    replies:
+      - thinking: "The change is in the summary Flow, so I will read it and the application instructions first."
+        text: "I'll read the summary Flow and the application instructions."
+        tool_uses:
+          - name: read
+            input: {path: internal/process/text_summary_flow.go}
+          - name: read
+            input: {path: AGENTS.md}
+      - thinking: "The Generated branch goes to the new Step and the other branches stay. The Step waits on a Channel that the Action publishes to."
+        text: "Adding the approval Step, its Channel and the Approve summary Action."
+        tool_uses:
+          - name: edit
+            input:
+              path: internal/process/text_summary_flow.go
+              old_string: |2-
+                	SummaryNotice       = dex.DefineAttribute[string]("summary-notice")
+                )
+              new_string: |2-
+                	SummaryNotice       = dex.DefineAttribute[string]("summary-notice")
+                )
+
+                // SummaryApprovals carries the decision that releases AwaitSummaryApproval.
+                var SummaryApprovals = dex.DefineChannel[bool]("SummaryApprovals")
+          - name: edit
+            input:
+              path: internal/process/text_summary_flow.go
+              old_string: |2-
+                			Generated: sdkgo.GoTo(SaveSummaryResult{}), Truncated: sdkgo.GoTo(SaveSummaryResult{}),
+              new_string: |2-
+                			Generated: sdkgo.GoTo(AwaitSummaryApproval{}), Truncated: sdkgo.GoTo(SaveSummaryResult{}),
+          - name: edit
+            input:
+              path: internal/process/text_summary_flow.go
+              old_string: |2-
+                		dex.DefineStep(SaveSummaryResult{}),
+              new_string: |2-
+                		dex.DefineStep(AwaitSummaryApproval{}),
+                		dex.DefineStep(SaveSummaryResult{}),
+          - name: edit
+            input:
+              path: internal/process/text_summary_flow.go
+              old_string: |2-
+                		dex.DefineRPC(flow.GetSummarySnapshot, nil),
+              new_string: |2-
+                		dex.DefineRPC(flow.GetSummarySnapshot, nil),
+                		dex.DefineRPC(flow.ApproveSummary, &dex.RPCOptions{
+                			Action: dex.DefineAction("Approve summary",
+                				dex.WhenAttributeMatches(SummaryStatus, dex.AttributeMatchEqual("awaiting-approval")),
+                				dex.ActionRequiresPermission("summary.approve")),
+                			LockAttributes: []dex.AttributeLock{dex.LockAttribute(SummaryStatus)},
+                		}),
+          - name: edit
+            input:
+              path: internal/process/text_summary_flow.go
+              old_string: |2-
+                SummaryNotice,
+                	}}
+              new_string: |2-
+                SummaryNotice,
+                	}, Channels: []dex.ChannelDef{SummaryApprovals}}
+          - name: edit
+            input:
+              path: internal/process/text_summary_flow.go
+              old_string: |2-
+                // dex:group group-id:result group-label:"Result"
+                // dex:explanation text:"Save the summary, the model and the token usage."
+              new_string: |2-
+                // dex:group group-id:result group-label:"Result"
+                // dex:explanation text:"Wait for a person to approve the generated summary before it is saved."
+                type AwaitSummaryApproval struct {
+                	dex.StepDefaults
+                }
+
+                func (AwaitSummaryApproval) WaitFor(ctx dex.Context, _ llm.GenerateTextResult) (_ *dex.Wait, err error) {
+                	defer logFailure(ctx, TextSummaryFlow{}, "AwaitSummaryApproval", &err)
+                	if err = SummaryStatus.Set(ctx, "awaiting-approval"); err != nil {
+                		return nil, err
+                	}
+                	return dex.Until(SummaryApprovals.ForOne()), nil
+                }
+
+                // Execute passes the generated result on to SaveSummaryResult once the approval arrived.
+                func (AwaitSummaryApproval) Execute(ctx dex.Context, result llm.GenerateTextResult) (_ *dex.StepDecision, err error) {
+                	defer logFailure(ctx, TextSummaryFlow{}, "AwaitSummaryApproval", &err)
+                	return dex.GoTo(SaveSummaryResult{}, result), nil
+                }
+
+                // dex:group group-id:result group-label:"Result"
+                // dex:explanation text:"Save the summary, the model and the token usage."
+          - name: edit
+            input:
+              path: internal/process/text_summary_flow.go
+              old_string: |2-
+                // readSummary reads every result Attribute; status is "pending" until PrepareSummary runs.
+              new_string: |2-
+                // ApproveSummary releases the run that waits for approval. It rechecks the status under the
+                // status lock, so a repeated click finds another status and queues no second decision.
+                func (TextSummaryFlow) ApproveSummary(ctx dex.Context, _ dex.None) (_ *dex.RPCResult[dex.None], err error) {
+                	defer logFailure(ctx, TextSummaryFlow{}, "ApproveSummary", &err)
+                	status, err := SummaryStatus.Get(ctx)
+                	if err != nil {
+                		return nil, err
+                	}
+                	if status != "awaiting-approval" {
+                		return nil, errors.New("the summary is not awaiting approval")
+                	}
+                	if err = SummaryStatus.Set(ctx, "approved"); err != nil {
+                		return nil, err
+                	}
+                	if err = SummaryApprovals.Publish(ctx, true); err != nil {
+                		return nil, err
+                	}
+                	return &dex.RPCResult[dex.None]{}, nil
+                }
+
+                // readSummary reads every result Attribute; status is "pending" until PrepareSummary runs.
+      - thinking: "A generated summary now waits for approval instead of completing, so its API test cannot expect completed; it proves the generated branch reaches the waiting Step instead."
+        text: "Updating the API test of the generated branch."
+        tool_uses:
+          - name: edit
+            input:
+              path: internal/apptest/text_summary_test.go
+              old_string: |2-
+                		{"generated", llmmock.GenerateTextShortSummary, generated.TextSummaryStatusCompleted, true},
+              new_string: ""
+          - name: edit
+            input:
+              path: internal/apptest/text_summary_test.go
+              old_string: |2-
+                // TestTextSummaryBranches runs the summary once per branch the Flow wires,
+              new_string: |2-
+                // TestTextSummaryGeneratedWaitsForApproval proves that a generated summary
+                // reaches the approval Step: the model is called once and nothing is
+                // saved, so the API shows no summary until a person approves it in Studio.
+                func TestTextSummaryGeneratedWaitsForApproval(t *testing.T) {
+                	model := llmmock.New(t, process.TextSummaryConnectionName)
+                	env := apptest.Start(t, worker.Connections{SummaryModel: model.Connection()})
+                	summaryID := uuid.New()
+                	if _, err := env.API.StartTextSummary(env.Context(t), &generated.StartTextSummaryRequest{RequestId: summaryID, Text: "The connector shipped on time."}); err != nil {
+                		t.Fatalf("start the summary: %v", err)
+                	}
+                	env.Eventually(t, 20*time.Second, func() bool { return len(model.GenerateText().Calls()) == 1 })
+                }
+
+                // TestTextSummaryBranches runs the summary once per branch the Flow wires,
+      - text: "Restoring the dependencies and generating the API code, as the template's instructions say."
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap", description: "Restore the application's dependencies", timeout_seconds: 600}
+      - tool_uses:
+          - name: bash
+            input: {command: "make generate", description: "Generate the API code", timeout_seconds: 600}
+      - text: "Building the application."
+        tool_uses:
+          - name: bash
+            input: {command: "go build ./...", description: "Build the application", timeout_seconds: 600}
+      - text: "Validating the Flow definitions."
+        tool_uses:
+          - name: bash
+            input: {command: "make check-fdg-v2", description: "Validate the Flow definitions", timeout_seconds: 600}
+      - tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Add the AwaitSummaryApproval Step and the SummaryApprovals Channel", status: completed}
+                - {content: "Add the Approve summary Action", status: completed}
+                - {content: "Run the source checks and push", status: in_progress}
+      - text: "Running the source checks and pushing the change."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Add a human approval before the summary is saved"
+              verification:
+                - "go build ./... succeeded"
+                - "make check-fdg-v2 validated the strict FDG 2.0 definition"
+              requirements:
+                - id: R1
+                  evidence: [internal/process/text_summary_flow.go]
+                  untested_reason: "A person approves in Studio, which the API tests do not drive; TestTextSummaryGeneratedWaitsForApproval proves the generated summary reaches the waiting Step."
+                - id: R2
+                  evidence: [internal/process/text_summary_flow.go]
+                  untested_reason: "The Approve summary Action is a Studio action, which the API tests do not drive."
+              requirements_revision: 1
+      - tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Add the AwaitSummaryApproval Step and the SummaryApprovals Channel", status: completed}
+                - {content: "Add the Approve summary Action", status: completed}
+                - {content: "Run the source checks and push", status: completed}
+      - text: "The summary now waits for approval: the Approve summary Action releases it, and the change is pushed to the default branch. I built the design as confirmed."

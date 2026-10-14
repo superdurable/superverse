@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A long text-only reply, streamed slowly enough that a browser can observe and
+# interrupt its uncommitted text, as the Studio Watch reconnection check does.
+name: explain
+title: "Long explanation"
+description: "A long text reply streamed slowly, for watching and interrupting uncommitted text."
+category: agent_feature
+inputs:
+  - label: "Explain the application"
+    message: "Explain how the application works."
+    replies:
+      - text: "The text summary application has one form and one durable process. In the browser, a person pastes the text they want shortened into the text area and presses Summarize; the button is disabled while the text is empty or a summary is already running. The form sends the text to the application's API, which starts one TextSummaryFlow with a request identity, so a repeated click joins the same process instead of starting another. The Flow has three Steps. The first Step accepts the text and checks its size. The second Step, GenerateSummary, calls the configured model connection and waits for the result, retrying a transient provider failure and ending in a clear failure when the provider rejects the request. The last Step saves the generated summary as the process result. While the process runs, the page polls its status and shows that the summary is being generated; when the status is completed it shows the summary text, and when the process failed it shows the failure message from the process. Studio Runs shows the same process with its Steps, its attributes and its history, which is where to look when a summary does not appear. Everything described here is read from the source I inspected earlier. I have not run a summary in this conversation, so the behavior of the model connection with real credentials is not verified here, and the application is ready for changes but not yet proven end to end."
+        chunk_delay_ms: 40

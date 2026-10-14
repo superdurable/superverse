@@ -1,0 +1,121 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A card with a Flow design (input 1), a request for changes that revises the design
+# (input 2), its confirmation, then a compaction that keeps the confirmed design's outline
+# (input 3) and a blocked checkpoint that leaves the design unbuilt (input 4). Card 1 designs
+# a review that waits on a Channel; card 2 makes it an approval that a person gives through
+# an Action. Both designs list the lost model response as a failure route, so the outline
+# counts one failure-handling Step. The progress list of input 3 carries usage above every
+# compaction threshold, as in the compaction scenario. The checkpoint edits only the
+# template's copy and is blocked, so it skips the source gate and hands nothing off; the
+# Session continues that turn three times, which the script answers with the same text.
+name: design-revised
+title: "Flow design revised"
+description: "A card with a Flow design, a revised design after a request for changes, the confirmation, a compaction that keeps the design's outline, then a blocked checkpoint that leaves the design unbuilt."
+category: project_feature
+compaction_summary: "The user confirmed the summary approval and its Flow design."
+inputs:
+  - label: "Describe the change"
+    message: "Plan a review before the summary is saved."
+    replies:
+      - thinking: "A review changes how the summary process runs, so the user confirms the requirements and the Flow design before I write any code."
+        text: "Here is what I plan to build and how the process will run. Please confirm it, or tell me what to change."
+        tool_uses:
+          - name: confirm_requirements
+            input:
+              title: "Summary review"
+              summary: "Each generated summary waits for a review before it is saved."
+              features: &features
+                - {id: R1, text: "A generated summary waits until it is reviewed, and only then is saved."}
+                - {id: R2, text: "The review records who released the summary."}
+              connections: []
+              user_setup: []
+              acceptance: &acceptance ["A summary is saved only after its review."]
+              design:
+                summary: "The summary run waits after generation until a reviewer sends the review; then it is saved."
+                flows:
+                  - flow_type: TextSummaryFlow
+                    purpose: "Summarizes a text with a model and saves it once it is reviewed."
+                    start_step: PrepareSummary
+                    steps:
+                      - &prepare {step_type: PrepareSummary, group: Text intake, explanation: "Validate and keep the text before any paid model request.",
+                         next: [{to: GenerateSummary, when: "the text is valid"}, {to: complete, when: "the text is empty, too long or not UTF-8"}]}
+                      - &generate {step_type: GenerateSummary, group: Summary, explanation: "Ask the configured model for a short factual summary.",
+                         next: [{to: AwaitSummaryApproval, when: "generated"}, {to: SaveSummaryResult, when: "truncated"},
+                                {to: RecordSummaryFailure, when: "blocked, rejected, invalid or a defect"},
+                                {to: RecordSummaryUncertainty, when: "the model response was lost", is_failure_route: true}]}
+                      - {step_type: AwaitSummaryApproval, group: Result, explanation: "Wait for the review of the generated summary.",
+                         waits_for: {kind: channel, name: SummaryReviews}, next: [{to: SaveSummaryResult}], features: [R1, R2]}
+                      - &save {step_type: SaveSummaryResult, group: Result, explanation: "Save the summary, the model and the token usage.", next: [{to: complete}]}
+                      - &failure {step_type: RecordSummaryFailure, group: Result, explanation: "Record why the model returned no usable summary.", next: [{to: complete}]}
+                      - &uncertainty {step_type: RecordSummaryUncertainty, group: Result, explanation: "Record a lost model response without sending the paid request again.", next: [{to: complete}]}
+                    channels: [{name: SummaryReviews, payload: "the review"}]
+  - label: "Ask for changes to the design"
+    requirements_change: "Make the review an approval that a person gives in Studio."
+    replies:
+      - text: "I made the review an approval in Studio. Please confirm the revised requirements and design."
+        tool_uses:
+          - name: confirm_requirements
+            input:
+              title: "Summary approval"
+              summary: "A person approves each generated summary in Studio before it is saved."
+              features: *features
+              connections: []
+              user_setup: []
+              acceptance: *acceptance
+              design:
+                summary: "The summary run waits after generation until a person approves it in Studio; then it is saved."
+                flows:
+                  - flow_type: TextSummaryFlow
+                    purpose: "Summarizes a text with a model and saves it once a person approves."
+                    start_step: PrepareSummary
+                    steps:
+                      - *prepare
+                      - *generate
+                      - {step_type: AwaitSummaryApproval, group: Result, explanation: "Wait for a person to approve the generated summary before it is saved.",
+                         waits_for: {kind: action, name: ApproveSummary}, next: [{to: SaveSummaryResult}], features: [R1, R2]}
+                      - *save
+                      - *failure
+                      - *uncertainty
+                    channels: [{name: SummaryApprovals, payload: "the approval"}]
+                    actions: [{label: "Approve summary", rpc: ApproveSummary, publishes: SummaryApprovals, permission: summary.approve}]
+  - label: "Confirm the revised requirements"
+    requirements_confirm: true
+    replies:
+      - thinking: "I will record the progress before I continue."
+        tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "R1: Add the approval Step", status: in_progress}
+                - {content: "R2: Add the Approve summary Action", status: pending}
+        usage: {input_tokens: 850000, output_tokens: 200}
+      - text: "The confirmed Flow design survived the compaction."
+        expect_segment_start:
+          - "<confirmed_requirements>"
+          - "Flow design: The summary run waits after generation until a person approves it in Studio; then it is saved."
+          - "TextSummaryFlow: PrepareSummary, GenerateSummary, AwaitSummaryApproval [Approve summary], SaveSummaryResult, RecordSummaryFailure; +1 failure-handling Step"
+  - label: "Push a checkpoint"
+    message: "Push a checkpoint of the work so far."
+    replies:
+      - text: "Changing the copy for the approval first."
+        tool_uses:
+          - name: edit
+            input: {path: web/src/App.tsx, old_string: "<label htmlFor=\"source-text\">Text to summarize</label>", new_string: "<label htmlFor=\"source-text\">Text to summarize and approve</label>"}
+      - text: "Pushing a checkpoint; the approval is not built yet."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Checkpoint the approval copy"
+              verification:
+                - "web/src/App.tsx names the approval"
+              blocked: true
+      - text: "The checkpoint is pushed; the approval Step and its Action are not built yet."
+      - text: "The checkpoint stays as pushed; the design is not built yet."
+        repeat: 3

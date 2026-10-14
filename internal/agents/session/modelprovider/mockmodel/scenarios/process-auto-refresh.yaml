@@ -1,0 +1,75 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# One ordered Studio scenario keeps source-changing inputs in the same Project.
+# The spec changes the automatic-build preference and invokes real manual builds
+# between inputs; every push still passes the application source gate.
+name: process-auto-refresh
+title: "Automatic process builds"
+description: "Builds each push, then tests preference-off, an uncommitted note and recovery through Setup."
+category: project_feature
+arguments:
+  note: Process build
+inputs:
+  - label: "Push with automatic builds on"
+    message: "Push the first process-build note."
+    replies:
+      - text: "Writing the first note."
+        tool_uses:
+          - name: write
+            input: {path: process-build-note.md, content: "{{note}} automatic\n"}
+      - text: "Restoring the application's dependencies."
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap", description: "Restore application dependencies", timeout_seconds: 600}
+      - text: "Checking and pushing the first note."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Add {{note}} automatic note"
+              verification: ["process-build-note.md holds {{note}} automatic"]
+      - text: "The first note is pushed."
+  - label: "Push with automatic builds off"
+    message: "Push the second process-build note."
+    replies:
+      - text: "Writing the second note."
+        tool_uses:
+          - name: write
+            input: {path: process-build-note.md, content: "{{note}} off\n"}
+      - text: "Checking and pushing the second note."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Add {{note}} off note"
+              verification: ["process-build-note.md holds {{note}} off"]
+      - text: "The second note is pushed."
+  - label: "Leave an uncommitted note"
+    message: "Leave a process-build note uncommitted for a manual build refusal."
+    replies:
+      - text: "Writing the uncommitted note."
+        tool_uses:
+          - name: write
+            input: {path: process-build-note.md, content: "{{note}} dirty\n"}
+      - text: "The note stays uncommitted for the manual build refusal."
+      - text: "The note stays uncommitted for the manual build refusal."
+      - text: "The note stays uncommitted for the manual build refusal."
+      - text: "The note stays uncommitted for the manual build refusal."
+  - label: "Push the recovery"
+    message: "Commit the process-build note so a manual build can succeed."
+    replies:
+      - text: "Writing the recovery note."
+        tool_uses:
+          - name: write
+            input: {path: process-build-note.md, content: "{{note}} recovery\n"}
+      - text: "Checking and pushing the recovery."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Add {{note}} recovery note"
+              verification: ["process-build-note.md holds {{note}} recovery"]
+      - text: "The recovery is pushed."

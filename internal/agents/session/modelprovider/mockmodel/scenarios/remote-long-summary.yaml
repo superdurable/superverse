@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A genuine provider compaction, not a forged summary Attribute. Its carried
+# scenario/step and old arguments must remain ordinary carry metadata during
+# compaction, but cannot select the later platform request from a handoff notice.
+name: remote-long-summary
+title: "Pre-remote long handoff summary"
+description: "Complete actual manifest read and compaction before a long remote interval."
+category: agent_feature
+test_action: "After the completed compaction, activate the real remote endpoint."
+arguments:
+  head: "1111111111111111111111111111111111111111"
+  notice: "old-notice"
+  summary: "old-summary"
+  budget: "1"
+  task: "cmd-bbbbbbbbbbbb"
+compaction_summary: "The application manifest was read before remote work; retain the repository objective after the long handoff."
+inputs:
+  - label: "Complete a genuine summary before remote work"
+    message: "Read the application manifest and summarize the platform context before my agent works."
+    replies:
+      - text: "Reading the actual application manifest before compaction."
+        tool_uses:
+          - name: read
+            input: {path: dex-app.yaml, limit: 60}
+        usage: {input_tokens: 850000, output_tokens: 200}
+      - text: "The genuine pre-remote platform summary is complete."

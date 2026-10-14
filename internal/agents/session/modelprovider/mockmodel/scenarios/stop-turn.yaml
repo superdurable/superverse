@@ -1,0 +1,35 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A turn the user stops: a server starts in the background, then a long check
+# runs in the foreground. The test presses Stop while the check runs: the turn
+# ends with the check answered interrupted_by_user and the background server
+# stopped, which sends no notification. Input 2, the user's next message,
+# continues the script, whose reply requires the interrupted result.
+name: stop-turn
+title: "Stopped turn"
+description: "A background server and a long foreground check that the user stops; the next message reads the interrupted result."
+category: agent_feature
+inputs:
+  - label: "Serve and check"
+    message: "Serve the application and run a long check."
+    replies:
+      - text: "Starting the server in the background."
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 600", description: "Serve the application", run_in_background: true}
+      - text: "Running a long check."
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 300", description: "Run a long check", timeout_seconds: 600}
+        expect_failure: true
+        expect_failure_text: "Error: interrupted_by_user"
+  - label: "Continue after the Stop"
+    message: "Continue."
+    replies:
+      - text: "The check was stopped before it finished; tell me how to continue."

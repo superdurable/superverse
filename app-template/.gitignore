@@ -1,0 +1,7 @@
+/.local/
+/internal/api/generated/
+/web/dist/
+/web/node_modules/
+/web/src/api/generated/
+*.log
+.DS_Store

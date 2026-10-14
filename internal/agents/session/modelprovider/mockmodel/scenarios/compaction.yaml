@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# One tool call whose reported usage is above every compaction threshold (the
+# largest is 800,000 tokens, and 900,000 is the hard limit of Opus and Sonnet).
+# After the tool result the Session compacts, and the next call continues at
+# step 1 in the new segment. It reads dex-app.yaml, which every READY Project has.
+name: compaction
+title: "Context compaction"
+description: "One tool call reports usage above every compaction threshold, so the Session compacts and continues in a new context segment."
+category: agent_feature
+compaction_summary: "The user asked to read the application manifest. It was read once and names the Flow definitions."
+inputs:
+  - label: "Read the manifest"
+    message: "Read the application manifest."
+    replies:
+      - thinking: "I need the application manifest before I can answer."
+        text: "Reading the application manifest."
+        tool_uses:
+          - name: read
+            input: {path: dex-app.yaml, limit: 60}
+        usage: {input_tokens: 850000, output_tokens: 200}
+      - text: "The manifest was read before the context was compacted; it names the application's Flow definitions."

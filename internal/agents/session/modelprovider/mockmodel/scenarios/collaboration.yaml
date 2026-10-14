@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A foreground command keeps a real Session turn open for concurrent queue commands.
+name: collaboration
+title: "Collaborator commands"
+description: "Hold a turn at a foreground command while two Builders and an owner exercise attribution."
+category: agent_feature
+test_action: "Drive authenticated commands from several accounts."
+inputs:
+  - label: "Wait for collaborators"
+    message: "Wait while collaborators update the queue."
+    replies:
+      - tool_uses:
+          - name: bash
+            input: {command: "sleep 300", description: "Wait for collaborator commands", timeout_seconds: 600}
+      - text: "The collaborator command completed."

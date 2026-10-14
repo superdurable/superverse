@@ -1,0 +1,81 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A change subagent: it edits the page heading in its own worktree, checks it and
+# reports, and the main agent's workspace stays untouched until the merge. Its
+# task notification opens an automatic turn that first merges a path the
+# subagent did not change, which merges nothing, lists the path as unknown and
+# leaves the change mergeable, then merges every file with merge_agent_changes
+# and reads the merged file. The merge leaves the change uncommitted, so the
+# script answers the Session's three handoff continuations. The subagent's
+# check counts its runs in the Sandbox and pauses long enough for a test to
+# replace the Worker while it runs; its result must be the first run. Its report
+# arrives after the first turn ended.
+name: subagent-change-merge
+title: "Subagent change and merge"
+description: "A change subagent edits the page heading in its worktree; its notification opens a turn that merges the change into the workspace."
+category: agent_feature
+arguments: {task: agent-aaaaaaaa}
+inputs:
+  - label: "Delegate the change"
+    message: "Change the page heading in the background."
+    replies:
+      - text: "Delegating the heading change to a subagent."
+        tool_uses:
+          - name: start_agent
+            input:
+              description: "Change the page heading"
+              kind: change
+              prompt: "Change the page heading in web/src/App.tsx to Delegated heading, check the change and report the files you changed. [[subagent:subagent-change-merge/heading]]"
+        expect_result_contains:
+          - "\"task_id\":\"agent-"
+      - text: "A subagent changes the heading; I will merge its change when it reports."
+      - text: "The subagent changed the heading; merging the heading component first."
+        notification: task
+        tool_uses:
+          - name: merge_agent_changes
+            input: {agent_id: "{{task}}", action: apply, paths: [web/src/Heading.tsx]}
+        expect_result_contains:
+          - "\"result\":\"nothing_to_merge\","
+          - "\"unknown\":[\"web/src/Heading.tsx\"]"
+      - text: "That file is not the subagent's change; merging every file it changed."
+        tool_uses:
+          - name: merge_agent_changes
+            input: {agent_id: "{{task}}", action: apply}
+        expect_result_contains:
+          - "\"result\":\"merged\","
+          - "web/src/App.tsx"
+      - text: "Checking the merged heading."
+        tool_uses:
+          - name: read
+            input: {path: web/src/App.tsx}
+        expect_result_contains:
+          - "<h1>Delegated heading</h1>"
+      - text: "The page heading now reads Delegated heading; the change is merged and not committed yet."
+      - text: "The merged change stays uncommitted until you ask me to publish it."
+      - text: "The merged change stays uncommitted."
+      - text: "Nothing else changed; the merged heading waits to be committed."
+subagents:
+  heading:
+    kind: change
+    replies:
+      - text: "Changing the page heading."
+        tool_uses:
+          - name: edit
+            input: {path: web/src/App.tsx, old_string: "<h1>Text Summary</h1>", new_string: "<h1>Delegated heading</h1>"}
+      - text: "Checking the change."
+        tool_uses:
+          - name: bash
+            input:
+              command: "runs=/tmp/heading-check-$(basename \"$PWD\"); echo run >> \"$runs\"; echo \"check run $(wc -l < \"$runs\")\"; sleep 30; grep -n '<h1>' web/src/App.tsx"
+              description: "Check the changed heading"
+              timeout_seconds: 300
+        expect_result_contains:
+          - "check run 1"
+          - "Delegated heading"
+      - text: "I changed the page heading in web/src/App.tsx to Delegated heading; grep shows the new heading."

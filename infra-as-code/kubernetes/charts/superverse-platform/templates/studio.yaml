@@ -1,0 +1,75 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+{{- if .Values.studio.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "v2.product" $ }}-studio
+  namespace: {{ include "v2.namespace" $ }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "v2.product" $ }}-studio
+  namespace: {{ include "v2.namespace" $ }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+spec:
+  replicas: {{ .Values.studio.replicas }}
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app: {{ include "v2.product" $ }}-studio}
+  template:
+    metadata:
+      labels: {app: {{ include "v2.product" $ }}-studio, app.kubernetes.io/part-of: {{ include "v2.product" $ }}, app.kubernetes.io/name: {{ include "v2.product" $ }}-studio}
+      annotations:
+        checksum/config: {{ toJson .Values.studio | sha256sum | quote }}
+    spec:
+      {{- include "v2.platformPodSpec" (dict "root" $ "serviceAccount" (printf "%s-studio" (include "v2.product" $)) "automountToken" false) | nindent 6 }}
+      containers:
+        - name: studio
+          image: {{ include "v2.image" .Values.studio.image | quote }}
+          imagePullPolicy: {{ .Values.studio.image.pullPolicy }}
+          {{- include "v2.platformContainerSecurity" . | nindent 10 }}
+          envFrom:
+            # The independent BROWSER_SIGNING_KEY, never a gRPC service credential.
+            - secretRef: {name: {{ include "v2.product" $ }}-studio}
+          env:
+            - {name: HOSTNAME, value: "0.0.0.0"}
+            - {name: PORT, value: "3000"}
+            - {name: SUPERVERSE_GRPC_ADDRESS, value: "{{ include "v2.product" $ }}-server:8080"}
+            - {name: NODE_ENV, value: production}
+            {{- range $key, $value := .Values.studio.config }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          ports: [{name: http, containerPort: 3000}]
+          startupProbe: {tcpSocket: {port: http}, periodSeconds: 3, failureThreshold: 100}
+          readinessProbe: {tcpSocket: {port: http}, periodSeconds: 5}
+          livenessProbe: {tcpSocket: {port: http}, periodSeconds: 10, failureThreshold: 6}
+          resources: {{ toYaml .Values.studio.resources | nindent 12 }}
+          volumeMounts:
+            {{- include "v2.platformScratchMounts" . | nindent 12 }}
+      volumes:
+        {{- include "v2.platformScratchVolumes" . | nindent 8 }}
+{{- if gt (int .Values.studio.replicas) 1 }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "v2.product" $ }}-studio
+  namespace: {{ include "v2.namespace" $ }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {app: {{ include "v2.product" $ }}-studio}
+{{- end }}
+{{- end }}

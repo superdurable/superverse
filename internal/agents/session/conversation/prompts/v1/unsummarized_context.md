@@ -1,0 +1,1 @@
+The earlier context of this conversation could not be summarized and is no longer available. Work from the repository, the todo list and the pending request below; inspect the workspace and its Git history to recover what was already done before continuing, and ask the user only for business facts you cannot recover.

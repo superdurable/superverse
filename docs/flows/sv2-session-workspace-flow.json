@@ -1,0 +1,2092 @@
+{
+  "schemaVersion": "2.0",
+  "valid": true,
+  "source": {
+    "language": "go",
+    "path": "internal/agents/sandbox/sessionworkspace/session_workspace_flow.go"
+  },
+  "flow": {
+    "name": "SessionWorkspaceFlow",
+    "startStepId": "step:AwaitWorkspaceCommand",
+    "span": {
+      "startLine": 36,
+      "startColumn": 1,
+      "endLine": 42,
+      "endColumn": 2
+    }
+  },
+  "nodes": [
+    {
+      "id": "decision-dispatch:rpc:CompleteSessionWorkspace",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "rpc:CompleteSessionWorkspace",
+      "phase": "rpc",
+      "span": {
+        "startLine": 132,
+        "startColumn": 1,
+        "endLine": 141,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:rpc:ReportProvisionOutcome",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "rpc:ReportProvisionOutcome",
+      "phase": "rpc",
+      "span": {
+        "startLine": 96,
+        "startColumn": 1,
+        "endLine": 105,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:AwaitProvisioningOutcome",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:AwaitProvisioningOutcome",
+      "phase": "execute",
+      "span": {
+        "startLine": 226,
+        "startColumn": 1,
+        "endLine": 247,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:AwaitWorkspaceCommand",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:AwaitWorkspaceCommand",
+      "phase": "execute",
+      "span": {
+        "startLine": 157,
+        "startColumn": 1,
+        "endLine": 178,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:ProvisionInstance",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:ProvisionInstance",
+      "phase": "execute",
+      "span": {
+        "startLine": 193,
+        "startColumn": 1,
+        "endLine": 205,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:ReclaimInstance",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:ReclaimInstance",
+      "phase": "execute",
+      "span": {
+        "startLine": 262,
+        "startColumn": 1,
+        "endLine": 283,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:RecordReclaimFailure",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:RecordReclaimFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 317,
+        "startColumn": 1,
+        "endLine": 330,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:ReportToSession",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:ReportToSession",
+      "phase": "execute",
+      "span": {
+        "startLine": 345,
+        "startColumn": 1,
+        "endLine": 364,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision:rpc:CompleteSessionWorkspace:135:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:CompleteSessionWorkspace",
+      "condition": "admission.Closed",
+      "phase": "rpc",
+      "span": {
+        "startLine": 135,
+        "startColumn": 10,
+        "endLine": 135,
+        "endColumn": 44
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:CompleteSessionWorkspace",
+      "condition": "!(admission.Closed)",
+      "phase": "rpc",
+      "span": {
+        "startLine": 139,
+        "startColumn": 9,
+        "endLine": 140,
+        "endColumn": 187
+      },
+      "decision": {
+        "type": "rpcResult",
+        "cancellations": [
+          {
+            "stepId": "step:AwaitWorkspaceCommand",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:ProvisionInstance",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:AwaitProvisioningOutcome",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:ReclaimInstance",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:RecordProvisionFailure",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:RecordReclaimFailure",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:ReportToSession",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:RecordReportFailure",
+            "scope": "all"
+          }
+        ]
+      }
+    },
+    {
+      "id": "decision:rpc:GetDexDisplay:125:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetDexDisplay",
+      "phase": "rpc",
+      "span": {
+        "startLine": 125,
+        "startColumn": 9,
+        "endLine": 127,
+        "endColumn": 4
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:GetDexSummary:117:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetDexSummary",
+      "phase": "rpc",
+      "span": {
+        "startLine": 117,
+        "startColumn": 9,
+        "endLine": 117,
+        "endColumn": 65
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:GetSessionWorkspace:112:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetSessionWorkspace",
+      "phase": "rpc",
+      "span": {
+        "startLine": 112,
+        "startColumn": 9,
+        "endLine": 112,
+        "endColumn": 51
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:ReportProvisionOutcome:104:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:ReportProvisionOutcome",
+      "condition": "!(instance.InstanceID != report.WorkspaceRequestID)",
+      "phase": "rpc",
+      "span": {
+        "startLine": 104,
+        "startColumn": 9,
+        "endLine": 104,
+        "endColumn": 43
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:ReportProvisionOutcome:99:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:ReportProvisionOutcome",
+      "condition": "instance.InstanceID != report.WorkspaceRequestID",
+      "phase": "rpc",
+      "span": {
+        "startLine": 99,
+        "startColumn": 10,
+        "endLine": 99,
+        "endColumn": 45
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:SubmitWorkspaceCommand:91:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:SubmitWorkspaceCommand",
+      "phase": "rpc",
+      "span": {
+        "startLine": 91,
+        "startColumn": 9,
+        "endLine": 91,
+        "endColumn": 107
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:step:AwaitProvisioningOutcome:237:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:AwaitProvisioningOutcome",
+      "condition": "provisioning == nil",
+      "phase": "execute",
+      "span": {
+        "startLine": 237,
+        "startColumn": 10,
+        "endLine": 237,
+        "endColumn": 50
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:AwaitProvisioningOutcome:246:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:AwaitProvisioningOutcome",
+      "condition": "!(provisioning == nil)",
+      "phase": "execute",
+      "span": {
+        "startLine": 246,
+        "startColumn": 9,
+        "endLine": 246,
+        "endColumn": 42
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:AwaitWorkspaceCommand:171:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:AwaitWorkspaceCommand",
+      "condition": "default",
+      "phase": "execute",
+      "span": {
+        "startLine": 171,
+        "startColumn": 10,
+        "endLine": 171,
+        "endColumn": 43
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:AwaitWorkspaceCommand:175:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:AwaitWorkspaceCommand",
+      "condition": "reclaims",
+      "phase": "execute",
+      "span": {
+        "startLine": 175,
+        "startColumn": 10,
+        "endLine": 175,
+        "endColumn": 43
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:AwaitWorkspaceCommand:177:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:AwaitWorkspaceCommand",
+      "condition": "!(reclaims)",
+      "phase": "execute",
+      "span": {
+        "startLine": 177,
+        "startColumn": 9,
+        "endLine": 177,
+        "endColumn": 44
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:CompleteSessionWorkspace:393:9",
+      "kind": "decision",
+      "name": "gracefulComplete",
+      "parentId": "step:CompleteSessionWorkspace",
+      "phase": "execute",
+      "span": {
+        "startLine": 393,
+        "startColumn": 9,
+        "endLine": 393,
+        "endColumn": 89
+      },
+      "decision": {
+        "type": "gracefulComplete"
+      }
+    },
+    {
+      "id": "decision:step:ProvisionInstance:199:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ProvisionInstance",
+      "condition": "errors.Is(err, ErrWorkspaceStartRejected)",
+      "phase": "execute",
+      "span": {
+        "startLine": 199,
+        "startColumn": 10,
+        "endLine": 199,
+        "endColumn": 50
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ProvisionInstance:204:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ProvisionInstance",
+      "condition": "!(errors.Is(err, ErrWorkspaceStartRejected))",
+      "phase": "execute",
+      "span": {
+        "startLine": 204,
+        "startColumn": 9,
+        "endLine": 204,
+        "endColumn": 51
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ReclaimInstance:267:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ReclaimInstance",
+      "condition": "errors.Is(err, ErrRefused)",
+      "phase": "execute",
+      "span": {
+        "startLine": 267,
+        "startColumn": 10,
+        "endLine": 267,
+        "endColumn": 48
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ReclaimInstance:277:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ReclaimInstance",
+      "condition": "!(errors.Is(err, ErrRefused)) and task.Command.Kind == CommandProvision",
+      "phase": "execute",
+      "span": {
+        "startLine": 277,
+        "startColumn": 10,
+        "endLine": 277,
+        "endColumn": 45
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ReclaimInstance:282:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ReclaimInstance",
+      "condition": "!(errors.Is(err, ErrRefused)) and !(task.Command.Kind == CommandProvision)",
+      "phase": "execute",
+      "span": {
+        "startLine": 282,
+        "startColumn": 9,
+        "endLine": 282,
+        "endColumn": 42
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RecordProvisionFailure:304:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RecordProvisionFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 304,
+        "startColumn": 9,
+        "endLine": 304,
+        "endColumn": 42
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RecordReclaimFailure:325:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RecordReclaimFailure",
+      "condition": "task.Command.Kind != CommandProvision",
+      "phase": "execute",
+      "span": {
+        "startLine": 325,
+        "startColumn": 10,
+        "endLine": 325,
+        "endColumn": 48
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RecordReclaimFailure:329:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RecordReclaimFailure",
+      "condition": "!(task.Command.Kind != CommandProvision)",
+      "phase": "execute",
+      "span": {
+        "startLine": 329,
+        "startColumn": 9,
+        "endLine": 329,
+        "endColumn": 42
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RecordReportFailure:378:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RecordReportFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 378,
+        "startColumn": 9,
+        "endLine": 378,
+        "endColumn": 47
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ReportToSession:358:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ReportToSession",
+      "condition": "admitted || outcome.Kind == OutcomeReclaimed || instance.InstanceID != outcome.WorkspaceRequestID || !instance.needsReclaim()",
+      "phase": "execute",
+      "span": {
+        "startLine": 358,
+        "startColumn": 10,
+        "endLine": 358,
+        "endColumn": 48
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ReportToSession:363:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ReportToSession",
+      "condition": "!(admitted || outcome.Kind == OutcomeReclaimed || instance.InstanceID != outcome.WorkspaceRequestID || !instance.needsReclaim())",
+      "phase": "execute",
+      "span": {
+        "startLine": 363,
+        "startColumn": 9,
+        "endLine": 363,
+        "endColumn": 49
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "resource:attribute:InstanceAttribute",
+      "kind": "attribute",
+      "name": "Instance",
+      "span": {
+        "startLine": 19,
+        "startColumn": 2,
+        "endLine": 19,
+        "endColumn": 64
+      },
+      "resource": {
+        "valueType": "Instance"
+      }
+    },
+    {
+      "id": "resource:attribute:OutcomeAttribute",
+      "kind": "attribute",
+      "name": "Outcome",
+      "span": {
+        "startLine": 20,
+        "startColumn": 2,
+        "endLine": 20,
+        "endColumn": 62
+      },
+      "resource": {
+        "valueType": "Outcome"
+      }
+    },
+    {
+      "id": "resource:attribute:admissionAttribute",
+      "kind": "attribute",
+      "name": "Admission",
+      "span": {
+        "startLine": 21,
+        "startColumn": 2,
+        "endLine": 21,
+        "endColumn": 66
+      },
+      "resource": {
+        "valueType": "Admission"
+      }
+    },
+    {
+      "id": "resource:attribute:projectIDAttribute",
+      "kind": "attribute",
+      "name": "ProjectID",
+      "span": {
+        "startLine": 18,
+        "startColumn": 2,
+        "endLine": 18,
+        "endColumn": 63
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:channel:provisionOutcomesChannel",
+      "kind": "channel",
+      "name": "ProvisionOutcomes",
+      "span": {
+        "startLine": 24,
+        "startColumn": 2,
+        "endLine": 24,
+        "endColumn": 87
+      },
+      "resource": {
+        "valueType": "ProvisionReport",
+        "map": true
+      }
+    },
+    {
+      "id": "resource:channel:workspaceCommandsChannel",
+      "kind": "channel",
+      "name": "WorkspaceCommands",
+      "span": {
+        "startLine": 23,
+        "startColumn": 2,
+        "endLine": 23,
+        "endColumn": 85
+      },
+      "resource": {
+        "valueType": "WorkspaceCommand"
+      }
+    },
+    {
+      "id": "rpc:CompleteSessionWorkspace",
+      "kind": "rpc",
+      "name": "CompleteSessionWorkspace",
+      "span": {
+        "startLine": 132,
+        "startColumn": 1,
+        "endLine": 141,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:GetDexDisplay",
+      "kind": "rpc",
+      "name": "GetDexDisplay",
+      "span": {
+        "startLine": 124,
+        "startColumn": 1,
+        "endLine": 128,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:GetDexSummary",
+      "kind": "rpc",
+      "name": "GetDexSummary",
+      "span": {
+        "startLine": 116,
+        "startColumn": 1,
+        "endLine": 118,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:GetSessionWorkspace",
+      "kind": "rpc",
+      "name": "GetSessionWorkspace",
+      "span": {
+        "startLine": 109,
+        "startColumn": 1,
+        "endLine": 113,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:ReportProvisionOutcome",
+      "kind": "rpc",
+      "name": "ReportProvisionOutcome",
+      "span": {
+        "startLine": 96,
+        "startColumn": 1,
+        "endLine": 105,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:SubmitWorkspaceCommand",
+      "kind": "rpc",
+      "name": "SubmitWorkspaceCommand",
+      "span": {
+        "startLine": 80,
+        "startColumn": 1,
+        "endLine": 92,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "step:AwaitProvisioningOutcome",
+      "kind": "step",
+      "name": "AwaitProvisioningOutcome",
+      "phase": "wait_for+execute",
+      "span": {
+        "startLine": 38,
+        "startColumn": 96,
+        "endLine": 38,
+        "endColumn": 148
+      },
+      "metadata": {
+        "explanation": "Wait, bounded, for the provisioning's report, then read its outcome from the provisioning and record the instance ready or failed."
+      }
+    },
+    {
+      "id": "step:AwaitWorkspaceCommand",
+      "kind": "step",
+      "name": "AwaitWorkspaceCommand",
+      "phase": "wait_for+execute",
+      "start": true,
+      "span": {
+        "startLine": 38,
+        "startColumn": 3,
+        "endLine": 38,
+        "endColumn": 47
+      },
+      "metadata": {
+        "explanation": "Wait for the next command of the Session, then record which instance it provisions or reclaims; a provisioning first reclaims an instance whose Pod may still run."
+      }
+    },
+    {
+      "id": "step:CompleteSessionWorkspace",
+      "kind": "step",
+      "name": "CompleteSessionWorkspace",
+      "phase": "execute",
+      "span": {
+        "startLine": 40,
+        "startColumn": 87,
+        "endLine": 40,
+        "endColumn": 129
+      },
+      "metadata": {
+        "explanation": "Complete the workspace of a deleting Project, discarding pending commands; the deletion releases the instance's resources by label."
+      }
+    },
+    {
+      "id": "step:ProvisionInstance",
+      "kind": "step",
+      "name": "ProvisionInstance",
+      "phase": "execute",
+      "span": {
+        "startLine": 38,
+        "startColumn": 49,
+        "endLine": 38,
+        "endColumn": 94
+      },
+      "metadata": {
+        "explanation": "Start the SandboxProvisionFlow of the request's instance on the volume earlier instances left."
+      }
+    },
+    {
+      "id": "step:ReclaimInstance",
+      "kind": "step",
+      "name": "ReclaimInstance",
+      "phase": "execute",
+      "span": {
+        "startLine": 39,
+        "startColumn": 3,
+        "endLine": 39,
+        "endColumn": 46
+      },
+      "metadata": {
+        "explanation": "Wait for a provisioning that may still run, have a Preview that holds the instance release it, stop the Preview engine, record the workspace and delete the Pod, keeping the volume; then provision the request that waited for it."
+      }
+    },
+    {
+      "id": "step:RecordProvisionFailure",
+      "kind": "step",
+      "name": "RecordProvisionFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 39,
+        "startColumn": 48,
+        "endLine": 39,
+        "endColumn": 88
+      },
+      "metadata": {
+        "explanation": "Record a request whose provisioning was rejected, exhausted its retries or reported nothing in time, keeping the instance provisioning, and report the failure."
+      }
+    },
+    {
+      "id": "step:RecordReclaimFailure",
+      "kind": "step",
+      "name": "RecordReclaimFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 39,
+        "startColumn": 90,
+        "endLine": 39,
+        "endColumn": 128
+      },
+      "metadata": {
+        "explanation": "Record a reclamation that did not finish, keeping the instance's resources, and fail the request that waited for the volume."
+      }
+    },
+    {
+      "id": "step:RecordReportFailure",
+      "kind": "step",
+      "name": "RecordReportFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 40,
+        "startColumn": 48,
+        "endLine": 40,
+        "endColumn": 85
+      },
+      "metadata": {
+        "explanation": "Record a report whose retries ran out as undelivered and wait for the next command; the Session reads the outcome once its own wait ends."
+      }
+    },
+    {
+      "id": "step:ReportToSession",
+      "kind": "step",
+      "name": "ReportToSession",
+      "phase": "execute",
+      "span": {
+        "startLine": 40,
+        "startColumn": 3,
+        "endLine": 40,
+        "endColumn": 46
+      },
+      "metadata": {
+        "explanation": "Report the outcome to the Session and record its answer; an instance the Session declined is reclaimed, and an undelivered report waits for the Session's own bounded wait."
+      }
+    },
+    {
+      "id": "wait:AwaitProvisioningOutcome:221:9",
+      "kind": "wait",
+      "name": "anyOf",
+      "parentId": "step:AwaitProvisioningOutcome",
+      "phase": "wait_for",
+      "span": {
+        "startLine": 221,
+        "startColumn": 9,
+        "endLine": 221,
+        "endColumn": 119
+      },
+      "wait": {
+        "type": "anyOf",
+        "conditions": [
+          {
+            "index": 0,
+            "kind": "channel",
+            "label": "ProvisionOutcomes[task.Command.WorkspaceRequestID].for 1",
+            "resourceId": "resource:channel:provisionOutcomesChannel",
+            "expression": "task.Command.WorkspaceRequestID",
+            "span": {
+              "startLine": 221,
+              "startColumn": 19,
+              "endLine": 221,
+              "endColumn": 83
+            }
+          },
+          {
+            "index": 1,
+            "kind": "timer",
+            "label": "provisioningWaitBudget timer",
+            "expression": "provisioningWaitBudget",
+            "span": {
+              "startLine": 221,
+              "startColumn": 85,
+              "endLine": 221,
+              "endColumn": 118
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "wait:AwaitWorkspaceCommand:152:9",
+      "kind": "wait",
+      "name": "until",
+      "parentId": "step:AwaitWorkspaceCommand",
+      "phase": "wait_for",
+      "span": {
+        "startLine": 152,
+        "startColumn": 9,
+        "endLine": 152,
+        "endColumn": 53
+      },
+      "wait": {
+        "type": "until",
+        "conditions": [
+          {
+            "index": 0,
+            "kind": "channel",
+            "label": "WorkspaceCommands.for 1",
+            "resourceId": "resource:channel:workspaceCommandsChannel",
+            "span": {
+              "startLine": 152,
+              "startColumn": 19,
+              "endLine": 152,
+              "endColumn": 52
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:0001",
+      "kind": "cancel",
+      "from": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "to": "step:AwaitProvisioningOutcome",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 140,
+        "startColumn": 49,
+        "endLine": 140,
+        "endColumn": 75
+      }
+    },
+    {
+      "id": "edge:0002",
+      "kind": "cancel",
+      "from": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "to": "step:AwaitWorkspaceCommand",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 140,
+        "startColumn": 3,
+        "endLine": 140,
+        "endColumn": 26
+      }
+    },
+    {
+      "id": "edge:0003",
+      "kind": "transition",
+      "from": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "to": "step:CompleteSessionWorkspace",
+      "label": "fan-out",
+      "span": {
+        "startLine": 139,
+        "startColumn": 75,
+        "endLine": 139,
+        "endColumn": 122
+      }
+    },
+    {
+      "id": "edge:0004",
+      "kind": "cancel",
+      "from": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "to": "step:ProvisionInstance",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 140,
+        "startColumn": 28,
+        "endLine": 140,
+        "endColumn": 47
+      }
+    },
+    {
+      "id": "edge:0005",
+      "kind": "cancel",
+      "from": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "to": "step:ReclaimInstance",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 140,
+        "startColumn": 77,
+        "endLine": 140,
+        "endColumn": 94
+      }
+    },
+    {
+      "id": "edge:0006",
+      "kind": "cancel",
+      "from": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "to": "step:RecordProvisionFailure",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 140,
+        "startColumn": 96,
+        "endLine": 140,
+        "endColumn": 120
+      }
+    },
+    {
+      "id": "edge:0007",
+      "kind": "cancel",
+      "from": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "to": "step:RecordReclaimFailure",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 140,
+        "startColumn": 122,
+        "endLine": 140,
+        "endColumn": 144
+      }
+    },
+    {
+      "id": "edge:0008",
+      "kind": "cancel",
+      "from": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "to": "step:RecordReportFailure",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 140,
+        "startColumn": 165,
+        "endLine": 140,
+        "endColumn": 186
+      }
+    },
+    {
+      "id": "edge:0009",
+      "kind": "cancel",
+      "from": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "to": "step:ReportToSession",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 140,
+        "startColumn": 146,
+        "endLine": 140,
+        "endColumn": 163
+      }
+    },
+    {
+      "id": "edge:0010",
+      "kind": "transition",
+      "from": "decision:step:AwaitProvisioningOutcome:237:10",
+      "to": "step:RecordProvisionFailure",
+      "label": "GoTo",
+      "span": {
+        "startLine": 237,
+        "startColumn": 10,
+        "endLine": 237,
+        "endColumn": 50
+      }
+    },
+    {
+      "id": "edge:0011",
+      "kind": "transition",
+      "from": "decision:step:AwaitProvisioningOutcome:246:9",
+      "to": "step:ReportToSession",
+      "label": "GoTo",
+      "span": {
+        "startLine": 246,
+        "startColumn": 9,
+        "endLine": 246,
+        "endColumn": 42
+      }
+    },
+    {
+      "id": "edge:0012",
+      "kind": "transition",
+      "from": "decision:step:AwaitWorkspaceCommand:171:10",
+      "to": "step:ReportToSession",
+      "label": "GoTo",
+      "span": {
+        "startLine": 171,
+        "startColumn": 10,
+        "endLine": 171,
+        "endColumn": 43
+      }
+    },
+    {
+      "id": "edge:0013",
+      "kind": "transition",
+      "from": "decision:step:AwaitWorkspaceCommand:175:10",
+      "to": "step:ReclaimInstance",
+      "label": "GoTo",
+      "span": {
+        "startLine": 175,
+        "startColumn": 10,
+        "endLine": 175,
+        "endColumn": 43
+      }
+    },
+    {
+      "id": "edge:0014",
+      "kind": "transition",
+      "from": "decision:step:AwaitWorkspaceCommand:177:9",
+      "to": "step:ProvisionInstance",
+      "label": "GoTo",
+      "span": {
+        "startLine": 177,
+        "startColumn": 9,
+        "endLine": 177,
+        "endColumn": 44
+      }
+    },
+    {
+      "id": "edge:0015",
+      "kind": "transition",
+      "from": "decision:step:ProvisionInstance:199:10",
+      "to": "step:RecordProvisionFailure",
+      "label": "GoTo",
+      "span": {
+        "startLine": 199,
+        "startColumn": 10,
+        "endLine": 199,
+        "endColumn": 50
+      }
+    },
+    {
+      "id": "edge:0016",
+      "kind": "transition",
+      "from": "decision:step:ProvisionInstance:204:9",
+      "to": "step:AwaitProvisioningOutcome",
+      "label": "GoTo",
+      "span": {
+        "startLine": 204,
+        "startColumn": 9,
+        "endLine": 204,
+        "endColumn": 51
+      }
+    },
+    {
+      "id": "edge:0017",
+      "kind": "transition",
+      "from": "decision:step:ReclaimInstance:267:10",
+      "to": "step:RecordReclaimFailure",
+      "label": "GoTo",
+      "span": {
+        "startLine": 267,
+        "startColumn": 10,
+        "endLine": 267,
+        "endColumn": 48
+      }
+    },
+    {
+      "id": "edge:0018",
+      "kind": "transition",
+      "from": "decision:step:ReclaimInstance:277:10",
+      "to": "step:ProvisionInstance",
+      "label": "GoTo",
+      "span": {
+        "startLine": 277,
+        "startColumn": 10,
+        "endLine": 277,
+        "endColumn": 45
+      }
+    },
+    {
+      "id": "edge:0019",
+      "kind": "transition",
+      "from": "decision:step:ReclaimInstance:282:9",
+      "to": "step:ReportToSession",
+      "label": "GoTo",
+      "span": {
+        "startLine": 282,
+        "startColumn": 9,
+        "endLine": 282,
+        "endColumn": 42
+      }
+    },
+    {
+      "id": "edge:0020",
+      "kind": "transition",
+      "from": "decision:step:RecordProvisionFailure:304:9",
+      "to": "step:ReportToSession",
+      "label": "GoTo",
+      "span": {
+        "startLine": 304,
+        "startColumn": 9,
+        "endLine": 304,
+        "endColumn": 42
+      }
+    },
+    {
+      "id": "edge:0021",
+      "kind": "transition",
+      "from": "decision:step:RecordReclaimFailure:325:10",
+      "to": "step:AwaitWorkspaceCommand",
+      "label": "GoTo",
+      "span": {
+        "startLine": 325,
+        "startColumn": 10,
+        "endLine": 325,
+        "endColumn": 48
+      }
+    },
+    {
+      "id": "edge:0022",
+      "kind": "transition",
+      "from": "decision:step:RecordReclaimFailure:329:9",
+      "to": "step:ReportToSession",
+      "label": "GoTo",
+      "span": {
+        "startLine": 329,
+        "startColumn": 9,
+        "endLine": 329,
+        "endColumn": 42
+      }
+    },
+    {
+      "id": "edge:0023",
+      "kind": "transition",
+      "from": "decision:step:RecordReportFailure:378:9",
+      "to": "step:AwaitWorkspaceCommand",
+      "label": "GoTo",
+      "span": {
+        "startLine": 378,
+        "startColumn": 9,
+        "endLine": 378,
+        "endColumn": 47
+      }
+    },
+    {
+      "id": "edge:0024",
+      "kind": "transition",
+      "from": "decision:step:ReportToSession:358:10",
+      "to": "step:AwaitWorkspaceCommand",
+      "label": "GoTo",
+      "span": {
+        "startLine": 358,
+        "startColumn": 10,
+        "endLine": 358,
+        "endColumn": 48
+      }
+    },
+    {
+      "id": "edge:0025",
+      "kind": "transition",
+      "from": "decision:step:ReportToSession:363:9",
+      "to": "step:ReclaimInstance",
+      "label": "GoTo",
+      "span": {
+        "startLine": 363,
+        "startColumn": 9,
+        "endLine": 363,
+        "endColumn": 49
+      }
+    },
+    {
+      "id": "edge:0026",
+      "kind": "resource_read",
+      "from": "resource:attribute:InstanceAttribute",
+      "to": "rpc:GetDexDisplay",
+      "label": "Get",
+      "span": {
+        "startLine": 126,
+        "startColumn": 25,
+        "endLine": 126,
+        "endColumn": 51
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0027",
+      "kind": "resource_read",
+      "from": "resource:attribute:InstanceAttribute",
+      "to": "rpc:GetSessionWorkspace",
+      "label": "Get",
+      "span": {
+        "startLine": 110,
+        "startColumn": 94,
+        "endLine": 110,
+        "endColumn": 120
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0028",
+      "kind": "resource_read",
+      "from": "resource:attribute:InstanceAttribute",
+      "to": "rpc:ReportProvisionOutcome",
+      "label": "Get",
+      "span": {
+        "startLine": 97,
+        "startColumn": 24,
+        "endLine": 97,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0029",
+      "kind": "resource_read",
+      "from": "resource:attribute:InstanceAttribute",
+      "to": "step:AwaitProvisioningOutcome",
+      "label": "Get",
+      "span": {
+        "startLine": 227,
+        "startColumn": 24,
+        "endLine": 227,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0030",
+      "kind": "resource_read",
+      "from": "resource:attribute:InstanceAttribute",
+      "to": "step:AwaitWorkspaceCommand",
+      "label": "Get",
+      "span": {
+        "startLine": 159,
+        "startColumn": 29,
+        "endLine": 159,
+        "endColumn": 55
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0031",
+      "kind": "resource_read",
+      "from": "resource:attribute:InstanceAttribute",
+      "to": "step:ProvisionInstance",
+      "label": "Get",
+      "span": {
+        "startLine": 194,
+        "startColumn": 24,
+        "endLine": 194,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0032",
+      "kind": "resource_read",
+      "from": "resource:attribute:InstanceAttribute",
+      "to": "step:ReclaimInstance",
+      "label": "Get",
+      "span": {
+        "startLine": 263,
+        "startColumn": 24,
+        "endLine": 263,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0033",
+      "kind": "resource_read",
+      "from": "resource:attribute:InstanceAttribute",
+      "to": "step:RecordProvisionFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 296,
+        "startColumn": 24,
+        "endLine": 296,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0034",
+      "kind": "resource_read",
+      "from": "resource:attribute:InstanceAttribute",
+      "to": "step:RecordReclaimFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 318,
+        "startColumn": 32,
+        "endLine": 318,
+        "endColumn": 58
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0035",
+      "kind": "resource_read",
+      "from": "resource:attribute:InstanceAttribute",
+      "to": "step:ReportToSession",
+      "label": "Get",
+      "span": {
+        "startLine": 356,
+        "startColumn": 24,
+        "endLine": 356,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0036",
+      "kind": "resource_read",
+      "from": "resource:attribute:OutcomeAttribute",
+      "to": "rpc:GetDexDisplay",
+      "label": "Get",
+      "span": {
+        "startLine": 126,
+        "startColumn": 87,
+        "endLine": 126,
+        "endColumn": 112
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0037",
+      "kind": "resource_read",
+      "from": "resource:attribute:OutcomeAttribute",
+      "to": "rpc:GetSessionWorkspace",
+      "label": "Get",
+      "span": {
+        "startLine": 111,
+        "startColumn": 34,
+        "endLine": 111,
+        "endColumn": 59
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0038",
+      "kind": "resource_read",
+      "from": "resource:attribute:admissionAttribute",
+      "to": "rpc:CompleteSessionWorkspace",
+      "label": "Get",
+      "span": {
+        "startLine": 133,
+        "startColumn": 35,
+        "endLine": 133,
+        "endColumn": 62
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0039",
+      "kind": "resource_read",
+      "from": "resource:attribute:admissionAttribute",
+      "to": "rpc:GetSessionWorkspace",
+      "label": "Get",
+      "span": {
+        "startLine": 111,
+        "startColumn": 90,
+        "endLine": 111,
+        "endColumn": 117
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0040",
+      "kind": "resource_read",
+      "from": "resource:attribute:admissionAttribute",
+      "to": "rpc:SubmitWorkspaceCommand",
+      "label": "Get",
+      "span": {
+        "startLine": 84,
+        "startColumn": 35,
+        "endLine": 84,
+        "endColumn": 62
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0041",
+      "kind": "resource_read",
+      "from": "resource:attribute:projectIDAttribute",
+      "to": "rpc:GetSessionWorkspace",
+      "label": "Get",
+      "span": {
+        "startLine": 110,
+        "startColumn": 44,
+        "endLine": 110,
+        "endColumn": 71
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0042",
+      "kind": "resource_read",
+      "from": "resource:attribute:projectIDAttribute",
+      "to": "step:AwaitProvisioningOutcome",
+      "label": "Get",
+      "span": {
+        "startLine": 228,
+        "startColumn": 79,
+        "endLine": 228,
+        "endColumn": 106
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0043",
+      "kind": "resource_read",
+      "from": "resource:attribute:projectIDAttribute",
+      "to": "step:CompleteSessionWorkspace",
+      "label": "Get",
+      "span": {
+        "startLine": 393,
+        "startColumn": 59,
+        "endLine": 393,
+        "endColumn": 86
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0044",
+      "kind": "resource_read",
+      "from": "resource:attribute:projectIDAttribute",
+      "to": "step:ProvisionInstance",
+      "label": "Get",
+      "span": {
+        "startLine": 196,
+        "startColumn": 63,
+        "endLine": 196,
+        "endColumn": 90
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0045",
+      "kind": "resource_read",
+      "from": "resource:attribute:projectIDAttribute",
+      "to": "step:ReclaimInstance",
+      "label": "Get",
+      "span": {
+        "startLine": 264,
+        "startColumn": 74,
+        "endLine": 264,
+        "endColumn": 101
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0046",
+      "kind": "resource_read",
+      "from": "resource:attribute:projectIDAttribute",
+      "to": "step:ReportToSession",
+      "label": "Get",
+      "span": {
+        "startLine": 346,
+        "startColumn": 78,
+        "endLine": 346,
+        "endColumn": 105
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0047",
+      "kind": "resource_read",
+      "from": "resource:channel:provisionOutcomesChannel",
+      "to": "rpc:ReportProvisionOutcome",
+      "label": "Size",
+      "span": {
+        "startLine": 101,
+        "startColumn": 47,
+        "endLine": 101,
+        "endColumn": 108
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0048",
+      "kind": "wait_condition",
+      "from": "resource:channel:provisionOutcomesChannel",
+      "to": "wait:AwaitProvisioningOutcome:221:9",
+      "label": "ProvisionOutcomes[task.Command.WorkspaceRequestID].for 1",
+      "span": {
+        "startLine": 221,
+        "startColumn": 19,
+        "endLine": 221,
+        "endColumn": 83
+      },
+      "metadata": {
+        "conditionIndex": 0
+      }
+    },
+    {
+      "id": "edge:0049",
+      "kind": "resource_read",
+      "from": "resource:channel:workspaceCommandsChannel",
+      "to": "step:AwaitWorkspaceCommand",
+      "label": "GetConditionResults",
+      "span": {
+        "startLine": 158,
+        "startColumn": 43,
+        "endLine": 158,
+        "endColumn": 92
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0050",
+      "kind": "resource_read",
+      "from": "resource:channel:workspaceCommandsChannel",
+      "to": "step:CompleteSessionWorkspace",
+      "label": "PendingMessages",
+      "span": {
+        "startLine": 390,
+        "startColumn": 36,
+        "endLine": 390,
+        "endColumn": 81
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0051",
+      "kind": "wait_condition",
+      "from": "resource:channel:workspaceCommandsChannel",
+      "to": "wait:AwaitWorkspaceCommand:152:9",
+      "label": "WorkspaceCommands.for 1",
+      "span": {
+        "startLine": 152,
+        "startColumn": 19,
+        "endLine": 152,
+        "endColumn": 52
+      },
+      "metadata": {
+        "conditionIndex": 0
+      }
+    },
+    {
+      "id": "edge:0052",
+      "kind": "resource_write",
+      "from": "rpc:CompleteSessionWorkspace",
+      "to": "resource:attribute:admissionAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 138,
+        "startColumn": 14,
+        "endLine": 138,
+        "endColumn": 52
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0053",
+      "kind": "resource_publish",
+      "from": "rpc:ReportProvisionOutcome",
+      "to": "resource:channel:provisionOutcomesChannel",
+      "label": "Publish",
+      "span": {
+        "startLine": 102,
+        "startColumn": 15,
+        "endLine": 102,
+        "endColumn": 87
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0054",
+      "kind": "resource_write",
+      "from": "rpc:SubmitWorkspaceCommand",
+      "to": "resource:attribute:admissionAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 88,
+        "startColumn": 15,
+        "endLine": 88,
+        "endColumn": 53
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0055",
+      "kind": "resource_publish",
+      "from": "rpc:SubmitWorkspaceCommand",
+      "to": "resource:channel:workspaceCommandsChannel",
+      "label": "Publish",
+      "span": {
+        "startLine": 89,
+        "startColumn": 15,
+        "endLine": 89,
+        "endColumn": 61
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0056",
+      "kind": "resource_write",
+      "from": "step:AwaitProvisioningOutcome",
+      "to": "resource:attribute:InstanceAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 240,
+        "startColumn": 14,
+        "endLine": 240,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0057",
+      "kind": "resource_write",
+      "from": "step:AwaitProvisioningOutcome",
+      "to": "resource:attribute:OutcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 245,
+        "startColumn": 14,
+        "endLine": 245,
+        "endColumn": 54
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0058",
+      "kind": "failure_transition",
+      "from": "step:AwaitProvisioningOutcome",
+      "to": "step:RecordProvisionFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 215,
+        "startColumn": 37,
+        "endLine": 215,
+        "endColumn": 97
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0059",
+      "kind": "resource_write",
+      "from": "step:AwaitWorkspaceCommand",
+      "to": "resource:attribute:InstanceAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 173,
+        "startColumn": 14,
+        "endLine": 173,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0060",
+      "kind": "resource_write",
+      "from": "step:AwaitWorkspaceCommand",
+      "to": "resource:attribute:OutcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 170,
+        "startColumn": 15,
+        "endLine": 170,
+        "endColumn": 55
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0061",
+      "kind": "resource_write",
+      "from": "step:CompleteSessionWorkspace",
+      "to": "resource:channel:workspaceCommandsChannel",
+      "label": "Delete",
+      "span": {
+        "startLine": 391,
+        "startColumn": 15,
+        "endLine": 391,
+        "endColumn": 70
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0062",
+      "kind": "failure_transition",
+      "from": "step:ProvisionInstance",
+      "to": "step:RecordProvisionFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 188,
+        "startColumn": 37,
+        "endLine": 188,
+        "endColumn": 97
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0063",
+      "kind": "resource_write",
+      "from": "step:ReclaimInstance",
+      "to": "resource:attribute:InstanceAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 276,
+        "startColumn": 15,
+        "endLine": 276,
+        "endColumn": 51
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0064",
+      "kind": "resource_write",
+      "from": "step:ReclaimInstance",
+      "to": "resource:attribute:OutcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 281,
+        "startColumn": 14,
+        "endLine": 281,
+        "endColumn": 54
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0065",
+      "kind": "failure_transition",
+      "from": "step:ReclaimInstance",
+      "to": "step:RecordReclaimFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 257,
+        "startColumn": 51,
+        "endLine": 257,
+        "endColumn": 109
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0066",
+      "kind": "resource_write",
+      "from": "step:RecordProvisionFailure",
+      "to": "resource:attribute:InstanceAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 301,
+        "startColumn": 14,
+        "endLine": 301,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0067",
+      "kind": "resource_write",
+      "from": "step:RecordProvisionFailure",
+      "to": "resource:attribute:OutcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 303,
+        "startColumn": 14,
+        "endLine": 303,
+        "endColumn": 54
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0068",
+      "kind": "resource_write",
+      "from": "step:RecordReclaimFailure",
+      "to": "resource:attribute:InstanceAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 323,
+        "startColumn": 14,
+        "endLine": 323,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0069",
+      "kind": "resource_write",
+      "from": "step:RecordReclaimFailure",
+      "to": "resource:attribute:OutcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 328,
+        "startColumn": 14,
+        "endLine": 328,
+        "endColumn": 54
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0070",
+      "kind": "resource_write",
+      "from": "step:RecordReportFailure",
+      "to": "resource:attribute:OutcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 377,
+        "startColumn": 14,
+        "endLine": 377,
+        "endColumn": 48
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0071",
+      "kind": "resource_write",
+      "from": "step:ReportToSession",
+      "to": "resource:attribute:InstanceAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 362,
+        "startColumn": 14,
+        "endLine": 362,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0072",
+      "kind": "resource_write",
+      "from": "step:ReportToSession",
+      "to": "resource:attribute:OutcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 355,
+        "startColumn": 14,
+        "endLine": 355,
+        "endColumn": 48
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0073",
+      "kind": "failure_transition",
+      "from": "step:ReportToSession",
+      "to": "step:RecordReportFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 340,
+        "startColumn": 37,
+        "endLine": 340,
+        "endColumn": 94
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    }
+  ],
+  "diagnostics": [],
+  "groups": [
+    {
+      "id": "command",
+      "label": "Command",
+      "stepIds": [
+        "step:AwaitWorkspaceCommand",
+        "step:ReportToSession",
+        "step:RecordReportFailure",
+        "step:CompleteSessionWorkspace"
+      ]
+    },
+    {
+      "id": "provision",
+      "label": "Provision",
+      "stepIds": [
+        "step:ProvisionInstance",
+        "step:AwaitProvisioningOutcome",
+        "step:RecordProvisionFailure"
+      ]
+    },
+    {
+      "id": "reclaim",
+      "label": "Reclaim",
+      "stepIds": [
+        "step:ReclaimInstance",
+        "step:RecordReclaimFailure"
+      ]
+    }
+  ],
+  "v2": {
+    "indexedAttributes": [],
+    "summary": {
+      "rpcName": "GetDexSummary",
+      "fields": []
+    },
+    "display": {
+      "rpcName": "GetDexDisplay",
+      "fields": [
+        {
+          "attributeKey": "Instance",
+          "valueType": "json",
+          "editable": false,
+          "description": "The Session's current Sandbox instance"
+        },
+        {
+          "attributeKey": "Outcome",
+          "valueType": "json",
+          "editable": false,
+          "description": "Outcome of the last command and how the Session answered it"
+        }
+      ]
+    },
+    "actions": [],
+    "start": {
+      "stepType": "AwaitWorkspaceCommand",
+      "input": {
+        "kind": "null"
+      }
+    }
+  }
+}

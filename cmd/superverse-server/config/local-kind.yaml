@@ -1,0 +1,78 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# Local Kind: the base layer of every local profile. `sv2 kind deploy` renders
+# it into the server ConfigMap, adds the image digests it computes, and records
+# the file name and digest in the deployment inputs. Secrets are not here; see
+# README.md for the environment variables the server Secret carries.
+environment: test
+localKind: true
+
+remoteAgent:
+  maxConcurrentReads: 4
+  acceptDevBridge: true
+
+# The local Git host runs inside the server: the Sandbox, the host builder and the
+# end-to-end tests use the real git command against it, and no GitHub App is
+# needed. local-kind-acceptance.yaml switches to GitHub.
+repohost: localgit
+
+studio:
+  publicOrigin: http://localhost:23000
+
+agent:
+  # New Sessions run the mock model, which needs no Claude key; any account
+  # may switch a Session to a Claude model when the main checkout's .env holds
+  # ANTHROPIC_API_KEY. local-kind-acceptance.yaml starts them on a Claude model.
+  mockModel: true
+  model: mock
+  # A thinking block that no longer matches its conversation fails the request
+  # instead of being dropped, so a broken append-only rule is visible.
+  thinkingPrefixMismatch: error
+
+storage:
+  s3Endpoint: http://minio:9000
+  artifactBucket: superverse-v2-artifacts
+
+# The chart's local PostgreSQL, a Service in the platform namespace; the server
+# reaches it inside the cluster, so TLS adds nothing.
+postgres:
+  host: postgres
+  sslMode: disable
+
+# TeamSpace connections: Project namespaces and Sandboxes read credentials from
+# the server Service's credential-read port; provider calls may use plain http
+# to the chart's local OAuth server.
+connections:
+  readURL: http://superverse-v2-server.superverse-v2-system.svc.cluster.local:8086/internal/connection-credentials/read
+  allowInsecureOAuthEndpoints: true
+
+builds:
+  localURL: http://host.docker.internal:29792
+
+localgit:
+  # The Pod mounts the main checkout's .local/superverse-v2/git here (a hostPath
+  # of the Kind node).
+  dir: /var/lib/superverse/git
+  listen: 0.0.0.0:8085
+  # The git-http port of the server Service.
+  cloneBaseURL: http://superverse-v2-server.superverse-v2-system.svc.cluster.local:8085
+
+# Every application is served at <scope>-<project>.localhost:23080, which `kind ports`
+# forwards to the project Gateway's Envoy proxies; the server Pod probes a route through their Service.
+routes:
+  localPort: 23080
+  gatewayURL: http://projects-gateway.superverse-v2-gateway.svc.cluster.local:80
+
+aws:
+  region: us-east-1
+
+# A replaced Live generation is retired after 30 seconds, so the lanes observe
+# it; the hosted default is ten minutes (decision 0025).
+live:
+  retirementDrain: 30s

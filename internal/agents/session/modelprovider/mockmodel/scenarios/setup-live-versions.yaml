@@ -1,0 +1,61 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# Two versions whose declarations differ, for Setup · Live: the first input
+# declares the optional environment value SUMMARY_GREETING in dex-app.yaml and
+# pushes it, which the case publishes to Live; the second replaces it with
+# SUMMARY_TONE and pushes again. Live's next version then keeps the summary
+# connection, proposes SUMMARY_TONE from Preview and no longer uses
+# SUMMARY_GREETING. Each push runs the template's bootstrap first, as a
+# reclaimed workspace has no dependencies, and goes through the real commit gate.
+name: setup-live-versions
+title: "Declare, then replace, an environment value"
+description: "Pushes a version that declares SUMMARY_GREETING, then one that declares SUMMARY_TONE instead, so Live's next version keeps, adds and drops configuration items."
+category: project_feature
+inputs:
+  - label: "Declare a greeting"
+    message: "Declare an optional SUMMARY_GREETING environment value and push it."
+    replies:
+      - text: "Declaring SUMMARY_GREETING in dex-app.yaml."
+        tool_uses:
+          - name: edit
+            input:
+              path: dex-app.yaml
+              old_string: "\"healthPath\": \"/api/health\""
+              new_string: "\"healthPath\": \"/api/health\",\n    \"environment\": [{\"name\": \"SUMMARY_GREETING\", \"required\": false, \"secret\": false, \"minLength\": 0, \"enum\": []}]"
+      - text: "Restoring the application's dependencies, as the template's instructions say."
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap", description: "Restore the application's dependencies", timeout_seconds: 600}
+      - text: "Running the source checks and pushing the declaration."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Declare the SUMMARY_GREETING environment value"
+              verification:
+                - "dex-app.yaml declares SUMMARY_GREETING as an optional value"
+      - text: "SUMMARY_GREETING is declared and pushed."
+  - label: "Replace it with a tone"
+    message: "Replace SUMMARY_GREETING with an optional SUMMARY_TONE environment value and push it."
+    replies:
+      - text: "Replacing SUMMARY_GREETING with SUMMARY_TONE in dex-app.yaml."
+        tool_uses:
+          - name: edit
+            input: {path: dex-app.yaml, old_string: "\"SUMMARY_GREETING\"", new_string: "\"SUMMARY_TONE\""}
+      - text: "Restoring the application's dependencies, as the template's instructions say."
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap", description: "Restore the application's dependencies", timeout_seconds: 600}
+      - text: "Running the source checks and pushing the change."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Replace SUMMARY_GREETING with SUMMARY_TONE"
+              verification:
+                - "dex-app.yaml declares SUMMARY_TONE and no longer SUMMARY_GREETING"
+      - text: "SUMMARY_TONE replaces SUMMARY_GREETING and is pushed."

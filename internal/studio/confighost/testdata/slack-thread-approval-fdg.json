@@ -1,0 +1,906 @@
+{
+  "schemaVersion": "2.0",
+  "valid": true,
+  "source": {
+    "language": "go",
+    "path": "flow/workflow.go"
+  },
+  "flow": {
+    "name": "Flow",
+    "startStepId": "step:initializeThread",
+    "span": {
+      "startLine": 96,
+      "startColumn": 1,
+      "endLine": 135,
+      "endColumn": 2
+    }
+  },
+  "nodes": [
+    {
+      "id": "decision-dispatch:rpc:ReceiveThreadReply",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "rpc:ReceiveThreadReply",
+      "phase": "rpc",
+      "span": {
+        "startLine": 171,
+        "startColumn": 1,
+        "endLine": 202,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision:rpc:GetDexDisplay:232:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetDexDisplay",
+      "phase": "rpc",
+      "span": {
+        "startLine": 232,
+        "startColumn": 9,
+        "endLine": 235,
+        "endColumn": 4
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:GetDexSummary:219:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetDexSummary",
+      "phase": "rpc",
+      "span": {
+        "startLine": 219,
+        "startColumn": 9,
+        "endLine": 222,
+        "endColumn": 4
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:GetThreadStatus:209:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetThreadStatus",
+      "phase": "rpc",
+      "span": {
+        "startLine": 209,
+        "startColumn": 9,
+        "endLine": 209,
+        "endColumn": 51
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:ReceiveThreadReply:180:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:ReceiveThreadReply",
+      "condition": "state.ReplyEventID == input.EventID",
+      "phase": "rpc",
+      "span": {
+        "startLine": 180,
+        "startColumn": 10,
+        "endLine": 180,
+        "endColumn": 97
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:ReceiveThreadReply:188:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:ReceiveThreadReply",
+      "condition": "!(state.ReplyEventID == input.EventID) and state.Status != StatusWaitingForReply",
+      "phase": "rpc",
+      "span": {
+        "startLine": 188,
+        "startColumn": 10,
+        "endLine": 188,
+        "endColumn": 80
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:ReceiveThreadReply:196:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:ReceiveThreadReply",
+      "condition": "!(state.ReplyEventID == input.EventID) and !(state.Status != StatusWaitingForReply)",
+      "phase": "rpc",
+      "span": {
+        "startLine": 196,
+        "startColumn": 9,
+        "endLine": 201,
+        "endColumn": 3
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:step:PostSlackCompletion:optional:defect",
+      "kind": "decision",
+      "name": "forceFail",
+      "parentId": "step:PostSlackCompletion",
+      "condition": "defect",
+      "phase": "execute",
+      "decision": {
+        "type": "forceFail"
+      }
+    },
+    {
+      "id": "decision:step:PostSlackCompletion:optional:providerRejected",
+      "kind": "decision",
+      "name": "forceFail",
+      "parentId": "step:PostSlackCompletion",
+      "condition": "providerRejected",
+      "phase": "execute",
+      "decision": {
+        "type": "forceFail"
+      }
+    },
+    {
+      "id": "decision:step:PostSlackCompletion:optional:uncertain",
+      "kind": "decision",
+      "name": "forceFail",
+      "parentId": "step:PostSlackCompletion",
+      "condition": "uncertain",
+      "phase": "execute",
+      "decision": {
+        "type": "forceFail"
+      }
+    },
+    {
+      "id": "decision:step:ReadSlackThread:optional:defect",
+      "kind": "decision",
+      "name": "forceFail",
+      "parentId": "step:ReadSlackThread",
+      "condition": "defect",
+      "phase": "execute",
+      "decision": {
+        "type": "forceFail"
+      }
+    },
+    {
+      "id": "decision:step:ReadSlackThread:optional:invalidResponse",
+      "kind": "decision",
+      "name": "forceFail",
+      "parentId": "step:ReadSlackThread",
+      "condition": "invalidResponse",
+      "phase": "execute",
+      "decision": {
+        "type": "forceFail"
+      }
+    },
+    {
+      "id": "decision:step:ReadSlackThread:optional:providerRejected",
+      "kind": "decision",
+      "name": "forceFail",
+      "parentId": "step:ReadSlackThread",
+      "condition": "providerRejected",
+      "phase": "execute",
+      "decision": {
+        "type": "forceFail"
+      }
+    },
+    {
+      "id": "decision:step:completionPosted:322:9",
+      "kind": "decision",
+      "name": "gracefulComplete",
+      "parentId": "step:completionPosted",
+      "phase": "execute",
+      "span": {
+        "startLine": 322,
+        "startColumn": 9,
+        "endLine": 322,
+        "endColumn": 36
+      },
+      "decision": {
+        "type": "gracefulComplete"
+      }
+    },
+    {
+      "id": "decision:step:initializeThread:275:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:initializeThread",
+      "phase": "execute",
+      "span": {
+        "startLine": 275,
+        "startColumn": 9,
+        "endLine": 275,
+        "endColumn": 66
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:threadLoaded:298:9",
+      "kind": "decision",
+      "name": "deadEnd",
+      "parentId": "step:threadLoaded",
+      "phase": "execute",
+      "span": {
+        "startLine": 298,
+        "startColumn": 9,
+        "endLine": 298,
+        "endColumn": 22
+      },
+      "decision": {
+        "type": "deadEnd"
+      }
+    },
+    {
+      "id": "resource:attribute:postReplyResultAttribute",
+      "kind": "attribute",
+      "name": "slack-thread-approval-post-reply-result",
+      "span": {
+        "startLine": 29,
+        "startColumn": 2,
+        "endLine": 29,
+        "endColumn": 120
+      },
+      "resource": {
+        "valueType": "slack.PostThreadReplyResult"
+      }
+    },
+    {
+      "id": "resource:attribute:threadStateAttribute",
+      "kind": "attribute",
+      "name": "slack-thread-approval-state",
+      "span": {
+        "startLine": 28,
+        "startColumn": 2,
+        "endLine": 28,
+        "endColumn": 92
+      },
+      "resource": {
+        "valueType": "ThreadState"
+      }
+    },
+    {
+      "id": "rpc:GetDexDisplay",
+      "kind": "rpc",
+      "name": "GetDexDisplay",
+      "span": {
+        "startLine": 227,
+        "startColumn": 1,
+        "endLine": 236,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:GetDexSummary",
+      "kind": "rpc",
+      "name": "GetDexSummary",
+      "span": {
+        "startLine": 214,
+        "startColumn": 1,
+        "endLine": 223,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:GetThreadStatus",
+      "kind": "rpc",
+      "name": "GetThreadStatus",
+      "span": {
+        "startLine": 204,
+        "startColumn": 1,
+        "endLine": 210,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:ReceiveThreadReply",
+      "kind": "rpc",
+      "name": "ReceiveThreadReply",
+      "span": {
+        "startLine": 171,
+        "startColumn": 1,
+        "endLine": 202,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "step:PostSlackCompletion",
+      "kind": "step",
+      "name": "PostSlackCompletion",
+      "phase": "execute",
+      "span": {
+        "startLine": 112,
+        "startColumn": 3,
+        "endLine": 132,
+        "endColumn": 6
+      },
+      "metadata": {
+        "connector": {
+          "configurationEnabled": true,
+          "configurationUI": {
+            "units": [
+              {
+                "id": "completionText",
+                "unitId": "textInput",
+                "label": "Completion reply",
+                "description": "Enter the Slack message posted to the thread after the configured approval reply arrives.",
+                "required": true,
+                "bindings": [
+                  {
+                    "port": "text",
+                    "jsonPointer": "/text"
+                  }
+                ]
+              }
+            ]
+          },
+          "connectionName": "slack-workspace",
+          "connectorId": "slack",
+          "modulePath": "github.com/superdurable/dex-connectors-library/connectors/slack",
+          "moduleVersion": "v0.22.1",
+          "operationId": "postThreadReply",
+          "operationKind": "mutation"
+        },
+        "connectorFactory": true,
+        "connectorOperationKind": "mutation",
+        "explanation": "Reply to the Slack thread after the configured reply Trigger invokes the RPC."
+      }
+    },
+    {
+      "id": "step:ReadSlackThread",
+      "kind": "step",
+      "name": "ReadSlackThread",
+      "phase": "execute",
+      "span": {
+        "startLine": 99,
+        "startColumn": 3,
+        "endLine": 110,
+        "endColumn": 6
+      },
+      "metadata": {
+        "connector": {
+          "configurationEnabled": true,
+          "configurationUI": {
+            "units": []
+          },
+          "connectionName": "slack-workspace",
+          "connectorId": "slack",
+          "modulePath": "github.com/superdurable/dex-connectors-library/connectors/slack",
+          "moduleVersion": "v0.22.1",
+          "operationId": "listThreadMessages",
+          "operationKind": "query"
+        },
+        "connectorFactory": true,
+        "connectorOperationKind": "query",
+        "explanation": "Read the messages in the newly created Slack thread."
+      }
+    },
+    {
+      "id": "step:completionPosted",
+      "kind": "step",
+      "name": "completionPosted",
+      "phase": "execute",
+      "span": {
+        "startLine": 133,
+        "startColumn": 3,
+        "endLine": 133,
+        "endColumn": 37
+      },
+      "metadata": {
+        "explanation": "Complete after Slack confirms the thread reply was posted."
+      }
+    },
+    {
+      "id": "step:initializeThread",
+      "kind": "step",
+      "name": "initializeThread",
+      "phase": "execute",
+      "start": true,
+      "span": {
+        "startLine": 98,
+        "startColumn": 3,
+        "endLine": 98,
+        "endColumn": 42
+      },
+      "metadata": {
+        "explanation": "Persist the Slack thread identity before reading its messages."
+      }
+    },
+    {
+      "id": "step:threadLoaded",
+      "kind": "step",
+      "name": "threadLoaded",
+      "phase": "execute",
+      "span": {
+        "startLine": 111,
+        "startColumn": 3,
+        "endLine": 111,
+        "endColumn": 33
+      },
+      "metadata": {
+        "explanation": "Store the Slack thread messages before waiting for a matching reply Trigger."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:0001",
+      "kind": "transition",
+      "from": "decision:rpc:ReceiveThreadReply:196:9",
+      "to": "step:PostSlackCompletion",
+      "label": "fan-out",
+      "span": {
+        "startLine": 199,
+        "startColumn": 4,
+        "endLine": 199,
+        "endColumn": 77
+      }
+    },
+    {
+      "id": "edge:0002",
+      "kind": "transition",
+      "from": "decision:step:initializeThread:275:9",
+      "to": "step:ReadSlackThread",
+      "label": "GoTo",
+      "span": {
+        "startLine": 275,
+        "startColumn": 9,
+        "endLine": 275,
+        "endColumn": 66
+      }
+    },
+    {
+      "id": "edge:0003",
+      "kind": "resource_read",
+      "from": "resource:attribute:postReplyResultAttribute",
+      "to": "rpc:GetDexDisplay",
+      "label": "Get",
+      "span": {
+        "startLine": 251,
+        "startColumn": 17,
+        "endLine": 251,
+        "endColumn": 50
+      },
+      "metadata": {
+        "function": "optionalPostReplyResult",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0004",
+      "kind": "resource_read",
+      "from": "resource:attribute:postReplyResultAttribute",
+      "to": "rpc:GetDexSummary",
+      "label": "Get",
+      "span": {
+        "startLine": 251,
+        "startColumn": 17,
+        "endLine": 251,
+        "endColumn": 50
+      },
+      "metadata": {
+        "function": "optionalPostReplyResult",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0005",
+      "kind": "resource_read",
+      "from": "resource:attribute:threadStateAttribute",
+      "to": "rpc:GetDexDisplay",
+      "label": "Get",
+      "span": {
+        "startLine": 239,
+        "startColumn": 16,
+        "endLine": 239,
+        "endColumn": 45
+      },
+      "metadata": {
+        "function": "slackThreadInspection",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0006",
+      "kind": "resource_read",
+      "from": "resource:attribute:threadStateAttribute",
+      "to": "rpc:GetDexSummary",
+      "label": "Get",
+      "span": {
+        "startLine": 239,
+        "startColumn": 16,
+        "endLine": 239,
+        "endColumn": 45
+      },
+      "metadata": {
+        "function": "slackThreadInspection",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0007",
+      "kind": "resource_read",
+      "from": "resource:attribute:threadStateAttribute",
+      "to": "rpc:GetThreadStatus",
+      "label": "Get",
+      "span": {
+        "startLine": 205,
+        "startColumn": 16,
+        "endLine": 205,
+        "endColumn": 45
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0008",
+      "kind": "resource_read",
+      "from": "resource:attribute:threadStateAttribute",
+      "to": "rpc:ReceiveThreadReply",
+      "label": "Get",
+      "span": {
+        "startLine": 175,
+        "startColumn": 16,
+        "endLine": 175,
+        "endColumn": 45
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0009",
+      "kind": "resource_read",
+      "from": "resource:attribute:threadStateAttribute",
+      "to": "step:completionPosted",
+      "label": "Get",
+      "span": {
+        "startLine": 314,
+        "startColumn": 16,
+        "endLine": 314,
+        "endColumn": 45
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0010",
+      "kind": "resource_read",
+      "from": "resource:attribute:threadStateAttribute",
+      "to": "step:threadLoaded",
+      "label": "Get",
+      "span": {
+        "startLine": 289,
+        "startColumn": 16,
+        "endLine": 289,
+        "endColumn": 45
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0011",
+      "kind": "resource_write",
+      "from": "rpc:ReceiveThreadReply",
+      "to": "resource:attribute:threadStateAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 193,
+        "startColumn": 12,
+        "endLine": 193,
+        "endColumn": 48
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0012",
+      "kind": "resource_write",
+      "from": "step:PostSlackCompletion",
+      "to": "resource:attribute:postReplyResultAttribute",
+      "label": "Set",
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0013",
+      "kind": "transition",
+      "from": "step:PostSlackCompletion",
+      "to": "step:completionPosted",
+      "label": "sent",
+      "span": {
+        "startLine": 130,
+        "startColumn": 21,
+        "endLine": 130,
+        "endColumn": 51
+      },
+      "metadata": {
+        "connectorBranch": true
+      }
+    },
+    {
+      "id": "edge:0014",
+      "kind": "transition",
+      "from": "step:ReadSlackThread",
+      "to": "step:threadLoaded",
+      "label": "read",
+      "span": {
+        "startLine": 109,
+        "startColumn": 10,
+        "endLine": 109,
+        "endColumn": 36
+      },
+      "metadata": {
+        "connectorBranch": true
+      }
+    },
+    {
+      "id": "edge:0015",
+      "kind": "resource_write",
+      "from": "step:completionPosted",
+      "to": "resource:attribute:threadStateAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 319,
+        "startColumn": 12,
+        "endLine": 319,
+        "endColumn": 48
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0016",
+      "kind": "resource_write",
+      "from": "step:initializeThread",
+      "to": "resource:attribute:threadStateAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 272,
+        "startColumn": 12,
+        "endLine": 272,
+        "endColumn": 68
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0017",
+      "kind": "resource_write",
+      "from": "step:threadLoaded",
+      "to": "resource:attribute:threadStateAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 295,
+        "startColumn": 12,
+        "endLine": 295,
+        "endColumn": 48
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    }
+  ],
+  "diagnostics": [],
+  "groups": [
+    {
+      "id": "approval",
+      "label": "Approval",
+      "stepIds": [
+        "step:initializeThread",
+        "step:threadLoaded"
+      ]
+    },
+    {
+      "id": "slack",
+      "label": "Slack",
+      "stepIds": [
+        "step:ReadSlackThread",
+        "step:PostSlackCompletion",
+        "step:completionPosted"
+      ]
+    }
+  ],
+  "v2": {
+    "indexedAttributes": [],
+    "summary": {
+      "rpcName": "GetDexSummary",
+      "fields": [
+        {
+          "attributeKey": "slack-thread-approval-state",
+          "valueType": "json",
+          "editable": false,
+          "description": "Slack thread status"
+        },
+        {
+          "attributeKey": "slack-thread-approval-post-reply-result",
+          "valueType": "object",
+          "editable": false,
+          "description": "Slack completion reply result"
+        }
+      ]
+    },
+    "display": {
+      "rpcName": "GetDexDisplay",
+      "fields": [
+        {
+          "attributeKey": "slack-thread-approval-state",
+          "valueType": "json",
+          "editable": false,
+          "description": "Slack thread details"
+        },
+        {
+          "attributeKey": "slack-thread-approval-post-reply-result",
+          "valueType": "object",
+          "editable": false,
+          "description": "Slack completion reply provider result"
+        }
+      ]
+    },
+    "actions": [],
+    "start": {
+      "stepType": "initializeThread",
+      "input": {
+        "kind": "object",
+        "fields": [
+          {
+            "name": "eventId",
+            "required": true,
+            "schema": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "teamId",
+            "required": true,
+            "schema": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "channelId",
+            "required": true,
+            "schema": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "threadTimestamp",
+            "required": true,
+            "schema": {
+              "kind": "string"
+            }
+          }
+        ]
+      }
+    },
+    "connectorTriggerBindings": [
+      {
+        "connectorId": "slack",
+        "triggerName": "threadReplyCreated",
+        "connectionName": "slack-workspace",
+        "bindingName": "slack-thread-approval-reply",
+        "modulePath": "github.com/superdurable/dex-connectors-library/connectors/slack",
+        "moduleVersion": "v0.22.1",
+        "configurationEnabled": true,
+        "configurationUI": {
+          "units": [
+            {
+              "id": "channel",
+              "unitId": "channelPicker",
+              "label": "Approval channel",
+              "description": "Select the same joined Slack channel used by the start Trigger; the picker stores its stable channel ID.",
+              "required": true,
+              "bindings": [
+                {
+                  "port": "channelId",
+                  "jsonPointer": "/channelId"
+                }
+              ]
+            },
+            {
+              "id": "message",
+              "unitId": "textInput",
+              "label": "Approval reply contains",
+              "description": "Enter plain text that an approval reply must contain, such as approved; leave blank to match any reply content.",
+              "required": false,
+              "bindings": [
+                {
+                  "port": "text",
+                  "jsonPointer": "/threadReplyMatcher/messageContains"
+                }
+              ]
+            },
+            {
+              "id": "approvers",
+              "unitId": "memberPicker",
+              "label": "Members allowed to approve",
+              "description": "Select the workspace members whose thread replies count as approval; at least one approver is required.",
+              "required": true,
+              "bindings": [
+                {
+                  "port": "memberIds",
+                  "jsonPointer": "/threadReplyMatcher/posterUserIds"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "connectorId": "slack",
+        "triggerName": "channelThreadCreated",
+        "connectionName": "slack-workspace",
+        "bindingName": "slack-thread-approval-start",
+        "modulePath": "github.com/superdurable/dex-connectors-library/connectors/slack",
+        "moduleVersion": "v0.22.1",
+        "configurationEnabled": true,
+        "configurationUI": {
+          "units": [
+            {
+              "id": "channel",
+              "unitId": "channelPicker",
+              "label": "Approval channel",
+              "description": "Select the joined Slack channel whose new root threads may start this Flow; the picker stores its stable channel ID.",
+              "required": true,
+              "bindings": [
+                {
+                  "port": "channelId",
+                  "jsonPointer": "/channelId"
+                }
+              ]
+            },
+            {
+              "id": "message",
+              "unitId": "textInput",
+              "label": "Start message contains",
+              "description": "Enter plain text that the root thread message must contain; leave blank to match any message content.",
+              "required": false,
+              "bindings": [
+                {
+                  "port": "text",
+                  "jsonPointer": "/threadTriggerMatcher/messageContains"
+                }
+              ]
+            },
+            {
+              "id": "members",
+              "unitId": "memberPicker",
+              "label": "Members allowed to start",
+              "description": "Select workspace members allowed to start the Flow; leave empty to allow any member posting in the selected channel.",
+              "required": false,
+              "bindings": [
+                {
+                  "port": "memberIds",
+                  "jsonPointer": "/threadTriggerMatcher/posterUserIds"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

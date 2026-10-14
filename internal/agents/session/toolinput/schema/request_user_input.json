@@ -1,0 +1,55 @@
+{
+  "type": "object",
+  "properties": {
+    "questions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Stable identifier unique within this batch."
+          },
+          "header": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "description": "Short navigation label with at most 32 Unicode characters."
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "description": "One concise question identifying a genuinely missing user-owned requirement, information or access and why it blocks progress. Check prior instructions first. Do not ask whether to proceed with authorized implementation or offer a choice the user already specified."
+          },
+          "options": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "description": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": ["label", "description"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["id", "header", "question", "options"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["questions"],
+  "additionalProperties": false
+}

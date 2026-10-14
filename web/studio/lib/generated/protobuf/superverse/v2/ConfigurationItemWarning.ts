@@ -1,0 +1,17 @@
+// Original file: api/superverse/v2/superverse.proto
+
+export const ConfigurationItemWarning = {
+  CONFIGURATION_ITEM_WARNING_UNSPECIFIED: 'CONFIGURATION_ITEM_WARNING_UNSPECIFIED',
+  CONFIGURATION_ITEM_WARNING_CHANNEL_SHARED: 'CONFIGURATION_ITEM_WARNING_CHANNEL_SHARED',
+  CONFIGURATION_ITEM_WARNING_CONNECTION_DELETED: 'CONFIGURATION_ITEM_WARNING_CONNECTION_DELETED',
+} as const;
+
+export type ConfigurationItemWarning =
+  | 'CONFIGURATION_ITEM_WARNING_UNSPECIFIED'
+  | 0
+  | 'CONFIGURATION_ITEM_WARNING_CHANNEL_SHARED'
+  | 1
+  | 'CONFIGURATION_ITEM_WARNING_CONNECTION_DELETED'
+  | 2
+
+export type ConfigurationItemWarning__Output = typeof ConfigurationItemWarning[keyof typeof ConfigurationItemWarning]

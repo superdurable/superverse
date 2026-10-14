@@ -1,0 +1,73 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A merge conflict: a change subagent rewrites the page heading in its worktree
+# while the main agent, after the snapshot, changes the same line in the
+# workspace. The merge applies nothing to that file and leaves the diff3
+# conflict markers in it; the main agent keeps the subagent's side with sed and
+# checks that the markers are gone. Each turn changes source without a push, so
+# each answers the Session's three handoff continuations. The subagent pauses so
+# its report arrives after the first turn ended.
+name: subagent-conflict
+title: "Subagent merge conflict"
+description: "A change subagent and the main agent change the same line; the merge reports a content conflict, which the main agent resolves."
+category: agent_error
+arguments: {task: agent-aaaaaaaa}
+inputs:
+  - label: "Delegate and change the same line"
+    message: "Rename the page heading in the background while you set another heading."
+    replies:
+      - text: "Delegating the heading rename to a subagent."
+        tool_uses:
+          - name: start_agent
+            input:
+              description: "Rename the page heading"
+              kind: change
+              prompt: "Change the page heading in web/src/App.tsx to Subagent heading and report the files you changed. [[subagent:subagent-conflict/rename]]"
+      - text: "Setting my own heading in the workspace."
+        tool_uses:
+          - name: edit
+            input: {path: web/src/App.tsx, old_string: "<h1>Text Summary</h1>", new_string: "<h1>Main heading</h1>"}
+      - text: "The workspace heading reads Main heading; the subagent renames it in its own worktree."
+      - text: "My heading change stays uncommitted while the subagent works."
+      - text: "My heading change stays uncommitted."
+      - text: "I wait for the subagent's report before I commit anything."
+      - text: "The subagent renamed the heading; merging its change."
+        notification: task
+        tool_uses:
+          - name: merge_agent_changes
+            input: {agent_id: "{{task}}", action: apply}
+        expect_result_contains:
+          - "\"result\":\"merged_with_conflicts\""
+          - "\"kind\":\"content\""
+          - "web/src/App.tsx"
+      - text: "Keeping the subagent's heading and removing the conflict markers."
+        tool_uses:
+          - name: bash
+            input:
+              command: "sed -i -e '/^<<<<<<< workspace$/,/^=======$/d' -e '/^>>>>>>> agent-/d' web/src/App.tsx && grep -c '<<<<<<<\\|>>>>>>>' web/src/App.tsx; grep -n '<h1>' web/src/App.tsx"
+              description: "Resolve the heading conflict"
+        expect_result_contains:
+          - "<h1>Subagent heading</h1>"
+      - text: "The heading conflict is resolved with the subagent's Subagent heading."
+      - text: "The resolved heading stays uncommitted until you ask me to publish it."
+      - text: "The resolved heading stays uncommitted."
+      - text: "Nothing else changed; the resolved heading waits to be committed."
+subagents:
+  rename:
+    kind: change
+    replies:
+      - text: "Waiting for the workspace to settle, then renaming the heading."
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 20", description: "Wait before the change", timeout_seconds: 300}
+      - text: "Renaming the page heading."
+        tool_uses:
+          - name: edit
+            input: {path: web/src/App.tsx, old_string: "<h1>Text Summary</h1>", new_string: "<h1>Subagent heading</h1>"}
+      - text: "I changed the page heading in web/src/App.tsx to Subagent heading."

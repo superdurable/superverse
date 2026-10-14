@@ -1,0 +1,238 @@
+/*
+ * Copyright (c) 2026 Super Durable, Inc.
+ *
+ * Licensed under the Sustainable Use License 1.0.
+ * You may not use this file except in compliance with the License.
+ * See the LICENSE file in the repository root.
+ *
+ * SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+ */
+
+/*
+ * React Flow internals for every graph in Studio: the Build and Runs canvas and the Diagnostics
+ * execution graph. Layered as `components`, above React Flow's own sheet (`vendor`) and below
+ * utilities, so these rules win over the library's defaults without specificity contests. Only
+ * `.react-flow__*` selectors, React Flow's state classes and [data-*] attributes belong here; our
+ * own node content is styled with utilities.
+ */
+
+/* React Flow's theming surface. Bare --xy-* names; the library falls back to its own -default. */
+.react-flow {
+  --xy-edge-stroke: var(--color-mark);
+  --xy-edge-stroke-selected: var(--color-ink-dim);
+  --xy-controls-button-background-color: var(--color-panel);
+  --xy-controls-button-background-color-hover: var(--color-raised);
+  --xy-controls-button-color: var(--color-ink-dim);
+  --xy-controls-button-color-hover: var(--color-ink);
+  --xy-controls-button-border-color: var(--color-line-soft);
+  --xy-minimap-background-color: var(--color-panel);
+  /* The library's default is a white wash, a light patch on the dark canvas. */
+  --xy-attribution-background-color: transparent;
+}
+
+/*
+ * The Flow and Runs canvas's edges (components/flow/canvas/render/Stage.tsx), keyed by the
+ * data-canvas-edge family. The layout routes every line around the cards; solid is what happens next
+ * and dashed red is where a failure goes. Widths scale by --zoom-comp and contrast by --edge-boost,
+ * which Stage writes on every viewport move, so zooming re-renders nothing.
+ */
+.react-flow__edge[data-canvas-edge] .react-flow__edge-path {
+  stroke-width: calc(1.7px * var(--zoom-comp));
+  stroke-linejoin: round;
+}
+
+/* Contrast rises as the graph shrinks, so the skeleton survives being small. */
+.react-flow__edge[data-canvas-edge="control"] .react-flow__edge-path {
+  stroke: var(--color-mark);
+  opacity: calc(0.95 * var(--edge-boost));
+}
+
+.react-flow__edge[data-canvas-edge="failure"] .react-flow__edge-path {
+  stroke: var(--color-fail-rule);
+  stroke-dasharray: 6 4;
+  opacity: calc(0.9 * var(--edge-boost));
+}
+
+.react-flow__edge[data-canvas-edge][data-dim]:not(.selected) .react-flow__edge-path {
+  opacity: 0.45;
+}
+
+/*
+ * A marching dash, like the Diagnostics Timeline step link. No CSS filter: drop-shadow on an SVG
+ * path inside React Flow's transformed viewport blanks the whole edge layer.
+ */
+.react-flow__edge[data-canvas-edge][data-lit] .react-flow__edge-path,
+.react-flow__edge[data-canvas-edge].selected .react-flow__edge-path {
+  animation: var(--animate-dash-flow);
+  opacity: 1;
+  stroke: var(--color-ink-dim);
+  stroke-dasharray: 8 5;
+  stroke-width: calc(2.6px * var(--zoom-comp));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-flow__edge[data-canvas-edge][data-lit] .react-flow__edge-path,
+  .react-flow__edge[data-canvas-edge].selected .react-flow__edge-path {
+    animation: none;
+    stroke-dasharray: none;
+  }
+}
+
+/*
+ * Motion on the Flow and Runs canvas (components/flow/canvas/camera). Nothing is drawn until the
+ * camera has framed it; then the drawing traces in from its start: each card swells into place as
+ * the trace reaches it (--enter-delay, written per node) and each line draws out of the card it
+ * leaves (--len is its length). The run's Step rings in once the trace, or the head travelling its
+ * line, arrives (--arrive-delay). Opening or closing a stage keeps the reader's place
+ * (components/flow/canvas/use-stage-scene.ts): every other card glides to its new place on the
+ * camera's curve, a card that just appeared swells in, and the lines fade out while the cards move,
+ * then back once they settle. While the next run loads, the last one dims in place.
+ */
+.react-flow[data-canvas-flow] .react-flow__node {
+  transition: transform 320ms var(--ease-glide);
+}
+
+.react-flow[data-canvas-flow] .react-flow__node > * {
+  animation: canvas-node-in 260ms var(--ease-glide) var(--enter-delay, 0ms) backwards;
+}
+
+.react-flow[data-canvas-flow] .react-flow__node > [data-now] {
+  animation:
+    canvas-node-in 260ms var(--ease-glide) var(--enter-delay, 0ms) backwards,
+    canvas-now-arrive 700ms var(--ease-glide) var(--arrive-delay, 0ms) backwards;
+}
+
+.react-flow[data-canvas-flow] .react-flow__node > [data-now-tag] {
+  animation-delay: var(--arrive-delay, 0ms);
+}
+
+/* Only while the drawing enters: a line that React Flow re-creates later must not draw itself in again. */
+.react-flow[data-canvas-flow][data-entering] .react-flow__edge-path {
+  animation: canvas-edge-draw 300ms var(--ease-glide) var(--enter-delay, 0ms) backwards;
+}
+
+.react-flow[data-canvas-flow][data-entering] .react-flow__edge[data-canvas-edge="failure"] .react-flow__edge-path {
+  animation-name: canvas-fade-in;
+}
+
+.react-flow[data-canvas-flow] .react-flow__edges,
+.react-flow[data-canvas-flow] .react-flow__edgelabel-renderer {
+  transition: opacity 160ms ease;
+}
+
+.react-flow[data-canvas-flow][data-relayout] .react-flow__edges,
+.react-flow[data-canvas-flow][data-relayout] .react-flow__edgelabel-renderer {
+  opacity: 0;
+  transition: opacity 80ms ease;
+}
+
+.react-flow[data-canvas-flow] .react-flow__viewport {
+  transition: opacity 160ms ease;
+}
+
+.react-flow[data-canvas-flow][data-pending] .react-flow__viewport {
+  opacity: 0.55;
+  transition: opacity 200ms ease 150ms;
+}
+
+/* The run moving on: a head with a fading trail travels the line, like the running Dex mark. */
+.react-flow__edge [data-canvas-travel] path {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.react-flow__edge [data-canvas-travel] [data-travel-part="trail"] {
+  animation: canvas-travel-trail 640ms cubic-bezier(0.4, 0, 0.6, 1) both;
+  opacity: 0.3;
+  stroke-dasharray: 56px var(--len);
+  stroke-width: calc(4px * var(--zoom-comp));
+}
+
+.react-flow__edge [data-canvas-travel] [data-travel-part="head"] {
+  animation: canvas-travel-head 640ms cubic-bezier(0.4, 0, 0.6, 1) both;
+  stroke-dasharray: 0.1px var(--len);
+  stroke-width: calc(9px * var(--zoom-comp));
+}
+
+@keyframes canvas-node-in {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+
+  60% {
+    scale: 1.012;
+  }
+}
+
+@keyframes canvas-now-arrive {
+  from {
+    outline-color: transparent;
+    outline-offset: 14px;
+  }
+}
+
+@keyframes canvas-edge-draw {
+  from {
+    opacity: 0;
+    stroke-dasharray: var(--len) var(--len);
+    stroke-dashoffset: var(--len);
+  }
+
+  to {
+    stroke-dasharray: var(--len) var(--len);
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes canvas-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes canvas-travel-trail {
+  from {
+    stroke-dashoffset: 56px;
+  }
+
+  to {
+    stroke-dashoffset: calc(56px - var(--len));
+  }
+}
+
+@keyframes canvas-travel-head {
+  from {
+    stroke-dashoffset: 0.1px;
+  }
+
+  to {
+    stroke-dashoffset: calc(0.1px - var(--len));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-flow[data-canvas-flow] .react-flow__node,
+  .react-flow[data-canvas-flow] .react-flow__edges,
+  .react-flow[data-canvas-flow] .react-flow__viewport {
+    transition: none;
+  }
+
+  .react-flow[data-canvas-flow] .react-flow__node > *,
+  .react-flow[data-canvas-flow] .react-flow__node > [data-now],
+  .react-flow[data-canvas-flow] .react-flow__edge-path {
+    animation: none;
+  }
+
+  .react-flow__edge [data-canvas-travel] {
+    display: none;
+  }
+
+  /* Nothing glides, so the lines have no reason to step aside. */
+  .react-flow[data-canvas-flow][data-relayout] .react-flow__edges,
+  .react-flow[data-canvas-flow][data-relayout] .react-flow__edgelabel-renderer {
+    opacity: 1;
+  }
+}

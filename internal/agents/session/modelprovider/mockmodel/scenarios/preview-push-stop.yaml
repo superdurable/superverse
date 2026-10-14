@@ -1,0 +1,39 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+name: preview-push-stop
+title: "Push before a stopped check"
+description: "Pushes a verified note, then runs a long check that the test stops; the pushed processes still build independently of the turn."
+category: project_feature
+arguments:
+  note: Mock deployment
+inputs:
+  - label: "Push a change"
+    message: "Add a deployment note and push it."
+    replies:
+      - text: "Writing the deployment note."
+        tool_uses:
+          - name: write
+            input: {path: preview-deploy-note.md, content: "{{note}}\n"}
+      - text: "Restoring the application's dependencies, as the template's instructions say."
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap", description: "Restore the application's dependencies", timeout_seconds: 600}
+      - text: "Running the source checks and pushing the note."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Add the deployment note {{note}}"
+              verification:
+                - "preview-deploy-note.md holds the note {{note}}"
+      - text: "The note is pushed. Checking while its processes build."
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 300", description: "Check after the push", timeout_seconds: 600}
+        expect_failure: true
+        expect_failure_text: "Error: interrupted_by_user"

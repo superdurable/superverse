@@ -1,0 +1,15 @@
+**
+!sandbox/
+!sandbox/coding/
+!sandbox/coding/**
+!scripts/
+!scripts/install-pinned-binary.sh
+!dex-skills/
+!dex-skills/**
+!app-template/
+!app-template/go.mod
+!app-template/go.sum
+!app-template/tools/
+!app-template/tools/openapi/
+!app-template/tools/openapi/go.mod
+!app-template/tools/openapi/go.sum

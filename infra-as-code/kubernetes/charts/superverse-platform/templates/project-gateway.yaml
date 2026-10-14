@@ -1,0 +1,138 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+{{/*
+The one Gateway of every project route (docs/architecture/linear-scaling/ingress.md). Envoy Gateway
+and its CRDs are installed before this chart, in the namespace v2.gatewayNamespace: by Terraform
+(terraform/kubernetes/controllers.tf) in hosted environments and by `sv2 kind` on Local Kind, both
+from the pins of infra-as-code/source-lock.json. Each Live Project and each serving Preview adds one
+HTTPRoute; no project route creates a load balancer, a listener rule, a DNS record or a certificate.
+*/}}
+{{- $namespace := include "v2.gatewayNamespace" . }}
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: projects
+  namespace: {{ $namespace }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      # ClusterIP: the platform ALB group (hosted) or the `kind ports` forward reaches the proxies; a
+      # Service of type LoadBalancer would create a cloud load balancer.
+      envoyService:
+        name: {{ include "v2.gatewayService" . }}
+        type: ClusterIP
+      envoyDeployment:
+        replicas: {{ if .Values.localKind }}1{{ else }}2{{ end }}
+        pod:
+          {{- with .Values.platformNodeSelector }}
+          nodeSelector: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+        container:
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {memory: 1Gi}
+      {{- if not .Values.localKind }}
+      envoyPDB: {minAvailable: 1}
+      {{- end }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: {{ include "v2.product" $ }}-projects
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+  parametersRef:
+    group: gateway.envoyproxy.io
+    kind: EnvoyProxy
+    namespace: {{ $namespace }}
+    name: projects
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: projects
+  namespace: {{ $namespace }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+spec:
+  gatewayClassName: {{ include "v2.product" $ }}-projects
+  listeners:
+    # Plain HTTP: hosted TLS ends at the platform ALB, which forwards every project host here.
+    - name: projects
+      protocol: HTTP
+      port: 80
+      hostname: {{ printf "*.%s" (include "v2.projectDomain" .) | quote }}
+      allowedRoutes:
+        kinds: [{group: gateway.networking.k8s.io, kind: HTTPRoute}]
+        # Only a project's Live namespace or Session namespace, whose admission
+        # (templates/project-route-admission.yaml) fixes each route's one host.
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: {app.kubernetes.io/managed-by: {{ include "v2.product" $ }}}
+            matchExpressions: [{key: superdurable.io/project-id, operator: Exists}]
+{{- if not .Values.localKind }}
+---
+# The Envoy Gateway controller is the cluster's only reader of every Secret (its chart's ClusterRole), so its
+# network is the narrowest that serves the project routes: it reaches only the Kubernetes API, and only its own proxies
+# reach it, on the xDS port. It exposes nothing outside the cluster; metrics, rate limit and the topology injector
+# webhook are not admitted.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: envoy-gateway-controller
+  namespace: {{ $namespace }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+spec:
+  podSelector: {matchLabels: {control-plane: envoy-gateway}}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: envoy, app.kubernetes.io/managed-by: envoy-gateway}}
+      ports: [{port: 18000, protocol: TCP}]
+  egress:
+    {{- if empty .Values.network.kubernetesApiCIDRs }}{{ fail "the gateway controller's egress needs the Kubernetes API CIDRs (network.kubernetesApiCIDRs)" }}{{ end }}
+    {{- range .Values.network.kubernetesApiCIDRs }}
+    - to: [{ipBlock: {cidr: {{ . | quote }}}}]
+    {{- end }}
+---
+# The one rule of project traffic on the platform ALB group: every host one label below the
+# environment's domain that no platform rule (Studio, Slack events, Dex debug) claims first goes to
+# the Envoy proxies. external-dns publishes its one wildcard record. The ALB health-checks the
+# proxies' readiness endpoint, never a project's application.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "v2.product" $ }}-projects
+  namespace: {{ $namespace }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+  annotations:
+    alb.ingress.kubernetes.io/group.name: {{ include "v2.product" $ }}-platform
+    # Last in the group, after every platform rule.
+    alb.ingress.kubernetes.io/group.order: "1000"
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: {{ .Values.hostedProjects.certificateArn | quote }}
+    alb.ingress.kubernetes.io/healthcheck-port: "19003"
+    alb.ingress.kubernetes.io/healthcheck-path: /ready
+    external-dns.alpha.kubernetes.io/hostname: {{ printf "*.%s" (include "v2.projectDomain" .) | quote }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: {{ printf "*.%s" (include "v2.projectDomain" .) | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: {service: {name: {{ include "v2.gatewayService" . }}, port: {number: 80}}}
+{{- end }}

@@ -1,0 +1,63 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# An application-owned Preview failure and its automatic fix. The first push
+# makes the server refuse to start without WELCOME_TEXT, which passes the
+# commit gate's build and checks but nothing sets in the Preview: the deployed
+# application exits, and the Preview reports the failure PREVIEW_FAILED, owned
+# by the application, for the Session's HEAD. That delivery notification opens
+# an automatic turn, the reply that declares it: the script makes the setting
+# optional again and pushes the fix, which the Preview then deploys and serves.
+# The second edit undoes the first, so the Project's source ends as it began.
+name: preview-failure-fix
+title: "Fix a failed Preview deployment"
+description: "Configure the Preview's summary-model connection first. Pushes a server that cannot start in the Preview; the failure's notification opens an automatic turn that fixes and pushes the source, which the Preview then serves."
+category: user_error
+inputs:
+  - label: "Push a required setting"
+    message: "Make the server refuse to start without WELCOME_TEXT and push it."
+    replies:
+      - text: "Reading the server entry point."
+        tool_uses:
+          - name: read
+            input: {path: cmd/server/main.go}
+      - text: "Requiring WELCOME_TEXT at startup."
+        tool_uses:
+          - name: edit
+            input:
+              path: cmd/server/main.go
+              old_string: "\tslog.SetDefault(logger)\n"
+              new_string: "\tslog.SetDefault(logger)\n\tif os.Getenv(\"WELCOME_TEXT\") == \"\" {\n\t\treturn errors.New(\"WELCOME_TEXT is not set\")\n\t}\n"
+      - text: "Restoring the application's dependencies, as the template's instructions say."
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap", description: "Restore the application's dependencies", timeout_seconds: 600}
+      - text: "Running the source checks and pushing."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Require WELCOME_TEXT at startup"
+              verification:
+                - "go build ./... compiles the startup check"
+      - text: "The startup check is pushed; the Preview deploys it by itself."
+      - text: "The Preview application exited at startup because WELCOME_TEXT is not set there. Removing the requirement, so the application starts without the setting."
+        notification: delivery
+        tool_uses:
+          - name: edit
+            input:
+              path: cmd/server/main.go
+              old_string: "\tif os.Getenv(\"WELCOME_TEXT\") == \"\" {\n\t\treturn errors.New(\"WELCOME_TEXT is not set\")\n\t}\n"
+              new_string: ""
+      - text: "Pushing the fix."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Start without WELCOME_TEXT"
+              verification:
+                - "the server starts without WELCOME_TEXT"
+      - text: "The fix is pushed. The Preview deploys it by itself, and the application starts without WELCOME_TEXT."

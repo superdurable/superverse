@@ -1,0 +1,20 @@
+// Original file: api/superverse/v2/superverse.proto
+
+export const ConfigurationStatus = {
+  CONFIGURATION_STATUS_UNSPECIFIED: 'CONFIGURATION_STATUS_UNSPECIFIED',
+  CONFIGURATION_STATUS_DRAFT: 'CONFIGURATION_STATUS_DRAFT',
+  CONFIGURATION_STATUS_NEEDS_REVIEW: 'CONFIGURATION_STATUS_NEEDS_REVIEW',
+  CONFIGURATION_STATUS_READY: 'CONFIGURATION_STATUS_READY',
+} as const;
+
+export type ConfigurationStatus =
+  | 'CONFIGURATION_STATUS_UNSPECIFIED'
+  | 0
+  | 'CONFIGURATION_STATUS_DRAFT'
+  | 1
+  | 'CONFIGURATION_STATUS_NEEDS_REVIEW'
+  | 2
+  | 'CONFIGURATION_STATUS_READY'
+  | 3
+
+export type ConfigurationStatus__Output = typeof ConfigurationStatus[keyof typeof ConfigurationStatus]

@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pattern"
+  ],
+  "properties": {
+    "pattern": {
+      "type": "string",
+      "description": "The glob to match file paths against, such as *.go (a file name at any depth) or **/*.test.ts. A pattern with a slash is matched against the whole path, relative to the workspace root or absolute in a read-only root, so start it with **/ to match below the path you give.",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "path": {
+      "type": "string",
+      "description": "The directory to search; the workspace root by default. It may also be a read-only root such as a Go module directory.",
+      "minLength": 1,
+      "maxLength": 4096
+    }
+  }
+}

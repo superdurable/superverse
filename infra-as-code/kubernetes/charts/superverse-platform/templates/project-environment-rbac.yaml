@@ -1,0 +1,103 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# Namespace-bound delegation; the server has no cluster-wide project Secret read grant.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "v2.product" $ }}-project-runtime
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+rules:
+  - apiGroups: [""]
+    resources: [serviceaccounts, persistentvolumeclaims, services, secrets]
+    verbs: [get, create, delete]
+  - apiGroups: [apps]
+    resources: [deployments]
+    verbs: [get, create, delete]
+  - apiGroups: [networking.k8s.io]
+    resources: [networkpolicies]
+    verbs: [get, create, delete]
+  # Only stateless Dex resources, the Live Worker endpoint that each new Live
+  # generation re-points and the traffic policies whose peers change between
+  # server releases can be reconciled in place. Data, credentials and
+  # application generation resources retain their existing permissions.
+  - apiGroups: [""]
+    resources: [services]
+    resourceNames: [dex, live-worker]
+    verbs: [update]
+  - apiGroups: [apps]
+    resources: [deployments]
+    resourceNames: [dex]
+    verbs: [update]
+  - apiGroups: [networking.k8s.io]
+    resources: [networkpolicies]
+    resourceNames: [allow-dex, allow-application, allow-temporal, allow-storage]
+    verbs: [update]
+  - apiGroups: [gateway.networking.k8s.io]
+    resources: [httproutes]
+    verbs: [get, create, update, delete]
+  # The Agent's read_live_app_runs finds the Live application Pod and reads
+  # the end of its log.
+  {{- include "v2.podReadRule" . | nindent 2 }}
+  - apiGroups: [""]
+    resources: [pods/log]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "v2.product" $ }}-project-provisioner
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+rules:
+  - apiGroups: [rbac.authorization.k8s.io]
+    resources: [clusterroles]
+    resourceNames: [{{ include "v2.product" $ }}-project-runtime]
+    verbs: [bind]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "v2.product" $ }}-project-provisioner
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "v2.serverAccount" . }}
+    namespace: {{ include "v2.namespace" $ }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "v2.product" $ }}-project-provisioner
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: {{ include "v2.product" $ }}-project-delegation
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [rbac.authorization.k8s.io]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [rolebindings]
+  matchConditions:
+    {{- include "v2.serverOnlyMatch" $ | nindent 4 }}
+    - name: project-runtime-binding
+      expression: object.roleRef.name == '{{ include "v2.product" $ }}-project-runtime'
+  validations:
+    - expression: request.namespace.matches('{{ include "v2.projectNamespacePattern" $ }}') && object.metadata.name == '{{ include "v2.product" $ }}-project-runtime'
+      message: Project delegation belongs only to an exact V2 Live namespace.
+    - expression: "object.roleRef.apiGroup == 'rbac.authorization.k8s.io' && object.roleRef.kind == 'ClusterRole' && size(object.subjects) == 1 && object.subjects[0].kind == 'ServiceAccount' && object.subjects[0].name == '{{ include "v2.serverAccount" . }}' && object.subjects[0].namespace == '{{ include "v2.namespace" $ }}'"
+      message: Project delegation has one fixed platform service account.
+    - expression: >-
+        has(object.metadata.labels) && object.metadata.labels['app.kubernetes.io/managed-by'] == '{{ include "v2.product" $ }}' &&
+        {{ include "v2.projectScopeNamespaceCEL" (dict "root" $ "namespace" "request.namespace" "labels" "object.metadata.labels") | nindent 8 | trim }}
+      message: Project delegation must preserve exact project ownership.
+---
+{{ include "v2.policyBinding" (dict "root" $ "name" "project-delegation") }}

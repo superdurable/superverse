@@ -1,0 +1,49 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A start_agent call that the user's Stop overtakes before its subagent
+# starts. Input 1 reads the page on the Session's instance. The test then
+# removes the instance as a lost node does, so input 2's start_agent finds the
+# workspace unreachable and waits for the instance the Session provisions next,
+# while the test presses Stop: the call is answered interrupted_by_user and its
+# record ends stopped before the start. The test then starts the subagent of
+# that record, as a start that raced with the Stop would, and its admission,
+# denied as stopped, reports the stop.
+name: subagent-stopped-start
+title: "Subagent start overtaken by a Stop"
+description: "A start_agent call waits for a new instance and the Stop overtakes it; a subagent started for it reports stopped."
+category: agent_feature
+test_action: "removes the Session's instance after input 1, presses Stop while input 2's start waits and starts the stopped subagent"
+inputs:
+  - label: "Read the page heading"
+    message: "Show me the page heading before you delegate."
+    replies:
+      - text: "Reading the page."
+        tool_uses:
+          - name: read
+            input: {path: web/src/App.tsx}
+        expect_result_contains:
+          - "<h1>Text Summary</h1>"
+      - text: "The page heading reads Text Summary."
+  - label: "Delegate after the instance is gone"
+    message: "Investigate the build in the background; I may stop it."
+    replies:
+      - text: "Delegating the investigation to a subagent."
+        tool_uses:
+          - name: start_agent
+            input:
+              description: "Investigate the build"
+              kind: investigate
+              prompt: "Report what the build prints. [[subagent:subagent-stopped-start/build]]"
+        expect_failure: true
+        expect_failure_text: "Error: interrupted_by_user"
+subagents:
+  build:
+    kind: investigate
+    replies:
+      - text: "The build prints nothing."

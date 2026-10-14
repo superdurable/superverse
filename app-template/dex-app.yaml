@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "superverse.dev/dex-app/v1",
+  "application": {
+    "port": 8080,
+    "healthPath": "/api/health"
+  },
+  "flowDefinitions": [
+    {
+      "sourcePath": "internal/process/text_summary_flow.go"
+    }
+  ],
+  "connectors": [
+    {
+      "connectionName": "summary-model",
+      "connectorId": "llm",
+      "modulePath": "github.com/superdurable/dex-connectors-library/connectors/superdurable/llm",
+      "version": "v0.22.1",
+      "authMethodId": "",
+      "operations": ["generateText"]
+    }
+  ]
+}

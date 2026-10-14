@@ -1,0 +1,230 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+{{/* A node pool's arm64 capacity: every general-purpose, memory or burstable instance with the caller's vCPU counts
+and at least 8 GiB, so one family's missing Spot capacity in a zone never blocks a launch, in the caller's capacity
+types (Karpenter launches Spot first when On-Demand is also allowed). */}}
+{{- define "v2.karpenterRequirements" -}}
+- key: kubernetes.io/arch
+  operator: In
+  values: [arm64]
+- key: kubernetes.io/os
+  operator: In
+  values: [linux]
+- key: karpenter.sh/capacity-type
+  operator: In
+  values: {{ toJson .capacityTypes }}
+- key: karpenter.k8s.aws/instance-category
+  operator: In
+  values: [m, r, t]
+- key: karpenter.k8s.aws/instance-cpu
+  operator: In
+  values: {{ toJson .cpus }}
+- key: karpenter.k8s.aws/instance-memory
+  operator: Gt
+  values: ["7999"]
+{{- end -}}
+
+{{/* A node pool's ceiling: its vCPU count and 8 GiB per vCPU, which the largest memory-optimized instances reach, so
+vCPUs are the binding limit. A ceiling is not spend: Karpenter launches nodes only for Pending Pods. */}}
+{{- define "v2.karpenterLimits" -}}
+cpu: {{ . }}
+memory: {{ mul . 8 }}Gi
+{{- end -}}
+
+{{/* The AMI, node role, discovery selectors and root volume both node classes share. */}}
+{{- define "v2.karpenterNodeClassBase" -}}
+amiSelectorTerms:
+  - alias: al2023@v20260911
+role: {{ .Values.nodePools.nodeRoleName }}
+subnetSelectorTerms:
+  - tags:
+      karpenter.sh/discovery: {{ .Values.nodePools.clusterName }}
+securityGroupSelectorTerms:
+  - tags:
+      karpenter.sh/discovery: {{ .Values.nodePools.clusterName }}
+blockDeviceMappings:
+  - deviceName: /dev/xvda
+    ebs:
+      volumeSize: 50Gi
+      volumeType: gp3
+      encrypted: true
+      deleteOnTermination: true
+{{- end -}}
+
+{{- if not .Values.localKind }}
+{{- if eq .Values.environment "prod" }}
+# In prod, Karpenter adds ordinary Spot capacity when the baseline node is full.
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: {{ include "v2.product" $ }}-platform
+spec:
+  template:
+    metadata:
+      labels:
+        superdurable.io/pool: platform
+    spec:
+      nodeClassRef:
+        group: karpenter.k8s.aws
+        kind: EC2NodeClass
+        name: {{ include "v2.product" $ }}-platform
+      requirements:
+        {{- include "v2.karpenterRequirements" (dict "cpus" (list "2" "4") "capacityTypes" (list "spot")) | nindent 8 }}
+      expireAfter: 720h
+  limits:
+    {{- include "v2.karpenterLimits" .Values.nodePools.limits.platform | nindent 4 }}
+  disruption:
+    consolidationPolicy: WhenEmptyOrUnderutilized
+    consolidateAfter: 5m
+---
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: {{ include "v2.product" $ }}-platform
+spec:
+  {{- include "v2.karpenterNodeClassBase" . | nindent 2 }}
+
+{{- end }}
+---
+# Karpenter creates isolated runsc capacity on demand in any eligible AZ.
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: {{ include "v2.product" $ }}-runsc
+spec:
+  template:
+    metadata:
+      labels:
+        superdurable.io/pool: sandbox
+        superdurable.io/sandbox-class: runsc
+    spec:
+      nodeClassRef:
+        group: karpenter.k8s.aws
+        kind: EC2NodeClass
+        name: {{ include "v2.product" $ }}-runsc
+      taints:
+        - key: superdurable.io/sandbox-class
+          value: runsc
+          effect: NoSchedule
+      requirements:
+        {{- /* 2 vCPU holds a coding Sandbox's 2 CPU / 4 GiB limits; a larger node mostly idles. A Sandbox's workspace
+        volume pins it to one zone, so On-Demand backs Spot there rather than leaving the Sandbox Pending. */}}
+        {{- include "v2.karpenterRequirements" (dict "cpus" (list "2") "capacityTypes" (list "spot" "on-demand")) | nindent 8 }}
+      expireAfter: 720h
+  limits:
+    {{- include "v2.karpenterLimits" .Values.nodePools.limits.runsc | nindent 4 }}
+  disruption:
+    consolidationPolicy: WhenEmpty
+    consolidateAfter: 1m
+---
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: {{ include "v2.product" $ }}-runsc
+spec:
+  {{- include "v2.karpenterNodeClassBase" . | nindent 2 }}
+  userData: |
+    MIME-Version: 1.0
+    Content-Type: multipart/mixed; boundary="SUPERVERSE"
+
+    --SUPERVERSE
+    Content-Type: text/x-shellscript; charset="us-ascii"
+
+    #!/usr/bin/env bash
+    set -euo pipefail
+    gvisor_archive=/var/tmp/gvisor.tar.bz2
+    gvisor_stage=/var/tmp/gvisor-install
+    rm -rf "$gvisor_stage"
+    mkdir -p "$gvisor_stage"
+    curl --fail --show-error --location --retry 5 --retry-all-errors \
+      --output "$gvisor_archive" \
+      "https://storage.googleapis.com/gvisor/releases/{{ .Values.nodePools.gvisorRelease }}/aarch64/gvisor.tar.bz2"
+    printf '%s  %s\n' '{{ .Values.nodePools.gvisorSHA256 }}' "$gvisor_archive" | sha256sum --check --strict
+    tar --extract --bzip2 --file "$gvisor_archive" --directory "$gvisor_stage"
+    install --owner root --group root --mode 0755 \
+      "$gvisor_stage/runsc" "$gvisor_stage/containerd-shim-runsc-v1" /usr/local/bin/
+    rm -rf /usr/local/bin/gvisor-bin
+    install --owner root --group root --mode 0755 --directory /usr/local/bin/gvisor-bin
+    find "$gvisor_stage/gvisor-bin" -maxdepth 1 -type f -print0 | \
+      xargs -0 -I '{}' install --owner root --group root --mode 0755 \
+        '{}' /usr/local/bin/gvisor-bin/
+    /usr/local/bin/runsc --version
+    rm -rf "$gvisor_archive" "$gvisor_stage"
+
+    --SUPERVERSE
+    Content-Type: application/node.eks.aws
+
+    ---
+    apiVersion: node.eks.aws/v1alpha1
+    kind: NodeConfig
+    spec:
+      containerd:
+        config: |
+          [plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runsc]
+            runtime_type = "io.containerd.runsc.v1"
+
+    --SUPERVERSE--
+
+---
+# Live application generations run on their own gVisor capacity, so a burst of Sessions never starves a running
+# application and Live growth never starves Sessions. The pool shares the runsc node class; Live Pods are
+# single-replica and serve traffic, so it takes On-Demand capacity in prod and never consolidates a running Pod.
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: {{ include "v2.product" $ }}-live
+spec:
+  template:
+    metadata:
+      labels:
+        superdurable.io/pool: live
+        superdurable.io/sandbox-class: runsc
+    spec:
+      nodeClassRef:
+        group: karpenter.k8s.aws
+        kind: EC2NodeClass
+        name: {{ include "v2.product" $ }}-runsc
+      taints:
+        - key: superdurable.io/pool
+          value: live
+          effect: NoSchedule
+      requirements:
+        {{- /* A Live Pod requests 100m / 128Mi, so a 4 vCPU node holds about 35 of them. */}}
+        {{- include "v2.karpenterRequirements" (dict "cpus" (list "2" "4") "capacityTypes" (ternary (list "on-demand") (list "spot" "on-demand") (eq .Values.environment "prod"))) | nindent 8 }}
+      expireAfter: 720h
+  limits:
+    {{- include "v2.karpenterLimits" .Values.nodePools.limits.live | nindent 4 }}
+  disruption:
+    consolidationPolicy: WhenEmpty
+    consolidateAfter: 5m
+---
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: runsc
+handler: runsc
+scheduling:
+  nodeSelector:
+    superdurable.io/pool: sandbox
+    superdurable.io/sandbox-class: runsc
+  tolerations:
+    - {key: superdurable.io/sandbox-class, operator: Equal, value: runsc, effect: NoSchedule}
+---
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: runsc-live
+handler: runsc
+scheduling:
+  nodeSelector:
+    superdurable.io/pool: live
+    superdurable.io/sandbox-class: runsc
+  tolerations:
+    - {key: superdurable.io/pool, operator: Equal, value: live, effect: NoSchedule}
+{{- end }}

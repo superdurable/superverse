@@ -1,0 +1,35 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# Leaves one uncommitted note in the workspace, so a Sandbox deadline test can
+# check that the note survives the reclamation of the Pod: the volume keeps it,
+# and workspace-note-check finds it on the next instance. The note's text comes
+# from [[scenario-arg:note=...]]; nothing is committed or pushed. A successful
+# write changes source, and a turn that ends after a change without a
+# commit_and_push with blocked=false is continued up to three times, each with a
+# reminder (the Session's source handoff rule). A blocked commit does not hand
+# off, and a real one would commit the note, so the script answers the three
+# continuations with the same text: the turn then ends with the note uncommitted.
+name: workspace-note
+title: "Uncommitted note"
+description: "Writes an uncommitted note from the note argument and leaves it in the workspace."
+category: agent_feature
+arguments:
+  note: Mock note
+inputs:
+  - label: "Leave a note"
+    message: "Leave a note in the workspace."
+    replies:
+      - text: "Writing the workspace note."
+        tool_uses:
+          - name: write
+            input: {path: sandbox-deadline-note.txt, content: "{{note}}\n"}
+      - text: "The note is written and left uncommitted."
+      - text: "The note stays uncommitted on purpose: it only has to survive the Sandbox."
+      - text: "The note stays uncommitted on purpose: it only has to survive the Sandbox."
+      - text: "The note stays uncommitted on purpose: it only has to survive the Sandbox."

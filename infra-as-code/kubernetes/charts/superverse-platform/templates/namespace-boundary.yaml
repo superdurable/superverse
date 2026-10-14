@@ -1,0 +1,55 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: {{ include "v2.product" $ }}-namespace-boundary
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE, DELETE]
+        resources: [namespaces]
+  matchConditions:
+    {{- include "v2.serverOnlyMatch" $ | nindent 4 }}
+  variables:
+    - name: target
+      expression: "request.operation == 'DELETE' ? oldObject : object"
+  validations:
+    - expression: >-
+        variables.target.metadata.name.matches('{{ include "v2.projectNamespacePattern" $ }}') ||
+        variables.target.metadata.name.matches('{{ include "v2.sessionNamespacePattern" $ }}')
+      message: The V2 server cannot create or delete another platform's namespace.
+---
+{{ include "v2.policyBinding" (dict "root" $ "name" "namespace-boundary") }}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: {{ include "v2.product" $ }}-namespaced-write-boundary
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ['*']
+        apiVersions: ['*']
+        operations: [CREATE, UPDATE, DELETE]
+        resources: ['*']
+        scope: Namespaced
+  matchConditions:
+    {{- include "v2.serverOnlyMatch" $ | nindent 4 }}
+  validations:
+    - expression: >-
+        request.namespace.matches('{{ include "v2.projectNamespacePattern" $ }}') ||
+        request.namespace.matches('{{ include "v2.sessionNamespacePattern" $ }}')
+      message: The V2 server may mutate only its project and session namespaces.
+---
+{{ include "v2.policyBinding" (dict "root" $ "name" "namespaced-write-boundary") }}

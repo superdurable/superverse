@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "path",
+    "content"
+  ],
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "The file to create or replace: relative to the workspace root, or absolute inside it. Missing directories are created.",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "content": {
+      "type": "string",
+      "description": "The complete new content of the file, at most 4 MiB.",
+      "minLength": 0,
+      "maxLength": 4194304
+    }
+  }
+}

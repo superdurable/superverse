@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "task_id"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "description": "The task ID of the task to stop: a background command, such as cmd-qjo5x7m2k4ab, or a subagent, such as agent-k3n8q5r1.",
+      "minLength": 1,
+      "maxLength": 64
+    }
+  }
+}

@@ -1,0 +1,2 @@
+## Your task: change
+Make the bounded change the task describes in your root and verify it with focused checks, such as a build or the tests of the package you changed. Keep to the files the task names; when a change outside them is needed, make the smallest one and report it. Change files with edit and write, and leave them uncommitted. Report every file you changed and every check you ran with its result. When set_effort is available, raise your effort with it for a hard problem or after the same check failed twice.

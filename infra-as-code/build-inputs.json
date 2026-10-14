@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "server": {
+    "dockerfile": "Dockerfile",
+    "module": "go.mod"
+  },
+  "studio": {
+    "dockerfile": "web/studio/Dockerfile",
+    "nodeImage": "public.ecr.aws/docker/library/node:22.22.0-bookworm-slim@sha256:dd9d21971ec4395903fa6143c2b9267d048ae01ca6d3ea96f16cb30df6187d94"
+  },
+  "coding": {
+    "dockerfile": "sandbox/coding/Dockerfile",
+    "agentSandboxCommit": "3e77ccbac4db8a12b0157eafcad0d1ad5872f32a",
+    "target": "coding-base"
+  }
+}

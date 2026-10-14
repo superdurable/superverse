@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# temporal on the coding Sandbox PATH. The Sandbox's Preview engine already
+# runs Temporal at 127.0.0.1:7233; a second development server would compete
+# for its ports and state. superverse-previewctl runs the real binary directly.
+set -euo pipefail
+
+server=false
+for argument in "$@"; do
+  if [ "$argument" = server ]; then
+    server=true
+  elif [ "$server" = true ] && [ "$argument" = start-dev ]; then
+    echo "temporal: server start-dev is not available in the Sandbox. The Preview engine's Temporal runs at 127.0.0.1:7233; start it with: superverse-previewctl environment ensure" >&2
+    exit 2
+  fi
+done
+exec /usr/local/libexec/superverse/temporal "$@"

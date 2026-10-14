@@ -1,0 +1,405 @@
+{
+  "schemaVersion": "2.0",
+  "valid": true,
+  "source": {
+    "language": "go",
+    "path": "internal/agents/session/backgroundcommand/background_command_flow.go"
+  },
+  "flow": {
+    "name": "BackgroundCommandFlow",
+    "startStepId": "step:WatchBackgroundCommand",
+    "span": {
+      "startLine": 32,
+      "startColumn": 1,
+      "endLine": 34,
+      "endColumn": 2
+    }
+  },
+  "nodes": [
+    {
+      "id": "decision:rpc:GetDexDisplay:62:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetDexDisplay",
+      "phase": "rpc",
+      "span": {
+        "startLine": 62,
+        "startColumn": 9,
+        "endLine": 62,
+        "endColumn": 110
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:GetDexSummary:55:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetDexSummary",
+      "phase": "rpc",
+      "span": {
+        "startLine": 55,
+        "startColumn": 9,
+        "endLine": 55,
+        "endColumn": 110
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:step:RecordBackgroundCommandLost:97:9",
+      "kind": "decision",
+      "name": "gracefulComplete",
+      "parentId": "step:RecordBackgroundCommandLost",
+      "phase": "execute",
+      "span": {
+        "startLine": 97,
+        "startColumn": 9,
+        "endLine": 97,
+        "endColumn": 137
+      },
+      "decision": {
+        "type": "gracefulComplete"
+      }
+    },
+    {
+      "id": "decision:step:WatchBackgroundCommand:83:9",
+      "kind": "decision",
+      "name": "gracefulComplete",
+      "parentId": "step:WatchBackgroundCommand",
+      "phase": "execute",
+      "span": {
+        "startLine": 83,
+        "startColumn": 9,
+        "endLine": 83,
+        "endColumn": 34
+      },
+      "decision": {
+        "type": "gracefulComplete"
+      }
+    },
+    {
+      "id": "resource:attribute:taskIDAttribute",
+      "kind": "attribute",
+      "name": "TaskID",
+      "span": {
+        "startLine": 15,
+        "startColumn": 5,
+        "endLine": 15,
+        "endColumn": 60
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "rpc:GetDexDisplay",
+      "kind": "rpc",
+      "name": "GetDexDisplay",
+      "span": {
+        "startLine": 61,
+        "startColumn": 1,
+        "endLine": 63,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:GetDexSummary",
+      "kind": "rpc",
+      "name": "GetDexSummary",
+      "span": {
+        "startLine": 54,
+        "startColumn": 1,
+        "endLine": 56,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "step:RecordBackgroundCommandLost",
+      "kind": "step",
+      "name": "RecordBackgroundCommandLost",
+      "phase": "execute",
+      "span": {
+        "startLine": 33,
+        "startColumn": 80,
+        "endLine": 33,
+        "endColumn": 125
+      },
+      "metadata": {
+        "explanation": "Complete with a lost command after the watch passed its limit or exhausted its retries."
+      }
+    },
+    {
+      "id": "step:WatchBackgroundCommand",
+      "kind": "step",
+      "name": "WatchBackgroundCommand",
+      "phase": "execute",
+      "start": true,
+      "span": {
+        "startLine": 33,
+        "startColumn": 23,
+        "endLine": 33,
+        "endColumn": 78
+      },
+      "metadata": {
+        "explanation": "Follow the background command in the Sandbox's command ledger until it ends or its watch limit passes."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:0001",
+      "kind": "resource_read",
+      "from": "resource:attribute:taskIDAttribute",
+      "to": "rpc:GetDexDisplay",
+      "label": "Get",
+      "span": {
+        "startLine": 62,
+        "startColumn": 83,
+        "endLine": 62,
+        "endColumn": 107
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0002",
+      "kind": "resource_read",
+      "from": "resource:attribute:taskIDAttribute",
+      "to": "rpc:GetDexSummary",
+      "label": "Get",
+      "span": {
+        "startLine": 55,
+        "startColumn": 83,
+        "endLine": 55,
+        "endColumn": 107
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0003",
+      "kind": "failure_transition",
+      "from": "step:WatchBackgroundCommand",
+      "to": "step:RecordBackgroundCommandLost",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 75,
+        "startColumn": 87,
+        "endLine": 75,
+        "endColumn": 164
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    }
+  ],
+  "diagnostics": [],
+  "groups": [
+    {
+      "id": "watch",
+      "label": "Watch",
+      "stepIds": [
+        "step:WatchBackgroundCommand",
+        "step:RecordBackgroundCommandLost"
+      ]
+    }
+  ],
+  "v2": {
+    "indexedAttributes": [],
+    "summary": {
+      "rpcName": "GetDexSummary",
+      "fields": [
+        {
+          "attributeKey": "TaskID",
+          "valueType": "string",
+          "editable": false,
+          "description": "Watched background command"
+        }
+      ]
+    },
+    "display": {
+      "rpcName": "GetDexDisplay",
+      "fields": [
+        {
+          "attributeKey": "TaskID",
+          "valueType": "string",
+          "editable": false,
+          "description": "Watched background command"
+        }
+      ]
+    },
+    "actions": [],
+    "start": {
+      "stepType": "WatchBackgroundCommand",
+      "input": {
+        "kind": "object",
+        "fields": [
+          {
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "session_flow_id",
+            "required": true,
+            "schema": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "lease",
+            "required": true,
+            "schema": {
+              "kind": "object",
+              "fields": [
+                {
+                  "name": "requestId",
+                  "required": true,
+                  "schema": {
+                    "kind": "string"
+                  }
+                },
+                {
+                  "name": "binding",
+                  "required": true,
+                  "schema": {
+                    "kind": "object",
+                    "fields": [
+                      {
+                        "name": "projectId",
+                        "required": true,
+                        "schema": {
+                          "kind": "string"
+                        }
+                      },
+                      {
+                        "name": "flowId",
+                        "required": true,
+                        "schema": {
+                          "kind": "string"
+                        }
+                      },
+                      {
+                        "name": "generation",
+                        "required": true,
+                        "schema": {
+                          "kind": "integer",
+                          "minimum": "-9223372036854775808",
+                          "maximum": "9223372036854775807"
+                        }
+                      },
+                      {
+                        "name": "sandboxNamespace",
+                        "required": true,
+                        "schema": {
+                          "kind": "string"
+                        }
+                      },
+                      {
+                        "name": "sandboxServiceName",
+                        "required": true,
+                        "schema": {
+                          "kind": "string"
+                        }
+                      },
+                      {
+                        "name": "sandboxUid",
+                        "required": true,
+                        "schema": {
+                          "kind": "string"
+                        }
+                      },
+                      {
+                        "name": "workspaceId",
+                        "required": true,
+                        "schema": {
+                          "kind": "string"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "name": "repository",
+                  "required": true,
+                  "schema": {
+                    "kind": "object",
+                    "fields": [
+                      {
+                        "name": "projectId",
+                        "required": true,
+                        "schema": {
+                          "kind": "string"
+                        }
+                      },
+                      {
+                        "name": "installationId",
+                        "required": true,
+                        "schema": {
+                          "kind": "integer",
+                          "minimum": "-9223372036854775808",
+                          "maximum": "9223372036854775807"
+                        }
+                      },
+                      {
+                        "name": "repositoryId",
+                        "required": true,
+                        "schema": {
+                          "kind": "integer",
+                          "minimum": "-9223372036854775808",
+                          "maximum": "9223372036854775807"
+                        }
+                      },
+                      {
+                        "name": "owner",
+                        "required": true,
+                        "schema": {
+                          "kind": "string"
+                        }
+                      },
+                      {
+                        "name": "name",
+                        "required": true,
+                        "schema": {
+                          "kind": "string"
+                        }
+                      },
+                      {
+                        "name": "cloneUrl",
+                        "required": true,
+                        "schema": {
+                          "kind": "string"
+                        }
+                      },
+                      {
+                        "name": "defaultBranch",
+                        "required": true,
+                        "schema": {
+                          "kind": "string"
+                        }
+                      },
+                      {
+                        "name": "expectedHeadSha",
+                        "required": false,
+                        "schema": {
+                          "kind": "string"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

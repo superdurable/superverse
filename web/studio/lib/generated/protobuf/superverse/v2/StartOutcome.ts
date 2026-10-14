@@ -1,0 +1,26 @@
+// Original file: api/superverse/v2/superverse.proto
+
+export const StartOutcome = {
+  START_OUTCOME_UNSPECIFIED: 'START_OUTCOME_UNSPECIFIED',
+  START_OUTCOME_RUNNING: 'START_OUTCOME_RUNNING',
+  START_OUTCOME_READY: 'START_OUTCOME_READY',
+  START_OUTCOME_FAILED: 'START_OUTCOME_FAILED',
+  START_OUTCOME_REFUSED: 'START_OUTCOME_REFUSED',
+  START_OUTCOME_CANCELLED: 'START_OUTCOME_CANCELLED',
+} as const;
+
+export type StartOutcome =
+  | 'START_OUTCOME_UNSPECIFIED'
+  | 0
+  | 'START_OUTCOME_RUNNING'
+  | 1
+  | 'START_OUTCOME_READY'
+  | 2
+  | 'START_OUTCOME_FAILED'
+  | 3
+  | 'START_OUTCOME_REFUSED'
+  | 4
+  | 'START_OUTCOME_CANCELLED'
+  | 5
+
+export type StartOutcome__Output = typeof StartOutcome[keyof typeof StartOutcome]

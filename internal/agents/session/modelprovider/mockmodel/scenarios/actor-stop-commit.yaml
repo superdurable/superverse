@@ -1,0 +1,41 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# Two authenticated Stops during an uninterruptible commit_and_push. Its real
+# source gate checks the application before the token-bearing push.
+# The test must observe the same pending Stop after both admissions, never
+# accept a stale second Stop as proof of joining. No application API is faked.
+name: actor-stop-commit
+title: "Stop attribution at a commit boundary"
+description: "Stop a real push and background task; the first Builder owns the marker."
+category: agent_feature
+test_action: "Press Stop twice during commit_and_push, using two authenticated Builders."
+inputs:
+  - label: "Hold a real push at its safe boundary"
+    message: "Prepare the bounded push-window Stop attribution check."
+    replies:
+      - text: "Starting a background task beside the push."
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 1800", description: "Actor Stop background task", run_in_background: true}
+      - text: "Preparing dependencies for the actual source gate."
+        tool_uses:
+          - name: bash
+            input:
+              command: "make bootstrap"
+              description: "Prepare the real application checks"
+              timeout_seconds: 600
+      - text: "Writing a disposable push checkpoint."
+        tool_uses:
+          - name: write
+            input: {path: actor-stop-checkpoint.md, content: "Stop attribution checkpoint\n"}
+      - text: "Pushing the checkpoint through the actual Git service."
+        tool_uses:
+          - name: commit_and_push
+            input: {summary: "Actor Stop boundary checkpoint", blocked: false, verification: ["Run the real staged source gate before publishing"], remaining_risks: ["Disposable Stop-ordering test checkpoint"]}
+      - text: "The checkpoint was pushed."

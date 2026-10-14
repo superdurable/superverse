@@ -1,0 +1,41 @@
+{
+  "realm": "superverse-e2e",
+  "enabled": true,
+  "sslRequired": "none",
+  "accessTokenLifespan": 60,
+  "revokeRefreshToken": true,
+  "refreshTokenMaxReuse": 0,
+  "eventsEnabled": true,
+  "eventsExpiration": 86400,
+  "eventsListeners": ["jboss-logging"],
+  "enabledEventTypes": ["CODE_TO_TOKEN", "CODE_TO_TOKEN_ERROR", "REFRESH_TOKEN", "REFRESH_TOKEN_ERROR", "USER_INFO_REQUEST", "USER_INFO_REQUEST_ERROR"],
+  "clients": [
+    {
+      "clientId": "superverse-e2e",
+      "name": "Superverse E2E",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${SV2_KEYCLOAK_CLIENT_SECRET}",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["${SV2_KEYCLOAK_REDIRECT_ORIGIN}/*"],
+      "webOrigins": ["+"],
+      "attributes": {"pkce.code.challenge.method": "S256"}
+    }
+  ],
+  "users": [
+    {
+      "username": "superverse-e2e",
+      "enabled": true,
+      "email": "superverse-e2e@example.com",
+      "emailVerified": true,
+      "firstName": "Superverse",
+      "lastName": "E2E",
+      "credentials": [{"type": "password", "value": "${SV2_KEYCLOAK_USER_PASSWORD}", "temporary": false}]
+    }
+  ]
+}

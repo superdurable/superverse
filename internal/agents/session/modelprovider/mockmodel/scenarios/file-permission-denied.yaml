@@ -1,0 +1,79 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A note whose permissions a command removed is refused with path_permission_denied,
+# a failure of the call that changed nothing, never a transient platform fault: the
+# file helper shares the UID of the model's commands, so the model locked the note
+# itself. The note is read alone, a serial call, and then searched and read in a
+# wave beside dex-app.yaml; an edit and a write of it are refused too. Each failure
+# returns at once with its code, owner, effect and hint, and the script continues
+# only when it does. The model restores the permissions and reads the note.
+#
+# The note is written with write, which the checker plays on the template, so the
+# last read finds it; it stays uncommitted. A successful write marks the turn's
+# source as changed, so the script answers the three handoff continuations with the
+# same text and the turn then ends.
+name: file-permission-denied
+title: "Locked note"
+description: "Calls on a note whose permissions a command removed fail with path_permission_denied, alone and in a wave; the model restores the permissions and reads it."
+category: agent_error
+inputs:
+  - label: "Read the locked note"
+    message: "Read the locked note."
+    replies:
+      - text: "Writing a note."
+        tool_uses:
+          - name: write
+            input: {path: file-permission-note.txt, content: "the note can be read again\n"}
+      - text: "Locking the note so that nobody may read it."
+        tool_uses:
+          - name: bash
+            input: {command: "chmod 000 file-permission-note.txt", description: "Lock the note"}
+      - text: "Reading the locked note."
+        tool_uses:
+          - name: read
+            input: {path: file-permission-note.txt}
+        expect_failure: true
+        expect_failure_text: "Error: path_permission_denied"
+        expect_failure_contains:
+          - "owner: call · effect: none"
+          - "file-permission-note.txt cannot be read: permission denied"
+          - "hint: The permissions of the file"
+      - text: "Searching and reading the locked note again, beside the application manifest."
+        tool_uses:
+          - name: read
+            input: {path: file-permission-note.txt}
+          - name: grep
+            input: {pattern: "note", path: file-permission-note.txt}
+          - name: read
+            input: {path: dex-app.yaml}
+        expect_failure: true
+        expect_failure_text: "Error: path_permission_denied"
+        expect_failure_contains: ["owner: call · effect: none"]
+      - text: "Changing the locked note."
+        tool_uses:
+          - name: edit
+            input: {path: file-permission-note.txt, old_string: "again", new_string: "now"}
+          - name: write
+            input: {path: file-permission-note.txt, content: "the note was replaced\n"}
+        expect_failure: true
+        expect_failure_text: "Error: path_permission_denied"
+        expect_failure_contains: ["owner: call · effect: none"]
+      - text: "The note's permissions deny every file tool; restoring them."
+        tool_uses:
+          - name: bash
+            input: {command: "chmod 644 file-permission-note.txt", description: "Unlock the note"}
+      - text: "Reading the note."
+        tool_uses:
+          - name: read
+            input: {path: file-permission-note.txt}
+        expect_result_contains: ["the note can be read again"]
+      - text: "The locked note was refused as my own call's failure each time; with its permissions restored it reads as written."
+      - text: "The note stays in the workspace on purpose; nothing is committed or pushed."
+      - text: "The note stays in the workspace on purpose; nothing is committed or pushed."
+      - text: "The note stays in the workspace on purpose; nothing is committed or pushed."

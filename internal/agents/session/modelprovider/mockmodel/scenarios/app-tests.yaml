@@ -1,0 +1,150 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# The commit gate's test stage on a confirmed change: the card asks for R1 (an
+# unknown summary answers not found) and R2 (blank text is rejected). After the
+# confirmation the script writes an API test with a wrong expectation, sees it
+# fail in make test-app, and its first commit_and_push fails the test stage
+# with application_tests_failed. The fix passes make test-app; a trace that
+# leaves R2 out fails as requirements_untested. A detached listener on the test
+# engine's Dex port then keeps the engine from starting, which fails as
+# test_environment_unavailable with its own retry hint; the script stops the
+# listener, retries once, and the complete trace pushes with the tests stage
+# passed and nothing uncovered: the template's tests cover every llm branch. The listener detaches from
+# a foreground command rather than running as a background task: a Session
+# whose turn grows this long routes no further tool while a background task's
+# watch runs (see the Dex test). The template's reference
+# tests stay unchanged; the new test file is the change.
+name: app-tests
+title: "Application API tests"
+description: "Writes an API test, runs make test-app, and passes the commit gate's test stage after a failing test, an incomplete requirement trace and a busy test engine."
+category: user_error
+inputs:
+  - label: "Describe the change"
+    message: "Make sure an unknown summary answers not found, and keep rejecting blank text."
+    replies:
+      - thinking: "These are behaviors of the API the user wants guaranteed, so I confirm them as requirements and prove each with a test."
+        text: "Here is what I will guarantee and test. Please confirm it, or tell me what to change."
+        tool_uses:
+          - name: confirm_requirements
+            input:
+              title: "Summary API guarantees"
+              summary: "The summary API answers clearly for unknown summaries and blank text."
+              features:
+                - {id: R1, text: "Reading a summary that does not exist answers not found."}
+                - {id: R2, text: "A blank text is rejected and starts no summary."}
+              connections: []
+              user_setup: []
+              acceptance: ["Both behaviors are proven by API tests that pass in the commit gate."]
+  - label: "Confirm the requirements"
+    requirements_confirm: true
+    replies:
+      - text: "Restoring the application's dependencies, as the template's instructions say."
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap", description: "Restore the application's dependencies", timeout_seconds: 600}
+      - text: "Writing the API test of R1."
+        tool_uses:
+          - name: write
+            input:
+              path: internal/apptest/text_summary_unknown_test.go
+              content: |
+                //go:build apptest
+
+                package apptest_test
+
+                import (
+                	"net/http"
+                	"testing"
+
+                	"github.com/google/uuid"
+                	"github.com/superdurable/dex-template-basic-process/internal/api/generated"
+                	"github.com/superdurable/dex-template-basic-process/internal/apptest"
+                )
+
+                func TestTextSummaryUnknownSummaryIsNotFound(t *testing.T) {
+                	env := apptest.Start(t, unconfiguredSummaryModel(t))
+                	_, err := env.API.GetTextSummary(env.Context(t), generated.GetTextSummaryParams{SummaryId: uuid.New()})
+                	requireAPIError(t, err, http.StatusBadRequest, "summary_not_found")
+                }
+      - text: "Running the new test."
+        tool_uses:
+          - name: bash
+            input: {command: "make test-app RUN=TestTextSummaryUnknownSummaryIsNotFound", description: "Run the new API test", timeout_seconds: 600}
+        expect_failure: true
+        expect_result_contains: ["--- FAIL: TestTextSummaryUnknownSummaryIsNotFound", "SUPERVERSE-APPTEST-SUMMARY"]
+      - text: "Checking what the commit gate reports for the failing test."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Test that an unknown summary answers not found"
+              verification: ["make test-app ran the new test"]
+              requirements:
+                - {id: R1, evidence: [internal/api/handler.go], tests: [TestTextSummaryUnknownSummaryIsNotFound]}
+                - {id: R2, evidence: [internal/api/handler.go], tests: [TestTextSummaryRejectsBlankText]}
+              requirements_revision: 1
+        expect_failure: true
+        expect_failure_text: "Error: application_tests_failed"
+        expect_failure_contains: ["TestTextSummaryUnknownSummaryIsNotFound", "next: make test-app RUN="]
+      - text: "The API answers 404 for an unknown summary, so the test expects the wrong status. Fixing the test."
+        tool_uses:
+          - name: edit
+            input:
+              path: internal/apptest/text_summary_unknown_test.go
+              old_string: "http.StatusBadRequest, \"summary_not_found\""
+              new_string: "http.StatusNotFound, \"summary_not_found\""
+      - tool_uses:
+          - name: bash
+            input: {command: "make test-app RUN=TestTextSummaryUnknownSummaryIsNotFound", description: "Run the fixed API test", timeout_seconds: 600}
+        expect_result_contains: ["\"exitCode\":0"]
+      - text: "Pushing with the trace of R1."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Test that an unknown summary answers not found"
+              verification: ["make test-app passed the new test"]
+              requirements:
+                - {id: R1, evidence: [internal/api/handler.go], tests: [TestTextSummaryUnknownSummaryIsNotFound]}
+              requirements_revision: 1
+        expect_failure: true
+        expect_failure_text: "Error: requirements_untested"
+        expect_failure_contains: ["R2 is not in the requirement trace"]
+      - text: "Starting a local server on port 8805."
+        tool_uses:
+          - name: bash
+            input: {command: "setsid python3 -m http.server 8805 --bind 127.0.0.1 >/dev/null 2>&1 </dev/null & for _ in $(seq 50); do (exec 3<>/dev/tcp/127.0.0.1/8805) 2>/dev/null && echo serving && exit 0; sleep 0.2; done; exit 1", description: "Serve files on port 8805"}
+        expect_result_contains: ["serving"]
+      - text: "Pushing with the trace of R1 and R2."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Test that an unknown summary answers not found"
+              verification: ["make test-app passed the new test"]
+              requirements:
+                - {id: R1, evidence: [internal/api/handler.go], tests: [TestTextSummaryUnknownSummaryIsNotFound]}
+                - {id: R2, evidence: [internal/api/handler.go], tests: [TestTextSummaryRejectsBlankText]}
+              requirements_revision: 1
+        expect_failure: true
+        expect_failure_text: "Error: test_environment_unavailable"
+        expect_failure_contains: ["owner: platform", "Call commit_and_push once more", "127.0.0.1:8805 is in use"]
+      - text: "My server holds a port of the test engine. Stopping it before I retry once."
+        tool_uses:
+          - name: bash
+            input: {command: "pkill -f 'http.server 880[5]'; sleep 1; ! pgrep -f 'http.server 880[5]'", description: "Stop the server on port 8805"}
+      - text: "Every confirmed requirement needs its test in the trace. Pushing with R1 and R2."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Test that an unknown summary answers not found"
+              verification: ["make test-app passed the new test", "the gate's test stage passed"]
+              requirements:
+                - {id: R1, evidence: [internal/api/handler.go], tests: [TestTextSummaryUnknownSummaryIsNotFound]}
+                - {id: R2, evidence: [internal/api/handler.go], tests: [TestTextSummaryRejectsBlankText]}
+              requirements_revision: 1
+        expect_result_contains: ["\"stage\":\"tests\",\"status\":\"passed\"", "\"tests\":{\"passed\":10,\"failed\":0,\"flows\":1"]
+      - text: "Both requirements are proven by API tests that passed in the commit gate, and the change is pushed. The template's tests cover every llm branch through its mocks; the real model runs in Preview."

@@ -1,0 +1,44 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# Remote replies are external fixture behavior, never a mock provider response.
+# One remote step matches one rendered assistant group with its exact stable ID.
+name: remote-handoff
+title: "Remote executor handoff"
+description: "A real remote file write followed by strict platform replay and one canonical handoff."
+category: agent_feature
+test_action: "Pair and drive the remote endpoint between inputs 1 and 3."
+arguments:
+  head: unset
+inputs:
+  - label: "Finish the platform prelude"
+    message: "Finish the platform prelude before connecting my agent."
+    replies:
+      - thinking: "The initial signed platform replay stays intact across the executor switch."
+        text: "The platform prelude is complete."
+  - label: "Drive the remote write"
+    message: "Write the remote handoff proof through my agent."
+    replies:
+      - remote: true
+        tool_uses:
+          - id: remote-1-2
+            name: write
+            input: {path: "raexec-handoff.txt", content: "Remote handoff proof\n"}
+        expect_result_contains: ["Created raexec-handoff.txt"]
+  - label: "Return to the Superverse agent"
+    message: "Read the remote handoff proof after switching back."
+    replies:
+      - expect_handoff: true
+        thinking: "All prior platform blocks and the exact external remote tool unit replay unchanged."
+        text: "Reading the actual remote write after the canonical handoff."
+        tool_uses:
+          - name: read
+            input: {path: "raexec-handoff.txt"}
+        expect_result_contains: ["Remote handoff proof"]
+      - thinking: "The real Sandbox read confirms the retained remote unit and strict platform continuation."
+        text: "Remote handoff replay is coherent."

@@ -1,0 +1,61 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A platform failure is reported beside the turn. A probe command runs in the
+# background and ends after the first turn; its notification opens an automatic
+# turn, which corrupts the probe's record in the Sandbox's command ledger with a
+# command. The ledger then answers every read of the probe with a helper error,
+# which the Sandbox tools treat as transient, so each read_task_output of the
+# probe is repeated until its retries are exhausted and recorded as
+# tool_unavailable, owned by the platform. The probe is read alone, a serial
+# call whose failure RecordToolFailure records, and then in a wave beside
+# dex-app.yaml, whose join records the failed branch. Each platform failure
+# starts ReportPlatformIssue beside the turn, which starts the PlatformIssueFlow
+# of its signature; where no issue repository is configured that Flow only logs
+# the incident. The record is corrupted only after the
+# probe ended, when the Session's watch of it has finished, so nothing but these
+# reads meets it. The script goes on only when each failure holds its code,
+# owner and effect, and it changes nothing in the workspace.
+name: platform-issue
+title: "Platform failure"
+description: "Reads of a background command whose ledger record is corrupt exhaust their retries, alone and in a wave; each platform failure is reported beside the turn."
+category: platform_error
+arguments: {task: cmd-aaaaaaaaaaaa}
+inputs:
+  - label: "Corrupt and read a probe's ledger record"
+    message: "Run a probe, corrupt its ledger record and read it."
+    replies:
+      - text: "Starting a probe command in the background."
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 20; echo probe-done", description: "Run a probe in the background", run_in_background: true}
+        expect_result_contains:
+          - "The command runs in the background as task cmd-"
+      - text: "The probe runs in the background; I will corrupt its ledger record when it ends."
+      - text: "The probe ended; corrupting its ledger record."
+        notification: task
+        tool_uses:
+          - name: bash
+            input: {command: "cd /tmp/superverse-exec/runs/{{task}} && test -f exit.json && printf corrupt > admission.json", description: "Corrupt the probe's ledger record"}
+      - text: "Reading the probe's output."
+        tool_uses:
+          - name: read_task_output
+            input: {task_id: "{{task}}"}
+        expect_failure: true
+        expect_failure_text: "Error: tool_unavailable"
+        expect_failure_contains: ["owner: platform · effect: none"]
+      - text: "Reading the probe's output again, beside the application manifest."
+        tool_uses:
+          - name: read_task_output
+            input: {task_id: "{{task}}"}
+          - name: read
+            input: {path: dex-app.yaml}
+        expect_failure: true
+        expect_failure_text: "Error: tool_unavailable"
+        expect_failure_contains: ["owner: platform · effect: none"]
+      - text: "The platform could not read the probe's corrupt ledger record, twice; both failures were reported beside the turn, which went on."

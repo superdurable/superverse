@@ -1,0 +1,316 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+{{/* CEL: the sandboxd container's probe is exactly the profile's local HTTP health check. Pass (dict "probe" name "period" n "failures" n). */}}
+{{- define "v2.sandboxProbeCEL" -}}
+has(variables.container.{{ .probe }}) &&
+has(variables.container.{{ .probe }}.httpGet) &&
+variables.container.{{ .probe }}.httpGet.path == '/v1/health' &&
+variables.container.{{ .probe }}.httpGet.port == 'sandboxd-rest' &&
+(!has(variables.container.{{ .probe }}.httpGet.host) ||
+  variables.container.{{ .probe }}.httpGet.host == '') &&
+(!has(variables.container.{{ .probe }}.httpGet.httpHeaders) ||
+  size(variables.container.{{ .probe }}.httpGet.httpHeaders) == 0) &&
+(!has(variables.container.{{ .probe }}.httpGet.scheme) ||
+  variables.container.{{ .probe }}.httpGet.scheme == '') &&
+(!has(variables.container.{{ .probe }}.exec) &&
+  !has(variables.container.{{ .probe }}.grpc) &&
+  !has(variables.container.{{ .probe }}.tcpSocket)) &&
+variables.container.{{ .probe }}.periodSeconds == {{ .period }} &&
+variables.container.{{ .probe }}.failureThreshold == {{ .failures }} &&
+(!has(variables.container.{{ .probe }}.initialDelaySeconds) ||
+  variables.container.{{ .probe }}.initialDelaySeconds == 0) &&
+(!has(variables.container.{{ .probe }}.successThreshold) ||
+  variables.container.{{ .probe }}.successThreshold == 1) &&
+(!has(variables.container.{{ .probe }}.timeoutSeconds) ||
+  variables.container.{{ .probe }}.timeoutSeconds == 1) &&
+!has(variables.container.{{ .probe }}.terminationGracePeriodSeconds)
+{{- end -}}
+
+{{/* CEL: the Pod volume `v` uses the given volume source and no other. */}}
+{{- define "v2.onlyVolumeSource" -}}
+{{- $sources := list "awsElasticBlockStore" "azureDisk" "azureFile" "cephfs" "cinder" "configMap" "csi" "downwardAPI" "emptyDir" "ephemeral" "fc"
+  "flexVolume" "flocker" "gcePersistentDisk" "gitRepo" "glusterfs" "hostPath" "image" "iscsi" "nfs" "persistentVolumeClaim" "photonPersistentDisk"
+  "portworxVolume" "projected" "quobyte" "rbd" "scaleIO" "secret" "storageos" "vsphereVolume" -}}
+has(v.{{ . }})
+{{- range without $sources . }} && !has(v.{{ . }}){{ end }}
+{{- end -}}
+
+{{- if not .Values.localKind }}
+{{- $profile := (include "v2.sandboxProfiles" . | fromJson).codingProfile }}
+# The Sandbox CRD exposes most of PodSpec. This policy accepts only the exact
+# shape of the coding profile instead of relying on Pod Security Admission to
+# catch every future pass-through field. Evaluation errors fail closed.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: {{ include "v2.product" $ }}-project-session-sandbox
+  labels:
+    app.kubernetes.io/part-of: {{ include "v2.product" $ }}
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["agents.x-k8s.io"]
+        apiVersions: ["v1beta1"]
+        operations: ["CREATE"]
+        resources: ["sandboxes"]
+        scope: Namespaced
+  matchConditions:
+    {{- include "v2.serverOnlyMatch" $ | nindent 4 }}
+  variables:
+    - name: pod
+      expression: object.spec.podTemplate.spec
+    - name: container
+      expression: variables.pod.containers[0]
+  validations:
+    - expression: >-
+        object.spec.operatingMode == 'Running' &&
+        object.metadata.labels['superdurable.io/sandbox-image-contract-revision'] == '{{ $profile.sandboxImageContractRevision }}' &&
+        object.spec.shutdownPolicy == 'Retain' &&
+        object.spec.service == true &&
+        (!has(object.spec.volumeClaimTemplates) ||
+          size(object.spec.volumeClaimTemplates) == 0) &&
+        has(object.spec.podTemplate.metadata) &&
+        has(object.spec.podTemplate.metadata.labels) &&
+        size(object.spec.podTemplate.metadata.labels) == 7 &&
+        object.spec.podTemplate.metadata.labels['app.kubernetes.io/managed-by'] == '{{ include "v2.product" $ }}' &&
+        object.spec.podTemplate.metadata.labels['superdurable.io/generation'] == object.metadata.labels['superdurable.io/generation'] &&
+        object.spec.podTemplate.metadata.labels['app.kubernetes.io/name'] == 'coding-sandbox' &&
+        object.spec.podTemplate.metadata.labels['superdurable.io/sandbox-profile'] == '{{ $profile.name }}' &&
+        object.spec.podTemplate.metadata.labels['superdurable.io/scope'] ==
+          object.metadata.labels['superdurable.io/scope'] &&
+        object.spec.podTemplate.metadata.labels['superdurable.io/project-id'] ==
+          object.metadata.labels['superdurable.io/project-id'] &&
+        object.spec.podTemplate.metadata.labels['superdurable.io/workspace-request-id'] ==
+          object.metadata.labels['superdurable.io/workspace-request-id'] &&
+        (!has(object.spec.podTemplate.metadata.annotations) ||
+          size(object.spec.podTemplate.metadata.annotations) == 0)
+      message: The Sandbox lifecycle and Pod metadata must equal {{ $profile.name }}.
+    - expression: >-
+        variables.pod.runtimeClassName == '{{ $profile.sandboxClassName }}' &&
+        variables.pod.serviceAccountName == '{{ $profile.serviceAccountName }}' &&
+        (!has(variables.pod.serviceAccount) || variables.pod.serviceAccount == '') &&
+        variables.pod.automountServiceAccountToken == false &&
+        variables.pod.enableServiceLinks == false &&
+        variables.pod.terminationGracePeriodSeconds == {{ $profile.terminationGracePeriodSeconds }} &&
+        (!has(variables.pod.hostNetwork) || variables.pod.hostNetwork == false) &&
+        (!has(variables.pod.hostPID) || variables.pod.hostPID == false) &&
+        (!has(variables.pod.hostIPC) || variables.pod.hostIPC == false) &&
+        !has(variables.pod.hostUsers) &&
+        (!has(variables.pod.shareProcessNamespace) ||
+          variables.pod.shareProcessNamespace == false) &&
+        (!has(variables.pod.hostAliases) || size(variables.pod.hostAliases) == 0) &&
+        (!has(variables.pod.imagePullSecrets) ||
+          size(variables.pod.imagePullSecrets) == 0) &&
+        (!has(variables.pod.initContainers) ||
+          size(variables.pod.initContainers) == 0) &&
+        (!has(variables.pod.ephemeralContainers) ||
+          size(variables.pod.ephemeralContainers) == 0) &&
+        (!has(variables.pod.nodeName) || variables.pod.nodeName == '') &&
+        (!has(variables.pod.nodeSelector) || size(variables.pod.nodeSelector) == 0) &&
+        !has(variables.pod.affinity) &&
+        (!has(variables.pod.tolerations) || size(variables.pod.tolerations) == 0) &&
+        !has(variables.pod.dnsConfig) && !has(variables.pod.dnsPolicy) &&
+        (!has(variables.pod.hostname) || variables.pod.hostname == '') &&
+        (!has(variables.pod.hostnameOverride) ||
+          variables.pod.hostnameOverride == '') &&
+        (!has(variables.pod.subdomain) || variables.pod.subdomain == '') &&
+        !has(variables.pod.activeDeadlineSeconds) && !has(variables.pod.os) &&
+        !has(variables.pod.overhead) && !has(variables.pod.preemptionPolicy) &&
+        !has(variables.pod.priority) && !has(variables.pod.priorityClassName) &&
+        (!has(variables.pod.readinessGates) ||
+          size(variables.pod.readinessGates) == 0) &&
+        (!has(variables.pod.resourceClaims) ||
+          size(variables.pod.resourceClaims) == 0) &&
+        !has(variables.pod.resources) &&
+        (!has(variables.pod.restartPolicy) ||
+          variables.pod.restartPolicy == '') &&
+        (!has(variables.pod.schedulerName) ||
+          variables.pod.schedulerName == '') &&
+        (!has(variables.pod.schedulingGates) ||
+          size(variables.pod.schedulingGates) == 0) &&
+        !has(variables.pod.schedulingGroup) &&
+        (!has(variables.pod.setHostnameAsFQDN) ||
+          variables.pod.setHostnameAsFQDN == false) &&
+        (!has(variables.pod.topologySpreadConstraints) ||
+          size(variables.pod.topologySpreadConstraints) == 0)
+      message: The Sandbox Pod may not bypass isolation, identity, network, or scheduling controls.
+    - expression: >-
+        has(variables.pod.securityContext) &&
+        variables.pod.securityContext.runAsUser == {{ $profile.securityContext.runAsUser }} &&
+        variables.pod.securityContext.runAsGroup == {{ $profile.securityContext.runAsGroup }} &&
+        variables.pod.securityContext.fsGroup == {{ $profile.securityContext.fsGroup }} &&
+        variables.pod.securityContext.runAsNonRoot == true &&
+        has(variables.pod.securityContext.seccompProfile) &&
+        variables.pod.securityContext.seccompProfile.type == 'RuntimeDefault' &&
+        !has(variables.pod.securityContext.seccompProfile.localhostProfile) &&
+        (!has(variables.pod.securityContext.supplementalGroups) ||
+          size(variables.pod.securityContext.supplementalGroups) == 0) &&
+        (!has(variables.pod.securityContext.sysctls) ||
+          size(variables.pod.securityContext.sysctls) == 0) &&
+        !has(variables.pod.securityContext.appArmorProfile) &&
+        !has(variables.pod.securityContext.fsGroupChangePolicy) &&
+        !has(variables.pod.securityContext.seLinuxChangePolicy) &&
+        !has(variables.pod.securityContext.supplementalGroupsPolicy) &&
+        !has(variables.pod.securityContext.windowsOptions) &&
+        !has(variables.pod.securityContext.seLinuxOptions)
+      message: The Sandbox Pod security context must equal {{ $profile.name }}.
+    - expression: >-
+        has(variables.pod.containers) && size(variables.pod.containers) == 1 &&
+        variables.container.name == 'sandboxd' &&
+        variables.container.image == {{ printf "%s@%s" $profile.image.repository $profile.image.digest | quote }} &&
+        variables.container.imagePullPolicy == '{{ $profile.image.pullPolicy }}' &&
+        has(variables.container.command) &&
+        variables.container.command == ['{{ $profile.initBinaryPath }}', '--', '{{ $profile.sandboxd.binaryPath }}'] &&
+        has(variables.container.args) &&
+        variables.container.args == [
+          '--root-dir={{ $profile.sandboxd.rootDir }}', '--rest-port={{ $profile.sandboxd.restPort }}', '--grpc-port={{ $profile.sandboxd.grpcPort }}'] &&
+        has(variables.container.lifecycle) && !has(variables.container.lifecycle.postStart) &&
+        !has(variables.container.lifecycle.stopSignal) &&
+        has(variables.container.lifecycle.preStop) && has(variables.container.lifecycle.preStop.exec) &&
+        !has(variables.container.lifecycle.preStop.httpGet) && !has(variables.container.lifecycle.preStop.tcpSocket) &&
+        !has(variables.container.lifecycle.preStop.sleep) &&
+        variables.container.lifecycle.preStop.exec.command == [
+          '{{ $profile.preview.controlBinaryPath }}', 'shutdown', '--timeout', '{{ $profile.preview.shutdownTimeout }}'] &&
+        (!has(variables.container.workingDir) ||
+          variables.container.workingDir == '') &&
+        (!has(variables.container.stdin) || variables.container.stdin == false) &&
+        (!has(variables.container.stdinOnce) ||
+          variables.container.stdinOnce == false) &&
+        (!has(variables.container.tty) || variables.container.tty == false) &&
+        (!has(variables.container.resizePolicy) ||
+          size(variables.container.resizePolicy) == 0) &&
+        !has(variables.container.restartPolicy) &&
+        (!has(variables.container.restartPolicyRules) ||
+          size(variables.container.restartPolicyRules) == 0) &&
+        (!has(variables.container.terminationMessagePath) ||
+          variables.container.terminationMessagePath == '') &&
+        (!has(variables.container.terminationMessagePolicy) ||
+          variables.container.terminationMessagePolicy == '')
+      message: The only container must be the catalog-authorized image, init, sandboxd command and Preview preStop hook.
+    - expression: >-
+        has(variables.container.env) && size(variables.container.env) == 4 &&
+        variables.container.env.exists_one(e, e.name == 'HOME' && !has(e.valueFrom) && e.value == '{{ $profile.sandboxd.rootDir }}') &&
+        variables.container.env.exists_one(e, e.name == 'TMPDIR' && !has(e.valueFrom) && e.value == '/tmp') &&
+        variables.container.env.exists_one(e, e.name == 'SUPERVERSE_PREVIEW_STATE_DIR' && !has(e.valueFrom) &&
+          e.value == '{{ $profile.preview.stateDir }}') &&
+        variables.container.env.exists_one(e, e.name == 'SUPERVERSE_POD_UID' && (!has(e.value) || e.value == '') &&
+          has(e.valueFrom) && has(e.valueFrom.fieldRef) && e.valueFrom.fieldRef.fieldPath == 'metadata.uid') &&
+        (!has(variables.container.envFrom) ||
+          size(variables.container.envFrom) == 0)
+      message: Sandbox environment may contain only HOME, TMPDIR, the Preview state directory and the Pod UID, without credential injection.
+    - expression: >-
+        has(variables.container.ports) && size(variables.container.ports) == 3 &&
+        variables.container.ports.exists_one(p,
+          p.name == 'sandboxd-rest' && p.containerPort == {{ $profile.sandboxd.restPort }} &&
+          p.protocol == 'TCP' && (!has(p.hostPort) || p.hostPort == 0) &&
+          (!has(p.hostIP) || p.hostIP == '')) &&
+        variables.container.ports.exists_one(p,
+          p.name == 'sandboxd-grpc' && p.containerPort == {{ $profile.sandboxd.grpcPort }} &&
+          p.protocol == 'TCP' && (!has(p.hostPort) || p.hostPort == 0) &&
+          (!has(p.hostIP) || p.hostIP == '')) &&
+        variables.container.ports.exists_one(p,
+          p.name == 'preview-dex' && p.containerPort == {{ $profile.preview.dexPort }} &&
+          p.protocol == 'TCP' && (!has(p.hostPort) || p.hostPort == 0) &&
+          (!has(p.hostIP) || p.hostIP == ''))
+      message: The Sandbox may expose only sandboxd and the Preview Dex on their fixed unprivileged container ports.
+    - expression: >-
+        {{- include "v2.sandboxProbeCEL" (dict "probe" "startupProbe" "period" 2 "failures" 30) | nindent 8 }} &&
+        {{- include "v2.sandboxProbeCEL" (dict "probe" "readinessProbe" "period" 5 "failures" 3) | nindent 8 }} &&
+        {{- include "v2.sandboxProbeCEL" (dict "probe" "livenessProbe" "period" 15 "failures" 3) | nindent 8 }}
+      message: Sandbox probes must target only the local fixed health endpoint.
+    - expression: >-
+        has(variables.container.securityContext) &&
+        variables.container.securityContext.runAsUser == {{ $profile.securityContext.runAsUser }} &&
+        variables.container.securityContext.runAsGroup == {{ $profile.securityContext.runAsGroup }} &&
+        variables.container.securityContext.runAsNonRoot == true &&
+        variables.container.securityContext.allowPrivilegeEscalation == false &&
+        variables.container.securityContext.readOnlyRootFilesystem == true &&
+        (!has(variables.container.securityContext.privileged) ||
+          variables.container.securityContext.privileged == false) &&
+        has(variables.container.securityContext.capabilities) &&
+        has(variables.container.securityContext.capabilities.drop) &&
+        variables.container.securityContext.capabilities.drop == ['ALL'] &&
+        (!has(variables.container.securityContext.capabilities.add) ||
+          size(variables.container.securityContext.capabilities.add) == 0) &&
+        (!has(variables.container.securityContext.procMount) ||
+          variables.container.securityContext.procMount == 'Default') &&
+        !has(variables.container.securityContext.seccompProfile) &&
+        !has(variables.container.securityContext.windowsOptions) &&
+        !has(variables.container.securityContext.seLinuxOptions) &&
+        !has(variables.container.securityContext.appArmorProfile)
+      message: The sandboxd container security context must equal {{ $profile.name }}.
+    - expression: >-
+        has(variables.container.resources) &&
+        has(variables.container.resources.requests) &&
+        size(variables.container.resources.requests) == {{ len $profile.resources.requests }} &&
+        {{- range $resource, $quantity := $profile.resources.requests }}
+        variables.container.resources.requests['{{ $resource }}'] == '{{ $quantity }}' &&
+        {{- end }}
+        has(variables.container.resources.limits) &&
+        size(variables.container.resources.limits) == {{ len $profile.resources.limits }} &&
+        {{- range $resource, $quantity := $profile.resources.limits }}
+        variables.container.resources.limits['{{ $resource }}'] == '{{ $quantity }}' &&
+        {{- end }}
+        (!has(variables.container.resources.claims) ||
+          size(variables.container.resources.claims) == 0)
+      message: The sandboxd resource envelope must equal {{ $profile.name }}.
+    # Hosted Sandboxes always mount the scoped EKS Pod Identity token.
+    - expression: >-
+        has(variables.container.volumeMounts) &&
+        size(variables.container.volumeMounts) == 4 &&
+        variables.container.volumeMounts.exists_one(m,
+          m.name == 'workspace' && m.mountPath == '{{ $profile.sandboxd.rootDir }}' &&
+          (!has(m.readOnly) || m.readOnly == false) &&
+          has(m.subPath) && m.subPath == '{{ $profile.workspace.repositorySubPath }}' &&
+          (!has(m.subPathExpr) || m.subPathExpr == '') &&
+          !has(m.mountPropagation) && !has(m.recursiveReadOnly)) &&
+        variables.container.volumeMounts.exists_one(m,
+          m.name == 'workspace' && m.mountPath == '{{ $profile.preview.stateDir }}' &&
+          (!has(m.readOnly) || m.readOnly == false) &&
+          has(m.subPath) && m.subPath == '{{ $profile.workspace.previewStateSubPath }}' &&
+          (!has(m.subPathExpr) || m.subPathExpr == '') &&
+          !has(m.mountPropagation) && !has(m.recursiveReadOnly)) &&
+        variables.container.volumeMounts.exists_one(m,
+          m.name == 'tmp' && m.mountPath == '/tmp' &&
+          (!has(m.readOnly) || m.readOnly == false) &&
+          (!has(m.subPath) || m.subPath == '') &&
+          (!has(m.subPathExpr) || m.subPathExpr == '') &&
+          !has(m.mountPropagation) && !has(m.recursiveReadOnly)) &&
+        variables.container.volumeMounts.exists_one(m,
+          m.name == 'eks-pod-identity-token' && m.mountPath == '/var/run/secrets/pods.eks.amazonaws.com/serviceaccount' &&
+          m.readOnly == true && !has(m.subPath) && !has(m.subPathExpr) && !has(m.mountPropagation)) &&
+        (!has(variables.container.volumeDevices) ||
+          size(variables.container.volumeDevices) == 0)
+      message: The sandboxd container may mount only the repository and Preview state of its workspace, and tmp, at fixed paths.
+    - expression: >-
+        has(variables.pod.volumes) && size(variables.pod.volumes) == 3 &&
+        variables.pod.volumes.exists_one(v,
+          v.name == 'eks-pod-identity-token' && has(v.projected) && v.projected.defaultMode == 420 &&
+          size(v.projected.sources) == 1 && has(v.projected.sources[0].serviceAccountToken) &&
+          v.projected.sources[0].serviceAccountToken.audience == 'pods.eks.amazonaws.com' &&
+          v.projected.sources[0].serviceAccountToken.expirationSeconds == 3600 &&
+          v.projected.sources[0].serviceAccountToken.path == 'eks-pod-identity-token' &&
+          !has(v.hostPath) && !has(v.secret) && !has(v.persistentVolumeClaim)) &&
+        variables.pod.volumes.exists_one(v,
+          v.name == 'workspace' &&
+          {{ include "v2.onlyVolumeSource" "persistentVolumeClaim" }} &&
+          v.persistentVolumeClaim.claimName == '{{ $profile.workspace.pvcName }}' &&
+          (!has(v.persistentVolumeClaim.readOnly) ||
+            v.persistentVolumeClaim.readOnly == false)) &&
+        variables.pod.volumes.exists_one(v,
+          v.name == 'tmp' &&
+          {{ include "v2.onlyVolumeSource" "emptyDir" }} &&
+          (!has(v.emptyDir.medium) || v.emptyDir.medium == '') &&
+          has(v.emptyDir.sizeLimit) && v.emptyDir.sizeLimit == '{{ $profile.tmp.sizeLimit }}')
+      message: The Sandbox may use only its exact workspace PVC and bounded tmp volume.
+---
+{{ include "v2.policyBinding" (dict "root" $ "name" "project-session-sandbox") }}
+
+{{- end }}

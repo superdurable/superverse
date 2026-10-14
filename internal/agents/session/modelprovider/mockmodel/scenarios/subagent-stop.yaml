@@ -1,0 +1,55 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A subagent the user has stopped: its command ignores SIGTERM, so the
+# command ledger's stop takes ten seconds and the subagent's stopped report
+# arrives after the turn that stopped it ended. Input 2 asks the main agent to
+# stop the investigation: stop_task stops the subagent, which saves its
+# worktree, and its task notification, status stopped, opens an automatic turn.
+# A test may instead press the Stop button after input 1: the Stop stops the
+# subagent too, and the paused automatic turns leave its report unanswered.
+name: subagent-stop
+title: "Subagent stopped"
+description: "A slow investigate subagent that stop_task stops; its stopped report opens an automatic turn."
+category: agent_feature
+arguments: {task: agent-aaaaaaaa}
+inputs:
+  - label: "Delegate a slow investigation"
+    message: "Investigate the build in the background; it takes a while."
+    replies:
+      - text: "Delegating the investigation to a subagent."
+        tool_uses:
+          - name: start_agent
+            input:
+              description: "Investigate the build"
+              kind: investigate
+              prompt: "Run the slow build check and report what it prints. [[subagent:subagent-stop/slow]]"
+        expect_result_contains:
+          - "\"task_id\":\"agent-"
+      - text: "A subagent investigates the build; its report arrives as a notification."
+  - label: "Stop the investigation"
+    message: "Stop the build investigation."
+    replies:
+      - text: "Stopping the subagent."
+        tool_uses:
+          - name: stop_task
+            input: {task_id: "{{task}}"}
+        expect_result_contains:
+          - ": stopping."
+      - text: "The subagent stops and saves what it has."
+      - text: "The subagent stopped before it finished; its saved work is kept."
+        notification: task
+subagents:
+  slow:
+    kind: investigate
+    replies:
+      - text: "Running the slow build check."
+        tool_uses:
+          - name: bash
+            input: {command: "trap '' TERM; sleep 300", description: "Run the slow build check", timeout_seconds: 600}
+      - text: "The slow build check finished without output."

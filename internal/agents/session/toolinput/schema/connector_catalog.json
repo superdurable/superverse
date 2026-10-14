@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["query"],
+  "properties": {
+    "query": {"type": "string", "minLength": 1, "maxLength": 160, "description": "Provider, connector ID or capability terms. All space-separated terms must match the connector and its operation descriptions."},
+    "operation": {"type": "string", "minLength": 1, "maxLength": 100, "description": "Optional exact operation name to verify, such as a name returned by a previous catalog result."},
+    "limit": {"type": "integer", "minimum": 1, "maximum": 8, "default": 4}
+  }
+}

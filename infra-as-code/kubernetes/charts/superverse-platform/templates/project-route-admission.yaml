@@ -1,0 +1,62 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+{{/*
+Hostname ownership of the project routes, on every lane and for every requester. Gateway API lets any
+namespace that the Gateway admits claim any hostname, so an HTTPRoute in a project's Live namespace
+(sv2-project-<id>) or Session namespace (sv2-session-<id>) is admitted only with the one host of its
+own scope and Project, the project Gateway as its only parent and Services of its own namespace as its
+backends. Application and Sandbox Pods mount no Kubernetes token, so no workload writes routes; this
+policy is the second line of defense behind the platform server's own write envelopes.
+*/}}
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: {{ include "v2.product" $ }}-project-routes
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    namespaceSelector:
+      matchLabels: {app.kubernetes.io/managed-by: {{ include "v2.product" $ }}}
+      matchExpressions: [{key: superdurable.io/project-id, operator: Exists}]
+    resourceRules:
+      - apiGroups: [gateway.networking.k8s.io]
+        apiVersions: ['*']
+        operations: [CREATE, UPDATE]
+        resources: [httproutes]
+  variables:
+    - name: project
+      expression: namespaceObject.metadata.labels['superdurable.io/project-id']
+    - name: scope
+      expression: >-
+        request.namespace == '{{ include "v2.projectNamespacePrefix" $ }}' + variables.project ? 'live' :
+        (request.namespace == '{{ include "v2.sessionNamespacePrefix" $ }}' + variables.project ? 'preview' : '')
+  validations:
+    - expression: variables.scope != ''
+      message: Project routes belong only to a project's own Live or Session namespace.
+    - expression: >-
+        has(object.spec.hostnames) &&
+        object.spec.hostnames == [variables.scope + '-' + variables.project + '.{{ include "v2.projectDomain" . }}']
+      message: A project route serves only the host of its own Project and scope.
+    - expression: >-
+        has(object.spec.parentRefs) && size(object.spec.parentRefs) == 1 &&
+        object.spec.parentRefs[0].name == 'projects' &&
+        has(object.spec.parentRefs[0].namespace) && object.spec.parentRefs[0].namespace == '{{ include "v2.gatewayNamespace" . }}' &&
+        (!has(object.spec.parentRefs[0].kind) || object.spec.parentRefs[0].kind == 'Gateway') &&
+        !has(object.spec.parentRefs[0].sectionName) && !has(object.spec.parentRefs[0].port)
+      message: A project route attaches only to the project Gateway.
+    - expression: >-
+        has(object.spec.rules) && object.spec.rules.all(rule,
+          has(rule.backendRefs) && rule.backendRefs.all(backend,
+            (!has(backend.namespace) || backend.namespace == request.namespace) &&
+            (!has(backend.group) || backend.group == '') &&
+            (!has(backend.kind) || backend.kind == 'Service')))
+      message: A project route forwards only to Services of its own namespace.
+---
+{{ include "v2.policyBinding" (dict "root" $ "name" "project-routes") }}

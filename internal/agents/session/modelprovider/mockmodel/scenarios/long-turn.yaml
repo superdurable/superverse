@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A Session completes more than 100 model calls in one turn with real Dex and
+# real tool admission. The model is the only substituted dependency.
+name: long-turn
+title: "Long turn"
+description: "Makes 101 model calls in one turn and completes without a model-call limit question."
+category: agent_feature
+inputs:
+  - label: "Complete a long turn"
+    message: "Keep the progress list current and finish the long task."
+    replies:
+      - text: "Recording the progress list."
+        tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Complete the long turn", status: in_progress}
+        repeat: 100
+      - text: "The long turn finished after 101 model calls."

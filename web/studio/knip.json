@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/knip@6.39.0/schema.json",
+  "entry": [
+    "app/**/{page,layout,route}.{ts,tsx}",
+    "tests/e2e/**/*.spec.ts",
+    "scripts/*.mjs"
+  ],
+  "ignore": ["lib/generated/**"],
+  "ignoreExportsUsedInFile": false,
+  "next": true,
+  "playwright": true
+}

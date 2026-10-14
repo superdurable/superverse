@@ -1,0 +1,5814 @@
+{
+  "schemaVersion": "2.0",
+  "valid": true,
+  "source": {
+    "language": "go",
+    "path": "internal/agents/session/subagent/subagent_flow.go"
+  },
+  "flow": {
+    "name": "SubagentFlow",
+    "startStepId": "step:InitializeSubagent",
+    "span": {
+      "startLine": 68,
+      "startColumn": 1,
+      "endLine": 80,
+      "endColumn": 2
+    }
+  },
+  "nodes": [
+    {
+      "id": "decision-dispatch:rpc:StopSubagent",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "rpc:StopSubagent",
+      "phase": "rpc",
+      "span": {
+        "startLine": 129,
+        "startColumn": 1,
+        "endLine": 143,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:ApplySubagentAdmission",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:ApplySubagentAdmission",
+      "phase": "execute",
+      "span": {
+        "startLine": 249,
+        "startColumn": 1,
+        "endLine": 265,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:AwaitSubagentDeadline",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:AwaitSubagentDeadline",
+      "phase": "execute",
+      "span": {
+        "startLine": 291,
+        "startColumn": 1,
+        "endLine": 300,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:AwaitSubagentParallelToolResults",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:AwaitSubagentParallelToolResults",
+      "phase": "execute",
+      "span": {
+        "startLine": 618,
+        "startColumn": 1,
+        "endLine": 631,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:BeginSubagentFinish",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:BeginSubagentFinish",
+      "phase": "execute",
+      "span": {
+        "startLine": 675,
+        "startColumn": 1,
+        "endLine": 681,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:CallSubagentModel",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:CallSubagentModel",
+      "phase": "execute",
+      "span": {
+        "startLine": 317,
+        "startColumn": 1,
+        "endLine": 367,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:CompactSubagentContext",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:CompactSubagentContext",
+      "phase": "execute",
+      "span": {
+        "startLine": 384,
+        "startColumn": 1,
+        "endLine": 407,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:ExecuteSubagentTool",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:ExecuteSubagentTool",
+      "phase": "execute",
+      "span": {
+        "startLine": 486,
+        "startColumn": 1,
+        "endLine": 508,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:FinishSubagent",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:FinishSubagent",
+      "phase": "execute",
+      "span": {
+        "startLine": 700,
+        "startColumn": 1,
+        "endLine": 718,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:InitializeSubagent",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:InitializeSubagent",
+      "phase": "execute",
+      "span": {
+        "startLine": 194,
+        "startColumn": 1,
+        "endLine": 215,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:RecordSubagentToolFailure",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:RecordSubagentToolFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 549,
+        "startColumn": 1,
+        "endLine": 559,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:RefreshFinishingWorkspace",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:RefreshFinishingWorkspace",
+      "phase": "execute",
+      "span": {
+        "startLine": 735,
+        "startColumn": 1,
+        "endLine": 748,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:RefreshSubagentWorkspace",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:RefreshSubagentWorkspace",
+      "phase": "execute",
+      "span": {
+        "startLine": 651,
+        "startColumn": 1,
+        "endLine": 663,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:RouteSubagentTools",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:RouteSubagentTools",
+      "phase": "execute",
+      "span": {
+        "startLine": 440,
+        "startColumn": 1,
+        "endLine": 461,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:SettleSubagentCommand",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:SettleSubagentCommand",
+      "phase": "execute",
+      "span": {
+        "startLine": 524,
+        "startColumn": 1,
+        "endLine": 538,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision:rpc:GetDexDisplay:172:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetDexDisplay",
+      "phase": "rpc",
+      "span": {
+        "startLine": 172,
+        "startColumn": 9,
+        "endLine": 174,
+        "endColumn": 4
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:GetDexSummary:163:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetDexSummary",
+      "phase": "rpc",
+      "span": {
+        "startLine": 163,
+        "startColumn": 9,
+        "endLine": 163,
+        "endColumn": 65
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:GetSubagentSnapshot:157:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetSubagentSnapshot",
+      "phase": "rpc",
+      "span": {
+        "startLine": 157,
+        "startColumn": 9,
+        "endLine": 157,
+        "endColumn": 59
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:StopSubagent:133:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:StopSubagent",
+      "condition": "status == StatusInitializing",
+      "phase": "rpc",
+      "span": {
+        "startLine": 133,
+        "startColumn": 10,
+        "endLine": 133,
+        "endColumn": 38
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:StopSubagent:136:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:StopSubagent",
+      "condition": "status == StatusRunning",
+      "phase": "rpc",
+      "span": {
+        "startLine": 136,
+        "startColumn": 10,
+        "endLine": 139,
+        "endColumn": 26
+      },
+      "decision": {
+        "type": "rpcResult",
+        "cancellations": [
+          {
+            "stepId": "step:AwaitSubagentDeadline",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:CallSubagentModel",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:CompactSubagentContext",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:RecordSubagentFailure",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:RouteSubagentTools",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:ExecuteSubagentTool",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:SettleSubagentCommand",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:RecordSubagentToolFailure",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:ExecuteSubagentParallelTool",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:RecoverSubagentParallelToolExecution",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:AwaitSubagentParallelToolResults",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:RefreshSubagentWorkspace",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:BeginSubagentFinish",
+            "scope": "all"
+          }
+        ]
+      }
+    },
+    {
+      "id": "decision:rpc:StopSubagent:141:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:StopSubagent",
+      "condition": "default",
+      "phase": "rpc",
+      "span": {
+        "startLine": 141,
+        "startColumn": 10,
+        "endLine": 141,
+        "endColumn": 79
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:step:ApplySubagentAdmission:254:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ApplySubagentAdmission",
+      "condition": " == answer.Stopped",
+      "phase": "execute",
+      "span": {
+        "startLine": 254,
+        "startColumn": 10,
+        "endLine": 254,
+        "endColumn": 48
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ApplySubagentAdmission:258:10",
+      "kind": "decision",
+      "name": "gracefulComplete",
+      "parentId": "step:ApplySubagentAdmission",
+      "condition": " == !answer.Admitted",
+      "phase": "execute",
+      "span": {
+        "startLine": 258,
+        "startColumn": 10,
+        "endLine": 258,
+        "endColumn": 110
+      },
+      "decision": {
+        "type": "gracefulComplete"
+      }
+    },
+    {
+      "id": "decision:step:ApplySubagentAdmission:261:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ApplySubagentAdmission",
+      "condition": " == dexflow.ValueOrZero(stopRequestAttribute.Get(ctx))",
+      "phase": "execute",
+      "span": {
+        "startLine": 261,
+        "startColumn": 10,
+        "endLine": 261,
+        "endColumn": 129
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ApplySubagentAdmission:264:9",
+      "kind": "decision",
+      "name": "goToMany",
+      "parentId": "step:ApplySubagentAdmission",
+      "condition": "otherwise",
+      "phase": "execute",
+      "span": {
+        "startLine": 264,
+        "startColumn": 9,
+        "endLine": 264,
+        "endColumn": 165
+      },
+      "decision": {
+        "type": "goToMany"
+      }
+    },
+    {
+      "id": "decision:step:AwaitSubagentDeadline:293:10",
+      "kind": "decision",
+      "name": "deadEnd",
+      "parentId": "step:AwaitSubagentDeadline",
+      "condition": "statusOf(comm.Must(statusAttribute.Get(ctx))) != StatusRunning",
+      "phase": "execute",
+      "span": {
+        "startLine": 293,
+        "startColumn": 10,
+        "endLine": 293,
+        "endColumn": 23
+      },
+      "decision": {
+        "type": "deadEnd"
+      }
+    },
+    {
+      "id": "decision:step:AwaitSubagentDeadline:296:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:AwaitSubagentDeadline",
+      "condition": "!(statusOf(comm.Must(statusAttribute.Get(ctx))) != StatusRunning)",
+      "phase": "execute",
+      "span": {
+        "startLine": 296,
+        "startColumn": 9,
+        "endLine": 299,
+        "endColumn": 25
+      },
+      "decision": {
+        "type": "goTo",
+        "cancellations": [
+          {
+            "stepId": "step:CallSubagentModel",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:CompactSubagentContext",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:RecordSubagentFailure",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:RouteSubagentTools",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:ExecuteSubagentTool",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:SettleSubagentCommand",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:RecordSubagentToolFailure",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:ExecuteSubagentParallelTool",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:RecoverSubagentParallelToolExecution",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:AwaitSubagentParallelToolResults",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:RefreshSubagentWorkspace",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:BeginSubagentFinish",
+            "scope": "all"
+          }
+        ]
+      }
+    },
+    {
+      "id": "decision:step:AwaitSubagentParallelToolResults:621:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:AwaitSubagentParallelToolResults",
+      "condition": "lost != nil \u0026\u0026 lostWorkspace(ctx, lost.Call.ID)",
+      "phase": "execute",
+      "span": {
+        "startLine": 621,
+        "startColumn": 10,
+        "endLine": 621,
+        "endColumn": 51
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:AwaitSubagentParallelToolResults:624:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:AwaitSubagentParallelToolResults",
+      "condition": "!(lost != nil \u0026\u0026 lostWorkspace(ctx, lost.Call.ID)) and finishToolBatch(ctx, batch)",
+      "phase": "execute",
+      "span": {
+        "startLine": 624,
+        "startColumn": 10,
+        "endLine": 624,
+        "endColumn": 45
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:AwaitSubagentParallelToolResults:628:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:AwaitSubagentParallelToolResults",
+      "condition": "!(lost != nil \u0026\u0026 lostWorkspace(ctx, lost.Call.ID)) and !(finishToolBatch(ctx, batch)) and plan.compacts",
+      "phase": "execute",
+      "span": {
+        "startLine": 628,
+        "startColumn": 10,
+        "endLine": 628,
+        "endColumn": 81
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:AwaitSubagentParallelToolResults:630:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:AwaitSubagentParallelToolResults",
+      "condition": "!(lost != nil \u0026\u0026 lostWorkspace(ctx, lost.Call.ID)) and !(finishToolBatch(ctx, batch)) and !(plan.compacts)",
+      "phase": "execute",
+      "span": {
+        "startLine": 630,
+        "startColumn": 9,
+        "endLine": 630,
+        "endColumn": 75
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:BeginSubagentFinish:677:10",
+      "kind": "decision",
+      "name": "deadEnd",
+      "parentId": "step:BeginSubagentFinish",
+      "condition": "statusOf(comm.Must(statusAttribute.Get(ctx))) != StatusRunning",
+      "phase": "execute",
+      "span": {
+        "startLine": 677,
+        "startColumn": 10,
+        "endLine": 677,
+        "endColumn": 23
+      },
+      "decision": {
+        "type": "deadEnd"
+      }
+    },
+    {
+      "id": "decision:step:BeginSubagentFinish:680:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:BeginSubagentFinish",
+      "condition": "!(statusOf(comm.Must(statusAttribute.Get(ctx))) != StatusRunning)",
+      "phase": "execute",
+      "span": {
+        "startLine": 680,
+        "startColumn": 9,
+        "endLine": 680,
+        "endColumn": 121
+      },
+      "decision": {
+        "type": "goTo",
+        "cancellations": [
+          {
+            "stepId": "step:AwaitSubagentDeadline",
+            "scope": "all"
+          }
+        ]
+      }
+    },
+    {
+      "id": "decision:step:CallSubagentModel:348:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:CallSubagentModel",
+      "condition": "isRejected",
+      "phase": "execute",
+      "span": {
+        "startLine": 348,
+        "startColumn": 10,
+        "endLine": 348,
+        "endColumn": 120
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:CallSubagentModel:358:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:CallSubagentModel",
+      "condition": "!(isRejected) and  == next.finish != nil",
+      "phase": "execute",
+      "span": {
+        "startLine": 358,
+        "startColumn": 10,
+        "endLine": 358,
+        "endColumn": 55
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:CallSubagentModel:360:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:CallSubagentModel",
+      "condition": "!(isRejected) and  == next.routes",
+      "phase": "execute",
+      "span": {
+        "startLine": 360,
+        "startColumn": 10,
+        "endLine": 360,
+        "endColumn": 45
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:CallSubagentModel:364:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:CallSubagentModel",
+      "condition": "!(isRejected) and next.compacts || plan.compacts",
+      "phase": "execute",
+      "span": {
+        "startLine": 364,
+        "startColumn": 10,
+        "endLine": 364,
+        "endColumn": 81
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:CallSubagentModel:366:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:CallSubagentModel",
+      "condition": "!(isRejected) and !(next.compacts || plan.compacts)",
+      "phase": "execute",
+      "span": {
+        "startLine": 366,
+        "startColumn": 9,
+        "endLine": 366,
+        "endColumn": 75
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:CompactSubagentContext:398:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:CompactSubagentContext",
+      "condition": "isRejected",
+      "phase": "execute",
+      "span": {
+        "startLine": 398,
+        "startColumn": 10,
+        "endLine": 398,
+        "endColumn": 161
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:CompactSubagentContext:406:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:CompactSubagentContext",
+      "condition": "!(isRejected)",
+      "phase": "execute",
+      "span": {
+        "startLine": 406,
+        "startColumn": 9,
+        "endLine": 406,
+        "endColumn": 99
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ExecuteSubagentParallelTool:584:9",
+      "kind": "decision",
+      "name": "deadEnd",
+      "parentId": "step:ExecuteSubagentParallelTool",
+      "phase": "execute",
+      "span": {
+        "startLine": 584,
+        "startColumn": 9,
+        "endLine": 584,
+        "endColumn": 22
+      },
+      "decision": {
+        "type": "deadEnd"
+      }
+    },
+    {
+      "id": "decision:step:ExecuteSubagentTool:494:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ExecuteSubagentTool",
+      "condition": " == errors.Is(err, sandboxtools.ErrWorkspaceUnavailable) \u0026\u0026 lostWorkspace(ctx, call.ID)",
+      "phase": "execute",
+      "span": {
+        "startLine": 494,
+        "startColumn": 10,
+        "endLine": 494,
+        "endColumn": 51
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ExecuteSubagentTool:501:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ExecuteSubagentTool",
+      "condition": "finishToolExecution(ctx, call, result, timing)",
+      "phase": "execute",
+      "span": {
+        "startLine": 501,
+        "startColumn": 10,
+        "endLine": 501,
+        "endColumn": 45
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ExecuteSubagentTool:505:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ExecuteSubagentTool",
+      "condition": "!(finishToolExecution(ctx, call, result, timing)) and plan.compacts",
+      "phase": "execute",
+      "span": {
+        "startLine": 505,
+        "startColumn": 10,
+        "endLine": 505,
+        "endColumn": 81
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ExecuteSubagentTool:507:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ExecuteSubagentTool",
+      "condition": "!(finishToolExecution(ctx, call, result, timing)) and !(plan.compacts)",
+      "phase": "execute",
+      "span": {
+        "startLine": 507,
+        "startColumn": 9,
+        "endLine": 507,
+        "endColumn": 75
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:FinishSubagent:708:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:FinishSubagent",
+      "condition": " == errors.Is(err, sandboxtools.ErrWorkspaceUnavailable) \u0026\u0026 finish.Refreshes \u003c maximumWorkspaceLosses",
+      "phase": "execute",
+      "span": {
+        "startLine": 708,
+        "startColumn": 10,
+        "endLine": 708,
+        "endColumn": 55
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:FinishSubagent:717:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:FinishSubagent",
+      "condition": "otherwise",
+      "phase": "execute",
+      "span": {
+        "startLine": 717,
+        "startColumn": 9,
+        "endLine": 717,
+        "endColumn": 50
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:InitializeSubagent:201:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:InitializeSubagent",
+      "condition": "!answer.Admitted",
+      "phase": "execute",
+      "span": {
+        "startLine": 201,
+        "startColumn": 10,
+        "endLine": 201,
+        "endColumn": 52
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:InitializeSubagent:214:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:InitializeSubagent",
+      "condition": "!(!answer.Admitted)",
+      "phase": "execute",
+      "span": {
+        "startLine": 214,
+        "startColumn": 9,
+        "endLine": 214,
+        "endColumn": 51
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RecordSubagentAdmissionFailure:235:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RecordSubagentAdmissionFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 235,
+        "startColumn": 9,
+        "endLine": 235,
+        "endColumn": 47
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RecordSubagentFailure:428:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RecordSubagentFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 428,
+        "startColumn": 9,
+        "endLine": 428,
+        "endColumn": 109
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RecordSubagentOutcome:777:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RecordSubagentOutcome",
+      "phase": "execute",
+      "span": {
+        "startLine": 777,
+        "startColumn": 9,
+        "endLine": 777,
+        "endColumn": 47
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RecordSubagentToolFailure:552:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RecordSubagentToolFailure",
+      "condition": "finishToolExecution(ctx, call, agentloop.UnfinishedToolResult(call, exhaustedRetriesMessage, dexflow.RecoveryDetail(ctx)), agentloop.ToolMessageTiming{})",
+      "phase": "execute",
+      "span": {
+        "startLine": 552,
+        "startColumn": 10,
+        "endLine": 552,
+        "endColumn": 45
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RecordSubagentToolFailure:556:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RecordSubagentToolFailure",
+      "condition": "!(finishToolExecution(ctx, call, agentloop.UnfinishedToolResult(call, exhaustedRetriesMessage, dexflow.RecoveryDetail(ctx)), agentloop.ToolMessageTiming{})) and plan.compacts",
+      "phase": "execute",
+      "span": {
+        "startLine": 556,
+        "startColumn": 10,
+        "endLine": 556,
+        "endColumn": 81
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RecordSubagentToolFailure:558:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RecordSubagentToolFailure",
+      "condition": "!(finishToolExecution(ctx, call, agentloop.UnfinishedToolResult(call, exhaustedRetriesMessage, dexflow.RecoveryDetail(ctx)), agentloop.ToolMessageTiming{})) and !(plan.compacts)",
+      "phase": "execute",
+      "span": {
+        "startLine": 558,
+        "startColumn": 9,
+        "endLine": 558,
+        "endColumn": 75
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RecordUndeliveredReport:834:9",
+      "kind": "decision",
+      "name": "gracefulComplete",
+      "parentId": "step:RecordUndeliveredReport",
+      "phase": "execute",
+      "span": {
+        "startLine": 834,
+        "startColumn": 9,
+        "endLine": 834,
+        "endColumn": 82
+      },
+      "decision": {
+        "type": "gracefulComplete"
+      }
+    },
+    {
+      "id": "decision:step:RecoverSubagentParallelToolExecution:600:9",
+      "kind": "decision",
+      "name": "deadEnd",
+      "parentId": "step:RecoverSubagentParallelToolExecution",
+      "phase": "execute",
+      "span": {
+        "startLine": 600,
+        "startColumn": 9,
+        "endLine": 600,
+        "endColumn": 22
+      },
+      "decision": {
+        "type": "deadEnd"
+      }
+    },
+    {
+      "id": "decision:step:RefreshFinishingWorkspace:743:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RefreshFinishingWorkspace",
+      "condition": "refreshed.Closed",
+      "phase": "execute",
+      "span": {
+        "startLine": 743,
+        "startColumn": 10,
+        "endLine": 743,
+        "endColumn": 51
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RefreshFinishingWorkspace:747:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RefreshFinishingWorkspace",
+      "condition": "!(refreshed.Closed)",
+      "phase": "execute",
+      "span": {
+        "startLine": 747,
+        "startColumn": 9,
+        "endLine": 747,
+        "endColumn": 84
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RefreshSubagentWorkspace:658:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RefreshSubagentWorkspace",
+      "condition": "refreshed.Closed",
+      "phase": "execute",
+      "span": {
+        "startLine": 658,
+        "startColumn": 10,
+        "endLine": 658,
+        "endColumn": 149
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RefreshSubagentWorkspace:662:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RefreshSubagentWorkspace",
+      "condition": "!(refreshed.Closed)",
+      "phase": "execute",
+      "span": {
+        "startLine": 662,
+        "startColumn": 9,
+        "endLine": 662,
+        "endColumn": 44
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ReportSubagentOutcome:819:9",
+      "kind": "decision",
+      "name": "gracefulComplete",
+      "parentId": "step:ReportSubagentOutcome",
+      "phase": "execute",
+      "span": {
+        "startLine": 819,
+        "startColumn": 9,
+        "endLine": 819,
+        "endColumn": 82
+      },
+      "decision": {
+        "type": "gracefulComplete"
+      }
+    },
+    {
+      "id": "decision:step:RouteSubagentTools:445:11",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RouteSubagentTools",
+      "condition": "route == routeAnswered and advancePastCall(ctx)",
+      "phase": "execute",
+      "span": {
+        "startLine": 445,
+        "startColumn": 11,
+        "endLine": 445,
+        "endColumn": 46
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RouteSubagentTools:447:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RouteSubagentTools",
+      "condition": "route == routeAnswered and !(advancePastCall(ctx))",
+      "phase": "execute",
+      "span": {
+        "startLine": 447,
+        "startColumn": 10,
+        "endLine": 447,
+        "endColumn": 100
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RouteSubagentTools:455:10",
+      "kind": "decision",
+      "name": "goToMany",
+      "parentId": "step:RouteSubagentTools",
+      "condition": "route == routeWave",
+      "phase": "execute",
+      "span": {
+        "startLine": 455,
+        "startColumn": 10,
+        "endLine": 455,
+        "endColumn": 36
+      },
+      "decision": {
+        "type": "goToMany"
+      }
+    },
+    {
+      "id": "decision:step:RouteSubagentTools:460:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RouteSubagentTools",
+      "condition": "otherwise",
+      "phase": "execute",
+      "span": {
+        "startLine": 460,
+        "startColumn": 9,
+        "endLine": 460,
+        "endColumn": 75
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:SettleSubagentCommand:531:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:SettleSubagentCommand",
+      "condition": "finishToolExecution(ctx, call, result, timing)",
+      "phase": "execute",
+      "span": {
+        "startLine": 531,
+        "startColumn": 10,
+        "endLine": 531,
+        "endColumn": 45
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:SettleSubagentCommand:535:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:SettleSubagentCommand",
+      "condition": "!(finishToolExecution(ctx, call, result, timing)) and plan.compacts",
+      "phase": "execute",
+      "span": {
+        "startLine": 535,
+        "startColumn": 10,
+        "endLine": 535,
+        "endColumn": 81
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:SettleSubagentCommand:537:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:SettleSubagentCommand",
+      "condition": "!(finishToolExecution(ctx, call, result, timing)) and !(plan.compacts)",
+      "phase": "execute",
+      "span": {
+        "startLine": 537,
+        "startColumn": 9,
+        "endLine": 537,
+        "endColumn": 75
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "resource:attribute:agentStateAttribute",
+      "kind": "attribute",
+      "name": "AgentState",
+      "span": {
+        "startLine": 36,
+        "startColumn": 2,
+        "endLine": 36,
+        "endColumn": 90
+      },
+      "resource": {
+        "valueType": "agentloop.AgentState"
+      }
+    },
+    {
+      "id": "resource:attribute:archivedMessagesAttribute",
+      "kind": "attribute",
+      "name": "ArchivedMessages",
+      "span": {
+        "startLine": 41,
+        "startColumn": 2,
+        "endLine": 41,
+        "endColumn": 110
+      },
+      "resource": {
+        "valueType": "conversation.ArchivedEntryChunk",
+        "map": true
+      }
+    },
+    {
+      "id": "resource:attribute:configAttribute",
+      "kind": "attribute",
+      "name": "Config",
+      "span": {
+        "startLine": 29,
+        "startColumn": 2,
+        "endLine": 29,
+        "endColumn": 62
+      },
+      "resource": {
+        "valueType": "Config"
+      }
+    },
+    {
+      "id": "resource:attribute:contextSegmentAttribute",
+      "kind": "attribute",
+      "name": "ContextSegment",
+      "span": {
+        "startLine": 38,
+        "startColumn": 2,
+        "endLine": 38,
+        "endColumn": 98
+      },
+      "resource": {
+        "valueType": "agentloop.ContextSegment"
+      }
+    },
+    {
+      "id": "resource:attribute:contextSegmentPromptsAttribute",
+      "kind": "attribute",
+      "name": "ContextSegmentPrompts",
+      "span": {
+        "startLine": 39,
+        "startColumn": 2,
+        "endLine": 39,
+        "endColumn": 111
+      },
+      "resource": {
+        "valueType": "conversation.SegmentPrompts",
+        "map": true
+      }
+    },
+    {
+      "id": "resource:attribute:currentMessagesAttribute",
+      "kind": "attribute",
+      "name": "CurrentMessages",
+      "span": {
+        "startLine": 40,
+        "startColumn": 2,
+        "endLine": 40,
+        "endColumn": 96
+      },
+      "resource": {
+        "valueType": "conversation.Entry",
+        "map": true
+      }
+    },
+    {
+      "id": "resource:attribute:identityAttribute",
+      "kind": "attribute",
+      "name": "Identity",
+      "span": {
+        "startLine": 23,
+        "startColumn": 2,
+        "endLine": 23,
+        "endColumn": 82
+      },
+      "resource": {
+        "valueType": "agenttasks.SubagentIdentity"
+      }
+    },
+    {
+      "id": "resource:attribute:messageWindowLockAttribute",
+      "kind": "attribute",
+      "name": "MessageWindowLock",
+      "span": {
+        "startLine": 37,
+        "startColumn": 2,
+        "endLine": 37,
+        "endColumn": 81
+      },
+      "resource": {
+        "valueType": "bool"
+      }
+    },
+    {
+      "id": "resource:attribute:outcomeAttribute",
+      "kind": "attribute",
+      "name": "Outcome",
+      "span": {
+        "startLine": 32,
+        "startColumn": 2,
+        "endLine": 32,
+        "endColumn": 64
+      },
+      "resource": {
+        "valueType": "Outcome"
+      }
+    },
+    {
+      "id": "resource:attribute:projectIDAttribute",
+      "kind": "attribute",
+      "name": "ProjectID",
+      "span": {
+        "startLine": 26,
+        "startColumn": 2,
+        "endLine": 26,
+        "endColumn": 142
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:startAttribute",
+      "kind": "attribute",
+      "name": "Start",
+      "span": {
+        "startLine": 24,
+        "startColumn": 2,
+        "endLine": 24,
+        "endColumn": 63
+      },
+      "resource": {
+        "valueType": "startRecord"
+      }
+    },
+    {
+      "id": "resource:attribute:statusAttribute",
+      "kind": "attribute",
+      "name": "SubagentStatus",
+      "span": {
+        "startLine": 28,
+        "startColumn": 2,
+        "endLine": 28,
+        "endColumn": 149
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:stopRequestAttribute",
+      "kind": "attribute",
+      "name": "StopRequest",
+      "span": {
+        "startLine": 30,
+        "startColumn": 2,
+        "endLine": 30,
+        "endColumn": 65
+      },
+      "resource": {
+        "valueType": "bool"
+      }
+    },
+    {
+      "id": "resource:attribute:workspaceAttribute",
+      "kind": "attribute",
+      "name": "Workspace",
+      "span": {
+        "startLine": 31,
+        "startColumn": 2,
+        "endLine": 31,
+        "endColumn": 68
+      },
+      "resource": {
+        "valueType": "Workspace"
+      }
+    },
+    {
+      "id": "resource:channel:parallelToolResultsChannel",
+      "kind": "channel",
+      "name": "ParallelToolResults",
+      "span": {
+        "startLine": 42,
+        "startColumn": 2,
+        "endLine": 42,
+        "endColumn": 98
+      },
+      "resource": {
+        "valueType": "parallelToolResult",
+        "map": true
+      }
+    },
+    {
+      "id": "resource:stream:agentActivityStream",
+      "kind": "stream",
+      "name": "AgentActivity",
+      "span": {
+        "startLine": 48,
+        "startColumn": 2,
+        "endLine": 48,
+        "endColumn": 93
+      },
+      "resource": {
+        "valueType": "conversation.AgentEvent"
+      }
+    },
+    {
+      "id": "resource:stream:assistantTextStream",
+      "kind": "stream",
+      "name": "AssistantText",
+      "span": {
+        "startLine": 47,
+        "startColumn": 2,
+        "endLine": 47,
+        "endColumn": 76
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:stream:reasoningSummaryStream",
+      "kind": "stream",
+      "name": "ReasoningSummary",
+      "span": {
+        "startLine": 46,
+        "startColumn": 2,
+        "endLine": 46,
+        "endColumn": 79
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "rpc:GetDexDisplay",
+      "kind": "rpc",
+      "name": "GetDexDisplay",
+      "span": {
+        "startLine": 171,
+        "startColumn": 1,
+        "endLine": 175,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:GetDexSummary",
+      "kind": "rpc",
+      "name": "GetDexSummary",
+      "span": {
+        "startLine": 162,
+        "startColumn": 1,
+        "endLine": 164,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:GetSubagentSnapshot",
+      "kind": "rpc",
+      "name": "GetSubagentSnapshot",
+      "span": {
+        "startLine": 147,
+        "startColumn": 1,
+        "endLine": 158,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:StopSubagent",
+      "kind": "rpc",
+      "name": "StopSubagent",
+      "span": {
+        "startLine": 129,
+        "startColumn": 1,
+        "endLine": 143,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "step:ApplySubagentAdmission",
+      "kind": "step",
+      "name": "ApplySubagentAdmission",
+      "phase": "execute",
+      "span": {
+        "startLine": 70,
+        "startColumn": 56,
+        "endLine": 70,
+        "endColumn": 106
+      },
+      "metadata": {
+        "explanation": "Under the status lock, end a denied subagent, reporting one whose start a Stop overtook, stop one that a Stop reached while it initialized, or start its loop beside its deadline."
+      }
+    },
+    {
+      "id": "step:AwaitSubagentDeadline",
+      "kind": "step",
+      "name": "AwaitSubagentDeadline",
+      "phase": "wait_for+execute",
+      "span": {
+        "startLine": 71,
+        "startColumn": 3,
+        "endLine": 71,
+        "endColumn": 42
+      },
+      "metadata": {
+        "explanation": "Wait for the deadline of the subagent's duration limit, then end its loop as timed out."
+      }
+    },
+    {
+      "id": "step:AwaitSubagentParallelToolResults",
+      "kind": "step",
+      "name": "AwaitSubagentParallelToolResults",
+      "phase": "wait_for+execute",
+      "span": {
+        "startLine": 75,
+        "startColumn": 59,
+        "endLine": 75,
+        "endColumn": 119
+      },
+      "metadata": {
+        "explanation": "Join the results of a read-only wave exactly once; a wave that lost its lease is routed again after a refresh."
+      }
+    },
+    {
+      "id": "step:BeginSubagentFinish",
+      "kind": "step",
+      "name": "BeginSubagentFinish",
+      "phase": "execute",
+      "span": {
+        "startLine": 76,
+        "startColumn": 57,
+        "endLine": 76,
+        "endColumn": 94
+      },
+      "metadata": {
+        "explanation": "End the loop of a running subagent once: it completed with its report or failed."
+      }
+    },
+    {
+      "id": "step:CallSubagentModel",
+      "kind": "step",
+      "name": "CallSubagentModel",
+      "phase": "execute",
+      "span": {
+        "startLine": 72,
+        "startColumn": 3,
+        "endLine": 72,
+        "endColumn": 48
+      },
+      "metadata": {
+        "explanation": "Make one model call; the last call before the limit may call no tool and writes the report."
+      }
+    },
+    {
+      "id": "step:CompactSubagentContext",
+      "kind": "step",
+      "name": "CompactSubagentContext",
+      "phase": "execute",
+      "span": {
+        "startLine": 72,
+        "startColumn": 50,
+        "endLine": 72,
+        "endColumn": 100
+      },
+      "metadata": {
+        "explanation": "Summarize the context segment and open the next one with the summary and the task."
+      }
+    },
+    {
+      "id": "step:ExecuteSubagentParallelTool",
+      "kind": "step",
+      "name": "ExecuteSubagentParallelTool",
+      "phase": "execute",
+      "span": {
+        "startLine": 74,
+        "startColumn": 58,
+        "endLine": 74,
+        "endColumn": 113
+      },
+      "metadata": {
+        "explanation": "Run one branch of a read-only wave and publish its result."
+      }
+    },
+    {
+      "id": "step:ExecuteSubagentTool",
+      "kind": "step",
+      "name": "ExecuteSubagentTool",
+      "phase": "execute",
+      "span": {
+        "startLine": 73,
+        "startColumn": 51,
+        "endLine": 73,
+        "endColumn": 98
+      },
+      "metadata": {
+        "explanation": "Run one tool on the lease copy in the worktree, with the call's stable identity and bounded execution."
+      }
+    },
+    {
+      "id": "step:FinishSubagent",
+      "kind": "step",
+      "name": "FinishSubagent",
+      "phase": "execute",
+      "span": {
+        "startLine": 76,
+        "startColumn": 96,
+        "endLine": 76,
+        "endColumn": 138
+      },
+      "metadata": {
+        "explanation": "Stop a command the loop left running and save the worktree into its result ref, keeping the changes for the merge."
+      }
+    },
+    {
+      "id": "step:InitializeSubagent",
+      "kind": "step",
+      "name": "InitializeSubagent",
+      "phase": "execute",
+      "start": true,
+      "span": {
+        "startLine": 70,
+        "startColumn": 3,
+        "endLine": 70,
+        "endColumn": 54
+      },
+      "metadata": {
+        "explanation": "Ask the Session to admit the subagent, then freeze its configuration and open its first segment with the task, holding no status lock."
+      }
+    },
+    {
+      "id": "step:RecordSubagentAdmissionFailure",
+      "kind": "step",
+      "name": "RecordSubagentAdmissionFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 70,
+        "startColumn": 108,
+        "endLine": 70,
+        "endColumn": 156
+      },
+      "metadata": {
+        "explanation": "Fail a subagent whose Session could not be asked to admit it, without an effect, and report the failure."
+      }
+    },
+    {
+      "id": "step:RecordSubagentFailure",
+      "kind": "step",
+      "name": "RecordSubagentFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 72,
+        "startColumn": 102,
+        "endLine": 72,
+        "endColumn": 141
+      },
+      "metadata": {
+        "explanation": "Fail the subagent whose model call, compaction or lease refresh could not finish, with the bounded cause."
+      }
+    },
+    {
+      "id": "step:RecordSubagentOutcome",
+      "kind": "step",
+      "name": "RecordSubagentOutcome",
+      "phase": "execute",
+      "span": {
+        "startLine": 77,
+        "startColumn": 58,
+        "endLine": 77,
+        "endColumn": 97
+      },
+      "metadata": {
+        "explanation": "Record how the subagent ended, drain the results of a stopped wave and report the end."
+      }
+    },
+    {
+      "id": "step:RecordSubagentToolFailure",
+      "kind": "step",
+      "name": "RecordSubagentToolFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 74,
+        "startColumn": 3,
+        "endLine": 74,
+        "endColumn": 56
+      },
+      "metadata": {
+        "explanation": "Record a serial call whose retries are exhausted as a platform failure the model reads, with an unknown effect for a call that may change the worktree."
+      }
+    },
+    {
+      "id": "step:RecordUndeliveredReport",
+      "kind": "step",
+      "name": "RecordUndeliveredReport",
+      "phase": "execute",
+      "span": {
+        "startLine": 78,
+        "startColumn": 3,
+        "endLine": 78,
+        "endColumn": 44
+      },
+      "metadata": {
+        "explanation": "Complete a subagent whose report could not be delivered within its wait limit; its outcome stays readable."
+      }
+    },
+    {
+      "id": "step:RecoverSubagentParallelToolExecution",
+      "kind": "step",
+      "name": "RecoverSubagentParallelToolExecution",
+      "phase": "execute",
+      "span": {
+        "startLine": 75,
+        "startColumn": 3,
+        "endLine": 75,
+        "endColumn": 57
+      },
+      "metadata": {
+        "explanation": "Publish a classified failure for one branch whose retries are exhausted."
+      }
+    },
+    {
+      "id": "step:RefreshFinishingWorkspace",
+      "kind": "step",
+      "name": "RefreshFinishingWorkspace",
+      "phase": "execute",
+      "span": {
+        "startLine": 77,
+        "startColumn": 3,
+        "endLine": 77,
+        "endColumn": 56
+      },
+      "metadata": {
+        "explanation": "Ask the Session every ten seconds for the lease of its current instance when the finishing subagent's copy proved unreachable, then save the worktree on it."
+      }
+    },
+    {
+      "id": "step:RefreshSubagentWorkspace",
+      "kind": "step",
+      "name": "RefreshSubagentWorkspace",
+      "phase": "execute",
+      "span": {
+        "startLine": 76,
+        "startColumn": 3,
+        "endLine": 76,
+        "endColumn": 55
+      },
+      "metadata": {
+        "explanation": "Ask the Session every ten seconds for the lease of its instance after the transport proved the subagent's copy unreachable."
+      }
+    },
+    {
+      "id": "step:ReportSubagentOutcome",
+      "kind": "step",
+      "name": "ReportSubagentOutcome",
+      "phase": "execute",
+      "span": {
+        "startLine": 77,
+        "startColumn": 99,
+        "endLine": 77,
+        "endColumn": 148
+      },
+      "metadata": {
+        "explanation": "Deliver the task notification of the end to the Session, waiting while its queue is full, then complete."
+      }
+    },
+    {
+      "id": "step:RouteSubagentTools",
+      "kind": "step",
+      "name": "RouteSubagentTools",
+      "phase": "execute",
+      "span": {
+        "startLine": 73,
+        "startColumn": 3,
+        "endLine": 73,
+        "endColumn": 49
+      },
+      "metadata": {
+        "explanation": "Answer a call the subagent may not make or set_effort, or run the call serially or in a read-only wave."
+      }
+    },
+    {
+      "id": "step:SettleSubagentCommand",
+      "kind": "step",
+      "name": "SettleSubagentCommand",
+      "phase": "execute",
+      "span": {
+        "startLine": 73,
+        "startColumn": 100,
+        "endLine": 73,
+        "endColumn": 149
+      },
+      "metadata": {
+        "explanation": "Settle a command past its timeout or exhausted retries from the ledger: a subagent's command is stopped, never moved to the background."
+      }
+    },
+    {
+      "id": "wait:AwaitSubagentDeadline:286:9",
+      "kind": "wait",
+      "name": "until",
+      "parentId": "step:AwaitSubagentDeadline",
+      "phase": "wait_for",
+      "span": {
+        "startLine": 286,
+        "startColumn": 9,
+        "endLine": 286,
+        "endColumn": 83
+      },
+      "wait": {
+        "type": "until",
+        "conditions": [
+          {
+            "index": 0,
+            "kind": "timer",
+            "label": "max(deadline.Sub(ctx.FirstAttemptAt()), time.Second) timer",
+            "expression": "max(deadline.Sub(ctx.FirstAttemptAt()), time.Second)",
+            "span": {
+              "startLine": 286,
+              "startColumn": 19,
+              "endLine": 286,
+              "endColumn": 82
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "wait:AwaitSubagentParallelToolResults:613:9",
+      "kind": "wait",
+      "name": "until",
+      "parentId": "step:AwaitSubagentParallelToolResults",
+      "phase": "wait_for",
+      "span": {
+        "startLine": 613,
+        "startColumn": 9,
+        "endLine": 613,
+        "endColumn": 86
+      },
+      "wait": {
+        "type": "until",
+        "conditions": [
+          {
+            "index": 0,
+            "kind": "channel",
+            "label": "ParallelToolResults[batch.BatchID].for len(batch.Records)",
+            "resourceId": "resource:channel:parallelToolResultsChannel",
+            "expression": "batch.BatchID, len(batch.Records)",
+            "span": {
+              "startLine": 613,
+              "startColumn": 19,
+              "endLine": 613,
+              "endColumn": 85
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:0001",
+      "kind": "cancel",
+      "from": "decision:rpc:StopSubagent:136:10",
+      "to": "step:AwaitSubagentDeadline",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 137,
+        "startColumn": 4,
+        "endLine": 137,
+        "endColumn": 27
+      }
+    },
+    {
+      "id": "edge:0002",
+      "kind": "cancel",
+      "from": "decision:rpc:StopSubagent:136:10",
+      "to": "step:AwaitSubagentParallelToolResults",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 138,
+        "startColumn": 104,
+        "endLine": 138,
+        "endColumn": 138
+      }
+    },
+    {
+      "id": "edge:0003",
+      "kind": "cancel",
+      "from": "decision:rpc:StopSubagent:136:10",
+      "to": "step:BeginSubagentFinish",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 139,
+        "startColumn": 4,
+        "endLine": 139,
+        "endColumn": 25
+      }
+    },
+    {
+      "id": "edge:0004",
+      "kind": "cancel",
+      "from": "decision:rpc:StopSubagent:136:10",
+      "to": "step:CallSubagentModel",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 137,
+        "startColumn": 29,
+        "endLine": 137,
+        "endColumn": 48
+      }
+    },
+    {
+      "id": "edge:0005",
+      "kind": "cancel",
+      "from": "decision:rpc:StopSubagent:136:10",
+      "to": "step:CompactSubagentContext",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 137,
+        "startColumn": 50,
+        "endLine": 137,
+        "endColumn": 74
+      }
+    },
+    {
+      "id": "edge:0006",
+      "kind": "cancel",
+      "from": "decision:rpc:StopSubagent:136:10",
+      "to": "step:ExecuteSubagentParallelTool",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 138,
+        "startColumn": 33,
+        "endLine": 138,
+        "endColumn": 62
+      }
+    },
+    {
+      "id": "edge:0007",
+      "kind": "cancel",
+      "from": "decision:rpc:StopSubagent:136:10",
+      "to": "step:ExecuteSubagentTool",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 137,
+        "startColumn": 123,
+        "endLine": 137,
+        "endColumn": 144
+      }
+    },
+    {
+      "id": "edge:0008",
+      "kind": "transition",
+      "from": "decision:rpc:StopSubagent:136:10",
+      "to": "step:FinishSubagent",
+      "label": "fan-out",
+      "span": {
+        "startLine": 136,
+        "startColumn": 68,
+        "endLine": 136,
+        "endColumn": 193
+      }
+    },
+    {
+      "id": "edge:0009",
+      "kind": "cancel",
+      "from": "decision:rpc:StopSubagent:136:10",
+      "to": "step:RecordSubagentFailure",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 137,
+        "startColumn": 76,
+        "endLine": 137,
+        "endColumn": 99
+      }
+    },
+    {
+      "id": "edge:0010",
+      "kind": "cancel",
+      "from": "decision:rpc:StopSubagent:136:10",
+      "to": "step:RecordSubagentToolFailure",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 138,
+        "startColumn": 4,
+        "endLine": 138,
+        "endColumn": 31
+      }
+    },
+    {
+      "id": "edge:0011",
+      "kind": "cancel",
+      "from": "decision:rpc:StopSubagent:136:10",
+      "to": "step:RecoverSubagentParallelToolExecution",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 138,
+        "startColumn": 64,
+        "endLine": 138,
+        "endColumn": 102
+      }
+    },
+    {
+      "id": "edge:0012",
+      "kind": "cancel",
+      "from": "decision:rpc:StopSubagent:136:10",
+      "to": "step:RefreshSubagentWorkspace",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 138,
+        "startColumn": 140,
+        "endLine": 138,
+        "endColumn": 166
+      }
+    },
+    {
+      "id": "edge:0013",
+      "kind": "cancel",
+      "from": "decision:rpc:StopSubagent:136:10",
+      "to": "step:RouteSubagentTools",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 137,
+        "startColumn": 101,
+        "endLine": 137,
+        "endColumn": 121
+      }
+    },
+    {
+      "id": "edge:0014",
+      "kind": "cancel",
+      "from": "decision:rpc:StopSubagent:136:10",
+      "to": "step:SettleSubagentCommand",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 137,
+        "startColumn": 146,
+        "endLine": 137,
+        "endColumn": 169
+      }
+    },
+    {
+      "id": "edge:0015",
+      "kind": "transition",
+      "from": "decision:step:ApplySubagentAdmission:254:10",
+      "to": "step:ReportSubagentOutcome",
+      "label": "GoTo",
+      "span": {
+        "startLine": 254,
+        "startColumn": 10,
+        "endLine": 254,
+        "endColumn": 48
+      }
+    },
+    {
+      "id": "edge:0016",
+      "kind": "transition",
+      "from": "decision:step:ApplySubagentAdmission:261:10",
+      "to": "step:FinishSubagent",
+      "label": "GoTo",
+      "span": {
+        "startLine": 261,
+        "startColumn": 10,
+        "endLine": 261,
+        "endColumn": 129
+      }
+    },
+    {
+      "id": "edge:0017",
+      "kind": "transition",
+      "from": "decision:step:ApplySubagentAdmission:264:9",
+      "to": "step:AwaitSubagentDeadline",
+      "label": "fan-out",
+      "span": {
+        "startLine": 264,
+        "startColumn": 120,
+        "endLine": 264,
+        "endColumn": 164
+      }
+    },
+    {
+      "id": "edge:0018",
+      "kind": "transition",
+      "from": "decision:step:ApplySubagentAdmission:264:9",
+      "to": "step:CallSubagentModel",
+      "label": "fan-out",
+      "span": {
+        "startLine": 264,
+        "startColumn": 22,
+        "endLine": 264,
+        "endColumn": 118
+      }
+    },
+    {
+      "id": "edge:0019",
+      "kind": "cancel",
+      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "to": "step:AwaitSubagentParallelToolResults",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 298,
+        "startColumn": 103,
+        "endLine": 298,
+        "endColumn": 137
+      }
+    },
+    {
+      "id": "edge:0020",
+      "kind": "cancel",
+      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "to": "step:BeginSubagentFinish",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 299,
+        "startColumn": 3,
+        "endLine": 299,
+        "endColumn": 24
+      }
+    },
+    {
+      "id": "edge:0021",
+      "kind": "cancel",
+      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "to": "step:CallSubagentModel",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 297,
+        "startColumn": 3,
+        "endLine": 297,
+        "endColumn": 22
+      }
+    },
+    {
+      "id": "edge:0022",
+      "kind": "cancel",
+      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "to": "step:CompactSubagentContext",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 297,
+        "startColumn": 24,
+        "endLine": 297,
+        "endColumn": 48
+      }
+    },
+    {
+      "id": "edge:0023",
+      "kind": "cancel",
+      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "to": "step:ExecuteSubagentParallelTool",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 298,
+        "startColumn": 32,
+        "endLine": 298,
+        "endColumn": 61
+      }
+    },
+    {
+      "id": "edge:0024",
+      "kind": "cancel",
+      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "to": "step:ExecuteSubagentTool",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 297,
+        "startColumn": 97,
+        "endLine": 297,
+        "endColumn": 118
+      }
+    },
+    {
+      "id": "edge:0025",
+      "kind": "transition",
+      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "to": "step:FinishSubagent",
+      "label": "GoTo",
+      "span": {
+        "startLine": 296,
+        "startColumn": 9,
+        "endLine": 296,
+        "endColumn": 129
+      }
+    },
+    {
+      "id": "edge:0026",
+      "kind": "cancel",
+      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "to": "step:RecordSubagentFailure",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 297,
+        "startColumn": 50,
+        "endLine": 297,
+        "endColumn": 73
+      }
+    },
+    {
+      "id": "edge:0027",
+      "kind": "cancel",
+      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "to": "step:RecordSubagentToolFailure",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 298,
+        "startColumn": 3,
+        "endLine": 298,
+        "endColumn": 30
+      }
+    },
+    {
+      "id": "edge:0028",
+      "kind": "cancel",
+      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "to": "step:RecoverSubagentParallelToolExecution",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 298,
+        "startColumn": 63,
+        "endLine": 298,
+        "endColumn": 101
+      }
+    },
+    {
+      "id": "edge:0029",
+      "kind": "cancel",
+      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "to": "step:RefreshSubagentWorkspace",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 298,
+        "startColumn": 139,
+        "endLine": 298,
+        "endColumn": 165
+      }
+    },
+    {
+      "id": "edge:0030",
+      "kind": "cancel",
+      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "to": "step:RouteSubagentTools",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 297,
+        "startColumn": 75,
+        "endLine": 297,
+        "endColumn": 95
+      }
+    },
+    {
+      "id": "edge:0031",
+      "kind": "cancel",
+      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "to": "step:SettleSubagentCommand",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 297,
+        "startColumn": 120,
+        "endLine": 297,
+        "endColumn": 143
+      }
+    },
+    {
+      "id": "edge:0032",
+      "kind": "transition",
+      "from": "decision:step:AwaitSubagentParallelToolResults:621:10",
+      "to": "step:RefreshSubagentWorkspace",
+      "label": "GoTo",
+      "span": {
+        "startLine": 621,
+        "startColumn": 10,
+        "endLine": 621,
+        "endColumn": 51
+      }
+    },
+    {
+      "id": "edge:0033",
+      "kind": "transition",
+      "from": "decision:step:AwaitSubagentParallelToolResults:624:10",
+      "to": "step:RouteSubagentTools",
+      "label": "GoTo",
+      "span": {
+        "startLine": 624,
+        "startColumn": 10,
+        "endLine": 624,
+        "endColumn": 45
+      }
+    },
+    {
+      "id": "edge:0034",
+      "kind": "transition",
+      "from": "decision:step:AwaitSubagentParallelToolResults:628:10",
+      "to": "step:CompactSubagentContext",
+      "label": "GoTo",
+      "span": {
+        "startLine": 628,
+        "startColumn": 10,
+        "endLine": 628,
+        "endColumn": 81
+      }
+    },
+    {
+      "id": "edge:0035",
+      "kind": "transition",
+      "from": "decision:step:AwaitSubagentParallelToolResults:630:9",
+      "to": "step:CallSubagentModel",
+      "label": "GoTo",
+      "span": {
+        "startLine": 630,
+        "startColumn": 9,
+        "endLine": 630,
+        "endColumn": 75
+      }
+    },
+    {
+      "id": "edge:0036",
+      "kind": "cancel",
+      "from": "decision:step:BeginSubagentFinish:680:9",
+      "to": "step:AwaitSubagentDeadline",
+      "label": "CancelSteps",
+      "span": {
+        "startLine": 680,
+        "startColumn": 97,
+        "endLine": 680,
+        "endColumn": 120
+      }
+    },
+    {
+      "id": "edge:0037",
+      "kind": "transition",
+      "from": "decision:step:BeginSubagentFinish:680:9",
+      "to": "step:FinishSubagent",
+      "label": "GoTo",
+      "span": {
+        "startLine": 680,
+        "startColumn": 9,
+        "endLine": 680,
+        "endColumn": 84
+      }
+    },
+    {
+      "id": "edge:0038",
+      "kind": "transition",
+      "from": "decision:step:CallSubagentModel:348:10",
+      "to": "step:BeginSubagentFinish",
+      "label": "GoTo",
+      "span": {
+        "startLine": 348,
+        "startColumn": 10,
+        "endLine": 348,
+        "endColumn": 120
+      }
+    },
+    {
+      "id": "edge:0039",
+      "kind": "transition",
+      "from": "decision:step:CallSubagentModel:358:10",
+      "to": "step:BeginSubagentFinish",
+      "label": "GoTo",
+      "span": {
+        "startLine": 358,
+        "startColumn": 10,
+        "endLine": 358,
+        "endColumn": 55
+      }
+    },
+    {
+      "id": "edge:0040",
+      "kind": "transition",
+      "from": "decision:step:CallSubagentModel:360:10",
+      "to": "step:RouteSubagentTools",
+      "label": "GoTo",
+      "span": {
+        "startLine": 360,
+        "startColumn": 10,
+        "endLine": 360,
+        "endColumn": 45
+      }
+    },
+    {
+      "id": "edge:0041",
+      "kind": "transition",
+      "from": "decision:step:CallSubagentModel:364:10",
+      "to": "step:CompactSubagentContext",
+      "label": "GoTo",
+      "span": {
+        "startLine": 364,
+        "startColumn": 10,
+        "endLine": 364,
+        "endColumn": 81
+      }
+    },
+    {
+      "id": "edge:0042",
+      "kind": "transition",
+      "from": "decision:step:CallSubagentModel:366:9",
+      "to": "step:CallSubagentModel",
+      "label": "GoTo",
+      "span": {
+        "startLine": 366,
+        "startColumn": 9,
+        "endLine": 366,
+        "endColumn": 75
+      }
+    },
+    {
+      "id": "edge:0043",
+      "kind": "transition",
+      "from": "decision:step:CompactSubagentContext:398:10",
+      "to": "step:BeginSubagentFinish",
+      "label": "GoTo",
+      "span": {
+        "startLine": 398,
+        "startColumn": 10,
+        "endLine": 398,
+        "endColumn": 161
+      }
+    },
+    {
+      "id": "edge:0044",
+      "kind": "transition",
+      "from": "decision:step:CompactSubagentContext:406:9",
+      "to": "step:CallSubagentModel",
+      "label": "GoTo",
+      "span": {
+        "startLine": 406,
+        "startColumn": 9,
+        "endLine": 406,
+        "endColumn": 99
+      }
+    },
+    {
+      "id": "edge:0045",
+      "kind": "transition",
+      "from": "decision:step:ExecuteSubagentTool:494:10",
+      "to": "step:RefreshSubagentWorkspace",
+      "label": "GoTo",
+      "span": {
+        "startLine": 494,
+        "startColumn": 10,
+        "endLine": 494,
+        "endColumn": 51
+      }
+    },
+    {
+      "id": "edge:0046",
+      "kind": "transition",
+      "from": "decision:step:ExecuteSubagentTool:501:10",
+      "to": "step:RouteSubagentTools",
+      "label": "GoTo",
+      "span": {
+        "startLine": 501,
+        "startColumn": 10,
+        "endLine": 501,
+        "endColumn": 45
+      }
+    },
+    {
+      "id": "edge:0047",
+      "kind": "transition",
+      "from": "decision:step:ExecuteSubagentTool:505:10",
+      "to": "step:CompactSubagentContext",
+      "label": "GoTo",
+      "span": {
+        "startLine": 505,
+        "startColumn": 10,
+        "endLine": 505,
+        "endColumn": 81
+      }
+    },
+    {
+      "id": "edge:0048",
+      "kind": "transition",
+      "from": "decision:step:ExecuteSubagentTool:507:9",
+      "to": "step:CallSubagentModel",
+      "label": "GoTo",
+      "span": {
+        "startLine": 507,
+        "startColumn": 9,
+        "endLine": 507,
+        "endColumn": 75
+      }
+    },
+    {
+      "id": "edge:0049",
+      "kind": "transition",
+      "from": "decision:step:FinishSubagent:708:10",
+      "to": "step:RefreshFinishingWorkspace",
+      "label": "GoTo",
+      "span": {
+        "startLine": 708,
+        "startColumn": 10,
+        "endLine": 708,
+        "endColumn": 55
+      }
+    },
+    {
+      "id": "edge:0050",
+      "kind": "transition",
+      "from": "decision:step:FinishSubagent:717:9",
+      "to": "step:RecordSubagentOutcome",
+      "label": "GoTo",
+      "span": {
+        "startLine": 717,
+        "startColumn": 9,
+        "endLine": 717,
+        "endColumn": 50
+      }
+    },
+    {
+      "id": "edge:0051",
+      "kind": "transition",
+      "from": "decision:step:InitializeSubagent:201:10",
+      "to": "step:ApplySubagentAdmission",
+      "label": "GoTo",
+      "span": {
+        "startLine": 201,
+        "startColumn": 10,
+        "endLine": 201,
+        "endColumn": 52
+      }
+    },
+    {
+      "id": "edge:0052",
+      "kind": "transition",
+      "from": "decision:step:InitializeSubagent:214:9",
+      "to": "step:ApplySubagentAdmission",
+      "label": "GoTo",
+      "span": {
+        "startLine": 214,
+        "startColumn": 9,
+        "endLine": 214,
+        "endColumn": 51
+      }
+    },
+    {
+      "id": "edge:0053",
+      "kind": "transition",
+      "from": "decision:step:RecordSubagentAdmissionFailure:235:9",
+      "to": "step:ReportSubagentOutcome",
+      "label": "GoTo",
+      "span": {
+        "startLine": 235,
+        "startColumn": 9,
+        "endLine": 235,
+        "endColumn": 47
+      }
+    },
+    {
+      "id": "edge:0054",
+      "kind": "transition",
+      "from": "decision:step:RecordSubagentFailure:428:9",
+      "to": "step:BeginSubagentFinish",
+      "label": "GoTo",
+      "span": {
+        "startLine": 428,
+        "startColumn": 9,
+        "endLine": 428,
+        "endColumn": 109
+      }
+    },
+    {
+      "id": "edge:0055",
+      "kind": "transition",
+      "from": "decision:step:RecordSubagentOutcome:777:9",
+      "to": "step:ReportSubagentOutcome",
+      "label": "GoTo",
+      "span": {
+        "startLine": 777,
+        "startColumn": 9,
+        "endLine": 777,
+        "endColumn": 47
+      }
+    },
+    {
+      "id": "edge:0056",
+      "kind": "transition",
+      "from": "decision:step:RecordSubagentToolFailure:552:10",
+      "to": "step:RouteSubagentTools",
+      "label": "GoTo",
+      "span": {
+        "startLine": 552,
+        "startColumn": 10,
+        "endLine": 552,
+        "endColumn": 45
+      }
+    },
+    {
+      "id": "edge:0057",
+      "kind": "transition",
+      "from": "decision:step:RecordSubagentToolFailure:556:10",
+      "to": "step:CompactSubagentContext",
+      "label": "GoTo",
+      "span": {
+        "startLine": 556,
+        "startColumn": 10,
+        "endLine": 556,
+        "endColumn": 81
+      }
+    },
+    {
+      "id": "edge:0058",
+      "kind": "transition",
+      "from": "decision:step:RecordSubagentToolFailure:558:9",
+      "to": "step:CallSubagentModel",
+      "label": "GoTo",
+      "span": {
+        "startLine": 558,
+        "startColumn": 9,
+        "endLine": 558,
+        "endColumn": 75
+      }
+    },
+    {
+      "id": "edge:0059",
+      "kind": "transition",
+      "from": "decision:step:RefreshFinishingWorkspace:743:10",
+      "to": "step:RecordSubagentOutcome",
+      "label": "GoTo",
+      "span": {
+        "startLine": 743,
+        "startColumn": 10,
+        "endLine": 743,
+        "endColumn": 51
+      }
+    },
+    {
+      "id": "edge:0060",
+      "kind": "transition",
+      "from": "decision:step:RefreshFinishingWorkspace:747:9",
+      "to": "step:FinishSubagent",
+      "label": "GoTo",
+      "span": {
+        "startLine": 747,
+        "startColumn": 9,
+        "endLine": 747,
+        "endColumn": 84
+      }
+    },
+    {
+      "id": "edge:0061",
+      "kind": "transition",
+      "from": "decision:step:RefreshSubagentWorkspace:658:10",
+      "to": "step:BeginSubagentFinish",
+      "label": "GoTo",
+      "span": {
+        "startLine": 658,
+        "startColumn": 10,
+        "endLine": 658,
+        "endColumn": 149
+      }
+    },
+    {
+      "id": "edge:0062",
+      "kind": "transition",
+      "from": "decision:step:RefreshSubagentWorkspace:662:9",
+      "to": "step:RouteSubagentTools",
+      "label": "GoTo",
+      "span": {
+        "startLine": 662,
+        "startColumn": 9,
+        "endLine": 662,
+        "endColumn": 44
+      }
+    },
+    {
+      "id": "edge:0063",
+      "kind": "transition",
+      "from": "decision:step:RouteSubagentTools:445:11",
+      "to": "step:RouteSubagentTools",
+      "label": "GoTo",
+      "span": {
+        "startLine": 445,
+        "startColumn": 11,
+        "endLine": 445,
+        "endColumn": 46
+      }
+    },
+    {
+      "id": "edge:0064",
+      "kind": "transition",
+      "from": "decision:step:RouteSubagentTools:447:10",
+      "to": "step:CallSubagentModel",
+      "label": "GoTo",
+      "span": {
+        "startLine": 447,
+        "startColumn": 10,
+        "endLine": 447,
+        "endColumn": 100
+      }
+    },
+    {
+      "id": "edge:0065",
+      "kind": "transition",
+      "from": "decision:step:RouteSubagentTools:455:10",
+      "to": "step:AwaitSubagentParallelToolResults",
+      "label": "fan-out",
+      "multiplicity": "×N",
+      "span": {
+        "startLine": 449,
+        "startColumn": 35,
+        "endLine": 449,
+        "endColumn": 92
+      }
+    },
+    {
+      "id": "edge:0066",
+      "kind": "transition",
+      "from": "decision:step:RouteSubagentTools:455:10",
+      "to": "step:ExecuteSubagentParallelTool",
+      "label": "fan-out",
+      "multiplicity": "×N",
+      "span": {
+        "startLine": 453,
+        "startColumn": 34,
+        "endLine": 453,
+        "endColumn": 117
+      }
+    },
+    {
+      "id": "edge:0067",
+      "kind": "transition",
+      "from": "decision:step:RouteSubagentTools:460:9",
+      "to": "step:ExecuteSubagentTool",
+      "label": "GoTo",
+      "span": {
+        "startLine": 460,
+        "startColumn": 9,
+        "endLine": 460,
+        "endColumn": 75
+      }
+    },
+    {
+      "id": "edge:0068",
+      "kind": "transition",
+      "from": "decision:step:SettleSubagentCommand:531:10",
+      "to": "step:RouteSubagentTools",
+      "label": "GoTo",
+      "span": {
+        "startLine": 531,
+        "startColumn": 10,
+        "endLine": 531,
+        "endColumn": 45
+      }
+    },
+    {
+      "id": "edge:0069",
+      "kind": "transition",
+      "from": "decision:step:SettleSubagentCommand:535:10",
+      "to": "step:CompactSubagentContext",
+      "label": "GoTo",
+      "span": {
+        "startLine": 535,
+        "startColumn": 10,
+        "endLine": 535,
+        "endColumn": 81
+      }
+    },
+    {
+      "id": "edge:0070",
+      "kind": "transition",
+      "from": "decision:step:SettleSubagentCommand:537:9",
+      "to": "step:CallSubagentModel",
+      "label": "GoTo",
+      "span": {
+        "startLine": 537,
+        "startColumn": 9,
+        "endLine": 537,
+        "endColumn": 75
+      }
+    },
+    {
+      "id": "edge:0071",
+      "kind": "resource_read",
+      "from": "resource:attribute:agentStateAttribute",
+      "to": "rpc:GetSubagentSnapshot",
+      "label": "Get",
+      "span": {
+        "startLine": 154,
+        "startColumn": 36,
+        "endLine": 154,
+        "endColumn": 64
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0072",
+      "kind": "resource_read",
+      "from": "resource:attribute:agentStateAttribute",
+      "to": "step:ApplySubagentAdmission",
+      "label": "Get",
+      "span": {
+        "startLine": 264,
+        "startColumn": 83,
+        "endLine": 264,
+        "endColumn": 111
+      },
+      "metadata": {
+        "function": "SubagentFlow.planModelCall",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0073",
+      "kind": "resource_read",
+      "from": "resource:attribute:agentStateAttribute",
+      "to": "step:AwaitSubagentParallelToolResults",
+      "label": "Get",
+      "span": {
+        "startLine": 623,
+        "startColumn": 5,
+        "endLine": 623,
+        "endColumn": 32
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0074",
+      "kind": "resource_read",
+      "from": "resource:attribute:agentStateAttribute",
+      "to": "step:CallSubagentModel",
+      "label": "Get",
+      "span": {
+        "startLine": 320,
+        "startColumn": 21,
+        "endLine": 320,
+        "endColumn": 49
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0075",
+      "kind": "resource_read",
+      "from": "resource:attribute:agentStateAttribute",
+      "to": "step:CompactSubagentContext",
+      "label": "Get",
+      "span": {
+        "startLine": 387,
+        "startColumn": 21,
+        "endLine": 387,
+        "endColumn": 49
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0076",
+      "kind": "resource_read",
+      "from": "resource:attribute:agentStateAttribute",
+      "to": "step:ExecuteSubagentTool",
+      "label": "Get",
+      "span": {
+        "startLine": 487,
+        "startColumn": 46,
+        "endLine": 487,
+        "endColumn": 74
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0077",
+      "kind": "resource_read",
+      "from": "resource:attribute:agentStateAttribute",
+      "to": "step:FinishSubagent",
+      "label": "Get",
+      "span": {
+        "startLine": 701,
+        "startColumn": 12,
+        "endLine": 701,
+        "endColumn": 45
+      },
+      "metadata": {
+        "function": "SubagentFlow.stopRunningCommand",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0078",
+      "kind": "resource_read",
+      "from": "resource:attribute:agentStateAttribute",
+      "to": "step:InitializeSubagent",
+      "label": "Get",
+      "span": {
+        "startLine": 213,
+        "startColumn": 2,
+        "endLine": 213,
+        "endColumn": 72
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0079",
+      "kind": "resource_read",
+      "from": "resource:attribute:agentStateAttribute",
+      "to": "step:RecordSubagentToolFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 550,
+        "startColumn": 46,
+        "endLine": 550,
+        "endColumn": 74
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0080",
+      "kind": "resource_read",
+      "from": "resource:attribute:agentStateAttribute",
+      "to": "step:RouteSubagentTools",
+      "label": "Get",
+      "span": {
+        "startLine": 458,
+        "startColumn": 46,
+        "endLine": 458,
+        "endColumn": 74
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0081",
+      "kind": "resource_read",
+      "from": "resource:attribute:agentStateAttribute",
+      "to": "step:SettleSubagentCommand",
+      "label": "Get",
+      "span": {
+        "startLine": 525,
+        "startColumn": 46,
+        "endLine": 525,
+        "endColumn": 74
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0082",
+      "kind": "resource_read",
+      "from": "resource:attribute:archivedMessagesAttribute",
+      "to": "step:CallSubagentModel",
+      "label": "Get",
+      "span": {
+        "startLine": 325,
+        "startColumn": 34,
+        "endLine": 325,
+        "endColumn": 120
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0083",
+      "kind": "resource_read",
+      "from": "resource:attribute:archivedMessagesAttribute",
+      "to": "step:CompactSubagentContext",
+      "label": "Get",
+      "span": {
+        "startLine": 392,
+        "startColumn": 34,
+        "endLine": 392,
+        "endColumn": 120
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0084",
+      "kind": "resource_read",
+      "from": "resource:attribute:configAttribute",
+      "to": "rpc:GetSubagentSnapshot",
+      "label": "Get",
+      "span": {
+        "startLine": 153,
+        "startColumn": 88,
+        "endLine": 153,
+        "endColumn": 112
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0085",
+      "kind": "resource_read",
+      "from": "resource:attribute:configAttribute",
+      "to": "step:AwaitSubagentDeadline",
+      "label": "Get",
+      "span": {
+        "startLine": 285,
+        "startColumn": 24,
+        "endLine": 285,
+        "endColumn": 48
+      },
+      "metadata": {
+        "phase": "wait_for"
+      }
+    },
+    {
+      "id": "edge:0086",
+      "kind": "resource_read",
+      "from": "resource:attribute:configAttribute",
+      "to": "step:CallSubagentModel",
+      "label": "Get",
+      "span": {
+        "startLine": 318,
+        "startColumn": 19,
+        "endLine": 318,
+        "endColumn": 34
+      },
+      "metadata": {
+        "function": "isLastCall",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0087",
+      "kind": "resource_read",
+      "from": "resource:attribute:configAttribute",
+      "to": "step:ExecuteSubagentParallelTool",
+      "label": "Get",
+      "span": {
+        "startLine": 575,
+        "startColumn": 17,
+        "endLine": 575,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "sessionIdentity",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0088",
+      "kind": "resource_read",
+      "from": "resource:attribute:configAttribute",
+      "to": "step:ExecuteSubagentTool",
+      "label": "Get",
+      "span": {
+        "startLine": 488,
+        "startColumn": 17,
+        "endLine": 488,
+        "endColumn": 49
+      },
+      "metadata": {
+        "function": "sessionIdentity",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0089",
+      "kind": "resource_read",
+      "from": "resource:attribute:contextSegmentAttribute",
+      "to": "step:ApplySubagentAdmission",
+      "label": "Get",
+      "span": {
+        "startLine": 264,
+        "startColumn": 83,
+        "endLine": 264,
+        "endColumn": 111
+      },
+      "metadata": {
+        "function": "SubagentFlow.planModelCall",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0090",
+      "kind": "resource_read",
+      "from": "resource:attribute:contextSegmentAttribute",
+      "to": "step:AwaitSubagentParallelToolResults",
+      "label": "Get",
+      "span": {
+        "startLine": 623,
+        "startColumn": 5,
+        "endLine": 623,
+        "endColumn": 32
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0091",
+      "kind": "resource_read",
+      "from": "resource:attribute:contextSegmentAttribute",
+      "to": "step:CallSubagentModel",
+      "label": "Get",
+      "span": {
+        "startLine": 318,
+        "startColumn": 46,
+        "endLine": 318,
+        "endColumn": 78
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0092",
+      "kind": "resource_read",
+      "from": "resource:attribute:contextSegmentAttribute",
+      "to": "step:CompactSubagentContext",
+      "label": "Get",
+      "span": {
+        "startLine": 385,
+        "startColumn": 23,
+        "endLine": 385,
+        "endColumn": 55
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0093",
+      "kind": "resource_read",
+      "from": "resource:attribute:contextSegmentAttribute",
+      "to": "step:ExecuteSubagentTool",
+      "label": "Get",
+      "span": {
+        "startLine": 500,
+        "startColumn": 5,
+        "endLine": 500,
+        "endColumn": 51
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0094",
+      "kind": "resource_read",
+      "from": "resource:attribute:contextSegmentAttribute",
+      "to": "step:InitializeSubagent",
+      "label": "Get",
+      "span": {
+        "startLine": 213,
+        "startColumn": 2,
+        "endLine": 213,
+        "endColumn": 72
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0095",
+      "kind": "resource_read",
+      "from": "resource:attribute:contextSegmentAttribute",
+      "to": "step:RecordSubagentToolFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 551,
+        "startColumn": 5,
+        "endLine": 551,
+        "endColumn": 158
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0096",
+      "kind": "resource_read",
+      "from": "resource:attribute:contextSegmentAttribute",
+      "to": "step:RouteSubagentTools",
+      "label": "Get",
+      "span": {
+        "startLine": 441,
+        "startColumn": 18,
+        "endLine": 441,
+        "endColumn": 32
+      },
+      "metadata": {
+        "function": "routeCall",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0097",
+      "kind": "resource_read",
+      "from": "resource:attribute:contextSegmentAttribute",
+      "to": "step:SettleSubagentCommand",
+      "label": "Get",
+      "span": {
+        "startLine": 530,
+        "startColumn": 5,
+        "endLine": 530,
+        "endColumn": 51
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0098",
+      "kind": "resource_read",
+      "from": "resource:attribute:contextSegmentPromptsAttribute",
+      "to": "step:CallSubagentModel",
+      "label": "Get",
+      "span": {
+        "startLine": 319,
+        "startColumn": 23,
+        "endLine": 319,
+        "endColumn": 84
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0099",
+      "kind": "resource_read",
+      "from": "resource:attribute:contextSegmentPromptsAttribute",
+      "to": "step:CompactSubagentContext",
+      "label": "Get",
+      "span": {
+        "startLine": 386,
+        "startColumn": 23,
+        "endLine": 386,
+        "endColumn": 84
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0100",
+      "kind": "resource_read",
+      "from": "resource:attribute:currentMessagesAttribute",
+      "to": "step:AwaitSubagentParallelToolResults",
+      "label": "Get",
+      "span": {
+        "startLine": 623,
+        "startColumn": 5,
+        "endLine": 623,
+        "endColumn": 32
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0101",
+      "kind": "resource_read",
+      "from": "resource:attribute:currentMessagesAttribute",
+      "to": "step:CallSubagentModel",
+      "label": "Get",
+      "span": {
+        "startLine": 323,
+        "startColumn": 21,
+        "endLine": 323,
+        "endColumn": 87
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0102",
+      "kind": "resource_read",
+      "from": "resource:attribute:currentMessagesAttribute",
+      "to": "step:CompactSubagentContext",
+      "label": "Get",
+      "span": {
+        "startLine": 390,
+        "startColumn": 21,
+        "endLine": 390,
+        "endColumn": 87
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0103",
+      "kind": "resource_read",
+      "from": "resource:attribute:currentMessagesAttribute",
+      "to": "step:ExecuteSubagentTool",
+      "label": "Get",
+      "span": {
+        "startLine": 500,
+        "startColumn": 5,
+        "endLine": 500,
+        "endColumn": 51
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0104",
+      "kind": "resource_read",
+      "from": "resource:attribute:currentMessagesAttribute",
+      "to": "step:FinishSubagent",
+      "label": "Get",
+      "span": {
+        "startLine": 715,
+        "startColumn": 37,
+        "endLine": 715,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "lastReplyText",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0105",
+      "kind": "resource_read",
+      "from": "resource:attribute:currentMessagesAttribute",
+      "to": "step:InitializeSubagent",
+      "label": "Get",
+      "span": {
+        "startLine": 213,
+        "startColumn": 2,
+        "endLine": 213,
+        "endColumn": 72
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0106",
+      "kind": "resource_read",
+      "from": "resource:attribute:currentMessagesAttribute",
+      "to": "step:RecordSubagentToolFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 551,
+        "startColumn": 5,
+        "endLine": 551,
+        "endColumn": 158
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0107",
+      "kind": "resource_read",
+      "from": "resource:attribute:currentMessagesAttribute",
+      "to": "step:RouteSubagentTools",
+      "label": "Get",
+      "span": {
+        "startLine": 441,
+        "startColumn": 18,
+        "endLine": 441,
+        "endColumn": 32
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0108",
+      "kind": "resource_read",
+      "from": "resource:attribute:currentMessagesAttribute",
+      "to": "step:SettleSubagentCommand",
+      "label": "Get",
+      "span": {
+        "startLine": 530,
+        "startColumn": 5,
+        "endLine": 530,
+        "endColumn": 51
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0109",
+      "kind": "resource_read",
+      "from": "resource:attribute:identityAttribute",
+      "to": "rpc:GetSubagentSnapshot",
+      "label": "Get",
+      "span": {
+        "startLine": 148,
+        "startColumn": 31,
+        "endLine": 148,
+        "endColumn": 57
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0110",
+      "kind": "resource_read",
+      "from": "resource:attribute:identityAttribute",
+      "to": "step:ApplySubagentAdmission",
+      "label": "Get",
+      "span": {
+        "startLine": 258,
+        "startColumn": 59,
+        "endLine": 258,
+        "endColumn": 85
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0111",
+      "kind": "resource_read",
+      "from": "resource:attribute:identityAttribute",
+      "to": "step:ExecuteSubagentParallelTool",
+      "label": "Get",
+      "span": {
+        "startLine": 575,
+        "startColumn": 17,
+        "endLine": 575,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "sessionIdentity",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0112",
+      "kind": "resource_read",
+      "from": "resource:attribute:identityAttribute",
+      "to": "step:ExecuteSubagentTool",
+      "label": "Get",
+      "span": {
+        "startLine": 488,
+        "startColumn": 17,
+        "endLine": 488,
+        "endColumn": 49
+      },
+      "metadata": {
+        "function": "sessionIdentity",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0113",
+      "kind": "resource_read",
+      "from": "resource:attribute:identityAttribute",
+      "to": "step:FinishSubagent",
+      "label": "Get",
+      "span": {
+        "startLine": 704,
+        "startColumn": 9,
+        "endLine": 704,
+        "endColumn": 41
+      },
+      "metadata": {
+        "function": "SubagentFlow.finishWorktree",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0114",
+      "kind": "resource_read",
+      "from": "resource:attribute:identityAttribute",
+      "to": "step:InitializeSubagent",
+      "label": "Get",
+      "span": {
+        "startLine": 195,
+        "startColumn": 40,
+        "endLine": 195,
+        "endColumn": 66
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0115",
+      "kind": "resource_read",
+      "from": "resource:attribute:identityAttribute",
+      "to": "step:RecordUndeliveredReport",
+      "label": "Get",
+      "span": {
+        "startLine": 831,
+        "startColumn": 33,
+        "endLine": 831,
+        "endColumn": 59
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0116",
+      "kind": "resource_read",
+      "from": "resource:attribute:identityAttribute",
+      "to": "step:RefreshFinishingWorkspace",
+      "label": "Get",
+      "span": {
+        "startLine": 737,
+        "startColumn": 56,
+        "endLine": 737,
+        "endColumn": 82
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0117",
+      "kind": "resource_read",
+      "from": "resource:attribute:identityAttribute",
+      "to": "step:RefreshSubagentWorkspace",
+      "label": "Get",
+      "span": {
+        "startLine": 653,
+        "startColumn": 56,
+        "endLine": 653,
+        "endColumn": 82
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0118",
+      "kind": "resource_read",
+      "from": "resource:attribute:identityAttribute",
+      "to": "step:ReportSubagentOutcome",
+      "label": "Get",
+      "span": {
+        "startLine": 799,
+        "startColumn": 40,
+        "endLine": 799,
+        "endColumn": 66
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0119",
+      "kind": "resource_read",
+      "from": "resource:attribute:outcomeAttribute",
+      "to": "rpc:GetDexDisplay",
+      "label": "Get",
+      "span": {
+        "startLine": 173,
+        "startColumn": 91,
+        "endLine": 173,
+        "endColumn": 116
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0120",
+      "kind": "resource_read",
+      "from": "resource:attribute:outcomeAttribute",
+      "to": "rpc:GetSubagentSnapshot",
+      "label": "Get",
+      "span": {
+        "startLine": 153,
+        "startColumn": 146,
+        "endLine": 153,
+        "endColumn": 171
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0121",
+      "kind": "resource_read",
+      "from": "resource:attribute:outcomeAttribute",
+      "to": "step:RecordUndeliveredReport",
+      "label": "Get",
+      "span": {
+        "startLine": 831,
+        "startColumn": 72,
+        "endLine": 831,
+        "endColumn": 97
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0122",
+      "kind": "resource_read",
+      "from": "resource:attribute:outcomeAttribute",
+      "to": "step:ReportSubagentOutcome",
+      "label": "Get",
+      "span": {
+        "startLine": 799,
+        "startColumn": 115,
+        "endLine": 799,
+        "endColumn": 140
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0123",
+      "kind": "resource_read",
+      "from": "resource:attribute:projectIDAttribute",
+      "to": "rpc:GetSubagentSnapshot",
+      "label": "Get",
+      "span": {
+        "startLine": 149,
+        "startColumn": 15,
+        "endLine": 149,
+        "endColumn": 42
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0124",
+      "kind": "resource_read",
+      "from": "resource:attribute:startAttribute",
+      "to": "rpc:GetSubagentSnapshot",
+      "label": "Get",
+      "span": {
+        "startLine": 148,
+        "startColumn": 70,
+        "endLine": 148,
+        "endColumn": 93
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0125",
+      "kind": "resource_read",
+      "from": "resource:attribute:startAttribute",
+      "to": "rpc:StopSubagent",
+      "label": "Get",
+      "span": {
+        "startLine": 136,
+        "startColumn": 173,
+        "endLine": 136,
+        "endColumn": 191
+      },
+      "metadata": {
+        "function": "finishOptions",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0126",
+      "kind": "resource_read",
+      "from": "resource:attribute:startAttribute",
+      "to": "step:ApplySubagentAdmission",
+      "label": "Get",
+      "span": {
+        "startLine": 261,
+        "startColumn": 109,
+        "endLine": 261,
+        "endColumn": 127
+      },
+      "metadata": {
+        "function": "finishOptions",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0127",
+      "kind": "resource_read",
+      "from": "resource:attribute:startAttribute",
+      "to": "step:AwaitSubagentDeadline",
+      "label": "Get",
+      "span": {
+        "startLine": 296,
+        "startColumn": 109,
+        "endLine": 296,
+        "endColumn": 127
+      },
+      "metadata": {
+        "function": "finishOptions",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0128",
+      "kind": "resource_read",
+      "from": "resource:attribute:startAttribute",
+      "to": "step:BeginSubagentFinish",
+      "label": "Get",
+      "span": {
+        "startLine": 680,
+        "startColumn": 64,
+        "endLine": 680,
+        "endColumn": 82
+      },
+      "metadata": {
+        "function": "finishOptions",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0129",
+      "kind": "resource_read",
+      "from": "resource:attribute:startAttribute",
+      "to": "step:CompactSubagentContext",
+      "label": "Get",
+      "span": {
+        "startLine": 403,
+        "startColumn": 65,
+        "endLine": 403,
+        "endColumn": 88
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0130",
+      "kind": "resource_read",
+      "from": "resource:attribute:startAttribute",
+      "to": "step:FinishSubagent",
+      "label": "Get",
+      "span": {
+        "startLine": 704,
+        "startColumn": 9,
+        "endLine": 704,
+        "endColumn": 41
+      },
+      "metadata": {
+        "function": "SubagentFlow.saveWork",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0131",
+      "kind": "resource_read",
+      "from": "resource:attribute:startAttribute",
+      "to": "step:InitializeSubagent",
+      "label": "Get",
+      "span": {
+        "startLine": 195,
+        "startColumn": 79,
+        "endLine": 195,
+        "endColumn": 102
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0132",
+      "kind": "resource_read",
+      "from": "resource:attribute:startAttribute",
+      "to": "step:RefreshFinishingWorkspace",
+      "label": "Get",
+      "span": {
+        "startLine": 747,
+        "startColumn": 64,
+        "endLine": 747,
+        "endColumn": 82
+      },
+      "metadata": {
+        "function": "finishOptions",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0133",
+      "kind": "resource_read",
+      "from": "resource:attribute:startAttribute",
+      "to": "step:ReportSubagentOutcome",
+      "label": "Get",
+      "span": {
+        "startLine": 799,
+        "startColumn": 79,
+        "endLine": 799,
+        "endColumn": 102
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0134",
+      "kind": "resource_read",
+      "from": "resource:attribute:statusAttribute",
+      "to": "rpc:GetDexDisplay",
+      "label": "Get",
+      "span": {
+        "startLine": 173,
+        "startColumn": 31,
+        "endLine": 173,
+        "endColumn": 55
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0135",
+      "kind": "resource_read",
+      "from": "resource:attribute:statusAttribute",
+      "to": "rpc:GetSubagentSnapshot",
+      "label": "Get",
+      "span": {
+        "startLine": 153,
+        "startColumn": 30,
+        "endLine": 153,
+        "endColumn": 54
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0136",
+      "kind": "resource_read",
+      "from": "resource:attribute:statusAttribute",
+      "to": "rpc:StopSubagent",
+      "label": "Get",
+      "span": {
+        "startLine": 130,
+        "startColumn": 38,
+        "endLine": 130,
+        "endColumn": 62
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0137",
+      "kind": "resource_read",
+      "from": "resource:attribute:statusAttribute",
+      "to": "step:AwaitSubagentDeadline",
+      "label": "Get",
+      "span": {
+        "startLine": 292,
+        "startColumn": 24,
+        "endLine": 292,
+        "endColumn": 48
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0138",
+      "kind": "resource_read",
+      "from": "resource:attribute:statusAttribute",
+      "to": "step:BeginSubagentFinish",
+      "label": "Get",
+      "span": {
+        "startLine": 676,
+        "startColumn": 24,
+        "endLine": 676,
+        "endColumn": 48
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0139",
+      "kind": "resource_read",
+      "from": "resource:attribute:stopRequestAttribute",
+      "to": "step:ApplySubagentAdmission",
+      "label": "Get",
+      "span": {
+        "startLine": 259,
+        "startColumn": 27,
+        "endLine": 259,
+        "endColumn": 56
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0140",
+      "kind": "resource_read",
+      "from": "resource:attribute:workspaceAttribute",
+      "to": "step:AwaitSubagentParallelToolResults",
+      "label": "Get",
+      "span": {
+        "startLine": 620,
+        "startColumn": 20,
+        "endLine": 620,
+        "endColumn": 52
+      },
+      "metadata": {
+        "function": "lostWorkspace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0141",
+      "kind": "resource_read",
+      "from": "resource:attribute:workspaceAttribute",
+      "to": "step:CompactSubagentContext",
+      "label": "Get",
+      "span": {
+        "startLine": 403,
+        "startColumn": 25,
+        "endLine": 403,
+        "endColumn": 52
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0142",
+      "kind": "resource_read",
+      "from": "resource:attribute:workspaceAttribute",
+      "to": "step:ExecuteSubagentParallelTool",
+      "label": "Get",
+      "span": {
+        "startLine": 575,
+        "startColumn": 17,
+        "endLine": 575,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "newSandboxCall",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0143",
+      "kind": "resource_read",
+      "from": "resource:attribute:workspaceAttribute",
+      "to": "step:ExecuteSubagentTool",
+      "label": "Get",
+      "span": {
+        "startLine": 488,
+        "startColumn": 17,
+        "endLine": 488,
+        "endColumn": 49
+      },
+      "metadata": {
+        "function": "newSandboxCall",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0144",
+      "kind": "resource_read",
+      "from": "resource:attribute:workspaceAttribute",
+      "to": "step:FinishSubagent",
+      "label": "Get",
+      "span": {
+        "startLine": 701,
+        "startColumn": 12,
+        "endLine": 701,
+        "endColumn": 45
+      },
+      "metadata": {
+        "function": "SubagentFlow.stopRunningCommand",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0145",
+      "kind": "resource_read",
+      "from": "resource:attribute:workspaceAttribute",
+      "to": "step:InitializeSubagent",
+      "label": "Get",
+      "span": {
+        "startLine": 195,
+        "startColumn": 115,
+        "endLine": 195,
+        "endColumn": 142
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0146",
+      "kind": "resource_read",
+      "from": "resource:attribute:workspaceAttribute",
+      "to": "step:RefreshFinishingWorkspace",
+      "label": "Get",
+      "span": {
+        "startLine": 736,
+        "startColumn": 18,
+        "endLine": 736,
+        "endColumn": 45
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0147",
+      "kind": "resource_read",
+      "from": "resource:attribute:workspaceAttribute",
+      "to": "step:RefreshSubagentWorkspace",
+      "label": "Get",
+      "span": {
+        "startLine": 652,
+        "startColumn": 18,
+        "endLine": 652,
+        "endColumn": 45
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0148",
+      "kind": "resource_read",
+      "from": "resource:attribute:workspaceAttribute",
+      "to": "step:SettleSubagentCommand",
+      "label": "Get",
+      "span": {
+        "startLine": 526,
+        "startColumn": 25,
+        "endLine": 526,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "newSandboxCall",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0149",
+      "kind": "resource_read",
+      "from": "resource:channel:parallelToolResultsChannel",
+      "to": "step:AwaitSubagentParallelToolResults",
+      "label": "GetConditionResults",
+      "span": {
+        "startLine": 619,
+        "startColumn": 58,
+        "endLine": 619,
+        "endColumn": 124
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0150",
+      "kind": "resource_read",
+      "from": "resource:channel:parallelToolResultsChannel",
+      "to": "step:RecordSubagentOutcome",
+      "label": "AllInstanceKeys",
+      "span": {
+        "startLine": 768,
+        "startColumn": 27,
+        "endLine": 768,
+        "endColumn": 74
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0151",
+      "kind": "resource_read",
+      "from": "resource:channel:parallelToolResultsChannel",
+      "to": "step:RecordSubagentOutcome",
+      "label": "PendingMessages",
+      "span": {
+        "startLine": 769,
+        "startColumn": 37,
+        "endLine": 769,
+        "endColumn": 94
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0152",
+      "kind": "wait_condition",
+      "from": "resource:channel:parallelToolResultsChannel",
+      "to": "wait:AwaitSubagentParallelToolResults:613:9",
+      "label": "ParallelToolResults[batch.BatchID].for len(batch.Records)",
+      "span": {
+        "startLine": 613,
+        "startColumn": 19,
+        "endLine": 613,
+        "endColumn": 85
+      },
+      "metadata": {
+        "conditionIndex": 0
+      }
+    },
+    {
+      "id": "edge:0153",
+      "kind": "resource_write",
+      "from": "rpc:StopSubagent",
+      "to": "resource:attribute:statusAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 135,
+        "startColumn": 15,
+        "endLine": 135,
+        "endColumn": 65
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0154",
+      "kind": "resource_write",
+      "from": "rpc:StopSubagent",
+      "to": "resource:attribute:stopRequestAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 132,
+        "startColumn": 15,
+        "endLine": 132,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0155",
+      "kind": "resource_write",
+      "from": "step:ApplySubagentAdmission",
+      "to": "resource:attribute:outcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 252,
+        "startColumn": 15,
+        "endLine": 252,
+        "endColumn": 180
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0156",
+      "kind": "resource_write",
+      "from": "step:ApplySubagentAdmission",
+      "to": "resource:attribute:statusAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 253,
+        "startColumn": 15,
+        "endLine": 253,
+        "endColumn": 63
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0157",
+      "kind": "resource_write",
+      "from": "step:AwaitSubagentDeadline",
+      "to": "resource:attribute:statusAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 295,
+        "startColumn": 14,
+        "endLine": 295,
+        "endColumn": 64
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0158",
+      "kind": "resource_write",
+      "from": "step:AwaitSubagentParallelToolResults",
+      "to": "resource:attribute:agentStateAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 623,
+        "startColumn": 5,
+        "endLine": 623,
+        "endColumn": 32
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0159",
+      "kind": "resource_write",
+      "from": "step:AwaitSubagentParallelToolResults",
+      "to": "resource:attribute:archivedMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 623,
+        "startColumn": 5,
+        "endLine": 623,
+        "endColumn": 32
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0160",
+      "kind": "resource_write",
+      "from": "step:AwaitSubagentParallelToolResults",
+      "to": "resource:attribute:contextSegmentAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 623,
+        "startColumn": 5,
+        "endLine": 623,
+        "endColumn": 32
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0161",
+      "kind": "resource_write",
+      "from": "step:AwaitSubagentParallelToolResults",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Delete",
+      "span": {
+        "startLine": 623,
+        "startColumn": 5,
+        "endLine": 623,
+        "endColumn": 32
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0162",
+      "kind": "resource_write",
+      "from": "step:AwaitSubagentParallelToolResults",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 623,
+        "startColumn": 5,
+        "endLine": 623,
+        "endColumn": 32
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0163",
+      "kind": "resource_write",
+      "from": "step:AwaitSubagentParallelToolResults",
+      "to": "resource:attribute:workspaceAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 620,
+        "startColumn": 20,
+        "endLine": 620,
+        "endColumn": 52
+      },
+      "metadata": {
+        "function": "lostWorkspace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0164",
+      "kind": "resource_write",
+      "from": "step:AwaitSubagentParallelToolResults",
+      "to": "resource:stream:agentActivityStream",
+      "label": "Write",
+      "span": {
+        "startLine": 623,
+        "startColumn": 5,
+        "endLine": 623,
+        "endColumn": 32
+      },
+      "metadata": {
+        "bestEffort": true,
+        "function": "writeActivity",
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0165",
+      "kind": "resource_write",
+      "from": "step:BeginSubagentFinish",
+      "to": "resource:attribute:statusAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 679,
+        "startColumn": 14,
+        "endLine": 679,
+        "endColumn": 64
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0166",
+      "kind": "resource_write",
+      "from": "step:CallSubagentModel",
+      "to": "resource:attribute:agentStateAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 355,
+        "startColumn": 10,
+        "endLine": 355,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0167",
+      "kind": "resource_write",
+      "from": "step:CallSubagentModel",
+      "to": "resource:attribute:archivedMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 355,
+        "startColumn": 10,
+        "endLine": 355,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0168",
+      "kind": "resource_write",
+      "from": "step:CallSubagentModel",
+      "to": "resource:attribute:contextSegmentAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 355,
+        "startColumn": 10,
+        "endLine": 355,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "recordReply",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0169",
+      "kind": "resource_write",
+      "from": "step:CallSubagentModel",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Delete",
+      "span": {
+        "startLine": 355,
+        "startColumn": 10,
+        "endLine": 355,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0170",
+      "kind": "resource_write",
+      "from": "step:CallSubagentModel",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 355,
+        "startColumn": 10,
+        "endLine": 355,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0171",
+      "kind": "resource_write",
+      "from": "step:CallSubagentModel",
+      "to": "resource:stream:agentActivityStream",
+      "label": "Write",
+      "span": {
+        "startLine": 339,
+        "startColumn": 2,
+        "endLine": 339,
+        "endColumn": 161
+      },
+      "metadata": {
+        "bestEffort": true,
+        "function": "writeActivity",
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0172",
+      "kind": "resource_write",
+      "from": "step:CallSubagentModel",
+      "to": "resource:stream:assistantTextStream",
+      "label": "Write",
+      "span": {
+        "startLine": 342,
+        "startColumn": 81,
+        "endLine": 342,
+        "endColumn": 103
+      },
+      "metadata": {
+        "bestEffort": true,
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress"
+      }
+    },
+    {
+      "id": "edge:0173",
+      "kind": "resource_write",
+      "from": "step:CallSubagentModel",
+      "to": "resource:stream:reasoningSummaryStream",
+      "label": "Write",
+      "span": {
+        "startLine": 343,
+        "startColumn": 81,
+        "endLine": 343,
+        "endColumn": 103
+      },
+      "metadata": {
+        "bestEffort": true,
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress"
+      }
+    },
+    {
+      "id": "edge:0174",
+      "kind": "failure_transition",
+      "from": "step:CallSubagentModel",
+      "to": "step:RecordSubagentFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 311,
+        "startColumn": 27,
+        "endLine": 311,
+        "endColumn": 86
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0175",
+      "kind": "resource_write",
+      "from": "step:CompactSubagentContext",
+      "to": "resource:attribute:agentStateAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 404,
+        "startColumn": 12,
+        "endLine": 404,
+        "endColumn": 82
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0176",
+      "kind": "resource_write",
+      "from": "step:CompactSubagentContext",
+      "to": "resource:attribute:archivedMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 404,
+        "startColumn": 12,
+        "endLine": 404,
+        "endColumn": 82
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0177",
+      "kind": "resource_write",
+      "from": "step:CompactSubagentContext",
+      "to": "resource:attribute:contextSegmentAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 404,
+        "startColumn": 12,
+        "endLine": 404,
+        "endColumn": 82
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0178",
+      "kind": "resource_write",
+      "from": "step:CompactSubagentContext",
+      "to": "resource:attribute:contextSegmentPromptsAttribute",
+      "label": "Delete",
+      "span": {
+        "startLine": 404,
+        "startColumn": 12,
+        "endLine": 404,
+        "endColumn": 82
+      },
+      "metadata": {
+        "function": "openNextSegment",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0179",
+      "kind": "resource_write",
+      "from": "step:CompactSubagentContext",
+      "to": "resource:attribute:contextSegmentPromptsAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 404,
+        "startColumn": 12,
+        "endLine": 404,
+        "endColumn": 82
+      },
+      "metadata": {
+        "function": "openNextSegment",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0180",
+      "kind": "resource_write",
+      "from": "step:CompactSubagentContext",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Delete",
+      "span": {
+        "startLine": 404,
+        "startColumn": 12,
+        "endLine": 404,
+        "endColumn": 82
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0181",
+      "kind": "resource_write",
+      "from": "step:CompactSubagentContext",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 404,
+        "startColumn": 12,
+        "endLine": 404,
+        "endColumn": 82
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0182",
+      "kind": "resource_write",
+      "from": "step:CompactSubagentContext",
+      "to": "resource:stream:agentActivityStream",
+      "label": "Write",
+      "span": {
+        "startLine": 405,
+        "startColumn": 29,
+        "endLine": 405,
+        "endColumn": 194
+      },
+      "metadata": {
+        "bestEffort": true,
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress"
+      }
+    },
+    {
+      "id": "edge:0183",
+      "kind": "failure_transition",
+      "from": "step:CompactSubagentContext",
+      "to": "step:RecordSubagentFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 378,
+        "startColumn": 27,
+        "endLine": 378,
+        "endColumn": 86
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0184",
+      "kind": "resource_publish",
+      "from": "step:ExecuteSubagentParallelTool",
+      "to": "resource:channel:parallelToolResultsChannel",
+      "label": "Publish",
+      "span": {
+        "startLine": 583,
+        "startColumn": 14,
+        "endLine": 583,
+        "endColumn": 83
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0185",
+      "kind": "resource_write",
+      "from": "step:ExecuteSubagentParallelTool",
+      "to": "resource:stream:agentActivityStream",
+      "label": "Write",
+      "span": {
+        "startLine": 575,
+        "startColumn": 17,
+        "endLine": 575,
+        "endColumn": 55
+      },
+      "metadata": {
+        "bestEffort": true,
+        "function": "writeActivity",
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0186",
+      "kind": "failure_transition",
+      "from": "step:ExecuteSubagentParallelTool",
+      "to": "step:RecoverSubagentParallelToolExecution",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 569,
+        "startColumn": 42,
+        "endLine": 569,
+        "endColumn": 144
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0187",
+      "kind": "resource_write",
+      "from": "step:ExecuteSubagentTool",
+      "to": "resource:attribute:agentStateAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 500,
+        "startColumn": 5,
+        "endLine": 500,
+        "endColumn": 51
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0188",
+      "kind": "resource_write",
+      "from": "step:ExecuteSubagentTool",
+      "to": "resource:attribute:archivedMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 500,
+        "startColumn": 5,
+        "endLine": 500,
+        "endColumn": 51
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0189",
+      "kind": "resource_write",
+      "from": "step:ExecuteSubagentTool",
+      "to": "resource:attribute:contextSegmentAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 500,
+        "startColumn": 5,
+        "endLine": 500,
+        "endColumn": 51
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0190",
+      "kind": "resource_write",
+      "from": "step:ExecuteSubagentTool",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Delete",
+      "span": {
+        "startLine": 500,
+        "startColumn": 5,
+        "endLine": 500,
+        "endColumn": 51
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0191",
+      "kind": "resource_write",
+      "from": "step:ExecuteSubagentTool",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 500,
+        "startColumn": 5,
+        "endLine": 500,
+        "endColumn": 51
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0192",
+      "kind": "resource_write",
+      "from": "step:ExecuteSubagentTool",
+      "to": "resource:attribute:workspaceAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 493,
+        "startColumn": 63,
+        "endLine": 493,
+        "endColumn": 90
+      },
+      "metadata": {
+        "function": "lostWorkspace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0193",
+      "kind": "resource_write",
+      "from": "step:ExecuteSubagentTool",
+      "to": "resource:stream:agentActivityStream",
+      "label": "Write",
+      "span": {
+        "startLine": 488,
+        "startColumn": 17,
+        "endLine": 488,
+        "endColumn": 49
+      },
+      "metadata": {
+        "bestEffort": true,
+        "function": "writeActivity",
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0194",
+      "kind": "failure_transition",
+      "from": "step:ExecuteSubagentTool",
+      "to": "step:RecordSubagentToolFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 481,
+        "startColumn": 42,
+        "endLine": 481,
+        "endColumn": 117
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0195",
+      "kind": "failure_transition",
+      "from": "step:ExecuteSubagentTool",
+      "to": "step:SettleSubagentCommand",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 479,
+        "startColumn": 43,
+        "endLine": 479,
+        "endColumn": 102
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0196",
+      "kind": "failure_transition",
+      "from": "step:FinishSubagent",
+      "to": "step:RecordSubagentOutcome",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 695,
+        "startColumn": 19,
+        "endLine": 695,
+        "endColumn": 78
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0197",
+      "kind": "resource_write",
+      "from": "step:InitializeSubagent",
+      "to": "resource:attribute:agentStateAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 212,
+        "startColumn": 14,
+        "endLine": 212,
+        "endColumn": 49
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0198",
+      "kind": "resource_write",
+      "from": "step:InitializeSubagent",
+      "to": "resource:attribute:archivedMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 213,
+        "startColumn": 2,
+        "endLine": 213,
+        "endColumn": 72
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0199",
+      "kind": "resource_write",
+      "from": "step:InitializeSubagent",
+      "to": "resource:attribute:configAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 205,
+        "startColumn": 14,
+        "endLine": 205,
+        "endColumn": 46
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0200",
+      "kind": "resource_write",
+      "from": "step:InitializeSubagent",
+      "to": "resource:attribute:contextSegmentAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 213,
+        "startColumn": 2,
+        "endLine": 213,
+        "endColumn": 72
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0201",
+      "kind": "resource_write",
+      "from": "step:InitializeSubagent",
+      "to": "resource:attribute:contextSegmentPromptsAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 213,
+        "startColumn": 2,
+        "endLine": 213,
+        "endColumn": 72
+      },
+      "metadata": {
+        "function": "openFirstSegment",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0202",
+      "kind": "resource_write",
+      "from": "step:InitializeSubagent",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Delete",
+      "span": {
+        "startLine": 213,
+        "startColumn": 2,
+        "endLine": 213,
+        "endColumn": 72
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0203",
+      "kind": "resource_write",
+      "from": "step:InitializeSubagent",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 213,
+        "startColumn": 2,
+        "endLine": 213,
+        "endColumn": 72
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0204",
+      "kind": "resource_write",
+      "from": "step:InitializeSubagent",
+      "to": "resource:attribute:messageWindowLockAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 209,
+        "startColumn": 14,
+        "endLine": 209,
+        "endColumn": 56
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0205",
+      "kind": "resource_write",
+      "from": "step:InitializeSubagent",
+      "to": "resource:attribute:workspaceAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 206,
+        "startColumn": 14,
+        "endLine": 206,
+        "endColumn": 45
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0206",
+      "kind": "failure_transition",
+      "from": "step:InitializeSubagent",
+      "to": "step:RecordSubagentAdmissionFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 187,
+        "startColumn": 41,
+        "endLine": 187,
+        "endColumn": 109
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0207",
+      "kind": "resource_write",
+      "from": "step:RecordSubagentAdmissionFailure",
+      "to": "resource:attribute:outcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 233,
+        "startColumn": 14,
+        "endLine": 233,
+        "endColumn": 147
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0208",
+      "kind": "resource_write",
+      "from": "step:RecordSubagentAdmissionFailure",
+      "to": "resource:attribute:statusAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 234,
+        "startColumn": 14,
+        "endLine": 234,
+        "endColumn": 61
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0209",
+      "kind": "resource_write",
+      "from": "step:RecordSubagentOutcome",
+      "to": "resource:attribute:outcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 774,
+        "startColumn": 14,
+        "endLine": 775,
+        "endColumn": 93
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0210",
+      "kind": "resource_write",
+      "from": "step:RecordSubagentOutcome",
+      "to": "resource:attribute:statusAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 776,
+        "startColumn": 14,
+        "endLine": 776,
+        "endColumn": 55
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0211",
+      "kind": "resource_write",
+      "from": "step:RecordSubagentOutcome",
+      "to": "resource:channel:parallelToolResultsChannel",
+      "label": "Delete",
+      "span": {
+        "startLine": 770,
+        "startColumn": 16,
+        "endLine": 770,
+        "endColumn": 83
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0212",
+      "kind": "resource_write",
+      "from": "step:RecordSubagentToolFailure",
+      "to": "resource:attribute:agentStateAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 551,
+        "startColumn": 5,
+        "endLine": 551,
+        "endColumn": 158
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0213",
+      "kind": "resource_write",
+      "from": "step:RecordSubagentToolFailure",
+      "to": "resource:attribute:archivedMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 551,
+        "startColumn": 5,
+        "endLine": 551,
+        "endColumn": 158
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0214",
+      "kind": "resource_write",
+      "from": "step:RecordSubagentToolFailure",
+      "to": "resource:attribute:contextSegmentAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 551,
+        "startColumn": 5,
+        "endLine": 551,
+        "endColumn": 158
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0215",
+      "kind": "resource_write",
+      "from": "step:RecordSubagentToolFailure",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Delete",
+      "span": {
+        "startLine": 551,
+        "startColumn": 5,
+        "endLine": 551,
+        "endColumn": 158
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0216",
+      "kind": "resource_write",
+      "from": "step:RecordSubagentToolFailure",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 551,
+        "startColumn": 5,
+        "endLine": 551,
+        "endColumn": 158
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0217",
+      "kind": "resource_write",
+      "from": "step:RecordSubagentToolFailure",
+      "to": "resource:stream:agentActivityStream",
+      "label": "Write",
+      "span": {
+        "startLine": 551,
+        "startColumn": 5,
+        "endLine": 551,
+        "endColumn": 158
+      },
+      "metadata": {
+        "bestEffort": true,
+        "function": "writeActivity",
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0218",
+      "kind": "resource_write",
+      "from": "step:RecordUndeliveredReport",
+      "to": "resource:attribute:outcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 833,
+        "startColumn": 14,
+        "endLine": 833,
+        "endColumn": 48
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0219",
+      "kind": "resource_publish",
+      "from": "step:RecoverSubagentParallelToolExecution",
+      "to": "resource:channel:parallelToolResultsChannel",
+      "label": "Publish",
+      "span": {
+        "startLine": 598,
+        "startColumn": 14,
+        "endLine": 599,
+        "endColumn": 109
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0220",
+      "kind": "resource_write",
+      "from": "step:RefreshFinishingWorkspace",
+      "to": "resource:attribute:workspaceAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 746,
+        "startColumn": 14,
+        "endLine": 746,
+        "endColumn": 45
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0221",
+      "kind": "failure_transition",
+      "from": "step:RefreshFinishingWorkspace",
+      "to": "step:RecordSubagentOutcome",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 730,
+        "startColumn": 54,
+        "endLine": 730,
+        "endColumn": 113
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0222",
+      "kind": "resource_write",
+      "from": "step:RefreshSubagentWorkspace",
+      "to": "resource:attribute:workspaceAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 661,
+        "startColumn": 14,
+        "endLine": 661,
+        "endColumn": 45
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0223",
+      "kind": "failure_transition",
+      "from": "step:RefreshSubagentWorkspace",
+      "to": "step:RecordSubagentFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 643,
+        "startColumn": 54,
+        "endLine": 643,
+        "endColumn": 113
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0224",
+      "kind": "resource_write",
+      "from": "step:ReportSubagentOutcome",
+      "to": "resource:attribute:outcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 818,
+        "startColumn": 14,
+        "endLine": 818,
+        "endColumn": 48
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0225",
+      "kind": "failure_transition",
+      "from": "step:ReportSubagentOutcome",
+      "to": "step:RecordUndeliveredReport",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 790,
+        "startColumn": 53,
+        "endLine": 790,
+        "endColumn": 114
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0226",
+      "kind": "resource_write",
+      "from": "step:RouteSubagentTools",
+      "to": "resource:attribute:agentStateAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 441,
+        "startColumn": 18,
+        "endLine": 441,
+        "endColumn": 32
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0227",
+      "kind": "resource_write",
+      "from": "step:RouteSubagentTools",
+      "to": "resource:attribute:archivedMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 441,
+        "startColumn": 18,
+        "endLine": 441,
+        "endColumn": 32
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0228",
+      "kind": "resource_write",
+      "from": "step:RouteSubagentTools",
+      "to": "resource:attribute:contextSegmentAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 441,
+        "startColumn": 18,
+        "endLine": 441,
+        "endColumn": 32
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0229",
+      "kind": "resource_write",
+      "from": "step:RouteSubagentTools",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Delete",
+      "span": {
+        "startLine": 441,
+        "startColumn": 18,
+        "endLine": 441,
+        "endColumn": 32
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0230",
+      "kind": "resource_write",
+      "from": "step:RouteSubagentTools",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 441,
+        "startColumn": 18,
+        "endLine": 441,
+        "endColumn": 32
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0231",
+      "kind": "resource_write",
+      "from": "step:RouteSubagentTools",
+      "to": "resource:stream:agentActivityStream",
+      "label": "Write",
+      "span": {
+        "startLine": 441,
+        "startColumn": 18,
+        "endLine": 441,
+        "endColumn": 32
+      },
+      "metadata": {
+        "bestEffort": true,
+        "function": "writeActivity",
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0232",
+      "kind": "resource_write",
+      "from": "step:SettleSubagentCommand",
+      "to": "resource:attribute:agentStateAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 530,
+        "startColumn": 5,
+        "endLine": 530,
+        "endColumn": 51
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0233",
+      "kind": "resource_write",
+      "from": "step:SettleSubagentCommand",
+      "to": "resource:attribute:archivedMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 530,
+        "startColumn": 5,
+        "endLine": 530,
+        "endColumn": 51
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0234",
+      "kind": "resource_write",
+      "from": "step:SettleSubagentCommand",
+      "to": "resource:attribute:contextSegmentAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 530,
+        "startColumn": 5,
+        "endLine": 530,
+        "endColumn": 51
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0235",
+      "kind": "resource_write",
+      "from": "step:SettleSubagentCommand",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Delete",
+      "span": {
+        "startLine": 530,
+        "startColumn": 5,
+        "endLine": 530,
+        "endColumn": 51
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0236",
+      "kind": "resource_write",
+      "from": "step:SettleSubagentCommand",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 530,
+        "startColumn": 5,
+        "endLine": 530,
+        "endColumn": 51
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0237",
+      "kind": "resource_write",
+      "from": "step:SettleSubagentCommand",
+      "to": "resource:stream:agentActivityStream",
+      "label": "Write",
+      "span": {
+        "startLine": 530,
+        "startColumn": 5,
+        "endLine": 530,
+        "endColumn": 51
+      },
+      "metadata": {
+        "bestEffort": true,
+        "function": "writeActivity",
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0238",
+      "kind": "failure_transition",
+      "from": "step:SettleSubagentCommand",
+      "to": "step:RecordSubagentToolFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 521,
+        "startColumn": 95,
+        "endLine": 521,
+        "endColumn": 170
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    }
+  ],
+  "diagnostics": [],
+  "groups": [
+    {
+      "id": "lifecycle",
+      "label": "Lifecycle",
+      "stepIds": [
+        "step:InitializeSubagent",
+        "step:ApplySubagentAdmission",
+        "step:RecordSubagentAdmissionFailure",
+        "step:AwaitSubagentDeadline",
+        "step:BeginSubagentFinish",
+        "step:FinishSubagent",
+        "step:RecordSubagentOutcome",
+        "step:ReportSubagentOutcome",
+        "step:RecordUndeliveredReport"
+      ]
+    },
+    {
+      "id": "model",
+      "label": "Model",
+      "stepIds": [
+        "step:CallSubagentModel",
+        "step:CompactSubagentContext",
+        "step:RecordSubagentFailure"
+      ]
+    },
+    {
+      "id": "tools",
+      "label": "Tools",
+      "stepIds": [
+        "step:RouteSubagentTools",
+        "step:ExecuteSubagentTool",
+        "step:ExecuteSubagentParallelTool",
+        "step:AwaitSubagentParallelToolResults"
+      ]
+    },
+    {
+      "id": "recovery",
+      "label": "Recovery",
+      "stepIds": [
+        "step:SettleSubagentCommand",
+        "step:RecordSubagentToolFailure",
+        "step:RecoverSubagentParallelToolExecution"
+      ]
+    },
+    {
+      "id": "workspace",
+      "label": "Workspace",
+      "stepIds": [
+        "step:RefreshSubagentWorkspace",
+        "step:RefreshFinishingWorkspace"
+      ]
+    }
+  ],
+  "v2": {
+    "indexedAttributes": [
+      {
+        "attributeKey": "ProjectID",
+        "indexKey": "keyword2",
+        "indexType": "keyword",
+        "valueType": "string",
+        "description": "Project of the subagent's Session"
+      },
+      {
+        "attributeKey": "SubagentStatus",
+        "indexKey": "keyword3",
+        "indexType": "keyword",
+        "valueType": "string",
+        "description": "Subagent lifecycle status"
+      }
+    ],
+    "summary": {
+      "rpcName": "GetDexSummary",
+      "fields": []
+    },
+    "display": {
+      "rpcName": "GetDexDisplay",
+      "fields": [
+        {
+          "attributeKey": "SubagentStatus",
+          "valueType": "string",
+          "editable": false,
+          "description": "Subagent lifecycle status"
+        },
+        {
+          "attributeKey": "Outcome",
+          "valueType": "json",
+          "editable": false,
+          "description": "How the subagent ended and whether its report reached the Session"
+        }
+      ]
+    },
+    "actions": [],
+    "start": {
+      "stepType": "InitializeSubagent",
+      "input": {
+        "kind": "null"
+      }
+    }
+  }
+}

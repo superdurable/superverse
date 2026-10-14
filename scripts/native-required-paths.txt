@@ -1,0 +1,21 @@
+# The paths only Local Native exercises: the Docker implementations of the runtime interfaces and the Native lane's
+# launcher and profile. A change that touches a path of scripts/kind-required-paths.txt runs on Local Kind instead of
+# Local Native, and on both when it also touches one of these paths. `make required-lanes` reads this list, AGENTS.md
+# (and so CLAUDE.md and the Cursor rules) repeats it, and `make check-agent-rules` checks that the two agree and that
+# the list holds every Docker package of scripts/check-package-layers.py. One glob per line: ** matches any number of
+# path segments, * one segment's text.
+
+# The Docker packages, the only ones that import the Docker Engine client, with their Docker tests.
+internal/platform/dockerapi/**
+internal/projects/infra/docker/**
+internal/agents/sandbox/docker/**
+internal/delivery/deployments/docker/**
+internal/bootstrap/docker.go
+
+# The Native lane: its launcher with the Compose stack, and its profile.
+infra-as-code/scripts/native/**
+cmd/superverse-server/config/native*.yaml
+
+# The platform Dex and server configuration that both local lanes render; it is also on
+# scripts/kind-required-paths.txt, so a change to it runs on both lanes.
+infra-as-code/scripts/local_platform.py

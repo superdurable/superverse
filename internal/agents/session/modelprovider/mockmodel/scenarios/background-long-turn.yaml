@@ -1,0 +1,46 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A long turn beside a background command: bash with run_in_background starts a
+# command that sleeps for seven minutes, and the turn goes on with 60 updates of
+# the progress list, enough Steps for the Session to move to a new run while the
+# command runs. The turn still ends before the command, whose exit notification
+# then opens an automatic turn that reads its output. It changes nothing in the
+# workspace.
+name: background-long-turn
+title: "Long turn beside a background command"
+description: "Keeps working for 60 model calls while a background command runs, then reads the command's output after its exit notification."
+category: agent_feature
+arguments: {task: cmd-aaaaaaaaaaaa}
+inputs:
+  - label: "Build and track progress"
+    message: "Build in the background and keep the progress list current meanwhile."
+    replies:
+      - text: "Starting the long build in the background."
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 420; echo long-build-done", description: "Long build in the background", run_in_background: true}
+        expect_result_contains:
+          - "The command runs in the background as task cmd-"
+      - text: "Recording the progress list."
+        tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Track the long build", status: in_progress}
+        repeat: 60
+      - text: "The long build runs in the background; I will read it when it finishes."
+      - text: "The long build finished; reading its output."
+        notification: task
+        tool_uses:
+          - name: read_task_output
+            input: {task_id: "{{task}}"}
+        expect_result_contains:
+          - "exited with code 0"
+          - "long-build-done"
+      - text: "The long build finished and printed long-build-done."

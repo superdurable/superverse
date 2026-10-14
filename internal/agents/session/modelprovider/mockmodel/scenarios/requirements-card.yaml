@@ -1,0 +1,48 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A new application: the Agent shows the requirements card first and builds only
+# after the user confirms it. The script touches no workspace file; it records
+# progress and reports, so a Session can run it on any READY Project. Input 2
+# confirms the card; the other requirements-* scenarios change requirements.
+name: requirements-card
+title: "Requirements card"
+description: "A new application: the requirements card first, then, after the confirmation, a progress list and a final reply."
+category: project_feature
+inputs:
+  - label: "Describe the application"
+    message: "Build a release newsletter."
+    replies:
+      - thinking: "This is a new application, so the user confirms the requirements before I write any code."
+        text: "Here is what I plan to build. Please confirm it, or tell me what to change."
+        tool_uses:
+          - name: confirm_requirements
+            input:
+              title: "Release newsletter"
+              summary: "A weekly newsletter of the latest releases that an administrator reviews before it is sent."
+              features:
+                - {id: R1, text: "Visitors subscribe with their email address, and each address is stored once."}
+                - {id: R2, text: "An administrator reviews the draft and approves it or asks for a revision."}
+              connections:
+                - need: "Send the approved newsletter by email"
+                  connector: gmail
+                  operations: [sendEmail]
+                  status: new
+                  user_setup: "Connect the Gmail account that sends the newsletter."
+              user_setup: ["Connect the Gmail account in Studio."]
+              acceptance: ["A test newsletter arrives in the administrator's mailbox after approval."]
+  - label: "Confirm the requirements"
+    requirements_confirm: true
+    replies:
+      - tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Build the subscription page", status: in_progress}
+                - {content: "Build the review and send flow", status: pending}
+      - text: "The requirements are confirmed, and I will build exactly these features."

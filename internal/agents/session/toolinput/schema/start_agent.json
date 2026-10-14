@@ -1,0 +1,47 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "description",
+    "prompt",
+    "kind"
+  ],
+  "properties": {
+    "description": {
+      "type": "string",
+      "description": "What the subagent works on, in at most 80 characters; the user sees it in the tasks panel. For connector_develop it also titles the commit and the pull request: connector(slug): description.",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "prompt": {
+      "type": "string",
+      "description": "The complete brief, at most 32 KiB: the goal, the relevant paths, the constraints and what the report must contain. The subagent sees nothing else of the conversation.",
+      "minLength": 1,
+      "maxLength": 32768
+    },
+    "kind": {
+      "type": "string",
+      "description": "investigate answers a question about the code or its dependencies; change makes a bounded change and checks it; connector_select chooses the connectors for the requirements; connector_develop builds or fixes one connector in the connectors library.",
+      "enum": [
+        "investigate",
+        "change",
+        "connector_select",
+        "connector_develop"
+      ]
+    },
+    "slug": {
+      "type": "string",
+      "description": "For connector_develop only: the connector ID, the manifest's metadata.name, such as newsapi; the contribution branch derives from it.",
+      "pattern": "^[a-z][a-z0-9-]{1,62}$"
+    },
+    "contribution": {
+      "type": "string",
+      "description": "For connector_develop only: new for a new connector, operation for a new operation of an existing connector, fix for a defect fix of an existing connector.",
+      "enum": [
+        "new",
+        "operation",
+        "fix"
+      ]
+    }
+  }
+}

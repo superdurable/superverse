@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "task_id"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "description": "The task ID of a background command, such as cmd-qjo5x7m2k4ab.",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "offset": {
+      "type": "integer",
+      "description": "The byte offset of the output to read from; each result gives the offset to read on from.",
+      "minimum": 0,
+      "default": 0
+    }
+  }
+}

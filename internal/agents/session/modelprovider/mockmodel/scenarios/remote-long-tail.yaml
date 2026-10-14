@@ -1,0 +1,29 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+name: remote-long-tail
+title: "Long remote handoff tail"
+description: "Exact external Sandbox tool units retained after more than one thousand remote entries."
+category: agent_feature
+test_action: "Drive the real remote endpoint; then launch remote-long-continuation."
+inputs:
+  - label: "Write and read the retained proof"
+    message: "Write and read the retained long handoff proof."
+    replies:
+      - remote: true
+        tool_uses:
+          - id: remote-1-36
+            name: write
+            input: {path: raexec-long-handoff.txt, content: "Long remote handoff proof\n"}
+        expect_result_contains: ["Created raexec-long-handoff.txt"]
+      - remote: true
+        tool_uses:
+          - id: remote-1-37
+            name: read
+            input: {path: raexec-long-handoff.txt}
+        expect_result_contains: ["Long remote handoff proof"]

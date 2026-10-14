@@ -1,0 +1,41 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+{{- $dexPorts := list (dict "name" "grpc" "port" 8801) }}
+{{- if or .Values.localKind .Values.dex.debugIngress.enabled }}
+{{- $target := ternary "web-proxy" "web" .Values.dex.debugIngress.enabled }}
+{{- $dexPorts = append $dexPorts (dict "name" "web" "port" 8802 "targetPort" $target) }}
+{{- end }}
+{{- $serverPorts := list (dict "name" "grpc" "port" 8080) (dict "name" "health" "port" 8082) (dict "name" "credential-read" "port" (include "v2.credentialRead.port" . | int)) (dict "name" "slack-events" "port" (include "v2.slackEvents.port" . | int)) (dict "name" "remote-agent" "port" (include "v2.remoteAgent.port" . | int)) }}
+{{- if .Values.localKind }}
+{{- /* Local Kind only: the local Git host, which Sandboxes clone from. */}}
+{{- $serverPorts = append $serverPorts (dict "name" "git-http" "port" (include "v2.localGit.port" . | int)) }}
+{{- end }}
+{{- range $name, $ports := dict "server" $serverPorts "dex" $dexPorts "studio" (list (dict "name" "http" "port" 3000)) }}
+{{- if or (ne $name "studio") $.Values.studio.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "v2.product" $ }}-{{ $name }}
+  namespace: {{ include "v2.namespace" $ }}
+spec:
+  selector: {app: {{ include "v2.product" $ }}-{{ $name }}}
+  ports: {{ toYaml $ports | nindent 4 }}
+{{- end }}
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: superverse-server-worker
+  namespace: {{ include "v2.namespace" $ }}
+spec:
+  clusterIP: None
+  selector: {app: {{ include "v2.product" $ }}-server}
+  ports: [{name: worker, port: 50051}]

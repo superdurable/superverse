@@ -1,0 +1,70 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A defect fix of an existing connector: the main agent explains a defect of
+# the released newsapi connector in business terms and asks with
+# request_user_input whether to submit a fix, because the fix opens a pull
+# request in the public library. After the user agrees it starts a
+# connector_develop subagent for newsapi with the contribution fix, which
+# changes only the newsapi module and reports; its finish commits and pushes
+# the branch, and its task notification carries the contribution.
+name: connector-develop-fix
+title: "Connector development: a defect fix"
+description: "The user agrees to submit a fix of the newsapi connector, which a connector_develop subagent makes on its library branch."
+category: project_feature
+arguments: {task: agent-aaaaaaaa}
+inputs:
+  - label: "Report the defect"
+    message: "The news page shows no articles for searches with an apostrophe."
+    replies:
+      - text: "The released newsapi connector mishandles an apostrophe in a search. A fix opens a pull request in the public connectors library."
+        tool_uses:
+          - name: request_user_input
+            input:
+              questions:
+                - id: fix
+                  header: "Connector fix"
+                  question: "Should I submit a fix of the newsapi connector to the public connectors library?"
+                  options:
+                    - {label: "Submit the fix", description: "A subagent fixes the connector and the platform opens a draft pull request."}
+                    - {label: "Not now", description: "Keep the connector as it is."}
+  - label: "Agree to submit the fix"
+    answers: ["Submit the fix"]
+    replies:
+      - text: "Fixing the connector upstream."
+        tool_uses:
+          - name: start_agent
+            input:
+              description: "Fix apostrophes in newsapi searches"
+              kind: connector_develop
+              slug: newsapi
+              contribution: fix
+              prompt: "Fix the newsapi connector so that a search query with an apostrophe returns its articles; extend the smallest test or example that proves it. [[subagent:connector-develop-fix/develop]]"
+        expect_result_contains:
+          - "\"branch\":\"superverse/"
+      - text: "A subagent fixes the connector; I will tell you when its branch is ready."
+      - text: "The fix is on its branch of the connectors library; a maintainer reviews it."
+        notification: task
+subagents:
+  develop:
+    kind: connector_develop
+    replies:
+      - text: "Finding the query handling."
+        tool_uses:
+          - name: grep
+            input: {pattern: "func ", path: connectors/newsapi/client.go, output_mode: count}
+      - text: "Recording the fix in the module."
+        tool_uses:
+          - name: bash
+            input:
+              command: "printf '\\nSearch queries keep apostrophes intact.\\n' >> connectors/newsapi/README.md && tail -1 connectors/newsapi/README.md"
+              description: "Record the fixed apostrophe handling in the README"
+              timeout_seconds: 60
+        expect_result_contains:
+          - "apostrophes"
+      - text: "I fixed the apostrophe handling of connectors/newsapi and left the version and catalog.yaml unchanged. The provider behavior is unverified."

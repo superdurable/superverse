@@ -1,0 +1,69 @@
+// Original file: api/superverse/v2/superverse.proto
+
+import type * as grpc from '@grpc/grpc-js'
+import type { MethodDefinition } from '@grpc/proto-loader'
+import type { CreateRemoteAgentPairingRequest as _superverse_v2_CreateRemoteAgentPairingRequest, CreateRemoteAgentPairingRequest__Output as _superverse_v2_CreateRemoteAgentPairingRequest__Output } from '../../superverse/v2/CreateRemoteAgentPairingRequest';
+import type { CreateRemoteAgentPairingResponse as _superverse_v2_CreateRemoteAgentPairingResponse, CreateRemoteAgentPairingResponse__Output as _superverse_v2_CreateRemoteAgentPairingResponse__Output } from '../../superverse/v2/CreateRemoteAgentPairingResponse';
+import type { ListRemoteAgentConnectionsRequest as _superverse_v2_ListRemoteAgentConnectionsRequest, ListRemoteAgentConnectionsRequest__Output as _superverse_v2_ListRemoteAgentConnectionsRequest__Output } from '../../superverse/v2/ListRemoteAgentConnectionsRequest';
+import type { ListRemoteAgentConnectionsResponse as _superverse_v2_ListRemoteAgentConnectionsResponse, ListRemoteAgentConnectionsResponse__Output as _superverse_v2_ListRemoteAgentConnectionsResponse__Output } from '../../superverse/v2/ListRemoteAgentConnectionsResponse';
+import type { RevokeRemoteAgentConnectionRequest as _superverse_v2_RevokeRemoteAgentConnectionRequest, RevokeRemoteAgentConnectionRequest__Output as _superverse_v2_RevokeRemoteAgentConnectionRequest__Output } from '../../superverse/v2/RevokeRemoteAgentConnectionRequest';
+import type { RevokeRemoteAgentConnectionResponse as _superverse_v2_RevokeRemoteAgentConnectionResponse, RevokeRemoteAgentConnectionResponse__Output as _superverse_v2_RevokeRemoteAgentConnectionResponse__Output } from '../../superverse/v2/RevokeRemoteAgentConnectionResponse';
+import type { SetSessionExecutorRequest as _superverse_v2_SetSessionExecutorRequest, SetSessionExecutorRequest__Output as _superverse_v2_SetSessionExecutorRequest__Output } from '../../superverse/v2/SetSessionExecutorRequest';
+import type { SetSessionExecutorResponse as _superverse_v2_SetSessionExecutorResponse, SetSessionExecutorResponse__Output as _superverse_v2_SetSessionExecutorResponse__Output } from '../../superverse/v2/SetSessionExecutorResponse';
+
+export interface RemoteAgentServiceClient extends grpc.Client {
+  CreateRemoteAgentPairing(argument: _superverse_v2_CreateRemoteAgentPairingRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_CreateRemoteAgentPairingResponse__Output>): grpc.ClientUnaryCall;
+  CreateRemoteAgentPairing(argument: _superverse_v2_CreateRemoteAgentPairingRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_superverse_v2_CreateRemoteAgentPairingResponse__Output>): grpc.ClientUnaryCall;
+  CreateRemoteAgentPairing(argument: _superverse_v2_CreateRemoteAgentPairingRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_CreateRemoteAgentPairingResponse__Output>): grpc.ClientUnaryCall;
+  CreateRemoteAgentPairing(argument: _superverse_v2_CreateRemoteAgentPairingRequest, callback: grpc.requestCallback<_superverse_v2_CreateRemoteAgentPairingResponse__Output>): grpc.ClientUnaryCall;
+  createRemoteAgentPairing(argument: _superverse_v2_CreateRemoteAgentPairingRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_CreateRemoteAgentPairingResponse__Output>): grpc.ClientUnaryCall;
+  createRemoteAgentPairing(argument: _superverse_v2_CreateRemoteAgentPairingRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_superverse_v2_CreateRemoteAgentPairingResponse__Output>): grpc.ClientUnaryCall;
+  createRemoteAgentPairing(argument: _superverse_v2_CreateRemoteAgentPairingRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_CreateRemoteAgentPairingResponse__Output>): grpc.ClientUnaryCall;
+  createRemoteAgentPairing(argument: _superverse_v2_CreateRemoteAgentPairingRequest, callback: grpc.requestCallback<_superverse_v2_CreateRemoteAgentPairingResponse__Output>): grpc.ClientUnaryCall;
+
+  ListRemoteAgentConnections(argument: _superverse_v2_ListRemoteAgentConnectionsRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_ListRemoteAgentConnectionsResponse__Output>): grpc.ClientUnaryCall;
+  ListRemoteAgentConnections(argument: _superverse_v2_ListRemoteAgentConnectionsRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_superverse_v2_ListRemoteAgentConnectionsResponse__Output>): grpc.ClientUnaryCall;
+  ListRemoteAgentConnections(argument: _superverse_v2_ListRemoteAgentConnectionsRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_ListRemoteAgentConnectionsResponse__Output>): grpc.ClientUnaryCall;
+  ListRemoteAgentConnections(argument: _superverse_v2_ListRemoteAgentConnectionsRequest, callback: grpc.requestCallback<_superverse_v2_ListRemoteAgentConnectionsResponse__Output>): grpc.ClientUnaryCall;
+  listRemoteAgentConnections(argument: _superverse_v2_ListRemoteAgentConnectionsRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_ListRemoteAgentConnectionsResponse__Output>): grpc.ClientUnaryCall;
+  listRemoteAgentConnections(argument: _superverse_v2_ListRemoteAgentConnectionsRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_superverse_v2_ListRemoteAgentConnectionsResponse__Output>): grpc.ClientUnaryCall;
+  listRemoteAgentConnections(argument: _superverse_v2_ListRemoteAgentConnectionsRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_ListRemoteAgentConnectionsResponse__Output>): grpc.ClientUnaryCall;
+  listRemoteAgentConnections(argument: _superverse_v2_ListRemoteAgentConnectionsRequest, callback: grpc.requestCallback<_superverse_v2_ListRemoteAgentConnectionsResponse__Output>): grpc.ClientUnaryCall;
+
+  RevokeRemoteAgentConnection(argument: _superverse_v2_RevokeRemoteAgentConnectionRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_RevokeRemoteAgentConnectionResponse__Output>): grpc.ClientUnaryCall;
+  RevokeRemoteAgentConnection(argument: _superverse_v2_RevokeRemoteAgentConnectionRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_superverse_v2_RevokeRemoteAgentConnectionResponse__Output>): grpc.ClientUnaryCall;
+  RevokeRemoteAgentConnection(argument: _superverse_v2_RevokeRemoteAgentConnectionRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_RevokeRemoteAgentConnectionResponse__Output>): grpc.ClientUnaryCall;
+  RevokeRemoteAgentConnection(argument: _superverse_v2_RevokeRemoteAgentConnectionRequest, callback: grpc.requestCallback<_superverse_v2_RevokeRemoteAgentConnectionResponse__Output>): grpc.ClientUnaryCall;
+  revokeRemoteAgentConnection(argument: _superverse_v2_RevokeRemoteAgentConnectionRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_RevokeRemoteAgentConnectionResponse__Output>): grpc.ClientUnaryCall;
+  revokeRemoteAgentConnection(argument: _superverse_v2_RevokeRemoteAgentConnectionRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_superverse_v2_RevokeRemoteAgentConnectionResponse__Output>): grpc.ClientUnaryCall;
+  revokeRemoteAgentConnection(argument: _superverse_v2_RevokeRemoteAgentConnectionRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_RevokeRemoteAgentConnectionResponse__Output>): grpc.ClientUnaryCall;
+  revokeRemoteAgentConnection(argument: _superverse_v2_RevokeRemoteAgentConnectionRequest, callback: grpc.requestCallback<_superverse_v2_RevokeRemoteAgentConnectionResponse__Output>): grpc.ClientUnaryCall;
+
+  SetSessionExecutor(argument: _superverse_v2_SetSessionExecutorRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_SetSessionExecutorResponse__Output>): grpc.ClientUnaryCall;
+  SetSessionExecutor(argument: _superverse_v2_SetSessionExecutorRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_superverse_v2_SetSessionExecutorResponse__Output>): grpc.ClientUnaryCall;
+  SetSessionExecutor(argument: _superverse_v2_SetSessionExecutorRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_SetSessionExecutorResponse__Output>): grpc.ClientUnaryCall;
+  SetSessionExecutor(argument: _superverse_v2_SetSessionExecutorRequest, callback: grpc.requestCallback<_superverse_v2_SetSessionExecutorResponse__Output>): grpc.ClientUnaryCall;
+  setSessionExecutor(argument: _superverse_v2_SetSessionExecutorRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_SetSessionExecutorResponse__Output>): grpc.ClientUnaryCall;
+  setSessionExecutor(argument: _superverse_v2_SetSessionExecutorRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_superverse_v2_SetSessionExecutorResponse__Output>): grpc.ClientUnaryCall;
+  setSessionExecutor(argument: _superverse_v2_SetSessionExecutorRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_SetSessionExecutorResponse__Output>): grpc.ClientUnaryCall;
+  setSessionExecutor(argument: _superverse_v2_SetSessionExecutorRequest, callback: grpc.requestCallback<_superverse_v2_SetSessionExecutorResponse__Output>): grpc.ClientUnaryCall;
+
+}
+
+export interface RemoteAgentServiceHandlers extends grpc.UntypedServiceImplementation {
+  CreateRemoteAgentPairing: grpc.handleUnaryCall<_superverse_v2_CreateRemoteAgentPairingRequest__Output, _superverse_v2_CreateRemoteAgentPairingResponse>;
+
+  ListRemoteAgentConnections: grpc.handleUnaryCall<_superverse_v2_ListRemoteAgentConnectionsRequest__Output, _superverse_v2_ListRemoteAgentConnectionsResponse>;
+
+  RevokeRemoteAgentConnection: grpc.handleUnaryCall<_superverse_v2_RevokeRemoteAgentConnectionRequest__Output, _superverse_v2_RevokeRemoteAgentConnectionResponse>;
+
+  SetSessionExecutor: grpc.handleUnaryCall<_superverse_v2_SetSessionExecutorRequest__Output, _superverse_v2_SetSessionExecutorResponse>;
+
+}
+
+export interface RemoteAgentServiceDefinition extends grpc.ServiceDefinition {
+  CreateRemoteAgentPairing: MethodDefinition<_superverse_v2_CreateRemoteAgentPairingRequest, _superverse_v2_CreateRemoteAgentPairingResponse, _superverse_v2_CreateRemoteAgentPairingRequest__Output, _superverse_v2_CreateRemoteAgentPairingResponse__Output>
+  ListRemoteAgentConnections: MethodDefinition<_superverse_v2_ListRemoteAgentConnectionsRequest, _superverse_v2_ListRemoteAgentConnectionsResponse, _superverse_v2_ListRemoteAgentConnectionsRequest__Output, _superverse_v2_ListRemoteAgentConnectionsResponse__Output>
+  RevokeRemoteAgentConnection: MethodDefinition<_superverse_v2_RevokeRemoteAgentConnectionRequest, _superverse_v2_RevokeRemoteAgentConnectionResponse, _superverse_v2_RevokeRemoteAgentConnectionRequest__Output, _superverse_v2_RevokeRemoteAgentConnectionResponse__Output>
+  SetSessionExecutor: MethodDefinition<_superverse_v2_SetSessionExecutorRequest, _superverse_v2_SetSessionExecutorResponse, _superverse_v2_SetSessionExecutorRequest__Output, _superverse_v2_SetSessionExecutorResponse__Output>
+}

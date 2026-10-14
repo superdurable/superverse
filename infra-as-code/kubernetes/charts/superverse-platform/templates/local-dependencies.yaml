@@ -1,0 +1,174 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+{{- if .Values.localKind }}
+{{- $temporal := required "localDependencies.temporalImage is required" .Values.localDependencies.temporalImage }}
+{{- $minio := required "localDependencies.minioImage is required" .Values.localDependencies.minioImage }}
+{{- range $name, $image := dict "temporal" $temporal "minio" $minio }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $name }}
+  namespace: {{ include "v2.namespace" $ }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+spec:
+  serviceName: {{ $name }}
+  replicas: 1
+  selector: {matchLabels: {app: {{ $name }}}}
+  template:
+    metadata:
+      labels: {app: {{ $name }}, app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+    spec:
+      containers:
+        - name: {{ $name }}
+          image: {{ $image | quote }}
+          {{- if eq $name "temporal" }}
+          args: [server, start-dev, --ip, "0.0.0.0", --ui-ip, "0.0.0.0", --namespace, {{ (include "v2.names" $ | fromJson).temporal_namespace }}, --db-filename, /data/temporal.db, --search-attribute, FlowType=Keyword, --search-attribute, DexParentFlowID=Keyword, --search-attribute, ActiveStepTypes=KeywordList, --search-attribute, keyword1=Keyword, --search-attribute, keyword2=Keyword, --search-attribute, keyword3=Keyword]
+          ports: [{name: grpc, containerPort: 7233}, {name: ui, containerPort: 8233}]
+          readinessProbe: {tcpSocket: {port: grpc}, initialDelaySeconds: 3}
+          {{- else }}
+          args: [server, /data]
+          envFrom: [{secretRef: {name: {{ include "v2.product" $ }}-minio}}]
+          ports: [{name: http, containerPort: 9000}]
+          readinessProbe: {tcpSocket: {port: http}, initialDelaySeconds: 3}
+          {{- end }}
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: "2", memory: 2Gi}
+          volumeMounts: [{name: data, mountPath: /data}]
+  volumeClaimTemplates:
+    - metadata: {name: data}
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources: {requests: {storage: {{ if eq $name "temporal" }}5Gi{{ else }}10Gi{{ end }}}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  namespace: {{ include "v2.namespace" $ }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+spec:
+  selector: {app: {{ $name }}}
+  ports:
+    {{- if eq $name "temporal" }}
+    - {name: grpc, port: 7233}
+    - {name: ui, port: 8233}
+    {{- else }}
+    - {name: http, port: 9000}
+    {{- end }}
+{{- end }}
+{{- $postgres := required "localDependencies.postgresImage is required" .Values.localDependencies.postgresImage }}
+---
+# The platform PostgreSQL, the server's database. kind up creates its roles from the lane's retained credentials through
+# the container's socket on every run; the superuser password here only seeds a new data volume.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: {{ include "v2.namespace" $ }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector: {matchLabels: {app: postgres}}
+  template:
+    metadata:
+      labels: {app: postgres, app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+    spec:
+      containers:
+        - name: postgres
+          image: {{ $postgres | quote }}
+          env:
+            - {name: POSTGRES_DB, value: superverse}
+            - {name: PGDATA, value: /var/lib/postgresql/data/pgdata}
+            - name: POSTGRES_PASSWORD
+              valueFrom: {secretKeyRef: {name: {{ include "v2.product" $ }}-postgres, key: POSTGRES_PASSWORD}}
+          ports: [{name: postgres, containerPort: 5432}]
+          # TCP, because the first start initializes the volume with a socket-only server.
+          readinessProbe: {exec: {command: [pg_isready, -h, 127.0.0.1, -U, postgres, -d, superverse]}, initialDelaySeconds: 3, periodSeconds: 5}
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: "2", memory: 1Gi}
+          volumeMounts: [{name: data, mountPath: /var/lib/postgresql/data}]
+  volumeClaimTemplates:
+    - metadata: {name: data}
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources: {requests: {storage: 5Gi}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: {{ include "v2.namespace" $ }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+spec:
+  selector: {app: postgres}
+  ports: [{name: postgres, port: 5432}]
+{{- $keycloak := required "localDependencies.keycloakImage is required" .Values.localDependencies.keycloakImage }}
+{{- $realm := .Files.Get "files/keycloak-realm.json" }}
+---
+# The OAuth provider of the connection tests (scripts/local_platform.py). Development mode imports the realm on every
+# start into the container's own database. Tokens carry the browser's issuer, keycloakOrigin, while the server and the
+# applications call the token and userinfo endpoints through the Service.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-realm
+  namespace: {{ include "v2.namespace" $ }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+data:
+  superverse-e2e.json: {{ $realm | quote }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: {{ include "v2.namespace" $ }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: keycloak}}
+  template:
+    metadata:
+      labels: {app: keycloak, app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+      annotations: {superdurable.io/realm-digest: {{ $realm | sha256sum | quote }}}
+    spec:
+      containers:
+        - name: keycloak
+          image: {{ $keycloak | quote }}
+          args: [start-dev, --import-realm]
+          env:
+            - {name: KC_BOOTSTRAP_ADMIN_USERNAME, value: admin}
+            - {name: KC_HOSTNAME, value: {{ required "localDependencies.keycloakOrigin is required" .Values.localDependencies.keycloakOrigin | quote }}}
+            - {name: KC_HOSTNAME_BACKCHANNEL_DYNAMIC, value: "true"}
+            - {name: KC_HTTP_ENABLED, value: "true"}
+            - {name: KC_HEALTH_ENABLED, value: "true"}
+            - {name: SV2_KEYCLOAK_REDIRECT_ORIGIN, value: {{ required "studio.config.SUPERVERSE_STUDIO_PUBLIC_ORIGIN is required" .Values.studio.config.SUPERVERSE_STUDIO_PUBLIC_ORIGIN | quote }}}
+          envFrom: [{secretRef: {name: {{ include "v2.product" $ }}-keycloak}}]
+          ports: [{name: http, containerPort: 8080}]
+          readinessProbe: {httpGet: {path: /realms/superverse-e2e/.well-known/openid-configuration, port: http}, initialDelaySeconds: 10, periodSeconds: 5}
+          resources:
+            requests: {cpu: 100m, memory: 384Mi}
+            limits: {cpu: "2", memory: 1Gi}
+          volumeMounts: [{name: realm, mountPath: /opt/keycloak/data/import, readOnly: true}]
+      volumes: [{name: realm, configMap: {name: keycloak-realm}}]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  namespace: {{ include "v2.namespace" $ }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+spec:
+  selector: {app: keycloak}
+  ports: [{name: http, port: 8080}]
+{{- end }}

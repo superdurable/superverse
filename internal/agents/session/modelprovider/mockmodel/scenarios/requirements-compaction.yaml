@@ -1,0 +1,40 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# After the user confirmed requirements, the context is compacted and the Agent still has
+# them: the first message of the new segment carries the confirmed requirements with their
+# version, and the last step answers only when it does. The arguments version and title
+# name the confirmed requirements the Session holds, by default those that
+# requirements-draft-changes confirms; a segment without them is answered with a stop
+# text. The progress list carries usage above every compaction threshold, as in the
+# compaction scenario, and touches no workspace file.
+name: requirements-compaction
+title: "Requirements after compaction"
+description: "Run it after a scenario confirmed requirements, with version and title set to them (by default those of requirements-draft-changes); it compacts, and its last reply answers only when the new segment carries them."
+category: agent_feature
+arguments:
+  version: "1"
+  title: Release tracker
+compaction_summary: "The user confirmed the requirements and the progress list was written."
+inputs:
+  - label: "Check the context"
+    message: "Check the context."
+    replies:
+      - thinking: "I will record the progress before I continue."
+        text: "Recording the progress."
+        tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Build the release list", status: in_progress}
+        usage: {input_tokens: 850000, output_tokens: 200}
+      - text: "The confirmed requirements survived the compaction."
+        expect_segment_start:
+          - "<confirmed_requirements>"
+          - "Version {{version}}: {{title}}"
+          - "R1:"

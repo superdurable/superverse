@@ -1,0 +1,89 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# The subagent limits in one turn. Three slow subagents run, so a fourth
+# start_agent is refused with subagent_limit_reached. Once they reported, two
+# quick subagents and one that surveys the source start, which makes six
+# started since the user's message, so the next start is refused with
+# subagent_budget_reached. The survey subagent makes its kind's 40 model
+# calls: the last one allows no tool and writes the report (last_call). The
+# pauses order the reports: the first five arrive inside the turn, and the
+# survey's report opens the one automatic turn. It changes nothing in the
+# workspace.
+name: subagent-limit
+title: "Subagent limits"
+description: "The running and the per-message subagent limits refuse a start, and a subagent reports at its model-call limit."
+category: agent_feature
+inputs:
+  - label: "Delegate past the limits"
+    message: "Survey the source with as many subagents as you may."
+    replies:
+      - text: "Delegating three slow checks and a fourth one."
+        tool_uses:
+          - name: start_agent
+            input: {description: "Slow check one", kind: investigate, prompt: "Run the slow check. [[subagent:subagent-limit/slow]]"}
+          - name: start_agent
+            input: {description: "Slow check two", kind: investigate, prompt: "Run the slow check. [[subagent:subagent-limit/slow]]"}
+          - name: start_agent
+            input: {description: "Slow check three", kind: investigate, prompt: "Run the slow check. [[subagent:subagent-limit/slow]]"}
+          - name: start_agent
+            input: {description: "Quick check refused", kind: investigate, prompt: "Report at once. [[subagent:subagent-limit/quick]]"}
+        expect_failure: true
+        expect_failure_text: "Error: subagent_limit_reached"
+      - text: "Three subagents run, the most that may; waiting for their reports."
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 60", description: "Wait for the slow checks", timeout_seconds: 300}
+      - text: "Delegating two quick checks and the survey."
+        tool_uses:
+          - name: start_agent
+            input: {description: "Quick check one", kind: investigate, prompt: "Report at once. [[subagent:subagent-limit/quick]]"}
+          - name: start_agent
+            input: {description: "Quick check two", kind: investigate, prompt: "Report at once. [[subagent:subagent-limit/quick]]"}
+          - name: start_agent
+            input: {description: "Survey the source", kind: investigate, prompt: "List the source until your model calls run out, then report. [[subagent:subagent-limit/survey]]"}
+      - text: "Trying a seventh subagent."
+        tool_uses:
+          - name: start_agent
+            input: {description: "Quick check past the budget", kind: investigate, prompt: "Report at once. [[subagent:subagent-limit/quick]]"}
+        expect_failure: true
+        expect_failure_text: "Error: subagent_budget_reached"
+      - text: "Six subagents started since your message; waiting for the quick checks."
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 20", description: "Wait for the quick checks", timeout_seconds: 300}
+      - text: "The survey runs on; its report arrives as a notification."
+      - text: "The survey subagent reported at its model-call limit."
+        notification: task
+subagents:
+  slow:
+    kind: investigate
+    replies:
+      - text: "Running the slow check."
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 20", description: "Run the slow check", timeout_seconds: 300}
+      - text: "The slow check finished."
+  quick:
+    kind: investigate
+    replies:
+      - text: "The quick check found nothing to report."
+  survey:
+    kind: investigate
+    replies:
+      - text: "Waiting for the other checks to report."
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 30", description: "Wait for the other checks", timeout_seconds: 300}
+      - text: "Listing the source."
+        tool_uses:
+          - name: glob
+            input: {pattern: "**/*.tsx", path: web/src}
+        repeat: 38
+      - text: "The survey listed the source until its model calls ran out: web/src holds App.tsx and main.tsx."
+        last_call: true

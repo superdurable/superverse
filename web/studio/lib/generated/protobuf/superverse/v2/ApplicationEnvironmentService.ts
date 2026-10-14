@@ -1,0 +1,41 @@
+// Original file: api/superverse/v2/superverse.proto
+
+import type * as grpc from '@grpc/grpc-js'
+import type { MethodDefinition } from '@grpc/proto-loader'
+import type { GetApplicationEnvironmentRequest as _superverse_v2_GetApplicationEnvironmentRequest, GetApplicationEnvironmentRequest__Output as _superverse_v2_GetApplicationEnvironmentRequest__Output } from '../../superverse/v2/GetApplicationEnvironmentRequest';
+import type { GetApplicationEnvironmentResponse as _superverse_v2_GetApplicationEnvironmentResponse, GetApplicationEnvironmentResponse__Output as _superverse_v2_GetApplicationEnvironmentResponse__Output } from '../../superverse/v2/GetApplicationEnvironmentResponse';
+import type { SaveApplicationEnvironmentRequest as _superverse_v2_SaveApplicationEnvironmentRequest, SaveApplicationEnvironmentRequest__Output as _superverse_v2_SaveApplicationEnvironmentRequest__Output } from '../../superverse/v2/SaveApplicationEnvironmentRequest';
+import type { SaveApplicationEnvironmentResponse as _superverse_v2_SaveApplicationEnvironmentResponse, SaveApplicationEnvironmentResponse__Output as _superverse_v2_SaveApplicationEnvironmentResponse__Output } from '../../superverse/v2/SaveApplicationEnvironmentResponse';
+
+export interface ApplicationEnvironmentServiceClient extends grpc.Client {
+  GetApplicationEnvironment(argument: _superverse_v2_GetApplicationEnvironmentRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_GetApplicationEnvironmentResponse__Output>): grpc.ClientUnaryCall;
+  GetApplicationEnvironment(argument: _superverse_v2_GetApplicationEnvironmentRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_superverse_v2_GetApplicationEnvironmentResponse__Output>): grpc.ClientUnaryCall;
+  GetApplicationEnvironment(argument: _superverse_v2_GetApplicationEnvironmentRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_GetApplicationEnvironmentResponse__Output>): grpc.ClientUnaryCall;
+  GetApplicationEnvironment(argument: _superverse_v2_GetApplicationEnvironmentRequest, callback: grpc.requestCallback<_superverse_v2_GetApplicationEnvironmentResponse__Output>): grpc.ClientUnaryCall;
+  getApplicationEnvironment(argument: _superverse_v2_GetApplicationEnvironmentRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_GetApplicationEnvironmentResponse__Output>): grpc.ClientUnaryCall;
+  getApplicationEnvironment(argument: _superverse_v2_GetApplicationEnvironmentRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_superverse_v2_GetApplicationEnvironmentResponse__Output>): grpc.ClientUnaryCall;
+  getApplicationEnvironment(argument: _superverse_v2_GetApplicationEnvironmentRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_GetApplicationEnvironmentResponse__Output>): grpc.ClientUnaryCall;
+  getApplicationEnvironment(argument: _superverse_v2_GetApplicationEnvironmentRequest, callback: grpc.requestCallback<_superverse_v2_GetApplicationEnvironmentResponse__Output>): grpc.ClientUnaryCall;
+
+  SaveApplicationEnvironment(argument: _superverse_v2_SaveApplicationEnvironmentRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_SaveApplicationEnvironmentResponse__Output>): grpc.ClientUnaryCall;
+  SaveApplicationEnvironment(argument: _superverse_v2_SaveApplicationEnvironmentRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_superverse_v2_SaveApplicationEnvironmentResponse__Output>): grpc.ClientUnaryCall;
+  SaveApplicationEnvironment(argument: _superverse_v2_SaveApplicationEnvironmentRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_SaveApplicationEnvironmentResponse__Output>): grpc.ClientUnaryCall;
+  SaveApplicationEnvironment(argument: _superverse_v2_SaveApplicationEnvironmentRequest, callback: grpc.requestCallback<_superverse_v2_SaveApplicationEnvironmentResponse__Output>): grpc.ClientUnaryCall;
+  saveApplicationEnvironment(argument: _superverse_v2_SaveApplicationEnvironmentRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_SaveApplicationEnvironmentResponse__Output>): grpc.ClientUnaryCall;
+  saveApplicationEnvironment(argument: _superverse_v2_SaveApplicationEnvironmentRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_superverse_v2_SaveApplicationEnvironmentResponse__Output>): grpc.ClientUnaryCall;
+  saveApplicationEnvironment(argument: _superverse_v2_SaveApplicationEnvironmentRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_SaveApplicationEnvironmentResponse__Output>): grpc.ClientUnaryCall;
+  saveApplicationEnvironment(argument: _superverse_v2_SaveApplicationEnvironmentRequest, callback: grpc.requestCallback<_superverse_v2_SaveApplicationEnvironmentResponse__Output>): grpc.ClientUnaryCall;
+
+}
+
+export interface ApplicationEnvironmentServiceHandlers extends grpc.UntypedServiceImplementation {
+  GetApplicationEnvironment: grpc.handleUnaryCall<_superverse_v2_GetApplicationEnvironmentRequest__Output, _superverse_v2_GetApplicationEnvironmentResponse>;
+
+  SaveApplicationEnvironment: grpc.handleUnaryCall<_superverse_v2_SaveApplicationEnvironmentRequest__Output, _superverse_v2_SaveApplicationEnvironmentResponse>;
+
+}
+
+export interface ApplicationEnvironmentServiceDefinition extends grpc.ServiceDefinition {
+  GetApplicationEnvironment: MethodDefinition<_superverse_v2_GetApplicationEnvironmentRequest, _superverse_v2_GetApplicationEnvironmentResponse, _superverse_v2_GetApplicationEnvironmentRequest__Output, _superverse_v2_GetApplicationEnvironmentResponse__Output>
+  SaveApplicationEnvironment: MethodDefinition<_superverse_v2_SaveApplicationEnvironmentRequest, _superverse_v2_SaveApplicationEnvironmentResponse, _superverse_v2_SaveApplicationEnvironmentRequest__Output, _superverse_v2_SaveApplicationEnvironmentResponse__Output>
+}

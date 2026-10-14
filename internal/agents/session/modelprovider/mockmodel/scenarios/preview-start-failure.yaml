@@ -1,0 +1,48 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A Preview start whose application exits at startup. The input makes the
+# server refuse to start without WELCOME_TEXT, which nothing sets in the
+# Preview, and pushes it as a blocked checkpoint, which hands nothing to the
+# Preview, so no automatic deployment races the person's start. A blocked
+# commit leaves the turn's source change without a handoff, so the Session
+# continues the turn three times; the script answers each with the same text.
+# A test then prepares that commit and starts the Preview twice; each start
+# fails PREVIEW_FAILED, owned by the application, and each delivery
+# notification opens an automatic turn, the replies that declare it.
+name: preview-start-failure
+title: "Start a Preview whose application exits"
+description: "Configure the Preview's summary-model connection first. Pushes a checkpoint whose server exits at startup in the Preview; each failed start's notification opens an automatic turn that explains it."
+category: user_error
+inputs:
+  - label: "Push a required setting as a checkpoint"
+    message: "Make the server refuse to start without WELCOME_TEXT and push it as a checkpoint."
+    replies:
+      - text: "Requiring WELCOME_TEXT at startup."
+        tool_uses:
+          - name: edit
+            input:
+              path: cmd/server/main.go
+              old_string: "\tslog.SetDefault(logger)\n"
+              new_string: "\tslog.SetDefault(logger)\n\tif os.Getenv(\"WELCOME_TEXT\") == \"\" {\n\t\treturn errors.New(\"WELCOME_TEXT is not set\")\n\t}\n"
+      - text: "Pushing the checkpoint without the source gate."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Checkpoint a required WELCOME_TEXT"
+              verification:
+                - "cmd/server/main.go refuses to start without WELCOME_TEXT"
+              blocked: true
+      - text: "The checkpoint is pushed; the server needs WELCOME_TEXT to start."
+      - text: "The checkpoint stays as pushed; start the Preview to see it."
+      - text: "The checkpoint stays as pushed; start the Preview to see it."
+      - text: "The checkpoint stays as pushed; start the Preview to see it."
+      - text: "The Preview application exited at startup because WELCOME_TEXT is not set there."
+        notification: delivery
+      - text: "The Preview application exited at startup again because WELCOME_TEXT is still not set there."
+        notification: delivery

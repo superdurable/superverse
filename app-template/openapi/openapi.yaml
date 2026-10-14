@@ -1,0 +1,127 @@
+openapi: 3.0.3
+info:
+  title: Dex Application API
+  version: 2.0.0
+paths:
+  /api/health:
+    get:
+      operationId: getHealth
+      responses:
+        '200':
+          description: Application is healthy.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/text-summaries:
+    post:
+      operationId: startTextSummary
+      description: Starts one TextSummaryFlow. Retrying the same requestId returns the same summary.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartTextSummaryRequest'
+      responses:
+        '202':
+          description: The summary Flow was started.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TextSummaryAccepted'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/text-summaries/{summaryId}:
+    get:
+      operationId: getTextSummary
+      parameters:
+        - name: summaryId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Current or final summary state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TextSummary'
+        default:
+          $ref: '#/components/responses/Error'
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+    StartTextSummaryRequest:
+      type: object
+      additionalProperties: false
+      required: [requestId, text]
+      properties:
+        requestId:
+          description: A new UUID for each submission; it identifies the summary.
+          type: string
+          format: uuid
+        text:
+          type: string
+          minLength: 1
+          maxLength: 65536
+    TextSummaryAccepted:
+      type: object
+      additionalProperties: false
+      required: [summaryId]
+      properties:
+        summaryId:
+          type: string
+          format: uuid
+    TextSummary:
+      type: object
+      additionalProperties: false
+      required: [status, summary, model, inputTokens, outputTokens, totalTokens, notice]
+      properties:
+        status:
+          type: string
+          enum: [pending, generating, completed, truncated, blocked, provider_rejected, invalid_response, defect, invalid_input, unknown]
+        summary:
+          type: string
+        model:
+          type: string
+        inputTokens:
+          type: integer
+          format: int64
+        outputTokens:
+          type: integer
+          format: int64
+        totalTokens:
+          type: integer
+          format: int64
+        notice:
+          type: string
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error, message]
+      properties:
+        error:
+          type: string
+          pattern: '^[a-z][a-z0-9_]*$'
+        message:
+          type: string
+          maxLength: 3000
+  responses:
+    Error:
+      description: Request failed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

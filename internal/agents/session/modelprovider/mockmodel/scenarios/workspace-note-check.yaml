@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# Checks that the note workspace-note left is still in the workspace with the
+# same text, [[scenario-arg:note=...]]. The command exits 0 only for an exact
+# line match, so the test reads the outcome from the tool result's exit code.
+name: workspace-note-check
+title: "Note check"
+description: "Checks that the note of workspace-note is still in the workspace."
+category: agent_feature
+arguments:
+  note: Mock note
+inputs:
+  - label: "Check the note"
+    message: "Check the workspace note."
+    replies:
+      - text: "Checking the workspace note."
+        tool_uses:
+          - name: bash
+            input: {command: "grep -qxF -- '{{note}}' sandbox-deadline-note.txt", description: "Check the workspace note"}
+      - text: "The note check finished."

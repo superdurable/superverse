@@ -1,0 +1,72 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A connector_select subagent for a new application whose need a released
+# connector meets: it searches the published catalog, which the Sandbox fetches
+# for real, finds the llm connector with its generateText operation and reports
+# in the fixed structure. Its task notification opens an automatic turn that
+# puts the choice on the requirements card as an existing connection, and the
+# user confirms the card. Nothing in the workspace changes.
+name: connector-select-existing
+title: "Connector selection: an existing connector"
+description: "A connector_select subagent finds the released llm connector; its report becomes the requirements card's connection, which the user confirms."
+category: project_feature
+arguments: {task: agent-aaaaaaaa}
+inputs:
+  - label: "Describe the application"
+    message: "Build a page that summarizes the text a visitor pastes."
+    replies:
+      - text: "Choosing the connector for the summaries before I show you the requirements."
+        tool_uses:
+          - name: start_agent
+            input:
+              description: "Choose the connector for summaries"
+              kind: connector_select
+              prompt: "Requirement R1: summarize the text a visitor pastes. Find the released connector and operation in the catalog and report it in the fixed structure. [[subagent:connector-select-existing/select]]"
+        expect_result_contains:
+          - "\"task_id\":\"agent-"
+      - text: "A subagent chooses the connector; I will show you the requirements when it reports."
+      - text: "The released llm connector meets the need. Please confirm what I will build."
+        notification: task
+        tool_uses:
+          - name: confirm_requirements
+            input:
+              title: "Text summaries"
+              summary: "A page where a visitor pastes text and reads a short summary of it."
+              features:
+                - {id: R1, text: "A visitor pastes text and reads its summary on the same page."}
+              connections:
+                - need: "Summarize the pasted text"
+                  connector: llm
+                  operations: [generateText]
+                  status: existing
+                  user_setup: "Configure the model provider's API key in Studio."
+              user_setup: ["Configure the llm connection in Studio."]
+              acceptance: ["A pasted paragraph returns a shorter summary."]
+  - label: "Confirm the requirements"
+    requirements_confirm: true
+    replies:
+      - text: "The requirements are confirmed; the summaries use the released llm connector."
+subagents:
+  select:
+    kind: connector_select
+    replies:
+      - text: "Searching the published catalog."
+        tool_uses:
+          - name: connector_catalog
+            input: {query: "llm", operation: "generateText"}
+        expect_result_contains:
+          - "\"id\":\"llm\""
+          - "generateText"
+      - text: |-
+          One requirement, one released connector.
+          - need: summarize the text a visitor pastes.
+          - recommended: llm, github.com/superdurable/dex-connectors-library/connectors/superdurable/llm, the catalog's version, existing, generateText (query), the manifest's default authentication.
+          - alternatives: none.
+          - gaps: none.
+          - user setup: an API key of the model provider.

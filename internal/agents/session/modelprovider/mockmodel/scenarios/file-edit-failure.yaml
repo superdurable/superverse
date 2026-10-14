@@ -1,0 +1,57 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# An edit whose old_string occurs twice is refused with edit_ambiguous and changes
+# nothing: the model reads the failure, reads the file again and edits it with one
+# more line of context, which is unique. The script writes its own note, so it
+# changes nothing of the application and runs on any READY Project, and it
+# continues only when the failed edit's result holds the code, the owner and
+# effect and the hint, so the later steps prove what the model read. The note
+# stays uncommitted. A turn that ends after a successful write or edit without a
+# commit_and_push with blocked=false is continued up to three times, each with a
+# reminder (the Session's source handoff rule); a blocked commit does not hand
+# off, and a real one would commit the note to the Project, so the script
+# answers the three continuations with the same text and the turn then ends.
+name: file-edit-failure
+title: "Ambiguous edit"
+description: "An edit of text that occurs twice fails with edit_ambiguous; the model reads the file and edits with more context."
+category: agent_error
+inputs:
+  - label: "Mark the review as done"
+    message: "Mark the review as done."
+    replies:
+      - text: "Writing a note with a repeated line."
+        tool_uses:
+          - name: write
+            input: {path: file-edit-note.txt, content: "todo: review\ntodo: review\n"}
+      - text: "Marking the review as done."
+        tool_uses:
+          - name: edit
+            input: {path: file-edit-note.txt, old_string: "todo: review", new_string: "done: review"}
+        expect_failure: true
+        expect_failure_text: "Error: edit_ambiguous"
+        expect_failure_contains:
+          - "owner: call · effect: none"
+          - "occurs 2 times in file-edit-note.txt"
+          - "hint: old_string occurs more than once"
+      - text: "That text occurs twice; reading the note again."
+        tool_uses:
+          - name: read
+            input: {path: file-edit-note.txt}
+      - text: "Editing the second line with the line break before it as context, which is unique."
+        tool_uses:
+          - name: edit
+            input: {path: file-edit-note.txt, old_string: "review\ntodo", new_string: "review\ndone"}
+      - text: "Checking the note."
+        tool_uses:
+          - name: read
+            input: {path: file-edit-note.txt}
+      - text: "The ambiguous edit was refused and changed nothing; with more context the edit marked the second review as done."
+      - text: "The note stays in the workspace on purpose; nothing is committed or pushed."
+      - text: "The note stays in the workspace on purpose; nothing is committed or pushed."
+      - text: "The note stays in the workspace on purpose; nothing is committed or pushed."

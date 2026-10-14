@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A command that is only blanks never runs: the model reads invalid_arguments as
+# an error result, writes the command and runs it again. It changes nothing in
+# the workspace. (bash runs in the agent root, which the model cannot name, so
+# a call cannot provoke a start refusal of a missing working directory.)
+name: tool-failure
+title: "Invalid command"
+description: "A blank command fails with invalid_arguments before it runs; the model corrects it."
+category: agent_error
+inputs:
+  - label: "List the web sources"
+    message: "List the web sources."
+    replies:
+      - text: "Listing the application's web sources."
+        tool_uses:
+          - name: bash
+            input: {command: "   ", description: "List the web sources"}
+        expect_failure: true
+        expect_failure_text: "Error: invalid_arguments"
+      - text: "That command was empty; listing the workspace root instead."
+        tool_uses:
+          - name: bash
+            input: {command: "ls", description: "List the workspace root"}
+      - text: "Listing finished: the empty command was corrected, and nothing was changed."

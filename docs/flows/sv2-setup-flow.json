@@ -1,0 +1,6125 @@
+{
+  "schemaVersion": "2.0",
+  "valid": true,
+  "source": {
+    "language": "go",
+    "path": "internal/projects/setup/project_setup_flow.go"
+  },
+  "flow": {
+    "name": "ProjectSetupFlow",
+    "startStepId": "step:AdmitSetup",
+    "span": {
+      "startLine": 67,
+      "startColumn": 1,
+      "endLine": 76,
+      "endColumn": 2
+    }
+  },
+  "nodes": [
+    {
+      "id": "decision-dispatch:rpc:RequestProjectSetupCleanup",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "rpc:RequestProjectSetupCleanup",
+      "phase": "rpc",
+      "span": {
+        "startLine": 156,
+        "startColumn": 1,
+        "endLine": 178,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:AdmitSetup",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:AdmitSetup",
+      "phase": "execute",
+      "span": {
+        "startLine": 225,
+        "startColumn": 1,
+        "endLine": 243,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:ClaimRepositoryBinding",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:ClaimRepositoryBinding",
+      "phase": "execute",
+      "span": {
+        "startLine": 282,
+        "startColumn": 1,
+        "endLine": 296,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:CleanupSetup",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:CleanupSetup",
+      "phase": "execute",
+      "span": {
+        "startLine": 523,
+        "startColumn": 1,
+        "endLine": 541,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:CommitProjectSetup",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:CommitProjectSetup",
+      "phase": "execute",
+      "span": {
+        "startLine": 481,
+        "startColumn": 1,
+        "endLine": 492,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:CommitProjectStorage",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:CommitProjectStorage",
+      "phase": "execute",
+      "span": {
+        "startLine": 414,
+        "startColumn": 1,
+        "endLine": 420,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:ConfigureRepository",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:ConfigureRepository",
+      "phase": "execute",
+      "span": {
+        "startLine": 457,
+        "startColumn": 1,
+        "endLine": 468,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:CreateManagedRepository",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:CreateManagedRepository",
+      "phase": "execute",
+      "span": {
+        "startLine": 256,
+        "startColumn": 1,
+        "endLine": 269,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:ExtractAppManifest",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:ExtractAppManifest",
+      "phase": "execute",
+      "span": {
+        "startLine": 341,
+        "startColumn": 1,
+        "endLine": 354,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:InitializeTemplate",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:InitializeTemplate",
+      "phase": "execute",
+      "span": {
+        "startLine": 314,
+        "startColumn": 1,
+        "endLine": 328,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:ReconcileProjectStorage",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:ReconcileProjectStorage",
+      "phase": "execute",
+      "span": {
+        "startLine": 369,
+        "startColumn": 1,
+        "endLine": 401,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:RegisterAppManifest",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:RegisterAppManifest",
+      "phase": "execute",
+      "span": {
+        "startLine": 433,
+        "startColumn": 1,
+        "endLine": 444,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision:rpc:GetDexDisplay:151:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetDexDisplay",
+      "phase": "rpc",
+      "span": {
+        "startLine": 151,
+        "startColumn": 9,
+        "endLine": 151,
+        "endColumn": 123
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:GetDexSummary:146:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetDexSummary",
+      "phase": "rpc",
+      "span": {
+        "startLine": 146,
+        "startColumn": 9,
+        "endLine": 146,
+        "endColumn": 103
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:GetProjectSetup:126:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetProjectSetup",
+      "phase": "rpc",
+      "span": {
+        "startLine": 126,
+        "startColumn": 9,
+        "endLine": 141,
+        "endColumn": 4
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RequestProjectSetupCleanup:163:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RequestProjectSetupCleanup",
+      "condition": "project.SetupFlowID != state.FlowID() || project.ProjectStatus != projects.StatusDeleting",
+      "phase": "rpc",
+      "span": {
+        "startLine": 163,
+        "startColumn": 10,
+        "endLine": 163,
+        "endColumn": 171
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RequestProjectSetupCleanup:167:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RequestProjectSetupCleanup",
+      "condition": "!(project.SetupFlowID != state.FlowID() || project.ProjectStatus != projects.StatusDeleting) and state.Status == StatusComplete || state.Status == StatusCancelled",
+      "phase": "rpc",
+      "span": {
+        "startLine": 167,
+        "startColumn": 10,
+        "endLine": 167,
+        "endColumn": 16
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RequestProjectSetupCleanup:177:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RequestProjectSetupCleanup",
+      "condition": "!(project.SetupFlowID != state.FlowID() || project.ProjectStatus != projects.StatusDeleting) and !(state.Status == StatusComplete || state.Status == StatusCancelled)",
+      "phase": "rpc",
+      "span": {
+        "startLine": 177,
+        "startColumn": 9,
+        "endLine": 177,
+        "endColumn": 15
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:step:AdmitSetup:228:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:AdmitSetup",
+      "condition": "state.ProjectDeletionRequested",
+      "phase": "execute",
+      "span": {
+        "startLine": 228,
+        "startColumn": 10,
+        "endLine": 228,
+        "endColumn": 51
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:AdmitSetup:235:10",
+      "kind": "decision",
+      "name": "gracefulComplete",
+      "parentId": "step:AdmitSetup",
+      "condition": "!(state.ProjectDeletionRequested) and errors.Is(err, projects.ErrChildAdmissionClosed)",
+      "phase": "execute",
+      "span": {
+        "startLine": 235,
+        "startColumn": 10,
+        "endLine": 235,
+        "endColumn": 53
+      },
+      "decision": {
+        "type": "gracefulComplete"
+      }
+    },
+    {
+      "id": "decision:step:AdmitSetup:242:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:AdmitSetup",
+      "condition": "!(state.ProjectDeletionRequested) and !(errors.Is(err, projects.ErrChildAdmissionClosed))",
+      "phase": "execute",
+      "span": {
+        "startLine": 242,
+        "startColumn": 9,
+        "endLine": 242,
+        "endColumn": 61
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ClaimRepositoryBinding:285:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ClaimRepositoryBinding",
+      "condition": "state.ProjectDeletionRequested",
+      "phase": "execute",
+      "span": {
+        "startLine": 285,
+        "startColumn": 10,
+        "endLine": 285,
+        "endColumn": 51
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ClaimRepositoryBinding:295:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ClaimRepositoryBinding",
+      "condition": "!(state.ProjectDeletionRequested)",
+      "phase": "execute",
+      "span": {
+        "startLine": 295,
+        "startColumn": 9,
+        "endLine": 295,
+        "endColumn": 56
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:CleanupSetup:533:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:CleanupSetup",
+      "condition": "errors.Is(err, repohost.ErrOtherHost)",
+      "phase": "execute",
+      "span": {
+        "startLine": 533,
+        "startColumn": 10,
+        "endLine": 533,
+        "endColumn": 57
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:CleanupSetup:540:9",
+      "kind": "decision",
+      "name": "gracefulComplete",
+      "parentId": "step:CleanupSetup",
+      "condition": "!(errors.Is(err, repohost.ErrOtherHost))",
+      "phase": "execute",
+      "span": {
+        "startLine": 540,
+        "startColumn": 9,
+        "endLine": 540,
+        "endColumn": 52
+      },
+      "decision": {
+        "type": "gracefulComplete"
+      }
+    },
+    {
+      "id": "decision:step:CommitProjectSetup:484:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:CommitProjectSetup",
+      "condition": "state.ProjectDeletionRequested",
+      "phase": "execute",
+      "span": {
+        "startLine": 484,
+        "startColumn": 10,
+        "endLine": 484,
+        "endColumn": 51
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:CommitProjectSetup:491:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:CommitProjectSetup",
+      "condition": "!(state.ProjectDeletionRequested)",
+      "phase": "execute",
+      "span": {
+        "startLine": 491,
+        "startColumn": 9,
+        "endLine": 491,
+        "endColumn": 58
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:CommitProjectStorage:416:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:CommitProjectStorage",
+      "condition": "comm.Must(SetupProjectDeletionRequested.Get(ctx))",
+      "phase": "execute",
+      "span": {
+        "startLine": 416,
+        "startColumn": 10,
+        "endLine": 416,
+        "endColumn": 51
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:CommitProjectStorage:419:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:CommitProjectStorage",
+      "condition": "!(comm.Must(SetupProjectDeletionRequested.Get(ctx)))",
+      "phase": "execute",
+      "span": {
+        "startLine": 419,
+        "startColumn": 9,
+        "endLine": 419,
+        "endColumn": 57
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:CompleteProjectSetup:509:9",
+      "kind": "decision",
+      "name": "gracefulComplete",
+      "parentId": "step:CompleteProjectSetup",
+      "phase": "execute",
+      "span": {
+        "startLine": 509,
+        "startColumn": 9,
+        "endLine": 509,
+        "endColumn": 52
+      },
+      "decision": {
+        "type": "gracefulComplete"
+      }
+    },
+    {
+      "id": "decision:step:ConfigureRepository:460:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ConfigureRepository",
+      "condition": "state.ProjectDeletionRequested",
+      "phase": "execute",
+      "span": {
+        "startLine": 460,
+        "startColumn": 10,
+        "endLine": 460,
+        "endColumn": 51
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ConfigureRepository:467:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ConfigureRepository",
+      "condition": "!(state.ProjectDeletionRequested)",
+      "phase": "execute",
+      "span": {
+        "startLine": 467,
+        "startColumn": 9,
+        "endLine": 467,
+        "endColumn": 56
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:CreateManagedRepository:259:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:CreateManagedRepository",
+      "condition": "state.ProjectDeletionRequested",
+      "phase": "execute",
+      "span": {
+        "startLine": 259,
+        "startColumn": 10,
+        "endLine": 259,
+        "endColumn": 51
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:CreateManagedRepository:268:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:CreateManagedRepository",
+      "condition": "!(state.ProjectDeletionRequested)",
+      "phase": "execute",
+      "span": {
+        "startLine": 268,
+        "startColumn": 9,
+        "endLine": 268,
+        "endColumn": 60
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ExtractAppManifest:344:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ExtractAppManifest",
+      "condition": "state.ProjectDeletionRequested",
+      "phase": "execute",
+      "span": {
+        "startLine": 344,
+        "startColumn": 10,
+        "endLine": 344,
+        "endColumn": 51
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ExtractAppManifest:353:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ExtractAppManifest",
+      "condition": "!(state.ProjectDeletionRequested)",
+      "phase": "execute",
+      "span": {
+        "startLine": 353,
+        "startColumn": 9,
+        "endLine": 353,
+        "endColumn": 61
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:InitializeTemplate:317:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:InitializeTemplate",
+      "condition": "state.ProjectDeletionRequested",
+      "phase": "execute",
+      "span": {
+        "startLine": 317,
+        "startColumn": 10,
+        "endLine": 317,
+        "endColumn": 51
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:InitializeTemplate:327:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:InitializeTemplate",
+      "condition": "!(state.ProjectDeletionRequested)",
+      "phase": "execute",
+      "span": {
+        "startLine": 327,
+        "startColumn": 9,
+        "endLine": 327,
+        "endColumn": 56
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ReconcileProjectStorage:372:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ReconcileProjectStorage",
+      "condition": "state.ProjectDeletionRequested",
+      "phase": "execute",
+      "span": {
+        "startLine": 372,
+        "startColumn": 10,
+        "endLine": 372,
+        "endColumn": 51
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ReconcileProjectStorage:398:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ReconcileProjectStorage",
+      "condition": "!(state.ProjectDeletionRequested) and cancelled",
+      "phase": "execute",
+      "span": {
+        "startLine": 398,
+        "startColumn": 10,
+        "endLine": 398,
+        "endColumn": 51
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ReconcileProjectStorage:400:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ReconcileProjectStorage",
+      "condition": "!(state.ProjectDeletionRequested) and !(cancelled)",
+      "phase": "execute",
+      "span": {
+        "startLine": 400,
+        "startColumn": 9,
+        "endLine": 400,
+        "endColumn": 58
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RecordSetupFailure:211:9",
+      "kind": "decision",
+      "name": "deadEnd",
+      "parentId": "step:RecordSetupFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 211,
+        "startColumn": 9,
+        "endLine": 211,
+        "endColumn": 22
+      },
+      "decision": {
+        "type": "deadEnd"
+      }
+    },
+    {
+      "id": "decision:step:RegisterAppManifest:436:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RegisterAppManifest",
+      "condition": "state.ProjectDeletionRequested",
+      "phase": "execute",
+      "span": {
+        "startLine": 436,
+        "startColumn": 10,
+        "endLine": 436,
+        "endColumn": 51
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RegisterAppManifest:443:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RegisterAppManifest",
+      "condition": "!(state.ProjectDeletionRequested)",
+      "phase": "execute",
+      "span": {
+        "startLine": 443,
+        "startColumn": 9,
+        "endLine": 443,
+        "endColumn": 57
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "resource:attribute:SetupAppManifestResult",
+      "kind": "attribute",
+      "name": "AppManifestResult",
+      "span": {
+        "startLine": 35,
+        "startColumn": 2,
+        "endLine": 35,
+        "endColumn": 92
+      },
+      "resource": {
+        "valueType": "*pb.AppManifestSnapshot"
+      }
+    },
+    {
+      "id": "resource:attribute:SetupCreatedAt",
+      "kind": "attribute",
+      "name": "CreatedAt",
+      "span": {
+        "startLine": 23,
+        "startColumn": 2,
+        "endLine": 23,
+        "endColumn": 66
+      },
+      "resource": {
+        "valueType": "time.Time"
+      }
+    },
+    {
+      "id": "resource:attribute:SetupFailure",
+      "kind": "attribute",
+      "name": "SetupFailure",
+      "span": {
+        "startLine": 39,
+        "startColumn": 2,
+        "endLine": 39,
+        "endColumn": 115
+      },
+      "resource": {
+        "valueType": "*dexflow.Failure"
+      }
+    },
+    {
+      "id": "resource:attribute:SetupID",
+      "kind": "attribute",
+      "name": "SetupID",
+      "span": {
+        "startLine": 30,
+        "startColumn": 2,
+        "endLine": 30,
+        "endColumn": 65
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:SetupPhase",
+      "kind": "attribute",
+      "name": "SetupPhase",
+      "span": {
+        "startLine": 34,
+        "startColumn": 2,
+        "endLine": 34,
+        "endColumn": 96
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:SetupProjectDeletionRequested",
+      "kind": "attribute",
+      "name": "ProjectDeletionRequested",
+      "span": {
+        "startLine": 38,
+        "startColumn": 2,
+        "endLine": 38,
+        "endColumn": 87
+      },
+      "resource": {
+        "valueType": "bool"
+      }
+    },
+    {
+      "id": "resource:attribute:SetupProjectID",
+      "kind": "attribute",
+      "name": "ProjectID",
+      "span": {
+        "startLine": 29,
+        "startColumn": 2,
+        "endLine": 29,
+        "endColumn": 146
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:SetupRevision",
+      "kind": "attribute",
+      "name": "SetupRevision",
+      "span": {
+        "startLine": 22,
+        "startColumn": 2,
+        "endLine": 22,
+        "endColumn": 95
+      },
+      "resource": {
+        "valueType": "uint64"
+      }
+    },
+    {
+      "id": "resource:attribute:SetupSourceCommit",
+      "kind": "attribute",
+      "name": "SetupSourceCommit",
+      "span": {
+        "startLine": 31,
+        "startColumn": 2,
+        "endLine": 31,
+        "endColumn": 103
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:SetupSourceRepository",
+      "kind": "attribute",
+      "name": "SourceRepository",
+      "span": {
+        "startLine": 33,
+        "startColumn": 2,
+        "endLine": 33,
+        "endColumn": 97
+      },
+      "resource": {
+        "valueType": "projects.RepositoryBindingRef"
+      }
+    },
+    {
+      "id": "resource:attribute:SetupStartIdentity",
+      "kind": "attribute",
+      "name": "StartIdentity",
+      "span": {
+        "startLine": 21,
+        "startColumn": 2,
+        "endLine": 21,
+        "endColumn": 82
+      },
+      "resource": {
+        "valueType": "dexflow.StartIdentity"
+      }
+    },
+    {
+      "id": "resource:attribute:SetupStatus",
+      "kind": "attribute",
+      "name": "SetupStatus",
+      "span": {
+        "startLine": 37,
+        "startColumn": 2,
+        "endLine": 37,
+        "endColumn": 183
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:SetupTemplateRevision",
+      "kind": "attribute",
+      "name": "TemplateRevision",
+      "span": {
+        "startLine": 32,
+        "startColumn": 2,
+        "endLine": 32,
+        "endColumn": 74
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:SetupUpdatedAt",
+      "kind": "attribute",
+      "name": "UpdatedAt",
+      "span": {
+        "startLine": 24,
+        "startColumn": 2,
+        "endLine": 24,
+        "endColumn": 66
+      },
+      "resource": {
+        "valueType": "time.Time"
+      }
+    },
+    {
+      "id": "resource:stream:SetupProgress",
+      "kind": "stream",
+      "name": "SetupProgress",
+      "span": {
+        "startLine": 40,
+        "startColumn": 2,
+        "endLine": 40,
+        "endColumn": 98
+      },
+      "resource": {
+        "valueType": "dexflow.ProgressEvent"
+      }
+    },
+    {
+      "id": "rpc:GetDexDisplay",
+      "kind": "rpc",
+      "name": "GetDexDisplay",
+      "span": {
+        "startLine": 150,
+        "startColumn": 1,
+        "endLine": 152,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:GetDexSummary",
+      "kind": "rpc",
+      "name": "GetDexSummary",
+      "span": {
+        "startLine": 145,
+        "startColumn": 1,
+        "endLine": 147,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:GetProjectSetup",
+      "kind": "rpc",
+      "name": "GetProjectSetup",
+      "span": {
+        "startLine": 125,
+        "startColumn": 1,
+        "endLine": 142,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:RequestProjectSetupCleanup",
+      "kind": "rpc",
+      "name": "RequestProjectSetupCleanup",
+      "span": {
+        "startLine": 156,
+        "startColumn": 1,
+        "endLine": 178,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "step:AdmitSetup",
+      "kind": "step",
+      "name": "AdmitSetup",
+      "phase": "execute",
+      "start": true,
+      "span": {
+        "startLine": 69,
+        "startColumn": 48,
+        "endLine": 69,
+        "endColumn": 88
+      },
+      "metadata": {
+        "explanation": "Register the Setup as a Project child before any provider effect, or cancel when the Project no longer admits it."
+      }
+    },
+    {
+      "id": "step:ClaimRepositoryBinding",
+      "kind": "step",
+      "name": "ClaimRepositoryBinding",
+      "phase": "execute",
+      "span": {
+        "startLine": 70,
+        "startColumn": 53,
+        "endLine": 70,
+        "endColumn": 100
+      },
+      "metadata": {
+        "explanation": "Claim exclusive managed repository ownership."
+      }
+    },
+    {
+      "id": "step:CleanupSetup",
+      "kind": "step",
+      "name": "CleanupSetup",
+      "phase": "execute",
+      "span": {
+        "startLine": 74,
+        "startColumn": 95,
+        "endLine": 74,
+        "endColumn": 132
+      },
+      "metadata": {
+        "explanation": "Release and archive the managed repository this Setup created but never handed off, then cancel."
+      }
+    },
+    {
+      "id": "step:CommitProjectSetup",
+      "kind": "step",
+      "name": "CommitProjectSetup",
+      "phase": "execute",
+      "span": {
+        "startLine": 74,
+        "startColumn": 3,
+        "endLine": 74,
+        "endColumn": 46
+      },
+      "metadata": {
+        "explanation": "Hand the repository binding and manifest to the Project and end the Setup's cleanup membership."
+      }
+    },
+    {
+      "id": "step:CommitProjectStorage",
+      "kind": "step",
+      "name": "CommitProjectStorage",
+      "phase": "execute",
+      "span": {
+        "startLine": 72,
+        "startColumn": 53,
+        "endLine": 72,
+        "endColumn": 98
+      },
+      "metadata": {
+        "explanation": "Advance to manifest registration under the Setup lock once the configuration storage is ready."
+      }
+    },
+    {
+      "id": "step:CompleteProjectSetup",
+      "kind": "step",
+      "name": "CompleteProjectSetup",
+      "phase": "execute",
+      "span": {
+        "startLine": 74,
+        "startColumn": 48,
+        "endLine": 74,
+        "endColumn": 93
+      },
+      "metadata": {
+        "explanation": "Complete the Setup once the Project accepted its result."
+      }
+    },
+    {
+      "id": "step:ConfigureRepository",
+      "kind": "step",
+      "name": "ConfigureRepository",
+      "phase": "execute",
+      "span": {
+        "startLine": 73,
+        "startColumn": 3,
+        "endLine": 73,
+        "endColumn": 47
+      },
+      "metadata": {
+        "explanation": "Recheck the managed repository identity and default branch right before the handoff."
+      }
+    },
+    {
+      "id": "step:CreateManagedRepository",
+      "kind": "step",
+      "name": "CreateManagedRepository",
+      "phase": "execute",
+      "span": {
+        "startLine": 70,
+        "startColumn": 3,
+        "endLine": 70,
+        "endColumn": 51
+      },
+      "metadata": {
+        "explanation": "Create or recover the owned managed repository and record its identity."
+      }
+    },
+    {
+      "id": "step:ExtractAppManifest",
+      "kind": "step",
+      "name": "ExtractAppManifest",
+      "phase": "execute",
+      "span": {
+        "startLine": 71,
+        "startColumn": 48,
+        "endLine": 71,
+        "endColumn": 91
+      },
+      "metadata": {
+        "explanation": "Publish the source commit's app manifest and contracts as immutable objects."
+      }
+    },
+    {
+      "id": "step:InitializeTemplate",
+      "kind": "step",
+      "name": "InitializeTemplate",
+      "phase": "execute",
+      "span": {
+        "startLine": 71,
+        "startColumn": 3,
+        "endLine": 71,
+        "endColumn": 46
+      },
+      "metadata": {
+        "explanation": "Push the accepted app template to the owned managed repository."
+      }
+    },
+    {
+      "id": "step:ReconcileProjectStorage",
+      "kind": "step",
+      "name": "ReconcileProjectStorage",
+      "phase": "execute",
+      "span": {
+        "startLine": 72,
+        "startColumn": 3,
+        "endLine": 72,
+        "endColumn": 51
+      },
+      "metadata": {
+        "explanation": "Reconcile the project's configuration storage until it is ready, handing every discovered identity to the Project; holds no Setup lock."
+      }
+    },
+    {
+      "id": "step:RecordSetupFailure",
+      "kind": "step",
+      "name": "RecordSetupFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 69,
+        "startColumn": 3,
+        "endLine": 69,
+        "endColumn": 46
+      },
+      "metadata": {
+        "explanation": "Retain a terminal setup failure until Project deletion cleans its effects."
+      }
+    },
+    {
+      "id": "step:RegisterAppManifest",
+      "kind": "step",
+      "name": "RegisterAppManifest",
+      "phase": "execute",
+      "span": {
+        "startLine": 72,
+        "startColumn": 100,
+        "endLine": 72,
+        "endColumn": 144
+      },
+      "metadata": {
+        "explanation": "Register the exact source manifest in the project's configuration storage before setup completion."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:0001",
+      "kind": "transition",
+      "from": "decision:step:AdmitSetup:228:10",
+      "to": "step:CleanupSetup",
+      "label": "GoTo",
+      "span": {
+        "startLine": 228,
+        "startColumn": 10,
+        "endLine": 228,
+        "endColumn": 51
+      }
+    },
+    {
+      "id": "edge:0002",
+      "kind": "transition",
+      "from": "decision:step:AdmitSetup:242:9",
+      "to": "step:CreateManagedRepository",
+      "label": "GoTo",
+      "span": {
+        "startLine": 242,
+        "startColumn": 9,
+        "endLine": 242,
+        "endColumn": 61
+      }
+    },
+    {
+      "id": "edge:0003",
+      "kind": "transition",
+      "from": "decision:step:ClaimRepositoryBinding:285:10",
+      "to": "step:CleanupSetup",
+      "label": "GoTo",
+      "span": {
+        "startLine": 285,
+        "startColumn": 10,
+        "endLine": 285,
+        "endColumn": 51
+      }
+    },
+    {
+      "id": "edge:0004",
+      "kind": "transition",
+      "from": "decision:step:ClaimRepositoryBinding:295:9",
+      "to": "step:InitializeTemplate",
+      "label": "GoTo",
+      "span": {
+        "startLine": 295,
+        "startColumn": 9,
+        "endLine": 295,
+        "endColumn": 56
+      }
+    },
+    {
+      "id": "edge:0005",
+      "kind": "transition",
+      "from": "decision:step:CleanupSetup:533:10",
+      "to": "step:RecordSetupFailure",
+      "label": "GoTo",
+      "span": {
+        "startLine": 533,
+        "startColumn": 10,
+        "endLine": 533,
+        "endColumn": 57
+      }
+    },
+    {
+      "id": "edge:0006",
+      "kind": "transition",
+      "from": "decision:step:CommitProjectSetup:484:10",
+      "to": "step:CleanupSetup",
+      "label": "GoTo",
+      "span": {
+        "startLine": 484,
+        "startColumn": 10,
+        "endLine": 484,
+        "endColumn": 51
+      }
+    },
+    {
+      "id": "edge:0007",
+      "kind": "transition",
+      "from": "decision:step:CommitProjectSetup:491:9",
+      "to": "step:CompleteProjectSetup",
+      "label": "GoTo",
+      "span": {
+        "startLine": 491,
+        "startColumn": 9,
+        "endLine": 491,
+        "endColumn": 58
+      }
+    },
+    {
+      "id": "edge:0008",
+      "kind": "transition",
+      "from": "decision:step:CommitProjectStorage:416:10",
+      "to": "step:CleanupSetup",
+      "label": "GoTo",
+      "span": {
+        "startLine": 416,
+        "startColumn": 10,
+        "endLine": 416,
+        "endColumn": 51
+      }
+    },
+    {
+      "id": "edge:0009",
+      "kind": "transition",
+      "from": "decision:step:CommitProjectStorage:419:9",
+      "to": "step:RegisterAppManifest",
+      "label": "GoTo",
+      "span": {
+        "startLine": 419,
+        "startColumn": 9,
+        "endLine": 419,
+        "endColumn": 57
+      }
+    },
+    {
+      "id": "edge:0010",
+      "kind": "transition",
+      "from": "decision:step:ConfigureRepository:460:10",
+      "to": "step:CleanupSetup",
+      "label": "GoTo",
+      "span": {
+        "startLine": 460,
+        "startColumn": 10,
+        "endLine": 460,
+        "endColumn": 51
+      }
+    },
+    {
+      "id": "edge:0011",
+      "kind": "transition",
+      "from": "decision:step:ConfigureRepository:467:9",
+      "to": "step:CommitProjectSetup",
+      "label": "GoTo",
+      "span": {
+        "startLine": 467,
+        "startColumn": 9,
+        "endLine": 467,
+        "endColumn": 56
+      }
+    },
+    {
+      "id": "edge:0012",
+      "kind": "transition",
+      "from": "decision:step:CreateManagedRepository:259:10",
+      "to": "step:CleanupSetup",
+      "label": "GoTo",
+      "span": {
+        "startLine": 259,
+        "startColumn": 10,
+        "endLine": 259,
+        "endColumn": 51
+      }
+    },
+    {
+      "id": "edge:0013",
+      "kind": "transition",
+      "from": "decision:step:CreateManagedRepository:268:9",
+      "to": "step:ClaimRepositoryBinding",
+      "label": "GoTo",
+      "span": {
+        "startLine": 268,
+        "startColumn": 9,
+        "endLine": 268,
+        "endColumn": 60
+      }
+    },
+    {
+      "id": "edge:0014",
+      "kind": "transition",
+      "from": "decision:step:ExtractAppManifest:344:10",
+      "to": "step:CleanupSetup",
+      "label": "GoTo",
+      "span": {
+        "startLine": 344,
+        "startColumn": 10,
+        "endLine": 344,
+        "endColumn": 51
+      }
+    },
+    {
+      "id": "edge:0015",
+      "kind": "transition",
+      "from": "decision:step:ExtractAppManifest:353:9",
+      "to": "step:ReconcileProjectStorage",
+      "label": "GoTo",
+      "span": {
+        "startLine": 353,
+        "startColumn": 9,
+        "endLine": 353,
+        "endColumn": 61
+      }
+    },
+    {
+      "id": "edge:0016",
+      "kind": "transition",
+      "from": "decision:step:InitializeTemplate:317:10",
+      "to": "step:CleanupSetup",
+      "label": "GoTo",
+      "span": {
+        "startLine": 317,
+        "startColumn": 10,
+        "endLine": 317,
+        "endColumn": 51
+      }
+    },
+    {
+      "id": "edge:0017",
+      "kind": "transition",
+      "from": "decision:step:InitializeTemplate:327:9",
+      "to": "step:ExtractAppManifest",
+      "label": "GoTo",
+      "span": {
+        "startLine": 327,
+        "startColumn": 9,
+        "endLine": 327,
+        "endColumn": 56
+      }
+    },
+    {
+      "id": "edge:0018",
+      "kind": "transition",
+      "from": "decision:step:ReconcileProjectStorage:372:10",
+      "to": "step:CleanupSetup",
+      "label": "GoTo",
+      "span": {
+        "startLine": 372,
+        "startColumn": 10,
+        "endLine": 372,
+        "endColumn": 51
+      }
+    },
+    {
+      "id": "edge:0019",
+      "kind": "transition",
+      "from": "decision:step:ReconcileProjectStorage:398:10",
+      "to": "step:CleanupSetup",
+      "label": "GoTo",
+      "span": {
+        "startLine": 398,
+        "startColumn": 10,
+        "endLine": 398,
+        "endColumn": 51
+      }
+    },
+    {
+      "id": "edge:0020",
+      "kind": "transition",
+      "from": "decision:step:ReconcileProjectStorage:400:9",
+      "to": "step:CommitProjectStorage",
+      "label": "GoTo",
+      "span": {
+        "startLine": 400,
+        "startColumn": 9,
+        "endLine": 400,
+        "endColumn": 58
+      }
+    },
+    {
+      "id": "edge:0021",
+      "kind": "transition",
+      "from": "decision:step:RegisterAppManifest:436:10",
+      "to": "step:CleanupSetup",
+      "label": "GoTo",
+      "span": {
+        "startLine": 436,
+        "startColumn": 10,
+        "endLine": 436,
+        "endColumn": 51
+      }
+    },
+    {
+      "id": "edge:0022",
+      "kind": "transition",
+      "from": "decision:step:RegisterAppManifest:443:9",
+      "to": "step:ConfigureRepository",
+      "label": "GoTo",
+      "span": {
+        "startLine": 443,
+        "startColumn": 9,
+        "endLine": 443,
+        "endColumn": 57
+      }
+    },
+    {
+      "id": "edge:0023",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupAppManifestResult",
+      "to": "rpc:GetProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 137,
+        "startColumn": 46,
+        "endLine": 137,
+        "endColumn": 77
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0024",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupAppManifestResult",
+      "to": "rpc:RequestProjectSetupCleanup",
+      "label": "Get",
+      "span": {
+        "startLine": 137,
+        "startColumn": 46,
+        "endLine": 137,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0025",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupAppManifestResult",
+      "to": "step:AdmitSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 137,
+        "startColumn": 46,
+        "endLine": 137,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0026",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupAppManifestResult",
+      "to": "step:ClaimRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 137,
+        "startColumn": 46,
+        "endLine": 137,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0027",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupAppManifestResult",
+      "to": "step:CleanupSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 137,
+        "startColumn": 46,
+        "endLine": 137,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0028",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupAppManifestResult",
+      "to": "step:CommitProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 137,
+        "startColumn": 46,
+        "endLine": 137,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0029",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupAppManifestResult",
+      "to": "step:CompleteProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 137,
+        "startColumn": 46,
+        "endLine": 137,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0030",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupAppManifestResult",
+      "to": "step:ConfigureRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 137,
+        "startColumn": 46,
+        "endLine": 137,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0031",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupAppManifestResult",
+      "to": "step:CreateManagedRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 137,
+        "startColumn": 46,
+        "endLine": 137,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0032",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupAppManifestResult",
+      "to": "step:ExtractAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 137,
+        "startColumn": 46,
+        "endLine": 137,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0033",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupAppManifestResult",
+      "to": "step:InitializeTemplate",
+      "label": "Get",
+      "span": {
+        "startLine": 137,
+        "startColumn": 46,
+        "endLine": 137,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0034",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupAppManifestResult",
+      "to": "step:ReconcileProjectStorage",
+      "label": "Get",
+      "span": {
+        "startLine": 137,
+        "startColumn": 46,
+        "endLine": 137,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0035",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupAppManifestResult",
+      "to": "step:RegisterAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 137,
+        "startColumn": 46,
+        "endLine": 137,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0036",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupCreatedAt",
+      "to": "rpc:GetProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 128,
+        "startColumn": 39,
+        "endLine": 128,
+        "endColumn": 62
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0037",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupCreatedAt",
+      "to": "rpc:RequestProjectSetupCleanup",
+      "label": "Get",
+      "span": {
+        "startLine": 128,
+        "startColumn": 39,
+        "endLine": 128,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0038",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupCreatedAt",
+      "to": "step:AdmitSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 128,
+        "startColumn": 39,
+        "endLine": 128,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0039",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupCreatedAt",
+      "to": "step:ClaimRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 128,
+        "startColumn": 39,
+        "endLine": 128,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0040",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupCreatedAt",
+      "to": "step:CleanupSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 128,
+        "startColumn": 39,
+        "endLine": 128,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0041",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupCreatedAt",
+      "to": "step:CommitProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 128,
+        "startColumn": 39,
+        "endLine": 128,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0042",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupCreatedAt",
+      "to": "step:CompleteProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 128,
+        "startColumn": 39,
+        "endLine": 128,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0043",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupCreatedAt",
+      "to": "step:ConfigureRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 128,
+        "startColumn": 39,
+        "endLine": 128,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0044",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupCreatedAt",
+      "to": "step:CreateManagedRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 128,
+        "startColumn": 39,
+        "endLine": 128,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0045",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupCreatedAt",
+      "to": "step:ExtractAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 128,
+        "startColumn": 39,
+        "endLine": 128,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0046",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupCreatedAt",
+      "to": "step:InitializeTemplate",
+      "label": "Get",
+      "span": {
+        "startLine": 128,
+        "startColumn": 39,
+        "endLine": 128,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0047",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupCreatedAt",
+      "to": "step:ReconcileProjectStorage",
+      "label": "Get",
+      "span": {
+        "startLine": 128,
+        "startColumn": 39,
+        "endLine": 128,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0048",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupCreatedAt",
+      "to": "step:RegisterAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 128,
+        "startColumn": 39,
+        "endLine": 128,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0049",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupFailure",
+      "to": "rpc:GetProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 139,
+        "startColumn": 46,
+        "endLine": 139,
+        "endColumn": 67
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0050",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupFailure",
+      "to": "rpc:RequestProjectSetupCleanup",
+      "label": "Get",
+      "span": {
+        "startLine": 139,
+        "startColumn": 46,
+        "endLine": 139,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0051",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupFailure",
+      "to": "step:AdmitSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 139,
+        "startColumn": 46,
+        "endLine": 139,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0052",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupFailure",
+      "to": "step:ClaimRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 139,
+        "startColumn": 46,
+        "endLine": 139,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0053",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupFailure",
+      "to": "step:CleanupSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 139,
+        "startColumn": 46,
+        "endLine": 139,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0054",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupFailure",
+      "to": "step:CommitProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 139,
+        "startColumn": 46,
+        "endLine": 139,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0055",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupFailure",
+      "to": "step:CompleteProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 139,
+        "startColumn": 46,
+        "endLine": 139,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0056",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupFailure",
+      "to": "step:ConfigureRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 139,
+        "startColumn": 46,
+        "endLine": 139,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0057",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupFailure",
+      "to": "step:CreateManagedRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 139,
+        "startColumn": 46,
+        "endLine": 139,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0058",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupFailure",
+      "to": "step:ExtractAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 139,
+        "startColumn": 46,
+        "endLine": 139,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0059",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupFailure",
+      "to": "step:InitializeTemplate",
+      "label": "Get",
+      "span": {
+        "startLine": 139,
+        "startColumn": 46,
+        "endLine": 139,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0060",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupFailure",
+      "to": "step:ReconcileProjectStorage",
+      "label": "Get",
+      "span": {
+        "startLine": 139,
+        "startColumn": 46,
+        "endLine": 139,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0061",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupFailure",
+      "to": "step:RecordSetupFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 199,
+        "startColumn": 30,
+        "endLine": 199,
+        "endColumn": 51
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0062",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupFailure",
+      "to": "step:RegisterAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 139,
+        "startColumn": 46,
+        "endLine": 139,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0063",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupID",
+      "to": "rpc:GetDexSummary",
+      "label": "Get",
+      "span": {
+        "startLine": 146,
+        "startColumn": 84,
+        "endLine": 146,
+        "endColumn": 100
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0064",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupID",
+      "to": "rpc:GetProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 131,
+        "startColumn": 39,
+        "endLine": 131,
+        "endColumn": 55
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0065",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupID",
+      "to": "rpc:RequestProjectSetupCleanup",
+      "label": "Get",
+      "span": {
+        "startLine": 131,
+        "startColumn": 39,
+        "endLine": 131,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0066",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupID",
+      "to": "step:AdmitSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 131,
+        "startColumn": 39,
+        "endLine": 131,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0067",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupID",
+      "to": "step:ClaimRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 131,
+        "startColumn": 39,
+        "endLine": 131,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0068",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupID",
+      "to": "step:CleanupSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 131,
+        "startColumn": 39,
+        "endLine": 131,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0069",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupID",
+      "to": "step:CommitProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 131,
+        "startColumn": 39,
+        "endLine": 131,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0070",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupID",
+      "to": "step:CompleteProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 131,
+        "startColumn": 39,
+        "endLine": 131,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0071",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupID",
+      "to": "step:ConfigureRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 131,
+        "startColumn": 39,
+        "endLine": 131,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0072",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupID",
+      "to": "step:CreateManagedRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 131,
+        "startColumn": 39,
+        "endLine": 131,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0073",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupID",
+      "to": "step:ExtractAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 131,
+        "startColumn": 39,
+        "endLine": 131,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0074",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupID",
+      "to": "step:InitializeTemplate",
+      "label": "Get",
+      "span": {
+        "startLine": 131,
+        "startColumn": 39,
+        "endLine": 131,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0075",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupID",
+      "to": "step:ReconcileProjectStorage",
+      "label": "Get",
+      "span": {
+        "startLine": 131,
+        "startColumn": 39,
+        "endLine": 131,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0076",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupID",
+      "to": "step:RegisterAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 131,
+        "startColumn": 39,
+        "endLine": 131,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0077",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupPhase",
+      "to": "rpc:GetProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 136,
+        "startColumn": 39,
+        "endLine": 136,
+        "endColumn": 58
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0078",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupPhase",
+      "to": "rpc:RequestProjectSetupCleanup",
+      "label": "Get",
+      "span": {
+        "startLine": 136,
+        "startColumn": 39,
+        "endLine": 136,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0079",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupPhase",
+      "to": "step:AdmitSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 136,
+        "startColumn": 39,
+        "endLine": 136,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0080",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupPhase",
+      "to": "step:ClaimRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 136,
+        "startColumn": 39,
+        "endLine": 136,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0081",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupPhase",
+      "to": "step:CleanupSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 136,
+        "startColumn": 39,
+        "endLine": 136,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0082",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupPhase",
+      "to": "step:CommitProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 136,
+        "startColumn": 39,
+        "endLine": 136,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0083",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupPhase",
+      "to": "step:CompleteProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 136,
+        "startColumn": 39,
+        "endLine": 136,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0084",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupPhase",
+      "to": "step:ConfigureRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 136,
+        "startColumn": 39,
+        "endLine": 136,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0085",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupPhase",
+      "to": "step:CreateManagedRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 136,
+        "startColumn": 39,
+        "endLine": 136,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0086",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupPhase",
+      "to": "step:ExtractAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 136,
+        "startColumn": 39,
+        "endLine": 136,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0087",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupPhase",
+      "to": "step:InitializeTemplate",
+      "label": "Get",
+      "span": {
+        "startLine": 136,
+        "startColumn": 39,
+        "endLine": 136,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0088",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupPhase",
+      "to": "step:ReconcileProjectStorage",
+      "label": "Get",
+      "span": {
+        "startLine": 136,
+        "startColumn": 39,
+        "endLine": 136,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0089",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupPhase",
+      "to": "step:RecordSetupFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 206,
+        "startColumn": 67,
+        "endLine": 206,
+        "endColumn": 86
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0090",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupPhase",
+      "to": "step:RegisterAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 136,
+        "startColumn": 39,
+        "endLine": 136,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0091",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectDeletionRequested",
+      "to": "rpc:GetProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 138,
+        "startColumn": 39,
+        "endLine": 138,
+        "endColumn": 77
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0092",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectDeletionRequested",
+      "to": "rpc:RequestProjectSetupCleanup",
+      "label": "Get",
+      "span": {
+        "startLine": 138,
+        "startColumn": 39,
+        "endLine": 138,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0093",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectDeletionRequested",
+      "to": "step:AdmitSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 138,
+        "startColumn": 39,
+        "endLine": 138,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0094",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectDeletionRequested",
+      "to": "step:ClaimRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 138,
+        "startColumn": 39,
+        "endLine": 138,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0095",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectDeletionRequested",
+      "to": "step:CleanupSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 138,
+        "startColumn": 39,
+        "endLine": 138,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0096",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectDeletionRequested",
+      "to": "step:CommitProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 138,
+        "startColumn": 39,
+        "endLine": 138,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0097",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectDeletionRequested",
+      "to": "step:CommitProjectStorage",
+      "label": "Get",
+      "span": {
+        "startLine": 415,
+        "startColumn": 15,
+        "endLine": 415,
+        "endColumn": 53
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0098",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectDeletionRequested",
+      "to": "step:CompleteProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 138,
+        "startColumn": 39,
+        "endLine": 138,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0099",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectDeletionRequested",
+      "to": "step:ConfigureRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 138,
+        "startColumn": 39,
+        "endLine": 138,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0100",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectDeletionRequested",
+      "to": "step:CreateManagedRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 138,
+        "startColumn": 39,
+        "endLine": 138,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0101",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectDeletionRequested",
+      "to": "step:ExtractAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 138,
+        "startColumn": 39,
+        "endLine": 138,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0102",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectDeletionRequested",
+      "to": "step:InitializeTemplate",
+      "label": "Get",
+      "span": {
+        "startLine": 138,
+        "startColumn": 39,
+        "endLine": 138,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0103",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectDeletionRequested",
+      "to": "step:ReconcileProjectStorage",
+      "label": "Get",
+      "span": {
+        "startLine": 138,
+        "startColumn": 39,
+        "endLine": 138,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0104",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectDeletionRequested",
+      "to": "step:RegisterAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 138,
+        "startColumn": 39,
+        "endLine": 138,
+        "endColumn": 77
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0105",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectID",
+      "to": "rpc:GetProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 130,
+        "startColumn": 39,
+        "endLine": 130,
+        "endColumn": 62
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0106",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectID",
+      "to": "rpc:RequestProjectSetupCleanup",
+      "label": "Get",
+      "span": {
+        "startLine": 130,
+        "startColumn": 39,
+        "endLine": 130,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0107",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectID",
+      "to": "step:AdmitSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 130,
+        "startColumn": 39,
+        "endLine": 130,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0108",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectID",
+      "to": "step:ClaimRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 130,
+        "startColumn": 39,
+        "endLine": 130,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0109",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectID",
+      "to": "step:CleanupSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 130,
+        "startColumn": 39,
+        "endLine": 130,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0110",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectID",
+      "to": "step:CommitProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 130,
+        "startColumn": 39,
+        "endLine": 130,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0111",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectID",
+      "to": "step:CompleteProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 130,
+        "startColumn": 39,
+        "endLine": 130,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0112",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectID",
+      "to": "step:ConfigureRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 130,
+        "startColumn": 39,
+        "endLine": 130,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0113",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectID",
+      "to": "step:CreateManagedRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 130,
+        "startColumn": 39,
+        "endLine": 130,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0114",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectID",
+      "to": "step:ExtractAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 130,
+        "startColumn": 39,
+        "endLine": 130,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0115",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectID",
+      "to": "step:InitializeTemplate",
+      "label": "Get",
+      "span": {
+        "startLine": 130,
+        "startColumn": 39,
+        "endLine": 130,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0116",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectID",
+      "to": "step:ReconcileProjectStorage",
+      "label": "Get",
+      "span": {
+        "startLine": 130,
+        "startColumn": 39,
+        "endLine": 130,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0117",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectID",
+      "to": "step:RecordSetupFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 205,
+        "startColumn": 46,
+        "endLine": 205,
+        "endColumn": 69
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0118",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupProjectID",
+      "to": "step:RegisterAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 130,
+        "startColumn": 39,
+        "endLine": 130,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0119",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupRevision",
+      "to": "rpc:GetProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 140,
+        "startColumn": 39,
+        "endLine": 140,
+        "endColumn": 61
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0120",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupRevision",
+      "to": "rpc:RequestProjectSetupCleanup",
+      "label": "Get",
+      "span": {
+        "startLine": 140,
+        "startColumn": 39,
+        "endLine": 140,
+        "endColumn": 61
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0121",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupRevision",
+      "to": "step:AdmitSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 140,
+        "startColumn": 39,
+        "endLine": 140,
+        "endColumn": 61
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0122",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupRevision",
+      "to": "step:ClaimRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 140,
+        "startColumn": 39,
+        "endLine": 140,
+        "endColumn": 61
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0123",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupRevision",
+      "to": "step:CleanupSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 140,
+        "startColumn": 39,
+        "endLine": 140,
+        "endColumn": 61
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0124",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupRevision",
+      "to": "step:CommitProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 140,
+        "startColumn": 39,
+        "endLine": 140,
+        "endColumn": 61
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0125",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupRevision",
+      "to": "step:CommitProjectStorage",
+      "label": "Get",
+      "span": {
+        "startLine": 555,
+        "startColumn": 47,
+        "endLine": 555,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0126",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupRevision",
+      "to": "step:CompleteProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 140,
+        "startColumn": 39,
+        "endLine": 140,
+        "endColumn": 61
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0127",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupRevision",
+      "to": "step:ConfigureRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 140,
+        "startColumn": 39,
+        "endLine": 140,
+        "endColumn": 61
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0128",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupRevision",
+      "to": "step:CreateManagedRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 140,
+        "startColumn": 39,
+        "endLine": 140,
+        "endColumn": 61
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0129",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupRevision",
+      "to": "step:ExtractAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 140,
+        "startColumn": 39,
+        "endLine": 140,
+        "endColumn": 61
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0130",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupRevision",
+      "to": "step:InitializeTemplate",
+      "label": "Get",
+      "span": {
+        "startLine": 140,
+        "startColumn": 39,
+        "endLine": 140,
+        "endColumn": 61
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0131",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupRevision",
+      "to": "step:ReconcileProjectStorage",
+      "label": "Get",
+      "span": {
+        "startLine": 140,
+        "startColumn": 39,
+        "endLine": 140,
+        "endColumn": 61
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0132",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupRevision",
+      "to": "step:RecordSetupFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 555,
+        "startColumn": 47,
+        "endLine": 555,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0133",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupRevision",
+      "to": "step:RegisterAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 140,
+        "startColumn": 39,
+        "endLine": 140,
+        "endColumn": 61
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0134",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceCommit",
+      "to": "rpc:GetDexDisplay",
+      "label": "Get",
+      "span": {
+        "startLine": 151,
+        "startColumn": 94,
+        "endLine": 151,
+        "endColumn": 120
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0135",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceCommit",
+      "to": "rpc:GetProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 132,
+        "startColumn": 39,
+        "endLine": 132,
+        "endColumn": 65
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0136",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceCommit",
+      "to": "rpc:RequestProjectSetupCleanup",
+      "label": "Get",
+      "span": {
+        "startLine": 132,
+        "startColumn": 39,
+        "endLine": 132,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0137",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceCommit",
+      "to": "step:AdmitSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 132,
+        "startColumn": 39,
+        "endLine": 132,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0138",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceCommit",
+      "to": "step:ClaimRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 132,
+        "startColumn": 39,
+        "endLine": 132,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0139",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceCommit",
+      "to": "step:CleanupSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 132,
+        "startColumn": 39,
+        "endLine": 132,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0140",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceCommit",
+      "to": "step:CommitProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 132,
+        "startColumn": 39,
+        "endLine": 132,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0141",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceCommit",
+      "to": "step:CompleteProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 132,
+        "startColumn": 39,
+        "endLine": 132,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0142",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceCommit",
+      "to": "step:ConfigureRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 132,
+        "startColumn": 39,
+        "endLine": 132,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0143",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceCommit",
+      "to": "step:CreateManagedRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 132,
+        "startColumn": 39,
+        "endLine": 132,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0144",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceCommit",
+      "to": "step:ExtractAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 132,
+        "startColumn": 39,
+        "endLine": 132,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0145",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceCommit",
+      "to": "step:InitializeTemplate",
+      "label": "Get",
+      "span": {
+        "startLine": 132,
+        "startColumn": 39,
+        "endLine": 132,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0146",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceCommit",
+      "to": "step:ReconcileProjectStorage",
+      "label": "Get",
+      "span": {
+        "startLine": 132,
+        "startColumn": 39,
+        "endLine": 132,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0147",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceCommit",
+      "to": "step:RegisterAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 132,
+        "startColumn": 39,
+        "endLine": 132,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0148",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceRepository",
+      "to": "rpc:GetProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 135,
+        "startColumn": 39,
+        "endLine": 135,
+        "endColumn": 69
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0149",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceRepository",
+      "to": "rpc:RequestProjectSetupCleanup",
+      "label": "Get",
+      "span": {
+        "startLine": 135,
+        "startColumn": 39,
+        "endLine": 135,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0150",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceRepository",
+      "to": "step:AdmitSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 135,
+        "startColumn": 39,
+        "endLine": 135,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0151",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceRepository",
+      "to": "step:ClaimRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 135,
+        "startColumn": 39,
+        "endLine": 135,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0152",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceRepository",
+      "to": "step:CleanupSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 135,
+        "startColumn": 39,
+        "endLine": 135,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0153",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceRepository",
+      "to": "step:CommitProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 135,
+        "startColumn": 39,
+        "endLine": 135,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0154",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceRepository",
+      "to": "step:CompleteProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 135,
+        "startColumn": 39,
+        "endLine": 135,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0155",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceRepository",
+      "to": "step:ConfigureRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 135,
+        "startColumn": 39,
+        "endLine": 135,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0156",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceRepository",
+      "to": "step:CreateManagedRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 135,
+        "startColumn": 39,
+        "endLine": 135,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0157",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceRepository",
+      "to": "step:ExtractAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 135,
+        "startColumn": 39,
+        "endLine": 135,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0158",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceRepository",
+      "to": "step:InitializeTemplate",
+      "label": "Get",
+      "span": {
+        "startLine": 135,
+        "startColumn": 39,
+        "endLine": 135,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0159",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceRepository",
+      "to": "step:ReconcileProjectStorage",
+      "label": "Get",
+      "span": {
+        "startLine": 135,
+        "startColumn": 39,
+        "endLine": 135,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0160",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupSourceRepository",
+      "to": "step:RegisterAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 135,
+        "startColumn": 39,
+        "endLine": 135,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0161",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStartIdentity",
+      "to": "rpc:GetProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 127,
+        "startColumn": 39,
+        "endLine": 127,
+        "endColumn": 66
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0162",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStartIdentity",
+      "to": "rpc:RequestProjectSetupCleanup",
+      "label": "Get",
+      "span": {
+        "startLine": 127,
+        "startColumn": 39,
+        "endLine": 127,
+        "endColumn": 66
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0163",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStartIdentity",
+      "to": "step:AdmitSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 127,
+        "startColumn": 39,
+        "endLine": 127,
+        "endColumn": 66
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0164",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStartIdentity",
+      "to": "step:ClaimRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 127,
+        "startColumn": 39,
+        "endLine": 127,
+        "endColumn": 66
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0165",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStartIdentity",
+      "to": "step:CleanupSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 127,
+        "startColumn": 39,
+        "endLine": 127,
+        "endColumn": 66
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0166",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStartIdentity",
+      "to": "step:CommitProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 127,
+        "startColumn": 39,
+        "endLine": 127,
+        "endColumn": 66
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0167",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStartIdentity",
+      "to": "step:CompleteProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 127,
+        "startColumn": 39,
+        "endLine": 127,
+        "endColumn": 66
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0168",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStartIdentity",
+      "to": "step:ConfigureRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 127,
+        "startColumn": 39,
+        "endLine": 127,
+        "endColumn": 66
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0169",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStartIdentity",
+      "to": "step:CreateManagedRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 127,
+        "startColumn": 39,
+        "endLine": 127,
+        "endColumn": 66
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0170",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStartIdentity",
+      "to": "step:ExtractAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 127,
+        "startColumn": 39,
+        "endLine": 127,
+        "endColumn": 66
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0171",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStartIdentity",
+      "to": "step:InitializeTemplate",
+      "label": "Get",
+      "span": {
+        "startLine": 127,
+        "startColumn": 39,
+        "endLine": 127,
+        "endColumn": 66
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0172",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStartIdentity",
+      "to": "step:ReconcileProjectStorage",
+      "label": "Get",
+      "span": {
+        "startLine": 127,
+        "startColumn": 39,
+        "endLine": 127,
+        "endColumn": 66
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0173",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStartIdentity",
+      "to": "step:RegisterAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 127,
+        "startColumn": 39,
+        "endLine": 127,
+        "endColumn": 66
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0174",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStatus",
+      "to": "rpc:GetProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 134,
+        "startColumn": 39,
+        "endLine": 134,
+        "endColumn": 59
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0175",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStatus",
+      "to": "rpc:RequestProjectSetupCleanup",
+      "label": "Get",
+      "span": {
+        "startLine": 134,
+        "startColumn": 39,
+        "endLine": 134,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0176",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStatus",
+      "to": "step:AdmitSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 134,
+        "startColumn": 39,
+        "endLine": 134,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0177",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStatus",
+      "to": "step:ClaimRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 134,
+        "startColumn": 39,
+        "endLine": 134,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0178",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStatus",
+      "to": "step:CleanupSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 134,
+        "startColumn": 39,
+        "endLine": 134,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0179",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStatus",
+      "to": "step:CommitProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 134,
+        "startColumn": 39,
+        "endLine": 134,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0180",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStatus",
+      "to": "step:CompleteProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 134,
+        "startColumn": 39,
+        "endLine": 134,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0181",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStatus",
+      "to": "step:ConfigureRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 134,
+        "startColumn": 39,
+        "endLine": 134,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0182",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStatus",
+      "to": "step:CreateManagedRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 134,
+        "startColumn": 39,
+        "endLine": 134,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0183",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStatus",
+      "to": "step:ExtractAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 134,
+        "startColumn": 39,
+        "endLine": 134,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0184",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStatus",
+      "to": "step:InitializeTemplate",
+      "label": "Get",
+      "span": {
+        "startLine": 134,
+        "startColumn": 39,
+        "endLine": 134,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0185",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStatus",
+      "to": "step:ReconcileProjectStorage",
+      "label": "Get",
+      "span": {
+        "startLine": 134,
+        "startColumn": 39,
+        "endLine": 134,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0186",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupStatus",
+      "to": "step:RegisterAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 134,
+        "startColumn": 39,
+        "endLine": 134,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0187",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupTemplateRevision",
+      "to": "rpc:GetProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 133,
+        "startColumn": 39,
+        "endLine": 133,
+        "endColumn": 69
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0188",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupTemplateRevision",
+      "to": "rpc:RequestProjectSetupCleanup",
+      "label": "Get",
+      "span": {
+        "startLine": 133,
+        "startColumn": 39,
+        "endLine": 133,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0189",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupTemplateRevision",
+      "to": "step:AdmitSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 133,
+        "startColumn": 39,
+        "endLine": 133,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0190",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupTemplateRevision",
+      "to": "step:ClaimRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 133,
+        "startColumn": 39,
+        "endLine": 133,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0191",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupTemplateRevision",
+      "to": "step:CleanupSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 133,
+        "startColumn": 39,
+        "endLine": 133,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0192",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupTemplateRevision",
+      "to": "step:CommitProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 133,
+        "startColumn": 39,
+        "endLine": 133,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0193",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupTemplateRevision",
+      "to": "step:CompleteProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 133,
+        "startColumn": 39,
+        "endLine": 133,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0194",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupTemplateRevision",
+      "to": "step:ConfigureRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 133,
+        "startColumn": 39,
+        "endLine": 133,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0195",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupTemplateRevision",
+      "to": "step:CreateManagedRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 133,
+        "startColumn": 39,
+        "endLine": 133,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0196",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupTemplateRevision",
+      "to": "step:ExtractAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 133,
+        "startColumn": 39,
+        "endLine": 133,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0197",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupTemplateRevision",
+      "to": "step:InitializeTemplate",
+      "label": "Get",
+      "span": {
+        "startLine": 133,
+        "startColumn": 39,
+        "endLine": 133,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0198",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupTemplateRevision",
+      "to": "step:ReconcileProjectStorage",
+      "label": "Get",
+      "span": {
+        "startLine": 133,
+        "startColumn": 39,
+        "endLine": 133,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0199",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupTemplateRevision",
+      "to": "step:RegisterAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 133,
+        "startColumn": 39,
+        "endLine": 133,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0200",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupUpdatedAt",
+      "to": "rpc:GetProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 129,
+        "startColumn": 39,
+        "endLine": 129,
+        "endColumn": 62
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0201",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupUpdatedAt",
+      "to": "rpc:RequestProjectSetupCleanup",
+      "label": "Get",
+      "span": {
+        "startLine": 129,
+        "startColumn": 39,
+        "endLine": 129,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0202",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupUpdatedAt",
+      "to": "step:AdmitSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 129,
+        "startColumn": 39,
+        "endLine": 129,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0203",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupUpdatedAt",
+      "to": "step:ClaimRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 129,
+        "startColumn": 39,
+        "endLine": 129,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0204",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupUpdatedAt",
+      "to": "step:CleanupSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 129,
+        "startColumn": 39,
+        "endLine": 129,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0205",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupUpdatedAt",
+      "to": "step:CommitProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 129,
+        "startColumn": 39,
+        "endLine": 129,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0206",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupUpdatedAt",
+      "to": "step:CompleteProjectSetup",
+      "label": "Get",
+      "span": {
+        "startLine": 129,
+        "startColumn": 39,
+        "endLine": 129,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0207",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupUpdatedAt",
+      "to": "step:ConfigureRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 129,
+        "startColumn": 39,
+        "endLine": 129,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0208",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupUpdatedAt",
+      "to": "step:CreateManagedRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 129,
+        "startColumn": 39,
+        "endLine": 129,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0209",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupUpdatedAt",
+      "to": "step:ExtractAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 129,
+        "startColumn": 39,
+        "endLine": 129,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0210",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupUpdatedAt",
+      "to": "step:InitializeTemplate",
+      "label": "Get",
+      "span": {
+        "startLine": 129,
+        "startColumn": 39,
+        "endLine": 129,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0211",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupUpdatedAt",
+      "to": "step:ReconcileProjectStorage",
+      "label": "Get",
+      "span": {
+        "startLine": 129,
+        "startColumn": 39,
+        "endLine": 129,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0212",
+      "kind": "resource_read",
+      "from": "resource:attribute:SetupUpdatedAt",
+      "to": "step:RegisterAppManifest",
+      "label": "Get",
+      "span": {
+        "startLine": 129,
+        "startColumn": 39,
+        "endLine": 129,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "ProjectSetupFlow.GetProjectSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0213",
+      "kind": "resource_write",
+      "from": "rpc:RequestProjectSetupCleanup",
+      "to": "resource:attribute:SetupProjectDeletionRequested",
+      "label": "Set",
+      "span": {
+        "startLine": 170,
+        "startColumn": 15,
+        "endLine": 170,
+        "endColumn": 59
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0214",
+      "kind": "resource_write",
+      "from": "rpc:RequestProjectSetupCleanup",
+      "to": "resource:attribute:SetupRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 555,
+        "startColumn": 14,
+        "endLine": 555,
+        "endColumn": 73
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0215",
+      "kind": "resource_write",
+      "from": "rpc:RequestProjectSetupCleanup",
+      "to": "resource:attribute:SetupStatus",
+      "label": "Set",
+      "span": {
+        "startLine": 174,
+        "startColumn": 15,
+        "endLine": 174,
+        "endColumn": 51
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0216",
+      "kind": "resource_write",
+      "from": "rpc:RequestProjectSetupCleanup",
+      "to": "resource:attribute:SetupUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 556,
+        "startColumn": 14,
+        "endLine": 556,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0217",
+      "kind": "resource_write",
+      "from": "step:AdmitSetup",
+      "to": "resource:attribute:SetupPhase",
+      "label": "Set",
+      "span": {
+        "startLine": 550,
+        "startColumn": 14,
+        "endLine": 550,
+        "endColumn": 39
+      },
+      "metadata": {
+        "function": "advanceSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0218",
+      "kind": "resource_write",
+      "from": "step:AdmitSetup",
+      "to": "resource:attribute:SetupRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 555,
+        "startColumn": 14,
+        "endLine": 555,
+        "endColumn": 73
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0219",
+      "kind": "resource_write",
+      "from": "step:AdmitSetup",
+      "to": "resource:attribute:SetupStatus",
+      "label": "Set",
+      "span": {
+        "startLine": 233,
+        "startColumn": 15,
+        "endLine": 233,
+        "endColumn": 52
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0220",
+      "kind": "resource_write",
+      "from": "step:AdmitSetup",
+      "to": "resource:attribute:SetupUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 556,
+        "startColumn": 14,
+        "endLine": 556,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0221",
+      "kind": "resource_write",
+      "from": "step:AdmitSetup",
+      "to": "resource:stream:SetupProgress",
+      "label": "Write",
+      "span": {
+        "startLine": 230,
+        "startColumn": 29,
+        "endLine": 230,
+        "endColumn": 106
+      },
+      "metadata": {
+        "bestEffort": true,
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress"
+      }
+    },
+    {
+      "id": "edge:0222",
+      "kind": "failure_transition",
+      "from": "step:AdmitSetup",
+      "to": "step:RecordSetupFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 222,
+        "startColumn": 26,
+        "endLine": 222,
+        "endColumn": 94
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0223",
+      "kind": "resource_write",
+      "from": "step:ClaimRepositoryBinding",
+      "to": "resource:attribute:SetupPhase",
+      "label": "Set",
+      "span": {
+        "startLine": 550,
+        "startColumn": 14,
+        "endLine": 550,
+        "endColumn": 39
+      },
+      "metadata": {
+        "function": "advanceSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0224",
+      "kind": "resource_write",
+      "from": "step:ClaimRepositoryBinding",
+      "to": "resource:attribute:SetupRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 555,
+        "startColumn": 14,
+        "endLine": 555,
+        "endColumn": 73
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0225",
+      "kind": "resource_write",
+      "from": "step:ClaimRepositoryBinding",
+      "to": "resource:attribute:SetupSourceRepository",
+      "label": "Set",
+      "span": {
+        "startLine": 293,
+        "startColumn": 14,
+        "endLine": 293,
+        "endColumn": 62
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0226",
+      "kind": "resource_write",
+      "from": "step:ClaimRepositoryBinding",
+      "to": "resource:attribute:SetupUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 556,
+        "startColumn": 14,
+        "endLine": 556,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0227",
+      "kind": "resource_write",
+      "from": "step:ClaimRepositoryBinding",
+      "to": "resource:stream:SetupProgress",
+      "label": "Write",
+      "span": {
+        "startLine": 287,
+        "startColumn": 29,
+        "endLine": 287,
+        "endColumn": 118
+      },
+      "metadata": {
+        "bestEffort": true,
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress"
+      }
+    },
+    {
+      "id": "edge:0228",
+      "kind": "failure_transition",
+      "from": "step:ClaimRepositoryBinding",
+      "to": "step:RecordSetupFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 279,
+        "startColumn": 26,
+        "endLine": 279,
+        "endColumn": 94
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0229",
+      "kind": "resource_write",
+      "from": "step:CleanupSetup",
+      "to": "resource:attribute:SetupFailure",
+      "label": "Set",
+      "span": {
+        "startLine": 532,
+        "startColumn": 15,
+        "endLine": 532,
+        "endColumn": 151
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0230",
+      "kind": "resource_write",
+      "from": "step:CleanupSetup",
+      "to": "resource:attribute:SetupRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 555,
+        "startColumn": 14,
+        "endLine": 555,
+        "endColumn": 73
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0231",
+      "kind": "resource_write",
+      "from": "step:CleanupSetup",
+      "to": "resource:attribute:SetupStatus",
+      "label": "Set",
+      "span": {
+        "startLine": 538,
+        "startColumn": 14,
+        "endLine": 538,
+        "endColumn": 51
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0232",
+      "kind": "resource_write",
+      "from": "step:CleanupSetup",
+      "to": "resource:attribute:SetupUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 556,
+        "startColumn": 14,
+        "endLine": 556,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0233",
+      "kind": "resource_write",
+      "from": "step:CleanupSetup",
+      "to": "resource:stream:SetupProgress",
+      "label": "Write",
+      "span": {
+        "startLine": 525,
+        "startColumn": 29,
+        "endLine": 525,
+        "endColumn": 108
+      },
+      "metadata": {
+        "bestEffort": true,
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress"
+      }
+    },
+    {
+      "id": "edge:0234",
+      "kind": "failure_transition",
+      "from": "step:CleanupSetup",
+      "to": "step:RecordSetupFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 520,
+        "startColumn": 26,
+        "endLine": 520,
+        "endColumn": 94
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0235",
+      "kind": "resource_write",
+      "from": "step:CommitProjectSetup",
+      "to": "resource:attribute:SetupPhase",
+      "label": "Set",
+      "span": {
+        "startLine": 550,
+        "startColumn": 14,
+        "endLine": 550,
+        "endColumn": 39
+      },
+      "metadata": {
+        "function": "advanceSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0236",
+      "kind": "resource_write",
+      "from": "step:CommitProjectSetup",
+      "to": "resource:attribute:SetupRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 555,
+        "startColumn": 14,
+        "endLine": 555,
+        "endColumn": 73
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0237",
+      "kind": "resource_write",
+      "from": "step:CommitProjectSetup",
+      "to": "resource:attribute:SetupUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 556,
+        "startColumn": 14,
+        "endLine": 556,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0238",
+      "kind": "resource_write",
+      "from": "step:CommitProjectSetup",
+      "to": "resource:stream:SetupProgress",
+      "label": "Write",
+      "span": {
+        "startLine": 486,
+        "startColumn": 29,
+        "endLine": 486,
+        "endColumn": 114
+      },
+      "metadata": {
+        "bestEffort": true,
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress"
+      }
+    },
+    {
+      "id": "edge:0239",
+      "kind": "failure_transition",
+      "from": "step:CommitProjectSetup",
+      "to": "step:RecordSetupFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 478,
+        "startColumn": 26,
+        "endLine": 478,
+        "endColumn": 94
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0240",
+      "kind": "resource_write",
+      "from": "step:CommitProjectStorage",
+      "to": "resource:attribute:SetupPhase",
+      "label": "Set",
+      "span": {
+        "startLine": 550,
+        "startColumn": 14,
+        "endLine": 550,
+        "endColumn": 39
+      },
+      "metadata": {
+        "function": "advanceSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0241",
+      "kind": "resource_write",
+      "from": "step:CommitProjectStorage",
+      "to": "resource:attribute:SetupRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 555,
+        "startColumn": 14,
+        "endLine": 555,
+        "endColumn": 73
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0242",
+      "kind": "resource_write",
+      "from": "step:CommitProjectStorage",
+      "to": "resource:attribute:SetupUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 556,
+        "startColumn": 14,
+        "endLine": 556,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0243",
+      "kind": "failure_transition",
+      "from": "step:CommitProjectStorage",
+      "to": "step:RecordSetupFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 411,
+        "startColumn": 26,
+        "endLine": 411,
+        "endColumn": 94
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0244",
+      "kind": "resource_write",
+      "from": "step:CompleteProjectSetup",
+      "to": "resource:attribute:SetupRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 555,
+        "startColumn": 14,
+        "endLine": 555,
+        "endColumn": 73
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0245",
+      "kind": "resource_write",
+      "from": "step:CompleteProjectSetup",
+      "to": "resource:attribute:SetupStatus",
+      "label": "Set",
+      "span": {
+        "startLine": 507,
+        "startColumn": 14,
+        "endLine": 507,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0246",
+      "kind": "resource_write",
+      "from": "step:CompleteProjectSetup",
+      "to": "resource:attribute:SetupUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 556,
+        "startColumn": 14,
+        "endLine": 556,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0247",
+      "kind": "resource_write",
+      "from": "step:CompleteProjectSetup",
+      "to": "resource:stream:SetupProgress",
+      "label": "Write",
+      "span": {
+        "startLine": 506,
+        "startColumn": 29,
+        "endLine": 506,
+        "endColumn": 120
+      },
+      "metadata": {
+        "bestEffort": true,
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress"
+      }
+    },
+    {
+      "id": "edge:0248",
+      "kind": "failure_transition",
+      "from": "step:CompleteProjectSetup",
+      "to": "step:RecordSetupFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 502,
+        "startColumn": 26,
+        "endLine": 502,
+        "endColumn": 94
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0249",
+      "kind": "resource_write",
+      "from": "step:ConfigureRepository",
+      "to": "resource:attribute:SetupPhase",
+      "label": "Set",
+      "span": {
+        "startLine": 550,
+        "startColumn": 14,
+        "endLine": 550,
+        "endColumn": 39
+      },
+      "metadata": {
+        "function": "advanceSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0250",
+      "kind": "resource_write",
+      "from": "step:ConfigureRepository",
+      "to": "resource:attribute:SetupRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 555,
+        "startColumn": 14,
+        "endLine": 555,
+        "endColumn": 73
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0251",
+      "kind": "resource_write",
+      "from": "step:ConfigureRepository",
+      "to": "resource:attribute:SetupUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 556,
+        "startColumn": 14,
+        "endLine": 556,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0252",
+      "kind": "resource_write",
+      "from": "step:ConfigureRepository",
+      "to": "resource:stream:SetupProgress",
+      "label": "Write",
+      "span": {
+        "startLine": 462,
+        "startColumn": 29,
+        "endLine": 462,
+        "endColumn": 115
+      },
+      "metadata": {
+        "bestEffort": true,
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress"
+      }
+    },
+    {
+      "id": "edge:0253",
+      "kind": "failure_transition",
+      "from": "step:ConfigureRepository",
+      "to": "step:RecordSetupFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 454,
+        "startColumn": 26,
+        "endLine": 454,
+        "endColumn": 94
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0254",
+      "kind": "resource_write",
+      "from": "step:CreateManagedRepository",
+      "to": "resource:attribute:SetupPhase",
+      "label": "Set",
+      "span": {
+        "startLine": 550,
+        "startColumn": 14,
+        "endLine": 550,
+        "endColumn": 39
+      },
+      "metadata": {
+        "function": "advanceSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0255",
+      "kind": "resource_write",
+      "from": "step:CreateManagedRepository",
+      "to": "resource:attribute:SetupRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 555,
+        "startColumn": 14,
+        "endLine": 555,
+        "endColumn": 73
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0256",
+      "kind": "resource_write",
+      "from": "step:CreateManagedRepository",
+      "to": "resource:attribute:SetupSourceRepository",
+      "label": "Set",
+      "span": {
+        "startLine": 266,
+        "startColumn": 14,
+        "endLine": 266,
+        "endColumn": 56
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0257",
+      "kind": "resource_write",
+      "from": "step:CreateManagedRepository",
+      "to": "resource:attribute:SetupUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 556,
+        "startColumn": 14,
+        "endLine": 556,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0258",
+      "kind": "resource_write",
+      "from": "step:CreateManagedRepository",
+      "to": "resource:stream:SetupProgress",
+      "label": "Write",
+      "span": {
+        "startLine": 261,
+        "startColumn": 29,
+        "endLine": 261,
+        "endColumn": 119
+      },
+      "metadata": {
+        "bestEffort": true,
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress"
+      }
+    },
+    {
+      "id": "edge:0259",
+      "kind": "failure_transition",
+      "from": "step:CreateManagedRepository",
+      "to": "step:RecordSetupFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 253,
+        "startColumn": 26,
+        "endLine": 253,
+        "endColumn": 94
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0260",
+      "kind": "resource_write",
+      "from": "step:ExtractAppManifest",
+      "to": "resource:attribute:SetupAppManifestResult",
+      "label": "Set",
+      "span": {
+        "startLine": 351,
+        "startColumn": 14,
+        "endLine": 351,
+        "endColumn": 55
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0261",
+      "kind": "resource_write",
+      "from": "step:ExtractAppManifest",
+      "to": "resource:attribute:SetupPhase",
+      "label": "Set",
+      "span": {
+        "startLine": 550,
+        "startColumn": 14,
+        "endLine": 550,
+        "endColumn": 39
+      },
+      "metadata": {
+        "function": "advanceSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0262",
+      "kind": "resource_write",
+      "from": "step:ExtractAppManifest",
+      "to": "resource:attribute:SetupRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 555,
+        "startColumn": 14,
+        "endLine": 555,
+        "endColumn": 73
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0263",
+      "kind": "resource_write",
+      "from": "step:ExtractAppManifest",
+      "to": "resource:attribute:SetupUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 556,
+        "startColumn": 14,
+        "endLine": 556,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0264",
+      "kind": "resource_write",
+      "from": "step:ExtractAppManifest",
+      "to": "resource:stream:SetupProgress",
+      "label": "Write",
+      "span": {
+        "startLine": 346,
+        "startColumn": 29,
+        "endLine": 346,
+        "endColumn": 114
+      },
+      "metadata": {
+        "bestEffort": true,
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress"
+      }
+    },
+    {
+      "id": "edge:0265",
+      "kind": "failure_transition",
+      "from": "step:ExtractAppManifest",
+      "to": "step:RecordSetupFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 338,
+        "startColumn": 26,
+        "endLine": 338,
+        "endColumn": 94
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0266",
+      "kind": "resource_write",
+      "from": "step:InitializeTemplate",
+      "to": "resource:attribute:SetupPhase",
+      "label": "Set",
+      "span": {
+        "startLine": 550,
+        "startColumn": 14,
+        "endLine": 550,
+        "endColumn": 39
+      },
+      "metadata": {
+        "function": "advanceSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0267",
+      "kind": "resource_write",
+      "from": "step:InitializeTemplate",
+      "to": "resource:attribute:SetupRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 555,
+        "startColumn": 14,
+        "endLine": 555,
+        "endColumn": 73
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0268",
+      "kind": "resource_write",
+      "from": "step:InitializeTemplate",
+      "to": "resource:attribute:SetupSourceCommit",
+      "label": "Set",
+      "span": {
+        "startLine": 325,
+        "startColumn": 14,
+        "endLine": 325,
+        "endColumn": 48
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0269",
+      "kind": "resource_write",
+      "from": "step:InitializeTemplate",
+      "to": "resource:attribute:SetupUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 556,
+        "startColumn": 14,
+        "endLine": 556,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0270",
+      "kind": "resource_write",
+      "from": "step:InitializeTemplate",
+      "to": "resource:stream:SetupProgress",
+      "label": "Write",
+      "span": {
+        "startLine": 319,
+        "startColumn": 29,
+        "endLine": 319,
+        "endColumn": 114
+      },
+      "metadata": {
+        "bestEffort": true,
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress"
+      }
+    },
+    {
+      "id": "edge:0271",
+      "kind": "failure_transition",
+      "from": "step:InitializeTemplate",
+      "to": "step:RecordSetupFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 308,
+        "startColumn": 30,
+        "endLine": 308,
+        "endColumn": 98
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0272",
+      "kind": "resource_write",
+      "from": "step:ReconcileProjectStorage",
+      "to": "resource:stream:SetupProgress",
+      "label": "Write",
+      "span": {
+        "startLine": 374,
+        "startColumn": 29,
+        "endLine": 374,
+        "endColumn": 119
+      },
+      "metadata": {
+        "bestEffort": true,
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress"
+      }
+    },
+    {
+      "id": "edge:0273",
+      "kind": "failure_transition",
+      "from": "step:ReconcileProjectStorage",
+      "to": "step:RecordSetupFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 366,
+        "startColumn": 54,
+        "endLine": 366,
+        "endColumn": 122
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0274",
+      "kind": "resource_write",
+      "from": "step:RecordSetupFailure",
+      "to": "resource:attribute:SetupFailure",
+      "label": "Set",
+      "span": {
+        "startLine": 209,
+        "startColumn": 14,
+        "endLine": 209,
+        "endColumn": 44
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0275",
+      "kind": "resource_write",
+      "from": "step:RecordSetupFailure",
+      "to": "resource:attribute:SetupRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 555,
+        "startColumn": 14,
+        "endLine": 555,
+        "endColumn": 73
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0276",
+      "kind": "resource_write",
+      "from": "step:RecordSetupFailure",
+      "to": "resource:attribute:SetupStatus",
+      "label": "Set",
+      "span": {
+        "startLine": 208,
+        "startColumn": 14,
+        "endLine": 208,
+        "endColumn": 53
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0277",
+      "kind": "resource_write",
+      "from": "step:RecordSetupFailure",
+      "to": "resource:attribute:SetupUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 556,
+        "startColumn": 14,
+        "endLine": 556,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0278",
+      "kind": "resource_write",
+      "from": "step:RegisterAppManifest",
+      "to": "resource:attribute:SetupPhase",
+      "label": "Set",
+      "span": {
+        "startLine": 550,
+        "startColumn": 14,
+        "endLine": 550,
+        "endColumn": 39
+      },
+      "metadata": {
+        "function": "advanceSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0279",
+      "kind": "resource_write",
+      "from": "step:RegisterAppManifest",
+      "to": "resource:attribute:SetupRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 555,
+        "startColumn": 14,
+        "endLine": 555,
+        "endColumn": 73
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0280",
+      "kind": "resource_write",
+      "from": "step:RegisterAppManifest",
+      "to": "resource:attribute:SetupUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 556,
+        "startColumn": 14,
+        "endLine": 556,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "touchSetup",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0281",
+      "kind": "resource_write",
+      "from": "step:RegisterAppManifest",
+      "to": "resource:stream:SetupProgress",
+      "label": "Write",
+      "span": {
+        "startLine": 438,
+        "startColumn": 29,
+        "endLine": 438,
+        "endColumn": 115
+      },
+      "metadata": {
+        "bestEffort": true,
+        "phase": "execute",
+        "repeatable": true,
+        "role": "progress"
+      }
+    },
+    {
+      "id": "edge:0282",
+      "kind": "failure_transition",
+      "from": "step:RegisterAppManifest",
+      "to": "step:RecordSetupFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 430,
+        "startColumn": 26,
+        "endLine": 430,
+        "endColumn": 94
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    }
+  ],
+  "diagnostics": [],
+  "groups": [
+    {
+      "id": "setup",
+      "label": "Project setup",
+      "stepIds": [
+        "step:RecordSetupFailure",
+        "step:AdmitSetup",
+        "step:CreateManagedRepository",
+        "step:ClaimRepositoryBinding",
+        "step:InitializeTemplate",
+        "step:ExtractAppManifest",
+        "step:ReconcileProjectStorage",
+        "step:CommitProjectStorage",
+        "step:RegisterAppManifest",
+        "step:ConfigureRepository",
+        "step:CommitProjectSetup",
+        "step:CompleteProjectSetup",
+        "step:CleanupSetup"
+      ]
+    }
+  ],
+  "v2": {
+    "indexedAttributes": [
+      {
+        "attributeKey": "ProjectID",
+        "indexKey": "keyword2",
+        "indexType": "keyword",
+        "valueType": "string",
+        "description": "ProjectID"
+      },
+      {
+        "attributeKey": "SetupStatus",
+        "indexKey": "keyword3",
+        "indexType": "keyword",
+        "valueType": "string",
+        "description": "SetupStatus"
+      }
+    ],
+    "summary": {
+      "rpcName": "GetDexSummary",
+      "fields": [
+        {
+          "attributeKey": "SetupID",
+          "valueType": "string",
+          "editable": false,
+          "description": "Setup identity"
+        }
+      ]
+    },
+    "display": {
+      "rpcName": "GetDexDisplay",
+      "fields": [
+        {
+          "attributeKey": "SetupSourceCommit",
+          "valueType": "string",
+          "editable": false,
+          "description": "Accepted source commit"
+        }
+      ]
+    },
+    "actions": [],
+    "start": {
+      "stepType": "AdmitSetup",
+      "input": {
+        "kind": "null"
+      }
+    }
+  }
+}

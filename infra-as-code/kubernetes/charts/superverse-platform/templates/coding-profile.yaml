@@ -1,0 +1,247 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+{{- $profiles := include "v2.sandboxProfiles" . | fromJson }}
+{{- $profile := $profiles.codingProfile }}
+{{- if $profile.enabled }}
+{{- $configName := include "v2.codingProfile.configName" $profiles }}
+{{- $namespace := include "v2.namespace" $ }}
+{{- $baseline := dict "root" $ "profile" $profile }}
+{{- $baselineNamespace := include "v2.codingProfile.sessionBaselineNamespace" $baseline | trim }}
+{{- $baselineManagerRoleBinding := include "v2.codingProfile.sessionBaselineManagerRoleBinding" $baseline | trim }}
+{{- $baselineServiceAccount := include "v2.codingProfile.sessionBaselineServiceAccount" $baseline | trim }}
+{{- $baselineResourceQuota := include "v2.codingProfile.sessionBaselineResourceQuota" $baseline | trim }}
+{{- $baselineLimitRange := include "v2.codingProfile.sessionBaselineLimitRange" $baseline | trim }}
+{{- $baselineDefaultDeny := include "v2.codingProfile.sessionBaselineDefaultDeny" $baseline | trim }}
+{{- $baselineSuperverseIngress := include "v2.codingProfile.sessionBaselineSuperverseIngress" $baseline | trim }}
+{{- $baselineSandboxEgress := include "v2.codingProfile.sessionBaselineSandboxEgress" $baseline | trim }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $configName }}
+  namespace: {{ $namespace }}
+  annotations: {helm.sh/resource-policy: keep}
+  labels:
+    {{- include "v2.codingProfile.labels" $ | nindent 4 }}
+    superdurable.io/sandbox-profile: {{ $profile.name | quote }}
+immutable: true
+{{- /* Any change to the rendered data below must bump v2.codingProfile.metadataRevision. */}}
+data:
+  contract.json: |-
+    {
+      "apiVersion": "superdurable.io/coding-sandbox-profile/v1",
+      "profile": {{ $profile.name | quote }},
+      "metadataRevision": {{ include "v2.codingProfile.metadataRevision" $ }},
+      "agentSandboxVersion": {{ $profile.agentSandboxVersion | quote }},
+      "sandboxImageContractRevision": {{ $profile.sandboxImageContractRevision }},
+      "oneSessionPerNamespace": true,
+      "resourceNames": {
+        "sandbox": {{ $profile.sandboxName | quote }},
+        "workspacePvc": {{ $profile.workspace.pvcName | quote }}
+      },
+      "network": {
+        "sandboxDirectPublicEgress": true
+      },
+      "namespaceBaseline": {
+        "apiVersion": "superdurable.io/coding-session-baseline/v1",
+        "resources": [
+          {"key": "baseline-namespace.yaml", "apiVersion": "v1", "kind": "Namespace", "nameInjection": "metadata.name", "sha256": {{ sha256sum $baselineNamespace | quote }}},
+          {"key": "baseline-session-manager-role-binding.yaml", "apiVersion": "rbac.authorization.k8s.io/v1", "kind": "RoleBinding", "name": "{{ include "v2.product" $ }}-session-manager", "sha256": {{ sha256sum $baselineManagerRoleBinding | quote }}},
+          {"key": "baseline-service-account.yaml", "apiVersion": "v1", "kind": "ServiceAccount", "name": {{ $profile.serviceAccountName | quote }}, "sha256": {{ sha256sum $baselineServiceAccount | quote }}},
+          {"key": "baseline-resource-quota.yaml", "apiVersion": "v1", "kind": "ResourceQuota", "name": "coding-sandbox-quota", "sha256": {{ sha256sum $baselineResourceQuota | quote }}},
+          {"key": "baseline-limit-range.yaml", "apiVersion": "v1", "kind": "LimitRange", "name": "coding-sandbox-limits", "sha256": {{ sha256sum $baselineLimitRange | quote }}},
+          {"key": "baseline-network-policy-default-deny.yaml", "apiVersion": "networking.k8s.io/v1", "kind": "NetworkPolicy", "name": "default-deny", "sha256": {{ sha256sum $baselineDefaultDeny | quote }}},
+          {"key": "baseline-network-policy-superverse-v2-ingress.yaml", "apiVersion": "networking.k8s.io/v1", "kind": "NetworkPolicy", "name": "allow-{{ include "v2.product" $ }}-to-sandboxd", "sha256": {{ sha256sum $baselineSuperverseIngress | quote }}},
+          {"key": "baseline-network-policy-sandbox-egress.yaml", "apiVersion": "networking.k8s.io/v1", "kind": "NetworkPolicy", "name": "allow-sandbox-dns-and-public-https", "sha256": {{ sha256sum $baselineSandboxEgress | quote }}}
+        ]
+      },
+      "superverseInjects": ["namespace metadata.name", "metadata.namespace", "session/project labels", "sandbox image contract label"],
+      "ownerIdentifiers": ["namespaceName", "namespaceUid", "sandboxName", "sandboxUid", "workspacePvcName", "workspacePvcUid", "profileVersion"]
+    }
+  baseline-namespace.yaml: |-{{ $baselineNamespace | nindent 4 }}
+  baseline-session-manager-role-binding.yaml: |-{{ $baselineManagerRoleBinding | nindent 4 }}
+  baseline-service-account.yaml: |-{{ $baselineServiceAccount | nindent 4 }}
+  baseline-resource-quota.yaml: |-{{ $baselineResourceQuota | nindent 4 }}
+  baseline-limit-range.yaml: |-{{ $baselineLimitRange | nindent 4 }}
+  baseline-network-policy-default-deny.yaml: |-{{ $baselineDefaultDeny | nindent 4 }}
+  baseline-network-policy-superverse-v2-ingress.yaml: |-{{ $baselineSuperverseIngress | nindent 4 }}
+  baseline-network-policy-sandbox-egress.yaml: |-{{ $baselineSandboxEgress | nindent 4 }}
+  pvc.yaml: |-
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: {{ $profile.workspace.pvcName }}
+      labels:
+        app.kubernetes.io/managed-by: {{ include "v2.product" $ }}
+        superdurable.io/sandbox-profile: {{ $profile.name | quote }}
+    spec:
+      accessModes:
+        - {{ $profile.workspace.accessMode }}
+      storageClassName: {{ $profile.workspace.storageClassName }}
+      resources:
+        requests:
+          storage: {{ $profile.workspace.size | quote }}
+  sandbox.yaml: |-
+    apiVersion: agents.x-k8s.io/v1beta1
+    kind: Sandbox
+    metadata:
+      name: {{ $profile.sandboxName }}
+      labels:
+        app.kubernetes.io/managed-by: {{ include "v2.product" $ }}
+        superdurable.io/sandbox-profile: {{ $profile.name | quote }}
+    spec:
+      operatingMode: Running
+      shutdownPolicy: Retain
+      service: true
+      podTemplate:
+        metadata:
+          labels:
+            app.kubernetes.io/name: coding-sandbox
+            superdurable.io/sandbox-profile: {{ $profile.name | quote }}
+        spec:
+          {{- with $profile.sandboxClassName }}
+          runtimeClassName: {{ . }}
+          {{- end }}
+          serviceAccountName: {{ $profile.serviceAccountName }}
+          automountServiceAccountToken: false
+          enableServiceLinks: false
+          terminationGracePeriodSeconds: {{ $profile.terminationGracePeriodSeconds }}
+          securityContext:
+            runAsUser: {{ $profile.securityContext.runAsUser }}
+            runAsGroup: {{ $profile.securityContext.runAsGroup }}
+            fsGroup: {{ $profile.securityContext.fsGroup }}
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: sandboxd
+              image: {{ printf "%s@%s" $profile.image.repository $profile.image.digest | quote }}
+              imagePullPolicy: {{ $profile.image.pullPolicy }}
+              command:
+                - {{ $profile.initBinaryPath | quote }}
+                - "--"
+                - {{ $profile.sandboxd.binaryPath | quote }}
+              args:
+                - {{ printf "--root-dir=%s" $profile.sandboxd.rootDir | quote }}
+                - {{ printf "--rest-port=%v" $profile.sandboxd.restPort | quote }}
+                - {{ printf "--grpc-port=%v" $profile.sandboxd.grpcPort | quote }}
+              env:
+                - name: HOME
+                  value: {{ $profile.sandboxd.rootDir | quote }}
+                - name: TMPDIR
+                  value: /tmp
+                - name: SUPERVERSE_PREVIEW_STATE_DIR
+                  value: {{ $profile.preview.stateDir | quote }}
+                - name: SUPERVERSE_POD_UID
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.uid
+              ports:
+                - name: sandboxd-rest
+                  containerPort: {{ $profile.sandboxd.restPort }}
+                  protocol: TCP
+                - name: sandboxd-grpc
+                  containerPort: {{ $profile.sandboxd.grpcPort }}
+                  protocol: TCP
+                - name: preview-dex
+                  containerPort: {{ $profile.preview.dexPort }}
+                  protocol: TCP
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                      - {{ $profile.preview.controlBinaryPath | quote }}
+                      - shutdown
+                      - --timeout
+                      - {{ $profile.preview.shutdownTimeout | quote }}
+              startupProbe:
+                httpGet:
+                  path: /v1/health
+                  port: sandboxd-rest
+                periodSeconds: 2
+                failureThreshold: 30
+              readinessProbe:
+                httpGet:
+                  path: /v1/health
+                  port: sandboxd-rest
+                periodSeconds: 5
+                failureThreshold: 3
+              livenessProbe:
+                httpGet:
+                  path: /v1/health
+                  port: sandboxd-rest
+                periodSeconds: 15
+                failureThreshold: 3
+              securityContext:
+                runAsUser: {{ $profile.securityContext.runAsUser }}
+                runAsGroup: {{ $profile.securityContext.runAsGroup }}
+                runAsNonRoot: true
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                {{- toYaml $profile.resources | nindent 16 }}
+              volumeMounts:
+                {{- if $profile.podIdentityProjection }}
+                - name: eks-pod-identity-token
+                  mountPath: /var/run/secrets/pods.eks.amazonaws.com/serviceaccount
+                  readOnly: true
+                {{- end }}
+                - name: workspace
+                  mountPath: {{ $profile.sandboxd.rootDir }}
+                  subPath: {{ $profile.workspace.repositorySubPath }}
+                - name: workspace
+                  mountPath: {{ $profile.preview.stateDir }}
+                  subPath: {{ $profile.workspace.previewStateSubPath }}
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            {{- if $profile.podIdentityProjection }}
+            - name: eks-pod-identity-token
+              projected:
+                defaultMode: 420
+                sources:
+                  - serviceAccountToken:
+                      audience: pods.eks.amazonaws.com
+                      expirationSeconds: 3600
+                      path: eks-pod-identity-token
+            {{- end }}
+            - name: workspace
+              persistentVolumeClaim:
+                claimName: {{ $profile.workspace.pvcName }}
+            - name: tmp
+              emptyDir:
+                sizeLimit: {{ $profile.tmp.sizeLimit | quote }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $configName }}-reader
+  namespace: {{ $namespace }}
+  annotations: {helm.sh/resource-policy: keep}
+rules:
+  - apiGroups: [""]
+    resources: [configmaps]
+    resourceNames: [{{ $configName | quote }}]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $configName }}-reader
+  namespace: {{ $namespace }}
+  annotations: {helm.sh/resource-policy: keep}
+subjects:
+  - {kind: ServiceAccount, name: {{ include "v2.serverAccount" $ }}, namespace: {{ $namespace }}}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $configName }}-reader
+{{- end }}

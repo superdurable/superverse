@@ -1,0 +1,68 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A change subagent whose instance is lost before it finishes. It edits the
+# page heading, and while its check runs, a command that ignores SIGTERM, the
+# test removes the Session's instance as a lost node does: the check's outcome
+# is unknown, and the subagent reports. Its finish finds its lease unreachable,
+# takes the lease of the instance the Session provisions next on the same
+# volume and saves the worktree there. Its task notification opens an
+# automatic turn that merges the saved change, reads it and answers the
+# Session's three handoff continuations.
+name: subagent-lost-instance
+title: "Subagent finish after a lost instance"
+description: "A change subagent's instance is removed while its check runs; its finish saves the change on the next instance, which the main agent merges."
+category: platform_error
+test_action: "removes the Session's instance while the subagent's check runs"
+arguments: {task: agent-aaaaaaaa}
+inputs:
+  - label: "Delegate a change whose instance is lost"
+    message: "Change the page heading in the background while its Sandbox is replaced."
+    replies:
+      - text: "Delegating the heading change to a subagent."
+        tool_uses:
+          - name: start_agent
+            input:
+              description: "Change the heading on a lost instance"
+              kind: change
+              prompt: "Change the page heading in web/src/App.tsx to Saved heading, check the change and report. [[subagent:subagent-lost-instance/heading]]"
+        expect_result_contains:
+          - "\"task_id\":\"agent-"
+      - text: "A subagent changes the heading; I will merge its change when it reports."
+      - text: "The subagent saved its change on the new instance; merging it."
+        notification: task
+        tool_uses:
+          - name: merge_agent_changes
+            input: {agent_id: "{{task}}", action: apply}
+        expect_result_contains:
+          - "\"result\":\"merged\","
+          - "web/src/App.tsx"
+      - text: "Checking the merged heading."
+        tool_uses:
+          - name: read
+            input: {path: web/src/App.tsx}
+        expect_result_contains:
+          - "<h1>Saved heading</h1>"
+      - text: "The page heading now reads Saved heading; the change is merged and not committed yet."
+      - text: "The merged change stays uncommitted until you ask me to publish it."
+      - text: "The merged change stays uncommitted."
+      - text: "Nothing else changed; the merged heading waits to be committed."
+subagents:
+  heading:
+    kind: change
+    replies:
+      - text: "Changing the page heading."
+        tool_uses:
+          - name: edit
+            input: {path: web/src/App.tsx, old_string: "<h1>Text Summary</h1>", new_string: "<h1>Saved heading</h1>"}
+      - text: "Checking the change."
+        tool_uses:
+          - name: bash
+            input: {command: "trap '' TERM; sleep 120; grep -n '<h1>' web/src/App.tsx", description: "Check the changed heading", timeout_seconds: 300}
+        expect_failure: true
+      - text: "I changed the page heading in web/src/App.tsx to Saved heading; my check was interrupted when the Sandbox went away."

@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+apiVersion: v2
+name: superverse-v2-platform
+description: Isolated Superverse V2 server, Studio and Dex
+type: application
+version: 2.0.10
+appVersion: "2.0.0"
+dependencies:
+  - {name: agent-sandbox, alias: sandboxController, version: 0.1.0+superdurable.1}

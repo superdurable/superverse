@@ -1,0 +1,87 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A connector_select subagent whose need two released connectors meet: it
+# searches the published catalog for Gmail and for Outlook mail and reports
+# both, Gmail recommended and Outlook as the alternative. Its task notification
+# opens an automatic turn that asks the user which one with
+# request_user_input; the answer puts the chosen connector on the requirements
+# card, which the user confirms. Nothing in the workspace changes.
+name: connector-select-choice
+title: "Connector selection: a choice between connectors"
+description: "A connector_select subagent reports two connectors that could send mail; the user chooses one, which the requirements card then lists."
+category: project_feature
+arguments: {task: agent-aaaaaaaa}
+inputs:
+  - label: "Describe the application"
+    message: "Build a weekly digest that is emailed to the team."
+    replies:
+      - text: "Choosing the connector that sends the email."
+        tool_uses:
+          - name: start_agent
+            input:
+              description: "Choose the connector that sends email"
+              kind: connector_select
+              prompt: "Requirement R1: send a weekly digest by email to a list of addresses. Find every released connector and operation that can send it, recommend one and report the alternatives. [[subagent:connector-select-choice/select]]"
+        expect_result_contains:
+          - "\"task_id\":\"agent-"
+      - text: "A subagent chooses the connector; I will ask you if there is a choice to make."
+      - text: "Two connectors can send the digest, and the account is yours to choose."
+        notification: task
+        tool_uses:
+          - name: request_user_input
+            input:
+              questions:
+                - id: mail
+                  header: "Mail connector"
+                  question: "Which account sends the weekly digest?"
+                  options:
+                    - {label: "Gmail", description: "Send from a Google account with the gmail connector."}
+                    - {label: "Outlook", description: "Send from a Microsoft account with the outlook-mail connector."}
+  - label: "Choose Gmail"
+    answers: ["Gmail"]
+    replies:
+      - text: "Please confirm what I will build."
+        tool_uses:
+          - name: confirm_requirements
+            input:
+              title: "Weekly digest"
+              summary: "A digest of the week's updates that is emailed to the team every Monday."
+              features:
+                - {id: R1, text: "Every Monday the digest is emailed to the team's addresses."}
+              connections:
+                - need: "Send the weekly digest by email"
+                  connector: gmail
+                  operations: [sendMessage]
+                  status: existing
+                  user_setup: "Connect the Google account that sends the digest."
+              user_setup: ["Connect the Gmail account in Studio."]
+              acceptance: ["A test digest arrives in a team mailbox."]
+  - label: "Confirm the requirements"
+    requirements_confirm: true
+    replies:
+      - text: "The requirements are confirmed; the digest is sent with the released gmail connector."
+subagents:
+  select:
+    kind: connector_select
+    replies:
+      - text: "Searching the catalog for both mail providers."
+        tool_uses:
+          - name: connector_catalog
+            input: {query: "gmail"}
+          - name: connector_catalog
+            input: {query: "outlook mail"}
+        expect_result_contains:
+          - "\"id\":\"gmail\""
+      - text: |-
+          One requirement, two released connectors.
+          - need: send a weekly digest by email.
+          - recommended: gmail, github.com/superdurable/dex-connectors-library/connectors/google/gmail, sendMessage (mutation), OAuth with a Google account.
+          - alternatives: outlook-mail, github.com/superdurable/dex-connectors-library/connectors/microsoft/outlook-mail, for a Microsoft 365 account; the user's choice of account decides.
+          - gaps: none.
+          - user setup: connect the sending account in Studio.

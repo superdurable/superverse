@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+{{- if not .Values.localKind }}
+# gp3 through the EBS CSI driver. The cluster's stock gp2 class predates the
+# driver and is slower and pricier per GiB; new PVCs should name this class
+# explicitly. Not marked default to avoid changing behavior of claims that
+# omit a class.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  encrypted: "true"
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+
+{{- end }}

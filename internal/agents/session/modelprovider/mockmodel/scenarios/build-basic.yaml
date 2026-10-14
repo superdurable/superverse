@@ -1,0 +1,70 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# The Local Kind build path: find the page heading, change it and push the
+# change through the real commit gate. The heading comes from the request as
+# [[scenario-arg:heading=...]]. The edit's old_string is the template's own text,
+# which the mock model checks at startup. A fresh workspace has no web dependencies,
+# so the script runs the template's bootstrap before the gate, as the template's
+# AGENTS.md says; a failed tool stops the scenario instead of claiming the push.
+name: build-basic
+title: "Change the page heading"
+description: "Finds the page heading, changes it to the heading argument and pushes the change through the commit gate."
+category: project_feature
+arguments:
+  heading: Mock build
+inputs:
+  - label: "Change the heading"
+    message: "Change the main heading of the page."
+    replies:
+      - thinking: "The heading is probably in the web page source, so I will search for it first."
+        text: "I'll find where the application heading is defined."
+        tool_uses:
+          - name: grep
+            input: {pattern: "<h1>", path: web/src, glob: "*.tsx", output_mode: content}
+          - name: glob
+            input: {pattern: "**/*", path: web/src}
+      - text: "Reading the page component."
+        tool_uses:
+          - name: read
+            input: {path: web/src/App.tsx}
+      - thinking: "One line changes: the main heading. Everything else stays as it is."
+        text: "Changing the heading to {{heading}}."
+        tool_uses:
+          - name: edit
+            input: {path: web/src/App.tsx, old_string: "<h1>Text Summary</h1>", new_string: "<h1>{{heading}}</h1>"}
+      - text: "Checking the edit."
+        tool_uses:
+          - name: bash
+            input: {command: "grep -n '<h1>' web/src/App.tsx", description: "Find the changed heading"}
+      - text: "Restoring the application's dependencies, as the template's instructions say."
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap", description: "Restore the application's dependencies", timeout_seconds: 600}
+      - tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Find the main heading", status: completed}
+                - {content: "Change the heading to {{heading}}", status: completed}
+                - {content: "Run the source checks and push", status: in_progress}
+      - text: "Running the source checks and pushing the change."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Change the main heading to {{heading}}"
+              verification:
+                - "grep -n <h1> web/src/App.tsx shows the new heading"
+      - tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Find the main heading", status: completed}
+                - {content: "Change the heading to {{heading}}", status: completed}
+                - {content: "Run the source checks and push", status: completed}
+      - text: "The main heading now reads {{heading}}, and the change is pushed to the default branch."

@@ -1,0 +1,387 @@
+// Copyright (c) 2026 Super Durable, Inc.
+//
+// Licensed under the Sustainable Use License 1.0.
+// You may not use this file except in compliance with the License.
+// See the LICENSE file in the repository root.
+//
+// SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { randomBytes } from "node:crypto";
+import type { AgentMessage__Output } from "@/lib/generated/protobuf/superverse/v2/AgentMessage";
+import type { AgentModel__Output } from "@/lib/generated/protobuf/superverse/v2/AgentModel";
+import type { PhaseTiming__Output } from "@/lib/generated/protobuf/superverse/v2/PhaseTiming";
+import type { ProjectSnapshot__Output } from "@/lib/generated/protobuf/superverse/v2/ProjectSnapshot";
+import type { SessionSnapshot__Output } from "@/lib/generated/protobuf/superverse/v2/SessionSnapshot";
+import type { SessionStatus__Output } from "@/lib/generated/protobuf/superverse/v2/SessionStatus";
+import { delay } from "@/lib/shared/async";
+import { timestampToISO } from "@/lib/shared/protobuf";
+import type { RpcInput, RpcOutput } from "@/lib/shared/rpc-methods";
+import { branchHead } from "./repository-host";
+import { chooseOption, rpc, rpcAnswered, rpcResult } from "./studio-api";
+
+/** SUPERVERSE_E2E_MODEL_TARGET when it names the mock model, which a lane offers or not. */
+export const MOCK_TARGET = "mock";
+/** The mock model's option in the model picker. */
+export const MOCK_MODEL_OPTION = "Mock";
+/**
+ * The models that SUPERVERSE_E2E_MODEL_TARGET may name, with their enum value and the option name of the
+ * model picker: the same names as `MODEL_TARGETS` of infra-as-code/scripts/kind/server_config.py, which
+ * `kind e2e` validates on the acceptance profile.
+ */
+const MODEL_TARGETS: Record<string, { enumValue: AgentModel__Output; picker: string }> = {
+  [MOCK_TARGET]: { enumValue: "AGENT_MODEL_MOCK", picker: MOCK_MODEL_OPTION },
+  "anthropic/claude-opus-5-5": { enumValue: "AGENT_MODEL_OPUS_5_5", picker: "Claude Opus 5.5" },
+  "anthropic/claude-sonnet-5-5": { enumValue: "AGENT_MODEL_SONNET_5_5", picker: "Claude Sonnet 5.5" },
+  "anthropic/claude-haiku-4-5": { enumValue: "AGENT_MODEL_HAIKU_4_5", picker: "Claude Haiku 4.5" },
+};
+const REAL_MODEL_TARGETS = Object.keys(MODEL_TARGETS).filter((model) => model !== MOCK_TARGET);
+function modelTarget(model: string) {
+  const target = MODEL_TARGETS[model];
+  if (!target) throw new Error(`SUPERVERSE_E2E_MODEL_TARGET must be one of ${Object.keys(MODEL_TARGETS).join(", ")}`);
+  return target;
+}
+/**
+ * The AgentModel enum value of a server model such as the `anthropic/claude-sonnet-5-5` that
+ * SUPERVERSE_E2E_MODEL_TARGET names, for comparing with the Session's selected model.
+ */
+export function agentModelEnum(model: string): AgentModel__Output {
+  return modelTarget(model).enumValue;
+}
+/** The option of the creation page's model picker for such a server model. */
+function pickerModel(model: string): string {
+  return modelTarget(model).picker;
+}
+export async function readProject(page: Page, projectId: string): Promise<ProjectSnapshot__Output> {
+  const { project } = await rpcResult(page.request, "GetProject", { projectId });
+  if (!project) throw new Error("GetProject returned no Project");
+  expect(project.projectId).toBe(projectId);
+  return project;
+}
+/** The Project's one Session, which its ProjectFlow started once the Project became READY. */
+export async function readSession(page: Page, projectId: string): Promise<SessionSnapshot__Output> {
+  const { session } = await rpcResult(page.request, "GetSession", { projectId });
+  if (!session) throw new Error("GetSession returned no Session");
+  expect(session.projectId).toBe(projectId);
+  return session;
+}
+/**
+ * The phase timings of a settled resource: each phase appears once with its start and an ended duration, and the
+ * phases the Flow always records are present.
+ */
+export function expectPhaseTimings(timings: readonly PhaseTiming__Output[], required: readonly string[]) {
+  const phases = timings.map((timing) => timing.phase);
+  expect(new Set(phases).size, "each phase is measured once").toBe(phases.length);
+  for (const timing of timings) {
+    expect(timing.phase).not.toBe("");
+    expect(Date.parse(timestampToISO(timing.startedAt) ?? ""), `phase ${timing.phase} has a start`).toBeGreaterThan(0);
+    expect(timing.durationMs, `phase ${timing.phase} of a settled resource has ended`).toMatch(/^[1-9][0-9]*$/);
+  }
+  expect(phases).toEqual(expect.arrayContaining([...required]));
+}
+
+/** The phases a Preview start measures in order, with the labels the Preview panel gives them. */
+const PREVIEW_START_PHASES = [
+  ["configuration", "Validating configuration"],
+  ["environment", "Starting engine"],
+  ["grant", "Authorizing"],
+  ["application", "Building app"],
+  ["route", "Exposing route"],
+] as const;
+
+/** The phases a workspace start measures in order. */
+const WORKSPACE_START_PHASES = ["provision", "checkout"] as const;
+
+/**
+ * Requires the READY Preview to carry the five phases of its start and the Session's workspace the two of its
+ * start, all ended and in order, and the Preview panel to list the Preview's with their labels.
+ */
+export async function expectStartPhases(page: Page, projectId: string) {
+  const { preview, workspace } = await readSession(page, projectId);
+  const previewPhases = PREVIEW_START_PHASES.map(([phase]) => phase);
+  expectPhaseTimings(preview?.phaseTimings ?? [], previewPhases);
+  expect(
+    preview?.phaseTimings.map((timing) => timing.phase),
+    "the Preview phases follow the start",
+  ).toEqual(previewPhases);
+  expectPhaseTimings(workspace?.phaseTimings ?? [], WORKSPACE_START_PHASES);
+  expect(
+    workspace?.phaseTimings.map((timing) => timing.phase),
+    "the workspace phases follow its start",
+  ).toEqual([...WORKSPACE_START_PHASES]);
+  const panel = page.getByRole("region", { name: "Project Preview" });
+  await expect(panel.getByRole("heading", { name: "Preview start phases" })).toBeVisible({ timeout: 30_000 });
+  for (const [, label] of PREVIEW_START_PHASES) await expect(panel.getByText(label, { exact: true })).toBeVisible();
+}
+
+/**
+ * Keeps the Project's READY workspace running for seven days with "Keep running for 7 days", which the
+ * chat header's workspace timer opens, and requires its Sandbox deadline to be about seven days ahead.
+ */
+export async function keepWorkspaceRunning(page: Page, projectId: string) {
+  const keep = page.getByRole("button", { name: "Keep running for 7 days", exact: true });
+  await expect(async () => {
+    if (!(await keep.isVisible())) await page.getByTestId("workspace-timer").click();
+    await expect(keep).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 60_000 });
+  const clicked = Date.now();
+  const [response] = await Promise.all([page.waitForResponse(rpcAnswered("RenewWorkspace")), keep.click()]);
+  expect(response.ok()).toBe(true);
+  const answer: RpcOutput<"RenewWorkspace"> = await response.json();
+  expect(answer.renewed, "The READY workspace must be renewed").toBe(true);
+  await page.keyboard.press("Escape");
+  const deadline = Number((await readSession(page, projectId)).workspace?.expiresAt?.seconds) * 1000;
+  const week = 7 * 24 * 60 * 60 * 1000;
+  expect(deadline).toBeGreaterThanOrEqual(clicked + week - 60_000);
+  expect(deadline).toBeLessThanOrEqual(Date.now() + week + 60_000);
+}
+/** The Session's head is the commit on its Project's default branch on the repository host; returns that repository. */
+export async function expectPushedHead(project: ProjectSnapshot__Output, session: SessionSnapshot__Output) {
+  expect(session.headCommit).toMatch(/^[0-9a-f]{40}$/);
+  if (!project.repository) throw new Error("The Project has no accepted repository");
+  expect(await branchHead(project.repository.fullName, project.repository.defaultBranch)).toBe(session.headCommit);
+  return project.repository;
+}
+/**
+ * What a spec does on the creation page to choose its Session's first turn, before it presses
+ * Build: it types a prompt, or on the mock model chooses the model and a scenario's first input.
+ */
+export type FirstTurnChoice = (page: Page) => Promise<void>;
+/** SUPERVERSE_E2E_MODEL_TARGET, trimmed: the platform developer's decision, or undefined when unset or empty. */
+export function modelTargetDecision(): string | undefined {
+  return process.env.SUPERVERSE_E2E_MODEL_TARGET?.trim() || undefined;
+}
+/** The failure of a spec that needs the developer's decision on a lane that offers no mock model. */
+export function modelTargetRequired(): Error {
+  return new Error(
+    `SUPERVERSE_E2E_MODEL_TARGET is required on a lane without the mock model; the platform developer chooses the model (one of ${Object.keys(MODEL_TARGETS).join(", ")})`,
+  );
+}
+/**
+ * The server model that the real-model specs run. A real-model run is never automatic: the platform
+ * developer sets SUPERVERSE_E2E_MODEL_TARGET, and there is no default. Unset or empty fails the spec
+ * here, and an unknown model fails it in `pickerModel`. A spec that has no mock scenario skips on
+ * `mock` before it asks, so `mock` reaching here fails.
+ */
+export function realModelTarget(): string {
+  const target = modelTargetDecision();
+  if (!target) throw modelTargetRequired();
+  if (target === MOCK_TARGET)
+    throw new Error(
+      `SUPERVERSE_E2E_MODEL_TARGET is ${MOCK_TARGET}, but this spec needs a real model (one of ${REAL_MODEL_TARGETS.join(", ")})`,
+    );
+  return target;
+}
+/**
+ * Chooses `realModelTarget()` in the picker and types the prompt as the first message, which Build
+ * sends after it applied the model. The model is checked when this is called, before the page is touched.
+ */
+export function typePrompt(prompt: string): FirstTurnChoice {
+  const model = pickerModel(realModelTarget());
+  return async (page) => {
+    await chooseOption(page.getByRole("button", { name: "Model", exact: true }), model);
+    await page.getByPlaceholder("Describe the app you want to build…").fill(prompt);
+  };
+}
+/**
+ * Creates a Project in the TeamSpace through its start form and returns once it is READY and its Session, which
+ * ProjectFlow starts then, exists. Studio opens the Flow at once, applies the model chosen on the
+ * start form and sends its first message once the Session starts; the spec then waits for that
+ * first turn.
+ */
+export async function createProject(
+  page: Page,
+  teamSpaceId: string,
+  chooseFirstTurn: FirstTurnChoice,
+  testInfo: TestInfo,
+  onAccepted?: (projectId: string) => Promise<void>,
+) {
+  const name = `V2 E2E ${randomBytes(4).toString("hex")}`;
+  const start = `/t/${teamSpaceId}/projects/start`;
+  if (new URL(page.url()).pathname !== start) await page.goto(start);
+  await expect(page.getByRole("heading", { name: "Create a project." })).toBeVisible();
+  await expect(page.getByText("Existing repository", { exact: true })).toHaveCount(0);
+  await page.getByLabel("Project name", { exact: true }).fill(name);
+  await chooseFirstTurn(page);
+  const responsePromise = page.waitForResponse(
+    (response) => rpcAnswered("CreateProject")(response) && response.status() !== 503,
+  );
+  await page.getByRole("button", { name: "Build", exact: true }).click();
+  const response = await responsePromise;
+  expect(response.ok()).toBe(true);
+  const accepted: RpcOutput<"CreateProject"> = await response.json();
+  expect(accepted.projectId).toMatch(/^[a-z0-9]+$/);
+  expect(Object.keys(accepted)).toEqual(["projectId"]);
+  const request: RpcInput<"CreateProject"> = response.request().postDataJSON();
+  expect(request.managedRepository).toEqual({});
+  expect(request.teamSpaceId).toBe(teamSpaceId);
+  // Real concurrent admission recovers the original identity while Setup is
+  // still running; a later retry also returns this Project after it is READY.
+  const duplicates = await Promise.all(Array.from({ length: 4 }, () => rpc(page.request, "CreateProject", request)));
+  for (const duplicate of duplicates) {
+    expect(duplicate.ok()).toBe(true);
+    expect(await duplicate.json()).toEqual(accepted);
+  }
+  await onAccepted?.(accepted.projectId);
+  await expect(page).toHaveURL(/\/p\/[a-z0-9]+\/flow(\?|$)/, { timeout: 60_000 });
+  const projectId = new URL(page.url()).pathname.split("/")[2];
+  expect(projectId).toBe(accepted.projectId);
+  await expect
+    .poll(async () => (await readProject(page, projectId)).status, { timeout: 10 * 60_000, intervals: [2000] })
+    .toBe("PROJECT_STATUS_READY");
+  const project = await readProject(page, projectId);
+  expect(project.name).toBe(name);
+  await expect
+    .poll(async () => (await rpc(page.request, "GetSession", { projectId })).status(), {
+      timeout: 60_000,
+      intervals: [1000],
+    })
+    .toBe(200);
+  expect(await rpcResult(page.request, "CreateProject", request)).toEqual(accepted);
+  expect((await rpc(page.request, "CreateProject", { ...request, name: `${name} conflict` })).status()).toBe(409);
+  await testInfo.attach("resource-identities", {
+    body: JSON.stringify({ projectId, name, studio: process.env.SUPERVERSE_E2E_BASE_URL }),
+    contentType: "application/json",
+  });
+  return { projectId, name };
+}
+/** A durable final reply of an Agent turn: an assistant message with content and no tool calls. */
+function isFinalReply(message: AgentMessage__Output | null | undefined): boolean {
+  return message?.role === "ROLE_ASSISTANT" && message.content.trim() !== "" && message.toolCalls.length === 0;
+}
+/**
+ * Asserts that a completed Session snapshot holds the Agent's authoritative history and description, with the Agent
+ * waiting for a message, and returns the sequence of its newest final reply after `afterSequence`. Errors never
+ * include model content.
+ */
+export function expectNewestFinalReplySequence(
+  completed: SessionSnapshot__Output,
+  projectId: string,
+  afterSequence: number,
+): number {
+  expect(Number.isSafeInteger(afterSequence) && afterSequence >= 0).toBe(true);
+  expect(completed.projectId).toBe(projectId);
+  const agent = completed.agent;
+  if (!agent?.history || !agent.description)
+    throw new Error("Completed Session must include authoritative Agent history and description");
+  expect(agent.description.status).toBe("STATUS_WAITING_FOR_MESSAGE");
+  const lastSequence = Number(agent.description.lastSequence);
+  expect(Number.isSafeInteger(lastSequence) && lastSequence > afterSequence).toBe(true);
+  // Select this turn's latest durable final reply, not an older assistant
+  // article or a tool-call message.
+  let sequence = 0;
+  for (const entry of agent.history.messages) {
+    if (!isFinalReply(entry.message)) continue;
+    const candidate = Number(entry.sequence);
+    expect(Number.isSafeInteger(candidate) && candidate > 0 && candidate <= lastSequence).toBe(true);
+    if (candidate > afterSequence) sequence = Math.max(sequence, candidate);
+  }
+  expect(
+    sequence,
+    "A newly completed final assistant message must follow the pre-explanation sequence",
+  ).toBeGreaterThan(afterSequence);
+  return sequence;
+}
+/** The Session statuses at which waiting for an Agent turn stops: the turn can no longer complete. */
+export const ENDED_SESSION_STATUSES: ReadonlySet<SessionStatus__Output> = new Set([
+  "SESSION_STATUS_FAILED",
+  "SESSION_STATUS_ARCHIVED",
+]);
+/** Waits until a turn after `afterSequence` of the Project's Session ends with a final reply. */
+export async function waitForCompletedTurn(page: Page, projectId: string, afterSequence = -1, timeoutMs = 15 * 60_000) {
+  let selectedModel = "";
+  let confirmedCard = "";
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const session = await readSession(page, projectId);
+    const safeCode = /^[A-Z0-9_]{1,80}$/.test(session.failure?.code ?? "") ? session.failure!.code : "unavailable";
+    if (ENDED_SESSION_STATUSES.has(session.status))
+      throw new Error(
+        `The Session of Project ${projectId} ended before the required completed turn (${session.status}; ${safeCode})`,
+      );
+    const snapshot = session.agent;
+    const description = snapshot?.description;
+    const pendingInput = description?.pendingUserInput;
+    if (pendingInput?.kind === "KIND_REQUIREMENTS") {
+      if (description?.model === "AGENT_MODEL_MOCK")
+        throw new Error(`The Session of Project ${projectId} runs the mock model; its scenario confirms the card`);
+      // The one confirmation before the Agent builds: a person confirms the card in the page, once per card.
+      if (pendingInput.callId !== confirmedCard) {
+        confirmedCard = pendingInput.callId;
+        await page.getByRole("button", { name: "Confirm and start building", exact: true }).click();
+      }
+      await delay(2000);
+      continue;
+    }
+    if (pendingInput?.questions.length || description?.pendingApproval) {
+      throw new Error(
+        `The Session of Project ${projectId} requires user input or approval; its Agent turn is not complete`,
+      );
+    }
+    if (
+      description?.status === "STATUS_WAITING_FOR_MESSAGE" &&
+      snapshot?.history?.messages.some((item) => Number(item.sequence) > afterSequence && isFinalReply(item.message))
+    ) {
+      selectedModel = description.model;
+      expect(selectedModel, "Completed Agent turn must identify its selected model").not.toBe(
+        "AGENT_MODEL_UNSPECIFIED",
+      );
+      break;
+    }
+    if (Date.now() >= deadline)
+      throw new Error(
+        `The Session of Project ${projectId} did not complete its real Agent turn within ${timeoutMs / 60_000} minutes`,
+      );
+    await delay(2000);
+  }
+  await test.info().attach(`agent-model-${projectId}-${afterSequence}`, {
+    body: JSON.stringify({ projectId, afterSequence, model: selectedModel }),
+    contentType: "application/json",
+  });
+}
+/**
+ * Waits until the Agent's turn ends at its requirements card, which it shows before it writes code for a change the
+ * user confirms first, and leaves the card unconfirmed. A turn that ends without the card fails.
+ */
+export async function waitForRequirementsCard(page: Page, projectId: string, timeoutMs = 15 * 60_000) {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const session = await readSession(page, projectId);
+    if (ENDED_SESSION_STATUSES.has(session.status))
+      throw new Error(`The Session of Project ${projectId} ended before its requirements card (${session.status})`);
+    const description = session.agent?.description;
+    if (description?.pendingUserInput?.kind === "KIND_REQUIREMENTS") return;
+    if (description?.pendingUserInput?.questions.length || description?.pendingApproval)
+      throw new Error(
+        `The Session of Project ${projectId} requires user input or approval instead of a requirements card`,
+      );
+    if (
+      description?.status === "STATUS_WAITING_FOR_MESSAGE" &&
+      session.agent?.history?.messages.some((item) => isFinalReply(item.message))
+    )
+      throw new Error(`The Session of Project ${projectId} ended its turn without a requirements card`);
+    if (Date.now() >= deadline)
+      throw new Error(
+        `The Session of Project ${projectId} showed no requirements card within ${timeoutMs / 60_000} minutes`,
+      );
+    await delay(2000);
+  }
+}
+/**
+ * Sends a change to the Project's Session through the chat's composer, as a person does, and waits
+ * until its turn completes. A Session on the mock model takes its inputs from the mock composer
+ * instead, which replaces the text box.
+ */
+export async function sendChange(page: Page, projectId: string, prompt: string) {
+  const before = Number((await readSession(page, projectId)).agent?.description?.lastSequence ?? 0);
+  await page.goto(`/p/${projectId}/flow`);
+  await page.getByRole("textbox", { name: "Message the agent", exact: true }).fill(prompt);
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  await waitForCompletedTurn(page, projectId, before);
+}
+export async function deleteProject(page: Page, projectId: string) {
+  await page.goto(`/p/${projectId}`);
+  await page.getByRole("button", { name: "Delete project", exact: true }).click();
+  await page.getByRole("button", { name: "Confirm delete project", exact: true }).click();
+  await expect(page.getByText("deleted", { exact: true })).toBeVisible({ timeout: 5 * 60_000 });
+}

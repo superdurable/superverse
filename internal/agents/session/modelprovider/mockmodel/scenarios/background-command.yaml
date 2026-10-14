@@ -1,0 +1,40 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A command started in the background: bash with run_in_background answers its
+# task ID at once, and the turn ends while the command still sleeps. When the
+# command exits, its watch publishes a task notification, which opens an
+# automatic turn: the model reads the task's output with read_task_output from
+# the task ID the notification carries, and finishes. The sleep keeps the end of
+# the command after the end of the first turn. It changes nothing in the
+# workspace.
+name: background-command
+title: "Background command"
+description: "A command started in the background whose exit notification opens an automatic turn that reads its output."
+category: agent_feature
+arguments: {task: cmd-aaaaaaaaaaaa}
+inputs:
+  - label: "Build in the background"
+    message: "Build in the background."
+    replies:
+      - text: "Starting the build in the background."
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 20; echo background-done", description: "Build in the background", run_in_background: true}
+        expect_result_contains:
+          - "The command runs in the background as task cmd-"
+      - text: "The build runs in the background; I will read it when it finishes."
+      - text: "The background build finished; reading its output."
+        notification: task
+        tool_uses:
+          - name: read_task_output
+            input: {task_id: "{{task}}"}
+        expect_result_contains:
+          - "exited with code 0"
+          - "background-done"
+      - text: "The background build finished and printed background-done."

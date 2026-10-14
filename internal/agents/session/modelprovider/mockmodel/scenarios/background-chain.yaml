@@ -1,0 +1,64 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A chain of background commands, each started by the turn that the previous
+# one's notification opened: the user's message starts the first, and the
+# notification of each command opens an automatic turn that starts the next.
+# With the default agent.taskTurns of 5, five automatic turns run;
+# the sixth notification only records the pause of automatic continuation, so
+# the last two steps are never asked. Each command sleeps past the end of its
+# turn. It changes nothing in the workspace.
+name: background-chain
+title: "Background command chain"
+description: "Background commands whose exit notifications each open an automatic turn that starts the next, until the automatic-turn bound pauses them."
+category: agent_feature
+inputs:
+  - label: "Chain the background steps"
+    message: "Chain the background steps."
+    replies:
+      - text: "Starting background step 1."
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 8; echo step-1", description: "Background step 1", run_in_background: true}
+      - text: "Background step 1 runs; waiting for it."
+      - text: "Starting background step 2."
+        notification: task
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 8; echo step-2", description: "Background step 2", run_in_background: true}
+      - text: "Background step 2 runs; waiting for it."
+      - text: "Starting background step 3."
+        notification: task
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 8; echo step-3", description: "Background step 3", run_in_background: true}
+      - text: "Background step 3 runs; waiting for it."
+      - text: "Starting background step 4."
+        notification: task
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 8; echo step-4", description: "Background step 4", run_in_background: true}
+      - text: "Background step 4 runs; waiting for it."
+      - text: "Starting background step 5."
+        notification: task
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 8; echo step-5", description: "Background step 5", run_in_background: true}
+      - text: "Background step 5 runs; waiting for it."
+      - text: "Starting background step 6."
+        notification: task
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 8; echo step-6", description: "Background step 6", run_in_background: true}
+      - text: "Background step 6 runs; waiting for it."
+      - text: "Starting background step 7."
+        notification: task
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 8; echo step-7", description: "Background step 7", run_in_background: true}
+      - text: "Background step 7 runs; waiting for it."

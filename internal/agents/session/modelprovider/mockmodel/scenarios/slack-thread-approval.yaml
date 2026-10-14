@@ -1,0 +1,1176 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A product build from the template: a Slack thread approval, as the connectors
+# library's thread-approval example. A new top-level message in the configured
+# channel starts SlackThreadApprovalFlow (channelThreadCreated, FlowID from the
+# team, channel and root timestamp), a reply in its thread invokes the
+# ReceiveThreadReply RPC (threadReplyCreated), and the Flow posts
+# "Processing complete." into the thread with postThreadReply. The application
+# serves the events the platform relays at slack.RelayedTriggerPath of the
+# slack-approvals connection (/triggers/slack/c2xhY2stYXBwcm92YWxz) on its HTTP
+# server and runs the trigger runner beside the Worker. The text-summary Flow,
+# its endpoints, page and tests are replaced, as the template's AGENTS.md says.
+# Every write and edit was built and checked outside the scenario (make
+# check-static, and the API tests on a real Dex); the edits' old_string is the
+# template's own text. Slack v1.0.0 has no mocks, so R3 is traced as untested.
+name: slack-thread-approval
+title: "Slack thread approval"
+description: "Builds a Slack thread approval from the template: a channel message starts a Flow, a thread reply finishes it with Processing complete., and pushes it."
+category: product
+inputs:
+  - label: "Describe the application"
+    message: "Build a Slack thread approval: a new message in the channel starts a process, a reply in its thread finishes it with a confirmation."
+    replies:
+      - thinking: "A new application with a Slack trigger and a reply in the thread; the user confirms the requirements before I write any code."
+        text: "Here is what I plan to build. Please confirm it, or tell me what to change."
+        tool_uses:
+          - name: confirm_requirements
+            input:
+              title: "Slack thread approval"
+              summary: "A process that follows threads in one Slack channel: a new message starts it, and a reply in its thread finishes it with a confirmation posted in the thread."
+              features:
+                - {id: R1, text: "A new top-level message in the configured Slack channel starts one approval for its thread; a redelivered message starts no second one."}
+                - {id: R2, text: "The first matching reply in that thread is accepted and moves the approval on; a later reply changes nothing."}
+                - {id: R3, text: "After the reply, the application posts Processing complete. into the same thread and completes the approval."}
+              connections:
+                - need: "Receive new channel messages and thread replies, and reply in the thread"
+                  connector: slack
+                  operations: [postThreadReply]
+                  status: existing
+                  user_setup: "Select the TeamSpace Slack connection as slack-approvals, then choose the channel and the members allowed to reply for both triggers in Studio Configuration."
+              user_setup: ["Invite the platform's Slack app to the approval channel."]
+              acceptance:
+                - "A new message in the channel starts a run in Studio that waits for a reply."
+                - "A reply in its thread makes the application post Processing complete. in the thread, and the run completes."
+  - label: "Confirm the requirements"
+    requirements_confirm: true
+    replies:
+      - thinking: "The template wires one connection and one Flow; I will read its instructions and the files that change."
+        text: "Reading the application instructions and the wiring I will change."
+        tool_uses:
+          - name: read
+            input: {path: AGENTS.md}
+          - name: read
+            input: {path: internal/worker/connections.go}
+          - name: read
+            input: {path: cmd/server/main.go}
+      - text: "Restoring the application's dependencies, as the template's instructions say."
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap", description: "Restore the application's dependencies", timeout_seconds: 600}
+      - text: "Adding the released Slack connector and the sdkgo release it builds with."
+        tool_uses:
+          - name: bash
+            input: {command: "go get github.com/superdurable/dex-connectors-library/connectors/slack@v1.0.0 github.com/superdurable/dex-connectors-library/sdkgo@v0.28.1", description: "Add the Slack connector and sdkgo", timeout_seconds: 600}
+      - thinking: "The connection's authentication method and the relayed trigger path come from the connector release itself."
+        text: "Reading the connector's authentication and its relayed trigger path."
+        tool_uses:
+          - name: bash
+            input: {command: "dir=$(go list -m -f '{{.Dir}}' github.com/superdurable/dex-connectors-library/connectors/slack) && sed -n '/^  auth:/,/^    fields:/p' \"$dir/connector.yaml\" && grep -n -A3 '^func RelayedTriggerPath' \"$dir/relayed_trigger.go\"", description: "Read the Slack auth method and relayed trigger path"}
+        expect_result_contains: ["slack-socket-mode-oauth", "RelayedTriggerPath"]
+      - thinking: "One Flow per file: the root message starts it, the reply RPC moves it to the Slack reply Step, and every failure branch goes to RecordReplyFailure. The trigger runner needs the Dex Client, so the Worker builds it."
+        text: "Writing SlackThreadApprovalFlow, its trigger filters, the connection and the trigger runner."
+        tool_uses:
+          - name: write
+            input:
+              path: internal/process/slack_thread_approval_flow.go
+              content: |2
+                package process
+
+                import (
+                	"context"
+                	"errors"
+                	"fmt"
+
+                	"github.com/superdurable/dex-connectors-library/connectors/slack"
+                	"github.com/superdurable/dex-connectors-library/sdkgo"
+                	"github.com/superdurable/dex/sdk-go/dex"
+                )
+
+                // SlackApprovalsConnectionName is the dex-app.yaml connection of the Slack
+                // workspace whose channel threads the Flow follows. Studio Configuration owns it.
+                const SlackApprovalsConnectionName = "slack-approvals"
+
+                // The dex-app.yaml trigger bindings: a new channel message starts a Flow, and
+                // a reply in its thread invokes ReceiveThreadReply.
+                const (
+                	StartTriggerBinding = "slack-thread-approval-start"
+                	ReplyTriggerBinding = "slack-thread-approval-reply"
+                )
+
+                // CompletionReplyText is the message the Flow posts into the thread.
+                const CompletionReplyText = "Processing complete."
+
+                // postCompletionReplyStep is the Step type of the Slack reply Step.
+                const postCompletionReplyStep = "PostCompletionReply"
+
+                // The statuses of one thread approval.
+                const (
+                	ThreadStatusWaitingForReply = "waiting_for_reply"
+                	ThreadStatusPostingReply    = "posting_reply"
+                	ThreadStatusCompleted       = "completed"
+                	ThreadStatusFailed          = "failed"
+                	ThreadStatusUnknown         = "unknown"
+                )
+
+                // errThreadNotReady keeps a reply pending until RecordThread has run, so the
+                // reply Trigger retries it instead of consuming it.
+                var errThreadNotReady = errors.New("the thread approval is still recording its root message")
+
+                // ThreadInput is the Start input: the Slack thread whose root message started
+                // the Flow. Studio Start Flow and the start Trigger both send it.
+                type ThreadInput struct {
+                	EventID         string `json:"eventId"`
+                	TeamID          string `json:"teamId"`
+                	ChannelID       string `json:"channelId"`
+                	ThreadTimestamp string `json:"threadTimestamp"`
+                }
+
+                // ThreadReply is the input of ReceiveThreadReply, mapped from a reply event.
+                type ThreadReply struct {
+                	EventID string `json:"eventId"`
+                	UserID  string `json:"userId"`
+                }
+
+                // ThreadReplyResult tells the reply Trigger what the reply did.
+                type ThreadReplyResult struct {
+                	Accepted  bool   `json:"accepted"`
+                	Duplicate bool   `json:"duplicate"`
+                	Status    string `json:"status"`
+                }
+
+                // ThreadApprovalSnapshot is the retained state of one thread approval.
+                type ThreadApprovalSnapshot struct {
+                	Status      string      `json:"status"`
+                	Thread      ThreadInput `json:"thread"`
+                	ReplyUserID string      `json:"replyUserId"`
+                	Notice      string      `json:"notice"`
+                }
+
+                var (
+                	// dex:indexed-attribute attribute-key:thread-status index-key:keyword1 index-type:keyword value-type:string description:"Thread approval status"
+                	ThreadApprovalStatus       = dex.DefineAttribute[string]("thread-status", dex.Indexed(dex.AttributeIndex{Type: dex.IndexKeyword, IndexKey: "keyword1"}))
+                	ThreadApprovalThread       = dex.DefineAttribute[ThreadInput]("thread")
+                	ThreadApprovalReplyEventID = dex.DefineAttribute[string]("reply-event-id")
+                	ThreadApprovalReplyUserID  = dex.DefineAttribute[string]("reply-user-id")
+                	ThreadApprovalNotice       = dex.DefineAttribute[string]("thread-notice")
+                )
+
+                // SlackThreadApprovalFlow follows one Slack thread: its root message starts
+                // the Flow, the first matching reply posts the completion reply and ends it.
+                type SlackThreadApprovalFlow struct {
+                	dex.FlowDefaults
+                	Connection slack.Connection
+                }
+
+                // SlackThreadApprovalFlowID derives the FlowID from the Slack team, channel
+                // and root message timestamp, so the root and its replies reach one Flow.
+                func SlackThreadApprovalFlowID(teamID, channelID, threadTimestamp string) string {
+                	return fmt.Sprintf("slack-thread-approval-%s-%s-%s", teamID, channelID, threadTimestamp)
+                }
+
+                // ReadThreadApproval reads the retained snapshot; found is false for an
+                // unknown FlowID.
+                func ReadThreadApproval(ctx context.Context, client *dex.Client, flowID string) (snapshot ThreadApprovalSnapshot, found bool, err error) {
+                	err = client.InvokeRPC(ctx, flowID, SlackThreadApprovalFlow{}.GetThreadApproval, nil, &snapshot)
+                	// A read-only RPC is also served by a completed Flow, so this error means the
+                	// Flow never started.
+                	var missing *dex.FlowNotActiveOrNotFoundError
+                	if errors.As(err, &missing) {
+                		return ThreadApprovalSnapshot{}, false, nil
+                	}
+                	return snapshot, err == nil, err
+                }
+
+                func (flow SlackThreadApprovalFlow) GetSteps() []dex.StepDef {
+                	return []dex.StepDef{
+                		dex.DefineStartStep(RecordThread{}),
+                		dex.DefineStep(slack.NewPostThreadReplyStep(slack.PostThreadReplyStepConfig[ThreadInput]{
+                			StepType:       postCompletionReplyStep,
+                			Connection:     flow.Connection,
+                			ConnectionName: SlackApprovalsConnectionName,
+                			Annotations:    sdkgo.StepAnnotations{GroupID: "reply", GroupLabel: "Reply", Explanation: "Post Processing complete. into the thread once a matching reply arrived."},
+                			MapToOperationInput: func(thread ThreadInput) slack.PostThreadReplyInput {
+                				return slack.PostThreadReplyInput{ChannelID: thread.ChannelID, ThreadTimestamp: thread.ThreadTimestamp, Text: CompletionReplyText}
+                			},
+                			// Failure branches never look like success: RecordReplyFailure switches on the branch.
+                			Sent:             sdkgo.GoTo(CompleteThread{}),
+                			ProviderRejected: sdkgo.GoTo(RecordReplyFailure{}), Defect: sdkgo.GoTo(RecordReplyFailure{}),
+                			Uncertain: sdkgo.GoTo(RecordReplyFailure{}),
+                		})),
+                		dex.DefineStep(CompleteThread{}),
+                		dex.DefineStep(RecordReplyFailure{}),
+                	}
+                }
+
+                func (flow SlackThreadApprovalFlow) GetRPCs() []dex.RPCDef {
+                	return []dex.RPCDef{
+                		dex.DefineRPC(flow.ReceiveThreadReply, &dex.RPCOptions{LockAttributes: []dex.AttributeLock{
+                			dex.LockAttribute(ThreadApprovalStatus), dex.LockAttribute(ThreadApprovalReplyEventID),
+                		}}),
+                		dex.DefineRPC(flow.GetDexSummary, nil),
+                		dex.DefineRPC(flow.GetDexDisplay, nil),
+                		dex.DefineRPC(flow.GetThreadApproval, nil),
+                	}
+                }
+
+                func (SlackThreadApprovalFlow) GetPersistenceSchema() dex.PersistenceSchema {
+                	return dex.PersistenceSchema{Attributes: []dex.AttributeDef{
+                		ThreadApprovalStatus, ThreadApprovalThread, ThreadApprovalReplyEventID, ThreadApprovalReplyUserID, ThreadApprovalNotice,
+                	}}
+                }
+
+                // GetConnectorTriggerBindings declares the two Slack Triggers; Studio
+                // Configuration saves each binding's channel and matchers.
+                func (SlackThreadApprovalFlow) GetConnectorTriggerBindings() []sdkgo.TriggerBindingDefinition {
+                	return []sdkgo.TriggerBindingDefinition{
+                		slack.DefineChannelThreadCreatedTriggerBinding(slack.ChannelThreadCreatedTriggerBindingConfig{
+                			ConnectionName: SlackApprovalsConnectionName, BindingName: StartTriggerBinding,
+                			ConfigurationUI: sdkgo.ConnectorConfigurationUI{Units: []sdkgo.ConnectorUIUnit{
+                				{
+                					ID: "channel", UnitID: slack.UIUnitChannelPicker, Label: "Approval channel", Required: true,
+                					Description: "Select the joined Slack channel whose new messages start a thread approval.",
+                					Bindings:    []sdkgo.ConnectorUIBinding{{Port: slack.UIChannelPickerPortChannelID, JSONPointer: "/channelId"}},
+                				},
+                				{
+                					ID: "message", UnitID: slack.UIUnitTextInput, Label: "Start message contains",
+                					Description: "Enter text the new message must contain; leave blank to match any message.",
+                					Bindings:    []sdkgo.ConnectorUIBinding{{Port: slack.UITextInputPortText, JSONPointer: "/threadTriggerMatcher/messageContains"}},
+                				},
+                			}},
+                		}),
+                		slack.DefineThreadReplyCreatedTriggerBinding(slack.ThreadReplyCreatedTriggerBindingConfig{
+                			ConnectionName: SlackApprovalsConnectionName, BindingName: ReplyTriggerBinding,
+                			ConfigurationUI: sdkgo.ConnectorConfigurationUI{Units: []sdkgo.ConnectorUIUnit{
+                				{
+                					ID: "channel", UnitID: slack.UIUnitChannelPicker, Label: "Approval channel", Required: true,
+                					Description: "Select the same channel as the start Trigger.",
+                					Bindings:    []sdkgo.ConnectorUIBinding{{Port: slack.UIChannelPickerPortChannelID, JSONPointer: "/channelId"}},
+                				},
+                				{
+                					ID: "message", UnitID: slack.UIUnitTextInput, Label: "Reply contains",
+                					Description: "Enter text a reply must contain, such as approve; leave blank to match any reply.",
+                					Bindings:    []sdkgo.ConnectorUIBinding{{Port: slack.UITextInputPortText, JSONPointer: "/threadReplyMatcher/messageContains"}},
+                				},
+                				{
+                					ID: "approvers", UnitID: slack.UIUnitMemberPicker, Label: "Members allowed to reply", Required: true,
+                					Description: "Select the members whose thread replies finish the approval.",
+                					Bindings:    []sdkgo.ConnectorUIBinding{{Port: slack.UIMemberPickerPortMemberIDs, JSONPointer: "/threadReplyMatcher/posterUserIds"}},
+                				},
+                			}},
+                		}),
+                	}
+                }
+
+                // dex:group group-id:thread group-label:"Thread"
+                // dex:explanation text:"Keep the Slack thread that the new channel message started and wait for a reply in it."
+                type RecordThread struct {
+                	dex.StepDefaultsNoWaitFor[ThreadInput]
+                }
+
+                func (RecordThread) GetStepOptions() *dex.StepOptions {
+                	return &dex.StepOptions{ExecuteLockAttributes: []dex.AttributeLock{dex.LockAttribute(ThreadApprovalStatus)}}
+                }
+
+                func (RecordThread) Execute(ctx dex.Context, thread ThreadInput) (_ *dex.StepDecision, err error) {
+                	defer logFailure(ctx, SlackThreadApprovalFlow{}, "RecordThread", &err)
+                	if err = errors.Join(ThreadApprovalThread.Set(ctx, thread), ThreadApprovalStatus.Set(ctx, ThreadStatusWaitingForReply)); err != nil {
+                		return nil, err
+                	}
+                	return dex.DeadEnd(), nil
+                }
+
+                // dex:group group-id:reply group-label:"Reply"
+                // dex:explanation text:"Complete once Slack confirms the completion reply."
+                type CompleteThread struct {
+                	dex.StepDefaultsNoWaitFor[slack.PostThreadReplyResult]
+                }
+
+                func (CompleteThread) GetStepOptions() *dex.StepOptions {
+                	return &dex.StepOptions{ExecuteLockAttributes: []dex.AttributeLock{dex.LockAttribute(ThreadApprovalStatus)}}
+                }
+
+                func (CompleteThread) Execute(ctx dex.Context, _ slack.PostThreadReplyResult) (_ *dex.StepDecision, err error) {
+                	defer logFailure(ctx, SlackThreadApprovalFlow{}, "CompleteThread", &err)
+                	if err = ThreadApprovalStatus.Set(ctx, ThreadStatusCompleted); err != nil {
+                		return nil, err
+                	}
+                	return dex.GracefulComplete(nil), nil
+                }
+
+                // dex:group group-id:reply group-label:"Reply"
+                // dex:explanation text:"Record why the completion reply was not confirmed, without posting it again."
+                type RecordReplyFailure struct {
+                	dex.StepDefaultsNoWaitFor[slack.PostThreadReplyResult]
+                }
+
+                func (RecordReplyFailure) GetStepOptions() *dex.StepOptions {
+                	return &dex.StepOptions{ExecuteLockAttributes: []dex.AttributeLock{dex.LockAttribute(ThreadApprovalStatus)}}
+                }
+
+                // Execute receives the rejected, defect and uncertain branches.
+                func (RecordReplyFailure) Execute(ctx dex.Context, result slack.PostThreadReplyResult) (_ *dex.StepDecision, err error) {
+                	defer logFailure(ctx, SlackThreadApprovalFlow{}, "RecordReplyFailure", &err)
+                	status, notice := ThreadStatusFailed, "Slack did not accept the completion reply. Check the slack-approvals connection in Studio Configuration."
+                	if result.Branch == slack.PostThreadReplyBranchUncertain {
+                		status, notice = ThreadStatusUnknown, "Slack did not confirm the completion reply; it may have been posted. Check the thread."
+                	}
+                	if err = errors.Join(ThreadApprovalStatus.Set(ctx, status), ThreadApprovalNotice.Set(ctx, notice)); err != nil {
+                		return nil, err
+                	}
+                	return dex.GracefulComplete(nil), nil
+                }
+
+                // ReceiveThreadReply accepts the first matching reply while the Flow waits and
+                // moves it to the completion reply. It rechecks the status under its lock, so
+                // a redelivered or later reply posts nothing again.
+                func (SlackThreadApprovalFlow) ReceiveThreadReply(ctx dex.Context, reply ThreadReply) (_ *dex.RPCResult[ThreadReplyResult], err error) {
+                	defer logFailure(ctx, SlackThreadApprovalFlow{}, "ReceiveThreadReply", &err)
+                	status, err := optional(ctx, ThreadApprovalStatus)
+                	if err != nil {
+                		return nil, err
+                	}
+                	acceptedEventID, err := optional(ctx, ThreadApprovalReplyEventID)
+                	if err != nil {
+                		return nil, err
+                	}
+                	switch {
+                	case acceptedEventID != "" && acceptedEventID == reply.EventID:
+                		return &dex.RPCResult[ThreadReplyResult]{Output: ThreadReplyResult{Duplicate: true, Status: status}}, nil
+                	case status == "":
+                		return nil, errThreadNotReady
+                	case status != ThreadStatusWaitingForReply:
+                		return &dex.RPCResult[ThreadReplyResult]{Output: ThreadReplyResult{Status: status}}, nil
+                	}
+                	thread, err := ThreadApprovalThread.Get(ctx)
+                	if err != nil {
+                		return nil, err
+                	}
+                	err = errors.Join(
+                		ThreadApprovalStatus.Set(ctx, ThreadStatusPostingReply),
+                		ThreadApprovalReplyEventID.Set(ctx, reply.EventID),
+                		ThreadApprovalReplyUserID.Set(ctx, reply.UserID),
+                	)
+                	if err != nil {
+                		return nil, err
+                	}
+                	return &dex.RPCResult[ThreadReplyResult]{
+                		Output:    ThreadReplyResult{Accepted: true, Status: ThreadStatusPostingReply},
+                		NextSteps: []dex.StepMovement{dex.MovementOf(sdkgo.StepRef[ThreadInput](postCompletionReplyStep), thread)},
+                	}, nil
+                }
+
+                // dex:field attribute-key:reply-user-id value-type:string editable:false description:"Replied by"
+                // dex:field attribute-key:thread-notice value-type:string editable:false description:"Notice"
+                func (SlackThreadApprovalFlow) GetDexSummary(ctx dex.Context, _ dex.None) (_ *dex.RPCResult[map[string]any], err error) {
+                	defer logFailure(ctx, SlackThreadApprovalFlow{}, "GetDexSummary", &err)
+                	snapshot, err := readThreadApproval(ctx)
+                	if err != nil {
+                		return nil, err
+                	}
+                	return &dex.RPCResult[map[string]any]{Output: map[string]any{
+                		"reply-user-id": snapshot.ReplyUserID, "thread-notice": snapshot.Notice,
+                	}}, nil
+                }
+
+                // dex:field attribute-key:thread-status value-type:string editable:false ui-slot:status description:"Status"
+                // dex:field attribute-key:thread value-type:json editable:false description:"Slack thread"
+                // dex:field attribute-key:reply-user-id value-type:string editable:false description:"Replied by"
+                // dex:field attribute-key:thread-notice value-type:string editable:false ui-slot:reason description:"Notice"
+                func (SlackThreadApprovalFlow) GetDexDisplay(ctx dex.Context, _ dex.None) (_ *dex.RPCResult[map[string]any], err error) {
+                	defer logFailure(ctx, SlackThreadApprovalFlow{}, "GetDexDisplay", &err)
+                	snapshot, err := readThreadApproval(ctx)
+                	if err != nil {
+                		return nil, err
+                	}
+                	return &dex.RPCResult[map[string]any]{Output: map[string]any{
+                		"thread-status": snapshot.Status, "thread": snapshot.Thread,
+                		"reply-user-id": snapshot.ReplyUserID, "thread-notice": snapshot.Notice,
+                	}}, nil
+                }
+
+                // GetThreadApproval is read-only, so it also serves a completed Flow.
+                func (SlackThreadApprovalFlow) GetThreadApproval(ctx dex.Context, _ dex.None) (_ *dex.RPCResult[ThreadApprovalSnapshot], err error) {
+                	defer logFailure(ctx, SlackThreadApprovalFlow{}, "GetThreadApproval", &err)
+                	snapshot, err := readThreadApproval(ctx)
+                	if err != nil {
+                		return nil, err
+                	}
+                	return &dex.RPCResult[ThreadApprovalSnapshot]{Output: snapshot}, nil
+                }
+
+                // readThreadApproval reads every Attribute; status is "pending" until RecordThread runs.
+                func readThreadApproval(ctx dex.Context) (snapshot ThreadApprovalSnapshot, err error) {
+                	var errs [4]error
+                	snapshot.Status, errs[0] = optional(ctx, ThreadApprovalStatus)
+                	snapshot.Thread, errs[1] = optional(ctx, ThreadApprovalThread)
+                	snapshot.ReplyUserID, errs[2] = optional(ctx, ThreadApprovalReplyUserID)
+                	snapshot.Notice, errs[3] = optional(ctx, ThreadApprovalNotice)
+                	if snapshot.Status == "" {
+                		snapshot.Status = "pending"
+                	}
+                	return snapshot, errors.Join(errs[:]...)
+                }
+
+                // optional returns the zero value for an Attribute the Flow has not written yet.
+                func optional[T any](ctx dex.Context, attribute dex.Attribute[T]) (T, error) {
+                	value, err := attribute.Get(ctx)
+                	var missing *dex.AttributeNotFoundError
+                	if errors.As(err, &missing) {
+                		return value, nil
+                	}
+                	return value, err
+                }
+          - name: write
+            input:
+              path: internal/process/slack_thread_triggers.go
+              content: |2
+                package process
+
+                import (
+                	"slices"
+                	"strings"
+
+                	"github.com/superdurable/dex-connectors-library/connectors/slack"
+                	"github.com/superdurable/dex-connectors-library/sdkgo"
+                )
+
+                // NewStartTriggerFilter admits a top-level message of the configured channel
+                // that matches the start binding's matcher.
+                func NewStartTriggerFilter(configuration slack.ChannelThreadCreatedTriggerConfiguration) (sdkgo.TriggerFilter[slack.MessageEvent], error) {
+                	if err := configuration.Validate(); err != nil {
+                		return nil, err
+                	}
+                	return messageFilter(configuration.ChannelID, configuration.ThreadTriggerMatcher, false), nil
+                }
+
+                // NewReplyTriggerFilter admits a thread reply of the configured channel that
+                // matches the reply binding's matcher.
+                func NewReplyTriggerFilter(configuration slack.ThreadReplyCreatedTriggerConfiguration) (sdkgo.TriggerFilter[slack.MessageEvent], error) {
+                	if err := configuration.Validate(); err != nil {
+                		return nil, err
+                	}
+                	return messageFilter(configuration.ChannelID, configuration.ThreadReplyMatcher, true), nil
+                }
+
+                // ResolveThreadApprovalFlowID gives a root message and its replies one FlowID.
+                func ResolveThreadApprovalFlowID(event sdkgo.TriggerEvent[slack.MessageEvent]) string {
+                	message := event.Payload
+                	return SlackThreadApprovalFlowID(message.TeamID, message.ChannelID, message.ThreadTimestamp)
+                }
+
+                // MapToThreadInput is the Start input of a root message.
+                func MapToThreadInput(event sdkgo.TriggerEvent[slack.MessageEvent]) ThreadInput {
+                	message := event.Payload
+                	return ThreadInput{EventID: event.ID, TeamID: message.TeamID, ChannelID: message.ChannelID, ThreadTimestamp: message.ThreadTimestamp}
+                }
+
+                // MapToThreadReply is the ReceiveThreadReply input of a reply: its event and
+                // author only, never the message text.
+                func MapToThreadReply(event sdkgo.TriggerEvent[slack.MessageEvent]) ThreadReply {
+                	return ThreadReply{EventID: event.ID, UserID: event.Payload.UserID}
+                }
+
+                func messageFilter(channelID string, matcher slack.MessageMatcher, reply bool) sdkgo.TriggerFilter[slack.MessageEvent] {
+                	return func(event sdkgo.TriggerEvent[slack.MessageEvent]) bool {
+                		message := event.Payload
+                		isReply := message.ThreadTimestamp != "" && message.ThreadTimestamp != message.Timestamp
+                		if event.ID == "" || message.TeamID == "" || message.ChannelID != channelID || message.ThreadTimestamp == "" || message.UserID == "" || isReply != reply {
+                			return false
+                		}
+                		if matcher.MessageContains != "" && !strings.Contains(strings.ToLower(message.Text), strings.ToLower(matcher.MessageContains)) {
+                			return false
+                		}
+                		return len(matcher.PosterUserIDs) == 0 || slices.Contains(matcher.PosterUserIDs, message.UserID)
+                	}
+                }
+          - name: write
+            input:
+              path: internal/worker/connections.go
+              content: |2
+                package worker
+
+                import (
+                	"fmt"
+
+                	"github.com/superdurable/dex-connectors-library/connectors/slack"
+                	"github.com/superdurable/dex-template-basic-process/internal/connectorconfiguration"
+                	"github.com/superdurable/dex-template-basic-process/internal/process"
+                )
+
+                // Connections holds one opened connection per dex-app.yaml connection. The
+                // Worker opens them from the project configuration; API tests pass
+                // connections without credentials instead.
+                type Connections struct {
+                	// SlackApprovals is the slack-approvals connection of SlackThreadApprovalFlow.
+                	SlackApprovals slack.Connection
+                }
+
+                // OpenConnections opens every declared connection with its connector's
+                // generated NewProjectConnection. Add one field and one line per connection.
+                func OpenConnections(configuration connectorconfiguration.Configuration) (Connections, error) {
+                	slackApprovals, err := slack.NewProjectConnection(configuration.Project(), process.SlackApprovalsConnectionName)
+                	if err != nil {
+                		return Connections{}, fmt.Errorf("configure %s connection: %w", process.SlackApprovalsConnectionName, err)
+                	}
+                	return Connections{SlackApprovals: slackApprovals}, nil
+                }
+          - name: write
+            input:
+              path: internal/worker/application.go
+              content: |2
+                package worker
+
+                import (
+                	"github.com/superdurable/dex-template-basic-process/internal/process"
+                	"github.com/superdurable/dex/sdk-go/dex"
+                )
+
+                // Application is the single list of the application's Flows with their
+                // connections: the Worker and the API tests register exactly this list. List
+                // every Flow here and its source file in dex-app.yaml.
+                func Application(connections Connections) []dex.Flow {
+                	return []dex.Flow{
+                		process.SlackThreadApprovalFlow{Connection: connections.SlackApprovals},
+                	}
+                }
+          - name: write
+            input:
+              path: internal/worker/triggers.go
+              content: |2
+                package worker
+
+                import (
+                	"fmt"
+                	"log/slog"
+
+                	"github.com/superdurable/dex-connectors-library/connectors/slack"
+                	"github.com/superdurable/dex-connectors-library/sdkgo"
+                	"github.com/superdurable/dex-template-basic-process/internal/connectorconfiguration"
+                	"github.com/superdurable/dex-template-basic-process/internal/process"
+                	"github.com/superdurable/dex/sdk-go/dex"
+                )
+
+                // OpenTriggers builds the Slack Trigger runner of the slack-approvals
+                // connection from the bindings saved in Studio Configuration: a new channel
+                // message starts SlackThreadApprovalFlow, a reply in its thread invokes
+                // ReceiveThreadReply. The runner serves the events the platform relays at
+                // slack.RelayedTriggerPath and runs until its context ends.
+                func OpenTriggers(configuration connectorconfiguration.Configuration, connections Connections, client *dex.Client, logger *slog.Logger) (*slack.MessageTriggerRunner, error) {
+                	project := configuration.Project()
+                	var start slack.ChannelThreadCreatedTriggerConfiguration
+                	if err := project.Configuration.DecodeTriggerConfiguration(slack.ConnectorID, process.SlackApprovalsConnectionName,
+                		slack.ChannelThreadCreatedTriggerDefinition.Trigger.TriggerName, process.StartTriggerBinding, &start); err != nil {
+                		return nil, fmt.Errorf("read the %s trigger binding: %w", process.StartTriggerBinding, err)
+                	}
+                	startFilter, err := process.NewStartTriggerFilter(start)
+                	if err != nil {
+                		return nil, fmt.Errorf("configure the %s trigger binding: %w", process.StartTriggerBinding, err)
+                	}
+                	var reply slack.ThreadReplyCreatedTriggerConfiguration
+                	if err := project.Configuration.DecodeTriggerConfiguration(slack.ConnectorID, process.SlackApprovalsConnectionName,
+                		slack.ThreadReplyCreatedTriggerDefinition.Trigger.TriggerName, process.ReplyTriggerBinding, &reply); err != nil {
+                		return nil, fmt.Errorf("read the %s trigger binding: %w", process.ReplyTriggerBinding, err)
+                	}
+                	replyFilter, err := process.NewReplyTriggerFilter(reply)
+                	if err != nil {
+                		return nil, fmt.Errorf("configure the %s trigger binding: %w", process.ReplyTriggerBinding, err)
+                	}
+                	flow := process.SlackThreadApprovalFlow{Connection: connections.SlackApprovals}
+                	runner, err := slack.NewProjectMessageTriggerRunner(project, process.SlackApprovalsConnectionName, slack.ProjectMessageTriggerRunnerConfig{
+                		ChannelThreadCreatedRoutes: []slack.ProjectChannelThreadCreatedTriggerRoute{
+                			{
+                				BindingName: process.StartTriggerBinding,
+                				Target:      sdkgo.NewDexFlowTriggerTarget(client, flow, startFilter, process.ResolveThreadApprovalFlowID, process.MapToThreadInput),
+                			},
+                		},
+                		ThreadReplyCreatedRoutes: []slack.ProjectThreadReplyCreatedTriggerRoute{
+                			{
+                				BindingName: process.ReplyTriggerBinding,
+                				Target:      sdkgo.NewDexRPCTriggerTarget(client, flow.ReceiveThreadReply, replyFilter, process.ResolveThreadApprovalFlowID, process.MapToThreadReply),
+                			},
+                		},
+                	}, slack.WithLogger(logger))
+                	if err != nil {
+                		return nil, fmt.Errorf("create the %s trigger runner: %w", process.SlackApprovalsConnectionName, err)
+                	}
+                	return runner, nil
+                }
+          - name: edit
+            input:
+              path: internal/worker/worker.go
+              old_string: |2-
+                	"github.com/superdurable/dex-template-basic-process/internal/connectorconfiguration"
+              new_string: |2-
+                	"github.com/superdurable/dex-connectors-library/connectors/slack"
+                	"github.com/superdurable/dex-template-basic-process/internal/connectorconfiguration"
+          - name: edit
+            input:
+              path: internal/worker/worker.go
+              old_string: |2-
+                // Worker owns the Dex Worker, the Dex Client used by the API, and their blob cache.
+                type Worker struct {
+                	Client    *dex.Client
+                	dexWorker *dex.Worker
+                	cache     *blobcache.Cache
+                }
+              new_string: |2-
+                // Worker owns the Dex Worker, the Dex Client used by the API and the Slack
+                // Trigger runner, and their blob cache.
+                type Worker struct {
+                	Client *dex.Client
+                	// Triggers receives the relayed Slack events at slack.RelayedTriggerPath;
+                	// run it with Run beside the Worker.
+                	Triggers  *slack.MessageTriggerRunner
+                	dexWorker *dex.Worker
+                	cache     *blobcache.Cache
+                }
+          - name: edit
+            input:
+              path: internal/worker/worker.go
+              old_string: |2-
+                	return &Worker{Client: client, dexWorker: dexWorker, cache: cache}, nil
+              new_string: |2-
+                	triggers, err := OpenTriggers(configuration, connections, client, logger)
+                	if err != nil {
+                		_ = client.Close()
+                		_ = dexWorker.Stop(context.Background())
+                		_ = cache.Close()
+                		return nil, err
+                	}
+                	return &Worker{Client: client, Triggers: triggers, dexWorker: dexWorker, cache: cache}, nil
+      - text: "Serving the relayed Slack events on the application's HTTP server and running the trigger runner beside the Worker."
+        tool_uses:
+          - name: edit
+            input:
+              path: cmd/server/main.go
+              old_string: |2-
+                	api "github.com/superdurable/dex-template-basic-process/internal/api"
+              new_string: |2-
+                	"github.com/superdurable/dex-connectors-library/connectors/slack"
+                	api "github.com/superdurable/dex-template-basic-process/internal/api"
+                	"github.com/superdurable/dex-template-basic-process/internal/process"
+          - name: edit
+            input:
+              path: cmd/server/main.go
+              old_string: |2-
+                	server := &http.Server{Addr: ":" + environment("PORT", "8080"), Handler: applicationHandler(apiHandler), ReadHeaderTimeout: 5 * time.Second}
+                	workerResult := worker.Start()
+                	serverResult := make(chan error, 1)
+                	go func() { serverResult <- server.ListenAndServe() }()
+                	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+                	defer stop()
+                	select {
+                	case <-ctx.Done():
+                	case err := <-workerResult:
+                		if err != nil {
+                			return fmt.Errorf("run Dex Worker: %w", err)
+                		}
+              new_string: |2-
+                	server := &http.Server{Addr: ":" + environment("PORT", "8080"), Handler: applicationHandler(apiHandler, worker.Triggers), ReadHeaderTimeout: 5 * time.Second}
+                	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+                	defer stop()
+                	workerResult := worker.Start()
+                	triggerResult := make(chan error, 1)
+                	go func() { triggerResult <- worker.Triggers.Run(ctx) }()
+                	serverResult := make(chan error, 1)
+                	go func() { serverResult <- server.ListenAndServe() }()
+                	select {
+                	case <-ctx.Done():
+                	case err := <-workerResult:
+                		if err != nil {
+                			return fmt.Errorf("run Dex Worker: %w", err)
+                		}
+                	case err := <-triggerResult:
+                		if err != nil && ctx.Err() == nil {
+                			return fmt.Errorf("run Slack triggers: %w", err)
+                		}
+          - name: edit
+            input:
+              path: cmd/server/main.go
+              old_string: |2-
+                func applicationHandler(apiHandler http.Handler) http.Handler {
+                	mux := http.NewServeMux()
+                	mux.Handle("/api/", apiHandler)
+              new_string: |2-
+                // applicationHandler serves the API, the Slack events the platform relays for
+                // the slack-approvals connection, and the web application.
+                func applicationHandler(apiHandler http.Handler, triggers *slack.MessageTriggerRunner) http.Handler {
+                	mux := http.NewServeMux()
+                	mux.Handle("/api/", apiHandler)
+                	mux.Handle(slack.RelayedTriggerPath(process.SlackApprovalsConnectionName), triggers)
+      - text: "Replacing the text-summary API, page and tests with the thread approval's, and declaring the Flow and the Slack connection in dex-app.yaml."
+        tool_uses:
+          - name: write
+            input:
+              path: openapi/openapi.yaml
+              content: |2
+                openapi: 3.0.3
+                info:
+                  title: Dex Application API
+                  version: 2.0.0
+                paths:
+                  /api/health:
+                    get:
+                      operationId: getHealth
+                      responses:
+                        '200':
+                          description: Application is healthy.
+                          content:
+                            application/json:
+                              schema:
+                                $ref: '#/components/schemas/HealthResponse'
+                        default:
+                          $ref: '#/components/responses/Error'
+                  /api/thread-approvals/{approvalId}:
+                    get:
+                      operationId: getThreadApproval
+                      description: Reads one Slack thread approval. Its ID is the FlowID that the thread's root message started.
+                      parameters:
+                        - name: approvalId
+                          in: path
+                          required: true
+                          schema:
+                            type: string
+                            minLength: 1
+                            maxLength: 512
+                            pattern: '^slack-thread-approval-[A-Za-z0-9.-]+$'
+                      responses:
+                        '200':
+                          description: Current or final state of the thread approval.
+                          content:
+                            application/json:
+                              schema:
+                                $ref: '#/components/schemas/ThreadApproval'
+                        default:
+                          $ref: '#/components/responses/Error'
+                components:
+                  schemas:
+                    HealthResponse:
+                      type: object
+                      additionalProperties: false
+                      required: [status]
+                      properties:
+                        status:
+                          type: string
+                          enum: [ok]
+                    ThreadApproval:
+                      type: object
+                      additionalProperties: false
+                      required: [status, teamId, channelId, threadTimestamp, replyUserId, notice]
+                      properties:
+                        status:
+                          type: string
+                          enum: [pending, waiting_for_reply, posting_reply, completed, failed, unknown]
+                        teamId:
+                          type: string
+                        channelId:
+                          type: string
+                        threadTimestamp:
+                          type: string
+                        replyUserId:
+                          type: string
+                        notice:
+                          type: string
+                    ErrorResponse:
+                      type: object
+                      additionalProperties: false
+                      required: [error, message]
+                      properties:
+                        error:
+                          type: string
+                          pattern: '^[a-z][a-z0-9_]*$'
+                        message:
+                          type: string
+                          maxLength: 3000
+                  responses:
+                    Error:
+                      description: Request failed.
+                      content:
+                        application/json:
+                          schema:
+                            $ref: '#/components/schemas/ErrorResponse'
+          - name: write
+            input:
+              path: internal/api/handler.go
+              content: |2
+                package api
+
+                import (
+                	"context"
+                	"encoding/json"
+                	"log/slog"
+                	"net/http"
+                	"time"
+
+                	"github.com/superdurable/dex-template-basic-process/internal/api/generated"
+                	"github.com/superdurable/dex-template-basic-process/internal/process"
+                	"github.com/superdurable/dex/sdk-go/dex"
+                )
+
+                // Handler implements openapi/openapi.yaml. Business state lives in Dex Flows;
+                // handlers start Flows and read their snapshots through the Dex Client.
+                type Handler struct {
+                	client *dex.Client
+                }
+
+                func NewHandler(client *dex.Client) (*generated.Server, error) {
+                	return generated.NewServer(&Handler{client: client},
+                		generated.WithErrorHandler(writeGeneratedError),
+                		generated.WithNotFound(func(w http.ResponseWriter, _ *http.Request) {
+                			writeError(w, http.StatusNotFound, "not_found", "unknown API route")
+                		}),
+                		generated.WithMethodNotAllowed(func(w http.ResponseWriter, _ *http.Request, allowed string) {
+                			w.Header().Set("Allow", allowed)
+                			writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method is not allowed")
+                		}),
+                	)
+                }
+
+                // NewError answers a handler error with a 500 and logs the end of the error;
+                // the response never carries it.
+                func (*Handler) NewError(ctx context.Context, err error) *generated.ErrorStatusCode {
+                	slog.ErrorContext(ctx, "API handler failed", "error", process.ErrorTail(err))
+                	return &generated.ErrorStatusCode{
+                		StatusCode: http.StatusInternalServerError,
+                		Response:   generated.ErrorResponse{Error: "application_unavailable", Message: "application is unavailable"},
+                	}
+                }
+
+                func (*Handler) GetHealth(context.Context) (*generated.HealthResponse, error) {
+                	return &generated.HealthResponse{Status: generated.HealthResponseStatusOk}, nil
+                }
+
+                func (handler *Handler) GetThreadApproval(ctx context.Context, params generated.GetThreadApprovalParams) (*generated.ThreadApproval, error) {
+                	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+                	defer cancel()
+                	snapshot, found, err := process.ReadThreadApproval(ctx, handler.client, params.ApprovalId)
+                	if err != nil {
+                		return nil, err
+                	}
+                	if !found {
+                		return nil, apiError(http.StatusNotFound, "approval_not_found", "No thread approval exists with this ID.")
+                	}
+                	return &generated.ThreadApproval{
+                		Status:          generated.ThreadApprovalStatus(snapshot.Status),
+                		TeamId:          snapshot.Thread.TeamID,
+                		ChannelId:       snapshot.Thread.ChannelID,
+                		ThreadTimestamp: snapshot.Thread.ThreadTimestamp,
+                		ReplyUserId:     snapshot.ReplyUserID,
+                		Notice:          snapshot.Notice,
+                	}, nil
+                }
+
+                func apiError(status int, code, message string) *generated.ErrorStatusCode {
+                	return &generated.ErrorStatusCode{StatusCode: status, Response: generated.ErrorResponse{Error: code, Message: message}}
+                }
+
+                func writeGeneratedError(_ context.Context, w http.ResponseWriter, _ *http.Request, _ error) {
+                	writeError(w, http.StatusBadRequest, "invalid_request", "request does not match the OpenAPI contract")
+                }
+
+                func writeError(w http.ResponseWriter, status int, code, message string) {
+                	w.Header().Set("Content-Type", "application/json")
+                	w.WriteHeader(status)
+                	_ = json.NewEncoder(w).Encode(generated.ErrorResponse{Error: code, Message: message})
+                }
+          - name: write
+            input:
+              path: web/src/App.tsx
+              content: |2
+                import { useEffect, useRef, useState, type FormEvent } from 'react';
+                import { getThreadApproval } from './api/generated/sdk.gen';
+                import type { ThreadApproval } from './api/generated/types.gen';
+
+                export function App() {
+                  const [approvalId, setApprovalId] = useState('');
+                  const [approval, setApproval] = useState<ThreadApproval | null>(null);
+                  const [loading, setLoading] = useState(false);
+                  const [error, setError] = useState('');
+                  // Each lookup replaces the previous one; late responses for older ones are ignored.
+                  const current = useRef<AbortController | null>(null);
+
+                  useEffect(() => () => current.current?.abort(), []);
+
+                  async function lookUp(event: FormEvent) {
+                    event.preventDefault();
+                    current.current?.abort();
+                    const controller = new AbortController();
+                    current.current = controller;
+                    setLoading(true);
+                    setApproval(null);
+                    setError('');
+                    try {
+                      const response = await getThreadApproval({ path: { approvalId: approvalId.trim() }, signal: controller.signal });
+                      if (controller.signal.aborted) return;
+                      if (!response.data) throw new Error(response.error?.message ?? 'The thread approval could not be read.');
+                      setApproval(response.data);
+                    } catch (failure) {
+                      if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : 'The lookup failed.');
+                    } finally {
+                      if (current.current === controller) setLoading(false);
+                    }
+                  }
+
+                  return (
+                    <main>
+                      <h1>Slack Thread Approval</h1>
+                      <p>
+                        A new message in the configured Slack channel starts an approval. The first matching reply in its thread
+                        finishes it: the application answers the thread with “Processing complete.”
+                      </p>
+                      <form onSubmit={lookUp}>
+                        <label htmlFor="approval-id">Approval ID (the run's Flow ID in Studio)</label>
+                        <input id="approval-id" required value={approvalId} onChange={(event) => setApprovalId(event.target.value)} placeholder="slack-thread-approval-T…-C…-1700000000.000100" />
+                        <button type="submit" disabled={loading || approvalId.trim() === ''}>{loading ? 'Reading…' : 'Look up'}</button>
+                      </form>
+                      <section aria-live="polite">
+                        {approval && (
+                          <>
+                            {approval.notice && <p role="alert">{approval.notice}</p>}
+                            <dl>
+                              <dt>Status</dt><dd>{approval.status}</dd>
+                              <dt>Channel</dt><dd>{approval.channelId || 'Not recorded yet'}</dd>
+                              <dt>Thread</dt><dd>{approval.threadTimestamp || 'Not recorded yet'}</dd>
+                              <dt>Replied by</dt><dd>{approval.replyUserId || 'No reply yet'}</dd>
+                            </dl>
+                          </>
+                        )}
+                        {error && <p role="alert">{error}</p>}
+                      </section>
+                    </main>
+                  );
+                }
+          - name: write
+            input:
+              path: web/src/styles.css
+              content: |2
+                :root {
+                  font-family: system-ui, sans-serif;
+                  color: #1f2937;
+                  background: #f8fafc;
+                }
+                body { margin: 0; }
+                main { max-width: 48rem; margin: 4rem auto; padding: 0 1.5rem; }
+                form { display: grid; gap: 0.75rem; }
+                input { font: inherit; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; }
+                button { justify-self: start; font: inherit; padding: 0.5rem 1.25rem; border: 0; border-radius: 0.5rem; background: #1d4ed8; color: #fff; cursor: pointer; }
+                button:disabled { background: #94a3b8; cursor: default; }
+                dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; }
+                dt { font-weight: 600; }
+                dd { margin: 0; }
+                [role="alert"] { color: #b91c1c; }
+          - name: write
+            input:
+              path: internal/apptest/slack_thread_approval_test.go
+              content: |2
+                //go:build apptest
+
+                package apptest_test
+
+                import (
+                	"errors"
+                	"net/http"
+                	"strings"
+                	"testing"
+                	"time"
+
+                	"github.com/google/uuid"
+                	"github.com/superdurable/dex-connectors-library/connectors/slack"
+                	"github.com/superdurable/dex-connectors-library/sdkgo"
+                	"github.com/superdurable/dex-template-basic-process/internal/api/generated"
+                	"github.com/superdurable/dex-template-basic-process/internal/apptest"
+                	"github.com/superdurable/dex-template-basic-process/internal/process"
+                	"github.com/superdurable/dex-template-basic-process/internal/worker"
+                	"github.com/superdurable/dex/sdk-go/dex"
+                )
+
+                // The tests of SlackThreadApprovalFlow, run with make test-app. The Slack
+                // connector has no mock package yet, so the slack-approvals connection is one
+                // without credentials, as before Studio Configuration: the completion reply
+                // selects the defect branch without any Slack request. The tests start the
+                // Flow as Studio Start Flow and the start Trigger do, and send the reply as
+                // the reply Trigger does.
+
+                // unconfiguredSlack is the slack-approvals connection of a Project whose
+                // Studio Configuration holds no Slack authorization.
+                func unconfiguredSlack(t *testing.T) worker.Connections {
+                	t.Helper()
+                	client, err := slack.New(slack.Config{}, sdkgo.StaticCredentialProvider[slack.Credentials]{})
+                	if err != nil {
+                		t.Fatal(err)
+                	}
+                	connection, err := slack.NewConnection(client, sdkgo.ConnectionRef{Provider: slack.ConnectorID, Name: process.SlackApprovalsConnectionName})
+                	if err != nil {
+                		t.Fatal(err)
+                	}
+                	return worker.Connections{SlackApprovals: connection}
+                }
+
+                // startThread starts the approval of a new root message, as the start Trigger
+                // does, and returns its ID.
+                func startThread(t *testing.T, env *apptest.Env, thread process.ThreadInput) string {
+                	t.Helper()
+                	approvalID := process.SlackThreadApprovalFlowID(thread.TeamID, thread.ChannelID, thread.ThreadTimestamp)
+                	_, err := env.Dex.StartFlow(env.Context(t), process.SlackThreadApprovalFlow{}, approvalID, thread, dex.StartFlowOptions{
+                		IDReusePolicy:  dex.IDReuseDisallow,
+                		AlreadyStarted: &dex.AlreadyStartedOptions{IgnoreError: true},
+                		RequestID:      &thread.EventID,
+                	})
+                	if err != nil {
+                		t.Fatalf("start the thread approval: %v", err)
+                	}
+                	return approvalID
+                }
+
+                func newThread() process.ThreadInput {
+                	return process.ThreadInput{EventID: "Ev" + uuid.NewString(), TeamID: "T0123ABCD", ChannelID: "C0456EFGH", ThreadTimestamp: "1790400000." + uuid.NewString()[:6]}
+                }
+
+                // requireStatus waits until the approval reaches status and returns it.
+                func requireStatus(t *testing.T, env *apptest.Env, approvalID string, status generated.ThreadApprovalStatus) *generated.ThreadApproval {
+                	t.Helper()
+                	var approval *generated.ThreadApproval
+                	env.Eventually(t, 20*time.Second, func() bool {
+                		read, err := env.API.GetThreadApproval(env.Context(t), generated.GetThreadApprovalParams{ApprovalId: approvalID})
+                		if err != nil {
+                			t.Fatalf("read approval %s: %v", approvalID, err)
+                		}
+                		approval = read
+                		return read.Status == status
+                	})
+                	return approval
+                }
+
+                func TestThreadApprovalStartsOnRootMessage(t *testing.T) {
+                	env := apptest.Start(t, unconfiguredSlack(t))
+                	thread := newThread()
+                	approvalID := startThread(t, env, thread)
+                	// A redelivered root message reaches the same approval and starts no second one.
+                	if again := startThread(t, env, thread); again != approvalID {
+                		t.Fatalf("a redelivered root message must reach %s, got %s", approvalID, again)
+                	}
+                	approval := requireStatus(t, env, approvalID, generated.ThreadApprovalStatusWaitingForReply)
+                	if approval.ChannelId != thread.ChannelID || approval.ThreadTimestamp != thread.ThreadTimestamp || approval.ReplyUserId != "" {
+                		t.Fatalf("the approval must keep its thread and have no reply yet: %+v", approval)
+                	}
+                }
+
+                func TestThreadApprovalReplyPostsCompletion(t *testing.T) {
+                	env := apptest.Start(t, unconfiguredSlack(t))
+                	approvalID := startThread(t, env, newThread())
+                	requireStatus(t, env, approvalID, generated.ThreadApprovalStatusWaitingForReply)
+                	var result process.ThreadReplyResult
+                	err := env.Dex.InvokeRPC(env.Context(t), approvalID, process.SlackThreadApprovalFlow{}.ReceiveThreadReply,
+                		process.ThreadReply{EventID: "Ev" + uuid.NewString(), UserID: "U0789IJKL"}, &result)
+                	if err != nil || !result.Accepted {
+                		t.Fatalf("the first reply must be accepted: %+v, %v", result, err)
+                	}
+                	// Without Slack credentials the completion reply is not sent, and the
+                	// approval says so instead of looking completed.
+                	approval := requireStatus(t, env, approvalID, generated.ThreadApprovalStatusFailed)
+                	if approval.ReplyUserId != "U0789IJKL" || !strings.Contains(approval.Notice, "Studio Configuration") {
+                		t.Fatalf("a failed completion reply must name the replier and the configuration: %+v", approval)
+                	}
+                }
+
+                func TestThreadApprovalUnknownIDIsNotFound(t *testing.T) {
+                	env := apptest.Start(t, unconfiguredSlack(t))
+                	_, err := env.API.GetThreadApproval(env.Context(t), generated.GetThreadApprovalParams{ApprovalId: "slack-thread-approval-T0-C0-0." + uuid.NewString()[:6]})
+                	var response *generated.ErrorStatusCode
+                	if !errors.As(err, &response) || response.StatusCode != http.StatusNotFound || response.Response.Error != "approval_not_found" {
+                		t.Fatalf("want 404 approval_not_found, got %v", err)
+                	}
+                }
+          - name: write
+            input:
+              path: dex-app.yaml
+              content: |2
+                {
+                  "schemaVersion": "superverse.dev/dex-app/v1",
+                  "application": {
+                    "port": 8080,
+                    "healthPath": "/api/health"
+                  },
+                  "flowDefinitions": [
+                    {
+                      "sourcePath": "internal/process/slack_thread_approval_flow.go"
+                    }
+                  ],
+                  "connectors": [
+                    {
+                      "connectionName": "slack-approvals",
+                      "connectorId": "slack",
+                      "modulePath": "github.com/superdurable/dex-connectors-library/connectors/slack",
+                      "version": "v1.0.0",
+                      "authMethodId": "",
+                      "operations": ["postThreadReply"],
+                      "triggerBindings": [
+                        {"triggerName": "channelThreadCreated", "bindingName": "slack-thread-approval-start"},
+                        {"triggerName": "threadReplyCreated", "bindingName": "slack-thread-approval-reply"}
+                      ]
+                    }
+                  ]
+                }
+      - tool_uses:
+          - name: bash
+            input: {command: "rm internal/process/text_summary_flow.go internal/apptest/text_summary_test.go", description: "Remove the text-summary Flow and its tests"}
+      - text: "Generating the API code."
+        tool_uses:
+          - name: bash
+            input: {command: "make generate", description: "Generate the API code", timeout_seconds: 600}
+      - tool_uses:
+          - name: bash
+            input: {command: "go mod tidy", description: "Tidy the module requirements", timeout_seconds: 600}
+      - text: "Building and vetting the application with its API tests."
+        tool_uses:
+          - name: bash
+            input: {command: "go build ./... && go vet ./... && go vet -tags apptest ./...", description: "Build and vet the application", timeout_seconds: 600}
+      - text: "Validating the Flow definition."
+        tool_uses:
+          - name: bash
+            input: {command: "make check-fdg-v2", description: "Validate the Flow definitions", timeout_seconds: 600}
+      - tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Add SlackThreadApprovalFlow with its Slack triggers", status: completed}
+                - {content: "Serve the relayed Slack events and run the trigger runner", status: completed}
+                - {content: "Replace the text-summary API, page and tests", status: completed}
+                - {content: "Run the source checks and push", status: in_progress}
+      - text: "Running the source checks and pushing the application."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Build the Slack thread approval: a channel message starts SlackThreadApprovalFlow, a thread reply posts Processing complete."
+              verification:
+                - "go build ./..., go vet ./... and go vet -tags apptest ./... succeeded"
+                - "make check-fdg-v2 validated the strict FDG 2.0 definition with both Slack trigger bindings"
+              remaining_risks:
+                - "Relayed Slack events and the real thread reply run only in a Preview whose slack-approvals connection and both trigger bindings are configured."
+              requirements:
+                - id: R1
+                  evidence: [internal/process/slack_thread_approval_flow.go, internal/process/slack_thread_triggers.go, internal/worker/triggers.go]
+                  tests: [TestThreadApprovalStartsOnRootMessage]
+                - id: R2
+                  evidence: [internal/process/slack_thread_approval_flow.go]
+                  tests: [TestThreadApprovalReplyPostsCompletion]
+                - id: R3
+                  evidence: [internal/process/slack_thread_approval_flow.go]
+                  untested_reason: "The Slack connector has no mocks yet, so no test can make Slack confirm the reply; the tests cover only a connection without credentials."
+              requirements_revision: 1
+      - tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Add SlackThreadApprovalFlow with its Slack triggers", status: completed}
+                - {content: "Serve the relayed Slack events and run the trigger runner", status: completed}
+                - {content: "Replace the text-summary API, page and tests", status: completed}
+                - {content: "Run the source checks and push", status: completed}
+      - text: "The Slack thread approval is pushed to the default branch. In Studio Configuration select the Slack connection as slack-approvals and choose the channel and the members allowed to reply for both triggers; the Preview then starts a run for each new channel message and posts Processing complete. after a reply in its thread."

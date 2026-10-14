@@ -1,0 +1,1411 @@
+{
+  "schemaVersion": "2.0",
+  "valid": true,
+  "source": {
+    "language": "go",
+    "path": "internal/agents/sandbox/provision/sandbox_provision_flow.go"
+  },
+  "flow": {
+    "name": "SandboxProvisionFlow",
+    "startStepId": "step:ProvisionInstance",
+    "span": {
+      "startLine": 39,
+      "startColumn": 1,
+      "endLine": 47,
+      "endColumn": 2
+    }
+  },
+  "nodes": [
+    {
+      "id": "decision-dispatch:step:CheckoutWorkspace",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:CheckoutWorkspace",
+      "phase": "execute",
+      "span": {
+        "startLine": 140,
+        "startColumn": 1,
+        "endLine": 176,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:ProvisionInstance",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:ProvisionInstance",
+      "phase": "execute",
+      "span": {
+        "startLine": 100,
+        "startColumn": 1,
+        "endLine": 128,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:RecordProvisionFailure",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:RecordProvisionFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 259,
+        "startColumn": 1,
+        "endLine": 269,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision:rpc:GetDexDisplay:81:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetDexDisplay",
+      "phase": "rpc",
+      "span": {
+        "startLine": 81,
+        "startColumn": 9,
+        "endLine": 84,
+        "endColumn": 4
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:GetDexSummary:73:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetDexSummary",
+      "phase": "rpc",
+      "span": {
+        "startLine": 73,
+        "startColumn": 9,
+        "endLine": 73,
+        "endColumn": 65
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:GetProvision:60:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetProvision",
+      "phase": "rpc",
+      "span": {
+        "startLine": 60,
+        "startColumn": 9,
+        "endLine": 67,
+        "endColumn": 4
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:step:CheckoutWorkspace:167:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:CheckoutWorkspace",
+      "condition": "errors.As(err, \u0026known) || errors.Is(err, repohost.ErrOtherHost)",
+      "phase": "execute",
+      "span": {
+        "startLine": 167,
+        "startColumn": 10,
+        "endLine": 167,
+        "endColumn": 58
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:CheckoutWorkspace:175:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:CheckoutWorkspace",
+      "condition": "!(errors.As(err, \u0026known) || errors.Is(err, repohost.ErrOtherHost))",
+      "phase": "execute",
+      "span": {
+        "startLine": 175,
+        "startColumn": 9,
+        "endLine": 175,
+        "endColumn": 56
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ProvisionInstance:123:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ProvisionInstance",
+      "condition": "refused != noFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 123,
+        "startColumn": 10,
+        "endLine": 123,
+        "endColumn": 58
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ProvisionInstance:127:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ProvisionInstance",
+      "condition": "!(refused != noFailure)",
+      "phase": "execute",
+      "span": {
+        "startLine": 127,
+        "startColumn": 9,
+        "endLine": 127,
+        "endColumn": 52
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RecordProvisionFailure:265:10",
+      "kind": "decision",
+      "name": "gracefulComplete",
+      "parentId": "step:RecordProvisionFailure",
+      "condition": "dexflow.RecoveryStep(ctx) == dex.GetFinalStepType(ReportProvisionOutcome{})",
+      "phase": "execute",
+      "span": {
+        "startLine": 265,
+        "startColumn": 10,
+        "endLine": 265,
+        "endColumn": 43
+      },
+      "decision": {
+        "type": "gracefulComplete"
+      }
+    },
+    {
+      "id": "decision:step:RecordProvisionFailure:268:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RecordProvisionFailure",
+      "condition": "!(dexflow.RecoveryStep(ctx) == dex.GetFinalStepType(ReportProvisionOutcome{}))",
+      "phase": "execute",
+      "span": {
+        "startLine": 268,
+        "startColumn": 9,
+        "endLine": 268,
+        "endColumn": 57
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ReportProvisionOutcome:248:9",
+      "kind": "decision",
+      "name": "gracefulComplete",
+      "parentId": "step:ReportProvisionOutcome",
+      "phase": "execute",
+      "span": {
+        "startLine": 248,
+        "startColumn": 9,
+        "endLine": 248,
+        "endColumn": 42
+      },
+      "decision": {
+        "type": "gracefulComplete"
+      }
+    },
+    {
+      "id": "decision:step:VerifyInstanceHealthy:221:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:VerifyInstanceHealthy",
+      "phase": "execute",
+      "span": {
+        "startLine": 221,
+        "startColumn": 9,
+        "endLine": 221,
+        "endColumn": 57
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "resource:attribute:CheckoutAttribute",
+      "kind": "attribute",
+      "name": "Checkout",
+      "span": {
+        "startLine": 21,
+        "startColumn": 2,
+        "endLine": 21,
+        "endColumn": 71
+      },
+      "resource": {
+        "valueType": "Checkout"
+      }
+    },
+    {
+      "id": "resource:attribute:OutcomeAttribute",
+      "kind": "attribute",
+      "name": "Outcome",
+      "span": {
+        "startLine": 23,
+        "startColumn": 2,
+        "endLine": 23,
+        "endColumn": 70
+      },
+      "resource": {
+        "valueType": "*Outcome"
+      }
+    },
+    {
+      "id": "resource:attribute:RequestAttribute",
+      "kind": "attribute",
+      "name": "Request",
+      "span": {
+        "startLine": 19,
+        "startColumn": 2,
+        "endLine": 19,
+        "endColumn": 69
+      },
+      "resource": {
+        "valueType": "Request"
+      }
+    },
+    {
+      "id": "resource:attribute:ResourcesAttribute",
+      "kind": "attribute",
+      "name": "Resources",
+      "span": {
+        "startLine": 20,
+        "startColumn": 2,
+        "endLine": 20,
+        "endColumn": 81
+      },
+      "resource": {
+        "valueType": "sandbox.Resources"
+      }
+    },
+    {
+      "id": "resource:attribute:WorkspaceTimingsAttribute",
+      "kind": "attribute",
+      "name": "WorkspaceTimings",
+      "span": {
+        "startLine": 22,
+        "startColumn": 2,
+        "endLine": 22,
+        "endColumn": 92
+      },
+      "resource": {
+        "valueType": "[]dexflow.PhaseTiming"
+      }
+    },
+    {
+      "id": "rpc:GetDexDisplay",
+      "kind": "rpc",
+      "name": "GetDexDisplay",
+      "span": {
+        "startLine": 80,
+        "startColumn": 1,
+        "endLine": 85,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:GetDexSummary",
+      "kind": "rpc",
+      "name": "GetDexSummary",
+      "span": {
+        "startLine": 72,
+        "startColumn": 1,
+        "endLine": 74,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:GetProvision",
+      "kind": "rpc",
+      "name": "GetProvision",
+      "span": {
+        "startLine": 59,
+        "startColumn": 1,
+        "endLine": 68,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "step:CheckoutWorkspace",
+      "kind": "step",
+      "name": "CheckoutWorkspace",
+      "phase": "execute",
+      "span": {
+        "startLine": 42,
+        "startColumn": 3,
+        "endLine": 42,
+        "endColumn": 42
+      },
+      "metadata": {
+        "explanation": "Wait until sandboxd accepts connections, then reconcile the precise repository checkout."
+      }
+    },
+    {
+      "id": "step:ProvisionInstance",
+      "kind": "step",
+      "name": "ProvisionInstance",
+      "phase": "execute",
+      "start": true,
+      "span": {
+        "startLine": 41,
+        "startColumn": 3,
+        "endLine": 41,
+        "endColumn": 47
+      },
+      "metadata": {
+        "explanation": "Query exact resources and create the instance's Sandbox on the Session's workspace volume until it is Ready."
+      }
+    },
+    {
+      "id": "step:RecordProvisionFailure",
+      "kind": "step",
+      "name": "RecordProvisionFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 45,
+        "startColumn": 3,
+        "endLine": 45,
+        "endColumn": 47
+      },
+      "metadata": {
+        "explanation": "Record the failure of a Step whose retries ran out or whose wait limit passed, with the final error, and report it; an undelivered report completes."
+      }
+    },
+    {
+      "id": "step:ReportProvisionOutcome",
+      "kind": "step",
+      "name": "ReportProvisionOutcome",
+      "phase": "execute",
+      "span": {
+        "startLine": 44,
+        "startColumn": 3,
+        "endLine": 44,
+        "endColumn": 47
+      },
+      "metadata": {
+        "explanation": "Report the outcome to the SessionWorkspaceFlow, which admits it only while it waits for this instance, then complete."
+      }
+    },
+    {
+      "id": "step:VerifyInstanceHealthy",
+      "kind": "step",
+      "name": "VerifyInstanceHealthy",
+      "phase": "execute",
+      "span": {
+        "startLine": 43,
+        "startColumn": 3,
+        "endLine": 43,
+        "endColumn": 46
+      },
+      "metadata": {
+        "explanation": "Confirm that the checked-out instance is still the provisioned one, Ready and reachable; the editor workspace becomes ready without registering a manifest."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:0001",
+      "kind": "transition",
+      "from": "decision:step:CheckoutWorkspace:167:10",
+      "to": "step:ReportProvisionOutcome",
+      "label": "GoTo",
+      "span": {
+        "startLine": 167,
+        "startColumn": 10,
+        "endLine": 167,
+        "endColumn": 58
+      }
+    },
+    {
+      "id": "edge:0002",
+      "kind": "transition",
+      "from": "decision:step:CheckoutWorkspace:175:9",
+      "to": "step:VerifyInstanceHealthy",
+      "label": "GoTo",
+      "span": {
+        "startLine": 175,
+        "startColumn": 9,
+        "endLine": 175,
+        "endColumn": 56
+      }
+    },
+    {
+      "id": "edge:0003",
+      "kind": "transition",
+      "from": "decision:step:ProvisionInstance:123:10",
+      "to": "step:ReportProvisionOutcome",
+      "label": "GoTo",
+      "span": {
+        "startLine": 123,
+        "startColumn": 10,
+        "endLine": 123,
+        "endColumn": 58
+      }
+    },
+    {
+      "id": "edge:0004",
+      "kind": "transition",
+      "from": "decision:step:ProvisionInstance:127:9",
+      "to": "step:CheckoutWorkspace",
+      "label": "GoTo",
+      "span": {
+        "startLine": 127,
+        "startColumn": 9,
+        "endLine": 127,
+        "endColumn": 52
+      }
+    },
+    {
+      "id": "edge:0005",
+      "kind": "transition",
+      "from": "decision:step:RecordProvisionFailure:268:9",
+      "to": "step:ReportProvisionOutcome",
+      "label": "GoTo",
+      "span": {
+        "startLine": 268,
+        "startColumn": 9,
+        "endLine": 268,
+        "endColumn": 57
+      }
+    },
+    {
+      "id": "edge:0006",
+      "kind": "transition",
+      "from": "decision:step:VerifyInstanceHealthy:221:9",
+      "to": "step:ReportProvisionOutcome",
+      "label": "GoTo",
+      "span": {
+        "startLine": 221,
+        "startColumn": 9,
+        "endLine": 221,
+        "endColumn": 57
+      }
+    },
+    {
+      "id": "edge:0007",
+      "kind": "resource_read",
+      "from": "resource:attribute:CheckoutAttribute",
+      "to": "rpc:GetProvision",
+      "label": "Get",
+      "span": {
+        "startLine": 63,
+        "startColumn": 31,
+        "endLine": 63,
+        "endColumn": 57
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0008",
+      "kind": "resource_read",
+      "from": "resource:attribute:CheckoutAttribute",
+      "to": "step:CheckoutWorkspace",
+      "label": "Get",
+      "span": {
+        "startLine": 63,
+        "startColumn": 31,
+        "endLine": 63,
+        "endColumn": 57
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0009",
+      "kind": "resource_read",
+      "from": "resource:attribute:CheckoutAttribute",
+      "to": "step:ProvisionInstance",
+      "label": "Get",
+      "span": {
+        "startLine": 63,
+        "startColumn": 31,
+        "endLine": 63,
+        "endColumn": 57
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0010",
+      "kind": "resource_read",
+      "from": "resource:attribute:CheckoutAttribute",
+      "to": "step:RecordProvisionFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 63,
+        "startColumn": 31,
+        "endLine": 63,
+        "endColumn": 57
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0011",
+      "kind": "resource_read",
+      "from": "resource:attribute:CheckoutAttribute",
+      "to": "step:ReportProvisionOutcome",
+      "label": "Get",
+      "span": {
+        "startLine": 63,
+        "startColumn": 31,
+        "endLine": 63,
+        "endColumn": 57
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0012",
+      "kind": "resource_read",
+      "from": "resource:attribute:CheckoutAttribute",
+      "to": "step:VerifyInstanceHealthy",
+      "label": "Get",
+      "span": {
+        "startLine": 63,
+        "startColumn": 31,
+        "endLine": 63,
+        "endColumn": 57
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0013",
+      "kind": "resource_read",
+      "from": "resource:attribute:OutcomeAttribute",
+      "to": "rpc:GetDexDisplay",
+      "label": "Get",
+      "span": {
+        "startLine": 83,
+        "startColumn": 31,
+        "endLine": 83,
+        "endColumn": 56
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0014",
+      "kind": "resource_read",
+      "from": "resource:attribute:OutcomeAttribute",
+      "to": "rpc:GetProvision",
+      "label": "Get",
+      "span": {
+        "startLine": 66,
+        "startColumn": 29,
+        "endLine": 66,
+        "endColumn": 54
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0015",
+      "kind": "resource_read",
+      "from": "resource:attribute:OutcomeAttribute",
+      "to": "step:CheckoutWorkspace",
+      "label": "Get",
+      "span": {
+        "startLine": 66,
+        "startColumn": 29,
+        "endLine": 66,
+        "endColumn": 54
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0016",
+      "kind": "resource_read",
+      "from": "resource:attribute:OutcomeAttribute",
+      "to": "step:ProvisionInstance",
+      "label": "Get",
+      "span": {
+        "startLine": 66,
+        "startColumn": 29,
+        "endLine": 66,
+        "endColumn": 54
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0017",
+      "kind": "resource_read",
+      "from": "resource:attribute:OutcomeAttribute",
+      "to": "step:RecordProvisionFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 66,
+        "startColumn": 29,
+        "endLine": 66,
+        "endColumn": 54
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0018",
+      "kind": "resource_read",
+      "from": "resource:attribute:OutcomeAttribute",
+      "to": "step:ReportProvisionOutcome",
+      "label": "Get",
+      "span": {
+        "startLine": 66,
+        "startColumn": 29,
+        "endLine": 66,
+        "endColumn": 54
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0019",
+      "kind": "resource_read",
+      "from": "resource:attribute:OutcomeAttribute",
+      "to": "step:VerifyInstanceHealthy",
+      "label": "Get",
+      "span": {
+        "startLine": 66,
+        "startColumn": 29,
+        "endLine": 66,
+        "endColumn": 54
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0020",
+      "kind": "resource_read",
+      "from": "resource:attribute:RequestAttribute",
+      "to": "rpc:GetDexDisplay",
+      "label": "Get",
+      "span": {
+        "startLine": 82,
+        "startColumn": 24,
+        "endLine": 82,
+        "endColumn": 49
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0021",
+      "kind": "resource_read",
+      "from": "resource:attribute:RequestAttribute",
+      "to": "rpc:GetProvision",
+      "label": "Get",
+      "span": {
+        "startLine": 61,
+        "startColumn": 31,
+        "endLine": 61,
+        "endColumn": 56
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0022",
+      "kind": "resource_read",
+      "from": "resource:attribute:RequestAttribute",
+      "to": "step:CheckoutWorkspace",
+      "label": "Get",
+      "span": {
+        "startLine": 61,
+        "startColumn": 31,
+        "endLine": 61,
+        "endColumn": 56
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0023",
+      "kind": "resource_read",
+      "from": "resource:attribute:RequestAttribute",
+      "to": "step:ProvisionInstance",
+      "label": "Get",
+      "span": {
+        "startLine": 61,
+        "startColumn": 31,
+        "endLine": 61,
+        "endColumn": 56
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0024",
+      "kind": "resource_read",
+      "from": "resource:attribute:RequestAttribute",
+      "to": "step:RecordProvisionFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 61,
+        "startColumn": 31,
+        "endLine": 61,
+        "endColumn": 56
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0025",
+      "kind": "resource_read",
+      "from": "resource:attribute:RequestAttribute",
+      "to": "step:ReportProvisionOutcome",
+      "label": "Get",
+      "span": {
+        "startLine": 61,
+        "startColumn": 31,
+        "endLine": 61,
+        "endColumn": 56
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0026",
+      "kind": "resource_read",
+      "from": "resource:attribute:RequestAttribute",
+      "to": "step:VerifyInstanceHealthy",
+      "label": "Get",
+      "span": {
+        "startLine": 61,
+        "startColumn": 31,
+        "endLine": 61,
+        "endColumn": 56
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0027",
+      "kind": "resource_read",
+      "from": "resource:attribute:ResourcesAttribute",
+      "to": "rpc:GetProvision",
+      "label": "Get",
+      "span": {
+        "startLine": 62,
+        "startColumn": 31,
+        "endLine": 62,
+        "endColumn": 58
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0028",
+      "kind": "resource_read",
+      "from": "resource:attribute:ResourcesAttribute",
+      "to": "step:CheckoutWorkspace",
+      "label": "Get",
+      "span": {
+        "startLine": 62,
+        "startColumn": 31,
+        "endLine": 62,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0029",
+      "kind": "resource_read",
+      "from": "resource:attribute:ResourcesAttribute",
+      "to": "step:ProvisionInstance",
+      "label": "Get",
+      "span": {
+        "startLine": 62,
+        "startColumn": 31,
+        "endLine": 62,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0030",
+      "kind": "resource_read",
+      "from": "resource:attribute:ResourcesAttribute",
+      "to": "step:RecordProvisionFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 62,
+        "startColumn": 31,
+        "endLine": 62,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0031",
+      "kind": "resource_read",
+      "from": "resource:attribute:ResourcesAttribute",
+      "to": "step:ReportProvisionOutcome",
+      "label": "Get",
+      "span": {
+        "startLine": 62,
+        "startColumn": 31,
+        "endLine": 62,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0032",
+      "kind": "resource_read",
+      "from": "resource:attribute:ResourcesAttribute",
+      "to": "step:VerifyInstanceHealthy",
+      "label": "Get",
+      "span": {
+        "startLine": 62,
+        "startColumn": 31,
+        "endLine": 62,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0033",
+      "kind": "resource_read",
+      "from": "resource:attribute:WorkspaceTimingsAttribute",
+      "to": "rpc:GetProvision",
+      "label": "Get",
+      "span": {
+        "startLine": 64,
+        "startColumn": 41,
+        "endLine": 64,
+        "endColumn": 75
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0034",
+      "kind": "resource_read",
+      "from": "resource:attribute:WorkspaceTimingsAttribute",
+      "to": "step:CheckoutWorkspace",
+      "label": "Get",
+      "span": {
+        "startLine": 64,
+        "startColumn": 41,
+        "endLine": 64,
+        "endColumn": 75
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0035",
+      "kind": "resource_read",
+      "from": "resource:attribute:WorkspaceTimingsAttribute",
+      "to": "step:ProvisionInstance",
+      "label": "Get",
+      "span": {
+        "startLine": 64,
+        "startColumn": 41,
+        "endLine": 64,
+        "endColumn": 75
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0036",
+      "kind": "resource_read",
+      "from": "resource:attribute:WorkspaceTimingsAttribute",
+      "to": "step:RecordProvisionFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 64,
+        "startColumn": 41,
+        "endLine": 64,
+        "endColumn": 75
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0037",
+      "kind": "resource_read",
+      "from": "resource:attribute:WorkspaceTimingsAttribute",
+      "to": "step:ReportProvisionOutcome",
+      "label": "Get",
+      "span": {
+        "startLine": 64,
+        "startColumn": 41,
+        "endLine": 64,
+        "endColumn": 75
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0038",
+      "kind": "resource_read",
+      "from": "resource:attribute:WorkspaceTimingsAttribute",
+      "to": "step:VerifyInstanceHealthy",
+      "label": "Get",
+      "span": {
+        "startLine": 64,
+        "startColumn": 41,
+        "endLine": 64,
+        "endColumn": 75
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0039",
+      "kind": "resource_write",
+      "from": "step:CheckoutWorkspace",
+      "to": "resource:attribute:CheckoutAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 173,
+        "startColumn": 14,
+        "endLine": 173,
+        "endColumn": 52
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0040",
+      "kind": "resource_write",
+      "from": "step:CheckoutWorkspace",
+      "to": "resource:attribute:OutcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 297,
+        "startColumn": 14,
+        "endLine": 297,
+        "endColumn": 49
+      },
+      "metadata": {
+        "function": "recordOutcome",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0041",
+      "kind": "resource_write",
+      "from": "step:CheckoutWorkspace",
+      "to": "resource:attribute:ResourcesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 295,
+        "startColumn": 14,
+        "endLine": 295,
+        "endColumn": 54
+      },
+      "metadata": {
+        "function": "recordOutcome",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0042",
+      "kind": "resource_write",
+      "from": "step:CheckoutWorkspace",
+      "to": "resource:attribute:WorkspaceTimingsAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 174,
+        "startColumn": 14,
+        "endLine": 174,
+        "endColumn": 104
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0043",
+      "kind": "failure_transition",
+      "from": "step:CheckoutWorkspace",
+      "to": "step:RecordProvisionFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 138,
+        "startColumn": 65,
+        "endLine": 138,
+        "endColumn": 134
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0044",
+      "kind": "resource_write",
+      "from": "step:ProvisionInstance",
+      "to": "resource:attribute:OutcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 297,
+        "startColumn": 14,
+        "endLine": 297,
+        "endColumn": 49
+      },
+      "metadata": {
+        "function": "recordOutcome",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0045",
+      "kind": "resource_write",
+      "from": "step:ProvisionInstance",
+      "to": "resource:attribute:ResourcesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 125,
+        "startColumn": 14,
+        "endLine": 125,
+        "endColumn": 54
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0046",
+      "kind": "resource_write",
+      "from": "step:ProvisionInstance",
+      "to": "resource:attribute:WorkspaceTimingsAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 126,
+        "startColumn": 14,
+        "endLine": 126,
+        "endColumn": 121
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0047",
+      "kind": "failure_transition",
+      "from": "step:ProvisionInstance",
+      "to": "step:RecordProvisionFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 98,
+        "startColumn": 53,
+        "endLine": 98,
+        "endColumn": 122
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0048",
+      "kind": "resource_write",
+      "from": "step:RecordProvisionFailure",
+      "to": "resource:attribute:OutcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 264,
+        "startColumn": 15,
+        "endLine": 264,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0049",
+      "kind": "resource_write",
+      "from": "step:RecordProvisionFailure",
+      "to": "resource:attribute:ResourcesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 295,
+        "startColumn": 14,
+        "endLine": 295,
+        "endColumn": 54
+      },
+      "metadata": {
+        "function": "recordOutcome",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0050",
+      "kind": "resource_write",
+      "from": "step:RecordProvisionFailure",
+      "to": "resource:attribute:WorkspaceTimingsAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 296,
+        "startColumn": 14,
+        "endLine": 296,
+        "endColumn": 104
+      },
+      "metadata": {
+        "function": "recordOutcome",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0051",
+      "kind": "resource_write",
+      "from": "step:ReportProvisionOutcome",
+      "to": "resource:attribute:OutcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 247,
+        "startColumn": 14,
+        "endLine": 247,
+        "endColumn": 49
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0052",
+      "kind": "failure_transition",
+      "from": "step:ReportProvisionOutcome",
+      "to": "step:RecordProvisionFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 234,
+        "startColumn": 37,
+        "endLine": 234,
+        "endColumn": 106
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0053",
+      "kind": "resource_write",
+      "from": "step:VerifyInstanceHealthy",
+      "to": "resource:attribute:OutcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 297,
+        "startColumn": 14,
+        "endLine": 297,
+        "endColumn": 49
+      },
+      "metadata": {
+        "function": "recordOutcome",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0054",
+      "kind": "resource_write",
+      "from": "step:VerifyInstanceHealthy",
+      "to": "resource:attribute:ResourcesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 295,
+        "startColumn": 14,
+        "endLine": 295,
+        "endColumn": 54
+      },
+      "metadata": {
+        "function": "recordOutcome",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0055",
+      "kind": "resource_write",
+      "from": "step:VerifyInstanceHealthy",
+      "to": "resource:attribute:WorkspaceTimingsAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 296,
+        "startColumn": 14,
+        "endLine": 296,
+        "endColumn": 104
+      },
+      "metadata": {
+        "function": "recordOutcome",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0056",
+      "kind": "failure_transition",
+      "from": "step:VerifyInstanceHealthy",
+      "to": "step:RecordProvisionFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 186,
+        "startColumn": 50,
+        "endLine": 186,
+        "endColumn": 119
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    }
+  ],
+  "diagnostics": [],
+  "groups": [
+    {
+      "id": "provision",
+      "label": "Provision",
+      "stepIds": [
+        "step:ProvisionInstance",
+        "step:CheckoutWorkspace",
+        "step:VerifyInstanceHealthy",
+        "step:ReportProvisionOutcome",
+        "step:RecordProvisionFailure"
+      ]
+    }
+  ],
+  "v2": {
+    "indexedAttributes": [],
+    "summary": {
+      "rpcName": "GetDexSummary",
+      "fields": []
+    },
+    "display": {
+      "rpcName": "GetDexDisplay",
+      "fields": [
+        {
+          "attributeKey": "Request",
+          "valueType": "json",
+          "editable": false,
+          "description": "Requested instance"
+        },
+        {
+          "attributeKey": "Outcome",
+          "valueType": "json",
+          "editable": false,
+          "description": "Outcome and how the Session workspace answered its report"
+        }
+      ]
+    },
+    "actions": [],
+    "start": {
+      "stepType": "ProvisionInstance",
+      "input": {
+        "kind": "null"
+      }
+    }
+  }
+}

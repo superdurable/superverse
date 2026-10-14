@@ -1,0 +1,124 @@
+{
+  "type": "object",
+  "properties": {
+    "ConnectorCatalogInput": {"$ref": "#/$defs/ConnectorCatalogInput"},
+    "CommitAndPushInput": {
+      "$ref": "#/$defs/CommitAndPushInput"
+    },
+    "ConfirmRequirementsInput": {
+      "$ref": "#/$defs/ConfirmRequirementsInput"
+    },
+    "StartTimerInput": {
+      "$ref": "#/$defs/StartTimerInput"
+    },
+    "SetEffortInput": {
+      "$ref": "#/$defs/SetEffortInput"
+    },
+    "BashInput": {
+      "$ref": "#/$defs/BashInput"
+    },
+    "ReadInput": {
+      "$ref": "#/$defs/ReadInput"
+    },
+    "EditInput": {
+      "$ref": "#/$defs/EditInput"
+    },
+    "WriteInput": {
+      "$ref": "#/$defs/WriteInput"
+    },
+    "GrepInput": {
+      "$ref": "#/$defs/GrepInput"
+    },
+    "GlobInput": {
+      "$ref": "#/$defs/GlobInput"
+    },
+    "ReadTaskOutputInput": {
+      "$ref": "#/$defs/ReadTaskOutputInput"
+    },
+    "StopTaskInput": {
+      "$ref": "#/$defs/StopTaskInput"
+    },
+    "ReadDeliveryStatusInput": {
+      "$ref": "#/$defs/ReadDeliveryStatusInput"
+    },
+    "ReadPlatformFlowInput": {
+      "$ref": "#/$defs/ReadPlatformFlowInput"
+    },
+    "ReadLiveAppRunsInput": {
+      "$ref": "#/$defs/ReadLiveAppRunsInput"
+    },
+    "RequestUserInputInput": {
+      "$ref": "#/$defs/RequestUserInputInput"
+    },
+    "WriteTodosInput": {
+      "$ref": "#/$defs/WriteTodosInput"
+    },
+    "StartAgentInput": {
+      "$ref": "#/$defs/StartAgentInput"
+    },
+    "MergeAgentChangesInput": {
+      "$ref": "#/$defs/MergeAgentChangesInput"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "ConnectorCatalogInput": {"$ref": "schema/connector_catalog.json"},
+    "CommitAndPushInput": {
+      "$ref": "schema/commit_and_push.json"
+    },
+    "ConfirmRequirementsInput": {
+      "$ref": "schema/confirm_requirements.json"
+    },
+    "StartTimerInput": {
+      "$ref": "schema/start_timer.json"
+    },
+    "SetEffortInput": {
+      "$ref": "schema/set_effort.json"
+    },
+    "BashInput": {
+      "$ref": "schema/bash.json"
+    },
+    "ReadInput": {
+      "$ref": "schema/read.json"
+    },
+    "EditInput": {
+      "$ref": "schema/edit.json"
+    },
+    "WriteInput": {
+      "$ref": "schema/write.json"
+    },
+    "GrepInput": {
+      "$ref": "schema/grep.json"
+    },
+    "GlobInput": {
+      "$ref": "schema/glob.json"
+    },
+    "ReadTaskOutputInput": {
+      "$ref": "schema/read_task_output.json"
+    },
+    "StopTaskInput": {
+      "$ref": "schema/stop_task.json"
+    },
+    "ReadDeliveryStatusInput": {
+      "$ref": "schema/read_delivery_status.json"
+    },
+    "ReadPlatformFlowInput": {
+      "$ref": "schema/read_platform_flow.json"
+    },
+    "ReadLiveAppRunsInput": {
+      "$ref": "schema/read_live_app_runs.json"
+    },
+    "RequestUserInputInput": {
+      "$ref": "schema/request_user_input.json"
+    },
+    "WriteTodosInput": {
+      "$ref": "schema/write_todos.json"
+    },
+    "StartAgentInput": {
+      "$ref": "schema/start_agent.json"
+    },
+    "MergeAgentChangesInput": {
+      "$ref": "schema/merge_agent_changes.json"
+    }
+  }
+}

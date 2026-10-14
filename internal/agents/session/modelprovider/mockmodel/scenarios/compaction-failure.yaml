@@ -1,0 +1,61 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A turn long enough to move its request into the archive, then two compactions
+# at the hard limit of Opus and Sonnet (900,000 tokens; the largest compaction
+# threshold is 800,000). The Session keeps fewer than 20 entries in its current
+# window, and each of the 12 calls adds a reply and a result, so the user's
+# request has left the window by the first compaction. That compaction
+# succeeds, and the new segment quotes the request from the archive chunk the
+# compaction loaded; the reply after it requires the quote. The model API is
+# overloaded for the second compaction: Dex retries CompactContext until it
+# gives up, and RecordCompactionFailure opens a segment without a summary
+# because the context is at its hard limit. The failure route of the compaction
+# loads the same archive chunks, so that segment quotes the request too, and the
+# last reply requires it.
+#
+# A segment without a summary carries no scenario position, and its pending
+# request alone would start the script again at input 1. The position travels in
+# the todo list, which the segment quotes: the second call at the hard limit
+# writes a todo item with [[scenario-step:14]], which continues the script at
+# the reply after it, as the marker of a compaction summary does.
+name: compaction-failure
+title: "Failed compaction at the hard limit"
+description: "A long turn compacts once, then the compaction at the hard limit fails, so the Session opens a segment without a summary that still quotes the request, and the script goes on."
+category: platform_error
+compaction_summary: "The user asked for the progress list to be kept current while the context fills up. It was written repeatedly."
+inputs:
+  - label: "Fill the context"
+    message: "Keep the progress list current until the context is full."
+    replies:
+      - text: "Recording the progress list."
+        tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Fill the context", status: in_progress}
+        repeat: 12
+      - text: "The context reached its hard limit."
+        tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Fill the context", status: in_progress}
+        usage: {input_tokens: 950000, output_tokens: 200}
+      - text: "The new segment quotes the original request, and the context is at its hard limit again."
+        expect_segment_start: ["<pending_request>\nKeep the progress list current until the context is full."]
+        tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Fill the context", status: completed}
+                - {content: "Continue after the context renewal [[scenario-step:14]]", status: in_progress}
+        usage: {input_tokens: 950000, output_tokens: 200}
+        compaction_error: {status: 529, type: overloaded_error, message: "The mock model is overloaded."}
+      - text: "The segment without a summary quotes the original request, and the work goes on."
+        expect_segment_start: ["<pending_request>\nKeep the progress list current until the context is full."]

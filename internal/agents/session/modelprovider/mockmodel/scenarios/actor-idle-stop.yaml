@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A real background command keeps Stop task-only after the main turn ends.
+# Ignoring TERM gives new input a bounded window before external Stop settles.
+# An explicitly stopped command sends no completion notification.
+name: actor-idle-stop
+title: "Idle Stop with explicit new input"
+description: "Check attribution across an idle task-only Stop and new user input."
+category: agent_feature
+test_action: "Stop the task, then send new input or recreate the platform server before input."
+inputs:
+  - label: "Start the idle Stop task"
+    message: "Prepare the idle Stop attribution check."
+    replies:
+      - text: "Starting the real task that ignores TERM."
+        tool_uses:
+          - name: bash
+            input: {command: "trap '' TERM; sleep 300", description: "Actor idle Stop task", run_in_background: true}
+      - text: "The main turn is idle while the task runs."

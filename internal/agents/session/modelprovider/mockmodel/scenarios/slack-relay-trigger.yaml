@@ -1,0 +1,480 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A Slack-triggered Flow on a platform Slack connection, which the platform's
+# Slack event relay feeds. The script writes SlackMessageFlow, a Slack message
+# trigger runner on the connection "support" whose channelThreadCreated binding
+# "support-message" starts it, mounts the runner at the relayed trigger path of
+# the application's HTTP server, declares the connection with Slack v1.0.0 in
+# dex-app.yaml and fetches the connector. The Flow has no API test, because a
+# relayed trigger has no connector mock, so the script pushes a blocked
+# checkpoint, which skips the source gate; the Session continues the turn three
+# times. A test deploys the commit itself, configures the connection and drives
+# the relay (TestSlackRelayDexIntegration).
+name: slack-relay-trigger
+title: "Start a Flow from relayed Slack messages"
+description: "Adds a Flow that a Slack message trigger on a platform Slack connection starts, mounted at the relayed trigger path, and pushes it as a checkpoint."
+category: project_feature
+inputs:
+  - label: "Add the Slack trigger"
+    message: "Start a run for every new message in our support Slack channel."
+    replies:
+      - text: "Restoring the application's dependencies and generating its API code, as the template's instructions say."
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap && make generate", description: "Restore the dependencies and generate the API code", timeout_seconds: 600}
+      - text: "Writing internal/process/slack_message_flow.go."
+        tool_uses:
+          - name: write
+            input:
+              path: internal/process/slack_message_flow.go
+              content: |
+                package process
+
+                import (
+                	"errors"
+
+                	"github.com/superdurable/dex-connectors-library/connectors/slack"
+                	"github.com/superdurable/dex-connectors-library/sdkgo"
+                	"github.com/superdurable/dex/sdk-go/dex"
+                )
+
+                // SlackConnectionName is the dex-app.yaml Slack connection whose
+                // channelThreadCreated binding SlackMessageBinding starts SlackMessageFlow.
+                const (
+                	SlackConnectionName = "support"
+                	SlackMessageBinding = "support-message"
+                )
+
+                // SlackMessageInput is the Slack message that started the Flow.
+                type SlackMessageInput struct {
+                	ChannelID string `json:"channelId"`
+                	Text      string `json:"text"`
+                }
+
+                var (
+                	SlackMessageChannel = dex.DefineAttribute[string]("slack-channel")
+                	SlackMessageText    = dex.DefineAttribute[string]("slack-text")
+                )
+
+                // SlackMessageFlow records one top-level Slack message of the configured
+                // channel.
+                type SlackMessageFlow struct {
+                	dex.FlowDefaults
+                }
+
+                // SlackMessageFlowID is one Flow per Slack event, so a repeated event starts
+                // no second Flow.
+                func SlackMessageFlowID(event sdkgo.TriggerEvent[slack.MessageEvent]) string {
+                	return "slack-message-" + event.ID
+                }
+
+                // SlackMessageFlowInput maps the Slack message to the Flow's input.
+                func SlackMessageFlowInput(event sdkgo.TriggerEvent[slack.MessageEvent]) SlackMessageInput {
+                	return SlackMessageInput{ChannelID: event.Payload.ChannelID, Text: event.Payload.Text}
+                }
+
+                func (SlackMessageFlow) GetSteps() []dex.StepDef {
+                	return []dex.StepDef{dex.DefineStartStep(RecordSlackMessage{})}
+                }
+
+                // GetConnectorTriggerBindings declares the support connection's channel
+                // binding, which Studio configures with the channel to watch.
+                func (SlackMessageFlow) GetConnectorTriggerBindings() []sdkgo.TriggerBindingDefinition {
+                	return []sdkgo.TriggerBindingDefinition{
+                		slack.DefineChannelThreadCreatedTriggerBinding(slack.ChannelThreadCreatedTriggerBindingConfig{
+                			ConnectionName: SlackConnectionName, BindingName: SlackMessageBinding,
+                			ConfigurationUI: sdkgo.ConnectorConfigurationUI{Units: []sdkgo.ConnectorUIUnit{{
+                				ID: "channel", UnitID: slack.UIUnitChannelPicker, Label: "Channel", Description: "Select the joined Slack channel whose new messages start a run.",
+                				Required: true, Bindings: []sdkgo.ConnectorUIBinding{{Port: slack.UIChannelPickerPortChannelID, JSONPointer: "/channelId"}},
+                			}}},
+                		}),
+                	}
+                }
+
+                func (flow SlackMessageFlow) GetRPCs() []dex.RPCDef {
+                	return []dex.RPCDef{dex.DefineRPC(flow.GetDexSummary, nil), dex.DefineRPC(flow.GetDexDisplay, nil)}
+                }
+
+                func (SlackMessageFlow) GetPersistenceSchema() dex.PersistenceSchema {
+                	return dex.PersistenceSchema{Attributes: []dex.AttributeDef{SlackMessageChannel, SlackMessageText}}
+                }
+
+                // dex:group group-id:slack group-label:"Slack"
+                // dex:explanation text:"Record the Slack message that started the run."
+                type RecordSlackMessage struct {
+                	dex.StepDefaultsNoWaitFor[SlackMessageInput]
+                }
+
+                func (RecordSlackMessage) Execute(ctx dex.Context, input SlackMessageInput) (*dex.StepDecision, error) {
+                	if err := errors.Join(SlackMessageChannel.Set(ctx, input.ChannelID), SlackMessageText.Set(ctx, input.Text)); err != nil {
+                		return nil, err
+                	}
+                	return dex.GracefulComplete(nil), nil
+                }
+
+                // dex:field attribute-key:slack-channel value-type:string editable:false description:"Channel"
+                func (SlackMessageFlow) GetDexSummary(ctx dex.Context, _ dex.None) (*dex.RPCResult[map[string]any], error) {
+                	channel, err := optional(ctx, SlackMessageChannel)
+                	if err != nil {
+                		return nil, err
+                	}
+                	return &dex.RPCResult[map[string]any]{Output: map[string]any{"slack-channel": channel}}, nil
+                }
+
+                // dex:field attribute-key:slack-channel value-type:string editable:false description:"Channel"
+                // dex:field attribute-key:slack-text value-type:string editable:false description:"Message"
+                func (SlackMessageFlow) GetDexDisplay(ctx dex.Context, _ dex.None) (*dex.RPCResult[map[string]any], error) {
+                	channel, err := optional(ctx, SlackMessageChannel)
+                	if err != nil {
+                		return nil, err
+                	}
+                	text, err := optional(ctx, SlackMessageText)
+                	if err != nil {
+                		return nil, err
+                	}
+                	return &dex.RPCResult[map[string]any]{Output: map[string]any{"slack-channel": channel, "slack-text": text}}, nil
+                }
+
+      - text: "Writing internal/worker/slack_trigger.go."
+        tool_uses:
+          - name: write
+            input:
+              path: internal/worker/slack_trigger.go
+              content: |
+                package worker
+
+                import (
+                	"log/slog"
+
+                	"github.com/superdurable/dex-connectors-library/connectors/slack"
+                	"github.com/superdurable/dex-connectors-library/sdkgo"
+                	"github.com/superdurable/dex-connectors-library/sdkgo/projectconfig"
+                	"github.com/superdurable/dex-template-basic-process/internal/process"
+                	"github.com/superdurable/dex/sdk-go/dex"
+                )
+
+                // newSlackTrigger starts SlackMessageFlow for every top-level message that the
+                // support connection's binding accepts. Without an app_token the host relays
+                // the events to slack.RelayedTriggerPath, where main mounts the runner.
+                func newSlackTrigger(project *projectconfig.LoadedProject, client *dex.Client, logger *slog.Logger) (*slack.MessageTriggerRunner, error) {
+                	everyMessage := func(sdkgo.TriggerEvent[slack.MessageEvent]) bool { return true }
+                	return slack.NewProjectMessageTriggerRunner(project, process.SlackConnectionName, slack.ProjectMessageTriggerRunnerConfig{
+                		ChannelThreadCreatedRoutes: []slack.ProjectChannelThreadCreatedTriggerRoute{{
+                			BindingName: process.SlackMessageBinding,
+                			Target:      sdkgo.NewDexFlowTriggerTarget(client, process.SlackMessageFlow{}, everyMessage, process.SlackMessageFlowID, process.SlackMessageFlowInput),
+                		}},
+                	}, slack.WithLogger(logger))
+                }
+      - text: "Writing internal/worker/worker.go."
+        tool_uses:
+          - name: write
+            input:
+              path: internal/worker/worker.go
+              content: |
+                package worker
+
+                import (
+                	"context"
+                	"errors"
+                	"fmt"
+                	"log/slog"
+                	"os"
+                	"path/filepath"
+                	"time"
+
+                	"github.com/superdurable/dex-connectors-library/connectors/slack"
+                	"github.com/superdurable/dex-template-basic-process/internal/connectorconfiguration"
+                	"github.com/superdurable/dex/blob-cache-go/blobcache"
+                	"github.com/superdurable/dex/sdk-go/dex"
+                )
+
+                // Worker owns the Dex Worker, the Dex Client used by the API, and their blob cache.
+                type Worker struct {
+                	Client *dex.Client
+                	// SlackTrigger receives the relayed Slack events of the support connection.
+                	SlackTrigger *slack.MessageTriggerRunner
+                	dexWorker    *dex.Worker
+                	cache        *blobcache.Cache
+                }
+
+                func New(logger *slog.Logger) (*Worker, error) {
+                	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+                	defer cancel()
+                	configuration, err := connectorconfiguration.Load(ctx)
+                	if err != nil {
+                		return nil, fmt.Errorf("load connector configuration: %w", err)
+                	}
+                	connections, err := OpenConnections(configuration)
+                	if err != nil {
+                		return nil, err
+                	}
+                	registry, err := dex.NewRegistry(Application(connections))
+                	if err != nil {
+                		return nil, fmt.Errorf("register Flows: %w", err)
+                	}
+                	cache, err := blobcache.New(&blobcache.Config{Dir: environment("DEX_BLOB_CACHE_DIR", filepath.Join(os.TempDir(), "application-blobs")), MaxBytes: 256 << 20, Logger: logger})
+                	if err != nil {
+                		return nil, fmt.Errorf("create Dex blob cache: %w", err)
+                	}
+                	flowServiceAddress := environment("DEX_FLOW_SERVICE_ADDRESS", "127.0.0.1:8801")
+                	workerTarget := dex.WorkerTarget{Address: environment("DEX_WORKER_TARGET", "127.0.0.1:8811"), Headless: os.Getenv("DEX_WORKER_HEADLESS") == "true"}
+                	dexWorker, err := dex.NewWorker(registry, cache, dex.WorkerOptions{BindAddress: environment("DEX_WORKER_BIND_ADDRESS", "127.0.0.1:8811"), WorkerTarget: workerTarget, FlowServiceAddress: flowServiceAddress, Logger: logger})
+                	if err != nil {
+                		_ = cache.Close()
+                		return nil, fmt.Errorf("create Dex Worker: %w", err)
+                	}
+                	client, err := dex.NewClient(registry, cache, dex.ClientOptions{FlowServiceAddress: flowServiceAddress, WorkerTarget: &workerTarget, Logger: logger})
+                	if err != nil {
+                		_ = dexWorker.Stop(context.Background())
+                		_ = cache.Close()
+                		return nil, fmt.Errorf("create Dex Client: %w", err)
+                	}
+                	slackTrigger, err := newSlackTrigger(configuration.Project(), client, logger)
+                	if err != nil {
+                		_ = client.Close()
+                		_ = dexWorker.Stop(context.Background())
+                		_ = cache.Close()
+                		return nil, fmt.Errorf("create Slack trigger: %w", err)
+                	}
+                	return &Worker{Client: client, SlackTrigger: slackTrigger, dexWorker: dexWorker, cache: cache}, nil
+                }
+
+                func (worker *Worker) Start() <-chan error {
+                	result := make(chan error, 2)
+                	go func() { result <- worker.dexWorker.Start() }()
+                	go func() { result <- worker.SlackTrigger.Run(context.Background()) }()
+                	return result
+                }
+
+                func (worker *Worker) Close() error {
+                	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+                	defer cancel()
+                	return errors.Join(worker.dexWorker.Stop(ctx), worker.Client.Close(), worker.cache.Close())
+                }
+
+                func environment(name, fallback string) string {
+                	if value := os.Getenv(name); value != "" {
+                		return value
+                	}
+                	return fallback
+                }
+      - text: "Writing internal/worker/application.go."
+        tool_uses:
+          - name: write
+            input:
+              path: internal/worker/application.go
+              content: |
+                package worker
+
+                import (
+                	"github.com/superdurable/dex-template-basic-process/internal/process"
+                	"github.com/superdurable/dex/sdk-go/dex"
+                )
+
+                // Application is the single list of the application's Flows with their
+                // connections: the Worker and the API tests register exactly this list. List
+                // every Flow here and its source file in dex-app.yaml.
+                func Application(connections Connections) []dex.Flow {
+                	return []dex.Flow{
+                		process.TextSummaryFlow{Connection: connections.SummaryModel},
+                		process.SlackMessageFlow{},
+                	}
+                }
+      - text: "Writing cmd/server/main.go."
+        tool_uses:
+          - name: write
+            input:
+              path: cmd/server/main.go
+              content: |
+                package main
+
+                import (
+                	"context"
+                	"errors"
+                	"fmt"
+                	"log/slog"
+                	"net/http"
+                	"os"
+                	"os/signal"
+                	"path/filepath"
+                	"syscall"
+                	"time"
+
+                	"github.com/superdurable/dex-connectors-library/connectors/slack"
+                	api "github.com/superdurable/dex-template-basic-process/internal/api"
+                	"github.com/superdurable/dex-template-basic-process/internal/process"
+                	"github.com/superdurable/dex-template-basic-process/internal/worker"
+                )
+
+                func main() {
+                	if err := run(); err != nil {
+                		slog.Error("application stopped", "error", err)
+                		os.Exit(1)
+                	}
+                }
+
+                func run() error {
+                	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+                	// Step, RPC and request failures log through the default logger.
+                	slog.SetDefault(logger)
+                	worker, err := worker.New(logger)
+                	if err != nil {
+                		return err
+                	}
+                	defer worker.Close()
+                	apiHandler, err := api.NewHandler(worker.Client)
+                	if err != nil {
+                		return fmt.Errorf("create OpenAPI handler: %w", err)
+                	}
+                	handler := http.NewServeMux()
+                	handler.Handle(slack.RelayedTriggerPath(process.SlackConnectionName), worker.SlackTrigger)
+                	handler.Handle("/", applicationHandler(apiHandler))
+                	server := &http.Server{Addr: ":" + environment("PORT", "8080"), Handler: handler, ReadHeaderTimeout: 5 * time.Second}
+                	workerResult := worker.Start()
+                	serverResult := make(chan error, 1)
+                	go func() { serverResult <- server.ListenAndServe() }()
+                	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+                	defer stop()
+                	select {
+                	case <-ctx.Done():
+                	case err := <-workerResult:
+                		if err != nil {
+                			return fmt.Errorf("run Dex Worker: %w", err)
+                		}
+                	case err := <-serverResult:
+                		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+                			return fmt.Errorf("run HTTP server: %w", err)
+                		}
+                	}
+                	shutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+                	defer cancel()
+                	return server.Shutdown(shutdown)
+                }
+
+                func applicationHandler(apiHandler http.Handler) http.Handler {
+                	mux := http.NewServeMux()
+                	mux.Handle("/api/", apiHandler)
+                	mux.Handle("/", staticHandler("web/dist"))
+                	return logServerErrors(mux)
+                }
+
+                // logServerErrors logs every response with a 5xx status with its method and
+                // route, never a request or response body.
+                func logServerErrors(next http.Handler) http.Handler {
+                	return http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+                		recorder := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+                		next.ServeHTTP(recorder, request)
+                		if recorder.status >= http.StatusInternalServerError {
+                			slog.ErrorContext(request.Context(), "HTTP request failed", "method", request.Method, "route", request.URL.Path, "status", recorder.status)
+                		}
+                	})
+                }
+
+                // statusRecorder keeps the status a handler wrote.
+                type statusRecorder struct {
+                	http.ResponseWriter
+                	status int
+                }
+
+                func (recorder *statusRecorder) WriteHeader(status int) {
+                	recorder.status = status
+                	recorder.ResponseWriter.WriteHeader(status)
+                }
+
+                func staticHandler(root string) http.Handler {
+                	files := http.FileServer(http.Dir(root))
+                	return http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+                		if request.Method != http.MethodGet && request.Method != http.MethodHead {
+                			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+                			return
+                		}
+                		asset := filepath.Join(root, filepath.Clean(request.URL.Path))
+                		if request.URL.Path != "/" {
+                			if info, err := os.Stat(asset); err == nil && !info.IsDir() {
+                				files.ServeHTTP(w, request)
+                				return
+                			}
+                		}
+                		http.ServeFile(w, request, filepath.Join(root, "index.html"))
+                	})
+                }
+
+                func environment(name, fallback string) string {
+                	if value := os.Getenv(name); value != "" {
+                		return value
+                	}
+                	return fallback
+                }
+      - text: "Writing dex-app.yaml."
+        tool_uses:
+          - name: write
+            input:
+              path: dex-app.yaml
+              content: |
+                {
+                  "schemaVersion": "superverse.dev/dex-app/v1",
+                  "application": {
+                    "port": 8080,
+                    "healthPath": "/api/health"
+                  },
+                  "flowDefinitions": [
+                    {
+                      "sourcePath": "internal/process/text_summary_flow.go"
+                    },
+                    {
+                      "sourcePath": "internal/process/slack_message_flow.go"
+                    }
+                  ],
+                  "connectors": [
+                    {
+                      "connectionName": "summary-model",
+                      "connectorId": "llm",
+                      "modulePath": "github.com/superdurable/dex-connectors-library/connectors/superdurable/llm",
+                      "version": "v0.22.1",
+                      "authMethodId": "",
+                      "operations": [
+                        "generateText"
+                      ]
+                    },
+                    {
+                      "connectionName": "support",
+                      "connectorId": "slack",
+                      "modulePath": "github.com/superdurable/dex-connectors-library/connectors/slack",
+                      "version": "v1.0.0",
+                      "authMethodId": "",
+                      "triggerBindings": [
+                        {
+                          "triggerName": "channelThreadCreated",
+                          "bindingName": "support-message"
+                        }
+                      ]
+                    }
+                  ]
+                }
+      - text: "Fetching the Slack connector v1.0.0 and checking the source."
+        tool_uses:
+          - name: bash
+            input:
+              command: "(go get github.com/superdurable/dex-connectors-library/connectors/slack@v1.0.0 && go mod tidy && make check-fdg-v2 && go build ./...) > /tmp/slack-trigger.log 2>&1 || { grep -v '^$' /tmp/slack-trigger.log | tail -3 | tr '\\n' ' '; exit 1; }; grep -c 'connectors/slack v1.0.0' go.mod"
+              description: "Fetch the Slack connector and check the source"
+              timeout_seconds: 600
+        expect_result_contains:
+          - "1"
+      - text: "Pushing the Slack trigger as a checkpoint: a relayed trigger has no connector mock for an API test."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Start SlackMessageFlow from relayed Slack messages of the support connection"
+              verification:
+                - "go build passes and the Flow definitions validate"
+              blocked: true
+      - text: "The Slack trigger is pushed. Select a platform Slack connection for support and bind support-message to the channel in Studio."
+      - text: "The checkpoint stays as pushed; the Slack connection is configured in Studio."
+      - text: "The checkpoint stays as pushed; the Slack connection is configured in Studio."
+      - text: "The checkpoint stays as pushed; the Slack connection is configured in Studio."

@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "sandboxProfiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "codingProfile"
+      ],
+      "properties": {
+        "codingProfile": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "image",
+            "workspace"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "image": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "repository",
+                "digest"
+              ],
+              "properties": {
+                "repository": {
+                  "type": "string",
+                  "pattern": "^[^@]*$"
+                },
+                "digest": {
+                  "type": "string",
+                  "pattern": "^$|^sha256:[a-f0-9]{64}$"
+                }
+              }
+            },
+            "workspace": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "size"
+              ],
+              "properties": {
+                "size": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*(Mi|Gi)$"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "hostedProjects": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dexImage",
+        "applicationRepository",
+        "certificateArn"
+      ],
+      "properties": {
+        "dexImage": {
+          "type": "string"
+        },
+        "applicationRepository": {
+          "type": "string"
+        },
+        "certificateArn": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

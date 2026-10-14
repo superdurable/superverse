@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# dexcli on the coding Sandbox PATH. It reads the Sandbox's Preview engine;
+# a subcommand that may change Flows needs --allow-mutation, which this shim
+# strips and dex-skills reserve for an explicit user request. A second
+# development environment is never started here. This guards against
+# mistakes; superverse-previewctl runs the real binary directly.
+set -euo pipefail
+
+real=/usr/local/libexec/superverse/dexcli
+allow_mutation=false
+arguments=()
+for argument in "$@"; do
+  if [ "$argument" = --allow-mutation ]; then
+    allow_mutation=true
+  else
+    arguments+=("$argument")
+  fi
+done
+
+refuse() {
+  echo "dexcli: '$1' may change Flows; add --allow-mutation only when the user explicitly asked for it." >&2
+  exit 2
+}
+
+command=${arguments[0]:-}
+case "$command" in
+  dev)
+    echo "dexcli: dev is not available in the Sandbox. The Preview engine runs at 127.0.0.1:8801 (namespace default); start it with: superverse-previewctl environment ensure" >&2
+    exit 2 ;;
+  "" | -* | health | version | visualize) ;;
+  flow)
+    case "${arguments[1]:-}" in
+      "" | -* | search | summary | state | history | inspect | watch) ;;
+      *) [ "$allow_mutation" = true ] || refuse "flow ${arguments[1]}" ;;
+    esac ;;
+  *) [ "$allow_mutation" = true ] || refuse "$command" ;;
+esac
+exec "$real" "${arguments[@]}"

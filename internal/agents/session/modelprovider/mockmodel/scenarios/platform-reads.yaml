@@ -1,0 +1,39 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# The read-only platform tools on the server, in one parallel wave: the
+# Project's delivery status, its ProjectFlow summary and the first page of its
+# history, and the end of the Live application's log. The argument project must
+# name the Session's Project: the history page has to hold the Flow's first
+# event, so a wave that cannot read the history stops instead of claiming a read.
+# A Project without a Live deployment answers the log read with a failure, which
+# the wave expects. The final text proves the results came back. It changes
+# nothing.
+name: platform-reads
+title: "Platform reads"
+description: "Reads the Project's delivery status, its ProjectFlow summary and history (set the project argument) and the Live application's log with the platform tools."
+category: project_feature
+arguments: {project: aaaa}
+inputs:
+  - label: "Read the platform state"
+    message: "Read the delivery status and the platform state of this Project."
+    replies:
+      - text: "Reading the delivery status, the Project's Flow with its history and the Live log."
+        tool_uses:
+          - name: read_delivery_status
+            input: {}
+          - name: read_platform_flow
+            input: {flow_id: "project-{{project}}", view: summary}
+          - name: read_platform_flow
+            input: {flow_id: "project-{{project}}", view: history, page_size: 5}
+          - name: read_live_app_runs
+            input: {operation: logs}
+        expect_failure: true
+        expect_result_contains:
+          - '"type":"FlowStarted"'
+      - text: "The platform reads finished."

@@ -1,0 +1,57 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# The questions of request_user_input: input 1 raises the effort, searches the
+# connector catalog and asks two questions, which end the turn. Input 2 answers
+# both, in question order: the answers start a turn that waits on a short
+# durable timer, records the plan and ends. It changes nothing in the workspace.
+name: question-answers
+title: "Questions and answers"
+description: "Raises the effort, searches the connector catalog and asks two questions; the answers continue through a short durable timer to a progress list."
+category: agent_feature
+inputs:
+  - label: "Plan a newsletter"
+    message: "Plan a weekly newsletter of the latest releases."
+    replies:
+      - thinking: "Sending needs a mail connector, and the provider and the schedule are the user's choices."
+        text: "Raising the effort and checking which mail connectors exist."
+        tool_uses:
+          - name: set_effort
+            input: {level: high, reason: "Choosing the mail connection and the schedule needs care."}
+          - name: connector_catalog
+            input: {query: "gmail"}
+      - text: "Two choices are yours."
+        tool_uses:
+          - name: request_user_input
+            input:
+              questions:
+                - id: provider
+                  header: "Mail provider"
+                  question: "Which mail account sends the newsletter?"
+                  options:
+                    - {label: "Gmail", description: "Send from a Gmail account."}
+                    - {label: "Outlook", description: "Send from an Outlook account."}
+                - id: schedule
+                  header: "Schedule"
+                  question: "When is the newsletter sent?"
+                  options:
+                    - {label: "Monday morning", description: "Every Monday at 9:00."}
+                    - {label: "Friday afternoon", description: "Every Friday at 15:00."}
+  - label: "Answer both questions"
+    answers: ["Gmail", "Monday morning"]
+    replies:
+      - text: "Waiting briefly before recording the plan."
+        tool_uses:
+          - name: start_timer
+            input: {duration_seconds: 2, reason: "Let the answers settle."}
+      - tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Send the newsletter from Gmail every Monday morning", status: pending}
+      - text: "The newsletter goes out from Gmail every Monday morning."

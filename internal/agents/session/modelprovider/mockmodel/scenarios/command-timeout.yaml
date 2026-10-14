@@ -1,0 +1,44 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A command that runs past its timeout_seconds: it prints 4,000 numbered lines,
+# then sleeps for 25 seconds and prints a last line. The Session's attempt ends
+# at the 5-second timeout and SettleForegroundCommand moves the command to the
+# background through the Sandbox's command ledger: the model reads a successful
+# result with the output so far, the first and the last numbered line, and the
+# task ID. The turn ends; when the command exits, its task notification opens
+# an automatic turn, which reads the end of the output with read_task_output
+# from the task ID the notification carries. It changes nothing in the
+# workspace.
+name: command-timeout
+title: "Command past its timeout"
+description: "A command that runs past its timeout moves to the background; its exit notification opens a turn that reads the end of its output."
+category: agent_feature
+arguments: {task: cmd-aaaaaaaaaaaa}
+inputs:
+  - label: "Run the numbering command"
+    message: "Run the numbering command."
+    replies:
+      - text: "Running the numbering command."
+        tool_uses:
+          - name: bash
+            input: {command: "for i in $(seq 1 4000); do printf 'line-%04d\\n' $i; done; sleep 25; echo numbering-finished", description: "Print numbered lines, then wait", timeout_seconds: 5}
+        expect_result_contains:
+          - "line-0001"
+          - "line-4000"
+          - "The command ran past its timeout of 5s and continues in the background as task cmd-"
+      - text: "The numbering command ran past its timeout and continues in the background."
+      - text: "The numbering command finished in the background; reading the end of its output."
+        notification: task
+        tool_uses:
+          - name: read_task_output
+            input: {task_id: "{{task}}", offset: 39990}
+        expect_result_contains:
+          - "exited with code 0"
+          - "line-4000\nnumbering-finished"
+      - text: "The numbering command finished in the background and printed numbering-finished."

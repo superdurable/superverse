@@ -1,0 +1,114 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+{{- if not .Values.localKind }}
+{{- $profile := (include "v2.sandboxProfiles" . | fromJson).codingProfile }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "v2.product" $ }}-platform
+  namespace: {{ include "v2.namespace" $ }}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}}
+      ports: [{port: 50051, protocol: TCP}, {port: 8801, protocol: TCP}]
+    - from:
+        - podSelector: {matchLabels: {app: {{ include "v2.product" $ }}-studio}}
+      ports: [{port: 8080, protocol: TCP}]
+    - ports: [{port: 3000, protocol: TCP}, {port: {{ include "v2.slackEvents.port" . }}, protocol: TCP}, {port: {{ include "v2.remoteAgent.port" . }}, protocol: TCP}]
+  egress:
+    - to:
+        - podSelector: {}
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+      ports: [{port: 53, protocol: UDP}, {port: 53, protocol: TCP}]
+    {{- range concat .Values.network.kubernetesApiCIDRs .Values.network.dependencyCIDRs }}
+    - to: [{ipBlock: {cidr: {{ . | quote }}}}]
+    {{- end }}
+    - to: [{ipBlock: {cidr: 169.254.170.23/32}}]
+      ports: [{port: 80, protocol: TCP}]
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16]
+      ports: [{port: 443, protocol: TCP}]
+---
+# Studio reaches only the sandbox application preview directly. All project
+# management requests cross authenticated Go APIs and private Dex gRPC.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "v2.product" $ }}-studio-preview
+  namespace: {{ include "v2.namespace" $ }}
+spec:
+  podSelector: {matchLabels: {app: {{ include "v2.product" $ }}-studio}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: {app.kubernetes.io/managed-by: {{ include "v2.product" $ }}}
+            matchExpressions: [{key: superdurable.io/scope, operator: In, values: [preview]}]
+          podSelector: {matchLabels: {superdurable.io/sandbox-profile: {{ $profile.name }}}}
+      ports: [{port: 3000, protocol: TCP}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "v2.product" $ }}-project-coordinator
+  namespace: {{ include "v2.namespace" $ }}
+spec:
+  podSelector: {matchLabels: {app: {{ include "v2.product" $ }}-server}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: {app.kubernetes.io/managed-by: {{ include "v2.product" $ }}}
+            matchExpressions: [{key: superdurable.io/project-id, operator: Exists}]
+          podSelector: {matchLabels: {superdurable.io/component: dex}}
+      ports: [{port: 8801, protocol: TCP}]
+    - to:
+        - namespaceSelector:
+            matchLabels: {app.kubernetes.io/managed-by: {{ include "v2.product" $ }}}
+            matchExpressions: [{key: superdurable.io/project-id, operator: Exists}]
+          podSelector: {matchLabels: {superdurable.io/component: storage}}
+      ports: [{port: 9000, protocol: TCP}]
+    - to:
+        - namespaceSelector:
+            matchLabels: {app.kubernetes.io/managed-by: {{ include "v2.product" $ }}}
+            matchExpressions: [{key: superdurable.io/scope, operator: In, values: [preview]}]
+          podSelector: {matchLabels: {superdurable.io/sandbox-profile: {{ $profile.name }}}}
+      # sandboxd and the Sandbox-local Preview Dex.
+      ports: [{port: {{ $profile.sandboxd.restPort }}, protocol: TCP}, {port: {{ $profile.sandboxd.grpcPort }}, protocol: TCP}, {port: {{ $profile.preview.dexPort }}, protocol: TCP}]
+    - to:
+        - namespaceSelector:
+            matchLabels: {app.kubernetes.io/managed-by: {{ include "v2.product" $ }}}
+            matchExpressions: [{key: superdurable.io/project-id, operator: Exists}]
+          podSelector: {matchLabels: {superdurable.io/component: application}}
+      ports: [{port: 8080, protocol: TCP}, {port: 8811, protocol: TCP}]
+---
+# Platform Dex runs on Temporal Cloud, and the server checks the data plane of
+# each project's Temporal Cloud namespace before the project Dex uses it.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "v2.product" $ }}-platform-temporal-cloud
+  namespace: {{ include "v2.namespace" $ }}
+spec:
+  podSelector:
+    matchExpressions: [{key: app, operator: In, values: [{{ include "v2.product" $ }}-dex, {{ include "v2.product" $ }}-server]}]
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16]
+      ports: [{port: 7233, protocol: TCP}]
+{{- end }}

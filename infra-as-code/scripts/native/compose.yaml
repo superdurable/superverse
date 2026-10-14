@@ -1,0 +1,124 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# The platform services of Local Native, which `sv2 native start` runs as this Compose project and `native stop`
+# stops: platform Temporal, MinIO, PostgreSQL, Dex and Keycloak with the pinned images and the configuration of Local Kind
+# (scripts/local_platform.py; `make -C infra-as-code check` compares the arguments with the chart's), the gateway of
+# Preview and Live routes, which polls them from the server, and the local registry of Release images. Every port is
+# published on the loopback only, from native.yaml; containers reach the host processes through host.docker.internal.
+# The launcher supplies every value through its environment, secrets included, so none is in this file. The data of
+# each service stays in its named volume across runs. The launcher supplies the
+# effective project name and instance label, so instances cannot select each other's resources.
+name: superverse-v2-native
+
+services:
+  temporal:
+    image: ${SV2_TEMPORAL_IMAGE:?}
+    # The image runs as its own user, whose home a new volume takes the ownership of.
+    command: [server, start-dev, --ip, 0.0.0.0, --ui-ip, 0.0.0.0, --namespace, "${SV2_TEMPORAL_NAMESPACE:?}", --db-filename, /home/temporal/temporal.db,
+              --search-attribute, FlowType=Keyword, --search-attribute, DexParentFlowID=Keyword, --search-attribute, ActiveStepTypes=KeywordList,
+              --search-attribute, keyword1=Keyword, --search-attribute, keyword2=Keyword, --search-attribute, keyword3=Keyword]
+    ports: ["127.0.0.1:${SV2_TEMPORAL_PORT:?}:7233", "127.0.0.1:${SV2_TEMPORAL_UI_PORT:?}:8233"]
+    volumes: [temporal:/home/temporal]
+    restart: unless-stopped
+    labels: ["superdurable.io/native-instance=${SV2_NATIVE_INSTANCE:?}"]
+
+  minio:
+    image: ${SV2_MINIO_IMAGE:?}
+    command: [server, /data]
+    environment:
+      MINIO_ROOT_USER: ${SV2_MINIO_ACCESS:?}
+      MINIO_ROOT_PASSWORD: ${SV2_MINIO_SECRET:?}
+    ports: ["127.0.0.1:${SV2_MINIO_PORT:?}:9000"]
+    volumes: [minio:/data]
+    restart: unless-stopped
+    labels: ["superdurable.io/native-instance=${SV2_NATIVE_INSTANCE:?}"]
+
+  # The server's database. The launcher creates its roles from the instance's retained credentials through the
+  # container's socket on every start; the superuser password here only seeds a new volume.
+  postgres:
+    image: ${SV2_POSTGRES_IMAGE:?}
+    environment:
+      POSTGRES_DB: superverse
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_PASSWORD: ${SV2_POSTGRES_PASSWORD:?}
+    ports: ["127.0.0.1:${SV2_POSTGRES_PORT:?}:5432"]
+    volumes: [postgres:/var/lib/postgresql/data]
+    restart: unless-stopped
+    labels: ["superdurable.io/native-instance=${SV2_NATIVE_INSTANCE:?}"]
+
+  dex:
+    image: ${SV2_DEX_IMAGE:?}
+    command: [--services, "api,interpreter,web"]
+    environment:
+      CONFIG_TEMPLATE_PATH: /etc/dex/config.yaml
+      TEMPORAL_HOST_PORT: temporal:7233
+    configs: [{source: dex, target: /etc/dex/config.yaml}]
+    ports: ["127.0.0.1:${SV2_DEX_PORT:?}:8801", "127.0.0.1:${SV2_DEX_WEB_PORT:?}:8802"]
+    depends_on: [temporal, minio]
+    restart: unless-stopped
+    labels: ["superdurable.io/native-instance=${SV2_NATIVE_INSTANCE:?}"]
+
+  # The OAuth provider of the connection tests. The launcher recreates it on every start, so it imports the chart's
+  # realm into a new database each time. Its tokens carry the browser's issuer, SV2_KEYCLOAK_ORIGIN.
+  keycloak:
+    image: ${SV2_KEYCLOAK_IMAGE:?}
+    command: [start-dev, --import-realm]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_HOSTNAME: ${SV2_KEYCLOAK_ORIGIN:?}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+      SV2_KEYCLOAK_REDIRECT_ORIGIN: ${SV2_STUDIO_ORIGIN:?}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:?}
+      SV2_KEYCLOAK_CLIENT_SECRET: ${SV2_KEYCLOAK_CLIENT_SECRET:?}
+      SV2_KEYCLOAK_USER_PASSWORD: ${SV2_KEYCLOAK_USER_PASSWORD:?}
+    configs: [{source: keycloak-realm, target: /opt/keycloak/data/import/superverse-e2e.json}]
+    ports: ["127.0.0.1:${SV2_KEYCLOAK_PORT:?}:8080"]
+    restart: unless-stopped
+    labels: ["superdurable.io/native-instance=${SV2_NATIVE_INSTANCE:?}"]
+
+  gateway:
+    image: ${SV2_GATEWAY_IMAGE:?}
+    command: ["--providers.http.endpoint=http://host.docker.internal:${SV2_ROUTES_PORT:?}/routes", --providers.http.pollInterval=1s,
+              "--entrypoints.web.address=:8080", "--entrypoints.traefik.address=:8081", --api=true, --api.insecure=true,
+              --ping=true, --ping.entrypoint=web, --log.level=ERROR]
+    ports: ["127.0.0.1:${SV2_GATEWAY_PORT:?}:8080", "127.0.0.1:${SV2_GATEWAY_API_PORT:?}:8081"]
+    user: "65532:65532"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    labels: ["superdurable.io/native-instance=${SV2_NATIVE_INSTANCE:?}"]
+
+  registry:
+    image: ${SV2_REGISTRY_IMAGE:?}
+    ports: ["127.0.0.1:${SV2_REGISTRY_PORT:?}:5000"]
+    volumes: [registry:/var/lib/registry]
+    restart: unless-stopped
+    labels: ["superdurable.io/native-instance=${SV2_NATIVE_INSTANCE:?}"]
+
+configs:
+  dex:
+    content: ${SV2_DEX_CONFIG:?}
+    labels: {superdurable.io/native-instance: "${SV2_NATIVE_INSTANCE:?}"}
+  # The file itself, so Compose never interpolates the realm's own placeholders.
+  keycloak-realm:
+    file: ../../kubernetes/charts/superverse-platform/files/keycloak-realm.json
+    labels: {superdurable.io/native-instance: "${SV2_NATIVE_INSTANCE:?}"}
+
+volumes:
+  temporal: {labels: {superdurable.io/native-instance: "${SV2_NATIVE_INSTANCE:?}"}}
+  minio: {labels: {superdurable.io/native-instance: "${SV2_NATIVE_INSTANCE:?}"}}
+  postgres: {labels: {superdurable.io/native-instance: "${SV2_NATIVE_INSTANCE:?}"}}
+  registry: {labels: {superdurable.io/native-instance: "${SV2_NATIVE_INSTANCE:?}"}}
+
+networks:
+  default:
+    labels: {superdurable.io/native-instance: "${SV2_NATIVE_INSTANCE:?}"}

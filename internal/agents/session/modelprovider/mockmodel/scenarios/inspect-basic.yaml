@@ -1,0 +1,40 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A read-only inspection of any Project: a parallel search and listing, one
+# read, one short command and a progress list. It names only dex-app.yaml, which
+# every READY Project has, and changes nothing in the workspace.
+name: inspect-basic
+title: "Read-only inspection"
+description: "A parallel search and listing, a read of the manifest, a command and a progress list; changes nothing."
+category: agent_feature
+inputs:
+  - label: "Inspect the application"
+    message: "Inspect the application."
+    replies:
+      - thinking: "I will look at the application manifest and the repository layout side by side."
+        text: "I'll inspect the application's structure."
+        tool_uses:
+          - name: grep
+            input: {pattern: flowDefinitions, path: dex-app.yaml, output_mode: content}
+          - name: glob
+            input: {pattern: "*.yaml"}
+      - text: "Reading the application manifest."
+        tool_uses:
+          - name: read
+            input: {path: dex-app.yaml}
+      - text: "Checking the working tree."
+        tool_uses:
+          - name: bash
+            input: {command: "git status --short", description: "Show the working tree's changes"}
+      - tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Inspect the application", status: completed}
+      - text: "Inspection finished: the manifest names the application's Flow definitions, and nothing was changed."

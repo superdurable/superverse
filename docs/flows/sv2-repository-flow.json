@@ -1,0 +1,1296 @@
+{
+  "schemaVersion": "2.0",
+  "valid": true,
+  "source": {
+    "language": "go",
+    "path": "internal/projects/repobinding/repository_binding_flow.go"
+  },
+  "flow": {
+    "name": "RepositoryBindingFlow",
+    "span": {
+      "startLine": 71,
+      "startColumn": 1,
+      "endLine": 73,
+      "endColumn": 2
+    }
+  },
+  "nodes": [
+    {
+      "id": "decision-dispatch:rpc:ClaimRepository",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "rpc:ClaimRepository",
+      "phase": "rpc",
+      "span": {
+        "startLine": 118,
+        "startColumn": 1,
+        "endLine": 136,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:rpc:ReleaseRepository",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "rpc:ReleaseRepository",
+      "phase": "rpc",
+      "span": {
+        "startLine": 140,
+        "startColumn": 1,
+        "endLine": 153,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision:rpc:ClaimRepository:121:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:ClaimRepository",
+      "condition": "b.Status == StatusReleased",
+      "phase": "rpc",
+      "span": {
+        "startLine": 121,
+        "startColumn": 10,
+        "endLine": 121,
+        "endColumn": 110
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:ClaimRepository:128:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:ClaimRepository",
+      "condition": "!(b.Status == StatusReleased) and b.Status == StatusBound",
+      "phase": "rpc",
+      "span": {
+        "startLine": 128,
+        "startColumn": 10,
+        "endLine": 128,
+        "endColumn": 58
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:ClaimRepository:135:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:ClaimRepository",
+      "condition": "!(b.Status == StatusReleased) and !(b.Status == StatusBound)",
+      "phase": "rpc",
+      "span": {
+        "startLine": 135,
+        "startColumn": 9,
+        "endLine": 135,
+        "endColumn": 96
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:GetDexDisplay:175:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetDexDisplay",
+      "phase": "rpc",
+      "span": {
+        "startLine": 175,
+        "startColumn": 9,
+        "endLine": 175,
+        "endColumn": 115
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:GetDexSummary:170:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetDexSummary",
+      "phase": "rpc",
+      "span": {
+        "startLine": 170,
+        "startColumn": 9,
+        "endLine": 170,
+        "endColumn": 117
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:GetRepositoryBinding:103:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetRepositoryBinding",
+      "phase": "rpc",
+      "span": {
+        "startLine": 103,
+        "startColumn": 9,
+        "endLine": 113,
+        "endColumn": 4
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:ReleaseRepository:143:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:ReleaseRepository",
+      "condition": "!b.releasableBy(in)",
+      "phase": "rpc",
+      "span": {
+        "startLine": 143,
+        "startColumn": 10,
+        "endLine": 143,
+        "endColumn": 113
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:ReleaseRepository:146:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:ReleaseRepository",
+      "condition": "!(!b.releasableBy(in)) and b.Status == StatusReleased",
+      "phase": "rpc",
+      "span": {
+        "startLine": 146,
+        "startColumn": 10,
+        "endLine": 146,
+        "endColumn": 80
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:ReleaseRepository:151:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:ReleaseRepository",
+      "condition": "!(!b.releasableBy(in)) and !(b.Status == StatusReleased)",
+      "phase": "rpc",
+      "span": {
+        "startLine": 151,
+        "startColumn": 9,
+        "endLine": 152,
+        "endColumn": 90
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:step:CompleteRepositoryBinding:165:9",
+      "kind": "decision",
+      "name": "gracefulComplete",
+      "parentId": "step:CompleteRepositoryBinding",
+      "phase": "execute",
+      "span": {
+        "startLine": 165,
+        "startColumn": 9,
+        "endLine": 165,
+        "endColumn": 54
+      },
+      "decision": {
+        "type": "gracefulComplete"
+      }
+    },
+    {
+      "id": "resource:attribute:AcceptedClaimID",
+      "kind": "attribute",
+      "name": "AcceptedClaimID",
+      "span": {
+        "startLine": 24,
+        "startColumn": 2,
+        "endLine": 24,
+        "endColumn": 66
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:BindingGeneration",
+      "kind": "attribute",
+      "name": "BindingGeneration",
+      "span": {
+        "startLine": 21,
+        "startColumn": 2,
+        "endLine": 21,
+        "endColumn": 70
+      },
+      "resource": {
+        "valueType": "uint64"
+      }
+    },
+    {
+      "id": "resource:attribute:BindingStatus",
+      "kind": "attribute",
+      "name": "BindingStatus",
+      "span": {
+        "startLine": 23,
+        "startColumn": 2,
+        "endLine": 23,
+        "endColumn": 143
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:BoundProjectID",
+      "kind": "attribute",
+      "name": "BoundProjectID",
+      "span": {
+        "startLine": 20,
+        "startColumn": 2,
+        "endLine": 20,
+        "endColumn": 67
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:RepositoryCreatedAt",
+      "kind": "attribute",
+      "name": "CreatedAt",
+      "span": {
+        "startLine": 14,
+        "startColumn": 2,
+        "endLine": 14,
+        "endColumn": 71
+      },
+      "resource": {
+        "valueType": "time.Time"
+      }
+    },
+    {
+      "id": "resource:attribute:RepositoryID",
+      "kind": "attribute",
+      "name": "RepositoryID",
+      "span": {
+        "startLine": 19,
+        "startColumn": 2,
+        "endLine": 19,
+        "endColumn": 64
+      },
+      "resource": {
+        "valueType": "int64"
+      }
+    },
+    {
+      "id": "resource:attribute:RepositoryRevision",
+      "kind": "attribute",
+      "name": "Revision",
+      "span": {
+        "startLine": 13,
+        "startColumn": 2,
+        "endLine": 13,
+        "endColumn": 67
+      },
+      "resource": {
+        "valueType": "uint64"
+      }
+    },
+    {
+      "id": "resource:attribute:RepositoryStartIdentity",
+      "kind": "attribute",
+      "name": "StartIdentity",
+      "span": {
+        "startLine": 12,
+        "startColumn": 2,
+        "endLine": 12,
+        "endColumn": 87
+      },
+      "resource": {
+        "valueType": "dexflow.StartIdentity"
+      }
+    },
+    {
+      "id": "resource:attribute:RepositoryUpdatedAt",
+      "kind": "attribute",
+      "name": "UpdatedAt",
+      "span": {
+        "startLine": 15,
+        "startColumn": 2,
+        "endLine": 15,
+        "endColumn": 71
+      },
+      "resource": {
+        "valueType": "time.Time"
+      }
+    },
+    {
+      "id": "rpc:ClaimRepository",
+      "kind": "rpc",
+      "name": "ClaimRepository",
+      "span": {
+        "startLine": 118,
+        "startColumn": 1,
+        "endLine": 136,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:GetDexDisplay",
+      "kind": "rpc",
+      "name": "GetDexDisplay",
+      "span": {
+        "startLine": 174,
+        "startColumn": 1,
+        "endLine": 176,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:GetDexSummary",
+      "kind": "rpc",
+      "name": "GetDexSummary",
+      "span": {
+        "startLine": 169,
+        "startColumn": 1,
+        "endLine": 171,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:GetRepositoryBinding",
+      "kind": "rpc",
+      "name": "GetRepositoryBinding",
+      "span": {
+        "startLine": 102,
+        "startColumn": 1,
+        "endLine": 114,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:ReleaseRepository",
+      "kind": "rpc",
+      "name": "ReleaseRepository",
+      "span": {
+        "startLine": 140,
+        "startColumn": 1,
+        "endLine": 153,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "step:CompleteRepositoryBinding",
+      "kind": "step",
+      "name": "CompleteRepositoryBinding",
+      "phase": "execute",
+      "span": {
+        "startLine": 72,
+        "startColumn": 23,
+        "endLine": 72,
+        "endColumn": 73
+      },
+      "metadata": {
+        "explanation": "Complete the binding that ReleaseRepository ended; the retained execution keeps it readable."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:0001",
+      "kind": "transition",
+      "from": "decision:rpc:ReleaseRepository:151:9",
+      "to": "step:CompleteRepositoryBinding",
+      "label": "fan-out",
+      "span": {
+        "startLine": 152,
+        "startColumn": 33,
+        "endLine": 152,
+        "endColumn": 88
+      }
+    },
+    {
+      "id": "edge:0002",
+      "kind": "resource_read",
+      "from": "resource:attribute:AcceptedClaimID",
+      "to": "rpc:ClaimRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 112,
+        "startColumn": 27,
+        "endLine": 112,
+        "endColumn": 51
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0003",
+      "kind": "resource_read",
+      "from": "resource:attribute:AcceptedClaimID",
+      "to": "rpc:GetRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 112,
+        "startColumn": 27,
+        "endLine": 112,
+        "endColumn": 51
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0004",
+      "kind": "resource_read",
+      "from": "resource:attribute:AcceptedClaimID",
+      "to": "rpc:ReleaseRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 112,
+        "startColumn": 27,
+        "endLine": 112,
+        "endColumn": 51
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0005",
+      "kind": "resource_read",
+      "from": "resource:attribute:AcceptedClaimID",
+      "to": "step:CompleteRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 112,
+        "startColumn": 27,
+        "endLine": 112,
+        "endColumn": 51
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0006",
+      "kind": "resource_read",
+      "from": "resource:attribute:BindingGeneration",
+      "to": "rpc:ClaimRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 110,
+        "startColumn": 27,
+        "endLine": 110,
+        "endColumn": 53
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0007",
+      "kind": "resource_read",
+      "from": "resource:attribute:BindingGeneration",
+      "to": "rpc:GetRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 110,
+        "startColumn": 27,
+        "endLine": 110,
+        "endColumn": 53
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0008",
+      "kind": "resource_read",
+      "from": "resource:attribute:BindingGeneration",
+      "to": "rpc:ReleaseRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 110,
+        "startColumn": 27,
+        "endLine": 110,
+        "endColumn": 53
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0009",
+      "kind": "resource_read",
+      "from": "resource:attribute:BindingGeneration",
+      "to": "step:CompleteRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 110,
+        "startColumn": 27,
+        "endLine": 110,
+        "endColumn": 53
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0010",
+      "kind": "resource_read",
+      "from": "resource:attribute:BindingStatus",
+      "to": "rpc:ClaimRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 111,
+        "startColumn": 27,
+        "endLine": 111,
+        "endColumn": 49
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0011",
+      "kind": "resource_read",
+      "from": "resource:attribute:BindingStatus",
+      "to": "rpc:GetDexDisplay",
+      "label": "Get",
+      "span": {
+        "startLine": 175,
+        "startColumn": 90,
+        "endLine": 175,
+        "endColumn": 112
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0012",
+      "kind": "resource_read",
+      "from": "resource:attribute:BindingStatus",
+      "to": "rpc:GetRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 111,
+        "startColumn": 27,
+        "endLine": 111,
+        "endColumn": 49
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0013",
+      "kind": "resource_read",
+      "from": "resource:attribute:BindingStatus",
+      "to": "rpc:ReleaseRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 111,
+        "startColumn": 27,
+        "endLine": 111,
+        "endColumn": 49
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0014",
+      "kind": "resource_read",
+      "from": "resource:attribute:BindingStatus",
+      "to": "step:CompleteRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 111,
+        "startColumn": 27,
+        "endLine": 111,
+        "endColumn": 49
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0015",
+      "kind": "resource_read",
+      "from": "resource:attribute:BoundProjectID",
+      "to": "rpc:ClaimRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 109,
+        "startColumn": 27,
+        "endLine": 109,
+        "endColumn": 50
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0016",
+      "kind": "resource_read",
+      "from": "resource:attribute:BoundProjectID",
+      "to": "rpc:GetDexSummary",
+      "label": "Get",
+      "span": {
+        "startLine": 170,
+        "startColumn": 91,
+        "endLine": 170,
+        "endColumn": 114
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0017",
+      "kind": "resource_read",
+      "from": "resource:attribute:BoundProjectID",
+      "to": "rpc:GetRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 109,
+        "startColumn": 27,
+        "endLine": 109,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0018",
+      "kind": "resource_read",
+      "from": "resource:attribute:BoundProjectID",
+      "to": "rpc:ReleaseRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 109,
+        "startColumn": 27,
+        "endLine": 109,
+        "endColumn": 50
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0019",
+      "kind": "resource_read",
+      "from": "resource:attribute:BoundProjectID",
+      "to": "step:CompleteRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 109,
+        "startColumn": 27,
+        "endLine": 109,
+        "endColumn": 50
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0020",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryCreatedAt",
+      "to": "rpc:ClaimRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 105,
+        "startColumn": 27,
+        "endLine": 105,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0021",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryCreatedAt",
+      "to": "rpc:GetRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 105,
+        "startColumn": 27,
+        "endLine": 105,
+        "endColumn": 55
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0022",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryCreatedAt",
+      "to": "rpc:ReleaseRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 105,
+        "startColumn": 27,
+        "endLine": 105,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0023",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryCreatedAt",
+      "to": "step:CompleteRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 105,
+        "startColumn": 27,
+        "endLine": 105,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0024",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryID",
+      "to": "rpc:ClaimRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 108,
+        "startColumn": 27,
+        "endLine": 108,
+        "endColumn": 48
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0025",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryID",
+      "to": "rpc:GetRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 108,
+        "startColumn": 27,
+        "endLine": 108,
+        "endColumn": 48
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0026",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryID",
+      "to": "rpc:ReleaseRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 108,
+        "startColumn": 27,
+        "endLine": 108,
+        "endColumn": 48
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0027",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryID",
+      "to": "step:CompleteRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 108,
+        "startColumn": 27,
+        "endLine": 108,
+        "endColumn": 48
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0028",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryRevision",
+      "to": "rpc:ClaimRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 107,
+        "startColumn": 27,
+        "endLine": 107,
+        "endColumn": 54
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0029",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryRevision",
+      "to": "rpc:GetRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 107,
+        "startColumn": 27,
+        "endLine": 107,
+        "endColumn": 54
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0030",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryRevision",
+      "to": "rpc:ReleaseRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 107,
+        "startColumn": 27,
+        "endLine": 107,
+        "endColumn": 54
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0031",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryRevision",
+      "to": "step:CompleteRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 107,
+        "startColumn": 27,
+        "endLine": 107,
+        "endColumn": 54
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0032",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryStartIdentity",
+      "to": "rpc:ClaimRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 104,
+        "startColumn": 27,
+        "endLine": 104,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0033",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryStartIdentity",
+      "to": "rpc:GetRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 104,
+        "startColumn": 27,
+        "endLine": 104,
+        "endColumn": 59
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0034",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryStartIdentity",
+      "to": "rpc:ReleaseRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 104,
+        "startColumn": 27,
+        "endLine": 104,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0035",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryStartIdentity",
+      "to": "step:CompleteRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 104,
+        "startColumn": 27,
+        "endLine": 104,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0036",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryUpdatedAt",
+      "to": "rpc:ClaimRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 106,
+        "startColumn": 27,
+        "endLine": 106,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0037",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryUpdatedAt",
+      "to": "rpc:GetRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 106,
+        "startColumn": 27,
+        "endLine": 106,
+        "endColumn": 55
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0038",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryUpdatedAt",
+      "to": "rpc:ReleaseRepository",
+      "label": "Get",
+      "span": {
+        "startLine": 106,
+        "startColumn": 27,
+        "endLine": 106,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0039",
+      "kind": "resource_read",
+      "from": "resource:attribute:RepositoryUpdatedAt",
+      "to": "step:CompleteRepositoryBinding",
+      "label": "Get",
+      "span": {
+        "startLine": 106,
+        "startColumn": 27,
+        "endLine": 106,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "RepositoryBindingFlow.GetRepositoryBinding",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0040",
+      "kind": "resource_write",
+      "from": "rpc:ClaimRepository",
+      "to": "resource:attribute:AcceptedClaimID",
+      "label": "Set",
+      "span": {
+        "startLine": 131,
+        "startColumn": 14,
+        "endLine": 131,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0041",
+      "kind": "resource_write",
+      "from": "rpc:ClaimRepository",
+      "to": "resource:attribute:BindingGeneration",
+      "label": "Set",
+      "span": {
+        "startLine": 132,
+        "startColumn": 14,
+        "endLine": 132,
+        "endColumn": 56
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0042",
+      "kind": "resource_write",
+      "from": "rpc:ClaimRepository",
+      "to": "resource:attribute:BindingStatus",
+      "label": "Set",
+      "span": {
+        "startLine": 133,
+        "startColumn": 14,
+        "endLine": 133,
+        "endColumn": 49
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0043",
+      "kind": "resource_write",
+      "from": "rpc:ClaimRepository",
+      "to": "resource:attribute:BoundProjectID",
+      "label": "Set",
+      "span": {
+        "startLine": 130,
+        "startColumn": 14,
+        "endLine": 130,
+        "endColumn": 51
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0044",
+      "kind": "resource_write",
+      "from": "rpc:ClaimRepository",
+      "to": "resource:attribute:RepositoryRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 197,
+        "startColumn": 14,
+        "endLine": 197,
+        "endColumn": 83
+      },
+      "metadata": {
+        "function": "touchRepository",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0045",
+      "kind": "resource_write",
+      "from": "rpc:ClaimRepository",
+      "to": "resource:attribute:RepositoryUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 198,
+        "startColumn": 14,
+        "endLine": 198,
+        "endColumn": 60
+      },
+      "metadata": {
+        "function": "touchRepository",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0046",
+      "kind": "resource_write",
+      "from": "rpc:ReleaseRepository",
+      "to": "resource:attribute:BindingStatus",
+      "label": "Set",
+      "span": {
+        "startLine": 149,
+        "startColumn": 14,
+        "endLine": 149,
+        "endColumn": 52
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0047",
+      "kind": "resource_write",
+      "from": "rpc:ReleaseRepository",
+      "to": "resource:attribute:BoundProjectID",
+      "label": "Set",
+      "span": {
+        "startLine": 148,
+        "startColumn": 14,
+        "endLine": 148,
+        "endColumn": 51
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0048",
+      "kind": "resource_write",
+      "from": "rpc:ReleaseRepository",
+      "to": "resource:attribute:RepositoryRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 197,
+        "startColumn": 14,
+        "endLine": 197,
+        "endColumn": 83
+      },
+      "metadata": {
+        "function": "touchRepository",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0049",
+      "kind": "resource_write",
+      "from": "rpc:ReleaseRepository",
+      "to": "resource:attribute:RepositoryUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 198,
+        "startColumn": 14,
+        "endLine": 198,
+        "endColumn": 60
+      },
+      "metadata": {
+        "function": "touchRepository",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    }
+  ],
+  "diagnostics": [],
+  "groups": [
+    {
+      "id": "binding",
+      "label": "Repository binding",
+      "stepIds": [
+        "step:CompleteRepositoryBinding"
+      ]
+    }
+  ],
+  "v2": {
+    "indexedAttributes": [
+      {
+        "attributeKey": "BindingStatus",
+        "indexKey": "keyword3",
+        "indexType": "keyword",
+        "valueType": "string",
+        "description": "Business status"
+      }
+    ],
+    "summary": {
+      "rpcName": "GetDexSummary",
+      "fields": [
+        {
+          "attributeKey": "BoundProjectID",
+          "valueType": "string",
+          "editable": false,
+          "description": "BoundProjectID"
+        }
+      ]
+    },
+    "display": {
+      "rpcName": "GetDexDisplay",
+      "fields": [
+        {
+          "attributeKey": "BindingStatus",
+          "valueType": "string",
+          "editable": false,
+          "description": "Repository binding state"
+        }
+      ]
+    },
+    "actions": []
+  }
+}

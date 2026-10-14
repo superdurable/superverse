@@ -1,0 +1,96 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+{{/*
+CEL: the named object is a Live application generation: a bounded name and a positive generation
+number. Pass (dict "name" <CEL string>). A constant pattern keeps the regex precompiled.
+*/}}
+{{- define "v2.generationNameCEL" -}}
+{{ .name }}.matches('^app-[a-z0-9]([a-z0-9-]{0,34}[a-z0-9])?-[1-9][0-9]{0,19}$')
+{{- end -}}
+
+{{- if not .Values.localKind }}
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: {{ include "v2.product" $ }}-project-environment-activation
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ['']
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE, DELETE]
+        resources: [namespaces]
+      - apiGroups: ['*']
+        apiVersions: ['*']
+        operations: [CREATE, UPDATE, DELETE]
+        resources: ['*']
+        scope: Namespaced
+  matchConditions:
+    {{- include "v2.serverOnlyMatch" $ | nindent 4 }}
+    - name: project-scope
+      expression: >-
+        request.namespace != '' ? request.namespace.matches('^{{ include "v2.projectNamespacePrefix" $ }}.*$') : (request.operation == 'DELETE' ? oldObject.metadata.name : object.metadata.name).matches('^{{ include "v2.projectNamespacePrefix" $ }}.*$')
+  variables:
+    - name: target
+      expression: "request.operation == 'DELETE' ? oldObject : object"
+    - name: labels
+      expression: variables.target.metadata.labels
+  validations:
+    - expression: >-
+        variables.labels['app.kubernetes.io/managed-by'] == '{{ include "v2.product" $ }}' &&
+        variables.labels['app.kubernetes.io/part-of'] == '{{ include "v2.product" $ }}-live' &&
+        variables.labels['superdurable.io/project-id'].matches('^[a-z0-9]{1,32}$') &&
+        (request.namespace == '' ? variables.target.metadata.name : request.namespace) ==
+          '{{ include "v2.projectNamespacePrefix" $ }}' + variables.labels['superdurable.io/project-id']
+      message: Every resource must bind the exact V2 project namespace.
+    - expression: >-
+        request.resource.resource in ['namespaces','rolebindings','serviceaccounts','secrets','deployments','services','networkpolicies','httproutes']
+      message: Hosted project resource kinds are explicitly bounded; storage and Temporal run in their cloud services.
+    - expression: >-
+        request.operation == 'DELETE' || request.resource.resource != 'serviceaccounts' ||
+        (object.automountServiceAccountToken == false &&
+         (object.metadata.name == 'dex' ||
+          {{- include "v2.generationNameCEL" (dict "name" "object.metadata.name") | nindent 10 }}))
+      message: Project service accounts are Dex or an exact application generation, without Kubernetes API credentials.
+    - expression: >-
+        request.operation == 'DELETE' || request.resource.resource != 'deployments' ||
+        (object.spec.replicas == 1 && object.spec.strategy.type == 'Recreate' &&
+         object.spec.template.spec.automountServiceAccountToken == false &&
+         (!has(object.spec.template.spec.hostNetwork) || object.spec.template.spec.hostNetwork == false) &&
+         (!has(object.spec.template.spec.hostPID) || object.spec.template.spec.hostPID == false) &&
+         (!has(object.spec.template.spec.hostIPC) || object.spec.template.spec.hostIPC == false) &&
+         (!has(object.spec.template.spec.initContainers) || size(object.spec.template.spec.initContainers) == 0) &&
+         size(object.spec.template.spec.containers) == 1 &&
+         object.spec.template.spec.containers.all(c, c.securityContext.allowPrivilegeEscalation == false && c.securityContext.capabilities.drop == ['ALL'] && (!has(c.securityContext.privileged) || c.securityContext.privileged == false)) &&
+         object.spec.template.spec.volumes.all(v, !has(v.hostPath) && !has(v.persistentVolumeClaim) && !has(v.projected)) &&
+         (object.metadata.name == 'dex' ?
+           (object.spec.template.spec.serviceAccountName == 'dex' && object.spec.template.spec.containers[0].image == {{ .Values.hostedProjects.dexImage | quote }}) :
+           ({{- include "v2.generationNameCEL" (dict "name" "object.metadata.name") | nindent 12 }} &&
+            object.spec.template.spec.serviceAccountName == object.metadata.name &&
+            object.spec.template.spec.runtimeClassName in ['runsc-live', 'runsc'] &&
+            object.spec.template.spec.containers[0].image.startsWith({{ printf "%s@sha256:" .Values.hostedProjects.applicationRepository | quote }}) &&
+            object.spec.template.spec.containers[0].securityContext.runAsNonRoot == true &&
+            object.spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem == true)))
+      message: Hosted application generations require gVisor and immutable owned images; Dex uses the reviewed platform image.
+    - expression: >-
+        request.operation == 'DELETE' || request.resource.resource != 'services' ||
+        (object.spec.type == 'ClusterIP' && (!has(object.spec.externalIPs) || size(object.spec.externalIPs)==0) && !has(object.spec.externalName))
+      message: Project services remain private; only the accepted Live route publishes an application.
+    # The host and the parent Gateway are fixed by templates/project-route-admission.yaml.
+    - expression: >-
+        request.operation == 'DELETE' || request.resource.resource != 'httproutes' ||
+        (object.metadata.name == 'live' && size(object.spec.rules)==1 && size(object.spec.rules[0].backendRefs)==1 &&
+         {{- include "v2.generationNameCEL" (dict "name" "object.spec.rules[0].backendRefs[0].name") | nindent 9 }} &&
+         object.spec.rules[0].backendRefs[0].port==8080 &&
+         (!has(object.metadata.annotations) || size(object.metadata.annotations)==0))
+      message: The hosted Live route forwards only to a generation Service.
+---
+{{ include "v2.policyBinding" (dict "root" $ "name" "project-environment-activation") }}
+{{- end }}

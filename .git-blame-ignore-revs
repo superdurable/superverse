@@ -1,0 +1,5 @@
+# Mechanical reformatting commits; use with git blame --ignore-revs-file .git-blame-ignore-revs
+# (or git config blame.ignoreRevsFile .git-blame-ignore-revs).
+
+# Format Studio sources with the pinned Prettier
+ea1266a18fba74dead359e2ef0d85704bf9f8371

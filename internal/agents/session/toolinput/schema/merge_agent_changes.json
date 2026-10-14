@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "agent_id",
+    "action"
+  ],
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "The task ID of a finished subagent, as start_agent answered it, such as agent-k3n8q5r1.",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "action": {
+      "type": "string",
+      "description": "apply merges the subagent's changes into the workspace as uncommitted changes; discard drops them.",
+      "enum": [
+        "apply",
+        "discard"
+      ]
+    },
+    "paths": {
+      "type": "array",
+      "description": "With apply, merge only the changed files these paths name, files or directories relative to the workspace, and leave the others mergeable; every changed file when omitted.",
+      "minItems": 1,
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4096
+      }
+    }
+  }
+}

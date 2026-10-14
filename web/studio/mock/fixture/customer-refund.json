@@ -1,0 +1,945 @@
+{
+  "schemaVersion": "2.0",
+  "valid": true,
+  "source": {
+    "language": "go",
+    "path": "examples/go/products/customer-refund/deterministic/workflow.go"
+  },
+  "flow": {
+    "name": "CustomerRefundFlow",
+    "startStepId": "step:deterministicReceiveRequest",
+    "span": {
+      "startLine": 82,
+      "startColumn": 1,
+      "endLine": 92,
+      "endColumn": 2
+    }
+  },
+  "nodes": [
+    {
+      "id": "decision-dispatch:step:deterministicCheckPolicy",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:deterministicCheckPolicy",
+      "phase": "execute",
+      "span": {
+        "startLine": 261,
+        "startColumn": 1,
+        "endLine": 292,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision:rpc:GetDexDisplay:180:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetDexDisplay",
+      "phase": "rpc",
+      "span": {
+        "startLine": 180,
+        "startColumn": 9,
+        "endLine": 188,
+        "endColumn": 4
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:GetDexSummary:134:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetDexSummary",
+      "phase": "rpc",
+      "span": {
+        "startLine": 134,
+        "startColumn": 9,
+        "endLine": 138,
+        "endColumn": 4
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:step:deterministicCheckOrder:248:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:deterministicCheckOrder",
+      "phase": "execute",
+      "span": {
+        "startLine": 248,
+        "startColumn": 9,
+        "endLine": 248,
+        "endColumn": 57
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:deterministicCheckPolicy:276:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:deterministicCheckPolicy",
+      "condition": "lookup != \"found\"",
+      "phase": "execute",
+      "span": {
+        "startLine": 276,
+        "startColumn": 10,
+        "endLine": 276,
+        "endColumn": 61
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:deterministicCheckPolicy:286:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:deterministicCheckPolicy",
+      "condition": "!(lookup != \"found\") and orderAgeDays \u003c= standardWindowDays",
+      "phase": "execute",
+      "span": {
+        "startLine": 286,
+        "startColumn": 10,
+        "endLine": 286,
+        "endColumn": 58
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:deterministicCheckPolicy:291:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:deterministicCheckPolicy",
+      "condition": "!(lookup != \"found\") and !(orderAgeDays \u003c= standardWindowDays)",
+      "phase": "execute",
+      "span": {
+        "startLine": 291,
+        "startColumn": 9,
+        "endLine": 291,
+        "endColumn": 56
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:deterministicCloseCase:414:9",
+      "kind": "decision",
+      "name": "gracefulComplete",
+      "parentId": "step:deterministicCloseCase",
+      "phase": "execute",
+      "span": {
+        "startLine": 414,
+        "startColumn": 9,
+        "endLine": 414,
+        "endColumn": 60
+      },
+      "decision": {
+        "type": "gracefulComplete"
+      }
+    },
+    {
+      "id": "decision:step:deterministicDenyRefund:352:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:deterministicDenyRefund",
+      "phase": "execute",
+      "span": {
+        "startLine": 352,
+        "startColumn": 9,
+        "endLine": 352,
+        "endColumn": 60
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:deterministicIssueRefund:332:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:deterministicIssueRefund",
+      "phase": "execute",
+      "span": {
+        "startLine": 332,
+        "startColumn": 9,
+        "endLine": 332,
+        "endColumn": 60
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:deterministicNotifyCustomer:388:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:deterministicNotifyCustomer",
+      "phase": "execute",
+      "span": {
+        "startLine": 388,
+        "startColumn": 9,
+        "endLine": 388,
+        "endColumn": 55
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:deterministicReceiveRequest:219:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:deterministicReceiveRequest",
+      "phase": "execute",
+      "span": {
+        "startLine": 219,
+        "startColumn": 9,
+        "endLine": 219,
+        "endColumn": 56
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "resource:attribute:deterministicBillingOutcome",
+      "kind": "attribute",
+      "name": "billing-outcome",
+      "span": {
+        "startLine": 54,
+        "startColumn": 5,
+        "endLine": 54,
+        "endColumn": 81
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:deterministicCaseStatus",
+      "kind": "attribute",
+      "name": "case-status",
+      "span": {
+        "startLine": 61,
+        "startColumn": 5,
+        "endLine": 64,
+        "endColumn": 2
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:deterministicChargeReference",
+      "kind": "attribute",
+      "name": "charge-reference",
+      "span": {
+        "startLine": 44,
+        "startColumn": 5,
+        "endLine": 44,
+        "endColumn": 83
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:deterministicOperatorNote",
+      "kind": "attribute",
+      "name": "operator-note",
+      "span": {
+        "startLine": 58,
+        "startColumn": 5,
+        "endLine": 58,
+        "endColumn": 77
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:deterministicOrderAgeDays",
+      "kind": "attribute",
+      "name": "order-age-days",
+      "span": {
+        "startLine": 48,
+        "startColumn": 5,
+        "endLine": 48,
+        "endColumn": 77
+      },
+      "resource": {
+        "valueType": "int64"
+      }
+    },
+    {
+      "id": "resource:attribute:deterministicOrderLookup",
+      "kind": "attribute",
+      "name": "order-lookup",
+      "span": {
+        "startLine": 50,
+        "startColumn": 5,
+        "endLine": 50,
+        "endColumn": 75
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:deterministicRecommendation",
+      "kind": "attribute",
+      "name": "recommended-action",
+      "span": {
+        "startLine": 56,
+        "startColumn": 5,
+        "endLine": 56,
+        "endColumn": 84
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:deterministicRefundAmount",
+      "kind": "attribute",
+      "name": "refund-amount",
+      "span": {
+        "startLine": 46,
+        "startColumn": 5,
+        "endLine": 46,
+        "endColumn": 77
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:deterministicRefundKey",
+      "kind": "attribute",
+      "name": "refund-key",
+      "span": {
+        "startLine": 52,
+        "startColumn": 5,
+        "endLine": 52,
+        "endColumn": 71
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "rpc:GetDexDisplay",
+      "kind": "rpc",
+      "name": "GetDexDisplay",
+      "span": {
+        "startLine": 148,
+        "startColumn": 1,
+        "endLine": 189,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:GetDexSummary",
+      "kind": "rpc",
+      "name": "GetDexSummary",
+      "span": {
+        "startLine": 118,
+        "startColumn": 1,
+        "endLine": 139,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "step:deterministicCheckOrder",
+      "kind": "step",
+      "name": "CheckOrder",
+      "phase": "execute",
+      "span": {
+        "startLine": 85,
+        "startColumn": 3,
+        "endLine": 85,
+        "endColumn": 44
+      },
+      "metadata": {
+        "explanation": "Check the order and charge evidence for the refund."
+      }
+    },
+    {
+      "id": "step:deterministicCheckPolicy",
+      "kind": "step",
+      "name": "CheckPolicy",
+      "phase": "execute",
+      "span": {
+        "startLine": 86,
+        "startColumn": 3,
+        "endLine": 86,
+        "endColumn": 45
+      },
+      "metadata": {
+        "explanation": "Evaluate refund policy and choose approve or deny."
+      }
+    },
+    {
+      "id": "step:deterministicCloseCase",
+      "kind": "step",
+      "name": "CloseCase",
+      "phase": "execute",
+      "span": {
+        "startLine": 90,
+        "startColumn": 3,
+        "endLine": 90,
+        "endColumn": 43
+      },
+      "metadata": {
+        "explanation": "Close the refund case after notification."
+      }
+    },
+    {
+      "id": "step:deterministicDenyRefund",
+      "kind": "step",
+      "name": "DenyRefund",
+      "phase": "execute",
+      "span": {
+        "startLine": 88,
+        "startColumn": 3,
+        "endLine": 88,
+        "endColumn": 44
+      },
+      "metadata": {
+        "explanation": "Record a policy denial for the refund request."
+      }
+    },
+    {
+      "id": "step:deterministicIssueRefund",
+      "kind": "step",
+      "name": "IssueRefund",
+      "phase": "execute",
+      "span": {
+        "startLine": 87,
+        "startColumn": 3,
+        "endLine": 87,
+        "endColumn": 66
+      },
+      "metadata": {
+        "explanation": "Issue the refund through billing."
+      }
+    },
+    {
+      "id": "step:deterministicNotifyCustomer",
+      "kind": "step",
+      "name": "NotifyCustomer",
+      "phase": "execute",
+      "span": {
+        "startLine": 89,
+        "startColumn": 3,
+        "endLine": 89,
+        "endColumn": 69
+      },
+      "metadata": {
+        "explanation": "Notify the customer of the refund decision."
+      }
+    },
+    {
+      "id": "step:deterministicReceiveRequest",
+      "kind": "step",
+      "name": "ReceiveRequest",
+      "phase": "execute",
+      "start": true,
+      "span": {
+        "startLine": 84,
+        "startColumn": 3,
+        "endLine": 84,
+        "endColumn": 53
+      },
+      "metadata": {
+        "explanation": "Store the inbound refund request and start the case."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:0001",
+      "kind": "transition",
+      "from": "decision:step:deterministicCheckOrder:248:9",
+      "to": "step:deterministicCheckPolicy",
+      "label": "GoTo",
+      "span": {
+        "startLine": 248,
+        "startColumn": 9,
+        "endLine": 248,
+        "endColumn": 57
+      }
+    },
+    {
+      "id": "edge:0002",
+      "kind": "transition",
+      "from": "decision:step:deterministicCheckPolicy:276:10",
+      "to": "step:deterministicNotifyCustomer",
+      "label": "GoTo",
+      "span": {
+        "startLine": 276,
+        "startColumn": 10,
+        "endLine": 276,
+        "endColumn": 61
+      }
+    },
+    {
+      "id": "edge:0003",
+      "kind": "transition",
+      "from": "decision:step:deterministicCheckPolicy:286:10",
+      "to": "step:deterministicIssueRefund",
+      "label": "GoTo",
+      "span": {
+        "startLine": 286,
+        "startColumn": 10,
+        "endLine": 286,
+        "endColumn": 58
+      }
+    },
+    {
+      "id": "edge:0004",
+      "kind": "transition",
+      "from": "decision:step:deterministicCheckPolicy:291:9",
+      "to": "step:deterministicDenyRefund",
+      "label": "GoTo",
+      "span": {
+        "startLine": 291,
+        "startColumn": 9,
+        "endLine": 291,
+        "endColumn": 56
+      }
+    },
+    {
+      "id": "edge:0005",
+      "kind": "transition",
+      "from": "decision:step:deterministicDenyRefund:352:9",
+      "to": "step:deterministicNotifyCustomer",
+      "label": "GoTo",
+      "span": {
+        "startLine": 352,
+        "startColumn": 9,
+        "endLine": 352,
+        "endColumn": 60
+      }
+    },
+    {
+      "id": "edge:0006",
+      "kind": "transition",
+      "from": "decision:step:deterministicIssueRefund:332:9",
+      "to": "step:deterministicNotifyCustomer",
+      "label": "GoTo",
+      "span": {
+        "startLine": 332,
+        "startColumn": 9,
+        "endLine": 332,
+        "endColumn": 60
+      }
+    },
+    {
+      "id": "edge:0007",
+      "kind": "transition",
+      "from": "decision:step:deterministicNotifyCustomer:388:9",
+      "to": "step:deterministicCloseCase",
+      "label": "GoTo",
+      "span": {
+        "startLine": 388,
+        "startColumn": 9,
+        "endLine": 388,
+        "endColumn": 55
+      }
+    },
+    {
+      "id": "edge:0008",
+      "kind": "transition",
+      "from": "decision:step:deterministicReceiveRequest:219:9",
+      "to": "step:deterministicCheckOrder",
+      "label": "GoTo",
+      "span": {
+        "startLine": 219,
+        "startColumn": 9,
+        "endLine": 219,
+        "endColumn": 56
+      }
+    },
+    {
+      "id": "edge:0009",
+      "kind": "resource_read",
+      "from": "resource:attribute:deterministicCaseStatus",
+      "to": "step:deterministicCloseCase",
+      "label": "Get",
+      "span": {
+        "startLine": 405,
+        "startColumn": 17,
+        "endLine": 405,
+        "endColumn": 49
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0010",
+      "kind": "resource_read",
+      "from": "resource:attribute:deterministicCaseStatus",
+      "to": "step:deterministicNotifyCustomer",
+      "label": "Get",
+      "span": {
+        "startLine": 370,
+        "startColumn": 17,
+        "endLine": 370,
+        "endColumn": 49
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0011",
+      "kind": "resource_read",
+      "from": "resource:attribute:deterministicOrderAgeDays",
+      "to": "step:deterministicCheckPolicy",
+      "label": "Get",
+      "span": {
+        "startLine": 278,
+        "startColumn": 23,
+        "endLine": 278,
+        "endColumn": 57
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0012",
+      "kind": "resource_read",
+      "from": "resource:attribute:deterministicOrderLookup",
+      "to": "step:deterministicCheckPolicy",
+      "label": "Get",
+      "span": {
+        "startLine": 265,
+        "startColumn": 17,
+        "endLine": 265,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0013",
+      "kind": "resource_write",
+      "from": "step:deterministicCheckOrder",
+      "to": "resource:attribute:deterministicCaseStatus",
+      "label": "Set",
+      "span": {
+        "startLine": 245,
+        "startColumn": 12,
+        "endLine": 245,
+        "endColumn": 64
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0014",
+      "kind": "resource_write",
+      "from": "step:deterministicCheckOrder",
+      "to": "resource:attribute:deterministicOrderAgeDays",
+      "label": "Set",
+      "span": {
+        "startLine": 239,
+        "startColumn": 19,
+        "endLine": 239,
+        "endColumn": 78
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0015",
+      "kind": "resource_write",
+      "from": "step:deterministicCheckOrder",
+      "to": "resource:attribute:deterministicOrderLookup",
+      "label": "Set",
+      "span": {
+        "startLine": 242,
+        "startColumn": 12,
+        "endLine": 242,
+        "endColumn": 53
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0016",
+      "kind": "resource_write",
+      "from": "step:deterministicCheckPolicy",
+      "to": "resource:attribute:deterministicCaseStatus",
+      "label": "Set",
+      "span": {
+        "startLine": 273,
+        "startColumn": 13,
+        "endLine": 273,
+        "endColumn": 66
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0017",
+      "kind": "resource_write",
+      "from": "step:deterministicCheckPolicy",
+      "to": "resource:attribute:deterministicRecommendation",
+      "label": "Set",
+      "span": {
+        "startLine": 270,
+        "startColumn": 13,
+        "endLine": 270,
+        "endColumn": 75
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0018",
+      "kind": "resource_write",
+      "from": "step:deterministicCloseCase",
+      "to": "resource:attribute:deterministicCaseStatus",
+      "label": "Set",
+      "span": {
+        "startLine": 410,
+        "startColumn": 13,
+        "endLine": 410,
+        "endColumn": 61
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0019",
+      "kind": "resource_write",
+      "from": "step:deterministicDenyRefund",
+      "to": "resource:attribute:deterministicCaseStatus",
+      "label": "Set",
+      "span": {
+        "startLine": 349,
+        "startColumn": 12,
+        "endLine": 349,
+        "endColumn": 58
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0020",
+      "kind": "resource_write",
+      "from": "step:deterministicIssueRefund",
+      "to": "resource:attribute:deterministicBillingOutcome",
+      "label": "Set",
+      "span": {
+        "startLine": 320,
+        "startColumn": 12,
+        "endLine": 320,
+        "endColumn": 57
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0021",
+      "kind": "resource_write",
+      "from": "step:deterministicIssueRefund",
+      "to": "resource:attribute:deterministicCaseStatus",
+      "label": "Set",
+      "span": {
+        "startLine": 329,
+        "startColumn": 12,
+        "endLine": 329,
+        "endColumn": 52
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0022",
+      "kind": "resource_write",
+      "from": "step:deterministicIssueRefund",
+      "to": "resource:attribute:deterministicRefundKey",
+      "label": "Set",
+      "span": {
+        "startLine": 316,
+        "startColumn": 12,
+        "endLine": 316,
+        "endColumn": 48
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "severity": "warning",
+      "code": "unused_resource",
+      "message": "attribute charge-reference has no direct access in the source file",
+      "span": {
+        "startLine": 44,
+        "startColumn": 5,
+        "endLine": 44,
+        "endColumn": 83
+      }
+    },
+    {
+      "severity": "warning",
+      "code": "unused_resource",
+      "message": "attribute operator-note has no direct access in the source file",
+      "span": {
+        "startLine": 58,
+        "startColumn": 5,
+        "endLine": 58,
+        "endColumn": 77
+      }
+    },
+    {
+      "severity": "warning",
+      "code": "unused_resource",
+      "message": "attribute refund-amount has no direct access in the source file",
+      "span": {
+        "startLine": 46,
+        "startColumn": 5,
+        "endLine": 46,
+        "endColumn": 77
+      }
+    }
+  ],
+  "groups": [
+    {
+      "id": "intake",
+      "label": "Intake",
+      "stepIds": ["step:deterministicReceiveRequest"]
+    },
+    {
+      "id": "evidence",
+      "label": "Evidence",
+      "stepIds": ["step:deterministicCheckOrder"]
+    },
+    {
+      "id": "control",
+      "label": "Control",
+      "stepIds": ["step:deterministicCheckPolicy"]
+    },
+    {
+      "id": "resolution",
+      "label": "Resolution",
+      "stepIds": ["step:deterministicIssueRefund", "step:deterministicNotifyCustomer"]
+    },
+    {
+      "id": "failure",
+      "label": "Failure",
+      "stepIds": ["step:deterministicDenyRefund"]
+    },
+    {
+      "id": "close",
+      "label": "Close",
+      "stepIds": ["step:deterministicCloseCase"]
+    }
+  ],
+  "v2": {
+    "indexedAttributes": [
+      {
+        "attributeKey": "case-status",
+        "indexKey": "CustomKeyword2",
+        "indexType": "keyword",
+        "valueType": "string",
+        "description": "Current case status"
+      }
+    ],
+    "summary": {
+      "rpcName": "GetDexSummary",
+      "fields": [
+        {
+          "attributeKey": "charge-reference",
+          "valueType": "string",
+          "editable": false,
+          "description": "Charge reference"
+        },
+        {
+          "attributeKey": "refund-amount",
+          "valueType": "string",
+          "editable": false,
+          "description": "Refund amount"
+        },
+        {
+          "attributeKey": "recommended-action",
+          "valueType": "string",
+          "editable": false,
+          "description": "Recommended action"
+        }
+      ]
+    },
+    "display": {
+      "rpcName": "GetDexDisplay",
+      "fields": [
+        {
+          "attributeKey": "charge-reference",
+          "valueType": "string",
+          "editable": false,
+          "description": "Charge reference"
+        },
+        {
+          "attributeKey": "refund-amount",
+          "valueType": "string",
+          "editable": false,
+          "description": "Requested amount"
+        },
+        {
+          "attributeKey": "order-lookup",
+          "valueType": "string",
+          "editable": false,
+          "description": "Order evidence"
+        },
+        {
+          "attributeKey": "order-age-days",
+          "valueType": "int64",
+          "editable": false,
+          "description": "Order age in days"
+        },
+        {
+          "attributeKey": "recommended-action",
+          "valueType": "string",
+          "editable": false,
+          "description": "Policy recommendation"
+        },
+        {
+          "attributeKey": "billing-outcome",
+          "valueType": "string",
+          "editable": false,
+          "description": "Billing outcome"
+        },
+        {
+          "attributeKey": "operator-note",
+          "valueType": "string",
+          "editable": true,
+          "description": "Operator note"
+        }
+      ]
+    },
+    "actions": []
+  }
+}

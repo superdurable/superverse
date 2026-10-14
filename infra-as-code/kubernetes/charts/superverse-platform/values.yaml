@@ -1,0 +1,99 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+environment: test
+localKind: false
+server:
+  enabled: true
+  image: {repository: "", digest: "", pullPolicy: IfNotPresent}
+  replicas: 1
+  # The server configuration document (cmd/superverse-server/config/README.md), rendered
+  # into the <product>-server-config ConfigMap. Non-secret settings only; the chart fills the
+  # addresses it owns and fixes environment, localKind and the sandbox profile.
+  config: {}
+  resources:
+    requests: {cpu: 250m, memory: 256Mi}
+    limits: {cpu: "2", memory: 2Gi}
+studio:
+  enabled: true
+  image: {repository: "", digest: "", pullPolicy: IfNotPresent}
+  # Studio keeps no state between requests; above 1 a PodDisruptionBudget keeps one Pod serving.
+  replicas: 1
+  config: {}
+  resources:
+    requests: {cpu: 100m, memory: 192Mi}
+    limits: {cpu: "1", memory: 1Gi}
+dex:
+  image: {repository: docker.io/superdurable/dex-server, tag: "v1.6.1", digest: "sha256:4938936477d82b4b8243f209d8555de7eaad5767adf89f38d513b8721ac14763", pullPolicy: IfNotPresent}
+  # More than one replica requires sharedStreamStore: the memory Stream store is per process,
+  # so a Stream written on one replica is never read on another.
+  replicas: 1
+  # Declares that the private <product>-dex-config selects a Stream store all replicas share (redis).
+  sharedStreamStore: false
+  temporalAddress: ""
+  internalClientCIDRs: []
+  debugIngress:
+    enabled: false
+    className: alb
+    certificateArn: ""
+    subnetIDs: []
+    targetCIDRs: []
+  resources:
+    requests: {cpu: 250m, memory: 512Mi}
+    limits: {cpu: "2", memory: 2Gi}
+ingress:
+  className: alb
+  certificateArn: ""
+  # The platform ALB's subnets: its target health checks reach the server's health port from them.
+  targetCIDRs: []
+network:
+  kubernetesApiCIDRs: []
+  dependencyCIDRs: []
+
+platformNodeSelector: {superdurable.io/pool: platform}
+localDependencies:
+  temporalImage: ""
+  minioImage: ""
+  postgresImage: ""
+  keycloakImage: ""
+  keycloakOrigin: ""
+sandboxController:
+  namespace: {create: true, name: agent-sandbox-system}
+  image:
+    repository: registry.k8s.io/agent-sandbox/agent-sandbox-controller
+    tag: v1.0.1@sha256:e1787f95cda406e2d81322e8637b6dfa2d77514fbbd0536a872b8e5d409b7154
+  nodeSelector: {superdurable.io/pool: platform}
+  resources:
+    requests: {cpu: 25m, memory: 64Mi}
+    limits: {cpu: 500m, memory: 256Mi}
+  podSecurityContext: {runAsNonRoot: true, runAsUser: 65532, seccompProfile: {type: RuntimeDefault}}
+  containerSecurityContext: {allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
+sandboxProfiles:
+  # Environment inputs of the coding profile; the rest of its immutable
+  # contract and its localKind settings are templates/_coding-profile.tpl.
+  codingProfile:
+    enabled: false
+    image:
+      repository: ""
+      # Deploy coding Sandboxes by immutable digest, never a mutable tag.
+      digest: ""
+    workspace:
+      size: 10Gi
+nodePools:
+  clusterName: ""
+  nodeRoleName: ""
+  gvisorRelease: ""
+  gvisorSHA256: ""
+  # vCPU ceilings per Karpenter pool (not spend). Terraform sets them per environment (node_pool_limits).
+  # A coding Sandbox requests 500m, so a 2 vCPU node holds 3: 160 vCPU is 80 nodes, 240 Sessions.
+  limits: {platform: 32, runsc: 160, live: 64}
+
+hostedProjects:
+  dexImage: ""
+  applicationRepository: ""
+  certificateArn: ""

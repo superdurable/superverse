@@ -1,0 +1,66 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A pushed checkpoint whose Flow source does not compile, then its repair.
+# Input 1 breaks the template's Flow source and pushes it as a blocked
+# checkpoint, which skips the source gate and hands nothing to the Preview. A
+# blocked commit leaves the turn's source change without a handoff, so the
+# Session continues the turn three times; the script answers each with the
+# same text. Input 2 restores the source through the real commit gate, which
+# hands the restored commit to the Preview, so the Project's source ends as
+# it began. A test can then deploy the checkpoint itself and see the Preview
+# refuse its definitions.
+name: preview-broken-checkpoint
+title: "Push a broken checkpoint, then repair it"
+description: "Pushes a blocked checkpoint whose Flow source does not compile, then restores the source through the commit gate."
+category: user_error
+inputs:
+  - label: "Push a broken checkpoint"
+    message: "Push a checkpoint whose Flow source does not compile yet."
+    replies:
+      - text: "Leaving the Flow source unfinished for a checkpoint."
+        tool_uses:
+          - name: edit
+            input:
+              path: internal/process/text_summary_flow.go
+              old_string: "// MaximumTextSummaryBytes bounds the source text kept in Flow state.\n"
+              new_string: "// MaximumTextSummaryBytes bounds the source text kept in Flow state.\nfunc unfinishedCheckpoint( {\n"
+      - text: "Pushing the checkpoint without the source gate."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Checkpoint an unfinished Flow source"
+              verification:
+                - "internal/process/text_summary_flow.go holds the unfinished checkpoint"
+              blocked: true
+      - text: "The checkpoint is pushed; its Flow source does not compile yet."
+      - text: "The checkpoint stays as pushed; the next message restores the Flow source."
+      - text: "The checkpoint stays as pushed; the next message restores the Flow source."
+      - text: "The checkpoint stays as pushed; the next message restores the Flow source."
+  - label: "Restore the Flow source"
+    message: "Restore the Flow source and push it."
+    replies:
+      - text: "Restoring the Flow source."
+        tool_uses:
+          - name: edit
+            input:
+              path: internal/process/text_summary_flow.go
+              old_string: "func unfinishedCheckpoint( {\n"
+              new_string: ""
+      - text: "Restoring the application's dependencies, as the template's instructions say."
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap", description: "Restore the application's dependencies", timeout_seconds: 600}
+      - text: "Running the source checks and pushing the restored Flow source."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Restore the Flow source"
+              verification:
+                - "internal/process/text_summary_flow.go compiles again"
+      - text: "The Flow source is restored and pushed. The Preview deploys it by itself."

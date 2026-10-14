@@ -1,0 +1,110 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+{{- if .Values.server.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "v2.serverAccount" . }}
+  namespace: {{ include "v2.namespace" $ }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+automountServiceAccountToken: true
+---
+# The server's non-secret configuration: the one document that cmd/superverse-server/config loads.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "v2.product" $ }}-server-config
+  namespace: {{ include "v2.namespace" $ }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+data:
+  server.yaml: |
+    {{- include "v2.serverConfig" . | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "v2.product" $ }}-server
+  namespace: {{ include "v2.namespace" $ }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+spec:
+  replicas: {{ .Values.server.replicas }}
+  revisionHistoryLimit: 3
+  {{- if .Values.localKind }}
+  # Two Pods never share the local Git host's repository directory, not even while a rollout replaces one.
+  strategy: {type: Recreate}
+  {{- end }}
+  selector:
+    matchLabels: {app: {{ include "v2.product" $ }}-server}
+  template:
+    metadata:
+      labels: {app: {{ include "v2.product" $ }}-server, app.kubernetes.io/part-of: {{ include "v2.product" $ }}, app.kubernetes.io/name: superverse-server}
+      annotations:
+        checksum/config: {{ toJson .Values.server | sha256sum | quote }}
+        # The rendered configuration also holds what the chart derives, such as the profile name.
+        checksum/server-config: {{ include "v2.serverConfig" . | sha256sum | quote }}
+    spec:
+      {{- include "v2.platformPodSpec" (dict "root" $ "serviceAccount" (include "v2.serverAccount" .) "automountToken" true) | nindent 6 }}
+      initContainers:
+        # Applies the pending database migrations as the schema owner before the server starts, which never migrates.
+        # Only this container receives the owner's password.
+        - name: migrate
+          image: {{ include "v2.image" .Values.server.image | quote }}
+          imagePullPolicy: {{ .Values.server.image.pullPolicy }}
+          args: [migrate]
+          {{- include "v2.platformContainerSecurity" . | nindent 10 }}
+          env:
+            - {name: SUPERVERSE_CONFIG_FILE, value: /etc/superverse/server.yaml}
+            - name: SUPERVERSE_POSTGRES_OWNER_PASSWORD
+              valueFrom: {secretKeyRef: {name: {{ include "v2.product" $ }}-postgres, key: SUPERVERSE_POSTGRES_OWNER_PASSWORD}}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+          volumeMounts:
+            - {name: server-config, mountPath: /etc/superverse, readOnly: true}
+      containers:
+        - name: server
+          image: {{ include "v2.image" .Values.server.image | quote }}
+          imagePullPolicy: {{ .Values.server.image.pullPolicy }}
+          {{- include "v2.platformContainerSecurity" . | nindent 10 }}
+          envFrom:
+            # The server's secrets (cmd/superverse-server/config/README.md); never copied into Studio.
+            - secretRef: {name: {{ include "v2.product" $ }}-server}
+          env:
+            - {name: SUPERVERSE_CONFIG_FILE, value: /etc/superverse/server.yaml}
+          ports: [{name: grpc, containerPort: 8080}, {name: health, containerPort: 8082}, {name: worker, containerPort: 50051}, {name: credential-read, containerPort: {{ include "v2.credentialRead.port" . }}}, {name: slack-events, containerPort: {{ include "v2.slackEvents.port" . }}}, {name: remote-agent, containerPort: {{ include "v2.remoteAgent.port" . }}}{{ if .Values.localKind }}, {name: git-http, containerPort: {{ include "v2.localGit.port" . }}}{{ end }}]
+          startupProbe: {tcpSocket: {port: health}, periodSeconds: 3, failureThreshold: 100}
+          readinessProbe: {httpGet: {path: /readyz, port: health}, periodSeconds: 5}
+          livenessProbe: {httpGet: {path: /healthz, port: health}, periodSeconds: 10, failureThreshold: 6}
+          {{- if not .Values.localKind }}
+          # A rolling update starts the replacement beside the old Pod, which keeps serving until platform Dex, which
+          # re-resolves the headless Worker Service every two seconds (with DNS records cached for five), routes to the
+          # replacement; it keeps its open connection meanwhile. The sleep and the server's 10-second shutdown fit the
+          # Pod's 45-second termination grace. Local Kind's Recreate strategy starts the replacement only after the old
+          # Pod exited, where a sleep would only delay it.
+          lifecycle: {preStop: {sleep: {seconds: 15}}}
+          {{- end }}
+          resources: {{ toYaml .Values.server.resources | nindent 12 }}
+          volumeMounts:
+            {{- include "v2.platformScratchMounts" . | nindent 12 }}
+            - {name: server-config, mountPath: /etc/superverse, readOnly: true}
+            {{- if .Values.localKind }}
+            - {name: git-repositories, mountPath: {{ include "v2.localGit.mountPath" . }}}
+            {{- end }}
+      volumes:
+        {{- include "v2.platformScratchVolumes" . | nindent 8 }}
+        - name: server-config
+          configMap: {name: {{ include "v2.product" $ }}-server-config, items: [{key: server.yaml, path: server.yaml}]}
+        {{- if .Values.localKind }}
+        # The local Git host's repositories live on the host, in the main checkout's .local/superverse-v2/git,
+        # which kind up mounts into the node. Type Directory makes a cluster created without that mount fail
+        # to start the Pod instead of keeping repositories on the node's own disk.
+        - name: git-repositories
+          hostPath: {path: {{ include "v2.localGit.nodePath" . }}, type: Directory}
+        {{- end }}
+{{- end }}

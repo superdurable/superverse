@@ -1,0 +1,3520 @@
+{
+  "schemaVersion": "2.0",
+  "valid": true,
+  "source": {
+    "language": "go",
+    "path": "internal/tenancy/teamspaces/team_space_flow.go"
+  },
+  "flow": {
+    "name": "TeamSpaceFlow",
+    "startStepId": "step:AwaitTeamSpaceCommands",
+    "span": {
+      "startLine": 44,
+      "startColumn": 1,
+      "endLine": 49,
+      "endColumn": 2
+    }
+  },
+  "nodes": [
+    {
+      "id": "decision-dispatch:rpc:AddTeamSpaceMember",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "rpc:AddTeamSpaceMember",
+      "phase": "rpc",
+      "span": {
+        "startLine": 104,
+        "startColumn": 1,
+        "endLine": 122,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:rpc:RegisterProject",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "rpc:RegisterProject",
+      "phase": "rpc",
+      "span": {
+        "startLine": 207,
+        "startColumn": 1,
+        "endLine": 223,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:rpc:RemoveTeamSpaceMember",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "rpc:RemoveTeamSpaceMember",
+      "phase": "rpc",
+      "span": {
+        "startLine": 148,
+        "startColumn": 1,
+        "endLine": 164,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:rpc:RenameTeamSpace",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "rpc:RenameTeamSpace",
+      "phase": "rpc",
+      "span": {
+        "startLine": 168,
+        "startColumn": 1,
+        "endLine": 183,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:rpc:RequestTeamSpaceDeletion",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "rpc:RequestTeamSpaceDeletion",
+      "phase": "rpc",
+      "span": {
+        "startLine": 187,
+        "startColumn": 1,
+        "endLine": 203,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:rpc:SetTeamSpaceMemberRole",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "rpc:SetTeamSpaceMemberRole",
+      "phase": "rpc",
+      "span": {
+        "startLine": 125,
+        "startColumn": 1,
+        "endLine": 144,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:rpc:UnregisterProject",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "rpc:UnregisterProject",
+      "phase": "rpc",
+      "span": {
+        "startLine": 227,
+        "startColumn": 1,
+        "endLine": 235,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:CompleteTeamSpaceDeletion",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:CompleteTeamSpaceDeletion",
+      "phase": "execute",
+      "span": {
+        "startLine": 314,
+        "startColumn": 1,
+        "endLine": 324,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:DeleteTeamSpaceResources",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:DeleteTeamSpaceResources",
+      "phase": "execute",
+      "span": {
+        "startLine": 268,
+        "startColumn": 1,
+        "endLine": 298,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision:rpc:AddTeamSpaceMember:107:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:AddTeamSpaceMember",
+      "condition": "rejection != nil",
+      "phase": "rpc",
+      "span": {
+        "startLine": 107,
+        "startColumn": 10,
+        "endLine": 107,
+        "endColumn": 34
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:AddTeamSpaceMember:111:11",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:AddTeamSpaceMember",
+      "condition": "!(rejection != nil) and found and existing.Role != in.Role",
+      "phase": "rpc",
+      "span": {
+        "startLine": 111,
+        "startColumn": 11,
+        "endLine": 111,
+        "endColumn": 125
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:AddTeamSpaceMember:113:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:AddTeamSpaceMember",
+      "condition": "!(rejection != nil) and found and !(existing.Role != in.Role)",
+      "phase": "rpc",
+      "span": {
+        "startLine": 113,
+        "startColumn": 10,
+        "endLine": 113,
+        "endColumn": 39
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:AddTeamSpaceMember:116:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:AddTeamSpaceMember",
+      "condition": "!(rejection != nil) and !(found) and len(members) \u003e= maxMembers",
+      "phase": "rpc",
+      "span": {
+        "startLine": 116,
+        "startColumn": 10,
+        "endLine": 116,
+        "endColumn": 140
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:AddTeamSpaceMember:121:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:AddTeamSpaceMember",
+      "condition": "!(rejection != nil) and !(found) and !(len(members) \u003e= maxMembers)",
+      "phase": "rpc",
+      "span": {
+        "startLine": 121,
+        "startColumn": 9,
+        "endLine": 121,
+        "endColumn": 38
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:GetDexDisplay:99:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetDexDisplay",
+      "phase": "rpc",
+      "span": {
+        "startLine": 99,
+        "startColumn": 9,
+        "endLine": 99,
+        "endColumn": 162
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:GetDexSummary:93:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetDexSummary",
+      "phase": "rpc",
+      "span": {
+        "startLine": 93,
+        "startColumn": 9,
+        "endLine": 93,
+        "endColumn": 106
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RegisterProject:209:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RegisterProject",
+      "condition": "err == nil",
+      "phase": "rpc",
+      "span": {
+        "startLine": 209,
+        "startColumn": 10,
+        "endLine": 209,
+        "endColumn": 46
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RegisterProject:215:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RegisterProject",
+      "condition": " == comm.Must(TeamSpaceStatus.Get(ctx)) != StatusReady",
+      "phase": "rpc",
+      "span": {
+        "startLine": 215,
+        "startColumn": 10,
+        "endLine": 215,
+        "endColumn": 101
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RegisterProject:217:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RegisterProject",
+      "condition": " == !in.Actor.PlatformAdmin \u0026\u0026 !isLoadedMember(ctx, in.Actor.AccountID)",
+      "phase": "rpc",
+      "span": {
+        "startLine": 217,
+        "startColumn": 10,
+        "endLine": 217,
+        "endColumn": 120
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RegisterProject:222:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RegisterProject",
+      "condition": "otherwise",
+      "phase": "rpc",
+      "span": {
+        "startLine": 222,
+        "startColumn": 9,
+        "endLine": 222,
+        "endColumn": 45
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RemoveTeamSpaceMember:151:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RemoveTeamSpaceMember",
+      "condition": "rejection != nil",
+      "phase": "rpc",
+      "span": {
+        "startLine": 151,
+        "startColumn": 10,
+        "endLine": 151,
+        "endColumn": 34
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RemoveTeamSpaceMember:155:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RemoveTeamSpaceMember",
+      "condition": "!(rejection != nil) and !found",
+      "phase": "rpc",
+      "span": {
+        "startLine": 155,
+        "startColumn": 10,
+        "endLine": 155,
+        "endColumn": 39
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RemoveTeamSpaceMember:158:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RemoveTeamSpaceMember",
+      "condition": "!(rejection != nil) and !(!found) and member.Role == RoleAdmin \u0026\u0026 admins(members) == 1",
+      "phase": "rpc",
+      "span": {
+        "startLine": 158,
+        "startColumn": 10,
+        "endLine": 158,
+        "endColumn": 116
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RemoveTeamSpaceMember:163:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RemoveTeamSpaceMember",
+      "condition": "!(rejection != nil) and !(!found) and !(member.Role == RoleAdmin \u0026\u0026 admins(members) == 1)",
+      "phase": "rpc",
+      "span": {
+        "startLine": 163,
+        "startColumn": 9,
+        "endLine": 163,
+        "endColumn": 38
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RenameTeamSpace:172:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RenameTeamSpace",
+      "condition": " == t.Status != StatusReady",
+      "phase": "rpc",
+      "span": {
+        "startLine": 172,
+        "startColumn": 10,
+        "endLine": 172,
+        "endColumn": 110
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RenameTeamSpace:174:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RenameTeamSpace",
+      "condition": " == !in.Actor.mayAdminister(loadedMembers(ctx, in.Actor.AccountID))",
+      "phase": "rpc",
+      "span": {
+        "startLine": 174,
+        "startColumn": 10,
+        "endLine": 174,
+        "endColumn": 111
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RenameTeamSpace:176:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RenameTeamSpace",
+      "condition": " == t.Revision != in.ExpectedRevision",
+      "phase": "rpc",
+      "span": {
+        "startLine": 176,
+        "startColumn": 10,
+        "endLine": 176,
+        "endColumn": 74
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RenameTeamSpace:178:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RenameTeamSpace",
+      "condition": " == t.Name == in.Name",
+      "phase": "rpc",
+      "span": {
+        "startLine": 178,
+        "startColumn": 10,
+        "endLine": 178,
+        "endColumn": 28
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RenameTeamSpace:182:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RenameTeamSpace",
+      "condition": "otherwise",
+      "phase": "rpc",
+      "span": {
+        "startLine": 182,
+        "startColumn": 9,
+        "endLine": 182,
+        "endColumn": 27
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RequestTeamSpaceDeletion:191:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RequestTeamSpaceDeletion",
+      "condition": " == !in.Actor.PlatformAdmin",
+      "phase": "rpc",
+      "span": {
+        "startLine": 191,
+        "startColumn": 10,
+        "endLine": 191,
+        "endColumn": 121
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RequestTeamSpaceDeletion:193:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RequestTeamSpaceDeletion",
+      "condition": " == t.ActiveCommand != nil \u0026\u0026 t.ActiveCommand.ID == in.ID",
+      "phase": "rpc",
+      "span": {
+        "startLine": 193,
+        "startColumn": 10,
+        "endLine": 193,
+        "endColumn": 28
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RequestTeamSpaceDeletion:195:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RequestTeamSpaceDeletion",
+      "condition": " == t.ActiveCommand != nil",
+      "phase": "rpc",
+      "span": {
+        "startLine": 195,
+        "startColumn": 10,
+        "endLine": 195,
+        "endColumn": 119
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:RequestTeamSpaceDeletion:202:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:RequestTeamSpaceDeletion",
+      "condition": "otherwise",
+      "phase": "rpc",
+      "span": {
+        "startLine": 202,
+        "startColumn": 9,
+        "endLine": 202,
+        "endColumn": 27
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:SetTeamSpaceMemberRole:128:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:SetTeamSpaceMemberRole",
+      "condition": "rejection != nil",
+      "phase": "rpc",
+      "span": {
+        "startLine": 128,
+        "startColumn": 10,
+        "endLine": 128,
+        "endColumn": 34
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:SetTeamSpaceMemberRole:133:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:SetTeamSpaceMemberRole",
+      "condition": "!(rejection != nil) and  == !found",
+      "phase": "rpc",
+      "span": {
+        "startLine": 133,
+        "startColumn": 10,
+        "endLine": 133,
+        "endColumn": 97
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:SetTeamSpaceMemberRole:135:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:SetTeamSpaceMemberRole",
+      "condition": "!(rejection != nil) and  == member.Role == in.Role",
+      "phase": "rpc",
+      "span": {
+        "startLine": 135,
+        "startColumn": 10,
+        "endLine": 135,
+        "endColumn": 39
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:SetTeamSpaceMemberRole:137:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:SetTeamSpaceMemberRole",
+      "condition": "!(rejection != nil) and  == member.Role == RoleAdmin \u0026\u0026 admins(members) == 1",
+      "phase": "rpc",
+      "span": {
+        "startLine": 137,
+        "startColumn": 10,
+        "endLine": 137,
+        "endColumn": 116
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:SetTeamSpaceMemberRole:143:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:SetTeamSpaceMemberRole",
+      "condition": "!(rejection != nil)",
+      "phase": "rpc",
+      "span": {
+        "startLine": 143,
+        "startColumn": 9,
+        "endLine": 143,
+        "endColumn": 38
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:UnregisterProject:229:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:UnregisterProject",
+      "condition": "dexflow.IsAttributeNotFound(err)",
+      "phase": "rpc",
+      "span": {
+        "startLine": 229,
+        "startColumn": 10,
+        "endLine": 229,
+        "endColumn": 46
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:UnregisterProject:234:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:UnregisterProject",
+      "condition": "otherwise",
+      "phase": "rpc",
+      "span": {
+        "startLine": 234,
+        "startColumn": 9,
+        "endLine": 234,
+        "endColumn": 45
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:step:AwaitTeamSpaceCommands:252:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:AwaitTeamSpaceCommands",
+      "phase": "execute",
+      "span": {
+        "startLine": 252,
+        "startColumn": 9,
+        "endLine": 252,
+        "endColumn": 66
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:CompleteTeamSpaceDeletion:316:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:CompleteTeamSpaceDeletion",
+      "condition": "!readTeamSpace(ctx).runsCommand(command)",
+      "phase": "execute",
+      "span": {
+        "startLine": 316,
+        "startColumn": 10,
+        "endLine": 316,
+        "endColumn": 61
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:CompleteTeamSpaceDeletion:323:9",
+      "kind": "decision",
+      "name": "gracefulComplete",
+      "parentId": "step:CompleteTeamSpaceDeletion",
+      "condition": "!(!readTeamSpace(ctx).runsCommand(command))",
+      "phase": "execute",
+      "span": {
+        "startLine": 323,
+        "startColumn": 9,
+        "endLine": 323,
+        "endColumn": 49
+      },
+      "decision": {
+        "type": "gracefulComplete"
+      }
+    },
+    {
+      "id": "decision:step:DeleteTeamSpaceResources:270:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:DeleteTeamSpaceResources",
+      "condition": "!readTeamSpace(ctx).runsCommand(command)",
+      "phase": "execute",
+      "span": {
+        "startLine": 270,
+        "startColumn": 10,
+        "endLine": 270,
+        "endColumn": 61
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:DeleteTeamSpaceResources:295:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:DeleteTeamSpaceResources",
+      "condition": "!(!readTeamSpace(ctx).runsCommand(command)) and command.Blocker != \"\"",
+      "phase": "execute",
+      "span": {
+        "startLine": 295,
+        "startColumn": 10,
+        "endLine": 295,
+        "endColumn": 65
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:DeleteTeamSpaceResources:297:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:DeleteTeamSpaceResources",
+      "condition": "!(!readTeamSpace(ctx).runsCommand(command)) and !(command.Blocker != \"\")",
+      "phase": "execute",
+      "span": {
+        "startLine": 297,
+        "startColumn": 9,
+        "endLine": 297,
+        "endColumn": 67
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RecordTeamSpaceFailure:352:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RecordTeamSpaceFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 352,
+        "startColumn": 9,
+        "endLine": 352,
+        "endColumn": 60
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "resource:attribute:TeamSpaceActiveCommand",
+      "kind": "attribute",
+      "name": "ActiveCommand",
+      "span": {
+        "startLine": 24,
+        "startColumn": 2,
+        "endLine": 24,
+        "endColumn": 73
+      },
+      "resource": {
+        "valueType": "*Command"
+      }
+    },
+    {
+      "id": "resource:attribute:TeamSpaceCreatedAt",
+      "kind": "attribute",
+      "name": "CreatedAt",
+      "span": {
+        "startLine": 27,
+        "startColumn": 2,
+        "endLine": 27,
+        "endColumn": 98
+      },
+      "resource": {
+        "valueType": "time.Time"
+      }
+    },
+    {
+      "id": "resource:attribute:TeamSpaceCreatorAccountID",
+      "kind": "attribute",
+      "name": "CreatorAccountID",
+      "span": {
+        "startLine": 21,
+        "startColumn": 2,
+        "endLine": 21,
+        "endColumn": 105
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:TeamSpaceLastCommand",
+      "kind": "attribute",
+      "name": "LastCommand",
+      "span": {
+        "startLine": 25,
+        "startColumn": 2,
+        "endLine": 25,
+        "endColumn": 71
+      },
+      "resource": {
+        "valueType": "*Command"
+      }
+    },
+    {
+      "id": "resource:attribute:TeamSpaceLastFailure",
+      "kind": "attribute",
+      "name": "LastFailure",
+      "span": {
+        "startLine": 26,
+        "startColumn": 2,
+        "endLine": 26,
+        "endColumn": 107
+      },
+      "resource": {
+        "valueType": "*dexflow.Failure"
+      }
+    },
+    {
+      "id": "resource:attribute:TeamSpaceMembers",
+      "kind": "attribute",
+      "name": "Members",
+      "span": {
+        "startLine": 30,
+        "startColumn": 2,
+        "endLine": 30,
+        "endColumn": 90
+      },
+      "resource": {
+        "valueType": "Member",
+        "map": true
+      }
+    },
+    {
+      "id": "resource:attribute:TeamSpaceName",
+      "kind": "attribute",
+      "name": "Name",
+      "span": {
+        "startLine": 19,
+        "startColumn": 2,
+        "endLine": 19,
+        "endColumn": 93
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:TeamSpaceProjects",
+      "kind": "attribute",
+      "name": "Projects",
+      "span": {
+        "startLine": 32,
+        "startColumn": 2,
+        "endLine": 32,
+        "endColumn": 75
+      },
+      "resource": {
+        "valueType": "RegisteredProject",
+        "map": true
+      }
+    },
+    {
+      "id": "resource:attribute:TeamSpaceRevision",
+      "kind": "attribute",
+      "name": "Revision",
+      "span": {
+        "startLine": 23,
+        "startColumn": 2,
+        "endLine": 23,
+        "endColumn": 94
+      },
+      "resource": {
+        "valueType": "uint64"
+      }
+    },
+    {
+      "id": "resource:attribute:TeamSpaceStartIdentity",
+      "kind": "attribute",
+      "name": "StartIdentity",
+      "span": {
+        "startLine": 18,
+        "startColumn": 2,
+        "endLine": 18,
+        "endColumn": 89
+      },
+      "resource": {
+        "valueType": "dexflow.StartIdentity"
+      }
+    },
+    {
+      "id": "resource:attribute:TeamSpaceStatus",
+      "kind": "attribute",
+      "name": "TeamSpaceStatus",
+      "span": {
+        "startLine": 20,
+        "startColumn": 2,
+        "endLine": 20,
+        "endColumn": 104
+      },
+      "resource": {
+        "valueType": "string"
+      }
+    },
+    {
+      "id": "resource:attribute:TeamSpaceUpdatedAt",
+      "kind": "attribute",
+      "name": "UpdatedAt",
+      "span": {
+        "startLine": 28,
+        "startColumn": 2,
+        "endLine": 28,
+        "endColumn": 98
+      },
+      "resource": {
+        "valueType": "time.Time"
+      }
+    },
+    {
+      "id": "resource:channel:TeamSpaceCommands",
+      "kind": "channel",
+      "name": "TeamSpaceCommands",
+      "span": {
+        "startLine": 33,
+        "startColumn": 2,
+        "endLine": 33,
+        "endColumn": 69
+      },
+      "resource": {
+        "valueType": "Command"
+      }
+    },
+    {
+      "id": "rpc:AddTeamSpaceMember",
+      "kind": "rpc",
+      "name": "AddTeamSpaceMember",
+      "span": {
+        "startLine": 104,
+        "startColumn": 1,
+        "endLine": 122,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:GetDexDisplay",
+      "kind": "rpc",
+      "name": "GetDexDisplay",
+      "span": {
+        "startLine": 98,
+        "startColumn": 1,
+        "endLine": 100,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:GetDexSummary",
+      "kind": "rpc",
+      "name": "GetDexSummary",
+      "span": {
+        "startLine": 92,
+        "startColumn": 1,
+        "endLine": 94,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:RegisterProject",
+      "kind": "rpc",
+      "name": "RegisterProject",
+      "span": {
+        "startLine": 207,
+        "startColumn": 1,
+        "endLine": 223,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:RemoveTeamSpaceMember",
+      "kind": "rpc",
+      "name": "RemoveTeamSpaceMember",
+      "span": {
+        "startLine": 148,
+        "startColumn": 1,
+        "endLine": 164,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:RenameTeamSpace",
+      "kind": "rpc",
+      "name": "RenameTeamSpace",
+      "span": {
+        "startLine": 168,
+        "startColumn": 1,
+        "endLine": 183,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:RequestTeamSpaceDeletion",
+      "kind": "rpc",
+      "name": "RequestTeamSpaceDeletion",
+      "span": {
+        "startLine": 187,
+        "startColumn": 1,
+        "endLine": 203,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:SetTeamSpaceMemberRole",
+      "kind": "rpc",
+      "name": "SetTeamSpaceMemberRole",
+      "span": {
+        "startLine": 125,
+        "startColumn": 1,
+        "endLine": 144,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:UnregisterProject",
+      "kind": "rpc",
+      "name": "UnregisterProject",
+      "span": {
+        "startLine": 227,
+        "startColumn": 1,
+        "endLine": 235,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "step:AwaitTeamSpaceCommands",
+      "kind": "step",
+      "name": "AwaitTeamSpaceCommands",
+      "phase": "wait_for+execute",
+      "start": true,
+      "span": {
+        "startLine": 46,
+        "startColumn": 3,
+        "endLine": 46,
+        "endColumn": 55
+      },
+      "metadata": {
+        "explanation": "Wait for the platform admin's deletion command."
+      }
+    },
+    {
+      "id": "step:CompleteTeamSpaceDeletion",
+      "kind": "step",
+      "name": "CompleteTeamSpaceDeletion",
+      "phase": "execute",
+      "span": {
+        "startLine": 47,
+        "startColumn": 3,
+        "endLine": 47,
+        "endColumn": 53
+      },
+      "metadata": {
+        "explanation": "Record the TeamSpace DELETED; its members stay with the closed Flow."
+      }
+    },
+    {
+      "id": "step:DeleteTeamSpaceResources",
+      "kind": "step",
+      "name": "DeleteTeamSpaceResources",
+      "phase": "execute",
+      "span": {
+        "startLine": 46,
+        "startColumn": 57,
+        "endLine": 46,
+        "endColumn": 106
+      },
+      "metadata": {
+        "explanation": "Delete every registered Project and wait until each is DELETED, then delete the TeamSpace's connections."
+      }
+    },
+    {
+      "id": "step:RecordTeamSpaceFailure",
+      "kind": "step",
+      "name": "RecordTeamSpaceFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 47,
+        "startColumn": 55,
+        "endLine": 47,
+        "endColumn": 102
+      },
+      "metadata": {
+        "explanation": "Record a deletion that did not converge; the TeamSpace stays DELETING until it is requested again."
+      }
+    },
+    {
+      "id": "wait:AwaitTeamSpaceCommands:247:9",
+      "kind": "wait",
+      "name": "until",
+      "parentId": "step:AwaitTeamSpaceCommands",
+      "phase": "wait_for",
+      "span": {
+        "startLine": 247,
+        "startColumn": 9,
+        "endLine": 247,
+        "endColumn": 46
+      },
+      "wait": {
+        "type": "until",
+        "conditions": [
+          {
+            "index": 0,
+            "kind": "channel",
+            "label": "TeamSpaceCommands.for 1",
+            "resourceId": "resource:channel:TeamSpaceCommands",
+            "span": {
+              "startLine": 247,
+              "startColumn": 19,
+              "endLine": 247,
+              "endColumn": 45
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:0001",
+      "kind": "transition",
+      "from": "decision:step:AwaitTeamSpaceCommands:252:9",
+      "to": "step:DeleteTeamSpaceResources",
+      "label": "GoTo",
+      "span": {
+        "startLine": 252,
+        "startColumn": 9,
+        "endLine": 252,
+        "endColumn": 66
+      }
+    },
+    {
+      "id": "edge:0002",
+      "kind": "transition",
+      "from": "decision:step:CompleteTeamSpaceDeletion:316:10",
+      "to": "step:AwaitTeamSpaceCommands",
+      "label": "GoTo",
+      "span": {
+        "startLine": 316,
+        "startColumn": 10,
+        "endLine": 316,
+        "endColumn": 61
+      }
+    },
+    {
+      "id": "edge:0003",
+      "kind": "transition",
+      "from": "decision:step:DeleteTeamSpaceResources:270:10",
+      "to": "step:AwaitTeamSpaceCommands",
+      "label": "GoTo",
+      "span": {
+        "startLine": 270,
+        "startColumn": 10,
+        "endLine": 270,
+        "endColumn": 61
+      }
+    },
+    {
+      "id": "edge:0004",
+      "kind": "transition",
+      "from": "decision:step:DeleteTeamSpaceResources:295:10",
+      "to": "step:RecordTeamSpaceFailure",
+      "label": "GoTo",
+      "span": {
+        "startLine": 295,
+        "startColumn": 10,
+        "endLine": 295,
+        "endColumn": 65
+      }
+    },
+    {
+      "id": "edge:0005",
+      "kind": "transition",
+      "from": "decision:step:DeleteTeamSpaceResources:297:9",
+      "to": "step:CompleteTeamSpaceDeletion",
+      "label": "GoTo",
+      "span": {
+        "startLine": 297,
+        "startColumn": 9,
+        "endLine": 297,
+        "endColumn": 67
+      }
+    },
+    {
+      "id": "edge:0006",
+      "kind": "transition",
+      "from": "decision:step:RecordTeamSpaceFailure:352:9",
+      "to": "step:AwaitTeamSpaceCommands",
+      "label": "GoTo",
+      "span": {
+        "startLine": 352,
+        "startColumn": 9,
+        "endLine": 352,
+        "endColumn": 60
+      }
+    },
+    {
+      "id": "edge:0007",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceActiveCommand",
+      "to": "rpc:AddTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 362,
+        "startColumn": 38,
+        "endLine": 362,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0008",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceActiveCommand",
+      "to": "rpc:RemoveTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 362,
+        "startColumn": 38,
+        "endLine": 362,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0009",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceActiveCommand",
+      "to": "rpc:RenameTeamSpace",
+      "label": "Get",
+      "span": {
+        "startLine": 362,
+        "startColumn": 38,
+        "endLine": 362,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0010",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceActiveCommand",
+      "to": "rpc:RequestTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 362,
+        "startColumn": 38,
+        "endLine": 362,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0011",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceActiveCommand",
+      "to": "rpc:SetTeamSpaceMemberRole",
+      "label": "Get",
+      "span": {
+        "startLine": 362,
+        "startColumn": 38,
+        "endLine": 362,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0012",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceActiveCommand",
+      "to": "step:CompleteTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 362,
+        "startColumn": 38,
+        "endLine": 362,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0013",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceActiveCommand",
+      "to": "step:DeleteTeamSpaceResources",
+      "label": "Get",
+      "span": {
+        "startLine": 362,
+        "startColumn": 38,
+        "endLine": 362,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0014",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceActiveCommand",
+      "to": "step:RecordTeamSpaceFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 362,
+        "startColumn": 38,
+        "endLine": 362,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0015",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceCreatedAt",
+      "to": "rpc:AddTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 366,
+        "startColumn": 31,
+        "endLine": 366,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0016",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceCreatedAt",
+      "to": "rpc:RemoveTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 366,
+        "startColumn": 31,
+        "endLine": 366,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0017",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceCreatedAt",
+      "to": "rpc:RenameTeamSpace",
+      "label": "Get",
+      "span": {
+        "startLine": 366,
+        "startColumn": 31,
+        "endLine": 366,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0018",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceCreatedAt",
+      "to": "rpc:RequestTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 366,
+        "startColumn": 31,
+        "endLine": 366,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0019",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceCreatedAt",
+      "to": "rpc:SetTeamSpaceMemberRole",
+      "label": "Get",
+      "span": {
+        "startLine": 366,
+        "startColumn": 31,
+        "endLine": 366,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0020",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceCreatedAt",
+      "to": "step:CompleteTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 366,
+        "startColumn": 31,
+        "endLine": 366,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0021",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceCreatedAt",
+      "to": "step:DeleteTeamSpaceResources",
+      "label": "Get",
+      "span": {
+        "startLine": 366,
+        "startColumn": 31,
+        "endLine": 366,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0022",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceCreatedAt",
+      "to": "step:RecordTeamSpaceFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 366,
+        "startColumn": 31,
+        "endLine": 366,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0023",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceCreatorAccountID",
+      "to": "rpc:AddTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 360,
+        "startColumn": 31,
+        "endLine": 360,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0024",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceCreatorAccountID",
+      "to": "rpc:RemoveTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 360,
+        "startColumn": 31,
+        "endLine": 360,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0025",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceCreatorAccountID",
+      "to": "rpc:RenameTeamSpace",
+      "label": "Get",
+      "span": {
+        "startLine": 360,
+        "startColumn": 31,
+        "endLine": 360,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0026",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceCreatorAccountID",
+      "to": "rpc:RequestTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 360,
+        "startColumn": 31,
+        "endLine": 360,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0027",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceCreatorAccountID",
+      "to": "rpc:SetTeamSpaceMemberRole",
+      "label": "Get",
+      "span": {
+        "startLine": 360,
+        "startColumn": 31,
+        "endLine": 360,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0028",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceCreatorAccountID",
+      "to": "step:CompleteTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 360,
+        "startColumn": 31,
+        "endLine": 360,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0029",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceCreatorAccountID",
+      "to": "step:DeleteTeamSpaceResources",
+      "label": "Get",
+      "span": {
+        "startLine": 360,
+        "startColumn": 31,
+        "endLine": 360,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0030",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceCreatorAccountID",
+      "to": "step:RecordTeamSpaceFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 360,
+        "startColumn": 31,
+        "endLine": 360,
+        "endColumn": 65
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0031",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceLastCommand",
+      "to": "rpc:AddTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 363,
+        "startColumn": 38,
+        "endLine": 363,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0032",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceLastCommand",
+      "to": "rpc:RemoveTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 363,
+        "startColumn": 38,
+        "endLine": 363,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0033",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceLastCommand",
+      "to": "rpc:RenameTeamSpace",
+      "label": "Get",
+      "span": {
+        "startLine": 363,
+        "startColumn": 38,
+        "endLine": 363,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0034",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceLastCommand",
+      "to": "rpc:RequestTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 363,
+        "startColumn": 38,
+        "endLine": 363,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0035",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceLastCommand",
+      "to": "rpc:SetTeamSpaceMemberRole",
+      "label": "Get",
+      "span": {
+        "startLine": 363,
+        "startColumn": 38,
+        "endLine": 363,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0036",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceLastCommand",
+      "to": "step:CompleteTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 363,
+        "startColumn": 38,
+        "endLine": 363,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0037",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceLastCommand",
+      "to": "step:DeleteTeamSpaceResources",
+      "label": "Get",
+      "span": {
+        "startLine": 363,
+        "startColumn": 38,
+        "endLine": 363,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0038",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceLastCommand",
+      "to": "step:RecordTeamSpaceFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 363,
+        "startColumn": 38,
+        "endLine": 363,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0039",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceLastFailure",
+      "to": "rpc:AddTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 364,
+        "startColumn": 38,
+        "endLine": 364,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0040",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceLastFailure",
+      "to": "rpc:RemoveTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 364,
+        "startColumn": 38,
+        "endLine": 364,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0041",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceLastFailure",
+      "to": "rpc:RenameTeamSpace",
+      "label": "Get",
+      "span": {
+        "startLine": 364,
+        "startColumn": 38,
+        "endLine": 364,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0042",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceLastFailure",
+      "to": "rpc:RequestTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 364,
+        "startColumn": 38,
+        "endLine": 364,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0043",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceLastFailure",
+      "to": "rpc:SetTeamSpaceMemberRole",
+      "label": "Get",
+      "span": {
+        "startLine": 364,
+        "startColumn": 38,
+        "endLine": 364,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0044",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceLastFailure",
+      "to": "step:CompleteTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 364,
+        "startColumn": 38,
+        "endLine": 364,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0045",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceLastFailure",
+      "to": "step:DeleteTeamSpaceResources",
+      "label": "Get",
+      "span": {
+        "startLine": 364,
+        "startColumn": 38,
+        "endLine": 364,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0046",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceLastFailure",
+      "to": "step:RecordTeamSpaceFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 364,
+        "startColumn": 38,
+        "endLine": 364,
+        "endColumn": 67
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0047",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceMembers",
+      "to": "rpc:AddTeamSpaceMember",
+      "label": "AllInstanceKeys",
+      "span": {
+        "startLine": 377,
+        "startColumn": 32,
+        "endLine": 377,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "admitMemberWrite",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0048",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceMembers",
+      "to": "rpc:AddTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 389,
+        "startColumn": 18,
+        "endLine": 389,
+        "endColumn": 54
+      },
+      "metadata": {
+        "function": "loadedMembers",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0049",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceMembers",
+      "to": "rpc:RegisterProject",
+      "label": "Get",
+      "span": {
+        "startLine": 389,
+        "startColumn": 18,
+        "endLine": 389,
+        "endColumn": 54
+      },
+      "metadata": {
+        "function": "loadedMembers",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0050",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceMembers",
+      "to": "rpc:RemoveTeamSpaceMember",
+      "label": "AllInstanceKeys",
+      "span": {
+        "startLine": 377,
+        "startColumn": 32,
+        "endLine": 377,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "admitMemberWrite",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0051",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceMembers",
+      "to": "rpc:RemoveTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 389,
+        "startColumn": 18,
+        "endLine": 389,
+        "endColumn": 54
+      },
+      "metadata": {
+        "function": "loadedMembers",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0052",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceMembers",
+      "to": "rpc:RenameTeamSpace",
+      "label": "Get",
+      "span": {
+        "startLine": 389,
+        "startColumn": 18,
+        "endLine": 389,
+        "endColumn": 54
+      },
+      "metadata": {
+        "function": "loadedMembers",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0053",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceMembers",
+      "to": "rpc:SetTeamSpaceMemberRole",
+      "label": "AllInstanceKeys",
+      "span": {
+        "startLine": 377,
+        "startColumn": 32,
+        "endLine": 377,
+        "endColumn": 69
+      },
+      "metadata": {
+        "function": "admitMemberWrite",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0054",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceMembers",
+      "to": "rpc:SetTeamSpaceMemberRole",
+      "label": "Get",
+      "span": {
+        "startLine": 389,
+        "startColumn": 18,
+        "endLine": 389,
+        "endColumn": 54
+      },
+      "metadata": {
+        "function": "loadedMembers",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0055",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceName",
+      "to": "rpc:AddTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 359,
+        "startColumn": 31,
+        "endLine": 359,
+        "endColumn": 53
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0056",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceName",
+      "to": "rpc:GetDexDisplay",
+      "label": "Get",
+      "span": {
+        "startLine": 99,
+        "startColumn": 81,
+        "endLine": 99,
+        "endColumn": 103
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0057",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceName",
+      "to": "rpc:GetDexSummary",
+      "label": "Get",
+      "span": {
+        "startLine": 93,
+        "startColumn": 81,
+        "endLine": 93,
+        "endColumn": 103
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0058",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceName",
+      "to": "rpc:RemoveTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 359,
+        "startColumn": 31,
+        "endLine": 359,
+        "endColumn": 53
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0059",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceName",
+      "to": "rpc:RenameTeamSpace",
+      "label": "Get",
+      "span": {
+        "startLine": 359,
+        "startColumn": 31,
+        "endLine": 359,
+        "endColumn": 53
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0060",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceName",
+      "to": "rpc:RequestTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 359,
+        "startColumn": 31,
+        "endLine": 359,
+        "endColumn": 53
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0061",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceName",
+      "to": "rpc:SetTeamSpaceMemberRole",
+      "label": "Get",
+      "span": {
+        "startLine": 359,
+        "startColumn": 31,
+        "endLine": 359,
+        "endColumn": 53
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0062",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceName",
+      "to": "step:CompleteTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 359,
+        "startColumn": 31,
+        "endLine": 359,
+        "endColumn": 53
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0063",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceName",
+      "to": "step:DeleteTeamSpaceResources",
+      "label": "Get",
+      "span": {
+        "startLine": 359,
+        "startColumn": 31,
+        "endLine": 359,
+        "endColumn": 53
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0064",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceName",
+      "to": "step:RecordTeamSpaceFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 359,
+        "startColumn": 31,
+        "endLine": 359,
+        "endColumn": 53
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0065",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceProjects",
+      "to": "rpc:RegisterProject",
+      "label": "Get",
+      "span": {
+        "startLine": 208,
+        "startColumn": 15,
+        "endLine": 208,
+        "endColumn": 55
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0066",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceProjects",
+      "to": "rpc:UnregisterProject",
+      "label": "Get",
+      "span": {
+        "startLine": 228,
+        "startColumn": 15,
+        "endLine": 228,
+        "endColumn": 55
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0067",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceProjects",
+      "to": "step:DeleteTeamSpaceResources",
+      "label": "AllInstanceKeys",
+      "span": {
+        "startLine": 273,
+        "startColumn": 41,
+        "endLine": 273,
+        "endColumn": 79
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0068",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceRevision",
+      "to": "rpc:AddTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 365,
+        "startColumn": 31,
+        "endLine": 365,
+        "endColumn": 57
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0069",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceRevision",
+      "to": "rpc:RemoveTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 365,
+        "startColumn": 31,
+        "endLine": 365,
+        "endColumn": 57
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0070",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceRevision",
+      "to": "rpc:RenameTeamSpace",
+      "label": "Get",
+      "span": {
+        "startLine": 365,
+        "startColumn": 31,
+        "endLine": 365,
+        "endColumn": 57
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0071",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceRevision",
+      "to": "rpc:RequestTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 365,
+        "startColumn": 31,
+        "endLine": 365,
+        "endColumn": 57
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0072",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceRevision",
+      "to": "rpc:SetTeamSpaceMemberRole",
+      "label": "Get",
+      "span": {
+        "startLine": 365,
+        "startColumn": 31,
+        "endLine": 365,
+        "endColumn": 57
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0073",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceRevision",
+      "to": "step:CompleteTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 365,
+        "startColumn": 31,
+        "endLine": 365,
+        "endColumn": 57
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0074",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceRevision",
+      "to": "step:DeleteTeamSpaceResources",
+      "label": "Get",
+      "span": {
+        "startLine": 365,
+        "startColumn": 31,
+        "endLine": 365,
+        "endColumn": 57
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0075",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceRevision",
+      "to": "step:RecordTeamSpaceFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 365,
+        "startColumn": 31,
+        "endLine": 365,
+        "endColumn": 57
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0076",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceStartIdentity",
+      "to": "rpc:AddTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 358,
+        "startColumn": 31,
+        "endLine": 358,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0077",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceStartIdentity",
+      "to": "rpc:RemoveTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 358,
+        "startColumn": 31,
+        "endLine": 358,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0078",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceStartIdentity",
+      "to": "rpc:RenameTeamSpace",
+      "label": "Get",
+      "span": {
+        "startLine": 358,
+        "startColumn": 31,
+        "endLine": 358,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0079",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceStartIdentity",
+      "to": "rpc:RequestTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 358,
+        "startColumn": 31,
+        "endLine": 358,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0080",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceStartIdentity",
+      "to": "rpc:SetTeamSpaceMemberRole",
+      "label": "Get",
+      "span": {
+        "startLine": 358,
+        "startColumn": 31,
+        "endLine": 358,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0081",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceStartIdentity",
+      "to": "step:CompleteTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 358,
+        "startColumn": 31,
+        "endLine": 358,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0082",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceStartIdentity",
+      "to": "step:DeleteTeamSpaceResources",
+      "label": "Get",
+      "span": {
+        "startLine": 358,
+        "startColumn": 31,
+        "endLine": 358,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0083",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceStartIdentity",
+      "to": "step:RecordTeamSpaceFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 358,
+        "startColumn": 31,
+        "endLine": 358,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0084",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceStatus",
+      "to": "rpc:AddTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 374,
+        "startColumn": 15,
+        "endLine": 374,
+        "endColumn": 39
+      },
+      "metadata": {
+        "function": "admitMemberWrite",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0085",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceStatus",
+      "to": "rpc:GetDexDisplay",
+      "label": "Get",
+      "span": {
+        "startLine": 99,
+        "startColumn": 135,
+        "endLine": 99,
+        "endColumn": 159
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0086",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceStatus",
+      "to": "rpc:RegisterProject",
+      "label": "Get",
+      "span": {
+        "startLine": 214,
+        "startColumn": 17,
+        "endLine": 214,
+        "endColumn": 41
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0087",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceStatus",
+      "to": "rpc:RemoveTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 374,
+        "startColumn": 15,
+        "endLine": 374,
+        "endColumn": 39
+      },
+      "metadata": {
+        "function": "admitMemberWrite",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0088",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceStatus",
+      "to": "rpc:RenameTeamSpace",
+      "label": "Get",
+      "span": {
+        "startLine": 361,
+        "startColumn": 31,
+        "endLine": 361,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0089",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceStatus",
+      "to": "rpc:RequestTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 361,
+        "startColumn": 31,
+        "endLine": 361,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0090",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceStatus",
+      "to": "rpc:SetTeamSpaceMemberRole",
+      "label": "Get",
+      "span": {
+        "startLine": 374,
+        "startColumn": 15,
+        "endLine": 374,
+        "endColumn": 39
+      },
+      "metadata": {
+        "function": "admitMemberWrite",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0091",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceStatus",
+      "to": "step:CompleteTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 361,
+        "startColumn": 31,
+        "endLine": 361,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0092",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceStatus",
+      "to": "step:DeleteTeamSpaceResources",
+      "label": "Get",
+      "span": {
+        "startLine": 361,
+        "startColumn": 31,
+        "endLine": 361,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0093",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceStatus",
+      "to": "step:RecordTeamSpaceFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 361,
+        "startColumn": 31,
+        "endLine": 361,
+        "endColumn": 55
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0094",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceUpdatedAt",
+      "to": "rpc:AddTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 367,
+        "startColumn": 31,
+        "endLine": 367,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0095",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceUpdatedAt",
+      "to": "rpc:RemoveTeamSpaceMember",
+      "label": "Get",
+      "span": {
+        "startLine": 367,
+        "startColumn": 31,
+        "endLine": 367,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0096",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceUpdatedAt",
+      "to": "rpc:RenameTeamSpace",
+      "label": "Get",
+      "span": {
+        "startLine": 367,
+        "startColumn": 31,
+        "endLine": 367,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0097",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceUpdatedAt",
+      "to": "rpc:RequestTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 367,
+        "startColumn": 31,
+        "endLine": 367,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0098",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceUpdatedAt",
+      "to": "rpc:SetTeamSpaceMemberRole",
+      "label": "Get",
+      "span": {
+        "startLine": 367,
+        "startColumn": 31,
+        "endLine": 367,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0099",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceUpdatedAt",
+      "to": "step:CompleteTeamSpaceDeletion",
+      "label": "Get",
+      "span": {
+        "startLine": 367,
+        "startColumn": 31,
+        "endLine": 367,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0100",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceUpdatedAt",
+      "to": "step:DeleteTeamSpaceResources",
+      "label": "Get",
+      "span": {
+        "startLine": 367,
+        "startColumn": 31,
+        "endLine": 367,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0101",
+      "kind": "resource_read",
+      "from": "resource:attribute:TeamSpaceUpdatedAt",
+      "to": "step:RecordTeamSpaceFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 367,
+        "startColumn": 31,
+        "endLine": 367,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "readTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0102",
+      "kind": "resource_read",
+      "from": "resource:channel:TeamSpaceCommands",
+      "to": "step:AwaitTeamSpaceCommands",
+      "label": "GetConditionResults",
+      "span": {
+        "startLine": 251,
+        "startColumn": 23,
+        "endLine": 251,
+        "endColumn": 65
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0103",
+      "kind": "wait_condition",
+      "from": "resource:channel:TeamSpaceCommands",
+      "to": "wait:AwaitTeamSpaceCommands:247:9",
+      "label": "TeamSpaceCommands.for 1",
+      "span": {
+        "startLine": 247,
+        "startColumn": 19,
+        "endLine": 247,
+        "endColumn": 45
+      },
+      "metadata": {
+        "conditionIndex": 0
+      }
+    },
+    {
+      "id": "edge:0104",
+      "kind": "resource_write",
+      "from": "rpc:AddTeamSpaceMember",
+      "to": "resource:attribute:TeamSpaceMembers",
+      "label": "Set",
+      "span": {
+        "startLine": 119,
+        "startColumn": 14,
+        "endLine": 119,
+        "endColumn": 76
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0105",
+      "kind": "resource_write",
+      "from": "rpc:AddTeamSpaceMember",
+      "to": "resource:attribute:TeamSpaceRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 418,
+        "startColumn": 14,
+        "endLine": 418,
+        "endColumn": 81
+      },
+      "metadata": {
+        "function": "touchTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0106",
+      "kind": "resource_write",
+      "from": "rpc:AddTeamSpaceMember",
+      "to": "resource:attribute:TeamSpaceUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 419,
+        "startColumn": 14,
+        "endLine": 419,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "touchTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0107",
+      "kind": "resource_write",
+      "from": "rpc:RegisterProject",
+      "to": "resource:attribute:TeamSpaceProjects",
+      "label": "Set",
+      "span": {
+        "startLine": 219,
+        "startColumn": 14,
+        "endLine": 221,
+        "endColumn": 4
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0108",
+      "kind": "resource_write",
+      "from": "rpc:RemoveTeamSpaceMember",
+      "to": "resource:attribute:TeamSpaceMembers",
+      "label": "Delete",
+      "span": {
+        "startLine": 161,
+        "startColumn": 14,
+        "endLine": 161,
+        "endColumn": 56
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0109",
+      "kind": "resource_write",
+      "from": "rpc:RemoveTeamSpaceMember",
+      "to": "resource:attribute:TeamSpaceRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 418,
+        "startColumn": 14,
+        "endLine": 418,
+        "endColumn": 81
+      },
+      "metadata": {
+        "function": "touchTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0110",
+      "kind": "resource_write",
+      "from": "rpc:RemoveTeamSpaceMember",
+      "to": "resource:attribute:TeamSpaceUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 419,
+        "startColumn": 14,
+        "endLine": 419,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "touchTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0111",
+      "kind": "resource_write",
+      "from": "rpc:RenameTeamSpace",
+      "to": "resource:attribute:TeamSpaceName",
+      "label": "Set",
+      "span": {
+        "startLine": 180,
+        "startColumn": 14,
+        "endLine": 180,
+        "endColumn": 45
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0112",
+      "kind": "resource_write",
+      "from": "rpc:RenameTeamSpace",
+      "to": "resource:attribute:TeamSpaceRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 418,
+        "startColumn": 14,
+        "endLine": 418,
+        "endColumn": 81
+      },
+      "metadata": {
+        "function": "touchTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0113",
+      "kind": "resource_write",
+      "from": "rpc:RenameTeamSpace",
+      "to": "resource:attribute:TeamSpaceUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 419,
+        "startColumn": 14,
+        "endLine": 419,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "touchTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0114",
+      "kind": "resource_write",
+      "from": "rpc:RequestTeamSpaceDeletion",
+      "to": "resource:attribute:TeamSpaceActiveCommand",
+      "label": "Set",
+      "span": {
+        "startLine": 199,
+        "startColumn": 14,
+        "endLine": 199,
+        "endColumn": 55
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0115",
+      "kind": "resource_write",
+      "from": "rpc:RequestTeamSpaceDeletion",
+      "to": "resource:attribute:TeamSpaceRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 418,
+        "startColumn": 14,
+        "endLine": 418,
+        "endColumn": 81
+      },
+      "metadata": {
+        "function": "touchTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0116",
+      "kind": "resource_write",
+      "from": "rpc:RequestTeamSpaceDeletion",
+      "to": "resource:attribute:TeamSpaceStatus",
+      "label": "Set",
+      "span": {
+        "startLine": 198,
+        "startColumn": 14,
+        "endLine": 198,
+        "endColumn": 54
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0117",
+      "kind": "resource_write",
+      "from": "rpc:RequestTeamSpaceDeletion",
+      "to": "resource:attribute:TeamSpaceUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 419,
+        "startColumn": 14,
+        "endLine": 419,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "touchTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0118",
+      "kind": "resource_publish",
+      "from": "rpc:RequestTeamSpaceDeletion",
+      "to": "resource:channel:TeamSpaceCommands",
+      "label": "Publish",
+      "span": {
+        "startLine": 200,
+        "startColumn": 14,
+        "endLine": 200,
+        "endColumn": 53
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0119",
+      "kind": "resource_write",
+      "from": "rpc:SetTeamSpaceMemberRole",
+      "to": "resource:attribute:TeamSpaceMembers",
+      "label": "Set",
+      "span": {
+        "startLine": 141,
+        "startColumn": 14,
+        "endLine": 141,
+        "endColumn": 61
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0120",
+      "kind": "resource_write",
+      "from": "rpc:SetTeamSpaceMemberRole",
+      "to": "resource:attribute:TeamSpaceRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 418,
+        "startColumn": 14,
+        "endLine": 418,
+        "endColumn": 81
+      },
+      "metadata": {
+        "function": "touchTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0121",
+      "kind": "resource_write",
+      "from": "rpc:SetTeamSpaceMemberRole",
+      "to": "resource:attribute:TeamSpaceUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 419,
+        "startColumn": 14,
+        "endLine": 419,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "touchTeamSpace",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0122",
+      "kind": "resource_write",
+      "from": "rpc:UnregisterProject",
+      "to": "resource:attribute:TeamSpaceProjects",
+      "label": "Delete",
+      "span": {
+        "startLine": 233,
+        "startColumn": 14,
+        "endLine": 233,
+        "endColumn": 57
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0123",
+      "kind": "resource_write",
+      "from": "step:CompleteTeamSpaceDeletion",
+      "to": "resource:attribute:TeamSpaceActiveCommand",
+      "label": "Set",
+      "span": {
+        "startLine": 320,
+        "startColumn": 14,
+        "endLine": 320,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0124",
+      "kind": "resource_write",
+      "from": "step:CompleteTeamSpaceDeletion",
+      "to": "resource:attribute:TeamSpaceLastCommand",
+      "label": "Set",
+      "span": {
+        "startLine": 319,
+        "startColumn": 14,
+        "endLine": 319,
+        "endColumn": 53
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0125",
+      "kind": "resource_write",
+      "from": "step:CompleteTeamSpaceDeletion",
+      "to": "resource:attribute:TeamSpaceLastFailure",
+      "label": "Set",
+      "span": {
+        "startLine": 321,
+        "startColumn": 14,
+        "endLine": 321,
+        "endColumn": 48
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0126",
+      "kind": "resource_write",
+      "from": "step:CompleteTeamSpaceDeletion",
+      "to": "resource:attribute:TeamSpaceRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 418,
+        "startColumn": 14,
+        "endLine": 418,
+        "endColumn": 81
+      },
+      "metadata": {
+        "function": "touchTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0127",
+      "kind": "resource_write",
+      "from": "step:CompleteTeamSpaceDeletion",
+      "to": "resource:attribute:TeamSpaceStatus",
+      "label": "Set",
+      "span": {
+        "startLine": 318,
+        "startColumn": 14,
+        "endLine": 318,
+        "endColumn": 53
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0128",
+      "kind": "resource_write",
+      "from": "step:CompleteTeamSpaceDeletion",
+      "to": "resource:attribute:TeamSpaceUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 419,
+        "startColumn": 14,
+        "endLine": 419,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "touchTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0129",
+      "kind": "failure_transition",
+      "from": "step:DeleteTeamSpaceResources",
+      "to": "step:RecordTeamSpaceFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 263,
+        "startColumn": 56,
+        "endLine": 263,
+        "endColumn": 128
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0130",
+      "kind": "resource_write",
+      "from": "step:RecordTeamSpaceFailure",
+      "to": "resource:attribute:TeamSpaceActiveCommand",
+      "label": "Set",
+      "span": {
+        "startLine": 349,
+        "startColumn": 15,
+        "endLine": 349,
+        "endColumn": 51
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0131",
+      "kind": "resource_write",
+      "from": "step:RecordTeamSpaceFailure",
+      "to": "resource:attribute:TeamSpaceLastFailure",
+      "label": "Set",
+      "span": {
+        "startLine": 348,
+        "startColumn": 15,
+        "endLine": 348,
+        "endColumn": 211
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0132",
+      "kind": "resource_write",
+      "from": "step:RecordTeamSpaceFailure",
+      "to": "resource:attribute:TeamSpaceRevision",
+      "label": "Set",
+      "span": {
+        "startLine": 418,
+        "startColumn": 14,
+        "endLine": 418,
+        "endColumn": 81
+      },
+      "metadata": {
+        "function": "touchTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0133",
+      "kind": "resource_write",
+      "from": "step:RecordTeamSpaceFailure",
+      "to": "resource:attribute:TeamSpaceUpdatedAt",
+      "label": "Set",
+      "span": {
+        "startLine": 419,
+        "startColumn": 14,
+        "endLine": 419,
+        "endColumn": 59
+      },
+      "metadata": {
+        "function": "touchTeamSpace",
+        "phase": "execute",
+        "via": "helper"
+      }
+    }
+  ],
+  "diagnostics": [],
+  "groups": [
+    {
+      "id": "teamspace",
+      "label": "TeamSpace",
+      "stepIds": [
+        "step:AwaitTeamSpaceCommands",
+        "step:DeleteTeamSpaceResources",
+        "step:CompleteTeamSpaceDeletion",
+        "step:RecordTeamSpaceFailure"
+      ]
+    }
+  ],
+  "v2": {
+    "indexedAttributes": [],
+    "summary": {
+      "rpcName": "GetDexSummary",
+      "fields": [
+        {
+          "attributeKey": "Name",
+          "valueType": "string",
+          "editable": false,
+          "description": "TeamSpace name"
+        }
+      ]
+    },
+    "display": {
+      "rpcName": "GetDexDisplay",
+      "fields": [
+        {
+          "attributeKey": "Name",
+          "valueType": "string",
+          "editable": false,
+          "description": "TeamSpace name"
+        },
+        {
+          "attributeKey": "TeamSpaceStatus",
+          "valueType": "string",
+          "editable": false,
+          "description": "TeamSpace lifecycle status"
+        }
+      ]
+    },
+    "actions": [],
+    "start": {
+      "stepType": "AwaitTeamSpaceCommands",
+      "input": {
+        "kind": "null"
+      }
+    }
+  }
+}

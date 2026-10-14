@@ -1,0 +1,128 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+{{- if .Values.localKind }}
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: {{ include "v2.product" $ }}-local-project-namespace
+  labels:
+    app.kubernetes.io/part-of: {{ include "v2.product" $ }}
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ['']
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE, DELETE]
+        resources: [namespaces]
+  matchConditions:
+    {{- include "v2.serverOnlyMatch" $ | nindent 4 }}
+    - name: project-scope
+      expression: >-
+        (request.operation == 'DELETE' ? oldObject.metadata.name : object.metadata.name)
+          .matches('^{{ include "v2.projectNamespacePrefix" $ }}.*$')
+  variables:
+    - name: target
+      expression: "request.operation == 'DELETE' ? oldObject : object"
+  validations:
+    - expression: >-
+        has(variables.target.metadata.labels) &&
+        variables.target.metadata.labels['app.kubernetes.io/managed-by'] == '{{ include "v2.product" $ }}' &&
+        variables.target.metadata.labels['app.kubernetes.io/part-of'] == '{{ include "v2.product" $ }}-live' &&
+        variables.target.metadata.labels['superdurable.io/project-id'].matches('^[a-z0-9]{1,16}$')
+      message: Project scope namespace must preserve V2 ownership.
+    - expression: >-
+        {{ include "v2.projectScopeNamespaceCEL" (dict "root" $ "namespace" "variables.target.metadata.name" "labels" "variables.target.metadata.labels") | nindent 8 | trim }}
+      message: Project scope namespace must match its exact project.
+    - expression: variables.target.metadata.labels['superdurable.io/component'] == 'infrastructure'
+      message: Project namespace is owned by its infrastructure coordinator.
+    - expression: request.operation != 'UPDATE' || object.metadata.labels == oldObject.metadata.labels
+      message: Project namespace identity is immutable.
+---
+{{ include "v2.policyBinding" (dict "root" $ "name" "local-project-namespace") }}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: {{ include "v2.product" $ }}-local-project-resources
+  labels:
+    app.kubernetes.io/part-of: {{ include "v2.product" $ }}
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ['*']
+        apiVersions: ['*']
+        operations: [CREATE, UPDATE, DELETE]
+        resources: ['*']
+        scope: Namespaced
+  matchConditions:
+    {{- include "v2.serverOnlyMatch" $ | nindent 4 }}
+    - name: project-scope
+      expression: request.namespace.matches('^{{ include "v2.projectNamespacePrefix" $ }}.*$')
+  variables:
+    - name: target
+      expression: "request.operation == 'DELETE' ? oldObject : object"
+  validations:
+    - expression: >-
+        namespaceObject != null && has(namespaceObject.metadata.labels) &&
+        namespaceObject.metadata.labels['app.kubernetes.io/managed-by'] == '{{ include "v2.product" $ }}' &&
+        {{ include "v2.projectScopeNamespaceCEL" (dict "root" $ "namespace" "request.namespace" "labels" "namespaceObject.metadata.labels") | nindent 8 | trim }}
+      message: Project resources require an exact owned Live namespace.
+    - expression: >-
+        has(variables.target.metadata.labels) &&
+        variables.target.metadata.labels['app.kubernetes.io/managed-by'] == '{{ include "v2.product" $ }}' &&
+        variables.target.metadata.labels['app.kubernetes.io/part-of'] == '{{ include "v2.product" $ }}-live' &&
+        variables.target.metadata.labels['superdurable.io/project-id'].matches('^[a-z0-9]{1,16}$') &&
+        variables.target.metadata.labels['superdurable.io/project-id'] == namespaceObject.metadata.labels['superdurable.io/project-id']
+      message: Project resource ownership cannot cross projects.
+    - expression: >-
+        (request.resource.group == '' && request.resource.resource in ['serviceaccounts', 'persistentvolumeclaims', 'services', 'secrets']) ||
+        (request.resource.group == 'apps' && request.resource.resource == 'deployments') ||
+        (request.resource.group == 'networking.k8s.io' && request.resource.resource == 'networkpolicies') ||
+        (request.resource.group == 'gateway.networking.k8s.io' && request.resource.resource == 'httproutes') ||
+        (request.resource.group == 'rbac.authorization.k8s.io' && request.resource.resource == 'rolebindings')
+      message: Project provider may mutate only its declared resource kinds.
+    - expression: >-
+        variables.target.metadata.name in [
+          'application', 'dex', 'temporal', 'storage', 'temporal-data', 'object-data', 'object-credentials', 'dex-config',
+          'dex-server-config', 'default-deny', 'allow-application', 'allow-dex', 'allow-temporal', 'allow-storage', 'allow-dns',
+          'live', 'live-worker', '{{ include "v2.product" $ }}-project-runtime'] ||
+        variables.target.metadata.name.matches('^dex-server-config-[1-9][0-9]{0,19}$') ||
+        variables.target.metadata.name.matches('^app-[a-z0-9]([a-z0-9-]{0,34}[a-z0-9])?-[1-9][0-9]{0,19}(-storage|-environment)?$')
+      message: Project provider may mutate only fixed infrastructure or generation resource names.
+    - expression: >-
+        request.resource.resource != 'services' ||
+        ((!has(variables.target.spec.type) || variables.target.spec.type == 'ClusterIP') &&
+         !has(variables.target.spec.externalIPs) && !has(variables.target.spec.externalName) &&
+         has(variables.target.spec.selector) &&
+         variables.target.spec.selector['superdurable.io/project-id'] == namespaceObject.metadata.labels['superdurable.io/project-id'])
+      message: Project Dex and storage Services must remain internal with owned selectors.
+    - expression: >-
+        request.resource.resource != 'serviceaccounts' ||
+        (has(variables.target.automountServiceAccountToken) && variables.target.automountServiceAccountToken == false)
+      message: Project workload service accounts cannot receive Kubernetes credentials.
+    # The host and the parent Gateway are fixed by templates/project-route-admission.yaml.
+    - expression: >-
+        request.resource.resource != 'httproutes' || variables.target.metadata.name == 'live'
+      message: Only the local Live application may have a route; project Dex is never exposed.
+    # Deployment and generation labels move when the same Project replaces Live.
+    # Preserve ownership, including the presence of the optional scope label of
+    # a Preview grant's credential.
+    - expression: >-
+        request.operation != 'UPDATE' ||
+        ['app.kubernetes.io/managed-by', 'app.kubernetes.io/part-of',
+         'superdurable.io/project-id', 'superdurable.io/component',
+         'superdurable.io/scope'].all(key,
+          (key in object.metadata.labels) == (key in oldObject.metadata.labels) &&
+          (!(key in object.metadata.labels) || object.metadata.labels[key] == oldObject.metadata.labels[key]))
+      message: Project resource ownership labels are immutable.
+---
+{{ include "v2.policyBinding" (dict "root" $ "name" "local-project-resources") }}
+{{- end }}

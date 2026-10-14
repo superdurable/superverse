@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "path"
+  ],
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "The file to read: relative to the workspace root, or absolute in the workspace or in a read-only root (installed skills under /opt/superverse/dex-skills, a Go module directory from go list -m -f '{{.Dir}}' <module>, Go standard library source, Preview logs, command output files).",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "offset": {
+      "type": "integer",
+      "description": "The first line to read, 1-based.",
+      "minimum": 1,
+      "default": 1
+    },
+    "limit": {
+      "type": "integer",
+      "description": "The number of lines to read, at most 2000.",
+      "minimum": 1,
+      "maximum": 2000,
+      "default": 2000
+    }
+  }
+}

@@ -1,0 +1,70 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# An application-owned Live deployment failure and its automatic fix. The
+# push makes the server refuse to start without WELCOME_TEXT, which passes the
+# commit gate's build and checks but nothing sets in Live. A test then builds
+# a Release of the pushed commit and deploys it: the deployed application
+# exits, so the deployment fails DEPLOYMENT_FAILED in a phase the application
+# owns, for the Session's HEAD. That delivery notification opens an automatic
+# turn, the reply that declares it: the script reads the delivery status,
+# makes the setting optional again and pushes the fix, and tells the user to
+# publish the fixed commit, because Live is a manual publish. The second edit
+# undoes the first, so the Project's source ends as it began.
+name: live-failure-fix
+title: "Fix a failed Live deployment"
+description: "Pushes a server that cannot start in Live; publish that commit to Live (with its summary-model connection configured), and the failed deployment's notification opens an automatic turn that reads the delivery status, pushes the fix and asks the user to publish it."
+category: user_error
+inputs:
+  - label: "Push a required setting"
+    message: "Make the server refuse to start without WELCOME_TEXT and push it."
+    replies:
+      - text: "Reading the server entry point."
+        tool_uses:
+          - name: read
+            input: {path: cmd/server/main.go}
+      - text: "Requiring WELCOME_TEXT at startup."
+        tool_uses:
+          - name: edit
+            input:
+              path: cmd/server/main.go
+              old_string: "\tslog.SetDefault(logger)\n"
+              new_string: "\tslog.SetDefault(logger)\n\tif os.Getenv(\"WELCOME_TEXT\") == \"\" {\n\t\treturn errors.New(\"WELCOME_TEXT is not set\")\n\t}\n"
+      - text: "Restoring the application's dependencies, as the template's instructions say."
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap", description: "Restore the application's dependencies", timeout_seconds: 600}
+      - text: "Running the source checks and pushing."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Require WELCOME_TEXT at startup"
+              verification:
+                - "go build ./... compiles the startup check"
+      - text: "The startup check is pushed. Publish it to Live when you are ready."
+      - text: "The Live deployment of the pushed commit failed. Reading the delivery status."
+        notification: delivery
+        tool_uses:
+          - name: read_delivery_status
+            input: {}
+        expect_result_contains: ["DEPLOYMENT_FAILED"]
+      - text: "The application exits at startup because WELCOME_TEXT is not set in Live. Removing the requirement, so the application starts without the setting."
+        tool_uses:
+          - name: edit
+            input:
+              path: cmd/server/main.go
+              old_string: "\tif os.Getenv(\"WELCOME_TEXT\") == \"\" {\n\t\treturn errors.New(\"WELCOME_TEXT is not set\")\n\t}\n"
+              new_string: ""
+      - text: "Pushing the fix."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Start without WELCOME_TEXT"
+              verification:
+                - "the server starts without WELCOME_TEXT"
+      - text: "The fix is pushed. Live keeps serving what it served before; publish this commit to Live to replace the failed deployment."

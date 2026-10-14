@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+localKind: true
+environment: test
+server:
+  image: {repository: superverse-v2/server, pullPolicy: Never}
+  # The server configuration comes from the profile that `sv2 kind deploy --config` renders.
+studio:
+  image: {repository: superverse-v2/studio, pullPolicy: Never}
+  # Two Studio Pods keep the lane on the multi-replica path that hosted environments may run.
+  replicas: 2
+  config:
+    SUPERVERSE_STUDIO_PUBLIC_ORIGIN: "http://localhost:23000"
+dex:
+  temporalAddress: temporal:7233
+localDependencies:
+  # The browser's origin of the lane's Keycloak, the `kind ports` forward of scripts/kind/cluster.py; its tokens carry it.
+  keycloakOrigin: "http://localhost:28190"
+platformNodeSelector: null
+sandboxController:
+  nodeSelector: null

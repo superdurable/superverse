@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "level": {
+      "type": "string",
+      "enum": ["high", "xhigh"]
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    }
+  },
+  "required": ["level", "reason"],
+  "additionalProperties": false
+}

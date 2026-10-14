@@ -1,0 +1,28 @@
+# The paths whose changes run on the Local Kind lane instead of Local Native (both when the change also touches a path of
+# scripts/native-required-paths.txt).
+# `make required-lanes` reads this list, AGENTS.md (and so CLAUDE.md and the Cursor rules) repeats it, and
+# `make check-agent-rules` checks that the two agree and that the list holds every Kubernetes package of
+# scripts/check-package-layers.py. One glob per line: ** matches any number of path segments, * one segment's text.
+
+# The Kubernetes packages, the only ones that import the Kubernetes API client, with their Kind tests.
+internal/platform/kubeapi/**
+internal/projects/infra/kube/**
+internal/agents/sandbox/kube/**
+internal/delivery/deployments/kube/**
+internal/bootstrap/kubernetes.go
+
+# The Sandbox's runtime: the coding image with sandboxd and its helpers. Native runs the same image, but only Kind
+# applies the Pod's restrictions.
+sandbox/coding/**
+
+# The deployment: the chart with the coding profile, the Kind lane's values, profiles and scripts, and the
+# Kubernetes Terraform root.
+infra-as-code/kubernetes/**
+infra-as-code/environments/local-kind/**
+infra-as-code/scripts/kind/**
+infra-as-code/terraform/kubernetes/**
+cmd/superverse-server/config/local-kind*.yaml
+
+# The platform Dex and server configuration that both local lanes render, such as the Attribute Store stores; it is
+# also on scripts/native-required-paths.txt, so a change to it runs on both lanes.
+infra-as-code/scripts/local_platform.py

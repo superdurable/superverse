@@ -1,0 +1,96 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+{{- $webEnabled := or .Values.localKind .Values.dex.debugIngress.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "v2.product" $ }}-dex
+  namespace: {{ include "v2.namespace" $ }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "v2.product" $ }}-dex
+  namespace: {{ include "v2.namespace" $ }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+spec:
+  replicas: {{ .Values.dex.replicas }}
+  revisionHistoryLimit: 3
+  # The memory Stream store lives in the one Dex process, which a rollout replaces; several
+  # replicas need the shared Stream store that dex.sharedStreamStore declares.
+  {{- if eq (int .Values.dex.replicas) 1 }}
+  strategy: {type: Recreate}
+  {{- end }}
+  selector:
+    matchLabels: {app: {{ include "v2.product" $ }}-dex}
+  template:
+    metadata:
+      labels: {app: {{ include "v2.product" $ }}-dex, app.kubernetes.io/part-of: {{ include "v2.product" $ }}, app.kubernetes.io/name: {{ include "v2.product" $ }}-dex}
+      annotations:
+        checksum/config: {{ toJson .Values.dex | sha256sum | quote }}
+        {{- if .Values.dex.debugIngress.enabled }}
+        checksum/web-proxy: {{ include (print $.Template.BasePath "/dex-debug-web-proxy.yaml") . | sha256sum | quote }}
+        {{- end }}
+    spec:
+      {{- include "v2.platformPodSpec" (dict "root" $ "serviceAccount" (printf "%s-dex" (include "v2.product" $)) "automountToken" false) | nindent 6 }}
+      containers:
+        - name: dex
+          image: {{ include "v2.image" .Values.dex.image | quote }}
+          imagePullPolicy: {{ .Values.dex.image.pullPolicy }}
+          {{- include "v2.platformContainerSecurity" . | nindent 10 }}
+          env:
+            - {name: CONFIG_TEMPLATE_PATH, value: /etc/dex/config.yaml}
+            - {name: TEMPORAL_HOST_PORT, value: {{ .Values.dex.temporalAddress | quote }}}
+          args: ["--services", {{ ternary "api,interpreter,web" "api,interpreter" $webEnabled | quote }}]
+          ports:
+            - {name: grpc, containerPort: 8801}
+            {{- if $webEnabled }}
+            - {name: web, containerPort: 8802}
+            {{- end }}
+          startupProbe: {tcpSocket: {port: grpc}, periodSeconds: 3, failureThreshold: 100}
+          readinessProbe: {tcpSocket: {port: grpc}, periodSeconds: 5}
+          livenessProbe: {tcpSocket: {port: grpc}, periodSeconds: 10, failureThreshold: 6}
+          resources: {{ toYaml .Values.dex.resources | nindent 12 }}
+          volumeMounts:
+            {{- include "v2.platformScratchMounts" . | nindent 12 }}
+            - {name: dex-config, mountPath: /etc/dex, readOnly: true}
+        {{- if .Values.dex.debugIngress.enabled }}
+        - name: web-proxy
+          image: {{ include "v2.debugWebProxyImage" . | quote }}
+          imagePullPolicy: IfNotPresent
+          command: ["/usr/sbin/nginx"]
+          args: ["-g", "daemon off;"]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          ports: [{name: web-proxy, containerPort: 8083}]
+          readinessProbe: {httpGet: {path: /readyz, port: web-proxy}, periodSeconds: 5}
+          resources:
+            requests: {cpu: 25m, memory: 32Mi}
+            limits: {cpu: 500m, memory: 128Mi}
+          volumeMounts:
+            - {name: web-proxy-config, mountPath: /etc/nginx/nginx.conf, subPath: nginx.conf, readOnly: true}
+            - {name: web-proxy-tmp, mountPath: /tmp}
+        {{- end }}
+      volumes:
+        {{- if .Values.dex.debugIngress.enabled }}
+        - name: web-proxy-config
+          configMap: {name: {{ include "v2.product" $ }}-dex-web-proxy}
+        - name: web-proxy-tmp
+          emptyDir: {sizeLimit: 32Mi}
+        {{- end }}
+        {{- include "v2.platformScratchVolumes" . | nindent 8 }}
+        - name: dex-config
+          secret: {secretName: {{ include "v2.product" $ }}-dex-config, defaultMode: 0440}

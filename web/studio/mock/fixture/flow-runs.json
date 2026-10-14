@@ -1,0 +1,2079 @@
+{
+  "recordedAt": "2026-10-06T06:51:59.958Z",
+  "definitions": [
+    {
+      "flowType": "TextSummaryFlow",
+      "sourcePath": "internal/process/text_summary_flow.go",
+      "schemaVersion": "2.0",
+      "digest": "sha256:f427eca1b7af773dae73c09dfd52cb897f8c85e40fb99869e0ef484e19e28f13",
+      "valid": true,
+      "graph": {
+        "schemaVersion": "2.0",
+        "valid": true,
+        "source": {
+          "language": "go",
+          "path": "internal/process/text_summary_flow.go"
+        },
+        "flow": {
+          "name": "TextSummaryFlow",
+          "startStepId": "step:PrepareSummary",
+          "span": {
+            "startLine": 85,
+            "startColumn": 1,
+            "endLine": 116,
+            "endColumn": 2
+          }
+        },
+        "nodes": [
+          {
+            "id": "decision-dispatch:step:PrepareSummary",
+            "kind": "decision_dispatch",
+            "name": "Decision",
+            "parentId": "step:PrepareSummary",
+            "phase": "execute",
+            "span": {
+              "startLine": 147,
+              "startColumn": 1,
+              "endLine": 166,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "decision:rpc:ApproveSummary:300:9",
+            "kind": "decision",
+            "name": "rpcResult",
+            "parentId": "rpc:ApproveSummary",
+            "phase": "rpc",
+            "span": {
+              "startLine": 300,
+              "startColumn": 9,
+              "endLine": 300,
+              "endColumn": 35
+            },
+            "decision": {
+              "type": "rpcResult"
+            }
+          },
+          {
+            "id": "decision:rpc:GetDexDisplay:271:9",
+            "kind": "decision",
+            "name": "rpcResult",
+            "parentId": "rpc:GetDexDisplay",
+            "phase": "rpc",
+            "span": {
+              "startLine": 271,
+              "startColumn": 9,
+              "endLine": 276,
+              "endColumn": 4
+            },
+            "decision": {
+              "type": "rpcResult"
+            }
+          },
+          {
+            "id": "decision:rpc:GetDexSummary:249:9",
+            "kind": "decision",
+            "name": "rpcResult",
+            "parentId": "rpc:GetDexSummary",
+            "phase": "rpc",
+            "span": {
+              "startLine": 249,
+              "startColumn": 9,
+              "endLine": 251,
+              "endColumn": 4
+            },
+            "decision": {
+              "type": "rpcResult"
+            }
+          },
+          {
+            "id": "decision:rpc:GetSummarySnapshot:285:9",
+            "kind": "decision",
+            "name": "rpcResult",
+            "parentId": "rpc:GetSummarySnapshot",
+            "phase": "rpc",
+            "span": {
+              "startLine": 285,
+              "startColumn": 9,
+              "endLine": 285,
+              "endColumn": 62
+            },
+            "decision": {
+              "type": "rpcResult"
+            }
+          },
+          {
+            "id": "decision:step:AwaitSummaryApproval:185:9",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:AwaitSummaryApproval",
+            "phase": "execute",
+            "span": {
+              "startLine": 185,
+              "startColumn": 9,
+              "endLine": 185,
+              "endColumn": 46
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:PrepareSummary:160:10",
+            "kind": "decision",
+            "name": "gracefulComplete",
+            "parentId": "step:PrepareSummary",
+            "condition": "input.Text == \"\" || len(input.Text) > MaximumTextSummaryBytes || !utf8.ValidString(input.Text)",
+            "phase": "execute",
+            "span": {
+              "startLine": 160,
+              "startColumn": 10,
+              "endLine": 160,
+              "endColumn": 35
+            },
+            "decision": {
+              "type": "gracefulComplete"
+            }
+          },
+          {
+            "id": "decision:step:PrepareSummary:165:9",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:PrepareSummary",
+            "condition": "!(input.Text == \"\" || len(input.Text) > MaximumTextSummaryBytes || !utf8.ValidString(input.Text))",
+            "phase": "execute",
+            "span": {
+              "startLine": 165,
+              "startColumn": 9,
+              "endLine": 165,
+              "endColumn": 76
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:RecordSummaryUncertainty:238:9",
+            "kind": "decision",
+            "name": "gracefulComplete",
+            "parentId": "step:RecordSummaryUncertainty",
+            "phase": "execute",
+            "span": {
+              "startLine": 238,
+              "startColumn": 9,
+              "endLine": 238,
+              "endColumn": 34
+            },
+            "decision": {
+              "type": "gracefulComplete"
+            }
+          },
+          {
+            "id": "decision:step:SaveSummaryResult:221:9",
+            "kind": "decision",
+            "name": "gracefulComplete",
+            "parentId": "step:SaveSummaryResult",
+            "phase": "execute",
+            "span": {
+              "startLine": 221,
+              "startColumn": 9,
+              "endLine": 221,
+              "endColumn": 34
+            },
+            "decision": {
+              "type": "gracefulComplete"
+            }
+          },
+          {
+            "id": "resource:attribute:SummaryInputTokens",
+            "kind": "attribute",
+            "name": "input-tokens",
+            "span": {
+              "startLine": 45,
+              "startColumn": 2,
+              "endLine": 45,
+              "endColumn": 66
+            },
+            "resource": {
+              "valueType": "int64"
+            }
+          },
+          {
+            "id": "resource:attribute:SummaryModel",
+            "kind": "attribute",
+            "name": "summary-model",
+            "span": {
+              "startLine": 44,
+              "startColumn": 2,
+              "endLine": 44,
+              "endColumn": 68
+            },
+            "resource": {
+              "valueType": "string"
+            }
+          },
+          {
+            "id": "resource:attribute:SummaryNotice",
+            "kind": "attribute",
+            "name": "summary-notice",
+            "span": {
+              "startLine": 48,
+              "startColumn": 2,
+              "endLine": 48,
+              "endColumn": 69
+            },
+            "resource": {
+              "valueType": "string"
+            }
+          },
+          {
+            "id": "resource:attribute:SummaryOutputTokens",
+            "kind": "attribute",
+            "name": "output-tokens",
+            "span": {
+              "startLine": 46,
+              "startColumn": 2,
+              "endLine": 46,
+              "endColumn": 67
+            },
+            "resource": {
+              "valueType": "int64"
+            }
+          },
+          {
+            "id": "resource:attribute:SummarySourceText",
+            "kind": "attribute",
+            "name": "source-text",
+            "span": {
+              "startLine": 42,
+              "startColumn": 2,
+              "endLine": 42,
+              "endColumn": 66
+            },
+            "resource": {
+              "valueType": "string"
+            }
+          },
+          {
+            "id": "resource:attribute:SummaryStatus",
+            "kind": "attribute",
+            "name": "summary-status",
+            "span": {
+              "startLine": 41,
+              "startColumn": 2,
+              "endLine": 41,
+              "endColumn": 148
+            },
+            "resource": {
+              "valueType": "string"
+            }
+          },
+          {
+            "id": "resource:attribute:SummaryText",
+            "kind": "attribute",
+            "name": "summary-text",
+            "span": {
+              "startLine": 43,
+              "startColumn": 2,
+              "endLine": 43,
+              "endColumn": 67
+            },
+            "resource": {
+              "valueType": "string"
+            }
+          },
+          {
+            "id": "resource:attribute:SummaryTotalTokens",
+            "kind": "attribute",
+            "name": "total-tokens",
+            "span": {
+              "startLine": 47,
+              "startColumn": 2,
+              "endLine": 47,
+              "endColumn": 66
+            },
+            "resource": {
+              "valueType": "int64"
+            }
+          },
+          {
+            "id": "resource:channel:SummaryApprovals",
+            "kind": "channel",
+            "name": "summary-approvals",
+            "span": {
+              "startLine": 49,
+              "startColumn": 2,
+              "endLine": 49,
+              "endColumn": 72
+            },
+            "resource": {
+              "valueType": "dex.None"
+            }
+          },
+          {
+            "id": "rpc:ApproveSummary",
+            "kind": "rpc",
+            "name": "ApproveSummary",
+            "span": {
+              "startLine": 289,
+              "startColumn": 1,
+              "endLine": 301,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "rpc:GetDexDisplay",
+            "kind": "rpc",
+            "name": "GetDexDisplay",
+            "span": {
+              "startLine": 262,
+              "startColumn": 1,
+              "endLine": 277,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "rpc:GetDexSummary",
+            "kind": "rpc",
+            "name": "GetDexSummary",
+            "span": {
+              "startLine": 244,
+              "startColumn": 1,
+              "endLine": 252,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "rpc:GetSummarySnapshot",
+            "kind": "rpc",
+            "name": "GetSummarySnapshot",
+            "span": {
+              "startLine": 280,
+              "startColumn": 1,
+              "endLine": 286,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "step:AwaitSummaryApproval",
+            "kind": "step",
+            "name": "AwaitSummaryApproval",
+            "phase": "wait_for+execute",
+            "span": {
+              "startLine": 112,
+              "startColumn": 3,
+              "endLine": 112,
+              "endColumn": 41
+            },
+            "metadata": {
+              "explanation": "Wait for an authorized person to approve the generated summary."
+            }
+          },
+          {
+            "id": "step:GenerateSummary",
+            "kind": "step",
+            "name": "GenerateSummary",
+            "phase": "execute",
+            "span": {
+              "startLine": 88,
+              "startColumn": 3,
+              "endLine": 111,
+              "endColumn": 6
+            },
+            "metadata": {
+              "connector": {
+                "configurationEnabled": true,
+                "configurationUI": {
+                  "units": []
+                },
+                "connectionName": "summary-model",
+                "connectorId": "llm",
+                "modulePath": "github.com/superdurable/dex-connectors-library/connectors/superdurable/llm",
+                "moduleVersion": "v0.21.0",
+                "operationId": "generateText",
+                "operationKind": "query"
+              },
+              "connectorFactory": true,
+              "connectorOperationKind": "query",
+              "explanation": "Ask the configured model for a short factual summary."
+            }
+          },
+          {
+            "id": "step:PrepareSummary",
+            "kind": "step",
+            "name": "PrepareSummary",
+            "phase": "execute",
+            "start": true,
+            "span": {
+              "startLine": 87,
+              "startColumn": 3,
+              "endLine": 87,
+              "endColumn": 40
+            },
+            "metadata": {
+              "explanation": "Validate and keep the text before any paid model request."
+            }
+          },
+          {
+            "id": "step:RecordSummaryUncertainty",
+            "kind": "step",
+            "name": "RecordSummaryUncertainty",
+            "phase": "execute",
+            "span": {
+              "startLine": 114,
+              "startColumn": 3,
+              "endLine": 114,
+              "endColumn": 45
+            },
+            "metadata": {
+              "explanation": "Record a lost model response without sending the paid request again."
+            }
+          },
+          {
+            "id": "step:SaveSummaryResult",
+            "kind": "step",
+            "name": "SaveSummaryResult",
+            "phase": "execute",
+            "span": {
+              "startLine": 113,
+              "startColumn": 3,
+              "endLine": 113,
+              "endColumn": 38
+            },
+            "metadata": {
+              "explanation": "Save the summary, the model and the token usage, or a safe failure notice."
+            }
+          },
+          {
+            "id": "wait:AwaitSummaryApproval:178:9",
+            "kind": "wait",
+            "name": "allOf",
+            "parentId": "step:AwaitSummaryApproval",
+            "phase": "wait_for",
+            "span": {
+              "startLine": 178,
+              "startColumn": 9,
+              "endLine": 178,
+              "endColumn": 45
+            },
+            "wait": {
+              "type": "allOf",
+              "conditions": [
+                {
+                  "kind": "channel",
+                  "label": "summary-approvals.for 1",
+                  "resourceId": "resource:channel:SummaryApprovals",
+                  "span": {
+                    "startLine": 178,
+                    "startColumn": 19,
+                    "endLine": 178,
+                    "endColumn": 44
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge:0001",
+            "kind": "transition",
+            "from": "decision:step:AwaitSummaryApproval:185:9",
+            "to": "step:SaveSummaryResult",
+            "label": "GoTo",
+            "span": {
+              "startLine": 185,
+              "startColumn": 9,
+              "endLine": 185,
+              "endColumn": 46
+            }
+          },
+          {
+            "id": "edge:0002",
+            "kind": "transition",
+            "from": "decision:step:PrepareSummary:165:9",
+            "to": "step:GenerateSummary",
+            "label": "GoTo",
+            "span": {
+              "startLine": 165,
+              "startColumn": 9,
+              "endLine": 165,
+              "endColumn": 76
+            }
+          },
+          {
+            "id": "edge:0003",
+            "kind": "resource_read",
+            "from": "resource:attribute:SummaryStatus",
+            "to": "rpc:ApproveSummary",
+            "label": "Get",
+            "span": {
+              "startLine": 290,
+              "startColumn": 17,
+              "endLine": 290,
+              "endColumn": 39
+            },
+            "metadata": {
+              "phase": "rpc"
+            }
+          },
+          {
+            "id": "edge:0004",
+            "kind": "resource_read",
+            "from": "resource:channel:SummaryApprovals",
+            "to": "step:AwaitSummaryApproval",
+            "label": "GetConditionResults",
+            "span": {
+              "startLine": 182,
+              "startColumn": 15,
+              "endLine": 182,
+              "endColumn": 56
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0005",
+            "kind": "wait_condition",
+            "from": "resource:channel:SummaryApprovals",
+            "to": "wait:AwaitSummaryApproval:178:9",
+            "label": "summary-approvals.for 1",
+            "span": {
+              "startLine": 178,
+              "startColumn": 19,
+              "endLine": 178,
+              "endColumn": 44
+            }
+          },
+          {
+            "id": "edge:0006",
+            "kind": "resource_publish",
+            "from": "rpc:ApproveSummary",
+            "to": "resource:channel:SummaryApprovals",
+            "label": "Publish",
+            "span": {
+              "startLine": 297,
+              "startColumn": 12,
+              "endLine": 297,
+              "endColumn": 46
+            },
+            "metadata": {
+              "phase": "rpc"
+            }
+          },
+          {
+            "id": "edge:0007",
+            "kind": "resource_write",
+            "from": "step:AwaitSummaryApproval",
+            "to": "resource:attribute:SummaryStatus",
+            "label": "Set",
+            "span": {
+              "startLine": 175,
+              "startColumn": 12,
+              "endLine": 175,
+              "endColumn": 55
+            },
+            "metadata": {
+              "phase": "wait_for"
+            }
+          },
+          {
+            "id": "edge:0008",
+            "kind": "transition",
+            "from": "step:GenerateSummary",
+            "to": "step:AwaitSummaryApproval",
+            "label": "generated",
+            "span": {
+              "startLine": 101,
+              "startColumn": 15,
+              "endLine": 101,
+              "endColumn": 49
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0009",
+            "kind": "failure_transition",
+            "from": "step:GenerateSummary",
+            "to": "step:RecordSummaryUncertainty",
+            "label": "Execute failure",
+            "metadata": {
+              "skipWaitFor": true
+            }
+          },
+          {
+            "id": "edge:0010",
+            "kind": "transition",
+            "from": "step:GenerateSummary",
+            "to": "step:SaveSummaryResult",
+            "label": "blocked",
+            "span": {
+              "startLine": 102,
+              "startColumn": 13,
+              "endLine": 102,
+              "endColumn": 44
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0011",
+            "kind": "transition",
+            "from": "step:GenerateSummary",
+            "to": "step:SaveSummaryResult",
+            "label": "defect",
+            "span": {
+              "startLine": 103,
+              "startColumn": 62,
+              "endLine": 103,
+              "endColumn": 93
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0012",
+            "kind": "transition",
+            "from": "step:GenerateSummary",
+            "to": "step:SaveSummaryResult",
+            "label": "invalidResponse",
+            "span": {
+              "startLine": 103,
+              "startColumn": 21,
+              "endLine": 103,
+              "endColumn": 52
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0013",
+            "kind": "transition",
+            "from": "step:GenerateSummary",
+            "to": "step:SaveSummaryResult",
+            "label": "providerRejected",
+            "span": {
+              "startLine": 102,
+              "startColumn": 64,
+              "endLine": 102,
+              "endColumn": 95
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0014",
+            "kind": "transition",
+            "from": "step:GenerateSummary",
+            "to": "step:SaveSummaryResult",
+            "label": "truncated",
+            "span": {
+              "startLine": 101,
+              "startColumn": 62,
+              "endLine": 101,
+              "endColumn": 93
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0015",
+            "kind": "resource_write",
+            "from": "step:PrepareSummary",
+            "to": "resource:attribute:SummaryNotice",
+            "label": "Set",
+            "span": {
+              "startLine": 155,
+              "startColumn": 4,
+              "endLine": 155,
+              "endColumn": 99
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0016",
+            "kind": "resource_write",
+            "from": "step:PrepareSummary",
+            "to": "resource:attribute:SummarySourceText",
+            "label": "Set",
+            "span": {
+              "startLine": 149,
+              "startColumn": 12,
+              "endLine": 149,
+              "endColumn": 50
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0017",
+            "kind": "resource_write",
+            "from": "step:PrepareSummary",
+            "to": "resource:attribute:SummaryStatus",
+            "label": "Set",
+            "span": {
+              "startLine": 154,
+              "startColumn": 4,
+              "endLine": 154,
+              "endColumn": 43
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0018",
+            "kind": "resource_write",
+            "from": "step:RecordSummaryUncertainty",
+            "to": "resource:attribute:SummaryNotice",
+            "label": "Set",
+            "span": {
+              "startLine": 233,
+              "startColumn": 3,
+              "endLine": 233,
+              "endColumn": 167
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0019",
+            "kind": "resource_write",
+            "from": "step:RecordSummaryUncertainty",
+            "to": "resource:attribute:SummaryStatus",
+            "label": "Set",
+            "span": {
+              "startLine": 232,
+              "startColumn": 3,
+              "endLine": 232,
+              "endColumn": 36
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0020",
+            "kind": "resource_write",
+            "from": "step:SaveSummaryResult",
+            "to": "resource:attribute:SummaryInputTokens",
+            "label": "Set",
+            "span": {
+              "startLine": 213,
+              "startColumn": 3,
+              "endLine": 213,
+              "endColumn": 62
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0021",
+            "kind": "resource_write",
+            "from": "step:SaveSummaryResult",
+            "to": "resource:attribute:SummaryModel",
+            "label": "Set",
+            "span": {
+              "startLine": 212,
+              "startColumn": 3,
+              "endLine": 212,
+              "endColumn": 50
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0022",
+            "kind": "resource_write",
+            "from": "step:SaveSummaryResult",
+            "to": "resource:attribute:SummaryNotice",
+            "label": "Set",
+            "span": {
+              "startLine": 216,
+              "startColumn": 3,
+              "endLine": 216,
+              "endColumn": 33
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0023",
+            "kind": "resource_write",
+            "from": "step:SaveSummaryResult",
+            "to": "resource:attribute:SummaryOutputTokens",
+            "label": "Set",
+            "span": {
+              "startLine": 214,
+              "startColumn": 3,
+              "endLine": 214,
+              "endColumn": 64
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0024",
+            "kind": "resource_write",
+            "from": "step:SaveSummaryResult",
+            "to": "resource:attribute:SummaryStatus",
+            "label": "Set",
+            "span": {
+              "startLine": 210,
+              "startColumn": 3,
+              "endLine": 210,
+              "endColumn": 33
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0025",
+            "kind": "resource_write",
+            "from": "step:SaveSummaryResult",
+            "to": "resource:attribute:SummaryText",
+            "label": "Set",
+            "span": {
+              "startLine": 211,
+              "startColumn": 3,
+              "endLine": 211,
+              "endColumn": 42
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0026",
+            "kind": "resource_write",
+            "from": "step:SaveSummaryResult",
+            "to": "resource:attribute:SummaryTotalTokens",
+            "label": "Set",
+            "span": {
+              "startLine": 215,
+              "startColumn": 3,
+              "endLine": 215,
+              "endColumn": 62
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          }
+        ],
+        "diagnostics": [],
+        "groups": [
+          {
+            "id": "intake",
+            "label": "Text intake",
+            "stepIds": ["step:PrepareSummary"]
+          },
+          {
+            "id": "generation",
+            "label": "Summary",
+            "stepIds": ["step:GenerateSummary"]
+          },
+          {
+            "id": "approval",
+            "label": "Approval",
+            "stepIds": ["step:AwaitSummaryApproval"]
+          },
+          {
+            "id": "result",
+            "label": "Result",
+            "stepIds": ["step:SaveSummaryResult", "step:RecordSummaryUncertainty"]
+          }
+        ],
+        "v2": {
+          "indexedAttributes": [
+            {
+              "attributeKey": "summary-status",
+              "indexKey": "keyword1",
+              "indexType": "keyword",
+              "valueType": "string",
+              "description": "Summary outcome"
+            }
+          ],
+          "summary": {
+            "rpcName": "GetDexSummary",
+            "fields": [
+              {
+                "attributeKey": "summary-text",
+                "valueType": "string",
+                "editable": false,
+                "description": "Summary"
+              },
+              {
+                "attributeKey": "summary-model",
+                "valueType": "string",
+                "editable": false,
+                "description": "Model"
+              },
+              {
+                "attributeKey": "total-tokens",
+                "valueType": "int64",
+                "editable": false,
+                "description": "Total tokens"
+              }
+            ]
+          },
+          "display": {
+            "rpcName": "GetDexDisplay",
+            "fields": [
+              {
+                "attributeKey": "summary-status",
+                "valueType": "string",
+                "editable": false,
+                "description": "Status",
+                "uiSlot": "status"
+              },
+              {
+                "attributeKey": "source-text",
+                "valueType": "string",
+                "editable": false,
+                "description": "Source text"
+              },
+              {
+                "attributeKey": "summary-text",
+                "valueType": "string",
+                "editable": false,
+                "description": "Summary"
+              },
+              {
+                "attributeKey": "summary-model",
+                "valueType": "string",
+                "editable": false,
+                "description": "Model"
+              },
+              {
+                "attributeKey": "input-tokens",
+                "valueType": "int64",
+                "editable": false,
+                "description": "Input tokens"
+              },
+              {
+                "attributeKey": "output-tokens",
+                "valueType": "int64",
+                "editable": false,
+                "description": "Output tokens"
+              },
+              {
+                "attributeKey": "total-tokens",
+                "valueType": "int64",
+                "editable": false,
+                "description": "Total tokens"
+              },
+              {
+                "attributeKey": "summary-notice",
+                "valueType": "string",
+                "editable": false,
+                "description": "Notice",
+                "uiSlot": "reason"
+              }
+            ]
+          },
+          "actions": [
+            {
+              "rpcName": "ApproveSummary",
+              "label": "Approve summary",
+              "requiredPermission": "summary.approve",
+              "condition": {
+                "attributeKey": "summary-status",
+                "operator": "in",
+                "values": ["awaiting-approval"]
+              },
+              "input": {
+                "kind": "none"
+              }
+            }
+          ],
+          "start": {
+            "stepType": "PrepareSummary",
+            "input": {
+              "kind": "object",
+              "fields": [
+                {
+                  "name": "text",
+                  "required": true,
+                  "schema": {
+                    "kind": "string"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ],
+  "runs": [
+    {
+      "summary": {
+        "definitionBinding": "CURRENT",
+        "definitionRevision": "mock-revision-1",
+        "flowId": "flow-7491c880-82f1-4420-b67d-b7c72774acf8",
+        "runId": "d5a44d98-0d26-77a3-b6ff-76ce3800429b",
+        "firstRunId": "d5a44d98-0d26-77a3-b6ff-76ce3800429b",
+        "requestId": "sv2-start-v1.643593260b38ff17758ec4d0860a68ef977fb93960b4f25b2703548c012791a9.1b3e9ef82c53fb0faa151adbdafd995ee9fea9969900e46c0bad1d4e9d24516e",
+        "flowType": "TextSummaryFlow",
+        "flowStatus": "Completed",
+        "flowStatusCode": 2,
+        "startTime": "2026-10-06T06:51:26.015862311Z",
+        "closeTime": "2026-10-06T06:51:32.146113124Z"
+      },
+      "row": {
+        "definitionBinding": "CURRENT",
+        "definitionRevision": "mock-revision-1",
+        "flowId": "flow-7491c880-82f1-4420-b67d-b7c72774acf8",
+        "flowType": "TextSummaryFlow",
+        "flowStatus": "Completed",
+        "flowStatusCode": 2,
+        "startTime": "2026-10-06T06:51:26.015862Z",
+        "closeTime": "2026-10-06T06:51:32.146113Z",
+        "indexedAttributes": {
+          "summary-status": "completed"
+        },
+        "summary": {
+          "summary-model": "gpt-5-mini-2025-08-07",
+          "summary-text": "Dex keeps application state in durable Flows. Build deploys the pushed Sandbox commit as Preview, Publishing builds an immutable Release and deploys it Live, and each environment keeps its own configuration and credentials.",
+          "total-tokens": "445"
+        }
+      },
+      "display": {
+        "flowId": "flow-7491c880-82f1-4420-b67d-b7c72774acf8",
+        "flowType": "TextSummaryFlow",
+        "flowStatus": "Completed",
+        "flowStatusCode": 2,
+        "isActive": false,
+        "display": {
+          "input-tokens": "101",
+          "output-tokens": "344",
+          "source-text": "Dex keeps application state in durable Flows. Build prepares and deploys the current pushed Sandbox commit as Preview. Publishing builds an immutable Release and deploys Live. Preview and Live keep their own configuration and credentials.",
+          "summary-model": "gpt-5-mini-2025-08-07",
+          "summary-notice": "",
+          "summary-status": "completed",
+          "summary-text": "Dex keeps application state in durable Flows. Build deploys the pushed Sandbox commit as Preview, Publishing builds an immutable Release and deploys it Live, and each environment keeps its own configuration and credentials.",
+          "total-tokens": "445"
+        },
+        "attributeSnapshot": {
+          "summary-status": "completed"
+        },
+        "eligibleActions": []
+      },
+      "state": null,
+      "history": {
+        "events": [
+          {
+            "eventId": 1,
+            "eventTime": "2026-10-06T06:51:26.015862311Z",
+            "type": "FlowStartedOrContinued",
+            "payload": {
+              "flowConfig": {
+                "activeStepSearchMode": 3,
+                "continueAsNewThreshold": 100,
+                "stepDurability": 1,
+                "workerTarget": {
+                  "address": "preview-worker.sv2-session-mock-mock0001.svc.cluster.local:18811"
+                }
+              },
+              "flowExecutionId": {
+                "flowId": "flow-7491c880-82f1-4420-b67d-b7c72774acf8",
+                "runId": "d5a44d98-0d26-77a3-b6ff-76ce3800429b"
+              },
+              "flowType": "TextSummaryFlow",
+              "initialStart": {
+                "startStepType": "PrepareSummary",
+                "stepInput": {
+                  "__dexBlobReference": {
+                    "id": "a0|z/zosg6ma85f",
+                    "kind": "object"
+                  }
+                },
+                "stepOptions": {
+                  "skipWaitFor": true
+                }
+              }
+            }
+          },
+          {
+            "eventId": 9,
+            "eventTime": "2026-10-06T06:51:26.138229356Z",
+            "type": "StepExecuteCompleted",
+            "payload": {
+              "context": {
+                "durability": 1,
+                "duration": "0.057216112s",
+                "finalAttempt": 1,
+                "fromStepExecutionId": "__start__",
+                "methodOptions": {
+                  "heartbeatTimeoutSeconds": 60,
+                  "retryPolicy": {
+                    "backoffCoefficient": 2,
+                    "initialIntervalSeconds": 1,
+                    "maximumIntervalSeconds": 100,
+                    "totalDurationSeconds": 14400
+                  },
+                  "timeoutSeconds": 7200
+                },
+                "startedTime": "2026-10-06T06:51:26.081013244Z",
+                "stepExecutionId": "PrepareSummary-1",
+                "stepType": "PrepareSummary"
+              },
+              "input": {
+                "stepInput": {
+                  "__dexBlobReference": {
+                    "id": "a0|z/zosg6ma85f",
+                    "kind": "object"
+                  }
+                }
+              },
+              "output": {
+                "stepDecision": {
+                  "nextSteps": [
+                    {
+                      "fromStepExecutionIdInternalOnly": "PrepareSummary-1",
+                      "stepInput": {
+                        "__dexBlobReference": {
+                          "id": "a0|z/lh6bt99ubc",
+                          "kind": "object"
+                        }
+                      },
+                      "stepOptions": {
+                        "executeDurabilityOverride": 1,
+                        "executeFailurePolicy": 2,
+                        "executeFailureProceedStepOptions": {
+                          "skipWaitFor": true
+                        },
+                        "executeFailureProceedStepType": "RecordSummaryUncertainty",
+                        "executeRetryPolicy": {
+                          "maximumAttempts": 1
+                        },
+                        "executeTimeoutSeconds": 900,
+                        "heartbeatTimeoutSeconds": 60,
+                        "skipWaitFor": true,
+                        "waitForFailurePolicy": 1
+                      },
+                      "stepType": "GenerateSummary"
+                    }
+                  ]
+                },
+                "upsertAttributes": [
+                  {
+                    "key": "source-text",
+                    "value": {
+                      "__dexBlobReference": {
+                        "id": "a0|z/vlr8gnvuh2",
+                        "kind": "string"
+                      }
+                    }
+                  },
+                  {
+                    "indexConfig": {
+                      "enable": true,
+                      "indexKey": "keyword1",
+                      "type": 1
+                    },
+                    "key": "summary-status",
+                    "value": {
+                      "stringValue": "generating"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "eventId": 16,
+            "eventTime": "2026-10-06T06:51:30.012512382Z",
+            "type": "StepExecuteCompleted",
+            "payload": {
+              "context": {
+                "durability": 1,
+                "duration": "3.822964420s",
+                "finalAttempt": 1,
+                "fromStepExecutionId": "PrepareSummary-1",
+                "methodOptions": {
+                  "heartbeatTimeoutSeconds": 60,
+                  "retryPolicy": {
+                    "backoffCoefficient": 2,
+                    "initialIntervalSeconds": 1,
+                    "maximumAttempts": 1,
+                    "maximumIntervalSeconds": 100,
+                    "totalDurationSeconds": 14400
+                  },
+                  "timeoutSeconds": 900
+                },
+                "startedTime": "2026-10-06T06:51:26.189547962Z",
+                "stepExecutionId": "GenerateSummary-1",
+                "stepType": "GenerateSummary"
+              },
+              "input": {
+                "attributes": [
+                  {
+                    "key": "source-text",
+                    "value": {
+                      "__dexBlobReference": {
+                        "id": "a0|z/vlr8gnvuh2",
+                        "kind": "string"
+                      }
+                    }
+                  },
+                  {
+                    "key": "summary-status",
+                    "value": {
+                      "stringValue": "generating"
+                    }
+                  }
+                ],
+                "stepInput": {
+                  "__dexBlobReference": {
+                    "id": "a0|z/lh6bt99ubc",
+                    "kind": "object"
+                  }
+                }
+              },
+              "output": {
+                "stepDecision": {
+                  "nextSteps": [
+                    {
+                      "fromStepExecutionIdInternalOnly": "GenerateSummary-1",
+                      "stepInput": {
+                        "__dexBlobReference": {
+                          "id": "a0|z/0je1gpmgjy",
+                          "kind": "object"
+                        }
+                      },
+                      "stepType": "AwaitSummaryApproval"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "eventId": 22,
+            "eventTime": "2026-10-06T06:51:30.066210759Z",
+            "type": "StepWaitForCompleted",
+            "payload": {
+              "context": {
+                "durability": 1,
+                "duration": "0.022829813s",
+                "finalAttempt": 1,
+                "fromStepExecutionId": "GenerateSummary-1",
+                "methodOptions": {
+                  "heartbeatTimeoutSeconds": 60,
+                  "retryPolicy": {
+                    "backoffCoefficient": 2,
+                    "initialIntervalSeconds": 1,
+                    "maximumIntervalSeconds": 100,
+                    "totalDurationSeconds": 14400
+                  },
+                  "timeoutSeconds": 7200
+                },
+                "startedTime": "2026-10-06T06:51:30.043380946Z",
+                "stepExecutionId": "AwaitSummaryApproval-1",
+                "stepType": "AwaitSummaryApproval"
+              },
+              "input": {
+                "attributes": [
+                  {
+                    "key": "source-text",
+                    "value": {
+                      "__dexBlobReference": {
+                        "id": "a0|z/vlr8gnvuh2",
+                        "kind": "string"
+                      }
+                    }
+                  },
+                  {
+                    "key": "summary-status",
+                    "value": {
+                      "stringValue": "generating"
+                    }
+                  }
+                ],
+                "stepInput": {
+                  "__dexBlobReference": {
+                    "id": "a0|z/0je1gpmgjy",
+                    "kind": "object"
+                  }
+                }
+              },
+              "output": {
+                "upsertAttributes": [
+                  {
+                    "indexConfig": {
+                      "enable": true,
+                      "indexKey": "keyword1",
+                      "type": 1
+                    },
+                    "key": "summary-status",
+                    "value": {
+                      "stringValue": "awaiting-approval"
+                    }
+                  }
+                ],
+                "waitForCondition": {
+                  "channelConditions": [
+                    {
+                      "channelName": "summary-approvals"
+                    }
+                  ],
+                  "waitingConditionType": 1
+                }
+              }
+            }
+          },
+          {
+            "eventId": 27,
+            "eventTime": "2026-10-06T06:51:32.024051988Z",
+            "type": "ChannelExternalPublish",
+            "payload": {
+              "messages": [
+                {
+                  "channelName": "summary-approvals",
+                  "messageId": "6877e835-edbd-723e-87b1-51c79607c5f2",
+                  "value": {
+                    "nullValue": null
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "eventId": 33,
+            "eventTime": "2026-10-06T06:51:32.068649618Z",
+            "type": "StepExecuteCompleted",
+            "payload": {
+              "context": {
+                "durability": 1,
+                "duration": "0.017791613s",
+                "finalAttempt": 1,
+                "fromStepExecutionId": "GenerateSummary-1",
+                "methodOptions": {
+                  "heartbeatTimeoutSeconds": 60,
+                  "retryPolicy": {
+                    "backoffCoefficient": 2,
+                    "initialIntervalSeconds": 1,
+                    "maximumIntervalSeconds": 100,
+                    "totalDurationSeconds": 14400
+                  },
+                  "timeoutSeconds": 7200
+                },
+                "startedTime": "2026-10-06T06:51:32.050858005Z",
+                "stepExecutionId": "AwaitSummaryApproval-1",
+                "stepType": "AwaitSummaryApproval"
+              },
+              "input": {
+                "attributes": [
+                  {
+                    "key": "DexWorkQueuePermissions",
+                    "value": {
+                      "objValue": {
+                        "encoding": "json",
+                        "payload": "WyJzdW1tYXJ5LmFwcHJvdmUiXQ=="
+                      }
+                    }
+                  },
+                  {
+                    "key": "source-text",
+                    "value": {
+                      "__dexBlobReference": {
+                        "id": "a0|z/vlr8gnvuh2",
+                        "kind": "string"
+                      }
+                    }
+                  },
+                  {
+                    "key": "summary-status",
+                    "value": {
+                      "stringValue": "awaiting-approval"
+                    }
+                  }
+                ],
+                "conditionResults": {
+                  "channelResults": [
+                    {
+                      "channelName": "summary-approvals",
+                      "conditionStatus": 2,
+                      "values": [
+                        {
+                          "nullValue": null
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "stepInput": {
+                  "__dexBlobReference": {
+                    "id": "a0|z/0je1gpmgjy",
+                    "kind": "object"
+                  }
+                }
+              },
+              "output": {
+                "stepDecision": {
+                  "nextSteps": [
+                    {
+                      "fromStepExecutionIdInternalOnly": "AwaitSummaryApproval-1",
+                      "stepInput": {
+                        "__dexBlobReference": {
+                          "id": "a0|z/f5xn1p87li",
+                          "kind": "object"
+                        }
+                      },
+                      "stepOptions": {
+                        "skipWaitFor": true
+                      },
+                      "stepType": "SaveSummaryResult"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "eventId": 39,
+            "eventTime": "2026-10-06T06:51:32.120178956Z",
+            "type": "StepExecuteCompleted",
+            "payload": {
+              "context": {
+                "durability": 1,
+                "duration": "0.020591974s",
+                "finalAttempt": 1,
+                "fromStepExecutionId": "AwaitSummaryApproval-1",
+                "methodOptions": {
+                  "heartbeatTimeoutSeconds": 60,
+                  "retryPolicy": {
+                    "backoffCoefficient": 2,
+                    "initialIntervalSeconds": 1,
+                    "maximumIntervalSeconds": 100,
+                    "totalDurationSeconds": 14400
+                  },
+                  "timeoutSeconds": 7200
+                },
+                "startedTime": "2026-10-06T06:51:32.099586982Z",
+                "stepExecutionId": "SaveSummaryResult-1",
+                "stepType": "SaveSummaryResult"
+              },
+              "input": {
+                "attributes": [
+                  {
+                    "key": "DexWorkQueuePermissions",
+                    "value": {
+                      "objValue": {
+                        "encoding": "json",
+                        "payload": "WyJzdW1tYXJ5LmFwcHJvdmUiXQ=="
+                      }
+                    }
+                  },
+                  {
+                    "key": "source-text",
+                    "value": {
+                      "__dexBlobReference": {
+                        "id": "a0|z/vlr8gnvuh2",
+                        "kind": "string"
+                      }
+                    }
+                  },
+                  {
+                    "key": "summary-status",
+                    "value": {
+                      "stringValue": "awaiting-approval"
+                    }
+                  }
+                ],
+                "stepInput": {
+                  "__dexBlobReference": {
+                    "id": "a0|z/f5xn1p87li",
+                    "kind": "object"
+                  }
+                }
+              },
+              "output": {
+                "stepDecision": {
+                  "closeDecision": {
+                    "closeDecisionType": 2,
+                    "closeInput": {
+                      "nullValue": null
+                    }
+                  }
+                },
+                "upsertAttributes": [
+                  {
+                    "indexConfig": {
+                      "enable": true,
+                      "indexKey": "keyword1",
+                      "type": 1
+                    },
+                    "key": "summary-status",
+                    "value": {
+                      "stringValue": "completed"
+                    }
+                  },
+                  {
+                    "key": "summary-text",
+                    "value": {
+                      "__dexBlobReference": {
+                        "id": "a0|z/77p6rpat9o",
+                        "kind": "string"
+                      }
+                    }
+                  },
+                  {
+                    "key": "summary-model",
+                    "value": {
+                      "stringValue": "gpt-5-mini-2025-08-07"
+                    }
+                  },
+                  {
+                    "key": "input-tokens",
+                    "value": {
+                      "intValue": "101"
+                    }
+                  },
+                  {
+                    "key": "output-tokens",
+                    "value": {
+                      "intValue": "344"
+                    }
+                  },
+                  {
+                    "key": "total-tokens",
+                    "value": {
+                      "intValue": "445"
+                    }
+                  },
+                  {
+                    "key": "summary-notice",
+                    "value": {
+                      "stringValue": ""
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "eventId": 44,
+            "eventTime": "2026-10-06T06:51:32.146113124Z",
+            "type": "FlowClosed",
+            "payload": {
+              "flowStatus": 2
+            }
+          }
+        ],
+        "nextInternalEventId": 45
+      }
+    },
+    {
+      "summary": {
+        "definitionBinding": "CURRENT",
+        "definitionRevision": "mock-revision-1",
+        "flowId": "flow-f47eedf4-3148-47a2-8f85-25716ec817f9",
+        "runId": "65223085-e4c2-784a-baf9-81e2e86bb994",
+        "firstRunId": "65223085-e4c2-784a-baf9-81e2e86bb994",
+        "requestId": "sv2-start-v1.643593260b38ff17758ec4d0860a68ef977fb93960b4f25b2703548c012791a9.98c14637ce08a22bd4a2145673a09c35c5541c6b9d80c20d86a7a186550fc12f",
+        "flowType": "TextSummaryFlow",
+        "flowStatus": "Running",
+        "flowStatusCode": 1,
+        "startTime": "2026-10-06T06:51:53.699224231Z",
+        "closeTime": null
+      },
+      "row": {
+        "definitionBinding": "CURRENT",
+        "definitionRevision": "mock-revision-1",
+        "flowId": "flow-f47eedf4-3148-47a2-8f85-25716ec817f9",
+        "flowType": "TextSummaryFlow",
+        "flowStatus": "Running",
+        "flowStatusCode": 1,
+        "startTime": "2026-10-06T06:51:53.699224Z",
+        "closeTime": null,
+        "indexedAttributes": {
+          "summary-status": "awaiting-approval"
+        },
+        "summary": {
+          "summary-model": "",
+          "summary-text": "",
+          "total-tokens": "0"
+        }
+      },
+      "display": {
+        "flowId": "flow-f47eedf4-3148-47a2-8f85-25716ec817f9",
+        "flowType": "TextSummaryFlow",
+        "flowStatus": "Running",
+        "flowStatusCode": 1,
+        "isActive": true,
+        "display": {
+          "input-tokens": "0",
+          "output-tokens": "0",
+          "source-text": "The Harbor Street community library reopens on the first Monday of next month after a six-month renovation. The reading room now has twice as many windows, a quiet corner for study groups and new shelving that brings the children's collection down to a height young readers can reach on their own. The old card catalogue cabinet stays in the entrance hall as a display case for local history, and volunteers have restored the brass handles. Opening hours change slightly: the library opens at nine on weekdays, closes at eight on Tuesdays and Thursdays, and keeps Saturday mornings for family reading sessions. Borrowing limits rise from ten to fifteen items, and late returns no longer carry a fine; instead, an item more than a month overdue pauses new loans until it comes back. The meeting room can be booked at the front desk for neighborhood groups free of charge, with a two-hour limit during busy weeks. A small cafe run by the high school's hospitality class serves tea and pastries on weekday afternoons, and its proceeds fund next year's summer reading prizes. The renovation added step-free access from the side street, an accessible restroom and a hearing loop in the meeting room. During the first week, staff will offer short tours every hour and help visitors set up the updated online catalogue, which can now place holds and renew loans from a phone. The library thanks the volunteers who packed and unpacked more than twelve thousand books and invites everyone to the reopening afternoon with music from the school band.",
+          "summary-model": "",
+          "summary-notice": "",
+          "summary-status": "awaiting-approval",
+          "summary-text": "",
+          "total-tokens": "0"
+        },
+        "attributeSnapshot": {
+          "summary-status": "awaiting-approval"
+        },
+        "eligibleActions": ["ApproveSummary"]
+      },
+      "state": {
+        "flowConfig": {
+          "activeStepSearchMode": 3,
+          "continueAsNewThreshold": 100,
+          "stepDurability": 1,
+          "workerTarget": {
+            "address": "preview-worker.sv2-session-mock-mock0001.svc.cluster.local:18811"
+          }
+        },
+        "attributes": [
+          {
+            "key": "DexWorkQueuePermissions",
+            "value": ["summary.approve"]
+          },
+          {
+            "key": "source-text",
+            "value": {
+              "__dexBlobReference": {
+                "id": "a0|z/l3yyftf144",
+                "kind": "string"
+              }
+            }
+          },
+          {
+            "key": "summary-status",
+            "value": "awaiting-approval"
+          }
+        ],
+        "activeStepExecutions": [
+          {
+            "stepExecutionId": "AwaitSummaryApproval-1",
+            "fromStepExecutionId": "GenerateSummary-1",
+            "stepType": "AwaitSummaryApproval",
+            "phase": "Waiting",
+            "movement": {
+              "fromStepExecutionIdInternalOnly": "GenerateSummary-1",
+              "stepInput": {
+                "__dexBlobReference": {
+                  "id": "a0|z/cnny0w93lz",
+                  "kind": "object"
+                }
+              },
+              "stepType": "AwaitSummaryApproval"
+            },
+            "waitingCondition": {
+              "channelConditions": [
+                {
+                  "channelName": "summary-approvals"
+                }
+              ],
+              "waitingConditionType": 1
+            },
+            "stepExecutionLocals": [],
+            "timers": []
+          }
+        ],
+        "queuedSteps": [],
+        "pendingChannelMessages": {},
+        "completedSteps": []
+      },
+      "history": {
+        "events": [
+          {
+            "eventId": 1,
+            "eventTime": "2026-10-06T06:51:53.699224231Z",
+            "type": "FlowStartedOrContinued",
+            "payload": {
+              "flowConfig": {
+                "activeStepSearchMode": 3,
+                "continueAsNewThreshold": 100,
+                "stepDurability": 1,
+                "workerTarget": {
+                  "address": "preview-worker.sv2-session-mock-mock0001.svc.cluster.local:18811"
+                }
+              },
+              "flowExecutionId": {
+                "flowId": "flow-f47eedf4-3148-47a2-8f85-25716ec817f9",
+                "runId": "65223085-e4c2-784a-baf9-81e2e86bb994"
+              },
+              "flowType": "TextSummaryFlow",
+              "initialStart": {
+                "startStepType": "PrepareSummary",
+                "stepInput": {
+                  "__dexBlobReference": {
+                    "id": "a0|z/lhe5umllbi",
+                    "kind": "object"
+                  }
+                },
+                "stepOptions": {
+                  "skipWaitFor": true
+                }
+              }
+            }
+          },
+          {
+            "eventId": 9,
+            "eventTime": "2026-10-06T06:51:53.846004271Z",
+            "type": "StepExecuteCompleted",
+            "payload": {
+              "context": {
+                "durability": 1,
+                "duration": "0.069757710s",
+                "finalAttempt": 1,
+                "fromStepExecutionId": "__start__",
+                "methodOptions": {
+                  "heartbeatTimeoutSeconds": 60,
+                  "retryPolicy": {
+                    "backoffCoefficient": 2,
+                    "initialIntervalSeconds": 1,
+                    "maximumIntervalSeconds": 100,
+                    "totalDurationSeconds": 14400
+                  },
+                  "timeoutSeconds": 7200
+                },
+                "startedTime": "2026-10-06T06:51:53.776246561Z",
+                "stepExecutionId": "PrepareSummary-1",
+                "stepType": "PrepareSummary"
+              },
+              "input": {
+                "stepInput": {
+                  "__dexBlobReference": {
+                    "id": "a0|z/lhe5umllbi",
+                    "kind": "object"
+                  }
+                }
+              },
+              "output": {
+                "stepDecision": {
+                  "nextSteps": [
+                    {
+                      "fromStepExecutionIdInternalOnly": "PrepareSummary-1",
+                      "stepInput": {
+                        "__dexBlobReference": {
+                          "id": "a0|z/vs4r48kuww",
+                          "kind": "object"
+                        }
+                      },
+                      "stepOptions": {
+                        "executeDurabilityOverride": 1,
+                        "executeFailurePolicy": 2,
+                        "executeFailureProceedStepOptions": {
+                          "skipWaitFor": true
+                        },
+                        "executeFailureProceedStepType": "RecordSummaryUncertainty",
+                        "executeRetryPolicy": {
+                          "maximumAttempts": 1
+                        },
+                        "executeTimeoutSeconds": 900,
+                        "heartbeatTimeoutSeconds": 60,
+                        "skipWaitFor": true,
+                        "waitForFailurePolicy": 1
+                      },
+                      "stepType": "GenerateSummary"
+                    }
+                  ]
+                },
+                "upsertAttributes": [
+                  {
+                    "key": "source-text",
+                    "value": {
+                      "__dexBlobReference": {
+                        "id": "a0|z/l3yyftf144",
+                        "kind": "string"
+                      }
+                    }
+                  },
+                  {
+                    "indexConfig": {
+                      "enable": true,
+                      "indexKey": "keyword1",
+                      "type": 1
+                    },
+                    "key": "summary-status",
+                    "value": {
+                      "stringValue": "generating"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "eventId": 16,
+            "eventTime": "2026-10-06T06:51:59.692350106Z",
+            "type": "StepExecuteCompleted",
+            "payload": {
+              "context": {
+                "durability": 1,
+                "duration": "5.777935404s",
+                "finalAttempt": 1,
+                "fromStepExecutionId": "PrepareSummary-1",
+                "methodOptions": {
+                  "heartbeatTimeoutSeconds": 60,
+                  "retryPolicy": {
+                    "backoffCoefficient": 2,
+                    "initialIntervalSeconds": 1,
+                    "maximumAttempts": 1,
+                    "maximumIntervalSeconds": 100,
+                    "totalDurationSeconds": 14400
+                  },
+                  "timeoutSeconds": 900
+                },
+                "startedTime": "2026-10-06T06:51:53.914414702Z",
+                "stepExecutionId": "GenerateSummary-1",
+                "stepType": "GenerateSummary"
+              },
+              "input": {
+                "attributes": [
+                  {
+                    "key": "source-text",
+                    "value": {
+                      "__dexBlobReference": {
+                        "id": "a0|z/l3yyftf144",
+                        "kind": "string"
+                      }
+                    }
+                  },
+                  {
+                    "key": "summary-status",
+                    "value": {
+                      "stringValue": "generating"
+                    }
+                  }
+                ],
+                "stepInput": {
+                  "__dexBlobReference": {
+                    "id": "a0|z/vs4r48kuww",
+                    "kind": "object"
+                  }
+                }
+              },
+              "output": {
+                "stepDecision": {
+                  "nextSteps": [
+                    {
+                      "fromStepExecutionIdInternalOnly": "GenerateSummary-1",
+                      "stepInput": {
+                        "__dexBlobReference": {
+                          "id": "a0|z/cnny0w93lz",
+                          "kind": "object"
+                        }
+                      },
+                      "stepType": "AwaitSummaryApproval"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "eventId": 22,
+            "eventTime": "2026-10-06T06:51:59.741527801Z",
+            "type": "StepWaitForCompleted",
+            "payload": {
+              "context": {
+                "durability": 1,
+                "duration": "0.023253987s",
+                "finalAttempt": 1,
+                "fromStepExecutionId": "GenerateSummary-1",
+                "methodOptions": {
+                  "heartbeatTimeoutSeconds": 60,
+                  "retryPolicy": {
+                    "backoffCoefficient": 2,
+                    "initialIntervalSeconds": 1,
+                    "maximumIntervalSeconds": 100,
+                    "totalDurationSeconds": 14400
+                  },
+                  "timeoutSeconds": 7200
+                },
+                "startedTime": "2026-10-06T06:51:59.718273814Z",
+                "stepExecutionId": "AwaitSummaryApproval-1",
+                "stepType": "AwaitSummaryApproval"
+              },
+              "input": {
+                "attributes": [
+                  {
+                    "key": "source-text",
+                    "value": {
+                      "__dexBlobReference": {
+                        "id": "a0|z/l3yyftf144",
+                        "kind": "string"
+                      }
+                    }
+                  },
+                  {
+                    "key": "summary-status",
+                    "value": {
+                      "stringValue": "generating"
+                    }
+                  }
+                ],
+                "stepInput": {
+                  "__dexBlobReference": {
+                    "id": "a0|z/cnny0w93lz",
+                    "kind": "object"
+                  }
+                }
+              },
+              "output": {
+                "upsertAttributes": [
+                  {
+                    "indexConfig": {
+                      "enable": true,
+                      "indexKey": "keyword1",
+                      "type": 1
+                    },
+                    "key": "summary-status",
+                    "value": {
+                      "stringValue": "awaiting-approval"
+                    }
+                  }
+                ],
+                "waitForCondition": {
+                  "channelConditions": [
+                    {
+                      "channelName": "summary-approvals"
+                    }
+                  ],
+                  "waitingConditionType": 1
+                }
+              }
+            }
+          }
+        ],
+        "nextInternalEventId": 27
+      }
+    }
+  ],
+  "blobs": {
+    "object:a0|z/f5xn1p87li": {
+      "branch": "generated",
+      "receipt": {
+        "callId": "e4e8500d-7260-56a1-a8f7-21da5f5a2305",
+        "metadata": {
+          "x-ratelimit-limit-requests": "500",
+          "x-ratelimit-limit-tokens": "500000",
+          "x-ratelimit-remaining-requests": "499",
+          "x-ratelimit-remaining-tokens": "499000",
+          "x-ratelimit-reset-requests": "12ms",
+          "x-ratelimit-reset-tokens": "4ms"
+        },
+        "observedAt": "2026-10-06T06:51:26.644432407Z",
+        "provider": "openai",
+        "providerObjectId": "resp_0992c0f2e4a81506ac0ceeaef73cf7e227997277d383475f5f",
+        "providerRequestId": "req_07994c05fcb7dfab98be2fae76f66630"
+      },
+      "value": {
+        "finishReason": "stop",
+        "providerFinishReason": "completed",
+        "requestedModel": "gpt-5-mini",
+        "responseId": "resp_0992c0f2e4a81506ac0ceeaef73cf7e227997277d383475f5f",
+        "servedModel": "gpt-5-mini-2025-08-07",
+        "text": "Dex keeps application state in durable Flows. Build deploys the pushed Sandbox commit as Preview, Publishing builds an immutable Release and deploys it Live, and each environment keeps its own configuration and credentials.",
+        "usage": {
+          "inputTokens": 101,
+          "outputTokens": 344,
+          "reasoningTokens": 256,
+          "totalTokens": 445
+        }
+      }
+    },
+    "object:a0|z/cnny0w93lz": {
+      "branch": "generated",
+      "receipt": {
+        "callId": "c81deb1b-7d46-5d73-8aef-0ae9dbcc334d",
+        "metadata": {
+          "x-ratelimit-limit-requests": "500",
+          "x-ratelimit-limit-tokens": "500000",
+          "x-ratelimit-remaining-requests": "499",
+          "x-ratelimit-remaining-tokens": "499000",
+          "x-ratelimit-reset-requests": "12ms",
+          "x-ratelimit-reset-tokens": "8ms"
+        },
+        "observedAt": "2026-10-06T06:51:54.197722028Z",
+        "provider": "openai",
+        "providerObjectId": "resp_9cd4407bad39c9f0d948c60e59cd7330078dc1257855498439",
+        "providerRequestId": "req_6e58cf7bf701d8849369fadf3c235fda"
+      },
+      "value": {
+        "finishReason": "stop",
+        "providerFinishReason": "completed",
+        "requestedModel": "gpt-5-mini",
+        "responseId": "resp_9cd4407bad39c9f0d948c60e59cd7330078dc1257855498439",
+        "servedModel": "gpt-5-mini-2025-08-07",
+        "text": "The renovated Harbor Street library reopens next month with a brighter reading room, a study corner, longer opening hours, higher borrowing limits and no late fines, a free meeting room, a student-run cafe and step-free access. Tours run all week, and the school band plays at the reopening.",
+        "usage": {
+          "inputTokens": 347,
+          "outputTokens": 728,
+          "reasoningTokens": 512,
+          "totalTokens": 1075
+        }
+      }
+    },
+    "object:a0|z/lhe5umllbi": {
+      "text": "The Harbor Street community library reopens on the first Monday of next month after a six-month renovation. The reading room now has twice as many windows, a quiet corner for study groups and new shelving that brings the children's collection down to a height young readers can reach on their own. The old card catalogue cabinet stays in the entrance hall as a display case for local history, and volunteers have restored the brass handles. Opening hours change slightly: the library opens at nine on weekdays, closes at eight on Tuesdays and Thursdays, and keeps Saturday mornings for family reading sessions. Borrowing limits rise from ten to fifteen items, and late returns no longer carry a fine; instead, an item more than a month overdue pauses new loans until it comes back. The meeting room can be booked at the front desk for neighborhood groups free of charge, with a two-hour limit during busy weeks. A small cafe run by the high school's hospitality class serves tea and pastries on weekday afternoons, and its proceeds fund next year's summer reading prizes. The renovation added step-free access from the side street, an accessible restroom and a hearing loop in the meeting room. During the first week, staff will offer short tours every hour and help visitors set up the updated online catalogue, which can now place holds and renew loans from a phone. The library thanks the volunteers who packed and unpacked more than twelve thousand books and invites everyone to the reopening afternoon with music from the school band."
+    },
+    "object:a0|z/lh6bt99ubc": {
+      "text": "Dex keeps application state in durable Flows. Build prepares and deploys the current pushed Sandbox commit as Preview. Publishing builds an immutable Release and deploys Live. Preview and Live keep their own configuration and credentials."
+    },
+    "object:a0|z/zosg6ma85f": {
+      "text": "Dex keeps application state in durable Flows. Build prepares and deploys the current pushed Sandbox commit as Preview. Publishing builds an immutable Release and deploys Live. Preview and Live keep their own configuration and credentials."
+    },
+    "object:a0|z/0je1gpmgjy": {
+      "branch": "generated",
+      "receipt": {
+        "callId": "e4e8500d-7260-56a1-a8f7-21da5f5a2305",
+        "metadata": {
+          "x-ratelimit-limit-requests": "500",
+          "x-ratelimit-limit-tokens": "500000",
+          "x-ratelimit-remaining-requests": "499",
+          "x-ratelimit-remaining-tokens": "499000",
+          "x-ratelimit-reset-requests": "12ms",
+          "x-ratelimit-reset-tokens": "4ms"
+        },
+        "observedAt": "2026-10-06T06:51:26.644432407Z",
+        "provider": "openai",
+        "providerObjectId": "resp_0992c0f2e4a81506ac0ceeaef73cf7e227997277d383475f5f",
+        "providerRequestId": "req_07994c05fcb7dfab98be2fae76f66630"
+      },
+      "value": {
+        "finishReason": "stop",
+        "providerFinishReason": "completed",
+        "requestedModel": "gpt-5-mini",
+        "responseId": "resp_0992c0f2e4a81506ac0ceeaef73cf7e227997277d383475f5f",
+        "servedModel": "gpt-5-mini-2025-08-07",
+        "text": "Dex keeps application state in durable Flows. Build deploys the pushed Sandbox commit as Preview, Publishing builds an immutable Release and deploys it Live, and each environment keeps its own configuration and credentials.",
+        "usage": {
+          "inputTokens": 101,
+          "outputTokens": 344,
+          "reasoningTokens": 256,
+          "totalTokens": 445
+        }
+      }
+    },
+    "object:a0|z/vs4r48kuww": {
+      "text": "The Harbor Street community library reopens on the first Monday of next month after a six-month renovation. The reading room now has twice as many windows, a quiet corner for study groups and new shelving that brings the children's collection down to a height young readers can reach on their own. The old card catalogue cabinet stays in the entrance hall as a display case for local history, and volunteers have restored the brass handles. Opening hours change slightly: the library opens at nine on weekdays, closes at eight on Tuesdays and Thursdays, and keeps Saturday mornings for family reading sessions. Borrowing limits rise from ten to fifteen items, and late returns no longer carry a fine; instead, an item more than a month overdue pauses new loans until it comes back. The meeting room can be booked at the front desk for neighborhood groups free of charge, with a two-hour limit during busy weeks. A small cafe run by the high school's hospitality class serves tea and pastries on weekday afternoons, and its proceeds fund next year's summer reading prizes. The renovation added step-free access from the side street, an accessible restroom and a hearing loop in the meeting room. During the first week, staff will offer short tours every hour and help visitors set up the updated online catalogue, which can now place holds and renew loans from a phone. The library thanks the volunteers who packed and unpacked more than twelve thousand books and invites everyone to the reopening afternoon with music from the school band."
+    },
+    "string:a0|z/vlr8gnvuh2": "Dex keeps application state in durable Flows. Build prepares and deploys the current pushed Sandbox commit as Preview. Publishing builds an immutable Release and deploys Live. Preview and Live keep their own configuration and credentials.",
+    "string:a0|z/77p6rpat9o": "Dex keeps application state in durable Flows. Build deploys the pushed Sandbox commit as Preview, Publishing builds an immutable Release and deploys it Live, and each environment keeps its own configuration and credentials.",
+    "string:a0|z/l3yyftf144": "The Harbor Street community library reopens on the first Monday of next month after a six-month renovation. The reading room now has twice as many windows, a quiet corner for study groups and new shelving that brings the children's collection down to a height young readers can reach on their own. The old card catalogue cabinet stays in the entrance hall as a display case for local history, and volunteers have restored the brass handles. Opening hours change slightly: the library opens at nine on weekdays, closes at eight on Tuesdays and Thursdays, and keeps Saturday mornings for family reading sessions. Borrowing limits rise from ten to fifteen items, and late returns no longer carry a fine; instead, an item more than a month overdue pauses new loans until it comes back. The meeting room can be booked at the front desk for neighborhood groups free of charge, with a two-hour limit during busy weeks. A small cafe run by the high school's hospitality class serves tea and pastries on weekday afternoons, and its proceeds fund next year's summer reading prizes. The renovation added step-free access from the side street, an accessible restroom and a hearing loop in the meeting room. During the first week, staff will offer short tours every hour and help visitors set up the updated online catalogue, which can now place holds and renew loans from a phone. The library thanks the volunteers who packed and unpacked more than twelve thousand books and invites everyone to the reopening afternoon with music from the school band."
+  }
+}

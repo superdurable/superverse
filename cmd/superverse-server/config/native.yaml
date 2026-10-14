@@ -1,0 +1,106 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# Local Native: the server, Studio and the Release builder run on this machine and
+# every project workload in the local Docker Engine (runtime docker), beside the
+# platform Temporal, MinIO and Dex, the gateway and the registry that the launcher
+# runs with Docker Compose. It is a complete profile of its own; no Kind cluster is
+# involved. `sv2 native start` adds a last layer with what it prepares for the run:
+# native.runId, native.stateDir, native.dockerSocket when the Docker context names
+# another socket, localgit.dir, server.blobCacheDir, sandbox.profile and the live
+# images. Every listener is on the loopback; the containers reach the host processes
+# through host.docker.internal. Secrets are not here; see README.md.
+#
+# The lane's ports are its own, apart from Local Kind's: each is the port Kind serves
+# for the same boundary, or Native's former one, minus 2000, except the Worker (25051),
+# which every Flow records as its Worker target, and the registry (25000), which every
+# Release image names. The launcher refuses a port of the Kind lane.
+environment: test
+localKind: true
+runtime: docker
+
+# The local Git host runs inside the server, with this lane's own repositories.
+repohost: localgit
+
+studio:
+  publicOrigin: http://localhost:21000
+
+agent:
+  # New Sessions run the mock model, which needs no Claude key; any account may
+  # switch a Session to a Claude model when the main checkout's .env holds
+  # ANTHROPIC_API_KEY.
+  mockModel: true
+  model: mock
+  thinkingPrefixMismatch: error
+
+server:
+  grpcAddress: 127.0.0.1:26080
+  healthAddress: 127.0.0.1:26082
+
+dex:
+  # The platform Dex container publishes its API here, and dials this process's
+  # Worker through host.docker.internal.
+  serverAddress: 127.0.0.1:26811
+  workerAddress: 127.0.0.1:25051
+  workerTarget: host.docker.internal:25051
+
+storage:
+  s3Endpoint: http://127.0.0.1:27000
+  artifactBucket: superverse-v2-artifacts
+
+# The platform PostgreSQL container publishes its port here, on the loopback.
+postgres:
+  host: 127.0.0.1
+  port: 26432
+  sslMode: disable
+
+builds:
+  localURL: http://127.0.0.1:27792
+
+# The independent Bridge listener has the ordinary named-instance port offset.
+remoteAgent:
+  maxConcurrentReads: 4
+  listen: 127.0.0.1:26089
+  acceptDevBridge: true
+
+# TeamSpace connections: the credential read endpoint listens on the loopback and
+# the applications' containers reach it through host.docker.internal; provider
+# calls may use plain http to the local OAuth server.
+connections:
+  readListen: 127.0.0.1:26087
+  readURL: http://host.docker.internal:26087/internal/connection-credentials/read
+  # The Slack event relay's events listener; only tests post to it locally.
+  slackRelay:
+    listenAddress: 127.0.0.1:26088
+  allowInsecureOAuthEndpoints: true
+
+localgit:
+  listen: 127.0.0.1:26085
+  # A Sandbox container clones from the server on this machine.
+  cloneBaseURL: http://host.docker.internal:26085
+
+routes:
+  localPort: 21080
+  gatewayURL: http://127.0.0.1:21080
+
+native:
+  # The launcher keeps this compatible default and replaces it for a named instance.
+  instance: default
+  dockerSocket: /var/run/docker.sock
+  networkPrefix: 10.233.0.0/16
+  registry: localhost:25000
+  gatewayAPI: http://127.0.0.1:21081
+  routesListen: 127.0.0.1:26086
+
+aws:
+  region: us-east-1
+
+# A replaced Live generation is retired after 30 seconds, so the lane observes
+# it; the hosted default is ten minutes (decision 0025).
+live:
+  retirementDrain: 30s

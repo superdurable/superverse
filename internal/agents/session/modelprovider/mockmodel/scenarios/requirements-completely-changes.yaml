@@ -1,0 +1,77 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# After a confirmation the user asks for a completely different application
+# (input 3). That is a large change whose card replaces the confirmed
+# requirements instead of revising them: it sets replaces_requirements, its
+# features are numbered from R1 again, and its confirmation (input 4) is the
+# next version. The script touches no workspace file, so a Session can run
+# it on any READY Project.
+name: requirements-completely-changes
+title: "Requirements replaced by a different request"
+description: "A confirmed card, then a completely different request whose new card replaces the requirements, numbered from R1, as the next version."
+category: project_feature
+inputs:
+  - label: "Describe the application"
+    message: "Build a release newsletter."
+    replies:
+      - thinking: "This is a new application, so the user confirms the requirements before I write any code."
+        text: "Here is what I plan to build. Please confirm it, or tell me what to change."
+        tool_uses:
+          - name: confirm_requirements
+            input:
+              title: "Release newsletter"
+              summary: "A weekly newsletter of the latest releases that an administrator reviews before it is sent."
+              features:
+                - {id: R1, text: "Visitors subscribe with their email address, and each address is stored once."}
+                - {id: R2, text: "An administrator reviews the draft and approves it or asks for a revision."}
+              connections:
+                - need: "Send the approved newsletter by email"
+                  connector: gmail
+                  operations: [sendEmail]
+                  status: new
+                  user_setup: "Connect the Gmail account that sends the newsletter."
+              user_setup: ["Connect the Gmail account in Studio."]
+              acceptance: ["A test newsletter arrives in the administrator's mailbox after approval."]
+  - label: "Confirm the requirements"
+    requirements_confirm: true
+    replies:
+      - tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Build the subscription page", status: in_progress}
+                - {content: "Build the review and send flow", status: pending}
+      - text: "The requirements are confirmed, and I will build exactly these features."
+  - label: "Ask for a different application"
+    message: "Drop the newsletter and build a release tracker instead."
+    replies:
+      - thinking: "This replaces the application, not one of its features, so the new card replaces the confirmed requirements and numbers its features from R1 again."
+        text: "This is a different application, so these requirements replace the confirmed ones. Please confirm them, or tell me what to change."
+        tool_uses:
+          - name: confirm_requirements
+            input:
+              title: "Release tracker"
+              summary: "A page that lists the latest releases of the organization's repositories."
+              replaces_requirements: true
+              features:
+                - {id: R1, text: "The page lists the releases of the last seven days, newest first."}
+                - {id: R2, text: "Each release links to its source."}
+              connections: []
+              user_setup: []
+              acceptance: ["The page shows the releases of the last seven days."]
+  - label: "Confirm the new requirements"
+    requirements_confirm: true
+    replies:
+      - tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Build the release list", status: in_progress}
+                - {content: "Link each release to its source", status: pending}
+      - text: "The new requirements replace the newsletter, and I will build exactly these features."

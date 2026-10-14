@@ -1,0 +1,38 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# The task tools on a background command: read_task_output reads the running
+# task's state and output, and stop_task stops it, which sends no notification.
+# It changes nothing in the workspace.
+name: task-tools
+title: "Task tools"
+description: "Reads a running background command with read_task_output and stops it with stop_task."
+category: agent_feature
+arguments: {task: cmd-aaaaaaaaaaaa}
+inputs:
+  - label: "Watch, read and stop"
+    message: "Watch the sources, read the watcher and stop it."
+    replies:
+      - text: "Starting a watcher in the background."
+        tool_uses:
+          - name: bash
+            input: {command: "echo watcher-started; sleep 600", description: "Watch the sources", run_in_background: true}
+      - text: "Reading the watcher's output."
+        tool_uses:
+          - name: read_task_output
+            input: {task_id: "{{task}}"}
+        expect_result_contains:
+          - ": running since "
+          - "watcher-started"
+      - text: "Stopping the watcher."
+        tool_uses:
+          - name: stop_task
+            input: {task_id: "{{task}}"}
+        expect_result_contains:
+          - ": stopped."
+      - text: "The watcher was stopped."

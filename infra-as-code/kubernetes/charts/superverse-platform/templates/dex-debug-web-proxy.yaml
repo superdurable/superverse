@@ -1,0 +1,60 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+{{- if .Values.dex.debugIngress.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "v2.product" $ }}-dex-web-proxy
+  namespace: {{ include "v2.namespace" $ }}
+  labels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}
+data:
+  nginx.conf: |
+    worker_processes 1;
+    pid /tmp/nginx.pid;
+    error_log /dev/stderr warn;
+    events { worker_connections 128; }
+    http {
+      access_log off;
+      client_body_temp_path /tmp/client_temp;
+      proxy_temp_path /tmp/proxy_temp;
+      fastcgi_temp_path /tmp/fastcgi_temp;
+      uwsgi_temp_path /tmp/uwsgi_temp;
+      scgi_temp_path /tmp/scgi_temp;
+      client_max_body_size 4m;
+      client_header_timeout 10s;
+      client_body_timeout 120s;
+      keepalive_timeout 60s;
+      server {
+        listen 8083;
+        server_name _;
+        location / {
+          proxy_pass http://127.0.0.1:8802;
+          proxy_http_version 1.1;
+          proxy_connect_timeout 5s;
+          proxy_read_timeout 120s;
+          proxy_send_timeout 120s;
+          proxy_buffering off;
+          proxy_request_buffering off;
+          proxy_set_header Connection "";
+          # ALB adds X-Forwarded-Proto. Dex requires the complete canonical
+          # root presentation; never trust browser-supplied embedding metadata.
+          proxy_set_header Host dex-web.{{ include "v2.domain" . }};
+          proxy_set_header X-Forwarded-Prefix /;
+          proxy_set_header X-Forwarded-Proto https;
+          proxy_set_header X-Forwarded-Host dex-web.{{ include "v2.domain" . }};
+          proxy_set_header X-Dex-Web-Embedded false;
+          proxy_set_header X-Dex-Web-CSRF-Token "";
+          proxy_set_header X-Dex-Connector-OAuth-Redirect-URI "";
+          proxy_set_header X-Dex-Work-Queue-Permissions "";
+          proxy_set_header X-Dex-Project-Actor "";
+          proxy_set_header Forwarded "";
+        }
+      }
+    }
+{{- end }}
