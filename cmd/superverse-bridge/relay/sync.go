@@ -312,13 +312,27 @@ func (r *relay) deliveryLoop(ctx context.Context) error {
 		return err
 	}
 	for {
+		followupDelay, err := r.sendContextFollowup(ctx)
+		if err != nil {
+			return err
+		}
 		r.mu.Lock()
 		if len(r.queue) == 0 {
 			r.mu.Unlock()
+			if followupDelay <= 0 {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-r.queued:
+					continue
+				}
+			}
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
 			case <-r.queued:
+				continue
+			case <-time.After(followupDelay):
 				continue
 			}
 		}
@@ -331,7 +345,7 @@ func (r *relay) deliveryLoop(ctx context.Context) error {
 		r.queue = r.queue[1:]
 		r.queueBytes -= len(head.text)
 		r.settled++
-		var err error
+		err = nil
 		if len(r.queue) == 0 {
 			r.progress.Cursor = max(r.progress.Cursor, r.queuedThrough)
 			err = r.saveLocked()

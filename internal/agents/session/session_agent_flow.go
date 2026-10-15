@@ -844,6 +844,7 @@ type RouteTool struct {
 }
 
 func (RouteTool) GetStepOptions() *dex.StepOptions { return routeToolStepOptions }
+
 func (step RouteTool) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, error) {
 	if interrupt := takeAgentInterrupt(ctx, false); interrupt != nil {
 		endStoppedTurn(ctx, nil, interrupt)
@@ -1548,19 +1549,7 @@ func (CompleteProjectSession) Execute(ctx dex.Context, _ dex.None) (*dex.StepDec
 
 // SetExecutor changes only the exact scoped Session's executor fence.
 func (flow *SessionAgentFlow) SetExecutor(ctx dex.Context, input remoteexec.SetRequest) (*dex.RPCResult[remoteexec.SetResult], error) {
-	output, interruption, err := setExecutor(ctx, input)
-	if err != nil {
-		return nil, err
-	}
-	if interruption == nil {
-		return &dex.RPCResult[remoteexec.SetResult]{Output: output}, nil
-	}
-	if interruption.EndsTurn {
-		// Keep the cancellation set identical to InterruptAgent above.
-		return (&dex.RPCResult[remoteexec.SetResult]{Output: output, NextSteps: []dex.StepMovement{dex.MovementOf(InterruptAgent{}, *interruption, dex.WithStepOptions(interruptMovementOptions(*interruption)))}}).CancelSteps(CompactContext{}, CallModel{}, RecordPlatformModelResult{}, RecordModelFailure{}, RecordCompactionFailure{}, ExecuteTool{}, ExecuteParallelTool{},
-			RecoverParallelToolExecution{}, AwaitParallelToolResults{}, RecordToolFailure{}, SettleForegroundCommand{}, AwaitAgentTimer{}, AwaitToolApproval{}, AwaitRemoteAgent{}), nil
-	}
-	return &dex.RPCResult[remoteexec.SetResult]{Output: output, NextSteps: []dex.StepMovement{dex.MovementOf(InterruptAgent{}, *interruption, dex.WithStepOptions(interruptMovementOptions(*interruption)))}}, nil
+	return setExecutorRPC(ctx, input)
 }
 
 // ReportRemote atomically admits a report and publishes its inbox message.

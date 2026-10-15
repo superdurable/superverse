@@ -109,8 +109,10 @@ start exhausted its retries.
 The Session holds the request side of its Sandbox instances. The workspace cold
 path (RequestSessionWorkspace, SendWorkspaceCommand, AwaitSessionWorkspace,
 ApplySessionWorkspace) is the only conversation path that calls
-`SessionAgentFlowDependency`: before the first model call, when no usable lease is
-admitted and when the transport proves the instance unreachable. It sends the
+`SessionAgentFlowDependency`: before the first platform model call, at remote
+activation for the first brief, when no usable lease is admitted and when the
+transport proves the instance unreachable. Remote activation runs the request
+beside the sole conversation waiter, so reports continue to be consumed. It sends the
 SessionWorkspaceFlow a `provision` command, which reclaims an earlier instance
 first, and waits for the outcome that Flow reports to `ReportWorkspaceOutcome`.
 A tool holding an admitted lease reaches the Sandbox directly. At the Sandbox
@@ -210,7 +212,7 @@ Session completion, like existing Channels; the closed Session refuses writes.
 | RPC/Step | Purpose and primitives |
 | --- | --- |
 | `ReadExecutor(SessionScopeInput)` | Unlocked read of exact Project, ACTIVE status and Executor; typed client checks live execution. Pairing admission and UI use it; SQL remains the credential/authentication boundary. |
-| `SetExecutor(SetRequest)` | Scoped, ACTIVE write under status/executor/interrupt locks. BasisEpoch CAS has one winner; only same-current-connection retry is idempotent despite an old basis. A replaced connection cannot recapture. Mode change increments epoch and generation atomically, records existing interruption and coalesces a control wake. Uninterruptible commit finishes and records its result before the old turn ends. It never cancels a question's AwaitUser. |
+| `SetExecutor(SetRequest)` | Scoped, ACTIVE write under status/executor/interrupt locks. BasisEpoch CAS has one winner; only same-current-connection retry is idempotent despite an old basis. A replaced connection cannot recapture. Mode change increments epoch and generation atomically, records existing interruption and coalesces a control wake. A remote activation with empty stored repository context also starts an independent workspace request with `ContinueAwaitRemote`; its owner alone waits for the outcome, and a joining tool demand ends its branch until the owner resumes it. Uninterruptible commit finishes and records its result before the old turn ends. It never cancels a question's AwaitUser. |
 | `ReportRemote(ReportRequest)` | Scoped ACTIVE write; exact connection/epoch/nonzero generation, expected next sequence and actual pending payload bounds. Duplicate admitted sequences publish nothing; gap returns expected sequence. Watermark and new Channel item commit together. External HTTP body maximum is 512 KiB at the owning endpoint. |
 | `AwaitUser` | In either executor mode subscribes to RemoteInbox. Records selected accepted answers before takeover settlement; direct Orca input still enters the canonical history. Unanswered pending input gets a takeover notice. Reads latest Executor regardless of wake reason. |
 | `AwaitRemoteAgent` | WaitFor on its own reports, steering and notifications, with no timer/history polling. Consumption rechecks fences, drops stale events and records interrupted results for stale tool calls. Public text/imported user entries persist once; activity stays best effort. |

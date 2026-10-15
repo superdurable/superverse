@@ -929,3 +929,28 @@ func settleExecutorQuestion(ctx dex.Context, changed bool) {
 		writeSnapshotRequired(ctx)
 	}
 }
+
+// setExecutorRPC starts repository context preparation beside the existing conversation waiter.
+func setExecutorRPC(ctx dex.Context, input remoteexec.SetRequest) (*dex.RPCResult[remoteexec.SetResult], error) {
+	output, interruption, err := setExecutor(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	if interruption == nil {
+		result := &dex.RPCResult[remoteexec.SetResult]{Output: output}
+		if output.Changed && output.Executor.Mode == remoteexec.ModeRemote && dexflow.ValueOrZero(workspaceAttribute.Get(ctx)).RepositoryContext == "" {
+			result.NextSteps = []dex.StepMovement{dex.MovementOf(RequestSessionWorkspace{}, workspaceDemand{ResumeAt: agentloop.ContinueAwaitRemote})}
+		}
+		return result, nil
+	}
+	workspaceSteps := []dex.StepMovement{}
+	if output.Changed && output.Executor.Mode == remoteexec.ModeRemote && dexflow.ValueOrZero(workspaceAttribute.Get(ctx)).RepositoryContext == "" {
+		workspaceSteps = append(workspaceSteps, dex.MovementOf(RequestSessionWorkspace{}, workspaceDemand{ResumeAt: agentloop.ContinueAwaitRemote}))
+	}
+	if interruption.EndsTurn {
+		// Keep the cancellation set identical to InterruptAgent above.
+		return (&dex.RPCResult[remoteexec.SetResult]{Output: output, NextSteps: append(workspaceSteps, dex.MovementOf(InterruptAgent{}, *interruption, dex.WithStepOptions(interruptMovementOptions(*interruption))))}).CancelSteps(CompactContext{}, CallModel{}, RecordPlatformModelResult{}, RecordModelFailure{}, RecordCompactionFailure{}, ExecuteTool{}, ExecuteParallelTool{},
+			RecoverParallelToolExecution{}, AwaitParallelToolResults{}, RecordToolFailure{}, SettleForegroundCommand{}, AwaitAgentTimer{}, AwaitToolApproval{}, AwaitRemoteAgent{}), nil
+	}
+	return &dex.RPCResult[remoteexec.SetResult]{Output: output, NextSteps: append(workspaceSteps, dex.MovementOf(InterruptAgent{}, *interruption, dex.WithStepOptions(interruptMovementOptions(*interruption))))}, nil
+}

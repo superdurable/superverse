@@ -72,10 +72,18 @@ type Progress struct {
 	Sending *Sending `json:"sending,omitempty"`
 	// Acknowledged is the highest report sequence the platform admitted; the
 	// next report is Acknowledged+1.
-	Acknowledged          uint64 `json:"acknowledged"`
-	LastImportedMessageID string `json:"lastImportedMessageId,omitempty"`
-	HistoryImported       bool   `json:"historyImported"`
-	BriefSent             bool   `json:"briefSent"`
+	Acknowledged             uint64    `json:"acknowledged"`
+	LastImportedMessageID    string    `json:"lastImportedMessageId,omitempty"`
+	HistoryImported          bool      `json:"historyImported"`
+	BriefSent                bool      `json:"briefSent"`
+	BriefWaitStartedAt       time.Time `json:"briefWaitStartedAt,omitzero"`
+	BriefText                string    `json:"briefText,omitempty"`
+	BriefWithoutContext      bool      `json:"briefWithoutContext,omitempty"`
+	ContextFollowupSent      bool      `json:"contextFollowupSent,omitempty"`
+	ContextFollowupAbandoned bool      `json:"contextFollowupAbandoned,omitempty"`
+	ContextFollowupStartedAt time.Time `json:"contextFollowupStartedAt,omitzero"`
+	ContextFollowupCheckedAt time.Time `json:"contextFollowupCheckedAt,omitzero"`
+	ContextFollowupText      string    `json:"contextFollowupText,omitempty"`
 	// Turns binds recent Codex turns to the generation they belong to.
 	Turns []TurnGeneration `json:"turns,omitempty"`
 	// Delivered holds the Orca message IDs of recent deliveries with the

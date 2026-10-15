@@ -191,7 +191,8 @@ func NewAgentState() AgentState {
 type Continuation string
 
 const (
-	ContinueAwaitUser Continuation = "await_user"
+	ContinueAwaitUser   Continuation = "await_user"
+	ContinueAwaitRemote Continuation = "await_remote"
 	// ContinueStartTurn is the model call that starts a turn: a rollover is
 	// decided before it.
 	ContinueStartTurn         Continuation = "start_turn"

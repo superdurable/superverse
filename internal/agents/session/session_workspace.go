@@ -198,6 +198,9 @@ func (flow *SessionAgentFlow) resumeAfterWorkspace(ctx dex.Context, demand works
 	switch demand.ResumeAt {
 	case "":
 		return ""
+	case agentloop.ContinueAwaitRemote:
+		// The conversation waiter remains active while this independent branch provisions.
+		return ""
 	case agentloop.ContinueStartTurn, agentloop.ContinueCompactContext, agentloop.ContinueCallModel:
 		if dexflow.OptionalValue(contextSegmentAttribute.Get(ctx)) == nil {
 			flow.openSessionStartSegment(ctx)
@@ -256,7 +259,7 @@ func (flow *SessionAgentFlow) applyWorkspace(ctx dex.Context, ws agentloop.Sessi
 		ws.ExtendDeadline(time.Now(), flow.sandboxHold)
 		isChanged = true
 	}
-	if isOwner && demand.ResumeAt == "" && ws.JoinedResumeAt != "" {
+	if isOwner && (demand.ResumeAt == "" || demand.ResumeAt == agentloop.ContinueAwaitRemote) && ws.JoinedResumeAt != "" {
 		demand.ResumeAt, isChanged = ws.TakeJoined(), true
 	}
 	if ws.State == agentloop.WorkspaceReady {

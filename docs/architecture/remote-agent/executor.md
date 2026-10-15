@@ -207,10 +207,17 @@ tools, which the platform does not see.
 
 ### Entering and leaving remote mode
 
-- **Entering**: nothing about the context segment changes; the remote agent never reads it. The
-  Bridge composes the new agent's first message from the Session's state (requirements card,
-  HEAD, todo list, the last public messages) through `ReadRemote`, so the Flow appends nothing on
-  activation.
+- **Entering**: `SetExecutor` starts an independent `RequestSessionWorkspace` branch with
+  `ContinueAwaitRemote` while the existing `AwaitUser` or `AwaitRemoteAgent` Step continues to
+  consume `RemoteInbox`. A report admitted during provisioning therefore does not wait for the
+  Sandbox outcome. `PlanRequest` joins an existing request or reads context from a usable lease;
+  `ApplySessionWorkspace` records the bounded repository context. The branch ends without starting
+  another inbox consumer. `ReadRemote` only reads the Workspace Attribute and reports context
+  `pending`, `ready`, or `unavailable`; a failed request does not block the remote agent. No new
+  Attribute, Channel, Stream, database table, or Flow RPC is involved. A remote activation requests
+  the Session's Sandbox only while its stored repository context is empty, including when the agent
+  never calls a tool; its existing hold, deadline
+  and reclamation bound its lifetime. The Bridge composes the first message from current state.
 - **Leaving** (to `platform`, owner decision 2026-10-12): the platform builds a fresh context, with
   no model call and without compacting the old segment, whose earlier entries may already have been
   dropped by retention. The first platform turn after the switch opens a new segment (`SegmentChange`
@@ -460,6 +467,11 @@ None in the Session. The connection credential table is in [connection](connecti
 
 Dex integration tests in `internal/agents` against the real lane (Dex, Sandbox, local Git host,
 PostgreSQL), driving the real remote agent endpoint over HTTP as a Bridge would; the remote
+HTTP admission case checks `pending` at the first context read, reports a real Sandbox read
+while provisioning is in flight, then checks its tool result, `SettledThrough`, `ready`, and
+the AGENTS.md content in `<repository_context>`. A forced real-dependency provisioning failure
+needs a local Git fixture whose committed template manifest is malformed before activation;
+until it exists, the `unavailable` path is unverified by integration tests.
 agent's decisions come from the test, the way an E2E test drives Studio:
 
 - Activation, a delivered message, a tool call that edits and commits in the Sandbox, the
@@ -546,7 +558,10 @@ E2E happy paths are unchanged.
 
 ## Resource Scalability
 
-None in cloud, Kubernetes or database resources. Per Session: one fixed-size Attribute; at most
+No new cloud, Kubernetes, or database resource type. Per Session: one fixed-size Attribute; at most
+one existing Sandbox workspace is requested when remote activation finds no stored repository context, even if no tool runs.
+`PlanRequest` joins an in-flight request or uses a READY lease; the Sandbox hold, deadline, and
+reclaim path bound its lifetime. No new resource type or control-plane call per sync is added.
 8 pending `RemoteInbox` reports and 2 MiB in total (one report is at most 512 KiB: the endpoint's body
 limit); at most one pending and one selected control item (a few bytes each). Per server replica:
 `remoteAgent.maxConcurrentReads` (4) message-loading `ReadRemote` passes, each holding at most 16

@@ -335,8 +335,13 @@ func readRemote(ctx dex.Context, input remoteexec.ReadRequest) (*dex.RPCResult[R
 			result.Output.Todos = todos.Items
 		}
 	}
-	if input.RepositoryContext {
-		result.Output.RepositoryContext = dexflow.ValueOrZero(workspaceAttribute.Get(ctx)).RepositoryContext
+	{
+		workspace := dexflow.ValueOrZero(workspaceAttribute.Get(ctx))
+		result.Output.RepositoryContextAvailable = workspace.RepositoryContext != ""
+		if input.RepositoryContext {
+			result.Output.RepositoryContext = workspace.RepositoryContext
+		}
+		result.Output.WorkspaceState = workspace.State
 	}
 	return result, nil
 }

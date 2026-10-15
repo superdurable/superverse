@@ -83,6 +83,14 @@ func syncResponse(read session.RemoteRead, request bridgeapi.SyncRequest) (bridg
 	response := bridgeapi.SyncResponse{Epoch: read.Executor.Epoch, Generation: read.Executor.Generation,
 		LastSequence: uint64(read.Delivery.LastSequence), ExaminedThrough: uint64(read.Delivery.Through), SettledThrough: read.SettledThrough,
 		Entries: make([]bridgeapi.Entry, 0, len(read.Delivery.Entries)), ToolSetDigest: agentloop.RemoteToolDigest(), Requirements: read.Requirements}
+	switch {
+	case read.RepositoryContextAvailable:
+		response.AgentContextState = bridgeapi.AgentContextReady
+	case read.WorkspaceState == agentloop.WorkspaceRequested || read.WorkspaceState == "":
+		response.AgentContextState = bridgeapi.AgentContextPending
+	default:
+		response.AgentContextState = bridgeapi.AgentContextUnavailable
+	}
 	if read.Delivery.Truncated {
 		response.Dropped = &bridgeapi.DroppedRange{From: request.After + 1, Through: uint64(read.Delivery.FirstRetainedSequence - 1)}
 	}

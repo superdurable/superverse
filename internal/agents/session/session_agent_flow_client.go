@@ -623,7 +623,9 @@ type RemoteRead struct {
 	// SettledThrough is the highest report whose outcome the Session recorded.
 	SettledThrough uint64 `json:"settled_through"`
 	// RepositoryContext is the Workspace's, when the request asked for it.
-	RepositoryContext string `json:"repository_context,omitempty"`
+	RepositoryContext          string                   `json:"repository_context,omitempty"`
+	WorkspaceState             agentloop.WorkspaceState `json:"workspace_state"`
+	RepositoryContextAvailable bool                     `json:"repository_context_available"`
 }
 
 // ReadRemote negotiates 16 exact current entries or one ten-entry archive chunk. The initial read,

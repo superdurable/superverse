@@ -348,7 +348,7 @@ func (ws *SessionWorkspace) PlanRequest(resumeAt Continuation, lost string, call
 		return WorkspaceUsableWithoutContext
 	case ws.IsUsable():
 		return WorkspaceUsable
-	case ws.State == WorkspaceRequested && resumeAt == "":
+	case ws.State == WorkspaceRequested && (resumeAt == "" || resumeAt == ContinueAwaitRemote):
 		return WorkspaceInFlight
 	case ws.State == WorkspaceRequested:
 		ws.join(resumeAt)

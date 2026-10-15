@@ -66,6 +66,14 @@ Project has at most one active binding (its executor).
    the Superverse Sandbox and changes only through the `superverse` tools. It also directs
    Codex to choose published connectors through `connector_catalog` and the Dex skills and to
    tell the user when remote mode cannot yet contribute a new connector or a fix.
+   While `agentContextState` is `pending`, it waits up to three minutes. The wait start is stored
+   in `progress.json` across restarts. If the wait expires, it sends the brief; when context later
+   becomes `ready`, it sends exactly the platform-provided `<repository_context>` section once,
+   using the normal durable Orca submission record. Follow-up checks are at least 15 seconds apart
+   and stop after 30 minutes, or immediately on `unavailable`; the progress file retains the
+   check and deadline timestamps and the settled result across restarts. With no pending follow-up,
+   the delivery loop has no timer. The Bridge adds no instructions. Codex reads
+   MCP `instructions` once at startup, so that copy does not change after a later delivery.
 
 ## Loops
 
@@ -261,6 +269,10 @@ None; the Bridge's local state is a client cache, not a source of truth.
 
 ## Tests
 
+- A real Native HTTP Dex test verifies the endpoint's `pending` to `ready` context state and
+  platform-provided section. A real Orca Bridge integration case for the three-minute timeout,
+  restart recovery, and one follow-up delivery remains necessary; no scripted Orca dependency
+  is introduced.
 - **Compatibility check** (before BRIDGE, on a real Orca 1.4.224 and Codex 0.162.x, recorded in
   `evidence/orca-compatibility.md`): the owner token reaching the allow-listed methods; session create, resume of an existing
   structured session, send while idle and while running (steer), cancel, history and subscribe event
@@ -288,3 +300,8 @@ No platform resource is created per Bridge beyond its connection row ([connectio
 On the Builder's machine: one `serve` process per Orca profile, at most 8 bindings (32 hard limit),
 bounded local queues as above, and at most 12 MiB of call timing trace per state directory. The
 trace is removed with that local directory. Timing adds no platform or Orca call to a tool request.
+One context poll every two seconds is made per binding only while
+the brief is pending, for at most three minutes. After a timed-out brief, the delivery loop checks
+for the repository section at intervals of at least 15 seconds, for at most 30 minutes, and stops
+immediately on `unavailable`. It makes no timed wake when no follow-up is pending. The local progress file retains at most
+one bounded brief and one repository section for crash recovery.

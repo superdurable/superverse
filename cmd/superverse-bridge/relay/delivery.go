@@ -34,6 +34,10 @@ const (
 	// maxBriefMessageBytes bounds each message the brief quotes.
 	maxBriefMessageBytes = 2 << 10
 	briefKey             = "brief"
+	contextFollowupKey   = "repository-context"
+	briefContextWait     = 3 * time.Minute
+	contextFollowupRetry = 15 * time.Second
+	contextFollowupLimit = 30 * time.Minute
 )
 
 // sessionState is the state sync last returned. A changed digest replaces
@@ -192,6 +196,11 @@ func (r *relay) finishDelivery(sending state.Sending, result SendResult) error {
 	}
 	if sending.Key == briefKey {
 		progress.BriefSent = true
+		progress.BriefText = ""
+	}
+	if sending.Key == contextFollowupKey {
+		progress.ContextFollowupSent = true
+		progress.ContextFollowupText = ""
 	}
 	progress.Cursor = max(progress.Cursor, sending.EntrySequence)
 	progress.Sending = nil
@@ -202,7 +211,7 @@ func (r *relay) finishDelivery(sending state.Sending, result SendResult) error {
 // the requirements, HEAD, the todo list and the recent public messages.
 func (r *relay) sendBrief(ctx context.Context) error {
 	r.mu.Lock()
-	sent, epoch, cursor, sending := r.progress.BriefSent, r.progress.Epoch, r.progress.Cursor, r.progress.Sending
+	sent, epoch, cursor, sending, savedText := r.progress.BriefSent, r.progress.Epoch, r.progress.Cursor, r.progress.Sending, r.progress.BriefText
 	r.mu.Unlock()
 	if sent {
 		return nil
@@ -210,13 +219,128 @@ func (r *relay) sendBrief(ctx context.Context) error {
 	if sending != nil && sending.Key != briefKey {
 		return nil
 	}
-	// An empty digest asks for the whole state.
-	answer, err := r.client.Sync(ctx, epoch, cursor-min(cursor, briefEntries), "", true)
-	if err != nil {
-		return err
+	if savedText != "" {
+		return r.deliver(ctx, delivery{key: briefKey, text: savedText})
 	}
-	r.noteAgentContext(answer)
-	return r.deliver(ctx, delivery{key: briefKey, text: composeBrief(r.projectName, answer)})
+	r.mu.Lock()
+	if r.progress.BriefWaitStartedAt.IsZero() {
+		r.progress.BriefWaitStartedAt = time.Now().UTC()
+		if err := r.saveLocked(); err != nil {
+			r.mu.Unlock()
+			return err
+		}
+	}
+	started := r.progress.BriefWaitStartedAt
+	r.mu.Unlock()
+	for {
+		answer, err := r.client.Sync(ctx, epoch, cursor-min(cursor, briefEntries), "", true)
+		if err != nil {
+			return err
+		}
+		if answer.AgentContextState != bridgeapi.AgentContextPending || time.Since(started) >= briefContextWait {
+			r.noteAgentContext(answer)
+			brief := composeBrief(r.projectName, answer)
+			r.mu.Lock()
+			r.progress.BriefWithoutContext = answer.AgentContextState == bridgeapi.AgentContextPending
+			r.progress.BriefText = brief
+			err = r.saveLocked()
+			r.mu.Unlock()
+			if err != nil {
+				return err
+			}
+			return r.deliver(ctx, delivery{key: briefKey, text: brief})
+		}
+		if err := sleep(ctx, pendingRetry); err != nil {
+			return err
+		}
+	}
+}
+
+// sendContextFollowup delivers the platform's section after a timed-out brief.
+// A positive delay is the next bounded check; zero means no follow-up timer.
+func (r *relay) sendContextFollowup(ctx context.Context) (time.Duration, error) {
+	r.mu.Lock()
+	needed := r.progress.BriefSent && r.progress.BriefWithoutContext && !r.progress.ContextFollowupSent && !r.progress.ContextFollowupAbandoned
+	epoch, cursor, savedText, sending := r.progress.Epoch, r.progress.Cursor, r.progress.ContextFollowupText, r.progress.Sending
+	r.mu.Unlock()
+	if !needed {
+		return 0, nil
+	}
+	if sending != nil && sending.Key != contextFollowupKey {
+		return contextFollowupRetry, nil
+	}
+	if savedText != "" {
+		return 0, r.deliver(ctx, delivery{key: contextFollowupKey, text: savedText})
+	}
+	now := time.Now().UTC()
+	r.mu.Lock()
+	if r.progress.ContextFollowupStartedAt.IsZero() {
+		r.progress.ContextFollowupStartedAt = now
+	}
+	deadline := r.progress.ContextFollowupStartedAt.Add(contextFollowupLimit)
+	if !now.Before(deadline) {
+		r.progress.ContextFollowupAbandoned = true
+		err := r.saveLocked()
+		r.mu.Unlock()
+		if err == nil {
+			r.logger.InfoContext(ctx, "repository context follow-up abandoned after timeout", "project", r.projectName)
+		}
+		return 0, err
+	}
+	if next := r.progress.ContextFollowupCheckedAt.Add(contextFollowupRetry); now.Before(next) {
+		r.mu.Unlock()
+		return min(time.Until(next), time.Until(deadline)), nil
+	}
+	r.progress.ContextFollowupCheckedAt = now
+	err := r.saveLocked()
+	r.mu.Unlock()
+	if err != nil {
+		return 0, err
+	}
+	pollCtx, cancel := context.WithDeadline(ctx, deadline)
+	answer, err := r.client.Sync(pollCtx, epoch, cursor, "", true)
+	cancel()
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) && ctx.Err() == nil {
+			return 0, r.abandonContextFollowup(ctx, "repository context follow-up abandoned after timeout")
+		}
+		return 0, err
+	}
+	if answer.AgentContextState == bridgeapi.AgentContextPending {
+		return min(contextFollowupRetry, time.Until(deadline)), nil
+	}
+	if answer.AgentContextState == bridgeapi.AgentContextUnavailable {
+		return 0, r.abandonContextFollowup(ctx, "repository context follow-up unavailable")
+	}
+	const open, close = "<repository_context>\n", "\n</repository_context>"
+	start := strings.Index(answer.AgentContext, open)
+	if start < 0 {
+		return 0, r.abandonContextFollowup(ctx, "repository context follow-up ready without section")
+	}
+	end := strings.LastIndex(answer.AgentContext[start+len(open):], close)
+	if end < 0 {
+		return 0, r.abandonContextFollowup(ctx, "repository context follow-up ready without closing tag")
+	}
+	section := answer.AgentContext[start : start+len(open)+end+len(close)]
+	r.mu.Lock()
+	r.progress.ContextFollowupText = section
+	err = r.saveLocked()
+	r.mu.Unlock()
+	if err != nil {
+		return 0, err
+	}
+	return 0, r.deliver(ctx, delivery{key: contextFollowupKey, text: section})
+}
+
+func (r *relay) abandonContextFollowup(ctx context.Context, reason string) error {
+	r.mu.Lock()
+	r.progress.ContextFollowupAbandoned = true
+	err := r.saveLocked()
+	r.mu.Unlock()
+	if err == nil {
+		r.logger.InfoContext(ctx, reason, "project", r.projectName)
+	}
+	return err
 }
 
 // composeBrief frames the platform's data: its agent context, then the

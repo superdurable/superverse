@@ -102,6 +102,15 @@ type SyncRequest struct {
 	Context     bool   `json:"context,omitempty"`
 }
 
+// AgentContextState describes the repository context requested for the brief.
+type AgentContextState string
+
+const (
+	AgentContextReady       AgentContextState = "ready"
+	AgentContextPending     AgentContextState = "pending"
+	AgentContextUnavailable AgentContextState = "unavailable"
+)
+
 // SyncResponse is the Session's ReadRemote answer: at most MaxSyncEntries
 // entries after the cursor, and the state the Bridge's brief and loops need.
 // ExaminedThrough is the last sequence the Session examined, which the next
@@ -133,11 +142,11 @@ type SyncResponse struct {
 	// and, for a tool call, its tool_result appended. It never decreases
 	// within an epoch and is part of the state digest; absent reads as 0.
 	SettledThrough uint64 `json:"settledThrough"`
-	// AgentContext, only when the request asked for it, is everything the
-	// platform tells the remote agent: its remote instructions, the shared
-	// Session rules and the repository context, at most 64 KiB. The Bridge
-	// adds no instructions.
-	AgentContext string `json:"agentContext,omitempty"`
+	// AgentContext, only when requested, contains the platform's remote
+	// instructions, shared Session rules and repository context, at most 64 KiB.
+	// The Bridge adds no instructions.
+	AgentContext      string            `json:"agentContext,omitempty"`
+	AgentContextState AgentContextState `json:"agentContextState"`
 }
 
 // DroppedRange is the conversation sequences, inclusive, that retention

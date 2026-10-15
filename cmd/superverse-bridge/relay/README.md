@@ -50,8 +50,13 @@ none otherwise. It refuses to start a second binding of an Orca session, so that
   messages within 200 messages and 512 KiB, after the last imported one, as `imported_message`
   events), and once the relay is ready, the brief (the platform's `agentContext`, then the Project's
   name, requirements, HEAD, todo list and the last 20 entries' public messages). The relay's first
-  `sync` after it starts, and the brief's, ask for `agentContext` (`context: true`), which serve
-  keeps in memory for the MCP `instructions`; later long polls never ask.
+  `sync` after it starts, and the brief's, ask for `agentContext` (`context: true`). The brief
+  waits up to three minutes while `agentContextState` is `pending`. After a timeout, a later
+  `ready` answer delivers the platform's `<repository_context>` section once. Follow-up checks
+  are at least 15 seconds apart and stop after 30 minutes or on `unavailable`; an idle delivery
+  loop has no timer after the follow-up settles. Progress records the wait, check timestamps and
+  settlement across restarts. MCP `instructions` are read once when Codex starts;
+  they are not refreshed, even when the later section is delivered as a message.
 - **Restart** (`drain.go`). Only a latest turn that `completed` or was `interrupted` (or none) is
   positively over; `running`, `unverifiable` and any other state may still run. Reports the Bridge
   that ran before sent may still be executing on the Session, whatever turn they belong to and
@@ -234,14 +239,10 @@ connection.
 
 ## Known gaps
 
-- **Tools and context fixed when Codex starts.** Codex 0.162.1 reads the MCP tool list and
+- **Tools and MCP instructions fixed when Codex starts.** Codex 0.162.1 reads the MCP tool list and
   `instructions` once, when it starts the superverse server. Connect restarts Codex after binding
   (`Orca.Reload`), but Codex started by an Orca restart or an idle respawn while serve is down or the
-  relay is not yet activated keeps zero tools and no instructions until it restarts again. The
-  repository context reaches Codex only when the Session's Workspace already holds it when the
-  relay first reads `agentContext` (the Session reads it when its workspace first becomes ready,
-  which for a remote agent is its first Sandbox tool call); otherwise Codex gets the platform's
-  fallback rule to read AGENTS.md and the Dex skill manifest itself, and no later refresh.
+  relay is not yet activated keeps zero tools and no instructions until it restarts again.
 
 - **Validation that tightens across a lost answer.** The server validates a report before it checks
   for a duplicate. If report N was admitted, its answer was lost, and an upgrade between then and the

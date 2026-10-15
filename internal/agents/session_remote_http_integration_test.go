@@ -17,8 +17,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/superdurable/dex/sdk-go/dex"
+	"github.com/superdurable/dex/sdk-go/gen/dexpb"
 	pb "github.com/superdurable/superversev2/gen/superverse/v2"
 	"github.com/superdurable/superversev2/internal/agents/remoteagent/bridgeapi"
+	"github.com/superdurable/superversev2/internal/agents/remoteexec"
+	sessionagent "github.com/superdurable/superversev2/internal/agents/session"
 	"github.com/superdurable/superversev2/internal/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/comm/dexflow/dexflowtest"
@@ -64,6 +68,11 @@ func TestSessionRemoteHTTPAdmissionDexIntegration(t *testing.T) {
 	if active.Epoch == 0 || active.Generation == 0 {
 		t.Fatalf("activation has zero fence: epoch=%d generation=%d", active.Epoch, active.Generation)
 	}
+	var firstContext bridgeapi.SyncResponse
+	remote.post(ctx, bridgeapi.PathSync, bridgeapi.SyncRequest{Epoch: active.Epoch, Context: true}, &firstContext, http.StatusOK)
+	if firstContext.AgentContextState != bridgeapi.AgentContextPending {
+		t.Fatalf("first remote context state = %q, want pending", firstContext.AgentContextState)
+	}
 	var retry bridgeapi.ActivateResponse
 	remote.post(ctx, bridgeapi.PathActivate, binding, &retry, http.StatusOK)
 	if retry.Epoch != active.Epoch || retry.Generation != active.Generation {
@@ -106,7 +115,8 @@ func TestSessionRemoteHTTPAdmissionDexIntegration(t *testing.T) {
 		!strings.Contains(platformPrompt, "start one connector_develop subagent per gap") {
 		t.Fatal("platform model segment lost connector instructions")
 	}
-	report := bridgeapi.Report{Epoch: active.Epoch, Generation: active.Generation, Sequence: 1, Events: []bridgeapi.Event{{Kind: bridgeapi.EventKindAssistantMessage, Text: "Remote HTTP proof"}}}
+	report := bridgeapi.Report{Epoch: active.Epoch, Generation: active.Generation, Sequence: 1,
+		ToolCall: &bridgeapi.ToolCall{Name: string(conversation.ToolRead), Arguments: json.RawMessage(`{"path":"AGENTS.md"}`)}}
 	var zeroRefusal bridgeapi.ErrorBody
 	zero := report
 	zero.Generation = 0
@@ -120,6 +130,26 @@ func TestSessionRemoteHTTPAdmissionDexIntegration(t *testing.T) {
 	if !accepted.Duplicate || accepted.Reported != 1 {
 		t.Fatal("duplicate had another admission")
 	}
+	// A tool reported during workspace preparation joins that request and executes on its lease.
+	for {
+		var current bridgeapi.SyncResponse
+		remote.post(ctx, bridgeapi.PathSync, bridgeapi.SyncRequest{Epoch: active.Epoch, Context: true}, &current, http.StatusOK)
+		if current.AgentContextState == bridgeapi.AgentContextReady && current.SettledThrough >= 1 {
+			if !strings.Contains(current.AgentContext, "<repository_context>") || !strings.Contains(current.AgentContext, "AGENTS.md") {
+				t.Fatal("ready remote context lacks the repository section and AGENTS.md")
+			}
+			break
+		}
+		if current.AgentContextState == bridgeapi.AgentContextUnavailable {
+			t.Fatal("fresh workspace could not prepare repository context")
+		}
+		select {
+		case <-ctx.Done():
+			t.Fatal("remote repository context did not become ready")
+		case <-time.After(100 * time.Millisecond):
+		}
+	}
+	remote.awaitResult(ctx, active.Epoch, conversation.CallID(fmt.Sprintf("remote-%d-1", active.Epoch)), "")
 	gap := report
 	gap.Sequence = 3
 	var refused bridgeapi.ErrorBody
@@ -135,13 +165,16 @@ func TestSessionRemoteHTTPAdmissionDexIntegration(t *testing.T) {
 	report.ToolCall = &bridgeapi.ToolCall{Name: string(conversation.ToolRead), Arguments: json.RawMessage(`{"path":"raexec-proof.txt"}`)}
 	remote.post(ctx, bridgeapi.PathReport, report, &accepted, http.StatusOK)
 	remote.awaitResult(ctx, active.Epoch, conversation.CallID(fmt.Sprintf("remote-%d-3", active.Epoch)), "Remote executor proof")
+	publicReply := bridgeapi.Report{Epoch: active.Epoch, Generation: active.Generation, Sequence: 4,
+		Events: []bridgeapi.Event{{Kind: bridgeapi.EventKindAssistantMessage, Text: "Remote HTTP proof"}}}
+	remote.post(ctx, bridgeapi.PathReport, publicReply, &accepted, http.StatusOK)
 	for stop := 0; stop < 2; stop++ {
 		if stop > 0 {
 			current, err := session.client.ReadExecutor(ctx, session.identity.ProjectID)
 			if err != nil {
 				t.Fatal(err)
 			}
-			next := bridgeapi.Report{Epoch: active.Epoch, Generation: current.Generation, Sequence: 4, Events: []bridgeapi.Event{{Kind: bridgeapi.EventKindUserMessage, Text: "Start the second remote turn"}}}
+			next := bridgeapi.Report{Epoch: active.Epoch, Generation: current.Generation, Sequence: 5, Events: []bridgeapi.Event{{Kind: bridgeapi.EventKindUserMessage, Text: "Start the second remote turn"}}}
 			remote.post(ctx, bridgeapi.PathReport, next, &accepted, http.StatusOK)
 			session.await(ctx, "new remote turn", func() bool {
 				snap, err := session.client.GetSnapshot(ctx, session.id)
@@ -160,7 +193,7 @@ func TestSessionRemoteHTTPAdmissionDexIntegration(t *testing.T) {
 			current, err := session.client.ReadExecutor(ctx, session.identity.ProjectID)
 			return err == nil && current.Generation > generation
 		})
-		stale := bridgeapi.Report{Epoch: active.Epoch, Generation: generation, Sequence: uint64(4 + stop), TurnCompleted: true}
+		stale := bridgeapi.Report{Epoch: active.Epoch, Generation: generation, Sequence: uint64(5 + stop), TurnCompleted: true}
 		remote.post(ctx, bridgeapi.PathReport, stale, &refused, http.StatusConflict)
 		if refused.Code != bridgeapi.ErrorStaleGeneration {
 			t.Fatalf("Stop %d stale refusal = %s", stop+1, refused.Code)
@@ -168,7 +201,7 @@ func TestSessionRemoteHTTPAdmissionDexIntegration(t *testing.T) {
 		// A lost answer retried after Stop: the admitted sequence stays admitted.
 		var replayed bridgeapi.ReportResponse
 		remote.post(ctx, bridgeapi.PathReport, report, &replayed, http.StatusOK)
-		if !replayed.Duplicate || replayed.Reported != uint64(3+stop) {
+		if !replayed.Duplicate || replayed.Reported != uint64(4+stop) {
 			t.Fatalf("Stop %d admitted-sequence replay was not a duplicate", stop+1)
 		}
 	}
@@ -190,5 +223,48 @@ func TestSessionRemoteHTTPAdmissionDexIntegration(t *testing.T) {
 	}
 	if snapshot.Agent.Description.ContextModel != "" {
 		t.Fatal("remote mode opened a platform context segment")
+	}
+	// Reentering remote mode with stored context must not schedule another
+	// RequestSessionWorkspace Step, even when the existing lease is usable.
+	workspaceBefore := session.workspace(ctx)
+	requestSteps := func() int {
+		t.Helper()
+		state, err := session.reader.GetFlowState(ctx, &dexpb.GetFlowStateRequest{FlowId: string(session.id)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		stepType := dex.GetFinalStepType(sessionagent.RequestSessionWorkspace{})
+		count := 0
+		for _, step := range state.GetCompletedSteps() {
+			if step.GetCompletedStepType() == stepType {
+				count++
+			}
+		}
+		for _, step := range state.GetActiveStepExecutions() {
+			if step.GetStepType() == stepType {
+				count++
+			}
+		}
+		for _, step := range state.GetQueuedSteps() {
+			if step.GetStepType() == stepType {
+				count++
+			}
+		}
+		return count
+	}
+	requestsBefore := requestSteps()
+	switched, err := session.client.SetExecutor(ctx, remoteexec.SetRequest{ProjectID: session.identity.ProjectID, BasisEpoch: active.Epoch,
+		Mode: remoteexec.ModePlatform, Owner: conversation.Actor{AccountID: owner, Email: caller.GetCanonicalEmail()}, Reason: remoteexec.HandoffSwitched})
+	if err != nil || !switched.Accepted {
+		t.Fatalf("switch to platform failed: %v", err)
+	}
+	reentrant := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
+	var reactivated bridgeapi.ActivateResponse
+	reentrant.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "http-proof-return", ProviderThreadID: "http-proof-return", HostLabel: "integration host"}}, &reactivated, http.StatusOK)
+	if reactivated.Epoch <= active.Epoch {
+		t.Fatal("remote reactivation did not advance executor epoch")
+	}
+	if after := session.workspace(ctx); after.RequestID != workspaceBefore.RequestID || requestSteps() != requestsBefore {
+		t.Fatal("remote reactivation with repository context requested the workspace again")
 	}
 }
