@@ -22,6 +22,14 @@ import (
 var (
 	//go:embed prompts/v1/session.md
 	sessionPromptFile string
+	//go:embed prompts/v1/platform_connectors.md
+	platformConnectorsPromptFile string
+	//go:embed prompts/v1/platform_delegation.md
+	platformDelegationPromptFile string
+	//go:embed prompts/v1/platform_subagent_task.md
+	platformSubagentTaskPromptFile string
+	//go:embed prompts/v1/platform_effort.md
+	platformEffortPromptFile string
 	//go:embed prompts/v1/source_handoff.md
 	sourceHandoffPromptFile string
 	//go:embed prompts/v1/platform_event.md
@@ -57,7 +65,10 @@ var (
 var (
 	// SessionSystemPrompt is the Session profile plus the source handoff
 	// guidance and how to act on delivery notifications.
-	SessionSystemPrompt = prompt(sessionPromptFile) + "\n\n" + prompt(sourceHandoffPromptFile) + "\n\n" + prompt(platformEventPromptFile)
+	SessionSystemPrompt = platformSessionPrompt() + "\n\n" + prompt(sourceHandoffPromptFile) + "\n\n" + prompt(platformEventPromptFile)
+	// RemoteSessionSystemPrompt contains the shared Session rules without
+	// instructions for tools available only to the platform model.
+	RemoteSessionSystemPrompt = remoteSessionPrompt() + "\n\n" + prompt(sourceHandoffPromptFile) + "\n\n" + prompt(platformEventPromptFile)
 	// CompactionInstruction is the final system instruction of a compaction
 	// call: the summary inside <summary> tags and no tool call.
 	CompactionInstruction = prompt(compactionPromptFile)
@@ -82,6 +93,28 @@ var (
 	// the superverse tools, its messages and the Dex skills.
 	RemoteAgentPrompt = strings.ReplaceAll(prompt(remoteAgentPromptFile), "{{sender_envelope_prefix}}", SenderEnvelopePrefix)
 )
+
+func platformSessionPrompt() string {
+	text := prompt(sessionPromptFile)
+	for marker, part := range map[string]string{
+		"{{platform_connectors}}":    prompt(platformConnectorsPromptFile),
+		"{{platform_delegation}}":    prompt(platformDelegationPromptFile),
+		"{{platform_subagent_task}}": prompt(platformSubagentTaskPromptFile),
+		"{{platform_effort}}":        prompt(platformEffortPromptFile),
+	} {
+		text = strings.ReplaceAll(text, marker, part)
+	}
+	return text
+}
+
+func remoteSessionPrompt() string {
+	text := prompt(sessionPromptFile)
+	for _, marker := range []string{"{{platform_connectors}}", "{{platform_delegation}}", "{{platform_effort}}"} {
+		text = strings.ReplaceAll(text, marker+"\n\n", "")
+	}
+	text = strings.ReplaceAll(text, " {{platform_subagent_task}} ", " ")
+	return text
+}
 
 // subagentPrompt joins what every subagent is, its root, the rules and the
 // task of its kind.

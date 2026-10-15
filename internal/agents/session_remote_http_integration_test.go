@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -76,6 +77,34 @@ func TestSessionRemoteHTTPAdmissionDexIntegration(t *testing.T) {
 	}
 	if active.ToolSetDigest != agentloop.RemoteToolDigest() {
 		t.Fatal("remote catalog digest differs from server catalog")
+	}
+	var synced bridgeapi.SyncResponse
+	remote.post(ctx, bridgeapi.PathSync, bridgeapi.SyncRequest{Epoch: active.Epoch, Context: true}, &synced, http.StatusOK)
+	for _, name := range []conversation.ToolName{
+		conversation.ToolStartAgent, conversation.ToolMergeAgentChanges,
+		conversation.ToolSetEffort, conversation.ToolStartTimer,
+	} {
+		if strings.Contains(synced.AgentContext, string(name)) {
+			t.Fatalf("remote agent context exposed platform-only tool %s", name)
+		}
+	}
+	if strings.Contains(synced.AgentContext, "A subagent is a task too") {
+		t.Fatal("remote agent context exposed platform subagent task instructions")
+	}
+	for _, passage := range []string{
+		"Choose connectors with `connector_catalog` and the Dex skills.",
+		"remote mode cannot contribute connectors yet",
+		"`request_user_input`",
+		"propose a workaround if one exists",
+	} {
+		if !strings.Contains(synced.AgentContext, passage) {
+			t.Fatalf("remote agent context lacks %q", passage)
+		}
+	}
+	platformPrompt := agentloop.SessionPromptFor(conversation.ModelMock).Prompts.System
+	if !strings.Contains(platformPrompt, "## Choosing and contributing connectors\nFor a new application or a large change, start one connector_select subagent") ||
+		!strings.Contains(platformPrompt, "start one connector_develop subagent per gap") {
+		t.Fatal("platform model segment lost connector instructions")
 	}
 	report := bridgeapi.Report{Epoch: active.Epoch, Generation: active.Generation, Sequence: 1, Events: []bridgeapi.Event{{Kind: bridgeapi.EventKindAssistantMessage, Text: "Remote HTTP proof"}}}
 	var zeroRefusal bridgeapi.ErrorBody

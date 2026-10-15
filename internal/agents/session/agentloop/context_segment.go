@@ -297,16 +297,10 @@ const maximumRemoteAgentContextBytes = 64 << 10
 
 // RemoteAgentContext is what a connected remote agent is told instead of the
 // Session's system prompt and segment_start: the remote agent prompt, the
-// platform tools it lacks, the same Session system prompt and the same
-// repository context, in its own tag.
+// shared Session rules and the repository context in its own tag.
 func RemoteAgentContext(repositoryContext string) string {
-	lacking := make([]string, 0, len(platformOnlyTools))
-	for _, name := range platformOnlyTools {
-		lacking = append(lacking, string(name))
-	}
-	text := conversation.RemoteAgentPrompt + "\n\nThe platform tools " + strings.Join(lacking, ", ") +
-		" are not superverse tools: do the work they would delegate yourself.\n\n" +
-		conversation.SessionSystemPrompt + "\n\n" + taggedSection(repositoryContextTag, repositoryContext)
+	text := conversation.RemoteAgentPrompt + "\n\n" + conversation.RemoteSessionSystemPrompt +
+		"\n\n" + taggedSection(repositoryContextTag, repositoryContext)
 	return comm.TruncateUTF8(strings.TrimSpace(text), maximumRemoteAgentContextBytes)
 }
 

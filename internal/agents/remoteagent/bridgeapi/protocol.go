@@ -134,8 +134,9 @@ type SyncResponse struct {
 	// within an epoch and is part of the state digest; absent reads as 0.
 	SettledThrough uint64 `json:"settledThrough"`
 	// AgentContext, only when the request asked for it, is everything the
-	// platform tells the remote agent: the platform agent's rules and the
-	// repository context, at most 64 KiB. The Bridge adds no instructions.
+	// platform tells the remote agent: its remote instructions, the shared
+	// Session rules and the repository context, at most 64 KiB. The Bridge
+	// adds no instructions.
 	AgentContext string `json:"agentContext,omitempty"`
 }
 

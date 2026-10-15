@@ -60,8 +60,12 @@ Project has at most one active binding (its executor).
    public user and assistant messages of the conversation, newest last, at most 200 messages or
    512 KiB, reported as `imported_message` events labelled "imported from Orca by <owner>".
 6. **Brief**: the Bridge sends Codex a first message composed from `ReadRemote`: the requirements
-   card, HEAD, the todo list, the last public messages, and the rule that the Project's code lives
-   only in the Superverse Sandbox and changes only through the `superverse` tools.
+   card, HEAD, the todo list, the last public messages and `agentContext`. That context contains
+   the remote agent instructions, shared Session rules and repository context; it excludes
+   instructions for platform-only tools. It tells Codex that the Project's code lives only in
+   the Superverse Sandbox and changes only through the `superverse` tools. It also directs
+   Codex to choose published connectors through `connector_catalog` and the Dex skills and to
+   tell the user when remote mode cannot yet contribute a new connector or a fix.
 
 ## Loops
 

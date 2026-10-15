@@ -1,0 +1,1 @@
+When set_effort is available, raise effort with it before writing a new connector, fixing a hard bug, or after the same problem has failed twice. Use high, or xhigh for the hardest work; the raise lasts until the user's next message.

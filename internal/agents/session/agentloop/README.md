@@ -67,8 +67,8 @@ first pending Stop keeps its actor; the Stop entry names that author. Automatic 
 
 `RemoteTools` derives the remote executor's sorted catalog from the Session catalog,
 excluding `platformOnlyTools`: `start_agent`, `merge_agent_changes`, `set_effort` and `start_timer`.
-`RemoteAgentContext` is everything a remote agent is told, so it has the platform agent's context:
-`conversation.RemoteAgentPrompt`, a line naming `platformOnlyTools`, `conversation.SessionSystemPrompt`
+`RemoteAgentContext` contains `conversation.RemoteAgentPrompt`,
+`conversation.RemoteSessionSystemPrompt` (shared rules, source handoff and delivery guidance)
 and the repository context in the same `<repository_context>` tag as segment_start, at most
 `maximumRemoteAgentContextBytes` (64 KiB; the prompts are about 30 KiB, the repository context at
 most 8 KiB). The remote `read`, `grep` and `glob` tools are the platform's, with the same read-only

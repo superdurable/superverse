@@ -418,6 +418,14 @@ only make sense to the platform model:
 - **Not offered**: `start_agent`, `merge_agent_changes` (platform subagents), `set_effort`,
   `start_timer` (platform model controls).
 
+The remote `agentContext` contains `remote_agent.md`, the shared Session instructions,
+the source handoff and delivery rules, and the repository context. The platform-only
+connector contribution, subagent delegation and effort instructions remain in the
+platform model's segment in their original order. Until remote connector contribution
+is available, Codex chooses published connectors with `connector_catalog` and the Dex
+skills; for a new connector or a fix, it tells the user through `request_user_input`
+that remote mode cannot contribute it yet and suggests a workaround when one exists.
+
 **Routing.** Today `RouteTool` resolves a call against `ContextSegment.ToolNames`, the set frozen for
 the platform model's segment. Remote mode never opens or compacts a segment, so a fresh Session has
 none and an older platform segment names tools Codex must not use (`start_agent`). In remote mode
