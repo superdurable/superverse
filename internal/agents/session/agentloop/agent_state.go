@@ -108,8 +108,6 @@ type AgentState struct {
 	// HandoffContinuations counts automatic continuations of the current turn
 	// after it stopped with changed source and no unblocked commit.
 	HandoffContinuations int `json:"handoff_continuations,omitempty"`
-	// TurnModelCalls counts replies for a subagent's kind-specific call bound.
-	TurnModelCalls int `json:"turn_model_calls,omitempty"`
 	// Running is the interruptible work in flight: the Step that schedules
 	// it sets it, and the Step that ends it clears it in its own commit, so
 	// InterruptAgent never cancels work that has already committed.

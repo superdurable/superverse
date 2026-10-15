@@ -160,7 +160,7 @@ func (*SubagentFlow) GetSubagentSnapshot(ctx dex.Context, _ dex.None) (*dex.RPCR
 	snapshot := subagentSnapshot{Identity: identity, Kind: start.Call.Kind, Description: start.Call.Description, BaseCommit: start.BaseCommit,
 		Status: statusOf(comm.Must(statusAttribute.Get(ctx))), Config: dexflow.OptionalValue(configAttribute.Get(ctx)), Outcome: dexflow.OptionalValue(outcomeAttribute.Get(ctx))}
 	if state := dexflow.OptionalValue(agentStateAttribute.Get(ctx)); state != nil {
-		snapshot.ModelCalls = state.TurnModelCalls
+		snapshot.LastSequence = state.LastSequence
 	}
 	return &dex.RPCResult[subagentSnapshot]{Output: snapshot}, nil
 }
@@ -273,10 +273,10 @@ func (step ApplySubagentAdmission) Execute(ctx dex.Context, answer agenttasks.Su
 }
 
 // freeze is the configuration a subagent keeps: the Session's model and HEAD at its start,
-// its kind's limits and the server's base effort of the kind, clamped to the model.
+// its kind's duration and the server's base effort of the kind, clamped to the model.
 func (flow *SubagentFlow) freeze(start startRecord, now time.Time) Config {
 	kind := start.Call.Kind
-	return Config{Model: start.Model, Kind: kind, Effort: modelprovider.ProfileOf(start.Model).BaseEffort(flow.efforts[kind]), ModelCalls: kind.ModelCalls(),
+	return Config{Model: start.Model, Kind: kind, Effort: modelprovider.ProfileOf(start.Model).BaseEffort(flow.efforts[kind]),
 		StartedAt: now, Deadline: now.Add(kind.Duration()), HeadCommit: start.HeadCommit}
 }
 
@@ -308,7 +308,7 @@ func (AwaitSubagentDeadline) Execute(ctx dex.Context, _ dex.None) (*dex.StepDeci
 }
 
 // dex:group group-id:model group-label:"Model"
-// dex:explanation text:"Make one model call; the last call before the limit may call no tool and writes the report."
+// dex:explanation text:"Make one model call and record its reply; a reply without tools ends the task with a report."
 type CallSubagentModel struct {
 	dex.StepDefaultsNoWaitFor[dex.None]
 	flow *SubagentFlow
@@ -320,10 +320,10 @@ func (CallSubagentModel) GetStepOptions() *dex.StepOptions {
 	return &options
 }
 
-// Execute streams and records one reply; one without a tool call is the report, and the last call before
-// the limit uses tool_choice none. A rejection a retry cannot change fails the subagent, any other error retries.
+// Execute streams and records one reply; one without a tool call is the report.
+// A rejection a retry cannot change fails the subagent, any other error retries.
 func (step CallSubagentModel) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, error) {
-	last, segment := isLastCall(ctx), comm.Must(contextSegmentAttribute.Get(ctx))
+	segment := comm.Must(contextSegmentAttribute.Get(ctx))
 	prompts := comm.Must(contextSegmentPromptsAttribute.Get(ctx, segment.PromptsKey()))
 	state := comm.Must(agentStateAttribute.Get(ctx))
 	read := func(sequence conversation.Sequence) conversation.Entry {
@@ -332,12 +332,7 @@ func (step CallSubagentModel) Execute(ctx dex.Context, _ dex.None) (*dex.StepDec
 		}
 		return archivedEntry(comm.Must(archivedMessagesAttribute.Get(ctx, agentloop.SequenceKey(archiveChunkFirst(sequence)))), sequence)
 	}
-	var transient []conversation.Entry
-	if last {
-		transient = append(transient, conversation.NoticeEntry(conversation.EntryRoleSystem, conversation.SubagentReportInstruction, ""))
-	}
-	request := step.flow.segmentRequest(ctx, agentloop.ModelCallKindResponse, prompts, read, transient...)
-	request.ToolChoiceNone = last
+	request := step.flow.segmentRequest(ctx, agentloop.ModelCallKindResponse, prompts, read)
 	assistant, assistantErr := dex.NewBufferedTextStream(ctx, assistantTextStream)
 	reasoning, reasoningErr := dex.NewBufferedTextStream(ctx, reasoningSummaryStream)
 	if err := errors.Join(assistantErr, reasoningErr); err != nil {
@@ -360,7 +355,7 @@ func (step CallSubagentModel) Execute(ctx dex.Context, _ dex.None) (*dex.StepDec
 	}
 	reply.Metrics.Effort = segment.EffectiveEffort()
 	progress.write(conversation.AgentEvent{Kind: conversation.EventKindModelCompleted, Message: agentloop.ModelReplyActivityMessage(reply), Attempt: &attempt})
-	next := recordReply(ctx, reply, ctx.FirstAttemptAt().UTC(), last)
+	next := recordReply(ctx, reply, ctx.FirstAttemptAt().UTC())
 	switch {
 	case next.finish != nil:
 		return dex.GoTo(BeginSubagentFinish{}, *next.finish), nil

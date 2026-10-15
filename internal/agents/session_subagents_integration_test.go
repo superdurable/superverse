@@ -187,8 +187,8 @@ func TestSessionMockSubagentInvestigateDexIntegration(t *testing.T) {
 		t.Fatal("the notification is not between the first turn's end and the automatic turn")
 	}
 	state := session.awaitSubagentEnd(ctx, record)
-	if state.Status != subagent.StatusCompleted || state.ModelCalls != 2 || state.Outcome.Delivery != subagent.ReportDeliveredForTest || !strings.Contains(state.Outcome.Report, "line 51") ||
-		state.Config == nil || state.Config.Model != conversation.ModelMock || state.Config.Kind != agenttasks.SubagentInvestigate || state.Config.ModelCalls != agenttasks.SubagentInvestigate.ModelCalls() {
+	if state.Status != subagent.StatusCompleted || state.Outcome.Delivery != subagent.ReportDeliveredForTest || !strings.Contains(state.Outcome.Report, "line 51") ||
+		state.Config == nil || state.Config.Model != conversation.ModelMock || state.Config.Kind != agenttasks.SubagentInvestigate {
 		t.Fatalf("the subagent's own state is wrong: %+v, %+v, %+v", state, state.Config, state.Outcome)
 	}
 	before := session.execution(ctx, identity.FlowID())
@@ -229,10 +229,10 @@ func TestSessionMockSubagentChangeMergeDexIntegration(t *testing.T) {
 	identity := session.subagentOf(onlySubagent(t, running))
 	session.await(ctx, "the subagent's check", func() bool {
 		state, err := session.subagents.SnapshotForTest(ctx, identity)
-		return err == nil && state.ModelCalls >= 2
+		return err == nil && state.LastSequence >= 5
 	})
-	// The check begins right after the model call that asked for it and runs
-	// for 30 seconds; the Worker is replaced while it runs.
+	// Sequence 5 is the second model reply, which asks for the 30-second check.
+	// The Worker is replaced while that check runs.
 	time.Sleep(3 * time.Second)
 	dexflowtest.RestartServerForTest(ctx, t, func(ctx context.Context) error {
 		_, err := session.subagents.SnapshotForTest(ctx, identity)
@@ -297,10 +297,10 @@ func TestSessionMockSubagentLostInstanceDexIntegration(t *testing.T) {
 	identity := session.subagentOf(onlySubagent(t, running))
 	session.await(ctx, "the subagent's check", func() bool {
 		state, err := session.subagents.SnapshotForTest(ctx, identity)
-		return err == nil && state.ModelCalls >= 2
+		return err == nil && state.LastSequence >= 5
 	})
-	// The check begins right after the model call that asked for it and runs
-	// for two minutes; the instance goes away while it runs.
+	// Sequence 5 is the second model reply, which asks for the two-minute check.
+	// The instance goes away while that check runs.
 	time.Sleep(5 * time.Second)
 	lost := session.workspace(ctx)
 	objects.removeInstance(ctx, lost.Resources)
@@ -530,9 +530,8 @@ func TestSessionMockSubagentStopButtonDexIntegration(t *testing.T) {
 
 // The limits of one turn: a fourth start while three subagents run is refused
 // with subagent_limit_reached, a seventh start since the user's message with
-// subagent_budget_reached, neither with an effect. The survey subagent makes
-// its kind's 40 model calls and writes its report in the last one, which
-// allows no tool.
+// subagent_budget_reached, neither with an effect. A delayed survey report
+// opens the one automatic turn after the other reports arrive.
 func TestSessionMockSubagentLimitDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
 	defer cancel()
@@ -547,7 +546,7 @@ func TestSessionMockSubagentLimitDexIntegration(t *testing.T) {
 	})
 	requireNoFailure(t, conversation.HistoryPage{Messages: messages})
 	assistant := ofRole(messages, conversation.MessageRoleAssistant)
-	if len(assistant) != 7 || assistant[6].Message.Content != "The survey subagent reported at its model-call limit." {
+	if len(assistant) != 7 || assistant[6].Message.Content != "The survey subagent reported its findings." {
 		t.Fatalf("expected the 7 mock replies; a stopped scenario answers with one text: %+v", assistant)
 	}
 	if refused := toolResult(t, messages, conversation.ToolStartAgent, 3); refused.ResultCode != toolfailure.SubagentLimitReached.String() {
@@ -573,11 +572,11 @@ func TestSessionMockSubagentLimitDexIntegration(t *testing.T) {
 		t.Fatalf("expected one notification per subagent, got %d", len(notifications))
 	}
 	state := session.awaitSubagentEnd(ctx, survey)
-	if state.Status != subagent.StatusCompleted || state.ModelCalls != agenttasks.SubagentInvestigate.ModelCalls() ||
-		state.Outcome.Report != "The survey listed the source until its model calls ran out: web/src holds App.tsx and main.tsx." {
-		t.Fatalf("the survey did not report in its last model call: %d calls, %+v", state.ModelCalls, state.Outcome)
+	if state.Status != subagent.StatusCompleted ||
+		state.Outcome.Report != "The survey found that web/src holds App.tsx and main.tsx." {
+		t.Fatalf("the survey did not report: %+v", state.Outcome)
 	}
-	t.Logf("FlowID=%s refused starts at both limits; survey %s reported after %d model calls", session.id, survey.TaskID(), state.ModelCalls)
+	t.Logf("FlowID=%s refused starts at both limits; survey %s reported", session.id, survey.TaskID())
 }
 
 // A deleting Project stops its Session's running subagent, which is not a

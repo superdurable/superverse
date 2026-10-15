@@ -34,7 +34,7 @@ import (
 // The Session keeps one record per subagent in its AttributeMap Subagents
 // under the agent ID; a record holds no prompt.
 
-// SubagentKind is what a subagent is started for, with the limits, the
+// SubagentKind is what a subagent is started for, with its duration limit, the
 // default effort and the system prompt of the kind. It is a struct that
 // string literals cannot convert to: the kinds below are its only values,
 // persisted by their names.
@@ -42,10 +42,8 @@ type SubagentKind struct{ definition *subagentKind }
 
 type subagentKind struct {
 	name string
-	// modelCalls and duration are the kind's limits: the last call before
-	// modelCalls asks for the report, and the duration ends the subagent.
-	modelCalls int
-	duration   time.Duration
+	// duration ends the subagent if it has not reported.
+	duration time.Duration
 	// effort is the base effort of the kind's model calls unless the server
 	// configures another; raisesEffort offers the kind set_effort.
 	effort       conversation.Effort
@@ -72,18 +70,18 @@ func (workspace subagentWorkspace) String() string { return workspace.name }
 var (
 	// SubagentInvestigate answers a question about the code or its
 	// dependencies.
-	SubagentInvestigate = SubagentKind{&subagentKind{name: "investigate", modelCalls: 40, duration: 20 * time.Minute,
+	SubagentInvestigate = SubagentKind{&subagentKind{name: "investigate", duration: 20 * time.Minute,
 		effort: conversation.EffortLow, systemPrompt: conversation.SubagentInvestigatePrompt, workspace: workspaceApplication, editsFiles: true, readsPlatform: true}}
 	// SubagentChange makes a bounded change and checks it.
-	SubagentChange = SubagentKind{&subagentKind{name: "change", modelCalls: 80, duration: 45 * time.Minute,
+	SubagentChange = SubagentKind{&subagentKind{name: "change", duration: 45 * time.Minute,
 		effort: conversation.EffortMedium, raisesEffort: true, systemPrompt: conversation.SubagentChangePrompt, workspace: workspaceApplication, editsFiles: true, readsPlatform: true}}
 	// SubagentConnectorSelect chooses the connectors that meet the
 	// requirements, reading the catalog and module sources without editing.
-	SubagentConnectorSelect = SubagentKind{&subagentKind{name: "connector_select", modelCalls: 25, duration: 10 * time.Minute,
+	SubagentConnectorSelect = SubagentKind{&subagentKind{name: "connector_select", duration: 10 * time.Minute,
 		effort: conversation.EffortMedium, systemPrompt: conversation.SubagentConnectorSelectPrompt, workspace: workspaceApplication}}
 	// SubagentConnectorDevelop builds one missing connector or operation, or
 	// fixes an existing connector, in a worktree of the connectors library.
-	SubagentConnectorDevelop = SubagentKind{&subagentKind{name: "connector_develop", modelCalls: 80, duration: 45 * time.Minute,
+	SubagentConnectorDevelop = SubagentKind{&subagentKind{name: "connector_develop", duration: 45 * time.Minute,
 		effort: conversation.EffortHigh, raisesEffort: true, systemPrompt: conversation.SubagentConnectorDevelopPrompt, workspace: workspaceConnectorsLibrary, editsFiles: true}}
 )
 
@@ -92,10 +90,6 @@ var SubagentKinds = []SubagentKind{SubagentInvestigate, SubagentChange, Subagent
 
 // String is the persisted spelling of the kind.
 func (kind SubagentKind) String() string { return kind.definition.name }
-
-// ModelCalls is how many model calls a subagent of the kind makes; the last
-// one writes the report.
-func (kind SubagentKind) ModelCalls() int { return kind.definition.modelCalls }
 
 // Duration is how long a subagent of the kind runs before it is finished as
 // timed out.

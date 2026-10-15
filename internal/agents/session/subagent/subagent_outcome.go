@@ -110,14 +110,13 @@ type startRecord struct {
 }
 
 // Config is frozen when the Session admits the subagent: its model, kind and
-// base effort, its model-call limit and the deadline of its duration limit,
+// base effort and the deadline of its duration limit,
 // and the Session's HEAD it reports platform reads for. The system prompt and
 // the tool set are frozen in the first segment's prompts.
 type Config struct {
 	Model      conversation.Model      `json:"model"`
 	Kind       agenttasks.SubagentKind `json:"kind"`
 	Effort     conversation.Effort     `json:"effort"`
-	ModelCalls int                     `json:"model_calls"`
 	StartedAt  time.Time               `json:"started_at"`
 	Deadline   time.Time               `json:"deadline"`
 	HeadCommit string                  `json:"head_commit,omitempty"`
@@ -246,17 +245,17 @@ type stopAnswer struct {
 }
 
 // subagentSnapshot is the retained read of a subagent: its identity and task, its
-// status, how many model calls it made and, once admitted and ended, its
+// status, message progress and, once admitted and ended, its
 // configuration and outcome. It holds no prompt.
 type subagentSnapshot struct {
-	Identity    agenttasks.SubagentIdentity `json:"identity"`
-	Kind        agenttasks.SubagentKind     `json:"kind"`
-	Description string                      `json:"description"`
-	BaseCommit  string                      `json:"base_commit"`
-	Status      FlowStatus                  `json:"status"`
-	ModelCalls  int                         `json:"model_calls"`
-	Config      *Config                     `json:"config,omitempty"`
-	Outcome     *Outcome                    `json:"outcome,omitempty"`
+	Identity     agenttasks.SubagentIdentity `json:"identity"`
+	Kind         agenttasks.SubagentKind     `json:"kind"`
+	Description  string                      `json:"description"`
+	BaseCommit   string                      `json:"base_commit"`
+	Status       FlowStatus                  `json:"status"`
+	LastSequence conversation.Sequence       `json:"last_sequence"`
+	Config       *Config                     `json:"config,omitempty"`
+	Outcome      *Outcome                    `json:"outcome,omitempty"`
 }
 
 // receipt is the output of a completed SubagentFlow.

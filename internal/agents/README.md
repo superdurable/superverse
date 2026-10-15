@@ -621,7 +621,7 @@ the operator's engine for the objects.
   `TestSessionMockSubagentStopButtonDexIntegration` (the Stop button stops a
   subagent while no turn runs and its report opens no turn),
   `TestSessionMockSubagentLimitDexIntegration` (the running limit, the
-  per-message budget and the model-call limit).
+  per-message budget and a delayed report).
 - `TestProjectDeletionStopsSubagentsDexIntegration` (on the mock model): the
   deletion finds the Session's running subagent by search and stops it before
   it releases the Sandbox.

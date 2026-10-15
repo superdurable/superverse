@@ -590,7 +590,7 @@ automatically for every Step and RPC.
 | `CreatedAt`, `UpdatedAt` | time.Time | |
 | `SessionModel` | `{Model, Revision, ChangedBy *conversation.Actor}` | The user's model choice ([above](#model-selection)) |
 | `ContextSegment` | struct (about 0.5 KB) | Current segment, last usage, pending bytes, force-compaction flag ([context management](context-management.md#segments)) |
-| `AgentState` | struct | Sequence range (`FirstRetainedSequence`, `CurrentFirstSequence`, `LastSequence`), `Status`, `PendingToolCalls`, `PendingToolIndex`, `TurnModelCalls` (shared struct field, unused by Session turns), `HandoffContinuations`, `TurnRequestSequences`, `SourceChangedSinceHandoff`, `Turn`, `Running`, `AutomaticTaskTurns`, `AutomaticPlatformTurns`, `AutomaticTurnsPaused`, `SubagentsStartedWithoutUser`, `ConnectorSlugs` (every connector slug an admitted `connector_develop` call named, at most 16) |
+| `AgentState` | struct | Sequence range (`FirstRetainedSequence`, `CurrentFirstSequence`, `LastSequence`), `Status`, `PendingToolCalls`, `PendingToolIndex`, `HandoffContinuations`, `TurnRequestSequences`, `SourceChangedSinceHandoff`, `Turn`, `Running`, `AutomaticTaskTurns`, `AutomaticPlatformTurns`, `AutomaticTurnsPaused`, `SubagentsStartedWithoutUser`, `ConnectorSlugs` (every connector slug an admitted `connector_develop` call named, at most 16) |
 | `MessageWindowLock` | bool | Coordination only: serializes every writer of the message maps |
 | `WaitingInputRound` | int64 | Monotonic reconciliation watermark |
 | `PendingUserInput` | struct | `{CallID, Kind, Questions, Requirements, StartedAt}`; Kind is `""` or `requirements` |
@@ -863,8 +863,8 @@ rollout; no general migration exists. Persistence changes are regenerated into
 `docs/flows/sv2-session-agent-flow.json`, and `check-flow-definitions.py` carries every Channel.
 
 Removing the prelaunch Session model-call limit keeps open local executions decodable:
-`SessionAgentFlow` no longer reads or increments `AgentState.TurnModelCalls` (which
-remains the subagent's kind-specific counter), and `AgentState` ignores the old
+`SessionAgentFlow` no longer reads or increments the removed `AgentState.TurnModelCalls`,
+and `AgentState` ignores the old `turn_model_calls` and
 `interaction_mode` JSON field.
 A pending `turn_limit` question already written before the rollout is projected as an
 ordinary question and its exact CallID and options remain answerable; either answer
@@ -896,9 +896,8 @@ These settings are keys of the server configuration, which defaults and range-ch
 The [SessionAgentFlow contract](#sessionagentflow-contract) remains the Flow's primitive,
 identity, Step, RPC and recovery inventory. `CheckSteered` no longer compares a turn's
 model-call count or creates a `turn_limit` pending question; model replies in both
-executor modes can continue beyond the former bound. Session turns no longer
-write the shared counter or reporting-only mode; SubagentFlow still counts its
-replies against each kind's bound. Already open prelaunch questions use
+executor modes can continue beyond the former bound. Neither Session nor
+SubagentFlow writes the removed counter or reporting-only mode. Already open prelaunch questions use
 the [compatibility behavior](#recovery-external-effects-and-compatibility) above.
 
 ## Database Schema Changes

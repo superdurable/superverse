@@ -487,7 +487,7 @@ Sessions through [rollover](#rollover).
 | `session.md` (with the source handoff policy and `platform_event.md`, the guidance for Preview deployments and delivery notifications) | The system prompt, frozen per segment. |
 | `compaction.md` | The system instruction of a compaction call. |
 | Notices | Short entries appended when needed: continuation after `max_tokens`, unfinished source handoff, "stop and report". |
-| Subagent prompts | A base prompt for every subagent plus one task section per kind ([subagents](subagents.md), [connectors](connectors.md)), frozen with the subagent's first segment; and the instruction that ends the request of a subagent's last model call. |
+| Subagent prompts | A base prompt for every subagent plus one task section per kind ([subagents](subagents.md), [connectors](connectors.md)), frozen with the subagent's first segment. |
 
 The system prompt establishes:
 
@@ -646,8 +646,7 @@ is the reference for scenarios, markers and checks.
   deterministic), `write`, `bash`, `start_agent`, `commit_and_push`, and a final text.
 - A scenario declares the scripts of the subagents that its `start_agent` calls start. The call's
   prompt names a script with `[[subagent:<scenario>/<name>]]`, the subagent's conversation gets the
-  script's replies in order, and the last reply, which calls no tool, is its report; a reply marked
-  `last_call` answers the last model call before the kind's limit. A script knows no task ID in
+  script's replies in order, and the last reply, which calls no tool, is its report. A script knows no task ID in
   advance: a scenario that declares the argument `task` receives the last task ID a user message
   holds, in a tool result or a notification, as `{{task}}` for its `stop_task` and
   `merge_agent_changes` steps.

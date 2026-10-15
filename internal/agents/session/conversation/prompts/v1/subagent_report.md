@@ -1,1 +1,0 @@
-Your model-call limit is reached, so no tool can run any more. Write your report now as your final message: what you found or changed, the files involved, the checks you ran with their results, what is unfinished and what the main agent must decide.

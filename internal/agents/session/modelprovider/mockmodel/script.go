@@ -167,10 +167,6 @@ type step struct {
 	// with an error instead of the summary, such as the overload that Dex
 	// retries until the Session gives up the compaction.
 	CompactionError *stepError `json:"compaction_error"`
-	// LastCall marks the report of a subagent's last model call before its
-	// limit, which the subagent makes with tool_choice none; a request that
-	// allows tools there is rejected.
-	LastCall bool `json:"last_call"`
 }
 
 // position is where a reply stands: the index of its input and its index
@@ -459,7 +455,7 @@ func (s *script) validateInput(index int, in input) error {
 }
 
 func (s *script) validateStep(step step, files rootFiles) error {
-	if step.Remote && (s.isSubagent() || step.Thinking != "" || step.Error != nil || step.Usage != nil || step.ChunkDelayMS != 0 || step.CompactionError != nil || step.LastCall || step.ExpectHandoff || step.Repeat > 1 || step.StopReason != "" || len(step.ToolUses) > 4 || len(step.Text) > 64<<10 || len(step.ExpectSegmentStart) > 0 || step.ExpectSenderEnvelope || step.ExpectPendingRequestBudget) {
+	if step.Remote && (s.isSubagent() || step.Thinking != "" || step.Error != nil || step.Usage != nil || step.ChunkDelayMS != 0 || step.CompactionError != nil || step.ExpectHandoff || step.Repeat > 1 || step.StopReason != "" || len(step.ToolUses) > 4 || len(step.Text) > 64<<10 || len(step.ExpectSegmentStart) > 0 || step.ExpectSenderEnvelope || step.ExpectPendingRequestBudget) {
 		return errors.New("a remote step has only exact public text/tool uses and never provider thinking, timing, failure, compaction or handoff expectations")
 	}
 	for _, use := range step.ToolUses {
@@ -497,9 +493,6 @@ func (s *script) validateStep(step step, files rootFiles) error {
 		if err := step.CompactionError.validate(); err != nil {
 			return fmt.Errorf("compaction_error: %w", err)
 		}
-	}
-	if step.LastCall && (!s.isSubagent() || len(step.ToolUses) > 0) {
-		return errors.New("last_call marks a subagent's report, which calls no tool")
 	}
 	if step.Notification != "" {
 		if err := step.Notification.Validate(); err != nil {

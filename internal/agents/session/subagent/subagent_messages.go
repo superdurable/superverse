@@ -177,11 +177,10 @@ type replyNext struct {
 }
 
 // recordReply records a completed model call by its stop reason, which is
-// read before the content. A reply without tool calls is the report, and so
-// is the reply of the last call, which may call no tool; a refusal or an
-// unexpected stop fails the subagent; a reply beyond the context window is
-// discarded and forces a compaction.
-func recordReply(ctx dex.Context, reply conversation.ModelReply, startedAt time.Time, last bool) replyNext {
+// read before the content. A reply without tool calls is the report; a refusal
+// or an unexpected stop fails the subagent; a reply beyond the context window
+// is discarded and forces a compaction.
+func recordReply(ctx dex.Context, reply conversation.ModelReply, startedAt time.Time) replyNext {
 	state, segment := comm.Must(agentStateAttribute.Get(ctx)), comm.Must(contextSegmentAttribute.Get(ctx))
 	segment.CacheAnchor = state.LastSequence
 	if prompt, isKnown := reply.Metrics.PromptTokens(); isKnown {
@@ -211,10 +210,9 @@ func recordReply(ctx dex.Context, reply conversation.ModelReply, startedAt time.
 	}
 	appendEntry(ctx, conversation.ModelReplyEntry(reply, summaries, startedAt))
 	state = comm.Must(agentStateAttribute.Get(ctx))
-	if !last && reply.StopReason == conversation.StopReasonMaxTokens {
+	if reply.StopReason == conversation.StopReasonMaxTokens {
 		// A cut reply's tool calls never run; the loop continues with a fresh
-		// call. The cut reply counts toward the limit.
-		state.TurnModelCalls++
+		// call.
 		limited, entries := agentloop.ContinueAfterOutputLimit(state, reply)
 		comm.MustDo(agentStateAttribute.Set(ctx, limited))
 		for _, entry := range entries {
@@ -222,20 +220,13 @@ func recordReply(ctx dex.Context, reply conversation.ModelReply, startedAt time.
 		}
 		return replyNext{callsAgain: true}
 	}
-	state.TurnModelCalls++
-	if last || len(reply.ToolCalls) == 0 {
+	if len(reply.ToolCalls) == 0 {
 		comm.MustDo(agentStateAttribute.Set(ctx, state))
 		return replyNext{finish: &subagentFinish{Status: agenttasks.SubagentCompleted, Report: comm.TruncateUTF8(reply.Text, maximumReportBytes)}}
 	}
 	state.Status, state.PendingToolCalls, state.PendingToolIndex = agentloop.AgentStatusRoutingTool, reply.ToolCalls, 0
 	comm.MustDo(agentStateAttribute.Set(ctx, state))
 	return replyNext{routes: true}
-}
-
-// isLastCall reports whether the next model call is the last the kind
-// allows, which writes the report and may call no tool.
-func isLastCall(ctx dex.Context) bool {
-	return comm.Must(agentStateAttribute.Get(ctx)).TurnModelCalls+1 >= comm.Must(configAttribute.Get(ctx)).ModelCalls
 }
 
 // summarize asks the segment's model for the summary of a compaction

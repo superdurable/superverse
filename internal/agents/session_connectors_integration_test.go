@@ -171,7 +171,7 @@ func TestSessionMockConnectorSelectExistingDexIntegration(t *testing.T) {
 	session := newMockSession(t, ctx, mockInput(t, "connector-select-existing", 1).Content)
 	record, messages, state := session.connectorSubagent(ctx, agenttasks.SubagentConnectorSelect)
 	card := session.requirementsCard(ctx, subagentNotification(t, messages, record, agenttasks.SubagentCompleted).Sequence)
-	if record.Changes != nil || record.Connector != nil || state.Config == nil || state.Config.ModelCalls != agenttasks.SubagentConnectorSelect.ModelCalls() ||
+	if record.Changes != nil || record.Connector != nil || state.Config == nil ||
 		state.Config.Effort != conversation.EffortMedium || !strings.Contains(state.Outcome.Report, "recommended: llm") {
 		t.Fatalf("the selection subagent is wrong: %+v, %+v, %+v", record, state.Config, state.Outcome)
 	}

@@ -51,8 +51,8 @@ Two kinds work on connectors ([connectors](../../../../docs/architecture/agent-h
 
 | Kind | Limits and effort | Tools | Root |
 | --- | --- | --- | --- |
-| `connector_select` | 25 model calls, 10 minutes, `medium`, fixed | `bash`, `read`, `grep`, `glob`, `connector_catalog`; no edit, no write, no platform readers | A worktree of the application, which it does not change |
-| `connector_develop` | 80 model calls, 45 minutes, `agent.subagentConnectorDevelopEffort` (`high`), `set_effort` | `bash`, `read`, `edit`, `write`, `grep`, `glob`, `connector_catalog`, `set_effort` | Its worktree of the connectors library, `/workspace/.git/superverse/connectors/worktrees/<agentID>`, on the connector's branch |
+| `connector_select` | 10 minutes, `medium`, fixed | `bash`, `read`, `grep`, `glob`, `connector_catalog`; no edit, no write, no platform readers | A worktree of the application, which it does not change |
+| `connector_develop` | 45 minutes, `agent.subagentConnectorDevelopEffort` (`high`), `set_effort` | `bash`, `read`, `edit`, `write`, `grep`, `glob`, `connector_catalog`, `set_effort` | Its worktree of the connectors library, `/workspace/.git/superverse/connectors/worktrees/<agentID>`, on the connector's branch |
 
 A develop call names the connector's `slug` and the contribution (`new`, `operation`, `fix`), which
 the fingerprint and the record carry; the Session created its library worktree with `start_agent`
@@ -115,8 +115,7 @@ the `task` notification carries the contribution, and the Session Service submit
   the Step's retries fails the subagent without an effect, and its report ends the
   Session's record FAILED.
 - **Retries and recovery.** Step retries and Worker replacement never create a FlowID or
-  reset state. There is no explicit rerun: a task is bounded by its kind's model-call and
-  duration limits.
+  reset state. There is no explicit rerun: a task is bounded by its kind's duration limit.
 - **Completion.** Business completion is the terminal `Outcome` (COMPLETED, FAILED,
   STOPPED, TIMED_OUT, or DENIED); every end but a denial reports to the Session. Engine completion is `dex.GracefulComplete(Receipt)`
   once the report was delivered, or once its wait limit passed undelivered. A completed
@@ -135,11 +134,11 @@ the `task` notification carries the contribution, and the Session Service submit
 | `Start` | `startRecord{Call{Kind, Description, Prompt, Connector}, Fingerprint, BaseCommit, Model, HeadCommit, Branch}` | Installed with the start; immutable; the only copy of the prompt besides the message log |
 | `ProjectID` | string, indexed `keyword2` | The search of a deleting Project |
 | `SubagentStatus` | string, indexed `keyword3`: INITIALIZING, RUNNING, FINISHING, COMPLETED, FAILED, STOPPED, TIMED_OUT, DENIED | The status lock: only `ApplySubagentAdmission`, `RecordSubagentAdmissionFailure`, `AwaitSubagentDeadline`, `BeginSubagentFinish`, `RecordSubagentOutcome` and `StopSubagent` write it, under its lock, so each end of the loop is decided once. Each of these Steps is short and calls nothing outside the Flow, so a `StopSubagent` never waits behind a Session RPC or a Sandbox read |
-| `Config` | `{Model, Kind, Effort, ModelCalls, StartedAt, Deadline, HeadCommit}` | Frozen at the admission; the system prompt and the tool set are frozen in the first segment's prompts |
+| `Config` | `{Model, Kind, Effort, StartedAt, Deadline, HeadCommit}` | Frozen at the admission; the system prompt and the tool set are frozen in the first segment's prompts; old `model_calls` values are ignored on decode |
 | `StopRequest` | bool | Written by `StopSubagent` while INITIALIZING; the admission honors it |
 | `Workspace` | `{Lease, Root, BaseCommit, RepositoryContext, LostCallID, Losses}` | The lease copy, the worktree root and the losses of the transport for one call (at most two refreshes per call) |
 | `Outcome` | `{Status, Report (at most 24 KiB), Changes{ResultCommit, Files, Insertions, Deletions}, Failure, Unsaved, FinishedAt, Delivery, Contribution, Refused}` | Written once by `RecordSubagentOutcome` (or the denial); the delivery by the report Steps. `Unsaved` says why the end could not save the worktree, whose changes then stay in it on the volume: the report leads with it, the notification carries `changes_unsaved` and its summary says so, and `merge_agent_changes` saves the worktree before it merges |
-| `AgentState`, `ContextSegment` | As in the Session | One task is one turn: the turn counters count the model calls |
+| `AgentState`, `ContextSegment` | As in the Session | One task is one turn; old `turn_model_calls` values are ignored on decode |
 | `MessageWindowLock` | bool | A coordination Attribute that the loop Steps lock |
 
 | AttributeMap | Key | Value | Load and growth |
@@ -150,9 +149,9 @@ the `task` notification carries the contribution, and the Session Service submit
 
 The execution owns all of its state; it never reads the Session's primitives. No secret:
 the lease holds provider identities, never credentials, and the prompt stays here, never
-in the Session's record. A subagent runs at most 80 model calls and 45 minutes, so its
-history is small; everything is retained for the execution's lifetime and then for the
-engine's retention.
+in the Session's record. A subagent runs for at most 45 minutes; its history
+grows with the model and tool calls within that deadline and is retained for
+the execution's lifetime and then for the engine's retention.
 
 ### Channels and ChannelMaps
 
@@ -184,7 +183,7 @@ any other business record.
 | `RecordSubagentAdmissionFailure` | Fails a subagent whose Session could not be asked to admit it, before any effect, with the bounded cause | Status lock; goes to `ReportSubagentOutcome`, so the Session's record ends FAILED instead of holding a running place until it counts as lost |
 | `ApplySubagentAdmission` | Applies the admission under the status lock | State Step. Admitted: `GoToMany(CallSubagentModel, AwaitSubagentDeadline)`, or `FinishSubagent{stopped}` for a recorded `StopRequest`; stopped before the start: STOPPED and `ReportSubagentOutcome`; denied: DENIED and complete |
 | `AwaitSubagentDeadline` | The business timer of the kind's duration limit | On expiry a RUNNING subagent goes to `FinishSubagent{timed_out}` and its loop Steps are cancelled |
-| `CallSubagentModel` | One model call. The last call before the limit has tool use disabled and an appended instruction to write the report | SYNC, 10 minutes per attempt, heartbeat 1 minute, 3 attempts within 30 minutes, retries starting 30 seconds apart; failure to `RecordSubagentFailure`. A reply without tool calls, or the last call's reply, is the report: `BeginSubagentFinish{completed}`; a refusal or an unexpected stop: `BeginSubagentFinish{failed}` |
+| `CallSubagentModel` | One model call | SYNC, 10 minutes per attempt, heartbeat 1 minute, 3 attempts within 30 minutes, retries starting 30 seconds apart; failure to `RecordSubagentFailure`. A reply without tool calls is the report: `BeginSubagentFinish{completed}`; a refusal or an unexpected stop: `BeginSubagentFinish{failed}` |
 | `CompactSubagentContext` | Compaction as in the Session; the next segment carries the summary, the repository context and the task | Same options and failure route |
 | `RecordSubagentFailure` | A model call, a compaction or a lease refresh that could not finish: the bounded cause | `BeginSubagentFinish{failed}` |
 | `RouteSubagentTools` | Answers a call the kind does not offer (`unknown_or_disabled_tool`) and `set_effort`, or runs the call serially or in a read-only wave | State Step |
@@ -202,7 +201,7 @@ any other business record.
 | RPC | Locks | Behavior |
 | --- | --- | --- |
 | `StopSubagent` | `SubagentStatus` | RUNNING: FINISHING, cancels the loop and the timer, and goes to `FinishSubagent{stopped}`. INITIALIZING: records `StopRequest`. Any other status answers whether the subagent has ended; a repeat changes nothing |
-| `GetSubagentSnapshot` | None | The retained read: identity, kind, description, base commit, status, model calls, configuration and outcome, never the prompt. Serves a completed execution |
+| `GetSubagentSnapshot` | None | The retained read: identity, kind, description, base commit, status, last message sequence, configuration and outcome, never the prompt. Serves a completed execution |
 | `GetDexSummary`, `GetDexDisplay` | None | The Dex Web row and header |
 
 | Effect | Identity and recovery |

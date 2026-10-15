@@ -10,14 +10,12 @@
 # start_agent is refused with subagent_limit_reached. Once they reported, two
 # quick subagents and one that surveys the source start, which makes six
 # started since the user's message, so the next start is refused with
-# subagent_budget_reached. The survey subagent makes its kind's 40 model
-# calls: the last one allows no tool and writes the report (last_call). The
-# pauses order the reports: the first five arrive inside the turn, and the
-# survey's report opens the one automatic turn. It changes nothing in the
+# subagent_budget_reached. The pauses order the reports: the first five arrive
+# inside the turn, and the survey's report opens the one automatic turn. It changes nothing in the
 # workspace.
 name: subagent-limit
 title: "Subagent limits"
-description: "The running and the per-message subagent limits refuse a start, and a subagent reports at its model-call limit."
+description: "The running and the per-message subagent limits refuse a start, and a delayed subagent report opens a turn."
 category: agent_feature
 inputs:
   - label: "Delegate past the limits"
@@ -46,7 +44,7 @@ inputs:
           - name: start_agent
             input: {description: "Quick check two", kind: investigate, prompt: "Report at once. [[subagent:subagent-limit/quick]]"}
           - name: start_agent
-            input: {description: "Survey the source", kind: investigate, prompt: "List the source until your model calls run out, then report. [[subagent:subagent-limit/survey]]"}
+            input: {description: "Survey the source", kind: investigate, prompt: "List the source and report. [[subagent:subagent-limit/survey]]"}
       - text: "Trying a seventh subagent."
         tool_uses:
           - name: start_agent
@@ -58,7 +56,7 @@ inputs:
           - name: bash
             input: {command: "sleep 20", description: "Wait for the quick checks", timeout_seconds: 300}
       - text: "The survey runs on; its report arrives as a notification."
-      - text: "The survey subagent reported at its model-call limit."
+      - text: "The survey subagent reported its findings."
         notification: task
 subagents:
   slow:
@@ -76,14 +74,12 @@ subagents:
   survey:
     kind: investigate
     replies:
-      - text: "Waiting for the other checks to report."
+      - text: "Waiting before surveying the source."
         tool_uses:
           - name: bash
-            input: {command: "sleep 30", description: "Wait for the other checks", timeout_seconds: 300}
+            input: {command: "sleep 30", description: "Wait before the survey", timeout_seconds: 300}
       - text: "Listing the source."
         tool_uses:
           - name: glob
             input: {pattern: "**/*.tsx", path: web/src}
-        repeat: 38
-      - text: "The survey listed the source until its model calls ran out: web/src holds App.tsx and main.tsx."
-        last_call: true
+      - text: "The survey found that web/src holds App.tsx and main.tsx."

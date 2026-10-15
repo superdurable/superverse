@@ -163,9 +163,6 @@ func (h *handler) plan(ctx context.Context, request messagesRequest) (reply, str
 	if err != nil {
 		return reply{}, "", err
 	}
-	if step := selected.scriptStep(); step != nil && step.LastCall && !request.allowsNoTool() {
-		return reply{}, "", fmt.Errorf("scenario %s at %s answers a subagent's last call, which the request makes with tool_choice none", name, at)
-	}
 	for _, block := range answer.blocks {
 		switch {
 		case block.kind != conversation.BlockTypeToolUse:

@@ -1742,7 +1742,6 @@
       "lib/session/SessionProvider.tsx",
       "lib/session/agent-types.ts",
       "lib/session/agent-view.ts",
-      "lib/session/command-failure.ts",
       "lib/session/design/use-design-shown.ts",
       "lib/session/design/use-flow-design.ts",
       "lib/session/message-merge.ts",

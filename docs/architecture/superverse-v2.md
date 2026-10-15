@@ -2269,7 +2269,7 @@ Required scenarios:
   recovery, bounded parallel order, Git conflicts and rechecking.
 - Subagents: a repeated start joins the one execution and a late admission is
   denied; the running limit and the per-message budget refuse a start without an
-  effect; a subagent reports at its model-call limit; a merge applies, discards
+  effect; a subagent reports or reaches its duration limit; a merge applies, discards
   or leaves a content conflict and repeats its receipt; `stop_task`, the Stop
   button and the Project's deletion each stop a running subagent, which saves its worktree; a Worker replacement during a subagent's
   command runs the command once.

@@ -11,7 +11,7 @@ limits. The main agent starts it, keeps talking to the user, and merges the resu
 | Always in the background | `start_agent` returns at once with a task ID. Completion arrives as a notification ([notifications](notifications-and-feedback.md)); the main agent never waits |
 | Own context | A subagent sees none of the conversation. Its prompt and the repository are everything it knows. Only its report returns to the main agent |
 | Own worktree | It works in a git worktree under `/workspace/.git`, so it cannot disturb the main workspace. Its changes reach the workspace only through `merge_agent_changes` |
-| Bounded | Per-kind limits on model calls and duration; at most 3 run at once; at most 6 start without user input |
+| Bounded | Per-kind duration limits; at most 3 run at once; at most 6 start without user input |
 | Frozen | Model, effort, system prompt and tools are fixed at start. The model is the Session's model at that moment |
 | Stoppable | The user's Stop stops every subagent; the main agent can stop one with `stop_task` |
 | Not a second Session | It cannot ask the user, set timers, commit, push, start agents or run background commands |
@@ -29,12 +29,12 @@ The main agent's prompt contains a delegation section with these rules:
   what the report must contain. There is no way to message a running subagent.
 - Start independent subagents in the same reply.
 
-| Kind | Use | Effort setting | Model-call limit | Duration limit | Workspace |
-|---|---|---|---|---|---|
-| `investigate` | Answer a question about the code or its dependencies | `agent.subagentInvestigateEffort`, default `low` | 40 | 20 minutes | A worktree of the application |
-| `change` | Make a bounded change and test it | `agent.subagentChangeEffort`, default `medium` | 80 | 45 minutes | A worktree of the application |
-| `connector_select` | Choose connectors for the requirements | `medium`, fixed | 25 | 10 minutes | A worktree of the application, read only |
-| `connector_develop` | Build a missing connector or operation, or fix a connector, for a draft pull request | `agent.subagentConnectorDevelopEffort`, default `high` | 80 | 45 minutes | A worktree of the connectors library on the connector's branch |
+| Kind | Use | Effort setting | Duration limit | Workspace |
+|---|---|---|---|---|
+| `investigate` | Answer a question about the code or its dependencies | `agent.subagentInvestigateEffort`, default `low` | 20 minutes | A worktree of the application |
+| `change` | Make a bounded change and test it | `agent.subagentChangeEffort`, default `medium` | 45 minutes | A worktree of the application |
+| `connector_select` | Choose connectors for the requirements | `medium`, fixed | 10 minutes | A worktree of the application, read only |
+| `connector_develop` | Build a missing connector or operation, or fix a connector, for a draft pull request | `agent.subagentConnectorDevelopEffort`, default `high` | 45 minutes | A worktree of the connectors library on the connector's branch |
 
 The two connector kinds, their prompts, tools, reports and the `ConnectorContributionFlow` that
 publishes a contribution are specified in [connectors](connectors.md#connector-subagents). The
@@ -186,8 +186,7 @@ The subagent's prompt rules:
 - Run one command at a time, in the foreground; a command past its timeout is stopped.
 - Do not commit, push, rebase, stash or change branches.
 - Finish with a report: what you found or changed, the files involved and anything the
-  main agent must decide. The report is your last message; it is capped at 24 KiB. When the
-  model-call limit is reached, the last call is asked for the report and can call no tool.
+  main agent must decide. The report is your last message; it is capped at 24 KiB.
 
 The path rules of the confinement package apply with the worktree as the agent root
 ([sandbox](sandbox.md#sandboxd-and-confinement)). The isolation is a soft one: a command
@@ -418,9 +417,10 @@ are declared in [session](session.md); their semantics are above. In outline:
   Streams `AgentActivity`, `AssistantText` and `ReasoningSummary`, 10 MiB each, shared by every
   execution of the Flow type, which the Session's Watch relays as a live status line while the
   Session's record stays canonical.
-  `AgentState.TurnModelCalls` is written only by this Flow, including output-limit
-  replies, and retains each kind's existing 25/40/80-call bound; main Session
-  turns no longer increment or check it.
+  `AgentState` no longer counts model calls. A persisted prelaunch
+  `turn_model_calls` field and `Config.model_calls` field are ignored on decode.
+  Existing FlowIDs, Step identities, message keys and deadlines are unchanged;
+  an open execution continues at its next model-call boundary without a cap.
 - **Steps and RPCs.** `InitializeSubagent`, `RecordSubagentAdmissionFailure`,
   `ApplySubagentAdmission`, `AwaitSubagentDeadline`, `CallSubagentModel`,
   `CompactSubagentContext`, `RecordSubagentFailure`, `RouteSubagentTools`,
@@ -490,8 +490,9 @@ three end-to-end cases stay the only E2E; subagent paths are Dex integration tes
   and the worktree is intact; an instance removed while a change subagent's check runs makes
   the finish, not the loop, refresh the lease, and the merge applies the change saved on the
   next instance of the same volume.
-- **Limits.** Model-call and duration limits end a subagent with a report; the last call
-  asks for the report; `timed_out` and `stopped` save their changes.
+- **Limits.** A subagent runs until it reports, is stopped or reaches its duration
+  deadline; `timed_out` and `stopped` save their changes. No model-call cap or
+  forced final model call remains.
 - **Stop.** `stop_task` stops a running subagent, which saves its worktree and reports
   STOPPED, and its report opens an automatic turn; the Stop button stops one while no turn
   runs, and the paused automatic turns record its report without opening a turn; a Stop that
@@ -527,4 +528,24 @@ owns the per-Flow contract and the README of `session/agenttasks` the records an
 SubagentFlow section of [the specification](../superverse-v2.md#subagentflow) summarizes them.
 The Git helpers' README (`internal/agents/sandbox/workspace/git`) describes the worktree
 operations and the merge receipt.
+
+## Resource Scalability
+
+No new cloud, Kubernetes, Temporal, Dex or database resource is created. One
+admitted subagent still owns one Dex Flow and one worktree; the existing Session
+limits of three running subagents and six starts between user messages cap
+simultaneous work, while each kind's 10-, 20- or 45-minute deadline ends its
+execution. Project deletion stops running subagents and removes worktrees;
+Dex retains closed execution state for its configured retention period.
+
+Removing the call cap can grow `ArchivedMessages` further within one subagent
+execution. `CurrentMessages` stays below 20 entries and archives its oldest ten;
+`ArchivedMessages` uses exact sequence keys and is retained with that Flow.
+There is no per-execution model-call count maximum now, so the number of archive
+chunks is limited by the deadline and actual model/tool latency, not a fixed
+quota. The pinned Flow contract and SDK do not declare a separate archive-chunk
+quota (checked 2026-10-13); capacity must be measured under sustained subagent
+work. The three 10 MiB Streams retain their existing shared Flow-type budget
+and are best effort. Each call uses the existing model and Sandbox data paths:
+no cloud control-plane call or tenant-wide scan occurs per call, poll or event.
 

@@ -155,9 +155,7 @@ replies in order, with the same replay check; a compaction summary of it carries
 the catalog. At startup every `start_agent` call must name a declared script of the call's kind,
 every declared script must be started, and each script's tools must be its kind's tool set
 (`agentloop.SubagentTools`, whose `bash` has no `run_in_background`). A reply marked
-`last_call: true` answers a subagent's last model call before its kind's limit, which the
-subagent makes with `tool_choice` `none` and the report instruction; a request without that tool
-choice is rejected there. A `connector_develop` subagent's root is a worktree of the connectors
+A `connector_develop` subagent's root is a worktree of the connectors
 library, which the template does not describe: its file tools play only on the files its script
 writes, and a read or edit of another library file is not checked.
 
@@ -232,7 +230,6 @@ subagents:                        # the scripts the start_agent prompts name: [[
     kind: investigate             # investigate or change, the start_agent call's kind
     replies:                      # the subagent's model calls; the last is its report
       - text: "..."
-        last_call: true           # the subagent's last call before its limit: tool_choice none
 ```
 
 A reply is a stream or an `error`, which answers the call with an Anthropic error body
@@ -338,7 +335,7 @@ or subagent kind ships with its scenario and the test that runs it.
 | `connector-develop-operation` | `project_feature` | message, confirm | A `connector_develop` subagent (slug `newsapi`, contribution `operation`) changes only the newsapi module: `TestSessionMockConnectorDevelopOperationDexIntegration` |
 | `connector-develop-fix` | `project_feature` | message, answers | The user agrees to submit a fix with `request_user_input`, then a `connector_develop` subagent (slug `newsapi`, contribution `fix`) changes only the newsapi module: `TestSessionMockConnectorDevelopFixDexIntegration` |
 | `connector-pr-retry` | `platform_error` | message, confirm | A `connector_develop` subagent builds `mockretry`; its draft pull request cannot be opened, and the `connector` notification (`notification: connector`) opens a turn that tells the user: the manual `TestSessionMockConnectorPullRequestRetryGitHubIntegration`, on a lane whose upstream library GitHub refuses |
-| `subagent-limit` | `agent_feature` | message | Seven `start_agent` calls in one turn: the fourth refused with `subagent_limit_reached` while three run, the seventh with `subagent_budget_reached`; a survey subagent makes its kind's 40 model calls and reports in the last (`last_call`): `TestSessionMockSubagentLimitDexIntegration` |
+| `subagent-limit` | `agent_feature` | message | Seven `start_agent` calls in one turn: the fourth refused with `subagent_limit_reached` while three run, the seventh with `subagent_budget_reached`; a delayed survey subagent reports in an automatic turn: `TestSessionMockSubagentLimitDexIntegration` |
 
 ## Files
 

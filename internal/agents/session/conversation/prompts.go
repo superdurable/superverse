@@ -50,8 +50,6 @@ var (
 	subagentConnectorDevelopPromptFile string
 	//go:embed prompts/v1/connector_contributor_skill.md
 	connectorContributorSkillFile string
-	//go:embed prompts/v1/subagent_report.md
-	subagentReportPromptFile string
 	//go:embed prompts/v1/remote_agent.md
 	remoteAgentPromptFile string
 )
@@ -80,9 +78,6 @@ var (
 	SubagentChangePrompt           = subagentPrompt(prompt(subagentApplicationRootPromptFile), prompt(subagentChangePromptFile))
 	SubagentConnectorSelectPrompt  = subagentPrompt(prompt(subagentApplicationRootPromptFile), prompt(subagentConnectorSelectPromptFile))
 	SubagentConnectorDevelopPrompt = subagentPrompt(prompt(subagentConnectorDevelopPromptFile), "# Connector contributor guide\n\n"+skillBody(connectorContributorSkillFile))
-	// SubagentReportInstruction ends the request of a subagent's last model
-	// call, which may call no tool: the report.
-	SubagentReportInstruction = prompt(subagentReportPromptFile)
 	// RemoteAgentPrompt opens a remote agent's context: how it works through
 	// the superverse tools, its messages and the Dex skills.
 	RemoteAgentPrompt = strings.ReplaceAll(prompt(remoteAgentPromptFile), "{{sender_envelope_prefix}}", SenderEnvelopePrefix)
