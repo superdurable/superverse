@@ -10,7 +10,9 @@
 import argparse
 import json
 import subprocess
+import sys
 import time
+from pathlib import Path
 
 import build_inputs
 from commands import child_cancellation, run, stop_children
@@ -64,9 +66,17 @@ def delete(args):
 COMMANDS = {"up": up, "build": build, "deploy": deploy, "ports": ports, "status": status, "e2e": e2e, "delete": delete, "builder": builder}
 
 
+def monitoring(args):
+    # The optional implementation and its deployment assets are private operations material.
+    sys.path.insert(0, str(ROOT / "infra-as-code/monitoring"))
+    import kind_monitoring
+    {"up": kind_monitoring.up, "down": kind_monitoring.down, "check": kind_monitoring.check}[args.monitoring_action]()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=COMMANDS)
+    parser.add_argument("command", choices=[*COMMANDS, "monitoring"])
+    parser.add_argument("monitoring_action", nargs="?", choices=["up", "down", "check"])
     parser.add_argument("--component", choices=["all", *build_inputs.COMPONENTS], default="all")
     parser.add_argument("--secret-env-file", help="deploy: private env file with the server secrets; it may hold other keys, which are ignored "
                                                   "because the configuration profile is the only source of every setting")
@@ -78,6 +88,12 @@ def main():
     parser.add_argument("--confirm")
     parser.add_argument("--dependencies-only", action="store_true")
     args = parser.parse_args()
+    if args.command == "monitoring":
+        require(args.monitoring_action is not None, "Choose monitoring up, down or check")
+        require_kind_version()
+        with kind_action_lock("monitoring-" + args.monitoring_action):
+            monitoring(args)
+        return
     if args.command == "status":
         status(args)
         return

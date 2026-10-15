@@ -9,6 +9,7 @@ App installation are reused; no new App or credentials are required by this layo
 `./infra-as-code/sv2` is the operator entry for the Local Kind and Local Native lanes. Both use the platform Helm chart at `kubernetes/charts/superverse-platform` and the pinned local inputs. The platform runs one Go server, Studio and platform Dex; Preview uses the Sandbox-local engine and Live runs in its own Project scope. Streams are best effort and do not own durable business state.
 
 Hosted deployment is described in private operations material.
+The optional monitoring installation is also maintained as private operations material.
 
 ## Local Kind
 
