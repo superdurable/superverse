@@ -177,6 +177,7 @@ the current contract.
 | [`tests/e2e/integration/setup`](tests/e2e/integration/setup/README.md) | Focused Tools, Setup scenarios on a local lane: the Live tab's banner and Next publish controls over two versions the mock model pushes. |
 | [`tests/e2e/integration/timeline`](tests/e2e/integration/timeline/README.md) | The environment timeline spec: the Interface's Preview History lists a refused push with its version and no commit hash. |
 | [`tests/e2e/journey`](tests/e2e/journey/README.md) | Retained end-to-end journeys through the real Studio, model, GitHub, Sandbox and application APIs that keep the resources they create. |
+| [`tests/e2e/manual`](tests/e2e/manual/README.md) | Holds opt-in provider E2E cases that require private credentials and operator consent outside the required local lanes. |
 | [`tests/e2e/support`](tests/e2e/support/README.md) | Modules the specs share: Studio BFF calls, accounts, Projects, configuration, publishing, Flow runs, Session transport, repository host reads, private fixtures and JSON assertions. |
 | [`tests/e2e/support/configuration`](tests/e2e/support/configuration/README.md) | Opt-in configuration helpers: the Native read-fault recovery case and the pieces of a two-version Live fixture for Setup's Live tab specs. |
 | [`tests/e2e/support/coverage`](tests/e2e/support/coverage/README.md) | Records, for each passing E2E spec, the Studio source files whose code ran in its browser pages, for the committed coverage map. |

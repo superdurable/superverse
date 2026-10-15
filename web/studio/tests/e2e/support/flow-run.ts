@@ -42,7 +42,7 @@ interface StudioSummaryRun {
  * The Flow API path of the Preview or Live target and the headers naming the instance this test observes:
  * the Session's workspace for the Project's Preview, the Project's current deployment for Live.
  */
-async function observedTarget(
+export async function observedTarget(
   page: Page,
   projectId: string,
   environment: "preview" | "live",

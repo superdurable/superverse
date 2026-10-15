@@ -247,6 +247,28 @@ mapped to its `AgentModel` enum value before the comparison), and
 need private provider configuration and are a separate configured acceptance;
 this journey does not replace the three required Local Kind cases.
 
+## Manual real-provider newsletter
+
+`manual/newsletter-product.spec.ts` is an opt-in product scenario. It creates a fresh
+TeamSpace and Project, runs the `newsletter-app` mock-model script through its first
+successful push, configures four real TeamSpace connections in Setup, chooses the Slack
+channel and admin member through Studio's pickers, starts Preview, subscribes one
+recipient, posts `publish newsletter` as that admin using an optional Slack user token
+or pauses for the operator to post it, finds the new campaign through Preview Runs,
+and requires one successful Gmail
+delivery in the completed campaign. The one-recipient campaign makes the aggregate
+`recipientCount=1, sentCount=1, failedCount=0, unknownCount=0` a per-recipient assertion.
+The test does not run in the three default E2E cases, `make required-lanes`, or `make ci`.
+
+Run it only on a built Local Native instance, with a headed browser and the private
+`SUPERVERSE_E2E_NEWSLETTER_FILE` described in the private manual newsletter runbook.
+The operator completes each Slack, GitHub and Google consent screen in that browser.
+The fixture, self-signed localhost certificate and configuration layer stay outside Git; set
+`SUPERVERSE_E2E_CAPTURE=off` to keep credential-bearing browser artifacts off disk.
+Only this manual spec accepts the local callback certificate. The test asks for
+a Slack message link only if its Preview Runs lookup cannot find the campaign.
+
+
 ## Additional scenarios
 
 `integration/administrator-projects.spec.ts` covers normal administrator login, two distinct
