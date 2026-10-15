@@ -13,7 +13,7 @@ import { listEnvironmentEvents } from "@/lib/api/project";
 import { usePagedList } from "@/lib/browser/use-paged-list";
 import type { EnvironmentEvent__Output } from "@/lib/generated/protobuf/superverse/v2/EnvironmentEvent";
 import { PUBLISH_STAGES, timingSpan } from "@/lib/project/publishing/publish-stages";
-import { formatElapsedDuration, formatTimeAgo } from "@/lib/shared/format";
+import { formatElapsedDuration } from "@/lib/shared/format";
 import { failureProblem } from "@/lib/shared/problem/problem";
 import { timestampToISO } from "@/lib/shared/protobuf";
 import {
@@ -24,6 +24,7 @@ import {
   OUTCOME_WORDS,
 } from "@/components/project/activity/event-text";
 import { Button } from "@/components/ui/Button";
+import { HistoryList, HistoryRow } from "./HistoryRows";
 import { RequestProblem } from "./RequestProblem";
 
 /** The phases of the stages a build runs, apart from those a deployment runs. */
@@ -79,56 +80,51 @@ export function useLiveHistory(projectId: string, reloadKey: string) {
 }
 
 /**
- * Live's history: publishes, rollbacks and cancelled publishes, each with who and when. A failure shows
- * why in a line; its full problem is under the stage bar while it is the latest publish.
+ * Live's history: publishes, rollbacks and cancelled publishes, one line each with who and when, opening
+ * underneath to the durations, the stage a cancel stopped in or why it failed. A failure's full problem is
+ * under the stage bar while it is the latest publish.
  */
 export function LiveHistory({ events }: { events: ReturnType<typeof useLiveHistory> }) {
   // Ages are read when the list first renders.
   const [now] = useState(() => Date.now());
   return (
-    <section aria-label="Live history" data-testid="live-history">
-      <h3 className="mb-2 text-[11px] font-normal tracking-[0.07em] text-ink-faint uppercase">Live history</h3>
+    <HistoryList
+      label="Live history"
+      heading="Live history"
+      testId="live-history"
+      footer={
+        events.nextPageToken && (
+          <Button className="mt-2" size="sm" disabled={events.loading} onClick={() => void events.loadMore()}>
+            {events.loading ? "Reading…" : "Older events"}
+          </Button>
+        )
+      }
+    >
       {events.error && <RequestProblem operation="Reading Live's history" reason={events.error} />}
-      <div className="overflow-hidden rounded-[10px] border border-line-soft bg-panel">
-        {!events.loaded && !events.error && (
-          <p className="px-3 py-2.5 text-[13px] text-ink-faint">Reading the history…</p>
-        )}
-        {events.loaded && events.items.length === 0 && (
-          <p className="px-3 py-2.5 text-[13px] text-ink-faint">Nothing has been published yet.</p>
-        )}
-        <ol className="divide-y divide-line-faint">
-          {events.items.map((event) => {
-            const at = timestampToISO(event.occurredAt);
-            const outcome = eventOutcome(event);
-            const detail = eventDetail(event);
-            return (
-              <li
-                key={eventKey(event)}
-                className="flex items-start gap-2.5 px-3 py-2.25 text-[12.5px]"
-                data-kind={event.kind}
-              >
-                <time className="w-19 shrink-0 text-ink-faint" dateTime={at ?? undefined}>
-                  {formatTimeAgo(at, now)}
-                </time>
-                <span className="min-w-0 flex-1">
-                  <span className="text-ink">
-                    {eventSentence(event, "live")} <b className="font-semibold">{eventVersion(event)}</b>
-                  </span>
-                  {outcome && outcome !== "READY" && (
-                    <span className={OUTCOME_WORDS[outcome].tone}> · {OUTCOME_WORDS[outcome].words}</span>
-                  )}
-                  {detail && <small className="block text-[11.5px] text-ink-faint">{detail}</small>}
-                </span>
-              </li>
-            );
-          })}
-        </ol>
-      </div>
-      {events.nextPageToken && (
-        <Button className="mt-2" size="sm" disabled={events.loading} onClick={() => void events.loadMore()}>
-          {events.loading ? "Reading…" : "Older events"}
-        </Button>
+      {!events.loaded && !events.error && (
+        <p className="px-3 py-2.5 text-[13px] text-ink-faint">Reading the history…</p>
       )}
-    </section>
+      {events.loaded && events.items.length === 0 && (
+        <p className="px-3 py-2.5 text-[13px] text-ink-faint">Nothing has been published yet.</p>
+      )}
+      <ol className="divide-y divide-line-faint">
+        {events.items.map((event) => {
+          const outcome = eventOutcome(event);
+          const detail = eventDetail(event);
+          return (
+            <li key={eventKey(event)} data-kind={event.kind}>
+              <HistoryRow at={timestampToISO(event.occurredAt)} now={now} detail={detail || undefined}>
+                <span className="text-ink">
+                  {eventSentence(event, "live")} <b className="font-semibold">{eventVersion(event)}</b>
+                </span>
+                {outcome && outcome !== "READY" && (
+                  <span className={OUTCOME_WORDS[outcome].tone}> · {OUTCOME_WORDS[outcome].words}</span>
+                )}
+              </HistoryRow>
+            </li>
+          );
+        })}
+      </ol>
+    </HistoryList>
   );
 }

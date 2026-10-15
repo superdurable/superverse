@@ -5,7 +5,6 @@
     "/superverse.v2.AgentService/ResolveToolApproval",
     "/superverse.v2.AgentService/SteerQueuedMessage",
     "/superverse.v2.AgentService/UpdateSessionModel",
-    "/superverse.v2.ApplicationEnvironmentService/SaveApplicationEnvironment",
     "/superverse.v2.ConnectorService/ReleaseUnusedConnections",
     "/superverse.v2.ConnectorService/SaveOperationConfiguration",
     "/superverse.v2.ConnectorService/SaveTriggerBinding",

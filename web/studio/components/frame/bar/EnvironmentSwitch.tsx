@@ -14,8 +14,9 @@ import { EnvironmentStatusTab, type TabStatus } from "@/components/frame/status/
 /**
  * Preview | Live: which environment every surface shows, each with one status dot. A word follows an
  * environment's name only when something is off, and it leads to the fix (`fixHrefOf`, which those
- * who cannot fix it go without). Without a Live deployment the Live name is a label that says so; a
- * role that works on Live only sees Live alone. A pending Setup write adds "Saving…" after them.
+ * who cannot fix it go without), or is the fix itself (`previewWord`, such as a stopped Preview's Start).
+ * Without a Live deployment the Live name is a label that says so; a role that works on Live only sees
+ * Live alone. A pending Setup write adds "Saving…" after them.
  */
 export function EnvironmentSwitch({
   environment,
@@ -25,6 +26,7 @@ export function EnvironmentSwitch({
   fixHrefOf,
   previewStatus,
   liveStatus,
+  previewWord,
   saving,
 }: {
   environment: ProjectEnvironment;
@@ -36,6 +38,8 @@ export function EnvironmentSwitch({
   fixHrefOf?: (environment: ProjectEnvironment, fix: StatusFix) => string;
   previewStatus?: TabStatus;
   liveStatus?: TabStatus;
+  /** Takes the place of Preview's word when given: a word that acts, such as Start for a stopped Preview. */
+  previewWord?: (selected: boolean) => ReactNode;
   /** What the bar says of unsaved Setup writes, such as "Saving…". */
   saving?: ReactNode;
 }) {
@@ -56,6 +60,7 @@ export function EnvironmentSwitch({
             href={hrefOf("preview")}
             status={previewStatus ?? null}
             fixHref={fixHref("preview", previewStatus)}
+            word={previewWord?.(environment === "preview")}
             testId="environment-preview"
           />
         )}

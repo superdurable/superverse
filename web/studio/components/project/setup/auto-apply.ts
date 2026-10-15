@@ -27,13 +27,15 @@ export function autoApplyDue(commands: ReturnType<typeof usePreviewCommands>, he
 }
 
 /**
- * Applies Setup's saved Preview settings on their own once the edits settle: one apply per burst of changes, and
- * never twice for the same revision, so a refused apply waits for the next change or the problem's Apply again
- * instead of repeating.
+ * Applies Setup's saved Preview settings on their own once the edits settle: one apply per burst of changes.
+ * While a push's update runs, apply is not allowed, so Setup waits for it. An apply is never repeated for the
+ * same configuration revision and the same push update, so a refused or failed one waits for the next change,
+ * a push's update that overtook it, or the problem's Apply again, instead of repeating.
  */
 export function useAutoApply(commands: ReturnType<typeof usePreviewCommands>, headCommit: string) {
   const due = autoApplyDue(commands, headCommit);
-  const revision = commands.configuration?.revision ?? "";
+  const update = commands.preview?.automaticDeployment;
+  const revision = JSON.stringify([commands.configuration?.revision ?? "", update?.commit ?? "", update?.status ?? ""]);
   const tried = useRef("");
   const act = useRef(commands.act);
   useEffect(() => {

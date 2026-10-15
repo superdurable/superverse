@@ -60,7 +60,7 @@ Next publish change publishes from either tab. While a publish runs (`usePublish
 The popover prepares a version's Release when it has none (`usePublishCheck`), never again for one whose
 preparation failed, and checks the Preview's own source meanwhile.
 
-`publish-opener.ts` lets any page open the popover: Tools ▸ Publishing's "Publish V13" and the Live
-tab's "Publish this change" (`openPublishPopover({ mode: "live" })`), which publishes Live's own version
-again with its waiting settings (the build records `LIVE_CODE`, no reason). With nothing waiting it offers
-"Publish V12 again", the same code and settings rebuilt.
+The bar's Publish is the one way in. On the Live tab it opens on Live's own version, which publishes it
+again with its waiting settings (the build records `LIVE_CODE`, no reason); with nothing waiting it offers
+"Publish V12 again", the same code and settings rebuilt. `publish-opener.ts` lets a page open the popover:
+a failed publish's "Publish again" in Tools ▸ Publishing (`openPublishPopover`).

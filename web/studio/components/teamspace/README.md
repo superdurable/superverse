@@ -1,7 +1,7 @@
 # TeamSpace pages
 
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
-Purpose: The TeamSpace switcher, creation and landing, page gate, Home header, People, a Project's Permissions and the Project role chip.
+Purpose: The TeamSpace switcher, creation and landing, page gate, Home header, People, a Project's Permissions and Share, and the Project role chip.
 
 Importers: `app`, `components/frame/bar`, `components/project` and `components/shell` import this directory.
 
@@ -37,3 +37,6 @@ and only a Project's owners (the platform admin reads as one) change the Project
 select or Remove, and a member who left the TeamSpace stays listed in a Project with a role that grants nothing.
 Every change answers with all the members, which the page shows at once; a rule the server refuses, such as
 removing the only owner of a Project, shows the server's message.
+
+`ProjectShare` is the bar's Share: an owner adds a member of the TeamSpace with a role through `AddProjectMember`,
+the same form Permissions shows, and anyone copies the link to the page shown.

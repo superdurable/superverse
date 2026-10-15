@@ -7,6 +7,7 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { focusAnchor } from "@/lib/browser/hash-focus";
 import type { EnvironmentStatus, StatusFix, StatusTone } from "@/lib/project/setup/environment-status";
 import type { ProjectEnvironment } from "@/lib/shared/studio-routes";
@@ -75,6 +76,7 @@ export function EnvironmentStatusTab({
   status,
   title,
   fixHref,
+  word,
   testId,
 }: {
   environment: ProjectEnvironment;
@@ -85,6 +87,8 @@ export function EnvironmentStatusTab({
   title?: string;
   /** Where the word leads, or null when it leads nowhere. */
   fixHref: string | null;
+  /** A word that acts, drawn in place of the status's own. */
+  word?: ReactNode;
   testId: string;
 }) {
   const tone = status?.tone ?? "plain";
@@ -119,36 +123,37 @@ export function EnvironmentStatusTab({
           {label}
         </span>
       )}
-      {status?.word &&
-        (fixHref && status.fix ? (
-          <Link
-            href={fixHref}
-            onClick={anchor ? () => focusAnchor(anchor) : undefined}
-            aria-label={`${name} ${status.word}: ${FIX_WORDS[status.fix.to]}`}
-            title={`${name}: ${status.detail}. Go to the fix.`}
-            className={cx(
-              FOCUS,
-              "-ml-1 max-w-36 min-w-0 truncate pr-2.25 font-medium group-data-[tight=true]/bar:max-w-20 hover:underline",
-              selected ? "text-panel" : WORDS[tone],
-            )}
-            data-testid={`${testId}-status`}
-            data-tone={tone}
-          >
-            · {status.word}
-          </Link>
-        ) : (
-          <span
-            title={`${name}: ${status.detail}`}
-            className={cx(
-              "-ml-1 max-w-36 min-w-0 truncate pr-2.25 font-medium group-data-[tight=true]/bar:max-w-20",
-              selected ? "text-panel" : WORDS[tone],
-            )}
-            data-testid={`${testId}-status`}
-            data-tone={tone}
-          >
-            · {status.word}
-          </span>
-        ))}
+      {word ??
+        (status?.word &&
+          (fixHref && status.fix ? (
+            <Link
+              href={fixHref}
+              onClick={anchor ? () => focusAnchor(anchor) : undefined}
+              aria-label={`${name} ${status.word}: ${FIX_WORDS[status.fix.to]}`}
+              title={`${name}: ${status.detail}. Go to the fix.`}
+              className={cx(
+                FOCUS,
+                "-ml-1 max-w-36 min-w-0 truncate pr-2.25 font-medium group-data-[tight=true]/bar:max-w-20 hover:underline",
+                selected ? "text-panel" : WORDS[tone],
+              )}
+              data-testid={`${testId}-status`}
+              data-tone={tone}
+            >
+              · {status.word}
+            </Link>
+          ) : (
+            <span
+              title={`${name}: ${status.detail}`}
+              className={cx(
+                "-ml-1 max-w-36 min-w-0 truncate pr-2.25 font-medium group-data-[tight=true]/bar:max-w-20",
+                selected ? "text-panel" : WORDS[tone],
+              )}
+              data-testid={`${testId}-status`}
+              data-tone={tone}
+            >
+              · {status.word}
+            </span>
+          )))}
     </span>
   );
 }

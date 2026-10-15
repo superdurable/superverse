@@ -56,11 +56,11 @@ function setupMarks(page: Page) {
 
 async function openConnectors(page: Page, projectId: string) {
   await page.goto(`/p/${projectId}/tools?tool=connectors`);
-  await expect(page.getByTestId("apply-header")).toBeVisible({ timeout: 5 * 60_000 });
-  await expect(page.getByTestId("next-publish-line")).toBeVisible();
+  await expect(page.getByTestId("preview-status")).toBeVisible({ timeout: 5 * 60_000 });
+  await expect(page.getByTestId("next-publish-status")).toBeVisible();
 }
 
-test("Setup autosaves Preview and applies it on its own, gates Apply on READY, refuses a write another tab overtook and follows Preview on the next publish", async ({
+test("Setup autosaves Preview and applies it on its own once READY, refuses a write another tab overtook and follows Preview on the next publish", async ({
   page,
   context,
 }, testInfo) => {
@@ -73,11 +73,11 @@ test("Setup autosaves Preview and applies it on its own, gates Apply on READY, r
   const { headCommit } = await readSession(page, projectId);
   await awaitConfigurationNotice(page, projectId, headCommit, "summary-model");
 
-  // The connection is missing: Apply stays disabled, and the gap is a link that focuses its row.
+  // The connection is missing: Preview's state under its column names the gap, a link that focuses its row.
+  // Nothing applies by hand; Setup applies on its own.
   await openConnectors(page, projectId);
-  const header = page.getByTestId("apply-header");
-  const apply = page.getByTestId("setup-bar").getByRole("button", { name: "Apply to Preview", exact: true });
-  await expect(apply).toBeDisabled();
+  const header = page.getByTestId("preview-status");
+  await expect(page.getByRole("button", { name: "Apply to Preview", exact: true })).toHaveCount(0);
   const gap = header.getByRole("list", { name: "Missing configuration" }).getByRole("link").first();
   await expect(gap).toContainText("summary-model");
   await gap.click();
@@ -141,20 +141,18 @@ test("Setup autosaves Preview and applies it on its own, gates Apply on READY, r
   await expect(conflict).toHaveCount(0);
   await other.close();
 
-  // Whichever tab applied last, the Preview ends up running the revision this tab now knows, and Apply to
-  // Preview has nothing left to apply.
+  // Whichever tab applied last, the Preview ends up running the revision this tab now knows.
   await expect(page.getByTestId("unapplied-count")).toHaveText(/^Running (V\d+ )?with these settings$/, {
     timeout: 10 * 60_000,
   });
-  await expect(apply).toBeDisabled();
 
   // The Next publish column: before the first publish the greeting follows what Preview applied, so its
-  // control reads "Same as Preview" and the line offers the version to publish.
-  await expect(page.getByTestId("next-publish-line")).toContainText(/Ready to publish V\d+ with these settings/, {
+  // control reads "Same as Preview" and the state under the column offers the version to publish.
+  await expect(page.getByTestId("next-publish-status")).toContainText(/Ready to publish V\d+ with these settings/, {
     timeout: 60_000,
   });
-  // The bar's Publish, over the Next publish column, opens the Publish popover on that version; Escape closes it.
-  await page.getByTestId("setup-publish").click();
+  // The bar's Publish opens the Publish popover on that version; Escape closes it.
+  await page.getByTestId("publish-to-live").click();
   const popover = page.getByRole("dialog", { name: "Publish to Live" });
   const head = (await readSession(page, projectId)).headCommit;
   await expect(popover.getByTestId(`publish-version-${head}`)).toHaveAttribute("aria-checked", "true");

@@ -106,7 +106,7 @@ export async function publishFromPopover(page: Page, popover: Locator) {
   return { copied, response, shown, shownPreview };
 }
 
-/** Opens the popover on Live's own version from the Live tab's banner, or from the bar when nothing waits. */
+/** Opens the popover on Live's own version from the bar's Publish on Setup's Live tab. */
 async function openOnLiveVersion(page: Page, projectId: string, liveReleaseId: string) {
   const target = {
     projectId,
@@ -116,13 +116,19 @@ async function openOnLiveVersion(page: Page, projectId: string, liveReleaseId: s
   };
   const { configuration } = await rpcResult(page.request, "GetProjectConfiguration", { target });
   const waiting = configuration?.items.filter((item) => item.differsFromLive).length ?? 0;
-  // The banner publishes Live's version with what waits, or again with the settings it runs.
-  const banner = page.getByTestId("live-banner");
-  await expect(banner.getByTestId("live-waiting-count")).toHaveText(
-    waiting === 0 ? "Nothing waiting for a publish" : `${waiting} ${waiting === 1 ? "change" : "changes"} waiting`,
+  // The state under Live's name counts what waits; the bar's Publish publishes Live's version with it, or again
+  // with the settings it runs.
+  await expect(page.getByTestId("next-publish-status")).toHaveText(
+    waiting === 0
+      ? "Live runs these settings"
+      : `${waiting} ${waiting === 1 ? "change" : "changes"} waiting for a publish`,
     { timeout: 60_000 },
   );
-  await banner.getByTestId("change-live-configuration").click();
+  const publish = page.getByTestId("publish-to-live");
+  await expect(publish).toHaveAttribute("aria-label", waiting === 0 ? "Publish" : `Publish, ${waiting} waiting`, {
+    timeout: 60_000,
+  });
+  await publish.click();
   const popover = page.getByRole("dialog", { name: "Publish to Live" });
   await expect(popover).toBeVisible();
   return popover;
@@ -141,7 +147,7 @@ export async function publishLive(
   if (mode === "configuration") {
     if (!before.live) throw new Error("A configuration-only change needs a Live version");
     target = before.live.releaseId;
-    // The change is made on Setup's Live tab, whose banner counts it as waiting and opens the popover on it.
+    // The change is made on Setup's Live tab, which counts it as waiting; the bar's Publish opens the popover on it.
     await page.goto(`/p/${projectId}/tools?tool=setup&v=live`);
     await expect(page.getByTestId("setup-checklist")).toBeVisible({ timeout: 10 * 60_000 });
     if (fillConnections) await fillConnections(page, "next");
@@ -315,14 +321,11 @@ async function awaitPublished(
   // The deployment runs the configuration the build froze, as a deployment from the panel does.
   expect(deployment.configurationRevision).toBe(build.configurationRevision);
   expectPhaseTimings(deployment.phaseTimings, ["VerifyReadiness", "ReleaseProjectDeployment"]);
-  // Tools, Publishing's stage bar ends at Go live, and what is Live opens the new address.
+  // Tools, Publishing's stage bar ends at Go live, and what is Live serves; the Interface opens its address.
   const progress = page.getByTestId("publish-progress");
   await expect(progress).toHaveAttribute("data-outcome", "published", { timeout: 60_000 });
   await expect(progress.getByTestId("publish-stages")).toHaveAttribute("aria-valuetext", /^(\d) of \1 stages done$/);
-  await expect(page.getByRole("region", { name: "What is Live" }).getByRole("link", { name: "Open" })).toHaveAttribute(
-    "href",
-    deployment.url,
-  );
+  await expect(page.getByTestId("live-serving-state")).toHaveText("READY");
   return { url: deployment.url, deployment, release, imageDigest: build.imageDigest };
 }
 

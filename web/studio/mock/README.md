@@ -230,9 +230,9 @@ the Live tab's hint, the Live chip and the chat's Live note.
 Tools, Setup (`?tool=setup`) shows one table with a Preview column and a Next publish column, Live's
 next-publish layer, where every item follows what Preview applied until Live sets its own, and Same as
 Preview follows again; a secret and a connection tied to one address are always Live's own. With `v=live`
-it shows the Next publish controls alone under a dark banner that counts what waits for a publish, whose
-"Publish this change" opens the Publish popover on Live's own version; the Next publish line's
-"Publish" opens it on the newest version. Publishing builds the version's copy from the layer
+it shows the Next publish controls alone under a dark banner, with what waits for a publish under Live's
+name; the bar's Publish opens the Publish popover on Live's own version there, and on the newest version
+on the Preview tab. Setup applies Preview's saved changes on its own; there is no Apply button. Publishing builds the version's copy from the layer
 (`DeriveLiveConfiguration`). Named fixtures seed more of Setup and of the Publish popover through the page
 URL, once per mock server and cumulatively, so restart the mock to see one alone:
 
@@ -280,19 +280,20 @@ URL, once per mock server and cumulatively, so restart the mock to see one alone
   Step in the composer as a chip) and Stop. The list folds to a rail of status
   icons with ‹ or by dragging.
 - **Interface** frames the Project's Preview under an address bar with reload,
-  open in a new window, Start and Stop, after the source is prepared and its
-  configuration validated; on Live it shows the Live address with Open. The
-  Preview URL is the same-origin `/api/mock-app`, so the browser URL probe
-  succeeds. Under the application, **Update the Preview after every push**, on
+  open in a new window and Stop, with Start Preview in place while it is
+  stopped, after the source is prepared and its configuration validated; on
+  Live it frames the Live address the same way, with copy link, and both fold
+  their details under Details. The Preview and Live URLs are the same-origin
+  `/api/mock-app`, so the browser URL probe succeeds. Under the application, **Update the Preview after every push**, on
   for a new Session, answers `UpdatePreviewAutoDeploy` with the Session's ACTIVE
   check; while it is off, a pushed commit is not deployed. Until the Preview
   configuration is validated, Configuration and the Preview panel list its one
   fixture gap.
 - **Tools** lists Publishing, Connectors, Permissions and Configuration, folds
   to a rail of icons, and pins any tool as a tab (the row's pin, or + after the
-  tabs). Publishing shows Live, then the mock's versions with Publish this
-  version, This is Live or Roll Live back, Compare with Live, and each version's
-  configuration and builds and its deployment. Connectors opens the fixture's
+  tabs). Publishing shows Live, then the mock's versions with Live's marked,
+  Roll Live back for an older one, and each version's builds, one line each
+  that opens to the rest, and Live's history in the same rows. Connectors opens the fixture's
   one connection in place with Preview and Live alike; "Use Preview's
   connections on Live" prepares the next version when it is not yet and opens
   Live's connection filled in from Preview, and the Live fixture credential is

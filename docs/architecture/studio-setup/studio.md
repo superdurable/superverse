@@ -129,49 +129,80 @@ Container queries on the tool panel decide the layout, never viewport breakpoint
   into the open row.
 - **Below 520px:** the cells stack, each captioned Preview or Next publish.
 
-### The Setup bar
+### Each column's state
 
-Under the heading, `project/setup/SetupBar.tsx` is a box like the other tools' cards, on the
-table's column grid with the table's border and padding: over the Preview column, **Apply to
-Preview** (with the Preview mark) and Preview's state directly under it; over the Next publish
-column, **Publish** (with the Publish ↑ icon) and the next publish's state directly under it. Each
-button is as wide as its column's dropdowns. "Saving…" and "Saved" sit at the start. Below 780px
-each state sits beside its button, and the two buttons, one width, end where the rows' chips end.
+Setup has no bar of its own and no Apply or Publish button. Each column's state sits under its name
+in the table's head (`project/setup/SetupStatus.tsx`, drawn by `SetupChecklist`'s head): Preview's
+under Preview, the next publish's under Next publish, and on the Live tab under Live. Below 780px
+the head stacks: Connection, then each name with its state beside it. The bar's "Saving…" and
+"Saved" say what the autosave does; the bar's Publish publishes.
 
 - **Preview's state:** by state "N missing:" with links that open and focus each item;
-  "Updating Preview with N changes…" with "· restarts in about 30 s" (the median of the last
-  `recent_starts` timings); "Updating Preview…" while it restarts; "N changes not on Preview yet;
-  it takes them when it starts" while it is stopped; or "Running V12 with these settings". With no
-  gaps and not READY it shows "Cannot check: {reason}". Before the latest push is built it says
-  "Building the latest push…", that it did not build, or that it is not built yet, and the next
-  publish's state says it shows once the push is built.
-- **Applying is automatic.** Changes save as they are made, and Setup applies them on its own
-  (`project/setup/auto-apply.ts`): three seconds after the last saved change, when the
-  configuration is READY, while Preview runs and has unapplied changes, or after its automatic
+  "Updating Preview with N changes…" with "· takes about 30 s" (the median of the last
+  `recent_starts` timings); "Updating Preview…" while it restarts; "Updating to the latest push…
+  Your changes follow." while a push's automatic update runs; "N changes saved; Preview takes them
+  when it starts" or "Not running; starts with these settings" while it is stopped; or "Running V12
+  with these settings". With no gaps and not READY it shows "Cannot check: {reason}". Before the
+  latest push is built, the table is replaced by "Building the latest push… Setup opens when it is
+  ready.", that it did not build, or that it is not built yet.
+- **Applying is automatic, and the only way.** Changes save as they are made, and Setup applies
+  them on its own (`project/setup/auto-apply.ts`): three seconds after the last saved change, when
+  the configuration is READY, while Preview runs and has unapplied changes, or after its automatic
   update to the latest push was refused for missing settings. One apply covers a burst of edits,
   because each apply rebuilds the Preview application of the same commit before it swaps it in;
-  the running Preview serves until the swap. An apply is never repeated for the same revision, so
-  a refused one waits for the next change or the problem's Apply again. A stopped Preview is not
-  started: Start takes the saved changes (`StartPreview` with `apply_configuration`).
-- **Apply to Preview** applies at once what Setup would apply on its own, or starts a stopped
-  Preview with it, first flushing the autosave queue and sending the revision it saved. It is
-  disabled while something is missing or while Preview runs these settings.
+  the running Preview serves until the swap, and edits made meanwhile go out together with the next
+  apply. An apply is never repeated for the same configuration and Preview revisions, so a refused
+  one waits for the next change, a new Preview revision or the problem's Apply again. A stopped
+  Preview is not started: Start takes the saved changes (`StartPreview` with `apply_configuration`).
+- **A push's update goes first.** While a push's automatic update runs
+  (`automaticDeployment` RUNNING), apply and Start are not allowed (`use-preview-commands.ts`): the
+  update moves the Preview's revision, so either would be refused with `REVISION_CHANGED`. Setup
+  applies once the update finishes.
 - **The next publish's state:** by state "N to set up before publishing:" with links, each in
   plain words such as "Stripe needs its own connection"; "Follows Preview once Preview is set up"
   (with the gaps of its own, if any); "Ready to publish V13 with these settings" when a version is
   ahead of Live; "N changes waiting for a publish"; or "Live runs these settings".
-- **Publish** opens the Publish popover on the newest version, or on Live's waiting settings when
-  no version is ahead. It is disabled only when nothing waits for a publish, never for a thing to
-  check.
+
+### Start Preview
+
+Nothing starts a stopped Preview but the agent's next push (with automatic builds on) and Start.
+A Preview stops when someone stops it, when its Sandbox is reclaimed, or when an update fails; it
+stays stopped until then. Start is offered where its absence shows, never as a standing control:
+
+- **The bar.** A stopped Preview's word, "· stopped" or "· not started", opens a small popover
+  (`build/PreviewStart.tsx`): what Start does, how long it takes, why it waits (the latest push
+  not built, Setup missing something, or a push's update running), and **Start Preview**. It works
+  from every tab, Flow and Runs included.
+- **Empty surfaces.** Runs, Inbox and the Interface, which are empty while Preview is stopped,
+  offer Start Preview in place. The Interface's address bar keeps only Stop, while Preview runs.
+
+## The Interface
+
+The Interface follows the prototype (`build/InterfaceSurface`): a 680px column with an address bar
+over the app's page, and its details folded underneath. The prototype's list of the app's pages is
+not built, because pages are not declared in `dex-app.yaml` yet.
+
+- **Address bar** (`build/InterfaceBar.tsx`): a chip with the status dot and the version, "Preview
+  V12" or "Live V12" (the state and commit in its hint), the address, reload and open in a new
+  window; on Preview, Stop while it runs; on Live, copy the Live link.
+- **The page.** Each environment's app in its frame: Preview's in `build/PreviewPanel`, and
+  Live's in `build/LiveInterface`, where what people do is real. `scripts/check-consumed-pins.mjs`
+  allows exactly these two application frames; the owner approved the Live frame on 2026-10-14.
+- **Preview's states**, as the prototype draws them: starting, a card with its phases; failed, the
+  problem with Start Preview; missing settings, the way to Setup; not built, the way to Setup;
+  stopped, "Start it to see the page. Live is not affected." with Start Preview.
+- **Details**, folded and read once opened: on Preview the deployed commit, where it stands beside
+  the latest push, the last start's phases and Preview's history; on Live the version and commit
+  Live runs and Live's history.
 
 ### The Live tab
 
 Setup on the Live tab shows the same Next publish controls in one column, for current Live's
 version, under a dark banner (`project/setup/LiveBanner.tsx`):
 
-- **Banner.** "You're changing Live · V12 · 1 change waiting · Publish this change" ("Publish
-  these changes" for several), or "Nothing waiting for a publish · Publish V12 again". Its action
-  opens the Publish popover on Live's own version (`openPublishPopover({ mode: "live" })`).
+- **Banner.** "You're changing Live · V12". What waits for a publish, "1 change waiting for a
+  publish" or "Live runs these settings", is the state under Live's name; the bar's Publish, which
+  counts it ("1 waiting"), opens the Publish popover on Live's own version.
 - **Intro.** These are the settings of the Next publish column on Preview; a new key or sign-in on
   a connection reaches Live at once, anything else goes out with the next publish; a blue dot
   marks a setting that differs from what Live V12 runs now.
@@ -208,10 +239,10 @@ holds `Dropdown.tsx`, `ActionMenu.tsx`, `use-listbox-keys.ts` and its README, on
 
 ## Publish popover
 
-The Publish button, the Setup bar's
-"Publish", the Live tab's banner and Tools ▸ Publishing's "Publish V13" open one small popover,
-`components/publishing/publish/PublishPopover`, a `PopoverCard` rather than a dialog
-(`publish-opener.ts`). On the Preview tab it shows:
+The bar's Publish button is the one way to publish. It opens one small popover,
+`components/publishing/publish/PublishPopover`, a `PopoverCard` rather than a dialog; a failed
+publish's "Publish again" opens it too (`publish-opener.ts`). Setup, its Live banner and
+Tools ▸ Publishing have no Publish of their own. On the Preview tab it shows:
 
 1. **Version.** The newest version ahead of Live, with the others folded behind "Another version
    (N more ahead of Live)". Each names its subject and its Preview validation: "ran on Preview at
@@ -249,9 +280,9 @@ changed; once the build is admitted, the popover closes and Tools ▸ Publishing
 
 The current entry is the Publish popover.
 
-**Entry and rules.** Waiting settings are published from the Live tab's banner, "Publish this
-change", or from Live's own version in Tools ▸ Publishing, "Publish its waiting settings". The
-rules follow the existing freeze model:
+**Entry and rules.** Waiting settings are published from the bar's Publish: on the Live tab, or on
+the Preview tab while no version is ahead of Live, it counts them ("1 waiting") and opens on Live's
+own version. The rules follow the existing freeze model:
 
 - **Immediate.** TeamSpace connection credentials take effect at once without publishing: a
   reauthorization or a replaced key is read at the next credential read
@@ -267,8 +298,7 @@ rules follow the existing freeze model:
 **The popover in this mode** says "Publish V12 again with 1 setting change. The code stays the
 same; it rebuilds, deploys and runs a health check", or, with nothing waiting, that publishing it
 again rebuilds the same code with the same settings; it lists the waiting settings and offers the
-newer versions on Preview with "Switch ›". "Publish this change" runs the same commands on Live's
-own commit. Build admission records `PreviewValidation{Kind: LIVE_CODE}`
+newer versions on Preview with "Switch ›". Its Publish runs the same commands on Live's own commit. Build admission records `PreviewValidation{Kind: LIVE_CODE}`
 ([flow-changes](flow-changes.md#projectreleaseflow)), because the code is what Live already runs,
 so no reason is asked for.
 
@@ -296,12 +326,18 @@ bottom:
   open ([build log](observability.md#build-log)), and the publish's recorded phases, cancellation
   and failure, each with its time and level. New lines keep it scrolled to the end unless the
   reader scrolled up. A failure shows the problem panel under the bar.
-- **What is Live:** the version, its address with Open, and Stop Live….
-- **The versions**, newest first, each with its builds and Preview validation or skip reason,
-  "Publish V13" for a version ahead of Live, "Publish its waiting settings" for Live's own, and
-  "Roll Live back to V10…" for an older one.
-- **Live history**, from `ListEnvironmentEvents` for Live: publishes, rollbacks and cancelled
-  publishes, with who and when ([timeline](observability.md#environment-timeline)).
+- **What is Live:** the version and Stop Live…. The Interface opens Live's address; Publishing
+  does not.
+- **The versions**, newest first, Preview's and Live's marked. There is no version card, Publish
+  or "Compare with Live": the list names and marks each version, and the bar publishes. The
+  selected version's **Builds** follow, headed "Builds · V10", with "Roll Live back to V10…"
+  beside the heading for a version older than Live.
+- **Builds** and **Live history** (from `ListEnvironmentEvents` for Live: publishes, rollbacks and
+  cancelled publishes, with who and when; [timeline](observability.md#environment-timeline)) share
+  one treatment (`publishing/HistoryRows.tsx`): a heading over a box of one-line rows, newest
+  first, each with its age (the date and time in its hint). A row with more opens underneath it:
+  a build's Preview validation or skip reason and its commit, build and configuration revision;
+  an event's durations, the stage a cancel stopped in, or why it failed.
 
 Stop Live (`RemoveLive`) and rollback (`StartDeployment` of an older build) each confirm first
 with their consequences: which version, connections and channels will run, that runs in flight
@@ -318,15 +354,20 @@ holds `publish-stages.ts`, `use-publish-progress.ts` (the Release and Deployment
 - **Runs | Events.** The Runs column (`flow/run/RunListColumn.tsx`) gains a Runs | Events switch.
   Its Events slot is filled through `flow/scope` with `project/activity/RecentEvents`, for Preview
   and Live ([recent events](observability.md#recent-events-received)).
-- **The Interface pane.** Start and Stop, the start's phases and its problem move from the
-  Preview menu into `build/PreviewPanel` and `InterfaceSurface`, beside the page's address.
+- **The Interface pane.** Stop, the start's phases and its problem move from the Preview menu into
+  `build/PreviewPanel` and `InterfaceSurface` ([the Interface](#the-interface)).
 - **The chat header's timer.** The workspace timer of `session/SessionStatusIndicators.tsx`
   becomes a popover with `WorkspaceKeepRunning`, "Keep running for 7 days".
 - **Project details** (`/p/<id>`, `project/ProjectPage.tsx`) holds the Preview's "Build each push
   automatically" switch (`PreviewAutoDeploy`) and Delete. Setup no longer shows the
   Project's facts or a delete link.
 - **Live's timeline** moves from `LiveTimelineMenu` to the Live history of Tools ▸ Publishing,
-  and a folded History on the Live Interface keeps it open to operators.
+  and the Live Interface's Details keep it open to operators.
+- **Share.** The bar's right side is Share, then Publish, as the prototype's Invite: a popover
+  (`teamspace/ProjectShare.tsx`) to add a member of the TeamSpace with a role, for owners, as
+  Tools ▸ Permissions does, and to copy the link to the page shown, with "Who has access ›". The
+  bar's copy-Live-link icon moves to the Live Interface's address bar, and the bar's "Live V12"
+  chip goes: the Live tab and the Interface's chip name the version.
 
 ## Timeline and recent events
 
@@ -355,5 +396,5 @@ It is selected only in `app/` route files, as today.
 ## Preview's timeline
 
 The Preview menu's "Timeline" (`EnvironmentTimeline` for Preview), which the prototype does not
-draw, moves to the Interface pane as a folded "History" section below Preview's phases. Live's
+draw, moves to the Interface's folded Details, with the deployed commit and the last start's phases. Live's
 timeline moves to Tools ▸ Publishing.

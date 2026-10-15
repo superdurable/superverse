@@ -1,7 +1,7 @@
 # Builder bar
 
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
-Purpose: The Builder's one 48px bar: the Project switch, the Preview | Live switch, the surface tabs, copy link, and how far the bar gives way when narrow.
+Purpose: The Builder's one 48px bar: the Project switch, the Preview | Live switch, the surface tabs, the actions, and how far the bar gives way when narrow.
 
 Importers: `components/frame` imports this directory.
 

@@ -53,8 +53,15 @@ const DEX_WEB_ADDRESS =
   /(?:localhost|127\.0\.0\.1):8802|dex-web(?:-[a-z0-9]+)?\.[a-z0-9-]+\.svc|^https?:.*connector.*\.js(?:\?|$)/i;
 /** The Flow API server and the Dex routes answer management routes in process, never through an upstream HTTP hop. */
 const MANAGEMENT_SERVER_DIRECTORIES = ["lib/server/flow/", "app/dex/"];
-/** The one frame Studio renders: the application Preview. */
-const APPLICATION_PREVIEW = "components/build/PreviewPanel.tsx";
+/**
+ * The only frames Studio renders: the Project's own application, on Preview and on Live, each in its one
+ * Interface component, titled and addressed as named here. The Live frame was approved by the owner on
+ * 2026-10-14 (the Interface shows Live's page as the prototype does).
+ */
+const APPLICATION_FRAMES = [
+  { member: "components/build/PreviewPanel.tsx", title: "Preview application", source: "preview.url" },
+  { member: "components/build/LiveInterface.tsx", title: "Live application", source: "live.url" },
+];
 
 const isForbiddenPackage = (name) => FORBIDDEN_PACKAGES.some((pkg) => name === pkg || name.startsWith(`${pkg}/`));
 const isRemoteURL = (name) => /^(?:https?:)?\/\//.test(name);
@@ -97,18 +104,19 @@ function jsxAttribute(node, name, syntax) {
   )?.initializer;
 }
 
-/** The Preview panel's frame, titled 'Preview application' and showing preview.url. */
-function isApplicationPreviewFrame(member, node, syntax) {
+/** Which application frame this is, by its file, title and address, or undefined for any other frame. */
+function applicationFrame(member, node, syntax) {
   const title = jsxAttribute(node, "title", syntax);
   const source = jsxAttribute(node, "src", syntax);
-  return (
-    member === APPLICATION_PREVIEW &&
-    title !== undefined &&
-    ts.isStringLiteral(title) &&
-    title.text === "Preview application" &&
-    source !== undefined &&
-    ts.isJsxExpression(source) &&
-    source.expression?.getText(syntax) === "preview.url"
+  return APPLICATION_FRAMES.find(
+    (frame) =>
+      member === frame.member &&
+      title !== undefined &&
+      ts.isStringLiteral(title) &&
+      title.text === frame.title &&
+      source !== undefined &&
+      ts.isJsxExpression(source) &&
+      source.expression?.getText(syntax) === frame.source,
   );
 }
 
@@ -130,7 +138,7 @@ function isThemeBootstrapScript(member, node, syntax) {
 function checkUIBoundary() {
   for (const file of FORBIDDEN_DEX_WEB_TRANSPORT_FILES)
     if (existsSync(join(studio, "lib", file))) failures.push(`Removed Dex Web transport was restored: ${file}`);
-  let applicationFrames = 0;
+  const applicationFrames = new Map(APPLICATION_FRAMES.map((frame) => [frame, 0]));
   let scannedSources = 0;
   const scanFile = (file) => {
     scannedSources++;
@@ -151,9 +159,9 @@ function checkUIBoundary() {
       }
       if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
         const tag = node.tagName.getText(syntax);
-        if (tag === "iframe" && !isApplicationPreviewFrame(member, node, syntax))
-          reject("Management iframe is forbidden");
-        else if (tag === "iframe") applicationFrames++;
+        const frame = tag === "iframe" ? applicationFrame(member, node, syntax) : undefined;
+        if (tag === "iframe" && !frame) reject("Management iframe is forbidden");
+        else if (frame) applicationFrames.set(frame, applicationFrames.get(frame) + 1);
         if (tag === "script" && !isThemeBootstrapScript(member, node, syntax))
           reject("Remote management JavaScript is forbidden");
       }
@@ -192,7 +200,8 @@ function checkUIBoundary() {
     }
   };
   for (const directory of ["app", "components", "lib", "mock"]) scanDirectory(join(studio, directory));
-  if (applicationFrames !== 1) failures.push("The intentional application Preview iframe must be the sole frame");
+  for (const [frame, count] of applicationFrames)
+    if (count !== 1) failures.push(`The application frame "${frame.title}" must appear exactly once: ${frame.member}`);
   return scannedSources;
 }
 

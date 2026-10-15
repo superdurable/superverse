@@ -289,9 +289,13 @@ export const teamSpaceConnectionService: MockService<"TeamSpaceConnectionService
       connection: mockConnectionSnapshot(completeMockAuthorization(tenancy, account, { state, providerError })),
     };
   },
-  StartTeamSpaceConnectionUiSession: ({ teamSpaceId, connectorId, caller }, { store }) => {
+  StartTeamSpaceConnectionUiSession: ({ teamSpaceId, connectorId: requested, connectionId, caller }, { store }) => {
     const { account, tenancy } = tenancyOf(store, caller);
     managedTeamSpace(tenancy, account, teamSpaceId);
+    // A connection's editor opens its own connector's form, as the server reads it from the connection.
+    const connectorId = connectionId
+      ? (mockConnection(tenancy, teamSpaceId, connectionId).connector?.connectorId ?? MOCK_CONNECTOR.connectorId)
+      : requested;
     // The Slack fixture's form only shows its manifest; its connection is seeded, not created here.
     if (connectorId === MOCK_SLACK_CONNECTOR.connectorId)
       return { ...mockForm, manifestJson: JSON.stringify(mockSlackManifest) };

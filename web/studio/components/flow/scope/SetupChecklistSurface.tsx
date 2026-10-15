@@ -13,7 +13,6 @@ import { FlowApiProvider, useFlowApiScope, type FlowApiScopeBinding } from "@/li
 import type { SetupChecklist } from "@/components/flow/connections/SetupChecklist";
 
 export type { SetupNotes } from "@/components/flow/connections/SetupChecklist";
-export { ACTION_CELLS, ACTION_COLUMNS } from "@/components/flow/connections/model/connection-words";
 import { LazySetupChecklist } from "./LazyFlowViews";
 
 /** What the table takes besides its two configuration hosts. */

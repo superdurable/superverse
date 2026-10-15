@@ -27,5 +27,5 @@ Its attachment contains only identities, timings, attempt counts and statuses.
 `live-versions.ts` holds the pieces of a Project whose Live runs one version while a newer version
 declares other configuration: publishing a chosen version through the bar's Publish, a variable's
 control in either column of Setup and filling it (a next-publish value that follows Preview becomes Live's
-own first), and Apply to Preview, which applies at once what Setup would apply on its own and waits until
-the Preview serves the head with that configuration applied. `setup-live.spec.ts` and `setup-draft.spec.ts` build their fixtures from them.
+own first), and setting a Preview value, which waits for Setup to apply it on its own, after any update of a
+push, and then until the Preview serves the head with that configuration applied. `setup-live.spec.ts` and `setup-draft.spec.ts` build their fixtures from them.

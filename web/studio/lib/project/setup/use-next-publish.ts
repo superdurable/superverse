@@ -8,7 +8,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { configurationDraftQueue } from "@/lib/api/flow/draft/configuration-draft";
 import { useProjectConfiguration } from "@/lib/project/use-project-configuration";
 import { flowApiRoutes } from "@/lib/shared/studio-routes";
@@ -51,4 +51,24 @@ export function useNextPublish(projectId: string | null, commit: string | null, 
     revision: configuration?.revision ?? "",
     refresh: retry,
   };
+}
+
+/**
+ * Counts the times Setup's next-publish autosave settled, on the Preview tab's Next publish column or on the Live
+ * tab (`liveCommit`'s), so a read of what waits for a publish outside Setup, such as the bar's Publish count,
+ * follows Setup's edits at once.
+ */
+export function useNextPublishSettles(projectId: string | null, liveCommit: string | null): number {
+  const column = configurationDraftQueue(flowApiRoutes.liveNextPublish(projectId ?? "", null));
+  const liveTab = configurationDraftQueue(flowApiRoutes.liveNextPublish(projectId ?? "", liveCommit));
+  const columnDraft = useSyncExternalStore(column.subscribe, column.getSnapshot, column.getSnapshot);
+  const liveDraft = useSyncExternalStore(liveTab.subscribe, liveTab.getSnapshot, liveTab.getSnapshot);
+  const busy = [columnDraft, liveDraft].some((draft) => draft.status === "saving" || draft.pending.length > 0);
+  const [settles, setSettles] = useState(0);
+  const wasBusy = useRef(busy);
+  useEffect(() => {
+    if (wasBusy.current && !busy) setSettles((count) => count + 1);
+    wasBusy.current = busy;
+  }, [busy]);
+  return settles;
 }

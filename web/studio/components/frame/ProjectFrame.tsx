@@ -25,7 +25,10 @@ import { usePinnedTools } from "./use-pinned-tools";
 import { SURFACES, surfacesFor, TOOLS } from "./surface-registry";
 import { useFrameLinks } from "./use-frame-links";
 
-type SwitchWords = Pick<ComponentProps<typeof EnvironmentSwitch>, "previewStatus" | "liveStatus" | "saving">;
+type SwitchWords = Pick<
+  ComponentProps<typeof EnvironmentSwitch>,
+  "previewStatus" | "liveStatus" | "saving" | "previewWord"
+>;
 
 /**
  * The Builder: one 48px bar over the chat column and one surface. The chat belongs to the Project, so
@@ -43,7 +46,6 @@ export function ProjectFrame({
   role,
   liveOnly = false,
   hasLive,
-  liveUrl,
   switchWords,
   processes,
   process,
@@ -69,7 +71,6 @@ export function ProjectFrame({
   /** The role works on Live only: the switch holds Live alone. */
   liveOnly?: boolean;
   hasLive: boolean;
-  liveUrl?: string;
   switchWords?: SwitchWords;
   /** The Processes of the version shown, which the picker at the head of the tabs offers. */
   processes: readonly PickerProcess[];
@@ -151,7 +152,6 @@ export function ProjectFrame({
         }
         notes={setupNeedsYou ? { tools: "setup needs you" } : undefined}
         actions={actions}
-        liveUrl={liveUrl}
       />
       <div ref={bodyRef} className="flex min-h-0 min-w-0 flex-1">
         {builds && (

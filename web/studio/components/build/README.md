@@ -1,7 +1,7 @@
 # Build surface
 
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
-Purpose: The Flow and Interface surfaces: the Flow Definitions of the version shown, the Preview with its source, start and stop, problem, phases and history, and the automatic-builds switch.
+Purpose: The Flow and Interface surfaces: the Flow Definitions of the version shown, the Preview with its source, Start and Stop, problem, phases and history, and the automatic-builds switch.
 
 Importers: `components/project`, `components/project/setup` and `mock/surface` import this directory.
 

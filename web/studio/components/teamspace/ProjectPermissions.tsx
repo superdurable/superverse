@@ -8,23 +8,14 @@
 
 "use client";
 
-import { useState, type FormEvent } from "react";
 import { useAccount } from "@/lib/account/AccountProvider";
-import { addProjectMember, removeProjectMember, setProjectMemberRole } from "@/lib/api/tenancy/project-member";
+import { removeProjectMember, setProjectMemberRole } from "@/lib/api/tenancy/project-member";
 import { useSingleFlight } from "@/lib/browser/use-single-flight";
 import { PROJECT_ROLES, projectRoleOf, serverProjectRole, type ProjectRole } from "@/lib/teamspace/project-roles";
-import { useProjectMembers, useTeamSpaceMembers } from "@/lib/teamspace/use-members";
+import { useProjectMembers } from "@/lib/teamspace/use-members";
 import { Banner } from "@/components/ui/Banner";
-import { Button } from "@/components/ui/Button";
-import { Dropdown } from "@/components/ui/menu/Dropdown";
 import { MemberTable, type MemberRow } from "./MemberTable";
-
-const ROLES = (Object.keys(PROJECT_ROLES) as ProjectRole[]).map((value) => ({
-  value,
-  word: value,
-}));
-/** What every role dropdown says first: the roles nest. */
-const ROLE_NOTE = "Each role includes everything after it.";
+import { AddProjectMember, PROJECT_ROLE_ITEMS, ROLE_NOTE } from "./ProjectShare";
 
 /**
  * Tools, Permissions: the Project's members, one role each. Its owners, and the platform admin, add members of
@@ -44,10 +35,7 @@ export function ProjectPermissions({
   const account = useAccount();
   const list = useProjectMembers(projectId);
   const editable = role === "owner";
-  const people = useTeamSpaceMembers(editable ? teamSpaceId : null);
-  const action = useSingleFlight<"add" | "role" | "remove">();
-  const [added, setAdded] = useState("");
-  const [addedRole, setAddedRole] = useState<ProjectRole>("builder");
+  const action = useSingleFlight<"role" | "remove">();
   const members = list.members ?? [];
   const owners = members.filter((member) => member.role === "PROJECT_ROLE_OWNER");
   const rows: MemberRow<ProjectRole>[] = members.map((member) => {
@@ -65,60 +53,15 @@ export function ProjectPermissions({
           : undefined,
     };
   });
-  const candidates = (people.members ?? []).filter(
-    (person) => !members.some((member) => member.accountId === person.accountId),
-  );
   const changed = (answer: { members: typeof members }) => list.replace(answer.members);
-  const add = (event: FormEvent) => {
-    event.preventDefault();
-    if (!added) return;
-    void action.run("add", async (signal) => {
-      changed(await addProjectMember({ projectId, accountId: added, role: serverProjectRole(addedRole) }, signal));
-      setAdded("");
-    });
-  };
   return (
     <div>
-      {editable && (
-        <form className="mb-4 flex flex-wrap items-end gap-2" onSubmit={add} aria-label="Add to the project">
-          <label className="grid min-w-60 flex-1 gap-1 text-[12.5px] text-ink-dim">
-            A member of the TeamSpace
-            <Dropdown
-              label="A member of the TeamSpace"
-              size="md"
-              disabled={candidates.length === 0}
-              value={added || null}
-              onChange={setAdded}
-              placeholder={
-                people.members === null
-                  ? "Loading the TeamSpace's people…"
-                  : candidates.length
-                    ? "Choose a person"
-                    : "Everyone is in"
-              }
-              items={candidates.map((person) => ({ value: person.accountId, label: person.email }))}
-            />
-          </label>
-          <label className="grid gap-1 text-[12.5px] text-ink-dim">
-            Role
-            <Dropdown
-              label="Role"
-              size="md"
-              inline
-              value={addedRole}
-              onChange={setAddedRole}
-              note={ROLE_NOTE}
-              items={ROLES.map((item) => ({ value: item.value, label: item.word, sub: PROJECT_ROLES[item.value].can }))}
-            />
-          </label>
-          <Button type="submit" variant="strong" disabled={action.busy !== null || !added}>
-            {action.busy === "add" ? "Adding…" : "Add"}
-          </Button>
-        </form>
+      {editable && list.members !== null && (
+        <AddProjectMember projectId={projectId} teamSpaceId={teamSpaceId} members={members} onAdded={list.replace} />
       )}
-      {(action.error || list.error || people.error) && (
+      {(action.error || list.error) && (
         <Banner role="alert" className="mb-4">
-          {action.error || list.error || people.error}
+          {action.error || list.error}
         </Banner>
       )}
       {list.members === null && !list.error ? (
@@ -129,7 +72,7 @@ export function ProjectPermissions({
         <MemberTable
           label="Project members"
           rows={rows}
-          roles={ROLES}
+          roles={PROJECT_ROLE_ITEMS}
           selfId={account?.accountId ?? null}
           editable={editable}
           busy={action.busy !== null}

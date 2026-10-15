@@ -76,13 +76,53 @@ export const MOCK_SLACK_CONNECTOR = {
   versionLine: "v1",
 } as const;
 
-/** The Slack fixture's release manifest: its two triggers in the connector's words and its channel picker. */
+/**
+ * The Slack fixture's release manifest: the connectors library's Slack sign-in (an OAuth sign-in that stores the
+ * bot and user tokens, the app's own client, and the app-level token pasted once for Socket Mode), its two
+ * triggers in the connector's words and its channel picker.
+ */
 export const mockSlackManifest = {
   metadata: { displayName: "Slack (local fixture)", description: "Mock development only. Channels are fixed." },
   spec: {
     provider: "slack",
     configuration: { fields: [] },
-    auth: { type: "oauth2", fields: [] },
+    auth: {
+      type: "oauth2",
+      fields: [
+        {
+          name: "oauth_client_id",
+          type: "string",
+          required: false,
+          description: "Client ID from the Slack app's Basic Information > App Credentials.",
+        },
+        {
+          name: "oauth_client_secret",
+          type: "secretString",
+          required: false,
+          description: "Client Secret from the Slack app's Basic Information > App Credentials.",
+        },
+        { name: "bot_token", type: "secretString", required: true, description: "Stored by the Slack sign-in." },
+        { name: "user_token", type: "secretString", required: true, description: "Stored by the Slack sign-in." },
+        {
+          name: "app_token",
+          type: "secretString",
+          required: true,
+          description:
+            "The xapp- token from Basic Information > App-Level Tokens, with connections:write. Any entered value is discarded.",
+        },
+      ],
+      oauth2: {
+        authorizationEndpoint: "https://slack.com/oauth/v2/authorize",
+        tokenEndpoint: "https://slack.com/api/oauth.v2.access",
+        clientIDCredential: "oauth_client_id",
+        clientSecretCredential: "oauth_client_secret",
+        scopes: ["channels:history", "groups:history", "channels:read", "groups:read", "users:read", "chat:write"],
+        credentialMappings: [
+          { credential: "bot_token", source: "access_token" },
+          { credential: "user_token", source: "authed_user.access_token" },
+        ],
+      },
+    },
     triggers: [
       { name: "channelThreadCreated", description: "Receive a matching top-level channel message." },
       { name: "threadReplyCreated", description: "Receive a matching thread reply." },

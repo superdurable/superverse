@@ -8,9 +8,8 @@
 
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import type { ProjectEnvironment, ProjectSurface } from "@/lib/shared/studio-routes";
-import { Glyph } from "@/components/ui/Glyph";
 import { TabStrip, type SurfaceTab } from "./TabStrip";
 import { useBarFit } from "./use-bar-fit";
 
@@ -34,7 +33,6 @@ export function ProjectBar({
   badges,
   notes,
   actions,
-  liveUrl,
 }: {
   /** The environment every surface shows. */
   environment: ProjectEnvironment;
@@ -49,8 +47,6 @@ export function ProjectBar({
   /** What a tab's badge says, for the tab's accessible name. */
   notes?: Partial<Record<ProjectSurface, string>>;
   actions?: ReactNode;
-  /** The Live address that copy link copies, while Live serves. */
-  liveUrl?: string;
 }) {
   const header = useRef<HTMLElement>(null);
   const leftBlock = useRef<HTMLDivElement>(null);
@@ -103,33 +99,7 @@ export function ProjectBar({
       />
       <div ref={actionBlock} className="ml-auto flex shrink-0 items-center gap-2 pl-2.5">
         {actions}
-        {liveUrl && <CopyLiveLink url={liveUrl} />}
       </div>
     </header>
-  );
-}
-
-function CopyLiveLink({ url }: { url: string }) {
-  const [copied, setCopied] = useState(false);
-  useEffect(() => {
-    if (!copied) return;
-    const timer = window.setTimeout(() => setCopied(false), 1600);
-    return () => window.clearTimeout(timer);
-  }, [copied]);
-  return (
-    <button
-      type="button"
-      aria-label={copied ? "Live link copied" : "Copy the Live link"}
-      title={copied ? "Copied" : `Copy the Live link, ${url}`}
-      onClick={() =>
-        void navigator.clipboard.writeText(url).then(
-          () => setCopied(true),
-          () => undefined,
-        )
-      }
-      className="grid size-8 place-items-center rounded-[7px] text-ink-dim hover:bg-hover hover:text-ink focus-visible:shadow-(--focus-ring) focus-visible:outline-none"
-    >
-      <Glyph name={copied ? "check" : "link"} />
-    </button>
   );
 }

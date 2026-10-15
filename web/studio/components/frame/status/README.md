@@ -1,7 +1,7 @@
 # Environment status
 
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
-Purpose: The bar's environment tabs: one status dot each, and a word only when something is off, which links to its fix.
+Purpose: The bar's environment tabs: one status dot each, and a word only when something is off, which links to its fix or, for a stopped Preview, opens Start.
 
 Importers: `components/build` and `components/frame/bar` import this directory.
 

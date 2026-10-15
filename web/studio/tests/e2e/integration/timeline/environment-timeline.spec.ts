@@ -37,12 +37,13 @@ test("the Preview timeline lists the refused push with its version and no commit
 
   await page.goto(`/p/${projectId}/interface`);
   const timeline = page.getByRole("region", { name: "Preview timeline", exact: true });
-  // The panel remounts once the Session's read settles, which folds History again: open it until it stays.
+  // The history is under the Interface's Details. The panel remounts once the Session's read settles, which
+  // folds Details again: open it until it stays.
   await expect(async () => {
     if (!(await timeline.isVisible()))
       await page
         .getByRole("region", { name: "Project Preview", exact: true })
-        .getByText("History", { exact: true })
+        .getByText("Details", { exact: true })
         .click();
     await expect(timeline).toBeVisible({ timeout: 2_000 });
   }).toPass({ timeout: 60_000 });

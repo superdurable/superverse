@@ -1,7 +1,7 @@
 # components/project/activity
 
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
-Purpose: The per-environment timeline, open or folded as History, and the recent trigger events: Preview's starts, Live's publishes and deployments, each with version, outcome and problem.
+Purpose: The per-environment timeline and the recent trigger events: Preview's starts, Live's publishes and deployments, each with version, outcome and problem.
 
 Importers: `components/build`, `components/project`, `components/publishing` and `mock/surface` import this directory.
 

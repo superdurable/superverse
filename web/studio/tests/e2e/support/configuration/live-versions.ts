@@ -87,20 +87,23 @@ export async function publishVersion(
 export const FIXTURE_SKIP_REASON = "The fixture publishes its first version before Preview runs it";
 
 /**
- * Sets one environment value in Setup's Preview column and applies it, then waits until the Preview serves the
- * Session's head with that configuration applied.
+ * Sets one environment value in Setup's Preview column, which Setup applies on its own, then waits until the
+ * Preview serves the Session's head with that configuration applied.
  */
 export async function applyPreviewValue(page: Page, projectId: string, name: string, value: string) {
   const head = (await readSession(page, projectId)).headCommit;
   await openPreviewConfiguration(page, projectId);
+  // Setup applies the saved value once edits settle and any update of a push has finished: to the running
+  // Preview, or to one whose update to the push was refused for the value this sets.
+  const applied = page.waitForResponse(
+    (response) =>
+      rpcAnswered("StartPreview")(response) &&
+      (response.request().postDataJSON() as Record<string, unknown>).applyConfiguration === true &&
+      response.ok(),
+    { timeout: 10 * 60_000 },
+  );
   await fillEnvironmentValue(page, name, value);
-  // Apply to Preview applies at once what Setup would apply on its own a few seconds after the last edit, and
-  // starts a stopped Preview with it.
-  const apply = page.getByTestId("setup-bar").getByRole("button", { name: "Apply to Preview" });
-  await expect(apply).toBeEnabled({ timeout: 3 * 60_000 });
-  const [started] = await Promise.all([page.waitForResponse(rpcAnswered("StartPreview")), apply.click()]);
-  expect(started.ok()).toBe(true);
-  expect((started.request().postDataJSON() as Record<string, unknown>).applyConfiguration).toBe(true);
+  await applied;
   await expect
     .poll(
       async () => {

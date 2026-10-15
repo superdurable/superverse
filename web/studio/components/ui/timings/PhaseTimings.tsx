@@ -49,7 +49,7 @@ export function PhaseTimings({
   const now = useNow(rows.some((row) => row.durationMs === 0));
   if (rows.length === 0) return null;
   return (
-    <section>
+    <section aria-label={title}>
       <h3 className="text-sm font-medium">{title}</h3>
       <ol className="mt-1 divide-y divide-line-soft text-sm">
         {rows.map((row) => (

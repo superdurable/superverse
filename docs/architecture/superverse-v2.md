@@ -1955,7 +1955,7 @@ by itself. Publish in the bar is a popover over the Release APIs: it prepares th
 when needed, requires its Live configuration, and builds it with an automatic deployment fenced on
 the Live revision shown.
 All Dex management UI source is local to Studio, with no shared Dex component
-package or management iframe; the user application Preview iframe remains isolated.
+package or management iframe; the user application's Preview and Live frames (the Live one approved on 2026-10-14) remain isolated.
 
 - Add immediate email/password registration and login. Ordinary users see
   personal projects; the administrator can access all projects. With the TeamSpace

@@ -18,10 +18,9 @@ import { failureProblem } from "@/lib/shared/problem/problem";
 import { projectRemedyLinks } from "@/lib/shared/problem/project-remedies";
 import { ProblemPanel } from "@/components/ui/problem/ProblemPanel";
 import { RequestProblem } from "./RequestProblem";
-import { Button, buttonStyle } from "@/components/ui/Button";
+import { Button } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
 import { Dialog } from "@/components/ui/Dialog";
-import { Glyph } from "@/components/ui/Glyph";
 
 /** Stop Live's confirmation: what stops, what is removed and what is kept, before anything happens. */
 function StopLiveDialog({
@@ -68,7 +67,7 @@ function StopLiveDialog({
   );
 }
 
-/** What Live serves now, its address with Open, and Stop Live…; the publish in progress is shown above it. */
+/** What Live serves now and Stop Live…; the Interface opens it. The publish in progress is shown above it. */
 export function LiveDeployment({
   projectId,
   project,
@@ -127,12 +126,6 @@ export function LiveDeployment({
         </span>
         {live && (
           <span className="ml-auto flex gap-2">
-            {live.url && !live.isRemoving && (
-              <a href={live.url} target="_blank" rel="noreferrer" className={buttonStyle("secondary", "sm")}>
-                <Glyph name="external" className="size-3.5" />
-                Open
-              </a>
-            )}
             <Button
               size="sm"
               variant="danger"

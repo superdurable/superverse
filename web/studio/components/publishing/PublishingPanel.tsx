@@ -26,7 +26,7 @@ import { commitDetail, versionNumber } from "@/lib/shared/version/version";
 import { LiveDeployment } from "./LiveDeployment";
 import { LiveHistory, useLiveHistory } from "./LiveHistory";
 import { Notice, RequestProblem } from "./RequestProblem";
-import { VersionDetail, type VersionPosition } from "./VersionDetail";
+import { VersionDetail, VersionTag, type VersionPosition } from "./VersionDetail";
 import { openPublishPopover } from "./publish/publish-opener";
 import { PublishProgress } from "./progress/PublishProgress";
 import { Button } from "@/components/ui/Button";
@@ -44,15 +44,6 @@ interface VersionRow {
   release: ReleaseSnapshot__Output | null;
 }
 
-function Tag({ live, children }: { live?: boolean; children: string }) {
-  return (
-    <span className="inline-flex h-4.5 shrink-0 items-center gap-1 rounded-full border border-line-soft px-1.5 text-[10.5px] text-ink-dim">
-      <span aria-hidden="true" className={cx("size-1.5 rounded-full", live ? "bg-pass" : "border border-ink")} />
-      {children}
-    </span>
-  );
-}
-
 /** The publish the URL names: the build a publish just started, or the deployment of a rollback. */
 function focusOf(query: URLSearchParams): PublishFocus | null {
   const build = query.get("build");
@@ -64,9 +55,9 @@ function focusOf(query: URLSearchParams): PublishFocus | null {
 
 /**
  * Tools, Publishing: the publish in progress or the last one, with its stage bar, Cancel and log; what is
- * Live with its address and Stop Live; every version newest first with its builds and how each met the
- * Preview rule; then Live's history. A version ahead of Live opens the Publish popover on it, the Live one
- * opens it on Live's waiting settings, and one behind rolls Live back after a confirmation.
+ * Live with its address and Stop Live; every version newest first, Preview's and Live's marked, with its
+ * builds; then Live's history. The bar's Publish publishes; a version older than Live rolls Live back after
+ * a confirmation.
  */
 export function PublishingPanel({ projectId }: { projectId: string }) {
   const query = useSearchParams();
@@ -138,12 +129,6 @@ export function PublishingPanel({ projectId }: { projectId: string }) {
   const selectedIndex = rows.findIndex((row) => row.sourceCommit === selectedCommit);
   const position: VersionPosition =
     live?.releaseId === selectedCommit ? "live" : liveIndex >= 0 && selectedIndex > liveIndex ? "behind" : "ahead";
-  const between =
-    liveIndex < 0 || selectedIndex < 0
-      ? versions.ahead.slice(Math.max(selectedIndex, 0))
-      : versions.candidates
-          .slice(Math.min(selectedIndex, liveIndex), Math.max(selectedIndex, liveIndex))
-          .filter((candidate) => candidate.sourceCommit !== live?.releaseId);
   const publishAgain = () =>
     openPublishPopover(
       progress.facts?.kind === "settings" ? { mode: "live" } : { mode: "version", commit: progress.releaseId },
@@ -209,8 +194,8 @@ export function PublishingPanel({ projectId }: { projectId: string }) {
                           ? `Release · ${enumText(row.release.status, "RELEASE_STATUS").toLowerCase()}`
                           : "")}
                     </span>
-                    {row.sourceCommit === previewCommit && <Tag>Preview</Tag>}
-                    {row.sourceCommit === live?.releaseId && <Tag live>Live</Tag>}
+                    {row.sourceCommit === previewCommit && <VersionTag>Preview</VersionTag>}
+                    {row.sourceCommit === live?.releaseId && <VersionTag live>Live</VersionTag>}
                     {row.release?.readyBuildRevisionId && row.sourceCommit !== live?.releaseId && (
                       <span className="shrink-0 text-[10.5px] text-ink-faint">built</span>
                     )}
@@ -230,7 +215,6 @@ export function PublishingPanel({ projectId }: { projectId: string }) {
               projectId={projectId}
               version={selected}
               position={position}
-              between={between}
               project={project}
               publishing={publishing}
               onRollback={(deploymentId) =>

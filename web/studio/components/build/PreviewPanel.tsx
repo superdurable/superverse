@@ -9,23 +9,21 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { enumText } from "@/lib/shared/protobuf";
 import { studioRoutes } from "@/lib/shared/studio-routes";
 import { probePublicUrl } from "@/lib/api/transport/public-url-probe";
 import { Button } from "@/components/ui/Button";
 import { Glyph } from "@/components/ui/Glyph";
 import { PhaseTimings } from "@/components/ui/timings/PhaseTimings";
-import { PREVIEW_PHASE_LABELS, previewStatusOf } from "@/lib/project/setup/environment-status";
+import { PREVIEW_PHASE_LABELS, previewStatusOf, startDurationWords } from "@/lib/project/setup/environment-status";
+import { commitDetail, versionNumber } from "@/lib/shared/version/version";
 import { ProblemPanel } from "@/components/ui/problem/ProblemPanel";
-import { cx } from "@/components/ui/cx";
 import { statusDotClass } from "@/components/frame/status/EnvironmentStatusTab";
-import { FoldedTimeline } from "@/components/project/activity/FoldedTimeline";
+import { EnvironmentTimeline } from "@/components/project/activity/EnvironmentTimeline";
+import { BAR_BUTTON, InterfaceBar, InterfaceDetails } from "./InterfaceBar";
 import { PreviewDeploymentStatus } from "./PreviewAutoDeploy";
 import { usePreviewCommands } from "./use-preview-commands";
-
-const BAR_BUTTON =
-  "grid size-6.5 place-items-center rounded-md text-ink-faint hover:bg-hover hover:text-ink focus-visible:shadow-(--focus-ring) focus-visible:outline-none";
 
 /** Opens the Preview in a new window, only once this browser can reach its public URL. */
 function PreviewLink({ url }: { url: string }) {
@@ -56,13 +54,23 @@ function PreviewLink({ url }: { url: string }) {
   );
 }
 
+/** The middle of the Interface while no page shows: what is happening, and the next step. */
+function Empty({ heading, children }: { heading: string; children: ReactNode }) {
+  return (
+    <div className="mx-auto my-5 flex max-w-sm flex-col items-center gap-1.5 text-center">
+      <b className="text-[14px] text-ink">{heading}</b>
+      {children}
+    </div>
+  );
+}
+
 /**
- * The Interface on Preview: the application as its users see it, framed under an address bar with
- * the environment and its status, the address, reload and open in a new window, and Start or Stop.
- * When the Preview is not running it says why and offers Start Preview; its problem shows with its
- * fix. Under the application: the deployed commit, the way to its configuration, where it stands
- * beside the latest push with its automatic deployment, the phases of its start, and its history.
- * The parent remounts the panel for a new source or Sandbox instance, which starts new operations.
+ * The Interface on Preview, as the prototype draws it: an address bar with "Preview V12" and its status
+ * dot, the address, reload, open in a new window and Stop while it runs; then the app's page. While it
+ * starts, its phases; failed, its problem with Start Preview; missing settings, the way to Setup; stopped,
+ * Start Preview. Under it, folded under Details: the deployed commit, where it stands beside the latest
+ * push, its last start's phases and its history. The parent remounts the panel for a new source or
+ * Sandbox instance, which starts new operations.
  */
 export function PreviewPanel({ projectId }: { projectId: string }) {
   const {
@@ -87,41 +95,83 @@ export function PreviewPanel({ projectId }: { projectId: string }) {
   const failed = previewStatusOf(preview, null).kind === "FAILED";
   const shown = previewStatusOf(preview, configuration);
   const ready = preview?.status === "PREVIEW_STATUS_READY" && Boolean(preview.url);
+  const version = versionNumber(preview?.servingVersion ?? preview?.preparedSource?.version ?? null, "");
   const statusWords = session.loading
     ? "loading"
     : status
       ? enumText(status, "PREVIEW_STATUS").replaceAll("_", " ").toLowerCase()
       : "not started";
-  const control =
-    runningDesired || stopping ? (
-      <Button size="sm" disabled={!allowed.stop} onClick={() => void act("stop")}>
-        {busy === "stop" ? "Stopping…" : retryCleanup ? "Retry Preview cleanup" : stopping ? "Stopping…" : "Stop"}
-      </Button>
-    ) : (
-      <Button variant="primary" size="sm" disabled={!allowed.start} onClick={() => void act("start")}>
-        {busy === "start" ? "Starting…" : "Start Preview"}
-      </Button>
+  const start = (
+    <Button variant="primary" size="sm" className="mt-2" disabled={!allowed.start} onClick={() => void act("start")}>
+      <Glyph name="play" className="size-3" />
+      {busy === "start" ? "Starting…" : "Start Preview"}
+    </Button>
+  );
+  let body: ReactNode;
+  if (ready && preview?.url)
+    body = (
+      <iframe
+        key={reloads}
+        title="Preview application"
+        src={preview.url}
+        className="h-[calc(100dvh-13rem)] min-h-96 w-full rounded-[10px] bg-white shadow-(--shadow-lift)"
+      />
+    );
+  else if (status === "PREVIEW_STATUS_STARTING")
+    body = (
+      <div className="rounded-[10px] border border-line-soft bg-panel px-4 py-3.5">
+        <b className="text-[14px] text-ink">Preview is starting{version && ` ${version}`}</b>
+        <p className="mt-1 mb-2.5 text-[12.5px] text-ink-faint">
+          About {startDurationWords(preview).replace(/^about /, "")}. The page appears when it&apos;s ready.
+        </p>
+        {preview && preview.phaseTimings.length > 0 && (
+          <PhaseTimings title="Preview start phases" timings={preview.phaseTimings} labels={PREVIEW_PHASE_LABELS} />
+        )}
+      </div>
+    );
+  else if (runningDesired || stopping)
+    body = <Empty heading="Stopping Preview">The page comes back when it starts.</Empty>;
+  else if (failed && sourceReady && configurationReady)
+    body = (
+      <Empty heading={`Preview did not start${version && ` ${version}`}`}>
+        <p className="text-[12.5px] text-ink-faint">The problem above says why; start it again once it is fixed.</p>
+        {start}
+      </Empty>
+    );
+  else if (!sourceReady)
+    body = (
+      <Empty heading="The latest push isn't built yet">
+        <p className="text-[12.5px] text-ink-faint">The agent&apos;s next push builds and starts it.</p>
+        <Link className="text-[12.5px] text-accent hover:underline" href={studioRoutes.setup(projectId, "preview")}>
+          Open Setup
+        </Link>
+      </Empty>
+    );
+  else if (!configurationReady)
+    body = (
+      <Empty heading="Preview needs setup before it starts">
+        <p className="text-[12.5px] text-ink-faint">{configurationError || "Setup lists what is missing."}</p>
+        <Link className="text-[12.5px] text-accent hover:underline" href={studioRoutes.setup(projectId, "preview")}>
+          Open Setup
+        </Link>
+      </Empty>
+    );
+  else
+    body = (
+      <Empty heading="Preview is stopped">
+        <p className="text-[12.5px] text-ink-faint">Start it to see the page. Live is not affected.</p>
+        {start}
+      </Empty>
     );
   return (
     <section className="flex flex-col gap-2" aria-label="Project Preview">
-      <div className="flex items-center gap-1.5 rounded-[9px] border border-line-soft bg-panel py-1 pr-1.5 pl-2">
-        <span
-          className="inline-flex h-4.5 shrink-0 items-center gap-1 rounded-full border border-line-soft px-1.75 text-[10.5px] font-medium text-ink-dim"
-          title={`Preview: ${shown.detail}`}
-        >
-          <span
-            aria-hidden="true"
-            className={cx("size-1.5 rounded-full border", statusDotClass("preview", shown.tone))}
-          />
-          Preview
-        </span>
-        <span
-          className="min-w-0 flex-1 truncate font-mono text-xs text-ink-dim"
-          title={preview?.url || undefined}
-          data-testid="preview-address"
-        >
-          {ready ? preview?.url : statusWords}
-        </span>
+      <InterfaceBar
+        environment="Preview"
+        dot={statusDotClass("preview", shown.tone)}
+        version={version}
+        title={`Preview: ${shown.detail}${preview?.sourceCommit ? ` · ${commitDetail(preview.sourceCommit)}` : ""}`}
+        address={ready && preview?.url ? preview.url : statusWords}
+      >
         {ready && preview?.url && (
           <>
             <button
@@ -136,70 +186,29 @@ export function PreviewPanel({ projectId }: { projectId: string }) {
             <PreviewLink url={preview.url} />
           </>
         )}
-        {control}
-      </div>
-      {problem && <ProblemPanel problem={problem} actions={remedyActions} />}
-      {preview?.status === "PREVIEW_STATUS_READY" && preview.url ? (
-        <iframe
-          key={reloads}
-          title="Preview application"
-          src={preview.url}
-          className="h-[calc(100dvh-13rem)] min-h-96 w-full rounded-[10px] bg-white shadow-(--shadow-lift)"
-        />
-      ) : (
-        <div className="mt-6 flex flex-col items-center gap-1.5 rounded-xl border border-line-soft bg-panel px-6 py-7 text-center">
-          <b className="text-[15px] text-ink">
-            {status === "PREVIEW_STATUS_STARTING"
-              ? "Preview is waking up"
-              : failed
-                ? "Preview did not start"
-                : "Preview is not running"}
-          </b>
-          <p className="max-w-sm text-[13.5px]/normal text-ink-faint">
-            {status === "PREVIEW_STATUS_STARTING"
-              ? "The app appears here when it is ready, usually within a minute."
-              : failed
-                ? "Fix the cause shown above in the application or its configuration, then start Preview again."
-                : !sourceReady
-                  ? "Its source is not prepared. The agent's next push deploys it, or prepare the current source and start it."
-                  : !configurationReady
-                    ? configurationError || "Validate the Preview configuration before starting it."
-                    : "Start it to see the app as its users do."}
-          </p>
-          {!runningDesired && (failed || !sourceReady || !configurationReady) && (
-            <Link
-              className="text-[13px] text-accent hover:underline"
-              href={studioRoutes.previewConfiguration(projectId)}
-            >
-              Open Configuration
-            </Link>
-          )}
-        </div>
-      )}
-      <div className="rounded-[10px] border border-line-soft bg-panel px-3.5 py-3 text-xs">
-        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          {preview?.sourceCommit && (
-            <p className="min-w-0 font-mono text-[11px] break-all text-ink-faint">
-              Deployed commit: {preview.sourceCommit}
-            </p>
-          )}
-          <Link
-            className="ml-auto text-[11px] text-accent hover:underline"
-            href={studioRoutes.previewConfiguration(projectId)}
-          >
-            Configure Preview
-          </Link>
-        </div>
-        <div className="mt-2">
-          <PreviewDeploymentStatus projectId={projectId} />
-        </div>
-        {preview && preview.phaseTimings.length > 0 && (
-          <div className="mt-3 border-t border-line-soft pt-3">
-            <PhaseTimings title="Preview start phases" timings={preview.phaseTimings} labels={PREVIEW_PHASE_LABELS} />
-          </div>
+        {(runningDesired || stopping) && (
+          <Button size="sm" variant="quiet" disabled={!allowed.stop} onClick={() => void act("stop")}>
+            <Glyph name="stop" className="size-3" />
+            {busy === "stop" ? "Stopping…" : retryCleanup ? "Retry Preview cleanup" : stopping ? "Stopping…" : "Stop"}
+          </Button>
         )}
-        <FoldedTimeline className="mt-3 border-t border-line-soft pt-3" projectId={projectId} scope="preview" />
-      </div>
+      </InterfaceBar>
+      {problem && <ProblemPanel problem={problem} actions={remedyActions} />}
+      {body}
+      <InterfaceDetails>
+        {() => (
+          <>
+            {preview?.sourceCommit && (
+              <p className="font-mono text-[11px] break-all text-ink-faint">Deployed commit: {preview.sourceCommit}</p>
+            )}
+            <PreviewDeploymentStatus projectId={projectId} />
+            {preview && preview.phaseTimings.length > 0 && status !== "PREVIEW_STATUS_STARTING" && (
+              <PhaseTimings title="Preview start phases" timings={preview.phaseTimings} labels={PREVIEW_PHASE_LABELS} />
+            )}
+            <EnvironmentTimeline projectId={projectId} scope="preview" />
+          </>
+        )}
+      </InterfaceDetails>
     </section>
   );
 }

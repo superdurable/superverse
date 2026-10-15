@@ -22,6 +22,7 @@ import { canOpenSurface, surfacesFor } from "@/components/frame/surface-registry
 import { FlowSurface } from "@/components/build/FlowSurface";
 import { InterfaceSurface } from "@/components/build/InterfaceSurface";
 import { LiveFlowScope, SessionFlowScope } from "@/components/flow/scope/FlowScope";
+import { PreviewStartButton } from "@/components/build/PreviewStart";
 import { InboxSurface, RunsSurface } from "@/components/flow/scope/FlowSurfaces";
 import { NotReady } from "@/components/ui/NotReady";
 import { RecentEvents } from "./activity/RecentEvents";
@@ -130,7 +131,12 @@ function SurfaceContent({
         );
       if (environment === "preview")
         return (
-          <SessionFlowScope key={`preview:${projectId}`} projectId={projectId} source="running">
+          <SessionFlowScope
+            key={`preview:${projectId}`}
+            projectId={projectId}
+            source="running"
+            start={<PreviewStartButton projectId={projectId} />}
+          >
             {view}
           </SessionFlowScope>
         );

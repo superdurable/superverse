@@ -20,11 +20,11 @@ process picker's pill and the active tab's underline take the same environment c
 | `STARTING` | `status` is `STARTING`, or the automatic deployment is `RUNNING` | pulsing, "starting", or "updating" for the automatic deployment of a push; the Interface pane, which shows "step k of 5" with the phase label and elapsed time | `phase_timings` (the phases `configuration`, `environment`, `grant`, `application`, `route`; `preview_snapshot.go:72-81`) |
 | `MISSING` | The configuration's `status` is not `READY` and the gap list is not empty | amber, "needs setup"; Setup, focused on the first gap | `GetProjectConfiguration.status` and `requirement_gaps` |
 | `CANNOT_CHECK` | The `status` is not `READY` and there are no gaps: a connector release that cannot be resolved, an unpublished trigger, a digest conflict | amber, "cannot check setup"; the problem panel with the reason from `validation_errors` | `GetProjectConfiguration.status`, `validation_errors` |
-| `UNAPPLIED` | `unapplied_change_count > 0` | grey, no word; the Setup bar says "N changes not on Preview yet" with Apply, and the Tools tab carries a badge | `GetProjectConfiguration` |
+| `UNAPPLIED` | `unapplied_change_count > 0` | grey, no word; Setup's Preview state says "Updating Preview with N changes…" while it applies them on its own, and the Tools tab carries a badge | `GetProjectConfiguration` |
 | `RUNNING` | `status` is `READY` | grey, no word; the tab's hint names the version | `source_commit` |
-| `STOPPED` | otherwise | hollow, "stopped", or "not started" before a first start; Start in the Interface pane | `status` |
+| `STOPPED` | otherwise | hollow, "stopped", or "not started" before a first start; the word opens Start Preview, which Runs, Inbox and the Interface also offer while they are empty | `status` |
 
-Apply to Preview and the Publish popover's Publish enable only
+Setup's automatic apply and the Publish popover's Publish act only
 when the configuration's `status` is `READY` (review 2), never on an empty gap list alone; for
 publishing it is the next publish of the chosen version. A non-READY configuration without gaps shows "Cannot check: {reason}".
 

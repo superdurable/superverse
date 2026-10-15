@@ -13,7 +13,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { nextPublishItemAnchor } from "@/lib/api/flow/draft/configuration-draft";
 import { useQueryUpdate } from "@/lib/browser/use-query-update";
 import { itemKeyOf, itemName, itemValueText, setupItems } from "@/lib/project/setup/configuration-items";
-import { draftWords, usePreviewDraft } from "@/lib/project/setup/PreviewDraftProvider";
+import { usePreviewDraft } from "@/lib/project/setup/PreviewDraftProvider";
 import { useNextPublish } from "@/lib/project/setup/use-next-publish";
 import { useProjectResource } from "@/lib/project/ProjectResourceProvider";
 import { useReleaseVersions } from "@/lib/project/use-release-versions";
@@ -24,9 +24,8 @@ import { PreviewSource } from "@/components/build/FlowSurface";
 import { usePreviewCommands } from "@/components/build/use-preview-commands";
 import { SetupChecklistSurface, type SetupNotes } from "@/components/flow/scope/SetupChecklistSurface";
 import { LiveBanner } from "@/components/project/setup/LiveBanner";
-import { SetupBar } from "@/components/project/setup/SetupBar";
+import { NextPublishStatus, PreviewStatus, UnbuiltStatus } from "@/components/project/setup/SetupStatus";
 import { autoApplyDue, useAutoApply } from "@/components/project/setup/auto-apply";
-import { openPublishPopover } from "@/components/publishing/publish/publish-opener";
 import { ProblemPanel } from "@/components/ui/problem/ProblemPanel";
 
 /** The tool panel, which Setup's table lays out by: its controls in the row, as chips, or stacked. */
@@ -47,15 +46,16 @@ function useLive() {
 }
 
 /**
- * Setup on the Preview tab: the bar with Preview's line and the Next publish line, then one table with a
- * Preview column, which autosaves into Preview's draft that Setup applies to a running Preview once edits
- * settle, and a Next publish column, what Live gets when this version is published.
+ * Setup on the Preview tab: one table with a Preview column, which autosaves into Preview's draft that Setup
+ * applies to the Preview on its own once edits settle, and a Next publish column, what Live gets when this
+ * version is published; each column's state is under its name. Until the latest push is built, why not.
  */
 function PreviewTab({ projectId }: { projectId: string }) {
   const session = useSessionResource();
-  const draft = usePreviewDraft();
   const commands = usePreviewCommands(projectId);
-  useAutoApply(commands, session?.resource?.headCommit ?? "");
+  const headCommit = session?.resource?.headCommit ?? "";
+  useAutoApply(commands, headCommit);
+  const draft = usePreviewDraft();
   const { live, name } = useLive();
   const applied = commands.preview?.appliedConfiguration?.configurationRevision ?? "";
   const next = useNextPublish(projectId, null, `${applied}:${live?.revision ?? ""}`);
@@ -64,39 +64,12 @@ function PreviewTab({ projectId }: { projectId: string }) {
   const versions = useReleaseVersions(projectId, live?.releaseId ?? null, session?.resource?.headCommit);
   const { queryHref } = useQueryUpdate();
   const source = session?.resource?.preview?.preparedSource;
-  const saving = draft ? draftWords(draft.all) : null;
   const newest = versions.ahead[0] ?? null;
   const [notes, setNotes] = useState<SetupNotes | null>(null);
+  const hrefOf = (anchor: string) => `${queryHref(() => undefined)}#${anchor}`;
   return (
     <Page>
-      <SetupBar
-        configuration={commands.configuration}
-        sourceReady={commands.sourceReady}
-        preview={commands.preview}
-        updating={autoApplyDue(commands, session?.resource?.headCommit ?? "")}
-        canApply={commands.allowed.apply}
-        applying={commands.busy === "apply" || commands.busy === "start"}
-        onApply={() => void commands.act("apply")}
-        saving={saving === "Saving…" || saving === "Saved" ? saving : null}
-        next={commands.sourceReady ? next.configuration : null}
-        connectors={notes?.connectors ?? {}}
-        nextError={next.error}
-        waiting={next.waiting}
-        ahead={newest ? versionNumber(newest.version, "the newest version") : null}
-        onPublish={
-          newest
-            ? () => openPublishPopover({ mode: "version", commit: newest.sourceCommit })
-            : live && next.waiting > 0
-              ? () => openPublishPopover({ mode: "live" })
-              : null
-        }
-        hrefOf={(anchor) => `${queryHref(() => undefined)}#${anchor}`}
-        version={
-          commands.preview?.status === "PREVIEW_STATUS_READY" && source
-            ? versionNumber(source.version, "") || null
-            : null
-        }
-      />
+      {!commands.sourceReady && <UnbuiltStatus preview={commands.preview} />}
       {commands.problem && <ProblemPanel problem={commands.problem} actions={commands.remedyActions} />}
       {commands.sourceReady && (
         <SetupChecklistSurface
@@ -113,6 +86,34 @@ function PreviewTab({ projectId }: { projectId: string }) {
           live={name}
           addresses={{ preview: commands.preview?.url ?? "", next: live?.url ?? "" }}
           onNotes={setNotes}
+          states={{
+            preview: (
+              <PreviewStatus
+                configuration={commands.configuration}
+                preview={commands.preview}
+                updating={autoApplyDue(commands, headCommit)}
+                pushUpdating={commands.pushUpdating}
+                applying={commands.busy === "apply" || commands.busy === "start"}
+                hrefOf={hrefOf}
+                version={
+                  commands.preview?.status === "PREVIEW_STATUS_READY" && source
+                    ? versionNumber(source.version, "") || null
+                    : null
+                }
+              />
+            ),
+            next: (
+              <NextPublishStatus
+                previewConfiguration={commands.configuration}
+                next={next.configuration}
+                nextError={next.error}
+                waiting={next.waiting}
+                ahead={newest ? versionNumber(newest.version, "the newest version") : null}
+                hrefOf={hrefOf}
+                connectors={notes?.connectors ?? {}}
+              />
+            ),
+          }}
         />
       )}
       {/* Build processes matters while the latest push is not built, and holds the manual build while automatic
@@ -128,12 +129,14 @@ function PreviewTab({ projectId }: { projectId: string }) {
 
 /**
  * Setup on the Live tab: the same Next publish controls in one column, checked against the version Live
- * runs, under the banner that says how many settings wait for a publish; then the connections a newer
- * version adds, set up from Preview, and what the next publish no longer uses.
+ * runs, under the banner that names it, with what waits for a publish under Live's name; then the
+ * connections a newer version adds, set up from Preview, and what the next publish no longer uses.
  */
 function LiveTab({ projectId }: { projectId: string }) {
   const { live, name } = useLive();
   const session = useSessionResource();
+  const { queryHref } = useQueryUpdate();
+  const [notes, setNotes] = useState<SetupNotes | null>(null);
   const applied = session?.resource?.preview?.appliedConfiguration?.configurationRevision ?? "";
   const reread = `${applied}:${live?.revision ?? ""}`;
   const next = useNextPublish(live ? projectId : null, live?.releaseId ?? null, reread);
@@ -164,11 +167,7 @@ function LiveTab({ projectId }: { projectId: string }) {
   return (
     <Page>
       <div>
-        <LiveBanner
-          version={versionNumber(live.version)}
-          waiting={next.waiting}
-          onPublish={() => openPublishPopover({ mode: "live" })}
-        />
+        <LiveBanner version={versionNumber(live.version)} />
         <SetupChecklistSurface
           previewPath={null}
           nextPath={next.basePath}
@@ -177,6 +176,20 @@ function LiveTab({ projectId }: { projectId: string }) {
           live={name}
           addresses={{ preview: "", next: live.url }}
           framed
+          onNotes={setNotes}
+          states={{
+            next: (
+              <NextPublishStatus
+                previewConfiguration={null}
+                next={next.configuration}
+                nextError={next.error}
+                waiting={next.waiting}
+                ahead={null}
+                hrefOf={(anchor) => `${queryHref(() => undefined)}#${anchor}`}
+                connectors={notes?.connectors ?? {}}
+              />
+            ),
+          }}
         />
       </div>
       {arriving.length > 0 && (

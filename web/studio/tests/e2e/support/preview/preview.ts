@@ -76,6 +76,19 @@ async function startPreview(page: Page, projectId: string): Promise<string> {
   return url;
 }
 
+/** Opens the Interface's Details under the page: the deployed commit, the start phases and the history. */
+async function openInterfaceDetails(page: Page) {
+  const details = page
+    .getByRole("region", { name: "Project Preview", exact: true })
+    .getByText("Details", { exact: true });
+  // The panel remounts once the Session's read settles, which folds Details again: open it until it stays.
+  const commit = page.getByText(/^Deployed commit: /);
+  await expect(async () => {
+    if (!(await commit.isVisible())) await details.click();
+    await expect(commit).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 60_000 });
+}
+
 /** Requires the Interface's link to the READY Preview at url, which it shows once the browser reaches the URL. */
 async function expectPreviewLink(page: Page, url: string) {
   const link = page.getByRole("link", { name: "Open Preview", exact: true });
@@ -106,6 +119,7 @@ export async function awaitDeployedPreview(page: Page, projectId: string, headCo
     .toBe(true);
   expect(url).toMatch(/^https?:\/\//);
   await page.goto(`/p/${projectId}/interface`);
+  await openInterfaceDetails(page);
   await expect(page.getByText(`Deployed commit: ${headCommit}`, { exact: true })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("button", { name: "Start Preview", exact: true })).toHaveCount(0);
   await expectPreviewLink(page, url);
@@ -224,8 +238,10 @@ export async function expectSurfacesFollowVersion(page: Page, projectId: string,
     timeout: 30_000,
   });
   await surfaces.getByRole("link", { name: "Interface", exact: true }).click({ timeout: 30_000 });
+  // The Interface shows Live's page under its address bar, which opens and copies the address.
   await expect(page.getByText(liveURL, { exact: true })).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByRole("link", { name: "Open", exact: true })).toHaveAttribute("href", liveURL);
+  await expect(page.getByRole("link", { name: "Open Live", exact: true })).toHaveAttribute("href", liveURL);
+  await expect(page.getByTitle("Live application", { exact: true })).toHaveAttribute("src", liveURL);
   await page.getByTestId("environment-preview").click();
   await expect(page).not.toHaveURL(/[?&]v=live/);
   await expect(page.getByRole("region", { name: "Project Preview", exact: true })).toBeVisible();

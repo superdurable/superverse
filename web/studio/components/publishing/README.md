@@ -32,10 +32,11 @@ flowchart LR
 
 `PublishingPanel` shows, top to bottom: the publish in progress or the last one (`progress/`, with the
 stage bar, Cancel and the inline log; the URL's `?release=&build=` or `?deployment=` names a publish just
-started), what is Live with its address and **Stop Live…** (`LiveDeployment`, `RemoveLive` after its
-consequences), the versions newest first with their builds (`VersionDetail`), and Live's history
-(`LiveHistory`, `ListEnvironmentEvents` for Live, cancelled publishes included). A version ahead of Live
-opens the bar's Publish popover on it (`publish/`), Live's own version opens it on its waiting settings,
-and an older one rolls Live back (`ReleaseDeployment`, `StartDeployment` of its last READY build after a
+started), what is Live and **Stop Live…** (`LiveDeployment`, `RemoveLive` after its
+consequences; the Interface opens Live's address), the versions newest first, Preview's and Live's marked,
+with the selected one's builds and, for a version older than Live, its rollback (`VersionDetail`), and Live's history (`LiveHistory`, `ListEnvironmentEvents` for Live, cancelled publishes
+included). Builds and Live's history share `HistoryRows`: one line per row, opening underneath to the rest.
+The bar's Publish publishes (`publish/`); there is no Publish here. An older version than Live rolls Live
+back (`ReleaseDeployment`, `StartDeployment` of its last READY build after a
 confirmation that names the version, its frozen settings, the runs in flight and that Preview and the
 next publish stay as they are). Stop Live and rollback wait while a publish runs.

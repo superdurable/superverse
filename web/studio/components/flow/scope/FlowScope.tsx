@@ -19,7 +19,7 @@ import { initialTemplateDesign } from "@/lib/project/initial-template-design";
 import { useProjectResource } from "@/lib/project/ProjectResourceProvider";
 import { preparedSourceOf, readyPreparedSource } from "@/lib/session/session-status";
 import { useSessionResource } from "@/lib/session/SessionProvider";
-import { flowApiRoutes, studioRoutes } from "@/lib/shared/studio-routes";
+import { flowApiRoutes } from "@/lib/shared/studio-routes";
 import { useQueryUpdate } from "@/lib/browser/use-query-update";
 import type { ObservedFlowTarget } from "@/lib/api/transport/flow-api-client";
 import { FlowApiProvider } from "@/lib/flow/FlowApiProvider";
@@ -121,10 +121,13 @@ export function LiveFlowScope({
 export function SessionFlowScope({
   projectId,
   source,
+  start,
   children,
 }: {
   projectId: string;
   source: "prepared" | "running";
+  /** Start Preview, offered in place while the running Preview's surfaces are empty. */
+  start?: ReactNode;
   children: ReactNode;
 }) {
   const project = useProjectResource()?.snapshot;
@@ -175,13 +178,9 @@ export function SessionFlowScope({
   }
   if (preview?.status !== "PREVIEW_STATUS_READY" || !preview.sourceCommit || !preview.definitionRevision) {
     return (
-      <NotReady
-        kind="unavailable"
-        heading="Preview is not running"
-        action={{ label: "Start Preview", href: studioRoutes.projectSurface(projectId, "interface") }}
-      >
-        Runs and Inbox items on Preview appear while it runs. Start it from the Interface, or the agent&apos;s next push
-        deploys it.
+      <NotReady kind="unavailable" heading="Preview is not running">
+        Runs and Inbox items on Preview appear while it runs. The agent&apos;s next push starts it, or start it now.
+        {start && <span className="block">{start}</span>}
       </NotReady>
     );
   }

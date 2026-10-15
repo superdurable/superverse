@@ -14,6 +14,7 @@ import type { PreviewStartRecord__Output } from "@/lib/generated/protobuf/superv
 import type { ProjectLive__Output } from "@/lib/generated/protobuf/superverse/v2/ProjectLive";
 import { usePublishProgress, type PublishFocus } from "@/lib/project/publishing/use-publish-progress";
 import { liveDifferenceCount } from "@/lib/project/setup/configuration-items";
+import { useNextPublishSettles } from "@/lib/project/setup/use-next-publish";
 import { useProjectConfiguration } from "@/lib/project/use-project-configuration";
 import type { ReleaseVersions } from "@/lib/project/use-release-versions";
 import type { ProjectEnvironment } from "@/lib/shared/studio-routes";
@@ -85,10 +86,12 @@ export function PublishButton({
   });
   const ahead = versions.ahead.length;
   const onLive = live !== null && (environment === "live" || (versions.loaded && ahead === 0));
+  // Setup's edits of the next publish change what waits; the count follows them as they save.
+  const settles = useNextPublishSettles(projectId, live?.releaseId ?? null);
   const waitingRead = useProjectConfiguration(
     onLive ? { projectId, scope: "PROJECT_SCOPE_LIVE", releaseId: live.releaseId, nextPublish: true } : null,
     // A publish that went Live, or one that failed, changes what waits; read it again with the publishing.
-    `${live?.revision ?? ""}:${progress.outcome ?? ""}`,
+    `${live?.revision ?? ""}:${progress.outcome ?? ""}:${settles}`,
   );
   const waiting = onLive && waitingRead.configuration ? liveDifferenceCount(waitingRead.configuration) : 0;
   const count = onLive ? waiting : ahead;

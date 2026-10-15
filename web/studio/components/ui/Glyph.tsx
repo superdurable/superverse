@@ -196,6 +196,15 @@ const PATHS = {
       <path d="M15 8l4 4-4 4M19 12H9" />
     </>
   ),
+  users: (
+    <>
+      <circle cx="9" cy="8.5" r="3" />
+      <path d="M3.5 19c.8-3.2 3-5 5.5-5s4.7 1.8 5.5 5" />
+      <path d="M15.5 5.8a3 3 0 0 1 0 5.4M17.5 14.4c1.5.7 2.6 2.2 3 4.6" />
+    </>
+  ),
+  stop: <rect x="6.5" y="6.5" width="11" height="11" rx="1.5" />,
+  play: <path d="M8 5.5v13l10.5-6.5z" />,
 } satisfies Record<string, ReactElement>;
 
 export type GlyphName = keyof typeof PATHS;

@@ -64,7 +64,8 @@ test("Setup on Live edits Live's next publish under its banner, which counts wha
     expect(newer).not.toBe(older);
     await applyPreviewValue(page, projectId, "SUMMARY_TONE", "friendly");
 
-    // The Live tab: a dark banner names the version Live runs, and nothing waits right after its publish.
+    // The Live tab: a dark banner names the version Live runs, and nothing waits right after its publish: the
+    // state under Live's name says so, and the bar's Publish counts nothing.
     await page.goto(`/p/${projectId}/tools?tool=setup&v=live`);
     const banner = page.getByTestId("live-banner");
     await expect(banner).toBeVisible({ timeout: 10 * 60_000 });
@@ -72,9 +73,10 @@ test("Setup on Live edits Live's next publish under its banner, which counts wha
     await expect(banner.getByTestId("live-banner-version")).toHaveText(/^V\d+$/);
     const checklist = page.getByTestId("setup-checklist");
     await expect(checklist).toBeVisible({ timeout: 10 * 60_000 });
-    const waiting = banner.getByTestId("live-waiting-count");
-    await expect(waiting).toHaveText("Nothing waiting for a publish", { timeout: 60_000 });
-    await expect(banner.getByTestId("change-live-configuration")).toHaveText(/^Publish V\d+ again$/);
+    const waiting = page.getByTestId("next-publish-status");
+    const publish = page.getByTestId("publish-to-live");
+    await expect(waiting).toHaveText("Live runs these settings", { timeout: 60_000 });
+    await expect(publish).toHaveAttribute("aria-label", "Publish");
 
     // What Live published is its own: the connection it chose and the greeting it typed.
     const connection = await connectionPicker(checklist, "summary-model", "next");
@@ -85,15 +87,15 @@ test("Setup on Live edits Live's next publish under its banner, which counts wha
 
     // A greeting of Live's own that differs from what Live runs waits for a publish, with the blue dot.
     await fillEnvironmentValue(page, "SUMMARY_GREETING", "Hello again");
-    await expect(waiting).toContainText("1 change waiting", { timeout: 60_000 });
-    await expect(banner.getByTestId("change-live-configuration")).toHaveText("Publish this change");
+    await expect(waiting).toHaveText("1 change waiting for a publish", { timeout: 60_000 });
+    await expect(publish).toHaveAttribute("aria-label", "Publish, 1 waiting");
     await expect(page.getByRole("img", { name: /^Live V\d+ runs Hello now\./ })).toBeVisible();
     // Back to the same as Preview: the version Preview applied no longer declares it, so it takes what Live
     // runs, and nothing waits.
     const followed = page.waitForResponse(layerWrite("/api/v2/application-environment"));
     await page.getByRole("button", { name: "SUMMARY_GREETING: back to the same as Preview", exact: true }).click();
     expect((await followed).request().postDataJSON()).toMatchObject({ followPreview: ["SUMMARY_GREETING"] });
-    await expect(waiting).toHaveText("Nothing waiting for a publish", { timeout: 60_000 });
+    await expect(waiting).toHaveText("Live runs these settings", { timeout: 60_000 });
 
     // "Same as Preview" makes the connection follow Preview's again.
     const [selection] = await Promise.all([

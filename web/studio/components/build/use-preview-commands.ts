@@ -70,9 +70,13 @@ export function usePreviewCommands(projectId: string) {
   const cleanupPhase = preview?.failure?.phase;
   const retryCleanup = stopping && (cleanupPhase === "stop-preview" || cleanupPhase === "release");
   const idle = action.busy === null;
+  // A push's automatic update moves the Preview's revision; a start or apply sent meanwhile would be refused, so
+  // both wait for it.
+  const pushUpdating = preview?.automaticDeployment?.status === "PREVIEW_DEPLOYMENT_STATUS_RUNNING";
   const allowed: Record<PreviewAction, boolean> = {
     start:
       idle &&
+      !pushUpdating &&
       session.status === "SESSION_STATUS_ACTIVE" &&
       sourceReady &&
       configurationReady &&
@@ -81,6 +85,7 @@ export function usePreviewCommands(projectId: string) {
     // Apply restarts a running Preview, and is enabled only on a READY configuration of the prepared source.
     apply:
       idle &&
+      !pushUpdating &&
       draft !== null &&
       session.status === "SESSION_STATUS_ACTIVE" &&
       sourceReady &&
@@ -158,6 +163,7 @@ export function usePreviewCommands(projectId: string) {
     runningDesired,
     stopping,
     retryCleanup,
+    pushUpdating,
     sourceReady,
     configurationReady,
     configuration,

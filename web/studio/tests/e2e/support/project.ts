@@ -109,9 +109,14 @@ export async function expectStartPhases(page: Page, projectId: string) {
     workspace?.phaseTimings.map((timing) => timing.phase),
     "the workspace phases follow its start",
   ).toEqual([...WORKSPACE_START_PHASES]);
+  // The last start's phases are under the Interface's Details, beside the history, whose starts list theirs too.
   const panel = page.getByRole("region", { name: "Project Preview" });
-  await expect(panel.getByRole("heading", { name: "Preview start phases" })).toBeVisible({ timeout: 30_000 });
-  for (const [, label] of PREVIEW_START_PHASES) await expect(panel.getByText(label, { exact: true })).toBeVisible();
+  const phases = panel.getByRole("region", { name: "Preview start phases", exact: true });
+  await expect(async () => {
+    if (!(await phases.isVisible())) await panel.getByText("Details", { exact: true }).click();
+    await expect(phases).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 60_000 });
+  for (const [, label] of PREVIEW_START_PHASES) await expect(phases.getByText(label, { exact: true })).toBeVisible();
 }
 
 /**

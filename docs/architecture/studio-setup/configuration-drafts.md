@@ -34,10 +34,11 @@ This needs no new table or copy.
   ([flow-changes](flow-changes.md#previewflow)), which survives a stop. `PreviewConfigurationRef`
   is cleared by a stop (`preview_flow.go` `StopPreview`, line 768) and cannot
   serve.
-- **Apply to Preview.** This is `StartPreview` with `apply_configuration = true`. It restarts the
-  Preview on its prepared commit and freezes the head, as every start does today. Setup sends it
-  on its own once edits settle while Preview runs, and Start from Studio sends it while saved
-  changes are not applied ([the Setup bar](studio.md#the-setup-bar)).
+- **Apply.** This is `StartPreview` with `apply_configuration = true`. It restarts the Preview on
+  its prepared commit and freezes the head, as every start does today. Setup sends it on its own
+  once edits settle while Preview runs, never while a push's update runs, and Start from Studio
+  sends it while saved changes are not applied; there is no Apply button
+  ([each column's state](studio.md#each-columns-state)).
 - **No other path applies drafts.** These starts revalidate the applied version against their
   commit through the existing exact-snapshot validation (`ValidationRequest.Snapshot`,
   `configuration_validation.go:92-101`):
@@ -88,7 +89,7 @@ Each edit is a CAS write, so Studio serializes the writes of one configuration o
   so it has two queues; "Saving…" covers both. A field change is written 500 ms after the last
   keystroke, or at once for a selection.
 - Each write carries the revision the previous write returned.
-- **Apply flushes first.** Apply to Preview first drains the queue, then sends the revision the
+- **Apply flushes first.** An apply first drains the queue, then sends the revision the
   last write returned as `StartPreviewRequest.configuration_revision`. The Preview freezes
   exactly that revision. A later revision, from another tab or the Agent, refuses the start
   with `PREVIEW_CONFIGURATION_CHANGED` ("Setup changed after you pressed Apply: review it and

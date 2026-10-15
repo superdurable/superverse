@@ -24,6 +24,8 @@ import {
   WaitingRunsProvider,
 } from "@/lib/project/WaitingRunsProvider";
 import { liveStatusOf, previewStatusOf, setupNeedsYou } from "@/lib/project/setup/environment-status";
+import { PreviewStartWord } from "@/components/build/PreviewStart";
+import { ProjectShare } from "@/components/teamspace/ProjectShare";
 import { draftWords, PreviewDraftProvider, usePreviewDraft } from "@/lib/project/setup/PreviewDraftProvider";
 import { useNewestPublish } from "@/lib/project/setup/use-newest-publish";
 import { configurationDrafts } from "@/lib/api/flow/draft/configuration-draft";
@@ -33,7 +35,7 @@ import { useSessionResource } from "@/lib/session/SessionProvider";
 import { useDesignShown } from "@/lib/session/design/use-design-shown";
 import { useFlowDesign } from "@/lib/session/design/use-flow-design";
 import { processName } from "@/lib/shared/format";
-import { commitDetail, versionNumber } from "@/lib/shared/version/version";
+import { versionNumber } from "@/lib/shared/version/version";
 import { studioRoutes, type ProjectTool } from "@/lib/shared/studio-routes";
 import { openChatColumn } from "@/components/frame/frame-panes";
 import { ProjectFrame } from "@/components/frame/ProjectFrame";
@@ -139,6 +141,9 @@ function BuilderFrame({ projectId, role, persistentQuery, children }: BuilderPro
     `${live?.revision}:${project?.activeDeployment?.deploymentId}`,
   );
   const savingWords = previewDraft && !liveOnly ? draftWords(previewDraft.all) : null;
+  const previewStatus = session
+    ? previewStatusOf(session.resource?.preview ?? null, previewDraft?.configuration ?? null)
+    : undefined;
   const previewPrepared = session?.resource?.preview?.preparedSource;
   const builds = canBuild(role);
   const waiting = useWaitingRuns();
@@ -205,7 +210,6 @@ function BuilderFrame({ projectId, role, persistentQuery, children }: BuilderPro
         role={role}
         liveOnly={liveOnly}
         hasLive={Boolean(live)}
-        liveUrl={live?.url || undefined}
         persistentQuery={persistentQuery}
         badges={{
           flow:
@@ -243,9 +247,14 @@ function BuilderFrame({ projectId, role, persistentQuery, children }: BuilderPro
         process={process}
         setupNeedsYou={builds && !liveOnly && setupNeedsYou(previewDraft?.configuration ?? null)}
         switchWords={{
-          previewStatus: session
-            ? previewStatusOf(session.resource?.preview ?? null, previewDraft?.configuration ?? null)
-            : undefined,
+          previewStatus,
+          // A stopped Preview's word opens Start, on every tab, for those who build.
+          previewWord:
+            builds && previewStatus?.kind === "STOPPED" && previewStatus.word
+              ? (selected) => (
+                  <PreviewStartWord projectId={projectId} word={previewStatus.word ?? ""} selected={selected} />
+                )
+              : undefined,
           liveStatus: project
             ? liveStatusOf(
                 project,
@@ -276,16 +285,13 @@ function BuilderFrame({ projectId, role, persistentQuery, children }: BuilderPro
         }}
         actions={
           <>
-            {shown === "live" && live && (
-              <span className="flex items-center gap-1.5 text-[12.5px] whitespace-nowrap text-ink-faint group-data-[narrow=true]/bar:hidden group-data-[tight=true]/bar:hidden">
-                <span
-                  title={commitDetail(live.releaseId)}
-                  className="inline-flex h-4.5 items-center gap-1 rounded-full border border-line-soft px-1.5 text-[10.5px] font-medium text-ink-dim"
-                >
-                  <span aria-hidden="true" className="size-1.5 rounded-full bg-pass" />
-                  Live {versionNumber(live.version)}
-                </span>
-              </span>
+            {builds && teamSpaceId && (
+              <ProjectShare
+                projectId={projectId}
+                projectName={projectName}
+                teamSpaceId={teamSpaceId}
+                owner={role === "owner"}
+              />
             )}
             {builds && (
               <PublishButton

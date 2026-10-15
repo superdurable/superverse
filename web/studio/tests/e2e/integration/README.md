@@ -60,8 +60,8 @@ the server's message with the missing configuration, the Open Setup fix the serv
 the phase and the commit. It deletes the Project at the end.
 
 `setup-draft.spec.ts` registers an account, creates a template Project on the mock model and lets
-its first push reach the Preview, which lacks the `summary-model` connection. Apply to Preview stays
-disabled and Setup lists the gap as a link that focuses its row. Selecting the TeamSpace connection in
+its first push reach the Preview, which lacks the `summary-model` connection. Setup has no Apply button;
+Preview's state under its column lists the gap as a link that focuses its row. Selecting the TeamSpace connection in
 Setup's Preview column autosaves, and Setup applies it on its own: `StartPreview` with
 `apply_configuration` and the saved revision, and the Preview runs. An edit of a variable autosaves and
 is applied on its own the same way. A second tab's write of the same setting makes this tab's next write
