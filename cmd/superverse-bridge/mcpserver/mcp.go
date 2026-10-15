@@ -13,15 +13,20 @@ package mcpserver
 import (
 	"bufio"
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log/slog"
+	"path/filepath"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/superdurable/superversev2/cmd/superverse-bridge/trace"
 	"github.com/superdurable/superversev2/internal/agents/remoteagent/bridgeapi"
 	"github.com/superdurable/superversev2/internal/comm"
 )
@@ -88,6 +93,7 @@ type textContent struct {
 type callToolResult struct {
 	Content []textContent `json:"content"`
 	IsError bool          `json:"isError"`
+	timing  CallTiming
 }
 
 // maxConcurrentCalls bounds the tool calls one MCP session runs at once; a
@@ -170,11 +176,12 @@ func (server *server) handle(ctx context.Context, wait *sync.WaitGroup, line []b
 			wait.Go(func() { server.watch(ctx) })
 		}
 	case message.Method == methodToolsCall:
+		mcpAt := time.Now().UnixMilli()
 		select {
 		case server.calls <- struct{}{}:
 			wait.Go(func() {
 				defer func() { <-server.calls }()
-				server.answer(ctx, message)
+				server.answerCall(ctx, message, mcpAt)
 			})
 		default:
 			server.reply(ctx, message.ID, toolError(fmt.Sprintf(
@@ -182,6 +189,40 @@ func (server *server) handle(ctx context.Context, wait *sync.WaitGroup, line []b
 		}
 	default:
 		server.answer(ctx, message)
+	}
+}
+
+// answerCall records a complete timing row after the MCP writer returns.
+func (server *server) answerCall(ctx context.Context, message rpcMessage, mcpAt int64) {
+	var request struct {
+		Name string `json:"name"`
+	}
+	_ = json.Unmarshal(message.Params, &request)
+	if len(request.Name) == 0 || len(request.Name) > 128 || strings.IndexFunc(request.Name, func(r rune) bool {
+		return !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '_' || r == '-')
+	}) >= 0 {
+		request.Name = "invalid"
+	}
+	var random [8]byte
+	_, _ = rand.Read(random[:])
+	result, rpcErr, done := server.call(ctx, message.Params)
+	written := server.reply(ctx, message.ID, result, rpcErr)
+	codexAt := time.Now().UnixMilli()
+	done(written)
+	outcome := "ok"
+	if !written {
+		outcome = "write_failed"
+	} else if rpcErr != nil {
+		outcome = "rpc_error"
+	} else if value, ok := result.(callToolResult); ok && value.IsError {
+		outcome = "tool_error"
+	}
+	call := trace.Call{LocalID: hex.EncodeToString(random[:]), Tool: request.Name, MCPAt: mcpAt, CodexAt: codexAt, Outcome: outcome}
+	if value, ok := result.(callToolResult); ok {
+		call.CallID, call.ReportedAt, call.ReportAnswerAt, call.SyncResultAt = value.timing.CallID, value.timing.ReportedAt, value.timing.ReportAnswerAt, value.timing.SyncResultAt
+	}
+	if err := trace.Append(filepath.Dir(server.socketPath), call); err != nil {
+		server.logger.WarnContext(ctx, "write call timing trace", "error", err)
 	}
 }
 
@@ -299,7 +340,7 @@ func (server *server) call(ctx context.Context, params json.RawMessage) (any, *r
 		done(false)
 		return nil, &rpcError{Code: rpcInvalidRequest, Message: "serve answered no result"}, none
 	}
-	return callToolResult{Content: []textContent{{Type: "text", Text: response.Result.Text}}, IsError: response.Result.IsError}, nil, done
+	return callToolResult{Content: []textContent{{Type: "text", Text: response.Result.Text}}, IsError: response.Result.IsError, timing: response.Result.Timing}, nil, done
 }
 
 func toolError(text string) callToolResult {

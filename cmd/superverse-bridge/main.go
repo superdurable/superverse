@@ -50,6 +50,7 @@ Commands:
   serve          run the relays of every binding (one per state directory)
   mcp            the MCP server Codex starts; serves the tools of $ORCA_AGENT_SESSION_ID
   status         print one line per binding
+  trace          print per-call timing segments and percentiles from local trace
   disconnect [--connection <id>]
                  revoke a binding's connection and remove it
   version        print the version
@@ -82,6 +83,8 @@ func run(arguments []string) int {
 		err = runConnect(ctx, args, logger)
 	case "status":
 		err = runStatus(ctx, args)
+	case "trace":
+		err = runTrace(args)
 	case "disconnect":
 		err = runDisconnect(ctx, args, logger)
 	case "version":

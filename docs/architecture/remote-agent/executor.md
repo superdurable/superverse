@@ -345,8 +345,8 @@ tool call does.
 
 **Streams.** No new Stream. `AwaitRemoteAgent` writes Codex's text to `AssistantText` as each
 complete item arrives and Codex activity to `AgentActivity` with one new event kind,
-`remote_activity` (a short public summary: Codex subagent started or finished, plan updated,
-waiting for approval in Orca). `ReasoningSummary` is never written in remote mode; hidden
+`remote_activity` (a short public summary: Codex subagent started or finished, local tool used,
+or waiting for approval in Orca). `ReasoningSummary` is never written in remote mode; hidden
 reasoning never leaves Orca. The 10 MiB budgets stay shared per Flow type and Stream name
 (pinned SDK); Studio and the Bridge recover from the Snapshot and the conversation entries.
 

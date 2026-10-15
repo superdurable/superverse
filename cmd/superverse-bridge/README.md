@@ -16,6 +16,7 @@ builds it for this machine into `bin/superverse-bridge`, with `BRIDGE_VERSION` (
 | `serve` | Holds the state directory's lock, listens on the local socket and runs every binding's relay. |
 | `mcp` | The MCP server Codex starts; serves the tools of `$ORCA_AGENT_SESSION_ID`. |
 | `status` | One line per binding, from the running `serve`, else from the state directory. |
+| `trace` | Reads the bounded local call trace and prints each call's timing segments plus p50, p90 and p99. |
 | `disconnect [--connection <id>]` | Revokes a binding's connection and removes it. |
 | `version` | The version, OS and architecture. |
 
@@ -33,3 +34,8 @@ transport framing and status.
 
 Every command takes `--state-dir` ([state](state/README.md)). Logs go to standard error and never
 contain message text, tool arguments or tokens.
+
+`trace --state-dir <dir>` reads `calls.jsonl` and its two rotations from that directory. Each
+JSON line holds a local call ID, remote call ID when assigned, tool name, five timing points and
+an outcome code. The three files are capped at 4 MiB each. No arguments, results or messages enter
+the trace; a call interrupted before its remote report has missing intermediate points.

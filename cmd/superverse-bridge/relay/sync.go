@@ -264,6 +264,7 @@ func (r *relay) resolveEntryLocked(entry uint64, callID string, result mcpserver
 		return nil
 	}
 	delete(r.calls, callID)
+	call.timing.SyncResultAt = time.Now().UnixMilli()
 	ack := newResultAck(late)
 	result.Delivered = ack.settle
 	call.finish(result)

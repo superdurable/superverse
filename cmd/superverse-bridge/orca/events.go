@@ -38,13 +38,14 @@ const (
 
 // Journal body kinds, message roles and turn states the Bridge reads.
 const (
-	bodyMessage   = "message"
-	bodyTurn      = "turn"
-	bodyToolCall  = "tool-call"
-	bodyApproval  = "approval"
-	roleUser      = "user"
-	roleAssistant = "assistant"
-	stateRunning  = "running"
+	bodyMessage        = "message"
+	bodyTurn           = "turn"
+	bodyToolCall       = "tool-call"
+	blockSubagentGroup = "subagent-group"
+	bodyApproval       = "approval"
+	roleUser           = "user"
+	roleAssistant      = "assistant"
+	stateRunning       = "running"
 	// A turn is over only when it completed or was interrupted; any other
 	// state, unverifiable included, may still run.
 	stateCompleted    = "completed"
@@ -156,8 +157,13 @@ type itemBody struct {
 	Role   string `json:"role"`
 	State  string `json:"state"`
 	Blocks []struct {
-		Type string `json:"type"`
-		Text string `json:"text"`
+		Type   string `json:"type"`
+		Text   string `json:"text"`
+		Agents []struct {
+			ID    string `json:"id"`
+			Label string `json:"label"`
+			State string `json:"state"`
+		} `json:"agents"`
 	} `json:"blocks"`
 	UserItemID  string `json:"userItemId"`
 	Name        string `json:"name"`
@@ -434,6 +440,38 @@ func (seen *seenItems) events(page historyPage, turnMessages func(turn renderIte
 		body := item.Body
 		position := state.Position{Epoch: page.Epoch, Sequence: item.Sequence}
 		event := relay.Event{Position: position, TurnID: item.turnItemID(), MessageID: item.ItemID}
+		if body.Kind == bodyMessage {
+			for _, block := range body.Blocks {
+				if block.Type != blockSubagentGroup {
+					continue
+				}
+				for _, agent := range block.Agents {
+					if agent.ID == "" {
+						continue
+					}
+					key := item.ItemID + "/" + agent.ID
+					activity := seen.reported[key]
+					if !activity.started {
+						label := strings.Join(strings.Fields(agent.Label), " ")
+						if label == "" {
+							label = "subagent"
+						}
+						if characters := []rune(label); len(characters) > 80 {
+							label = string(characters[:80])
+						}
+						events = append(events, relay.Event{Kind: relay.EventActivity, Position: position,
+							TurnID: item.turnItemID(), MessageID: item.ItemID, Text: "Codex subagent started: " + label})
+						activity.started = true
+					}
+					if (agent.State == "done" || agent.State == stateCompleted || agent.State == "failed" || agent.State == "stopped" || agent.State == "cancelled") && !activity.finished {
+						events = append(events, relay.Event{Kind: relay.EventActivity, Position: position,
+							TurnID: item.turnItemID(), MessageID: item.ItemID, Text: "Codex subagent finished"})
+						activity.finished = true
+					}
+					seen.mark(key, activity)
+				}
+			}
+		}
 		switch body.Kind {
 		case bodyMessage:
 			text := body.text()

@@ -65,7 +65,17 @@ type localResponse struct {
 type CallResult struct {
 	Text      string     `json:"text"`
 	IsError   bool       `json:"isError,omitempty"`
+	Timing    CallTiming `json:"timing,omitempty"`
 	Delivered func(bool) `json:"-"`
+}
+
+// CallTiming contains only the remote call identity and timestamps. It travels
+// over the private local socket, never in an MCP tool result.
+type CallTiming struct {
+	CallID         string `json:"callId,omitempty"`
+	ReportedAt     int64  `json:"reportedAt,omitempty"`
+	ReportAnswerAt int64  `json:"reportAnswerAt,omitempty"`
+	SyncResultAt   int64  `json:"syncResultAt,omitempty"`
 }
 
 // ackWait bounds how long serve waits for mcp to acknowledge a call's

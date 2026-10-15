@@ -115,10 +115,17 @@ Project has at most one active binding (its executor).
   streams only to paired WebSocket clients), so the Bridge polls `agentSession.history` with
   `direction: "after"` from its cursor about once a second and reports, at most once per second and
   32 events per report: completed assistant messages, user messages the owner
-  typed in Orca, a short summary of Codex activity (its subagents starting and finishing, plan
-  updates, a local command it ran), and turn completion. Echoes of messages the Bridge delivered are
+  typed in Orca, a short summary of Codex activity (its subagents starting and finishing, a local
+  command it ran, or a pending approval), and turn completion. Subagent activity comes from
+  `subagent-group` blocks on root assistant rows; rows bearing `agentId` are never imported.
+  Echoes of messages the Bridge delivered are
   recognized by the Orca message ID that `send` returned and are not reported. Hidden reasoning and
   raw tool output are never reported.
+- **Call trace.** `mcp` writes one private JSON line per tool response in the Bridge state directory,
+  with local/remote call IDs, tool name, MCP receipt, first report, report answer, `sync` result,
+  response-write timestamps and an outcome code. `calls.jsonl` rotates through two older files at
+  4 MiB each. `superverse-bridge trace` prints each segment and p50/p90/p99; it makes no network
+  call. A missing timing point means that stage was not reached or its response was not observed.
 - **Stop and takeover.** When `sync` shows the turn interrupted, the Bridge calls
   `agentSession.cancel`. A 409 `executor_changed` or a 401 stops every loop, cancels the running
   Codex turn, removes the binding and shows "Connection replaced by <name>" or "Reconnect from
@@ -145,7 +152,7 @@ Local state (0600, in the Bridge's state directory): the token, the binding, the
 and the entry being sent, the next report
 sequence, the last imported Orca message ID and unacknowledged reports (at most 1,024 items or
 8 MiB per binding; when full, the Bridge stops accepting new MCP calls until acknowledgements free
-space).
+space), and the call timing trace (three files of at most 4 MiB).
 
 ## Orca protocol
 
@@ -279,4 +286,5 @@ None; the Bridge's local state is a client cache, not a source of truth.
 
 No platform resource is created per Bridge beyond its connection row ([connection](connection.md#resource-scalability)).
 On the Builder's machine: one `serve` process per Orca profile, at most 8 bindings (32 hard limit),
-bounded local queues as above.
+bounded local queues as above, and at most 12 MiB of call timing trace per state directory. The
+trace is removed with that local directory. Timing adds no platform or Orca call to a tool request.

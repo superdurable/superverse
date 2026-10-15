@@ -8,6 +8,12 @@ Dependencies: `cmd/superverse-bridge/mcpserver`, `cmd/superverse-bridge/platform
 
 The [remote agent protocol](../../../docs/api/remote-agent.md) defines the platform boundary; this README describes the relay.
 
+The relay stamps a call just before its first platform `report`, after the report answer, and when
+the matching result first appears in `sync`. These times and the remote call ID travel on the
+private local socket to `mcp`, which writes the bounded [call trace](../README.md) after its response
+write. Retried reports keep the first send time and latest report answer time. Trace failures do not
+delay or fail a tool call.
+
 ## Orca
 
 `Orca` is the narrow interface the relay needs of Orca's structured session protocol

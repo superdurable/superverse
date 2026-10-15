@@ -16,6 +16,8 @@ outcome.
   serve.lock                   flock held by the one serve process
   bindings.lock                flock held while a binding is added
   bridge.sock                  the local socket between mcp and serve (0600, see mcpserver)
+  calls.lock                   flock serializing trace writes and rotation (0600)
+  calls.jsonl[.1|.2]           private timing trace, three files of at most 4 MiB each
   bindings/<connectionId>/     0700, at most 8 bindings
   bindings/.staging-*/         a binding being assembled; never listed
     token                      the connection token

@@ -44,6 +44,7 @@ type pendingCall struct {
 	callID string
 	turnID string
 	result chan mcpserver.CallResult
+	timing mcpserver.CallTiming
 }
 
 func newPendingCall(turnID string) *pendingCall {
@@ -53,6 +54,7 @@ func newPendingCall(turnID string) *pendingCall {
 // finish delivers the call's result once; a later result is dropped, and
 // its delivery obligation counts as undelivered.
 func (call *pendingCall) finish(result mcpserver.CallResult) {
+	result.Timing = call.timing
 	select {
 	case call.result <- result:
 	default:
@@ -320,7 +322,21 @@ func (r *relay) sendHead(ctx context.Context, head state.StoredReport) error {
 		}
 	}
 	r.bindCall(head.Slot, report)
+	if report.ToolCall != nil {
+		r.mu.Lock()
+		if call := r.slotCalls[head.Slot]; call != nil && call.timing.ReportedAt == 0 {
+			call.timing.ReportedAt = time.Now().UnixMilli()
+		}
+		r.mu.Unlock()
+	}
 	answer, err := r.client.Report(ctx, report)
+	if report.ToolCall != nil {
+		r.mu.Lock()
+		if call := r.slotCalls[head.Slot]; call != nil {
+			call.timing.ReportAnswerAt = time.Now().UnixMilli()
+		}
+		r.mu.Unlock()
+	}
 	if err == nil {
 		r.mu.Lock()
 		r.progress.Acknowledged = max(r.progress.Acknowledged, answer.Reported, report.Sequence)
@@ -378,6 +394,7 @@ func (r *relay) bindCall(slot uint64, report bridgeapi.Report) {
 		return
 	}
 	call.callID = bridgeapi.RemoteCallID(report.Epoch, report.Sequence)
+	call.timing.CallID = call.callID
 	r.calls[call.callID] = call
 }
 
