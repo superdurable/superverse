@@ -16,7 +16,7 @@ import type { ProjectConfigurationSnapshot__Output } from "@/lib/generated/proto
 import type { ProjectLive__Output } from "@/lib/generated/protobuf/superverse/v2/ProjectLive";
 import { useProcessDefinitions } from "@/lib/project/ProcessDefinitionsProvider";
 import { timingSpan } from "@/lib/project/publishing/publish-stages";
-import { itemName, itemValueText } from "@/lib/project/setup/configuration-items";
+import { itemName, itemValueText, liveDifferenceCount } from "@/lib/project/setup/configuration-items";
 import { formatElapsedDuration, processName } from "@/lib/shared/format";
 import { flowApiRoutes } from "@/lib/shared/studio-routes";
 import { versionNumber } from "@/lib/shared/version/version";
@@ -68,10 +68,11 @@ function waitingWords(item: ConfigurationItem__Output): string {
 }
 
 /**
- * What a publish does, before it does it, as a short list: the version it replaces (or a first publish),
- * the processes that change or start, each waiting setting with Live's value, an address-bound connection
- * that sends events to Live's own address, the items no longer used, the connections Live runs with, and
- * the time it took last time. A settings-only publish keeps Live's code and lists only the settings.
+ * What a publish does, before it does it: one line first, such as "Replaces V12 · 2 setting changes · about
+ * 3 min" or "V12 again · 1 setting change", then Details, folded: the version it replaces (or a first
+ * publish), the processes that change or start, each waiting setting with Live's value, an address-bound
+ * connection that sends events to Live's own address, the items no longer used, the connections Live runs
+ * with, and the time it took last time. A settings-only publish keeps Live's code and lists only the settings.
  */
 export function ConsequenceSummary({
   projectId,
@@ -103,6 +104,19 @@ export function ConsequenceSummary({
   const deploy = durations.deploy
     ? `deploy and a health check, about ${formatElapsedDuration(durations.deploy)}`
     : "deploy and a health check";
+  const count = liveDifferenceCount(configuration);
+  const total = durations.build && durations.deploy ? durations.build + durations.deploy : null;
+  const headline = [
+    settingsOnly
+      ? `${versionNumber(live?.version)} again`
+      : live
+        ? `Replaces ${versionNumber(live.version)}`
+        : "First publish to Live",
+    count > 0 ? `${count} setting change${count === 1 ? "" : "s"}` : settingsOnly ? "same settings" : "",
+    total ? `about ${formatElapsedDuration(total)}` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
   const lines = [
     settingsOnly
       ? `Live keeps running ${versionNumber(live?.version)}'s code; it rebuilds with ${waiting.length + added.length + gone.length > 0 ? "the new" : "the same"} settings.`
@@ -118,32 +132,38 @@ export function ConsequenceSummary({
     `${build}, then ${deploy}.`,
   ].filter((line): line is string => Boolean(line));
   return (
-    <div data-testid="publish-consequences">
-      <ul className="grid list-disc gap-1 pl-4 text-[12.5px] text-ink-dim marker:text-ink-faint">
-        {lines.map((line, index) => (
-          <li key={line} data-testid={index === 0 ? "publish-replaces" : undefined}>
-            {line}
+    <>
+      <p className="px-1 pb-1 text-[13px] text-ink" data-testid="publish-headline">
+        {headline}
+      </p>
+      <details className="group px-1 pb-1 text-[12.5px]" data-testid="publish-consequences">
+        <summary className="cursor-pointer text-ink-faint">Details</summary>
+        <ul className="mt-1 grid list-disc gap-1 pl-4 text-ink-dim marker:text-ink-faint">
+          {lines.map((line, index) => (
+            <li key={line} data-testid={index === 0 ? "publish-replaces" : undefined}>
+              {line}
+            </li>
+          ))}
+          <li>
+            <button
+              type="button"
+              className="text-accent hover:underline"
+              aria-expanded={identities}
+              onClick={() => setIdentities((value) => !value)}
+            >
+              {identities ? "Hide the connections Live uses" : "The connections Live uses"}
+            </button>
           </li>
-        ))}
-        <li>
-          <button
-            type="button"
-            className="text-accent hover:underline"
-            aria-expanded={identities}
-            onClick={() => setIdentities((value) => !value)}
-          >
-            {identities ? "Hide the connections Live uses" : "The connections Live uses"}
-          </button>
-        </li>
-      </ul>
-      {identities && (
-        <div className="mt-1.5 rounded-lg bg-well px-2.5 py-2">
-          <LiveIdentitiesSurface
-            basePath={flowApiRoutes.liveNextPublish(projectId, configuration.releaseId || null)}
-            version={configuration.revision}
-          />
-        </div>
-      )}
-    </div>
+        </ul>
+        {identities && (
+          <div className="mt-1.5 rounded-lg bg-well px-2.5 py-2">
+            <LiveIdentitiesSurface
+              basePath={flowApiRoutes.liveNextPublish(projectId, configuration.releaseId || null)}
+              version={configuration.revision}
+            />
+          </div>
+        )}
+      </details>
+    </>
   );
 }

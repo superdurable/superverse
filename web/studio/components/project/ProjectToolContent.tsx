@@ -8,7 +8,6 @@
 
 "use client";
 
-import type { ReactNode } from "react";
 import { useProjectResource } from "@/lib/project/ProjectResourceProvider";
 import type { ProjectEnvironment, ProjectTool } from "@/lib/shared/studio-routes";
 import { projectRoleOf } from "@/lib/teamspace/project-roles";
@@ -21,13 +20,8 @@ import { SetupPage } from "./SetupPage";
 
 const TOOL_PAGE = "max-w-6xl px-6.5 pt-5.5 pb-10";
 
-function ToolHeading({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <>
-      <h2 className="text-lg font-semibold text-ink">{title}</h2>
-      <p className="mt-1 mb-4 text-[13px] text-ink-faint">{children}</p>
-    </>
-  );
+function ToolHeading({ title }: { title: string }) {
+  return <h2 className="mb-4 text-lg font-semibold text-ink">{title}</h2>;
 }
 
 /** The open tool of Tools; Setup shows the environment the bar's tab selects. */
@@ -72,9 +66,7 @@ function PermissionsTool({ projectId }: { projectId: string }) {
   const role = project ? projectRoleOf(project.callerRole) : null;
   return (
     <div className={TOOL_PAGE}>
-      <ToolHeading title="Permissions">
-        One role per person in this project. People join from the project&apos;s TeamSpace.
-      </ToolHeading>
+      <ToolHeading title="Permissions" />
       {project && role ? (
         <ProjectPermissions projectId={projectId} teamSpaceId={project.teamSpaceId} role={role} />
       ) : (

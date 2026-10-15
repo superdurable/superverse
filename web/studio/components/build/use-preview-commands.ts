@@ -44,8 +44,9 @@ type CommandInput = PreviewCommandInput & { apply?: ApplyOptions };
  * Starting, stopping and applying Setup to the Project's Preview. Each command is fenced to the Preview
  * revision and Sandbox instance it was decided against; a command whose acceptance is uncertain keeps
  * its request ID for the retry, and the caller remounts for a new source or instance, which starts new
- * operations. Apply is its own command: it flushes the autosave queue first and freezes exactly the
- * revision its last write returned, restarting a running Preview.
+ * operations. Apply flushes the autosave queue first and freezes exactly the revision its last write returned,
+ * restarting a running Preview; Setup sends it on its own once edits settle, and a start sends it too while
+ * saved settings differ from what Preview runs.
  */
 export function usePreviewCommands(projectId: string) {
   const session = useProjectSessionResource();
@@ -95,7 +96,8 @@ export function usePreviewCommands(projectId: string) {
       if (!operation) {
         const fence = newPreviewCommand(projectId, preview);
         let apply: ApplyOptions | undefined;
-        if (kind === "apply") {
+        // A start also takes Setup's saved settings that Preview does not run yet, as Setup applies them on its own.
+        if (kind === "apply" || (kind === "start" && (configuration?.unappliedChangeCount ?? 0) > 0)) {
           // The queue's last write names the revision the person saw; without one, the read configuration's.
           const flushed = draft ? await draft.queue.flush() : null;
           apply = { applyConfiguration: true, configurationRevision: flushed ?? configuration?.revision ?? "0" };

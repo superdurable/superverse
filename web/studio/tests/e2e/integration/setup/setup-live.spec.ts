@@ -74,7 +74,7 @@ test("Setup on Live edits Live's next publish under its banner, which counts wha
     await expect(checklist).toBeVisible({ timeout: 10 * 60_000 });
     const waiting = banner.getByTestId("live-waiting-count");
     await expect(waiting).toHaveText("Nothing waiting for a publish", { timeout: 60_000 });
-    await expect(banner.getByTestId("change-live-configuration")).toHaveText(/^Publish V\d+ again…$/);
+    await expect(banner.getByTestId("change-live-configuration")).toHaveText(/^Publish V\d+ again$/);
 
     // What Live published is its own: the connection it chose and the greeting it typed.
     const connection = await connectionPicker(checklist, "summary-model", "next");
@@ -86,7 +86,7 @@ test("Setup on Live edits Live's next publish under its banner, which counts wha
     // A greeting of Live's own that differs from what Live runs waits for a publish, with the blue dot.
     await fillEnvironmentValue(page, "SUMMARY_GREETING", "Hello again");
     await expect(waiting).toContainText("1 change waiting", { timeout: 60_000 });
-    await expect(banner.getByTestId("change-live-configuration")).toHaveText("Publish this change…");
+    await expect(banner.getByTestId("change-live-configuration")).toHaveText("Publish this change");
     await expect(page.getByRole("img", { name: /^Live V\d+ runs Hello now\./ })).toBeVisible();
     // Back to the same as Preview: the version Preview applied no longer declares it, so it takes what Live
     // runs, and nothing waits.

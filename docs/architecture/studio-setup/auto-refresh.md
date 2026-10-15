@@ -123,8 +123,10 @@ status/version/preference contracts; Git remains the only version number owner.
 
 ## UI/UX
 
-The step is **Build processes**; the preference is **Build each push automatically**. Healthy
-automatic builds hide the manual button. Off exposes **Build processes**; FAILED exposes
+The step is **Build processes**; the preference is **Build each push automatically**. Setup shows
+the step while the latest push is not built (building, failed, or waiting for a manual build) and
+whenever automatic builds are off, where it holds the manual build; with automatic builds on, a
+built push needs none, so it goes away. Healthy automatic builds hide the manual button. Off exposes **Build processes**; FAILED exposes
 **Build V12 processes again** (or **Build processes again** before version metadata resolves).
 Status reads **Building V12 processes…** / **Processes of V12 ready**, beside **V12 · subject**.
 Unresolved metadata names the latest push, never a hash. Configuration gaps remain separate.

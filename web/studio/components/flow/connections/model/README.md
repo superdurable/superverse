@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: What Setup's table reads and how it names things: each column's catalog and sessions, the rows' items and tones, the grid and the reply channel default.
 
-Importers: `components/flow/connections` and `components/flow/connections/row` import this directory.
+Importers: `components/flow/connections`, `components/flow/connections/row` and `components/flow/scope` import this directory.
 
 Imports: it imports `components/flow/connector/manifest`, `components/flow/connector/native`, `components/ui`, `lib/api/flow`, `lib/api/flow/draft`, `lib/api/transport`, `lib/flow` and `lib/generated/protobuf`.
 
@@ -12,6 +12,7 @@ flowchart LR
   self["components/flow/connections/model"]
   c0["components/flow/connections"] --> self
   c1["components/flow/connections/row"] --> self
+  c2["components/flow/scope"] --> self
   self --> d0["components/flow/connector/manifest"]
   self --> d1["components/flow/connector/native"]
   self --> d2["components/ui"]

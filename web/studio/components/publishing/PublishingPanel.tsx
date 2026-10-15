@@ -153,13 +153,7 @@ export function PublishingPanel({ projectId }: { projectId: string }) {
     <div className="@container min-h-0 flex-1 overflow-y-auto px-6.5 pt-5.5 pb-10">
       <div className="mx-auto max-w-[1400px] space-y-4">
         <header className="flex items-start gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-ink">Publishing</h2>
-            <p className="mt-1 text-[13px] text-ink-faint">
-              What is Live, every version with its builds, and Live&apos;s history. Publish ships every process
-              together; an older version rolls Live back.
-            </p>
-          </div>
+          <h2 className="text-lg font-semibold text-ink">Publishing</h2>
           <Button className="ml-auto" size="sm" onClick={() => setRefresh((value) => value + 1)}>
             Refresh
           </Button>

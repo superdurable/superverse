@@ -285,7 +285,6 @@ function BuilderFrame({ projectId, role, persistentQuery, children }: BuilderPro
                   <span aria-hidden="true" className="size-1.5 rounded-full bg-pass" />
                   Live {versionNumber(live.version)}
                 </span>
-                real runs, real people
               </span>
             )}
             {builds && (

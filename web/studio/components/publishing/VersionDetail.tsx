@@ -97,7 +97,7 @@ export function VersionDetail({
           {position === "ahead" && (
             <Button disabled={publishing} onClick={() => openPublishPopover({ mode: "version", commit })}>
               <Glyph name="upload" />
-              Publish {versionNumber(version.version)}…
+              Publish {versionNumber(version.version)}
             </Button>
           )}
           {position === "live" && (
@@ -112,7 +112,7 @@ export function VersionDetail({
                 onClick={() => openPublishPopover({ mode: "live" })}
                 className="text-[13px] text-accent hover:underline disabled:opacity-50"
               >
-                Publish its waiting settings…
+                Publish its waiting settings
               </button>
             </>
           )}

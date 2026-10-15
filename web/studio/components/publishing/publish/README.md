@@ -29,10 +29,12 @@ flowchart LR
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
-`PublishButton` sits in the Builder bar. On the Preview tab it counts the versions ahead of Live ("2 new")
-and is the one primary action when there are any; on the Live tab it counts the settings waiting for a
-publish ("1 waiting") and opens on Live's own version. While a publish runs (`usePublishProgress`) it
-reads "Publishing…" and is disabled.
+`PublishButton` sits in the Builder bar. It is the one primary action, in green, whenever a version is
+ahead of Live or settings wait for a publish, on either tab. On the Preview tab it counts the versions ahead
+of Live ("2 new"); on the Live tab, and on the Preview tab when no version
+is ahead, it counts the settings waiting for a publish ("1 waiting") and opens on Live's own version, so a
+Next publish change publishes from either tab. While a publish runs (`usePublishProgress`) it reads
+"Publishing…" and is disabled.
 
 `PublishPopover` is a `PopoverCard`, not a dialog wizard:
 
@@ -43,9 +45,10 @@ reads "Publishing…" and is disabled.
   against the version, with "Set up ›" to its Setup row on the tab shown (the item's Next publish anchor,
   `nextPublishGapAnchor`, which unfolds the row and focuses its Next publish control), and what deserves a look without blocking, such as a trigger listening where Preview listens,
   with "Pick ›". A secret or an address-bound connection says why it cannot follow Preview.
-- **What happens** (`ConsequenceSummary`): the version replaced or a first publish, the processes that
-  change, new, waiting and no longer used settings, address-bound connections, the connections Live
-  uses (folded, `LiveIdentitiesSurface`), and the previous publish's durations.
+- **Summary** (`ConsequenceSummary`): one line, such as "Replaces V12 · 2 setting changes · about 3 min",
+  then **Details**, folded: the version replaced or a first publish, the processes that change, new,
+  waiting and no longer used settings, address-bound connections, the connections Live uses (folded,
+  `LiveIdentitiesSurface`), and the previous publish's durations. Checks read one line per concern.
 - **Reason**: only for a version not in the Preview record, required, at most 500 code points, sent as
   `preview_skip_reason`. The prototype's checkbox is not adopted.
 - **Publish** (`publish-commands.ts`): writes what Setup still holds for the layer, builds the version's
@@ -57,7 +60,7 @@ reads "Publishing…" and is disabled.
 The popover prepares a version's Release when it has none (`usePublishCheck`), never again for one whose
 preparation failed, and checks the Preview's own source meanwhile.
 
-`publish-opener.ts` lets any page open the popover: Tools ▸ Publishing's "Publish V13…" and the Live
-tab's "Publish this change…" (`openPublishPopover({ mode: "live" })`), which publishes Live's own version
+`publish-opener.ts` lets any page open the popover: Tools ▸ Publishing's "Publish V13" and the Live
+tab's "Publish this change" (`openPublishPopover({ mode: "live" })`), which publishes Live's own version
 again with its waiting settings (the build records `LIVE_CODE`, no reason). With nothing waiting it offers
 "Publish V12 again", the same code and settings rebuilt.

@@ -26,10 +26,13 @@ import { usePublishOpenings, type PublishOpening } from "./publish-opener";
 import { PublishPopover } from "./PublishPopover";
 
 /**
- * The bar's Publish: it opens the Publish popover. On the Preview tab it counts the versions ahead of
- * Live ("2 new") and is the one primary action when there are any; on the Live tab it counts the settings
- * waiting for a publish ("1 waiting") and opens on Live's own version. While a publish runs it reads
- * "Publishing…" and is disabled. Once a publish is admitted, Tools ▸ Publishing opens on it.
+ * The bar's Publish: it opens the Publish popover, and is the one primary action whenever a version is ahead
+ * of Live or settings wait for a publish. On the Preview tab it counts the versions ahead of
+ * Live ("2 new"); on the Live tab, and on the Preview
+ * tab when no version is ahead, it counts the settings waiting for a publish ("1 waiting") and opens on
+ * Live's own version, so a Next publish change is published the same way from either tab. While a
+ * publish runs it reads "Publishing…" and is disabled. Once a publish is admitted, Tools ▸ Publishing
+ * opens on it.
  */
 export function PublishButton({
   projectId,
@@ -80,16 +83,17 @@ export function PublishButton({
     setOpening(next);
     popover.setOpen(true);
   });
-  const onLive = environment === "live" && live !== null;
+  const ahead = versions.ahead.length;
+  const onLive = live !== null && (environment === "live" || (versions.loaded && ahead === 0));
   const waitingRead = useProjectConfiguration(
     onLive ? { projectId, scope: "PROJECT_SCOPE_LIVE", releaseId: live.releaseId, nextPublish: true } : null,
     // A publish that went Live, or one that failed, changes what waits; read it again with the publishing.
     `${live?.revision ?? ""}:${progress.outcome ?? ""}`,
   );
   const waiting = onLive && waitingRead.configuration ? liveDifferenceCount(waitingRead.configuration) : 0;
-  const ahead = versions.ahead.length;
   const count = onLive ? waiting : ahead;
-  const primary = !onLive && ahead > 0;
+  // Green whenever something can go Live: a newer version, or settings that wait for a publish.
+  const primary = ahead > 0 || waiting > 0;
   const accepted = (commit: string, buildRevisionId: string) => {
     popover.close();
     setStarted({ releaseId: commit, buildRevisionId });
@@ -111,15 +115,19 @@ export function PublishButton({
         title={
           running
             ? "A publish is running; Tools ▸ Publishing shows it"
-            : primary
+            : !onLive && ahead > 0
               ? `${ahead} version${ahead === 1 ? "" : "s"} on Preview that Live doesn't have`
-              : onLive
-                ? "Publish Live's waiting settings, or a newer version"
-                : "Live is up to date"
+              : waiting > 0
+                ? `Publish Live's waiting settings${ahead > 0 ? ", or a newer version" : ""}`
+                : ahead > 0
+                  ? "Publish a newer version"
+                  : "Live is up to date"
         }
         disabled={running}
         onClick={() => {
-          setOpening(onLive ? { mode: "live" } : { mode: "version" });
+          // The Preview tab opens on the newest version; the popover shows Live's own only while none is ahead,
+          // so a version pushed a moment ago replaces it as soon as the versions list it.
+          setOpening(environment === "live" && live !== null ? { mode: "live" } : { mode: "version" });
           popover.toggle();
         }}
         className={cx(buttonStyle(primary ? "primary" : "secondary", "md"), "h-8 min-h-0 py-0")}

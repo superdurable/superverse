@@ -124,8 +124,11 @@ test("Publish needs a Preview run or a reason, states its consequences and publi
     const second = await publishVersion(page, projectId, newer, fillTemplateSummaryConnection, {
       skipReason: undefined,
       checkConsequences: async (shown) => {
+        await expect(shown.getByTestId("publish-headline")).toContainText(`Replaces V${olderVersion?.number}`);
         await expect(shown.getByTestId("publish-replaces")).toContainText(`Replaces V${olderVersion?.number}.`);
+        // The details are folded under the one-line summary.
         const consequences = shown.getByTestId("publish-consequences");
+        await consequences.getByText("Details", { exact: true }).click();
         await expect(consequences).toContainText("New on Live: environment SUMMARY_TONE.");
         await expect(consequences).toContainText("No longer used: environment SUMMARY_GREETING.");
         await consequences.getByRole("button", { name: "The connections Live uses" }).click();
@@ -146,7 +149,9 @@ test("Publish needs a Preview run or a reason, states its consequences and publi
       {
         mode: "configuration",
         checkConsequences: async (shown) => {
-          await expect(shown).toContainText(/Publish V\d+ again with \d+ setting changes?\./);
+          await expect(shown.getByTestId("publish-headline")).toHaveText(
+            /^V\d+ again · \d+ setting changes?( · about .+)?$/,
+          );
           const consequences = shown.getByTestId("publish-consequences");
           await expect(consequences).toContainText("environment SUMMARY_TONE changes (Live now: friendly).");
           await expect(shown.getByRole("radiogroup")).toHaveCount(0);

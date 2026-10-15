@@ -12,7 +12,7 @@ import type { RpcOutput } from "@/lib/shared/rpc-methods";
 import { configure, fillTemplateSummaryConnection } from "@/tests/e2e/support/configuration";
 import { exerciseTextSummaryInApplication, exerciseTextSummaryInStudio } from "@/tests/e2e/support/flow-run";
 import { expectStartPhases, readSession } from "@/tests/e2e/support/project";
-import { rpcAnswered, UUID } from "@/tests/e2e/support/studio-api";
+import { rpcAnswered, rpcResult, UUID } from "@/tests/e2e/support/studio-api";
 
 // The Project's Preview: starting it from the Interface, the automatic deployment of a push and its
 // configuration notice, and the template edit seen on Preview.
@@ -25,6 +25,11 @@ async function startPreview(page: Page, projectId: string): Promise<string> {
   // must never silently select a newer instance on behalf of this operation.
   const observed = (await readSession(page, projectId)).preview;
   if (!observed?.workspaceRequestId) throw new Error("Start Preview requires an observed prepared workspace");
+  // Start also takes Setup's saved settings that the Preview does not run yet, as Setup applies them on its own.
+  const { configuration } = await rpcResult(page.request, "GetProjectConfiguration", {
+    target: { projectId, scope: "PROJECT_SCOPE_PREVIEW" },
+  });
+  const applying = (configuration?.unappliedChangeCount ?? 0) > 0;
   const [response] = await Promise.all([
     page.waitForResponse(rpcAnswered("StartPreview"), { timeout: 30_000 }),
     start.click({ timeout: 30_000 }),
@@ -36,6 +41,7 @@ async function startPreview(page: Page, projectId: string): Promise<string> {
     expectedRevision: observed.revision,
     generation: observed.generation,
     workspaceRequestId: observed.workspaceRequestId,
+    ...(applying ? { applyConfiguration: true, configurationRevision: expect.stringMatching(/^[1-9][0-9]*$/) } : {}),
   });
   expect(response.ok()).toBe(true);
   const { preview: accepted }: RpcOutput<"StartPreview"> = await response.json();

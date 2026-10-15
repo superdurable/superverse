@@ -14,8 +14,11 @@ import { cx } from "@/components/ui/cx";
 
 /** The segment around one environment: its name and, when something is off, its word. */
 const SEGMENT = cx("inline-flex h-7 min-w-0 items-center rounded-[7px] border text-[13px] whitespace-nowrap");
-/** The selected environment's segment, ringed in the environment's colour: grey Preview, green Live. */
-const SELECTED = cx("border-env-rule bg-panel font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-env-rule)]");
+/**
+ * The selected environment's segment, filled with the environment's colour, grey Preview and green Live, in
+ * the panel's colour; its healthy dot turns the panel's colour and its word reads on the fill.
+ */
+const SELECTED = cx("border-env bg-env font-semibold text-panel");
 const UNSELECTED = cx("border-transparent text-ink-faint");
 const FOCUS = cx("rounded-[6px] focus-visible:shadow-(--focus-ring) focus-visible:outline-none");
 
@@ -90,7 +93,13 @@ export function EnvironmentStatusTab({
     <>
       <span
         aria-hidden="true"
-        className={cx("size-2 shrink-0 rounded-full border-[1.5px]", statusDotClass(environment, tone))}
+        className={cx(
+          "size-2 shrink-0 rounded-full border-[1.5px]",
+          selected && (tone === "ok" || tone === "plain")
+            ? cx("border-panel", tone === "ok" && "bg-panel")
+            : statusDotClass(environment, tone),
+          selected && tone !== "ok" && tone !== "plain" && "ring-1 ring-panel",
+        )}
       />
       {name}
       {status && <span className="sr-only">: {status.detail}</span>}
@@ -120,7 +129,7 @@ export function EnvironmentStatusTab({
             className={cx(
               FOCUS,
               "-ml-1 max-w-36 min-w-0 truncate pr-2.25 font-medium group-data-[tight=true]/bar:max-w-20 hover:underline",
-              WORDS[tone],
+              selected ? "text-panel" : WORDS[tone],
             )}
             data-testid={`${testId}-status`}
             data-tone={tone}
@@ -132,7 +141,7 @@ export function EnvironmentStatusTab({
             title={`${name}: ${status.detail}`}
             className={cx(
               "-ml-1 max-w-36 min-w-0 truncate pr-2.25 font-medium group-data-[tight=true]/bar:max-w-20",
-              WORDS[tone],
+              selected ? "text-panel" : WORDS[tone],
             )}
             data-testid={`${testId}-status`}
             data-tone={tone}

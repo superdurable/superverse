@@ -25,17 +25,15 @@ import { usePreviewCommands } from "@/components/build/use-preview-commands";
 import { SetupChecklistSurface, type SetupNotes } from "@/components/flow/scope/SetupChecklistSurface";
 import { LiveBanner } from "@/components/project/setup/LiveBanner";
 import { SetupBar } from "@/components/project/setup/SetupBar";
+import { autoApplyDue, useAutoApply } from "@/components/project/setup/auto-apply";
 import { openPublishPopover } from "@/components/publishing/publish/publish-opener";
 import { ProblemPanel } from "@/components/ui/problem/ProblemPanel";
 
 /** The tool panel, which Setup's table lays out by: its controls in the row, as chips, or stacked. */
-function Page({ intro, children }: { intro: ReactNode; children: ReactNode }) {
+function Page({ children }: { children: ReactNode }) {
   return (
-    <div className="@container/tool grid max-w-[64rem] gap-3.5 px-6.5 pt-5.5 pb-10" data-setup-page>
-      <header>
-        <h2 className="text-lg font-semibold text-ink">Setup</h2>
-        <p className="mt-1 max-w-240 text-[13px] text-ink-faint">{intro}</p>
-      </header>
+    <div className="@container/tool grid max-w-[1400px] gap-3.5 px-6.5 pt-5.5 pb-10" data-setup-page>
+      <h2 className="text-lg font-semibold text-ink">Setup</h2>
       {children}
     </div>
   );
@@ -50,13 +48,14 @@ function useLive() {
 
 /**
  * Setup on the Preview tab: the bar with Preview's line and the Next publish line, then one table with a
- * Preview column, which autosaves into Preview's draft that Apply to Preview runs, and a Next publish
- * column, Live's settings for the next publish, which the Live tab shows too.
+ * Preview column, which autosaves into Preview's draft that Setup applies to a running Preview once edits
+ * settle, and a Next publish column, what Live gets when this version is published.
  */
 function PreviewTab({ projectId }: { projectId: string }) {
   const session = useSessionResource();
   const draft = usePreviewDraft();
   const commands = usePreviewCommands(projectId);
+  useAutoApply(commands, session?.resource?.headCommit ?? "");
   const { live, name } = useLive();
   const applied = commands.preview?.appliedConfiguration?.configurationRevision ?? "";
   const next = useNextPublish(projectId, null, `${applied}:${live?.revision ?? ""}`);
@@ -69,30 +68,28 @@ function PreviewTab({ projectId }: { projectId: string }) {
   const newest = versions.ahead[0] ?? null;
   const [notes, setNotes] = useState<SetupNotes | null>(null);
   return (
-    <Page
-      intro={
-        <>
-          What this project&apos;s steps use from outside, and the settings they need. <b>Preview</b> is what Preview
-          runs. <b>Next publish</b> is Live&apos;s settings, the same ones the Live tab shows: change them in either
-          place and they reach Live when you publish. Changes save as you make them.
-        </>
-      }
-    >
+    <Page>
       <SetupBar
         configuration={commands.configuration}
         sourceReady={commands.sourceReady}
         preview={commands.preview}
+        updating={autoApplyDue(commands, session?.resource?.headCommit ?? "")}
         canApply={commands.allowed.apply}
-        applying={commands.busy === "apply"}
+        applying={commands.busy === "apply" || commands.busy === "start"}
         onApply={() => void commands.act("apply")}
         saving={saving === "Saving…" || saving === "Saved" ? saving : null}
         next={commands.sourceReady ? next.configuration : null}
         connectors={notes?.connectors ?? {}}
-        warnings={notes?.warnings ?? []}
         nextError={next.error}
         waiting={next.waiting}
         ahead={newest ? versionNumber(newest.version, "the newest version") : null}
-        onPublish={newest ? () => openPublishPopover({ mode: "version", commit: newest.sourceCommit }) : null}
+        onPublish={
+          newest
+            ? () => openPublishPopover({ mode: "version", commit: newest.sourceCommit })
+            : live && next.waiting > 0
+              ? () => openPublishPopover({ mode: "live" })
+              : null
+        }
         hrefOf={(anchor) => `${queryHref(() => undefined)}#${anchor}`}
         version={
           commands.preview?.status === "PREVIEW_STATUS_READY" && source
@@ -118,16 +115,13 @@ function PreviewTab({ projectId }: { projectId: string }) {
           onNotes={setNotes}
         />
       )}
-      <div className="-mx-4">
-        <PreviewSource projectId={projectId} />
-      </div>
-      <p className="text-[13px] text-ink-faint">
-        The project&apos;s repository, automatic builds and deletion are in{" "}
-        <Link className="text-accent hover:underline" href={studioRoutes.project(projectId)}>
-          Project details
-        </Link>
-        .
-      </p>
+      {/* Build processes matters while the latest push is not built, and holds the manual build while automatic
+          builds are off. */}
+      {(!commands.sourceReady || !(session?.resource?.agent?.description?.isPreviewAutoDeployEnabled ?? true)) && (
+        <div className="-mx-4">
+          <PreviewSource projectId={projectId} />
+        </div>
+      )}
     </Page>
   );
 }
@@ -146,7 +140,7 @@ function LiveTab({ projectId }: { projectId: string }) {
   const upcoming = useNextPublish(live ? projectId : null, null, reread);
   if (!live)
     return (
-      <Page intro="Live's settings, once something is published.">
+      <Page>
         <div className="max-w-240 rounded-[10px] border border-line-soft bg-panel px-5 py-7 text-center">
           <b className="text-[15px] text-ink">Not published yet</b>
           <p className="mt-1.5 text-[13.5px] text-ink-faint">
@@ -168,15 +162,7 @@ function LiveTab({ projectId }: { projectId: string }) {
   );
   const gone = (upcoming.configuration?.items ?? []).filter((item) => item.state === "STATE_NO_LONGER_USED");
   return (
-    <Page
-      intro={
-        <>
-          Live&apos;s settings: the same ones as the <b>Next publish</b> column on Preview, so a change made in either
-          place is the same change. A new key or sign-in on a connection reaches Live at once; anything else goes out
-          with the next publish. A blue dot marks a setting that differs from what {name} runs now.
-        </>
-      }
-    >
+    <Page>
       <div>
         <LiveBanner
           version={versionNumber(live.version)}

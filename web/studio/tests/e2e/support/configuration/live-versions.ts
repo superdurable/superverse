@@ -94,10 +94,13 @@ export async function applyPreviewValue(page: Page, projectId: string, name: str
   const head = (await readSession(page, projectId)).headCommit;
   await openPreviewConfiguration(page, projectId);
   await fillEnvironmentValue(page, name, value);
-  const apply = page.getByTestId("apply-header").getByRole("button", { name: "Apply to Preview" });
+  // Apply to Preview applies at once what Setup would apply on its own a few seconds after the last edit, and
+  // starts a stopped Preview with it.
+  const apply = page.getByTestId("setup-bar").getByRole("button", { name: "Apply to Preview" });
   await expect(apply).toBeEnabled({ timeout: 3 * 60_000 });
   const [started] = await Promise.all([page.waitForResponse(rpcAnswered("StartPreview")), apply.click()]);
   expect(started.ok()).toBe(true);
+  expect((started.request().postDataJSON() as Record<string, unknown>).applyConfiguration).toBe(true);
   await expect
     .poll(
       async () => {

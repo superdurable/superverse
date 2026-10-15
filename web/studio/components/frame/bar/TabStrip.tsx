@@ -77,7 +77,7 @@ export function TabStrip({
               aria-label={notes?.[surface] ? `${label}, ${notes[surface]}` : label}
               title={label}
               className={cx(
-                "-mb-px inline-flex shrink-0 items-center gap-1.75 border-b-2 px-2.75 text-[13px] whitespace-nowrap focus-visible:shadow-[inset_0_0_0_2px_var(--color-accent-rule)] focus-visible:outline-none",
+                "-mb-px inline-flex shrink-0 items-center gap-1.75 border-b-3 px-2.75 text-[13px] whitespace-nowrap focus-visible:shadow-[inset_0_0_0_2px_var(--color-accent-rule)] focus-visible:outline-none",
                 open ? "border-b-env font-semibold text-ink" : "border-b-transparent text-ink-faint hover:text-ink",
               )}
             >

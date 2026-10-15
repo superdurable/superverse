@@ -146,7 +146,7 @@ export async function publishLive(
     await expect(page.getByTestId("setup-checklist")).toBeVisible({ timeout: 10 * 60_000 });
     if (fillConnections) await fillConnections(page, "next");
     popover = await openOnLiveVersion(page, projectId, target);
-    await expect(popover).toContainText(/again with \d+ setting changes?\.|has no waiting changes/, {
+    await expect(popover.getByTestId("publish-headline")).toHaveText(/ again · (\d+ setting changes?|same settings)/, {
       timeout: 3 * 60_000,
     });
   } else {

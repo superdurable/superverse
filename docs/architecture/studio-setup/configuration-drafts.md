@@ -35,12 +35,14 @@ This needs no new table or copy.
   is cleared by a stop (`preview_flow.go` `StopPreview`, line 768) and cannot
   serve.
 - **Apply to Preview.** This is `StartPreview` with `apply_configuration = true`. It restarts the
-  Preview on its prepared commit and freezes the head, as every start does today.
+  Preview on its prepared commit and freezes the head, as every start does today. Setup sends it
+  on its own once edits settle while Preview runs, and Start from Studio sends it while saved
+  changes are not applied ([the Setup bar](studio.md#the-setup-bar)).
 - **No other path applies drafts.** These starts revalidate the applied version against their
   commit through the existing exact-snapshot validation (`ValidationRequest.Snapshot`,
   `configuration_validation.go:92-101`):
   - the automatic deployment of a pushed commit (`deploy-preview`);
-  - Start from the Preview menu;
+  - a Start from Studio while every saved change is applied;
   - the wake of a stopped Preview.
 
   If that version lacks what the new commit declares, the start is refused as
@@ -320,10 +322,10 @@ went away with conflicts.
 - **Next publish listening where Preview listens.** A trigger binding whose next-publish value
   equals Preview's applied value through the same TeamSpace connection makes Preview and Live
   both answer each event, for example both replying in one Slack channel. Studio finds it from
-  the item list (`preview_value_json` against the resolved value), marks the control amber with
-  the menu note "Preview listens in this channel too, so both would answer each message", and the
-  Setup bar and the Publish popover list it under the things to check. It is a warning
-  only.
+  the item list (`preview_value_json` against the resolved value). The control keeps its normal
+  colour, since the person may want both in one channel: its menu note says "Preview listens here
+  too: while Preview runs, Preview and Live both answer each message", and the Publish popover
+  lists it once under Check. It never blocks a publish.
 - **Connection needs reauthorization.** An `AUTHORIZATION_REQUIRED` gap shows on the item with
   "Reauthorize". The button starts `StartTeamSpaceConnectionOAuth` in a dialog and returns to
   the item. The TeamSpace rule that refuses reauthorizing a connection Live uses still applies,

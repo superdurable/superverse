@@ -69,8 +69,8 @@ function useSkipReason(projectId: string): [string, (reason: string) => void] {
 /**
  * The Publish popover: on a version, the version (others folded), what blocks it with a link to each
  * Setup row, what deserves a look, what happens, a required short reason when the version is not in the
- * Preview record, and Publish; on Live's own version (`{ mode: "live" }`), its waiting settings and the
- * newer versions to switch to. Publish builds the frozen copy and starts the build; once admitted the
+ * Preview record, and Publish; on Live's own version (`{ mode: "live" }`, or when no version is ahead),
+ * its waiting settings and the newer versions to switch to. Publish builds the frozen copy and starts the build; once admitted the
  * popover closes and `onAccepted` follows it.
  */
 export function PublishPopover({
@@ -99,8 +99,9 @@ export function PublishPopover({
   starts: readonly PreviewStartRecord__Output[];
   links: { publishing: string; setup: (anchor: string) => string; preview: string };
 }) {
-  const liveMode = opening.mode === "live" && live !== null;
   const { ahead } = versions;
+  // With no version ahead, Live's own version is what there is to publish: its waiting settings.
+  const liveMode = live !== null && (opening.mode === "live" || (versions.loaded && ahead.length === 0));
   const named = opening.mode === "version" ? opening.commit : undefined;
   const commit = liveMode
     ? live.releaseId
@@ -167,13 +168,11 @@ export function PublishPopover({
           </p>
         ) : liveMode ? (
           <>
-            <p className="px-1 pb-1.5 text-[12.5px] leading-snug text-ink-dim">
-              {!configuration
-                ? "Reading Live's waiting settings…"
-                : waiting > 0
-                  ? `Publish ${versionNumber(live.version)} again with ${waiting} setting change${waiting === 1 ? "" : "s"}. The code stays the same; it rebuilds, deploys and runs a health check.`
-                  : `Live ${versionNumber(live.version)} has no waiting changes. Publishing it again rebuilds the same code with the same settings.`}
-            </p>
+            {!configuration && (
+              <p className="px-1 pb-1.5 text-[12.5px] text-ink-dim" role="status">
+                Reading Live&apos;s waiting settings…
+              </p>
+            )}
             {ahead.length > 0 && (
               <section aria-label="Newer on Preview">
                 <h3 className={SECTION}>Newer on Preview</h3>
@@ -196,10 +195,7 @@ export function PublishPopover({
           </>
         ) : commit === null ? (
           <p className={NOTE}>
-            {versions.error ||
-              (live
-                ? `Live is up to date with ${versionLabel(live.version)}. To go back to an earlier version, open All versions.`
-                : "Nothing to publish yet. The agent's first change makes the first version.")}
+            {versions.error || "Nothing to publish yet. The agent's first change makes the first version."}
           </p>
         ) : (
           <VersionChoice
@@ -229,25 +225,18 @@ export function PublishPopover({
               </p>
             ) : (
               <>
+                <ConsequenceSummary
+                  projectId={projectId}
+                  commit={commit}
+                  configuration={configuration}
+                  live={live}
+                  settingsOnly={liveMode}
+                />
                 <PublishChecks configuration={configuration} setupHref={links.setup} onNavigate={onClose} />
                 {preparing && (
                   <p className="px-1 pt-1.5 text-[12px] text-ink-faint" role="status">
                     Getting {versionNumber(version)} ready to publish. The first time takes a few minutes.
                   </p>
-                )}
-                {ready && (
-                  <section aria-label="What happens">
-                    <h3 className={SECTION}>What happens</h3>
-                    <div className="px-1 pb-1">
-                      <ConsequenceSummary
-                        projectId={projectId}
-                        commit={commit}
-                        configuration={configuration}
-                        live={live}
-                        settingsOnly={liveMode}
-                      />
-                    </div>
-                  </section>
                 )}
               </>
             )}

@@ -219,19 +219,20 @@ once it has no gap, as Go reports on every read; the fixture's gap is the
 connection until a TeamSpace connection is selected. Every Setup edit autosaves
 (the bar says Saving…, then Saved), and a write on a revision another tab
 changed shows "Changed elsewhere" on the item with Keep yours or Take theirs.
-Apply to Preview freezes the revision the tab last saved and restarts the
-Preview; a later edit counts as "N changes not applied" in Setup's header and marks the Tools tab and
-its Setup entry with "Setup needs you", and an Apply after
-another tab changed Setup is refused with `PREVIEW_CONFIGURATION_CHANGED`. A
-push or Start revalidates the applied configuration instead of applying. Switch to Live to see the "N behind" count in
+Setup applies a running Preview's saved changes on its own three seconds after the last edit, and Apply to
+Preview does it at once: either freezes the revision the tab last saved and restarts the Preview. While it
+waits the line reads "Updating Preview with N changes…"; a stopped Preview's changes count as "N changes not
+on Preview yet" and mark the Tools tab and its Setup entry with "Setup needs you", and Start applies them. An
+Apply after another tab changed Setup is refused with `PREVIEW_CONFIGURATION_CHANGED`. A push revalidates the
+applied configuration instead of applying. Switch to Live to see the "N behind" count in
 the Live tab's hint, the Live chip and the chat's Live note.
 
 Tools, Setup (`?tool=setup`) shows one table with a Preview column and a Next publish column, Live's
 next-publish layer, where every item follows what Preview applied until Live sets its own, and Same as
 Preview follows again; a secret and a connection tied to one address are always Live's own. With `v=live`
 it shows the Next publish controls alone under a dark banner that counts what waits for a publish, whose
-"Publish this change…" opens the Publish popover on Live's own version; the Next publish line's
-"Publish…" opens it on the newest version. Publishing builds the version's copy from the layer
+"Publish this change" opens the Publish popover on Live's own version; the Next publish line's
+"Publish" opens it on the newest version. Publishing builds the version's copy from the layer
 (`DeriveLiveConfiguration`). Named fixtures seed more of Setup and of the Publish popover through the page
 URL, once per mock server and cumulatively, so restart the mock to see one alone:
 
@@ -254,8 +255,8 @@ URL, once per mock server and cumulatively, so restart the mock to see one alone
   listened to by another Project, which the item's warning names.
 - `?setupFixture=next-publish`: Setup opens on the prepared head; Preview applied the seed connection, a
   label and the Slack connection name listening in `#escalations`, and Live runs the head with exactly the
-  next publish: every item follows Preview, nothing waits, and Slack's Next publish channel is amber because
-  Preview listens there too.
+  next publish: every item follows Preview and nothing waits. Slack's Next publish channel is where Preview
+  listens too, which its menu note and the Publish popover's Check say without colouring it.
 - `?setupFixture=waiting`: as `next-publish`, then Preview applies a new label, which the next publish
   follows, and the next publish has its own model: two settings wait, each with a blue dot whose hint
   names what Live V1 runs, and the Live tab's banner counts them.

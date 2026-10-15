@@ -298,9 +298,9 @@ export function VariablesBlock({
   return (
     <section aria-label="Variables" ref={setContainer} data-testid="setup-variables">
       <h3 className="mt-5.5 mb-2 flex items-center gap-2 text-[11px] font-normal tracking-[0.07em] text-ink-faint uppercase">
-        Variables <span className="text-[12px] tracking-normal normal-case">· values the code reads</span>
+        Variables
       </h3>
-      <div className="max-w-240 rounded-[10px] border border-line-soft bg-panel py-1">
+      <div className="rounded-[10px] border border-line-soft bg-panel py-1">
         {fields.filter((field) => field.required).map(row)}
         {optional.length > 0 && (
           <div className="flex min-h-10 items-center px-3.5">

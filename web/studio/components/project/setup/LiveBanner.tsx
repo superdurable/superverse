@@ -27,7 +27,7 @@ export function LiveBanner({
   return (
     <section
       aria-label="You're changing Live"
-      className="flex max-w-240 flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-t-[10px] bg-ink px-3.5 py-2.25 text-[13px] text-panel"
+      className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-t-[10px] bg-ink px-3.5 py-2.25 text-[13px] text-panel"
       data-testid="live-banner"
     >
       <b className="font-semibold">You&apos;re changing Live</b>
@@ -44,11 +44,7 @@ export function LiveBanner({
           className="inline-flex h-7 items-center rounded-[7px] border border-panel bg-panel px-2.5 text-[12.5px] font-medium text-ink hover:bg-band-0"
           data-testid="change-live-configuration"
         >
-          {waiting === 0
-            ? `Publish ${version} again…`
-            : waiting === 1
-              ? "Publish this change…"
-              : "Publish these changes…"}
+          {waiting === 0 ? `Publish ${version} again` : waiting === 1 ? "Publish this change" : "Publish these changes"}
         </button>
       )}
     </section>

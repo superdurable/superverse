@@ -25,8 +25,9 @@ export interface MemberRow<R extends string> {
 }
 
 /**
- * People with one role each. Those who may change them get a labelled role dropdown and Remove on every row that
- * can change; everyone else reads the roles. `describe` adds what a role allows under it and to each choice.
+ * People with one role each, one line per person. Those who may change them get a labelled role dropdown and
+ * Remove on every row that can change; everyone else reads the roles. `describe` says what a role allows in each
+ * choice of the dropdown and in the hint of a role that only reads, and `roleNote` heads the dropdown's menu.
  */
 export function MemberTable<R extends string>({
   label,
@@ -36,6 +37,7 @@ export function MemberTable<R extends string>({
   editable,
   busy,
   describe,
+  roleNote,
   onRole,
   onRemove,
 }: {
@@ -47,6 +49,7 @@ export function MemberTable<R extends string>({
   editable: boolean;
   busy: boolean;
   describe?: (role: R) => string;
+  roleNote?: string;
   onRole: (accountId: string, role: R) => void;
   onRemove: (accountId: string) => void;
 }) {
@@ -84,13 +87,12 @@ export function MemberTable<R extends string>({
                     value={row.role}
                     disabled={busy}
                     onChange={(next) => onRole(row.accountId, next)}
+                    note={roleNote}
+                    title={describe?.(row.role)}
                     items={roles.map((item) => ({ value: item.value, label: item.word, sub: describe?.(item.value) }))}
                   />
                 ) : (
-                  word(row.role)
-                )}
-                {describe && (
-                  <small className="mt-1 block max-w-80 text-[11.5px] text-ink-faint">{describe(row.role)}</small>
+                  <span title={describe?.(row.role)}>{word(row.role)}</span>
                 )}
               </td>
               {editable && (

@@ -38,8 +38,9 @@ export async function openPreviewConfiguration(page: Page, projectId: string) {
   const setup = `/p/${projectId}/tools?tool=setup`;
   await page.goto(setup);
   const checklist = page.getByTestId("setup-checklist");
+  // Build processes shows only while the latest push is not built; Setup's table only once it is.
   const control = page.getByRole("region", { name: "Build processes", exact: true });
-  await expect(control).toBeVisible({ timeout: 2 * 60_000 });
+  await expect(checklist.or(control)).toBeVisible({ timeout: 2 * 60_000 });
   const session = await readSession(page, projectId);
   const source = session.preview?.preparedSource;
   const ready = source?.status === "PREVIEW_SOURCE_STATUS_READY" && source.sourceCommit === session.headCommit;

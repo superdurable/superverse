@@ -10,24 +10,19 @@ import { useEffect, useMemo } from "react";
 import type { FlowApiScopeBinding } from "@/lib/flow/FlowApiProvider";
 import { useFlowHost } from "@/lib/flow/FlowHostProvider";
 import { connectionKey, connectorDisplayName, type ConnectionsResponse } from "@/lib/api/flow/connector";
-import { draftItemKey, nextPublishItemAnchor } from "@/lib/api/flow/draft/configuration-draft";
 import { studioRoutes } from "@/lib/shared/studio-routes";
 import { cx } from "@/components/ui/cx";
-import { Glyph } from "@/components/ui/Glyph";
-import { ONE_COLUMN, TWO_COLUMNS, WIDE_ONLY } from "@/components/flow/connections/model/connection-words";
+import { ONE_COLUMN, SETUP_HINTS, TWO_COLUMNS, WIDE_ONLY } from "@/components/flow/connections/model/connection-words";
 import { ReleaseUnused } from "./ReleaseUnused";
 import {
-  listensWithPreview,
   type SetupItem,
   type SetupSide,
   type SetupSideName,
   type SetupTable,
 } from "@/components/flow/connections/model/row-model";
-import { channelOf } from "@/components/flow/connections/model/setting-defaults";
 import { useReplyChannelDefaults } from "@/components/flow/connections/model/setting-defaults";
 import { SetupRow } from "@/components/flow/connections/row/SetupRow";
 import {
-  useChannelNames,
   useConnectionSessions,
   useConnectorCatalog,
   useReleaseManifests,
@@ -52,38 +47,13 @@ function useSide(
   return { side, error, catalog };
 }
 
-/** What the bar above the table says from what only the table reads: connector names and what deserves a look. */
+/** What the bar above the table says from what only the table reads: the connector names. */
 export interface SetupNotes {
   /** Each connector's name, by connector ID. */
   connectors: Record<string, string>;
-  /** What the next publish would do that deserves a look, each a link to its control. */
-  warnings: { anchor: string; words: string }[];
 }
 
-/**
- * The next publish's trigger bindings that would listen where Preview listens, through the same connection,
- * in words such as "Slack: #support is Preview's channel too".
- */
-function listeningWarnings(side: SetupSide | null, channels: Map<string, Map<string, string>>) {
-  return (side?.catalog.connections ?? []).flatMap((connection) =>
-    (connection.triggerUses ?? []).flatMap((use) => {
-      const key = draftItemKey({
-        kind: "KIND_TRIGGER_BINDING",
-        connectorId: connection.connectorId,
-        connectionName: connection.connectionName,
-        triggerName: use.triggerName,
-        bindingName: use.bindingName,
-      });
-      if (!listensWithPreview(side, connection, key)) return [];
-      const channel = channelOf(use);
-      const named = channels.get(connectionKey(connection))?.get(channel) ?? channel;
-      const what = named ? `${named} is Preview's channel too` : "listens where Preview listens";
-      return [{ anchor: nextPublishItemAnchor(key), words: `${connectorDisplayName(connection)}: ${what}` }];
-    }),
-  );
-}
-
-/** The table's head: Connection, then each column, the Next publish with the Publish glyph, never "Live". */
+/** The table's head: Connection, then each column by name alone, never "Live" on the Preview tab; the icons are on the bar's buttons above. */
 function Head({ liveTab }: { liveTab: boolean }) {
   return (
     <div
@@ -95,18 +65,16 @@ function Head({ liveTab }: { liveTab: boolean }) {
     >
       <span>Connection</span>
       {liveTab ? (
-        <span className="flex items-center gap-1.5 @max-[520px]/tool:hidden">
+        <span className="flex cursor-help items-center gap-1.5 @max-[520px]/tool:hidden" title={SETUP_HINTS.live}>
           <span className="size-1.75 rounded-full bg-pass" />
           Live
         </span>
       ) : (
         <>
-          <span className={cx(WIDE_ONLY, "flex items-center gap-1.5")}>
-            <span className="size-2 rounded-full border-[1.5px] border-ink-dim" />
+          <span className={cx(WIDE_ONLY, "cursor-help")} title={SETUP_HINTS.preview}>
             Preview
           </span>
-          <span className={cx(WIDE_ONLY, "flex items-center gap-1.5")} title="Live's settings">
-            <Glyph name="upload" className="size-3.25" />
+          <span className={cx(WIDE_ONLY, "cursor-help")} title={SETUP_HINTS.nextPublish}>
             Next publish
           </span>
         </>
@@ -160,14 +128,9 @@ export function SetupChecklist({
   const connectors = useConnectorCatalog();
   const manifests = useReleaseManifests(catalog, teamSpaceId);
   useReplyChannelDefaults(previewSide.side);
-  const channels = useChannelNames(nextSide.catalog, nextSide.side?.sessions ?? new Map());
   const notes = JSON.stringify({
     connectors: Object.fromEntries(
       (catalog?.connections ?? []).map((connection) => [connection.connectorId, connectorDisplayName(connection)]),
-    ),
-    // Two bindings listening in one channel read alike; the first links to it.
-    warnings: listeningWarnings(nextSide.side, channels).filter(
-      (warning, index, all) => all.findIndex((other) => other.words === warning.words) === index,
     ),
   });
   useEffect(() => onNotes?.(JSON.parse(notes) as SetupNotes), [notes, onNotes]);
@@ -199,10 +162,7 @@ export function SetupChecklist({
         </p>
       ))}
       <div
-        className={cx(
-          "max-w-240 border border-line-soft bg-panel",
-          framed ? "rounded-b-[10px] border-t-0" : "rounded-[10px]",
-        )}
+        className={cx("border border-line-soft bg-panel", framed ? "rounded-b-[10px] border-t-0" : "rounded-[10px]")}
       >
         <Head liveTab={liveTab} />
         {catalog.connections.length === 0 ? (
@@ -220,14 +180,14 @@ export function SetupChecklist({
         )}
       </div>
       <VariablesBlock sides={sides} liveTab={liveTab} live={live} />
-      <p className="mt-2.5 flex max-w-240 flex-wrap items-center gap-2.5 text-[12.5px] text-ink-faint">
-        A new key or sign-in on a connection reaches every project that uses it at once.
-        {teamSpaceId && (
-          <a className="text-accent hover:underline" href={studioRoutes.teamSpaceConnections(teamSpaceId)}>
-            The TeamSpace&apos;s connections ›
-          </a>
-        )}
-      </p>
+      {teamSpaceId && (
+        <a
+          className="mt-2.5 justify-self-start text-[12.5px] text-accent hover:underline"
+          href={studioRoutes.teamSpaceConnections(teamSpaceId)}
+        >
+          The TeamSpace&apos;s connections ›
+        </a>
+      )}
       {liveTab && <ReleaseUnused path={next.basePath} catalog={catalog} />}
     </div>
   );

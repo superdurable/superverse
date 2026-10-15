@@ -15,38 +15,32 @@ import type { PreviewSnapshot__Output } from "@/lib/generated/protobuf/supervers
 import type { ProjectConfigurationSnapshot__Output } from "@/lib/generated/protobuf/superverse/v2/ProjectConfigurationSnapshot";
 import { focusAnchor } from "@/lib/browser/hash-focus";
 import { gapAnchor, gapItemKey, nextPublishGapAnchor } from "@/lib/project/setup/configuration-items";
-import { previewStatusOf, startDurationWords } from "@/lib/project/setup/environment-status";
+import { startDurationWords } from "@/lib/project/setup/environment-status";
 import { cannotCheckText } from "@/lib/shared/problem/problem";
 import { requirementGapName } from "@/lib/shared/problem/requirement-gaps";
-import { statusDotClass } from "@/components/frame/status/EnvironmentStatusTab";
+import { ACTION_CELLS, ACTION_COLUMNS } from "@/components/flow/scope/SetupChecklistSurface";
 import { Button } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
 import { Glyph } from "@/components/ui/Glyph";
 import { Spinner } from "@/components/ui/Icons";
 
-const LINE = cx("flex min-h-11.5 flex-wrap items-center gap-x-2.5 gap-y-1.5 px-3.5 py-2.25 text-[13px]");
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
-/** A link that opens and focuses one item: red where something is missing, amber where it deserves a look. */
+/** A link, in red, that opens and focuses one item Setup misses. */
 function ItemLink({
   anchor,
   hrefOf,
-  amber = false,
   children,
 }: {
   anchor: string;
   hrefOf: (anchor: string) => string;
-  amber?: boolean;
   children: ReactNode;
 }) {
   return (
     <Link
       href={hrefOf(anchor)}
       onClick={() => focusAnchor(anchor)}
-      className={cx(
-        "underline underline-offset-3",
-        amber ? "text-busy decoration-busy-rule" : "text-fail decoration-fail-rule",
-      )}
+      className="text-fail underline decoration-fail-rule underline-offset-3"
     >
       {children}
     </Link>
@@ -111,15 +105,17 @@ function nextPublishGapWords(gap: ConfigurationRequirementGap__Output, connector
 }
 
 /**
- * Setup's two lines above the table. Preview: what it lacks, as links to each item, or the saved changes it
- * does not run yet with Apply to Preview, which restarts it with them, or the version it runs with these
- * settings. Next publish, Live's settings: what to set up before publishing, what waits for a publish,
- * or the version ready to publish, with Publish….
+ * The Setup bar above the table, on its columns. Over the Preview column, Apply to Preview, which applies at once
+ * what Setup applies on its own once edits settle, with Preview's state under it: what it lacks, as links to
+ * each item, the saved changes it is being updated with, or the version it runs with these settings. Over the
+ * Next publish column, Publish, which opens the Publish popover whenever something waits, with the next
+ * publish's state under it: what to set up before publishing, what waits, or the version ready to publish.
  */
 export function SetupBar({
   configuration,
   sourceReady,
   preview,
+  updating,
   canApply,
   applying,
   onApply,
@@ -132,14 +128,17 @@ export function SetupBar({
   hrefOf,
   version,
   connectors,
-  warnings,
 }: {
   /** Preview's configuration of its prepared source, null while it is read. */
   configuration: ProjectConfigurationSnapshot__Output | null;
   sourceReady: boolean;
   preview: PreviewSnapshot__Output | null;
+  /** Setup is about to apply its saved changes to the running Preview on its own. */
+  updating: boolean;
   canApply: boolean;
+  /** An apply, or a start that takes the saved changes, is being sent. */
   applying: boolean;
+  /** Applies the saved settings now: restarts a running Preview with them, or starts a stopped one. */
   onApply: () => void;
   /** "Saving…" or "Saved" while this tab's Setup writes settle, of either column. */
   saving: string | null;
@@ -150,7 +149,7 @@ export function SetupBar({
   waiting: number;
   /** The newest version ahead of Live, "V13"; null when Live runs the newest. */
   ahead: string | null;
-  /** Opens the Publish popover on the newest version; null where nothing opens it. */
+  /** Opens the Publish popover on the newest version, or on Live's waiting settings; null with nothing to publish. */
   onPublish: (() => void) | null;
   /** This page with an anchor. */
   hrefOf: (anchor: string) => string;
@@ -158,20 +157,26 @@ export function SetupBar({
   version: string | null;
   /** Each connector's name, by connector ID, for the Next publish line's words. */
   connectors: Record<string, string>;
-  /** What the next publish would do that deserves a look, each a link to its control. */
-  warnings: readonly { anchor: string; words: string }[];
 }) {
-  const status = previewStatusOf(preview, configuration);
   const ready = configuration?.status === "CONFIGURATION_STATUS_READY";
   const changes = configuration?.unappliedChangeCount ?? 0;
   const running = preview?.status === "PREVIEW_STATUS_READY";
+  const source = preview?.preparedSource;
   let previewLine: ReactNode;
   if (!sourceReady)
-    previewLine = <span className="text-ink-faint">The latest push is not prepared yet; Setup opens once it is.</span>;
+    previewLine = (
+      <span className="text-ink-faint">
+        {source?.status === "PREVIEW_SOURCE_STATUS_PREPARING"
+          ? "Building the latest push… Setup opens when it is ready."
+          : source?.status === "PREVIEW_SOURCE_STATUS_FAILED"
+            ? "The latest push did not build; Build processes below says why."
+            : "The latest push is not built yet; Build processes below builds it."}
+      </span>
+    );
   else if (!configuration)
     previewLine = <span className="text-ink-faint">Reading the Preview&apos;s configuration…</span>;
   else if (applying || preview?.status === "PREVIEW_STATUS_STARTING")
-    previewLine = <span className="text-ink-dim">Restarting with your changes…</span>;
+    previewLine = <span className="text-ink-dim">Updating Preview…</span>;
   else if (!ready && configuration.requirementGaps.length > 0)
     previewLine = (
       <>
@@ -188,17 +193,24 @@ export function SetupBar({
   else
     previewLine = (
       <span className={changes > 0 ? "text-ink" : "text-ink-faint"} data-testid="unapplied-count">
-        {changes > 0
-          ? `${plural(changes, "change", "changes")} not on Preview yet`
-          : running
-            ? `Running ${version ? `${version} ` : ""}with these settings`
-            : "No changes to apply"}
+        {updating
+          ? changes > 0
+            ? `Updating Preview with ${plural(changes, "change", "changes")}…`
+            : "Updating Preview…"
+          : changes > 0
+            ? running
+              ? `${plural(changes, "change", "changes")} not on Preview yet`
+              : `${plural(changes, "change", "changes")} not on Preview yet; it takes them when it starts`
+            : running
+              ? `Running ${version ? `${version} ` : ""}with these settings`
+              : "Preview is not running; it starts with these settings"}
       </span>
     );
   const previewGaps = new Set((configuration?.requirementGaps ?? []).map(gapItemKey));
   const ownGaps = (next?.requirementGaps ?? []).filter((gap) => !previewGaps.has(gapItemKey(gap)));
   let nextLine: ReactNode;
-  if (!next)
+  if (!sourceReady) nextLine = <span className="text-ink-faint">Shows once the latest push is built.</span>;
+  else if (!next)
     nextLine = (
       <span className={nextError ? "text-fail" : "text-ink-faint"}>{nextError || "Reading Live's next publish…"}</span>
     );
@@ -243,64 +255,51 @@ export function SetupBar({
             : "Live runs these settings"}
       </span>
     );
+  const state = "flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-[12.5px] leading-snug";
   return (
-    <section
-      aria-label="Setup status"
-      className="max-w-240 rounded-[10px] border border-line-soft bg-panel"
-      data-testid="setup-bar"
-    >
-      <div className={LINE} data-testid="apply-header">
-        <span className={cx("size-2 shrink-0 rounded-full border", statusDotClass("preview", status.tone))} />
-        <b className="font-semibold">Preview</b>
+    <section aria-label="Setup status" className={ACTION_COLUMNS} data-testid="setup-bar">
+      <span className={ACTION_CELLS.saving}>{saving}</span>
+      <Button
+        size="sm"
+        className={ACTION_CELLS.apply}
+        disabled={!sourceReady || !canApply || !ready || (running && changes === 0)}
+        title={
+          !ready
+            ? "Complete what is missing first"
+            : running && changes === 0
+              ? "Preview runs these settings"
+              : "Setup applies your changes on its own once you stop editing; this applies them now"
+        }
+        onClick={onApply}
+      >
+        {applying ? (
+          <Spinner className="size-3.5" />
+        ) : (
+          <span aria-hidden="true" className="size-2 rounded-full border-[1.5px] border-current" />
+        )}
+        {applying ? "Applying…" : "Apply to Preview"}
+      </Button>
+      <Button
+        size="sm"
+        className={ACTION_CELLS.publish}
+        disabled={!onPublish}
+        title={onPublish ? undefined : "Nothing waits for a publish"}
+        onClick={() => onPublish?.()}
+        data-testid="setup-publish"
+      >
+        <Glyph name="upload" className="size-3.5" />
+        Publish
+      </Button>
+      <div className={cx(ACTION_CELLS.preview, state)} aria-label="Preview" data-testid="apply-header">
         {previewLine}
-        {saving && <span className="text-[12px] text-ink-faint">{saving}</span>}
-        {sourceReady && configuration && (
-          <span className="ml-auto flex items-center gap-2">
-            {ready && (changes > 0 || !running) && (
-              <span className="text-[12px] text-ink-faint">
-                {running ? "restarts" : "starts"} in {startDurationWords(preview)}
-              </span>
-            )}
-            <Button
-              variant="strong"
-              size="sm"
-              disabled={!canApply || !ready}
-              title={!ready ? "Complete what is missing first" : undefined}
-              onClick={onApply}
-            >
-              {applying && <Spinner className="size-3.5" />}
-              {applying ? "Applying…" : "Apply to Preview"}
-            </Button>
+        {sourceReady && ready && (changes > 0 || !running) && (
+          <span className="text-[12px] text-ink-faint">
+            · {running ? "restarts" : "starts"} in {startDurationWords(preview)}
           </span>
         )}
       </div>
-      <div className={cx(LINE, "border-t border-line-faint")} data-testid="next-publish-line">
-        <Glyph name="upload" className="size-3.5 text-ink-dim" />
-        <b className="font-semibold">Next publish</b>
-        <span
-          className="text-ink-faint"
-          title="The same settings as the Live tab: a change in either place is the same change"
-        >
-          · Live&apos;s settings
-        </span>
+      <div className={cx(ACTION_CELLS.next, state)} aria-label="Next publish" data-testid="next-publish-line">
         {nextLine}
-        {next && warnings.length > 0 && (
-          <ul aria-label="Check before publishing" className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            {warnings.map((warning) => (
-              <li key={warning.anchor}>
-                <ItemLink anchor={warning.anchor} hrefOf={hrefOf} amber>
-                  {warning.words}
-                </ItemLink>
-              </li>
-            ))}
-          </ul>
-        )}
-        {onPublish && ahead && (
-          <Button size="sm" className="ml-auto" onClick={onPublish} data-testid="setup-publish">
-            <Glyph name="upload" className="size-3.5" />
-            Publish…
-          </Button>
-        )}
       </div>
     </section>
   );

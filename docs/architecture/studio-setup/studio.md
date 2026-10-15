@@ -20,9 +20,11 @@ Every version is shown as "V*N* · subject", never as a hash
   name and hover hint, with accessible labels. On phone widths, the Project and environment controls wrap above the
   surface navigation, keeping its scrolling tabs separate from the controls and actions beside
   them.
-- **Colours (E3).** Preview is grey and only Live is green: the tab's dot, the process picker's
-  pill (`ProcessPicker`) and the active tab's underline (`TabStrip`) take the selected
-  environment's colour.
+- **Colours (E3).** Preview is grey and only Live is green: the selected tab of the switch is
+  filled with its colour (solid grey or solid green, its words and healthy dot in the panel's
+  colour), and the process picker's pill (`ProcessPicker`) and the active tab's 3px underline
+  (`TabStrip`) take the selected environment's colour. No line runs along the bar. The bar's Publish is green whenever a version is ahead of Live or settings
+  wait for a publish, on either tab.
 - **No chevron menus.** `SegmentMenu` is deleted, and the Preview menu (`build/PreviewMenu.tsx`)
   and `LiveTimelineMenu` leave the bar. What they held moves to the
   [surfaces below](#moved-surfaces).
@@ -30,10 +32,12 @@ Every version is shown as "V*N* · subject", never as a hash
   do today through `?v=live`.
 - **Operators** see only the Live tab, as today.
 - **Publish button** (`components/publishing/publish/PublishButton`). "Publish" with the Publish ↑
-  icon, at the top right, opens the [Publish popover](#publish-popover). On the Preview tab it
-  counts the versions ahead of Live ("2 new") and is the one primary action when there are any; on
-  the Live tab it counts the waiting settings ("1 waiting") and opens on Live's own version. While
-  a publish runs it reads "Publishing…" and is disabled.
+  icon, at the top right, opens the [Publish popover](#publish-popover). It is the one primary
+  action, in green, whenever a version is ahead of Live or settings wait for a publish, on either
+  tab. On the Preview tab it counts the versions ahead of Live ("2 new"); on the Live tab, and on
+  the Preview tab when no version is ahead, it counts the waiting settings ("1
+  waiting") and opens on Live's own version, so a change in the Next publish column publishes from
+  either tab. While a publish runs it reads "Publishing…" and is disabled.
 - **Unsaved writes.** A Setup write that is still pending makes the bar show "Saving…".
 
 ## Tools ▸ Setup
@@ -50,11 +54,23 @@ STUDIOSETUP shipped:
 One table, generated from the item list and the gap report of `GetProjectConfiguration`, for
 Preview's prepared commit on the Preview tab:
 
-- **Columns (L1).** Connection | Preview | Next publish. The Next publish header carries the
-  Publish ↑ icon and never says "Live"; its hint is "Live's settings". The Preview column is what
-  Preview runs once applied. The Next publish column shows what the next publish uses and edits
-  the [next-publish layer](configuration-drafts.md#live-next-publish-layer), the same settings the
-  Live tab shows, so a change made in either place is the same change.
+- **Columns (L1).** Connection | Preview | Next publish. The headers carry no icon and the Next
+  publish header never says "Live". The Preview column is what Preview runs once applied. The
+  Next publish column shows what Live gets when this version is published and edits the
+  [next-publish layer](configuration-drafts.md#live-next-publish-layer). The Live tab edits the
+  same layer for the version Live runs, so the two show the same settings only when Preview and
+  Live run the same version. Nothing in either reaches Live before a publish.
+- **Hints, not prose.** Setup, Publishing and Permissions have no intro line under their heading,
+  and Setup uses the panel's width (up to 1400px, as Publishing): the Preview and Next publish
+  columns grow from 232px with it, the Connection column takes the rest, and under the table only
+  the link to the TeamSpace's connections remains. Build processes shows while the latest push is
+  not built and whenever automatic builds are off, where it holds the manual build, and Project
+  details is reached from the Project's menu. What each column means is the hover hint of its header
+  (`SETUP_HINTS` in `components/flow/connections/model/connection-words.ts`), which names it without
+  an icon: Preview, "What Preview runs with. Changes save as you make them and reach Preview when
+  you apply them."; Next publish, "What Live gets when you publish this version. Changes reach Live
+  only when you publish. The Live tab shows the same settings when Live runs this version."; and the
+  Live tab's Live column, the same from Live's side with the blue dot.
 - **A row per connection name**, with its connector's logo and name and the Steps that use it,
   and a connection dropdown in each column. A row opens to its body. On the Preview tab a row
   starts folded unless something in it is missing or worth a look; a row that opened for that
@@ -85,8 +101,9 @@ Preview's prepared commit on the Preview tab:
 - **Reasons live in the menu**, in the note at the top of the open menu or in an option's
   tooltip, never in a line of text under the control.
 - **A glyph inside the control** marks a red control (a gap: nothing works yet) or an amber one
-  (worth a look: a new sign-in is needed, the app is not in the channel, Preview listens there
-  too).
+  (worth a look: a new sign-in is needed, the app is not in the channel). A channel that Preview or
+  another Project also listens in is a choice, not a fault: the control keeps its normal colour, its
+  menu note says that both answer each message, and the Publish popover lists it once under Check.
 - **A blue dot inside the control** means that its value differs from what Live runs now: it is
   waiting. Its tooltip names Live's value, "Live V12 runs #support now. This goes out with the
   next publish."
@@ -114,29 +131,46 @@ Container queries on the tool panel decide the layout, never viewport breakpoint
 
 ### The Setup bar
 
-Above the table, `project/setup/SetupBar.tsx` has two lines:
+Under the heading, `project/setup/SetupBar.tsx` is a box like the other tools' cards, on the
+table's column grid with the table's border and padding: over the Preview column, **Apply to
+Preview** (with the Preview mark) and Preview's state directly under it; over the Next publish
+column, **Publish** (with the Publish ↑ icon) and the next publish's state directly under it. Each
+button is as wide as its column's dropdowns. "Saving…" and "Saved" sit at the start. Below 780px
+each state sits beside its button, and the two buttons, one width, end where the rows' chips end.
 
-- **Preview:** its dot, then by state "N missing:" with links that open and focus each item;
-  "N changes not on Preview yet" with the note "restarts in about 30 s" (the median of the last
-  `recent_starts` timings) and the apply action, `StartPreview` with `apply_configuration`, which
-  first flushes the autosave queue and sends the revision it saved (the prototype labels it
-  "Restart Preview", and "Start Preview" before a first start); "Restarting with your changes…"
-  with the phases; or "Running V12 with these settings". Apply is enabled only when the
-  configuration's `status` is `READY`; with no gaps and not READY it shows "Cannot check:
-  {reason}". "Saving…" and "Saved" follow.
-- **Next publish · Live's settings:** by state "N to set up before publishing:" with links, each in
+- **Preview's state:** by state "N missing:" with links that open and focus each item;
+  "Updating Preview with N changes…" with "· restarts in about 30 s" (the median of the last
+  `recent_starts` timings); "Updating Preview…" while it restarts; "N changes not on Preview yet;
+  it takes them when it starts" while it is stopped; or "Running V12 with these settings". With no
+  gaps and not READY it shows "Cannot check: {reason}". Before the latest push is built it says
+  "Building the latest push…", that it did not build, or that it is not built yet, and the next
+  publish's state says it shows once the push is built.
+- **Applying is automatic.** Changes save as they are made, and Setup applies them on its own
+  (`project/setup/auto-apply.ts`): three seconds after the last saved change, when the
+  configuration is READY, while Preview runs and has unapplied changes, or after its automatic
+  update to the latest push was refused for missing settings. One apply covers a burst of edits,
+  because each apply rebuilds the Preview application of the same commit before it swaps it in;
+  the running Preview serves until the swap. An apply is never repeated for the same revision, so
+  a refused one waits for the next change or the problem's Apply again. A stopped Preview is not
+  started: Start takes the saved changes (`StartPreview` with `apply_configuration`).
+- **Apply to Preview** applies at once what Setup would apply on its own, or starts a stopped
+  Preview with it, first flushing the autosave queue and sending the revision it saved. It is
+  disabled while something is missing or while Preview runs these settings.
+- **The next publish's state:** by state "N to set up before publishing:" with links, each in
   plain words such as "Stripe needs its own connection"; "Follows Preview once Preview is set up"
-  (with the gaps of its own, if any); "Ready to publish V13 with these settings", with "Publish…",
-  when a version is ahead of Live; "N changes waiting for a publish"; or "Live runs these
-  settings". Things to check follow as amber links.
+  (with the gaps of its own, if any); "Ready to publish V13 with these settings" when a version is
+  ahead of Live; "N changes waiting for a publish"; or "Live runs these settings".
+- **Publish** opens the Publish popover on the newest version, or on Live's waiting settings when
+  no version is ahead. It is disabled only when nothing waits for a publish, never for a thing to
+  check.
 
 ### The Live tab
 
 Setup on the Live tab shows the same Next publish controls in one column, for current Live's
 version, under a dark banner (`project/setup/LiveBanner.tsx`):
 
-- **Banner.** "You're changing Live · V12 · 1 change waiting · Publish this change…" ("Publish
-  these changes…" for several), or "Nothing waiting for a publish · Publish V12 again…". Its action
+- **Banner.** "You're changing Live · V12 · 1 change waiting · Publish this change" ("Publish
+  these changes" for several), or "Nothing waiting for a publish · Publish V12 again". Its action
   opens the Publish popover on Live's own version (`openPublishPopover({ mode: "live" })`).
 - **Intro.** These are the settings of the Next publish column on Preview; a new key or sign-in on
   a connection reaches Live at once, anything else goes out with the next publish; a blue dot
@@ -174,8 +208,8 @@ holds `Dropdown.tsx`, `ActionMenu.tsx`, `use-listbox-keys.ts` and its README, on
 
 ## Publish popover
 
- The Publish button, the Setup bar's
-"Publish…", the Live tab's banner and Tools ▸ Publishing's "Publish V13…" open one small popover,
+The Publish button, the Setup bar's
+"Publish", the Live tab's banner and Tools ▸ Publishing's "Publish V13" open one small popover,
 `components/publishing/publish/PublishPopover`, a `PopoverCard` rather than a dialog
 (`publish-opener.ts`). On the Preview tab it shows:
 
@@ -187,14 +221,16 @@ holds `Dropdown.tsx`, `ActionMenu.tsx`, `use-listbox-keys.ts` and its README, on
 2. **Set up for Live first · N.** Each gap of the next publish for that version, with "Set up ›",
    which opens its Setup row with the Next publish control focused. Publish is disabled while any
    remains, or while the configuration is not READY.
-3. **Check.** What deserves a look and does not block, such as a trigger listening where Preview
-   listens or a connection that needs a new sign-in, each with "Pick ›" to its row.
-4. **What happens.** From the item list and the Live pointer: "Replaces V12. 3 runs in flight
-   finish on V12; new runs start on V13", the processes that start on Live or change, each waiting
-   setting, an address-bound connection sending events to Live's own address, the items no longer
-   used, the connections Live uses with their channels, and "Build about 2 min, then deploy and a
-   health check" from previous durations. A first publish reads "Starts Live at its address for
-   the first time." It reuses `ConsequenceSummary`.
+3. **Summary.** One line first: "Replaces V12 · 2 setting changes · about 3 min", "V12 again · 1
+   setting change", or "First publish to Live", the time from the previous publish's durations.
+   **Details**, folded under it, lists the rest from the item list and the Live pointer: "Replaces
+   V12. Runs in flight finish on V12; new runs start on this version", the processes that start on
+   Live or change, each waiting setting, an address-bound connection sending events to Live's own
+   address, the items no longer used, the connections Live uses with their channels, and the build
+   and deploy times. It reuses `ConsequenceSummary`.
+4. **Check.** What deserves a look and does not block, in a few words with why in its hint, one
+   line per concern, so a connection's triggers that listen where Preview listens read as one
+   ("support: Preview listens here too"), each with "Pick ›" to its row.
 5. **Reason.** A version never started on Preview needs a short reason, at most 500 code points,
    sent as `preview_skip_reason`; Publish stays disabled until it is filled, as the build admission
    already requires. The prototype's checkbox is not adopted.
@@ -214,7 +250,7 @@ changed; once the build is admitted, the popover closes and Tools ▸ Publishing
 The current entry is the Publish popover.
 
 **Entry and rules.** Waiting settings are published from the Live tab's banner, "Publish this
-change…", or from Live's own version in Tools ▸ Publishing, "Publish its waiting settings…". The
+change", or from Live's own version in Tools ▸ Publishing, "Publish its waiting settings". The
 rules follow the existing freeze model:
 
 - **Immediate.** TeamSpace connection credentials take effect at once without publishing: a
@@ -251,7 +287,9 @@ bottom:
 - **The publish in progress, or the last one**, from `components/publishing/progress/`: its header
   ("Publishing V13 · Started … by Maya", Cancel), the stage bar **Check → Lock settings → Build →
   Deploy → Go live** (Deploy and Go live for a rollback) with each stage's state and duration
-  ([stages](observability.md#publishing-stages)), and "View logs" / "Hide logs". Cancel confirms
+  ([stages](observability.md#publishing-stages)), and "View logs" / "Hide logs". Each stage is as wide
+  as its words; a panel narrower than 46rem drops the durations and one narrower than 34rem keeps
+  only the running, failed or cancelled stage's name, all of which stay in each stage's hover hint. Cancel confirms
   briefly that the running Live is untouched and is disabled once the health check
   (`VerifyReadiness`) has passed; a later refusal reads "Too late to cancel". The log opens inline
   under the bar, grouped by stage and monospace: the build's output, redacted, read only while it is
@@ -260,7 +298,7 @@ bottom:
   reader scrolled up. A failure shows the problem panel under the bar.
 - **What is Live:** the version, its address with Open, and Stop Live….
 - **The versions**, newest first, each with its builds and Preview validation or skip reason,
-  "Publish V13…" for a version ahead of Live, "Publish its waiting settings…" for Live's own, and
+  "Publish V13" for a version ahead of Live, "Publish its waiting settings" for Live's own, and
   "Roll Live back to V10…" for an older one.
 - **Live history**, from `ListEnvironmentEvents` for Live: publishes, rollbacks and cancelled
   publishes, with who and when ([timeline](observability.md#environment-timeline)).

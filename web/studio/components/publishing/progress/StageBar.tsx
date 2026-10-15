@@ -30,8 +30,10 @@ function StateMark({ state }: { state: StageState }) {
 
 /**
  * The stage bar: Check → Lock settings → Build → Deploy → Go live (Deploy and Go live for a rollback),
- * each with its state and, once done, how long it took. On a narrow panel only the stage that runs, failed
- * or was cancelled keeps its name; every stage keeps it in its hover hint and the bar's value text.
+ * each with its state and, once done, how long it took. Each stage is as wide as its words, so no name is
+ * cut. A panel narrower than 46rem drops the durations, and one narrower than 34rem keeps only the name of
+ * the stage that runs, failed or was cancelled; every stage keeps both in its hover hint and the bar's
+ * value text.
  */
 export function StageBar({ stages, label }: { stages: readonly StageView[]; label: string }) {
   const reached = stages.filter((view) => view.state === "done").length;
@@ -61,7 +63,7 @@ export function StageBar({ stages, label }: { stages: readonly StageView[]; labe
             data-stage={view.stage.id}
             data-state={view.state}
             className={cx(
-              "flex h-8.5 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-2 text-[13px] whitespace-nowrap",
+              "flex h-8.5 min-w-0 flex-auto items-center justify-center gap-1.5 rounded-full px-2 text-[13px] whitespace-nowrap",
               SEGMENT[view.state].tone,
             )}
           >
@@ -74,7 +76,9 @@ export function StageBar({ stages, label }: { stages: readonly StageView[]; labe
               {view.stage.label}
             </span>
             <StateMark state={view.state} />
-            {duration && <span className="font-mono text-[11.5px] opacity-85">{duration}</span>}
+            {duration && (
+              <span className="hidden font-mono text-[11.5px] opacity-85 @[46rem]/stages:inline">{duration}</span>
+            )}
           </span>
         );
       })}

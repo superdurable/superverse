@@ -23,6 +23,8 @@ const ROLES = (Object.keys(PROJECT_ROLES) as ProjectRole[]).map((value) => ({
   value,
   word: value,
 }));
+/** What every role dropdown says first: the roles nest. */
+const ROLE_NOTE = "Each role includes everything after it.";
 
 /**
  * Tools, Permissions: the Project's members, one role each. Its owners, and the platform admin, add members of
@@ -76,7 +78,7 @@ export function ProjectPermissions({
     });
   };
   return (
-    <div className="max-w-3xl">
+    <div>
       {editable && (
         <form className="mb-4 flex flex-wrap items-end gap-2" onSubmit={add} aria-label="Add to the project">
           <label className="grid min-w-60 flex-1 gap-1 text-[12.5px] text-ink-dim">
@@ -105,6 +107,7 @@ export function ProjectPermissions({
               inline
               value={addedRole}
               onChange={setAddedRole}
+              note={ROLE_NOTE}
               items={ROLES.map((item) => ({ value: item.value, label: item.word, sub: PROJECT_ROLES[item.value].can }))}
             />
           </label>
@@ -131,6 +134,7 @@ export function ProjectPermissions({
           editable={editable}
           busy={action.busy !== null}
           describe={(item) => PROJECT_ROLES[item].can}
+          roleNote={ROLE_NOTE}
           onRole={(accountId, next) =>
             void action.run("role", async (signal) =>
               changed(await setProjectMemberRole({ projectId, accountId, role: serverProjectRole(next) }, signal)),
@@ -143,11 +147,6 @@ export function ProjectPermissions({
           }
         />
       )}
-      <p className="mt-3 text-[12.5px] text-ink-faint">
-        {editable
-          ? "Each role includes everything after it. Only owners change who is in the project."
-          : "Each role includes everything after it. The project's owners change who is in it."}
-      </p>
     </div>
   );
 }

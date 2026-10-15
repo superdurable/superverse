@@ -37,8 +37,8 @@ function valueAt(json: string, unit: ConnectorUIUnit): string {
 /**
  * One setting of a trigger binding or Step on one side: its connector's unit as a dropdown, once the side's
  * connection works, else "After connecting" with the reason in its tooltip. On the next publish it starts with
- * "Same as Preview" and carries the blue dot while it waits; red when Setup misses it, amber where the next
- * publish would listen where Preview listens.
+ * "Same as Preview" and carries the blue dot while it waits; red when Setup misses it. Where the next publish
+ * would listen where Preview or another Project listens, its menu note says so without colouring it.
  */
 export function SettingCell({
   side,
@@ -107,12 +107,10 @@ export function SettingCell({
         connection={connection}
         session={opened.session}
         compact={label}
-        tone={missing ? "none" : listens || shared ? "warn" : undefined}
+        tone={missing ? "none" : undefined}
         note={
           [
-            listens
-              ? "Preview listens here too, so both would answer each event. Pick another value for the next publish."
-              : "",
+            listens ? "Preview listens here too: while Preview runs, Preview and Live both answer each message." : "",
             shared ? `${item?.warningProjectName || "Another Project"} also listens here.` : "",
             extraNote ?? "",
           ]

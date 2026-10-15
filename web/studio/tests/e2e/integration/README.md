@@ -61,11 +61,12 @@ the phase and the commit. It deletes the Project at the end.
 
 `setup-draft.spec.ts` registers an account, creates a template Project on the mock model and lets
 its first push reach the Preview, which lacks the `summary-model` connection. Apply to Preview stays
-disabled and lists the gap as a link that focuses its row. Selecting the TeamSpace connection in
-Setup's Preview column autosaves; Apply then sends `apply_configuration` with the saved revision and the
-Preview runs. An edit of a variable autosaves and reads "1 change not on Preview yet", also after a
-reload. A second tab's write of the same setting makes this tab's next write show "Changed elsewhere",
-resolved with Take theirs, and a last Apply leaves no change unapplied. In the Next publish column the
+disabled and Setup lists the gap as a link that focuses its row. Selecting the TeamSpace connection in
+Setup's Preview column autosaves, and Setup applies it on its own: `StartPreview` with
+`apply_configuration` and the saved revision, and the Preview runs. An edit of a variable autosaves and
+is applied on its own the same way. A second tab's write of the same setting makes this tab's next write
+show "Changed elsewhere", resolved with Take theirs; the Preview then runs that revision and Apply to
+Preview has nothing left to apply. In the Next publish column the
 variable follows Preview, becomes Live's own through "Different on Live…", written to the next-publish
 layer under the one "Saving…", and follows Preview again with `followPreview`, as the layer's items report.
 It requires the lane's Studio, server, Dex and local Git host with the mock model offered, and

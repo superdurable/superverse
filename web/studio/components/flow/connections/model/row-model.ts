@@ -177,17 +177,16 @@ export function listensWithPreview(side: SetupSide | null, connection: Connectio
   return !binding.differsFromPreview && !selection.differsFromPreview && selection.previewValueJson !== "";
 }
 
-/** A side's state of a row: red when an item is missing, amber when something deserves a look. */
+/**
+ * A side's state of a row: red when an item is missing, amber when its connection needs a new sign-in. A channel
+ * Preview or another Project also listens in is a choice, not a fault: its menu note says so and the Publish
+ * popover lists it once.
+ */
 export function rowTone(side: SetupSide | null, connection: ConnectionView): "none" | "warn" | "ok" {
   const keys = rowItemKeys(connection);
   if (!side || keys.some((key) => sideItem(side, key).missing)) return "none";
   const own = sideConnection(side, connection);
-  const shared = keys.some((key) =>
-    sideItem(side, key).item?.warnings.includes("CONFIGURATION_ITEM_WARNING_CHANNEL_SHARED"),
-  );
-  if ((own && needsSignIn(own)) || shared || keys.some((key) => listensWithPreview(side, connection, key)))
-    return "warn";
-  return "ok";
+  return own && needsSignIn(own) ? "warn" : "ok";
 }
 
 /** Why a connector's connection serves one address, as the next publish's menu note says it. */

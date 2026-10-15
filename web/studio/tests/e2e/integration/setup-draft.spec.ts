@@ -60,7 +60,7 @@ async function openConnectors(page: Page, projectId: string) {
   await expect(page.getByTestId("next-publish-line")).toBeVisible();
 }
 
-test("Setup autosaves Preview, gates Apply on READY, refuses a write another tab overtook and follows Preview on the next publish", async ({
+test("Setup autosaves Preview and applies it on its own, gates Apply on READY, refuses a write another tab overtook and follows Preview on the next publish", async ({
   page,
   context,
 }, testInfo) => {
@@ -76,7 +76,7 @@ test("Setup autosaves Preview, gates Apply on READY, refuses a write another tab
   // The connection is missing: Apply stays disabled, and the gap is a link that focuses its row.
   await openConnectors(page, projectId);
   const header = page.getByTestId("apply-header");
-  const apply = header.getByRole("button", { name: "Apply to Preview", exact: true });
+  const apply = page.getByTestId("setup-bar").getByRole("button", { name: "Apply to Preview", exact: true });
   await expect(apply).toBeDisabled();
   const gap = header.getByRole("list", { name: "Missing configuration" }).getByRole("link").first();
   await expect(gap).toContainText("summary-model");
@@ -98,14 +98,10 @@ test("Setup autosaves Preview, gates Apply on READY, refuses a write another tab
   await expect(marks.tab).toBeVisible();
   await expect(marks.entry).toBeVisible();
 
-  // A selection autosaves, the configuration turns READY and Apply restarts the Preview with the
-  // revision the last write returned.
+  // A selection autosaves, the configuration turns READY and Setup applies it on its own, without Apply to
+  // Preview: the refused Preview restarts with the revision the last write returned.
+  const applied = page.waitForResponse(rpcAnswered("StartPreview"), { timeout: 3 * 60_000 });
   await fillTemplateSummaryConnection(page);
-  await openConnectors(page, projectId);
-  await expect(apply).toBeEnabled({ timeout: 2 * 60_000 });
-  await expect(header).toContainText(/(re)?starts in about/);
-  const applied = page.waitForResponse(rpcAnswered("StartPreview"));
-  await apply.click();
   const request = (await applied).request().postDataJSON() as Record<string, unknown>;
   expect(request.applyConfiguration).toBe(true);
   expect(String(request.configurationRevision)).toMatch(/^[1-9][0-9]*$/);
@@ -120,17 +116,15 @@ test("Setup autosaves Preview, gates Apply on READY, refuses a write another tab
   await expect(marks.tab).toHaveCount(0);
   await expect(marks.entry).toHaveCount(0);
 
-  // An edit autosaves and counts as one change the running Preview lacks, also after a reload.
+  // An edit autosaves, and once the edits settle Setup updates the running Preview with it on its own.
+  const updated = page.waitForResponse(rpcAnswered("StartPreview"), { timeout: 2 * 60_000 });
   await typeGreeting(page, "Hello from Preview");
   await expect(page.getByTestId("draft-status")).toHaveText("Saved", { timeout: 30_000 });
-  await expect(page.getByTestId("unapplied-count")).toHaveText("1 change not on Preview yet", { timeout: 60_000 });
-  await page.reload();
-  await expect(page.getByTestId("unapplied-count")).toHaveText("1 change not on Preview yet", { timeout: 2 * 60_000 });
-  // Unapplied changes are normal while editing: the running Preview says no word, and Tools and its
-  // Setup entry carry the mark instead.
-  await expect(marks.tab).toBeVisible();
-  await expect(marks.entry).toBeVisible();
-  await expect(page.getByTestId("environment-preview")).toHaveAttribute("data-status", "RUNNING");
+  const update = (await updated).request().postDataJSON() as Record<string, unknown>;
+  expect(update.applyConfiguration).toBe(true);
+  await expect(page.getByTestId("unapplied-count")).toHaveText(/^Running (V\d+ )?with these settings$/, {
+    timeout: 10 * 60_000,
+  });
   await expect(page.getByTestId("environment-preview-status")).toHaveCount(0);
 
   // A second tab writes the same value; this tab's next write is refused for the changed revision
@@ -147,20 +141,20 @@ test("Setup autosaves Preview, gates Apply on READY, refuses a write another tab
   await expect(conflict).toHaveCount(0);
   await other.close();
 
-  // Apply sends the revision this tab now knows, and the Preview runs it.
-  await expect(apply).toBeEnabled({ timeout: 60_000 });
-  await apply.click();
+  // Whichever tab applied last, the Preview ends up running the revision this tab now knows, and Apply to
+  // Preview has nothing left to apply.
   await expect(page.getByTestId("unapplied-count")).toHaveText(/^Running (V\d+ )?with these settings$/, {
     timeout: 10 * 60_000,
   });
+  await expect(apply).toBeDisabled();
 
   // The Next publish column: before the first publish the greeting follows what Preview applied, so its
   // control reads "Same as Preview" and the line offers the version to publish.
   await expect(page.getByTestId("next-publish-line")).toContainText(/Ready to publish V\d+ with these settings/, {
     timeout: 60_000,
   });
-  // Its Publish… opens the bar's Publish popover on that version; Escape closes it.
-  await page.getByTestId("next-publish-line").getByTestId("setup-publish").click();
+  // The bar's Publish, over the Next publish column, opens the Publish popover on that version; Escape closes it.
+  await page.getByTestId("setup-publish").click();
   const popover = page.getByRole("dialog", { name: "Publish to Live" });
   const head = (await readSession(page, projectId)).headCommit;
   await expect(popover.getByTestId(`publish-version-${head}`)).toHaveAttribute("aria-checked", "true");

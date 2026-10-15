@@ -21,10 +21,11 @@ import { cx } from "@/components/ui/cx";
 
 const SECTION = "px-1 pt-2.5 pb-1 text-[11px] tracking-[0.07em] text-ink-faint uppercase";
 
-/** One line of a list: a dot in its tone, the words, and the link to its Setup row. */
+/** One line of a list: a dot in its tone, the words with why in their hint, and the link to its Setup row. */
 function Line({
   tone,
   words,
+  hint,
   link,
   href,
   anchor,
@@ -32,6 +33,7 @@ function Line({
 }: {
   tone: "fail" | "busy";
   words: string;
+  hint?: string;
   link: string;
   href: string;
   anchor: string;
@@ -43,7 +45,9 @@ function Line({
         aria-hidden="true"
         className={cx("mt-1.5 size-2 shrink-0 rounded-full", tone === "fail" ? "bg-fail" : "bg-busy")}
       />
-      <span className="min-w-0 flex-1 leading-snug text-ink">{words}</span>
+      <span className="min-w-0 flex-1 leading-snug text-ink" title={hint}>
+        {words}
+      </span>
       <Link
         href={href}
         className="shrink-0 whitespace-nowrap text-accent hover:underline"
@@ -67,16 +71,26 @@ function gapWords(gap: ConfigurationRequirementGap__Output): string {
   return requirementGapName(gap);
 }
 
-/** What deserves a look on an item and does not block, in words; null when nothing does. */
-function checkWords(item: ConfigurationItem__Output): string | null {
+/**
+ * What deserves a look on an item and does not block, in a few words with why in the hint; null when nothing
+ * does. A trigger is named by its connection, so a connection's triggers that share a concern read as one line.
+ */
+function checkWords(item: ConfigurationItem__Output): { words: string; hint: string } | null {
   if (!item.key || item.state === "STATE_NO_LONGER_USED") return null;
-  const name = itemName(item.key);
+  const name =
+    item.key.kind === "KIND_TRIGGER_BINDING" && item.key.connectionName ? item.key.connectionName : itemName(item.key);
   if (item.warnings.includes("CONFIGURATION_ITEM_WARNING_CONNECTION_DELETED"))
-    return `${name}: its connection was deleted or is no longer active`;
+    return { words: `${name}: connection deleted`, hint: "Its connection was deleted or is no longer active." };
   if (item.warnings.includes("CONFIGURATION_ITEM_WARNING_CHANNEL_SHARED"))
-    return `${name}: ${item.warningProjectName || "another Project"} listens there too`;
+    return {
+      words: `${name}: ${item.warningProjectName || "another Project"} listens here too`,
+      hint: "Both answer each message in this channel.",
+    };
   if (item.key.kind === "KIND_TRIGGER_BINDING" && item.state === "STATE_FOLLOWS_PREVIEW" && item.previewValueJson)
-    return `${name} listens where Preview listens`;
+    return {
+      words: `${name}: Preview listens here too`,
+      hint: "While Preview runs, Preview and Live both answer each message in this channel.",
+    };
   return null;
 }
 
@@ -102,10 +116,13 @@ export function PublishChecks({
 }) {
   const ready = configuration.status === "CONFIGURATION_STATUS_READY";
   const gaps = ready ? [] : configuration.requirementGaps;
-  const checks = configuration.items.flatMap((item) => {
-    const words = checkWords(item);
-    return words ? [{ item, words }] : [];
-  });
+  // One line per concern: a connection's triggers that listen where Preview listens read alike.
+  const checks = configuration.items
+    .flatMap((item) => {
+      const check = checkWords(item);
+      return check ? [{ item, ...check }] : [];
+    })
+    .filter((check, index, all) => all.findIndex((other) => other.words === check.words) === index);
   return (
     <>
       {!ready && (
@@ -138,11 +155,12 @@ export function PublishChecks({
         <section aria-label="Check" data-testid="publish-checks">
           <h3 className={SECTION}>Check</h3>
           <ul>
-            {checks.map(({ item, words }) => (
+            {checks.map(({ item, words, hint }) => (
               <Line
                 key={itemAnchor(item)}
                 tone="busy"
                 words={words}
+                hint={hint}
                 link="Pick ›"
                 href={setupHref(itemAnchor(item))}
                 anchor={itemAnchor(item)}

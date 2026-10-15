@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: The bar's environment tabs: one status dot each, and a word only when something is off, which links to its fix.
 
-Importers: `components/build`, `components/frame/bar` and `components/project/setup` import this directory.
+Importers: `components/build` and `components/frame/bar` import this directory.
 
 Imports: it imports `components/ui`, `lib/browser`, `lib/project/setup` and `lib/shared`.
 
@@ -12,7 +12,6 @@ flowchart LR
   self["components/frame/status"]
   c0["components/build"] --> self
   c1["components/frame/bar"] --> self
-  c2["components/project/setup"] --> self
   self --> d0["components/ui"]
   self --> d1["lib/browser"]
   self --> d2["lib/project/setup"]

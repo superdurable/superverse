@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: The Flow and Interface surfaces: the Flow Definitions of the version shown, the Preview with its source, start and stop, problem, phases and history, and the automatic-builds switch.
 
-Importers: `components/project` and `mock/surface` import this directory.
+Importers: `components/project`, `components/project/setup` and `mock/surface` import this directory.
 
 Imports: it imports `components/flow/scope`, `components/frame/status`, `components/project/activity`, `components/ui`, `components/ui/problem`, `components/ui/timings`, `lib/api`, `lib/api/transport`, `lib/browser`, `lib/flow`, `lib/generated/protobuf`, `lib/project`, `lib/project/setup`, `lib/session`, `lib/session/design`, `lib/shared`, `lib/shared/problem` and `lib/shared/version`.
 
@@ -11,7 +11,8 @@ Imports: it imports `components/flow/scope`, `components/frame/status`, `compone
 flowchart LR
   self["components/build"]
   c0["components/project"] --> self
-  c1["mock/surface"] --> self
+  c1["components/project/setup"] --> self
+  c2["mock/surface"] --> self
   self --> d0["components/flow/scope"]
   self --> d1["components/frame/status"]
   self --> d2["components/project/activity"]

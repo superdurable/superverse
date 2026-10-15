@@ -40,13 +40,21 @@ test("pushes build processes automatically, independently of Preview settings, u
       .getByRole("region", { name: "Automatic builds", exact: true })
       .getByRole("switch", { name: "Build each push automatically", exact: true });
     await expect(automatic).toHaveAttribute("aria-checked", "true", { timeout: 60_000 });
+    // Setup shows Build processes only while the latest push is not built: the push builds on its own and the
+    // control goes away.
     await page.goto(`/p/${projectId}/tools?tool=setup`);
     const control = page.getByRole("region", { name: "Build processes", exact: true });
-    await expect(control).toBeVisible({ timeout: 2 * 60_000 });
-    await expect(control.getByRole("link", { name: "Automatic builds are on", exact: true })).toBeVisible();
-    await expect(control).toContainText(/Processes of V[0-9]+ ready/, { timeout: 10 * 60_000 });
-    await expect(control.getByTestId("preview-current-commit")).toHaveText(/^V[0-9]+ · .+/);
-    await expect(control.getByRole("button", { name: /^Build (processes|V[0-9]+ processes again)$/ })).toHaveCount(0);
+    await expect
+      .poll(
+        async () => {
+          const session = await readSession(page, projectId);
+          const source = session.preview?.preparedSource;
+          return source?.status === "PREVIEW_SOURCE_STATUS_READY" && source.sourceCommit === session.headCommit;
+        },
+        { timeout: 10 * 60_000, intervals: [2000] },
+      )
+      .toBe(true);
+    await expect(control).toHaveCount(0, { timeout: 60_000 });
     const first = await readSession(page, projectId);
     expect(first.preview?.preparedSource?.sourceCommit).toBe(first.headCommit);
     expect(first.preview?.preparedSource?.status).toBe("PREVIEW_SOURCE_STATUS_READY");
@@ -57,10 +65,12 @@ test("pushes build processes automatically, independently of Preview settings, u
       .toBe("PREVIEW_DEPLOYMENT_STATUS_INCOMPATIBLE");
     await expect(page.getByTestId("setup-checklist")).toBeVisible();
 
-    // Off suppresses the next push's build; a manual build still works.
+    // Off suppresses the next push's build; Setup then keeps Build processes, whose manual build still works.
     await setAutomaticBuilds(page, projectId, false);
     await page.goto(`/p/${projectId}/tools?tool=setup`);
-    await expect(control.getByRole("button", { name: "Build processes", exact: true })).toBeVisible();
+    await expect(control.getByRole("button", { name: "Build processes", exact: true })).toBeVisible({
+      timeout: 2 * 60_000,
+    });
     await page.goto(`/p/${projectId}/flow`);
     await runMockScenario(page, projectId, "process-auto-refresh", { inputs: [2] });
     const pushed = await readSession(page, projectId);

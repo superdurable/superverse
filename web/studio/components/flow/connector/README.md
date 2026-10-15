@@ -1,6 +1,7 @@
 # Connections
 
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
+
 Purpose: The Connections view of a Project's Flow configuration: connectors, their setup steps and authorization guide, the connection form and its native units.
 
 Importers: no production directory imports this directory.
@@ -18,4 +19,5 @@ flowchart LR
   self --> d5["lib/api/flow/draft"]
   self --> d6["lib/flow"]
 ```
+
 <!-- END GENERATED DIRECTORY SUMMARY -->
