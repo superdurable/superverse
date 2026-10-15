@@ -14,6 +14,7 @@ import { register } from "@/tests/e2e/support/account";
 import { createTeamSpace } from "@/tests/e2e/support/teamspace/teamspace";
 import { expectNativeConfigurationRecovery } from "@/tests/e2e/support/configuration/recovery";
 import { openPreviewConfiguration } from "@/tests/e2e/support/configuration";
+import { fillEnvironmentValue } from "@/tests/e2e/support/configuration/live-versions";
 import {
   chooseMockFirstInput,
   choosesMockModel,
@@ -166,6 +167,7 @@ test("template project edits, pushes, previews, deploys Live twice, denies old g
     expect(repository.fullName).toMatch(/^[^/]+\/[^/]+$/);
 
     await openPreviewConfiguration(page, projectId);
+    if (mock) await fillEnvironmentValue(page, "SUMMARY_GREETING", "From project acceptance");
     // A UI session's signed nonce is longer than a configuration resource ID.
     // Drive both business RPCs through Studio's BFF and require the configuration
     // host's coded result, before this Project selects its TeamSpace connection.
