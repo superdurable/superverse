@@ -26,14 +26,14 @@
     "generate:protobuf": "node scripts/generate-protobuf-types.mjs"
   },
   "dependencies": {
-    "@grpc/grpc-js": "1.14.4",
+    "@grpc/grpc-js": "1.14.5",
     "@grpc/proto-loader": "0.8.0",
     "@xyflow/react": "^12.11.6",
     "@zxing/browser": "0.1.5",
     "@zxing/library": "0.21.3",
     "dagre": "^0.8.5",
     "elkjs": "0.11.1",
-    "next": "16.3.3",
+    "next": "16.3.8",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-markdown": "10.1.0",
@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@jridgewell/trace-mapping": "0.3.31",
-    "@playwright/test": "1.55.0",
+    "@playwright/test": "1.55.1",
     "@tailwindcss/postcss": "4.3.3",
     "@types/dagre": "^0.7.54",
     "@types/node": "^20",
@@ -49,13 +49,21 @@
     "@types/react-dom": "^19",
     "@types/unist": "3.0.3",
     "eslint": "^9",
-    "eslint-config-next": "16.3.3",
+    "eslint-config-next": "16.3.8",
     "eslint-config-prettier": "10.1.8",
     "knip": "6.39.0",
-    "playwright-core": "1.55.0",
+    "playwright-core": "1.55.1",
     "prettier": "3.9.9",
     "prettier-plugin-tailwindcss": "0.8.1",
     "tailwindcss": "4.3.3",
     "typescript": "^5"
+  },
+  "overrides": {
+    "sharp": "0.35.5",
+    "source-map-js": "1.2.2",
+    "brace-expansion": "1.1.21",
+    "@typescript-eslint/typescript-estree": {
+      "brace-expansion": "5.0.12"
+    }
   }
 }

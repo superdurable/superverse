@@ -19,5 +19,9 @@
     "@vitejs/plugin-react": "6.1.1",
     "typescript": "5.9.3",
     "vite": "8.3.0"
+  },
+  "overrides": {
+    "js-yaml": "4.3.2",
+    "source-map-js": "1.2.2"
   }
 }
