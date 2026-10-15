@@ -20,7 +20,6 @@ import (
 	"github.com/superdurable/dex/sdk-go/dex"
 
 	"github.com/superdurable/superversev2/internal/agents/remoteexec"
-	"github.com/superdurable/superversev2/internal/agents/sandbox/workspace"
 	"github.com/superdurable/superversev2/internal/agents/sandbox/workspace/git"
 	"github.com/superdurable/superversev2/internal/agents/sandbox/workspace/sandboxd"
 	"github.com/superdurable/superversev2/internal/agents/session/agentloop"
@@ -203,6 +202,7 @@ func serialToolStepOptions(call conversation.ToolCall) *dex.StepOptions {
 	}
 	options := parallelToolStepOptions(agentloop.CatalogTool(call.Name))
 	options.ExecuteLoadAttributeMaps = messageMaps
+	configureConnectorToolOptions(options, call)
 	switch agentID, isSubagent := subagentOfCall(call); {
 	case call.Name == conversation.ToolStartAgent:
 		// The new worktree keeps the worktrees of the unfinished subagents.
@@ -228,9 +228,10 @@ func commandStepOptions(call conversation.ToolCall) *dex.StepOptions {
 // that the join can resolve the batch.
 func parallelToolStepOptions(definition agentloop.ToolDefinition) *dex.StepOptions {
 	return &dex.StepOptions{
-		ExecuteMethodTimeout: definition.AttemptTimeout,
-		HeartbeatTimeout:     time.Minute,
-		ExecuteDurability:    toolExecuteDurability(definition),
+		ExecuteMethodTimeout:     definition.AttemptTimeout,
+		ExecuteLoadAttributeMaps: connectorToolMapLoads(definition.Name),
+		HeartbeatTimeout:         time.Minute,
+		ExecuteDurability:        toolExecuteDurability(definition),
 		ExecuteRetry: &dex.RetryPolicy{
 			InitialInterval: agentloop.ToolRetryInitialInterval, BackoffCoefficient: agentloop.ToolRetryBackoffCoefficient, MaximumInterval: agentloop.ToolRetryMaximumInterval,
 			// #nosec G115 -- the catalog init check bounds MaximumAttempts to int32.
@@ -244,6 +245,11 @@ func parallelToolStepOptions(definition agentloop.ToolDefinition) *dex.StepOptio
 // command ledger, a delegation tool on the Session's subagents and any other
 // as a branch of a wave runs it.
 func (flow *SessionAgentFlow) executeTool(ctx dex.Context, call conversation.ToolCall) (agentloop.ToolExecutionResult, error) {
+	if call.Name == conversation.ToolStartConnectorContribution || call.Name == conversation.ToolSubmitConnectorContribution {
+		execution, end := beginToolAttempt(ctx, call)
+		defer end()
+		return flow.executeConnectorTool(ctx, execution, call)
+	}
 	if call.Name == conversation.ToolBash {
 		return flow.executeCommand(ctx, call)
 	}
@@ -307,7 +313,7 @@ func (flow *SessionAgentFlow) executeBranch(ctx dex.Context, input parallelToolE
 // identity.
 func newSandboxCall(ctx dex.Context, call conversation.ToolCall) sandboxtools.Call {
 	return sandboxtools.Call{
-		Tool: string(call.Name), Arguments: call.Arguments.String(), HeadCommit: comm.Must(headCommitAttribute.Get(ctx)), Root: sandboxd.WorkspaceRoot, Progress: func(string) {},
+		Tool: string(call.Name), Arguments: call.Arguments.String(), HeadCommit: comm.Must(headCommitAttribute.Get(ctx)), Root: sandboxCallRoot(ctx, call), Progress: func(string) {},
 		Mutating:     agentloop.CatalogTool(call.Name).WorkspaceAccess == agentloop.WorkspaceAccessMutating,
 		Lease:        agentloop.AdmittedLease(dexflow.ValueOrZero(workspaceUseAttribute.Get(ctx)), dexflow.ValueOrZero(workspaceAttribute.Get(ctx))),
 		Requirements: dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx)).TraceScope(),
@@ -638,12 +644,6 @@ func (flow *SessionAgentFlow) stopTasks(ctx dex.Context, interruption agentInter
 	return errors.Join(failures...)
 }
 
-// taskCall is the trusted call of a task operation on the instance of lease.
-func taskCall(ctx dex.Context, lease workspace.Lease, taskID string) sandboxtools.Call {
-	return sandboxtools.Call{Tool: string(conversation.ToolStopTask), Arguments: sandboxtools.TaskArguments(taskID), Lease: &lease, Root: sandboxd.WorkspaceRoot,
-		HeadCommit: comm.Must(headCommitAttribute.Get(ctx)), Mutating: true, Identity: sandboxd.InvocationIdentity{FlowID: ctx.FlowID(), CallID: taskID}, Progress: func(string) {}}
-}
-
 // The subagents of the agent: the admission of a start_agent call, the
 // start, stop and merge of a subagent, the records its admission and report
 // write, and the Stop of the ones not admitted yet. A record is the Session's
@@ -721,8 +721,12 @@ func admitSubagentCall(ctx dex.Context, call conversation.ToolCall) bool {
 	if _, isAdmitted := records[agentID]; isAdmitted {
 		return true
 	}
+	if requested.Connector != nil && remoteConnectorOpen(ctx, requested.Connector.Slug) {
+		appendSessionFailure(ctx, call, toolfailure.ConnectorContributionRunning, "a remote agent already works on this connector")
+		return false
+	}
 	state := comm.Must(agentStateAttribute.Get(ctx))
-	if code, message, isAdmitted := agenttasks.AdmitSubagentStart(records, requested, state.SubagentsStartedWithoutUser, state.ConnectorSlugs, now); !isAdmitted {
+	if code, message, isAdmitted := agenttasks.AdmitSubagentStart(records, requested, state.SubagentsStartedWithoutUser, connectorContributionSlugs(ctx, state.ConnectorSlugs), now); !isAdmitted {
 		appendSessionFailure(ctx, call, code, message)
 		return false
 	}

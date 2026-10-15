@@ -13,16 +13,18 @@ type ToolName string
 
 // Sandbox tools run over the Session's accepted workspace lease.
 const (
-	ToolBash             ToolName = "bash"
-	ToolRead             ToolName = "read"
-	ToolEdit             ToolName = "edit"
-	ToolWrite            ToolName = "write"
-	ToolGrep             ToolName = "grep"
-	ToolGlob             ToolName = "glob"
-	ToolReadTaskOutput   ToolName = "read_task_output"
-	ToolStopTask         ToolName = "stop_task"
-	ToolConnectorCatalog ToolName = "connector_catalog"
-	ToolCommitAndPush    ToolName = "commit_and_push"
+	ToolBash                        ToolName = "bash"
+	ToolRead                        ToolName = "read"
+	ToolEdit                        ToolName = "edit"
+	ToolWrite                       ToolName = "write"
+	ToolGrep                        ToolName = "grep"
+	ToolGlob                        ToolName = "glob"
+	ToolReadTaskOutput              ToolName = "read_task_output"
+	ToolStopTask                    ToolName = "stop_task"
+	ToolConnectorCatalog            ToolName = "connector_catalog"
+	ToolCommitAndPush               ToolName = "commit_and_push"
+	ToolStartConnectorContribution  ToolName = "start_connector_contribution"
+	ToolSubmitConnectorContribution ToolName = "submit_connector_contribution"
 )
 
 // Delegation tools start the Session's subagents and merge what they changed

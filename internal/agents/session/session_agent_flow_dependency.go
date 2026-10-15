@@ -67,6 +67,9 @@ type SessionAgentFlowDependency interface {
 	// StopBackgroundCommandWatch stops the BackgroundCommandFlow SubFlow flowID that watches a
 	// background command, when the Session closes; one that no longer runs is stopped already.
 	StopBackgroundCommandWatch(ctx context.Context, flowID string) error
+	// SubmitConnectorContribution reconciles the Project and slug's existing
+	// contribution before accepting the remote worktree's committed head.
+	SubmitConnectorContribution(ctx context.Context, projectID string, contributed conversation.ConnectorContribution, summary string) error
 }
 
 // ProjectDiagnosticsReader runs the Agent's read-only platform tools on the

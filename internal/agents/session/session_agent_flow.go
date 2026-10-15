@@ -151,7 +151,7 @@ func (flow *SessionAgentFlow) GetRPCs() []dex.RPCDef {
 		// Every write of a STARTING record whose subagent may have started holds
 		// the AgentInterrupt lock.
 		dex.DefineRPC(flow.AdmitSubagent, dexflow.ShortRPC(statusLock, interruptLock)),
-		dex.DefineRPC(flow.GetSnapshot, &dex.RPCOptions{Timeout: readRPCTimeout, LoadAttributeMaps: []dex.AttributeDef{currentMessagesAttribute, backgroundCommandsAttribute, subagentsAttribute},
+		dex.DefineRPC(flow.GetSnapshot, &dex.RPCOptions{Timeout: readRPCTimeout, LoadAttributeMaps: []dex.AttributeDef{currentMessagesAttribute, backgroundCommandsAttribute, subagentsAttribute, connectorContributionsAttribute},
 			LoadChannels: []dex.ChannelDef{queuedUserMessagesChannel, steeredUserMessagesChannel}}),
 		dex.DefineRPC(flow.GetArchivedMessages, &dex.RPCOptions{Timeout: commandRPCTimeout}),
 		dex.DefineRPC(flow.GetFlowDesign, loadDesigns(&dex.RPCOptions{Timeout: readRPCTimeout}, flowdesign.Slots...)),
@@ -179,7 +179,7 @@ func (*SessionAgentFlow) GetPersistenceSchema() dex.PersistenceSchema {
 			contextSegmentAttribute, contextSegmentPromptsAttribute, currentMessagesAttribute, archivedMessagesAttribute, todoListAttribute,
 			confirmedRequirementsAttribute, flowDesignsAttribute, builtFlowDesignAttribute, builtFlowDesignCommitAttribute, pendingUserInputAttribute, pendingApprovalAttribute, pendingTimerAttribute,
 			workspaceAttribute, workspaceUseAttribute,
-			agentInterruptAttribute, notificationReceiptsAttribute, backgroundCommandsAttribute, subagentsAttribute, previewHandoffAttribute, previewAutoDeployAttribute, previewAutoDeployChangedByAttribute,
+			agentInterruptAttribute, notificationReceiptsAttribute, backgroundCommandsAttribute, subagentsAttribute, connectorContributionsAttribute, previewHandoffAttribute, previewAutoDeployAttribute, previewAutoDeployChangedByAttribute,
 		},
 		Channels: []dex.ChannelDef{
 			queuedUserMessagesChannel, steeredUserMessagesChannel, answeredUserInputsChannel, remoteInboxChannel,
@@ -201,11 +201,11 @@ var (
 	workspaceLock    = dex.LockAttribute(workspaceAttribute)
 	interruptLock    = dex.LockAttribute(agentInterruptAttribute)
 	receiptsLock     = dex.LockAttribute(notificationReceiptsAttribute)
-	taskMaps         = []dex.AttributeDef{backgroundCommandsAttribute, subagentsAttribute}
+	taskMaps         = []dex.AttributeDef{backgroundCommandsAttribute, subagentsAttribute, connectorContributionsAttribute}
 	shortStepRetry   = dexflow.StepRetry(2 * time.Minute)
 	// Steps that admit, stop, fail or forget a subagent's start load its records; a STARTING
 	// record whose subagent may have started is written only under the AgentInterrupt lock.
-	taskMessageMaps = []dex.AttributeDef{currentMessagesAttribute, subagentsAttribute, backgroundCommandsAttribute}
+	taskMessageMaps = []dex.AttributeDef{currentMessagesAttribute, subagentsAttribute, backgroundCommandsAttribute, connectorContributionsAttribute}
 
 	// The Steps that consume notifications lock Workspace, whose deadline a
 	// task's end extends, and AgentInterrupt, which applies a Stop.
@@ -877,6 +877,9 @@ func (step RouteTool) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, e
 	if call.Name == conversation.ToolStartAgent && !admitSubagentCall(ctx, call) {
 		return dex.GoTo(CheckSteered{}, advancePendingTools(ctx, 1)), nil
 	}
+	if call.Name == conversation.ToolStartConnectorContribution && !admitConnectorContribution(ctx, call) {
+		return dex.GoTo(CheckSteered{}, advancePendingTools(ctx, 1)), nil
+	}
 	if batch, needsWorkspace := agentloop.ParallelToolBatch(toolNames, state); len(batch.Records) > 0 {
 		if needsWorkspace && !step.flow.admitWorkspaceUse(ctx) {
 			return dex.GoTo(RequestSessionWorkspace{}, workspaceDemand{ResumeAt: agentloop.ContinueRouteTool}), nil
@@ -1282,32 +1285,7 @@ type RequestSessionWorkspace struct {
 func (RequestSessionWorkspace) GetStepOptions() *dex.StepOptions { return workspaceRequestStepOptions }
 
 func (step RequestSessionWorkspace) Execute(ctx dex.Context, demand workspaceDemand) (*dex.StepDecision, error) {
-	ws := dexflow.ValueOrZero(workspaceAttribute.Get(ctx))
-	if !acceptsUserCommand(ctx) {
-		return dex.DeadEnd(), nil
-	}
-	plan := ws.PlanRequest(demand.ResumeAt, demand.Lost, demand.CallID, newWorkspaceRequestID(ctx))
-	if plan.ChangesWorkspace() {
-		comm.MustDo(workspaceAttribute.Set(ctx, ws))
-	}
-	switch plan {
-	case agentloop.WorkspaceOpened:
-		// The previous request's Sandbox deadline ends with it; the request is durable before its command.
-		demand.RequestID = ws.RequestID
-		return dex.GoTo(SendWorkspaceCommand{}, demand).CancelSteps(AwaitSandboxDeadline{}), nil
-	case agentloop.WorkspaceUsableWithoutContext:
-		// Read the repository context now instead of waiting for the next instance.
-		demand.RequestID, demand.PromptOnly = ws.RequestID, true
-		return dex.GoTo(ApplySessionWorkspace{}, demand), nil
-	case agentloop.WorkspaceInFlight, agentloop.WorkspaceJoined:
-		return dex.DeadEnd(), nil
-	case agentloop.WorkspaceUsable, agentloop.WorkspaceLossesExhausted:
-		// Nothing to request: resume below.
-	}
-	if next := step.flow.resumeAfterWorkspace(ctx, demand, plan == agentloop.WorkspaceUsable); next != "" {
-		return dex.GoTo(CheckSteered{}, next), nil
-	}
-	return dex.DeadEnd(), nil
+	return step.executeRequestWorkspace(ctx, demand)
 }
 
 // dex:group group-id:workspace group-label:"Workspace"

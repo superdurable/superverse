@@ -28,6 +28,52 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
 )
 
+// writeActivity writes an activity event to the best-effort Stream; a failed
+// write, such as after a Stop cancelled the Step, loses only the live event.
+func writeActivity(ctx dex.Context, event conversation.AgentEvent) {
+	event.Message = agentloop.CondenseActivityMessage(event.Message)
+	dexflow.StreamWritten(ctx, agentActivityStream.Write(ctx, event))
+}
+
+// writeSnapshotRequired tells live readers to read the Snapshot again.
+func writeSnapshotRequired(ctx dex.Context) {
+	writeActivity(ctx, conversation.AgentEvent{Kind: conversation.EventKindSnapshotRequired, Message: "Durable interaction state changed."})
+}
+
+// writeInputConsumption reports the inputs a Step consumed, if any.
+func writeInputConsumption(ctx dex.Context, queued, steered []conversation.PendingUserMessage, messageSequence *conversation.Sequence) {
+	if event, isConsumed := agentloop.InputConsumptionEvent(queued, steered, messageSequence); isConsumed {
+		writeActivity(ctx, event)
+	}
+}
+
+// modelProgress writes the best-effort activity of one model reply.
+type modelProgress struct {
+	ctx             dex.Context
+	messageSequence conversation.Sequence
+}
+
+func (progress modelProgress) write(event conversation.AgentEvent) {
+	event.Message, event.MessageSequence = agentloop.CondenseActivityMessage(event.Message), &progress.messageSequence
+	dexflow.StreamWritten(progress.ctx, agentActivityStream.Write(progress.ctx, event))
+}
+
+// writeActivity is the conversation.ActivityWriter of the model call.
+func (progress modelProgress) writeActivity(event conversation.AgentEvent) error {
+	progress.write(event)
+	return nil
+}
+
+// writeToolProgress reports the attempt of a tool call that starts running.
+// Progress carries no command output; dexflow.KeepAlive, not progress, keeps
+// the attempt alive.
+func writeToolProgress(ctx dex.Context, call conversation.ToolCall) {
+	event := agentloop.ToolActivity(conversation.EventKindToolProgress, "Running "+string(call.Name)+".", call)
+	attempt := ctx.Attempt()
+	event.Attempt = &attempt
+	dexflow.StreamWritten(ctx, agentActivityStream.Write(ctx, event))
+}
+
 // readExecutor admits a scoped read without initializing or changing the
 // executor. Older open Sessions have no Attribute and remain platform epoch 0.
 func readExecutor(ctx dex.Context, input agentloop.SessionScopeInput) (*dex.RPCResult[remoteexec.Executor], error) {
@@ -470,64 +516,6 @@ func pendingRequestText(ctx dex.Context, read entryReader) string {
 		}
 	}
 	return conversation.PendingRequestText(entries)
-}
-
-// recordModelReply records a completed model call by its stop reason, which
-// is read before the content, and returns where the turn continues. A refusal
-// or an unexpected stop ends the turn; a reply beyond the context window is
-// discarded and forces a compaction.
-func recordModelReply(ctx dex.Context, reply conversation.ModelReply, startedAt time.Time, admission remoteexec.Fence) agentloop.Continuation {
-	state, segment := comm.Must(agentStateAttribute.Get(ctx)), comm.Must(contextSegmentAttribute.Get(ctx))
-	segment.CacheAnchor = state.LastSequence
-	if prompt, isKnown := reply.Metrics.PromptTokens(); isKnown {
-		segment.PromptTokens = prompt
-	}
-	segment.OutputTokens, segment.PendingBytes = 0, 0
-	if reply.Metrics.OutputTokens != nil {
-		segment.OutputTokens = *reply.Metrics.OutputTokens
-	}
-	if len(reply.Blocks) == 0 && reply.StopReason != conversation.StopReasonRefusal && reply.StopReason != conversation.StopReasonModelContextWindowExceeded {
-		// An empty assistant message cannot be replayed.
-		reply.StopReason = "empty_reply"
-	}
-	switch reply.StopReason {
-	case conversation.StopReasonModelContextWindowExceeded:
-		segment.ForceCompaction = true
-		comm.MustDo(contextSegmentAttribute.Set(ctx, segment))
-		return agentloop.ContinueCompactContext
-	case conversation.StopReasonEndTurn, conversation.StopReasonToolUse, conversation.StopReasonMaxTokens:
-	case conversation.StopReasonRefusal:
-		comm.MustDo(contextSegmentAttribute.Set(ctx, segment))
-		recordTurnFailure(ctx, modelRefused.failure(reply.RefusalCategory))
-		return agentloop.ContinueAwaitUser
-	default:
-		comm.MustDo(contextSegmentAttribute.Set(ctx, segment))
-		recordTurnFailure(ctx, modelUnexpectedStop.failure(string(reply.StopReason)))
-		return agentloop.ContinueAwaitUser
-	}
-	comm.MustDo(contextSegmentAttribute.Set(ctx, segment))
-	summaries := make([]conversation.ToolCallSummary, 0, len(reply.ToolCalls))
-	for _, call := range reply.ToolCalls {
-		summaries = append(summaries, agentloop.ToolSummary(call))
-	}
-	appendEntry(ctx, conversation.ModelReplyEntry(reply, summaries, startedAt))
-	if reply.StopReason == conversation.StopReasonMaxTokens {
-		limited, entries := agentloop.ContinueAfterOutputLimit(comm.Must(agentStateAttribute.Get(ctx)), reply)
-		comm.MustDo(agentStateAttribute.Set(ctx, limited))
-		for _, entry := range entries {
-			appendEntry(ctx, entry)
-		}
-		return agentloop.ContinueCompactContext
-	}
-	state, next, notice := agentloop.ContinueAfterModelReply(comm.Must(agentStateAttribute.Get(ctx)), reply)
-	if len(state.PendingToolCalls) > 0 {
-		state.PendingToolsAdmission = admission
-	}
-	comm.MustDo(agentStateAttribute.Set(ctx, state))
-	if notice != nil {
-		appendEntry(ctx, *notice)
-	}
-	return next
 }
 
 // modelFailureCode is a model call without a usable reply that the Session

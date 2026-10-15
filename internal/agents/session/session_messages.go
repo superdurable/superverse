@@ -242,6 +242,64 @@ func trimRetainedEntries(ctx dex.Context) {
 	comm.MustDo(agentStateAttribute.Set(ctx, state))
 }
 
+// recordModelReply records a completed model call by its stop reason, which
+// is read before the content, and returns where the turn continues. A refusal
+// or an unexpected stop ends the turn; a reply beyond the context window is
+// discarded and forces a compaction.
+func recordModelReply(ctx dex.Context, reply conversation.ModelReply, startedAt time.Time, admission remoteexec.Fence) agentloop.Continuation {
+	state, segment := comm.Must(agentStateAttribute.Get(ctx)), comm.Must(contextSegmentAttribute.Get(ctx))
+	segment.CacheAnchor = state.LastSequence
+	if prompt, isKnown := reply.Metrics.PromptTokens(); isKnown {
+		segment.PromptTokens = prompt
+	}
+	segment.OutputTokens, segment.PendingBytes = 0, 0
+	if reply.Metrics.OutputTokens != nil {
+		segment.OutputTokens = *reply.Metrics.OutputTokens
+	}
+	if len(reply.Blocks) == 0 && reply.StopReason != conversation.StopReasonRefusal && reply.StopReason != conversation.StopReasonModelContextWindowExceeded {
+		// An empty assistant message cannot be replayed.
+		reply.StopReason = "empty_reply"
+	}
+	switch reply.StopReason {
+	case conversation.StopReasonModelContextWindowExceeded:
+		segment.ForceCompaction = true
+		comm.MustDo(contextSegmentAttribute.Set(ctx, segment))
+		return agentloop.ContinueCompactContext
+	case conversation.StopReasonEndTurn, conversation.StopReasonToolUse, conversation.StopReasonMaxTokens:
+	case conversation.StopReasonRefusal:
+		comm.MustDo(contextSegmentAttribute.Set(ctx, segment))
+		recordTurnFailure(ctx, modelRefused.failure(reply.RefusalCategory))
+		return agentloop.ContinueAwaitUser
+	default:
+		comm.MustDo(contextSegmentAttribute.Set(ctx, segment))
+		recordTurnFailure(ctx, modelUnexpectedStop.failure(string(reply.StopReason)))
+		return agentloop.ContinueAwaitUser
+	}
+	comm.MustDo(contextSegmentAttribute.Set(ctx, segment))
+	summaries := make([]conversation.ToolCallSummary, 0, len(reply.ToolCalls))
+	for _, call := range reply.ToolCalls {
+		summaries = append(summaries, agentloop.ToolSummary(call))
+	}
+	appendEntry(ctx, conversation.ModelReplyEntry(reply, summaries, startedAt))
+	if reply.StopReason == conversation.StopReasonMaxTokens {
+		limited, entries := agentloop.ContinueAfterOutputLimit(comm.Must(agentStateAttribute.Get(ctx)), reply)
+		comm.MustDo(agentStateAttribute.Set(ctx, limited))
+		for _, entry := range entries {
+			appendEntry(ctx, entry)
+		}
+		return agentloop.ContinueCompactContext
+	}
+	state, next, notice := agentloop.ContinueAfterModelReply(comm.Must(agentStateAttribute.Get(ctx)), reply)
+	if len(state.PendingToolCalls) > 0 {
+		state.PendingToolsAdmission = admission
+	}
+	comm.MustDo(agentStateAttribute.Set(ctx, state))
+	if notice != nil {
+		appendEntry(ctx, *notice)
+	}
+	return next
+}
+
 func modelCallID(ctx dex.Context, kind agentloop.ModelCallKind) conversation.CallID {
 	encoded, err := json.Marshal(struct {
 		FlowID          string                  `json:"flow_id"`
@@ -818,6 +876,7 @@ func (flow *SessionAgentFlow) getSessionSnapshot(ctx dex.Context) (*dex.RPCResul
 		return comm.Must(currentMessagesAttribute.Get(ctx, agentloop.SequenceKey(sequence)))
 	}
 	snapshot.Agent = agentSnapshot(ctx, comm.Must(state, err), read, dexflow.OptionalValue(todoListAttribute.Get(ctx)))
+	snapshot.Agent.Description.ConnectorSlugs = connectorContributionSlugs(ctx, snapshot.Agent.Description.ConnectorSlugs)
 	return &dex.RPCResult[agentloop.SessionSnapshot]{Output: snapshot}, nil
 }
 

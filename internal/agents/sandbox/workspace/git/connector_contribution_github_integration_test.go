@@ -88,7 +88,8 @@ sed -i 's|^directories:$|directories:\n  - %[2]s|' catalog.yaml`, worktree.Root,
 		t.Fatalf("finish the contribution: %+v, %v", finished, err)
 	}
 	replayed, err := operations.FinishContribution(ctx, client, target, summary, true)
-	if err != nil || replayed.Commit != finished.Commit || replayed.Location != connectorlibrary.LocationUpstream {
+	if err != nil || replayed.Commit != finished.Commit || replayed.Module != finished.Module || replayed.Branch != finished.Branch ||
+		replayed.Location != connectorlibrary.LocationUpstream || replayed.Unchanged || replayed.Missing || replayed.Rejected != "" {
 		t.Fatalf("a replayed finish did not reuse the commit: %+v, %v", replayed, err)
 	}
 	identity, err := upstream.BotIdentityForTest(ctx)

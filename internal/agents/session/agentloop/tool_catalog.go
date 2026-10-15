@@ -99,6 +99,8 @@ type ToolDefinition struct {
 	// own Project through the Session's ProjectDiagnosticsReader, without the
 	// workspace.
 	Platform bool
+	// RemoteOnly offers this tool to the connected executor, not the platform model.
+	RemoteOnly bool
 	// strict has the provider guarantee that the model's input follows the
 	// input schema. The provider takes a subset of JSON Schema for a strict
 	// tool, so the bounds a schema declares stay with the tool's decoder, which
@@ -202,6 +204,12 @@ var toolCatalog = []ToolDefinition{
 	fileTool(conversation.ToolGlob, "Find files by a glob such as *.go or **/*.test.ts, most recently modified first: at most 200 paths and 16 KiB. It searches the workspace or a literal path you give, which may be a read-only root; wildcards in path are never expanded. A pattern with a slash is matched against the whole path, so start it with **/ to match below that path. .gitignore is honored and .git is skipped. Use it to find the actual name of a file or to list a directory.",
 		toolinput.Glob.JSONSchema(), WorkspaceAccessReadOnly, sandboxtools.Glob),
 	catalogTool(conversation.ToolConnectorCatalog, "Search the official published Connector catalog by provider or capability. Returns only the matching release identities and operations, with each connector's exact Go module and the install_command that adds the release to go.mod. Run install_command, find the module's directory with go list -m -f '{{.Dir}}' <module>, then read connector.yaml and the generated factory there with read and grep; catalog descriptions do not define Go signatures.", toolinput.ConnectorCatalog.JSONSchema()),
+	remoteOnly(uninterruptible(longRunning(sandboxTool(conversation.ToolStartConnectorContribution,
+		"Start a connector contribution in a separate worktree of the connectors library. It returns the worktree path, base commit and contributor skill path. Work in that path with the file tools or bash. At most one open contribution per connector and 16 distinct connectors per Session.",
+		toolinput.StartConnectorContribution.JSONSchema(), WorkspaceAccessMutating, sandboxtools.CreateContributionWorktree, 2*time.Minute)))),
+	remoteOnly(uninterruptible(longRunning(sandboxTool(conversation.ToolSubmitConnectorContribution,
+		"Verify, commit and push the open connector worktree as the GitHub App, then submit it for a draft pull request and release candidate. The result confirms acceptance; connector notifications report publication or failure later.",
+		toolinput.SubmitConnectorContribution.JSONSchema(), WorkspaceAccessMutating, sandboxtools.FinishContribution, 15*time.Minute)))),
 	// The delegation tools. The Session runs start_agent itself: it creates the
 	// subagent's worktree and starts its SubagentFlow. Both may run for a while
 	// and must finish their effects, so Stop never cancels them.
@@ -324,6 +332,11 @@ func longRunning(definition ToolDefinition) ToolDefinition {
 	return definition
 }
 
+func remoteOnly(definition ToolDefinition) ToolDefinition {
+	definition.RemoteOnly = true
+	return definition
+}
+
 // commandTool runs a command through the Sandbox's command ledger, which
 // starts it once per call identity, so a retried attempt finds the command
 // instead of starting it again. The Session gives each call the polling
@@ -413,11 +426,14 @@ func (node schemaNode) optionalParameters() int {
 }
 
 // SessionTools is the frozen tool set of a Session segment on model, in name
-// order: every catalog tool, without set_effort for a model that takes no
-// effort. A segment keeps it whatever the turn's mode.
+// order: catalog tools except RemoteOnly, without set_effort for a model that
+// takes no effort. A segment keeps it whatever the turn's mode.
 func SessionTools(model conversation.Model) []ToolDefinition {
 	definitions := make([]ToolDefinition, 0, len(toolCatalog))
 	for _, definition := range toolCatalog {
+		if definition.RemoteOnly {
+			continue
+		}
 		if definition.Name != conversation.ToolSetEffort || modelprovider.ProfileOf(model).Effort {
 			definitions = append(definitions, definition)
 		}
@@ -436,7 +452,7 @@ var platformOnlyTools = []conversation.ToolName{conversation.ToolStartAgent, con
 func RemoteTools() []ToolDefinition {
 	definitions := make([]ToolDefinition, 0, len(toolCatalog))
 	for _, definition := range toolCatalog {
-		if slices.Contains(platformOnlyTools, definition.Name) {
+		if !definition.RemoteOnly && slices.Contains(platformOnlyTools, definition.Name) {
 			continue
 		}
 		switch definition.Name {

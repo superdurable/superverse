@@ -51,6 +51,23 @@ func (s *SessionFlowService) submitContribution(ctx context.Context, id agenttas
 	return nil
 }
 
+// SubmitConnectorContribution accepts a remote agent's committed connector
+// head. A lost answer is reconciled by the Flow snapshot before Submit.
+func (s *SessionFlowService) SubmitConnectorContribution(ctx context.Context, projectID string, contributed conversation.ConnectorContribution, summary string) error {
+	id := contribution.Identity{ProjectID: projectID, Slug: contributed.Slug}
+	current, err := s.Contributions.Snapshot(ctx, id)
+	var missing *dex.FlowNotFoundError
+	switch {
+	case err == nil && current.Record.Status.Closed():
+		return contribution.ErrContributionClosed
+	case err == nil && current.Record.HeadCommit == contributed.HeadCommit:
+		return nil
+	case err != nil && !errors.As(err, &missing):
+		return err
+	}
+	return s.Contributions.Submit(ctx, contribution.Submission{Identity: id, Contribution: contributed, Report: summary})
+}
+
 // AdmitConnectorContribution admits a contribution while its Session is
 // ACTIVE with a running execution; a closed, stopped or missing Session, such
 // as a deleting Project's, denies it.

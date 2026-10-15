@@ -55,13 +55,20 @@ printf 'module github.com/superdurable/dex-connectors-library/connectors/mockfee
 printf 'metadata:\n  name: mockfeed\n' > connectors/mockfeed/connector.yaml`)
 	finish := map[string]any{"branch": branch, "slug": "mockfeed", "contribution": "new", "subject": ContributionSubject("mockfeed", "add mockfeed"),
 		"name": "Superverse", "email": "bot@superdurable.io", "push": true, "url": remote.CloneURL, "contribute": true}
+	var firstHead string
 	for attempt := range 2 {
 		var finished contributionAnswer
 		if err := runContribution(testContext(t), client, "finish", "k3n8q5r1", remote, finish, &finished); err != nil {
 			t.Fatalf("finish attempt %d: %v", attempt, err)
 		}
-		if !finished.Pushed || finished.Module != "connectors/mockfeed" || finished.Base != worktree.Base || finished.Files != 3 {
+		if !finished.Pushed || finished.Module != "connectors/mockfeed" || finished.Base != worktree.Base || finished.Files != 3 ||
+			finished.Unchanged || finished.Missing || finished.Rejected != "" {
 			t.Fatalf("finish attempt %d did not contribute the new connector once: %+v", attempt, finished)
+		}
+		if attempt == 0 {
+			firstHead = finished.Commit
+		} else if finished.Commit != firstHead {
+			t.Fatalf("finish replay changed the committed head from %s to %s", firstHead, finished.Commit)
 		}
 		if pushed := strings.TrimSpace(shell(t, client, "git --git-dir=/tmp/library.git rev-parse refs/heads/"+branch)); pushed != finished.Commit {
 			t.Fatalf("finish attempt %d: the library's branch is at %s, not %s", attempt, pushed, finished.Commit)

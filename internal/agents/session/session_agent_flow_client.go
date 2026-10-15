@@ -409,6 +409,57 @@ func (client *SessionAgentFlowClient) GetFlowDesign(ctx context.Context, flowID 
 	return read.Design, nil
 }
 
+// ResumeToken resumes a best-effort event subscription.
+type ResumeToken string
+
+// EventStream selects one best-effort live Stream.
+type EventStream string
+
+const (
+	EventStreamReasoning EventStream = "reasoning"
+	EventStreamAssistant EventStream = "assistant"
+	EventStreamActivity  EventStream = "activity"
+)
+
+// StreamEventKind discriminates the three live event payloads, which the API
+// sends as the reasoning_summary, assistant_text and activity members of the
+// SessionProgress content oneof.
+type StreamEventKind string
+
+const (
+	StreamEventKindReasoning StreamEventKind = "reasoning_summary"
+	StreamEventKindAssistant StreamEventKind = "assistant_text"
+	StreamEventKindActivity  StreamEventKind = "activity"
+)
+
+// definition returns the Stream of stream and the kind of its events.
+func (stream EventStream) definition() (dex.StreamDef, StreamEventKind) {
+	switch stream {
+	case EventStreamReasoning:
+		return reasoningSummaryStream, StreamEventKindReasoning
+	case EventStreamAssistant:
+		return assistantTextStream, StreamEventKindAssistant
+	case EventStreamActivity:
+		return agentActivityStream, StreamEventKindActivity
+	default:
+		panic(fmt.Sprintf("unknown event Stream %q", stream))
+	}
+}
+
+// StreamEvent is one typed best-effort Stream message.
+// Text is populated for assistant and reasoning events; Activity is populated for activity events.
+type StreamEvent struct {
+	Kind        StreamEventKind
+	Text        string
+	Activity    conversation.AgentEvent
+	ResumeToken ResumeToken
+	CreatedAt   time.Time
+	Source      string
+	// TaskID names the subagent whose activity a Session's Watch relays;
+	// empty for the Session's own Streams.
+	TaskID string
+}
+
 // ReadEvent long-polls exactly one best-effort Stream.
 func (client *SessionAgentFlowClient) ReadEvent(ctx context.Context, flowID agentloop.FlowID, stream EventStream, resumeToken ResumeToken) (StreamEvent, error) {
 	definition, kind := stream.definition()

@@ -130,6 +130,33 @@ type AgentState struct {
 	ConnectorSlugs []string `json:"connector_slugs,omitempty"`
 }
 
+// ConnectorContributionAttempt is the Session's remote worktree attempt. The
+// ConnectorContributionFlow owns the submitted branch, pull request and
+// release candidate; this record only gates tools and recovers their effects.
+type ConnectorContributionAttempt struct {
+	Contribution conversation.ContributionKind       `json:"contribution"`
+	WorktreePath string                              `json:"worktree_path"`
+	WorktreeID   string                              `json:"worktree_id"`
+	BaseCommit   string                              `json:"base_commit,omitempty"`
+	Status       ConnectorContributionAttemptStatus  `json:"status"`
+	StartCallID  conversation.CallID                 `json:"start_call_id"`
+	Attempt      uint64                              `json:"attempt"`
+	SubmitCallID conversation.CallID                 `json:"submit_call_id,omitempty"`
+	Summary      string                              `json:"summary,omitempty"`
+	Result       *conversation.ConnectorContribution `json:"result,omitempty"`
+	SubmittedAt  *time.Time                          `json:"submitted_at,omitempty"`
+}
+
+// ConnectorContributionAttemptStatus is the closed state of a remote
+// contribution worktree, separate from the contribution Flow's PR status.
+type ConnectorContributionAttemptStatus string
+
+const (
+	ConnectorContributionOpen      ConnectorContributionAttemptStatus = "OPEN"
+	ConnectorContributionSubmitted ConnectorContributionAttemptStatus = "SUBMITTED"
+	ConnectorContributionFailed    ConnectorContributionAttemptStatus = "FAILED"
+)
+
 // RunningKind is the kind of work a turn has in flight.
 type RunningKind string
 
@@ -247,8 +274,8 @@ type AgentDescription struct {
 	// IsPreviewAutoDeployEnabled is whether the Preview deploys each pushed
 	// commit after its turn.
 	IsPreviewAutoDeployEnabled bool `json:"is_preview_auto_deploy_enabled"`
-	// ConnectorSlugs are the connectors the Session's develop subagents
-	// contribute to, whose ConnectorContributionFlows the Snapshot reads.
+	// ConnectorSlugs is the union of platform and remote connector slugs whose
+	// ConnectorContributionFlows the Snapshot reads.
 	ConnectorSlugs []string `json:"connector_slugs,omitempty"`
 }
 

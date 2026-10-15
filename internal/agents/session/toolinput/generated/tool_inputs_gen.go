@@ -2327,6 +2327,52 @@ func (o OptStartAgentContribution) Or(d StartAgentContribution) StartAgentContri
 	return d
 }
 
+// NewOptStartConnectorContribution returns new OptStartConnectorContribution with value set to v.
+func NewOptStartConnectorContribution(v StartConnectorContribution) OptStartConnectorContribution {
+	return OptStartConnectorContribution{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptStartConnectorContribution is optional StartConnectorContribution.
+type OptStartConnectorContribution struct {
+	Value StartConnectorContribution
+	Set   bool
+}
+
+// IsSet returns true if OptStartConnectorContribution was set.
+func (o OptStartConnectorContribution) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptStartConnectorContribution) Reset() {
+	var v StartConnectorContribution
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptStartConnectorContribution) SetTo(v StartConnectorContribution) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptStartConnectorContribution) Get() (v StartConnectorContribution, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptStartConnectorContribution) Or(d StartConnectorContribution) StartConnectorContribution {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptStartTimer returns new OptStartTimer with value set to v.
 func NewOptStartTimer(v StartTimer) OptStartTimer {
 	return OptStartTimer{
@@ -2459,6 +2505,52 @@ func (o OptString) Get() (v string, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptString) Or(d string) string {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSubmitConnectorContribution returns new OptSubmitConnectorContribution with value set to v.
+func NewOptSubmitConnectorContribution(v SubmitConnectorContribution) OptSubmitConnectorContribution {
+	return OptSubmitConnectorContribution{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSubmitConnectorContribution is optional SubmitConnectorContribution.
+type OptSubmitConnectorContribution struct {
+	Value SubmitConnectorContribution
+	Set   bool
+}
+
+// IsSet returns true if OptSubmitConnectorContribution was set.
+func (o OptSubmitConnectorContribution) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSubmitConnectorContribution) Reset() {
+	var v SubmitConnectorContribution
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSubmitConnectorContribution) SetTo(v SubmitConnectorContribution) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSubmitConnectorContribution) Get() (v SubmitConnectorContribution, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSubmitConnectorContribution) Or(d SubmitConnectorContribution) SubmitConnectorContribution {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -3366,6 +3458,95 @@ func (s *StartAgentKind) UnmarshalText(data []byte) error {
 }
 
 // Ref: #
+type StartConnectorContribution struct {
+	// The connector ID in the library manifest, such as newsapi.
+	Slug string `json:"slug"`
+	// New connector, new operation of an existing connector, or defect fix.
+	Contribution StartConnectorContributionContribution `json:"contribution"`
+	// Why this connector change is needed.
+	Reason string `json:"reason"`
+}
+
+// GetSlug returns the value of Slug.
+func (s *StartConnectorContribution) GetSlug() string {
+	return s.Slug
+}
+
+// GetContribution returns the value of Contribution.
+func (s *StartConnectorContribution) GetContribution() StartConnectorContributionContribution {
+	return s.Contribution
+}
+
+// GetReason returns the value of Reason.
+func (s *StartConnectorContribution) GetReason() string {
+	return s.Reason
+}
+
+// SetSlug sets the value of Slug.
+func (s *StartConnectorContribution) SetSlug(val string) {
+	s.Slug = val
+}
+
+// SetContribution sets the value of Contribution.
+func (s *StartConnectorContribution) SetContribution(val StartConnectorContributionContribution) {
+	s.Contribution = val
+}
+
+// SetReason sets the value of Reason.
+func (s *StartConnectorContribution) SetReason(val string) {
+	s.Reason = val
+}
+
+// New connector, new operation of an existing connector, or defect fix.
+type StartConnectorContributionContribution string
+
+const (
+	StartConnectorContributionContributionNew       StartConnectorContributionContribution = "new"
+	StartConnectorContributionContributionOperation StartConnectorContributionContribution = "operation"
+	StartConnectorContributionContributionFix       StartConnectorContributionContribution = "fix"
+)
+
+// AllValues returns all StartConnectorContributionContribution values.
+func (StartConnectorContributionContribution) AllValues() []StartConnectorContributionContribution {
+	return []StartConnectorContributionContribution{
+		StartConnectorContributionContributionNew,
+		StartConnectorContributionContributionOperation,
+		StartConnectorContributionContributionFix,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s StartConnectorContributionContribution) MarshalText() ([]byte, error) {
+	switch s {
+	case StartConnectorContributionContributionNew:
+		return []byte(s), nil
+	case StartConnectorContributionContributionOperation:
+		return []byte(s), nil
+	case StartConnectorContributionContributionFix:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *StartConnectorContributionContribution) UnmarshalText(data []byte) error {
+	switch StartConnectorContributionContribution(data) {
+	case StartConnectorContributionContributionNew:
+		*s = StartConnectorContributionContributionNew
+		return nil
+	case StartConnectorContributionContributionOperation:
+		*s = StartConnectorContributionContributionOperation
+		return nil
+	case StartConnectorContributionContributionFix:
+		*s = StartConnectorContributionContributionFix
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #
 type StartTimer struct {
 	DurationSeconds int    `json:"duration_seconds"`
 	Reason          string `json:"reason"`
@@ -3408,27 +3589,57 @@ func (s *StopTask) SetTaskID(val string) {
 	s.TaskID = val
 }
 
+// Ref: #
+type SubmitConnectorContribution struct {
+	// The connector ID of the open contribution.
+	Slug string `json:"slug"`
+	// Commit and pull request subject after connector(slug):.
+	Summary string `json:"summary"`
+}
+
+// GetSlug returns the value of Slug.
+func (s *SubmitConnectorContribution) GetSlug() string {
+	return s.Slug
+}
+
+// GetSummary returns the value of Summary.
+func (s *SubmitConnectorContribution) GetSummary() string {
+	return s.Summary
+}
+
+// SetSlug sets the value of Slug.
+func (s *SubmitConnectorContribution) SetSlug(val string) {
+	s.Slug = val
+}
+
+// SetSummary sets the value of Summary.
+func (s *SubmitConnectorContribution) SetSummary(val string) {
+	s.Summary = val
+}
+
 type ToolInputs struct {
-	ConnectorCatalogInput    OptConnectorCatalog    `json:"ConnectorCatalogInput"`
-	CommitAndPushInput       OptCommitAndPush       `json:"CommitAndPushInput"`
-	ConfirmRequirementsInput OptConfirmRequirements `json:"ConfirmRequirementsInput"`
-	StartTimerInput          OptStartTimer          `json:"StartTimerInput"`
-	SetEffortInput           OptSetEffort           `json:"SetEffortInput"`
-	BashInput                OptBash                `json:"BashInput"`
-	ReadInput                OptRead                `json:"ReadInput"`
-	EditInput                OptEdit                `json:"EditInput"`
-	WriteInput               OptWrite               `json:"WriteInput"`
-	GrepInput                OptGrep                `json:"GrepInput"`
-	GlobInput                OptGlob                `json:"GlobInput"`
-	ReadTaskOutputInput      OptReadTaskOutput      `json:"ReadTaskOutputInput"`
-	StopTaskInput            OptStopTask            `json:"StopTaskInput"`
-	ReadDeliveryStatusInput  OptReadDeliveryStatus  `json:"ReadDeliveryStatusInput"`
-	ReadPlatformFlowInput    OptReadPlatformFlow    `json:"ReadPlatformFlowInput"`
-	ReadLiveAppRunsInput     OptReadLiveAppRuns     `json:"ReadLiveAppRunsInput"`
-	RequestUserInputInput    OptRequestUserInput    `json:"RequestUserInputInput"`
-	WriteTodosInput          OptWriteTodos          `json:"WriteTodosInput"`
-	StartAgentInput          OptStartAgent          `json:"StartAgentInput"`
-	MergeAgentChangesInput   OptMergeAgentChanges   `json:"MergeAgentChangesInput"`
+	ConnectorCatalogInput            OptConnectorCatalog            `json:"ConnectorCatalogInput"`
+	CommitAndPushInput               OptCommitAndPush               `json:"CommitAndPushInput"`
+	ConfirmRequirementsInput         OptConfirmRequirements         `json:"ConfirmRequirementsInput"`
+	StartTimerInput                  OptStartTimer                  `json:"StartTimerInput"`
+	SetEffortInput                   OptSetEffort                   `json:"SetEffortInput"`
+	BashInput                        OptBash                        `json:"BashInput"`
+	ReadInput                        OptRead                        `json:"ReadInput"`
+	EditInput                        OptEdit                        `json:"EditInput"`
+	WriteInput                       OptWrite                       `json:"WriteInput"`
+	GrepInput                        OptGrep                        `json:"GrepInput"`
+	GlobInput                        OptGlob                        `json:"GlobInput"`
+	ReadTaskOutputInput              OptReadTaskOutput              `json:"ReadTaskOutputInput"`
+	StopTaskInput                    OptStopTask                    `json:"StopTaskInput"`
+	ReadDeliveryStatusInput          OptReadDeliveryStatus          `json:"ReadDeliveryStatusInput"`
+	ReadPlatformFlowInput            OptReadPlatformFlow            `json:"ReadPlatformFlowInput"`
+	ReadLiveAppRunsInput             OptReadLiveAppRuns             `json:"ReadLiveAppRunsInput"`
+	RequestUserInputInput            OptRequestUserInput            `json:"RequestUserInputInput"`
+	WriteTodosInput                  OptWriteTodos                  `json:"WriteTodosInput"`
+	StartAgentInput                  OptStartAgent                  `json:"StartAgentInput"`
+	StartConnectorContributionInput  OptStartConnectorContribution  `json:"StartConnectorContributionInput"`
+	SubmitConnectorContributionInput OptSubmitConnectorContribution `json:"SubmitConnectorContributionInput"`
+	MergeAgentChangesInput           OptMergeAgentChanges           `json:"MergeAgentChangesInput"`
 }
 
 // GetConnectorCatalogInput returns the value of ConnectorCatalogInput.
@@ -3524,6 +3735,16 @@ func (s *ToolInputs) GetWriteTodosInput() OptWriteTodos {
 // GetStartAgentInput returns the value of StartAgentInput.
 func (s *ToolInputs) GetStartAgentInput() OptStartAgent {
 	return s.StartAgentInput
+}
+
+// GetStartConnectorContributionInput returns the value of StartConnectorContributionInput.
+func (s *ToolInputs) GetStartConnectorContributionInput() OptStartConnectorContribution {
+	return s.StartConnectorContributionInput
+}
+
+// GetSubmitConnectorContributionInput returns the value of SubmitConnectorContributionInput.
+func (s *ToolInputs) GetSubmitConnectorContributionInput() OptSubmitConnectorContribution {
+	return s.SubmitConnectorContributionInput
 }
 
 // GetMergeAgentChangesInput returns the value of MergeAgentChangesInput.
@@ -3624,6 +3845,16 @@ func (s *ToolInputs) SetWriteTodosInput(val OptWriteTodos) {
 // SetStartAgentInput sets the value of StartAgentInput.
 func (s *ToolInputs) SetStartAgentInput(val OptStartAgent) {
 	s.StartAgentInput = val
+}
+
+// SetStartConnectorContributionInput sets the value of StartConnectorContributionInput.
+func (s *ToolInputs) SetStartConnectorContributionInput(val OptStartConnectorContribution) {
+	s.StartConnectorContributionInput = val
+}
+
+// SetSubmitConnectorContributionInput sets the value of SubmitConnectorContributionInput.
+func (s *ToolInputs) SetSubmitConnectorContributionInput(val OptSubmitConnectorContribution) {
+	s.SubmitConnectorContributionInput = val
 }
 
 // SetMergeAgentChangesInput sets the value of MergeAgentChangesInput.
@@ -7925,6 +8156,39 @@ func (s *OptStartAgentContribution) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes StartConnectorContribution as json.
+func (o OptStartConnectorContribution) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes StartConnectorContribution from json.
+func (o *OptStartConnectorContribution) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptStartConnectorContribution to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptStartConnectorContribution) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptStartConnectorContribution) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes StartTimer as json.
 func (o OptStartTimer) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -8022,6 +8286,39 @@ func (s OptString) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptString) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SubmitConnectorContribution as json.
+func (o OptSubmitConnectorContribution) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes SubmitConnectorContribution from json.
+func (o *OptSubmitConnectorContribution) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptSubmitConnectorContribution to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptSubmitConnectorContribution) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptSubmitConnectorContribution) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -9828,6 +10125,176 @@ func (s *StartAgentKind) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *StartConnectorContribution) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *StartConnectorContribution) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("slug")
+		e.Str(s.Slug)
+	}
+	{
+		e.FieldStart("contribution")
+		s.Contribution.Encode(e)
+	}
+	{
+		e.FieldStart("reason")
+		e.Str(s.Reason)
+	}
+}
+
+var jsonFieldsNameOfStartConnectorContribution = [3]string{
+	0: "slug",
+	1: "contribution",
+	2: "reason",
+}
+
+// Decode decodes StartConnectorContribution from json.
+func (s *StartConnectorContribution) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StartConnectorContribution to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "slug":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Slug = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"slug\"")
+			}
+		case "contribution":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Contribution.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"contribution\"")
+			}
+		case "reason":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Reason = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"reason\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode StartConnectorContribution")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfStartConnectorContribution) {
+					name = jsonFieldsNameOfStartConnectorContribution[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StartConnectorContribution) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StartConnectorContribution) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StartConnectorContributionContribution as json.
+func (s StartConnectorContributionContribution) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes StartConnectorContributionContribution from json.
+func (s *StartConnectorContributionContribution) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StartConnectorContributionContribution to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch StartConnectorContributionContribution(v) {
+	case StartConnectorContributionContributionNew:
+		*s = StartConnectorContributionContributionNew
+	case StartConnectorContributionContributionOperation:
+		*s = StartConnectorContributionContributionOperation
+	case StartConnectorContributionContributionFix:
+		*s = StartConnectorContributionContributionFix
+	default:
+		*s = StartConnectorContributionContribution(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s StartConnectorContributionContribution) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StartConnectorContributionContribution) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *StartTimer) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -10037,6 +10504,119 @@ func (s *StopTask) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *SubmitConnectorContribution) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SubmitConnectorContribution) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("slug")
+		e.Str(s.Slug)
+	}
+	{
+		e.FieldStart("summary")
+		e.Str(s.Summary)
+	}
+}
+
+var jsonFieldsNameOfSubmitConnectorContribution = [2]string{
+	0: "slug",
+	1: "summary",
+}
+
+// Decode decodes SubmitConnectorContribution from json.
+func (s *SubmitConnectorContribution) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SubmitConnectorContribution to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "slug":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Slug = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"slug\"")
+			}
+		case "summary":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Summary = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"summary\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SubmitConnectorContribution")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSubmitConnectorContribution) {
+					name = jsonFieldsNameOfSubmitConnectorContribution[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SubmitConnectorContribution) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SubmitConnectorContribution) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *ToolInputs) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -10160,6 +10740,18 @@ func (s *ToolInputs) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.StartConnectorContributionInput.Set {
+			e.FieldStart("StartConnectorContributionInput")
+			s.StartConnectorContributionInput.Encode(e)
+		}
+	}
+	{
+		if s.SubmitConnectorContributionInput.Set {
+			e.FieldStart("SubmitConnectorContributionInput")
+			s.SubmitConnectorContributionInput.Encode(e)
+		}
+	}
+	{
 		if s.MergeAgentChangesInput.Set {
 			e.FieldStart("MergeAgentChangesInput")
 			s.MergeAgentChangesInput.Encode(e)
@@ -10167,7 +10759,7 @@ func (s *ToolInputs) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfToolInputs = [20]string{
+var jsonFieldsNameOfToolInputs = [22]string{
 	0:  "ConnectorCatalogInput",
 	1:  "CommitAndPushInput",
 	2:  "ConfirmRequirementsInput",
@@ -10187,7 +10779,9 @@ var jsonFieldsNameOfToolInputs = [20]string{
 	16: "RequestUserInputInput",
 	17: "WriteTodosInput",
 	18: "StartAgentInput",
-	19: "MergeAgentChangesInput",
+	19: "StartConnectorContributionInput",
+	20: "SubmitConnectorContributionInput",
+	21: "MergeAgentChangesInput",
 }
 
 // Decode decodes ToolInputs from json.
@@ -10387,6 +10981,26 @@ func (s *ToolInputs) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"StartAgentInput\"")
+			}
+		case "StartConnectorContributionInput":
+			if err := func() error {
+				s.StartConnectorContributionInput.Reset()
+				if err := s.StartConnectorContributionInput.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"StartConnectorContributionInput\"")
+			}
+		case "SubmitConnectorContributionInput":
+			if err := func() error {
+				s.SubmitConnectorContributionInput.Reset()
+				if err := s.SubmitConnectorContributionInput.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"SubmitConnectorContributionInput\"")
 			}
 		case "MergeAgentChangesInput":
 			if err := func() error {
@@ -14316,6 +14930,88 @@ func (s StartAgentKind) Validate() error {
 	}
 }
 
+func (s *StartConnectorContribution) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:     0,
+			MinLengthSet:  false,
+			MaxLength:     0,
+			MaxLengthSet:  false,
+			Email:         false,
+			Hostname:      false,
+			Regex:         regexMap["^[a-z][a-z0-9-]{1,62}$"],
+			MinNumeric:    0,
+			MinNumericSet: false,
+			MaxNumeric:    0,
+			MaxNumericSet: false,
+		}).Validate(string(s.Slug)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "slug",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Contribution.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "contribution",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:     1,
+			MinLengthSet:  true,
+			MaxLength:     200,
+			MaxLengthSet:  true,
+			Email:         false,
+			Hostname:      false,
+			Regex:         nil,
+			MinNumeric:    0,
+			MinNumericSet: false,
+			MaxNumeric:    0,
+			MaxNumericSet: false,
+		}).Validate(string(s.Reason)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "reason",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s StartConnectorContributionContribution) Validate() error {
+	switch s {
+	case "new":
+		return nil
+	case "operation":
+		return nil
+	case "fix":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *StartTimer) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -14375,6 +15071,64 @@ func (s *StopTask) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "task_id",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SubmitConnectorContribution) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:     0,
+			MinLengthSet:  false,
+			MaxLength:     0,
+			MaxLengthSet:  false,
+			Email:         false,
+			Hostname:      false,
+			Regex:         regexMap["^[a-z][a-z0-9-]{1,62}$"],
+			MinNumeric:    0,
+			MinNumericSet: false,
+			MaxNumeric:    0,
+			MaxNumericSet: false,
+		}).Validate(string(s.Slug)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "slug",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:     1,
+			MinLengthSet:  true,
+			MaxLength:     80,
+			MaxLengthSet:  true,
+			Email:         false,
+			Hostname:      false,
+			Regex:         nil,
+			MinNumeric:    0,
+			MinNumericSet: false,
+			MaxNumeric:    0,
+			MaxNumericSet: false,
+		}).Validate(string(s.Summary)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "summary",
 			Error: err,
 		})
 	}
@@ -14729,6 +15483,42 @@ func (s *ToolInputs) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "StartAgentInput",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.StartConnectorContributionInput.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "StartConnectorContributionInput",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.SubmitConnectorContributionInput.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "SubmitConnectorContributionInput",
 			Error: err,
 		})
 	}

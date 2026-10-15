@@ -59,6 +59,12 @@ func main() {
 		os.Exit(1)
 	}
 	launched := launches(tests)
+	remoteTests, err := readRemoteHTTPTests()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "check-mock-scenarios:", err)
+		os.Exit(1)
+	}
+	problems = append(problems, remoteOnlyCoverageProblems(remoteTests)...)
 	for _, scenario := range catalog {
 		if !launched[scenario.Name] {
 			problems = append(problems, "no Dex integration test or E2E spec launches the scenario "+scenario.Name+" through its helper")
@@ -72,6 +78,55 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Printf("Mock scenarios: %d match the Session tool catalog and the application template, cover every tool, pending input, notification and subagent kind, and each runs in a test\n", len(catalog))
+}
+
+// Remote-only tools cannot be called by the platform mock model. Their
+// coverage is a real remote HTTP Dex test that reports the call and syncs its
+// result; platform tools still require the mock scenario above.
+func remoteOnlyCoverageProblems(tests []string) []string {
+	var problems []string
+	for _, tool := range agentloop.RemoteTools() {
+		if !tool.RemoteOnly {
+			continue
+		}
+		constant := "conversation.Tool"
+		for _, word := range strings.Split(string(tool.Name), "_") {
+			constant += strings.ToUpper(word[:1]) + word[1:]
+		}
+		covered := false
+		for _, source := range tests {
+			if strings.Contains(source, constant) && strings.Contains(source, "bridgeapi.PathReport") && strings.Contains(source, "bridgeapi.PathSync") {
+				covered = true
+				break
+			}
+		}
+		if !covered {
+			problems = append(problems, fmt.Sprintf("no remote HTTP Dex integration test reports and syncs the remote-only tool %s", tool.Name))
+		}
+	}
+	return problems
+}
+
+func readRemoteHTTPTests() ([]string, error) {
+	entries, err := os.ReadDir("internal/agents")
+	if err != nil {
+		return nil, err
+	}
+	var tests []string
+	for _, entry := range entries {
+		name := entry.Name()
+		if entry.IsDir() || !strings.HasPrefix(name, "session_remote_") || !strings.HasSuffix(name, "_integration_test.go") {
+			continue
+		}
+		contents, err := os.ReadFile("internal/agents/" + name)
+		if err != nil {
+			return nil, err
+		}
+		if strings.Contains(string(contents), "HTTPDexIntegration") {
+			tests = append(tests, string(contents))
+		}
+	}
+	return tests, nil
 }
 
 // coverageProblems lists each tool, pending-input kind, produced

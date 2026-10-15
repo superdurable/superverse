@@ -35,15 +35,28 @@ type remoteHTTPClient struct {
 
 func (remote *remoteHTTPClient) post(ctx context.Context, path string, input, output any, expected int) {
 	remote.t.Helper()
-	status, data, err := remote.request(ctx, path, input)
-	if err != nil {
-		remote.t.Fatalf("remote %s request failed (%T)", path, err)
-	}
-	if status != expected {
-		remote.t.Fatalf("remote %s returned %d, expected %d", path, status, expected)
-	}
-	if err = json.Unmarshal(data, output); err != nil {
-		remote.t.Fatalf("remote %s invalid typed response (%T)", path, err)
+	backoff := 50 * time.Millisecond
+	for {
+		status, data, err := remote.request(ctx, path, input)
+		if err != nil {
+			remote.t.Fatalf("remote %s request failed (%T)", path, err)
+		}
+		if path == bridgeapi.PathSync && expected == http.StatusOK && (status == http.StatusServiceUnavailable || status == http.StatusTooManyRequests) {
+			select {
+			case <-ctx.Done():
+				remote.t.Fatalf("remote %s remained unavailable: %v", path, ctx.Err())
+			case <-time.After(backoff):
+			}
+			backoff = min(2*backoff, time.Second)
+			continue
+		}
+		if status != expected {
+			remote.t.Fatalf("remote %s returned %d, expected %d", path, status, expected)
+		}
+		if err = json.Unmarshal(data, output); err != nil {
+			remote.t.Fatalf("remote %s invalid typed response (%T)", path, err)
+		}
+		return
 	}
 }
 

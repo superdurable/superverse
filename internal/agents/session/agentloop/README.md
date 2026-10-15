@@ -67,6 +67,9 @@ first pending Stop keeps its actor; the Stop entry names that author. Automatic 
 
 `RemoteTools` derives the remote executor's sorted catalog from the Session catalog,
 excluding `platformOnlyTools`: `start_agent`, `merge_agent_changes`, `set_effort` and `start_timer`.
+The catalog marks `start_connector_contribution` and `submit_connector_contribution`
+`RemoteOnly`; `SessionTools` excludes that marked set, and the scenario checker
+requires a remote HTTP Dex test for it.
 `RemoteAgentContext` contains `conversation.RemoteAgentPrompt`,
 `conversation.RemoteSessionSystemPrompt` (shared rules, source handoff and delivery guidance)
 and the repository context in the same `<repository_context>` tag as segment_start, at most

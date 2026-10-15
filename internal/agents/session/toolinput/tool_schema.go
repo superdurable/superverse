@@ -47,16 +47,18 @@ func (schema Schema[T]) Decode(encoded string) (T, error) {
 var toolInputSchemas embed.FS
 
 var (
-	Bash             = mustSchema(conversation.ToolBash, (*generated.Bash).Validate)
-	Read             = mustSchema(conversation.ToolRead, (*generated.Read).Validate)
-	Edit             = mustSchema(conversation.ToolEdit, (*generated.Edit).Validate)
-	Write            = mustSchema(conversation.ToolWrite, (*generated.Write).Validate)
-	Grep             = mustSchema(conversation.ToolGrep, (*generated.Grep).Validate)
-	Glob             = mustSchema(conversation.ToolGlob, (*generated.Glob).Validate)
-	ReadTaskOutput   = mustSchema(conversation.ToolReadTaskOutput, (*generated.ReadTaskOutput).Validate)
-	StopTask         = mustSchema(conversation.ToolStopTask, (*generated.StopTask).Validate)
-	ConnectorCatalog = mustSchema(conversation.ToolConnectorCatalog, (*generated.ConnectorCatalog).Validate)
-	CommitAndPush    = mustSchema(conversation.ToolCommitAndPush, (*generated.CommitAndPush).Validate)
+	Bash                        = mustSchema(conversation.ToolBash, (*generated.Bash).Validate)
+	Read                        = mustSchema(conversation.ToolRead, (*generated.Read).Validate)
+	Edit                        = mustSchema(conversation.ToolEdit, (*generated.Edit).Validate)
+	Write                       = mustSchema(conversation.ToolWrite, (*generated.Write).Validate)
+	Grep                        = mustSchema(conversation.ToolGrep, (*generated.Grep).Validate)
+	Glob                        = mustSchema(conversation.ToolGlob, (*generated.Glob).Validate)
+	ReadTaskOutput              = mustSchema(conversation.ToolReadTaskOutput, (*generated.ReadTaskOutput).Validate)
+	StopTask                    = mustSchema(conversation.ToolStopTask, (*generated.StopTask).Validate)
+	ConnectorCatalog            = mustSchema(conversation.ToolConnectorCatalog, (*generated.ConnectorCatalog).Validate)
+	CommitAndPush               = mustSchema(conversation.ToolCommitAndPush, (*generated.CommitAndPush).Validate)
+	StartConnectorContribution  = mustSchema(conversation.ToolStartConnectorContribution, (*generated.StartConnectorContribution).Validate)
+	SubmitConnectorContribution = mustSchema(conversation.ToolSubmitConnectorContribution, (*generated.SubmitConnectorContribution).Validate)
 	// The platform tools' inputs.
 	ReadDeliveryStatus  = mustSchema(conversation.ToolReadDeliveryStatus, (*generated.ReadDeliveryStatus).Validate)
 	ReadPlatformFlow    = mustSchema(conversation.ToolReadPlatformFlow, (*generated.ReadPlatformFlow).Validate)

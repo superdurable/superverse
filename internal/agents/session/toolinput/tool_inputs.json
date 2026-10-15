@@ -56,6 +56,12 @@
     "StartAgentInput": {
       "$ref": "#/$defs/StartAgentInput"
     },
+    "StartConnectorContributionInput": {
+      "$ref": "#/$defs/StartConnectorContributionInput"
+    },
+    "SubmitConnectorContributionInput": {
+      "$ref": "#/$defs/SubmitConnectorContributionInput"
+    },
     "MergeAgentChangesInput": {
       "$ref": "#/$defs/MergeAgentChangesInput"
     }
@@ -116,6 +122,12 @@
     },
     "StartAgentInput": {
       "$ref": "schema/start_agent.json"
+    },
+    "StartConnectorContributionInput": {
+      "$ref": "schema/start_connector_contribution.json"
+    },
+    "SubmitConnectorContributionInput": {
+      "$ref": "schema/submit_connector_contribution.json"
     },
     "MergeAgentChangesInput": {
       "$ref": "schema/merge_agent_changes.json"

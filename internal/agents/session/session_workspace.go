@@ -19,13 +19,50 @@ import (
 	"github.com/superdurable/superversev2/internal/agents/sandbox"
 	"github.com/superdurable/superversev2/internal/agents/sandbox/provision"
 	"github.com/superdurable/superversev2/internal/agents/sandbox/workspace"
+	"github.com/superdurable/superversev2/internal/agents/sandbox/workspace/sandboxd"
 	"github.com/superdurable/superversev2/internal/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/agents/session/sandboxtools"
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
 )
+
+func (step RequestSessionWorkspace) executeRequestWorkspace(ctx dex.Context, demand workspaceDemand) (*dex.StepDecision, error) {
+	ws := dexflow.ValueOrZero(workspaceAttribute.Get(ctx))
+	if !acceptsUserCommand(ctx) {
+		return dex.DeadEnd(), nil
+	}
+	plan := ws.PlanRequest(demand.ResumeAt, demand.Lost, demand.CallID, newWorkspaceRequestID(ctx))
+	if plan.ChangesWorkspace() {
+		comm.MustDo(workspaceAttribute.Set(ctx, ws))
+	}
+	switch plan {
+	case agentloop.WorkspaceOpened:
+		// The previous request's Sandbox deadline ends with it; the request is durable before its command.
+		demand.RequestID = ws.RequestID
+		return dex.GoTo(SendWorkspaceCommand{}, demand).CancelSteps(AwaitSandboxDeadline{}), nil
+	case agentloop.WorkspaceUsableWithoutContext:
+		// Read the repository context now instead of waiting for the next instance.
+		demand.RequestID, demand.PromptOnly = ws.RequestID, true
+		return dex.GoTo(ApplySessionWorkspace{}, demand), nil
+	case agentloop.WorkspaceInFlight, agentloop.WorkspaceJoined:
+		return dex.DeadEnd(), nil
+	case agentloop.WorkspaceUsable, agentloop.WorkspaceLossesExhausted:
+		// Nothing to request: resume below.
+	}
+	if next := step.flow.resumeAfterWorkspace(ctx, demand, plan == agentloop.WorkspaceUsable); next != "" {
+		return dex.GoTo(CheckSteered{}, next), nil
+	}
+	return dex.DeadEnd(), nil
+}
+
+// taskCall is the trusted call of a task operation on the instance of lease.
+func taskCall(ctx dex.Context, lease workspace.Lease, taskID string) sandboxtools.Call {
+	return sandboxtools.Call{Tool: string(conversation.ToolStopTask), Arguments: sandboxtools.TaskArguments(taskID), Lease: &lease, Root: sandboxd.WorkspaceRoot,
+		HeadCommit: comm.Must(headCommitAttribute.Get(ctx)), Mutating: true, Identity: sandboxd.InvocationIdentity{FlowID: ctx.FlowID(), CallID: taskID}, Progress: func(string) {}}
+}
 
 // workspaceWaitBudget bounds the wait for the outcome of a request: it
 // outlasts the SessionWorkspaceFlow's reclamation of an earlier instance (15

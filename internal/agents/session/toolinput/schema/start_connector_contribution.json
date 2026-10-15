@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["slug", "contribution", "reason"],
+  "properties": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,62}$",
+      "description": "The connector ID in the library manifest, such as newsapi."
+    },
+    "contribution": {
+      "type": "string",
+      "enum": ["new", "operation", "fix"],
+      "description": "New connector, new operation of an existing connector, or defect fix."
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "Why this connector change is needed."
+    }
+  }
+}

@@ -23,9 +23,9 @@ import (
 // the manifest's metadata.name, with the kind of the contribution. The branch
 // and the Session's contribution record derive from the slug.
 
-// maximumConnectorContributions bounds the distinct connectors one Session
+// MaximumConnectorContributions bounds the distinct connectors one Session
 // contributes to; the start of a develop subagent for one more is refused.
-const maximumConnectorContributions = 16
+const MaximumConnectorContributions = 16
 
 // ConnectorTarget is the connector a connector_develop call contributes to: its
 // slug and the kind of the contribution.
@@ -43,7 +43,7 @@ func (id SubagentIdentity) Contribution(target ConnectorTarget) git.Contribution
 // admitConnectorTarget decides whether a connector_develop call for target may
 // start beside the records: no unfinished develop subagent may work on the same
 // connector, which shares its branch, and the Session contributes to at most
-// maximumConnectorContributions distinct connectors, the slugs that admitted
+// MaximumConnectorContributions distinct connectors, the slugs that admitted
 // develop calls named, whatever became of them. A refusal is the call's
 // failure, with no effect.
 func admitConnectorTarget(records map[string]SubagentRecord, slugs []string, target ConnectorTarget, now time.Time) (toolfailure.Code, string, bool) {
@@ -52,7 +52,7 @@ func admitConnectorTarget(records map[string]SubagentRecord, slugs []string, tar
 			return toolfailure.ConnectorContributionRunning, fmt.Sprintf("subagent %s works on the connector %s", record.TaskID(), target.Slug), false
 		}
 	}
-	if !slices.Contains(slugs, target.Slug) && len(slugs) >= maximumConnectorContributions {
+	if !slices.Contains(slugs, target.Slug) && len(slugs) >= MaximumConnectorContributions {
 		return toolfailure.ConnectorContributionLimitReached, fmt.Sprintf("this Session contributes to %d connectors, the most it may", len(slugs)), false
 	}
 	return toolfailure.Code{}, "", true

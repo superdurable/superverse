@@ -336,7 +336,7 @@ and never complete the Session. Retries of every new RPC and Step are idempotent
 Every other Attribute is unchanged; [collaboration](collaboration.md#dex-flow-changes) adds the
 actor fields.
 
-**AttributeMaps.** No new AttributeMap for remote mode. `CurrentMessages` keys stay unpadded
+**AttributeMaps.** RACONN adds `ConnectorContributions`, specified below. `CurrentMessages` keys stay unpadded
 decimal sequences (`37`) and `ArchivedMessages` chunks stay keyed by their first sequence
 (`131`); the retention change above applies in remote mode. [Run feedback](run-feedback.md)
 adds `ObservedRuns`.
@@ -408,7 +408,7 @@ new primitives is deployed before Studio offers pairing.
 ### Other Flows
 
 PreviewFlow, SessionWorkspaceFlow, SandboxProvisionFlow, SubagentFlow, BackgroundCommandFlow,
-PlatformIssueFlow and ConnectorContributionFlow are unchanged by remote mode. Codex never starts
+PlatformIssueFlow and ConnectorContributionFlow retain their Flow identities. Codex never starts
 a platform subagent: `start_agent` and `merge_agent_changes` are not in the remote tool set.
 
 ## Remote tool set
@@ -419,19 +419,82 @@ only make sense to the platform model:
 
 - **Offered**: `read`, `edit`, `write`, `grep`, `glob`, `bash`, `read_task_output`, `stop_task`
   (commands only), `commit_and_push`, `connector_catalog`, `read_delivery_status`,
-  `read_platform_flow`, `read_live_app_runs`, `request_user_input`, `confirm_requirements`,
+  `read_platform_flow`, `read_live_app_runs`, `start_connector_contribution`,
+  `submit_connector_contribution`, `request_user_input`, `confirm_requirements`,
   `write_todos` (shown as the progress list in Studio), and `watch_preview_run` once RUNFEEDBACK
   adds it ([run feedback](run-feedback.md#scope)).
 - **Not offered**: `start_agent`, `merge_agent_changes` (platform subagents), `set_effort`,
   `start_timer` (platform model controls).
 
 The remote `agentContext` contains `remote_agent.md`, the shared Session instructions,
-the source handoff and delivery rules, and the repository context. The platform-only
-connector contribution, subagent delegation and effort instructions remain in the
-platform model's segment in their original order. Until remote connector contribution
-is available, Codex chooses published connectors with `connector_catalog` and the Dex
-skills; for a new connector or a fix, it tells the user through `request_user_input`
-that remote mode cannot contribute it yet and suggests a workaround when one exists.
+the source handoff and delivery rules, and the repository context. Platform subagent
+delegation and effort instructions remain in the platform model's segment. Codex starts
+a new connector, operation or fix with `start_connector_contribution`, edits the returned
+worktree using the file tools or `bash`, then calls `submit_connector_contribution`.
+The latter accepts the committed head; `connector/<slug>/release_candidate_published`
+and failure notifications arrive through `ReadRemote` and Bridge `sync`. After a published
+candidate, Codex installs its module at the RC version, updates `dex-app.yaml` and runs
+`commit_and_push` for the application.
+
+### Connector contribution contract
+
+The existing SessionAgentFlow remains `session-<projectID>` (for example
+`session-project-42`), started once by Project readiness. A remote call has identity
+`remote-<epoch>-<sequence>`; a duplicate Report is refused by the remote sequence
+watermark. A new call after a submitted or failed attempt creates a new worktree ID
+derived from that call ID, on the same `superverse/<lane>/<projectID>/<slug>` branch.
+No new Session FlowID or Run is created. ConnectorContributionFlow retains
+`connector-contribution-<projectID>-<slug>`, starts on the first accepted submission
+and receives subsequent heads through `Submit`; its PR and RC are authoritative.
+Project deletion archives the Session, closes its contribution Flow and removes the
+workspace. Engine completion and diagnostic retention follow the existing Project
+cleanup, separately from the business RC outcome.
+
+`ConnectorContributions` is a Dex AttributeMap keyed by the canonical slug, for
+example `superversemock`. Its ordinary struct value contains `Contribution` (`new`,
+`operation`, `fix`), `WorktreeID`, `WorktreePath`, `BaseCommit`, `Status` (`OPEN`,
+`SUBMITTED`, `FAILED`), `StartCallID`, `Attempt`, `SubmitCallID`, `Summary`, `Result`
+and `SubmittedAt`. RouteTool writes the map under its interrupt lock; ExecuteTool
+loads exactly the slug, and file tools may load the at most 16 keys to select a
+trusted worktree root. `AgentState.ConnectorSlugs` remains the platform subagent
+admission list; the union with this map enforces 16 distinct slugs across both modes
+and supplies Snapshot's contribution lookup for Studio. No secret or credential is
+stored in the map. Entries remain for the Session lifetime to preserve admission
+and repeated-call results; Project deletion clears them with the Flow. There is no
+ChannelMap or new Channel. Existing conversation messages and best-effort activity
+Streams carry tool results; `ReadRemote` recovers from the canonical message map,
+and the contribution Flow snapshot recovers PR/RC status after stream loss.
+
+`RouteTool` refuses a second open attempt of a slug, an unfinished platform
+contribution of the same slug and a 17th distinct slug. Platform `start_agent`
+also refuses a slug with an OPEN remote attempt under the same lock. `ExecuteTool` invokes
+`CreateContributionWorktree`, whose worktree receipt reuses an existing path and
+base on retry, and then `FinishContribution`, whose receipt queries the branch
+before any retry of commit/push. The Session Service queries the contribution
+Flow snapshot before `Submit` and treats the same head as accepted. The start
+attempt is bounded by two minutes; submit by 15 minutes, both using existing
+tool retry, heartbeat, cancellation and failure routing. A failed or interrupted
+submission keeps its named attempt for explicit recovery. The only new dependency
+call is `SubmitConnectorContribution`; existing `GetSnapshot` and `ReadRemote`
+expose the result. Sandbox file helpers confine absolute paths under an OPEN
+worktree root and continue to deny its `.git` metadata. No cloud control-plane
+call, tenant scan, new Flow per request or new database row is added.
+
+### Connector verification
+
+The remote HTTP Dex integration test reports both tools through the production
+endpoint, edits through remote file and bash tools, reaches the real local Git
+host and waits for the contribution Flow's RC and the Bridge notification in
+`sync`. It also checks duplicate reports and repeated submit, the worktree
+scope, admission refusals and Snapshot discovery. Existing GitHub integration
+tests in `internal/agents/sandbox/workspace/git/connector_contribution_github_integration_test.go`
+exercise the GitHub App commit and push; the local lane uses its real Git host.
+No database schema or UI component changes are required: Studio already reads
+the contribution Flow snapshots by Snapshot connector slugs. The connector
+worktree and branch are bounded by 16 slugs per Session; worktrees are removed
+on submit and remaining workspace state is removed on Project deletion. The
+existing local Git host and contribution Flow are per Project/slug, with no
+resource per tool call or generation.
 
 **Routing.** Today `RouteTool` resolves a call against `ContextSegment.ToolNames`, the set frozen for
 the platform model's segment. Remote mode never opens or compacts a segment, so a fresh Session has

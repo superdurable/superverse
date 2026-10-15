@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["slug", "summary"],
+  "properties": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,62}$",
+      "description": "The connector ID of the open contribution."
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "description": "Commit and pull request subject after connector(slug):."
+    }
+  }
+}

@@ -60,7 +60,7 @@ class PackageGraph:
         self.tests = {}         # directory -> test function names
         files = sorted(set(required_lanes_module.git("ls-files", "*.go").splitlines() +
                            required_lanes_module.git("ls-files", "--others", "--exclude-standard", "*.go").splitlines()))
-        files = [path for path in files if in_root_module(path)]
+        files = [path for path in files if in_root_module(path) and (ROOT / path).is_file()]
         for path in files:
             directory, text = str(Path(path).parent), (ROOT / path).read_text(encoding="utf-8", errors="replace")
             local = {name[len(MODULE) + 1:] for name in imports(text) if name.startswith(MODULE + "/")}

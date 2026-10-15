@@ -102,9 +102,9 @@ func TestSessionRemoteHTTPAdmissionDexIntegration(t *testing.T) {
 	}
 	for _, passage := range []string{
 		"Choose connectors with `connector_catalog` and the Dex skills.",
-		"remote mode cannot contribute connectors yet",
+		"`start_connector_contribution`",
+		"`submit_connector_contribution`",
 		"`request_user_input`",
-		"propose a workaround if one exists",
 	} {
 		if !strings.Contains(synced.AgentContext, passage) {
 			t.Fatalf("remote agent context lacks %q", passage)
