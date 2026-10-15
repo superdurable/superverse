@@ -844,10 +844,10 @@ type RouteTool struct {
 }
 
 func (RouteTool) GetStepOptions() *dex.StepOptions { return routeToolStepOptions }
-
 func (step RouteTool) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, error) {
 	if interrupt := takeAgentInterrupt(ctx, false); interrupt != nil {
 		endStoppedTurn(ctx, nil, interrupt)
+		comm.MustDo(agentInterruptAttribute.Delete(ctx))
 		return dex.GoTo(AwaitUser{}, nil), nil
 	}
 	if rejectStaleToolBatch(ctx) {

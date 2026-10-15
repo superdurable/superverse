@@ -276,8 +276,9 @@ source. Exact-credential LastSeen is a transient SQL join, never executor state.
 
 ### Tests
 
-Stop between CheckSteered and RouteTool has real Dex integration source in
-`stop_marker_ordering_integration_test.go`. Parent agents tests drive the actual
+`stop_marker_ordering_integration_test.go` covers Stop between CheckSteered and RouteTool
+in platform and remote modes, and an admitted first remote report consumed after idle Stop,
+using the real Dex integration harness. Parent agents tests drive the actual
 remote HTTP/PostgreSQL/Dex/Sandbox/Git/storage path for admission, concurrent
 activation, bounds, batching/catalog, question and foreground takeover,
 worker restart, offline reclamation, retention, initial HEAD and strict/interactive

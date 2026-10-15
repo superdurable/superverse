@@ -514,12 +514,13 @@ agent's decisions come from the test, the way an E2E test drives Studio:
   handoff entry of at most 16 KiB, never touching a dropped chunk or an incomplete batch; the
   platform model (mock) continues; with a pre-remote summary and without one; Studio shows one
   marker and no repeated history.
-- Stop races: the first report of a Codex turn admitted just before Stop and not yet consumed; a
-  report of a turn stopped two Stops ago; a turn that started before a Stop whose first event reaches
-  the Bridge after it, and after a second Stop; a Stop committed between `CheckSteered` and
-  `RouteTool` for a parallel wave and for a built-in (also in platform mode); a call executing when
-  Stop commits (cancellable and `commit_and_push`). Each ends with one `interrupted` or real result,
-  never a second execution.
+- Stop races still needing coverage: a report of a turn stopped two Stops ago; a turn that started
+  before a Stop whose first event reaches the Bridge after it, and after a second Stop; a call executing
+  when Stop commits (cancellable and `commit_and_push`). Each ends with one `interrupted` or real result,
+  never a second execution. `TestRouteToolStopFenceDexIntegration` covers the built-in and parallel
+  wave `CheckSteered` to `RouteTool` windows in remote and platform modes (W1-W4).
+  `TestStaleFirstRemoteReportAfterIdleStopDexIntegration` covers the first Codex turn report admitted
+  before Stop and consumed afterward by `AwaitRemoteAgent` and `AwaitUser` (W5).
 - Two `SetExecutor` calls with the same basis epoch (two Builders activating at once): one wins; a
   delayed retry of the loser, and of a connection that was superseded, is refused.
 - Worker restart during `AwaitRemoteAgent` and during a remote tool Step.

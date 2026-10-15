@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/superdurable/dex/sdk-go/dex"
+	"github.com/superdurable/superversev2/internal/agents/remoteexec"
 	"github.com/superdurable/superversev2/internal/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/agents/session/conversation"
@@ -42,11 +43,11 @@ func (*StopMarkerOrderingFlow) GetPersistenceSchema() dex.PersistenceSchema {
 	return schema
 }
 func (*StopMarkerOrderingFlow) GetSteps() []dex.StepDef {
-	return []dex.StepDef{dex.DefineStep(SettleStopMarkerTest{}), dex.DefineStep(ConsumeStopMarkerTest{}), dex.DefineStep(EndStopMarkerTest{}), dex.DefineStep(RouteStoppedToolTest{})}
+	return []dex.StepDef{dex.DefineStep(SettleStopMarkerTest{}), dex.DefineStep(ConsumeStopMarkerTest{}), dex.DefineStep(EndStopMarkerTest{}), dex.DefineStep(RouteStoppedToolTest{}), dex.DefineStep(ConsumeStaleRemoteTest{}), dex.DefineStep(ConsumeStaleIdleTest{})}
 }
 func (flow *StopMarkerOrderingFlow) GetRPCs() []dex.RPCDef {
 	options := &dex.RPCOptions{Timeout: time.Minute, IsTransactional: true, LockAttributes: finishInterruptStepOptions.ExecuteLockAttributes, LoadAttributeMaps: taskMessageMaps}
-	return []dex.RPCDef{dex.DefineRPC(flow.InstallStop, options), dex.DefineRPC(flow.ScheduleSettlement, options), dex.DefineRPC(flow.ScheduleStoppedRoute, options), dex.DefineRPC(flow.WakeWithInput, options), dex.DefineRPC(flow.WakeWithNotification, options), dex.DefineRPC(flow.ReadCommittedStop, &dex.RPCOptions{Timeout: time.Minute, LoadAttributeMaps: taskMessageMaps}), dex.DefineRPC(flow.CompleteStopTest, options)}
+	return []dex.RPCDef{dex.DefineRPC(flow.InstallStop, options), dex.DefineRPC(flow.InstallRemoteReport, options), dex.DefineRPC(flow.CommitIdleRemoteStop, options), dex.DefineRPC(flow.ScheduleStaleRemote, options), dex.DefineRPC(flow.ScheduleSettlement, options), dex.DefineRPC(flow.ScheduleStoppedRoute, options), dex.DefineRPC(flow.WakeWithInput, options), dex.DefineRPC(flow.WakeWithNotification, options), dex.DefineRPC(flow.ReadCommittedStop, &dex.RPCOptions{Timeout: time.Minute, LoadAttributeMaps: taskMessageMaps}), dex.DefineRPC(flow.CompleteStopTest, options)}
 }
 
 // Like sessionStartAttributes, the test fixture is installed with StartFlow,
@@ -69,6 +70,7 @@ type stopFixture struct {
 	Starting      bool                     `json:"starting"`
 	DropInterrupt bool                     `json:"drop_interrupt"`
 	PendingCalls  []conversation.ToolCall  `json:"pending_calls,omitempty"`
+	Executor      *remoteexec.Executor     `json:"executor,omitempty"`
 }
 
 func (*StopMarkerOrderingFlow) InstallStop(ctx dex.Context, fixture stopFixture) (*dex.RPCResult[dex.None], error) {
@@ -76,6 +78,10 @@ func (*StopMarkerOrderingFlow) InstallStop(ctx dex.Context, fixture stopFixture)
 	state.Turn, state.Status = fixture.StateTurn, fixture.Status
 	if len(fixture.PendingCalls) > 0 {
 		state.PendingToolCalls, state.PendingToolIndex = fixture.PendingCalls, 0
+	}
+	if fixture.Executor != nil {
+		state.PendingToolsAdmission = fixture.Executor.Admitted()
+		comm.MustDo(executorAttribute.Set(ctx, *fixture.Executor))
 	}
 	comm.MustDo(agentStateAttribute.Set(ctx, state))
 	if fixture.DropInterrupt {
@@ -93,6 +99,73 @@ func (*StopMarkerOrderingFlow) InstallStop(ctx dex.Context, fixture stopFixture)
 		comm.MustDo(subagentsAttribute.Set(ctx, record.AgentID, record))
 	}
 	return &dex.RPCResult[dex.None]{}, nil
+}
+
+// InstallRemoteReport commits the already admitted first report before Stop.
+func (*StopMarkerOrderingFlow) InstallRemoteReport(ctx dex.Context, report remoteexec.RemoteReport) (*dex.RPCResult[dex.None], error) {
+	executor := remoteexec.Executor{Mode: remoteexec.ModeRemote, Epoch: report.Epoch, Generation: report.Generation,
+		Remote: &remoteexec.RemoteExecutor{ConnectionID: report.ConnectionID, Owner: report.Owner, Reported: report.Sequence}}
+	comm.MustDo(executorAttribute.Set(ctx, executor))
+	comm.MustDo(remoteInboxChannel.Publish(ctx, remoteexec.InboxItem{Report: &report}))
+	return &dex.RPCResult[dex.None]{}, nil
+}
+
+// CommitIdleRemoteStop calls the production admission and marker consumers in
+// separate Dex commits from the report. An idle Stop has no running Step for
+// InterruptAgent to cancel, and AwaitUser would consume its marker before any
+// later report, so the fixture commits that same consumption explicitly.
+func (*StopMarkerOrderingFlow) CommitIdleRemoteStop(ctx dex.Context, actor conversation.Actor) (*dex.RPCResult[bool], error) {
+	_, plan, err := interruptAgent(ctx, agentloop.InterruptAgentRequest{Turn: 7, Actor: &actor})
+	if err != nil {
+		return nil, err
+	}
+	if !plan.Admitted || plan.Joined {
+		return &dex.RPCResult[bool]{Output: false}, nil
+	}
+	takeAgentInterrupt(ctx, true)
+	return &dex.RPCResult[bool]{Output: true}, nil
+}
+
+type staleRemoteFixture struct {
+	Boundary int  `json:"boundary"`
+	Idle     bool `json:"idle"`
+}
+
+func (*StopMarkerOrderingFlow) ScheduleStaleRemote(_ dex.Context, input staleRemoteFixture) (*dex.RPCResult[dex.None], error) {
+	if input.Idle {
+		return &dex.RPCResult[dex.None]{NextSteps: []dex.StepMovement{dex.MovementOf(ConsumeStaleIdleTest{}, input.Boundary)}}, nil
+	}
+	return &dex.RPCResult[dex.None]{NextSteps: []dex.StepMovement{dex.MovementOf(ConsumeStaleRemoteTest{}, input.Boundary)}}, nil
+}
+
+type ConsumeStaleRemoteTest struct{ dex.StepDefaults }
+
+func (ConsumeStaleRemoteTest) GetStepOptions() *dex.StepOptions { return remoteStepOptions() }
+func (ConsumeStaleRemoteTest) WaitFor(ctx dex.Context, _ int) (*dex.Wait, error) {
+	return (AwaitRemoteAgent{}).WaitFor(ctx, nil)
+}
+func (ConsumeStaleRemoteTest) Execute(ctx dex.Context, boundary int) (*dex.StepDecision, error) {
+	flow := &SessionAgentFlow{automaticTurns: agentloop.AutomaticTurnBounds{Task: 5, Platform: 5}, sandboxHold: time.Minute}
+	if _, err := (AwaitRemoteAgent{flow: flow}).Execute(ctx, nil); err != nil {
+		return nil, err
+	}
+	comm.MustDo(stopMarkerSettled.Set(ctx, boundary))
+	return dex.DeadEnd(), nil
+}
+
+type ConsumeStaleIdleTest struct{ dex.StepDefaults }
+
+func (ConsumeStaleIdleTest) GetStepOptions() *dex.StepOptions { return remoteIdleStepOptions() }
+func (ConsumeStaleIdleTest) WaitFor(ctx dex.Context, _ int) (*dex.Wait, error) {
+	return (AwaitUser{}).WaitFor(ctx, nil)
+}
+func (ConsumeStaleIdleTest) Execute(ctx dex.Context, boundary int) (*dex.StepDecision, error) {
+	flow := &SessionAgentFlow{automaticTurns: agentloop.AutomaticTurnBounds{Task: 5, Platform: 5}, sandboxHold: time.Minute}
+	if _, err := (AwaitUser{flow: flow}).Execute(ctx, nil); err != nil {
+		return nil, err
+	}
+	comm.MustDo(stopMarkerSettled.Set(ctx, boundary))
+	return dex.DeadEnd(), nil
 }
 
 type settlementFixture struct {
@@ -159,10 +232,11 @@ type committedStop struct {
 	Entries   []conversation.Entry                 `json:"entries"`
 	Boundary  int                                  `json:"boundary"`
 	Subagents map[string]agenttasks.SubagentRecord `json:"subagents"`
+	Executor  remoteexec.Executor                  `json:"executor"`
 }
 
 func (*StopMarkerOrderingFlow) ReadCommittedStop(ctx dex.Context, _ dex.None) (*dex.RPCResult[committedStop], error) {
-	result := committedStop{State: comm.Must(agentStateAttribute.Get(ctx)), Interrupt: dexflow.OptionalValue(agentInterruptAttribute.Get(ctx)), Boundary: comm.Must(stopMarkerSettled.Get(ctx)), Subagents: loadedSubagents(ctx)}
+	result := committedStop{State: comm.Must(agentStateAttribute.Get(ctx)), Interrupt: dexflow.OptionalValue(agentInterruptAttribute.Get(ctx)), Boundary: comm.Must(stopMarkerSettled.Get(ctx)), Subagents: loadedSubagents(ctx), Executor: currentExecutor(ctx)}
 	for seq := result.State.CurrentFirstSequence; seq <= result.State.LastSequence; seq++ {
 		result.Entries = append(result.Entries, comm.Must(currentMessagesAttribute.Get(ctx, agentloop.SequenceKey(seq))))
 	}
@@ -437,44 +511,110 @@ func (RouteStoppedToolTest) Execute(ctx dex.Context, boundary int) (*dex.StepDec
 }
 
 func TestRouteToolStopFenceDexIntegration(t *testing.T) {
-	for _, kind := range []string{"built-in", "parallel-wave"} {
-		t.Run(kind, func(t *testing.T) {
+	for _, mode := range []remoteexec.Mode{remoteexec.ModePlatform, remoteexec.ModeRemote} {
+		for _, kind := range []string{"built-in", "parallel-wave"} {
+			t.Run(string(mode)+"/"+kind, func(t *testing.T) {
+				ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
+				defer cancel()
+				sdk, _, flow, id := stopTestClient(t, ctx)
+				defer completeStopTest(t, ctx, sdk, flow, id)
+				actor := conversation.Actor{AccountID: "stopper", Email: "stopper@example.com"}
+				calls := []conversation.ToolCall{{ID: "fenced-todos", Name: conversation.ToolWriteTodos, Arguments: conversation.MustJSONObject(`{"todos":[]}`)}}
+				if kind == "parallel-wave" {
+					calls = []conversation.ToolCall{{ID: "fenced-read-a", Name: conversation.ToolRead, Arguments: conversation.MustJSONObject(`{"path":"a.txt"}`)},
+						{ID: "fenced-read-b", Name: conversation.ToolRead, Arguments: conversation.MustJSONObject(`{"path":"b.txt"}`)}}
+				}
+				fixture := stopFixture{Interrupt: agentloop.AgentInterrupt{Turn: 7, RequestedAt: time.Now().UTC(), Actor: &actor}, StateTurn: 7, Status: agentloop.AgentStatusRoutingTool, PendingCalls: calls}
+				if mode == remoteexec.ModeRemote {
+					fixture.Executor = &remoteexec.Executor{Mode: remoteexec.ModeRemote, Epoch: 3, Generation: 5,
+						Remote: &remoteexec.RemoteExecutor{ConnectionID: "route-stop", Owner: actor}}
+				}
+				var none dex.None
+				if err := sdk.InvokeRPC(ctx, id, flow.InstallStop, fixture, &none); err != nil {
+					t.Fatal(err)
+				}
+				if err := sdk.InvokeRPC(ctx, id, flow.ScheduleStoppedRoute, 1, &none); err != nil {
+					t.Fatal(err)
+				}
+				result := waitCommittedStop(t, ctx, sdk, flow, id, 1)
+				requireOneStop(t, result, actor)
+				if result.Interrupt != nil || result.State.Running != nil || len(result.State.PendingToolCalls) != 0 || result.State.Status != agentloop.AgentStatusWaitingForMessage {
+				t.Fatalf("stopped route admitted work: interrupt=%v running=%v pending=%d status=%s", result.Interrupt, result.State.Running, len(result.State.PendingToolCalls), result.State.Status)
+				}
+				if result.State.PendingToolsAdmission != (remoteexec.Fence{}) {
+					t.Fatal("stopped route retained pending tool admission")
+				}
+				results := map[conversation.CallID]int{}
+				for _, entry := range result.Entries {
+					if entry.Kind == conversation.EntryKindToolResult {
+						results[entry.Meta.ToolCall.ID]++
+						if entry.Meta.ToolExecution == nil || entry.Meta.ToolExecution.ResultCode != toolfailure.InterruptedByUser.String() {
+							t.Fatal("pending call did not receive interrupted result")
+						}
+					}
+				}
+				for _, call := range calls {
+					if results[call.ID] != 1 {
+						t.Fatalf("call %s got %d results", call.ID, results[call.ID])
+					}
+				}
+			})
+		}
+	}
+}
+
+func TestStaleFirstRemoteReportAfterIdleStopDexIntegration(t *testing.T) {
+	for _, consumer := range []struct {
+		name string
+		idle bool
+	}{{"AwaitRemoteAgent", false}, {"AwaitUser", true}} {
+		t.Run(consumer.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 			defer cancel()
 			sdk, _, flow, id := stopTestClient(t, ctx)
 			defer completeStopTest(t, ctx, sdk, flow, id)
 			actor := conversation.Actor{AccountID: "stopper", Email: "stopper@example.com"}
-			calls := []conversation.ToolCall{{ID: "fenced-todos", Name: conversation.ToolWriteTodos, Arguments: conversation.MustJSONObject(`{"todos":[]}`)}}
-			if kind == "parallel-wave" {
-				calls = []conversation.ToolCall{{ID: "fenced-read-a", Name: conversation.ToolRead, Arguments: conversation.MustJSONObject(`{"path":"a.txt"}`)},
-					{ID: "fenced-read-b", Name: conversation.ToolRead, Arguments: conversation.MustJSONObject(`{"path":"b.txt"}`)}}
-			}
-			fixture := stopFixture{Interrupt: agentloop.AgentInterrupt{Turn: 7, RequestedAt: time.Now().UTC(), Actor: &actor}, StateTurn: 7, Status: agentloop.AgentStatusRoutingTool, PendingCalls: calls}
+			report := remoteexec.RemoteReport{ConnectionID: "idle-stop", Owner: actor, Epoch: 3, Generation: 5, Sequence: 1,
+				ProviderTurn: "first-codex-turn", ToolCall: &remoteexec.RemoteToolCall{Name: conversation.ToolWriteTodos, Arguments: conversation.MustJSONObject(`{"todos":[]}`)}}
 			var none dex.None
-			if err := sdk.InvokeRPC(ctx, id, flow.InstallStop, fixture, &none); err != nil {
+			if err := sdk.InvokeRPC(ctx, id, flow.InstallRemoteReport, report, &none); err != nil {
 				t.Fatal(err)
 			}
-			if err := sdk.InvokeRPC(ctx, id, flow.ScheduleStoppedRoute, 1, &none); err != nil {
+			var admitted bool
+			if err := sdk.InvokeRPC(ctx, id, flow.CommitIdleRemoteStop, actor, &admitted); err != nil {
+				t.Fatal(err)
+			}
+			if !admitted {
+				t.Fatal("idle Stop was not admitted")
+			}
+			before := waitCommittedStop(t, ctx, sdk, flow, id, 0)
+			requireOneStop(t, before, actor)
+			if before.Executor.Generation != 6 || before.Executor.Remote == nil || before.Executor.Remote.Consumed != 0 || before.State.Turn != 7 || before.Interrupt != nil {
+				t.Fatal("idle Stop did not commit generation and marker before report consumption")
+			}
+			if err := sdk.InvokeRPC(ctx, id, flow.ScheduleStaleRemote, staleRemoteFixture{Boundary: 1, Idle: consumer.idle}, &none); err != nil {
 				t.Fatal(err)
 			}
 			result := waitCommittedStop(t, ctx, sdk, flow, id, 1)
 			requireOneStop(t, result, actor)
-			if result.Interrupt != nil || result.State.Running != nil || len(result.State.PendingToolCalls) != 0 || result.State.Status != agentloop.AgentStatusWaitingForMessage {
-				t.Fatal("stopped route admitted work")
+			if result.Executor.Generation != 6 || result.Executor.Remote == nil || result.Executor.Remote.Consumed != 1 || result.Interrupt != nil || result.State.Turn != 7 || result.State.Running != nil || len(result.State.PendingToolCalls) != 0 {
+				t.Fatal("stale report reopened stopped work or failed to advance consumption")
 			}
-			results := map[conversation.CallID]int{}
+			call := report.Call()
+			results, calls := 0, 0
 			for _, entry := range result.Entries {
-				if entry.Kind == conversation.EntryKindToolResult {
-					results[entry.Meta.ToolCall.ID]++
+				if entry.Kind == conversation.EntryKindToolResult && entry.Meta.ToolCall.ID == call.ID {
+					results++
 					if entry.Meta.ToolExecution == nil || entry.Meta.ToolExecution.ResultCode != toolfailure.InterruptedByUser.String() {
-						t.Fatal("pending call did not receive interrupted result")
+						t.Fatal("stale call was not interrupted")
 					}
 				}
-			}
-			for _, call := range calls {
-				if results[call.ID] != 1 {
-					t.Fatalf("call %s got %d results", call.ID, results[call.ID])
+				if entry.Kind == conversation.EntryKindModelReply && len(entry.Meta.ToolCalls) == 1 && entry.Meta.ToolCalls[0].ID == call.ID {
+					calls++
 				}
+			}
+			if results != 1 || calls != 1 {
+				t.Fatalf("stale call entries: call=%d result=%d, want one each", calls, results)
 			}
 		})
 	}
