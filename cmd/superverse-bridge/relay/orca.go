@@ -27,9 +27,12 @@ type Orca interface {
 	// changes when Orca restarts.
 	Runtime(ctx context.Context) (Runtime, error)
 	// OpenConversations lists the Codex conversations open in Orca: the
-	// structured ones, which can be bound, and those in a terminal, which
-	// cannot.
+	// structured ones, which can be bound once they hold a provider thread,
+	// and those in a terminal, which cannot.
 	OpenConversations(ctx context.Context) ([]OpenConversation, error)
+	// OpenWorktrees lists the open Orca worktrees where a new structured
+	// conversation can be created.
+	OpenWorktrees(ctx context.Context) ([]OpenWorktree, error)
 	// ResolveWorktree checks a new conversation's worktree selector
 	// (id:<worktreeId> or path:<dir>) and returns the one to create it in.
 	ResolveWorktree(ctx context.Context, selector string) (string, error)
@@ -86,12 +89,14 @@ type Session struct {
 	ProviderThreadID string
 }
 
-// OpenConversation is a Codex conversation open in an Orca tab. Only a
-// structured one has a SessionID and can be bound: a Codex conversation in a
-// terminal cannot, because two processes would write one thread.
+// OpenConversation is a Codex conversation open in an Orca tab. A structured
+// chat can be bound only once Orca has given it a session ID and a confirmed
+// provider thread. A terminal cannot be bound because two processes would
+// write one thread.
 type OpenConversation struct {
-	SessionID  string
-	Structured bool
+	SessionID           string
+	Structured          bool
+	ProviderThreadReady bool
 	// Worktree is Orca's worktree ID; Path is its directory.
 	Worktree string
 	Path     string
@@ -101,6 +106,12 @@ type OpenConversation struct {
 	// ReadError is why a structured conversation's journal could not be read;
 	// such a conversation cannot be bound.
 	ReadError error
+}
+
+// OpenWorktree is an Orca worktree from the tabs inventory.
+type OpenWorktree struct {
+	Selector string
+	Path     string
 }
 
 // Conversation is a session's current provider thread and latest turn.

@@ -39,15 +39,18 @@ func TestOrcaVersionAndTabsIntegration(t *testing.T) {
 	if len(conversations) == 0 {
 		t.Fatal("Orca returned no open Codex conversation")
 	}
-	for _, conversation := range conversations {
-		if conversation.Worktree == "" || conversation.Path == "" {
-			continue
-		}
-		if _, err := client.ResolveWorktree(ctx, "path:"+conversation.Path); err != nil {
+	worktrees, err := client.OpenWorktrees(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(worktrees) == 0 {
+		t.Fatal("Orca returned no open worktree")
+	}
+	for _, worktree := range worktrees {
+		if resolved, err := client.ResolveWorktree(ctx, "path:"+worktree.Path); err != nil || resolved != worktree.Selector {
 			t.Fatalf("resolve a worktree from the real tabs snapshot: %v", err)
 		}
-		t.Logf("Orca %s, Codex %s: %d conversations; worktree resolved", runtime.OrcaVersion, runtime.CodexVersion, len(conversations))
-		return
 	}
-	t.Fatal("Orca returned no resolvable worktree")
+	t.Logf("Orca %s, Codex %s: %d conversations and %d resolvable worktrees",
+		runtime.OrcaVersion, runtime.CodexVersion, len(conversations), len(worktrees))
 }

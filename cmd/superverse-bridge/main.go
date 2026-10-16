@@ -44,8 +44,8 @@ const usage = `superverse-bridge connects a Codex conversation in Orca to a Supe
 
 Commands:
   connect --endpoint <studio origin> [--session <orca session id> | --new --worktree <selector>]
-                 choose an Orca Codex conversation on the terminal (a new one offered
-                 only with --worktree), pair with a code from Studio (asked on the
+                 choose an Orca Codex conversation or a new conversation in any
+                 open worktree on the terminal, pair with a code from Studio (asked on the
                  terminal), bind it and run serve
   serve          run the relays of every binding (one per state directory)
   mcp            the MCP server Codex starts; serves the tools of $ORCA_AGENT_SESSION_ID
@@ -192,7 +192,7 @@ func runConnect(ctx context.Context, args []string, logger *slog.Logger) error {
 	session := flags.set.String("session", "", "the Orca session to connect; chosen on the terminal when empty")
 	newConversation := flags.set.Bool("new", false, "start a new conversation in --worktree instead of choosing one")
 	worktree := flags.set.String("worktree", "", "the Orca worktree of a new conversation (id:<worktreeId> or path:<dir>); "+
-		"offers a new conversation in the choice, and is needed with --new")
+		"narrows the new-conversation choice, and is needed with --new")
 	codexConfig := flags.set.String("codex-config", "", "the Codex configuration file (default $CODEX_HOME/config.toml or ~/.codex/config.toml)")
 	dir, err := flags.open(args)
 	if err != nil {
@@ -225,12 +225,14 @@ func runConnect(ctx context.Context, args []string, logger *slog.Logger) error {
 	}
 	sessionID := *session
 	if sessionID == "" && !*newConversation {
-		if sessionID, err = chooseConversation(ctx, client, dir, *worktree); err != nil {
-			if errors.Is(err, errExitChoice) {
+		choice, chooseErr := chooseConversation(ctx, client, dir, *worktree)
+		if chooseErr != nil {
+			if errors.Is(chooseErr, errExitChoice) {
 				return nil
 			}
-			return err
+			return chooseErr
 		}
+		sessionID, *worktree = choice.sessionID, choice.worktree
 	}
 	stateDirArgument := ""
 	if defaultPath, defaultErr := state.DefaultPath(); defaultErr != nil || filepath.Clean(defaultPath) != dir.Path() {

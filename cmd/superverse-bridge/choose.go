@@ -25,19 +25,25 @@ import (
 
 var errExitChoice = errors.New("exit requested")
 
-// chooseConversation lists Orca's Codex conversations on the terminal and
-// reads the Builder's choice: an Orca session ID, or empty for a new
-// conversation. Only a structured conversation that no binding
-// holds can be chosen; a new conversation is offered last, and only with a
-// worktree.
-func chooseConversation(ctx context.Context, orca relay.Orca, dir *state.Dir, worktree string) (string, error) {
+type conversationChoice struct {
+	sessionID string
+	worktree  string
+}
+
+// chooseConversation lists Orca's Codex conversations and open worktrees.
+// Only a structured chat with a confirmed provider thread can be selected.
+func chooseConversation(ctx context.Context, orca relay.Orca, dir *state.Dir, worktree string) (conversationChoice, error) {
 	conversations, err := orca.OpenConversations(ctx)
 	if err != nil {
-		return "", fmt.Errorf("list Orca's Codex conversations: %w", err)
+		return conversationChoice{}, fmt.Errorf("list Orca's Codex conversations: %w", err)
+	}
+	worktrees, err := orca.OpenWorktrees(ctx)
+	if err != nil {
+		return conversationChoice{}, fmt.Errorf("list Orca's open worktrees: %w", err)
 	}
 	bindings, err := dir.Bindings()
 	if err != nil {
-		return "", err
+		return conversationChoice{}, err
 	}
 	boundTo := map[string]string{}
 	for _, binding := range bindings {
@@ -45,7 +51,7 @@ func chooseConversation(ctx context.Context, orca relay.Orca, dir *state.Dir, wo
 	}
 	tty, err := os.OpenFile("/dev/tty", os.O_RDWR, 0)
 	if err != nil {
-		return "", fmt.Errorf("connect lists the conversations on a terminal; pass --session <id> or --new --worktree <selector>: %w", err)
+		return conversationChoice{}, fmt.Errorf("connect lists the conversations on a terminal; pass --session <id> or --new --worktree <selector>: %w", err)
 	}
 	// A cancelled read may still hold the tty on macOS; process exit closes it.
 	defer func() {
@@ -53,7 +59,7 @@ func chooseConversation(ctx context.Context, orca relay.Orca, dir *state.Dir, wo
 			_ = tty.Close()
 		}
 	}()
-	var choices []string
+	var choices []conversationChoice
 	fmt.Fprintln(tty, "Codex conversations in Orca:")
 	for _, conversation := range conversations {
 		label := conversationLabel(conversation)
@@ -62,37 +68,42 @@ func chooseConversation(ctx context.Context, orca relay.Orca, dir *state.Dir, wo
 			fmt.Fprintf(tty, "   -  %s (runs in a terminal and cannot be connected: two processes would write one thread)\n", label)
 		case conversation.ReadError != nil:
 			fmt.Fprintf(tty, "   -  %s (unavailable: %v)\n", label, conversation.ReadError)
+		case conversation.SessionID == "" || !conversation.ProviderThreadReady:
+			fmt.Fprintf(tty, "   -  %s (send any message first, or choose New conversation)\n", label)
 		case bound:
 			fmt.Fprintf(tty, "   -  %s (already connected to %s)\n", label, project)
 		default:
-			choices = append(choices, conversation.SessionID)
+			choices = append(choices, conversationChoice{sessionID: conversation.SessionID})
 			fmt.Fprintf(tty, "  %2d) %s\n", len(choices), label)
 		}
 	}
 	if worktree != "" {
-		choices = append(choices, "")
+		choices = append(choices, conversationChoice{worktree: worktree})
 		fmt.Fprintf(tty, "  %2d) New conversation in %s\n", len(choices), worktree)
 	} else {
-		fmt.Fprintln(tty, "   -  New conversation: run connect again with --worktree id:<worktreeId> or path:<dir>")
+		for _, open := range worktrees {
+			choices = append(choices, conversationChoice{worktree: open.Selector})
+			fmt.Fprintf(tty, "  %2d) New conversation in %s\n", len(choices), open.Path)
+		}
 	}
 	if len(choices) == 0 {
-		fmt.Fprintln(tty, "No available conversation. Start a Codex chat in Orca or use --worktree.")
+		fmt.Fprintln(tty, "No available conversation or open worktree. Open one in Orca first.")
 	}
 	fmt.Fprintln(tty, "   0) Exit")
 	return readChoice(ctx, tty, choices)
 }
 
-func readChoice(ctx context.Context, tty io.ReadWriter, choices []string) (string, error) {
+func readChoice(ctx context.Context, tty io.ReadWriter, choices []conversationChoice) (conversationChoice, error) {
 	reader := bufio.NewReader(tty)
 	for {
 		fmt.Fprintf(tty, "Connect which conversation [0-%d]: ", len(choices))
 		line, err := readTerminalLine(ctx, reader)
 		if err != nil {
-			return "", fmt.Errorf("read the choice: %w", err)
+			return conversationChoice{}, fmt.Errorf("read the choice: %w", err)
 		}
 		if index, err := strconv.Atoi(strings.TrimSpace(line)); err == nil {
 			if index == 0 {
-				return "", errExitChoice
+				return conversationChoice{}, errExitChoice
 			}
 			if index >= 1 && index <= len(choices) {
 				return choices[index-1], nil

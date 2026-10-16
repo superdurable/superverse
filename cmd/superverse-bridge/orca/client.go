@@ -153,9 +153,13 @@ type tab struct {
 	} `json:"agentStatus"`
 }
 
-// structured is a structured Codex conversation, which the Bridge can drive.
+// structured is a Codex chat with a session ID; it may still lack a provider thread.
 func (tab tab) structured() bool {
-	return tab.Type == tabTypeAgentSession && tab.Agent == agentCodex && tab.SessionID != ""
+	return tab.codexChat() && tab.SessionID != ""
+}
+
+func (tab tab) codexChat() bool {
+	return tab.Type == tabTypeAgentSession && tab.Agent == agentCodex
 }
 
 // codexTerminal is Codex running in a terminal, which the Bridge refuses.
@@ -198,10 +202,15 @@ func (client *Client) OpenConversations(ctx context.Context) ([]relay.OpenConver
 				answer, err := client.tail(ctx, tab.SessionID)
 				if err != nil {
 					conversation.ReadError = fmt.Errorf("read the journal of Orca session %s: %w", tab.SessionID, err)
-				} else if items := answer.Page.Items; len(items) > 0 && items[len(items)-1].ObservedAt > 0 {
-					conversation.LastActivity = time.UnixMilli(items[len(items)-1].ObservedAt)
+				} else {
+					conversation.ProviderThreadReady = answer.ProviderSession != nil && answer.ProviderSession.ID != ""
+					if items := answer.Page.Items; len(items) > 0 && items[len(items)-1].ObservedAt > 0 {
+						conversation.LastActivity = time.UnixMilli(items[len(items)-1].ObservedAt)
+					}
 				}
 				conversation.SessionID, conversation.Structured = tab.SessionID, true
+			case tab.codexChat():
+				conversation.Structured = true
 			case tab.codexTerminal():
 				if tab.AgentStatus != nil && tab.AgentStatus.UpdatedAt > 0 {
 					conversation.LastActivity = time.UnixMilli(tab.AgentStatus.UpdatedAt)
@@ -224,24 +233,36 @@ func (client *Client) OpenConversations(ctx context.Context) ([]relay.OpenConver
 	return conversations, nil
 }
 
+// OpenWorktrees lists every distinct open Orca worktree from the tabs snapshot.
+func (client *Client) OpenWorktrees(ctx context.Context) ([]relay.OpenWorktree, error) {
+	snapshots, err := client.tabs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var worktrees []relay.OpenWorktree
+	seen := map[string]bool{}
+	for _, snapshot := range snapshots {
+		if !strings.Contains(snapshot.Worktree, worktreeSeparator) || worktreePath(snapshot.Worktree) == "" || seen[snapshot.Worktree] {
+			continue
+		}
+		seen[snapshot.Worktree] = true
+		worktrees = append(worktrees, relay.OpenWorktree{Selector: selectorID + snapshot.Worktree, Path: worktreePath(snapshot.Worktree)})
+	}
+	return worktrees, nil
+}
+
 // ResolveWorktree checks a new conversation's worktree selector against the
 // worktrees Orca lists and returns it as id:<worktreeId>. It accepts
 // id:<worktreeId> and path:<dir>; Orca's other selectors are not resolved.
 func (client *Client) ResolveWorktree(ctx context.Context, selector string) (string, error) {
-	snapshots, err := client.tabs(ctx)
+	worktrees, err := client.OpenWorktrees(ctx)
 	if err != nil {
 		return "", err
 	}
-	var worktrees []string
-	for _, snapshot := range snapshots {
-		if strings.Contains(snapshot.Worktree, worktreeSeparator) && !slices.Contains(worktrees, snapshot.Worktree) {
-			worktrees = append(worktrees, snapshot.Worktree)
-		}
-	}
 	for _, worktree := range worktrees {
-		if selector == selectorID+worktree || (strings.HasPrefix(selector, selectorPath) &&
-			filepath.Clean(strings.TrimPrefix(selector, selectorPath)) == filepath.Clean(worktreePath(worktree))) {
-			return selectorID + worktree, nil
+		if selector == worktree.Selector || (strings.HasPrefix(selector, selectorPath) &&
+			filepath.Clean(strings.TrimPrefix(selector, selectorPath)) == filepath.Clean(worktree.Path)) {
+			return worktree.Selector, nil
 		}
 	}
 	if !strings.HasPrefix(selector, selectorID) && !strings.HasPrefix(selector, selectorPath) {
@@ -249,7 +270,7 @@ func (client *Client) ResolveWorktree(ctx context.Context, selector string) (str
 	}
 	paths := make([]string, 0, len(worktrees))
 	for _, worktree := range worktrees {
-		paths = append(paths, worktreePath(worktree))
+		paths = append(paths, worktree.Path)
 	}
 	return "", fmt.Errorf("orca lists no worktree %q; open it in Orca first. Orca's worktrees: %s",
 		selector, strings.Join(paths, ", "))

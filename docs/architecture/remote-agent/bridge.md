@@ -37,14 +37,15 @@ Project has at most one active binding (its executor).
 
 1. **Pair** with the code ([connection](connection.md#pairing)).
 2. **Choose the conversation.** The plugin lists Orca's structured Codex sessions (the Orca session
-   the Builder is looking at is preselected) and offers "New conversation". The terminal `connect`
-   does the same before it redeems the pairing code: without `--session` it lists the structured
-   sessions on the terminal for the Builder to choose (bound ones shown unavailable), and creates a
-   new conversation only when asked (`--new --worktree <selector>`), so a selection error never uses
-   up the one-time code. Only structured
-   sessions are accepted; a Codex conversation running in a terminal is refused with the reason
-   (two processes would write one thread). An existing conversation is driven by its Orca session
-   ID, so Orca's own conflict check applies.
+   the Builder is looking at is preselected) and offers "New conversation". Before redeeming the
+   pairing code, terminal `connect` lists each eligible Codex session and a "New conversation in
+   <worktree>" choice for every open Orca worktree from the tabs snapshot. `--worktree` narrows the
+   new-conversation choice, and `--new --worktree <selector>` creates it without the picker. A
+   newly opened Orca Codex chat may already have a session ID while lacking a provider thread;
+   it is shown as unavailable until the Builder sends a message, or they can select New
+   conversation. The Bridge checks this before pairing for direct `--session` too. Bound sessions
+   and Codex running in a terminal are unavailable (two processes would write one thread). An
+   existing conversation is driven by its Orca session ID, so Orca's own conflict check applies.
 3. **Install the MCP server** in the Codex home that Orca uses for that session's account (the
    default `~/.codex/config.toml`, which Orca mirrors into its managed account homes): one
    `[mcp_servers.superverse]` entry that runs `<bridge> mcp` with

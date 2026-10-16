@@ -10,6 +10,7 @@
 
 import os
 import pty
+import re
 import select
 import signal
 import tempfile
@@ -41,7 +42,29 @@ def run_case(name, arguments, prompt, response, expected_code):
         os.waitpid(child, 0)
         raise AssertionError(f"{name}: prompt absent or CLI exited early")
 
-    if response == "SIGINT":
+    if response == "NEW":
+        label = re.escape(str(REPO).encode())
+        choice = re.search(rb"(?m)^[ \t]*(\d+)\) New conversation in " + label + rb"\r?$", observed)
+        if choice is None:
+            os.kill(child, signal.SIGKILL)
+            os.close(master)
+            os.waitpid(child, 0)
+            raise AssertionError(f"{name}: no New conversation choice for this worktree")
+        os.write(master, choice.group(1) + b"\n")
+        deadline = time.monotonic() + 20
+        while b"Pairing code from Studio" not in observed and time.monotonic() < deadline:
+            if select.select([master], [], [], 0.2)[0]:
+                try:
+                    observed += os.read(master, 65536)
+                except OSError:
+                    break
+        if b"Pairing code from Studio" not in observed:
+            os.kill(child, signal.SIGKILL)
+            os.close(master)
+            os.waitpid(child, 0)
+            raise AssertionError(f"{name}: selecting New did not reach the pairing prompt")
+        os.kill(child, signal.SIGINT)
+    elif response == "SIGINT":
         os.kill(child, signal.SIGINT)
     else:
         os.write(master, response.encode() + b"\n")
@@ -77,6 +100,7 @@ def main():
         ]
         run_case("choice-zero", arguments, b"Connect which conversation", "0", 0)
         run_case("choice-SIGINT", arguments, b"Connect which conversation", "SIGINT", 130)
+        run_case("new-without-worktree", arguments, b"Connect which conversation", "NEW", 130)
         run_case(
             "pairing-SIGINT",
             [*arguments, "--new", "--worktree", f"path:{REPO}"],

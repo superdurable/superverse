@@ -115,7 +115,7 @@ func checkBindable(dir *state.Dir, sessionID string) error {
 }
 
 // checkStructured fails unless sessionID is a structured Codex conversation
-// open in Orca whose journal can be read.
+// open in Orca whose journal can be read and holds a provider thread.
 func checkStructured(ctx context.Context, orca Orca, sessionID string) error {
 	conversations, err := orca.OpenConversations(ctx)
 	if err != nil {
@@ -123,7 +123,13 @@ func checkStructured(ctx context.Context, orca Orca, sessionID string) error {
 	}
 	for _, conversation := range conversations {
 		if conversation.Structured && conversation.SessionID == sessionID {
-			return conversation.ReadError
+			if conversation.ReadError != nil {
+				return conversation.ReadError
+			}
+			if !conversation.ProviderThreadReady {
+				return errors.New("the Orca conversation has no Codex thread yet; send any message first, or choose New conversation")
+			}
+			return nil
 		}
 	}
 	return fmt.Errorf("orca session %s is not an open structured Codex conversation; "+

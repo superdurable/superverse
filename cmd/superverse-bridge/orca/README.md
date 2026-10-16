@@ -43,11 +43,14 @@ pinned to Orca 1.4.224 or 1.4.225 and Codex 0.162.x.
 - **Conversations.** `OpenConversations` reads `session.tabs.listAll`: an `agent-session` tab of
   agent `codex` is a structured conversation (its `sessionId`, `title`, the snapshot's `worktree`
   ID `<repoId>::<path>`, and its newest journal row's `observedAt` as the last activity, one `tail`
-  read each; a session whose journal cannot be read is listed with that error, cannot be chosen, and
-  fails `connect --session` before pairing, while the others stay available); a `terminal` tab whose `launchAgent` or `agentStatus.agentType` is `codex` is a Codex
-  TUI, listed as unavailable (its `agentStatus.updatedAt` as the last activity). `ResolveWorktree`
-  accepts `id:<worktreeId>` or `path:<dir>` only when it names a worktree of a listed snapshot, and
-  returns it as `id:<worktreeId>`.
+  read each). A fresh desktop Codex chat on Orca 1.4.225 had a session ID but no `providerSession.id`
+  in its tail before its first message; the picker shows it unavailable and `connect --session`
+  rejects it before pairing. A Bridge-created chat had a provider thread before its first message.
+  A session whose journal cannot be read is also unavailable while other sessions stay available.
+  A `terminal` tab whose `launchAgent` or `agentStatus.agentType` is `codex` is a Codex TUI, listed as
+  unavailable (its `agentStatus.updatedAt` as the last activity). `OpenWorktrees` lists every distinct
+  worktree from the tabs snapshot. `ResolveWorktree` accepts `id:<worktreeId>` or `path:<dir>` only
+  when it names one of those worktrees, and returns it as `id:<worktreeId>`.
 - **Create and cancel** resend identical params when unanswered (Orca's ledger replays them).
   `CreateSession` mints the session ID (`sv-` and 24 hex digits) in the worktree `ResolveWorktree`
   returned. The Bridge sends `{envelope, worktree, agent}` to both supported Orca versions.
