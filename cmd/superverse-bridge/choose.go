@@ -23,6 +23,8 @@ import (
 	"github.com/superdurable/superversev2/cmd/superverse-bridge/state"
 )
 
+var errExitChoice = errors.New("exit requested")
+
 // chooseConversation lists Orca's Codex conversations on the terminal and
 // reads the Builder's choice: an Orca session ID, or empty for a new
 // conversation. Only a structured conversation that no binding
@@ -45,7 +47,12 @@ func chooseConversation(ctx context.Context, orca relay.Orca, dir *state.Dir, wo
 	if err != nil {
 		return "", fmt.Errorf("connect lists the conversations on a terminal; pass --session <id> or --new --worktree <selector>: %w", err)
 	}
-	defer func() { _ = tty.Close() }()
+	// A cancelled read may still hold the tty on macOS; process exit closes it.
+	defer func() {
+		if ctx.Err() == nil {
+			_ = tty.Close()
+		}
+	}()
 	var choices []string
 	fmt.Fprintln(tty, "Codex conversations in Orca:")
 	for _, conversation := range conversations {
@@ -69,25 +76,54 @@ func chooseConversation(ctx context.Context, orca relay.Orca, dir *state.Dir, wo
 		fmt.Fprintln(tty, "   -  New conversation: run connect again with --worktree id:<worktreeId> or path:<dir>")
 	}
 	if len(choices) == 0 {
-		return "", errors.New("no Codex conversation in Orca can be connected; start a Codex chat in Orca " +
-			"(a new Codex agent opens as a chat when Settings, Experimental, Chat UI is on, as it is once Orca holds a chat), " +
-			"or a new conversation with --worktree")
+		fmt.Fprintln(tty, "No available conversation. Start a Codex chat in Orca or use --worktree.")
 	}
-	return readChoice(tty, choices)
+	fmt.Fprintln(tty, "   0) Exit")
+	return readChoice(ctx, tty, choices)
 }
 
-func readChoice(tty io.ReadWriter, choices []string) (string, error) {
+func readChoice(ctx context.Context, tty io.ReadWriter, choices []string) (string, error) {
 	reader := bufio.NewReader(tty)
 	for {
-		fmt.Fprintf(tty, "Connect which conversation [1-%d]: ", len(choices))
-		line, err := reader.ReadString('\n')
+		fmt.Fprintf(tty, "Connect which conversation [0-%d]: ", len(choices))
+		line, err := readTerminalLine(ctx, reader)
 		if err != nil {
 			return "", fmt.Errorf("read the choice: %w", err)
 		}
-		if index, err := strconv.Atoi(strings.TrimSpace(line)); err == nil && index >= 1 && index <= len(choices) {
-			return choices[index-1], nil
+		if index, err := strconv.Atoi(strings.TrimSpace(line)); err == nil {
+			if index == 0 {
+				return "", errExitChoice
+			}
+			if index >= 1 && index <= len(choices) {
+				return choices[index-1], nil
+			}
 		}
-		fmt.Fprintf(tty, "Enter a number from 1 to %d.\n", len(choices))
+		fmt.Fprintf(tty, "Enter a number from 0 to %d.\n", len(choices))
+	}
+}
+
+// readTerminalLine returns on cancellation even when closing /dev/tty cannot
+// interrupt a blocked read. The command exits after a cancelled prompt.
+func readTerminalLine(ctx context.Context, reader *bufio.Reader) (string, error) {
+	result := make(chan struct {
+		line string
+		err  error
+	}, 1)
+	go func() {
+		line, err := reader.ReadString('\n')
+		result <- struct {
+			line string
+			err  error
+		}{line, err}
+	}()
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	case read := <-result:
+		if err := ctx.Err(); err != nil {
+			return "", err
+		}
+		return read.line, read.err
 	}
 }
 

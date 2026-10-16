@@ -7,19 +7,19 @@ Callers: `cmd/superverse-bridge`.
 Dependencies: `cmd/superverse-bridge/relay`, `cmd/superverse-bridge/state` and `internal/comm`; it calls the Orca runtime's local socket and runs `codex --version`.
 
 The Orca runtime protocol is confined by this adapter and is
-pinned to Orca 1.4.224 and Codex 0.162.x.
+pinned to Orca 1.4.224 or 1.4.225 and Codex 0.162.x.
 
 - **Transport** (`transport.go`). `orca-runtime.json` in `$ORCA_USER_DATA_PATH` or Orca's default
   directory gives the runtime ID, the unix socket and the owner token; all three change on every
   Orca restart, so the file is re-read after a failed dial, an `unauthorized` answer or a changed
   `_meta.runtimeId`. Each call is one NDJSON request on its own connection, bounded by 90 s, with
-  keepalive frames skipped and answers capped at 4 MiB, Orca 1.4.224's own response frame bound. A
+  keepalive frames skipped and answers capped at 4 MiB, Orca 1.4.224 and 1.4.225's response frame bound. A
   connection that closes without an answer, or an answer from another runtime, is uncertain
   (`errNoAnswer`); a longer answer is `errAnswerTooLarge`, returned as is and never resent as
   uncertain. The token is only in the request
   line, which never reaches an error or a log.
 - **Allow-list.** `status.get`, `session.tabs.listAll`, `agentSession.create`, `send`, `cancel`,
-  `history`, `queuedMessageDelete`, `close` and `reveal`; any other method panics. Orca must be exactly 1.4.224
+  `history`, `queuedMessageDelete`, `close` and `reveal`; any other method panics. Orca must be 1.4.224 or 1.4.225
   (`status.get` `appVersion`) and Codex 0.162.x (`codex --version` through the login shell, as Orca
   resolves it, cached for 5 minutes).
 - **Fingerprint** (`canonical.go`). Every mutation carries `payloadFingerprint`, the SHA-256 of
@@ -50,8 +50,10 @@ pinned to Orca 1.4.224 and Codex 0.162.x.
   returns it as `id:<worktreeId>`.
 - **Create and cancel** resend identical params when unanswered (Orca's ledger replays them).
   `CreateSession` mints the session ID (`sv-` and 24 hex digits) in the worktree `ResolveWorktree`
-  returned. Orca 1.4.224's create takes only `{envelope, worktree, agent, resumeFrom?, tabId?}`
-  (`tabId` is the desktop window's own provisional chat tab) and publishes the chat's tab to the
+  returned. The Bridge sends `{envelope, worktree, agent}` to both supported Orca versions.
+  Both also accept optional `resumeFrom` and `tabId` (`tabId` is the desktop window's own
+  provisional chat tab); 1.4.225 additionally accepts `firstMessage` and `options`, which the
+  Bridge does not send. Orca publishes the chat's tab to the
   runtime's session-tab inventory (`session.tabs.listAll`, paired clients) with `activate: true`,
   but sends the desktop window no tab: the window shows the chat only once it reloads that
   inventory, as opening the chat from Agent Session History in the right sidebar does (a history
@@ -59,7 +61,7 @@ pinned to Orca 1.4.224 and Codex 0.162.x.
   same Orca session opens), so `connect` says so after creating one. New Codex agents open as
   structured chats instead of terminal sessions when Settings, Experimental, Chat UI is on
   (`experimentalNativeChat`) or the app already holds a structured chat
-  (`app.holdsStructuredAgentSessions`). These Orca behaviours were read from the Orca 1.4.224
+  (`app.holdsStructuredAgentSessions`). These Orca behaviours were read from the Orca 1.4.224 and 1.4.225
   application bundle and are not yet verified live. `Cancel` reads the history first, fails with `relay.ErrConversationChanged`
   when the session holds another provider thread than the binding's (and refuses when it holds
   none), and cancels unless the latest turn is
@@ -124,4 +126,4 @@ pinned to Orca 1.4.224 and Codex 0.162.x.
   later send checks the thread before and after, and a changed thread stops the relay
   (`relay.ErrConversationChanged`); nothing creates a replacement conversation. A message the
   Builder types in Orca between the reload and the stored binding starts Codex too early; connect
-  again then. These semantics were read from the Orca 1.4.224 bundle and await a live run.
+  again then. These semantics were read from the Orca 1.4.224 and 1.4.225 bundles and await a live run.

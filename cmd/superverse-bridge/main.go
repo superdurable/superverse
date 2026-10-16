@@ -96,6 +96,9 @@ func run(arguments []string) int {
 		return 2
 	}
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return 130
+		}
 		fmt.Fprintln(os.Stderr, "superverse-bridge:", err)
 		return 1
 	}
@@ -223,6 +226,9 @@ func runConnect(ctx context.Context, args []string, logger *slog.Logger) error {
 	sessionID := *session
 	if sessionID == "" && !*newConversation {
 		if sessionID, err = chooseConversation(ctx, client, dir, *worktree); err != nil {
+			if errors.Is(err, errExitChoice) {
+				return nil
+			}
 			return err
 		}
 	}
@@ -238,7 +244,7 @@ func runConnect(ctx context.Context, args []string, logger *slog.Logger) error {
 		return err
 	}
 	fmt.Printf("Paired with %s; connecting Orca session %s.\n", binding.Record.ProjectName, binding.Record.OrcaSessionID)
-	// Orca 1.4.224 publishes the chat's tab to its runtime but may not open it
+	// Orca 1.4.224 and 1.4.225 publish the chat's tab to the runtime but may not open it
 	// in a window that is already open.
 	fmt.Printf("Codex restarts with the superverse tools on its next message. If the chat (Orca session %s) "+
 		"is not shown in Orca's window, open it from Agent Session History in the right sidebar.\n", binding.Record.OrcaSessionID)
@@ -264,16 +270,21 @@ func runConnect(ctx context.Context, args []string, logger *slog.Logger) error {
 
 // promptPairingCode reads the pairing code on the terminal. It is never an
 // argument and never logged.
-func promptPairingCode() (string, error) {
+func promptPairingCode(ctx context.Context) (string, error) {
 	tty, err := os.OpenFile("/dev/tty", os.O_RDWR, 0)
 	if err != nil {
 		return "", fmt.Errorf("connect asks for the pairing code on a terminal: %w", err)
 	}
-	defer func() { _ = tty.Close() }()
-	if _, err = fmt.Fprint(tty, "Pairing code from Studio: "); err != nil {
+	// A cancelled read may still hold the tty on macOS; process exit closes it.
+	defer func() {
+		if ctx.Err() == nil {
+			_ = tty.Close()
+		}
+	}()
+	if _, err = fmt.Fprint(tty, "Pairing code from Studio (Ctrl+C to cancel): "); err != nil {
 		return "", fmt.Errorf("prompt for the pairing code: %w", err)
 	}
-	line, err := bufio.NewReader(tty).ReadString('\n')
+	line, err := readTerminalLine(ctx, bufio.NewReader(tty))
 	if err != nil {
 		return "", fmt.Errorf("read the pairing code: %w", err)
 	}

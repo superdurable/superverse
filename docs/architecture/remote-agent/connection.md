@@ -282,7 +282,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON remote_agent_connections TO superverse_s
 
 - **Connect dialog**: who is connected now (if anyone) and that their agent will stop; the
   accepted-risk warning; the code with a countdown and copy button; "Waiting for your Bridge…",
-  then "Connected: Codex 0.162.1 in Orca 1.4.224 on 'sam-mbp'".
+  then "Connected: Codex 0.162.1 in Orca 1.4.225 on '<machine>'".
 - **Executor menu**: "Connect my agent", "Use the Superverse agent", and for the connected Builder
   "Disconnect".
 - Errors in plain words: an expired code, a Bridge whose version Studio does not accept, the

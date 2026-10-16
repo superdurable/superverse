@@ -91,7 +91,7 @@ Project has at most one active binding (its executor).
      in the form Orca requires (a 13-digit millisecond timestamp, a hyphen and 32 random hex digits),
      the payload's fingerprint and the `expectedRuntimeFence` it sends with.
   2. It sends with that operation ID as `clientOperationId` and the request's `payloadFingerprint`
-     (SHA-256 over Orca's canonical sorted-key JSON, which Orca recomputes). Orca 1.4.224 keeps the
+     (SHA-256 over Orca's canonical sorted-key JSON, which Orca recomputes). Orca 1.4.224 and 1.4.225 keep the
      journal of submissions in SQLite (`agent-session-journal.db`), so it survives an Orca restart;
      a byte-identical resend with the same ID returns the current state without sending again, for
      24 hours. The Bridge never sets `retryUnknown`.
@@ -106,7 +106,7 @@ Project has at most one active binding (its executor).
        "This message may not have reached Codex" with "Send again") and advance.
 
   On restart with an entry still *sending*, the Bridge asks again with the same operation ID,
-  fingerprint and fence. Orca 1.4.224 does not compare `expectedRuntimeFence` (it must be `null` on
+  fingerprint and fence. Orca 1.4.224 and 1.4.225 do not compare `expectedRuntimeFence` (it must be `null` on
   `create` and a positive integer otherwise) and its fence belongs to a session, not to the Orca
   process; the Bridge detects an Orca restart by a change of `_meta.runtimeId`. Even so: the Bridge does not create a new ID for the same entry, and treats an answer that is not
   `accepted` or `rejected` as `unknown`. A first submission older than Orca's 24-hour limit is
@@ -179,7 +179,7 @@ space), and the call timing trace (three files of at most 4 MiB).
   closes without an answer is uncertain and is resent byte-identically. The paired remote transport
   (`orca serve`, WebSocket with device pairing) does not accept the owner token and is not supported
   in the first version.
-- **Credential (source-verified, Orca 1.4.224).** No narrow credential exists:
+- **Credential (source-verified, Orca 1.4.224 and 1.4.225).** No narrow credential exists:
   - every `agentSession.*` method requires the `workspace` permission, which also covers terminals
     and files;
   - a `runtime-paired` client is granted `workspace`, `settings-write`, `accounts-admin`,
@@ -197,7 +197,7 @@ space), and the call timing trace (three files of at most 4 MiB).
 - **Versions.** The Orca version comes from `status.get` (`appVersion`); no RPC reports Codex's,
   so the Bridge runs `codex --version` itself. `agentSession` is not a published Orca API: its methods and fences change between
   releases. The Bridge accepts an explicit allow-list of exact Orca versions and Codex minor
-  versions (first: Orca 1.4.224, Codex 0.162.x) and refuses others with a message naming the
+  versions (currently Orca 1.4.224 and 1.4.225, Codex 0.162.x) and refuses others with a message naming the
   supported versions. Each new Orca release is added only after the compatibility check passes on
   it. The design asks Orca upstream for a stable session API; until then this maintenance cost is
   accepted.

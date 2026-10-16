@@ -257,7 +257,7 @@ connection.
   reconnects or disconnects), and an unconfirmed thread refuses the mutation and is retried; while
   a cancel waits for the turn to stop, a page that names no thread does not prove it stopped. These
   reads detect a change, they do not prevent one: the gap below remains unmet. A
-  cancel names the latest turn's `turnId`, which Orca 1.4.224 accepts and enforces itself (Codex
+  cancel names the latest turn's `turnId`, which Orca 1.4.224 and 1.4.225 accept and enforce themselves (Codex
   `turn/interrupt` of that turn on the session's current thread; a turn that does not run is
   refused with `cancelled: false`), so a cancel never stops another turn, a replacement
   conversation's included. A send has no such precondition. The installed host's strict request
@@ -279,7 +279,7 @@ connection.
 
 ## Scenarios to run against real Orca
 
-None of these runs in CI; each needs Orca 1.4.224, Codex 0.162.x and the Native lane's endpoint.
+None of these runs in CI; each needs a supported Orca (1.4.224 or 1.4.225), Codex 0.162.x and the Native lane's endpoint.
 
 1. **Full queue, pending send, later tool result.** Codex waits on a slow Superverse tool (a long
    `bash`); Builders send more than 64 Studio messages; Orca holds the first steer `pending`. The

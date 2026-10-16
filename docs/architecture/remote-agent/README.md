@@ -108,11 +108,11 @@ confined by its compiled method allow-list; narrowing it is follow-up work
   and BFF boundary, the credential read endpoint, the migrations and package limits. The first draft's
   baseline was `5eae756fa`; its facts that changed since are corrected here.
 - **Owner decisions** are listed under [Decisions](#decisions), with the accepted risk.
-- **Not yet verified** (ORCACHECK): every statement about Orca's
-  `agentSession` protocol, structured-session resume, plugin
-  process lifetime, and Codex's MCP environment handling. They come from reading Orca 1.4.224 and
-  Codex 0.160 source, not from running them; BRIDGE starts only after they are checked on the real
-  programs.
+- **Compatibility evidence**: the original ORCACHECK record covers Orca 1.4.224 and Codex
+  0.162.1. The Bridge currently allows Orca 1.4.224 and 1.4.225 with Codex 0.162.x;
+  its 1.4.225 method shapes, fingerprint admission and fence behavior were reviewed from
+  the installed application. Live status and tab reads were checked on 1.4.225; a complete
+  pairing, delivery and cancellation run still requires a local connection.
 
 ## Principles
 

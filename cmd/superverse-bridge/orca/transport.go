@@ -49,7 +49,7 @@ var allowedMethods = map[string]bool{
 const (
 	// callTimeout bounds one call; create and a first send may start Codex.
 	callTimeout = 90 * time.Second
-	// maxAnswerBytes is Orca 1.4.224's own bound on a response frame, which
+	// maxAnswerBytes is Orca 1.4.224 and 1.4.225's response frame bound, which
 	// a full history page may reach.
 	maxAnswerBytes = 4 << 20
 	// keepalive is the frame Orca sends on long polls.

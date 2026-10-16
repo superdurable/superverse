@@ -33,7 +33,7 @@ import (
 // The versions the Bridge was checked against (ORCACHECK): exact Orca
 // releases and Codex minor versions.
 var (
-	supportedOrcaVersions  = []string{"1.4.224"}
+	supportedOrcaVersions  = []string{"1.4.224", "1.4.225"}
 	supportedCodexVersions = []string{"0.162."}
 )
 

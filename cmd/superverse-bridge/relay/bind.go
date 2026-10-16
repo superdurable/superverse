@@ -35,7 +35,7 @@ type BindRequest struct {
 	// PairingCode reads the one-time pairing code. Bind asks for it only after
 	// the Orca session and the Codex configuration were checked, so a wrong
 	// choice never spends the code.
-	PairingCode func() (string, error)
+	PairingCode func(context.Context) (string, error)
 	// SessionID is the Orca session to drive; empty creates a new conversation
 	// in Worktree, an Orca worktree selector.
 	SessionID string
@@ -76,7 +76,7 @@ func Bind(ctx context.Context, dir *state.Dir, orca Orca, request BindRequest, l
 	if err != nil {
 		return nil, err
 	}
-	code, err := request.PairingCode()
+	code, err := request.PairingCode(ctx)
 	if err != nil {
 		return nil, err
 	}
