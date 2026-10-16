@@ -2,6 +2,7 @@
 
 import type { AgentEvent as _superverse_v2_AgentEvent, AgentEvent__Output as _superverse_v2_AgentEvent__Output } from '../../superverse/v2/AgentEvent';
 import type { Timestamp as _google_protobuf_Timestamp, Timestamp__Output as _google_protobuf_Timestamp__Output } from '../../google/protobuf/Timestamp';
+import type { AgentRequirementsDraft as _superverse_v2_AgentRequirementsDraft, AgentRequirementsDraft__Output as _superverse_v2_AgentRequirementsDraft__Output } from '../../superverse/v2/AgentRequirementsDraft';
 
 export interface SessionProgress {
   'activity'?: (_superverse_v2_AgentEvent | null);
@@ -10,7 +11,8 @@ export interface SessionProgress {
   'reasoningSummary'?: (string);
   'assistantText'?: (string);
   'taskId'?: (string);
-  'content'?: "activity"|"reasoningSummary"|"assistantText";
+  'requirementsDraft'?: (_superverse_v2_AgentRequirementsDraft | null);
+  'content'?: "activity"|"reasoningSummary"|"assistantText"|"requirementsDraft";
 }
 
 export interface SessionProgress__Output {
@@ -20,5 +22,6 @@ export interface SessionProgress__Output {
   'reasoningSummary'?: (string);
   'assistantText'?: (string);
   'taskId': (string);
-  'content'?: "activity"|"reasoningSummary"|"assistantText";
+  'requirementsDraft'?: (_superverse_v2_AgentRequirementsDraft__Output | null);
+  'content'?: "activity"|"reasoningSummary"|"assistantText"|"requirementsDraft";
 }

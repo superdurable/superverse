@@ -51,8 +51,10 @@ Consequences for Superverse:
 
 ## Discovery: the `connector_catalog` tool
 
-`connector_catalog` is the agent's only source for selecting a connector. It searches the published
-catalog, which lists released connectors only.
+The agent selects connectors from the published catalog, which lists released connectors only: the
+catalog matches the Session's first segment lists ([below](#catalog-matches-of-the-first-request)),
+and `connector_catalog` for every need they do not cover. `connector_catalog` searches the
+catalog.
 
 - **Input** (strict schema): `query`, 1 to 160 characters of provider, connector ID or capability
   terms, all of which must match; optional `operation`, an exact operation name to verify; optional
@@ -82,6 +84,37 @@ cache is a read-only root of those tools. It confirms the configuration fields, 
 methods, input and output types, branches, idempotency, execution policy, trigger schema and generated
 package before writing code, and matches each requirement to an exact operation name and kind. A
 capability that does not exist is recorded as a gap, never assumed.
+
+### Catalog matches of the first request
+
+The server finds the released connectors that the Session's first request names before the first
+model call, so the agent can write the requirements card at once, without a Sandbox, a subagent or
+a catalog search.
+
+- **Copy.** Each server replica keeps one copy of the same published catalog document
+  (`connectorlibrary.PublishedCatalog`). The composition root refreshes it in a goroutine it owns
+  and cancels at shutdown: one HTTPS GET at start and every five minutes, a minute after a failed
+  fetch, each within 15 seconds; the document is decoded like the tool's (at most 1 MiB and 512
+  connectors, valid identities) and the last good copy stays until a newer one replaces it. Studio's
+  TeamSpace connection catalog reads the same copy and fetches only when it is older than five
+  minutes. The copy holds only public data.
+- **Matching.** On the warm copy, with no network call, the Step that opens the first segment
+  matches the user's own words of the request, by whole words and ignoring case, against each
+  connector's display name, its ID with hyphens read as spaces, its directory's last element and a
+  small alias table (`Sheets`, `Google Mail`, `Outlook`, `Teams`, `Excel`, `SharePoint`, `Entra`,
+  `S3`, `Postgres`, `Zendesk`, `Twilio`, `Hacker News`). A display name or alias that is also an
+  everyday word (`Front`, `Linear`, `LLM`, `Webhook`, `Zoom`, `Notion`, `Teams`, ...) matches only
+  as capitalized, and such an ID or directory element never matches. Overlapping names resolve to the
+  leftmost and then the longest, so `Outlook Calendar` names the calendar connector.
+- **Result.** The `<catalog_matches>` section of the first `segment_start`, in the tool's result
+  shape: the catalog source and SHA-256, the fetch time, at most six connectors in the order the
+  request first names them, each with its operations, triggers, module and `install_command`, the
+  total and whether entries were left out, at most 8 KiB
+  ([context management](context-management.md#segments)). A cold copy or no match leaves the
+  section out, and the agent searches with `connector_catalog` as before.
+
+The catalog names no authentication method, so the card's "what the user must set up" may stay
+general (connect the account in Studio) until the build reads the connector's manifest.
 
 ## Declaring and wiring a connector
 
@@ -186,10 +219,14 @@ working around it. Two subagent kinds, both background subagents with their own 
 
 How they fit the requirements flow:
 
-1. For a new application or large change the main agent starts `connector_select` with the user's
-   requirements.
-2. The main agent turns its report into the `connections` of the requirements card and, when several
-   choices exist, asks with `request_user_input` first ([session](session.md#requirements-cards)).
+1. For a new application or large change the main agent takes the card's
+   connections from the catalog matches the first segment lists
+   ([above](#catalog-matches-of-the-first-request)) and calls `connector_catalog` only for a need
+   they do not cover. It starts `connector_select` with the user's requirements before the card only
+   when several connectors could meet a need or none does.
+2. The main agent puts those connectors, or the `connector_select` report, into the `connections` of
+   the requirements card and, when several choices exist, asks with `request_user_input` first
+   ([session](session.md#requirements-cards)).
 3. Once the card is recorded, the main agent starts one `connector_develop` per gap, in parallel up to the
    subagent limits, and keeps working on the rest of the application.
 4. When a develop subagent completes, its notification carries the contribution (the module, the
@@ -551,7 +588,8 @@ any release.
 
 None. A contribution record is an Attribute of its `ConnectorContributionFlow`; a release candidate's
 assets are a GitHub pre-release of the library, or files of the local Git host's release store; the
-catalog and pull requests are read from their public owners and cached for minutes only.
+catalog and pull requests are read from their public owners and cached for minutes only, the catalog
+as one in-memory copy per server replica and one per Sandbox Runner.
 
 ## UI/UX
 
@@ -580,6 +618,10 @@ missing credentials or the test repository make the result incomplete, never a p
   match fails with `catalog_result_too_large`; an unreachable catalog is `catalog_unavailable`.
 - **Selection.** The report has the fixed structure for an existing connector and for a gap; the main agent
   puts it on the requirements card.
+- **Catalog matches.** `TestSessionMockCatalogPrefetchDexIntegration` (scenario `catalog-prefetch`):
+  a request that names Stripe and Slack opens the first segment with both in `<catalog_matches>`,
+  read from the server's copy of the real published catalog, and the card is recorded from them
+  with no `connector_select` or `connector_catalog` call while the workspace request is in flight.
 - **Contribution.**
   - The contribution helper in a real coding container creates the library worktree, and a finish and its
     replay commit and push a new connector once; an unreachable remote is transient.

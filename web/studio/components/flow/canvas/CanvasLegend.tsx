@@ -121,6 +121,7 @@ function Census({ scene }: { scene: Scene }): JSX.Element | null {
   const lines = new Map<string, number>();
   for (const link of scene.links) increment(lines, link.family);
   const stages = scene.boxes.filter((box) => box.kind === "stage").length;
+  const unwritten = scene.boxes.filter((box) => box.unwritten).length;
   const marks = [
     scene.boxes.some((box) => box.isStart) && { glyph: "bolt" as const, label: "where the flow begins" },
     scene.boxes.some((box) => box.loops || box.stage?.loops) && {
@@ -147,8 +148,15 @@ function Census({ scene }: { scene: Scene }): JSX.Element | null {
           </ul>
         </>
       ) : null}
-      {stages > 0 || lines.size > 0 || marks.length > 0 ? <h4 className={HEAD}>Shapes</h4> : null}
+      {stages > 0 || unwritten > 0 || lines.size > 0 || marks.length > 0 ? <h4 className={HEAD}>Shapes</h4> : null}
       <ul>
+        {unwritten > 0 ? (
+          <li className={ROW} data-shape="unwritten">
+            <span className="h-3 w-4 flex-none rounded-[4px] border border-dashed border-line bg-panel/60" />
+            <span className={ROW_TEXT}>a step whose code is not written yet</span>
+            <span className={ROW_COUNT}>{unwritten}</span>
+          </li>
+        ) : null}
         {stages > 0 ? (
           <li className={ROW}>
             <span className="h-3 w-4 flex-none rounded-[4px] border border-line-soft shadow-[2px_2px_0_-1px_var(--color-panel),2px_2px_0_0_var(--color-line-soft)]" />

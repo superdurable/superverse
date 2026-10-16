@@ -9,6 +9,7 @@
 // Disposable Session presentation state. The typed resource snapshot owns durable state.
 import type { SessionSnapshot__Output } from "@/lib/generated/protobuf/superverse/v2/SessionSnapshot";
 import {
+  AgentStatus,
   EventKind,
   EventStream,
   hasRunningWork,
@@ -22,6 +23,7 @@ import {
   type SequencedMessage,
 } from "./agent-types";
 import { appendActivityEvent, mergeSequencedMessages } from "./message-merge";
+import { isDraftOver, type RequirementsDraft } from "./draft/requirements-draft";
 
 const MAXIMUM_ACTIVITY_EVENTS = 200;
 const MAXIMUM_MODEL_SOURCES = 256;
@@ -53,6 +55,8 @@ export interface SessionState {
   assistant: LiveTextEntry | null;
   reasoning: LiveTextEntry[];
   activities: ActivityStreamEvent[];
+  /** The newest draft of the card the agent is writing, until the Snapshot says its call is over; best effort. */
+  requirementsDraft: RequirementsDraft | null;
   /** The newest live status line of each running subagent, by task ID; best effort. */
   subagentLines: ReadonlyMap<string, string>;
   /** The message sequence each model call (source) will commit. */
@@ -75,6 +79,7 @@ export type SessionAction =
   | { type: "streamFailed" }
   | { type: "textEvent"; stream: EventStream; event: AssistantStreamEvent | ReasoningStreamEvent }
   | { type: "activityEvent"; event: ActivityStreamEvent }
+  | { type: "requirementsDraft"; draft: RequirementsDraft }
   | { type: "subagentActivity"; taskId: string; event: AgentEvent }
   | { type: "mutating"; mutating: boolean; kind?: string }
   | { type: "stopRequested" }
@@ -109,6 +114,7 @@ export const initialSessionState: SessionState = {
   assistant: null,
   reasoning: [],
   activities: [],
+  requirementsDraft: null,
   subagentLines: new Map(),
   modelSequences: new Map(),
   stoppedSources: new Set(),
@@ -211,12 +217,27 @@ function applyInputConsumption(snapshot: AgentSnapshot, event: ActivityStreamEve
   };
 }
 
+/** The draft to keep against the state's Snapshot and messages: none once its card call is over. */
+function currentDraft(state: SessionState, draft: RequirementsDraft | null): RequirementsDraft | null {
+  const description = state.snapshot?.description;
+  if (!draft || !description) return draft;
+  const context = {
+    revision: description.confirmedRequirements?.revision ?? 0,
+    turn: description.turn,
+    waiting: description.status === AgentStatus.WAITING_FOR_MESSAGE,
+    answers: (callId: string) => state.messages.some(({ message }) => message.toolCallId === callId),
+  };
+  return isDraftOver(draft, context) ? null : draft;
+}
+
 function applySnapshot(state: SessionState, snapshot: AgentSnapshot, hasEarlierMessages: boolean): SessionState {
   const pendingCallId = snapshot.description.pendingUserInput?.callId;
+  const messages = mergeSequencedMessages(state.messages, snapshot.history.messages);
   return reconcileModelText({
     ...state,
     snapshot,
-    messages: mergeSequencedMessages(state.messages, snapshot.history.messages),
+    messages,
+    requirementsDraft: currentDraft({ ...state, snapshot, messages }, state.requirementsDraft),
     hasEarlierMessages,
     answeredQuestionCallId: pendingCallId === state.answeredQuestionCallId ? state.answeredQuestionCallId : null,
     loading: false,
@@ -312,6 +333,8 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
       return applyTextEvent(state, action);
     case "activityEvent":
       return applyActivity(state, action.event);
+    case "requirementsDraft":
+      return { ...state, requirementsDraft: currentDraft(state, action.draft) };
     case "subagentActivity": {
       // The tool and what it works on say more than the event's generic message.
       const { toolName, target, message } = action.event;

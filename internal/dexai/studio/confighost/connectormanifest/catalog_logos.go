@@ -19,6 +19,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/superdurable/superversev2/internal/comm"
+	"github.com/superdurable/superversev2/internal/comm/platform/connectorlibrary"
 )
 
 // Each catalog entry shows the logo its release publishes in the library's
@@ -39,7 +40,7 @@ const (
 	logoFetchers = 8
 	// maxCatalogLogos bounds the releases whose logos the process keeps;
 	// reaching it forgets them all, and the next reads fetch them again.
-	maxCatalogLogos = 2 * maxCatalogEntries
+	maxCatalogLogos = 2 * connectorlibrary.MaximumCatalogEntries
 )
 
 // logoFiles are the files of a connector's directory that may hold its logo,

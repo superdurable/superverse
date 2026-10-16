@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/flowdesign"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/sandboxtools"
@@ -516,4 +517,164 @@ func requirementsText(version int64, spec Requirements) string {
 		fmt.Fprintf(&text, "\nFlow design: %s\n%s\n", spec.Design.Summary, spec.Design.Outline)
 	}
 	return strings.TrimSuffix(text.String(), "\n")
+}
+
+// RequirementsDraft is the requirements card of a confirm_requirements call
+// while the model still writes it: what its partial input holds so far, read
+// leniently and bounded like the card. The RequirementsDraft Stream carries one
+// whole draft per event; it is never the card, which RouteTool records.
+// BaseRevision is the confirmed requirements' revision when the model call
+// started, 0 when none; a recorded card moves past it.
+type RequirementsDraft struct {
+	CallID        conversation.CallID  `json:"call_id"`
+	Turn          int64                `json:"turn"`
+	BaseRevision  int64                `json:"base_revision"`
+	Title         string               `json:"title"`
+	Summary       string               `json:"summary"`
+	Features      []RequirementFeature `json:"features"`
+	Connections   []DraftConnection    `json:"connections"`
+	DesignSummary string               `json:"design_summary"`
+	Flows         []DraftFlow          `json:"flows"`
+	// Complete says the model finished writing the input, which the Session
+	// records or refuses next.
+	Complete bool `json:"complete"`
+}
+
+// DraftConnection is a connection of a draft: the need and its connector.
+type DraftConnection struct {
+	Need      string `json:"need"`
+	Connector string `json:"connector"`
+}
+
+// DraftFlow is a designed Flow of a draft with the Go type names of the Steps
+// written so far.
+type DraftFlow struct {
+	FlowType  string   `json:"flow_type"`
+	StepTypes []string `json:"step_types"`
+}
+
+// requirementsDraftInterval is the shortest time between two drafts of one
+// call while its input grows.
+const requirementsDraftInterval = time.Second
+
+// maximumDraftInputBytes bounds the input a draft is read from: a card within
+// its limits stays far below it, and a longer one is refused when it completes.
+const maximumDraftInputBytes = 96 << 10
+
+// RequirementsDrafter turns the input of the card calls of one model call into
+// drafts. It reads a growing input at most once per requirementsDraftInterval
+// and writes the draft when it holds something new, and always the complete
+// input's. A malformed or overlong input yields none.
+type RequirementsDrafter struct {
+	turn, baseRevision int64
+	call               conversation.CallID
+	lastAt             time.Time
+	lastSize           int
+	last               string
+}
+
+// NewRequirementsDrafter starts the drafts of the model call of turn, whose
+// confirmed requirements are at baseRevision.
+func NewRequirementsDrafter(turn, baseRevision int64) *RequirementsDrafter {
+	return &RequirementsDrafter{turn: turn, baseRevision: baseRevision}
+}
+
+// Next is the draft to write for progress, if one is due.
+func (drafter *RequirementsDrafter) Next(progress conversation.ToolInputProgress, now time.Time) (RequirementsDraft, bool) {
+	if progress.CallID != drafter.call {
+		drafter.call, drafter.lastAt, drafter.lastSize, drafter.last = progress.CallID, time.Time{}, 0, ""
+	}
+	isDue := progress.Complete || len(progress.Input) > drafter.lastSize && now.Sub(drafter.lastAt) >= requirementsDraftInterval
+	if !isDue || len(progress.Input) > maximumDraftInputBytes {
+		return RequirementsDraft{}, false
+	}
+	drafter.lastAt, drafter.lastSize = now, len(progress.Input)
+	draft, isRead := readRequirementsDraft(progress.Input)
+	encoded := string(comm.Must(json.Marshal(draft)))
+	if !isRead || !progress.Complete && (encoded == drafter.last || encoded == emptyDraftJSON) {
+		return RequirementsDraft{}, false
+	}
+	drafter.last = encoded
+	draft.CallID, draft.Turn, draft.BaseRevision, draft.Complete = progress.CallID, drafter.turn, drafter.baseRevision, progress.Complete
+	return draft, true
+}
+
+// emptyDraftJSON is the encoding of a draft that holds nothing yet.
+var emptyDraftJSON = string(comm.Must(json.Marshal(boundedDraft(partialCard{}))))
+
+// partialCard is what a draft reads of a card's input; a field of another
+// type than the card's is skipped.
+type partialCard struct {
+	Title       string               `json:"title"`
+	Summary     string               `json:"summary"`
+	Features    []RequirementFeature `json:"features"`
+	Connections []DraftConnection    `json:"connections"`
+	Design      struct {
+		Summary string `json:"summary"`
+		Flows   []struct {
+			FlowType string `json:"flow_type"`
+			Steps    []struct {
+				StepType string `json:"step_type"`
+			} `json:"steps"`
+		} `json:"flows"`
+	} `json:"design"`
+}
+
+// readRequirementsDraft closes the partial input and reads the draft it
+// holds; false when it is not a JSON object yet or is malformed.
+func readRequirementsDraft(input string) (RequirementsDraft, bool) {
+	closed, isClosed := conversation.ClosePartialJSON(input)
+	if !isClosed || !strings.HasPrefix(closed, "{") {
+		return RequirementsDraft{}, false
+	}
+	var card partialCard
+	if err := json.Unmarshal([]byte(closed), &card); err != nil {
+		if _, isTypeMismatch := errors.AsType[*json.UnmarshalTypeError](err); !isTypeMismatch {
+			return RequirementsDraft{}, false
+		}
+	}
+	return boundedDraft(card), true
+}
+
+// boundedDraft keeps what the card's schema admits of a partial card, cut to
+// its limits; a feature, connection, Flow or Step that holds nothing yet is
+// left out.
+func boundedDraft(card partialCard) RequirementsDraft {
+	draft := RequirementsDraft{Title: runePrefix(card.Title, 120), Summary: runePrefix(card.Summary, 1200), Features: []RequirementFeature{},
+		Connections: []DraftConnection{}, DesignSummary: runePrefix(card.Design.Summary, 600), Flows: []DraftFlow{}}
+	for _, feature := range card.Features[:min(len(card.Features), 20)] {
+		if feature.ID != "" || feature.Text != "" {
+			draft.Features = append(draft.Features, RequirementFeature{ID: runePrefix(feature.ID, 4), Text: runePrefix(feature.Text, 600)})
+		}
+	}
+	for _, connection := range card.Connections[:min(len(card.Connections), 10)] {
+		if connection.Need != "" || connection.Connector != "" {
+			draft.Connections = append(draft.Connections, DraftConnection{Need: runePrefix(connection.Need, 300), Connector: runePrefix(connection.Connector, 120)})
+		}
+	}
+	for _, flow := range card.Design.Flows[:min(len(card.Design.Flows), 6)] {
+		if flow.FlowType == "" {
+			continue
+		}
+		drafted := DraftFlow{FlowType: runePrefix(flow.FlowType, 80), StepTypes: []string{}}
+		for _, step := range flow.Steps[:min(len(flow.Steps), 30)] {
+			if step.StepType != "" {
+				drafted.StepTypes = append(drafted.StepTypes, runePrefix(step.StepType, 80))
+			}
+		}
+		draft.Flows = append(draft.Flows, drafted)
+	}
+	return draft
+}
+
+// runePrefix is the first maximum characters of text.
+func runePrefix(text string, maximum int) string {
+	count := 0
+	for index := range text {
+		if count == maximum {
+			return text[:index]
+		}
+		count++
+	}
+	return text
 }

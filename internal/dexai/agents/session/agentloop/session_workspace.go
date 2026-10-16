@@ -348,7 +348,7 @@ func (ws *SessionWorkspace) PlanRequest(resumeAt Continuation, lost string, call
 		return WorkspaceUsableWithoutContext
 	case ws.IsUsable():
 		return WorkspaceUsable
-	case ws.State == WorkspaceRequested && (resumeAt == "" || resumeAt == ContinueAwaitRemote):
+	case ws.State == WorkspaceRequested && (resumeAt == "" || resumeAt.IsBesideConversation()):
 		return WorkspaceInFlight
 	case ws.State == WorkspaceRequested:
 		ws.join(resumeAt)
@@ -356,6 +356,14 @@ func (ws *SessionWorkspace) PlanRequest(resumeAt Continuation, lost string, call
 	}
 	ws.request(requestID)
 	return WorkspaceOpened
+}
+
+// IsBesideConversation reports whether a workspace demand runs beside the
+// conversation, which it never resumes: the request a remote activation or the
+// first model call starts to prepare the repository context. Its owner hands
+// a joined conversation continuation back when the request settles.
+func (next Continuation) IsBesideConversation() bool {
+	return next == ContinueAwaitRemote || next == ContinuePrepareContext
 }
 
 // IsUsable reports whether new tools may be dispatched on the accepted lease:

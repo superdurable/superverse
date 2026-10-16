@@ -33,7 +33,7 @@ func TestPreWaveReleaseRefusedLive(t *testing.T) {
 	httpClient := connectormanifest.NewReleaseHTTPClient()
 	defer httpClient.CloseIdleConnections()
 	shared := NewTeamSpaceConnections(nil, nil, connectormanifest.NewReleaseResolver(httpClient, connectorlibrary.OfficialReleaseDownloadURL),
-		connectormanifest.NewCatalog(httpClient), PlatformClients{}, NewProviderHTTPClient(false), nil, nil, false)
+		connectormanifest.NewCatalog(httpClient, connectorlibrary.NewPublishedCatalog(httpClient)), PlatformClients{}, NewProviderHTTPClient(false), nil, nil, false)
 	gmail := connectormanifest.Module{ConnectorID: "gmail", ModulePath: "github.com/superdurable/dex-connectors-library/connectors/google/gmail", ModuleVersion: "v0.22.0"}
 	_, err := shared.Create(ctx, Creation{TeamSpaceID: "tslive", RequestID: "live", ActorAccountID: "live", Name: "gmail", Release: gmail, AuthMethodID: "google-oauth"})
 	if !errors.Is(err, ErrInvalid) || !errors.Is(err, errConnectorVersionUnsupported) {

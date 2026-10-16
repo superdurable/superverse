@@ -138,7 +138,7 @@ export function NodeBox({
       data-emphasis={box.emphasis}
       data-selected={selected ? "true" : undefined}
       data-detour={box.detourOf !== undefined ? "true" : undefined}
-      aria-label={`${box.title}${box.subtitle ? `, ${box.subtitle}` : ""}${box.pill ? `, ${box.pill.text}` : ""}${now ? ", now" : ""}${box.failures ? `, ${box.failures} failure route${box.failures === 1 ? "" : "s"}` : ""}${box.detourOf !== undefined ? ", failure handling" : ""}${box.mark ? `, ${box.mark}` : ""}`}
+      aria-label={`${box.title}${box.subtitle ? `, ${box.subtitle}` : ""}${box.pill ? `, ${box.pill.text}` : ""}${now ? ", now" : ""}${box.failures ? `, ${box.failures} failure route${box.failures === 1 ? "" : "s"}` : ""}${box.detourOf !== undefined ? ", failure handling" : ""}${box.unwritten ? ", not written yet" : ""}${box.mark ? `, ${box.mark}` : ""}`}
       title={box.identity}
       style={{ width: `${box.w}px`, height: `${box.h}px` }}
       onClick={select}

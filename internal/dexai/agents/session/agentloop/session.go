@@ -15,6 +15,7 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/flowid"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/git"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/toolinput"
 )
 
 // FlowID uniquely identifies one durable Agent conversation.
@@ -180,6 +181,26 @@ func (handoff *PreviewHandoff) HandOff(call conversation.ToolCall, result ToolEx
 func BuildsDesign(call conversation.ToolCall, result ToolExecutionResult) bool {
 	_, isHandedOff := sourceChange(call, result)
 	return isHandedOff && flowid.IsCommitSHA(result.HeadCommit)
+}
+
+// WrittenSource is the file a recorded result of a succeeded write or edit
+// changed and the text the call wrote there: the whole content, or the
+// new_string that replaced old_string. The call's arguments, which the
+// succeeded call decoded, hold both.
+func WrittenSource(call conversation.ToolCall, result ToolExecutionResult) (string, string, bool) {
+	if isChanged, _ := sourceChange(call, result); !isChanged {
+		return "", "", false
+	}
+	switch call.Name {
+	case conversation.ToolWrite:
+		input, err := toolinput.Write.Decode(call.Arguments.String())
+		return input.Path, input.Content, err == nil
+	case conversation.ToolEdit:
+		input, err := toolinput.Edit.Decode(call.Arguments.String())
+		return input.Path, input.NewString, err == nil
+	default:
+		return "", "", false
+	}
 }
 
 // sourceChange reports how a recorded tool result moves the turn's source

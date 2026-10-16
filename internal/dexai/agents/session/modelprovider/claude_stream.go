@@ -21,9 +21,10 @@ import (
 )
 
 // readStream accumulates every event into the complete message, forwards the
-// live presentation (summarized thinking, text, completed tool calls and a
-// fallback) and builds the reply from the accumulated message. Signature and
-// tool-input deltas are only accumulated.
+// live presentation (summarized thinking, text, completed tool calls, the
+// input of a requirements card as it grows and a fallback) and builds the
+// reply from the accumulated message. Signature deltas and the input deltas of
+// other tools are only accumulated.
 func readStream(stream *ssestream.Stream[anthropic.BetaRawMessageStreamEventUnion], request conversation.ModelRequest, startedAt time.Time) (conversation.ModelReply, error) {
 	var message anthropic.BetaMessage
 	var firstEventMS *int64
@@ -64,6 +65,8 @@ func forwardEvent(event anthropic.BetaRawMessageStreamEventUnion, message anthro
 			if event.Delta.Text != "" {
 				return request.WriteAssistant(event.Delta.Text)
 			}
+		case "input_json_delta":
+			writeCardInput(message.Content[event.Index], request, false)
 		}
 	case "content_block_start":
 		if block := message.Content[event.Index]; block.Type == conversation.BlockTypeFallback.String() {
@@ -72,6 +75,7 @@ func forwardEvent(event anthropic.BetaRawMessageStreamEventUnion, message anthro
 		}
 	case "content_block_stop":
 		if block := message.Content[event.Index]; block.Type == conversation.BlockTypeToolUse.String() {
+			writeCardInput(block, request, true)
 			call := toolCall(block)
 			target := request.ToolTarget(call)
 			return request.WriteActivity(conversation.AgentEvent{Kind: conversation.EventKindModelToolCall,
@@ -79,6 +83,15 @@ func forwardEvent(event anthropic.BetaRawMessageStreamEventUnion, message anthro
 		}
 	}
 	return nil
+}
+
+// writeCardInput passes the input a confirm_requirements block holds so far,
+// partial JSON until the block stops, to the request's tool input writer.
+func writeCardInput(block anthropic.BetaContentBlockUnion, request conversation.ModelRequest, isComplete bool) {
+	if request.WriteToolInput == nil || block.Type != conversation.BlockTypeToolUse.String() || block.Name != string(conversation.ToolConfirmRequirements) {
+		return
+	}
+	request.WriteToolInput(conversation.ToolInputProgress{CallID: conversation.CallID(block.ID), Name: conversation.ToolName(block.Name), Input: string(block.Input), Complete: isComplete})
 }
 
 // buildReply reads the stop reason, then the content: the blocks to store

@@ -131,6 +131,8 @@ export interface Box {
   target?: string;
   /** A design's mark against the current source, drawn as text above the card. */
   mark?: "new" | "changed";
+  /** A designed Step whose code the agent has not written yet, drawn dashed with the planned emphasis. */
+  unwritten?: boolean;
 }
 
 /** `control` and `failure` are flow inside the process. */

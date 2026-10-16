@@ -110,10 +110,15 @@ func TestSessionRemoteHTTPAdmissionDexIntegration(t *testing.T) {
 			t.Fatalf("remote agent context lacks %q", passage)
 		}
 	}
+	// The platform segment keeps the connector instructions, which name the platform-only subagents.
+	const selectPassage = "Start one connector_select subagent with the user's requirements before the card only when several connectors could meet a need or none does"
 	platformPrompt := agentloop.SessionPromptFor(conversation.ModelMock).Prompts.System
-	if !strings.Contains(platformPrompt, "## Choosing and contributing connectors\nFor a new application or a large change, start one connector_select subagent") ||
-		!strings.Contains(platformPrompt, "start one connector_develop subagent per gap") {
+	if !strings.Contains(platformPrompt, "## Choosing and contributing connectors\nFor a new application or a large change, take the card's connections") ||
+		!strings.Contains(platformPrompt, selectPassage) || !strings.Contains(platformPrompt, "start one connector_develop subagent per gap") {
 		t.Fatal("platform model segment lost connector instructions")
+	}
+	if strings.Contains(synced.AgentContext, selectPassage) {
+		t.Fatal("remote agent context exposed the platform connector subagent instructions")
 	}
 	report := bridgeapi.Report{Epoch: active.Epoch, Generation: active.Generation, Sequence: 1,
 		ToolCall: &bridgeapi.ToolCall{Name: string(conversation.ToolRead), Arguments: json.RawMessage(`{"path":"AGENTS.md"}`)}}

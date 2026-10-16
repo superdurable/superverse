@@ -36,13 +36,15 @@ controls are the separate ACTORSTUDIO slice.
 ## Streams
 
 Three Dex Streams carry live progress. SessionAgentFlow and SubagentFlow each declare
-them; the Stream names are the same.
+them; the Stream names are the same. SessionAgentFlow declares a fourth,
+`RequirementsDraft`, for the requirements card the agent is writing.
 
 | Stream | Payload | Written by | Read by |
 | --- | --- | --- | --- |
 | `AgentActivity` | `AgentEvent` | The Flow's Steps: model lifecycle, tool lifecycle, input consumption, compaction, interrupt | The Session Watch; for a RUNNING subagent, the subagent's activity as a one-line status |
 | `AssistantText` | string chunks | `CallModel` | The Session Watch (live assistant text) |
 | `ReasoningSummary` | string chunks | `CallModel`, from summarized thinking | The Session Watch (reasoning area) |
+| `RequirementsDraft` | `RequirementsDraft`, the whole draft per event | `CallModel`, from a `confirm_requirements` call's partial input | The Session Watch (the Brief, drafting) |
 
 ### From Claude events to Streams
 
@@ -50,13 +52,38 @@ them; the Stream names are the same.
 | --- | --- |
 | `thinking_delta` (summarized) | `ReasoningSummary` |
 | `text_delta` | `AssistantText` |
-| `content_block_stop` of a `tool_use` | `AgentActivity` `model_tool_call{tool, target}` |
+| `content_block_stop` of a `tool_use` | `AgentActivity` `model_tool_call{tool, target}`; for `confirm_requirements`, also its complete draft |
+| `input_json_delta` of `confirm_requirements` | `RequirementsDraft`, at most once a second (below) |
 | A `fallback` block starts | `AgentActivity` notice naming the model that continues |
-| `signature_delta`, `input_json_delta` | Accumulated only; never streamed |
+| `signature_delta`, `input_json_delta` of any other tool | Accumulated only; never streamed |
 
 Summarized reasoning and the text between tool calls are the "what is happening" signal.
 The Haiku profile uses budget thinking and sends no `display` parameter; its thinking
 deltas feed the same Stream.
+
+### Requirements drafts
+
+`confirm_requirements` streams its input eagerly ([tool orchestration](tool-orchestration.md#strict-schemas)),
+so the provider sends the card as the model writes it. The Claude adapter passes the input a card's
+`tool_use` block holds so far to the request's tool input writer after each `input_json_delta` and once
+when the block stops; no other tool's input reaches it. `CallModel` hands it to an
+`agentloop.RequirementsDrafter`:
+
+- **Cadence.** While the input grows it is read at most once a second; a read writes a draft only when it
+  holds something and differs from the call's previous draft. The complete input is always written, with
+  `complete` set. A new call ID starts over.
+- **Lenient read.** `conversation.ClosePartialJSON` closes the open JSON: an open string value ends where it was cut
+  (a partial escape dropped), an unfinished key, number or literal falls back to the last complete value,
+  and every open array and object is closed. The result is read into the draft; a field of another type is
+  skipped, and a malformed input, or one over 96 KiB, writes nothing.
+- **Payload.** `RequirementsDraft{call_id, turn, base_revision, title, summary, features{id,text},
+  connections{need,connector}, design_summary, flows{flow_type, step_types}, complete}`, bounded to the
+  card schema's lengths and counts (at most 20 features, 10 connections, 6 Flows of 30 Steps). `turn` is the
+  model call's turn and `base_revision` the confirmed requirements' revision when it started, 0 when none.
+  Every event is the whole draft, so a lost event only means that a later one shows.
+- **Not the card.** RouteTool records or refuses the complete input as before; the draft never becomes the
+  card. A draft is over once a Snapshot's `confirmed_requirements` revision passes `base_revision`, a tool
+  result answers its call, or its turn ended (`turn` passed, or the same turn waits for a message).
 
 ### Activity events
 
@@ -125,7 +152,8 @@ contributed, each read from its `ConnectorContributionFlow` ([connectors](connec
 | Busy state, Stop button | Agent status, the current `Turn`, running tasks |
 | Model and effort line, model selector | The segment's model and effort, the Session's selected model and its revision |
 | Questions | Pending user input and its kind (ordinary question, or `REQUIREMENTS` for a card an old Session still waits at) |
-| Requirements card and Process Brief | The current requirements (`confirmed_requirements`) with their version and design reference |
+| Requirements card and Process Brief | The current requirements (`confirmed_requirements`) with their version and design reference, and the designed Steps the agent wrote (`design_written_steps`) |
+| The Brief, drafting | The newest `requirements_draft` event of a card call that is not over |
 | Progress line | The todo list |
 | Tasks panel | `AgentDescription.subagents` and `background_commands`: the Session's records (Tasks in the Snapshot, above) |
 | Workspace status, "Keep running" | `SessionSnapshot.workspace` (status, `expires_at`, phase timings), joined from the `SessionWorkspaceFlow` |
@@ -169,10 +197,11 @@ enum prefix plus the persisted value.
   and revision checks are the server's; browser roles grant none. See
   [the resource API contract](../../api/resource-grpc.md).
 - **`WatchSession`** is a resource-level stream. Its progress frame is a `SessionProgress`
-  whose `content` is an activity event, a reasoning summary or assistant text, with
-  `created_at` and `source` (the producing Step execution). Resume cursors are signed and
-  scoped to the principal, project, session and source vector.
-- **Sources.** Each snapshot read determines the Watch's sources: the Session's three
+  whose `content` is an activity event, a reasoning summary, assistant text or a requirements
+  draft (`AgentRequirementsDraft`), with `created_at` and `source` (the producing Step
+  execution). Resume cursors are signed and scoped to the principal, project, session and
+  source vector.
+- **Sources.** Each snapshot read determines the Watch's sources: the Session's four
   Streams, plus the `AgentActivity` Stream of every RUNNING subagent listed in the
   Snapshot. No other subagent Stream is read, a STARTING or lost subagent's included. The
   first resolution of a connection reads the snapshot, so that its sources hold the running
@@ -212,6 +241,10 @@ enum prefix plus the persisted value.
 - After `agent_interrupted`, text and activity from calls that started before it are
   ignored. A cancelled call can keep streaming for a short time; Studio drops it by
   `source`, so the user never sees it.
+- Studio keeps only the newest requirements draft and drops it once its call is over
+  ([requirements drafts](#requirements-drafts)): when a snapshot carries the recorded version, the
+  call's tool result or the end of its turn. A draft that arrives after its call is over is
+  ignored, and one that arrives before the snapshot of its turn is kept until that snapshot.
 - Pending questions and approvals remain explicit user actions; the requirements card waits for
   none and changes by message.
   Archive paging keeps the reader's position.
@@ -318,6 +351,12 @@ user must prepare, and how acceptance works. A card with a Flow design reads as 
 card in the chat shows its title, version and summary with **Open the brief**
 ([design before implementation](../design-first/studio.md#the-process-brief)).
 
+- **While the agent writes the card**, the Flow tab shows its newest draft as the Brief with the
+  badge "Brief · drafting": the title, the summary, the features, the apps and a plain list of the
+  designed Steps' names per process, as they arrive, and the note that the drawing appears when the
+  agent records the card. No drawing is made of a draft. A Project created in this browser leaves
+  its first conversation for the Flow tab at its first draft. A revision's draft takes the place of
+  the current version's Brief until it is recorded.
 - The Brief's badge reads "Building from this brief · version N". There is no Confirm and no
   Request changes, and the composer stays enabled.
 - **Change something…** sends the person's text as a chat message and steers it, so the
@@ -329,7 +368,9 @@ card in the chat shows its title, version and summary with **Open the brief**
   "Reply in the chat to build or change it"; the reply is an ordinary chat message.
 - From a card with a design until its build is complete, the Flow tab draws the designed Flows
   under a Design label, and shows them by itself once per card version
-  ([the Flow tab](../design-first/studio.md#the-flow-tab)).
+  ([the Flow tab](../design-first/studio.md#the-flow-tab)). While the agent builds it, a Step whose
+  code is not written yet is drawn dashed and the label counts "N of M steps written"
+  ([written Steps](../design-first/flow-design.md#written-steps)).
 
 ### Progress, notices and markers
 
@@ -370,8 +411,8 @@ This topic adds no Flow, Attribute, AttributeMap, Channel, Step or RPC; those ar
 
 | | SessionAgentFlow | SubagentFlow |
 | --- | --- | --- |
-| Streams | `AgentActivity` (`AgentEvent`), `AssistantText` (string), `ReasoningSummary` (string) | The same three names |
-| Producers | `CallModel` writes text and reasoning and the model and tool activity; other Steps write lifecycle activity | The subagent's model and tool Steps |
+| Streams | `AgentActivity` (`AgentEvent`), `AssistantText` (string), `ReasoningSummary` (string), `RequirementsDraft` (`agentloop.RequirementsDraft`) | The first three names; no `RequirementsDraft` |
+| Producers | `CallModel` writes text and reasoning, the model and tool activity and the drafts of a requirements card; other Steps write lifecycle activity | The subagent's model and tool Steps |
 | Consumers | The Session Watch, which Studio's BFF relays | The Session Watch reads only `AgentActivity` of RUNNING subagents |
 
 - **Budget and scope.** Each Stream declares a 10 MiB buffer (`10<<20`). In the pinned Dex
@@ -391,8 +432,18 @@ This topic adds no Flow, Attribute, AttributeMap, Channel, Step or RPC; those ar
   pending inputs, todo list, tasks), and for a subagent the Session's record. A Stream is
   never the authoritative business record. Reconnection starts with a fresh snapshot and
   reasoning summaries are not recovered.
+- **`RequirementsDraft`.** Its budget is its own 10 MiB, shared by every SessionAgentFlow, like the
+  others. A card writes at most one draft a second while it streams, each at most about 90 KB and
+  typically a few KiB, plus its complete one: a card of a minute's writing retains under a
+  megabyte at worst. Delivery is best effort: a reader that misses events, a trimmed Stream or a
+  reconnect (which starts on the fresh tail) shows the next draft, or none once the card is recorded.
+  The recorded version in the Snapshot is canonical and a draft is never recovered: after the card
+  is recorded, Studio shows the card. A Stop or a failed model call leaves a draft without its card;
+  the end of its turn in the Snapshot drops it.
 - **Compatibility.** Stream names and payload shapes of open executions are preserved; the
   changed `AgentEvent` fields are replaced before launch without a compatibility layer.
+  `RequirementsDraft` is new: an open Session writes it from its next model call, and a Watch
+  resume cursor from before it has no position for it, so the Watch starts it at its tail.
 
 ## Database Schema Changes
 
@@ -410,12 +461,18 @@ Flow-owned state.
   reaches the same state from the Snapshot; the projection never contains thinking, tool
   arguments or results; stop writes `agent_interrupted` and the cancelled call's text is
   not shown; subagent activity is relayed for RUNNING subagents only.
+  `TestSessionMockSummaryApprovalDesignBuiltDexIntegration` reads the `RequirementsDraft`
+  Stream of `summary-approval`, whose card streams at 100 ms per delta: several drafts, all
+  received before the card was recorded, growing, the last one complete with the recorded
+  card's call, title and designed Steps.
 - **Studio source checks.** `make check-web` runs the Studio rules of
   [the current contract](../../../web/studio/README.md) and the typecheck, which
   covers the generated Agent types; it is a static check, not integration evidence.
 - **E2E.** The three cases (`registration.spec.ts`, `create-project.spec.ts` and `template-approval.spec.ts`),
   run on the lanes `make required-lanes` names, exercise the work log, the requirements card and the
-  conversation against the real BFF and gRPC path. No new E2E is added for edge cases; Studio-only
+  conversation against the real BFF and gRPC path. `template-approval.spec.ts` on the mock model sees
+  the Brief, drafting, with the designed Steps' names while the card streams, and the design's
+  "6 of 6 steps written" with the approval Step solid after the scripted edit. No new E2E is added for edge cases; Studio-only
   behaviors (model selector rendering, Stop, tasks panel) are covered by the static checks and observed
   during those cases.
 - **Not verified.** Stream trimming under the real 10 MiB shared budget at scale, and the

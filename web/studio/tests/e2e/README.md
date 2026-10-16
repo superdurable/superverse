@@ -185,11 +185,16 @@ it. The prompt points at the template's `AGENTS.md` and the in-repository skill
 section "Answer a waiting Step", and asks for the requirements card before any change.
 The card does not wait: the agent records it as version 1 and builds it in the same turn.
 On the mock model the `summary-approval` scenario's one input, chosen on the creation page,
-shows it (R1 the approval Step, R2 the Action). As soon as the Project is created, the person
+shows it (R1 the approval Step, R2 the Action), streamed at 100 ms per delta: from the moment the
+Project is created the case watches the Flow tab, to which the first conversation switches at the
+card's first draft, show the Brief, drafting, with the designed Steps' names, until the card is
+recorded. As soon as the Project is created, the person
 configures the Session's Preview, saving the `summary-model` connection, while the turn runs up
 to its source gate. The case then waits for the card (`waitForRequirementsCard`) and, on the mock
 model, checks the Process Brief of version 1 on the Flow tab (Building or Built from this brief,
-no Confirm and build, the outline, the design changes and the marked diagram). The turn's
+no Confirm and build, the outline, the design changes and the marked diagram) and that, once
+the scripted edit declared `AwaitSummaryApproval`, the design reads "6 of 6 steps written" with
+that Step solid. The turn's
 `commit_and_push` traces R1 and R2 at version 1 (each with an `untested_reason`, because the llm
 connector has no mocks yet) and passes the commit gate's test stage, which runs the template's
 API tests. The case waits for
@@ -307,9 +312,11 @@ through the mock composer. No Session list, `?session=` parameter or Session sto
 ## Workspace on demand
 
 A new Session has no Sandbox. Its workspace instance is started on first demand:
-the first Agent turn or an accepted Start Preview. Until then Session snapshots
-carry `workspace: null` and a `PREVIEW_STATUS_NOT_STARTED` Preview. Scenarios
-therefore wait for a completed Agent turn before they assert `workspace.status == "WORKSPACE_STATUS_READY"`. The
+beside the first model call of the first Agent turn, or by an accepted Start Preview.
+Until then Session snapshots carry `workspace: null` and a `PREVIEW_STATUS_NOT_STARTED`
+Preview. The first reply and the requirements card do not wait for the instance, but a
+workspace tool does, so scenarios wait for a completed Agent turn that used one before
+they assert `workspace.status == "WORKSPACE_STATUS_READY"`. The
 Preview configuration scope names no workspace: it reads the source prepared for
 the Session's HEAD and never starts a Sandbox, and an unprepared HEAD reads
 the "Prepare current source" button, which `configure` answers by preparing it. An accepted Start Preview must read back as

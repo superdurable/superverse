@@ -177,10 +177,12 @@ search and list them by path. The Agent finds a module's directory with
 names each connector's exact module path for it.
 
 `connector_catalog` fetches only the official HTTPS catalog (15-second fetch,
-1 MiB bound), validates it, and returns at most eight matching entries within
-16 KiB with the catalog digest, exact module path and the `install_command`
-that adds the release to `go.mod`. Runner keeps one catalog document for five
-minutes; the cache holds no credential or goroutine.
+1 MiB bound), decodes and validates it with `connectorlibrary.DecodeCatalog`, and
+returns at most eight matching entries within 16 KiB as `connectorlibrary.CatalogMatches`,
+with the catalog digest, exact module path and the `install_command` that adds the
+release to `go.mod`, the shape the Session's first segment lists its catalog matches in.
+Runner keeps one catalog document for five minutes; the cache holds no credential or
+goroutine.
 
 See the [tool orchestration design](../../../../../docs/architecture/agent-harness-design/tool-orchestration.md#where-tools-run) for
 lease fencing, output budgets and cleanup.

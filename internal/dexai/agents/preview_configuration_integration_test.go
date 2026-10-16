@@ -26,6 +26,7 @@ import (
 	pb "github.com/superdurable/superversev2/gen/superverse/v2"
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/dexflow/dexflowtest"
+	"github.com/superdurable/superversev2/internal/comm/platform/connectorlibrary"
 	"github.com/superdurable/superversev2/internal/comm/platform/deploymentnames"
 	"github.com/superdurable/superversev2/internal/comm/platform/objectstore"
 	"github.com/superdurable/superversev2/internal/comm/platform/postgres/postgrestest"
@@ -188,7 +189,7 @@ func laneTeamSpaceConnections(ctx context.Context, t *testing.T, projectClient *
 	providers := connections.NewProviderHTTPClient(true)
 	reader := connections.NewCredentialReader(dao, objects, releases, providers, connections.PlatformClients{}, slog.Default())
 	return confighost.SharedConnections{
-		Connections: connections.NewTeamSpaceConnections(dao, objects, releases, connectormanifest.NewCatalog(releaseClient), connections.PlatformClients{}, providers, reader, nil, true),
+		Connections: connections.NewTeamSpaceConnections(dao, objects, releases, connectormanifest.NewCatalog(releaseClient, connectorlibrary.NewPublishedCatalog(releaseClient)), connections.PlatformClients{}, providers, reader, nil, true),
 		Reader:      reader, Usages: connections.NewUsages(dao, objects), ReadURL: dexflowtest.CredentialReadURLForTest(t), Providers: providers,
 		ProjectTeamSpace: func(ctx context.Context, projectID string) (string, error) {
 			project, err := projectClient.Read(ctx, projectID)

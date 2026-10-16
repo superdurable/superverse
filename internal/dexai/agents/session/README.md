@@ -88,8 +88,8 @@ RecordCompactionFailure.
 
 RouteTool routes the tool call at the cursor of `AgentState.PendingToolCalls`:
 `write_todos`, `set_effort` and `confirm_requirements` finish there (a card is recorded as
-the next version of `ConfirmedRequirements`, with its design in `FlowDesigns[confirmed]`, and
-the turn goes on), `start_timer` waits in AwaitAgentTimer, and `request_user_input` in
+the next version of `ConfirmedRequirements`, with its design in `FlowDesigns[confirmed]` and its
+Steps in `WrittenDesignSteps`, and the turn goes on), `start_timer` waits in AwaitAgentTimer, and `request_user_input` in
 AwaitUser. SendMessage records and answers a requirements card a Session still waits at from
 before cards stopped waiting, and the start Step queues the first message the Session started with. Consecutive
 parallel-eligible calls fan out to ExecuteParallelTool branches joined by
@@ -112,10 +112,22 @@ start exhausted its retries.
 The Session holds the request side of its Sandbox instances. The workspace cold
 path (RequestSessionWorkspace, SendWorkspaceCommand, AwaitSessionWorkspace,
 ApplySessionWorkspace) is the only conversation path that calls
-`SessionAgentFlowDependency`: before the first platform model call, at remote
+`SessionAgentFlowDependency`: beside the first platform model call, at remote
 activation for the first brief, when no usable lease is admitted and when the
-transport proves the instance unreachable. Remote activation runs the request
-beside the sole conversation waiter, so reports continue to be consumed. It sends the
+transport proves the instance unreachable. The first model call does not wait for
+the workspace ([the decision](../../../../docs/architecture/agent-harness-design/sandbox.md#gates-and-the-cold-path)):
+`planModelCall` opens the first segment at once, without the repository context and
+with the catalog matches of the request (`connectorCatalogMatcher`, the server
+replica's warm copy of the published catalog, read without a network call), and the
+boundary Step moves to CallModel and, with `GoToMany`, to RequestSessionWorkspace with
+`ContinuePrepareContext`. That request, like the one remote activation starts with
+`ContinueAwaitRemote`, runs beside the conversation and never resumes it
+(`Continuation.IsBesideConversation`): a workspace tool called meanwhile joins it and
+waits, and its owner hands that continuation back when the request settles, READY or
+failed. A segment opened without the repository context awaits it
+(`ContextSegment.AwaitsRepositoryContext`); the first model-call boundary after the
+workspace read it appends it once as a user notice (`agentloop.RepositoryContextNotice`)
+and clears the mark in the same commit. A failed request appends nothing. It sends the
 SessionWorkspaceFlow a `provision` command, which reclaims an earlier instance
 first, and waits for the outcome that Flow reports to `ReportWorkspaceOutcome`.
 A tool holding an admitted lease reaches the Sandbox directly. At the Sandbox
@@ -270,9 +282,12 @@ catalog excludes start_agent, merge_agent_changes, set_effort and start_timer;
 stop_task accepts background command IDs only. watch_preview_run is absent until
 its separate implementation.
 
-Streams remain `ReasoningSummary`, `AssistantText`, `AgentActivity`, each 10 MiB
-shared by every SessionAgentFlow instance with that Stream name (verified against
-pinned SDK v1.10.1 stream.go). Remote reports never populate reasoning. Activity
+Streams are `ReasoningSummary`, `AssistantText`, `AgentActivity` and
+`RequirementsDraft`, each 10 MiB shared by every SessionAgentFlow instance with
+that Stream name (verified against pinned SDK v1.10.1 stream.go). CallModel writes
+the drafts of a requirements card while the model writes it, at most once a
+second, through `agentloop.RequirementsDrafter`; the recorded card is canonical
+([requirements drafts](../../../../docs/architecture/agent-harness-design/streaming-and-studio.md#requirements-drafts)). Remote reports never populate reasoning. Activity
 is immediately visible best effort, may precede a failed commit and may truncate;
 Snapshot/current/archive reads recover canonical facts after reconnect. Agent
 execution history is diagnostics, never business conversation recovery.
@@ -383,11 +398,11 @@ verification before claiming deployment capacity.
 | `session_agent_flow.go` | The Flow DSL: primitives, registration, StepOptions, the RPCs and the Steps. Each Step reads and writes its primitives directly, applies the decisions of `agentloop` and returns its decision; see [the line budget](../../../../docs/architecture/agent-harness-design/session.md#line-budget). |
 | `session_agent_flow_client.go` | `SessionAgentFlowClient`: start, commands (the Stop button `InterruptAgent` and the Preview's automatic deployment switch `UpdatePreviewAutoDeploy` among them), `ReportSessionNotification`, `ReportWorkspaceOutcome` and, with the subagent's record locked and loaded, `ReportSubagentNotification`, `AdmitSubagent` and `RequestSubagentWorkspace` for the Session Service, snapshots, the live summary that never reports a stopped engine execution as running (`SessionExecutionStoppedError`), archived history, best-effort Stream subscription types and reads, the workspace demand, the workspace renewal and the Project cleanup reads and command. |
 | `session_agent_flow_bootstrap.go` | `SessionAgentFlowBootstrap`: assembles the Flow with the model adapter, the Sandbox tool Runner, the platform tool reader, the workspace capabilities and the instance provider that the workspace Flow reclaims through, and closes them. |
-| `session_agent_flow_dependency.go` | `SessionAgentFlowDependency` (admission, the provision and reclaim commands to the SessionWorkspaceFlow, its outcome read, the report of a platform failure, the Preview's announcement, the Preview deployment of a handoff, and the start and stop of a subagent, `agenttasks.AgentTaskLauncher`) and `repositoryContextReader`, the ports the cold-path, deadline and handoff Steps and `ReportPlatformIssue` call, and `ProjectDiagnosticsReader`, the port of the [platform tools](../diagnostics/README.md). |
-| `session_lifecycle.go` | The Start input, start Attributes, the ACTIVE check of commands, status transitions, clearing the pending input of an archived Session, the Agent status, the conversation view of the Snapshot with the Preview's automatic deployment, the bounded read-only RemoteRead projection, and the option presets of the Steps and RPCs. |
+| `session_agent_flow_dependency.go` | `SessionAgentFlowDependency` (admission, the provision and reclaim commands to the SessionWorkspaceFlow, its outcome read, the report of a platform failure, the Preview's announcement, the Preview deployment of a handoff, and the start and stop of a subagent, `agenttasks.AgentTaskLauncher`) and `repositoryContextReader`, the ports the cold-path, deadline and handoff Steps and `ReportPlatformIssue` call, `ProjectDiagnosticsReader`, the port of the [platform tools](../diagnostics/README.md), and `connectorCatalogMatcher`, the port through which the Step that opens the first segment reads the catalog matches of its request from `connectorlibrary.PublishedCatalog`. |
+| `session_lifecycle.go` | The Start input, start Attributes, the ACTIVE check of commands, status transitions, clearing the pending input of an archived Session, the Agent status, the conversation view of the Snapshot with the Preview's automatic deployment and the current design's built and written Steps, the writes of a recorded design and of how far a tool result built it (`recordFlowDesign`, `recordDesignProgress`), the bounded read-only RemoteRead projection, and the option presets of the Steps and RPCs. |
 | `session_messages.go` | Conversation RPC data operations, turn start and steering, the append-only entry log and archive chunks, recording a model reply by its stop reason, todos and effort, Stop admission and settlement, Preview publication data, Session notifications and automatic turns; remote inbox batch sizing, consumption, public-entry persistence and report-batch formation. Waits and scheduling decisions remain in the Flow file. |
 | `session_executor.go` | The executor side of a turn: best-effort Stream activity writes, model and tool attempt activity, the options of the model Steps, model-call planning and selective loads, compaction outcomes, the replayed segment request, the model call with its activity, opening segments, and recording model and compaction failures, with the platform incident of a rejected model call, executor/report admission, fresh platform outcome recording and platform handoff reconstruction. |
-| `session_workspace.go` | The cold-path Step input, request execution and wait budget, trusted task calls on a workspace lease, admitting the workspace Flow's outcome (a reclaimed one clears the Preview's hold), applying and failing a request, the demand of a call or wave that lost its workspace, the dispatch gate with its Sandbox deadline extension (also after a task's end, or for a ready Preview with the Preview hold), the decision at the deadline, which a running task or an unfinished subagent postpones and which revokes the lease of an idle instance, resumption and the Session HEAD. |
+| `session_workspace.go` | The cold-path Step input, request execution and wait budget, trusted task calls on a workspace lease, admitting the workspace Flow's outcome (a reclaimed one clears the Preview's hold), applying and failing a request, the demand of a call or wave that lost its workspace, the dispatch gate with its Sandbox deadline extension (also after a task's end, or for a ready Preview with the Preview hold), the decision at the deadline, which a running task or an unfinished subagent postpones and which revokes the lease of an idle instance, resumption and the Session HEAD, the repository context a segment awaits, appended once as a notice, and the catalog matches of the first request. |
 | `remote_worktree_tools.go` | Remote-only connector contribution and Codex task worktree admission and execution, exact or bounded map loads, server-owned file-tool roots, stable keep sets, and closed-task cleanup. |
 | `tool_execution.go` | The refusal of a call the turn may not make, built-in tools, Sandbox and platform tool execution, the foreground `bash` flow (begin, then polling the command ledger within the call's timeout) and its settling, the parallel tool inputs, branches and results, recording tool results with the HEAD and the Preview handoff a push hands off, the platform incidents of recorded results, which ReportPlatformIssue reports beside the turn, background commands: their records, the input of the SubFlow that follows one in the ledger, and the stop of the running ones; and subagents: the admission of `start_agent`, the start, stop and merge of a subagent, and the writes of its record by its admission, its report, a Stop and a failed start. |
 | [`conversation/`](conversation/README.md) | The entry log and its public view, request assembly, models, request and reply, tool calls, events and the embedded `session-v1` prompts. |

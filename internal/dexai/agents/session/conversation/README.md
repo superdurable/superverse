@@ -67,9 +67,9 @@ caps.
 `ProviderBillingProblem` declares fixed guidance for `billing_error`.
 | `tool_call.go` | Tool names, the `ToolSpec`, `ToolCall`, outcomes and measurements. |
 | `tool_failure.go` | `ToolFailure`, the owner, effect, hint and text of a failed tool call as the model reads it. |
-| `events.go` | Activity events, input consumption, the provider writers and todo item statuses. |
+| `events.go` | Activity events, input consumption, the provider writers (text, activity and the partial input of a streamed tool call, `ToolInputProgress`) and todo item statuses. |
 | `notification.go` | `SessionNotification`, the payload of the Channel `SessionNotifications`, with its kinds, sources, bounds and validation, the text the model reads and its entry; the `TaskChanges` a subagent's `task` notification carries (its result commit and diffstat); the content of a `delivery` notification: `DeliveryOutcome` (`ready`, `failure`, `notice`) and `DeliveryOwner` (`application`, `configuration`, `platform`), struct-typed sets, with the code, phase, commit, resource, at most `MaximumNotificationGaps` gap names, a summary and a message; which notifications open a platform turn and how a stale failure becomes a notice. |
-| `json_values.go` | JSON object and enum helpers. |
+| `json_values.go` | JSON object and enum helpers, and `ClosePartialJSON`, which closes the partial JSON of a tool input the model still writes. |
 | `prompts.go`, `prompts/v1/` | The embedded `session-v1` instructions and notices; `session.md` holds shared rules, while `platform_connectors.md`, `platform_delegation.md`, `platform_subagent_task.md` and `platform_effort.md` fill its platform-only insertion points. `platform_event.md` covers delivery notifications. `subagent.md` with its kind-specific prompt is the system prompt of a subagent. `remote_agent.md` opens a remote agent's context and gives its connector guidance. |
 
 ## Actor framing

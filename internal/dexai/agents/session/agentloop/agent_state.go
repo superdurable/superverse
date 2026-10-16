@@ -309,6 +309,10 @@ type Continuation string
 const (
 	ContinueAwaitUser   Continuation = "await_user"
 	ContinueAwaitRemote Continuation = "await_remote"
+	// ContinuePrepareContext is the workspace request that the first model
+	// call starts beside the conversation to prepare the repository context;
+	// like ContinueAwaitRemote it never resumes the conversation.
+	ContinuePrepareContext Continuation = "prepare_context"
 	// ContinueStartTurn is the model call that starts a turn: a rollover is
 	// decided before it.
 	ContinueStartTurn         Continuation = "start_turn"
@@ -346,8 +350,12 @@ type AgentDescription struct {
 	// ConfirmedDesignBuiltCommit is the commit that push verified, set only
 	// while ConfirmedDesignBuilt.
 	ConfirmedDesignBuiltCommit string `json:"confirmed_design_built_commit,omitempty"`
-	PendingQueuedMessageCount  int    `json:"pending_queued_message_count"`
-	PendingSteeredMessageCount int    `json:"pending_steered_message_count"`
+	// ConfirmedDesignWrittenSteps are the Steps of that design whose
+	// declaration a succeeded write or edit wrote since it was recorded, each
+	// <flow_type>.<step_type> (flowdesign.WrittenSteps).
+	ConfirmedDesignWrittenSteps []string `json:"confirmed_design_written_steps,omitempty"`
+	PendingQueuedMessageCount   int      `json:"pending_queued_message_count"`
+	PendingSteeredMessageCount  int      `json:"pending_steered_message_count"`
 
 	AvailableTools []conversation.ToolName `json:"available_tools"`
 	// Turn is the current turn, which a Stop names.

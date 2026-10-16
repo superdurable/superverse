@@ -19,9 +19,13 @@ import { designPhaseLabel, type DesignPhase } from "@/lib/shared/design-phase";
 import { processName, stepName } from "@/lib/shared/format";
 import { DesignStepPanel } from "./DesignStepPanel";
 
+const NONE_WRITTEN: readonly string[] = [];
+
 /**
  * One designed Flow on the Flow tab, drawn by the canvas that draws implemented Flows, under its Design
  * label. Its Steps are marked new or changed against the current source when it is the Session head's.
+ * While the agent builds it, a Step whose code is not written yet, neither by the agent's writes nor in the
+ * compared source, is drawn dashed, and the label counts the written ones; once built, every Step is.
  * It has no runs, so it offers no Runs, Start or Action control.
  */
 export function DesignFlowView({
@@ -30,6 +34,7 @@ export function DesignFlowView({
   phase,
   current,
   features,
+  written = NONE_WRITTEN,
   direction,
 }: {
   flowType: string;
@@ -38,6 +43,8 @@ export function DesignFlowView({
   /** The current source's graphs; null when they are not the Session head's, so nothing is marked. */
   current: CurrentGraphs;
   features: readonly { id: string; text: string }[];
+  /** The designed Steps whose declaration the agent wrote, each `Flow.Step`. */
+  written?: readonly string[];
   /** The way it first reads, which the reader may change; the canvas's own default when absent. */
   direction?: Direction;
 }) {
@@ -49,6 +56,17 @@ export function DesignFlowView({
     const graph = current.get(flowType);
     return compareFlow(decoded.model, graph ? safeDecode(graph) : null);
   }, [current, decoded, flowType]);
+  // A Step the compared source already holds needs no code; without a comparison only the agent's writes count.
+  const unwritten = useMemo(() => {
+    if (!decoded || phase !== "building") return new Set<string>();
+    const done = new Set(
+      written.filter((name) => name.startsWith(`${flowType}.`)).map((name) => name.slice(flowType.length + 1)),
+    );
+    const missing = decoded.model.steps.filter(
+      (step) => !done.has(step.stepType) && (comparison === null || comparison.marks.get(step.id) === "new"),
+    );
+    return new Set(missing.map((step) => step.id));
+  }, [comparison, decoded, flowType, phase, written]);
   const renderPanel = useCallback(
     (step: StepModel, close: () => void) => {
       const designedStep = designed?.steps.find((item) => item.stepType === step.stepType);
@@ -76,6 +94,9 @@ export function DesignFlowView({
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line-soft bg-panel px-3 py-2 text-[12.5px]">
         <strong className="font-semibold text-accent">{designPhaseLabel(phase)}</strong>
         <span className="text-ink-dim">{designed.purpose}</span>
+        <span className="text-ink-dim" data-testid="design-steps-written">
+          {decoded.model.steps.length - unwritten.size} of {decoded.model.steps.length} steps written
+        </span>
         {removed.length > 0 && <span className="text-ink-dim">Removes {removed.join(", ")}.</span>}
         {current === null && (
           <span className="text-ink-faint">
@@ -88,6 +109,7 @@ export function DesignFlowView({
         flow={decoded.model}
         groups={groups}
         marks={comparison?.marks}
+        unwritten={unwritten}
         renderPanel={renderPanel}
         fitKey={`design|${design.digest}|${flowType}`}
         initialDirection={direction}

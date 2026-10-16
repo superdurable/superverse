@@ -105,17 +105,19 @@ const ProjectStageContext = createContext<ProjectStageState | null>(null);
 /**
  * The stage of the Builder's Project, from its snapshot and its Session's (`session`, null while the Project
  * has none). A Project created in this browser starts in its first conversation and switches once, never
- * back: when the agent records the Session's first requirements card, or when processes are built from
- * the agent's own push. Built stays built in this browser once seen, so a rebuild of a newer push never
- * hides what was there.
+ * back: when the agent starts writing the Session's first requirements card (`drafting`, its draft streams
+ * in) or records it, or when processes are built from the agent's own push. Built stays built in this
+ * browser once seen, so a rebuild of a newer push never hides what was there.
  */
 export function ProjectStageProvider({
   projectId,
   session,
+  drafting = false,
   children,
 }: {
   projectId: string;
   session: SessionSnapshot__Output | null;
+  drafting?: boolean;
   children: ReactNode;
 }) {
   const key = STORAGE_KEYS.projectStage(projectId);
@@ -130,7 +132,7 @@ export function ProjectStageProvider({
   const facts = stageFacts(project, session?.projectId === projectId ? session : null);
   const known = project !== null && (project.status !== "PROJECT_STATUS_READY" || session !== null);
   const hasOwnProcesses = facts.builtNow || stored === "built";
-  const switched = stored !== "conversation" || facts.hasRequirements || hasOwnProcesses;
+  const switched = stored !== "conversation" || facts.hasRequirements || drafting || hasOwnProcesses;
   // Each move is recorded once and only forward.
   const reached: FirstRun | null = hasOwnProcesses ? "built" : switched && stored !== null ? "shaping" : null;
   useEffect(() => {

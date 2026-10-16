@@ -80,6 +80,8 @@ export const MOCK_REQUIREMENTS: AgentRequirements__Output = {
   },
   designBuilt: false,
   designBuiltCommit: "",
+  // The agent declared the first two Steps; the drawing dashes the rest until they are written.
+  designWrittenSteps: ["ReleaseNewsletterFlow.CollectReleases", "ReleaseNewsletterFlow.DraftNewsletter"],
 };
 
 /** The body of MOCK_REQUIREMENTS' Flow design, which GetFlowDesign returns at its digest. */

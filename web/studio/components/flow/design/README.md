@@ -34,7 +34,7 @@ A design is the optional `design` of a requirements card, read through `GetFlowD
 | `design-compare.ts`   | A design against the current source per Flow type: new, changed or unchanged Flows, the marks of the designed Steps and the change lines in the canvas's names                                                               |
 | `DesignFlowView.tsx`  | The Flow tab's design view: the host's Brief button, the label, the purpose, what it removes and the marked canvas, through `FlowGraphCanvas`                                                                                |
 | `DesignStepPanel.tsx` | A designed Step under its title: its explanation, wait, ways out and the features it serves, with its Go names behind More details                                                                                           |
-| `brief/`              | The Process Brief: the card and its design in business words, with Change something…                                                                                                                                        |
+| `brief/`              | The Process Brief: the card and its design in business words, with Change something…                                                                                                                                         |
 
 The expansion goes through the canvas's own decoder and its split of the main story from failure
 handling, so a design and its implementation draw the same picture. A designed Flow never enters a

@@ -112,7 +112,7 @@ func authorizedKeycloakConnection(ctx context.Context, t *testing.T) keycloakCon
 	releases := connectormanifest.NewReleaseResolver(releaseClient, connectorlibrary.OfficialReleaseDownloadURL)
 	providers := NewProviderHTTPClient(true)
 	reader := NewCredentialReader(dao, objects, releases, providers, PlatformClients{}, slog.Default())
-	shared := NewTeamSpaceConnections(dao, objects, releases, connectormanifest.NewCatalog(releaseClient), PlatformClients{}, providers, reader, nil, true)
+	shared := NewTeamSpaceConnections(dao, objects, releases, connectormanifest.NewCatalog(releaseClient, connectorlibrary.NewPublishedCatalog(releaseClient)), PlatformClients{}, providers, reader, nil, true)
 	usages := NewUsages(dao, objects)
 	teamSpaceID, account := flowid.RandomID(8), flowid.RandomID(32)
 	registerAccount(ctx, t, db, account, teamSpaceID)

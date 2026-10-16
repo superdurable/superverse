@@ -7,38 +7,16 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import {
-  answerQuestions,
-  deleteQueuedMessage,
-  interruptAgent,
-  resolveToolApproval,
-  sendMessage,
-  steerQueuedMessage,
-  updateSessionModel,
-} from "@/lib/api/agent";
 import { getSession, listArchivedMessages } from "@/lib/api/session";
-import { ApiError, errorMessage, newRequestId } from "@/lib/api/transport/api-error";
+import { ApiError, errorMessage } from "@/lib/api/transport/api-error";
 import { watch } from "@/lib/api/transport/watch";
 import type { SessionSnapshot__Output } from "@/lib/generated/protobuf/superverse/v2/SessionSnapshot";
 import { delay, isAbortError } from "@/lib/shared/async";
-import type { RpcInput } from "@/lib/shared/rpc-methods";
 import { timestampToISO } from "@/lib/shared/protobuf";
-import { commandFailureText, stoppedExecutionReason, unlessNotAdmitted } from "./command-failure";
-import {
-  AgentStatus,
-  EventStream,
-  type AgentModel,
-  type AgentSnapshot,
-  type SequencedMessage,
-  type UserInputAnswer,
-} from "./agent-types";
-import {
-  agentActivityView,
-  agentHistoryView,
-  agentModelInput,
-  agentSnapshotView,
-  validatePendingAnswers,
-} from "./agent-view";
+import { commandFailureText, stoppedExecutionReason, useSessionCommands } from "./session-commands";
+import { AgentStatus, EventStream, type AgentSnapshot, type SequencedMessage } from "./agent-types";
+import { agentActivityView, agentHistoryView, agentSnapshotView } from "./agent-view";
+import { requirementsDraftView } from "./draft/requirements-draft";
 import { initialSessionState, sessionReducer } from "./session-reducer";
 import { isStaleSessionSnapshot, sessionStatus, type KnownSessionStatus } from "./session-status";
 
@@ -233,6 +211,8 @@ export function useSessionOwner(projectId: string) {
                 stream: EventStream.REASONING,
                 event: { ...position, kind: "reasoning_summary", value: progress.reasoningSummary ?? "" },
               });
+            } else if (progress.content === "requirementsDraft" && progress.requirementsDraft) {
+              dispatch({ type: "requirementsDraft", draft: requirementsDraftView(progress.requirementsDraft) });
             }
           }
           progressCursor.current = resumeCursor;
@@ -337,62 +317,7 @@ export function useSessionOwner(projectId: string) {
     [noteStoppedExecution, refresh],
   );
 
-  const commands = useMemo(() => {
-    const session = { projectId };
-    // Answers the pending question batch; the Agent takes the answer or refuses it as not admitted.
-    const answerPending = async (callId: string, input: Required<RpcInput<"AnswerQuestions">>["input"]) => {
-      dispatch({ type: "answeringQuestions", callId });
-      try {
-        await mutate("answer", (signal) => answerQuestions({ ...session, input }, signal));
-        dispatch({ type: "questionsAnswered", callId });
-      } finally {
-        dispatch({ type: "answeringQuestions", callId: null });
-      }
-    };
-    return {
-      // A send is a new message with a new ID. The Agent does not deduplicate by message ID, so reusing
-      // one for a retry would queue a second copy under the same ID.
-      send: (text: string) =>
-        mutate("send", (signal) => sendMessage({ ...session, messageId: newRequestId(), text }, signal)),
-      // A change to what the agent builds is a message; while a turn runs (`steer`) it also steers that
-      // turn, which applies it at its next safe boundary. A steer the Agent no longer admits, because the
-      // turn ended and took the message, changes nothing: the message is delivered either way.
-      change: (text: string, steer: boolean) =>
-        mutate("send", async (signal) => {
-          const messageId = newRequestId();
-          await sendMessage({ ...session, messageId, text }, signal);
-          if (steer) await steerQueuedMessage({ ...session, messageId }, signal).catch(unlessNotAdmitted);
-        }),
-      steer: (messageId: string) => mutate("steer", (signal) => steerQueuedMessage({ ...session, messageId }, signal)),
-      deleteMessage: (messageId: string) =>
-        mutate("delete", (signal) => deleteQueuedMessage({ ...session, messageId }, signal)),
-      answerQuestions: async (callId: string, answers: readonly UserInputAnswer[]) => {
-        const pending = latestSnapshot.current?.description.pendingUserInput;
-        if (pending?.callId !== callId) throw new Error("These Agent questions are no longer pending");
-        validatePendingAnswers(answers, pending.questions);
-        return answerPending(callId, {
-          callId,
-          answers: answers.map(({ questionId, answer }) => ({ questionId, answer })),
-        });
-      },
-      // Taken at any time: the next turn starts on the model. The revision is the one the person saw;
-      // a stale one is refused as not admitted.
-      updateModel: (model: AgentModel, expectedRevision: number) =>
-        mutate("model", (signal) =>
-          updateSessionModel({ ...session, model: agentModelInput(model), expectedRevision }, signal),
-        ),
-      approveTool: (callId: string, approved: boolean) =>
-        mutate("approval", (signal) => resolveToolApproval({ ...session, callId, isApproved: approved }, signal)),
-      // Stops the turn the person saw: a later turn refuses a stale Stop as not admitted.
-      stop: async () => {
-        const turn = latestSnapshot.current?.description.turn ?? 0;
-        await mutate("stop", (signal) => interruptAgent({ ...session, turn }, signal));
-        dispatch({ type: "stopRequested" });
-      },
-      loadEarlier: () => loadHistory("page"),
-      jumpToBeginning: () => loadHistory("beginning"),
-    };
-  }, [loadHistory, mutate, projectId]);
+  const commands = useSessionCommands({ projectId, mutate, dispatch, latestSnapshot, loadHistory });
 
   const resourceStatus = useMemo(() => (state.resource ? sessionStatus(state.resource) : null), [state.resource]);
   return { ...state, ...commands, status: resourceStatus, projectId, refresh };

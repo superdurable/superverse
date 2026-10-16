@@ -41,7 +41,7 @@ one there. A segment stays on one model, so one reply never mixes the two.
 | `model_router.go` | `ModelRouter`: the client of each call's model, Claude or the mock model. |
 | `claude_client.go` | The request: frozen tools and system prompt, the replayed blocks byte for byte, thinking, effort, betas and the three one-hour cache breakpoints; error classification into retryable errors and `ModelRejectedError`. |
 | `strict_schema.go` | `StrictInputSchema`: the input schema of a strict tool as the API takes it (the SDK's transformation: lengths, ranges and defaults move into the description of their parameter), written with sorted keys so the frozen prompt's digest and the request bytes of the tools are the same in every server process. |
-| `claude_stream.go` | Stream capture with `BetaMessage.Accumulate`, live reasoning summaries, text and tool-call activity, the fallback cleanup and usage metrics. |
+| `claude_stream.go` | Stream capture with `BetaMessage.Accumulate`, live reasoning summaries, text and tool-call activity, the partial input of a `confirm_requirements` call for the request's tool input writer, the fallback cleanup and usage metrics. |
 
 The adapter classifies Anthropic's documented low-credit HTTP 400
 `invalid_request_error` by its specific message prefix, because the structured error
@@ -65,7 +65,7 @@ request per model profile, a multi-turn append-only tool loop with
 `prefix_mismatch_behavior: error` and its `count_tokens` replay, a compaction, a
 continuation after `max_tokens` and the classification of rejected requests.
 `claude_strict_tools_live_test.go` sends the Session Agent's frozen tool set, its strict
-tools with the schemas the API takes and the eager input streaming of `write` and `edit`,
+tools with the schemas the API takes and the eager input streaming of `write`, `edit` and `confirm_requirements`,
 to every Claude model and requires a tool call whose input the tool's decoder accepts.
 The API also rejects a strict set whose compiled grammar is too large (HTTP 400, "The
 compiled grammar is too large"), which no count of tools or parameters shows; that test is

@@ -44,6 +44,9 @@ import type { AgentPendingUserMessage as _superverse_v2_AgentPendingUserMessage,
 import type { AgentRequirementConnection as _superverse_v2_AgentRequirementConnection, AgentRequirementConnection__Output as _superverse_v2_AgentRequirementConnection__Output } from './superverse/v2/AgentRequirementConnection';
 import type { AgentRequirementFeature as _superverse_v2_AgentRequirementFeature, AgentRequirementFeature__Output as _superverse_v2_AgentRequirementFeature__Output } from './superverse/v2/AgentRequirementFeature';
 import type { AgentRequirements as _superverse_v2_AgentRequirements, AgentRequirements__Output as _superverse_v2_AgentRequirements__Output } from './superverse/v2/AgentRequirements';
+import type { AgentRequirementsDraft as _superverse_v2_AgentRequirementsDraft, AgentRequirementsDraft__Output as _superverse_v2_AgentRequirementsDraft__Output } from './superverse/v2/AgentRequirementsDraft';
+import type { AgentRequirementsDraftConnection as _superverse_v2_AgentRequirementsDraftConnection, AgentRequirementsDraftConnection__Output as _superverse_v2_AgentRequirementsDraftConnection__Output } from './superverse/v2/AgentRequirementsDraftConnection';
+import type { AgentRequirementsDraftFlow as _superverse_v2_AgentRequirementsDraftFlow, AgentRequirementsDraftFlow__Output as _superverse_v2_AgentRequirementsDraftFlow__Output } from './superverse/v2/AgentRequirementsDraftFlow';
 import type { AgentSequencedMessage as _superverse_v2_AgentSequencedMessage, AgentSequencedMessage__Output as _superverse_v2_AgentSequencedMessage__Output } from './superverse/v2/AgentSequencedMessage';
 import type { AgentServiceClient as _superverse_v2_AgentServiceClient, AgentServiceDefinition as _superverse_v2_AgentServiceDefinition } from './superverse/v2/AgentService';
 import type { AgentSnapshot as _superverse_v2_AgentSnapshot, AgentSnapshot__Output as _superverse_v2_AgentSnapshot__Output } from './superverse/v2/AgentSnapshot';
@@ -385,6 +388,9 @@ export interface ProtoGrpcType {
       AgentRequirementConnection: MessageTypeDefinition<_superverse_v2_AgentRequirementConnection, _superverse_v2_AgentRequirementConnection__Output>
       AgentRequirementFeature: MessageTypeDefinition<_superverse_v2_AgentRequirementFeature, _superverse_v2_AgentRequirementFeature__Output>
       AgentRequirements: MessageTypeDefinition<_superverse_v2_AgentRequirements, _superverse_v2_AgentRequirements__Output>
+      AgentRequirementsDraft: MessageTypeDefinition<_superverse_v2_AgentRequirementsDraft, _superverse_v2_AgentRequirementsDraft__Output>
+      AgentRequirementsDraftConnection: MessageTypeDefinition<_superverse_v2_AgentRequirementsDraftConnection, _superverse_v2_AgentRequirementsDraftConnection__Output>
+      AgentRequirementsDraftFlow: MessageTypeDefinition<_superverse_v2_AgentRequirementsDraftFlow, _superverse_v2_AgentRequirementsDraftFlow__Output>
       AgentSequencedMessage: MessageTypeDefinition<_superverse_v2_AgentSequencedMessage, _superverse_v2_AgentSequencedMessage__Output>
       AgentService: SubtypeConstructor<typeof grpc.Client, _superverse_v2_AgentServiceClient> & { service: _superverse_v2_AgentServiceDefinition }
       AgentSnapshot: MessageTypeDefinition<_superverse_v2_AgentSnapshot, _superverse_v2_AgentSnapshot__Output>

@@ -19,6 +19,7 @@ import (
 	"github.com/superdurable/dex/sdk-go/dex"
 	"github.com/superdurable/dex/sdk-go/gen/dexpb"
 	serverconfig "github.com/superdurable/superversev2/cmd/superverse-server/config"
+	"github.com/superdurable/superversev2/internal/comm/platform/connectorlibrary"
 	"github.com/superdurable/superversev2/internal/comm/platform/postgres"
 	"github.com/superdurable/superversev2/internal/dexai/agents"
 	"github.com/superdurable/superversev2/internal/dexai/agents/diagnostics"
@@ -104,10 +105,17 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	owned.add(func() error { providerClient.CloseIdleConnections(); return nil })
 	connectorReleases := connectormanifest.NewReleaseHTTPClient()
 	owned.add(func() error { connectorReleases.CloseIdleConnections(); return nil })
+	// The replica's one copy of the published connector catalog, kept warm until the server stops,
+	// serves the TeamSpace connections and the catalog matches of each Session's first request.
+	publishedCatalog := connectorlibrary.NewPublishedCatalog(connectorReleases)
+	refreshing, stopRefresh := context.WithCancel(ctx)
+	refreshed := make(chan struct{})
+	go func() { publishedCatalog.Run(refreshing, logger); close(refreshed) }()
+	owned.add(func() error { stopRefresh(); <-refreshed; return nil })
 	connectionDAO, releaseResolver := connectiondao.New(db), connectormanifest.NewReleaseResolver(connectorReleases, config.connectors.ReleaseCandidateDownloadURL())
 	credentialReader := connections.NewCredentialReader(connectionDAO, config.objects, releaseResolver, providerClient, config.platformClients, logger)
 	shared := confighost.SharedConnections{
-		Connections: connections.NewTeamSpaceConnections(connectionDAO, config.objects, releaseResolver, connectormanifest.NewCatalog(connectorReleases),
+		Connections: connections.NewTeamSpaceConnections(connectionDAO, config.objects, releaseResolver, connectormanifest.NewCatalog(connectorReleases, publishedCatalog),
 			config.platformClients, providerClient, credentialReader, config.formKey, config.privateProviderHTTP),
 		FormKey: config.formKey, Reader: credentialReader, Usages: connections.NewUsages(connectionDAO, config.objects), ReadURL: config.credentialReadURL, Providers: providerClient, PlainHTTP: config.privateProviderHTTP,
 	}
@@ -147,7 +155,7 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	// the instance provider on it; Session tools, the workspace Flow's
 	// reclamation, the provisioning, the Preview and the deleting Project's
 	// release share them.
-	sessionAgent, err := sessionagent.NewSessionAgentFlowBootstrap(config.agent, &git.HostCredentials{Host: config.host}, sessionService, projectDiagnostics, providers.sandboxAddresses, providers.instances, logger)
+	sessionAgent, err := sessionagent.NewSessionAgentFlowBootstrap(config.agent, &git.HostCredentials{Host: config.host}, sessionService, projectDiagnostics, publishedCatalog, providers.sandboxAddresses, providers.instances, logger)
 	if err != nil {
 		return nil, err
 	}

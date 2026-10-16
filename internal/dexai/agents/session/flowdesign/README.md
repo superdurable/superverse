@@ -23,13 +23,15 @@ turns the decoded tool input into a `Design`, checks what the schema cannot and 
 what the card, the current requirements and every `segment_start` carry of it. The
 Session keeps the body in its AttributeMap `FlowDesigns`, under the one slot it reads
 (`confirmed`); `pending`, where a card that waited for a confirmation kept its design, is
-only deleted. This package holds no state.
+only deleted. The Session also keeps how far the agent wrote the design's code, in its
+Attribute `WrittenDesignSteps` (`WrittenSteps`). This package holds no state.
 
 | Path | Responsibility |
 | --- | --- |
 | `flow_design.go` | the design types, the closed sets of wait kinds, transition ends and slots, and the conversion from the decoded tool input |
 | `validation.go` | the cross-reference, reachability and size checks; group shape is left to Dex's analyzer |
 | `outline.go` | the canonical JSON, the digest, the outline and the main story |
+| `written_steps.go` | `WrittenSteps`: every designed Step and whether a write or edit declared it (`type <StepType> struct` or `StepType: "<StepType>"` in a non-test Go file), a Step type of several Flows marked in the Flow its file names ([written Steps](../../../../../docs/architecture/design-first/flow-design.md#written-steps)) |
 
 The main story is what the start Step reaches through ordinary transitions; every other
 Step is failure handling, which only failure routes reach. This is the split Dex's

@@ -54,7 +54,7 @@ func TestTeamSpaceConnectionFormAcrossReplicasIntegration(t *testing.T) {
 		releases := connectormanifest.NewReleaseResolver(releaseClient, connectorlibrary.OfficialReleaseDownloadURL)
 		providers := connections.NewProviderHTTPClient(true)
 		reader := connections.NewCredentialReader(dao, objects, releases, providers, connections.PlatformClients{}, slog.Default())
-		shared := connections.NewTeamSpaceConnections(dao, objects, releases, connectormanifest.NewCatalog(releaseClient), connections.PlatformClients{},
+		shared := connections.NewTeamSpaceConnections(dao, objects, releases, connectormanifest.NewCatalog(releaseClient, connectorlibrary.NewPublishedCatalog(releaseClient)), connections.PlatformClients{},
 			providers, reader, key, true)
 		b := &boundary.Boundary{Logger: slog.Default(), Accounts: &accounts.Accounts{DAO: accountdao.New(db, "admin@superverse.test"), Signer: comm.Must(accounts.NewTokenSigner(key))}, Cursors: watch.NewCursorCodec(key)}
 		connection := serveLoopback(ctx, t, &Server{Boundary: b, Connections: tenancy.Connections{Connections: shared, Access: dao, StudioOrigin: "http://127.0.0.1:3000"}})

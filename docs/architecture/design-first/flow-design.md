@@ -147,6 +147,7 @@ are raised only with evidence of a real design that needs more.
 | The current design | `SessionAgentFlow` | `FlowDesigns` instance `confirmed`; its reference in `ConfirmedRequirements.Spec.Design`, the current version of the requirements |
 | The implemented Flows | The Project's source | The prepared source's definition bundle (`projects/<projectID>/preview-source/<commit>/definitions.json`), as today |
 | Whether the current design is built, and by which commit | `SessionAgentFlow` | `BuiltFlowDesign`, the digest of the current design that a push built, and `BuiltFlowDesignCommit`, the commit that push verified ([build completion](#build-completion)) |
+| Which designed Steps the agent's writes declared | `SessionAgentFlow` | `WrittenDesignSteps`, one entry per Step of the current design ([written Steps](#written-steps)) |
 
 The reference is `flowdesign.Reference{Digest, Summary, Outline}`, so the card shows the design's summary without reading the body. A card without a design has none.
 A card is recorded as the next version in the `RouteTool` commit that answers it
@@ -185,6 +186,35 @@ push, such as a small change without a card, leaves the design built, and withou
 Studio could not tell the push that built the design from the later one and would draw the old
 design again until the later push's processes were built.
 
+## Written Steps
+
+Before the push builds a design, Studio shows how far the agent wrote its code, Step by Step, with no
+agent or prompt change: the design already names the Go type of every Step (`step_type`, unique within
+its Flow), and the Session holds the full arguments of every `write` and `edit` it records.
+
+- **Declaration.** Source declares a Step two ways: an ordinary Step by its struct type
+  (`type PrepareSummary struct`) and a connector Step only by the string of its options
+  (`StepType: "GenerateSummary"`). A succeeded `write` (its `content`) or `edit` (its `new_string`) of a
+  Go file that is not a test file declares the designed Steps whose type names one of the two forms
+  spells. `flowdesign.WrittenSteps.Record` finds them.
+- **Same name in two Flows.** A Step type designed in several Flows is marked in the Flow the file's
+  name names: the Flow's snake-case name without `_flow`, the longest one the file name starts with,
+  such as `text_summary_flow.go` or `text_summary_steps.go` for `TextSummaryFlow`. When the file names
+  none of them, each is marked.
+- **State.** The Attribute `WrittenDesignSteps` (`flowdesign.WrittenSteps{Digest, Steps}`) lists every
+  Step of the current design with `Written`. The commit that records a card with a design starts it for
+  that design, keeping `Written` on a Step the new design keeps in the same Flow (its code stays in the
+  workspace), and a card that clears the design deletes it. The commit of each recorded `write` or `edit`
+  result marks the Steps it declares, so the tool-result Steps never load `FlowDesigns`.
+- **Not proof.** A mark says the agent wrote the declaration, not that the Step works, compiles or is
+  wired as designed; it never comes back off: a later edit that deletes the struct leaves it marked. A
+  `bash` command, a subagent's merged change or a remote executor's change that writes a file marks
+  nothing. The push that builds the design is the completion ([build completion](#build-completion)).
+- **Studio.** While the design is built, Studio draws a Step solid when it is written or when the
+  compared current source already holds it (unchanged or changed), and dashed, with the planned
+  emphasis, otherwise; the design's label counts "N of M steps written" and the legend names the dashed
+  shape. Once the design is built every Step is solid ([the Flow tab](studio.md#the-flow-tab)).
+
 ## API
 
 - **Snapshot and Watch**: `AgentRequirements` gains `AgentFlowDesignReference design = 7`
@@ -193,7 +223,13 @@ design again until the later push's processes were built.
   still waits at). `AgentRequirements` also gains
   `bool design_built = 8`, which only `confirmed_requirements` sets: whether
   `BuiltFlowDesign` equals the current design's digest, and `string design_built_commit = 9`,
-  set only while `design_built`: `BuiltFlowDesignCommit`.
+  set only while `design_built`: `BuiltFlowDesignCommit`. `repeated string design_written_steps = 10`,
+  set only in `confirmed_requirements`, lists the [written Steps](#written-steps) of the current design,
+  each `<flow_type>.<step_type>`, in design order.
+- **Draft**: while the agent writes a card, the Session Watch sends its drafts as
+  `SessionProgress.requirements_draft` ([streaming and Studio](../agent-harness-design/streaming-and-studio.md#requirements-drafts)),
+  with the designed Flows' names and Step types as far as they arrived; Studio lists them and draws no
+  design until the card is recorded.
 - **`AgentService.GetFlowDesign`** (the ninth RPC of the service): request `project_id`,
   `slot` (`AGENT_FLOW_DESIGN_SLOT_CONFIRMED`, the only slot),
   `digest`, and `CallerContext caller = 100`. Response: `AgentFlowDesign`, the typed design
@@ -242,6 +278,7 @@ stored one inside the same commit.
 | `ConfirmedRequirements` | struct | — | The current version: `Spec.Design` holds the reference of the `confirmed` instance; the version number counts the recorded cards |
 | `BuiltFlowDesign` | string | — | The digest of the current design that a pushed, unblocked `commit_and_push` built ([build completion](#build-completion)). Owner `SessionAgentFlow`; written only in that result's commit. At most 71 bytes for the Session's lifetime, not indexed, no secret; the Snapshot reads it. |
 | `BuiltFlowDesignCommit` | string | — | The commit that the push which built the current design verified, written beside `BuiltFlowDesign` in that result's commit. Owner `SessionAgentFlow`. A commit SHA of 40 characters for the Session's lifetime, not indexed, no secret; read by the Snapshot only while the design is built |
+| `WrittenDesignSteps` | `flowdesign.WrittenSteps{Digest, Steps[{FlowType, StepType, Written}]}` | — | The [written Steps](#written-steps) of the current design. Owner `SessionAgentFlow`; set by the commit that records a card with a design (deleted with the design), updated by the commit of a recorded `write` or `edit` result. One entry per designed Step, at most 6 Flows of 30 Steps (about 30 KB at worst), replaced with each design; not indexed, no secret; an ordinary Attribute, so the tool-result Steps read it without loading `FlowDesigns`. The Snapshot reads it and reports its written Steps only while its digest is the current design's. |
 
 Locking and CAS:
 
@@ -263,9 +300,12 @@ None added. A change to the card is a chat message on `QueuedUserMessages` or
 
 ### Streams
 
-None added. The Session Watch carries the reference inside the Snapshot. A lost Watch frame
-is recovered by the next Snapshot read, and the body is always read through
-`GetFlowDesign`.
+`RequirementsDraft` carries the drafts of a card while the model writes it, the designed Flows'
+names and Step types among them; it is owned by
+[streaming and Studio](../agent-harness-design/streaming-and-studio.md#requirements-drafts). The
+recorded design reaches Studio only through the Snapshot: the Session Watch carries the reference
+inside the Snapshot, a lost Watch frame is recovered by the next Snapshot read, and the body is
+always read through `GetFlowDesign`.
 
 ### Steps, RPCs, and recovery
 
@@ -274,13 +314,17 @@ is recovered by the next Snapshot read, and the body is always read through
 | `RouteTool` (`confirm_requirements`) | Validates the card and the design, records the next version with the design's reference and writes the design | writes `ConfirmedRequirements`, `FlowDesigns[confirmed]`; deletes `FlowDesigns[pending]` |
 | `GetFlowDesign` RPC | Returns the `confirmed` instance if its digest matches | loads the fixed instance `confirmed` (at most 24 KiB); read timeout as `GetSnapshot` |
 | The tool batch's result commit (`commit_and_push`) | A pushed, unblocked result writes the current design's digest and the commit it verified, beside the Session HEAD and the Preview handoff it already writes | reads `ConfirmedRequirements`; writes `BuiltFlowDesign`, `BuiltFlowDesignCommit` |
-| `GetSnapshot` and the Watch | `confirmed_requirements.design_built` compares `BuiltFlowDesign` with the current digest; `design_built_commit` carries `BuiltFlowDesignCommit` while it is built | reads `BuiltFlowDesign`, `BuiltFlowDesignCommit` |
+| The tool batch's result commit (`write`, `edit`) | A succeeded result marks the designed Steps it declares written (`recordDesignProgress`, beside the built design) | reads and writes `WrittenDesignSteps` |
+| `RouteTool` (`confirm_requirements`) and an old card's `SendMessage` | The commit that records a design starts its written Steps; one that clears the design deletes them | writes `WrittenDesignSteps` |
+| `CallModel` | Writes the drafts of a card the model writes | writes the `RequirementsDraft` Stream |
+| `GetSnapshot` and the Watch | `confirmed_requirements.design_built` compares `BuiltFlowDesign` with the current digest; `design_built_commit` carries `BuiltFlowDesignCommit` while it is built; `design_written_steps` lists the written Steps of `WrittenDesignSteps` when its digest is current | reads `BuiltFlowDesign`, `BuiltFlowDesignCommit`, `WrittenDesignSteps` |
 | Segment start (compaction, new segment) | Renders the outline from `ConfirmedRequirements`; no map load | reads `ConfirmedRequirements` |
 
 The design has no external effects, so nothing has to be reconciled after an uncertain
-outcome. Retries of the commits are idempotent: the same key gets the same value. Open
-executions: the fields are optional, so a Session that started before designs existed decodes
-with no design. A Session that waits at a card from before cards stopped waiting is answered by
+outcome. Retries of the commits are idempotent: the same key gets the same value, and marking a
+written Step again changes nothing. Open executions: the fields are optional, so a Session that
+started before designs existed decodes with no design, and one whose design was recorded before
+`WrittenDesignSteps` existed reports no written Steps until its next design. A Session that waits at a card from before cards stopped waiting is answered by
 a message, and its next card replaces `confirmed` and deletes `pending`
 ([session](../agent-harness-design/session.md#recovery-external-effects-and-compatibility)). The
 regenerated `docs/flows/sv2-session-agent-flow.json` shows the map and RPC.

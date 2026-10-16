@@ -24,6 +24,7 @@ import { useQueryUpdate } from "@/lib/browser/use-query-update";
 import { useFlowCatalog } from "@/lib/flow/FlowCatalogProvider";
 import { useFlowHost } from "@/lib/flow/FlowHostProvider";
 import { LiveFlowScope, SessionFlowScope } from "@/components/flow/scope/FlowScope";
+import { DraftBrief } from "@/components/flow/scope/flow-design";
 import { FlowFrame } from "@/components/flow/scope/FlowSurfaces";
 import { LazyFlowCanvas, LazyProjectMap } from "@/components/flow/scope/LazyFlowViews";
 import { NotReady } from "@/components/ui/NotReady";
@@ -158,7 +159,8 @@ export function PreviewSource({ projectId }: { projectId: string }) {
  * still draws one. From a recorded requirements card with a Flow design until its build is complete, Preview
  * draws the designed Flows from the design instead, and shows them by itself once per card version.
  * Until processes are built from the agent's own push, Preview draws nothing of the template the
- * Project started from: it waits calmly, with Build processes only where a person must press it.
+ * Project started from: it waits calmly, with Build processes only where a person must press it. While
+ * the agent writes its first card, the card's draft shows as the Brief, drafting.
  */
 export function FlowSurface({
   projectId,
@@ -232,6 +234,8 @@ export function FlowSurface({
           </NotReady>
         ) : stage.hasRequirements ? (
           <CardBrief state={cardState} />
+        ) : session?.requirementsDraft ? (
+          <DraftBrief draft={session.requirementsDraft} />
         ) : (
           <NotReady kind="empty" heading="Reading your description…">
             The processes the agent builds from what you describe show here.

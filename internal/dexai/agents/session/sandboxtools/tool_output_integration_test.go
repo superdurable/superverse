@@ -18,6 +18,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/superdurable/superversev2/internal/comm/platform/connectorlibrary"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/sandboxd"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/sandboxd/sandboxdtest"
 	"github.com/superdurable/superversev2/internal/dexai/agents/toolfailure"
@@ -153,8 +154,8 @@ func TestConnectorCatalogActualSandbox(t *testing.T) {
 	defer cancel()
 	result := invoke(ctx, t, execution, ConnectorCatalog, map[string]any{"query": "github", "limit": 1})
 	var catalog struct {
-		SHA256  string                  `json:"sha256"`
-		Matches []connectorCatalogMatch `json:"matches"`
+		SHA256  string                          `json:"sha256"`
+		Matches []connectorlibrary.CatalogMatch `json:"matches"`
 	}
 	if err := json.Unmarshal([]byte(result.Content), &catalog); err != nil || result.Failure != nil || len(catalog.SHA256) != 64 || len(catalog.Matches) != 1 || catalog.Matches[0].ID != "github" || len(result.Content) > 16<<10 {
 		t.Fatalf("actual published catalog discovery failed: %s", result.Content)

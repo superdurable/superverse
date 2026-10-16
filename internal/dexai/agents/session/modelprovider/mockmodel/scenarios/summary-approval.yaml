@@ -21,7 +21,11 @@
 # the design of TextSummaryFlow with the approval: the template's Steps, groups and
 # transitions as the analyzer renders them, the lost model response as a failure route, plus
 # the new Step, Channel and Action. That is exactly what the script then implements, so its
-# final reply says the design was built as recorded.
+# final reply says the design was built as recorded. The card's reply streams at 100 ms per
+# delta, about 16 seconds for the card's input, so that its RequirementsDraft Stream carries
+# drafts at most once a second before the card is recorded: the E2E sees the Brief drafting
+# and the Dex integration test reads the drafts. Its edit of internal/process/text_summary_flow.go
+# declares type AwaitSummaryApproval struct, which marks that designed Step written.
 name: summary-approval
 title: "Summary approval"
 description: "Adds a human approval Step and an Approve summary Action to the template's TextSummaryFlow after a requirements card, in the same turn, and pushes it."
@@ -32,6 +36,7 @@ inputs:
     replies:
       - thinking: "A human approval changes how the process runs, so I show the requirements before I write any code, then keep building."
         text: "Here is what I will build. I am starting now; tell me in the chat if anything should change."
+        chunk_delay_ms: 100
         tool_uses:
           - name: confirm_requirements
             input:

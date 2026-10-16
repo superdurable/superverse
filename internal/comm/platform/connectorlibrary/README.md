@@ -1,11 +1,11 @@
 # Connectors library
 
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
-Purpose: Reaches the connectors library that connector_develop subagents contribute to: fetch and push remotes, the committing bot identity and the upstream library's draft pull requests.
+Purpose: Reaches the connectors library: contribution remotes, the committing bot and draft pull requests, and the published catalog's document, per-replica warm copy and the connectors a request names.
 
 Callers: `internal/dexai/agents/sandbox/workspace/git`, `internal/dexai/agents/session/contribution`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/session/sandboxtools`, `internal/dexai/agents/session/subagent`, `internal/dexai/bootstrap` and `internal/dexai/studio/confighost/connectormanifest` import this package.
 
-Dependencies: it imports `internal/comm`, `internal/comm/platform/deploymentnames`, `internal/comm/platform/githubapp` and `internal/comm/platform/repohost`.
+Dependencies: it imports `internal/comm`, `internal/comm/platform/deploymentnames`, `internal/comm/platform/githubapp` and `internal/comm/platform/repohost` and calls the Connector catalog API.
 
 ```mermaid
 flowchart LR
@@ -21,6 +21,7 @@ flowchart LR
   self --> d1["internal/comm/platform/deploymentnames"]
   self --> d2["internal/comm/platform/githubapp"]
   self --> d3["internal/comm/platform/repohost"]
+  self --> e0(["Connector catalog API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 
@@ -83,6 +84,32 @@ answer is `errOutcomeUnknown`, a 4xx other than 408 and 429 is `ErrRejected`, an
 may succeed when asked again. A server without an upstream answers `ErrNotConfigured` where the
 upstream is needed.
 
+## Published catalog
+
+The published catalog (`PublishedCatalogURL`) lists every released connector at its latest release.
+`catalog.go` owns its document for every reader: `DecodeCatalog` accepts at most 1 MiB and 512
+connectors of `connectors.dex.dev/catalog/v1alpha1` `ConnectorCatalog` with valid IDs, directories
+and versions, and keeps the document's SHA-256; `CatalogEntry.Match` adds the exact Go module
+(`CatalogModulePath`, with the major version from v2 on), the `go get` install command and the
+manifest and factory paths; `CatalogMatches` is the answer of a search, which `FitJSON` cuts from
+the end, marked truncated, to a byte budget. The Sandbox's `connector_catalog` tool, which fetches
+the document in the Sandbox, answers with it within 16 KiB.
+
+`PublishedCatalog` is a server replica's one copy. The composition root runs `Run` in a goroutine
+it cancels at shutdown: it fetches at once (15-second bound) and then every five minutes
+(`CatalogLifetime`), a minute after a failed fetch, which it logs and which keeps the last good
+copy. Studio's TeamSpace connections read it with `Fresh`, which fetches only when the copy is
+older than five minutes. Several replicas each keep their own copy; nothing else is shared.
+
+`RequestMatches` serves the Session's first segment and never touches the network: on the warm copy
+it finds, by whole words, the display name, the ID with hyphens read as spaces, the directory's last
+element and a small alias table (`Sheets`, `Outlook`, `Teams`, `Excel`, `S3`, `Postgres`, ...). A
+display name or alias that is also an everyday word (`Front`, `Linear`, `LLM`, `Webhook`) matches
+only as capitalized, and such an ID or directory element never does. Overlapping names resolve to
+the leftmost and then the longest, so `Outlook Calendar` names the calendar. The answer lists at
+most six connectors in the order of their first appearance as compact JSON of at most 8 KiB, with
+the catalog's digest; a cold copy or no match answers nothing.
+
 ## Verification
 
 `TestConnectorContributionGitHubIntegration` in the [workspace Git package](../../../dexai/agents/sandbox/workspace/git/README.md)
@@ -91,6 +118,9 @@ exercises this package against the GitHub test repository. It is a manual test, 
 
 | File | Responsibility |
 | --- | --- |
+| `catalog.go` | The published catalog's document: `DecodeCatalog`, `CatalogEntry`, `CatalogMatch`, `CatalogMatches` and `CatalogModulePath` |
 | `library.go` | `Library`, `Location`, `Remote`, `Identity`, `Mirror` and the branch of a connector |
+| `published_catalog.go` | `PublishedCatalog`: the replica's warm copy, its background refresh and `Fresh` |
 | `release_candidate.go` | `ReleaseCandidate`, its publication on the upstream library or the local Git host's copy, and where candidates are downloaded from |
+| `request_matches.go` | `RequestMatches`: the connectors a request names, with the alias table and the everyday words |
 | `upstream.go` | `Upstream`: per-operation tokens, the bot identity, the pull request lookup and the draft pull request, and the classification of errors |

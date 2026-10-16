@@ -122,6 +122,9 @@ func agentSnapshot(ctx dex.Context, state agentloop.AgentState, read func(conver
 		if agent.Description.ConfirmedDesignBuilt {
 			agent.Description.ConfirmedDesignBuiltCommit = dexflow.ValueOrZero(builtFlowDesignCommitAttribute.Get(ctx))
 		}
+		if written := dexflow.ValueOrZero(writtenDesignStepsAttribute.Get(ctx)); written.Digest == confirmed.Spec.Design.Digest {
+			agent.Description.ConfirmedDesignWrittenSteps = written.Names()
+		}
 	}
 	agent.Description.BackgroundCommands = agenttasks.SortedBackgroundCommands(loadedBackgroundCommands(ctx))
 	agent.Description.Subagents = agenttasks.SortedSubagents(loadedSubagents(ctx))
@@ -212,25 +215,42 @@ type flowDesignRPCOutput struct {
 // recordFlowDesign moves FlowDesigns to a card recorded over stored, whose
 // version carries recorded: the card's own design becomes the current one, a
 // card without one keeps the stored design, and a card that replaces the
-// requirements without one deletes it. A design an old waiting card left is deleted.
+// requirements without one deletes it. A design an old waiting card left is
+// deleted. WrittenDesignSteps follows the current design: a new design starts
+// it afresh, keeping the written Steps it keeps, and a deleted one deletes it.
 func recordFlowDesign(ctx dex.Context, stored *agentloop.ConfirmedRequirements, recorded *flowdesign.Reference, design *flowdesign.Design) {
 	switch {
 	case design != nil:
 		comm.MustDo(flowDesignsAttribute.Set(ctx, string(flowdesign.SlotConfirmed), *design))
+		comm.MustDo(writtenDesignStepsAttribute.Set(ctx, flowdesign.NewWrittenSteps(*design, dexflow.OptionalValue(writtenDesignStepsAttribute.Get(ctx)))))
 	case recorded == nil && stored != nil && stored.Spec.Design != nil:
 		comm.MustDo(flowDesignsAttribute.Delete(ctx, string(flowdesign.SlotConfirmed)))
+		comm.MustDo(writtenDesignStepsAttribute.Delete(ctx))
 	}
 	comm.MustDo(flowDesignsAttribute.Delete(ctx, string(flowdesign.SlotPending)))
 }
 
-// recordBuiltDesign records, in the commit of a result that BuildsDesign,
-// that the push built the current Flow design, if there is one, and its commit.
-func recordBuiltDesign(ctx dex.Context, call conversation.ToolCall, result agentloop.ToolExecutionResult) {
+// recordDesignProgress records, in the commit of a tool result, how far the
+// agent built the current Flow design: a succeeded write or edit marks the
+// designed Steps it declares written, and a result that BuildsDesign records
+// that the push built the design, if there is one, and its commit.
+func recordDesignProgress(ctx dex.Context, call conversation.ToolCall, result agentloop.ToolExecutionResult) {
+	if filePath, text, isWritten := agentloop.WrittenSource(call, result); isWritten {
+		if written := dexflow.OptionalValue(writtenDesignStepsAttribute.Get(ctx)); written != nil && written.Record(filePath, text) {
+			comm.MustDo(writtenDesignStepsAttribute.Set(ctx, *written))
+		}
+	}
 	confirmed := dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx))
 	if confirmed != nil && confirmed.Spec.Design != nil && agentloop.BuildsDesign(call, result) {
 		comm.MustDo(builtFlowDesignAttribute.Set(ctx, confirmed.Spec.Design.Digest))
 		comm.MustDo(builtFlowDesignCommitAttribute.Set(ctx, result.HeadCommit))
 	}
+}
+
+// confirmedRevision is the revision of the confirmed requirements, 0 while
+// none is recorded, which a requirements draft names as its base.
+func confirmedRevision(ctx dex.Context) int64 {
+	return dexflow.ValueOrZero(confirmedRequirementsAttribute.Get(ctx)).Revision
 }
 
 func readRemote(ctx dex.Context, input remoteexec.ReadRequest) (*dex.RPCResult[RemoteRead], error) {

@@ -173,6 +173,14 @@ words a business person would use. It is one column: a header, a summary grid of
 **The current requirements** in the chat show the design's summary and its outline behind
 **More details**.
 
+**While the agent writes the card**, before it is recorded, the Flow tab shows its newest draft
+(`DraftBrief`, [requirements drafts](../agent-harness-design/streaming-and-studio.md#requirements-drafts))
+as the Brief with the badge **Brief · drafting**: the title, the summaries, the features, the apps
+and a plain list of each designed process's Step names, as they arrive, at most once a second, and
+the note that the drawing appears when the agent records the card. A draft is never drawn. A
+Project's first conversation switches to the Flow tab at its first draft, and a revision's draft
+takes the place of the current version's Brief until the revision is recorded.
+
 ## The Flow tab
 
 The Flow tab draws a design in place of the implemented Flows it changes, from the card until
@@ -186,14 +194,21 @@ see it, and only on Preview; Live always shows what Live runs.
 - **What.** Each Flow the design lists is drawn from the design under a label, in a strip
   above the canvas that never covers it: "Design · building" from the card on, and "Design ·
   built, building processes" once the design is built and until those processes are built. The strip also
-  gives the Flow's purpose, the Steps and Actions the design removes, which have no place on
-  the designed graph, and "Not compared" when there is nothing to compare with. New Flows of
+  gives the Flow's purpose, how many of its Steps are written ("4 of 6 steps written", below),
+  the Steps and Actions the design removes, which have no place on the designed graph, and
+  "Not compared" when there is nothing to compare with. New Flows of
   the design join the Flow picker, and every designed Flow is tagged **design** there. On All
   processes a bar names the label and links each designed Flow. Flows the design does not
   list are drawn from the source as today.
 - **Marks.** The designed Steps are marked **new** or **changed** against the current
   source, when it is the Session HEAD's. A closed stage carries **new** when all its marked
   Steps are new and **changed** when any is marked.
+- **Written Steps.** While the design is built, a Step is solid when the agent wrote its
+  declaration ([written Steps](flow-design.md#written-steps)) or the compared source already holds
+  it, and dashed and faded, with the planned emphasis, while its code is not written yet; its
+  accessible name says "not written yet", the strip counts the written ones and the legend names the
+  dashed shape. Without a comparison only the agent's writes count. Once the design is built every
+  Step is solid, and the implemented Flows replace the drawing when the Preview's processes are built.
 - **Step panel.** Under the Step's title: the explanation, the wait in words, the ways out
   with their conditions (failure routes named as failure handling), and the features the
   Step serves with their text from the card; its Go names behind **More details**.
@@ -237,11 +252,13 @@ and needs no card.
 - The Brief is a region whose parts are regions named by their headings, and the label is
   text. Marks (**new**,
   **changed**) are text badges above the Step card and part of its accessible name, never
-  color alone and never a dashed, faded or ghosted card: on every Flow canvas a dashed card
-  means failure handling.
+  color alone and never a dashed, faded or ghosted card. A dashed card in the failure color
+  means failure handling; a dashed, faded neutral card is a Step not reached yet: a run's next
+  Step, or a designed Step whose code is not written yet, which its accessible name ("not written
+  yet"), the strip's count and the legend say in text.
 - Open the brief is a link, so the browser's history works.
 - Loading uses `NotReady`'s placeholder, and a failed read uses its error state with retry.
   NOT_FOUND (a slot without a design) draws no design.
 - Mock mode has a fixture design for the requirements fixture (`web/studio/mock/`), selected
   only in `app/` route files. The mock never builds, so a recorded fixture design stays
-  "Design · building".
+  "Design · building", with its first two Steps written and the rest dashed.

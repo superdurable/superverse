@@ -26,6 +26,8 @@ export interface ShownDesign {
   outline: string;
   /** The features of its requirements, which the Steps name. */
   features: readonly { id: string; text: string }[];
+  /** The designed Steps whose declaration the agent wrote since the design was recorded, each `Flow.Step`. */
+  writtenSteps: readonly string[];
   /** Null while it loads and after a failed read. */
   body: FlowDesignBody | null;
   error: string | null;
@@ -42,6 +44,7 @@ interface DesignReference {
   phase: DesignPhase;
   version: number;
   features: readonly { id: string; text: string }[];
+  writtenSteps: readonly string[];
 }
 
 /**
@@ -66,6 +69,7 @@ function shownReference(resource: SessionSnapshot__Output | null | undefined): D
     phase: spec.designBuilt ? "built" : "building",
     version: revision,
     features: spec.features,
+    writtenSteps: spec.designWrittenSteps,
   };
 }
 
@@ -131,6 +135,7 @@ export function useFlowDesign(enabled: boolean): ShownDesign | null {
     summary: reference.summary,
     outline: reference.outline,
     features: reference.features,
+    writtenSteps: reference.writtenSteps,
     body: bodies.get(digest) ?? null,
     error: current?.error ?? null,
     retry: () => {

@@ -14,6 +14,7 @@ export interface AgentRequirements {
   'design'?: (_superverse_v2_AgentFlowDesignReference | null);
   'designBuilt'?: (boolean);
   'designBuiltCommit'?: (string);
+  'designWrittenSteps'?: (string)[];
 }
 
 export interface AgentRequirements__Output {
@@ -26,4 +27,5 @@ export interface AgentRequirements__Output {
   'design': (_superverse_v2_AgentFlowDesignReference__Output | null);
   'designBuilt': (boolean);
   'designBuiltCommit': (string);
+  'designWrittenSteps': (string)[];
 }

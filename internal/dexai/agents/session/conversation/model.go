@@ -182,6 +182,9 @@ type ModelRequest struct {
 	WriteAssistant TextWriter
 	WriteReasoning TextWriter
 	WriteActivity  ActivityWriter
+	// WriteToolInput receives the input of each confirm_requirements call as
+	// the model writes it, after every delta and once complete; nil skips it.
+	WriteToolInput ToolInputWriter
 	// ToolTarget names what a tool call works on, for its activity event.
 	ToolTarget func(ToolCall) string
 }

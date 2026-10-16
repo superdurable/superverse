@@ -399,6 +399,7 @@ func agentDescription(value agentloop.AgentDescription) *pb.AgentDescription {
 		out.ConfirmedRequirements = &pb.AgentConfirmedRequirements{Revision: p.Revision, Spec: agentRequirements(&p.Spec), ConfirmedAt: p.ConfirmedAt.UTC().Format(time.RFC3339Nano), ConfirmedBy: agentActor(p.ConfirmedBy)}
 		out.ConfirmedRequirements.Spec.DesignBuilt = value.ConfirmedDesignBuilt
 		out.ConfirmedRequirements.Spec.DesignBuiltCommit = value.ConfirmedDesignBuiltCommit
+		out.ConfirmedRequirements.Spec.DesignWrittenSteps = value.ConfirmedDesignWrittenSteps
 	}
 	if p := value.TodoList; p != nil {
 		out.TodoList = &pb.AgentTodoList{Revision: p.Revision}
@@ -458,6 +459,23 @@ func agentRequirements(value *agentloop.Requirements) *pb.AgentRequirements {
 	for _, connection := range value.Connections {
 		out.Connections = append(out.Connections, &pb.AgentRequirementConnection{Need: connection.Need, Connector: connection.Connector, Operations: connection.Operations,
 			Status: boundary.Enum[pb.AgentRequirementConnection_Status](connection.Status), UserSetup: connection.UserSetup})
+	}
+	return out
+}
+
+// agentRequirementsDraft maps a draft of the requirements card the agent is
+// writing, which the RequirementsDraft Stream already bounded.
+func agentRequirementsDraft(value agentloop.RequirementsDraft) *pb.AgentRequirementsDraft {
+	out := &pb.AgentRequirementsDraft{CallId: string(value.CallID), Turn: value.Turn, BaseRevision: value.BaseRevision, Title: value.Title, Summary: value.Summary,
+		DesignSummary: value.DesignSummary, Complete: value.Complete}
+	for _, feature := range value.Features {
+		out.Features = append(out.Features, &pb.AgentRequirementFeature{Id: feature.ID, Text: feature.Text})
+	}
+	for _, connection := range value.Connections {
+		out.Connections = append(out.Connections, &pb.AgentRequirementsDraftConnection{Need: connection.Need, Connector: connection.Connector})
+	}
+	for _, flow := range value.Flows {
+		out.Flows = append(out.Flows, &pb.AgentRequirementsDraftFlow{FlowType: flow.FlowType, StepTypes: flow.StepTypes})
 	}
 	return out
 }

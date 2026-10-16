@@ -118,10 +118,10 @@ func (s *sessionServer) WatchSession(in *pb.WatchSessionRequest, stream grpc.Ser
 	return boundary.AgentRPCStatus(resource.Run(ctx))
 }
 
-// agentEventSources are the three event Streams of one Session Agent.
+// agentEventSources are the event Streams of one Session Agent.
 func (s *sessionServer) agentEventSources(id agentloop.FlowID) []watch.Source[sessionagent.StreamEvent] {
 	var sources []watch.Source[sessionagent.StreamEvent]
-	for _, stream := range []sessionagent.EventStream{sessionagent.EventStreamReasoning, sessionagent.EventStreamAssistant, sessionagent.EventStreamActivity} {
+	for _, stream := range sessionagent.EventStreams {
 		sources = append(sources, watch.Source[sessionagent.StreamEvent]{
 			Identity: "SessionAgentFlow/" + string(id) + "/" + string(stream),
 			Tail: func(ctx context.Context) (string, error) {
@@ -302,8 +302,8 @@ func workspaceSnapshot(session agentloop.SessionSummary, instance sessionworkspa
 	return out
 }
 
-// sessionProgress is one event of the Session Agent's reasoning, assistant or
-// activity Stream.
+// sessionProgress is one event of the Session Agent's reasoning, assistant,
+// activity or requirements draft Stream.
 func sessionProgress(e sessionagent.StreamEvent) *pb.SessionProgress {
 	out := &pb.SessionProgress{CreatedAt: timestamppb.New(e.CreatedAt), Source: e.Source, TaskId: e.TaskID}
 	switch e.Kind {
@@ -313,6 +313,8 @@ func sessionProgress(e sessionagent.StreamEvent) *pb.SessionProgress {
 		out.Content = &pb.SessionProgress_AssistantText{AssistantText: e.Text}
 	case sessionagent.StreamEventKindActivity:
 		out.Content = &pb.SessionProgress_Activity{Activity: agentActivity(e.Activity)}
+	case sessionagent.StreamEventKindRequirementsDraft:
+		out.Content = &pb.SessionProgress_RequirementsDraft{RequirementsDraft: agentRequirementsDraft(e.Draft)}
 	default:
 		panic(fmt.Sprintf("unknown Session event kind %q", e.Kind))
 	}

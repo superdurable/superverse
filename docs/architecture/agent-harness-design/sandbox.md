@@ -164,12 +164,16 @@ Project and never touch the lease or sandboxd.
 Three gates are the only entries from the conversation into the cold path. They are
 described with the Steps that contain them in [session](session.md#steps); in short:
 
-- **G1, first segment.** The model call that finds no context segment yet and no recorded
-  `Workspace.RepositoryContext` goes through `RequestSessionWorkspace` first, and the cold
-  path returns to the model continuation through `CheckSteered`. The cold path opens the
-  Session's first segment itself, with the repository context if the lease provided it, and
-  does not ask G1 again, so a workspace that cannot be prepared delays the model but never
-  blocks it; that segment then carries no repository context.
+- **G1, first segment.** The first model call does not wait for the workspace. The boundary
+  Step that finds no context segment opens the Session's first segment at once, with
+  `Workspace.RepositoryContext` only when the workspace already read it and with the catalog
+  matches of the request ([connectors](connectors.md#catalog-matches-of-the-first-request)).
+  Without the repository context it moves to `CallModel` and, beside it, to
+  `RequestSessionWorkspace` with the continuation `prepare_context`, which runs beside the
+  conversation and never resumes it. The segment awaits the context
+  (`ContextSegment.AwaitsRepositoryContext`): the first model-call boundary after the request
+  read it appends it once as a user notice ([context management](context-management.md#segments)).
+  A failed request appends nothing, and the conversation goes on without it.
 - **G2, dispatch.** A wave or a serial call with workspace access requires
   `Workspace.State == READY` and a usable lease, then sets `WorkspaceUse` under the
   `Workspace` lock; otherwise it requests a workspace.
@@ -185,9 +189,13 @@ G1 | G2 | G3 | RPC RequestSessionWorkspace
        -> SendWorkspaceCommand(provision) -> AwaitSessionWorkspace -> ApplySessionWorkspace   (opens the request)
        -> ApplySessionWorkspace{PromptOnly}      (READY lease without the repository context)
        -> join: JoinedResumeAt = continuation, DeadEnd   (a request in flight)
+       -> DeadEnd   (an RPC, prepare_context or await_remote demand that finds a request in flight)
      SendWorkspaceCommand -(refused)-> RecordWorkspaceFailure
      SendWorkspaceCommand | AwaitSessionWorkspace | ApplySessionWorkspace -(retries exhausted)-> RecordWorkspaceFailure
   -> finish(ok | failed): CheckSteered(continuation) | DeadEnd
+
+G1: CheckSteered | AnsweredInput (no segment; segment opened without the repository context)
+  -> CallModel  +  RequestSessionWorkspace{prepare_context}   (GoToMany; the request runs beside the call)
 
 ApplySessionWorkspace(READY) -> AwaitSandboxDeadline -> SendWorkspaceCommand(reclaim)
 
@@ -198,20 +206,22 @@ SessionWorkspaceFlow, one command at a time:
 
 | Session Step | Policy | Behavior |
 |---|---|---|
-| `RequestSessionWorkspace` | ASYNC; one-minute method timeout; locks `Workspace`; loads `CurrentMessages` and `Subagents` | Not ACTIVE: DeadEnd. A reported loss of the current READY or REVOKED request counts per call (`LostCallID`, `Losses`) and revokes the lease; more than two losses of one call finish as failed without a new request. READY with a usable lease: finish ok, or `ApplySessionWorkspace{PromptOnly}` for a model continuation whose repository context was never read. A request in flight is joined: an RPC-triggered branch ends, the conversation records its continuation as `JoinedResumeAt` and ends, and the Step that settles the request resumes it. Otherwise it opens a request (`State = REQUESTED`, a new WorkspaceRequestID, the previous failure cleared), cancels the previous request's `AwaitSandboxDeadline` and moves to `SendWorkspaceCommand`; the request is durable before its command |
+| `RequestSessionWorkspace` | ASYNC; one-minute method timeout; locks `Workspace`; loads `CurrentMessages` and `Subagents` | Not ACTIVE: DeadEnd. A reported loss of the current READY or REVOKED request counts per call (`LostCallID`, `Losses`) and revokes the lease; more than two losses of one call finish as failed without a new request. READY with a usable lease: finish ok, or `ApplySessionWorkspace{PromptOnly}` for a model continuation, or a `prepare_context` or `await_remote` demand, whose repository context was never read. A request in flight is joined: an RPC-triggered branch and a demand beside the conversation (`prepare_context`, `await_remote`) end, the conversation records its continuation as `JoinedResumeAt` and ends, and the Step that settles the request resumes it. Otherwise it opens a request (`State = REQUESTED`, a new WorkspaceRequestID, the previous failure cleared), cancels the previous request's `AwaitSandboxDeadline` and moves to `SendWorkspaceCommand`; the request is durable before its command |
 | `SendWorkspaceCommand` | `dexflow.ProviderStepOptions()` (SYNC, 45-second attempts, retried for three minutes); no lock; failure to `RecordWorkspaceFailure` | For a request that settled or was replaced meanwhile: `ApplySessionWorkspace`. Otherwise `ProvisionWorkspace(identity, requestID, PreviewHolds)` through the Session Service, which requires a READY Project, starts the `SessionWorkspaceFlow` on the first command and submits `ws-<n>/provision`; a repeat is accepted without a second command. A refusal (`ErrWorkspaceCommandRejected`, including an ended workspace Flow) or the refusal of a replaced request goes to `RecordWorkspaceFailure` with the reason; an accepted command goes to `AwaitSessionWorkspace`. For the reclamation at the deadline it submits `ws-<n>/reclaim` (`ReclaimWorkspace`) and ends; a refusal or exhausted retries record only the detail |
 | `AwaitSessionWorkspace` | Waits for the request's `WorkspaceOutcomes` instance or a timer of `provision.Budget` plus 30 minutes, which outlasts the workspace Flow's reclamation of an earlier instance, its own wait and its report; `ProviderStepOptions()`; no lock; failure to `RecordWorkspaceFailure` | Takes the grant of the reported outcome, then `ApplySessionWorkspace`. At the timer without a report it reads the request's outcome from the workspace Flow (`ObserveWorkspace`, its `GetSessionWorkspace`), and without one goes to `RecordWorkspaceFailure` with `WORKSPACE_TIMEOUT`; the workspace Flow reclaims that instance before the next one |
-| `ApplySessionWorkspace` | SYNC; 30 s; retried for 2 minutes; locks `Workspace`; loads `CurrentMessages` and `Subagents`; failure to `RecordWorkspaceFailure` | Another request replaced this branch's: an RPC-triggered branch ends and the conversation goes back to `RequestSessionWorkspace`. A request still REQUESTED settles from the observed outcome: a READY one is accepted (its lease recorded, the Sandbox deadline set one hold ahead, and a Preview's hold of an earlier instance cleared), a failed one is recorded with its code (the provisioning's own, such as `CHECKOUT_FAILED`, or `WORKSPACE_RECLAIM_FAILED` when the earlier instance could not be reclaimed). The owner of an RPC-triggered request takes `JoinedResumeAt`, and a waiting Preview is told the settlement. On READY the idempotent post-grant effects commit with this Step: `HeadCommit` from the lease and the repository context (`Workspace.RepositoryContext`, at most 8 KiB). READY finishes ok and the owner arms `AwaitSandboxDeadline`; FAILED, REVOKED or an empty state finishes failed |
-| `RecordWorkspaceFailure` | ASYNC; one-minute method timeout; locks `Workspace`; loads `CurrentMessages` and `Subagents` | Reached from a refused command, from a Step that exhausted its retries or from `AwaitSessionWorkspace` at its timer. The owner's request, if still REQUESTED, becomes `FAILED("WORKSPACE_TIMEOUT")` after that timer and `FAILED("WORKSPACE_START_FAILED")` otherwise, with `FailureDetail` from `ctx.RecoveryError().Detail` or the refusal (at most 2 KiB); a waiting Preview is told the failure. A prompt-only branch owns no request and records only the detail. The owner of an RPC-triggered request takes `JoinedResumeAt`. A READY request whose lease effects failed still arms its Sandbox deadline |
+| `ApplySessionWorkspace` | SYNC; 30 s; retried for 2 minutes; locks `Workspace`; loads `CurrentMessages` and `Subagents`; failure to `RecordWorkspaceFailure` | Another request replaced this branch's: an RPC-triggered branch ends and the conversation goes back to `RequestSessionWorkspace`. A request still REQUESTED settles from the observed outcome: a READY one is accepted (its lease recorded, the Sandbox deadline set one hold ahead, and a Preview's hold of an earlier instance cleared), a failed one is recorded with its code (the provisioning's own, such as `CHECKOUT_FAILED`, or `WORKSPACE_RECLAIM_FAILED` when the earlier instance could not be reclaimed). The owner of an RPC-triggered request or of one beside the conversation takes `JoinedResumeAt`, and a waiting Preview is told the settlement. On READY the idempotent post-grant effects commit with this Step: `HeadCommit` from the lease and the repository context (`Workspace.RepositoryContext`, at most 8 KiB). READY finishes ok and the owner arms `AwaitSandboxDeadline`; FAILED, REVOKED or an empty state finishes failed |
+| `RecordWorkspaceFailure` | ASYNC; one-minute method timeout; locks `Workspace`; loads `CurrentMessages` and `Subagents` | Reached from a refused command, from a Step that exhausted its retries or from `AwaitSessionWorkspace` at its timer. The owner's request, if still REQUESTED, becomes `FAILED("WORKSPACE_TIMEOUT")` after that timer and `FAILED("WORKSPACE_START_FAILED")` otherwise, with `FailureDetail` from `ctx.RecoveryError().Detail` or the refusal (at most 2 KiB); a waiting Preview is told the failure. A prompt-only branch owns no request and records only the detail. The owner of an RPC-triggered request or of one beside the conversation takes `JoinedResumeAt`, so a tool that joined the failed request reads `workspace_unavailable`. A READY request whose lease effects failed still arms its Sandbox deadline |
 
-`finish(ok)` continues the caller: an RPC-triggered branch ends with DeadEnd, and any other
-branch goes through `CheckSteered` with the continuation it waited at (a model continuation
-or `route_tool`). `finish(failed)` does the same, except that `route_tool` first appends the
-known-failure tool result `workspace_unavailable` for the current pending call, ends
-workspace use and continues after the tool, and a model continuation opens the Session's
-first segment without the repository context if it has none. A Step that settles a request
-owned by an RPC-triggered branch also finishes the joined conversation continuation, in the
-same commit. A pending `start_agent` call that the settling Step answers this way started no
+`finish(ok)` continues the caller: an RPC-triggered branch and a branch beside the
+conversation (`prepare_context`, `await_remote`) end with DeadEnd, and any other branch goes
+through `CheckSteered` with the continuation it waited at (`route_tool`, or a model
+continuation that a branch started by an earlier binary still carries; it opens the
+Session's first segment with the repository context if it has none). `finish(failed)` does
+the same, except that `route_tool` first appends the known-failure tool result
+`workspace_unavailable` for the current pending call, ends workspace use and continues after
+the tool, and such a model continuation opens the first segment without the repository
+context. A Step that settles a request owned by an RPC-triggered branch or a branch beside
+the conversation also finishes the joined conversation continuation, in the same commit. A pending `start_agent` call that the settling Step answers this way started no
 subagent, so the Step deletes its STARTING record.
 
 The workspace RPCs of `SessionAgentFlow` (short RPCs with a ten-second timeout; internal
@@ -902,8 +912,11 @@ change to a graph.
 
 ## Cold start
 
-A cold start is the time from the demand for a workspace to a usable Sandbox. Two paths
-matter, and with a one-hour hold the second is the common one:
+A cold start is the time from the demand for a workspace to a usable Sandbox. The Session's
+first reply does not wait for it: the first model call runs while the first request provisions
+([G1](#gates-and-the-cold-path)), so the requirements card can be recorded before the Sandbox is
+ready, and only the first workspace tool waits. Two paths matter, and with a one-hour hold the
+second is the common one:
 
 1. **First instance of a Project.** The isolation boundary and the volume do not exist yet:
    the provisioning creates them, starts the Pod and checks the repository out.
@@ -1033,8 +1046,8 @@ dies with the volume.
   "Prepare current source" is an explicit action.
 - **Timings.** Deployment, Release, Preview and workspace views show the duration of each
   phase.
-- **Failures.** A failed cold path appears as a model turn without repository context or
-  as a failed tool row; an engine or Preview failure appears as a delivery notification
+- **Failures.** A failed cold path appears as a conversation that never receives the
+  repository context or as a failed `workspace_unavailable` tool row; an engine or Preview failure appears as a delivery notification
   ([notifications](notifications-and-feedback.md)). The lease, the binding, retained
   references, internal endpoints and credentials never reach the browser.
 

@@ -86,3 +86,12 @@ type ProjectDiagnosticsReader interface {
 type repositoryContextReader interface {
 	RepositoryContext(ctx context.Context, lease workspace.Lease) (string, error)
 }
+
+// connectorCatalogMatcher finds the released connectors a request names in
+// the server replica's warm copy of the published connector catalog, with no
+// network call: the catalog_matches JSON of at most six connectors and 8 KiB,
+// or "" while the copy is cold or nothing matches. The Step that opens the
+// Session's first segment calls it.
+type connectorCatalogMatcher interface {
+	RequestMatches(request string) string
+}

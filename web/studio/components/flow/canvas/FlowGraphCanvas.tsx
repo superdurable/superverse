@@ -45,9 +45,14 @@ export type StepMarkText = "new" | "changed";
 
 /**
  * A stage carries its Steps' marks: "new" when every marked member is new and none is unmarked, else
- * "changed" when any member is marked.
+ * "changed" when any member is marked. An unwritten Step is drawn dashed, as a planned one is.
  */
-function markedScene(scene: Scene, marks: ReadonlyMap<string, StepMarkText>, groups: StepGroup[]): Scene {
+function markedScene(
+  scene: Scene,
+  marks: ReadonlyMap<string, StepMarkText>,
+  groups: StepGroup[],
+  unwritten: ReadonlySet<string>,
+): Scene {
   const markOf = (box: Box): StepMarkText | undefined => {
     if (box.kind === "step") return marks.get(box.id);
     if (box.kind !== "stage") return undefined;
@@ -56,7 +61,9 @@ function markedScene(scene: Scene, marks: ReadonlyMap<string, StepMarkText>, gro
     if (memberMarks.every((mark) => mark === undefined)) return undefined;
     return memberMarks.every((mark) => mark === "new") ? "new" : "changed";
   };
-  return { ...scene, boxes: scene.boxes.map((box) => ({ ...box, mark: markOf(box) })) };
+  const writtenState = (box: Box): Partial<Box> =>
+    box.kind === "step" && unwritten.has(box.id) ? { emphasis: "planned", unwritten: true } : {};
+  return { ...scene, boxes: scene.boxes.map((box) => ({ ...box, mark: markOf(box), ...writtenState(box) })) };
 }
 
 /**
@@ -70,6 +77,7 @@ export function FlowGraphCanvas({
   fitKey,
   overlay = null,
   marks,
+  unwritten,
   notice,
   renderPanel,
   onActionable,
@@ -95,6 +103,8 @@ export function FlowGraphCanvas({
   overlay?: RunOverlay | null;
   /** Text marks by Step id. */
   marks?: ReadonlyMap<string, StepMarkText>;
+  /** The ids of Steps whose code is not written yet, such as a design's while the agent builds it. */
+  unwritten?: ReadonlySet<string>;
   /** A line under the controls, such as a failed run read. */
   notice?: ReactNode;
   /** The selected Step's panel in place of its definition, for a view that explains Steps its own way. */
@@ -134,8 +144,8 @@ export function FlowGraphCanvas({
       { direction, run: overlay, groups, openStages: stages.openStages },
       sources,
     );
-    return marks ? markedScene(drawn, marks, groups) : drawn;
-  }, [detourFor, direction, flow, groups, marks, overlay, stages.openStages, stages.scene]);
+    return marks || unwritten ? markedScene(drawn, marks ?? new Map(), groups, unwritten ?? new Set()) : drawn;
+  }, [detourFor, direction, flow, groups, marks, overlay, stages.openStages, stages.scene, unwritten]);
   // Nothing selected, so no detour: however the selection was cleared.
   if (selectedId === null && detourFor !== null) setDetourFor(null);
 

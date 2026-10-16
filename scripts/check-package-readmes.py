@@ -75,6 +75,7 @@ EXTERNAL = {
 # Remote APIs a package reaches over net/http, a raw gRPC connection or a subprocess (also one run in
 # the Sandbox), which no module import reveals.
 REACHES = {
+    "internal/comm/platform/connectorlibrary": ("Connector catalog API",),
     "internal/dexai/agents/sandbox/docker": ("sandboxd API",),
     "internal/dexai/agents/sandbox/kube": ("Preview application API",),
     "internal/dexai/agents/sandbox/workspace/git": ("GitHub Git API",),
@@ -94,7 +95,7 @@ REACHES = {
     "internal/dexai/projects/infra/kube/connect": ("project Dex API", "application Worker API"),
     "internal/dexai/projects/projecttest": ("business API",),
     "internal/dexai/studio/confighost": ("Connector provider API",),
-    "internal/dexai/studio/confighost/connectormanifest": ("GitHub Releases API", "Connector catalog API", "Connector library source API", "OAuth provider API"),
+    "internal/dexai/studio/confighost/connectormanifest": ("GitHub Releases API", "Connector library source API", "OAuth provider API"),
     "internal/dexai/tenancy/accountdao": ("PostgreSQL API",),
     "internal/dexai/tenancy/connections": ("OAuth provider API",),
 }

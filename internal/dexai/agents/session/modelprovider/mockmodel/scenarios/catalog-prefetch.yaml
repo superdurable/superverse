@@ -1,0 +1,77 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# The first reply does not wait for the workspace. The request names Stripe and Slack, so the
+# Session's first segment lists both in <catalog_matches>, which the server found in its copy of
+# the published catalog, and the first model call starts while the workspace request runs beside
+# it. The card is recorded at once from those matches, with no connector_select subagent and no
+# connector_catalog call. The read of AGENTS.md is the first workspace tool: it joins the request in
+# flight and waits for it, and the next request carries the repository context as one notice after
+# the segment_start, which lacks it. The script stands in for the build: it names the application in
+# the page heading, restores the dependencies and pushes through the real commit gate, tracing R1 as
+# untested because the Stripe and Slack connectors have no mocks yet. Its last reply proves that no
+# later boundary appended the context again.
+name: catalog-prefetch
+title: "Card from catalog matches"
+description: "A request that names Stripe and Slack: the card is recorded from the server's catalog matches while the workspace starts, the repository context arrives as one notice before the first edit, and the change is pushed."
+category: project_feature
+inputs:
+  - label: "Describe the application"
+    message: "Post new Stripe payments to Slack."
+    replies:
+      - thinking: "The catalog matches list Stripe with its Checkout Session trigger and Slack with postChannelMessage, so the card needs no further search."
+        text: "Here is what I will build. I am starting now; tell me in the chat if anything should change."
+        expect_segment_start: ["<catalog_matches>", "\"id\":\"stripe\"", "\"id\":\"slack\""]
+        tool_uses:
+          - name: confirm_requirements
+            input:
+              title: "Stripe payments in Slack"
+              summary: "Each completed Stripe checkout posts its amount to a Slack channel the team chooses."
+              features:
+                - {id: R1, text: "A completed Stripe checkout posts one message with its amount to the chosen Slack channel."}
+              connections:
+                - need: "Receive completed checkouts"
+                  connector: stripe
+                  operations: [checkoutSessionUpdated]
+                  status: new
+                  user_setup: "Connect the Stripe account in Studio."
+                - need: "Post the payment message"
+                  connector: slack
+                  operations: [postChannelMessage]
+                  status: new
+                  user_setup: "Connect the Slack workspace in Studio and choose the channel."
+              user_setup: ["Connect Stripe and Slack in Studio."]
+              acceptance: ["A test checkout in Stripe's test mode posts its amount to the chosen Slack channel."]
+      - text: "The repository context has not arrived yet, so I read the template's instructions first."
+        tool_uses:
+          - name: read
+            input: {path: AGENTS.md, limit: 40}
+      - thinking: "The repository context is in the conversation now; start with the page heading."
+        text: "Naming the application on its page."
+        expect_repository_context_notice: true
+        tool_uses:
+          - name: edit
+            input: {path: web/src/App.tsx, old_string: "<h1>Text Summary</h1>", new_string: "<h1>Stripe payments in Slack</h1>"}
+      - text: "Restoring the application's dependencies, as the template's instructions say."
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap", description: "Restore the application's dependencies", timeout_seconds: 600}
+      - text: "Running the source checks and pushing the change."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Name the Stripe payments in Slack application"
+              verification:
+                - "grep -n <h1> web/src/App.tsx shows the new heading"
+              requirements:
+                - id: R1
+                  evidence: [web/src/App.tsx]
+                  untested_reason: "The Stripe and Slack connectors have no mocks yet, so no API test can drive a checkout; a person checks it with Stripe's test mode."
+              requirements_revision: 1
+      - text: "The card is recorded as version 1, and the first change is pushed to the default branch."
+        expect_repository_context_notice: true

@@ -42,7 +42,7 @@ ProjectCreationPage admits the managed source with a stable request ID and the S
 first message with its message ID and model, which ProjectFlow starts the Session with, so the
 start needs no open tab; it marks the Project's first conversation in this browser and opens
 the Builder. ProjectBuilder follows the Project's stage (`lib/project/stage`): the chat
-alone until the agent's first requirements card or the agent's own processes, then the
+alone until the first draft of the agent's first requirements card or the agent's own processes, then the
 standard frame, whose tabs, Publish and Preview's status appear as they have something
 to show. ProjectPage is the Project's
 details: its status, repository, links into the Builder, the Preview's automatic

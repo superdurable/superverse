@@ -8,7 +8,8 @@
 
 /*
  * What the hosts of a Flow design use besides its lazy view: the card's change lines against the current
- * source, and the Process Brief that reads the card with its design.
+ * source, the Process Brief that reads the card with its design, and the Brief of a card still being written.
  */
 export { designChangeLines } from "@/components/flow/design/design-compare";
+export { DraftBrief } from "@/components/flow/design/brief/DraftBrief";
 export { ProcessBrief } from "@/components/flow/design/brief/ProcessBrief";

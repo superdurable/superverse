@@ -86,7 +86,7 @@ test("one release-newsletter prompt produces pushed, valid application source", 
   // The server created the Project from the template revision whose design Studio compares Flow designs with.
   expect(initial.templateRevision).toBe(appTemplateDesign.templateRevision);
   // A new Project opens on its first conversation: the chat is the whole page, with no tabs and nothing of the
-  // template it started from, until the agent's first requirements card switches it to the Builder's Flow tab.
+  // template it started from, until the first draft of the agent's requirements card switches it to the Flow tab.
   await expect(page.getByRole("region", { name: "Project chat" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Surface" })).toHaveCount(0);
   await expect(page.getByTestId("project-map")).toHaveCount(0);

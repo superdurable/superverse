@@ -5,7 +5,7 @@ Purpose: Resolves and verifies official Connector releases, validates values aga
 
 Callers: `internal/dexai/api/tenancy`, `internal/dexai/bootstrap`, `internal/dexai/studio/confighost` and `internal/dexai/tenancy/connections` import this package.
 
-Dependencies: it imports `internal/comm`, `internal/comm/platform/connectorlibrary` and `internal/dexai/studio/flowapi/fdg` and calls the Connector catalog, Connector library source, GitHub Releases and OAuth provider APIs.
+Dependencies: it imports `internal/comm`, `internal/comm/platform/connectorlibrary` and `internal/dexai/studio/flowapi/fdg` and calls the Connector library source, GitHub Releases and OAuth provider APIs.
 
 ```mermaid
 flowchart LR
@@ -17,10 +17,9 @@ flowchart LR
   self --> d0["internal/comm"]
   self --> d1["internal/comm/platform/connectorlibrary"]
   self --> d2["internal/dexai/studio/flowapi/fdg"]
-  self --> e0(["Connector catalog API"])
-  self --> e1(["Connector library source API"])
-  self --> e2(["GitHub Releases API"])
-  self --> e3(["OAuth provider API"])
+  self --> e0(["Connector library source API"])
+  self --> e1(["GitHub Releases API"])
+  self --> e2(["OAuth provider API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 
@@ -43,7 +42,7 @@ that manifest declares. Pseudo-versions are refused.
 | `value_sources.go` | Value sources (a literal, or a credential field, setting, key member or template) and their resolution with the rules of Dex Web: `ResolveOAuth2`, `GrantValues` |
 | `token_grants.go` | The refresh and minting declarations (`oauth2.refresh`, `clientCredentials`, `serviceAccount.jwtBearer`), their grants with defaults, the host-kept credentials, token requests and responses kept raw, the authorization code exchange, its credentials and identity derivations |
 | `studio_commands.go` | Studio command declaration checks |
-| `catalog.go` | The published catalog of released connectors, kept five minutes (`Catalog`) |
+| `catalog.go` | The released connectors of the published catalog (`Catalog`), read from the server replica's copy (`connectorlibrary.PublishedCatalog`), which fetches again when it is older than five minutes |
 | `catalog_logos.go` | Each catalog release's logo from the library's source at its tag, kept for the process (`Catalog.WithLogos`) |
 | `endpoint_bound.go` | The endpoint-bound connectors (Stripe, Typeform, Help Scout and Calendly), whose connections are tied to one address, each with its reason (`EndpointBoundReason`), until the library's manifest declares it |
 

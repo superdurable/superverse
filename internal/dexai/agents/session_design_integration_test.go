@@ -14,6 +14,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	sessionagent "github.com/superdurable/superversev2/internal/dexai/agents/session"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
@@ -170,10 +171,83 @@ func TestSessionMockDesignRefusedDexIntegration(t *testing.T) {
 	requireProgress(t, agent, conversation.MockProgress{Scenario: "design-refused", Input: 1})
 }
 
+// draftSteps counts the designed Steps a draft names.
+func draftSteps(draft agentloop.RequirementsDraft) int {
+	count := 0
+	for _, flow := range draft.Flows {
+		count += len(flow.StepTypes)
+	}
+	return count
+}
+
+// requireCardDrafts reads the RequirementsDraft Stream of the Session, whose
+// one card call streamed its input at 100 ms per delta: several drafts, each
+// received before the card was recorded, growing to the whole card (the mock
+// writes its keys in sorted order, the design first), the last one complete
+// and naming the call that recorded it with its title and design.
+func requireCardDrafts(ctx context.Context, s *mockSession, agent agentloop.AgentSnapshot) {
+	s.t.Helper()
+	confirmed := agent.Description.ConfirmedRequirements
+	drafts, err := s.client.RequirementsDraftsForTest(ctx, s.id, 50)
+	if err != nil {
+		s.t.Fatalf("listing the requirements drafts of %s: %v", s.id, err)
+	}
+	if len(drafts) < 3 {
+		s.t.Fatalf("the card streamed %d drafts, want one at most every second while it streamed for about 16 seconds", len(drafts))
+	}
+	// The card's reply may already be archived: page back from the current messages until it shows.
+	var cardCall conversation.CallID
+	for page := agent.History; ; {
+		for _, message := range ofRole(page.Messages, conversation.MessageRoleAssistant) {
+			for _, call := range message.Message.ToolCalls {
+				if call.Name == conversation.ToolConfirmRequirements && cardCall == "" {
+					cardCall = call.ID
+				}
+			}
+		}
+		if cardCall != "" || page.NextBeforeSequence == nil {
+			break
+		}
+		if page, err = s.client.GetArchivedMessageRange(ctx, s.id, *page.NextBeforeSequence, 200); err != nil {
+			s.t.Fatalf("reading the archived messages of %s: %v", s.id, err)
+		}
+	}
+	if cardCall == "" {
+		s.t.Fatal("the history holds no confirm_requirements call")
+	}
+	// ConfirmedAt is RouteTool's first attempt, which Dex reports in whole seconds (truncated), and
+	// the complete draft is written at the call's content_block_stop just before RouteTool, so a
+	// draft may carry a time up to a second after it. The oldest draft proves the card streamed.
+	recordedBy := confirmed.ConfirmedAt.Add(time.Second)
+	if oldest := drafts[len(drafts)-1]; oldest.CreatedTime.After(confirmed.ConfirmedAt.Add(-5 * time.Second)) {
+		s.t.Fatalf("the oldest draft arrived at %s, less than 5 seconds before the card was recorded at %s", oldest.CreatedTime, confirmed.ConfirmedAt)
+	}
+	for index, draft := range drafts {
+		if draft.CreatedTime.After(recordedBy) {
+			s.t.Fatalf("draft %d arrived at %s, after the card was recorded at %s", index, draft.CreatedTime, confirmed.ConfirmedAt)
+		}
+		if draft.Value.CallID != cardCall || draft.Value.BaseRevision != 0 || draft.Value.Turn != drafts[0].Value.Turn {
+			s.t.Fatalf("draft %d names call %s at base revision %d in turn %d, not the card call %s at 0", index, draft.Value.CallID, draft.Value.BaseRevision, draft.Value.Turn, cardCall)
+		}
+		if newer := drafts[max(index-1, 0)].Value; index > 0 && (draft.Value.Complete || len(draft.Value.Features) > len(newer.Features) || draftSteps(draft.Value) > draftSteps(newer)) {
+			s.t.Fatalf("draft %d, older than draft %d, is complete or holds more features or Steps: %+v", index, index-1, draft.Value)
+		}
+	}
+	last := drafts[0].Value
+	if !last.Complete || last.Title != confirmed.Spec.Title || last.Summary != confirmed.Spec.Summary || len(last.Features) != len(confirmed.Spec.Features) {
+		s.t.Fatalf("the last draft %+v is not the complete card %q", last, confirmed.Spec.Title)
+	}
+	if len(last.Flows) != 1 || last.Flows[0].FlowType != "TextSummaryFlow" || len(last.Flows[0].StepTypes) != 6 || last.DesignSummary != confirmed.Spec.Design.Summary {
+		s.t.Fatalf("the last draft does not carry the designed TextSummaryFlow with its six Steps: %+v", last.Flows)
+	}
+}
+
 // summary-approval records a card whose design is the approval it then
 // builds in the same turn, and pushes it through the commit gate without
 // blocked: that push completes the build, so the current design reads as
-// built, and the final reply says it was built as recorded.
+// built, and the final reply says it was built as recorded. The card streamed
+// its drafts before it was recorded, and the edit that declares
+// AwaitSummaryApproval marked that designed Step, and only it, written.
 func TestSessionMockSummaryApprovalDesignBuiltDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
 	defer cancel()
@@ -192,6 +266,10 @@ func TestSessionMockSummaryApprovalDesignBuiltDexIntegration(t *testing.T) {
 		t.Fatalf("the built design names commit %q, not the pushed head %s", agent.Description.ConfirmedDesignBuiltCommit, head)
 	}
 	session.flowDesign(ctx, flowdesign.SlotConfirmed, confirmed.Spec.Design)
+	if written := agent.Description.ConfirmedDesignWrittenSteps; !slices.Equal(written, []string{"TextSummaryFlow.AwaitSummaryApproval"}) {
+		t.Fatalf("the edits marked %v written, want only TextSummaryFlow.AwaitSummaryApproval, whose struct the scenario declares", written)
+	}
+	requireCardDrafts(ctx, session, agent)
 	if final := agent.History.Messages[len(agent.History.Messages)-1].Message.Content; !strings.Contains(final, "built the design as recorded") {
 		t.Fatalf("the final reply does not report the build against the design: %q", final)
 	}

@@ -40,7 +40,6 @@ var (
 	sessionRevisionAttribute  = dex.DefineAttribute[uint64]("Revision")
 	sessionCreatedAtAttribute = dex.DefineAttribute[time.Time]("CreatedAt")
 	sessionUpdatedAtAttribute = dex.DefineAttribute[time.Time]("UpdatedAt")
-
 	// The conversation: the selected model, the state machine, the
 	// append-only entry log and the context segment that replays it.
 	sessionModelAttribute          = dex.DefineAttribute[agentloop.SessionModel]("SessionModel")
@@ -55,7 +54,6 @@ var (
 	archivedMessagesAttribute      = dex.DefineAttributeMap[conversation.ArchivedEntryChunk]("ArchivedMessages")
 	queuedUserMessagesChannel      = dex.DefineChannel[conversation.PendingUserMessage]("QueuedUserMessages")
 	steeredUserMessagesChannel     = dex.DefineChannel[conversation.PendingUserMessage]("SteeredUserMessages")
-
 	// The Agent's todo list, the current requirements with their Flow design, and what a turn
 	// waits for: answers, approvals, a timer and the branches of a parallel tool wave.
 	todoListAttribute              = dex.DefineAttribute[agentloop.TodoList]("TodoList")
@@ -63,13 +61,13 @@ var (
 	flowDesignsAttribute           = dex.DefineAttributeMap[flowdesign.Design]("FlowDesigns")
 	builtFlowDesignAttribute       = dex.DefineAttribute[string]("BuiltFlowDesign")
 	builtFlowDesignCommitAttribute = dex.DefineAttribute[string]("BuiltFlowDesignCommit")
+	writtenDesignStepsAttribute    = dex.DefineAttribute[flowdesign.WrittenSteps]("WrittenDesignSteps")
 	pendingUserInputAttribute      = dex.DefineAttribute[agentloop.PendingUserInput]("PendingUserInput")
 	pendingApprovalAttribute       = dex.DefineAttribute[agentloop.PendingApproval]("PendingApproval")
 	pendingTimerAttribute          = dex.DefineAttribute[agentloop.PendingTimer]("PendingTimer")
 	answeredUserInputsChannel      = dex.DefineChannel[agentloop.AnsweredUserInput]("AnsweredUserInputs")
 	toolApprovalsChannel           = dex.DefineChannelMap[agentloop.ToolApproval]("ToolApprovals")
 	parallelToolResultsChannel     = dex.DefineChannelMap[parallelToolResult]("ParallelToolResults")
-
 	// What happens beside the turn: the user's Stop, notifications and their admitted IDs, background
 	// commands with the stop of each one's watch by task ID, subagents and the Preview's automatic deployment.
 	agentInterruptAttribute                 = dex.DefineAttribute[agentloop.AgentInterrupt]("AgentInterrupt")
@@ -85,17 +83,16 @@ var (
 	previewHandoffAttribute             = dex.DefineAttribute[agentloop.PreviewHandoff]("PreviewHandoff")
 	previewAutoDeployAttribute          = dex.DefineAttribute[bool]("PreviewAutoDeploy")
 	previewAutoDeployChangedByAttribute = dex.DefineAttribute[conversation.Actor]("PreviewAutoDeployChangedBy")
-
 	// The Session workspace (its request, accepted lease and the wave using it) and one
 	// outcome per WorkspaceRequestID from the SessionWorkspaceFlow, which only the waiting Step consumes.
 	workspaceAttribute       = dex.DefineAttribute[agentloop.SessionWorkspace]("Workspace")
 	workspaceUseAttribute    = dex.DefineAttribute[agentloop.WorkspaceUse]("WorkspaceUse")
 	workspaceOutcomesChannel = dex.DefineChannelMap[agentloop.WorkspaceReport]("WorkspaceOutcomes")
-
 	// Best-effort live output; the Snapshot is the durable record.
-	reasoningSummaryStream = dex.DefineStream[string]("ReasoningSummary", 10<<20)
-	assistantTextStream    = dex.DefineStream[string]("AssistantText", 10<<20)
-	agentActivityStream    = dex.DefineStream[conversation.AgentEvent]("AgentActivity", 10<<20)
+	reasoningSummaryStream  = dex.DefineStream[string]("ReasoningSummary", 10<<20)
+	assistantTextStream     = dex.DefineStream[string]("AssistantText", 10<<20)
+	agentActivityStream     = dex.DefineStream[conversation.AgentEvent]("AgentActivity", 10<<20)
+	requirementsDraftStream = dex.DefineStream[agentloop.RequirementsDraft]("RequirementsDraft", 10<<20)
 )
 
 // SessionAgentFlow owns the durable coding Session and its AI Agent state machine.
@@ -103,6 +100,7 @@ type SessionAgentFlow struct {
 	dex.FlowDefaults
 	dependency     SessionAgentFlowDependency
 	repository     repositoryContextReader
+	catalog        connectorCatalogMatcher
 	modelClient    conversation.ModelClient
 	sandbox        *sandboxtools.Runner
 	diagnostics    ProjectDiagnosticsReader
@@ -181,7 +179,7 @@ func (*SessionAgentFlow) GetPersistenceSchema() dex.PersistenceSchema {
 			sessionStatusAttribute, closeReasonAttribute, sessionRevisionAttribute, sessionCreatedAtAttribute, sessionUpdatedAtAttribute,
 			sessionModelAttribute, executorAttribute, agentStateAttribute, messageWindowLockAttribute, waitingInputRoundAttribute,
 			contextSegmentAttribute, contextSegmentPromptsAttribute, currentMessagesAttribute, archivedMessagesAttribute, todoListAttribute,
-			confirmedRequirementsAttribute, flowDesignsAttribute, builtFlowDesignAttribute, builtFlowDesignCommitAttribute, pendingUserInputAttribute, pendingApprovalAttribute, pendingTimerAttribute,
+			confirmedRequirementsAttribute, flowDesignsAttribute, builtFlowDesignAttribute, builtFlowDesignCommitAttribute, writtenDesignStepsAttribute, pendingUserInputAttribute, pendingApprovalAttribute, pendingTimerAttribute,
 			workspaceAttribute, workspaceUseAttribute,
 			agentInterruptAttribute, notificationReceiptsAttribute, backgroundCommandsAttribute, subagentsAttribute, pendingSubagentWorktreeCleanupAttribute, connectorContributionsAttribute, taskWorktreesAttribute, previewHandoffAttribute, previewAutoDeployAttribute, previewAutoDeployChangedByAttribute,
 		},
@@ -189,7 +187,7 @@ func (*SessionAgentFlow) GetPersistenceSchema() dex.PersistenceSchema {
 			queuedUserMessagesChannel, steeredUserMessagesChannel, answeredUserInputsChannel, remoteInboxChannel,
 			toolApprovalsChannel, parallelToolResultsChannel, sessionNotificationsChannel, backgroundCommandStopsChannel, workspaceOutcomesChannel,
 		},
-		Streams: []dex.StreamDef{reasoningSummaryStream, assistantTextStream, agentActivityStream},
+		Streams: []dex.StreamDef{reasoningSummaryStream, assistantTextStream, agentActivityStream, requirementsDraftStream},
 	}
 }
 
@@ -222,13 +220,11 @@ var (
 	recordToolFailureStepOptions    = conversationStepOptions(taskMessageMaps, interruptLock, executorLock)
 	parallelToolRecoveryStepOptions = &dex.StepOptions{WaitForMethodTimeout: time.Minute, ExecuteMethodTimeout: time.Minute}
 	timerStepOptions                = &dex.StepOptions{ExecuteLoadAttributeMaps: messageMaps, ExecuteLockAttributes: messageMutationStepOptions.ExecuteLockAttributes}
-
 	// A background command's end is recorded under its notification's receipts lock, by one writer at a
 	// time; a failed WaitFor records it lost, exhausted retries AbandonBackgroundCommand.
 	abandonBackgroundCommandStepOptions = &dex.StepOptions{ExecuteMethodTimeout: 30 * time.Second, ExecuteRetry: shortStepRetry, ExecuteLoadAttributeMaps: taskMaps}
 	backgroundExitStepOptions           = &dex.StepOptions{WaitForFailure: dex.ProceedOnWaitForFailure, ExecuteMethodTimeout: 30 * time.Second, ExecuteRetry: shortStepRetry,
 		ExecuteLoadAttributeMaps: taskMaps, ExecuteLockAttributes: []dex.AttributeLock{receiptsLock}}
-
 	// The lifecycle Steps lock SessionStatus.
 	sessionLifecycleStepOptions = &dex.StepOptions{ExecuteMethodTimeout: 30 * time.Second, ExecuteDurability: dex.StepDurabilitySync,
 		ExecuteRetry: shortStepRetry, ExecuteLockAttributes: []dex.AttributeLock{statusLock}}
@@ -591,8 +587,8 @@ func (step AnsweredInput) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecisio
 		return dex.GoTo(AnsweredInput{}, nil, dex.WithStepOptions(plan.load)), nil
 	case nextAwaitRemote:
 		return dex.GoTo(AwaitRemoteAgent{}, nil), nil
-	case nextRequestWorkspace:
-		return dex.GoTo(RequestSessionWorkspace{}, workspaceDemand{ResumeAt: agentloop.ContinueStartTurn}), nil
+	case nextCallModelPreparingContext:
+		return dex.GoToMany(dex.MovementOf(CallModel{}, plan.admission, dex.WithStepOptions(plan.load)), dex.MovementOf(RequestSessionWorkspace{}, workspaceDemand{ResumeAt: agentloop.ContinuePrepareContext})), nil
 	case nextCompactContext:
 		return dex.GoTo(CompactContext{}, plan.compaction, dex.WithStepOptions(plan.load)), nil
 	default:
@@ -643,15 +639,14 @@ func (step CheckSteered) Execute(ctx dex.Context, next agentloop.Continuation) (
 	}
 	switch next {
 	case agentloop.ContinueStartTurn, agentloop.ContinueCompactContext, agentloop.ContinueCallModel:
-		// The first segment opens once the repository context is read; the cold path resumes
-		// this continuation, so a workspace that cannot be prepared only delays the model.
+		// The first segment opens at once; its workspace request starts beside the first model call.
 		switch plan := step.flow.planModelCall(ctx, next); plan.next {
 		case nextLoadExecutorContext:
 			return dex.GoTo(CheckSteered{}, next, dex.WithStepOptions(plan.load)), nil
 		case nextAwaitRemote:
 			return dex.GoToMany(dex.MovementOf(AwaitRemoteAgent{}, nil)), nil
-		case nextRequestWorkspace:
-			return dex.GoTo(RequestSessionWorkspace{}, workspaceDemand{ResumeAt: next}), nil
+		case nextCallModelPreparingContext:
+			return dex.GoToMany(dex.MovementOf(CallModel{}, plan.admission, dex.WithStepOptions(plan.load)), dex.MovementOf(RequestSessionWorkspace{}, workspaceDemand{ResumeAt: agentloop.ContinuePrepareContext})), nil
 		case nextCompactContext:
 			return dex.GoTo(CompactContext{}, plan.compaction, dex.WithStepOptions(plan.load)), nil
 		default:
@@ -813,6 +808,12 @@ func (step CallModel) Execute(ctx dex.Context, input modelAdmission) (*dex.StepD
 	// from a Write call in the Step method. A lost write never fails the call (StreamWritten).
 	request.WriteAssistant = func(chunk string) error { dexflow.StreamWritten(ctx, assistant.Write(chunk)); return nil }
 	request.WriteReasoning = func(chunk string) error { dexflow.StreamWritten(ctx, reasoning.Write(chunk)); return nil }
+	drafts := agentloop.NewRequirementsDrafter(input.Turn, confirmedRevision(ctx))
+	request.WriteToolInput = func(progress conversation.ToolInputProgress) {
+		if draft, isDue := drafts.Next(progress, time.Now()); isDue {
+			dexflow.StreamWritten(ctx, requirementsDraftStream.Write(ctx, draft))
+		}
+	}
 	outcome, err := step.flow.completeModelCall(ctx, segment, request, input)
 	if err != nil {
 		return nil, err

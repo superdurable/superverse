@@ -55,7 +55,7 @@ func TestOAuthSeedKeepsNoPlatformSecretIntegration(t *testing.T) {
 		Scopes: append(append([]string{}, method.OAuth2.Scopes.List...), method.OAuth2.UserScopes...)}}
 	providers := NewProviderHTTPClient(true)
 	reader := NewCredentialReader(dao, objects, releases, providers, clients, slog.Default())
-	shared := NewTeamSpaceConnections(dao, objects, releases, connectormanifest.NewCatalog(releaseClient), clients, providers, reader, nil, true)
+	shared := NewTeamSpaceConnections(dao, objects, releases, connectormanifest.NewCatalog(releaseClient, connectorlibrary.NewPublishedCatalog(releaseClient)), clients, providers, reader, nil, true)
 	teamSpaceID, account := "ts"+flowid.RandomID(10), flowid.RandomID(32)
 	registerAccount(ctx, t, db, account, teamSpaceID)
 	t.Cleanup(func() {

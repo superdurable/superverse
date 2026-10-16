@@ -172,10 +172,14 @@ anchors it; `**/client*.go` finds a file anywhere below `path`, while `dex/clien
   generated decoding (required fields, types, defaults) and `Validate` (ranges, array sizes, Unicode
   string lengths). Handlers add what a schema cannot say: byte and NUL limits, blank text and path
   rules. An omitted optional value takes its default; an explicit zero is validated, not replaced.
-- **`eager_input_streaming`** is set on `write` and `edit`, so long `content` and
-  `old_string`/`new_string` stream early. The input is decoded and validated only after the
+- **`eager_input_streaming`** is set on `write`, `edit` and `confirm_requirements`, so long `content`,
+  `old_string`/`new_string` and the card stream early. Eager streaming is independent of strictness:
+  `confirm_requirements` stays non-strict. The input is decoded and validated only after the
   `tool_use` block completes, so partial or invalid JSON (for example after `max_tokens`) never
-  reaches a handler.
+  reaches a handler; only the card's partial input is read before that, leniently and for display
+  only, into the `RequirementsDraft` Stream ([requirements drafts](streaming-and-studio.md#requirements-drafts)).
+  The flag is part of the frozen tool definitions and so of the prompt digest: setting it on the card
+  rolled each open Session's context over once at its next turn ([rollover](context-management.md#rollover)).
 - The live Claude API test sends the full strict tool set to each supported model
   ([context management](context-management.md#models)).
 
@@ -331,7 +335,8 @@ runtime resolved for it.
   cannot be resolved are treated the same; `errClosed` and `errCapacity` stay distinct.
 - The pool is never authority: a replaced Worker rebuilds it from the lease in Session Attributes.
 - The connector catalog is cached for five minutes in the Runner: one public document of at most
-  1 MiB, no credential, no goroutine.
+  1 MiB, no credential, no goroutine. The server keeps its own copy for the catalog matches of a
+  Session's first request ([connectors](connectors.md#catalog-matches-of-the-first-request)).
 
 ## Commands
 
@@ -756,7 +761,9 @@ and `glob` the pattern, `commit_and_push` the first line of its summary, `connec
 platform tools the Flow or operation, `read_task_output` and `stop_task` the task ID, `start_agent` its
 description, `merge_agent_changes` the agent ID, `confirm_requirements` the title), `tool_progress` with
 the attempt number only, and the terminal completed or failed event with the failure code. No file
-content, diff or command output is streamed. The budget is 10 MiB shared by every execution with the same
+content, diff or command output is streamed. `RequirementsDraft` carries the drafts of a
+`confirm_requirements` call while the model writes it, at most one a second, which `CallModel` writes
+([requirements drafts](streaming-and-studio.md#requirements-drafts)). The budget is 10 MiB shared by every execution with the same
 Flow type and Stream name; delivery is best effort and the tool result in `CurrentMessages` is canonical
 ([streaming-and-studio.md](streaming-and-studio.md)).
 

@@ -318,6 +318,7 @@ function agentRequirementsView(value: AgentRequirements__Output) {
       : null,
     designBuilt: value.designBuilt,
     designBuiltCommit: value.designBuiltCommit,
+    designWrittenSteps: value.designWrittenSteps,
   };
 }
 

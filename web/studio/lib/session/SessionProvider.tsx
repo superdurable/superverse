@@ -14,19 +14,20 @@ import { useSessionOwner } from "./use-session-owner";
 type SessionContextValue = ReturnType<typeof useSessionOwner>;
 type SessionResourceValue = Pick<
   SessionContextValue,
-  "projectId" | "resource" | "status" | "loading" | "error" | "streamState" | "refresh"
+  "projectId" | "resource" | "status" | "loading" | "error" | "streamState" | "refresh" | "requirementsDraft"
 >;
 const SessionContext = createContext<SessionContextValue | null>(null);
 const SessionResourceContext = createContext<SessionResourceValue | null>(null);
 
 function SessionOwner({ projectId, children }: { projectId: string; children: ReactNode }) {
   const session = useSessionOwner(projectId);
-  const { resource, status, loading, error, streamState, refresh } = session;
+  const { resource, status, loading, error, streamState, refresh, requirementsDraft } = session;
   // Streamed text changes only the conversation context. Resource views and
-  // indicators read this stable selection of the same owner.
+  // indicators read this stable selection of the same owner, with the card's
+  // draft, which changes at most once a second while the agent writes it.
   const selected = useMemo(
-    () => ({ projectId, resource, status, loading, error, streamState, refresh }),
-    [projectId, resource, status, loading, error, streamState, refresh],
+    () => ({ projectId, resource, status, loading, error, streamState, refresh, requirementsDraft }),
+    [projectId, resource, status, loading, error, streamState, refresh, requirementsDraft],
   );
   return (
     <SessionResourceContext.Provider value={selected}>

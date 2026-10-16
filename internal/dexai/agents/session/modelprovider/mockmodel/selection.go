@@ -22,6 +22,7 @@ import (
 
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteexec"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 )
 
@@ -68,6 +69,11 @@ type selection struct {
 	// segmentStart is the text of the request's first message, the
 	// segment_start, which every reply of the request is checked against.
 	segmentStart string
+	// contextInStart reports whether the segment_start block holds the
+	// repository context, and contextNotices counts the later user text
+	// blocks that do, up to the reply.
+	contextInStart bool
+	contextNotices int
 	// run names this run of the scenario: the segment and the position of the
 	// message that started it, so a Session that runs scenarios one after
 	// another, or one scenario again, never repeats a tool use ID.
@@ -154,7 +160,7 @@ func walk(messages []requestMessage, onAssistant func(requestMessage, selection)
 			if err != nil {
 				return selection{}, err
 			}
-			current = current.receive(received, index).withMessageArgumentsOf(message)
+			current = current.receive(received, index).withMessageArgumentsOf(message).countRepositoryContext(message, index)
 			if err := current.checkHandoffBoundary(message); err != nil {
 				return selection{}, err
 			}
@@ -183,6 +189,32 @@ func walk(messages []requestMessage, onAssistant func(requestMessage, selection)
 		return selection{}, errors.New("interactive remote tool uses lack their complete result unit")
 	}
 	return current, nil
+}
+
+// countRepositoryContext records whether the segment_start, the first text
+// block of the first message, holds the repository context, and counts the
+// later user text blocks that hold it: the notices the Session appends.
+func (sel selection) countRepositoryContext(message requestMessage, index int) selection {
+	for position, text := range message.texts() {
+		switch {
+		case index == 0 && position == 0:
+			sel.contextInStart = agentloop.HoldsRepositoryContext(text)
+		case agentloop.HoldsRepositoryContext(text):
+			sel.contextNotices++
+		}
+	}
+	return sel
+}
+
+// repositoryContextStop is the stop text of a step that expects the
+// repository context in exactly one notice after a segment_start without it,
+// when the request carries it otherwise; "" when it may reply.
+func (sel selection) repositoryContextStop() string {
+	if step := sel.script.stepAt(sel.at); step == nil || !step.ExpectRepositoryContextNotice || !sel.contextInStart && sel.contextNotices == 1 {
+		return ""
+	}
+	return fmt.Sprintf("Mock scenario %s stopped at %s: the repository context is in the segment_start (%t) and in %d notices, not in exactly one notice",
+		sel.script.Name, sel.at, sel.contextInStart, sel.contextNotices)
 }
 
 // settleTools checks the tool results of answer against the reply of the
@@ -485,6 +517,9 @@ func (sel selection) nextReply() (reply, error) {
 	}
 	if missing := sel.script.missingFromSegmentStart(sel.at, sel.arguments, sel.segmentStart); missing != "" {
 		return textReply(fmt.Sprintf("Mock scenario %s stopped at %s: the first message of the context segment lacks %q", sel.script.Name, sel.at, missing)), nil
+	}
+	if stop := sel.repositoryContextStop(); stop != "" {
+		return textReply(stop), nil
 	}
 	return sel.script.replyAt(sel.at, sel.arguments, sel.run)
 }

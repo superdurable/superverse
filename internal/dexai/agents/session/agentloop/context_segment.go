@@ -79,6 +79,11 @@ type ContextSegment struct {
 	CacheAnchor          conversation.Sequence `json:"cache_anchor,omitempty"`
 	ForceCompaction      bool                  `json:"force_compaction,omitempty"`
 	CompactionFailedTurn int64                 `json:"compaction_failed_turn,omitempty"`
+	// AwaitsRepositoryContext marks a segment that opened without the
+	// repository context: the first model-call boundary after the workspace
+	// read it appends it once as a notice (RepositoryContextNotice) and clears
+	// the mark. A segment of an earlier binary decodes false.
+	AwaitsRepositoryContext bool `json:"awaits_repository_context,omitempty"`
 }
 
 // PromptsKey is the ContextSegmentPrompts instance key of the segment, its
@@ -265,23 +270,27 @@ func SegmentChange(segment ContextSegment, selected conversation.Model, settings
 	return SegmentReasonCompaction
 }
 
-// SegmentStart is the opening message of a segment.
+// SegmentStart is the opening message of a segment. CatalogMatches, the
+// released connectors the first request names, only opens the Session's
+// first segment.
 type SegmentStart struct {
 	Summary               string
 	RepositoryContext     string
 	ConfirmedRequirements *ConfirmedRequirements
 	TodoList              *TodoList
+	CatalogMatches        string
 	PendingRequest        string
 }
 
 // Text renders the segment_start text: the summary, the repository context,
-// the current requirements, the todo list and the pending request, each in
-// its own tag.
+// the current requirements, the todo list, the catalog matches and the
+// pending request, each in its own tag; the pending request stays last.
 func (start SegmentStart) Text() string {
 	text := taggedSection("context_summary", start.Summary) +
 		taggedSection(repositoryContextTag, start.RepositoryContext) +
 		taggedSection("confirmed_requirements", confirmedRequirementsText(start.ConfirmedRequirements)) +
 		taggedSection("current_plan", todoListText(start.TodoList)) +
+		taggedSection("catalog_matches", start.CatalogMatches) +
 		taggedSection("pending_request", start.PendingRequest)
 	if text == "" {
 		return "<context_summary>\nThe conversation starts here.\n</context_summary>"
@@ -290,6 +299,19 @@ func (start SegmentStart) Text() string {
 }
 
 const repositoryContextTag = "repository_context"
+
+// RepositoryContextNotice is the user notice that brings the repository
+// context to a segment that opened without it, in the tag segment_start uses.
+func RepositoryContextNotice(repositoryContext string) conversation.Entry {
+	return conversation.NoticeEntry(conversation.EntryRoleUser, strings.TrimSuffix(taggedSection(repositoryContextTag, repositoryContext), "\n"), "")
+}
+
+// HoldsRepositoryContext reports whether text, a segment_start or a notice,
+// holds a repository context section.
+func HoldsRepositoryContext(text string) bool {
+	opening := "<" + repositoryContextTag + ">\n"
+	return strings.HasPrefix(text, opening) || strings.Contains(text, "\n"+opening)
+}
 
 // maximumRemoteAgentContextBytes bounds RemoteAgentContext: the prompts are
 // about 30 KiB and the repository context at most 8 KiB.

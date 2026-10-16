@@ -72,7 +72,8 @@ export function ProjectBuilder(props: BuilderProps) {
   const owner = useProjectResource();
   const project = owner?.snapshot;
   const role = props.role ?? (project ? projectRoleOf(project.callerRole) : null);
-  const resource = useSessionResource()?.resource;
+  const sessionResource = useSessionResource();
+  const resource = sessionResource?.resource;
   const { environment, surface } = useBuilderLocation();
   const live = project?.live && !project.live.isRemoving ? project.live : null;
   const liveOnly = role !== null && PROJECT_ROLES[role].liveOnly;
@@ -108,7 +109,11 @@ export function ProjectBuilder(props: BuilderProps) {
     >
       <WaitingRunsProvider runs={waiting}>
         <PreviewDraftProvider projectId={props.projectId} source={setupSource}>
-          <ProjectStageProvider projectId={props.projectId} session={resource ?? null}>
+          <ProjectStageProvider
+            projectId={props.projectId}
+            session={resource ?? null}
+            drafting={Boolean(sessionResource?.requirementsDraft)}
+          >
             <ComposerDraftProvider onPropose={openChatColumn}>
               <BuilderFrame {...props} role={role} />
               <ElementPicker />

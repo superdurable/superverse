@@ -271,7 +271,7 @@ chunk makes every archive write, history page and segment load read more.
 | `user_message` | user | The user's text. | public |
 | `model_reply` | assistant | Thinking (signed), text and `tool_use`, as Claude returned them. | public |
 | `tool_result` | user | One `tool_result` block. `is_error` is true when the result is not `succeeded`. | public (status only) |
-| `notice` | system or user | Mode text, continuation text or a per-message effort entry. | hidden; a stop notice is a marker |
+| `notice` | system or user | Mode text, continuation text, the repository context a segment opened without, or a per-message effort entry. | hidden; a stop notice is a marker |
 | `segment_start` | user | The segment's opening message. | hidden for the first segment, marker after |
 | `notification` | user | A task, delivery or connector notification ([notifications](notifications-and-feedback.md)). | public |
 
@@ -324,7 +324,7 @@ Every way of changing already-sent content has an append-only replacement.
 | --- | --- |
 | Current todo list | `<current_plan>` in `segment_start`; later changes are `write_todos` tool results. |
 | Reminder after an unfinished source handoff | A user notice appended on each continuation. |
-| Repository information | `<repository_context>` in `segment_start`; `Workspace.RepositoryContext` is at most 8 KiB and is recorded when the lease takes effect. |
+| Repository information | `<repository_context>` in `segment_start`; `Workspace.RepositoryContext` is at most 8 KiB and is recorded when the lease takes effect. A segment that opened before the workspace read it gets it once as a user notice. |
 | Limiting result size | Results are sized when recorded; there is no truncation on send. |
 | Shrinking a large context | Simple compaction opens a new segment. |
 | Raising effort | Per-message effort entries; the base effort is fixed per segment. |
@@ -349,6 +349,7 @@ with fixed system prompt, tools, model and base effort.
 | `CacheAnchor` | The entry carrying the explicit cache breakpoint. |
 | `ForceCompaction` | Set by `model_context_window_exceeded`. |
 | `CompactionFailedTurn` | The turn in which a compaction last failed. |
+| `AwaitsRepositoryContext` | The segment opened without the repository context and has not received it yet. `openSegment` sets it whenever its `segment_start` carries none; a segment of an earlier binary decodes false. |
 
 `ContextSegmentPrompts` (AttributeMap, key = segment number such as `3`, value
 `{System, Tools}`, about 40 KB): the frozen prompt and tool definitions. Only the current
@@ -356,10 +357,31 @@ segment's instance exists. The prompts are stored, not recomputed, so a newer se
 keeps serving an older segment unchanged until the next rollover.
 
 The `segment_start` entry is one user-role message. It contains, in order:
-`<context_summary>`, `<repository_context>`, `<current_plan>` (the todo list),
-`<pending_request>` (the current turn's bounded user request quote). When a requirements card
-was recorded it also carries the current version ([session](session.md#requirements-cards)). The current mode's notice is
-appended after it.
+`<context_summary>`, `<repository_context>`, `<confirmed_requirements>` (the current version,
+when a requirements card was recorded; [session](session.md#requirements-cards)),
+`<current_plan>` (the todo list), `<catalog_matches>` and `<pending_request>` (the current
+turn's bounded user request quote), which stays last. The current mode's notice is appended
+after it.
+
+`<catalog_matches>` opens only the Session's first segment (`session_start`): the released
+connectors that the user's own words in the first request name, as compact JSON of
+`connectorlibrary.CatalogMatches` (the catalog's source, SHA-256 and fetch time, at most six
+entries in the order the request names them, each with its module and `install_command`, the
+total and whether entries were left out), at most 8 KiB. The Step that opens the segment reads
+it from the server replica's warm copy of the published catalog without a network call; a cold
+copy or no match leaves the section out ([connectors](connectors.md#catalog-matches-of-the-first-request)).
+The section is part of the frozen entry, so it never changes, and the cache prefix (tools and
+system prompt) does not depend on it.
+
+The first segment opens at once, before the Session's workspace is ready
+([sandbox](sandbox.md#gates-and-the-cold-path)), so its `segment_start` usually carries no
+`<repository_context>` and the segment awaits it (`AwaitsRepositoryContext`). Segments are
+append-only, so the context arrives as one hidden user notice that holds exactly the
+`<repository_context>` section (`agentloop.RepositoryContextNotice`): the first model-call
+boundary (`planModelCall`) that finds the mark and a recorded `Workspace.RepositoryContext`
+appends it and clears the mark in the same commit, so it is never appended twice. A request
+that failed records no context, and nothing is appended. A later segment carries the context in
+its own `segment_start` once the workspace read it.
 
 Conversation owns the quote's existing 256 KiB total byte budget. When all retained turn requests
 fit, their exact stored text is joined unchanged with two newline bytes. Otherwise it retains the
@@ -449,7 +471,10 @@ set, and the cache would be lost anyway, so these changes cannot be absorbed by 
 
 Cost: a deployment that changes prompts or tools makes each active Session summarize once
 at its next turn. The call reads mostly cached tokens and costs roughly a few cents to
-twenty cents. A deployment that changes neither prompt nor tools triggers nothing.
+twenty cents. A deployment that changes neither prompt nor tools triggers nothing. A tool's
+`strict` and `eager_input_streaming` flags are part of its frozen definition: streaming the
+`confirm_requirements` input eagerly ([tool orchestration](tool-orchestration.md#strict-schemas))
+was such a change.
 
 A subagent never rolls over: its `Config` freezes model, effort, system prompt and tools
 for its whole run, and it compacts like the Session ([subagents](subagents.md)).
@@ -524,7 +549,8 @@ The system prompt establishes:
 - **Tools.** The tool set and its use ([tool orchestration](tool-orchestration.md)). Tool
   failures arrive as `is_error` results with an owner and an effect; a platform failure is
   not the call's fault, so use an alternative or tell the user in business terms.
-- **Discovery.** Start from the repository context. Resolve capabilities through
+- **Discovery.** Start from the repository context. Take the card's connections from the
+  catalog matches the first segment lists, and resolve other capabilities through
   `connector_catalog` and the installed operation factory before SDK internals.
   Declare connections in the application manifest and configure credentials later in
   Studio.
@@ -542,7 +568,10 @@ The system prompt establishes:
 
 For a template repository the repository context includes `AGENTS.md` at HEAD, which
 names the files to change, the reference Flow and a table from feature to skill section.
-The template keeps it within 6 KiB (`make check-app-template`).
+The template keeps it within 6 KiB (`make check-app-template`). It reaches the first
+segment as the late notice once the workspace is ready: the prompt tells the agent to write
+the requirements card from the request first and to read `AGENTS.md` itself when the
+conversation holds no repository context when it starts changing files.
 
 ## Tool result sizing
 
@@ -713,7 +742,7 @@ changes.
 
 | Name | Type | Owner and writer | Loading and locking | Growth |
 | --- | --- | --- | --- | --- |
-| `ContextSegment` | Attribute, struct (about 0.5 KB) | Every Step that appends entries (`PendingBytes`), `RecordPlatformModelResult` (usage, `CacheAnchor`, `ForceCompaction`, new segment) and `RecordCompactionFailure`, all under the message-window lock | Read by the conversation Steps | One value, replaced in place |
+| `ContextSegment` | Attribute, struct (about 0.5 KB) | Every Step that appends entries (`PendingBytes`), the model-call boundaries (`CheckSteered`, `AnsweredInput`: the first segment and the clearing of `AwaitsRepositoryContext`), `RecordPlatformModelResult` (usage, `CacheAnchor`, `ForceCompaction`, new segment) and `RecordCompactionFailure`, all under the message-window lock | Read by the conversation Steps | One value, replaced in place |
 | `SessionModel` | Attribute, struct `{Model, Revision}` | `UpdateSessionModel`; read at turn start | Own lock; no message-window lock | One value |
 | `CurrentMessages` | AttributeMap of `Entry`; key = sequence, for example `137` | The conversation Step that holds the message-window lock | Loaded in full; at most 19 entries | Bounded window |
 | `ArchivedMessages` | AttributeMap of `ArchivedEntryChunk`; key = the chunk's first sequence, for example `131` holds 131 to 140 | Same | Exact instances covering the current segment | 1,000-entry retention; chunks of the current segment are never dropped |
@@ -733,7 +762,8 @@ None added or changed by this topic. Steering, answers and notifications are own
 
 ### Streams
 
-`ReasoningSummary` and `AssistantText` (string chunks) and `AgentActivity` (`AgentEvent`)
+`ReasoningSummary` and `AssistantText` (string chunks), `AgentActivity` (`AgentEvent`) and
+`RequirementsDraft` (the drafts of a requirements card the model writes)
 are written by `CallModel` while the call runs; the short result/failure Steps
 write compaction activity (`compacted`, `compaction_failed`), never summary text. They are best effort, with a
 10 MiB budget shared per Flow type and Stream name; resume, loss and recovery are in
@@ -748,7 +778,7 @@ summary is not recoverable after reload, by design.
 | `CompactContext` | Same; returns a summary, correction or rejection outcome | Same transport settings; input names reason, original executor/Turn admission and ToolChoiceNone. No authoritative post-transport writes. |
 | `RecordPlatformModelResult` | Fresh authority/Turn, context, exact prompts/archive loads for compaction; commits history/usage or new segment | Short message/executor/interrupt-locked Step. Stale outcomes end their branch; correction calls require fresh admission. |
 | `RecordModelFailure`, `RecordCompactionFailure` | `AgentState`, `ContextSegment` | Short Steps; end in `CheckSteered(ContinueAwaitUser)`. |
-| `CheckSteered`, `AnsweredInput`, `RouteTool` | Evaluate the compaction and rollover decision; append entries | Owned by [session.md](session.md). |
+| `CheckSteered`, `AnsweredInput`, `RouteTool` | Evaluate the compaction and rollover decision; open the first segment with its catalog matches; append entries, among them the late repository-context notice | Owned by [session.md](session.md). |
 | RPC `UpdateSessionModel` | `SessionModel` | Locked, short, typed lock-conflict retry; a stale revision is rejected. |
 
 - **Cleanup and ownership of incomplete work.** An unfinished model call leaves no durable

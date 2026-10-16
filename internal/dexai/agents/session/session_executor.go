@@ -357,16 +357,19 @@ type modelCallNext int
 const (
 	nextCallModel modelCallNext = iota
 	nextCompactContext
-	nextRequestWorkspace
+	// nextCallModelPreparingContext calls the model in a first segment that
+	// opened without the repository context and starts, beside the call, the
+	// workspace request that prepares it.
+	nextCallModelPreparingContext
 	nextAwaitRemote
 	nextLoadExecutorContext
 )
 
 // modelCallPlan is the movement a boundary Step builds for a model
-// continuation: the call, a compaction first or the workspace cold path that
-// prepares the repository context of the first segment. load selects the
-// archive chunks and prompts the model Step reads, and for a compaction the
-// same ones for its failure route.
+// continuation: the call, a compaction first, or the call beside the
+// workspace request that prepares the repository context of the first
+// segment. load selects the archive chunks and prompts the model Step reads,
+// and for a compaction the same ones for its failure route.
 type modelCallPlan struct {
 	next       modelCallNext
 	compaction contextCompaction
@@ -375,13 +378,14 @@ type modelCallPlan struct {
 }
 
 // planModelCall decides the model continuation next at a boundary. The first
-// segment opens once the repository context was read, or the cold path is
-// asked to read it first; the cold path opens the segment either way. A turn
+// segment opens at once, with the repository context only when the workspace
+// already read it; otherwise the workspace request that reads it starts beside
+// the call, and a later boundary appends the context once it arrives. A turn
 // start may roll the segment over, and any boundary but a direct model call
 // may compact it.
 func (flow *SessionAgentFlow) planModelCall(ctx dex.Context, next agentloop.Continuation) (plan modelCallPlan) {
 	defer func() {
-		if plan.next == nextCallModel || plan.next == nextCompactContext {
+		if plan.next == nextCallModel || plan.next == nextCallModelPreparingContext || plan.next == nextCompactContext {
 			plan.admission = modelAdmission{Authority: currentExecutor(ctx).Admitted(), Turn: comm.Must(agentStateAttribute.Get(ctx)).Turn}
 			plan.compaction.Admission = plan.admission
 			status := agentloop.AgentStatusCallingModel
@@ -404,13 +408,14 @@ func (flow *SessionAgentFlow) planModelCall(ctx dex.Context, next agentloop.Cont
 		setRunningWork(ctx, &agentloop.RunningWork{Kind: agentloop.RunningModel})
 		return modelCallPlan{next: nextCallModel, load: segmentLoad(comm.Must(agentStateAttribute.Get(ctx)), segment, false)}
 	}
-	segment := dexflow.OptionalValue(contextSegmentAttribute.Get(ctx))
+	segment, call := dexflow.OptionalValue(contextSegmentAttribute.Get(ctx)), nextCallModel
 	if segment == nil {
-		if dexflow.ValueOrZero(workspaceAttribute.Get(ctx)).RepositoryContext == "" {
-			return modelCallPlan{next: nextRequestWorkspace}
-		}
 		opened := flow.openSessionStartSegment(ctx)
-		segment = &opened
+		if segment = &opened; opened.AwaitsRepositoryContext {
+			call = nextCallModelPreparingContext
+		}
+	} else {
+		segment = appendLateRepositoryContext(ctx, *segment)
 	}
 	// The model call or compaction is the work in flight until its Step commits.
 	setRunningWork(ctx, &agentloop.RunningWork{Kind: agentloop.RunningModel})
@@ -421,7 +426,7 @@ func (flow *SessionAgentFlow) planModelCall(ctx dex.Context, next agentloop.Cont
 			return modelCallPlan{next: nextCompactContext, compaction: contextCompaction{Reason: reason}, load: segmentLoad(state, *segment, true)}
 		}
 	}
-	return modelCallPlan{next: nextCallModel, load: segmentLoad(state, *segment, false)}
+	return modelCallPlan{next: call, load: segmentLoad(state, *segment, false)}
 }
 
 // segmentLoad selects the archive chunks that hold the segment's entries and
@@ -482,18 +487,24 @@ func (flow *SessionAgentFlow) openSessionStartSegment(ctx dex.Context) agentloop
 
 // openSegment opens the next segment for reason on model with summary: one
 // segment_start entry with the summary, the repository context, the confirmed
-// requirements, the todo list and the turn's pending request as read finds it,
-// then the notice of a reporting turn. The segment and its prompts replace the
-// previous ones, and archive chunks before it become eligible for retention.
+// requirements, the todo list, for the Session's first segment the catalog
+// matches of its request, and the turn's pending request as read finds it,
+// then the notice of a reporting turn. A segment without the repository
+// context awaits it. The segment and its prompts replace the previous ones,
+// and archive chunks before it become eligible for retention.
 func (flow *SessionAgentFlow) openSegment(ctx dex.Context, reason agentloop.SegmentReason, model conversation.Model, summary string, read entryReader) agentloop.ContextSegment {
-	previous := dexflow.OptionalValue(contextSegmentAttribute.Get(ctx))
+	previous, request := dexflow.OptionalValue(contextSegmentAttribute.Get(ctx)), pendingRequestEntries(ctx, read)
 	start := agentloop.SegmentStart{Summary: summary, RepositoryContext: dexflow.ValueOrZero(workspaceAttribute.Get(ctx)).RepositoryContext,
 		ConfirmedRequirements: dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx)),
-		TodoList:              dexflow.OptionalValue(todoListAttribute.Get(ctx)), PendingRequest: pendingRequestText(ctx, read)}
+		TodoList:              dexflow.OptionalValue(todoListAttribute.Get(ctx)), PendingRequest: conversation.PendingRequestText(request)}
+	if reason == agentloop.SegmentReasonSessionStart {
+		start.CatalogMatches = flow.requestCatalogMatches(request)
+	}
 	entry := conversation.SegmentStartEntry(start.Text(), agentloop.SegmentMarker(reason))
 	first := appendEntry(ctx, entry)
 	segment := agentloop.NewSegment(previous, first, reason, model, flow.settings, entry.Bytes())
 	segment.Summary = comm.TruncateUTF8(summary, 8<<10)
+	segment.AwaitsRepositoryContext = start.RepositoryContext == ""
 	comm.MustDo(contextSegmentAttribute.Set(ctx, segment))
 	comm.MustDo(contextSegmentPromptsAttribute.Set(ctx, segment.PromptsKey(), agentloop.SessionPromptFor(model).Prompts))
 	if previous != nil {
@@ -503,12 +514,12 @@ func (flow *SessionAgentFlow) openSegment(ctx dex.Context, reason agentloop.Segm
 	return comm.Must(contextSegmentAttribute.Get(ctx))
 }
 
-// pendingRequestText quotes the user messages the current turn works on that
+// pendingRequestEntries are the user messages the current turn works on that
 // read finds. A compaction and its failure route load the chunks that hold
 // them (segmentLoad) and read them with loadedEntry. The first segment opens in
 // Steps that load no archive chunk and reads only CurrentMessages
 // (currentEntry), so a message archived before it is left out.
-func pendingRequestText(ctx dex.Context, read entryReader) string {
+func pendingRequestEntries(ctx dex.Context, read entryReader) []conversation.Entry {
 	state := comm.Must(agentStateAttribute.Get(ctx))
 	var entries []conversation.Entry
 	for _, sequence := range state.TurnRequestSequences {
@@ -516,7 +527,7 @@ func pendingRequestText(ctx dex.Context, read entryReader) string {
 			entries = append(entries, entry)
 		}
 	}
-	return conversation.PendingRequestText(entries)
+	return entries
 }
 
 // modelFailureCode is a model call without a usable reply that the Session

@@ -199,9 +199,11 @@ RPC ReportRemote -> RemoteInbox(Report) -> AwaitUser | AwaitRemoteAgent
 CheckSteered -> AwaitAgentTimer -> CheckSteered  (start_timer)
 CheckSteered -> AwaitToolApproval -> CheckSteered
 
-G1 prompt / G2 dispatch / G3 lost transport / RPC RequestSessionWorkspace
+CheckSteered | AnsweredInput (G1: first segment opened without the repository context)
+  -> CallModel + RequestSessionWorkspace{prepare_context}   (beside the call; never resumes it)
+G1 / G2 dispatch / G3 lost transport / RPC RequestSessionWorkspace
   -> RequestSessionWorkspace -> SendWorkspaceCommand(provision) -> AwaitSessionWorkspace
-  -> ApplySessionWorkspace -> the returning continuation via CheckSteered
+  -> ApplySessionWorkspace -> the returning or joined continuation via CheckSteered, or DeadEnd
   ApplySessionWorkspace(READY) arms AwaitSandboxDeadline -> SendWorkspaceCommand(reclaim)
   Command refused or retries exhausted -> RecordWorkspaceFailure
   (the SessionWorkspaceFlow provisions and reclaims; see sandbox.md)
@@ -341,12 +343,23 @@ There is no mode switch, no "execute plan" command, no confirmation and no force
   `ConfirmedDesignBuilt` compares the digests, and `ConfirmedDesignBuiltCommit` carries the commit
   while the design is built, so Studio knows which push's processes replace the design. The outline is in the
   current requirements, so every `segment_start` carries it without a map load
-  ([build completion](../design-first/flow-design.md#build-completion)).
+  ([build completion](../design-first/flow-design.md#build-completion)). The same commit that records a
+  design starts `WrittenDesignSteps` for it, and the commit of each succeeded `write` or `edit` result
+  marks the designed Steps it declares; the Snapshot's `ConfirmedDesignWrittenSteps` lists them
+  ([written Steps](../design-first/flow-design.md#written-steps)).
+- **Draft.** While the model writes a card, `CallModel` writes its drafts, at most one a second, to the
+  `RequirementsDraft` Stream ([streaming and Studio](streaming-and-studio.md#requirements-drafts)); the
+  draft is never the card.
 - Rules in the prompt: show the card once before writing code for a new application or a large
   change, then keep building it; revise it when a message changes the requirements; make small
-  changes directly; never show a card again for an unchanged version; the connections part comes
-  from the connector subagent's selection report ([connectors](connectors.md)); when several
-  connections are possible, ask with `request_user_input` first, which still waits for the answer.
+  changes directly; never show a card again for an unchanged version; write the card from the
+  request without waiting for the repository context; the connections part comes from the catalog
+  matches the first segment lists, from `connector_catalog` for a need they do not cover, and from
+  the connector subagent's selection report only when several connectors could meet a need or
+  none does ([connectors](connectors.md#connector-subagents)); the catalog names no
+  authentication details, so what the user must set up may stay general until the build reads the
+  connector; when several connections are possible, ask with `request_user_input` first, which
+  still waits for the answer.
 - **Large and small changes.** The recorded card is the boundary, so the current requirements
   always match the application.
   - A large change would alter the current requirements: add, remove or change a feature, add or
@@ -629,6 +642,7 @@ automatically for every Step and RPC.
 | `ConfirmedRequirements` | `{Revision, Spec, ConfirmedAt, LastFeatureNumber, ConfirmedBy *conversation.Actor}`, at most 16 KiB rendered | The current version of the requirements, under its persisted name: written only by `RouteTool`, in the commit that records a card ([above](#requirements-cards)); `ConfirmedAt` is when it was recorded; `ConfirmedBy` is set only on a version confirmed while cards waited; `Spec.Design` is the current Flow design's reference |
 | `BuiltFlowDesign` | string, at most 71 bytes | The digest of the current Flow design that a pushed, unblocked `commit_and_push` built; written only in that result's commit |
 | `BuiltFlowDesignCommit` | string, a commit SHA | The commit that push verified, written beside `BuiltFlowDesign` |
+| `WrittenDesignSteps` | `flowdesign.WrittenSteps{Digest, Steps[{FlowType, StepType, Written}]}`, one entry per designed Step, at most 6 Flows of 30 Steps (about 30 KB at worst, typically under 1 KB) | How far the agent wrote the current design's code. `RouteTool` (and `SendMessage` for an old waiting card), in the commit that records a card with a design, sets it to that design's Steps, keeping `Written` on a Step the new design keeps in the same Flow, and deletes it with the design; a card without a design keeps it. The Steps that record tool results (`ExecuteTool` and the other result Steps, through `recordDesignProgress`) set `Written` on the designed Steps a succeeded `write` or `edit` of a non-test Go file declares, `type <StepType> struct` or `StepType: "<StepType>"`, in the result's commit, without a lock: the Step graph runs them one at a time. The Snapshot reports the written ones as `ConfirmedDesignWrittenSteps` only while its digest is the current design's. No index, no secret; it lives as long as the design ([written Steps](../design-first/flow-design.md#written-steps)) |
 | `AgentInterrupt` | `{Turn, RequestedAt, EndsTurn, Actor *conversation.Actor, MarkerWritten bool}` | A Stop request for the running turn; also the lock that serializes the changes of a STARTING `Subagents` record (see Locking) |
 | `NotificationReceipts` | []string, at most 128, FIFO | IDs of the last 128 admitted notifications and workspace outcome reports (`workspace/<WorkspaceRequestID>`), written in the commit that publishes them ([notifications](notifications-and-feedback.md)) |
 | `PendingSubagentWorktreeCleanup` | optional string, one `flowid.AgentTaskID` such as `k3n8q5r1` | RouteTool records the ID of one evicted finished `Subagents` record before deleting it. `ExecuteTool` clears it only after the Sandbox confirms cleanup of that checkout, both Git refs and its plans and receipts. No secret or index; retained across retries and executor switches until cleanup or Project deletion. |
@@ -645,7 +659,8 @@ repository; it has no expiry; see [sandbox](sandbox.md)), `Failure` (safe code: 
 code, `WORKSPACE_TIMEOUT`, `WORKSPACE_START_FAILED`, `WORKSPACE_RECLAIM_FAILED` or
 `WORKSPACE_NOT_PROVISIONED`), `FailureDetail` (at most 2 KiB), `JoinedResumeAt` (the continuation
 that found the request in flight), `RepositoryContext` (trusted repository prompt context, at most
-8 KiB, recorded when the lease takes effect), `LostCallID` and `Losses`, and `SandboxDeadline`. The
+8 KiB, recorded when the lease takes effect; a segment that opened without it receives it once as a
+user notice, [context management](context-management.md#segments)), `LostCallID` and `Losses`, and `SandboxDeadline`. The
 Preview: `PreviewWaits` (the ID of the Preview command that waits for the next request to settle,
 which the settlement names; persisted as `previewWaitsFor`) and `PreviewHolds`
 (the WorkspaceRequestID of the instance lent to the Preview, which every workspace command names so
@@ -752,6 +767,7 @@ answer, approval or notification; a stale message is rejected, never applied.
 | `ReasoningSummary` | string chunks | `CallModel` | Conversation UI |
 | `AssistantText` | string chunks | `CallModel` | Conversation UI |
 | `AgentActivity` | `AgentEvent` (with `target`; kinds include `compacted`, `compaction_failed`, `agent_interrupted`, `user_input_requested`) | Steps (state, model and compaction, tools, input consumption, interrupts) | Conversation UI |
+| `RequirementsDraft` | `agentloop.RequirementsDraft`, the whole draft of a requirements card per event | `CallModel`, at most once a second per card call and once complete ([streaming and Studio](streaming-and-studio.md#requirements-drafts)) | The Brief, drafting |
 
 Each Stream is declared with `10 << 20` bytes. In the pinned Dex SDK that budget is shared by every
 execution with the same Flow type and Stream name; it is not per Session and it is not a durable
@@ -791,11 +807,19 @@ minute method timeout, `CurrentMessages` loaded, `MessageWindowLock` held). Only
 | `ReportPlatformIssue`, `AbandonPlatformIssue` | Side branch that starts or joins the `PlatformIssueFlow` of a platform fault's signature, which files it; the end of a report whose start exhausted its retries | Provider options, no lock; the turn never waits for it ([tool orchestration](tool-orchestration.md#platform-issue-reporting)) |
 | `CompleteProjectSession` | Complete the Session of a deleting Project ([above](#never-expires-closes-only-with-the-project)) | Reached from the RPC of the same name, which archives the Session, cancels every branch and stops the background command watches; the Step checks that admission again, because the completion is irreversible, and completes gracefully with the cleanup receipt |
 
-Workspace gates. G1 (first segment): a model call that finds no context segment yet and no
-`Workspace.RepositoryContext` goes through `RequestSessionWorkspace` first; the cold path opens the
-Session's first segment itself, with the repository context if the lease provided it, and returns to
-the model continuation through `CheckSteered` without asking G1 again, so a workspace that cannot be
-prepared delays the model but never blocks it. G2 (dispatch): before a wave or a serial call with
+Workspace gates. G1 (first segment): the first model call does not wait for the workspace.
+`planModelCall` opens the Session's first segment at once, with `Workspace.RepositoryContext` only
+when the workspace already read it, and with the catalog matches of the first request, which the
+`connectorCatalogMatcher` port reads from the server replica's warm copy of the published catalog
+without a network call ([connectors](connectors.md#catalog-matches-of-the-first-request)). A segment
+opened without the repository context awaits it, and `CheckSteered` or `AnsweredInput` moves with
+`GoToMany` to `CallModel` and to `RequestSessionWorkspace{ResumeAt: prepare_context}`. That request
+runs beside the conversation, like the one remote activation starts with `await_remote`
+(`Continuation.IsBesideConversation`): it never resumes the conversation, a demand of it that finds a
+request in flight ends, and its owner hands a continuation that joined it back when it settles, READY
+or failed. The first model-call boundary after the request recorded the repository context appends
+it once as a user notice and clears the segment's mark; a failed request appends nothing, and a
+workspace tool (G2) asks again. G2 (dispatch): before a wave or a serial call with
 workspace access, `admitWorkspaceUse` requires `State == READY` and a usable lease, then sets
 `WorkspaceUse` under the Workspace lock; otherwise `RequestSessionWorkspace{ResumeAt: route_tool}`. G3
 (lost transport): the Runner reports `ErrWorkspaceUnavailable`, which proves the call was not
@@ -922,6 +946,25 @@ Starting the Session with its first message keeps open executions working too: t
 of an execution started without one finds no message and behaves as before, and a ProjectFlow
 without `InitialSessionRequest` starts its Session as before.
 
+Opening the first segment before the workspace is ready keeps open executions working. A
+segment opened by an earlier binary decodes `AwaitsRepositoryContext` as false, so it already
+carries its repository context or never receives a notice: nothing is appended twice. A branch
+an earlier binary parked in the cold path with a model continuation (`start_turn`, `call_model`,
+`compact_context`) still resumes through `resumeAfterWorkspace`, which opens the first segment
+with the repository context it read. The new continuation `prepare_context` and the
+`<catalog_matches>` section are unknown to an earlier binary, so a rollback waits until no
+Session has a `prepare_context` request in flight. The Step graph changes only by the added
+movement from `CheckSteered` and `AnsweredInput` to `RequestSessionWorkspace`.
+
+The requirements draft and the written design Steps keep open executions working. Streaming the
+card's input eagerly changes the frozen tool definitions, so each open Session rolls its context over
+once at its next turn ([rollover](context-management.md#rollover)). `RequirementsDraft` is a new Stream
+that an open Session writes from its next model call. `WrittenDesignSteps` is absent on a Session whose
+design was recorded before it: the Snapshot then reports no written Steps, so Studio dashes every
+Step the compared source does not hold until the push builds the design, and the next card with a
+design starts it. Apart from that Stream and that Attribute, no Step, Channel, Stream or other
+primitive changes.
+
 ### Line budget
 
 `session_agent_flow.go` has a hard limit of 1,600 lines, like every `*_flow.go` file, because the
@@ -951,13 +994,27 @@ writes `ConfirmedRequirements` (the current version) and `FlowDesigns[confirmed]
 `PendingUserInput` holds questions, `SendMessage` records and answers an old waiting card (under the
 `ConfirmedRequirements` lock, with `FlowDesigns[pending]` loaded), `AnswerQuestions`
 takes questions only and `GetFlowDesign` reads `confirmed` only; no Step, Channel, Stream or
-primitive name changes.
+primitive name changes. `CallModel` writes the drafts of a requirements card to the new
+`RequirementsDraft` Stream, and the new `WrittenDesignSteps` Attribute records which designed Steps
+the agent's writes declared, written where `FlowDesigns` and `BuiltFlowDesign` are; no Step or
+Channel changes.
 The start Step admits the first message the Session starts with, once, into
 `QueuedUserMessages`. `CheckSteered` no longer compares a turn's
 model-call count or creates a `turn_limit` pending question; model replies in both
 executor modes can continue beyond the former bound. Neither Session nor
 SubagentFlow writes the removed counter or reporting-only mode. Already open prelaunch questions use
 the [compatibility behavior](#recovery-external-effects-and-compatibility) above.
+
+The first reply does not wait for the workspace. `CheckSteered` and `AnsweredInput` open the first
+segment at once and, when it lacks the repository context, move with `GoToMany` to `CallModel` and
+to `RequestSessionWorkspace{prepare_context}`; that branch runs beside the conversation and never
+resumes it. The `Workspace` value type is unchanged; `ContextSegment` gains the field
+`AwaitsRepositoryContext` (JSON `awaits_repository_context`, omitted when false), which the first
+model-call boundary after the request read the context clears in the commit that appends the
+one repository-context notice. The first segment's `segment_start` carries `<catalog_matches>`
+from the server replica's catalog copy; the Step reads it without a network call. The owner of a
+request beside the conversation now also hands a joined continuation back when the request fails.
+No RPC, Channel, Stream or AttributeMap changes, and no new Attribute is declared.
 
 For subagent record expiry, `RouteTool` atomically replaces the oldest finished record with
 one pending cleanup ID. The first `ExecuteTool` of the next `start_agent` removes that ID's
@@ -1016,8 +1073,9 @@ three E2E cases with real Opus 5.5.
 | Model failure | A blocked provider egress past the retries runs `RecordModelFailure`; the Session stays ACTIVE and the next message succeeds; a compaction failure runs `RecordCompactionFailure` |
 | Instance | A cold start runs exactly one workspace Flow and one provisioning, and a repeated command joins; a Worker restart during a provisioning or a reclamation leaves one execution; a replacement reclaims the lost instance first; a late outcome after a replacement is declined; the `WorkspaceOutcomes` instance `ws-<n>` is consumed only by the Step that waits for that request, and a report that never arrives settles through the workspace Flow's own state |
 | Sandbox deadline | A shortened hold makes the deadline reclamation exactly the `reclaim` command and the `reclaimed` report, keeping the volume; a running task postpones reclamation; a READY Preview's `ready` notification extends it to `sandbox.previewHold`, also while a question waits; `RenewSessionWorkspace` moves the deadline; a wave dispatched seconds before the deadline makes the timer re-arm; the lend of the READY instance to a Preview command moves it one hold ahead; a Worker restart while it waits reclaims once; a running Preview is stopped first; an uncommitted file survives reclaim and resume |
+| First reply | A request that names Stripe and Slack records its card from the first segment's catalog matches while the workspace request the first model call started is in flight (the Session's history completes that request's first Step, then the card's routing, then the READY instance's settlement); the repository context arrives as exactly one notice before the first edit, and the change is pushed (`TestSessionMockCatalogPrefetchDexIntegration`, scenario `catalog-prefetch`) |
 | Requirements | A new application shows the card and a small change does not; the card records `ConfirmedRequirements` version 1 and the turn goes on to build it; a message steered after the card makes the agent record version 2, and the next push traces revision 2; a message to an old waiting card records it and answers it (local reconciliation, as no current path creates such a card) |
-| Flow design | A card's design is the current one, which a revised card replaces and a stale digest cannot read; recorded unbuilt; a compaction keeps its outline; a blocked checkpoint leaves it unbuilt and a pushed, unblocked commit builds it, and a revised design moves `BuiltFlowDesign` at the next push; each rule a design breaks refuses the card as `invalid_user_input` |
+| Flow design | A card's design is the current one, which a revised card replaces and a stale digest cannot read; recorded unbuilt; a compaction keeps its outline; a blocked checkpoint leaves it unbuilt and a pushed, unblocked commit builds it, and a revised design moves `BuiltFlowDesign` at the next push; each rule a design breaks refuses the card as `invalid_user_input`; the edit that declares a designed Step's struct marks it, and only it, written; the card's drafts arrive on `RequirementsDraft` before it is recorded, the last one complete with its title |
 | Stop | One press stops the model call, a background command and a subagent; a stale `Turn` answers false; a non-interruptible tool ends the turn at the next boundary; a subagent that is still starting is marked STOPPED and answered `Stopped` at its admission, and reports STOPPED when its start was racing the Stop; with no turn running the press stops a running subagent, and its report opens no turn; "continue" resumes with published results and the STOPPED report; notification-first, input-first and Finish-first commits write one first-actor marker; a late same-Turn settlement cannot alter a newer Stop; persisted MarkerWritten survives a replacement Worker |
 | Background commands | A command's watch runs as a SubFlow, so the Session routes tools while it runs; its end publishes one notification; a stopped command publishes none; Project deletion stops each running watch before the Session completes |
 | Notifications and automatic turns | A duplicate ID publishes once; admission refuses a 33rd pending notification; caps and `AutomaticTurnsPaused` hold; a notification after Stop opens no turn |
@@ -1106,8 +1164,18 @@ real dependency acceptance; source does not promise seamless recovery.
 
 ## Resource Scalability
 
-None. Recording the requirements card drops the `FlowDesigns` bound from two instances to one;
+The first reply's catalog matches read the server replica's one copy of the published connector
+catalog, which the composition root refreshes with one HTTPS GET every five minutes (a minute
+after a failure) per replica, whatever the number of Projects or Sessions; the copy is at most
+1 MiB and 512 entries, holds no tenant data and is the same document on every replica. Opening a
+segment reads only that copy, with no network call and no scan proportional to tenants; Studio's
+TeamSpace connections read the same copy and fetch only when it is older than five minutes. The
+workspace request beside the first model call is the one request a Session made before; it starts
+earlier, not more often. Recording the requirements card drops the `FlowDesigns` bound from two instances to one;
 the first message adds one bounded, cleared Attribute to ProjectFlow and no Session state.
+`WrittenDesignSteps` is one bounded Attribute per Session, replaced with each design. The
+`RequirementsDraft` Stream adds no resource: its 10 MiB budget is shared by every Session and trims
+the oldest drafts; a card writes at most one draft a second.
 Removing the Session model-call limit creates no cloud, Kubernetes,
 Temporal, Dex or database resource and adds no control-plane call or tenant scan
 on a request, poll or event. The existing Session and workspace lifecycles and

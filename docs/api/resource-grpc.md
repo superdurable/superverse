@@ -291,7 +291,8 @@ mechanically.
    revision 2; Timestamp created_at 3}` serves Project, Release and Deployment; it carries
    the Step name and the event time, never the free-text detail of the waiting Step.
    `SessionProgress` is `{oneof content {AgentEvent activity 3; reasoning_summary 7;
-   assistant_text 8}; Timestamp created_at 5; source 6; task_id 9}`.
+   assistant_text 8; AgentRequirementsDraft requirements_draft 10}; Timestamp created_at 5;
+   source 6; task_id 9}`.
 10. **M10. Acceptance responses.** A start returns the resource-specific ID of the resource
     it started, from validated input, without a snapshot read: `project_id`,
     `release_id`, `deployment_id` or `build_revision_id`. ProjectFlow starts the Project's
@@ -797,9 +798,10 @@ CreateProject's first message, if any, queued once by its start Step
 the creation page, which preselects Sonnet, or the mock model for the platform administrator
 where `ListMockScenarios` offers it, and CreateProject carries both, so the Session starts
 working without an open browser. A new SessionSnapshot has no
-`workspace`. The Session requests its workspace on first demand: its first model turn
-(repository context for the prompt), a tool dispatch that needs the workspace, an accepted
-StartPreview or PreparePreviewSource. A Preview configuration read reads stored state alone
+`workspace`. The Session requests its workspace on first demand: its first model call, which
+does not wait for it (the repository context reaches the conversation once the workspace is
+ready), a tool dispatch that needs the workspace, an accepted StartPreview or
+PreparePreviewSource. A Preview configuration read reads stored state alone
 and never requests one. Only the Project's deletion closes the Session.
 
 RenewWorkspace is Studio's "Keep running for 7 days": it moves the Sandbox deadline of the
@@ -1585,9 +1587,20 @@ without a message, so an idle Watch stays open until the client leaves. There is
 Operation resource, generic GetOperation or WatchOperation API.
 
 A WatchSession progress frame carries one Agent Stream event as `SessionProgress.content`:
-`activity` for the activity Stream, `reasoning_summary` for the reasoning Stream and
-`assistant_text` for the assistant Stream, with its `created_at` and `source`; an `activity`
-with a `task_id` is the live status line of that running subagent. Studio
+`activity` for the activity Stream, `reasoning_summary` for the reasoning Stream,
+`assistant_text` for the assistant Stream and `requirements_draft` for the requirements draft
+Stream, with its `created_at` and `source`; an `activity` with a `task_id` is the live status
+line of that running subagent. `AgentRequirementsDraft {call_id 1; int64 turn 2; int64
+base_revision 3; title 4; summary 5; repeated AgentRequirementFeature features 6; repeated
+AgentRequirementsDraftConnection connections 7 {need 1; connector 2}; design_summary 8;
+repeated AgentRequirementsDraftFlow flows 9 {flow_type 1; repeated step_types 2}; bool
+complete 10}` is the whole draft so far of the requirements card that the call `call_id` is
+writing; it is not the card, and it is over once the Snapshot's `confirmed_requirements`
+revision passes `base_revision`, a message answers the call or its turn ends
+([requirements drafts](../architecture/agent-harness-design/streaming-and-studio.md#requirements-drafts)).
+`AgentRequirements.design_written_steps 10`, set only in `confirmed_requirements`, lists the
+current design's Steps whose declaration the agent wrote, each `<flow_type>.<step_type>`
+([written Steps](../architecture/design-first/flow-design.md#written-steps)). Studio
 reconnects every Watch explicitly with its last cursor.
 
 Only fixed sanitized errors cross this boundary. Each RPC maps its errors once, where it

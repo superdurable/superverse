@@ -417,20 +417,25 @@ type ResumeToken string
 type EventStream string
 
 const (
-	EventStreamReasoning EventStream = "reasoning"
-	EventStreamAssistant EventStream = "assistant"
-	EventStreamActivity  EventStream = "activity"
+	EventStreamReasoning         EventStream = "reasoning"
+	EventStreamAssistant         EventStream = "assistant"
+	EventStreamActivity          EventStream = "activity"
+	EventStreamRequirementsDraft EventStream = "requirements_draft"
 )
 
-// StreamEventKind discriminates the three live event payloads, which the API
-// sends as the reasoning_summary, assistant_text and activity members of the
-// SessionProgress content oneof.
+// EventStreams are the Session's own live Streams, which its Watch reads.
+var EventStreams = []EventStream{EventStreamReasoning, EventStreamAssistant, EventStreamActivity, EventStreamRequirementsDraft}
+
+// StreamEventKind discriminates the four live event payloads, which the API
+// sends as the reasoning_summary, assistant_text, activity and
+// requirements_draft members of the SessionProgress content oneof.
 type StreamEventKind string
 
 const (
-	StreamEventKindReasoning StreamEventKind = "reasoning_summary"
-	StreamEventKindAssistant StreamEventKind = "assistant_text"
-	StreamEventKindActivity  StreamEventKind = "activity"
+	StreamEventKindReasoning         StreamEventKind = "reasoning_summary"
+	StreamEventKindAssistant         StreamEventKind = "assistant_text"
+	StreamEventKindActivity          StreamEventKind = "activity"
+	StreamEventKindRequirementsDraft StreamEventKind = "requirements_draft"
 )
 
 // definition returns the Stream of stream and the kind of its events.
@@ -442,17 +447,21 @@ func (stream EventStream) definition() (dex.StreamDef, StreamEventKind) {
 		return assistantTextStream, StreamEventKindAssistant
 	case EventStreamActivity:
 		return agentActivityStream, StreamEventKindActivity
+	case EventStreamRequirementsDraft:
+		return requirementsDraftStream, StreamEventKindRequirementsDraft
 	default:
 		panic(fmt.Sprintf("unknown event Stream %q", stream))
 	}
 }
 
-// StreamEvent is one typed best-effort Stream message.
-// Text is populated for assistant and reasoning events; Activity is populated for activity events.
+// StreamEvent is one typed best-effort Stream message. Text is populated for
+// assistant and reasoning events, Activity for activity events and Draft for
+// requirements draft events.
 type StreamEvent struct {
 	Kind        StreamEventKind
 	Text        string
 	Activity    conversation.AgentEvent
+	Draft       agentloop.RequirementsDraft
 	ResumeToken ResumeToken
 	CreatedAt   time.Time
 	Source      string
@@ -466,8 +475,11 @@ func (client *SessionAgentFlowClient) ReadEvent(ctx context.Context, flowID agen
 	definition, kind := stream.definition()
 	event := StreamEvent{Kind: kind}
 	var value any = &event.Text
-	if kind == StreamEventKindActivity {
+	switch kind {
+	case StreamEventKindActivity:
 		value = &event.Activity
+	case StreamEventKindRequirementsDraft:
+		value = &event.Draft
 	}
 	ctx, endPoll := comm.WithLongPollWindow(ctx, eventPollTimeout)
 	defer endPoll()
@@ -486,10 +498,21 @@ func (client *SessionAgentFlowClient) ReadEvent(ctx context.Context, flowID agen
 // best-effort Stream, or "" when it retains none.
 func (client *SessionAgentFlowClient) LatestEventResumeToken(ctx context.Context, flowID agentloop.FlowID, stream EventStream) (ResumeToken, error) {
 	definition, kind := stream.definition()
-	if kind == StreamEventKindActivity {
+	switch kind {
+	case StreamEventKindActivity:
 		return latestResumeToken[conversation.AgentEvent](ctx, client.sdk, flowID, definition)
+	case StreamEventKindRequirementsDraft:
+		return latestResumeToken[agentloop.RequirementsDraft](ctx, client.sdk, flowID, definition)
 	}
 	return latestResumeToken[string](ctx, client.sdk, flowID, definition)
+}
+
+// RequirementsDraftsForTest lists the newest requirements drafts the Session
+// retains, newest first, with the time the Stream Store received each.
+func (client *SessionAgentFlowClient) RequirementsDraftsForTest(ctx context.Context, flowID agentloop.FlowID, limit int32) ([]dex.ListedStreamMessage[agentloop.RequirementsDraft], error) {
+	var page dex.StreamMessagesPage[agentloop.RequirementsDraft]
+	err := client.sdk.ListStreamMessages(ctx, string(flowID), requirementsDraftStream, limit, "", &page)
+	return page.Messages, err
 }
 
 func latestResumeToken[T any](ctx context.Context, sdk *dex.Client, flowID agentloop.FlowID, stream dex.StreamDef) (ResumeToken, error) {

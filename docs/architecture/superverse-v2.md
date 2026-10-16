@@ -162,7 +162,7 @@ package owns the following;
 | [`comm/dexflow/dexflowtest`](../../internal/comm/dexflow/dexflowtest/README.md) | Connects integration tests to an actual Dex Server and checks engine state, never substituting a Flow, Worker or dependency. |
 | [`comm/flowid`](../../internal/comm/flowid/README.md) | Derives the stable FlowIDs, server-assigned business IDs and Start RequestID fingerprints of the platform Flows, and checks the formats of identifiers that callers supply. |
 | [`comm/platform`](../../internal/comm/platform/README.md) | Classifies the outcomes of Kubernetes, AWS, S3, GitHub and gRPC provider calls for every adapter and business package, without reading error text. |
-| [`comm/platform/connectorlibrary`](../../internal/comm/platform/connectorlibrary/README.md) | Reaches the connectors library that connector_develop subagents contribute to: fetch and push remotes, the committing bot identity and the upstream library's draft pull requests. |
+| [`comm/platform/connectorlibrary`](../../internal/comm/platform/connectorlibrary/README.md) | Reaches the connectors library: contribution remotes, the committing bot and draft pull requests, and the published catalog's document, per-replica warm copy and the connectors a request names. |
 | [`comm/platform/deploymentnames`](../../internal/comm/platform/deploymentnames/README.md) | Declares the deployment environments and owns their static, operator-selected names (prefixes, clusters, registries, IAM paths and domains) that Go, Terraform, Helm and the infra scripts share. |
 | [`comm/platform/dockerapi`](../../internal/comm/platform/dockerapi/README.md) | Gives the Docker runtime packages one raw REST client of the Docker Engine API on its unix socket, with the container, network, volume and image calls they build on. |
 | [`comm/platform/eventqueue`](../../internal/comm/platform/eventqueue/README.md) | Declares the bounded, best-effort keyed queue that the Slack event relay offers events to and consumes them from, with its limits and typed refusals. |
@@ -1759,7 +1759,7 @@ authorization opens its scoped OAuth page with callback identity preserved.
 | Watch | Resource selector | First frame | Progress |
 | --- | --- | --- | --- |
 | WatchProject | ProjectID | ProjectSnapshot including current setup's safe view | ResourceProgress from ProjectProgress/current SetupProgress |
-| WatchSession | ProjectID | SessionSnapshot with current messages, state, pending inputs, workspace and Preview | SessionProgress: AgentActivity/AssistantText/ReasoningSummary |
+| WatchSession | ProjectID | SessionSnapshot with current messages, state, pending inputs, workspace and Preview | SessionProgress: AgentActivity/AssistantText/ReasoningSummary/RequirementsDraft |
 | WatchRelease | ProjectID, ReleaseID | ReleaseSnapshot | ResourceProgress from BuildProgress |
 | WatchDeployment | ProjectID, DeploymentID | DeploymentSnapshot | ResourceProgress from DeploymentProgress |
 
@@ -1956,8 +1956,8 @@ mock development. A Project page is the Builder ([the current contract](studio-s
 visual spec [prototype.html](studio-setup/studio.md)): the sidebar, one 48px bar
 lined up with the columns, the Project's chat column on every surface, and one of the surfaces
 Flow, Runs, Inbox, Interface and Tools (Publishing, Setup, Permissions). A new Project is its
-conversation alone until the agent's first requirements card, then switches once to the Builder on
-the Flow tab, where the card is a Process Brief, a summary above the drawn design, that the agent
+conversation alone until the agent starts writing its first requirements card, then switches once
+to the Builder on the Flow tab, where the card's draft streams in as the Brief and the recorded card is a Process Brief, a summary above the drawn design, that the agent
 builds from at once ([session](agent-harness-design/session.md#requirements-cards)); a chat
 message, which the Brief's Change something… sends and steers, changes it.
 Surfaces appear when they have something to show: Runs, Tools, Publish and Preview's status once

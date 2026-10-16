@@ -1402,14 +1402,15 @@ message SessionWorkspaceSnapshot {
   repeated PhaseTiming phase_timings = 11;
 }
 
-// One event of the Session Agent's reasoning, assistant or activity Stream, or of the activity of
-// one of its running subagents, which task_id names. Best effort: the next snapshot corrects a lost
-// or uncommitted event.
+// One event of the Session Agent's reasoning, assistant, activity or requirements draft Stream, or of
+// the activity of one of its running subagents, which task_id names. Best effort: the next snapshot
+// corrects a lost or uncommitted event.
 message SessionProgress {
   oneof content {
     AgentEvent activity = 3;
     string reasoning_summary = 7;
     string assistant_text = 8;
+    AgentRequirementsDraft requirements_draft = 10;
   }
   google.protobuf.Timestamp created_at = 5;
   string source = 6;
@@ -2114,6 +2115,41 @@ message AgentRequirements {
   bool design_built = 8;
   // Set only in confirmed_requirements while design_built: the commit that push verified.
   string design_built_commit = 9;
+  // Set only in confirmed_requirements: the Steps of the current design whose declaration a successful
+  // write or edit of the agent wrote since the design was recorded, each <flow_type>.<step_type>.
+  repeated string design_written_steps = 10;
+}
+
+// The requirements card the Session Agent is writing, read leniently from the partial input of its
+// confirm_requirements call (call_id) while the model writes it: every event is the whole draft so far,
+// bounded like the card. It is not the card: the recorded version in the snapshot is, and a draft is
+// over once a snapshot's confirmed_requirements revision passes base_revision, a message answers the
+// call or the turn ends.
+message AgentRequirementsDraft {
+  string call_id = 1;
+  // The turn of the model call that writes the card.
+  int64 turn = 2;
+  // The revision of the confirmed requirements when the model call started; 0 when none was recorded.
+  int64 base_revision = 3;
+  string title = 4;
+  string summary = 5;
+  repeated AgentRequirementFeature features = 6;
+  repeated AgentRequirementsDraftConnection connections = 7;
+  string design_summary = 8;
+  repeated AgentRequirementsDraftFlow flows = 9;
+  // The model finished writing the input; the Session records or refuses it next.
+  bool complete = 10;
+}
+
+message AgentRequirementsDraftConnection {
+  string need = 1;
+  string connector = 2;
+}
+
+// A designed Flow of a draft: its Go type name and the Go type names of its Steps written so far.
+message AgentRequirementsDraftFlow {
+  string flow_type = 1;
+  repeated string step_types = 2;
 }
 
 // What a card carries of its Flow design: the digest of its body, its summary and its outline,

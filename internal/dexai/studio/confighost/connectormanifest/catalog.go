@@ -10,16 +10,10 @@ package connectormanifest
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"net/http"
-	"regexp"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/ghodss/yaml"
-	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/platform/connectorlibrary"
 	"golang.org/x/mod/semver"
 )
@@ -28,21 +22,6 @@ import (
 // release, never a release candidate. A TeamSpace creates connections from
 // it; a connector the catalog does not list yet is configured from a Project
 // that declares it.
-
-const (
-	// catalogLifetime is how long a fetched catalog serves before the next
-	// fetch.
-	catalogLifetime = 5 * time.Minute
-	// catalogLimit bounds the catalog document.
-	catalogLimit = 1 << 20
-	// maxCatalogEntries bounds the connectors one catalog lists.
-	maxCatalogEntries = 512
-)
-
-var (
-	catalogDirectory = regexp.MustCompile(`^connectors/[a-z0-9-]+(/[a-z0-9-]+)*$`)
-	catalogVersion   = regexp.MustCompile(`^v[0-9]+\.[0-9]+\.[0-9]+$`)
-)
 
 // CatalogEntry is one released connector of the catalog.
 type CatalogEntry struct {
@@ -63,54 +42,40 @@ func (entry CatalogEntry) Module() Module {
 	return Module{ConnectorID: entry.ConnectorID, ModulePath: entry.ModulePath, ModuleVersion: entry.Version}
 }
 
-type catalogDocument struct {
-	APIVersion string `json:"apiVersion"`
-	Kind       string `json:"kind"`
-	Connectors []struct {
-		ID          string `json:"id"`
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		Version     string `json:"version"`
-		Directory   string `json:"directory"`
-	} `json:"connectors"`
-}
-
-// Catalog fetches the published catalog through its HTTP client, which the
-// caller owns, and keeps one copy for catalogLifetime. Concurrent misses may
-// fetch twice; nobody waits behind another's fetch.
+// Catalog reads the released connectors from the server replica's copy of
+// the published catalog, which the composition root keeps warm, and fetches
+// release logos through its HTTP client, which the caller owns.
 type Catalog struct {
 	httpClient *http.Client
-	url        string
+	published  *connectorlibrary.PublishedCatalog
 	// sourceURL is where the library's source is read at a release tag.
 	sourceURL string
 	mutex     sync.Mutex
-	entries   []CatalogEntry
-	fetchedAt time.Time
 	// logos holds each release's logo by CatalogEntry.release, empty for none.
 	logos map[string]string
 }
 
-// NewCatalog reads connectorlibrary.PublishedCatalogURL, and the logos of
-// connectorlibrary.PublishedSourceURL, with httpClient.
-func NewCatalog(httpClient *http.Client) *Catalog {
-	return &Catalog{httpClient: httpClient, url: connectorlibrary.PublishedCatalogURL, sourceURL: connectorlibrary.PublishedSourceURL, logos: map[string]string{}}
+// NewCatalog reads the catalog from published, and the logos of
+// connectorlibrary.PublishedSourceURL with httpClient.
+func NewCatalog(httpClient *http.Client, published *connectorlibrary.PublishedCatalog) *Catalog {
+	return &Catalog{httpClient: httpClient, published: published, sourceURL: connectorlibrary.PublishedSourceURL, logos: map[string]string{}}
 }
 
-// Entries returns the released connectors.
+// Entries returns the released connectors; a copy older than
+// connectorlibrary.CatalogLifetime is fetched again first.
 func (catalog *Catalog) Entries(ctx context.Context) ([]CatalogEntry, error) {
-	catalog.mutex.Lock()
-	entries, fetchedAt := catalog.entries, catalog.fetchedAt
-	catalog.mutex.Unlock()
-	if entries != nil && time.Since(fetchedAt) < catalogLifetime {
-		return entries, nil
-	}
-	entries, err := catalog.fetch(ctx)
+	published, err := catalog.published.Fresh(ctx)
 	if err != nil {
 		return nil, err
 	}
-	catalog.mutex.Lock()
-	catalog.entries, catalog.fetchedAt = entries, time.Now()
-	catalog.mutex.Unlock()
+	entries := make([]CatalogEntry, 0, len(published.Entries))
+	for _, connector := range published.Entries {
+		entries = append(entries, CatalogEntry{
+			ConnectorID: connector.ID, DisplayName: strings.TrimSpace(connector.Name), Description: strings.TrimSpace(connector.Description),
+			ModulePath: connectorlibrary.CatalogModulePath(connector.Directory, connector.Version), Version: connector.Version, VersionLine: VersionLine(connector.Version),
+			directory: connector.Directory,
+		})
+	}
 	return entries, nil
 }
 
@@ -126,49 +91,6 @@ func (catalog *Catalog) LatestRelease(ctx context.Context, connectorID, versionL
 		}
 	}
 	return CatalogEntry{}, false, nil
-}
-
-func (catalog *Catalog) fetch(ctx context.Context) ([]CatalogEntry, error) {
-	request := comm.Must(http.NewRequestWithContext(ctx, http.MethodGet, catalog.url, nil))
-	response, err := catalog.httpClient.Do(request)
-	if err != nil {
-		return nil, fmt.Errorf("fetch the connector catalog: %w", err)
-	}
-	defer func() { _ = response.Body.Close() }()
-	contents, err := readResponseBody(response.Body, catalogLimit)
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("fetch the connector catalog: HTTP %d", response.StatusCode)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("read the connector catalog: %w", err)
-	}
-	var document catalogDocument
-	if err = yaml.Unmarshal(contents, &document); err != nil || document.APIVersion != "connectors.dex.dev/catalog/v1alpha1" || document.Kind != "ConnectorCatalog" ||
-		len(document.Connectors) == 0 || len(document.Connectors) > maxCatalogEntries {
-		return nil, errors.New("the connector catalog is not a supported catalog document")
-	}
-	entries := make([]CatalogEntry, 0, len(document.Connectors))
-	for _, connector := range document.Connectors {
-		if !connectorReleaseIDPattern.MatchString(connector.ID) || !catalogDirectory.MatchString(connector.Directory) || !catalogVersion.MatchString(connector.Version) {
-			return nil, errors.New("the connector catalog lists an invalid release identity")
-		}
-		entries = append(entries, CatalogEntry{
-			ConnectorID: connector.ID, DisplayName: strings.TrimSpace(connector.Name), Description: strings.TrimSpace(connector.Description),
-			ModulePath: connectorModulePath(connector.Directory, connector.Version), Version: connector.Version, VersionLine: VersionLine(connector.Version),
-			directory: connector.Directory,
-		})
-	}
-	return entries, nil
-}
-
-// connectorModulePath is the Go module of the connector in directory at
-// version: from v2 on, Go module paths end in the major version.
-func connectorModulePath(directory, version string) string {
-	path := connectorlibrary.ModulePath + "/" + directory
-	if major := VersionLine(version); major != "v0" && major != "v1" {
-		path += "/" + major
-	}
-	return path
 }
 
 // VersionLine is a release's or release candidate's major version, the line

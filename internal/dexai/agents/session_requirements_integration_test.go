@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/superdurable/dex/sdk-go/dex"
 	sessionagent "github.com/superdurable/superversev2/internal/dexai/agents/session"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
@@ -388,4 +389,55 @@ func (s *mockSession) send(ctx context.Context, content string) {
 	if err := s.client.SendPendingMessage(ctx, s.id, pending); err != nil {
 		s.t.Fatalf("sending a message to %s: %v", s.id, err)
 	}
+}
+
+// The first reply does not wait for the workspace. catalog-prefetch's request
+// names Stripe and Slack, which the Session's first segment lists in its
+// catalog matches from the server's copy of the published catalog (the mock
+// model gives the card only then), so the card is recorded from them, with no
+// connector_select subagent or connector_catalog call, while the workspace
+// request that the first model call started is in flight: the Session's
+// history completes that request's first Step, then the card's routing, and
+// only then the Step that applies the READY instance. The read of AGENTS.md
+// waits for the request. The edit after it, and the last reply, need the
+// repository context in exactly one notice after a segment_start without it,
+// so it arrived before the first file changed and no later boundary appended
+// it again. The change is pushed through the commit gate.
+func TestSessionMockCatalogPrefetchDexIntegration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
+	defer cancel()
+	session := newMockSession(t, ctx, mockInput(t, "catalog-prefetch", 1).Content)
+	// A cold catalog copy or a missing notice ends the turn with the mock model's stop text and no card.
+	if ended := replies(session.finishedTurn(ctx).History); len(ended) == 0 || len(callsAfter(ended, 0)) == 0 {
+		t.Fatalf("the turn ended without the scripted calls: %+v", ended)
+	}
+	agent := session.recordedRequirements(ctx, 0, 1)
+	if spec := agent.Description.ConfirmedRequirements.Spec; len(spec.Connections) != 2 || spec.Connections[0].Connector != "stripe" || spec.Connections[1].Connector != "slack" {
+		t.Fatalf("version 1 does not hold the matched connections: %+v", spec.Connections)
+	}
+	assistant := replies(agent.History)
+	if len(assistant) != 6 || len(assistant[0].Message.ToolCalls) != 1 || assistant[0].Message.ToolCalls[0].Name != conversation.ToolConfirmRequirements ||
+		!strings.Contains(assistant[5].Message.Content, "version 1") {
+		t.Fatalf("the turn did not run the script from the card to its last reply: %+v", assistant)
+	}
+	for _, call := range callsAfter(agent.History.Messages, 0) {
+		if call.Name == conversation.ToolStartAgent || call.Name == conversation.ToolConnectorCatalog {
+			t.Fatalf("the turn searched the catalog again with %s", call.Name)
+		}
+	}
+	if pushed := toolResult(t, agent.History.Messages, conversation.ToolCommitAndPush, 0); pushed.Outcome != conversation.ToolOutcomeSucceeded || pushed.ResultCode != agentloop.CommitPushedForTest {
+		t.Fatalf("the change was not pushed: %+v", pushed)
+	}
+	requireProgress(t, agent, conversation.MockProgress{Scenario: "catalog-prefetch", Input: 1})
+	// The first RouteTool routes the card, the first ApplySessionWorkspace records the READY instance.
+	// The request's Step runs beside the model call, so the order of its commit against the card's is
+	// the engine's; only READY after the card proves that the card did not wait for the workspace.
+	steps := completedSteps(t, ctx, session.reader, string(session.id))
+	requested := slices.Index(steps, dex.GetFinalStepType(sessionagent.RequestSessionWorkspace{}))
+	card := slices.Index(steps, dex.GetFinalStepType(sessionagent.RouteTool{}))
+	ready := slices.Index(steps, dex.GetFinalStepType(sessionagent.ApplySessionWorkspace{}))
+	if requested < 0 || card < 0 || ready < card || ready < requested {
+		t.Fatalf("the card was not recorded while the workspace request was in flight: request at %d, card at %d, READY at %d of %v", requested, card, ready, steps)
+	}
+	t.Logf("FlowID=%s request at %d, card at %d, READY at %d of %d completed Steps", session.id, requested, card, ready, len(steps))
 }

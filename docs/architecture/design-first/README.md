@@ -37,9 +37,10 @@ flowchart LR
 
 ## Dex Flow Changes
 
-Only `SessionAgentFlow` changes. It gets one AttributeMap (`FlowDesigns`), two Attributes
-(`BuiltFlowDesign` and `BuiltFlowDesignCommit`) and one read RPC (`GetFlowDesign`). `RouteTool` and
-the commit of a `commit_and_push` result change their effects. The full per-Flow
+Only `SessionAgentFlow` changes. It gets one AttributeMap (`FlowDesigns`), three Attributes
+(`BuiltFlowDesign`, `BuiltFlowDesignCommit` and `WrittenDesignSteps`), one read RPC (`GetFlowDesign`)
+and one Stream (`RequirementsDraft`, the drafts of a card the model writes). `RouteTool`,
+`CallModel` and the commit of a `commit_and_push`, `write` or `edit` result change their effects. The full per-Flow
 contract of the changed parts is in [flow-design.md](flow-design.md#per-flow-contract-sessionagentflow).
 Every other Flow: None. No new Flow exists; the design is a fact of the Session, and nothing
 about it has a lifecycle of its own.
@@ -61,10 +62,13 @@ See [studio.md](studio.md). In short:
   nothing waits for a confirmation. A person changes it with **Change something…**, which
   sends and steers a chat message, or with any chat message; the card in the chat points
   there with **Open the brief** from other tabs.
+- While the agent writes the card, the Flow tab shows its draft as the Brief, drafting: the
+  title, summary, features and Step names as they arrive, with no drawing.
 - From the card until the build is complete, the Flow tab draws the designed Flows in place
   of the ones they change, under a label: "Design · building", then "Design · built,
   building processes". Steps are marked new or
-  changed, and the Step panel shows the explanation, the wait, the ways out and the features
+  changed, a Step whose code is not written yet is dashed with "N of M steps written" in the
+  label, and the Step panel shows the explanation, the wait, the ways out and the features
   the Step serves. There is no switch. Designed Flows are tagged in the Flow picker.
 - A card that arrives while the Flow tab is open shows there at once; on another tab the
   Flow tab's entry carries a **Design** marker.
@@ -83,10 +87,10 @@ that drive it (`make check-mock-scenarios`).
 |---|---|
 | `summary-approval` scenario, extended | Its card carries a design of `TextSummaryFlow` with `AwaitSummaryApproval`, the `SummaryApprovals` Channel and the `Approve summary` Action. That is exactly what the scenario then implements, so the agent's final reply says it built the design as recorded. `RecordSummaryUncertainty` is a failure route on both sides, so the design view and the implementation both hide it, and the outline ends with "+1 failure-handling Step". |
 | Scenario `design-revised` and `TestSessionMockDesignRevisedDexIntegration` | Card 1 records version 1 with its design in `confirmed`, and the Snapshot's reference has its digest; the turn goes on to a durable timer. `GetFlowDesign` returns the body with that digest. A change sent and steered interrupts the timer and makes card 2, which records version 2 and replaces `confirmed` in the commit that writes `ConfirmedRequirements`, whose design reference matches, so the first digest reads as changed, and `design_built` is false. A compaction's `segment_start` carries the outline. The next push traces version 2: a trace of version 1 is refused, and the blocked `commit_and_push` of version 2 leaves `design_built` false. |
-| `TestSessionMockSummaryApprovalDesignBuiltDexIntegration` | The `summary-approval` push through the commit gate, pushed and unblocked, makes `design_built` true with `design_built_commit` the pushed head, and the final reply says the design was built as recorded. |
+| `TestSessionMockSummaryApprovalDesignBuiltDexIntegration` | The `summary-approval` push through the commit gate, pushed and unblocked, makes `design_built` true with `design_built_commit` the pushed head, and the final reply says the design was built as recorded. The edit that declares `type AwaitSummaryApproval struct` marks `TextSummaryFlow.AwaitSummaryApproval`, and only it, written; the card, streamed at 100 ms per delta, wrote several drafts to `RequirementsDraft` before it was recorded, the last one complete with its call, title and six designed Steps. |
 | Scenario `design-refused` and `TestSessionMockDesignRefusedDexIntegration` | A transition to an undeclared Step, an unreachable Step, a wait on an undeclared Channel, a feature ID the card lacks and an oversized design are each refused with `invalid_user_input` and record no version. The corrected card is recorded. |
 | `TestSessionMockRequirementsCardDexIntegration`, unchanged | A card without a design behaves as before. Its reference is absent, and `GetFlowDesign` answers NOT_FOUND. |
-| `template-approval.spec.ts`, extended (Native lane) | With the Flow tab open, the card arrives and the tab shows `TextSummaryFlow` from the design at once, under "Design · building", compared with the template's initial design: the Result stage is marked changed, `AwaitSummaryApproval` in it new and `GenerateSummary` changed, with no Runs or Start; the Process Brief reads "Building from this brief · version 1", keeps the outline behind More details and says "Text summary · changed: adds Await summary approval, Approve summary; changes Generate summary", and the chat's card links to it. The one input builds on: after the push and the automatic process build, the implemented `TextSummaryFlow` replaces the design: its Result stage carries no mark and the label is gone. |
+| `template-approval.spec.ts`, extended (Native lane) | With the Flow tab open, the card arrives and the tab shows `TextSummaryFlow` from the design at once, under "Design · building", compared with the template's initial design: the Result stage is marked changed, `AwaitSummaryApproval` in it new and `GenerateSummary` changed, with no Runs or Start; the Process Brief reads "Building from this brief · version 1", keeps the outline behind More details and says "Text summary · changed: adds Await summary approval, Approve summary; changes Generate summary", and the chat's card links to it. The one input builds on: after the push and the automatic process build, the implemented `TextSummaryFlow` replaces the design: its Result stage carries no mark and the label is gone. Extended again: while the card streams, the Flow tab, switched from the first conversation, shows the Brief, drafting, with the designed Steps' names; after the scripted edit the design reads "6 of 6 steps written" and `AwaitSummaryApproval` is solid. |
 
 The comparator and the design view are Studio code. The extended spec covers them and records
 them in the Studio coverage map. No new E2E case exists. Whether the agent names a difference

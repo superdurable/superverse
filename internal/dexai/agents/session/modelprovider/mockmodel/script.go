@@ -150,6 +150,11 @@ type step struct {
 	// compaction uses it to prove what the new segment carries; a request
 	// without one of them is answered with a stop text.
 	ExpectSegmentStart []string `json:"expect_segment_start"`
+	// ExpectRepositoryContextNotice requires the repository context in exactly
+	// one notice after the segment_start, which lacks it: the Session opened
+	// the segment before its workspace was ready and appended the context once.
+	// A request without it is answered with a stop text.
+	ExpectRepositoryContextNotice bool `json:"expect_repository_context_notice"`
 	// ExpectSenderEnvelope checks the actual request block, including a forged nested envelope.
 	ExpectSenderEnvelope bool `json:"expect_sender_envelope"`
 	// ExpectPendingRequestBudget checks the real compacted multipart quote.
@@ -443,7 +448,7 @@ func (s *script) validateInput(index int, in input) error {
 }
 
 func (s *script) validateStep(step step, files rootFiles) error {
-	if step.Remote && (s.isSubagent() || step.Thinking != "" || step.Error != nil || step.Usage != nil || step.ChunkDelayMS != 0 || step.CompactionError != nil || step.ExpectHandoff || step.Repeat > 1 || step.StopReason != "" || len(step.ToolUses) > 4 || len(step.Text) > 64<<10 || len(step.ExpectSegmentStart) > 0 || step.ExpectSenderEnvelope || step.ExpectPendingRequestBudget) {
+	if step.Remote && (s.isSubagent() || step.Thinking != "" || step.Error != nil || step.Usage != nil || step.ChunkDelayMS != 0 || step.CompactionError != nil || step.ExpectHandoff || step.Repeat > 1 || step.StopReason != "" || len(step.ToolUses) > 4 || len(step.Text) > 64<<10 || len(step.ExpectSegmentStart) > 0 || step.ExpectRepositoryContextNotice || step.ExpectSenderEnvelope || step.ExpectPendingRequestBudget) {
 		return errors.New("a remote step has only exact public text/tool uses and never provider thinking, timing, failure, compaction or handoff expectations")
 	}
 	for _, use := range step.ToolUses {

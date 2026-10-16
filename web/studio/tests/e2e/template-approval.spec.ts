@@ -6,6 +6,7 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
+import type { Page } from "@playwright/test";
 import { test, expect } from "@/tests/e2e/support/coverage/spec-coverage";
 import { register } from "@/tests/e2e/support/account";
 import { fillTemplateSummaryConnection } from "@/tests/e2e/support/configuration";
@@ -44,6 +45,24 @@ const APPROVAL_PROMPT = [
   "Run go build ./... and make check-fdg-v2, then commit and push to the default branch with commit_and_push.",
 ].join(" ");
 
+/**
+ * On the mock model the card's reply streams for about 16 seconds: from its first draft until the card is
+ * recorded, the Flow tab, to which the first conversation switches, shows the draft as the Brief, drafting,
+ * with no drawing. The mock writes the card's keys in sorted order, so its design, with the names of its
+ * Steps, arrives first and its title last. It settles to the failure, if any, so that the watch can run beside
+ * the Project's creation.
+ */
+async function draftingBriefShown(page: Page): Promise<unknown> {
+  try {
+    const brief = page.locator('[data-brief-state="drafting"]');
+    await expect(brief.getByText("Brief · drafting", { exact: true })).toBeVisible({ timeout: 25 * 60_000 });
+    await expect(brief.getByRole("region", { name: "Steps", exact: true })).toContainText("Prepare summary");
+    return null;
+  } catch (failure) {
+    return failure;
+  }
+}
+
 test("template project Agent adds a summary approval that Preview and an operator on Live start, approve and complete", async ({
   page,
   browser,
@@ -57,16 +76,24 @@ test("template project Agent adds a summary approval that Preview and an operato
   // model input 1 of the scenario, as SUPERVERSE_E2E_MODEL_TARGET or the lane decides; CreateProject
   // carries it, and the Session starts with it.
   const mock = await choosesMockModel(page);
+  let drafting: Promise<unknown> = Promise.resolve(null);
   const created = await createProject(
     page,
     teamSpaceId,
     mock ? chooseMockFirstInput("summary-approval") : typePrompt(APPROVAL_PROMPT),
     testInfo,
+    mock
+      ? async () => {
+          drafting = draftingBriefShown(page);
+        }
+      : undefined,
   );
   // The agent records its requirements card first and goes on building in the same turn, so the workspace
   // changes from the start: Preview's processes build from a clean pushed head, and the person configures
   // Preview once the push's automatic deployment stops at it with the configuration notice.
   await waitForRequirementsCard(page, created.projectId, 10 * 60_000);
+  const draftFailure = await drafting;
+  if (draftFailure) throw draftFailure;
   // The scripted card carries the Flow design of the approval, which the Flow tab shows as the Process Brief
   // of version 1 while the agent builds it, until the Preview's processes are built from its push: a summary
   // grid above the drawn design, with no Confirm and build. Behind the Brief's More details are the outline,
@@ -95,6 +122,16 @@ test("template project Agent adds a summary approval that Preview and an operato
     await expect(design.getByRole("button", { name: /^Await summary approval\b.*, new$/ })).toBeVisible();
     await expect(design.getByRole("button", { name: /^Generate summary\b.*, changed$/ })).toBeVisible();
     await expect(design.getByRole("button", { name: /^(Test run|Live run|Start)/ })).toHaveCount(0);
+    // A designed Step is dashed until its code is written. The template holds the five it keeps or changes,
+    // and the scripted edit declares AwaitSummaryApproval, which then turns solid: all six read written, as
+    // they do once the push built the design.
+    await expect(design.getByTestId("design-steps-written")).toHaveText("6 of 6 steps written", {
+      timeout: 10 * 60_000,
+    });
+    await expect(design.getByRole("button", { name: /^Await summary approval\b.*, new$/ })).not.toHaveAttribute(
+      "data-emphasis",
+      "planned",
+    );
   }
   if (mock) await waitForFirstMockInput(page, created.projectId, "summary-approval", 25 * 60_000);
   else await waitForCompletedTurn(page, created.projectId, -1, 25 * 60_000);

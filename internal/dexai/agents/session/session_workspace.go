@@ -12,6 +12,7 @@ import (
 	"cmp"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/superdurable/dex/sdk-go/dex"
@@ -239,10 +240,10 @@ func holdSandbox(ctx dex.Context, instanceID string, hold time.Duration) {
 
 // resumeAfterWorkspace prepares leaving the cold path in the commit of the
 // Step that settled it and returns the continuation the waiting branch resumes
-// through CheckSteered, or "" to end an RPC-triggered branch. A model
-// continuation opens the Session's first segment if it has none, with the
-// repository context if the lease provided it, so a workspace that cannot be
-// prepared delays the model but never blocks it. A failed tool demand answers
+// through CheckSteered, or "" to end an RPC-triggered branch or one beside the
+// conversation. A model continuation, which only a branch an earlier binary
+// started carries, opens the Session's first segment if it has none, with the
+// repository context if the lease provided it. A failed tool demand answers
 // the pending call with a failure the model reads, and a start_agent call
 // answered so started no subagent, whose record is forgotten. Nothing here
 // fails the Session.
@@ -250,8 +251,9 @@ func (flow *SessionAgentFlow) resumeAfterWorkspace(ctx dex.Context, demand works
 	switch demand.ResumeAt {
 	case "":
 		return ""
-	case agentloop.ContinueAwaitRemote:
-		// The conversation waiter remains active while this independent branch provisions.
+	case agentloop.ContinueAwaitRemote, agentloop.ContinuePrepareContext:
+		// The conversation goes on beside this branch; the next model-call
+		// boundary appends a repository context the segment awaits.
 		return ""
 	case agentloop.ContinueStartTurn, agentloop.ContinueCompactContext, agentloop.ContinueCallModel:
 		if dexflow.OptionalValue(contextSegmentAttribute.Get(ctx)) == nil {
@@ -285,9 +287,41 @@ func confirmSessionHead(ctx dex.Context, commit string, at time.Time) {
 	}
 }
 
+// appendLateRepositoryContext appends the repository context that segment
+// awaits as one user notice, once the workspace read it, and clears the mark
+// in the same commit, so it is never appended twice. It returns the segment
+// as recorded. A failed workspace appends nothing.
+func appendLateRepositoryContext(ctx dex.Context, segment agentloop.ContextSegment) *agentloop.ContextSegment {
+	repositoryContext := dexflow.ValueOrZero(workspaceAttribute.Get(ctx)).RepositoryContext
+	if !segment.AwaitsRepositoryContext || repositoryContext == "" {
+		return &segment
+	}
+	appendEntry(ctx, agentloop.RepositoryContextNotice(repositoryContext))
+	segment = comm.Must(contextSegmentAttribute.Get(ctx))
+	segment.AwaitsRepositoryContext = false
+	comm.MustDo(contextSegmentAttribute.Set(ctx, segment))
+	return &segment
+}
+
+// requestCatalogMatches are the released connectors that the user's own words
+// in request name, as the warm per-replica catalog copy finds them without a
+// network call; "" when it finds none or is cold.
+func (flow *SessionAgentFlow) requestCatalogMatches(request []conversation.Entry) string {
+	var words []string
+	for _, entry := range request {
+		if entry.Kind != conversation.EntryKindUserMessage {
+			continue
+		}
+		if message, isPublic := entry.PublicMessage(); isPublic {
+			words = append(words, message.Content)
+		}
+	}
+	return flow.catalog.RequestMatches(strings.Join(words, "\n\n"))
+}
+
 // readRepositoryContext reads the trusted context of the leased checkout,
-// which the next segment_start carries. The caller records it in Workspace in
-// the same commit.
+// which the next segment_start carries, or a notice to a segment that awaits
+// it. The caller records it in Workspace in the same commit.
 func (flow *SessionAgentFlow) readRepositoryContext(ctx dex.Context, lease workspace.Lease) (string, error) {
 	repositoryContext, err := flow.repository.RepositoryContext(ctx, lease)
 	return comm.TruncateUTF8(repositoryContext, agentloop.MaximumRepositoryContextBytes), err
@@ -311,7 +345,7 @@ func (flow *SessionAgentFlow) applyWorkspace(ctx dex.Context, ws agentloop.Sessi
 		ws.ExtendDeadline(time.Now(), flow.sandboxHold)
 		isChanged = true
 	}
-	if isOwner && (demand.ResumeAt == "" || demand.ResumeAt == agentloop.ContinueAwaitRemote) && ws.JoinedResumeAt != "" {
+	if isOwner && (demand.ResumeAt == "" || demand.ResumeAt.IsBesideConversation()) && ws.JoinedResumeAt != "" {
 		demand.ResumeAt, isChanged = ws.TakeJoined(), true
 	}
 	if ws.State == agentloop.WorkspaceReady {
@@ -364,7 +398,8 @@ func (flow *SessionAgentFlow) settleWorkspaceFailure(ctx dex.Context, ws *agentl
 			return demand, false, err
 		}
 	}
-	if isOwner && demand.ResumeAt == "" {
+	if isOwner && (demand.ResumeAt == "" || demand.ResumeAt.IsBesideConversation()) {
+		// A tool that joined the failed request reads that the workspace is unavailable.
 		demand.ResumeAt = ws.TakeJoined()
 	}
 	comm.MustDo(workspaceAttribute.Set(ctx, *ws))

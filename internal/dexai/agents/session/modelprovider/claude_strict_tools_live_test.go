@@ -25,7 +25,7 @@ import (
 )
 
 // The frozen tool set of the Session Agent, strict tools with the schemas the
-// API takes and the eager input streaming of write and edit, is accepted by
+// API takes and the eager input streaming of write, edit and confirm_requirements, is accepted by
 // every supported model, and a model that is asked for a tool call answers with
 // an input that the tool's own decoder validates. The key is
 // ANTHROPIC_API_KEY; a missing key fails the test.

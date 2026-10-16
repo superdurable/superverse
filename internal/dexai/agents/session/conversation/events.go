@@ -97,6 +97,20 @@ type TextWriter func(string) error
 // ActivityWriter receives one structured lifecycle event.
 type ActivityWriter func(AgentEvent) error
 
+// ToolInputWriter receives the input of a tool call the model is still
+// writing, which it streams for a requirements card.
+type ToolInputWriter func(ToolInputProgress)
+
+// ToolInputProgress is the input a streamed tool call holds so far: the JSON
+// text written up to now, an object the model may have cut anywhere, and
+// whether its block is complete.
+type ToolInputProgress struct {
+	CallID   CallID
+	Name     ToolName
+	Input    string
+	Complete bool
+}
+
 // TaskStatus describes one item of the Agent's todo list.
 type TaskStatus string
 

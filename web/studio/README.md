@@ -102,7 +102,7 @@ the current contract.
 | [`components/flow/connector/native/model`](components/flow/connector/native/model/README.md) | Projects each model provider's listing into the model picker's options, one module per provider, with the listing notices they share. |
 | [`components/flow/connector/team-space`](components/flow/connector/team-space/README.md) | A Teamspace connection's editor with the connector's own form, and the picker that chooses one for a Project's connection name. |
 | [`components/flow/design`](components/flow/design/README.md) | Draws an agent's Flow design with the Flow canvas under its Design label, compares it with the current source for marks and change lines, and holds its Process Brief. |
-| [`components/flow/design/brief`](components/flow/design/brief/README.md) | The Process Brief on the Flow tab: the current requirements card and its Flow design in business words, a summary grid above the drawing, with Change something. |
+| [`components/flow/design/brief`](components/flow/design/brief/README.md) | The Process Brief on the Flow tab: the current requirements card and its Flow design in business words, a summary grid above the drawing, Change something, and the card's draft. |
 | [`components/flow/diagnostics`](components/flow/diagnostics/README.md) | The Diagnostics pages of a Flow and one run: overview, live state, Streams, the run record, and the Stop, Time Travel and channel operation dialogs. |
 | [`components/flow/diagnostics/event`](components/flow/diagnostics/event/README.md) | Renders the details of one history event: its Step method sections, effects, failure and the Step options it ran with. |
 | [`components/flow/diagnostics/graph`](components/flow/diagnostics/graph/README.md) | Reconstructs and draws a run's execution graph from its history events, without applying a newer Flow Definition. |
@@ -163,6 +163,7 @@ the current contract.
 | [`lib/server/rpc`](lib/server/rpc/README.md) | Serves `/api/rpc/<Method>` for the six browser services through a fail-closed allowlist and a strict descriptor-driven request decoder. |
 | [`lib/session`](lib/session/README.md) | The page-owned Session: `SessionProvider`, its owner hook with the single Watch and the Agent commands, the reducer, the Agent protobuf projection, message merging and the mock scenarios. |
 | [`lib/session/design`](lib/session/design/README.md) | Reads which Flow design the Flow tab draws from the Session Snapshot, reads its body once per digest, remembers which card version it showed, and whether its Brief shows. |
+| [`lib/session/draft`](lib/session/draft/README.md) | The requirements card the agent is still writing, as the Session Watch streams it, and when the Snapshot says its card call is over. |
 | [`lib/shared`](lib/shared/README.md) | Pure code both sides use: protobuf and JSON types, formatting, abort and delay, RPC method types, Session command errors, Project availability, Flow Definition catalogs and Studio routes. |
 | [`lib/shared/problem`](lib/shared/problem/README.md) | The one problem format's copy: remedy buttons, what-happened phrases, gap phrases, refusal texts and the builders that turn a failure, an error or a notice into a problem. |
 | [`lib/shared/version`](lib/shared/version/README.md) | How Studio names a commit: "V12 · subject" from the version the server froze with each record, never a cut hash. |

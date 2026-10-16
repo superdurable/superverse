@@ -16,7 +16,7 @@ import { useProjectSession, useSessionResource } from "@/lib/session/SessionProv
 import type { ShownDesign } from "@/lib/session/design/use-flow-design";
 import { designPhaseLabel } from "@/lib/shared/design-phase";
 import { processName } from "@/lib/shared/format";
-import { designChangeLines, ProcessBrief } from "@/components/flow/scope/flow-design";
+import { designChangeLines, DraftBrief, ProcessBrief } from "@/components/flow/scope/flow-design";
 import { LazyDesignFlowView } from "@/components/flow/scope/LazyFlowViews";
 import { cx } from "@/components/ui/cx";
 import { NotReady } from "@/components/ui/NotReady";
@@ -28,7 +28,7 @@ const ANSWER_FIRST = "The agent waits for your answers in the chat; answer them,
  * The Process Brief of the current version of the requirements, whose design is shown or which has none. The
  * agent builds from it at once; Change something… sends a message, which steers the turn while one runs, and
  * the agent records a revised version and builds what changed. It alone reads the Session's commands, whose
- * streamed text then never redraws the canvas.
+ * streamed text then never redraws the canvas. While the agent writes the next card, its draft takes the place.
  */
 function BriefHost({
   design,
@@ -46,6 +46,7 @@ function BriefHost({
   const [failed, setFailed] = useState(false);
   const description = session.snapshot?.description ?? null;
   const current = description?.confirmedRequirements ?? null;
+  if (session.requirementsDraft) return <DraftBrief draft={session.requirementsDraft} />;
   if (!current) return drawing ?? null;
   const mock = description?.executor?.mode !== "remote" && description?.contextModel === "mock";
   const ready = description !== null && description.status !== AgentStatus.INITIALIZING;
@@ -134,6 +135,7 @@ export function DesignSurface({ design, flowType }: { design: ShownDesign; flowT
       phase={design.phase}
       current={current}
       features={design.features}
+      written={design.writtenSteps}
       direction="lr"
     />
   ) : design.error ? (
