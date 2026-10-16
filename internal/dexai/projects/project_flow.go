@@ -56,7 +56,10 @@ var (
 	// ProjectSessionStartFailure is SESSION_START_FAILED, kept apart from the command failure in
 	// LastFailure: commands leave it, and only the Session's registration clears it.
 	ProjectSessionStartFailure = dex.DefineAttribute[*dexflow.Failure]("SessionStartFailure", dex.SyncToAttributeStore())
-	ChildFlows                 = dex.DefineAttributeMap[ChildFlowReference]("ChildFlows")
+	// ProjectInitialSessionRequest is the creator's Session model and first message until StartProjectSession
+	// starts the Session; it is never synced, so the message never reaches SQL.
+	ProjectInitialSessionRequest = dex.DefineAttribute[SessionStartRequest]("InitialSessionRequest")
+	ChildFlows                   = dex.DefineAttributeMap[ChildFlowReference]("ChildFlows")
 	// ProjectMembers, by AccountID, syncs as the child table project_members and stays after deletion.
 	ProjectMembers  = dex.DefineAttributeMap[ProjectMember]("Members", dex.SyncToAttributeStore())
 	ProjectCommands = dex.DefineChannel[ProjectCommand]("ProjectCommands")
@@ -116,6 +119,7 @@ func (f *ProjectFlow) GetPersistenceSchema() dex.PersistenceSchema {
 			ProjectStartIdentity, ProjectRevision, ProjectCreatedAt, ProjectUpdatedAt, ProjectID, ProjectCreatorAccountID, ProjectName, ProjectTemplateRevision,
 			ProjectSetupFlowID, ProjectTeamSpaceID, ProjectStatus, ProjectRepositoryBinding, ProjectAppManifest, ProjectActiveDeployment, ProjectCurrentLive, ProjectStorage,
 			ProjectLiveExecution, ProjectActiveCommand, ProjectLastCommand, ProjectLastFailure, ProjectSessionStartFailure, ChildFlows, ProjectMembers,
+			ProjectInitialSessionRequest,
 		},
 		Channels: []dex.ChannelDef{ProjectCommands},
 		Streams:  []dex.StreamDef{ProjectProgress},
@@ -147,6 +151,9 @@ func (f *ProjectFlow) InitialAttributes(in ProjectStart) []dex.InitialAttributeD
 	dexflow.Add(b, ProjectLastFailure, nil)
 	dexflow.Add(b, ProjectSessionStartFailure, nil)
 	dexflow.AddInstance(b, ProjectMembers, in.CreatorAccountID, ProjectMember{Role: RoleOwner, AddedAt: now, AddedByAccountID: in.CreatorAccountID})
+	if in.InitialSession != nil {
+		dexflow.Add(b, ProjectInitialSessionRequest, *in.InitialSession)
+	}
 	return b.Values()
 }
 
@@ -530,12 +537,16 @@ func (s StartProjectSession) GetStepOptions() *dex.StepOptions {
 	return providerStepOptions(dex.ProceedToOnExecuteFailure(RecordProjectSessionStartFailure{flow: s.flow}, nil))
 }
 
-// Execute makes the Session's one StartFlow, idempotent by FlowID and RequestID;
-// a Project no longer READY because its deletion began starts none.
+// Execute makes the Session's one StartFlow, idempotent by FlowID and RequestID, with the creator's request,
+// which this commit clears; a Project no longer READY because its deletion began starts none.
 func (s StartProjectSession) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, error) {
 	if project := s.flow.readProject(ctx); project.ProjectStatus == StatusReady {
-		if err := s.flow.Sessions.StartForProject(ctx, project); err != nil {
+		initial := dexflow.OptionalValue(ProjectInitialSessionRequest.Get(ctx))
+		if err := s.flow.Sessions.StartForProject(ctx, project, initial); err != nil {
 			return nil, dex.ErrorWithStack(fmt.Errorf("start the Session of Project %s: %w", project.ProjectID, err))
+		}
+		if initial != nil {
+			comm.MustDo(ProjectInitialSessionRequest.Delete(ctx))
 		}
 	}
 	return dex.DeadEnd(), nil

@@ -35,7 +35,7 @@ worktree ([subagents.md](subagents.md)).
 | Request assembly, frozen tools in the request, stop reasons, effort entries, `PendingBytes` | [context-management.md](context-management.md) |
 | The commit gate, requirement trace and application tests | [commit-gate-and-app-tests.md](commit-gate-and-app-tests.md) |
 | Connector selection and connector subagents | [connectors.md](connectors.md) |
-| Stop, steering, questions, requirements confirmation, the SessionAgentFlow contract | [session.md](session.md) |
+| Stop, steering, questions, requirements cards, the SessionAgentFlow contract | [session.md](session.md) |
 | What reaches the browser | [streaming-and-studio.md](streaming-and-studio.md) |
 
 ## Where tools run
@@ -55,7 +55,7 @@ flowchart LR
   argument decoding, helper requests and responses, failure classification, the platform Git
   protocol and commit gate, the connector catalog, and the three platform tools. The Runner reads
   no Flow: `Call` carries the tool name, arguments, `Identity{FlowID, CallID}`, the accepted lease,
-  the confirmed HEAD, the agent root and, for `commit_and_push`, the confirmed requirement IDs and
+  the confirmed HEAD, the agent root and, for `commit_and_push`, the current requirement IDs and
   revision. The Session fenced the lease to itself when it accepted the grant.
 - **Image helpers** (stdlib-only Go binaries in the coding image, JSON in and out): sandboxd's file
   API reads bytes only, cannot search and cannot leave `/workspace`, and its process API restricts
@@ -221,7 +221,7 @@ anchors it; `**/client*.go` finds a file anywhere below `path`, while `dex/clien
 | `commit_and_push` | Commit SHA, branch, and the duration of each gate stage ([commit gate](commit-gate-and-app-tests.md#result)) | A few lines |
 | `connector_catalog` | At most 8 compact entries: connector ID, name, version, exact module, matching operations and triggers (name, kind, description), `install_command`, the paths of the manifest and the generated factory in the module, and the catalog's source, digest and match count | At most 16 KiB |
 | Platform tools | JSON, redacted ([Platform diagnostic tools](#platform-diagnostic-tools)); the existing parameters page a large result | At most 16 KiB |
-| `write_todos`, `request_user_input`, `confirm_requirements`, `start_timer`, `set_effort` | A short status payload; the three user-facing tools end the turn when the wait begins | Small |
+| `write_todos`, `request_user_input`, `confirm_requirements`, `start_timer`, `set_effort` | A short status payload; `request_user_input` ends the turn when its wait begins and `start_timer` waits; `confirm_requirements` answers `recorded` with the version and the turn goes on | Small |
 | `start_agent` | `{task_id: "agent-<id>", base_commit}`, immediately; `{task_id, status}` when a Stop ended its record before the start | Small |
 | `merge_agent_changes` | JSON with `result` (`merged`, `merged_with_conflicts`, `nothing_to_merge` or `discarded`), the applied files, the conflicts as `{path, kind}` (kind `content`, `binary`, `delete_modify`, `add_add` or `changed_during_merge`), the unchanged files, the requested `paths` that name no changed file (`unknown`) and, for a conflict or an unknown path, a `next` line | One entry per touched file, within the 64 KiB backstop |
 
@@ -263,9 +263,10 @@ flowchart TD
 - **Pending calls.** The `tool_use` blocks of one model reply wait in `AgentState.PendingToolCalls`;
   `PendingToolIndex` is the cursor. `RouteTool` admits and routes the call at the cursor.
 - **Built-ins** (`write_todos`, `start_timer`, `request_user_input`, `confirm_requirements`,
-  `set_effort`) run inside the `RouteTool` commit. A question or requirements card ends the turn and
-  supersedes the calls behind it (`superseded_by_user_input`); `start_timer` waits, and the calls behind
-  it run afterwards.
+  `set_effort`) run inside the `RouteTool` commit. A question ends the turn and supersedes the calls
+  behind it (`superseded_by_user_input`); a requirements card is recorded as the next version and the
+  calls behind it run ([session.md](session.md#requirements-cards)); `start_timer` waits, and the calls
+  behind it run afterwards.
 - **Admission before dispatch** for `start_agent` is made in `RouteTool` (the limits and the
   `Subagents` record; [subagents.md](subagents.md)); its execution is `ExecuteTool`.
 - **Parallel wave.** `RouteTool` takes the run of consecutive calls from the cursor that are
@@ -595,9 +596,9 @@ the hint of a platform code unless the code's own hint replaces it.
 | `invalid_effort` | `set_effort` asked for a level the model profile does not offer |
 | `multiple_write_todos_calls`, `invalid_todos` | A response writes the progress list twice, or the list is invalid |
 | `invalid_duration_seconds` | `start_timer` got an invalid duration |
-| `invalid_user_input`, `user_input_already_pending` | A question or requirements card is invalid, or one is already waiting |
+| `invalid_user_input`, `user_input_already_pending` | A question or requirements card is invalid, or a question is already waiting |
 | `rejected_by_user` | A tool that requires approval was rejected |
-| `superseded_by_steered_user_message`, `superseded_by_user_input` | The call sat behind steering, or behind a question or card, and did not run |
+| `superseded_by_steered_user_message`, `superseded_by_user_input` | The call sat behind steering, or behind a question, and did not run |
 | `interrupted_by_user` | Stop ended the turn; effect `unknown` for a tool that changes state |
 
 The delegation codes above are explained in

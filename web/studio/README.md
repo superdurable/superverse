@@ -87,7 +87,7 @@ the current contract.
 | [`app`](app/README.md) | The Next.js routes: signed-in and sign-in pages, the BFF route handlers and the `/dex` Flow API routes, and the only files that choose mock or production code. |
 | [`components/agent`](components/agent/README.md) | The shared Agent UI's single entry `index.ts`; Studio reaches the conversation and interaction presentation only through this entry. |
 | [`components/agent/conversation`](components/agent/conversation/README.md) | Renders an Agent conversation: turns, messages, notices, Markdown and each turn's work as one plain line, with its full log, markers and metrics folded, on a live clock. |
-| [`components/agent/interaction`](components/agent/interaction/README.md) | What the Agent asks of and shows the reader: question batches, the requirements card and confirmed requirements, queued messages, todo progress, timers and background tasks. |
+| [`components/agent/interaction`](components/agent/interaction/README.md) | What the Agent asks of and shows the reader: question batches, an old waiting requirements card, the current requirements, queued messages, todo progress, timers and background tasks. |
 | [`components/build`](components/build/README.md) | The Flow and Interface surfaces: the Flow Definitions of the version shown, the Preview with its source, Start and Stop, problem, phases and history, and the automatic-builds switch. |
 | [`components/flow/canvas`](components/flow/canvas/README.md) | Draws a Flow Definition on a React Flow canvas, by stage or by Step, with its controls, legend and Step panel, optionally overlaid with one run and its failure. |
 | [`components/flow/canvas/camera`](components/flow/canvas/camera/README.md) | Frames what the canvas shows: a Step with the Steps around it, legibly; the entrance trace of a new drawing; one eased move per change. |
@@ -102,7 +102,7 @@ the current contract.
 | [`components/flow/connector/native/model`](components/flow/connector/native/model/README.md) | Projects each model provider's listing into the model picker's options, one module per provider, with the listing notices they share. |
 | [`components/flow/connector/team-space`](components/flow/connector/team-space/README.md) | A Teamspace connection's editor with the connector's own form, and the picker that chooses one for a Project's connection name. |
 | [`components/flow/design`](components/flow/design/README.md) | Draws an agent's Flow design with the Flow canvas under its Design label, compares it with the current source for marks and change lines, and holds its Process Brief. |
-| [`components/flow/design/brief`](components/flow/design/brief/README.md) | The Process Brief on the Flow tab: a requirements card and its Flow design in business words, a summary grid above the drawing, with Change something and Confirm and build. |
+| [`components/flow/design/brief`](components/flow/design/brief/README.md) | The Process Brief on the Flow tab: the current requirements card and its Flow design in business words, a summary grid above the drawing, with Change something. |
 | [`components/flow/diagnostics`](components/flow/diagnostics/README.md) | The Diagnostics pages of a Flow and one run: overview, live state, Streams, the run record, and the Stop, Time Travel and channel operation dialogs. |
 | [`components/flow/diagnostics/event`](components/flow/diagnostics/event/README.md) | Renders the details of one history event: its Step method sections, effects, failure and the Step options it ran with. |
 | [`components/flow/diagnostics/graph`](components/flow/diagnostics/graph/README.md) | Reconstructs and draws a run's execution graph from its history events, without applying a newer Flow Definition. |
@@ -133,7 +133,7 @@ the current contract.
 | [`components/session/executor`](components/session/executor/README.md) | Shows the Session executor, SQL-derived remote liveness, offline notice, and epoch-fenced return to Superverse while keeping connection dialog ownership with its caller. |
 | [`components/session/mock`](components/session/mock/README.md) | The mock model's composer, in a Session and on the creation page: it picks a category, a scenario and its arguments, and sends the next input as its kind arrives. |
 | [`components/session/remoteagent`](components/session/remoteagent/README.md) | Shows Builder connection risk acknowledgement, one-time pairing and safe connection metadata through Studio's typed business API. |
-| [`components/session/start`](components/session/start/README.md) | A new Session's first turn and the composer's send: the starting model, the creation intent the chat sends once the Session waits, and replies to a waiting card. |
+| [`components/session/start`](components/session/start/README.md) | The composer around a Session's turns: the starting model the creation page preselects, the composer's text per Project and its send. |
 | [`components/shell`](components/shell/README.md) | The app frame: the sign-in and registration form, the signed-in sidebar with its rail, Projects, Team, theme and account, the account pages' bar, and the brand marks. |
 | [`components/shell/palette`](components/shell/palette/README.md) | Jump to (⌘K or Ctrl K): Home, New project, every Project, and the Processes, surfaces and tools the open Builder offers. |
 | [`components/teamspace`](components/teamspace/README.md) | The Teamspace switcher, creation and landing, page gate, Home header, People, a Project's Permissions and Share, and the Project role chip. |
@@ -153,7 +153,7 @@ the current contract.
 | [`lib/api/transport`](lib/api/transport/README.md) | The browser network layer owns RPC posts, bounded read retries, snapshot Watches, command recovery, the Flow API client and application URL probes. |
 | [`lib/browser`](lib/browser/README.md) | Browser-only utilities: storage with every stored key, the theme preference, single-flight user actions, URL query updates and paged lists. |
 | [`lib/flow`](lib/flow/README.md) | The providers the Flow UI reads: the scoped Flow API client, Flow view navigation and the Flow catalog, with the definition revision binding and enum labels. |
-| [`lib/project`](lib/project/README.md) | Project resources: the Project Watch provider and list, resource Watches, release versions, Process definitions, waiting runs, configuration reads, requirement gap names, creation intents and the template's Design. |
+| [`lib/project`](lib/project/README.md) | Project resources: the Project Watch provider and list, resource Watches, release versions, Process definitions, waiting runs, configuration reads, requirement gap names, the pending creation and the template's Design. |
 | [`lib/project/publishing`](lib/project/publishing/README.md) | A publish's five stages from its phase timings, the publish in progress with its Watches, the build log read, and the Publish popover's version check. |
 | [`lib/project/setup`](lib/project/setup/README.md) | Setup's shared state: each environment's status, the Preview draft, Live's next-publish layer with its items, and the gap links. |
 | [`lib/project/stage`](lib/project/stage/README.md) | How far a Project has come, from its first conversation to built and Live, and the Builder tabs it has shown in this browser. |
@@ -224,18 +224,11 @@ message there: the free-text composer with a Claude model, or, where `ListMockSc
 lets the account select the mock model, the mock composer, whose first scenario input
 becomes the message. The picker starts on Sonnet, or for the platform administrator
 (`useAccount().isAdmin`) on the mock model where `ListMockScenarios` offers it
-(`components/session/use-starting-model.ts`). The page stores the choice as the
-Project's creation intent. Once the new Session waits for its first message with an
-empty conversation, the Builder's chat applies the model with `UpdateSessionModel` (at
-the snapshot's model revision) when it differs from the Session's, which costs nothing
-before the first message, and then sends the message as the Session's first
-`SendMessage`, with the intent's key as the message ID, automatically and once
-(`components/session/use-creation-intent.ts`). A conversation that holds a message
-settles the intent, so a reload never sends it again; a send whose answer was lost
-can at worst queue the message twice. A model change or send that fails keeps the
-intent: the page shows the error and the composer holds the message as a draft (the
-mock composer, its scenario and arguments), which the person sends again with the
-model the picker shows.
+(`components/session/use-starting-model.ts`). The creation page sends the message, its
+message ID and the model with `CreateProject` (`components/project/ProjectCreationPage.tsx`).
+The server admits them before the Project starts, and the Project's Session starts on that
+model with the message admitted once, whether or not the tab stays open; a retry of the
+same request repeats the same message ID, and a changed one is refused.
 
 - Every Watch connection, including a reconnect, starts with a snapshot. Get is
   used for the first load, recovery and command reconciliation; a Get response
@@ -255,9 +248,8 @@ Preview commands and Publishing builds, recoveries and deployments keep their
 request ID across retries until accepted, or until the server definitely rejects
 (400, 401, 403, 404 or 409) a command whose attempts were all definite. After
 one uncertain attempt the ID is kept, so the next retry repeats that request.
-Project creation and Release preparation keep their stored request ID until
-accepted, and the creation intent keeps its message ID until the conversation
-holds a message. Each component runs at most one user action at a
+Project creation, with its first message's ID, and Release preparation keep their
+stored request ID until accepted. Each component runs at most one user action at a
 time (`useSingleFlight`), and unmounting aborts it.
 
 ## Browser boundary

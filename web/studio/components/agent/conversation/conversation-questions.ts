@@ -6,15 +6,14 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-// The Agent's request_user_input and confirm_requirements calls of the history. The history carries
-// no tool arguments, so a past request shows only its target, the first question or the card's title;
-// the pending questions and the card come from the Agent's description.
+// The Agent's request_user_input calls of the history. The history carries no tool arguments, so a past
+// request shows only its target, the first question; the pending questions come from the Agent's
+// description. A requirements card waits for nobody: its call is an ordinary work item.
 import type { AgentToolCall } from "@/lib/session/agent-types";
 import type { ConversationQuestionItem, PresentationContext } from "./conversation-presentation";
 
-const REQUIREMENTS_TOOL = "confirm_requirements";
 /** The tools whose call waits for the user's answer. */
-export const QUESTION_TOOLS: ReadonlySet<string> = new Set(["request_user_input", REQUIREMENTS_TOOL]);
+export const QUESTION_TOOLS: ReadonlySet<string> = new Set(["request_user_input"]);
 
 export function questionItem(call: AgentToolCall, context: PresentationContext): ConversationQuestionItem {
   const answered = context.messages.some((entry) => entry.message.answeredInputCallId === call.id);
@@ -26,7 +25,6 @@ export function questionItem(call: AgentToolCall, context: PresentationContext):
   return {
     key: `question-${call.id}`,
     callId: call.id,
-    isRequirements: call.name === REQUIREMENTS_TOOL,
     target: call.target,
     status: answered
       ? "answered"

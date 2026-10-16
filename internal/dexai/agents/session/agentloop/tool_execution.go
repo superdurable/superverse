@@ -176,6 +176,9 @@ const (
 	ToolResultStatusCleared        ToolResultStatus = "cleared"
 	ToolResultStatusWaitingForUser ToolResultStatus = "waiting_for_user"
 	ToolResultStatusCompleted      ToolResultStatus = "completed"
+	// ToolResultStatusRecorded answers a requirements card recorded as the
+	// next version; the turn goes on.
+	ToolResultStatusRecorded ToolResultStatus = "recorded"
 )
 
 // ToolResult encodes the result of a built-in tool that succeeded. The payload

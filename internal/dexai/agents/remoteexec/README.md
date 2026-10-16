@@ -91,7 +91,7 @@ seen at the next poll, within `SyncWait`.
 A projected tool result keeps its `ToolCall` summary, so the HTTP mapping classifies
 `request_user_input`'s `waiting_for_user` placeholder (from the Session's typed result payload) as
 the wire status `waiting_for_user`: the remote call stays open until its answer entry
-(`AnsweredInputCallID`). No other result, `confirm_requirements`' placeholder included, carries a
+(`AnsweredInputCallID`). No other result, `confirm_requirements`' recorded result included, carries a
 status.
 
 `projectEntry` and `BoundedDelivery` produce a transient public projection,

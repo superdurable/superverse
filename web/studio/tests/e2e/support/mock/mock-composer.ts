@@ -76,7 +76,8 @@ async function selectMockInput(page: Page, scenario: string, number: number, arg
 
 /**
  * On the creation page, chooses the mock model and the first input of a scenario with its
- * arguments as the Session's first message, in place of a prompt; Build then creates the Project.
+ * arguments as the Session's first message, in place of a prompt; Build then creates the Project
+ * with it.
  */
 export function chooseMockFirstInput(scenario: string, args: Readonly<Record<string, string>> = {}): FirstTurnChoice {
   return async (page) => {
@@ -156,8 +157,8 @@ async function finishMockInput(
 }
 
 /**
- * Waits until the turn of a scenario's first input ends. The creation page sent that input as the
- * Session's first message once the Session started, so no spec sends it.
+ * Waits until the turn of a scenario's first input ends. CreateProject carried that input as the
+ * Session's first message, which the Session started with, so no spec sends it.
  */
 export async function waitForFirstMockInput(page: Page, projectId: string, scenario: string, timeoutMs = 15 * 60_000) {
   await finishMockInput(page, projectId, scenario, 1, 0, timeoutMs);

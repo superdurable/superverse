@@ -100,21 +100,23 @@ A Project has exactly one Session, `session-<projectID>`, for example
 The API has no Session ID and no Session start: ProjectFlow's Step
 `StartProjectSession` calls `StartForProject` (`projects.SessionLifecycle`)
 once the Project is READY. It starts the Session with the profile `session-v1`
-on the Project's AppManifest commit and without a message, through
+on the Project's AppManifest commit, and with the first message and model that
+CreateProject carried (ProjectFlow's `InitialSessionRequest`), if any, through
 `SessionAgentFlowClient.StartAccepted`: `IDReuseDisallow`, the Start RequestID
 `flowid.Fingerprint(struct{ProjectID string})` and same-request
 `AlreadyStarted.IgnoreError`, so a retried Step, a replay and a repeated Setup
 commit join the one execution. The Session's StartIdentity Attribute keeps that
-fingerprint; the HEAD and the server's start model are not part of it, so a
+fingerprint; the HEAD, the start model and the first message are not part of it, so a
 retry under other server defaults joins the accepted execution unchanged, and a
 start with another RequestID is refused (`dex.FlowAlreadyStartedError`). A
 start whose retries are exhausted leaves the Project READY with
 `SESSION_START_FAILED` in its own `SessionStartFailure`, which the Session's
 admission clears (`TestProjectSessionStartFailureDexIntegration`).
 
-Studio applies the model the person chose on the creation page with
-`UpdateSessionModel` when it differs from the Session's, then sends the creation
-intent as the Session's first `SendMessage`. Session start involves no Sandbox: the
+The Session starts on the model the person chose on the creation page (the
+server's default when none), and its start Step publishes the first message to
+`QueuedUserMessages` in the commit that admits the Session, once, so no browser
+has to stay open to deliver it. Session start involves no Sandbox: the
 first tool or Preview demand provisions one. The
 Session's first Step calls `AdmitSession`, which registers `session-<projectID>`
 as the Project's child before any message, model call, tool or workspace
@@ -374,8 +376,9 @@ disposable process memory.
 
 Studio addresses the Session by its Project: the Build page opens the
 Project's one Session directly. The creation page shows the Session's model picker and
-composer (the mock composer on the mock model), and Build applies the chosen model and
-sends the creation intent as its first message. A Session denied at admission is ARCHIVED
+composer (the mock composer on the mock model), and CreateProject carries the chosen model
+and the first message, so the Session starts on that model with the message queued once
+(`StartForProject` passes ProjectFlow's `InitialSessionRequest` to `StartAccepted`). A Session denied at admission is ARCHIVED
 with `admission_denied`.
 
 A new Session has no workspace. `SessionSnapshot.workspace` is absent until the

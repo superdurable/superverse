@@ -35,14 +35,11 @@ export interface ConversationViewProps {
   notificationLinks?: NotificationLinks;
 }
 
-/** How a question or requirements card of the history ended, in words, and its badge tone. */
+/** How a question of the history ended, in words, and its badge tone. */
 function questionState(item: ConversationQuestionItem): { label: string; tone: BadgeTone } {
   switch (item.status) {
     case "pending":
-      return {
-        label: item.isRequirements ? "Waiting for you to confirm what to build" : "Waiting for your answer",
-        tone: "busy",
-      };
+      return { label: "Waiting for your answer", tone: "busy" };
     case "answered":
       return { label: "Answered", tone: "pass" };
     case "cancelled":
@@ -52,12 +49,12 @@ function questionState(item: ConversationQuestionItem): { label: string; tone: B
   }
 }
 
-/** A question or requirements card the agent showed: how it ended and its first question or title. */
+/** A question the agent asked: how it ended and its first question. */
 function QuestionCard({ item }: { item: ConversationQuestionItem }) {
   const { label, tone } = questionState(item);
   return (
     <article
-      aria-label={item.isRequirements ? "What to build" : "Question"}
+      aria-label="Question"
       className="flex flex-col items-start gap-1.5 rounded-lg border border-line-soft bg-panel px-3 py-2.5 text-body text-ink-dim"
       data-status={item.status}
     >

@@ -6,9 +6,9 @@
 #
 # SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-# The commit gate's test stage on a confirmed change: the card asks for R1 (an
+# The commit gate's test stage on a recorded change: the card asks for R1 (an
 # unknown summary answers not found) and R2 (blank text is rejected). After the
-# confirmation the script writes an API test with a wrong expectation, sees it
+# card the script, in the same turn, writes an API test with a wrong expectation, sees it
 # fail in make test-app, and its first commit_and_push fails the test stage
 # with application_tests_failed. The fix passes make test-app; a trace that
 # leaves R2 out fails as requirements_untested. A detached listener on the test
@@ -28,8 +28,8 @@ inputs:
   - label: "Describe the change"
     message: "Make sure an unknown summary answers not found, and keep rejecting blank text."
     replies:
-      - thinking: "These are behaviors of the API the user wants guaranteed, so I confirm them as requirements and prove each with a test."
-        text: "Here is what I will guarantee and test. Please confirm it, or tell me what to change."
+      - thinking: "These are behaviors of the API the user wants guaranteed, so I record them as requirements and prove each with a test."
+        text: "Here is what I will guarantee and test. I am starting now; tell me in the chat if anything should change."
         tool_uses:
           - name: confirm_requirements
             input:
@@ -41,9 +41,6 @@ inputs:
               connections: []
               user_setup: []
               acceptance: ["Both behaviors are proven by API tests that pass in the commit gate."]
-  - label: "Confirm the requirements"
-    requirements_confirm: true
-    replies:
       - text: "Restoring the application's dependencies, as the template's instructions say."
         tool_uses:
           - name: bash
@@ -136,7 +133,7 @@ inputs:
         tool_uses:
           - name: bash
             input: {command: "pkill -f 'http.server 880[5]'; sleep 1; ! pgrep -f 'http.server 880[5]'", description: "Stop the server on port 8805"}
-      - text: "Every confirmed requirement needs its test in the trace. Pushing with R1 and R2."
+      - text: "Every recorded requirement needs its test in the trace. Pushing with R1 and R2."
         tool_uses:
           - name: commit_and_push
             input:

@@ -122,17 +122,19 @@ type Attribute struct {
 	Key   string `json:"key"`
 }
 
-// Slot names the two designs a Session keeps: the waiting card's and the
-// confirmed one. Each is a fixed instance key of the Session's FlowDesigns.
+// Slot names a design a Session keeps, a fixed instance key of its
+// FlowDesigns: the design of the current requirements.
 type Slot string
 
 const (
-	SlotPending   Slot = "pending"
 	SlotConfirmed Slot = "confirmed"
+	// SlotPending held the design of a card that waited for a confirmation;
+	// recording a card deletes what a Session left there.
+	SlotPending Slot = "pending"
 )
 
-// Slots lists both slots; the business API maps each.
-var Slots = []Slot{SlotPending, SlotConfirmed}
+// Slots lists the slots a Session reads; the business API maps each.
+var Slots = []Slot{SlotConfirmed}
 
 // FromToolInput is the design of a confirm_requirements call, whose schema
 // the decoder already enforced. Absent lists become empty ones and an absent

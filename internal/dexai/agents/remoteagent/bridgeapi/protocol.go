@@ -204,7 +204,7 @@ const (
 	// ToolResultStatusWaitingForUser is request_user_input's placeholder: the
 	// question is open and its answer arrives as an entry whose
 	// AnsweredInputCallID is the call, which is the call's actual result.
-	// confirm_requirements' placeholder carries no status: it ends the turn.
+	// confirm_requirements' result carries no status: the card is recorded and the turn goes on.
 	ToolResultStatusWaitingForUser ToolResultStatus = "waiting_for_user"
 )
 

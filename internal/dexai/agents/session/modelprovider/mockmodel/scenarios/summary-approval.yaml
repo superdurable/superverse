@@ -14,24 +14,24 @@
 # template's gate passes the result (go build, strict FDG 2.0 with the Action, vet, gofmt). A fresh workspace
 # has no web dependencies and no generated API code, so the script runs make bootstrap and
 # make generate first, as the template's AGENTS.md says. A new human approval is a change
-# the user confirms first, so input 1 ends at the requirements card, input 2 confirms it, and
-# the commit_and_push traces R1 and R2 at version 1, each with an untested_reason: a person
+# the user reads first, so input 1 shows the requirements card, recorded as version 1, keeps
+# building in the same turn, and the commit_and_push traces R1 and R2 at version 1, each with an untested_reason: a person
 # approves in Studio, which the API tests do not drive. The generated branch's API test now
 # proves that the summary reaches the approval Step instead of completing. The card carries
 # the design of TextSummaryFlow with the approval: the template's Steps, groups and
 # transitions as the analyzer renders them, the lost model response as a failure route, plus
 # the new Step, Channel and Action. That is exactly what the script then implements, so its
-# final reply says the design was built as confirmed.
+# final reply says the design was built as recorded.
 name: summary-approval
 title: "Summary approval"
-description: "Adds a human approval Step and an Approve summary Action to the template's TextSummaryFlow after a confirmed requirements card, and pushes it."
+description: "Adds a human approval Step and an Approve summary Action to the template's TextSummaryFlow after a requirements card, in the same turn, and pushes it."
 category: product
 inputs:
   - label: "Describe the change"
     message: "Add a human approval before the summary is saved."
     replies:
-      - thinking: "A human approval changes how the process runs, so the user confirms the requirements before I write any code."
-        text: "Here is what I plan to build. Please confirm it, or tell me what to change."
+      - thinking: "A human approval changes how the process runs, so I show the requirements before I write any code, then keep building."
+        text: "Here is what I will build. I am starting now; tell me in the chat if anything should change."
         tool_uses:
           - name: confirm_requirements
             input:
@@ -64,9 +64,6 @@ inputs:
                     channels: [{name: SummaryApprovals, payload: "the approval"}]
                     actions: [{label: "Approve summary", rpc: ApproveSummary, publishes: SummaryApprovals, permission: summary.approve}]
                     attributes: [{name: SummaryStatus, value: "pending, awaiting-approval, approved, completed or failed"}, {name: SummaryText, value: "the saved summary"}]
-  - label: "Confirm the requirements"
-    requirements_confirm: true
-    replies:
       - thinking: "The change is in the summary Flow, so I will read it and the application instructions first."
         text: "I'll read the summary Flow and the application instructions."
         tool_uses:
@@ -256,4 +253,4 @@ inputs:
                 - {content: "Add the AwaitSummaryApproval Step and the SummaryApprovals Channel", status: completed}
                 - {content: "Add the Approve summary Action", status: completed}
                 - {content: "Run the source checks and push", status: completed}
-      - text: "The summary now waits for approval: the Approve summary Action releases it, and the change is pushed to the default branch. I built the design as confirmed."
+      - text: "The summary now waits for approval: the Approve summary Action releases it, and the change is pushed to the default branch. I built the design as recorded."

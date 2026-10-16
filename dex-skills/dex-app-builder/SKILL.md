@@ -9,13 +9,14 @@ Build the smallest coherent Dex product that satisfies the user's request. A
 clear implementation request authorizes its stated UI and routine engineering
 choices. Ask only for missing business facts, access or consequential choices;
 do not turn discovery, design, wireframes or source checks into repeated gates.
-The one confirmation is the requirements card (`confirm_requirements`), asked once
-before code for a new application or a large change, one that alters the confirmed
-requirements: a revised card keeps every confirmed feature's number and never
-reuses a removed one, and a completely different request gets a card that replaces
-the requirements. Make a small change, one that leaves them as they are, directly,
-and never ask again for a version the user confirmed. A card that adds, removes or
-changes Flows carries their design ([Confirmation artifact](references/product-discovery.md#confirmation-artifact)).
+The requirements card (`confirm_requirements`) shows what you build before code for a
+new application or a large change, one that alters the current requirements. It does
+not wait: the Session records it as the next version and you keep building, and the
+user changes it with a message, which you answer with a revised card. A revised card
+keeps every recorded feature's number and never reuses a removed one, and a completely
+different request gets a card that replaces the requirements. Make a small change, one
+that leaves them as they are, directly. A card that adds, removes or changes Flows
+carries their design ([Confirmation artifact](references/product-discovery.md#confirmation-artifact)).
 
 ## Session start and routing
 
@@ -23,7 +24,7 @@ changes Flows carries their design ([Confirmation artifact](references/product-d
   its backend. A missing released connector capability is an explicit gap, never
   something to rebuild from low-level wire types or a direct provider call: the
   Session's main agent chooses connectors with a `connector_select` subagent,
-  confirms the connections on the requirements card (asking first when several
+  puts the connections on the requirements card (asking first when several
   could serve a need), and contributes each gap upstream with a
   `connector_develop` subagent. [Dex Connector Contributor](../dex-connector-contributor/SKILL.md)
   is that subagent's guide.

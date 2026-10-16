@@ -94,7 +94,8 @@ func (client *SessionAgentFlowClient) SessionRequest(identity agentloop.SessionI
 // waiting for workspace or model preparation. The Project fingerprint is the
 // Start RequestID, so a retried or replayed start joins the accepted
 // execution even when server defaults changed, and the FlowID is never
-// started again. The Session has no Flow timeout: it never expires and ends
+// started again: the first message of the accepted start is the only one
+// admitted. The Session has no Flow timeout: it never expires and ends
 // only with its Project.
 func (client *SessionAgentFlowClient) StartAccepted(ctx context.Context, request agentloop.StartRequest) error {
 	if request.SessionStartIdentity != agentloop.SessionStartIdentity(request.Session.ProjectID) {
@@ -102,7 +103,7 @@ func (client *SessionAgentFlowClient) StartAccepted(ctx context.Context, request
 	}
 	durability := dex.StepDurabilityAsync
 	_, err := client.sdk.StartFlow(ctx, client.flow, string(agentloop.SessionFlowID(request.Session.ProjectID)),
-		nil,
+		agentloop.SessionStartInput{FirstMessage: request.FirstMessage},
 		dex.StartFlowOptions{
 			RequestID:      &request.SessionStartIdentity,
 			AlreadyStarted: &dex.AlreadyStartedOptions{IgnoreError: true},

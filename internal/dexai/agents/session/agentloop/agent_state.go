@@ -31,9 +31,18 @@ type StartRequest struct {
 	// SessionStartIdentity fingerprints trusted embedding input independently of mutable server defaults or repository HEAD.
 	SessionStartIdentity string          `json:"session_start_identity,omitempty"`
 	Session              SessionIdentity `json:"session"`
-	// Model is the server's default model when the Session started; the
-	// first accepted start keeps it on an exact retry.
+	// Model is the model the Project's creator chose, or the server's default
+	// when the Session started; the first accepted start keeps it on an exact retry.
 	Model conversation.Model `json:"model"`
+	// FirstMessage is the creator's first message, which the start Step admits
+	// once into QueuedUserMessages; nil without one.
+	FirstMessage *conversation.PendingUserMessage `json:"first_message,omitempty"`
+}
+
+// SessionStartInput is the input of the Session's start Step: the first
+// message it admits, or nil. A Session started before it existed has none.
+type SessionStartInput struct {
+	FirstMessage *conversation.PendingUserMessage `json:"first_message,omitempty"`
 }
 
 // AgentStatus describes the active durable state-machine boundary.

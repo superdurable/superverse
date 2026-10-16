@@ -13,7 +13,7 @@ import { administratorCredentials, credentials, type Credentials, type OAuth } f
 import { register, signIn } from "@/tests/e2e/support/account";
 import { openPreviewConfiguration } from "@/tests/e2e/support/configuration";
 import { observedTarget } from "@/tests/e2e/support/flow-run";
-import { chooseMockFirstInput, runMockScenario, waitForFirstMockInput } from "@/tests/e2e/support/mock/mock-composer";
+import { chooseMockFirstInput, waitForFirstMockInput } from "@/tests/e2e/support/mock/mock-composer";
 import { createProject, readSession, waitForRequirementsCard } from "@/tests/e2e/support/project";
 import { publishLive } from "@/tests/e2e/support/publishing";
 import { rpcAnswered, rpcResult, safeFill } from "@/tests/e2e/support/studio-api";
@@ -286,9 +286,9 @@ test("manual real-provider newsletter from a mock-built application", async ({ p
     teamSpaceId = await createTeamSpace(page);
   }
   const created = await createProject(page, teamSpaceId, chooseMockFirstInput("newsletter-app"), info);
-  await waitForFirstMockInput(page, created.projectId, "newsletter-app");
+  // The one input records the requirements card and builds the application in the same turn.
   await waitForRequirementsCard(page, created.projectId, 10 * 60_000);
-  await runMockScenario(page, created.projectId, "newsletter-app", { inputs: [2], timeoutMs: 30 * 60_000 });
+  await waitForFirstMockInput(page, created.projectId, "newsletter-app", 30 * 60_000);
   const source = await readSession(page, created.projectId);
   expect(source.headCommit).toMatch(/^[0-9a-f]{40}$/);
   await openPreviewConfiguration(page, created.projectId);

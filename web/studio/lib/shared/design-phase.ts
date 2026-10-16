@@ -7,12 +7,11 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 /**
- * Where a Flow design stands, which its label on the Flow tab says: its card waits for confirmation, the
- * agent builds it, or the push that built it is in and the Preview's processes are not built from it yet.
+ * Where a Flow design stands, which its label on the Flow tab says: the agent builds it, or the push that
+ * built it is in and the Preview's processes are not built from it yet.
  */
-export type DesignPhase = "waiting" | "building" | "built";
+export type DesignPhase = "building" | "built";
 
 export function designPhaseLabel(phase: DesignPhase): string {
-  if (phase === "waiting") return "Design · waiting for your confirmation";
   return phase === "building" ? "Design · building" : "Design · built, building processes";
 }

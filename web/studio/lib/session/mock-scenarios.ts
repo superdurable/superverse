@@ -61,12 +61,6 @@ export function mockScenarioOffered(scenario: MockScenario, progress: MockProgre
 /** The categories in the order the composer lists them. */
 export const MOCK_CATEGORIES = Object.keys(MOCK_CATEGORY_LABELS) as MockScenarioCategory[];
 
-/** A scenario and the argument values the mock composer chose for one of its inputs. */
-export interface MockInputChoice {
-  scenario: string;
-  arguments: Readonly<Record<string, string>>;
-}
-
 /** What the server offers this caller: whether it may select the mock model, and the catalog. */
 export interface MockScenarioCatalog {
   selectable: boolean;

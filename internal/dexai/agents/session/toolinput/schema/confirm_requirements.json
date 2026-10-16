@@ -19,7 +19,7 @@
       "type": "array",
       "minItems": 1,
       "maxItems": 20,
-      "description": "Every behavior the user will get, each one a single behavior that a test can prove, with IDs in increasing order. A first card and a card that replaces the requirements number them R1, R2, ...; a revised card keeps the ID of every confirmed feature it keeps or changes and numbers a new feature above every number the requirements have used, so a removed feature's number is never reused and the IDs may have gaps.",
+      "description": "Every behavior the user will get, each one a single behavior that a test can prove, with IDs in increasing order. A first card and a card that replaces the requirements number them R1, R2, ...; a revised card keeps the ID of every recorded feature it keeps or changes and numbers a new feature above every number the requirements have used, so a removed feature's number is never reused and the IDs may have gaps.",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -105,7 +105,7 @@
     },
     "replaces_requirements": {
       "type": "boolean",
-      "description": "True only for a completely different request after a confirmation: the card replaces the confirmed requirements instead of revising them, and its features are numbered from R1 again.",
+      "description": "True only for a completely different request after a recorded version: the card replaces the recorded requirements instead of revising them, and its features are numbered from R1 again.",
       "default": false
     },
     "design": {

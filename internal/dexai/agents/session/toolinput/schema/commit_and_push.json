@@ -32,7 +32,7 @@
     "requirements": {
       "type": "array",
       "maxItems": 60,
-      "description": "Every confirmed requirement with the code that implements it and the API tests that prove it. Pass none for a change that has no confirmed requirements.",
+      "description": "Every requirement of the current version with the code that implements it and the API tests that prove it. Pass none for a change that has no recorded requirements.",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -45,7 +45,7 @@
             "type": "string",
             "minLength": 2,
             "maxLength": 4,
-            "description": "A feature ID of the confirmed requirements, such as R1."
+            "description": "A feature ID of the current requirements, such as R1."
           },
           "evidence": {
             "type": "array",
@@ -81,7 +81,7 @@
     "requirements_revision": {
       "type": "integer",
       "minimum": 1,
-      "description": "The version of the confirmed requirements the trace refers to; required with requirements."
+      "description": "The current version of the requirements, which the trace refers to; required with requirements."
     },
     "blocked": {
       "type": "boolean",

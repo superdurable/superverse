@@ -33,9 +33,10 @@ type SetupLifecycle interface {
 // SessionLifecycle starts the READY Project's one Session and cleans it up for
 // the Project's deletion.
 type SessionLifecycle interface {
-	// StartForProject starts the Session of the READY project; a repeated
-	// start joins its execution.
-	StartForProject(ctx context.Context, project Project) error
+	// StartForProject starts the Session of the READY project with the
+	// creator's model and first message, if any; a repeated start joins its
+	// execution, which keeps the first start's message.
+	StartForProject(ctx context.Context, project Project, initial *SessionStartRequest) error
 	// CleanupProjectSession performs one cleanup pass of the deleting
 	// Project's Session and reports whether it ended and released everything.
 	CleanupProjectSession(ctx context.Context, projectID string) (bool, error)

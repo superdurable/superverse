@@ -163,29 +163,28 @@ func describeLastMessage(agent agentloop.AgentSnapshot) string {
 }
 
 // A connector_select subagent finds the released llm connector, edits nothing,
-// and its report becomes the requirements card's existing connection, which the
-// user confirms as version 1.
+// and its report becomes the existing connection of the requirements card,
+// which the Session records as version 1.
 func TestSessionMockConnectorSelectExistingDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
 	defer cancel()
 	session := newMockSession(t, ctx, mockInput(t, "connector-select-existing", 1).Content)
 	record, messages, state := session.connectorSubagent(ctx, agenttasks.SubagentConnectorSelect)
-	card := session.requirementsCard(ctx, subagentNotification(t, messages, record, agenttasks.SubagentCompleted).Sequence)
+	card := session.recordedRequirements(ctx, subagentNotification(t, messages, record, agenttasks.SubagentCompleted).Sequence, 1)
 	if record.Changes != nil || record.Connector != nil || state.Config == nil ||
 		state.Config.Effort != conversation.EffortMedium || !strings.Contains(state.Outcome.Report, "recommended: llm") {
 		t.Fatalf("the selection subagent is wrong: %+v, %+v, %+v", record, state.Config, state.Outcome)
 	}
-	connections := card.Description.PendingUserInput.Requirements.Connections
+	connections := card.Description.ConfirmedRequirements.Spec.Connections
 	if len(connections) != 1 || connections[0].Connector != "llm" || connections[0].Status != agentloop.RequirementConnectionExisting {
 		t.Fatalf("the card does not list the selected connector as existing: %+v", connections)
 	}
-	session.confirmed(ctx, *card.Description.PendingUserInput, card.Description.LastSequence, 1)
 	t.Logf("FlowID=%s selected llm through %s", session.id, session.subagentOf(record).FlowID())
 }
 
 // A connector_select subagent reports two connectors; the main agent asks the
-// user which one, and the answer puts gmail on the card, which the user
-// confirms.
+// user which one, and the answer puts gmail on the card, which the Session
+// records as version 1.
 func TestSessionMockConnectorSelectChoiceDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
 	defer cancel()
@@ -202,11 +201,10 @@ func TestSessionMockConnectorSelectChoiceDexIntegration(t *testing.T) {
 	if err := session.client.AnswerQuestions(ctx, session.id, request); err != nil {
 		t.Fatalf("answering the choice: %v", err)
 	}
-	card := session.requirementsCard(ctx, agent.Description.LastSequence)
-	if connections := card.Description.PendingUserInput.Requirements.Connections; len(connections) != 1 || connections[0].Connector != "gmail" {
+	card := session.recordedRequirements(ctx, agent.Description.LastSequence, 1)
+	if connections := card.Description.ConfirmedRequirements.Spec.Connections; len(connections) != 1 || connections[0].Connector != "gmail" {
 		t.Fatalf("the card does not list the chosen connector: %+v", connections)
 	}
-	session.confirmed(ctx, *card.Description.PendingUserInput, card.Description.LastSequence, 1)
 }
 
 // requireContribution checks the contribution a completed develop subagent
@@ -245,13 +243,13 @@ func (s *mockSession) requireContribution(ctx context.Context, record agenttasks
 	return recorded
 }
 
-// A new connector: after the confirmation the develop subagent writes the
+// A new connector: after the card the develop subagent writes the
 // mockfeed module and its catalog entry in its library worktree; its finish
 // verifies, commits and pushes the branch, and the contribution is recorded.
 func TestSessionMockConnectorDevelopNewDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
 	defer cancel()
-	session, _ := startConfirmed(t, ctx, mockInput(t, "connector-develop-new", 1), mockInput(t, "connector-develop-new", 2))
+	session, _ := startRecorded(t, ctx, mockInput(t, "connector-develop-new", 1))
 	record, messages, state := session.connectorSubagent(ctx, agenttasks.SubagentConnectorDevelop)
 	if state.Config.Effort != conversation.EffortHigh && state.Config.Effort != conversation.EffortMedium {
 		t.Fatalf("the develop subagent runs at %s", state.Config.Effort)
@@ -276,7 +274,7 @@ func TestSessionMockConnectorDevelopNewDexIntegration(t *testing.T) {
 func TestSessionMockConnectorReleaseCandidateDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout+3*previewCommandTimeout+liveSourceTimeout+liveBuildTimeout+liveDeploymentTimeout)
 	defer cancel()
-	session, _ := startConfirmed(t, ctx, mockInput(t, "connector-release-candidate", 1), mockInput(t, "connector-release-candidate", 2))
+	session, _ := startRecorded(t, ctx, mockInput(t, "connector-release-candidate", 1))
 	record, messages, state := session.connectorSubagent(ctx, agenttasks.SubagentConnectorDevelop)
 	made := state.Outcome.Contribution
 	if made == nil || !made.CandidatePublished || made.ReleaseCandidate == nil || made.CandidateRefused != "" {
@@ -348,7 +346,7 @@ func TestSessionMockConnectorReleaseCandidateDexIntegration(t *testing.T) {
 func TestSessionMockConnectorDevelopOperationDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
 	defer cancel()
-	session, _ := startConfirmed(t, ctx, mockInput(t, "connector-develop-operation", 1), mockInput(t, "connector-develop-operation", 2))
+	session, _ := startRecorded(t, ctx, mockInput(t, "connector-develop-operation", 1))
 	record, messages, state := session.connectorSubagent(ctx, agenttasks.SubagentConnectorDevelop)
 	session.requireContribution(ctx, record, messages, state, "newsapi", conversation.ContributionOperation)
 }

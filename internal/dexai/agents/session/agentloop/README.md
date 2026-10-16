@@ -52,15 +52,15 @@ decisions in their own commits.
 | `conversation_turn.go` | Turn start and steering, the continuation after a model reply or an output-limit stop, model reply kinds and the entry-window bounds and keys; the admission and delivery of Session notifications and the automatic turns they open under `AutomaticTurnBounds` (task and connector notifications against the task bound, an application-owned delivery failure of HEAD against the platform bound); the Stop button's admission and turn end. |
 | `context_segment.go` | `ContextSegment`, `SessionModel` and its changes, the frozen prompt of each model and of each subagent kind on each model, a segment on a given prompt and effort (`NewSegmentFor`, how a subagent opens its own), the compaction and rollover decision, `segment_start` text, markers and retention. |
 | `todo_list.go` | The Agent's own progress list that `write_todos` replaces. |
-| `user_input.go` | Pending user input: questions and answers, the requirements card with its Flow design's reference, its confirmation and the confirmed requirements, which carry the confirmed design forward. |
+| `user_input.go` | Pending user input: questions and answers, and the reply to a card an old Session still waits at; the requirements card with its Flow design's reference, recorded as the next version of the current requirements (`RecordRequirements`), which carries the design forward, and the result that answers the card. |
 | `progress.go` | Step heartbeats, activity event constructors and the target of a tool call. |
 | `tool_catalog.go` | `ToolDefinition` with its workspace access and execution policy, the static catalog of built-in, Sandbox, delegation (`start_agent`, `merge_agent_changes`, both loose) and platform tools with their strict and eager-input-streaming flags and the startup check of the provider's strict counts (`confirm_requirements` and `commit_and_push` stay non-strict because of the provider's grammar-size limit, which only `make test-claude-live` shows; rerun it whenever the strict set or a strict schema changes), the frozen tool set of a model (each tool as the request carries it), the tool set of a subagent kind (`SubagentTools`: commands in its root, whose `bash` has no `run_in_background`, the file tools, the connector catalog, the platform readers and `set_effort` for `change`) and the argument mapping of built-in tools and `start_agent` (`RequestedSubagent`). |
 | `tool_execution.go` | Tool batches, approvals, results with the code and effect of a failure, the failure results of calls that cannot run or finish, the reasons that cancel pending calls, and their entries, sized when recorded; the `PlatformIncident` of a platform-owned tool result or of a model call the API rejected with HTTP 400, 401 or 403, its signature (the SHA-256 of owner, tool, code and error type), the outcomes of its report and the event that records one. |
 
 ## Collaborator attribution
 
-User turns preserve their message author; answers and confirmed requirements preserve the
-answerer. Model changes preserve their accepted changer across revision acknowledgements. The
+User turns preserve their message author; answers preserve the answerer, and a version of the
+requirements confirmed while cards waited keeps who confirmed it (a recorded card has none). Model changes preserve their accepted changer across revision acknowledgements. The
 first pending Stop keeps its actor; the Stop entry names that author. Automatic turns invent none.
 
 ## Remote catalog and context selection

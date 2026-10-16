@@ -39,9 +39,6 @@ var (
 	stepMarker     = regexp.MustCompile(`\[\[scenario-step:([0-9]{1,6})\]\]`)
 	argumentMarker = regexp.MustCompile(`\[\[scenario-arg:([a-z][a-z_]*)=([A-Za-z0-9 ._:/-]{1,128})\]\]`)
 	argumentValue  = regexp.MustCompile(`^[A-Za-z0-9 ._:/-]{1,128}$`)
-	// confirmation is the user message of a confirmed requirements card
-	// (agentloop.AnswerPendingInput).
-	confirmation = regexp.MustCompile(`^Requirements confirmed \(version [0-9]+\)$`)
 )
 
 // defaultReply answers a conversation that names no scenario, so a person can
@@ -245,10 +242,9 @@ type received struct {
 // readInput reads what a user message gives the scenario. The newest text
 // block with a scenario marker names its input: a message that follows a
 // rejected model call also holds the input that call never answered. A marker
-// followed by a step marker is a compaction summary's carry-over. An answer carries no marker: the
-// confirmation is known by its text, answers to
-// questions and a request for changes by the call of the reply before it that
-// they answer.
+// followed by a step marker is a compaction summary's carry-over. An answer
+// carries no marker: answers to questions are known by the call of the reply
+// before them that they answer.
 func readInput(assistant, message requestMessage) (received, error) {
 	texts := message.markerTexts()
 	text := strings.Join(texts, "\n")
@@ -281,15 +277,8 @@ func readInput(assistant, message requestMessage) (received, error) {
 		in.arguments = arguments
 		if step := stepMarker.FindStringSubmatch(text); step != nil {
 			in.carry, in.carried = comm.Must(strconv.Atoi(step[1])), true
-		} else if answersCall(assistant, message, conversation.ToolConfirmRequirements) {
-			in.kind = InputRequirementsChange
 		}
 		return in, nil
-	}
-	for _, block := range texts {
-		if confirmation.MatchString(block) {
-			return received{kind: InputRequirementsConfirm}, nil
-		}
 	}
 	// A notification is never a user's input.
 	userTexts := slices.DeleteFunc(slices.Clone(texts), func(text string) bool { return strings.HasPrefix(text, conversation.NotificationPreamble) })
@@ -298,8 +287,6 @@ func readInput(assistant, message requestMessage) (received, error) {
 		return received{}, nil
 	case answersCall(assistant, message, conversation.ToolRequestUserInput) && strings.HasPrefix(userTexts[0], "**"):
 		return received{kind: InputAnswers}, nil
-	case answersCall(assistant, message, conversation.ToolConfirmRequirements):
-		return received{kind: InputRequirementsChange}, nil
 	}
 	return received{}, nil
 }
@@ -381,9 +368,7 @@ func (sel selection) receive(in received, index int) selection {
 		sel.rejected = sel.outOfOrder(s, number)
 		return sel
 	}
-	// A marker names its input, so a message and a request for changes are
-	// interchangeable there; the Session already lets the user answer a card
-	// only with its decision.
+	// A marker names its input, so any text the user writes may be it.
 	expected := s.Inputs[number-1]
 	matches := expected.kind() == in.kind || in.script != nil && expected.kind().carriesMarker()
 	if !matches {
@@ -433,10 +418,6 @@ func describeReceived(in received) string {
 
 func describeKind(kind InputKind) string {
 	switch kind {
-	case InputRequirementsConfirm:
-		return "a confirmation of the requirements card"
-	case InputRequirementsChange:
-		return "a request for changes to the requirements card"
 	case InputAnswers:
 		return "answers to the questions"
 	default:

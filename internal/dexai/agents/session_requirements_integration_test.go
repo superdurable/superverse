@@ -26,8 +26,8 @@ import (
 )
 
 // The mock model numbers its tool calls by input and reply, so a Session that runs
-// two scenarios repeats call IDs. These scenarios therefore tell a card, an
-// answer or a reply of one turn from the earlier ones by message sequence.
+// two scenarios repeats call IDs. These scenarios therefore tell a card or a
+// reply of one turn from the earlier ones by message sequence.
 
 // waitForSnapshot polls the Session until done accepts its Snapshot. A Session
 // that ends first, or whose engine execution stops, fails the test.
@@ -54,72 +54,67 @@ func (s *mockSession) waitForSnapshot(ctx context.Context, what string, done fun
 	}
 }
 
-// requirementsCard waits for a requirements card that a message after
-// sequence added and that ends the turn.
-func (s *mockSession) requirementsCard(ctx context.Context, after conversation.Sequence) agentloop.AgentSnapshot {
+// recordedRequirements waits until the turn after sequence ended with a reply
+// while the current requirements are version, and fails unless that version
+// was recorded without waiting: no input waits for the user, no one confirmed
+// it, and every card the turn showed after sequence has a result.
+func (s *mockSession) recordedRequirements(ctx context.Context, after conversation.Sequence, version int64) agentloop.AgentSnapshot {
 	s.t.Helper()
-	return s.waitForSnapshot(ctx, "the requirements card", func(agent agentloop.AgentSnapshot) bool {
-		pending := agent.Description.PendingUserInput
-		return pending != nil && pending.Kind == agentloop.PendingUserInputKindRequirements && agent.Description.LastSequence > after &&
-			agent.Description.Status == agentloop.AgentStatusWaitingForMessage
-	})
-}
-
-// decide answers the card with decision and returns the answer: the user
-// message after sequence that names the card's call, once it is recorded and
-// the card no longer waits. A request for changes may already show the
-// revised card, whose call is another one.
-func (s *mockSession) decide(ctx context.Context, card agentloop.PendingUserInput, decision agentloop.RequirementsDecision, after conversation.Sequence) conversation.SequencedMessage {
-	s.t.Helper()
-	if err := s.client.AnswerQuestions(ctx, s.id, agentloop.AnswerQuestionsRequest{CallID: card.CallID, Requirements: &decision}); err != nil {
-		s.t.Fatalf("answering the card of %s: %v", card.CallID, err)
-	}
-	var answered conversation.SequencedMessage
-	s.waitForSnapshot(ctx, "the answer to the card", func(agent agentloop.AgentSnapshot) bool {
-		for _, message := range agent.History.Messages {
-			if message.Sequence > after && message.Message.Role == conversation.MessageRoleUser && message.Message.AnsweredInputCallID != nil && *message.Message.AnsweredInputCallID == card.CallID {
-				answered = message
-			}
-		}
-		pending := agent.Description.PendingUserInput
-		return answered.Sequence > 0 && (pending == nil || pending.CallID != card.CallID)
-	})
-	return answered
-}
-
-// confirmed answers the card with the confirmation, requires the answer of
-// version, and returns the Snapshot once the turn it starts ended with a reply.
-func (s *mockSession) confirmed(ctx context.Context, card agentloop.PendingUserInput, after conversation.Sequence, version int64) agentloop.AgentSnapshot {
-	s.t.Helper()
-	answered := s.decide(ctx, card, agentloop.RequirementsDecision{IsConfirmed: true}, after)
-	if want := "Requirements confirmed (version " + strconv.FormatInt(version, 10) + ")"; answered.Message.Content != want {
-		s.t.Fatalf("the confirmation answered %q, want %q", answered.Message.Content, want)
-	}
-	agent := s.waitForSnapshot(ctx, "the turn after the confirmation", func(agent agentloop.AgentSnapshot) bool {
-		return endsWithReplyAfter(agent, answered.Sequence)
+	agent := s.waitForSnapshot(ctx, "version "+strconv.FormatInt(version, 10)+" of the requirements", func(agent agentloop.AgentSnapshot) bool {
+		stored := agent.Description.ConfirmedRequirements
+		return stored != nil && stored.Revision == version && endsWithReplyAfter(agent, after)
 	})
 	requireNoFailure(s.t, agent.History)
-	if stored := agent.Description.ConfirmedRequirements; stored == nil || stored.Revision != version || !reflect.DeepEqual(stored.Spec, *card.Requirements) || stored.ConfirmedAt.IsZero() {
-		s.t.Fatalf("the confirmation did not store the card as version %d: %+v", version, stored)
+	if pending := agent.Description.PendingUserInput; pending != nil {
+		s.t.Fatalf("an input waits for the user after the card: %+v", pending)
+	}
+	if stored := agent.Description.ConfirmedRequirements; stored.ConfirmedBy != nil || stored.ConfirmedAt.IsZero() {
+		s.t.Fatalf("version %d is not a recorded version: %+v", version, stored)
+	}
+	_, messages := s.history(ctx)
+	cards, results := 0, 0
+	for _, message := range messages {
+		if message.Sequence <= after {
+			continue
+		}
+		for _, call := range message.Message.ToolCalls {
+			if call.Name == conversation.ToolConfirmRequirements {
+				cards++
+			}
+		}
+		if message.Message.Role == conversation.MessageRoleTool && *message.Message.ToolName == conversation.ToolConfirmRequirements {
+			results++
+		}
+	}
+	if cards == 0 || results != cards {
+		s.t.Fatalf("the turn after %d showed %d cards with %d results", after, cards, results)
 	}
 	return agent
 }
 
-// startConfirmed starts a mock Session with the describing input of a
-// requirements scenario, confirms its card with the scenario's confirmation
-// and returns the Snapshot once that turn ended, holding version 1.
-func startConfirmed(t *testing.T, ctx context.Context, describe, confirm mockmodel.Input) (*mockSession, agentloop.AgentSnapshot) {
+// steer sends content and steers it at once, as Studio's change box does.
+func (s *mockSession) steer(ctx context.Context, content string) {
+	s.t.Helper()
+	id := conversation.MessageID("steer-" + time.Now().UTC().Format("150405.000000000"))
+	if err := s.client.SendPendingMessage(ctx, s.id, conversation.PendingUserMessage{MessageID: id, Value: conversation.UserMessage{Content: content}}); err != nil {
+		s.t.Fatalf("sending a message to %s: %v", s.id, err)
+	}
+	// The API steers as the authenticated caller; the Session records it as SteeredBy.
+	if err := s.client.SteerMessage(ctx, s.id, conversation.SteerMessageRequest{Actor: &conversation.Actor{AccountID: s.account}, MessageID: id}); err != nil {
+		s.t.Fatalf("steering message %s of %s: %v", id, s.id, err)
+	}
+}
+
+// startRecorded starts a mock Session with the describing input of a
+// requirements scenario and returns the Snapshot once its turn ended after
+// recording version 1.
+func startRecorded(t *testing.T, ctx context.Context, describe mockmodel.Input) (*mockSession, agentloop.AgentSnapshot) {
 	t.Helper()
-	if describe.Kind != mockmodel.InputMessage || confirm.Kind != mockmodel.InputRequirementsConfirm {
-		t.Fatalf("the scenario lists its first inputs as %s and %s, not a message and a confirmation", describe.Kind, confirm.Kind)
+	if describe.Kind != mockmodel.InputMessage {
+		t.Fatalf("the scenario lists its first input as %s, not a message", describe.Kind)
 	}
 	session := newMockSession(t, ctx, describe.Content)
-	agent := session.requirementsCard(ctx, 0)
-	requireNoFailure(t, agent.History)
-	if agent.Description.ConfirmedRequirements != nil {
-		t.Fatalf("a new Session holds confirmed requirements: %+v", agent.Description.ConfirmedRequirements)
-	}
-	return session, session.confirmed(ctx, *agent.Description.PendingUserInput, 0, 1)
+	return session, session.recordedRequirements(ctx, 0, 1)
 }
 
 // endsWithReplyAfter reports whether the turn after sequence ended: the
@@ -152,120 +147,112 @@ func requireRejected(t *testing.T, what string, err error) {
 	}
 }
 
-// A new application shows the requirements card and ends the turn there. The
-// card refuses a queued message and any answer of another shape or call. The
-// confirmation writes ConfirmedRequirements in the commit that publishes
-// "Requirements confirmed (version 1)", and the script goes on without asking
-// again.
+// A new application shows the requirements card, which the Session records as
+// version 1 in the commit that answers the call, and the turn goes on: the
+// script's progress list and final reply follow in the same turn. Nothing
+// waits for the user, so no answer is admitted for the card.
 func TestSessionMockRequirementsCardDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
 	defer cancel()
-	session := newMockSession(t, ctx, mockInput(t, "requirements-card", 1).Content)
-
-	// The card ends the turn, and nothing is confirmed yet.
-	agent := session.requirementsCard(ctx, 0)
-	requireNoFailure(t, agent.History)
-	card := *agent.Description.PendingUserInput
-	if agent.Description.ConfirmedRequirements != nil || card.Requirements == nil || len(card.Questions) != 0 {
-		t.Fatalf("the card is not an unconfirmed requirements wait: %+v", agent.Description)
+	session, agent := startRecorded(t, ctx, mockInput(t, "requirements-card", 1))
+	stored := *agent.Description.ConfirmedRequirements
+	if spec := stored.Spec; spec.Title != "Release newsletter" || len(spec.Features) != 2 || spec.Features[0].ID != "R1" || spec.Features[1].ID != "R2" ||
+		len(spec.Connections) != 1 || spec.Connections[0].Status != agentloop.RequirementConnectionNew || spec.ReplacesRequirements {
+		t.Fatalf("version 1 does not hold the mock requirements: %+v", spec)
 	}
-	if spec := card.Requirements; spec.Title != "Release newsletter" || len(spec.Features) != 2 || spec.Features[0].ID != "R1" || spec.Features[1].ID != "R2" ||
-		len(spec.Connections) != 1 || spec.Connections[0].Status != agentloop.RequirementConnectionNew {
-		t.Fatalf("the card does not hold the mock requirements: %+v", spec)
+	if stored.LastFeatureNumber != 2 {
+		t.Fatalf("version 1 does not have 2 as its highest number: %+v", stored)
 	}
 	assistant := replies(agent.History)
-	if len(assistant) != 1 || len(assistant[0].Message.ToolCalls) != 1 || assistant[0].Message.ToolCalls[0].Name != conversation.ToolConfirmRequirements ||
+	if len(assistant) != 3 || len(assistant[0].Message.ToolCalls) != 1 || assistant[0].Message.ToolCalls[0].Name != conversation.ToolConfirmRequirements ||
 		assistant[0].Message.ToolCalls[0].Target != "Release newsletter" {
-		t.Fatalf("the first turn did not end with the confirm_requirements call: %+v", assistant)
+		t.Fatalf("the turn did not start with the confirm_requirements call: %+v", assistant)
 	}
 	requireMock(t, assistant[0], mockInputTokens)
-
-	// Only an exact decision of this card is admitted.
-	requireRejected(t, "a queued message", session.client.SendPendingMessage(ctx, session.id, conversation.PendingUserMessage{MessageID: "card-pending", Value: conversation.UserMessage{Content: "hello"}}))
-	for what, request := range map[string]agentloop.AnswerQuestionsRequest{
-		"a stale call":                   {CallID: "another-call", Requirements: &agentloop.RequirementsDecision{IsConfirmed: true}},
-		"answers to a card":              {CallID: card.CallID, Answers: []agentloop.UserInputAnswer{{QuestionID: "q", Answer: "a"}}},
-		"no decision":                    {CallID: card.CallID},
-		"a confirmation with text":       {CallID: card.CallID, Requirements: &agentloop.RequirementsDecision{IsConfirmed: true, RequestedChanges: "also"}},
-		"a request for changes, no text": {CallID: card.CallID, Requirements: &agentloop.RequirementsDecision{RequestedChanges: "  "}},
-	} {
-		requireRejected(t, what, session.client.AnswerQuestions(ctx, session.id, request))
+	if len(assistant[1].Message.ToolCalls) != 1 || assistant[1].Message.ToolCalls[0].Name != conversation.ToolWriteTodos ||
+		len(assistant[2].Message.ToolCalls) != 0 || !strings.Contains(assistant[2].Message.Content, "version 1") {
+		t.Fatalf("the turn did not go on after the card without a second one: %d replies", len(assistant))
 	}
-	if again := session.requirementsCard(ctx, 0); again.Description.PendingUserInput.CallID != card.CallID || again.Description.ConfirmedRequirements != nil {
-		t.Fatalf("a rejected answer changed the card: %+v", again.Description)
-	}
-
-	// The confirmation is version 1 and the script goes on to its final reply.
-	agent = session.confirmed(ctx, card, 0, 1)
-	assistant = replies(agent.History)
-	if len(assistant) != 3 || len(assistant[1].Message.ToolCalls) != 1 || assistant[1].Message.ToolCalls[0].Name != conversation.ToolWriteTodos ||
-		len(assistant[2].Message.ToolCalls) != 0 || !strings.Contains(assistant[2].Message.Content, "confirmed") {
-		t.Fatalf("the script did not go on after the confirmation without a second card: %d replies", len(assistant))
+	if recorded := toolResult(t, agent.History.Messages, conversation.ToolConfirmRequirements, 0); recorded.Outcome != conversation.ToolOutcomeSucceeded || recorded.ResultCode != "" {
+		t.Fatalf("the card was not recorded: %+v", recorded)
 	}
 	if todo := agent.Description.TodoList; todo == nil || len(todo.Items) != 2 {
 		t.Fatalf("the progress list was not recorded: %+v", todo)
 	}
-	requireProgress(t, agent, conversation.MockProgress{Scenario: "requirements-card", Input: 2})
+	requireProgress(t, agent, conversation.MockProgress{Scenario: "requirements-card", Input: 1})
+	call := assistant[0].Message.ToolCalls[0].ID
+	requireRejected(t, "an answer to the card", session.client.AnswerQuestions(ctx, session.id, agentloop.AnswerQuestionsRequest{CallID: call, Answers: []agentloop.UserInputAnswer{{QuestionID: "q", Answer: "a"}}}))
 }
 
-// The user asks for changes to the draft card before anything is confirmed,
-// in their own words: the mock model takes a text that answers the card as the
-// scenario's request for changes, and the Session answers with the trimmed
-// text. Nothing is confirmed while the revised card waits; it keeps the
-// draft's R1 and R2 and adds R3, and its confirmation is version 1.
-func TestSessionMockRequirementsDraftChangesDexIntegration(t *testing.T) {
+// A message changes the requirements while the Agent works. The first card is
+// recorded as version 1 and the turn goes on to a durable timer; the message,
+// sent and steered as Studio's change box does, interrupts the timer at once
+// and starts the turn that revises the card as version 2: R1 and R2 of
+// version 1 and a new R3. The rest of the interrupted turn never runs.
+func TestSessionMockRequirementsSteeredChangeDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
 	defer cancel()
-	if change := mockInput(t, "requirements-draft-changes", 2); change.Kind != mockmodel.InputRequirementsChange {
-		t.Fatalf("requirements-draft-changes lists input 2 as %s, not a request for changes", change.Kind)
-	}
 	session := newMockSession(t, ctx, mockInput(t, "requirements-draft-changes", 1).Content)
-	agent := session.requirementsCard(ctx, 0)
+	agent := session.waitForSnapshot(ctx, "version 1 while the Agent waits on its timer", func(agent agentloop.AgentSnapshot) bool {
+		stored := agent.Description.ConfirmedRequirements
+		return stored != nil && stored.Revision == 1 && agent.Description.PendingTimer != nil && agent.Description.Status == agentloop.AgentStatusWaitingForTimer
+	})
 	requireNoFailure(t, agent.History)
-	draft := *agent.Description.PendingUserInput
-
-	const changes = "Please let visitors filter the list by repository."
-	answered := session.decide(ctx, draft, agentloop.RequirementsDecision{RequestedChanges: " " + changes + " "}, agent.Description.LastSequence)
-	if answered.Message.Content != changes {
-		t.Fatalf("the request for changes answered %q, want the user's text", answered.Message.Content)
-	}
-	agent = session.requirementsCard(ctx, answered.Sequence)
-	revised := *agent.Description.PendingUserInput
-	if agent.Description.ConfirmedRequirements != nil {
-		t.Fatalf("a request for changes to the draft confirmed requirements: %+v", agent.Description.ConfirmedRequirements)
-	}
-	if features := revised.Requirements.Features; len(features) != 3 || !reflect.DeepEqual(features[:2], draft.Requirements.Features) || features[2].ID != "R3" {
-		t.Fatalf("the revised card does not keep R1 and R2 of the draft and add R3: %+v", features)
+	first := *agent.Description.ConfirmedRequirements
+	if agent.Description.PendingUserInput != nil {
+		t.Fatalf("the card waits for the user: %+v", agent.Description.PendingUserInput)
 	}
 
-	agent = session.confirmed(ctx, revised, answered.Sequence, 1)
-	requireProgress(t, agent, conversation.MockProgress{Scenario: "requirements-draft-changes", Input: 3})
+	before := agent.Description.LastSequence
+	change := mockInput(t, "requirements-draft-changes", 2)
+	session.steer(ctx, change.Content)
+	agent = session.recordedRequirements(ctx, before, 2)
+	second := *agent.Description.ConfirmedRequirements
+	if features := second.Spec.Features; len(features) != 3 || !reflect.DeepEqual(features[:2], first.Spec.Features) || features[2].ID != "R3" {
+		t.Fatalf("version 2 does not keep R1 and R2 of version 1 and add R3: %+v", features)
+	}
+	if second.LastFeatureNumber != 3 || second.Spec.ReplacesRequirements || !second.ConfirmedAt.After(first.ConfirmedAt) {
+		t.Fatalf("version 2 does not revise version 1: %+v", second)
+	}
+	_, messages := session.history(ctx)
+	if timer := toolResult(t, messages, conversation.ToolStartTimer, 0); timer.ResultCode != toolfailure.SupersededBySteeredUserMessage.String() {
+		t.Fatalf("the steered change did not interrupt the timer: %+v", timer)
+	}
+	var steered bool
+	for _, message := range messages {
+		steered = steered || message.Sequence > before && message.Message.Role == conversation.MessageRoleUser && message.Message.SteeredBy != nil
+		if message.Message.Role == conversation.MessageRoleAssistant && strings.Contains(message.Message.Content, "so I build version 1") {
+			t.Fatalf("the interrupted turn went on after the steered change: %q", message.Message.Content)
+		}
+	}
+	if !steered {
+		t.Fatal("the change did not start its turn as a steered message")
+	}
+	if final := agent.History.Messages[len(agent.History.Messages)-1].Message.Content; !strings.Contains(final, "version 2") {
+		t.Fatalf("the turn of the change did not end with version 2: %q", final)
+	}
+	requireProgress(t, agent, conversation.MockProgress{Scenario: "requirements-draft-changes", Input: 2})
 }
 
-// After a confirmation, a completely different request is a large change whose
-// card replaces the requirements instead of revising them and says so with
-// replaces_requirements: version 1 stays until the new card is confirmed, and
-// version 2 is the new application alone, with its features numbered from R1
-// again, none of version 1's, and the numbering's high mark restarted.
+// After version 1, a completely different request is a large change whose card
+// replaces the requirements instead of revising them and says so with
+// replaces_requirements: version 2 is the new application alone, with its
+// features numbered from R1 again, none of version 1's, and the numbering's
+// high mark restarted.
 func TestSessionMockRequirementsCompletelyChangesDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
 	defer cancel()
-	session, agent := startConfirmed(t, ctx, mockInput(t, "requirements-completely-changes", 1), mockInput(t, "requirements-completely-changes", 2))
+	session, agent := startRecorded(t, ctx, mockInput(t, "requirements-completely-changes", 1))
 	first := *agent.Description.ConfirmedRequirements
 
-	session.send(ctx, mockInput(t, "requirements-completely-changes", 3).Content)
-	agent = session.requirementsCard(ctx, agent.Description.LastSequence)
-	card := *agent.Description.PendingUserInput
-	if kept := agent.Description.ConfirmedRequirements; kept == nil || !reflect.DeepEqual(*kept, first) {
-		t.Fatalf("the new card changed version 1 before its confirmation: %+v", kept)
-	}
-	if !card.Requirements.ReplacesRequirements {
-		t.Fatal("the card of a completely different request does not mark that it replaces the requirements")
-	}
-
-	agent = session.confirmed(ctx, card, agent.Description.LastSequence, 2)
+	before := agent.Description.LastSequence
+	session.send(ctx, mockInput(t, "requirements-completely-changes", 2).Content)
+	agent = session.recordedRequirements(ctx, before, 2)
 	stored := *agent.Description.ConfirmedRequirements
 	second := stored.Spec
+	if !second.ReplacesRequirements {
+		t.Fatal("the card of a completely different request does not mark that it replaces the requirements")
+	}
 	if second.Title == first.Spec.Title || len(second.Features) == 0 || second.Features[0].ID != "R1" {
 		t.Fatalf("version 2 is not a new application numbered from R1: %+v", second)
 	}
@@ -277,73 +264,65 @@ func TestSessionMockRequirementsCompletelyChangesDexIntegration(t *testing.T) {
 			t.Fatalf("version 2 kept the feature %q of version 1", feature.Text)
 		}
 	}
-	requireProgress(t, agent, conversation.MockProgress{Scenario: "requirements-completely-changes", Input: 4})
+	requireProgress(t, agent, conversation.MockProgress{Scenario: "requirements-completely-changes", Input: 2})
 }
 
-// After a confirmation, a request that adds a feature and drops another is a
-// large change: the revised card keeps R1 and R3 exactly as confirmed, removes
-// R2 without reusing its number and adds R4, and its confirmation is version 2,
-// exactly R1, R3 and R4, whose highest number used is 4. The work that follows
-// covers that change alone. A card that then gives the dropped feature R2 back
-// is refused with the next free number, R5, and the corrected card is version
-// 3. A compaction afterwards keeps version 3 in the new segment: the mock
-// model answers a reply after the compaction with a stop text unless the first
-// message of the request, the segment_start, carries it with its version.
+// After version 1, a request that adds a feature and drops another is a large
+// change: the revised card keeps R1 and R3 exactly as recorded, removes R2
+// without reusing its number and adds R4, recorded as version 2, exactly R1,
+// R3 and R4, whose highest number used is 4. The work that follows in that
+// turn covers that change alone. A card that then gives the dropped feature
+// R2 back is refused with the next free number, R5, and the corrected card is
+// version 3. A compaction afterwards keeps version 3 in the new segment: the
+// mock model answers a reply after the compaction with a stop text unless the
+// first message of the request, the segment_start, carries it with its version.
 func TestSessionMockRequirementsAmendedDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
 	defer cancel()
-	session, agent := startConfirmed(t, ctx, mockInput(t, "requirements-amended", 1), mockInput(t, "requirements-amended", 2))
+	session, agent := startRecorded(t, ctx, mockInput(t, "requirements-amended", 1))
 	first := *agent.Description.ConfirmedRequirements
 
-	session.send(ctx, mockInput(t, "requirements-amended", 3).Content)
-	agent = session.requirementsCard(ctx, agent.Description.LastSequence)
-	revised := *agent.Description.PendingUserInput
-	if kept := agent.Description.ConfirmedRequirements; kept == nil || !reflect.DeepEqual(*kept, first) {
-		t.Fatalf("the revised card changed version 1 before its confirmation: %+v", kept)
-	}
-
-	confirmedAt := agent.Description.LastSequence
-	agent = session.confirmed(ctx, revised, confirmedAt, 2)
+	before := agent.Description.LastSequence
+	session.send(ctx, mockInput(t, "requirements-amended", 2).Content)
+	agent = session.recordedRequirements(ctx, before, 2)
 	second := *agent.Description.ConfirmedRequirements
 	old := first.Spec.Features
 	if len(old) != 3 || old[1].ID != "R2" {
 		t.Fatalf("version 1 is not R1 to R3: %+v", old)
 	}
 	if features := second.Spec.Features; len(features) != 3 || features[0] != old[0] || features[1] != old[2] || features[2].ID != "R4" || features[2].Text == old[1].Text {
-		t.Fatalf("version 2 is not R1 and R3 as confirmed plus a new R4: %+v", features)
+		t.Fatalf("version 2 is not R1 and R3 as recorded plus a new R4: %+v", features)
 	}
 	if second.LastFeatureNumber != 4 || second.Spec.ReplacesRequirements {
 		t.Fatalf("version 2 does not revise version 1 with 4 as its highest number: %+v", second)
 	}
 	_, messages := session.history(ctx)
-	if calls := callsAfter(messages, confirmedAt); len(calls) != 1 || calls[0].Name != conversation.ToolWriteTodos {
-		t.Fatalf("the work after version 2 is not one progress list: %+v", calls)
+	if calls := callsAfter(messages, before); len(calls) != 2 || calls[0].Name != conversation.ToolConfirmRequirements || calls[1].Name != conversation.ToolWriteTodos {
+		t.Fatalf("the turn of version 2 is not its card and one progress list: %+v", calls)
 	}
 	if todo := agent.Description.TodoList; todo == nil || len(todo.Items) != 2 || !strings.HasPrefix(todo.Items[0].Content, "R4:") || !strings.Contains(todo.Items[1].Content, "R2") {
 		t.Fatalf("the work after version 2 does not cover adding R4 and removing R2 alone: %+v", todo)
 	}
-	requireProgress(t, agent, conversation.MockProgress{Scenario: "requirements-amended", Input: 4, NextInput: 5})
+	requireProgress(t, agent, conversation.MockProgress{Scenario: "requirements-amended", Input: 2, NextInput: 3})
 
 	// A card that gives the dropped feature its removed number R2 back is refused
 	// with the next free number, and the corrected card numbers it R5.
-	before := agent.Description.LastSequence
-	session.send(ctx, mockInput(t, "requirements-amended", 5).Content)
-	agent = session.pendingInput(ctx, agentloop.PendingUserInputKindRequirements, before)
+	before = agent.Description.LastSequence
+	session.send(ctx, mockInput(t, "requirements-amended", 3).Content)
+	agent = session.recordedRequirements(ctx, before, 3)
 	_, messages = session.history(ctx)
 	after := slices.DeleteFunc(slices.Clone(messages), func(message conversation.SequencedMessage) bool { return message.Sequence <= before })
 	if refused := toolResult(t, after, conversation.ToolConfirmRequirements, 0); refused.Outcome != conversation.ToolOutcomeKnownFailure || refused.ResultCode != toolfailure.InvalidUserInput.String() {
 		t.Fatalf("the card that reuses R2 was not refused: %+v", refused)
 	}
-	corrected := *agent.Description.PendingUserInput
-	if features := corrected.Requirements.Features; len(features) != 4 || features[3].ID != "R5" || features[3].Text != old[1].Text {
-		t.Fatalf("the corrected card does not number the restored feature R5: %+v", features)
-	}
-	agent = session.confirmed(ctx, corrected, agent.Description.LastSequence, 3)
 	third := *agent.Description.ConfirmedRequirements
+	if features := third.Spec.Features; len(features) != 4 || features[3].ID != "R5" || features[3].Text != old[1].Text {
+		t.Fatalf("version 3 does not number the restored feature R5: %+v", features)
+	}
 	if third.LastFeatureNumber != 5 {
 		t.Fatalf("version 3 does not have 5 as its highest number: %+v", third)
 	}
-	requireProgress(t, agent, conversation.MockProgress{Scenario: "requirements-amended", Input: 6})
+	requireProgress(t, agent, conversation.MockProgress{Scenario: "requirements-amended", Input: 3})
 
 	// A compaction keeps version 3: the scenario's last step checks the new segment_start.
 	before = agent.Description.LastSequence
@@ -361,27 +340,26 @@ func TestSessionMockRequirementsAmendedDexIntegration(t *testing.T) {
 	}
 	final := agent.History.Messages[len(agent.History.Messages)-1].Message.Content
 	if !strings.Contains(final, "survived the compaction") {
-		t.Fatalf("the segment after the compaction does not carry version %d of the confirmed requirements: %q", third.Revision, final)
+		t.Fatalf("the segment after the compaction does not carry version %d of the requirements: %q", third.Revision, final)
 	}
 	if kept := agent.Description.ConfirmedRequirements; kept == nil || kept.Revision != third.Revision {
-		t.Fatalf("the compaction changed the confirmed requirements: %+v", kept)
+		t.Fatalf("the compaction changed the current requirements: %+v", kept)
 	}
 }
 
-// After a confirmation, new copy leaves the confirmed requirements as they
-// are, so it is a small change: the Agent edits the label in the workspace
-// directly, with no card and no question, and version 1 stays exactly as
-// confirmed. The edit stays uncommitted, so the Session continues the turn
-// three times with the source handoff reminder, which the scenario answers
-// with the same text.
+// After version 1, new copy leaves the requirements as they are, so it is a
+// small change: the Agent edits the label in the workspace directly, with no
+// card and no question, and version 1 stays exactly as recorded. The edit
+// stays uncommitted, so the Session continues the turn three times with the
+// source handoff reminder, which the scenario answers with the same text.
 func TestSessionMockRequirementsSmallChangeDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
 	defer cancel()
-	session, agent := startConfirmed(t, ctx, mockInput(t, "requirements-small-change", 1), mockInput(t, "requirements-small-change", 2))
+	session, agent := startRecorded(t, ctx, mockInput(t, "requirements-small-change", 1))
 	first := *agent.Description.ConfirmedRequirements
 
 	before := agent.Description.LastSequence
-	session.send(ctx, mockInput(t, "requirements-small-change", 3).Content)
+	session.send(ctx, mockInput(t, "requirements-small-change", 2).Content)
 	agent = session.waitForSnapshot(ctx, "the turn of the small change", func(agent agentloop.AgentSnapshot) bool {
 		return endsWithReplyAfter(agent, before)
 	})
@@ -390,7 +368,7 @@ func TestSessionMockRequirementsSmallChangeDexIntegration(t *testing.T) {
 		t.Fatalf("the small change waits for the user: %+v", agent.Description.PendingUserInput)
 	}
 	if kept := agent.Description.ConfirmedRequirements; kept == nil || !reflect.DeepEqual(*kept, first) {
-		t.Fatalf("the small change changed the confirmed requirements: %+v", kept)
+		t.Fatalf("the small change changed the current requirements: %+v", kept)
 	}
 	_, messages := session.history(ctx)
 	if calls := callsAfter(messages, before); len(calls) != 1 || calls[0].Name != conversation.ToolEdit {
@@ -400,7 +378,7 @@ func TestSessionMockRequirementsSmallChangeDexIntegration(t *testing.T) {
 	if edit := toolResult(t, after, conversation.ToolEdit, 0); edit.Outcome != conversation.ToolOutcomeSucceeded {
 		t.Fatalf("the edit of the label did not succeed: %+v", edit)
 	}
-	requireProgress(t, agent, conversation.MockProgress{Scenario: "requirements-small-change", Input: 3})
+	requireProgress(t, agent, conversation.MockProgress{Scenario: "requirements-small-change", Input: 2})
 }
 
 // send queues a message for the Session.

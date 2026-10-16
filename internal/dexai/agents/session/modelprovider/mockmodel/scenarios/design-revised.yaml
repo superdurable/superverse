@@ -6,26 +6,28 @@
 #
 # SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-# A card with a Flow design (input 1), a request for changes that revises the design
-# (input 2), its confirmation, then a compaction that keeps the confirmed design's outline
-# (input 3) and a blocked checkpoint that leaves the design unbuilt (input 4). Card 1 designs
+# A card with a Flow design (input 1), recorded as version 1 while the turn goes on to a
+# durable timer that a steered message interrupts; that message (input 2) revises the
+# design as version 2, and a compaction in the same turn keeps its outline; then a blocked
+# checkpoint that traces version 2 and leaves the design unbuilt (input 3). Card 1 designs
 # a review that waits on a Channel; card 2 makes it an approval that a person gives through
 # an Action. Both designs list the lost model response as a failure route, so the outline
-# counts one failure-handling Step. The progress list of input 3 carries usage above every
+# counts one failure-handling Step. The progress list of input 2 carries usage above every
 # compaction threshold, as in the compaction scenario. The checkpoint edits only the
-# template's copy and is blocked, so it skips the source gate and hands nothing off; the
-# Session continues that turn three times, which the script answers with the same text.
+# template's copy; its first push names version 1 and is refused, the second names version 2.
+# It is blocked, so it skips the source gate and hands nothing off; the Session continues
+# that turn three times, which the script answers with the same text.
 name: design-revised
 title: "Flow design revised"
-description: "A card with a Flow design, a revised design after a request for changes, the confirmation, a compaction that keeps the design's outline, then a blocked checkpoint that leaves the design unbuilt."
+description: "A card with a Flow design, a revised design from a message while the Agent works, a compaction that keeps the design's outline, then a blocked checkpoint that traces the revised version and leaves the design unbuilt."
 category: project_feature
-compaction_summary: "The user confirmed the summary approval and its Flow design."
+compaction_summary: "The summary approval and its Flow design are recorded as version 2."
 inputs:
   - label: "Describe the change"
     message: "Plan a review before the summary is saved."
     replies:
-      - thinking: "A review changes how the summary process runs, so the user confirms the requirements and the Flow design before I write any code."
-        text: "Here is what I plan to build and how the process will run. Please confirm it, or tell me what to change."
+      - thinking: "A review changes how the summary process runs, so I show the requirements and the Flow design before I write any code, then keep building."
+        text: "Here is what I will build and how the process will run. I am starting now; tell me in the chat if anything should change."
         tool_uses:
           - name: confirm_requirements
             input:
@@ -56,10 +58,17 @@ inputs:
                       - &failure {step_type: RecordSummaryFailure, group: Result, explanation: "Record why the model returned no usable summary.", next: [{to: complete}]}
                       - &uncertainty {step_type: RecordSummaryUncertainty, group: Result, explanation: "Record a lost model response without sending the paid request again.", next: [{to: complete}]}
                     channels: [{name: SummaryReviews, payload: "the review"}]
-  - label: "Ask for changes to the design"
-    requirements_change: "Make the review an approval that a person gives in Studio."
+      - text: "Reading the summary process first; a message from you now revises the design before I change any source."
+        tool_uses:
+          - name: start_timer
+            input: {duration_seconds: 900, reason: "Read the summary process."}
+        expect_failure: true
+        expect_failure_text: "Error: superseded_by_steered_user_message"
+      - text: "Nothing changed, so I build version 1."
+  - label: "Change the design"
+    message: "Make the review an approval that a person gives in Studio."
     replies:
-      - text: "I made the review an approval in Studio. Please confirm the revised requirements and design."
+      - text: "I made the review an approval in Studio, recorded as the next version of the requirements and design."
         tool_uses:
           - name: confirm_requirements
             input:
@@ -85,9 +94,6 @@ inputs:
                       - *uncertainty
                     channels: [{name: SummaryApprovals, payload: "the approval"}]
                     actions: [{label: "Approve summary", rpc: ApproveSummary, publishes: SummaryApprovals, permission: summary.approve}]
-  - label: "Confirm the revised requirements"
-    requirements_confirm: true
-    replies:
       - thinking: "I will record the progress before I continue."
         tool_uses:
           - name: write_todos
@@ -96,7 +102,7 @@ inputs:
                 - {content: "R1: Add the approval Step", status: in_progress}
                 - {content: "R2: Add the Approve summary Action", status: pending}
         usage: {input_tokens: 850000, output_tokens: 200}
-      - text: "The confirmed Flow design survived the compaction."
+      - text: "The recorded Flow design survived the compaction."
         expect_segment_start:
           - "<confirmed_requirements>"
           - "Flow design: The summary run waits after generation until a person approves it in Studio; then it is saved."
@@ -116,6 +122,23 @@ inputs:
               verification:
                 - "web/src/App.tsx names the approval"
               blocked: true
+              requirements_revision: 1
+              requirements:
+                - {id: R1, evidence: ["The approval copy names the review."], tests: [], untested_reason: "A checkpoint verifies nothing."}
+        expect_failure: true
+        expect_failure_text: "Error: invalid_arguments"
+        expect_failure_contains: ["requirements_revision must be the current version 2"]
+      - text: "The requirements are at version 2 now, so the checkpoint traces that version."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Checkpoint the approval copy"
+              verification:
+                - "web/src/App.tsx names the approval"
+              blocked: true
+              requirements_revision: 2
+              requirements:
+                - {id: R1, evidence: ["The approval copy names the approval."], tests: [], untested_reason: "A checkpoint verifies nothing."}
       - text: "The checkpoint is pushed; the approval Step and its Action are not built yet."
       - text: "The checkpoint stays as pushed; the design is not built yet."
         repeat: 3

@@ -12,7 +12,8 @@
 # by a feature the card lacks, a transition to an undeclared Step, a Step that the start
 # Step never reaches, a wait on an undeclared Channel, and a design whose canonical JSON
 # passes 24 KiB (three Flows of thirty Steps with long explanations, written once through
-# YAML anchors). The corrected card ends the turn. The script touches no workspace file.
+# YAML anchors). The corrected card is recorded as version 1, and a closing reply ends the
+# turn. The script touches no workspace file.
 name: design-refused
 title: "Flow design refused"
 description: "Five cards whose Flow design names an undeclared Step, Channel or feature, leaves a Step unreachable or is too large, each refused as invalid user input, then the corrected card."
@@ -151,7 +152,7 @@ inputs:
         expect_failure_text: "Error: invalid_user_input"
         expect_failure_contains: ["of canonical JSON exceed the limit of 24576"]
       - thinking: "The corrected design declares every Step, Channel and feature it names and fits its bound."
-        text: "Here is what I plan to build and how the process will run. Please confirm it, or tell me what to change."
+        text: "Here is what I will build and how the process will run. Tell me in the chat if anything should change."
         tool_uses:
           - name: confirm_requirements
             input:
@@ -161,3 +162,4 @@ inputs:
                 flows:
                   - {flow_type: TextSummaryFlow, purpose: *purpose, start_step: PrepareSummary, channels: *channels, actions: *actions,
                      steps: [*prepare, *generate, *await, *save, *failure, *uncertainty]}
+      - text: "The corrected requirements and design are recorded as version 1."

@@ -6,23 +6,23 @@
 #
 # SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-# After a confirmation the user asks for different copy (input 3). New copy
-# leaves the confirmed requirements as they are, so it is a small change: the
-# Agent edits the template's label directly, with no card, and the confirmed
+# After a recorded card the user asks for different copy (input 2). New copy
+# leaves the recorded requirements as they are, so it is a small change: the
+# Agent edits the template's label directly, with no card, and the recorded
 # version stays. The edit is real and stays uncommitted. A turn that ends after
 # a successful edit without a commit_and_push with blocked=false is continued up
 # to three times, each with a reminder (the Session's source handoff rule), so
 # the script answers the three continuations with the same text.
 name: requirements-small-change
-title: "Small change after confirmation"
-description: "A confirmed card, then a copy change that the Agent makes directly, with no card, while the confirmed version stays."
+title: "Small change after a card"
+description: "A recorded card, then a copy change that the Agent makes directly, with no card, while the recorded version stays."
 category: project_feature
 inputs:
   - label: "Describe the application"
     message: "Build a page that summarizes a text."
     replies:
-      - thinking: "A new application, so the user confirms the requirements before I write any code."
-        text: "Here is what I plan to build. Please confirm it, or tell me what to change."
+      - thinking: "A new application, so I show the requirements before I write any code, then keep building."
+        text: "Here is what I will build. I am starting now; tell me in the chat if anything should change."
         tool_uses:
           - name: confirm_requirements
             input:
@@ -34,24 +34,21 @@ inputs:
               connections: []
               user_setup: []
               acceptance: ["A pasted text gets a summary on the page."]
-  - label: "Confirm the requirements"
-    requirements_confirm: true
-    replies:
       - tool_uses:
           - name: write_todos
             input:
               todos:
                 - {content: "R1: Accept the text to summarize", status: in_progress}
                 - {content: "R2: Show the summary", status: pending}
-      - text: "The requirements are confirmed, and I will build exactly these features."
+      - text: "The requirements are recorded as version 1, and I will build exactly these features."
   - label: "Change the copy"
     message: "Change the label of the text box to Your text."
     replies:
-      - thinking: "New copy leaves the confirmed requirements as they are, so this is a small change: I make it directly, with no card."
+      - thinking: "New copy leaves the recorded requirements as they are, so this is a small change: I make it directly, with no card."
         text: "Changing the label of the text box."
         tool_uses:
           - name: edit
             input: {path: web/src/App.tsx, old_string: "<label htmlFor=\"source-text\">Text to summarize</label>", new_string: "<label htmlFor=\"source-text\">Your text</label>"}
-      - text: "The label of the text box now reads Your text. The confirmed requirements are unchanged, so there was no new card."
+      - text: "The label of the text box now reads Your text. The recorded requirements are unchanged, so there was no new card."
       - text: "The label change stays in the workspace on purpose; nothing is committed or pushed."
         repeat: 3

@@ -22,7 +22,7 @@ applications. The tool's place in the catalog (timeouts, retries, failure format
 | Subject | Owner |
 |---|---|
 | Tool catalog, timeouts, retry policy, failure model and text format | [tool-orchestration.md](tool-orchestration.md) |
-| `ConfirmedRequirements` and the requirements card | [session.md](session.md#requirements-confirmation) |
+| `ConfirmedRequirements` and the requirements card | [session.md](session.md#requirements-cards) |
 | The connector mock contract, connector subagents | [connectors.md](connectors.md) |
 | Preview deployment after a push, delivery notifications | [notifications-and-feedback.md](notifications-and-feedback.md) |
 | The Sandbox, its ports and the Preview engine | [sandbox.md](sandbox.md) |
@@ -165,25 +165,27 @@ hint: Fix the failing tests and engine problems above, then call commit_and_push
 
 ## Requirement trace
 
-The trace ties what the user confirmed to the code and the tests that prove it. The IDs are those of the
-Session's `ConfirmedRequirements` (`R1`, `R2`, ...; [session.md](session.md#requirements-confirmation)).
+The trace ties the requirements the user was shown to the code and the tests that prove it. The IDs are those
+of the current version in the Session's `ConfirmedRequirements` (`R1`, `R2`, ...;
+[session.md](session.md#requirements-cards)). A card is recorded in the commit that answers it, so a push later
+in the same turn traces that version, and a push after a revised card traces the next one.
 
 Each item of `requirements` has:
 
-- `id`: a feature ID of the confirmed revision;
+- `id`: a feature ID of the current revision;
 - `evidence`: 1 to 10 files or symbols (each at most 512 characters) that implement it;
 - `tests`: at most 10 test names that prove it; and
 - `untested_reason`: at most 300 characters, when no test can.
 
-The Session passes its current confirmed IDs and revision to the tool in the trusted call context, like the
+The Session passes the current IDs and revision to the tool in the trusted call context, like the
 HEAD, so the tool reads no Flow. Rules:
 
 - An unknown ID, a duplicate, or a `requirements_revision` that is not the current revision is
   `invalid_arguments`; a blank field is rejected before any effect.
-- When stage 4 applies, `blocked=false` and the Session has confirmed requirements, every ID of the current
+- When stage 4 applies, `blocked=false` and the Session has recorded requirements, every ID of the current
   revision appears, and each item names tests that passed in this run (from `tests.json`) or gives an
   `untested_reason`; otherwise `requirements_untested`.
-- Without confirmed requirements (a small change) or without stage 4, the list may be empty and only its
+- Without recorded requirements (a small change) or without stage 4, the list may be empty and only its
   form is checked.
 
 ## dexcli checks
@@ -439,7 +441,7 @@ applications keep Dex as their store.
 ## UI/UX
 
 - The commit card shows each gate stage with its duration, whether tests ran, and "unverified" for a blocked commit.
-  The requirement trace appears through the argument view, with IDs that match the confirmed requirements card.
+  The requirement trace appears through the argument view, with IDs that match the current requirements card.
 - The generated application's UI is neither changed nor tested here.
 - The agent receives one stage-tagged report and the feature map.
 
@@ -452,8 +454,8 @@ result, never a skip.
 | Area | Scenario |
 |---|---|
 | `apptest` (real coding image, real Temporal and dexcli) | Binds 127.0.0.1 only; the summary matches the real executions; a second run queues and the first is never killed; killing the caller's group leaves no process or listener; a timeout exits 124 after teardown; kept failure directories stay bounded |
-| Gate (owned disposable sandboxd, real template) | All stages pass with durations; a Flow file with a diagnostic fails `flow_definition_invalid`; changing `checkStatic` or `testApplication` fails `source_gate_weakened`; a static failure after more than 6 KiB of output on each stream shows the failing command; an AttributeMap read without a load fails the static stage; a failing assertion is `application_tests_failed`; deleted tests or an unwired branch is `application_tests_incomplete`; a production `connectormock` import is `connector_mock_in_production`; an untested confirmed requirement is `requirements_untested`; a clean accepted HEAD repeats no build |
-| Dex integration (mock model) | A generated application runs `make test-app` inside the gate; two worktrees test at once and queue; the gate checks the trace against the confirmed requirement IDs |
+| Gate (owned disposable sandboxd, real template) | All stages pass with durations; a Flow file with a diagnostic fails `flow_definition_invalid`; changing `checkStatic` or `testApplication` fails `source_gate_weakened`; a static failure after more than 6 KiB of output on each stream shows the failing command; an AttributeMap read without a load fails the static stage; a failing assertion is `application_tests_failed`; deleted tests or an unwired branch is `application_tests_incomplete`; a production `connectormock` import is `connector_mock_in_production`; an untested recorded requirement is `requirements_untested`; a clean accepted HEAD repeats no build |
+| Dex integration (mock model) | A generated application runs `make test-app` inside the gate; two worktrees test at once and queue; the gate checks the trace against the current requirement IDs |
 | dexcli (Dex repository) | Fixture integration tests: every code fires with its span, the silent cases stay silent, the covered constructs (helpers, closures, loops, package-variable and function options, movement options, call-site rule, directive); Dex's own examples and the connector examples render clean; Superverse's registered Flows render clean with the pinned CLI (`make check-flow-definition`) |
 | End to end | The `create-project.spec.ts` and `template-approval.spec.ts` cases run the real gate on the agent's change |
 

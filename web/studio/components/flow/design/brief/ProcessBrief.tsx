@@ -29,10 +29,13 @@ import {
 
 export interface ProcessBriefProps {
   card: BriefCard;
-  /** The card's version: the one a confirmation will have, or the confirmed one. */
+  /** The version of the requirements the card is, which the agent recorded when it showed the card. */
   version: number;
-  /** The card waits for the person, or the agent builds from it; or it is confirmed and the agent stopped short of building, which its host says. */
-  status: "waiting" | "building" | "stopped";
+  /**
+   * The agent builds from the card, or built its design and the processes are being built from it; or its
+   * last turn ended short of building it, which the Brief's host says.
+   */
+  status: "building" | "built" | "stopped";
   /** The design's summary and outline, which the card carries; absent for a card without a design. */
   designSummary?: string;
   outline?: string;
@@ -44,7 +47,7 @@ export interface ProcessBriefProps {
   drawing?: ReactNode;
   /** The Brief's foot; absent when it offers nothing to do. */
   actions?: BriefActionsProps;
-  /** A line in place of the actions, such as who answers the card on the mock model. */
+  /** A line in place of the actions, such as who sends a change on the mock model. */
   note?: string;
 }
 
@@ -95,9 +98,11 @@ export function ProcessBrief({
       >
         <header className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
           <h2 className="text-title font-semibold wrap-anywhere text-ink">{card.title}</h2>
-          <span className="text-caption text-ink-faint">Brief · draft {String(version)}</span>
-          {status === "waiting" && <Badge tone="busy">Waiting for you</Badge>}
-          {status === "building" && <Badge tone="accent">Building from this brief</Badge>}
+          {status === "building" && <Badge tone="accent">Building from this brief · version {String(version)}</Badge>}
+          {status === "built" && <Badge tone="pass">Built from this brief · version {String(version)}</Badge>}
+          {status === "stopped" && (
+            <span className="text-caption text-ink-faint">Brief · version {String(version)}</span>
+          )}
         </header>
         <div className={cx(GRID, "mt-3 text-body text-ink-dim")}>
           {brief && brief.startsWhen.length > 0 && (

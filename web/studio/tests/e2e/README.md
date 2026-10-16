@@ -78,7 +78,7 @@ password is a valid account password) plus the fields listed for its case.
 | File                                         | What it proves                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Requires                                                                                                                                                                                                                         |
 | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `create-project.spec.ts`                     | Required case of the local lanes: a new Teamspace, managed creation in it, concurrent duplicate admission, a retry after READY, same-request input conflict, rejection of absent/retired sources and the removed repository-list RPC; a template Project's real Agent turns, "Keep running for 7 days" from the chat header's More details on the READY workspace (a Sandbox deadline seven days ahead), Watch reconnect during streamed text, pushed head, the configuration notice of the push's automatic Preview deployment, Preview, immutable Release, Live published once through the Publish popover on the version Preview ran (a build with an automatic deployment, followed in Tools, Publishing's stage bar) and once again as Live's own version from the Live tab, account isolation (an account outside the Teamspace neither lists nor reads it or the Project), Live removal and Project deletion. With the local mock model, the heading edit also declares an optional environment value; the Project saves it through Studio Setup, covering `SaveApplicationEnvironment` on the same publish journey. The Agent's heading edit is verified at the actual Preview and Live URLs. It also probes the strict `/api/rpc` boundary: a CreateProject or ListProjects without a Teamspace, an unknown field, a body `caller`, a malformed uint64 fence and an undeclared or zero status filter are 400, `Login`, `GetFlowCatalog` and `getProject` are 404, and a GET of a unary RPC or a POST of a Watch is 405.    | `SUPERVERSE_E2E_OPENAI_FILE`                                                                                                                                                                                                     |
-| `template-approval.spec.ts`                  | Required case of the local lanes: one fixed prompt makes the real Agent add a human approval Step and Action to the template's `TextSummaryFlow` and push it; the Preview, configured while the requirements card waits, deploys the push by itself; a second account then joins the Teamspace through People and the Project as an operator through Permissions and sees Live only, without Preview, chat or Tools; Preview, by the owner, and Live, by the operator, each start the Flow in Studio (Test run, then Live run), read its Diagnostics while it waits, approve it through the run drawer, which opens on the waiting Step ringed "now", after the canvas opens framed on that Step with the Steps a transition joins to it wholly in view and keeps its lines through two run polls, and complete it; the bar's Preview                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Live switch then moves the Flow, Runs, Interface and chat to Live and back; then Live removal and Project deletion. See [Template approval](#template-approval).                                                                 | `SUPERVERSE_E2E_OPENAI_FILE` |
+| `template-approval.spec.ts`                  | Required case of the local lanes: one fixed prompt makes the real Agent add a human approval Step and Action to the template's `TextSummaryFlow` and push it; the push's automatic deployment stops at the unconfigured Preview with its configuration notice, and the owner configures Preview and starts it; a second account then joins the Teamspace through People and the Project as an operator through Permissions and sees Live only, without Preview, chat or Tools; Preview, by the owner, and Live, by the operator, each start the Flow in Studio (Test run, then Live run), read its Diagnostics while it waits, approve it through the run drawer, which opens on the waiting Step ringed "now", after the canvas opens framed on that Step with the Steps a transition joins to it wholly in view and keeps its lines through two run polls, and complete it; the bar's Preview                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Live switch then moves the Flow, Runs, Interface and chat to Live and back; then Live removal and Project deletion. See [Template approval](#template-approval).                                                                 | `SUPERVERSE_E2E_OPENAI_FILE` |
 | `registration.spec.ts`                       | Registration, duplicate rejection, cookie properties, the new account's first Teamspace with its retried creation, logout revocation, wrong-password rejection, and sign-in that reopens the Teamspace.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Nothing else                                                                                                                                                                                                                     |
 | `integration/administrator-projects.spec.ts` | The administrator lists, observes and manages the Teamspaces and Projects of different owners, and deletes the Teamspaces.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `SUPERVERSE_E2E_ADMINISTRATOR_FILE`                                                                                                                                                                                              |
 | `integration/flow-api-authorization.spec.ts` | The Flow API binds exact targets and rejects revoked sessions immediately; see [Flow API authorization](#flow-api-authorization). Its fixture and probe helpers are in `integration/flow-api-probe.ts`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `SUPERVERSE_E2E_FLOW_API_FIXTURE`, `SUPERVERSE_GRPC_ADDRESS`                                                                                                                                                                     |
@@ -94,12 +94,10 @@ Shared modules:
 - `support/account.ts`: a fresh account `identity`, registration and sign-in.
 - `support/project.ts`: Project and Session reads and creation (the first turn is typed
   with `typePrompt` or chosen with `chooseMockFirstInput`), completed-turn
-  waits (a Session without a selected model fails them; a requirements card that
-  appears is confirmed in the page with Confirm and build, once per card, on the
-  Process Brief that the chat's Open the brief opens, or in the chat for a card
-  without a design, except on the mock model, whose scenario confirms it), the wait for a
-  turn that ends at its requirements card, which it leaves unconfirmed
-  (`waitForRequirementsCard`), the asserted sequence
+  waits (a Session without a selected model, or one that waits for an answer or an
+  approval, fails them; a requirements card never waits, because the agent records it and
+  goes on building in the same turn), the wait for the agent's first recorded
+  requirements card, version 1 or later (`waitForRequirementsCard`), the asserted sequence
   of a completed turn's newest final reply (`expectNewestFinalReplySequence`),
   `expectPushedHead`, the `AgentModel` enum value of a server model
   (`agentModelEnum`), "Keep running for 7 days" with its renewed Sandbox
@@ -185,15 +183,16 @@ between `GenerateSummary` and `SaveSummaryResult` waits on a new Channel
 `ApproveSummary` (label "Approve summary", permission `summary.approve`) publishes to
 it. The prompt points at the template's `AGENTS.md` and the in-repository skill
 section "Answer a waiting Step", and asks for the requirements card before any change.
-The turn ends at that card: with a real model the case waits for it
-(`waitForRequirementsCard`); on the mock model the `summary-approval` scenario's input 1,
-chosen on the creation page, shows it (R1 the approval Step, R2 the Action). While the card waits, the person
-configures the Session's Preview, saving the `summary-model` connection. Then the
-completed-turn wait confirms the card with **Confirm and build** on its Process Brief,
-through the real BFF and gRPC path, or the scenario's input 2 confirms it through the
-mock composer, whose `commit_and_push` traces R1 and R2 at version 1 (each with an
-`untested_reason`, because the llm connector has no mocks yet) and passes the commit
-gate's test stage, which runs the template's API tests. The case waits for
+The card does not wait: the agent records it as version 1 and builds it in the same turn.
+On the mock model the `summary-approval` scenario's one input, chosen on the creation page,
+shows it (R1 the approval Step, R2 the Action). As soon as the Project is created, the person
+configures the Session's Preview, saving the `summary-model` connection, while the turn runs up
+to its source gate. The case then waits for the card (`waitForRequirementsCard`) and, on the mock
+model, checks the Process Brief of version 1 on the Flow tab (Building or Built from this brief,
+no Confirm and build, the outline, the design changes and the marked diagram). The turn's
+`commit_and_push` traces R1 and R2 at version 1 (each with an `untested_reason`, because the llm
+connector has no mocks yet) and passes the commit gate's test stage, which runs the template's
+API tests. The case waits for
 the completed turn and requires the Session head on the default branch of the repository
 host. The push deploys itself to the configured Preview: without Start Preview, the case
 waits until the Preview is READY at the pushed head, which the build page shows as the
@@ -231,12 +230,12 @@ Session `yamc/79nvnqsa` to a new project and no follow-up message. It records th
 initial `app-template@<tree>` revision and TextSummaryFlow Design, then requires a
 `commit_and_push` whose outcome is `OUTCOME_SUCCEEDED` (the public history never
 carries a tool result's content) and whose head matches the pushed remote head, a
-unchanged business prompt in the complete durable history, followed only by
-the `Requirements confirmed (version N)` answers of the requirements cards that
-the wait confirmed, no `request_user_input`, valid strict FDG 2.0 definitions without the template
+unchanged business prompt in the complete durable history as its only user message,
+which CreateProject carried, so Studio sends no SendMessage, no `request_user_input`,
+valid strict FDG 2.0 definitions without the template
 reference Flow, and released GitHub `listReleases`, OpenAI/llm `generateText` and
 Gmail `sendMessage` connections. Model calls, tool calls, failed tool calls, the requirements cards and the
-confirmed version, reads of installed references (tool call targets starting with `skills:` or
+recorded version, reads of installed references (tool call targets starting with `skills:` or
 `module:`) and authoring time are written to the private
 `release-newsletter-journey.json` and the test attachment for comparison across
 models; message bodies and tool arguments are not exported. Set
@@ -296,8 +295,11 @@ The creation page shows the Session's own model picker and composer, so a spec c
 the first turn there (`createProject` takes that choice: `typePrompt` chooses the real model
 that `SUPERVERSE_E2E_MODEL_TARGET` names, and types the prompt;
 `chooseMockFirstInput` chooses the mock model and a scenario's first input) and presses
-Build. `createProject` returns once the Project is READY and its Session exists. The
-Builder's chat applies the chosen model and sends the first message by itself, so a spec
+Build. CreateProject carries the first message, its message ID and the model, so the Session
+starts on that model with the message admitted once, without the page. `createProject` returns
+once the Project is READY and its Session exists, after it checked that the Session holds exactly
+one copy of the first message despite four concurrent repeats of the request, that it runs the
+chosen model, and that a repeat with a changed name or message is refused; a spec then
 waits for that turn (`waitForCompletedTurn`, or `waitForFirstMockInput` on the mock model)
 before it sends the next change through the composer (`sendChange`) or, on the mock model,
 through the mock composer. No Session list, `?session=` parameter or Session stop exists.
@@ -307,8 +309,7 @@ through the mock composer. No Session list, `?session=` parameter or Session sto
 A new Session has no Sandbox. Its workspace instance is started on first demand:
 the first Agent turn or an accepted Start Preview. Until then Session snapshots
 carry `workspace: null` and a `PREVIEW_STATUS_NOT_STARTED` Preview. Scenarios
-therefore wait for a completed Agent turn, or one that ended at its requirements
-card, before they assert `workspace.status == "WORKSPACE_STATUS_READY"`. The
+therefore wait for a completed Agent turn before they assert `workspace.status == "WORKSPACE_STATUS_READY"`. The
 Preview configuration scope names no workspace: it reads the source prepared for
 the Session's HEAD and never starts a Sandbox, and an unprepared HEAD reads
 the "Prepare current source" button, which `configure` answers by preparing it. An accepted Start Preview must read back as
@@ -464,9 +465,9 @@ reply of the mock model itself, such as an input out of order, fails the spec wi
   same Session it then sends input 1 of `explain` for the explanation (a long text streamed
   slowly, so the Watch reconnection check can interrupt it) and runs `inspect-basic` (read-only
   tools in the real coding container). A real model runs the inspection first and the edit last.
-- `template-approval.spec.ts` runs `summary-approval` in two steps: input 1, sent from the
-  creation page, shows the requirements card, the case configures the Preview while it waits,
-  input 2 confirms it through the mock composer, and the mock edit adds the
+- `template-approval.spec.ts` runs `summary-approval`, one input sent from the creation page: it
+  records the requirements card, the case configures the Preview while the turn runs, and the
+  same turn's mock edit adds the
   `AwaitSummaryApproval` Step, the `SummaryApprovals` Channel and the `ApproveSummary` Action
   the prompt asks for, runs `go build ./...` and `make check-fdg-v2`, and pushes through the
   real gate.

@@ -23,7 +23,7 @@ flowchart LR
 `ProjectStageProvider` takes the Builder's Session and reads its Project; `useProjectStage()` returns
 the stage (`conversation`, `shaping`, `built` or `live`) with the facts behind it: whether processes are
 built from the agent's own push (`hasOwnProcesses`), whether a published version runs (`hasPublished`),
-whether the requirements card waits or was confirmed, and whether the Preview has served a page of the agent's
+whether the agent recorded a version of the requirements card, and whether the Preview has served a page of the agent's
 push. Only a Project created in this browser has a first conversation: the creation page calls
 `beginFirstRun`, and the Builder switches once to the standard view when the requirements card arrives or
 processes are built, or when a link names another surface (`leaveFirstRun`). The switch and "built" are

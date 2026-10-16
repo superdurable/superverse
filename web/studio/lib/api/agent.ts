@@ -68,8 +68,8 @@ export function listMockScenarios(signal: AbortSignal): Promise<RpcOutput<"ListM
 }
 
 /**
- * The body of the Flow design in a slot, the waiting card's or the confirmed requirements', at the
- * digest its reference carries. A slot without a design is NOT_FOUND; another digest is REVISION_CHANGED.
+ * The body of the Flow design of the current requirements (slot CONFIRMED), at the digest its
+ * reference carries. A slot without a design is NOT_FOUND; another digest is REVISION_CHANGED.
  */
 export function getFlowDesign(
   input: Required<RpcInput<"GetFlowDesign">>,

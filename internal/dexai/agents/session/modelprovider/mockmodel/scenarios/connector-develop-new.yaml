@@ -7,7 +7,7 @@
 # SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 # A new connector: the requirements card lists a connection that needs a new
-# connector, and after the user confirms it the main agent starts a
+# connector, and after the card, in the same turn, the main agent starts a
 # connector_develop subagent for the slug mockfeed. The subagent works in its
 # worktree of the connectors library on the branch of its connector: it reads
 # the library's rules, writes the module's go.mod, manifest and README and adds
@@ -17,14 +17,14 @@
 # automatic turn. The application workspace stays untouched.
 name: connector-develop-new
 title: "Connector development: a new connector"
-description: "After the requirements are confirmed, a connector_develop subagent builds the new connector mockfeed on its library branch, which the platform commits and pushes."
+description: "After the requirements card, a connector_develop subagent builds the new connector mockfeed on its library branch, which the platform commits and pushes."
 category: project_feature
 arguments: {task: agent-aaaaaaaa}
 inputs:
   - label: "Describe the application"
     message: "Build a page that lists the newest items of our internal feed."
     replies:
-      - text: "No released connector reads the feed, so a new one is built upstream. Please confirm what I will build."
+      - text: "No released connector reads the feed, so a new one is built upstream. Here is what I will build; tell me in the chat if anything should change."
         tool_uses:
           - name: confirm_requirements
             input:
@@ -40,9 +40,6 @@ inputs:
                   user_setup: "An API key of the feed."
               user_setup: ["Create an API key of the feed."]
               acceptance: ["The page shows the ten newest items."]
-  - label: "Confirm the requirements"
-    requirements_confirm: true
-    replies:
       - text: "Building the mockfeed connector upstream while I work on the page."
         tool_uses:
           - name: start_agent

@@ -45,24 +45,15 @@ interface DesignReference {
 }
 
 /**
- * The design the Session's Snapshot says the Flow tab draws: the waiting card's, or else the confirmed
- * one until it is built and the Preview's processes are built from its push. A later push moves past it.
+ * The design the Session's Snapshot says the Flow tab draws: the current version's, from the moment the
+ * agent records its card until it is built and the Preview's processes are built from its push. A later
+ * push moves past it.
  */
 function shownReference(resource: SessionSnapshot__Output | null | undefined): DesignReference | null {
   const description = resource?.agent?.description;
   if (!resource || !description) return null;
   const confirmed = description.confirmedRequirements;
   const revision = Number(confirmed?.revision ?? 0);
-  const pending = description.pendingUserInput;
-  const card = pending?.kind === "KIND_REQUIREMENTS" ? pending.requirements : null;
-  if (card?.design)
-    return {
-      slot: "AGENT_FLOW_DESIGN_SLOT_PENDING",
-      ...card.design,
-      phase: "waiting",
-      version: revision + 1,
-      features: card.features,
-    };
   const spec = confirmed?.spec;
   if (!spec?.design) return null;
   if (spec.designBuilt) {

@@ -27,8 +27,8 @@ The commit_and_push tool runs the committed source gate: the checkStatic target
 production builds), the platform's own Flow-definition check, which Preview also
 applies, and the template's testApplication target (`make test-app`) on a fresh
 test engine, which then requires that every Flow ran, every wired branch of a
-mocked connector was returned, the engine stayed healthy and every confirmed
-requirement is traced to passing tests. Use focused checks while editing
+mocked connector was returned, the engine stayed healthy and every requirement
+of the current version is traced to passing tests. Use focused checks while editing
 (`make check-fdg-v2`, a build, `make test-app RUN=<affected tests>`); do not
 duplicate the complete gate immediately before calling the tool. Generate
 ignored client packages before resolving their imports. Never start your own Dex

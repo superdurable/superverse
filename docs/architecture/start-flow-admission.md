@@ -177,11 +177,11 @@ A Project has exactly one Session, which ProjectFlow starts
 - Trigger. `CommitProjectSetup` makes the Project READY and moves to the Step
   `StartProjectSession`, whose provider Execute, without a Project lock, calls
   `SessionLifecycle.StartForProject` and so `SessionAgentFlowClient.StartAccepted`
-  with the default profile, the Project's AppManifest commit as HEAD and no
-  message. A Project that is no longer READY, because its deletion began, starts
-  none. The API has no Session start; Studio applies the model the person chose
-  on the creation page with `UpdateSessionModel` when it differs from the
-  Session's, then sends the creation intent as the first `SendMessage`.
+  with the default profile, the Project's AppManifest commit as HEAD and the first
+  message and model that CreateProject carried, which ProjectFlow holds in its
+  unsynced `InitialSessionRequest` until the start succeeds and then clears; the
+  Session's start Step queues the message once. A Project that is no longer READY,
+  because its deletion began, starts none. The API has no Session start.
 - Start RequestID and options. `flowid.Fingerprint(struct{ProjectID string})`,
   `IDReuseDisallow`, `AlreadyStarted.IgnoreError: true`, ASYNC durability and no
   Flow timeout. A retried Execute, a replayed Step and a repeated commit, which

@@ -353,7 +353,7 @@ func composeBrief(projectName string, answer bridgeapi.SyncResponse) string {
 	}
 	fmt.Fprintf(&brief, "Superverse Project: %s\n", projectName)
 	if answer.Requirements != "" {
-		fmt.Fprintf(&brief, "\nConfirmed requirements:\n%s\n", answer.Requirements)
+		fmt.Fprintf(&brief, "\nCurrent requirements:\n%s\n", answer.Requirements)
 	}
 	if answer.Head != nil {
 		fmt.Fprintf(&brief, "\nHEAD: %s %s\n", answer.Head.Commit, answer.Head.Branch)

@@ -118,18 +118,46 @@ function applyGenericTurn(agent: MockAgent, userContent: string) {
   bumpWaitingRound(agent);
 }
 
-/** The agent shows a requirements card and waits for the decision. */
-function showRequirementsCard(agent: MockAgent, spec: AgentRequirements__Output) {
+/**
+ * The agent shows a requirements card, which is recorded at once as the next version, and goes on building
+ * from it; the mock never builds it, so its design stays `Design · building`.
+ */
+function recordRequirementsCard(agent: MockAgent, spec: AgentRequirements__Output) {
   const callId = `confirm-${agent.nextSequence}`;
+  const revision = (agent.description.confirmedRequirements?.revision ?? 0) + 1;
   appendMessage(
     agent,
-    mockMessage("ROLE_ASSISTANT", "Here is what I plan to build.", {
+    mockMessage("ROLE_ASSISTANT", "Here is what I will build.", {
       toolCalls: [{ id: callId, name: "confirm_requirements", target: spec.title }],
     }),
   );
+  appendMessage(agent, mockToolResult({ toolCallId: callId, toolName: "confirm_requirements" }));
+  agent.description.confirmedRequirements = { revision, spec, confirmedAt: nowIso(), confirmedBy: null };
+  agent.description.todoList = {
+    revision: (agent.description.todoList?.revision ?? 0) + 1,
+    items: [
+      { content: "Build the subscription page", status: "STATUS_IN_PROGRESS" },
+      { content: "Build the review and send flow", status: "STATUS_PENDING" },
+    ],
+  };
+  appendMessage(
+    agent,
+    mockMessage(
+      "ROLE_ASSISTANT",
+      `I am building version ${String(revision)} of these requirements. Send a message to change them.`,
+    ),
+  );
   agent.description.status = "STATUS_WAITING_FOR_MESSAGE";
-  agent.description.pendingUserInput = { callId, kind: "KIND_REQUIREMENTS", questions: [], requirements: spec };
   bumpWaitingRound(agent);
+}
+
+/** A change to the recorded card, as a message: the agent records a revised version with the change as one more feature. */
+function reviseRequirements(agent: MockAgent, spec: AgentRequirements__Output, content: string) {
+  appendMessage(agent, mockMessage("ROLE_USER", content));
+  startTurn(agent);
+  const change = content.replace(SCENARIO_MARKERS, "").trim().slice(0, 200);
+  const feature = { id: `R${String(spec.features.length + 1)}`, text: change };
+  recordRequirementsCard(agent, { ...spec, features: [...spec.features, feature] });
 }
 
 export function sendMessage(store: MockStore, projectId: string, content: string): boolean {
@@ -143,6 +171,7 @@ export function sendMessage(store: MockStore, projectId: string, content: string
   }
 
   const session = store.sessions.get(projectId);
+  const current = agent.description.confirmedRequirements;
   if (phrase === MOCK_SCRIPT_PHRASES.SHOW_TOOLS) {
     applyShowTools(agent, true);
     if (session) holdWorkspace(session);
@@ -170,10 +199,10 @@ export function sendMessage(store: MockStore, projectId: string, content: string
     };
     bumpWaitingRound(agent);
   } else if (phrase === MOCK_SCRIPT_PHRASES.CONFIRM_REQUIREMENTS) {
-    showRequirementsCard(agent, MOCK_REQUIREMENTS);
+    recordRequirementsCard(agent, MOCK_REQUIREMENTS);
   } else if (phrase === MOCK_SCRIPT_PHRASES.CONFIRM_PLAIN_REQUIREMENTS) {
     // A card without a Flow design, which the Flow tab shows as the Brief alone.
-    showRequirementsCard(agent, { ...MOCK_REQUIREMENTS, design: null });
+    recordRequirementsCard(agent, { ...MOCK_REQUIREMENTS, design: null });
   } else if (phrase === MOCK_SCRIPT_PHRASES.NEED_APPROVAL) {
     agent.description.status = "STATUS_WAITING_FOR_TOOL_APPROVAL";
     agent.description.pendingApproval = {
@@ -195,6 +224,9 @@ export function sendMessage(store: MockStore, projectId: string, content: string
       ],
     };
     bumpWaitingRound(agent);
+  } else if (phrase === null && current?.spec && !current.spec.designBuilt) {
+    // While the agent builds a recorded card, which the mock never finishes, a message changes it.
+    reviseRequirements(agent, current.spec, content);
   } else {
     applyGenericTurn(agent, content);
     if (session) {
@@ -219,64 +251,13 @@ function resolveWait(agent: MockAgent, field: PendingWait, reply: string) {
   return true;
 }
 
-/** The decision on a requirements card: the confirmation, or the changes asked for in text. */
-export interface MockRequirementsDecision {
-  isConfirmed: boolean;
-  requestedChanges: string;
-}
-
-export function answerQuestions(
-  store: MockStore,
-  projectId: string,
-  callId: string,
-  decision?: MockRequirementsDecision,
-): boolean {
+export function answerQuestions(store: MockStore, projectId: string, callId: string): boolean {
   const agent = store.agents.get(projectId);
   const pending = agent?.description.pendingUserInput;
-  if (!agent || pending?.callId !== callId) return false;
-  if (pending.kind === "KIND_REQUIREMENTS")
-    return decideRequirements(agent, pending.callId, pending.requirements, decision);
-  if (decision !== undefined) return false;
+  if (!agent || pending?.callId !== callId || pending.kind !== "KIND_QUESTION") return false;
   appendMessage(agent, mockMessage("ROLE_USER", "Answered the questions above.", { answeredInputCallId: callId }));
   appendMessage(agent, mockToolResult({ toolCallId: callId, toolName: "request_user_input" }));
   return resolveWait(agent, "pendingUserInput", "Thanks — continuing with your answers.");
-}
-
-/**
- * A confirmation stores the card as the next version and the agent starts building; a request for
- * changes answers with the user's text and shows a revised card, with the change as one more feature.
- */
-function decideRequirements(
-  agent: MockAgent,
-  callId: string,
-  spec: AgentRequirements__Output | null,
-  decision: MockRequirementsDecision | undefined,
-): boolean {
-  const changes = decision?.requestedChanges.trim() ?? "";
-  if (!spec || !decision || decision.isConfirmed === (changes !== "")) return false;
-  const revision = (agent.description.confirmedRequirements?.revision ?? 0) + 1;
-  const content = decision.isConfirmed ? `Requirements confirmed (version ${String(revision)})` : changes;
-  appendMessage(agent, mockMessage("ROLE_USER", content, { answeredInputCallId: callId }));
-  appendMessage(agent, mockToolResult({ toolCallId: callId, toolName: "confirm_requirements" }));
-  agent.description.pendingUserInput = null;
-  if (!decision.isConfirmed) {
-    const feature = { id: `R${String(spec.features.length + 1)}`, text: changes.slice(0, 200) };
-    showRequirementsCard(agent, { ...spec, features: [...spec.features, feature] });
-    return true;
-  }
-  agent.description.confirmedRequirements = { revision, spec, confirmedAt: nowIso(), confirmedBy: null };
-  agent.description.todoList = {
-    revision: (agent.description.todoList?.revision ?? 0) + 1,
-    items: [
-      { content: "Build the subscription page", status: "STATUS_IN_PROGRESS" },
-      { content: "Build the review and send flow", status: "STATUS_PENDING" },
-    ],
-  };
-  return resolveWait(
-    agent,
-    "pendingUserInput",
-    "The requirements are confirmed, and I will build exactly these features.",
-  );
 }
 
 export function approveTool(store: MockStore, projectId: string, callId: string, approved: boolean): boolean {

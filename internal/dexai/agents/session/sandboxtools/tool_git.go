@@ -72,10 +72,10 @@ func (execution *Execution) commitAndPush(ctx context.Context, call Call) (Resul
 }
 
 // traceRequirements checks the form of the requirement trace against the
-// confirmed requirements the Session passed: every item names a distinct
-// feature ID of the confirmed version, and the trace names that version. An
-// empty trace is valid in form, as for a small change with nothing confirmed;
-// the gate's test stage checks that the trace covers every confirmed ID with
+// current requirements the Session passed: every item names a distinct
+// feature ID of the current version, and the trace names that version. An
+// empty trace is valid in form, as for a small change with nothing recorded;
+// the gate's test stage checks that the trace covers every current ID with
 // passing tests.
 func traceRequirements(items []generated.CommitAndPushRequirementsItem, revision generated.OptInt, confirmed *ConfirmedRequirements) (git.RequirementTrace, error) {
 	var trace git.RequirementTrace
@@ -86,17 +86,17 @@ func traceRequirements(items []generated.CommitAndPushRequirementsItem, revision
 		return trace, nil
 	}
 	if confirmed == nil {
-		return trace, invalidArguments(errors.New("requirements: no requirements are confirmed; pass none for a change without a confirmation"))
+		return trace, invalidArguments(errors.New("requirements: no requirements are recorded; pass none for a change without a requirements card"))
 	}
 	if !revision.Set || int64(revision.Value) != confirmed.Revision {
-		return trace, invalidArguments(fmt.Errorf("requirements_revision must be the confirmed version %d", confirmed.Revision))
+		return trace, invalidArguments(fmt.Errorf("requirements_revision must be the current version %d", confirmed.Revision))
 	}
 	named := make(map[string]bool, len(items))
 	for index, item := range items {
 		name := fmt.Sprintf("requirements[%d]", index)
 		switch {
 		case !slices.Contains(confirmed.IDs, item.ID):
-			return trace, invalidArguments(fmt.Errorf("%s.id %q is not a feature of the confirmed version %d", name, item.ID, confirmed.Revision))
+			return trace, invalidArguments(fmt.Errorf("%s.id %q is not a feature of the current version %d", name, item.ID, confirmed.Revision))
 		case named[item.ID]:
 			return trace, invalidArguments(fmt.Errorf("%s.id %q appears twice", name, item.ID))
 		}

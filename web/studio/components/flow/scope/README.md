@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: Studio's only entry into the Flow UI: binds it to a Project-scoped Flow API, supplies navigation and the catalog notice, and loads its views on demand.
 
-Importers: `components/build`, `components/project`, `components/publishing/publish`, `components/session`, `components/teamspace/connections` and `mock/surface` import this directory.
+Importers: `components/build`, `components/project`, `components/publishing/publish`, `components/teamspace/connections` and `mock/surface` import this directory.
 
 Imports: it imports `components/flow/canvas`, `components/flow/connections`, `components/flow/connector/team-space`, `components/flow/design`, `components/flow/design/brief`, `components/flow/diagnostics`, `components/flow/frame`, `components/flow/map`, `components/flow/run`, `components/flow/run/tryit`, `components/ui`, `lib/api/flow`, `lib/api/transport`, `lib/browser`, `lib/flow`, `lib/project`, `lib/project/setup`, `lib/session` and `lib/shared`.
 
@@ -13,9 +13,8 @@ flowchart LR
   c0["components/build"] --> self
   c1["components/project"] --> self
   c2["components/publishing/publish"] --> self
-  c3["components/session"] --> self
-  c4["components/teamspace/connections"] --> self
-  c5["mock/surface"] --> self
+  c3["components/teamspace/connections"] --> self
+  c4["mock/surface"] --> self
   self --> d0["components/flow/canvas"]
   self --> d1["components/flow/connections"]
   self --> d2["components/flow/connector/team-space"]

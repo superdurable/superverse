@@ -11,10 +11,9 @@
 import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
 import { useProcessDefinitions } from "@/lib/project/ProcessDefinitionsProvider";
-import { AgentStatus, type RequirementsDecision } from "@/lib/session/agent-types";
+import { AgentStatus } from "@/lib/session/agent-types";
 import { useProjectSession, useSessionResource } from "@/lib/session/SessionProvider";
 import type { ShownDesign } from "@/lib/session/design/use-flow-design";
-import { useBriefShown } from "@/lib/session/design/use-brief-on-screen";
 import { designPhaseLabel } from "@/lib/shared/design-phase";
 import { processName } from "@/lib/shared/format";
 import { designChangeLines, ProcessBrief } from "@/components/flow/scope/flow-design";
@@ -22,18 +21,14 @@ import { LazyDesignFlowView } from "@/components/flow/scope/LazyFlowViews";
 import { cx } from "@/components/ui/cx";
 import { NotReady } from "@/components/ui/NotReady";
 
-const MOCK_ANSWER = "On the mock model, the mock composer in the chat sends the answer.";
-
-/** Counts the Brief as on screen, so the chat leaves out its pointer to it. */
-function BriefShown() {
-  useBriefShown();
-  return null;
-}
+const MOCK_CHANGE = "On the mock model, the mock composer in the chat sends the scenario's next input.";
+const ANSWER_FIRST = "The agent waits for your answers in the chat; answer them, then change the brief.";
 
 /**
- * The Process Brief of the card whose design is shown, or of a card without one: the waiting card with Confirm
- * and build, or the confirmed one. Change something… asks for changes to a waiting card, and otherwise sends a
- * message to the agent. It alone reads the Session's commands, whose streamed text then never redraws the canvas.
+ * The Process Brief of the current version of the requirements, whose design is shown or which has none. The
+ * agent builds from it at once; Change something… sends a message, which steers the turn while one runs, and
+ * the agent records a revised version and builds what changed. It alone reads the Session's commands, whose
+ * streamed text then never redraws the canvas.
  */
 function BriefHost({
   design,
@@ -44,78 +39,55 @@ function BriefHost({
   design?: ShownDesign;
   changes: readonly string[];
   drawing?: ReactNode;
-  /** The confirmed card's agent stopped short of building, which the host says above the Brief. */
+  /** The agent's last turn ended short of building the card, which the host says above the Brief. */
   stopped?: boolean;
 }) {
   const session = useProjectSession();
   const [failed, setFailed] = useState(false);
   const description = session.snapshot?.description ?? null;
-  const confirmed = description?.confirmedRequirements ?? null;
-  const pending = description?.pendingUserInput?.kind === "requirements" ? description.pendingUserInput : null;
-  const waits = design ? design.phase === "waiting" : pending !== null;
-  const waiting = waits ? pending : null;
-  const card = waits ? waiting?.requirements : confirmed?.spec;
-  if (!card) return drawing ?? null;
-  const callId = waiting?.callId ?? null;
+  const current = description?.confirmedRequirements ?? null;
+  if (!current) return drawing ?? null;
   const mock = description?.executor?.mode !== "remote" && description?.contextModel === "mock";
-  // As in the chat: an answer stays in flight until the Snapshot takes it.
-  const reconciling = callId !== null && session.answeredQuestionCallId === callId;
   const ready = description !== null && description.status !== AgentStatus.INITIALIZING;
-  const answer = (decision: RequirementsDecision) => {
-    if (callId === null) return Promise.reject(new Error("No card waits"));
+  // Questions block every message until they are answered; a card a Session still waits at takes it as its reply.
+  const questions = description?.pendingUserInput?.kind === "question";
+  const turnRunning = description !== null && description.status !== AgentStatus.WAITING_FOR_MESSAGE;
+  const change = (text: string) => {
     setFailed(false);
-    return session.decideRequirements(callId, decision).catch((reason: unknown) => {
+    return session.change(text, turnRunning).catch((reason: unknown) => {
       setFailed(true);
       throw reason;
     });
   };
-  const send = (text: string) => {
-    setFailed(false);
-    return session.send(text).catch((reason: unknown) => {
-      setFailed(true);
-      throw reason;
-    });
-  };
-  const actions = mock
-    ? undefined
-    : {
-        disabled:
-          session.mutating ||
-          session.status !== "SESSION_STATUS_ACTIVE" ||
-          !ready ||
-          !session.snapshotCurrent ||
-          reconciling,
-        submitting: (callId !== null && session.answeringQuestionCallId === callId) || reconciling,
-        error: failed ? session.commandError : null,
-        onConfirm:
-          callId === null
-            ? undefined
-            : () => void answer({ isConfirmed: true, requestedChanges: "" }).catch(() => undefined),
-        onChange: (text: string) =>
-          callId === null ? send(text) : answer({ isConfirmed: false, requestedChanges: text }),
-      };
+  const actions =
+    mock || questions
+      ? undefined
+      : {
+          disabled:
+            session.mutating || session.status !== "SESSION_STATUS_ACTIVE" || !ready || !session.snapshotCurrent,
+          submitting: session.mutationKind === "send",
+          error: failed ? session.commandError : null,
+          onChange: change,
+        };
   return (
-    <>
-      <BriefShown />
-      <ProcessBrief
-        key={callId ?? "confirmed"}
-        card={card}
-        version={(confirmed?.revision ?? 0) + (waiting ? 1 : 0)}
-        status={callId !== null ? "waiting" : stopped ? "stopped" : "building"}
-        designSummary={design?.summary}
-        outline={design?.outline}
-        design={design?.body}
-        changes={changes}
-        drawing={drawing}
-        actions={actions}
-        note={mock && callId !== null ? MOCK_ANSWER : undefined}
-      />
-    </>
+    <ProcessBrief
+      key={String(current.revision)}
+      card={current.spec}
+      version={current.revision}
+      status={design?.phase === "built" ? "built" : stopped ? "stopped" : "building"}
+      designSummary={design?.summary}
+      outline={design?.outline}
+      design={design?.body}
+      changes={changes}
+      drawing={drawing}
+      actions={actions}
+      note={mock ? MOCK_CHANGE : questions ? ANSWER_FIRST : undefined}
+    />
   );
 }
 
-/** What the Flow tab says above a confirmed card's Brief until its processes are built. */
-const CONFIRMED_NOTE = {
+/** What the Flow tab says above a recorded card's Brief until its processes are built. */
+const CARD_NOTE = {
   building: "The agent is building it. The processes show here once they are built.",
   stalled:
     "Not built yet: the agent's last turn ended before the processes were built. Ask it in the chat to carry on; its last turn's More details show what failed.",
@@ -123,24 +95,21 @@ const CONFIRMED_NOTE = {
 
 /**
  * The Process Brief of a card that carries no Flow design, which the Flow tab shows alone: the same summary
- * without a drawing, while it waits and once it is confirmed, saying whether the agent is still building what
- * it describes.
+ * without a drawing, saying whether the agent is still building what it describes.
  */
-export function CardBrief({ state }: { state: "waiting" | keyof typeof CONFIRMED_NOTE }) {
+export function CardBrief({ state }: { state: keyof typeof CARD_NOTE }) {
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      {state !== "waiting" && (
-        <p
-          className={cx(
-            "border-b border-line-faint px-5 py-2.5 text-body",
-            state === "stalled" ? "bg-busy-subtle text-busy" : "bg-panel text-ink-dim",
-          )}
-          role="status"
-          data-card-brief-state={state}
-        >
-          {CONFIRMED_NOTE[state]}
-        </p>
-      )}
+      <p
+        className={cx(
+          "border-b border-line-faint px-5 py-2.5 text-body",
+          state === "stalled" ? "bg-busy-subtle text-busy" : "bg-panel text-ink-dim",
+        )}
+        role="status"
+        data-card-brief-state={state}
+      >
+        {CARD_NOTE[state]}
+      </p>
       <BriefHost changes={[]} stopped={state === "stalled"} />
     </div>
   );
@@ -148,8 +117,8 @@ export function CardBrief({ state }: { state: "waiting" | keyof typeof CONFIRMED
 
 /**
  * A designed Flow on the Flow tab, in place of the implemented one it changes: the Process Brief of its card
- * with the design drawn below its summary, left to right with its stages closed, while the card waits and
- * after it is confirmed. Its Steps are compared with the current source only when that source is the Session
+ * with the design drawn below its summary, left to right with its stages closed, from the moment the agent
+ * records the card. Its Steps are compared with the current source only when that source is the Session
  * head's.
  */
 export function DesignSurface({ design, flowType }: { design: ShownDesign; flowType: string }) {

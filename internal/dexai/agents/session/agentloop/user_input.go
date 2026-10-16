@@ -45,20 +45,23 @@ type UserInputQuestion struct {
 }
 
 // PendingUserInput describes one durable wait for the user: a batch of
-// questions, or the requirements card the user confirms.
+// questions. A Session that waited at a requirements card before cards stopped
+// waiting still holds that card until a message answers it.
 type PendingUserInput struct {
 	CallID    conversation.CallID `json:"call_id"`
 	Questions []UserInputQuestion `json:"questions"`
 	StartedAt *time.Time          `json:"started_at,omitempty"`
 	// Kind is empty for the questions of a request_user_input call.
 	Kind PendingUserInputKind `json:"kind,omitempty"`
-	// Requirements is the card of a requirements wait; it has no questions.
+	// Requirements is the card of an old requirements wait; it has no questions.
 	Requirements *Requirements `json:"requirements,omitempty"`
 }
 
-// PendingUserInputKind names the model's questions (empty) or requirements card.
+// PendingUserInputKind names the model's questions (empty) or an old requirements card.
 type PendingUserInputKind string
 
+// PendingUserInputKindRequirements is the kind of a card a Session waited at
+// before cards stopped waiting; SendMessage answers it with the message.
 const PendingUserInputKindRequirements PendingUserInputKind = "requirements"
 
 // CurrentKind maps a question left by the removed prelaunch turn limit to an
@@ -70,19 +73,16 @@ func (kind PendingUserInputKind) CurrentKind() PendingUserInputKind {
 	return kind
 }
 
-// PendingUserInputKinds lists every kind of pending input, the questions of
-// request_user_input (the empty kind) first. The mock scenario coverage check
-// requires a scenario that answers each.
-var PendingUserInputKinds = []PendingUserInputKind{"", PendingUserInputKindRequirements}
+// PendingUserInputKinds lists every kind of pending input a Session creates:
+// the questions of request_user_input (the empty kind). The mock scenario
+// coverage check requires a scenario that answers each.
+var PendingUserInputKinds = []PendingUserInputKind{""}
 
-// AnswerQuestionsRequest identifies and answers one pending input: a question
-// batch with Answers, or a requirements card with Requirements.
+// AnswerQuestionsRequest identifies and answers one pending question batch.
 type AnswerQuestionsRequest struct {
 	Actor   *conversation.Actor `json:"actor,omitempty"`
 	CallID  conversation.CallID `json:"call_id"`
 	Answers []UserInputAnswer   `json:"answers"`
-	// Requirements decides a requirements card and is nil for questions.
-	Requirements *RequirementsDecision `json:"requirements,omitempty"`
 }
 
 // UserInputAnswer answers one question in a pending input batch.
@@ -186,8 +186,8 @@ func answeredQuestionsDescription(questionCount int) string {
 	return fmt.Sprintf("Answered %d %s.", questionCount, noun)
 }
 
-// The requirements card is the one confirmation before the Agent builds: a
-// pending input of its own kind that the user confirms or answers with changes.
+// The requirements card records what the Agent builds as a version the user
+// reads while the Agent goes on; the user changes it with a message.
 
 // RequirementFeature is one behavior the user will get. Its ID, R<n>, keeps
 // its number in every later version of the requirements, and the
@@ -230,7 +230,7 @@ type RequirementConnection struct {
 	UserSetup  string                      `json:"user_setup"`
 }
 
-// Requirements is what a requirements card asks the user to confirm.
+// Requirements is what a requirements card shows the user.
 type Requirements struct {
 	Title       string                  `json:"title"`
 	Summary     string                  `json:"summary"`
@@ -239,7 +239,7 @@ type Requirements struct {
 	UserSetup   []string                `json:"user_setup"`
 	Acceptance  []string                `json:"acceptance"`
 	// ReplacesRequirements marks the card of a completely different request
-	// after a confirmation: it replaces the confirmed requirements instead of
+	// after a recorded version: it replaces the requirements instead of
 	// revising them, so its features are numbered from R1 again.
 	ReplacesRequirements bool `json:"replaces_requirements,omitempty"`
 	// Design is the reference of the card's Flow design, whose body the
@@ -247,10 +247,12 @@ type Requirements struct {
 	Design *flowdesign.Reference `json:"design,omitempty"`
 }
 
-// ConfirmedRequirements is the version of the requirements the user confirmed.
-// SessionAgentFlow is its only owner: AnswerQuestions writes it in the commit
-// that publishes the confirmation, and a request for changes leaves it as it is.
+// ConfirmedRequirements is the current version of the requirements, under its
+// persisted name. SessionAgentFlow is its only owner: RouteTool records each
+// card as the next version in the commit that answers the call.
 type ConfirmedRequirements struct {
+	// ConfirmedBy is the user who confirmed a version recorded while cards
+	// waited for a confirmation; nil on a recorded version.
 	ConfirmedBy *conversation.Actor `json:"confirmed_by,omitempty"`
 	Revision    int64               `json:"revision"`
 	Spec        Requirements        `json:"spec"`
@@ -262,62 +264,55 @@ type ConfirmedRequirements struct {
 	LastFeatureNumber int64 `json:"last_feature_number,omitempty"`
 }
 
-// RequirementsDecision is the user's answer to a requirements card: the
-// confirmation, or the changes the user asks for in text.
-type RequirementsDecision struct {
-	IsConfirmed      bool   `json:"is_confirmed"`
-	RequestedChanges string `json:"requested_changes,omitempty"`
-}
-
 // maximumRequirementsBytes bounds the requirements as segment_start renders
-// them, which every segment after the confirmation carries.
+// them, which every segment after a recorded version carries.
 const maximumRequirementsBytes = 16 << 10
 
 // RequestedRequirements is the card a confirm_requirements call shows, and
 // its Flow design or nil. The schema bounds the sizes; the model must also give
 // non-blank text, keep the card within maximumRequirementsBytes and give its
-// features stable IDs (checkFeatureIDs) against stored, the confirmed
-// requirements or nil, so that the IDs of a version are exactly those the
-// commit trace can name. Only a card that replaces confirmed requirements may
-// set ReplacesRequirements, and a design must pass flowdesign's validation.
-func RequestedRequirements(call conversation.ToolCall, stored *ConfirmedRequirements, startedAt time.Time) (PendingUserInput, *flowdesign.Design, error) {
+// features stable IDs (checkFeatureIDs) against stored, the current version
+// or nil, so that the IDs of a version are exactly those the commit trace can
+// name. Only a card that replaces recorded requirements may set
+// ReplacesRequirements, and a design must pass flowdesign's validation.
+func RequestedRequirements(call conversation.ToolCall, stored *ConfirmedRequirements) (Requirements, *flowdesign.Design, error) {
 	input, err := toolinput.ConfirmRequirements.Decode(call.Arguments.String())
 	if err != nil {
-		return PendingUserInput{}, nil, invalidToolArguments(call, err)
+		return Requirements{}, nil, invalidToolArguments(call, err)
 	}
 	spec := Requirements{Features: make([]RequirementFeature, 0, len(input.Features)), Connections: make([]RequirementConnection, 0, len(input.Connections)),
 		ReplacesRequirements: input.ReplacesRequirements.Value}
 	if spec.ReplacesRequirements && stored == nil {
-		return PendingUserInput{}, nil, errors.New("replaces_requirements is only for a card that replaces confirmed requirements, and none are confirmed")
+		return Requirements{}, nil, errors.New("replaces_requirements is only for a card that replaces recorded requirements, and none are recorded")
 	}
 	if spec.Title, err = nonBlankText("title", input.Title); err != nil {
-		return PendingUserInput{}, nil, err
+		return Requirements{}, nil, err
 	}
 	if spec.Summary, err = nonBlankText("summary", input.Summary); err != nil {
-		return PendingUserInput{}, nil, err
+		return Requirements{}, nil, err
 	}
 	for index, feature := range input.Features {
 		text, textErr := nonBlankText(fmt.Sprintf("features[%d].text", index), feature.Text)
 		if textErr != nil {
-			return PendingUserInput{}, nil, textErr
+			return Requirements{}, nil, textErr
 		}
 		spec.Features = append(spec.Features, RequirementFeature{ID: feature.ID, Text: text})
 	}
 	if err = checkFeatureIDs(spec, stored); err != nil {
-		return PendingUserInput{}, nil, err
+		return Requirements{}, nil, err
 	}
 	for index, connection := range input.Connections {
 		item, itemErr := requirementConnection(index, connection.Need, connection.Connector, connection.Operations, string(connection.Status), connection.UserSetup)
 		if itemErr != nil {
-			return PendingUserInput{}, nil, itemErr
+			return Requirements{}, nil, itemErr
 		}
 		spec.Connections = append(spec.Connections, item)
 	}
 	if spec.UserSetup, err = nonBlankTexts("user_setup", input.UserSetup); err != nil {
-		return PendingUserInput{}, nil, err
+		return Requirements{}, nil, err
 	}
 	if spec.Acceptance, err = nonBlankTexts("acceptance", input.Acceptance); err != nil {
-		return PendingUserInput{}, nil, err
+		return Requirements{}, nil, err
 	}
 	var design *flowdesign.Design
 	if value, isSet := input.Design.Get(); isSet {
@@ -327,19 +322,19 @@ func RequestedRequirements(call conversation.ToolCall, stored *ConfirmedRequirem
 			featureIDs = append(featureIDs, feature.ID)
 		}
 		if err = designed.Validate(featureIDs); err != nil {
-			return PendingUserInput{}, nil, err
+			return Requirements{}, nil, err
 		}
 		reference := designed.Reference()
 		design, spec.Design = &designed, &reference
 	}
 	if len(requirementsText(1, spec)) > maximumRequirementsBytes {
-		return PendingUserInput{}, nil, fmt.Errorf("the requirements are too long: keep them within %d KiB in all", maximumRequirementsBytes>>10)
+		return Requirements{}, nil, fmt.Errorf("the requirements are too long: keep them within %d KiB in all", maximumRequirementsBytes>>10)
 	}
-	return PendingUserInput{CallID: call.ID, Kind: PendingUserInputKindRequirements, Requirements: &spec, StartedAt: &startedAt}, design, nil
+	return spec, design, nil
 }
 
 // checkFeatureIDs requires stable feature IDs: R<n> in increasing order, gaps
-// allowed. A card that revises confirmed requirements keeps the ID of every
+// allowed. A card that revises recorded requirements keeps the ID of every
 // feature it keeps or changes and numbers a new feature above every number
 // the requirements have used, so a removed feature's number is never reused;
 // only a card that replaces them numbers from R1 again.
@@ -415,66 +410,61 @@ func nonBlankTexts(name string, texts []string) ([]string, error) {
 	return trimmed, nil
 }
 
-// NextRequirementsRevision is the version the next confirmation will have: the
-// stored revision plus one.
-func NextRequirementsRevision(stored *ConfirmedRequirements) int64 {
-	if stored == nil {
-		return 1
+// RecordRequirements is the version a card records over stored, the current
+// version or nil: the stored revision plus one, which carries the stored design
+// forward when a revising card has none, and the highest feature number used.
+func RecordRequirements(stored *ConfirmedRequirements, card Requirements, at time.Time) ConfirmedRequirements {
+	recorded := ConfirmedRequirements{Revision: 1, Spec: card, ConfirmedAt: at}
+	if stored != nil {
+		recorded.Revision = stored.Revision + 1
+		if !card.ReplacesRequirements {
+			recorded.LastFeatureNumber = stored.lastFeatureNumber()
+			if card.Design == nil {
+				recorded.Spec.Design = stored.Spec.Design
+			}
+		}
 	}
-	return stored.Revision + 1
+	recorded.LastFeatureNumber = recorded.lastFeatureNumber()
+	return recorded
+}
+
+// RecordedRequirementsResult answers a confirm_requirements call that recorded
+// version: the turn goes on, and the user changes the card with a message.
+func RecordedRequirementsResult(version int64) ToolResultPayload {
+	return ToolResultPayload{Status: ToolResultStatusRecorded, Version: version,
+		Reason: fmt.Sprintf("Shown to the user as version %d. Continue building it; the user changes it by sending a message, and a change is recorded as the next version.", version)}
 }
 
 // PendingInputAnswer is what answering the pending input decides: the user
-// message that begins the next turn, the activity message that records it and,
-// for a confirmation, the requirements to store in the same commit.
+// message that begins the next turn and the activity message that records it.
 type PendingInputAnswer struct {
 	Message     conversation.UserMessage
 	Description string
-	Confirmed   *ConfirmedRequirements
 }
 
-// AnswerPendingInput validates the answer to the pending input. A question
-// batch takes one answer per question, a requirements card one decision; false
-// rejects any other shape. stored is the confirmed requirements before this
-// answer.
-func AnswerPendingInput(pending PendingUserInput, request AnswerQuestionsRequest, stored *ConfirmedRequirements, now time.Time) (PendingInputAnswer, bool) {
-	if pending.Kind != PendingUserInputKindRequirements {
-		message, isValid := answeredUserMessage(pending, request.Answers)
-		message.Actor = request.Actor
-		return PendingInputAnswer{Message: message, Description: answeredQuestionsDescription(len(pending.Questions))}, isValid && request.Requirements == nil
-	}
-	decision := request.Requirements
-	if decision == nil || len(request.Answers) != 0 {
+// AnswerPendingInput validates the answers to a pending question batch: one
+// per question; false rejects any other shape and an old requirements card,
+// which only a message answers (AnswerRequirementsCard).
+func AnswerPendingInput(pending PendingUserInput, request AnswerQuestionsRequest) (PendingInputAnswer, bool) {
+	if pending.Kind == PendingUserInputKindRequirements {
 		return PendingInputAnswer{}, false
 	}
+	message, isValid := answeredUserMessage(pending, request.Answers)
+	message.Actor = request.Actor
+	return PendingInputAnswer{Message: message, Description: answeredQuestionsDescription(len(pending.Questions))}, isValid
+}
+
+// AnswerRequirementsCard answers the old requirements card a Session waits at
+// with the user's message, which the Agent reads as the reply to the card that
+// SendMessage recorded as version.
+func AnswerRequirementsCard(pending PendingUserInput, message conversation.UserMessage, version int64) AnsweredUserInput {
 	callID := pending.CallID
-	if decision.IsConfirmed {
-		if decision.RequestedChanges != "" {
-			return PendingInputAnswer{}, false
-		}
-		confirmed := ConfirmedRequirements{Revision: NextRequirementsRevision(stored), Spec: *pending.Requirements, ConfirmedAt: now, ConfirmedBy: request.Actor}
-		if stored != nil && !confirmed.Spec.ReplacesRequirements {
-			confirmed.LastFeatureNumber = stored.lastFeatureNumber()
-			if confirmed.Spec.Design == nil {
-				confirmed.Spec.Design = stored.Spec.Design
-			}
-		}
-		confirmed.LastFeatureNumber = confirmed.lastFeatureNumber()
-		return PendingInputAnswer{
-			Message:     conversation.UserMessage{Actor: request.Actor, Content: fmt.Sprintf("Requirements confirmed (version %d)", confirmed.Revision), AnsweredInputCallID: &callID},
-			Description: fmt.Sprintf("Confirmed the requirements (version %d).", confirmed.Revision),
-			Confirmed:   &confirmed,
-		}, true
-	}
-	changes := strings.TrimSpace(decision.RequestedChanges)
-	if changes == "" || len(changes) > maximumAnsweredMessageBytes {
-		return PendingInputAnswer{}, false
-	}
-	return PendingInputAnswer{Message: conversation.UserMessage{Actor: request.Actor, Content: changes, AnsweredInputCallID: &callID}, Description: "Asked for changes to the requirements."}, true
+	message.AnsweredInputCallID = &callID
+	return AnsweredUserInput{CallID: callID, Message: message, Description: fmt.Sprintf("Replied to the requirements, recorded as version %d.", version)}
 }
 
 // TraceScope is what commit_and_push checks its requirement trace against: the
-// confirmed version and its feature IDs; nil when nothing is confirmed.
+// current version and its feature IDs; nil when nothing is recorded.
 func (confirmed *ConfirmedRequirements) TraceScope() *sandboxtools.ConfirmedRequirements {
 	if confirmed == nil {
 		return nil
@@ -486,8 +476,8 @@ func (confirmed *ConfirmedRequirements) TraceScope() *sandboxtools.ConfirmedRequ
 	return scope
 }
 
-// confirmedRequirementsText renders the confirmed requirements for a
-// segment_start entry, or "" when none are confirmed. It names the number
+// confirmedRequirementsText renders the current requirements for a
+// segment_start entry, or "" when none are recorded. It names the number
 // of the next new feature, which a removed last feature does not show.
 func confirmedRequirementsText(confirmed *ConfirmedRequirements) string {
 	if confirmed == nil {

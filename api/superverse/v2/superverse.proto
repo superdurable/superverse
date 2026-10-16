@@ -727,7 +727,12 @@ service ProjectService {
 }
 
 // The server derives the Project and Setup IDs from the caller and request_id. A request without
-// managed_repository is invalid.
+// managed_repository is invalid. initial_message, when set, is the first message of the Project's
+// Session, with message_id as SendMessageRequest has them; the Session starts on model, or on the
+// server's default when it is unspecified, and admits the message once, so the start needs no
+// open browser. model is admitted as UpdateSessionModelRequest admits it, before the Project is
+// created. A retry with the same request_id and a changed name, TeamSpace, message, message_id
+// or model is ALREADY_EXISTS.
 message CreateProjectRequest {
   string request_id = 2;
   string name = 3;
@@ -735,6 +740,10 @@ message CreateProjectRequest {
   // The caller must be a member of the TeamSpace, which ProjectFlow's first Step confirms. Field 7
   // was the retired imported_repository.
   string team_space_id = 8;
+  string initial_message = 9;
+  AgentModel model = 10;
+  // Required with initial_message, absent without it.
+  string message_id = 11;
   CallerContext caller = 100;
 }
 
@@ -1562,7 +1571,10 @@ service AgentService {
 }
 
 // The browser creates a new message_id for every send. The Agent does not deduplicate by it,
-// so retrying a send that was in fact admitted queues a second message.
+// so retrying a send that was in fact admitted queues a second message. A message to a Session
+// that still waits at a requirements card from before cards stopped waiting
+// (AgentPendingUserInput.KIND_REQUIREMENTS) records that card as the next version and is its
+// reply, which is not queued.
 message SendMessageRequest {
   string project_id = 1;
   string message_id = 3;
@@ -1633,10 +1645,9 @@ message InterruptAgentRequest {
 
 message InterruptAgentResponse {}
 
-// The Flow design of a requirements card (slot PENDING) or of the confirmed requirements (slot
-// CONFIRMED), whose digest the caller read from the Snapshot's design reference. NOT_FOUND when
-// the slot holds no design; ABORTED with REVISION_CHANGED when it holds another digest, after
-// which the caller reads the Snapshot again.
+// The Flow design of the current requirements (slot CONFIRMED), whose digest the caller read from
+// the Snapshot's design reference. NOT_FOUND when the slot holds no design; ABORTED with
+// REVISION_CHANGED when it holds another digest, after which the caller reads the Snapshot again.
 message GetFlowDesignRequest {
   string project_id = 1;
   AgentFlowDesignSlot slot = 3;
@@ -1650,7 +1661,6 @@ message GetFlowDesignResponse {
 
 enum AgentFlowDesignSlot {
   AGENT_FLOW_DESIGN_SLOT_UNSPECIFIED = 0;
-  AGENT_FLOW_DESIGN_SLOT_PENDING = 1;
   AGENT_FLOW_DESIGN_SLOT_CONFIRMED = 2;
 }
 
@@ -1691,7 +1701,7 @@ message AgentMockScenario {
   repeated AgentMockScenarioInput inputs = 5;
   Category category = 6;
   // The scenario changes the Project: its source (an edit, a merge of a subagent's changes or a
-  // push) or its requirements (a confirmed card), so it expects a new Project and runs once per
+  // push) or its requirements (a recorded card), so it expects a new Project and runs once per
   // Project.
   bool needs_new_project = 7;
   // What only the scenario's Dex test can do between its inputs, such as removing the Session's
@@ -1707,16 +1717,12 @@ message AgentMockScenarioArgument {
 }
 
 // One user input, numbered from 1. content is exactly what Studio sends for KIND_MESSAGE
-// (SendMessage) and KIND_REQUIREMENTS_CHANGE (the requested changes), each with its
-// [[scenario:name#number]] marker; answers are the
-// answers to the pending questions in question order for KIND_ANSWERS. A confirmation carries
-// neither.
+// (SendMessage), with its [[scenario:name#number]] marker; answers are the answers to the pending
+// questions in question order for KIND_ANSWERS.
 message AgentMockScenarioInput {
   enum Kind {
     KIND_UNSPECIFIED = 0;
     KIND_MESSAGE = 1;
-    KIND_REQUIREMENTS_CONFIRM = 2;
-    KIND_REQUIREMENTS_CHANGE = 3;
     KIND_ANSWERS = 4;
   }
   int32 number = 1;
@@ -1961,7 +1967,7 @@ message AgentDescription {
   string effort = 20;
   AgentTodoList todo_list = 21;
   AgentModel context_model = 22;
-  // The version of the requirements the user last confirmed; unset until the first confirmation.
+  // The current version of the requirements, which the Agent builds; unset until its first card.
   AgentConfirmedRequirements confirmed_requirements = 23;
   // The current turn, which a Stop names (InterruptAgentRequest.turn).
   int64 turn = 24;
@@ -2075,7 +2081,9 @@ message AgentPendingTimer {
 
 // What the Agent waits for the user to answer. KIND_QUESTION is a request_user_input batch: the
 // domain value of a question batch is empty, so this one value is the mapped exception to the
-// prefix-plus-domain-value rule. A requirements card has no questions; it carries requirements.
+// prefix-plus-domain-value rule. KIND_REQUIREMENTS is a requirements card a Session waited at
+// before cards stopped waiting: it has no questions, carries requirements and is answered by
+// SendMessage.
 message AgentPendingUserInput {
   enum Kind {
     KIND_UNSPECIFIED = 0;
@@ -2089,7 +2097,7 @@ message AgentPendingUserInput {
   AgentRequirements requirements = 5;
 }
 
-// What a requirements card asks the user to confirm. Feature IDs are R<n> in increasing order and
+// What a requirements card shows the user. Feature IDs are R<n> in increasing order and
 // keep their numbers in later versions; a removed feature's number is never reused, so they may
 // have gaps. The commit_and_push requirement trace names them.
 message AgentRequirements {
@@ -2102,7 +2110,7 @@ message AgentRequirements {
   // The card's Flow design, absent for a card that changes no Flow. GetFlowDesign reads its body.
   AgentFlowDesignReference design = 7;
   // Set only in confirmed_requirements: whether a pushed, unblocked commit_and_push built the
-  // confirmed design.
+  // current design.
   bool design_built = 8;
   // Set only in confirmed_requirements while design_built: the commit that push verified.
   string design_built_commit = 9;
@@ -2211,8 +2219,10 @@ message AgentRequirementConnection {
   string user_setup = 5;
 }
 
-// The requirements the user confirmed. revision counts the confirmations: the card that is
-// pending confirms revision + 1.
+// The current version of the requirements. revision counts the recorded cards: each card the
+// Agent shows is recorded as the next version while the Agent goes on building, and the user
+// changes it with a message. confirmed_at is when the version was recorded; confirmed_by is the
+// user who confirmed a version recorded while cards waited for a confirmation, unset otherwise.
 message AgentConfirmedRequirements {
   int64 revision = 1;
   AgentRequirements spec = 2;
@@ -2297,19 +2307,10 @@ message AgentInputConsumption {
   repeated string steered_message_ids = 2;
 }
 
-// Answers the pending input: one answer per question of a question batch, or the decision of a
-// requirements card with no answers. The two shapes never mix.
+// Answers the pending question batch: one answer per question.
 message AgentAnswerQuestionsInput {
   string call_id = 1;
   repeated AgentUserInputAnswer answers = 2;
-  AgentRequirementsDecision requirements = 3;
-}
-
-// The decision on a requirements card: is_confirmed confirms it, otherwise requested_changes is
-// the user's text asking for changes.
-message AgentRequirementsDecision {
-  bool is_confirmed = 1;
-  string requested_changes = 2;
 }
 
 // ---------------------------------------------------------------------------------------------

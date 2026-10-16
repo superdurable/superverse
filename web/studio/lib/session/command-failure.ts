@@ -24,6 +24,11 @@ export function commandFailureText(reason: unknown): string {
   return `Command result is uncertain. Confirm the current state before sending again. ${detail}`;
 }
 
+/** Rethrows a failure unless the Agent definitely did not admit the command, which then changed nothing. */
+export function unlessNotAdmitted(reason: unknown): void {
+  if (!(reason instanceof ApiError && reason.errorInfo?.reason === "AGENT_COMMAND_NOT_ADMITTED")) throw reason;
+}
+
 /** The reason of a failure that found the Session's engine execution stopped, or null. */
 export function stoppedExecutionReason(reason: unknown): string | null {
   const info = reason instanceof ApiError ? reason.errorInfo : undefined;

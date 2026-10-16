@@ -37,8 +37,6 @@ export const STORAGE_KEYS = {
   designShown: (projectId: string) => `superversev2.design-shown.v1:${projectId}`,
   /** Whether one surface's "More details" fold is open, per browser. */
   moreDetails: (surface: string) => `superversev2.more-details.v1:${surface}`,
-  /** What to do once a Project is ready, in session storage. */
-  projectIntent: (projectId: string) => `superversev2.project-intent.v3:${projectId}`,
   /** How far a Project created in this browser has come from its first conversation; absent for any other. */
   projectStage: (projectId: string) => `superversev2.project-stage.v1:${projectId}`,
   /** The Builder tabs a Project has shown in this browser and those not visited since they appeared, as JSON. */

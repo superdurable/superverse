@@ -134,6 +134,11 @@ function Duration({ value, prefix }: { value: number | null; prefix?: string }) 
   );
 }
 
+/** A tool's name as its row shows it; a requirements card, which waits for nobody, reads as what it did. */
+function ToolName({ name }: { name: string }) {
+  return name === "confirm_requirements" ? <span>Recorded what to build</span> : <code>{name}</code>;
+}
+
 /**
  * One tool call as a single row: its name, target, attempt count once it retried, status, result
  * code and duration. The row never shows arguments, output or a diff; the Agent's history does not
@@ -142,7 +147,7 @@ function Duration({ value, prefix }: { value: number | null; prefix?: string }) 
 function ToolCallRow({ item }: { item: ConversationToolWorkItem }) {
   return (
     <div className={cx(ITEM, ROW)}>
-      <code>{item.call.name}</code>
+      <ToolName name={item.call.name} />
       {item.target ? (
         <span className={TARGET} title={item.target}>
           {item.target}
@@ -293,7 +298,7 @@ function WorkLogDetails({ turn, markers }: { turn: ConversationTurn; markers: re
         ) : (
           <details className={ITEM} key={operation.key}>
             <summary className={cx(SUMMARY, ROW)}>
-              <code>{group.name}</code>
+              <ToolName name={group.name} />
               {group.calls[0]?.target ? (
                 <span className={TARGET} title={group.calls[0].target}>
                   {group.calls[0].target}

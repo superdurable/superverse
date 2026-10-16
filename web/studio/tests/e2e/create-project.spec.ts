@@ -39,7 +39,7 @@ import { observeSessionTransport, withDeadline } from "@/tests/e2e/support/sessi
 import { rpc, rpcResult, studioOrigin } from "@/tests/e2e/support/studio-api";
 
 // The creation page takes the first message of the Project's one Session, which then takes every
-// later turn, and the Builder sends it once the Session starts. SUPERVERSE_E2E_MODEL_TARGET decides the model
+// later turn, and CreateProject carries it, so the Session starts with it. SUPERVERSE_E2E_MODEL_TARGET decides the model
 // when the platform developer sets it; without it a lane that offers the mock model, as the local lanes do,
 // chooses it. On the mock model every turn is a scenario through the mock composer, the creation page's
 // included: a read-only inspection, a long streamed explanation and the heading edit. A real model
@@ -83,6 +83,10 @@ async function expectStrictBusinessRoutes(page: Page, teamSpaceId: string, proje
   // Every Project belongs to a Teamspace.
   const noTeamSpace = { requestId: randomUUID(), name: rejectedName, managedRepository: {} };
   expect((await post("CreateProject", noTeamSpace)).status()).toBe(400);
+  // A first message takes its message ID, as SendMessage does; neither comes without the other.
+  const firstMessage = { requestId: randomUUID(), name: rejectedName, managedRepository: {}, teamSpaceId };
+  expect((await post("CreateProject", { ...firstMessage, initialMessage: "Build it." })).status()).toBe(400);
+  expect((await post("CreateProject", { ...firstMessage, messageId: randomUUID() })).status()).toBe(400);
   expect((await post("ListImportableRepositories", {})).status()).toBe(404);
   const listed = await rpcResult(page.request, "ListProjects", { teamSpaceId });
   expect(Array.isArray(listed.projects)).toBe(true);

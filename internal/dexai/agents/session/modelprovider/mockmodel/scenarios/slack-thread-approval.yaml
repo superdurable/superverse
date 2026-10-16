@@ -27,8 +27,8 @@ inputs:
   - label: "Describe the application"
     message: "Build a Slack thread approval: a new message in the channel starts a process, a reply in its thread finishes it with a confirmation."
     replies:
-      - thinking: "A new application with a Slack trigger and a reply in the thread; the user confirms the requirements before I write any code."
-        text: "Here is what I plan to build. Please confirm it, or tell me what to change."
+      - thinking: "A new application with a Slack trigger and a reply in the thread; I show the requirements before I write any code, then keep building."
+        text: "Here is what I will build. I am starting now; tell me in the chat if anything should change."
         tool_uses:
           - name: confirm_requirements
             input:
@@ -48,9 +48,6 @@ inputs:
               acceptance:
                 - "A new message in the channel starts a run in Studio that waits for a reply."
                 - "A reply in its thread makes the application post Processing complete. in the thread, and the run completes."
-  - label: "Confirm the requirements"
-    requirements_confirm: true
-    replies:
       - thinking: "The template wires one connection and one Flow; I will read its instructions and the files that change."
         text: "Reading the application instructions and the wiring I will change."
         tool_uses:

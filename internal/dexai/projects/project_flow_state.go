@@ -150,6 +150,22 @@ type ProjectStart struct {
 	Identity                                                                      dexflow.StartIdentity
 	ProjectID, CreatorAccountID, Name, TemplateRevision, SetupFlowID, TeamSpaceID string
 	CreatorIsPlatformAdmin                                                        bool
+	// InitialSession is what the creator chose for the Session's first turn,
+	// or nil.
+	InitialSession *SessionStartRequest
+}
+
+// SessionStartRequest is what the Project's creator chose for the Session's
+// first turn, which the API admitted: a model, or empty for the server's
+// default, and a first message with its ID and author, absent without one. The
+// message is bounded by the message limit.
+type SessionStartRequest struct {
+	Model     string `json:"model,omitempty"`
+	MessageID string `json:"message_id,omitempty"`
+	Text      string `json:"text,omitempty"`
+	// AuthorAccountID and AuthorEmail name the creator, the message's author.
+	AuthorAccountID string `json:"author_account_id,omitempty"`
+	AuthorEmail     string `json:"author_email,omitempty"`
 }
 
 // teamSpaceAdmission is the input of the Project's registration in its

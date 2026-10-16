@@ -29,7 +29,6 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/backgroundcommand"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
-	"github.com/superdurable/superversev2/internal/dexai/agents/session/flowdesign"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/sandboxtools"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/toolinput"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/toolinput/generated"
@@ -68,9 +67,9 @@ type parallelToolResult struct {
 // retries are exhausted.
 const exhaustedRetriesMessage = "The platform could not complete the call: its transient faults outlasted the retries."
 
-// pendingUserInputMessage answers a question or requirements card while
-// another one waits for the user.
-const pendingUserInputMessage = "a question batch or requirements card already waits for the user"
+// pendingUserInputMessage answers a question batch while another one waits
+// for the user.
+const pendingUserInputMessage = "a question batch already waits for the user"
 
 func newToolExecutionContext(
 	ctx context.Context,
@@ -106,7 +105,7 @@ func routeBuiltInTool(ctx dex.Context, call conversation.ToolCall, state agentlo
 	case conversation.ToolRequestUserInput:
 		return requestUserInput(ctx, call)
 	case conversation.ToolConfirmRequirements:
-		return confirmRequirements(ctx, call)
+		confirmRequirements(ctx, call)
 	case conversation.ToolSetEffort:
 		effort, _, err := agentloop.RequestedEffort(call)
 		if err != nil {
@@ -146,7 +145,7 @@ func writeTodos(ctx dex.Context, call conversation.ToolCall, state agentloop.Age
 }
 
 // requestUserInput records the questions of the call and waits for their
-// answers. Only one question batch or requirements card may wait at a time.
+// answers. Only one question batch may wait at a time.
 func requestUserInput(ctx dex.Context, call conversation.ToolCall) agentloop.Continuation {
 	if dexflow.OptionalValue(pendingUserInputAttribute.Get(ctx)) != nil {
 		appendSessionFailure(ctx, call, toolfailure.UserInputAlreadyPending, pendingUserInputMessage)
@@ -160,25 +159,22 @@ func requestUserInput(ctx dex.Context, call conversation.ToolCall) agentloop.Con
 	return waitForUser(ctx, call, input, agentloop.ToolResultPayload{Questions: input.Questions}, fmt.Sprintf("Requested answers to %d question(s).", len(input.Questions)))
 }
 
-// confirmRequirements records the requirements card of the call, with its Flow
-// design in FlowDesigns, and waits for the user to confirm it or ask for
-// changes. The version a confirmation will have is the stored revision plus one.
-func confirmRequirements(ctx dex.Context, call conversation.ToolCall) agentloop.Continuation {
-	if dexflow.OptionalValue(pendingUserInputAttribute.Get(ctx)) != nil {
-		appendSessionFailure(ctx, call, toolfailure.UserInputAlreadyPending, pendingUserInputMessage)
-		return ""
-	}
-	confirmed := dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx))
-	input, design, err := agentloop.RequestedRequirements(call, confirmed, ctx.FirstAttemptAt().UTC())
+// confirmRequirements records the card of the call as the next version of the
+// requirements, with its Flow design in FlowDesigns, and lets the turn go on:
+// the user reads the card and changes it with a message.
+func confirmRequirements(ctx dex.Context, call conversation.ToolCall) {
+	stored := dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx))
+	card, design, err := agentloop.RequestedRequirements(call, stored)
 	if err != nil {
 		appendSessionFailure(ctx, call, toolfailure.InvalidUserInput, err.Error())
-		return ""
+		return
 	}
-	if design != nil {
-		comm.MustDo(flowDesignsAttribute.Set(ctx, string(flowdesign.SlotPending), *design))
-	}
-	version := agentloop.NextRequirementsRevision(confirmed)
-	return waitForUser(ctx, call, input, agentloop.ToolResultPayload{Version: version}, fmt.Sprintf("Requested confirmation of the requirements (version %d).", version))
+	recorded := agentloop.RecordRequirements(stored, card, ctx.FirstAttemptAt().UTC())
+	recordFlowDesign(ctx, stored, recorded.Spec.Design, design)
+	comm.MustDo(confirmedRequirementsAttribute.Set(ctx, recorded))
+	appendSessionToolResult(ctx, call, agentloop.RecordedRequirementsResult(recorded.Revision))
+	writeActivity(ctx, agentloop.ToolActivity(conversation.EventKindToolCompleted, fmt.Sprintf("Recorded the requirements (version %d).", recorded.Revision), call))
+	writeSnapshotRequired(ctx)
 }
 
 // waitForUser records the pending input of the call, answers the call as
@@ -309,8 +305,8 @@ func (flow *SessionAgentFlow) executeBranch(ctx dex.Context, input parallelToolE
 }
 
 // newSandboxCall is the trusted context of a Sandbox call: the admitted lease,
-// the confirmed HEAD and requirements, the agent root and the call's stable
-// identity.
+// the confirmed HEAD, the current requirements, the agent root and the call's
+// stable identity.
 func newSandboxCall(ctx dex.Context, call conversation.ToolCall) sandboxtools.Call {
 	return sandboxtools.Call{
 		Tool: string(call.Name), Arguments: call.Arguments.String(), HeadCommit: comm.Must(headCommitAttribute.Get(ctx)), Root: sandboxCallRoot(ctx, call), Progress: func(string) {},

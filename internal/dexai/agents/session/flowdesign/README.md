@@ -20,8 +20,10 @@ flowchart LR
 The agent's Flow design is the optional `design` of `confirm_requirements`
 ([design-first](../../../../../docs/architecture/design-first/flow-design.md)). This package
 turns the decoded tool input into a `Design`, checks what the schema cannot and renders
-what the card, the confirmed requirements and every `segment_start` carry of it. The
-Session keeps the body in its AttributeMap `FlowDesigns`; this package holds no state.
+what the card, the current requirements and every `segment_start` carry of it. The
+Session keeps the body in its AttributeMap `FlowDesigns`, under the one slot it reads
+(`confirmed`); `pending`, where a card that waited for a confirmation kept its design, is
+only deleted. This package holds no state.
 
 | Path | Responsibility |
 | --- | --- |

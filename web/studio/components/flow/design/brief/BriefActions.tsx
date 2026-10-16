@@ -14,19 +14,17 @@ import { Button } from "@/components/ui/Button";
 export interface BriefActionsProps {
   disabled: boolean;
   submitting: boolean;
-  /** Why the last answer or message was not taken. */
+  /** Why the last message was not taken. */
   error?: string | null;
-  /** Confirm and build, only while the card waits for the person. */
-  onConfirm?: () => void;
   /**
-   * Sends what should change: the waiting card's request for changes, which the agent answers with a revised
-   * card, or else a message to the agent. The box closes once it is taken.
+   * Sends what should change as a message to the agent, which records a revised version and builds what
+   * changed. The box closes once it is taken.
    */
   onChange: (text: string) => Promise<unknown>;
 }
 
-/** The Brief's foot: Change something…, which opens a small box in place, and Confirm and build while the card waits. */
-export function BriefActions({ disabled, submitting, error, onConfirm, onChange }: BriefActionsProps) {
+/** The Brief's foot: Change something…, which opens a small box in place. */
+export function BriefActions({ disabled, submitting, error, onChange }: BriefActionsProps) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const changes = text.trim();
@@ -75,11 +73,6 @@ export function BriefActions({ disabled, submitting, error, onConfirm, onChange 
         ) : (
           <Button aria-expanded={false} onClick={() => setOpen(true)}>
             Change something…
-          </Button>
-        )}
-        {onConfirm && !open && (
-          <Button variant="primary" disabled={disabled} onClick={onConfirm}>
-            Confirm and build
           </Button>
         )}
       </div>

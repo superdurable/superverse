@@ -1,11 +1,12 @@
 # Studio: the design on the card and the Flow tab
 
 Studio draws the design on the Flow tab, with the canvas that draws implemented Flows, below
-the summary of the card's **Process Brief**, until the build of the confirmed design is
-complete. Then the implemented Flows replace it. A person still confirms the card: a card with a
-design is decided on its Brief, which holds Confirm and build, and the card in the chat points
-there ([README](README.md#the-pieces)). A card that does not wait for an answer is planned as a
-separate Session change.
+the summary of the card's **Process Brief**, until the build of the recorded design is
+complete. Then the implemented Flows replace it. The card does not wait for an answer
+([session](../agent-harness-design/session.md#requirements-cards)): the agent builds
+from it at once, the Brief says which version it builds, and a person changes it with a message,
+which the Brief's **Change something…** sends and steers. The card in the chat points to the
+Brief ([README](README.md#the-pieces)).
 
 ## Where the code lives
 
@@ -109,18 +110,19 @@ compared by their Step type, like any other Step.
 
 ## The card
 
-A card without a design keeps its four parts and its two actions
+A card without a design keeps its four parts and has no actions
 ([streaming and Studio](../agent-harness-design/streaming-and-studio.md#requirements-card)).
-A card with a design is decided on its Process Brief: in the chat it shows only its title,
-version and summary, "Waiting for you" and **Open the brief**, a link to the Flow tab at the
+A card with a design reads on its Process Brief: in the chat it shows only its title,
+version and summary and **Open the brief**, a link to the Flow tab at the
 design's first Flow ("Preparing the brief…" while the design loads). The chat leaves this
 pointer out while the Flow tab shows the Brief (`web/studio/lib/session/design/use-brief-on-screen.ts`).
-When the design does not load, the card keeps its controls and adds a fifth part, **Design**:
-the design summary and, behind **More details**, the outline.
+When the design does not load, the card adds a fifth part, **Design**: the design summary and,
+behind **More details**, the outline.
 
-While a card waits, the chat's composer stays open ("Reply or ask for a change…"): a message
-answers the card as a request for changes with that text, as the Brief's **Change
-something…** does.
+The chat's composer stays open: a message changes the card, queued while a turn runs, as the
+Brief's **Change something…** does (which also steers it). A card a Session still waits at
+from before cards stopped waiting shows read only, with "Reply in the chat to build or change
+it"; the reply is an ordinary message.
 
 ## The Process Brief
 
@@ -128,10 +130,9 @@ The Brief (`components/flow/design/brief`) reads the card and its design togethe
 words a business person would use. It is one column: a header, a summary grid of short parts,
 **More details**, the drawn design below the grid and the actions at its foot.
 
-- **Header**: the card's title, "Brief · draft N" (the version a confirmation has, or the
-  confirmed one) and one badge: **Waiting for you** while the card waits for the person,
-  **Building from this brief** once it is confirmed. A
-  card whose agent stopped short of building carries no badge; the Flow tab says so above it.
+- **Header**: the card's title and one badge, **Building from this brief · version N**, the
+  version the Session recorded. A card whose agent stopped short of building carries no badge;
+  the Flow tab says so above it.
 - **Summary grid**, three columns when the Flow area is wide, then two, then one as it
   narrows (container queries, never the viewport). A part shows only when it has content:
   - **Starts when**: per process, the wait of its start Step, or that Step with its
@@ -163,29 +164,28 @@ words a business person would use. It is one column: a header, a summary grid of
   drawing traces in from its start to its finish. The summary above it keeps to the top part
   and scrolls on its own, so the drawing always shows. There is no Steps list: the drawing is
   the steps. A card without a design shows the same grid with no drawing.
-- **Actions**: **Change something…** opens a small box in place with **Send changes**. While
-  the card waits, the text is its request for changes: the agent revises, and the revised card
-  carries the revised design. Once it is confirmed, the text goes to the agent as an ordinary
-  message. **Confirm and build** shows while the card waits for the person. On the mock model
-  the foot names the mock composer instead, which sends every answer.
+- **Actions**: **Change something…** opens a small box in place with **Send changes**, which
+  sends the text as a chat message and steers it, so the agent takes it at its next safe
+  boundary, revises the card as the next version with the revised design, and builds the
+  difference. There is no Confirm. On the mock model the foot names the mock composer instead,
+  which sends every input.
 
-**Confirmed requirements** in the chat show the confirmed design's summary and its outline
-behind **More details**.
+**The current requirements** in the chat show the design's summary and its outline behind
+**More details**.
 
 ## The Flow tab
 
 The Flow tab draws a design in place of the implemented Flows it changes, from the card until
-the build of the confirmed design is complete. There is no switch between the design and the
+the build of the recorded design is complete. There is no switch between the design and the
 implementation: while a design is drawn, it is what the Flow tab shows. Only those who build
 see it, and only on Preview; Live always shows what Live runs.
 
-- **When.** While a card with a design waits, and after its confirmation until the design is
+- **When.** From the card with a design until the design is
   built ([build completion](flow-design.md#build-completion)) and the Preview's processes are
   built from the commit that built it.
 - **What.** Each Flow the design lists is drawn from the design under a label, in a strip
-  above the canvas that never covers it: "Design · waiting for your confirmation" while the
-  card waits, "Design · building" after the confirmation, and "Design · built, building
-  processes" once the design is built and until those processes are built. The strip also
+  above the canvas that never covers it: "Design · building" from the card on, and "Design ·
+  built, building processes" once the design is built and until those processes are built. The strip also
   gives the Flow's purpose, the Steps and Actions the design removes, which have no place on
   the designed graph, and "Not compared" when there is nothing to compare with. New Flows of
   the design join the Flow picker, and every designed Flow is tagged **design** there. On All
@@ -214,11 +214,11 @@ see it, and only on Preview; Live always shows what Live runs.
 
 ## Differences between the build and the design
 
-Studio draws no comparison between the implementation and the confirmed design: no drift
+Studio draws no comparison between the implementation and the recorded design: no drift
 line, no marks and no note on the project map. The canvas shows what runs, and the agent
 explains the rest in the chat.
 
-When the agent finishes a build that follows a confirmed design, it compares the Flows it
+When the agent finishes a build that follows a recorded design, it compares the Flows it
 built with the design and names every difference in its reply, for example:
 
 - "NotifyApprover is in the design but I did not build it, because ...";
@@ -226,9 +226,9 @@ built with the design and names every difference in its reply, for example:
 - "GenerateSummary's route to RecordSummaryFailure is an ordinary decision, not a failure
   route".
 
-It says that it built the design as confirmed when there is no difference. The outline of the
-confirmed design is in every segment (`segment_start`), and the commit gate renders every
-Flow the commit holds, so the agent has both sides. A difference that changes the confirmed
+It says that it built the design as recorded when there is no difference. The outline of the
+current design is in every segment (`segment_start`), and the commit gate renders every
+Flow the commit holds, so the agent has both sides. A difference that changes the current
 requirements still gets a revised card, as today. One that changes only the design is told
 and needs no card.
 
@@ -243,5 +243,5 @@ and needs no card.
 - Loading uses `NotReady`'s placeholder, and a failed read uses its error state with retry.
   NOT_FOUND (a slot without a design) draws no design.
 - Mock mode has a fixture design for the requirements fixture (`web/studio/mock/`), selected
-  only in `app/` route files. The mock never builds, so a confirmed fixture design stays
+  only in `app/` route files. The mock never builds, so a recorded fixture design stays
   "Design · building".

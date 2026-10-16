@@ -104,13 +104,21 @@ func (v Snapshot) Preview() preview.Snapshot { return previewView(v.Session, v.P
 
 // StartForProject starts the READY Project's one Session, from ProjectFlow's
 // StartProjectSession, its only creation trigger. The Session starts with the
-// default profile on the Project's AppManifest commit, without a message:
-// Studio applies the model the user chose on the creation page and sends the
-// creation intent as the first message. A retried or replayed start joins the
-// accepted execution.
-func (s *SessionFlowService) StartForProject(ctx context.Context, project projects.Project) error {
+// default profile on the Project's AppManifest commit, on the model the
+// creator chose or the server's default, and with the creator's first
+// message, which its start Step admits once. A retried or replayed start
+// joins the accepted execution.
+func (s *SessionFlowService) StartForProject(ctx context.Context, project projects.Project, initial *projects.SessionStartRequest) error {
 	identity := agentloop.SessionIdentity{ProjectID: project.ProjectID, Profile: agentloop.ProfileSessionV1, HeadCommit: project.AppManifest.SourceCommit}
-	return s.Agent.StartAccepted(ctx, s.Agent.SessionRequest(identity))
+	request := s.Agent.SessionRequest(identity)
+	if initial != nil && initial.Model != "" {
+		request.Model = conversation.Model(initial.Model)
+	}
+	if initial != nil && initial.Text != "" {
+		author := conversation.Actor{AccountID: initial.AuthorAccountID, Email: initial.AuthorEmail}
+		request.FirstMessage = &conversation.PendingUserMessage{MessageID: conversation.MessageID(initial.MessageID), Value: conversation.UserMessage{Actor: &author, Content: initial.Text}}
+	}
+	return s.Agent.StartAccepted(ctx, request)
 }
 
 // SessionCaller is the authenticated author and authorized role of a Session command.

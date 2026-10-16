@@ -37,8 +37,8 @@ export const SCENARIO_MARKERS = /\s*\[\[scenario(?:-arg)?:[^\]]*\]\]/g;
 /**
  * Mock mode is a local environment, so every account may select the mock model. The inputs'
  * messages are the mock Agent's script phrases, so the mock composer drives its scripts the way it
- * drives the server's scenarios: the requirements card with a request for changes and a
- * confirmation, and an ordinary turn with an argument.
+ * drives the server's scenarios: the requirements card the agent records and a message that changes
+ * it, and an ordinary turn with an argument.
  */
 export const MOCK_SCENARIOS: AgentMockScenario[] = [
   {
@@ -46,7 +46,8 @@ export const MOCK_SCENARIOS: AgentMockScenario[] = [
     title: "Requirements draft changed",
     category: "CATEGORY_PROJECT_FEATURE",
     needsNewProject: false,
-    description: "A requirements card, a request for changes to the draft that revises it, then the confirmation.",
+    description:
+      "A requirements card the agent records and builds from, then a message that changes it into version 2.",
     arguments: [],
     inputs: [
       {
@@ -58,16 +59,9 @@ export const MOCK_SCENARIOS: AgentMockScenario[] = [
       },
       {
         number: 2,
-        label: "Ask for changes to the draft",
-        kind: "KIND_REQUIREMENTS_CHANGE",
+        label: "Change the requirements",
+        kind: "KIND_MESSAGE",
         content: "Add a weekly digest. [[scenario:requirements-draft-changes#2]]",
-        answers: [],
-      },
-      {
-        number: 3,
-        label: "Confirm the revised requirements",
-        kind: "KIND_REQUIREMENTS_CONFIRM",
-        content: "",
         answers: [],
       },
     ],

@@ -141,7 +141,7 @@ func (s *agentServer) UpdateSessionModel(ctx context.Context, in *pb.UpdateSessi
 	request := agentloop.UpdateSessionModelRequest{Model: model, ExpectedRevision: in.GetExpectedRevision()}
 	return admitCommand[pb.UpdateSessionModelResponse](ctx, s, in, invalid, func(caller agents.SessionCaller) error {
 		// admitCommand authenticated the caller's account ID.
-		if err := s.admitModel(ctx, in.GetCaller().GetAccountId(), model); err != nil {
+		if err := admitModel(ctx, s.Boundary, s.models, in.GetCaller().GetAccountId(), model); err != nil {
 			return err
 		}
 		request.Actor = &caller.Actor
@@ -149,20 +149,21 @@ func (s *agentServer) UpdateSessionModel(ctx context.Context, in *pb.UpdateSessi
 	})
 }
 
-// admitModel decides whether the account may select model here. A Claude
-// model needs the server's Claude key; the mock model needs a server that
-// offers it and, outside Local Kind and Native, the administrator.
-func (s *agentServer) admitModel(ctx context.Context, accountID string, model conversation.Model) error {
+// admitModel decides whether the account may select model here, for
+// UpdateSessionModel and CreateProject. A Claude model needs the server's
+// Claude key; the mock model needs a server that offers it and, outside Local
+// Kind and Native, the administrator.
+func admitModel(ctx context.Context, b *boundary.Boundary, models SessionModels, accountID string, model conversation.Model) error {
 	if model != conversation.ModelMock {
-		if !s.models.Claude {
+		if !models.Claude {
 			return &commandRefusalError{status.Error(codes.FailedPrecondition, "this environment has no Claude key")}
 		}
 		return nil
 	}
-	if !s.models.Mock {
+	if !models.Mock {
 		return &commandRefusalError{status.Error(codes.FailedPrecondition, "this environment does not offer the mock model")}
 	}
-	selectable, err := s.mockSelectable(ctx, accountID)
+	selectable, err := mockSelectable(ctx, b, models, accountID)
 	if err != nil {
 		// The command did not run, so a failed read of the administrator refuses it.
 		return &commandRefusalError{boundary.RPCStatus(err)}
@@ -176,11 +177,11 @@ func (s *agentServer) admitModel(ctx context.Context, accountID string, model co
 // mockSelectable reports whether the account may select the mock model: the
 // server offers it, and the environment is Local or the account is the
 // administrator. The authority is the account itself, never a browser role.
-func (s *agentServer) mockSelectable(ctx context.Context, accountID string) (bool, error) {
-	if !s.models.Mock || s.models.Local {
-		return s.models.Mock, nil
+func mockSelectable(ctx context.Context, b *boundary.Boundary, models SessionModels, accountID string) (bool, error) {
+	if !models.Mock || models.Local {
+		return models.Mock, nil
 	}
-	return s.Accounts.IsAdministrator(ctx, accountID)
+	return b.Accounts.IsAdministrator(ctx, accountID)
 }
 
 // ListMockScenarios returns the mock model's scenarios when the caller may
@@ -190,7 +191,7 @@ func (s *agentServer) ListMockScenarios(ctx context.Context, in *pb.ListMockScen
 	if err != nil {
 		return nil, err
 	}
-	selectable, err := s.mockSelectable(ctx, account.AccountID)
+	selectable, err := mockSelectable(ctx, s.Boundary, s.models, account.AccountID)
 	if err != nil {
 		return nil, boundary.RPCStatus(err)
 	}
@@ -213,8 +214,8 @@ func (s *agentServer) ListMockScenarios(ctx context.Context, in *pb.ListMockScen
 	return out, nil
 }
 
-// GetFlowDesign reads the Flow design of the Session's waiting card or of its
-// confirmed requirements, at the digest the caller read from the Snapshot.
+// GetFlowDesign reads the Flow design of the Session's current requirements,
+// at the digest the caller read from the Snapshot.
 func (s *agentServer) GetFlowDesign(ctx context.Context, in *pb.GetFlowDesignRequest) (*pb.GetFlowDesignResponse, error) {
 	account, err := s.Authenticate(ctx, in.GetCaller())
 	if err != nil {
@@ -264,20 +265,9 @@ func (s *agentServer) InterruptAgent(ctx context.Context, in *pb.InterruptAgentR
 	})
 }
 
-// answerQuestionsRequest maps the answer to a question batch (one to three
-// answers) or to a requirements card (a decision and no answers). The pending
-// input decides whether the shape fits it.
+// answerQuestionsRequest maps the answers to a question batch: one to three,
+// one per question, which the pending batch checks.
 func answerQuestionsRequest(in *pb.AgentAnswerQuestionsInput) (agentloop.AnswerQuestionsRequest, error) {
-	if decision := in.GetRequirements(); decision != nil {
-		if strings.TrimSpace(in.GetCallId()) == "" || len(in.GetAnswers()) != 0 {
-			return agentloop.AnswerQuestionsRequest{}, status.Error(codes.InvalidArgument, "a requirements decision takes a call ID and no answers")
-		}
-		// A confirmation carries no text; a request for changes is the user's own message.
-		if changes := decision.GetRequestedChanges(); decision.GetIsConfirmed() != (changes == "") || changes != "" && !validMessageContent(changes) {
-			return agentloop.AnswerQuestionsRequest{}, status.Error(codes.InvalidArgument, "a confirmation takes no text and a request for changes takes valid text")
-		}
-		return agentloop.AnswerQuestionsRequest{CallID: conversation.CallID(in.GetCallId()), Requirements: &agentloop.RequirementsDecision{IsConfirmed: decision.GetIsConfirmed(), RequestedChanges: decision.GetRequestedChanges()}}, nil
-	}
 	if strings.TrimSpace(in.GetCallId()) == "" || len(in.GetAnswers()) == 0 || len(in.GetAnswers()) > 3 {
 		return agentloop.AnswerQuestionsRequest{}, status.Error(codes.InvalidArgument, "call ID and one to three answers are required")
 	}
@@ -295,7 +285,6 @@ func answerQuestionsRequest(in *pb.AgentAnswerQuestionsInput) (agentloop.AnswerQ
 
 // flowDesignSlots maps the API design slot enum to the Session's slots.
 var flowDesignSlots = map[pb.AgentFlowDesignSlot]flowdesign.Slot{
-	pb.AgentFlowDesignSlot_AGENT_FLOW_DESIGN_SLOT_PENDING:   flowdesign.SlotPending,
 	pb.AgentFlowDesignSlot_AGENT_FLOW_DESIGN_SLOT_CONFIRMED: flowdesign.SlotConfirmed,
 }
 
@@ -456,7 +445,7 @@ func pendingUserInputKind(kind agentloop.PendingUserInputKind) pb.AgentPendingUs
 	return boundary.Enum[pb.AgentPendingUserInput_Kind](kind)
 }
 
-// agentRequirements maps the requirements of a card or a confirmation; nil
+// agentRequirements maps the requirements of a card or a recorded version; nil
 // stays nil.
 func agentRequirements(value *agentloop.Requirements) *pb.AgentRequirements {
 	if value == nil {

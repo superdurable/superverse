@@ -1,13 +1,15 @@
 # Design before implementation
 
-Before the agent builds a new application or a large change, the person confirms a
-requirements card ([session](../agent-harness-design/session.md#requirements-confirmation)).
+Before the agent builds a new application or a large change, it shows a requirements card
+([session](../agent-harness-design/session.md#requirements-cards)), which the Session records
+as the next version of the requirements while the agent goes on building; the person changes
+it with a chat message.
 This design adds the agent's Flow design to that card: the Flows it will add or change,
 drawn as Flow graphs with the same renderer Studio uses for implemented Flows, and a short
-design summary. The person confirms the requirements and the design together, in the one
-confirmation that already exists. From the card until the build is complete, the Flow tab
-draws the designed Flows, labeled Design; then the implemented Flows replace them. The agent
-names in the chat how what it built differs from the design. Nothing blocks on a difference.
+design summary. The requirements and the design are recorded together, under one version
+number. From the card until the build is complete, the Flow tab draws the designed Flows,
+labeled Design; then the implemented Flows replace them. The agent names in the chat how
+what it built differs from the design. Nothing blocks on a difference.
 
 
 ## The pieces
@@ -15,19 +17,19 @@ names in the chat how what it built differs from the design. Nothing blocks on a
 | Piece | What it is | Topic |
 |---|---|---|
 | Flow design | A compact, typed description of the proposed Flows: Steps with their groups and explanations, what each Step waits for, the transitions between Steps, Channels, Actions and Attributes, and which feature (R1, R2...) each Step serves. It is an optional `design` part of `confirm_requirements`, which the server validates. | [flow-design.md](flow-design.md) |
-| Storage and API | `SessionAgentFlow` owns the design. The card and the confirmed requirements carry a small reference (digest and outline). The body lives in a two-instance AttributeMap `FlowDesigns` (`pending`, `confirmed`) that one read RPC serves. | [flow-design.md](flow-design.md#storage) |
-| Rendering and confirmation | Studio expands the design into an FDG 2.0-shaped graph and draws it on the Flow tab in place of the Flows it changes, outside the Flow Definition catalog, under a Design label. Each Step is marked new or changed against the current source. The card's Process Brief beside it holds the card's two actions. | [studio.md](studio.md) |
-| Build completion | A pushed, unblocked `commit_and_push` marks the confirmed design built. Once the Preview's processes are built from that push, the implemented Flows replace the design on the Flow tab. | [flow-design.md](flow-design.md#build-completion) |
-| Differences | When the build is complete, the agent compares what it built with the confirmed design and names each difference in its reply. Studio draws no comparison. | [studio.md](studio.md#differences-between-the-build-and-the-design) |
+| Storage and API | `SessionAgentFlow` owns the design. The current requirements (the Attribute `ConfirmedRequirements`) carry a small reference (digest and outline). The body lives in the AttributeMap `FlowDesigns` under the one key `confirmed`, which one read RPC serves. | [flow-design.md](flow-design.md#storage) |
+| Rendering | Studio expands the design into an FDG 2.0-shaped graph and draws it on the Flow tab in place of the Flows it changes, outside the Flow Definition catalog, under a Design label. Each Step is marked new or changed against the current source. The card's Process Brief beside it says which version the agent builds and takes a change. | [studio.md](studio.md) |
+| Build completion | A pushed, unblocked `commit_and_push` marks the current design built. Once the Preview's processes are built from that push, the implemented Flows replace the design on the Flow tab. | [flow-design.md](flow-design.md#build-completion) |
+| Differences | When the build is complete, the agent compares what it built with the current design and names each difference in its reply. Studio draws no comparison. | [studio.md](studio.md#differences-between-the-build-and-the-design) |
 
 ```mermaid
 flowchart LR
   agent[Agent] -->|confirm_requirements with design| session[SessionAgentFlow]
-  session -->|PendingUserInput: card + design reference| studio[Studio card]
-  session -->|FlowDesigns pending| read[GetFlowDesign]
+  session -->|ConfirmedRequirements: version N + design reference| studio[Studio Brief]
+  session -->|FlowDesigns confirmed| read[GetFlowDesign]
   read --> canvas[Flow tab: Design label]
-  studio -->|confirm / request changes| session
-  session -->|ConfirmedRequirements + FlowDesigns confirmed| read
+  studio -->|Change something: message, steered| session
+  session -->|the next card: version N+1| read
   agent -->|commit_and_push, not blocked| built[BuiltFlowDesign and its commit]
   built --> implemented[Flow tab: implemented Flows]
   agent -->|reply: differences from the design| chat[Chat]
@@ -36,7 +38,7 @@ flowchart LR
 ## Dex Flow Changes
 
 Only `SessionAgentFlow` changes. It gets one AttributeMap (`FlowDesigns`), two Attributes
-(`BuiltFlowDesign` and `BuiltFlowDesignCommit`) and one read RPC (`GetFlowDesign`). `RouteTool`, `AnswerQuestions` and
+(`BuiltFlowDesign` and `BuiltFlowDesignCommit`) and one read RPC (`GetFlowDesign`). `RouteTool` and
 the commit of a `commit_and_push` result change their effects. The full per-Flow
 contract of the changed parts is in [flow-design.md](flow-design.md#per-flow-contract-sessionagentflow).
 Every other Flow: None. No new Flow exists; the design is a fact of the Session, and nothing
@@ -55,20 +57,21 @@ See [studio.md](studio.md). In short:
 - A requirements card with a design shows as its **Process Brief** on the Flow tab: a summary
   grid in business words (what starts it, who acts, the rules, the apps) above the drawn
   design, with what it does, what to prepare, when it is done, the features and what it
-  changes behind **More details**. A person confirms it there with **Confirm and build**, and
-  asks for changes with **Change something…** or a chat message; the card in the chat points
+  changes behind **More details**. Its badge reads "Building from this brief · version N";
+  nothing waits for a confirmation. A person changes it with **Change something…**, which
+  sends and steers a chat message, or with any chat message; the card in the chat points
   there with **Open the brief** from other tabs.
 - From the card until the build is complete, the Flow tab draws the designed Flows in place
-  of the ones they change, under a label: "Design · waiting for your confirmation", then
-  "Design · building", then "Design · built, building processes". Steps are marked new or
+  of the ones they change, under a label: "Design · building", then "Design · built,
+  building processes". Steps are marked new or
   changed, and the Step panel shows the explanation, the wait, the ways out and the features
   the Step serves. There is no switch. Designed Flows are tagged in the Flow picker.
 - A card that arrives while the Flow tab is open shows there at once; on another tab the
   Flow tab's entry carries a **Design** marker.
 - When the build is complete and its processes are built, the implemented Flows replace the
   design. The agent's reply names any difference from the design. The canvas never does.
-- **Confirmed requirements** show the confirmed design's summary and outline as text; the
-  Brief folds to a **Brief** button above the diagram that reopens it read only.
+- **The current requirements** show the design's summary and outline as text; the Brief
+  folds to a **Brief** button above the diagram that reopens it.
 
 ## Tests
 
@@ -78,12 +81,12 @@ that drive it (`make check-mock-scenarios`).
 
 | Test | What it proves |
 |---|---|
-| `summary-approval` scenario, extended | Its card carries a design of `TextSummaryFlow` with `AwaitSummaryApproval`, the `SummaryApprovals` Channel and the `Approve summary` Action. That is exactly what the scenario then implements, so the agent's final reply says it built the design as confirmed. `RecordSummaryUncertainty` is a failure route on both sides, so the design view and the implementation both hide it, and the outline ends with "+1 failure-handling Step". |
-| New scenario `design-revised` and `TestSessionMockDesignRevisedDexIntegration` | Card 1 stores the `pending` design, and the Snapshot's reference has its digest. `GetFlowDesign` returns the body with that digest. A request for changes leaves nothing confirmed. Card 2 replaces `pending`. The confirmation copies it to `confirmed` in the commit that writes `ConfirmedRequirements`, whose design reference matches, and `design_built` is false. A compaction's `segment_start` carries the outline. A blocked `commit_and_push` leaves `design_built` false. |
-| `TestSessionMockSummaryApprovalDesignBuiltDexIntegration` | The `summary-approval` push through the commit gate, pushed and unblocked, makes `design_built` true with `design_built_commit` the pushed head, and the final reply says the design was built as confirmed. |
-| New scenario `design-refused` and `TestSessionMockDesignRefusedDexIntegration` | A transition to an undeclared Step, an unreachable Step, a wait on an undeclared Channel, a feature ID the card lacks and an oversized design are each refused with `invalid_user_input` and no pending input. The corrected card is admitted. |
+| `summary-approval` scenario, extended | Its card carries a design of `TextSummaryFlow` with `AwaitSummaryApproval`, the `SummaryApprovals` Channel and the `Approve summary` Action. That is exactly what the scenario then implements, so the agent's final reply says it built the design as recorded. `RecordSummaryUncertainty` is a failure route on both sides, so the design view and the implementation both hide it, and the outline ends with "+1 failure-handling Step". |
+| Scenario `design-revised` and `TestSessionMockDesignRevisedDexIntegration` | Card 1 records version 1 with its design in `confirmed`, and the Snapshot's reference has its digest; the turn goes on to a durable timer. `GetFlowDesign` returns the body with that digest. A change sent and steered interrupts the timer and makes card 2, which records version 2 and replaces `confirmed` in the commit that writes `ConfirmedRequirements`, whose design reference matches, so the first digest reads as changed, and `design_built` is false. A compaction's `segment_start` carries the outline. The next push traces version 2: a trace of version 1 is refused, and the blocked `commit_and_push` of version 2 leaves `design_built` false. |
+| `TestSessionMockSummaryApprovalDesignBuiltDexIntegration` | The `summary-approval` push through the commit gate, pushed and unblocked, makes `design_built` true with `design_built_commit` the pushed head, and the final reply says the design was built as recorded. |
+| Scenario `design-refused` and `TestSessionMockDesignRefusedDexIntegration` | A transition to an undeclared Step, an unreachable Step, a wait on an undeclared Channel, a feature ID the card lacks and an oversized design are each refused with `invalid_user_input` and record no version. The corrected card is recorded. |
 | `TestSessionMockRequirementsCardDexIntegration`, unchanged | A card without a design behaves as before. Its reference is absent, and `GetFlowDesign` answers NOT_FOUND. |
-| `template-approval.spec.ts`, extended (Native lane) | With the Flow tab open, the card arrives and the tab shows `TextSummaryFlow` from the design at once, under "Design · waiting for your confirmation", compared with the template's initial design: the Result stage is marked changed, `AwaitSummaryApproval` in it new and `GenerateSummary` changed, with no Runs or Start; the Process Brief keeps the outline behind More details and says "Text summary · changed: adds Await summary approval, Approve summary; changes Generate summary", and the chat's card links to it. Confirm: the label says "Design · building". After the push and the automatic process build, the implemented `TextSummaryFlow` replaces the design: its Result stage carries no mark and the label is gone. |
+| `template-approval.spec.ts`, extended (Native lane) | With the Flow tab open, the card arrives and the tab shows `TextSummaryFlow` from the design at once, under "Design · building", compared with the template's initial design: the Result stage is marked changed, `AwaitSummaryApproval` in it new and `GenerateSummary` changed, with no Runs or Start; the Process Brief reads "Building from this brief · version 1", keeps the outline behind More details and says "Text summary · changed: adds Await summary approval, Approve summary; changes Generate summary", and the chat's card links to it. The one input builds on: after the push and the automatic process build, the implemented `TextSummaryFlow` replaces the design: its Result stage carries no mark and the label is gone. |
 
 The comparator and the design view are Studio code. The extended spec covers them and records
 them in the Studio coverage map. No new E2E case exists. Whether the agent names a difference
@@ -93,7 +96,7 @@ real-model run checks it.
 ## Documentation
 
 - [Agent harness session](../agent-harness-design/session.md): the requirements
-  confirmation section, the Attribute table (`FlowDesigns`, `BuiltFlowDesign`,
+  card section, the Attribute table (`FlowDesigns`, `BuiltFlowDesign`,
   `BuiltFlowDesignCommit`, the design reference), the RPC list (`GetFlowDesign`) and the large/small change rule for
   design-only deviations.
 - [Streaming and Studio](../agent-harness-design/streaming-and-studio.md#requirements-card):
@@ -110,7 +113,7 @@ real-model run checks it.
   group of two or more main-story Steps is one run or one choice, and `is_failure_route`
   marks breakage only, never a business rejection. The prompt, the skill and the analyzer
   then say the same thing in one pass. The prompt also tells the agent to name, when a build
-  of a confirmed design is complete, every difference between what it built and the design.
+  of a recorded design is complete, every difference between what it built and the design.
 - The mock model README (new scenarios), the package README of the new
   `internal/dexai/agents/session/flowdesign`, the Studio READMEs of `components/flow/design` and
   `lib/session/design`, the Studio mock README, and the test rows of
@@ -126,10 +129,10 @@ one small cache per browser tab:
 
 | Resource | Unit | Bound | Deleted |
 | --- | --- | --- | --- |
-| `FlowDesigns` instances | Session | two fixed keys, at most 24 KiB each | with the Session's state |
+| `FlowDesigns` instances | Session | one fixed key (`confirmed`), at most 24 KiB; a Session that waited at a card before cards stopped waiting may also hold `pending` until its next card deletes it | with the Session's state |
 | `BuiltFlowDesign` | Session | one digest of 71 bytes | with the Session's state |
 | `BuiltFlowDesignCommit` | Session | one commit SHA of 40 bytes | with the Session's state |
-| Design reference in `PendingUserInput` and `ConfirmedRequirements` | Session | a digest and an outline of at most 2 KiB, inside the 16 KiB requirements bound | replaced by the next card or confirmation |
+| Design reference in `ConfirmedRequirements` | Session | a digest and an outline of at most 2 KiB, inside the 16 KiB requirements bound | replaced by the next card |
 | Studio's design cache (`lib/session/design`) | browser tab | the designs read in the tab, keyed by digest | when the tab closes |
 | The card version the Flow tab showed | browser | one storage key per Project | with the browser's site data |
 
@@ -139,8 +142,9 @@ one small cache per browser tab:
   a Watch frame with an unchanged reference reads nothing. `GetFlowDesign` is an unlocked
   read of one Session by its FlowID: no database read, no scan across Projects and no
   control-plane call.
-- A confirmation writes one more map instance, and a pushed, unblocked `commit_and_push`
-  writes one more small Attribute in a commit it already makes. No Dex call is added.
-- At 10,000 Projects the designs hold at most about 480 MB of Session state, bounded per
+- A card with a design writes the one map instance in the commit that records it, and a
+  pushed, unblocked `commit_and_push` writes one more small Attribute in a commit it already
+  makes. No Dex call is added.
+- At 10,000 Projects the designs hold at most about 240 MB of Session state, bounded per
   Session and removed with it. Nothing is created per request, event or build, and no
   per-tenant resource meets a provider quota.

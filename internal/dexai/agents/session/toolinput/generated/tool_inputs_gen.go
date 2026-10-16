@@ -82,10 +82,10 @@ type CommitAndPush struct {
 	Summary        string   `json:"summary"`
 	Verification   []string `json:"verification"`
 	RemainingRisks []string `json:"remaining_risks"`
-	// Every confirmed requirement with the code that implements it and the API tests that prove it. Pass
-	// none for a change that has no confirmed requirements.
+	// Every requirement of the current version with the code that implements it and the API tests that
+	// prove it. Pass none for a change that has no recorded requirements.
 	Requirements []CommitAndPushRequirementsItem `json:"requirements"`
-	// The version of the confirmed requirements the trace refers to; required with requirements.
+	// The current version of the requirements, which the trace refers to; required with requirements.
 	RequirementsRevision OptInt  `json:"requirements_revision"`
 	Blocked              OptBool `json:"blocked"`
 }
@@ -151,7 +151,7 @@ func (s *CommitAndPush) SetBlocked(val OptBool) {
 }
 
 type CommitAndPushRequirementsItem struct {
-	// A feature ID of the confirmed requirements, such as R1.
+	// A feature ID of the current requirements, such as R1.
 	ID string `json:"id"`
 	// The files or symbols that implement it.
 	Evidence []string `json:"evidence"`
@@ -210,7 +210,7 @@ type ConfirmRequirements struct {
 	Summary string `json:"summary"`
 	// Every behavior the user will get, each one a single behavior that a test can prove, with IDs in
 	// increasing order. A first card and a card that replaces the requirements number them R1, R2, ...; a
-	// revised card keeps the ID of every confirmed feature it keeps or changes and numbers a new feature
+	// revised card keeps the ID of every recorded feature it keeps or changes and numbers a new feature
 	// above every number the requirements have used, so a removed feature's number is never reused and the
 	// IDs may have gaps.
 	Features []ConfirmRequirementsFeaturesItem `json:"features"`
@@ -220,8 +220,8 @@ type ConfirmRequirements struct {
 	UserSetup []string `json:"user_setup"`
 	// How the user can check that the work is done.
 	Acceptance []string `json:"acceptance"`
-	// True only for a completely different request after a confirmation: the card replaces the confirmed
-	// requirements instead of revising them, and its features are numbered from R1 again.
+	// True only for a completely different request after a recorded version: the card replaces the
+	// recorded requirements instead of revising them, and its features are numbered from R1 again.
 	ReplacesRequirements OptBool `json:"replaces_requirements"`
 	// The Flows the card adds or changes, before any code: required on a card for a new application or a
 	// large change that adds, removes or changes a Flow's Steps, waits, transitions, Channels, Actions or

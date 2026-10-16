@@ -162,13 +162,12 @@ function BuilderFrame({ projectId, role, persistentQuery, children }: BuilderPro
   useEffect(() => {
     if (conversation) preloadSwitchViews();
   }, [conversation]);
-  // Until processes are built the bar names the stage in place of Preview | Live: Building from a confirmed card
+  // Until processes are built the bar names the stage in place of Preview | Live: Building from a recorded card
   // while the agent works on it or its built design's processes are being built, else Shaping.
   const shaping = builds && !liveOnly && (stage.stage === "conversation" || stage.stage === "shaping");
   const agent = session?.resource?.agent?.description;
   const building =
     Number(agent?.confirmedRequirements?.revision ?? 0) > 0 &&
-    agent?.pendingUserInput?.kind !== "KIND_REQUIREMENTS" &&
     (agent?.status !== "STATUS_WAITING_FOR_MESSAGE" || Boolean(agent.confirmedRequirements?.spec?.designBuilt));
   // Preview's status counts once processes are built from the agent's own push: before, it is the template's.
   const previewStatus =

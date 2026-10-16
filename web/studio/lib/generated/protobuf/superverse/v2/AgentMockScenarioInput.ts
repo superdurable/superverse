@@ -6,8 +6,6 @@
 export const _superverse_v2_AgentMockScenarioInput_Kind = {
   KIND_UNSPECIFIED: 'KIND_UNSPECIFIED',
   KIND_MESSAGE: 'KIND_MESSAGE',
-  KIND_REQUIREMENTS_CONFIRM: 'KIND_REQUIREMENTS_CONFIRM',
-  KIND_REQUIREMENTS_CHANGE: 'KIND_REQUIREMENTS_CHANGE',
   KIND_ANSWERS: 'KIND_ANSWERS',
 } as const;
 
@@ -16,10 +14,6 @@ export type _superverse_v2_AgentMockScenarioInput_Kind =
   | 0
   | 'KIND_MESSAGE'
   | 1
-  | 'KIND_REQUIREMENTS_CONFIRM'
-  | 2
-  | 'KIND_REQUIREMENTS_CHANGE'
-  | 3
   | 'KIND_ANSWERS'
   | 4
 

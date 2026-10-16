@@ -2,8 +2,8 @@
 
 The Session is the Project's one long-lived coding conversation. It is a single Dex Flow,
 `SessionAgentFlow` (`internal/dexai/agents/session/session_agent_flow.go`), that owns the
-conversation, its turns, the questions and the requirements card the agent puts to the
-user, the Stop button, automatic turns, and the request side of the Sandbox instance the
+conversation, its turns, the questions the agent puts to the user, the requirements cards
+it records, the Stop button, automatic turns, and the request side of the Sandbox instance the
 agent works in: it asks for an instance, holds the accepted lease and the Sandbox deadline,
 and decides when the instance is idle, while its `SessionWorkspaceFlow` provisions and
 reclaims the instances. This document owns those behaviors and the complete Flow contract.
@@ -36,12 +36,20 @@ Other topics own what the Session uses:
 - Start options: Start RequestID `flowid.Fingerprint(struct{ProjectID string})`, the complete
   logical input; `dex.IDReuseDisallow` with same-request `AlreadyStarted.IgnoreError`; no
   Flow timeout; the ASYNC durability override. The server-selected profile, default model,
-  prompt and HEAD stay outside the RequestID. The start has no input: it installs the identity
-  and lifecycle Attributes (`ProjectID`, `Profile`, the AppManifest commit as `HeadCommit`,
-  `StartIdentity`, ACTIVE, `SessionModel` with the default model) atomically with StartFlow.
-  Studio applies the model the user picked on the creation page (`UpdateSessionModel`, free
-  before the first message) and sends the creation intent as the first `SendMessage` (see
-  [UI/UX](#uiux)).
+  prompt, HEAD and the first message stay outside the RequestID. The start installs the
+  identity and lifecycle Attributes (`ProjectID`, `Profile`, the AppManifest commit as
+  `HeadCommit`, `StartIdentity`, ACTIVE, `SessionModel` with the model the creator chose, or
+  the default model when none) atomically with StartFlow.
+- **The first message.** `CreateProject` may carry the creator's first message, its message ID
+  and the model ([resource API](../../api/resource-grpc.md#durable-creation)). ProjectFlow keeps
+  them in its unsynced Attribute `InitialSessionRequest` until `StartProjectSession` passes them
+  to `SessionLifecycle.StartForProject` and clears the Attribute in the commit of the start that
+  succeeded. The Session start carries the message to its start Step, `InitializeSessionAgent`,
+  which publishes it to `QueuedUserMessages` in the commit that admits the Session, with the
+  creator as its author. Because the start Step runs once per execution and the FlowID is
+  started once per Project, the first message is admitted exactly once; the start needs no open
+  browser. A Session started without a message (a Project created without one, or an open
+  execution started before this field existed) waits for the first `SendMessage`.
 - A retried or replayed `StartProjectSession` joins the running execution. The FlowID is never
   started again: the Step runs only on the READY transition, and Project IDs are never
   reused. No explicit rerun exists. Only an authorized `dexcli flow time-travel` runs a
@@ -178,7 +186,8 @@ AwaitUser -> CheckSteered -> CompactContext -> CallModel
   CallModel -> RecordPlatformModelResult -> CheckSteered -> RouteTool ; failure -> RecordModelFailure -> CheckSteered(await_user)
     RouteTool -> AwaitParallelToolResults + ExecuteParallelTool x N -> CheckSteered
     RouteTool -> CheckSteered -> ExecuteTool -> CheckSteered ; failure -> RecordToolFailure
-    RouteTool(request_user_input, confirm_requirements) -> CheckSteered(await_user)
+    RouteTool(request_user_input) -> CheckSteered(await_user)
+    RouteTool(confirm_requirements, write_todos, set_effort) -> CheckSteered (the turn goes on)
     ExecuteParallelTool failure -> RecoverParallelToolExecution
     ExecuteTool(bash) -> SettleForegroundCommand on timeout or retry exhaustion
 
@@ -224,8 +233,9 @@ administrator acts as OWNER. No browser request supplies an author. Operators re
 
 User messages and answers retain `UserMessage.Actor` through their Channels and immutable history
 entries (`Meta.Actor`). Steering preserves the author and message ID and records a separate
-`PendingUserMessage.SteeredBy`, retained as `Meta.SteeredBy` on consumption. Requirements
-confirmations record `ConfirmedBy`; model selections record `ChangedBy`; the auto-deploy toggle
+`PendingUserMessage.SteeredBy`, retained as `Meta.SteeredBy` on consumption. A version of the
+requirements confirmed while cards waited for a confirmation keeps its `ConfirmedBy`; a recorded
+card has none, because the agent records it. Model selections record `ChangedBy`; the auto-deploy toggle
 records `PreviewAutoDeployChangedBy` in the same locked commit as its value. A no-op toggle or
 acknowledged model-revision retry preserves the previous changer. The first Stop of a turn keeps
 its actor through cancellation or boundary consumption and records it on the Stop marker.
@@ -245,7 +255,15 @@ changes, preserving the frozen old segment. Tests prove the request shape, not m
 - `SendMessage` publishes a validated `PendingUserMessage` to `QueuedUserMessages`. The Agent
   client creates the application message ID once before its RPC retry loop; Snapshot returns the
   ID so edit, delete and steer address the exact payload. `SendMessage` is refused while a
-  question awaits its answer.
+  question awaits its answer. A Session that still waits at a requirements card from before
+  cards stopped waiting (`PendingUserInput.Kind` `requirements`) takes the message as the card's
+  reply instead: in one commit `SendMessage` records the card as the next version of
+  `ConfirmedRequirements`, as `RouteTool` records a card now, moves its design from
+  `FlowDesigns[pending]` to `confirmed`, deletes the pending input and publishes the message,
+  with `AnsweredInputCallID` set to the card's call, to `AnsweredUserInputs`; it is never queued.
+  `AwaitUser` consumes it as any answer, and the next turn opens a segment under the current
+  prompt, so the agent records the card again and builds. This branch is removed once no
+  Session holds such a card.
 - `SteerMessage` moves one queued message, by ID, to `SteeredUserMessages`, preserving the ID; a
   repeated or stale ID is rejected. `DeleteQueuedMessage{MessageID, Actor, IsOwner}` checks and
   deletes under the transactional queue RPC lock. Only the author or an OWNER (including the
@@ -267,65 +285,76 @@ changes, preserving the frozen old segment. Tests prove the request shape, not m
 
 - `request_user_input` stores `PendingUserInput{Kind: "", CallID, Questions}` and ends the turn.
   The answer is the next input. The turn ends through `CheckSteered(await_user)` like every other
-  turn end, so steering that is already pending when a question (or the requirements card) is
-  asked overrides it: the steered turn deletes the pending input and the steering text starts the
-  next turn.
-- `AnswerQuestions` verifies the exact pending call ID and every question ID. In one commit it
+  turn end, so steering that is already pending when a question is asked overrides it: the
+  steered turn deletes the pending input and the steering text starts the next turn.
+- `AnswerQuestions` answers questions only. It verifies the exact pending call ID and every
+  question ID, and refuses an old requirements card, which only a message answers. In one commit it
   deletes `PendingUserInput` and publishes the validated answer to `AnsweredUserInputs`. `AwaitUser`
   waits only on that Channel while a question is pending and checks for an already published
   answer before the Attribute; it appends the answer to `CurrentMessages`, writes a content-free
   `user_input_answered` activity and enters `AnsweredInput`, which starts the answer turn without
   looking at either queue.
-- `PendingUserInput.Kind` is `""` (a `request_user_input` batch) or `requirements`.
+- `PendingUserInput.Kind` is `""` (a `request_user_input` batch). `requirements` remains only for
+  decoding a card a Session waited at before cards stopped waiting; no new Session writes it.
   The `WaitingInputRound` watermark advances at each durable wait so that Studio can tell a new
   question from a stale one; it stays within JavaScript's safe-integer range.
 - Prompts reserve questions for facts only the user owns and never for routine confirmation.
 
-### Requirements confirmation
+### Requirements cards
 
-The requirements card is the one approval gate before the agent builds. There is no mode switch,
-no "execute plan" command and no forced tool call.
+The requirements card shows the person what the agent builds, and the Session records it as a
+version; it does not wait.
+There is no mode switch, no "execute plan" command, no confirmation and no forced tool call.
 
 - The main agent calls `confirm_requirements` (a non-strict schema the decoder validates; subagents do not have it). Input:
   `title`, `summary`, `features[{id: "R1", text}]` (at most 20), `connections[{need, connector,
   operations[], status existing or new, user_setup}]`, `user_setup[]`, `acceptance[]` and, for a
   card that adds, removes or changes Flows, the optional `design`
   ([design before implementation](../design-first/flow-design.md)).
-- The effect follows the question pattern: `PendingUserInput{Kind: requirements, Requirements}` is
-  written and the turn ends. The version the confirmation will have is the stored
-  `ConfirmedRequirements.Revision` plus one. A card with a design writes its body to the
-  `FlowDesigns` instance `pending` in the same commit, and `Requirements.Design` carries its
-  reference `{Digest, Summary, Outline}`; `flowdesign` validates it first.
-- Studio shows the requirements card: features, connections (existing and new), what the user must
-  prepare, and acceptance. Two actions: confirm and start building, or request changes. Confirming
-  answers with the user message "Requirements confirmed (version N)"; requesting changes answers
-  with the user's text.
-- On confirmation `AnswerQuestions` writes `ConfirmedRequirements{Revision, Spec, ConfirmedAt,
-  LastFeatureNumber}`, in the same commit that publishes the answer. `SessionAgentFlow` is its only owner. It is shown in
-  Snapshot, carried into every `segment_start` entry, and its numbering (R1, R2...) is the one the
-  `commit_and_push` `requirements` map is checked against
+- `RouteTool` validates the card against the current version (the feature numbering below, the
+  16 KiB bound; `flowdesign` validates a design) and, in the same commit, records it as the next
+  version: `ConfirmedRequirements{Revision: stored + 1, Spec, ConfirmedAt, LastFeatureNumber}`
+  with no `ConfirmedBy`. The Attribute keeps its persisted name and means the current version.
+  A revising card without a design carries the stored design reference forward. The call is
+  answered `{"status": "recorded", "version": N, "reason": ...}`, whose reason tells the model
+  that the person was shown version N, that it continues building and that a message changes
+  it; the turn goes on to the next call or model reply. An invalid card is refused as
+  `invalid_user_input` and records nothing. `SessionAgentFlow` is the only owner of the version.
+  It is shown in Snapshot, carried into every `segment_start` entry, and its numbering (R1,
+  R2...) is the one the `commit_and_push` `requirements` map is checked against, at the
+  current revision, from the same turn on
   ([commit gate and application tests](commit-gate-and-app-tests.md)).
-- **Flow design.** A confirmation copies the `pending` design to `confirmed` after checking its
-  digest against the card's reference. A card without a design carries the confirmed design
-  forward, and one that replaces the requirements without a design deletes it. The commit of a
-  pushed, unblocked `commit_and_push` result writes `BuiltFlowDesign`, the digest of the confirmed
+- **Changes come as messages.** Studio shows the card as the Process Brief, building from it.
+  The person changes it with a chat message: a message sent during a turn queues, and the
+  Brief's **Change something…** sends it and steers it at once, so the next `CheckSteered`
+  boundary skips the calls not yet run (`superseded_by_steered_user_message`) and starts a turn
+  with it. The agent then calls `confirm_requirements` again with the revised card, which records
+  version N + 1, and builds only what changed. A `commit_and_push` already running finishes at
+  version N; a later push traces N + 1. A message after the turn starts the next turn.
+- **Flow design.** A card with a design writes its body to the `FlowDesigns` instance `confirmed`
+  in the commit that records the version, and `Requirements.Design` carries its reference
+  `{Digest, Summary, Outline}`. A card without a design keeps the stored design, and one that
+  replaces the requirements without a design deletes it. The same commit deletes the `pending`
+  instance a card left while cards waited for a confirmation. The commit of a
+  pushed, unblocked `commit_and_push` result writes `BuiltFlowDesign`, the digest of the current
   design it built, and `BuiltFlowDesignCommit`, the commit it verified; the Snapshot's
   `ConfirmedDesignBuilt` compares the digests, and `ConfirmedDesignBuiltCommit` carries the commit
   while the design is built, so Studio knows which push's processes replace the design. The outline is in the
-  confirmed requirements, so every `segment_start` carries it without a map load
+  current requirements, so every `segment_start` carries it without a map load
   ([build completion](../design-first/flow-design.md#build-completion)).
-- Rules in the prompt: confirm once before writing code for a new application or a large change;
-  make small changes directly; never ask again for the same version; the connections part comes
+- Rules in the prompt: show the card once before writing code for a new application or a large
+  change, then keep building it; revise it when a message changes the requirements; make small
+  changes directly; never show a card again for an unchanged version; the connections part comes
   from the connector subagent's selection report ([connectors](connectors.md)); when several
-  connections are possible, ask with `request_user_input` first.
-- **Large and small changes.** The confirmed card is the boundary, so the confirmed requirements
+  connections are possible, ask with `request_user_input` first, which still waits for the answer.
+- **Large and small changes.** The recorded card is the boundary, so the current requirements
   always match the application.
-  - A large change would alter the confirmed requirements: add, remove or change a feature, add or
+  - A large change would alter the current requirements: add, remove or change a feature, add or
     replace a connection, change what the user prepares or the acceptance, or build any feature while
-    nothing is confirmed. It gets a revised card that keeps the confirmed features' numbers and
-    continues them; confirming it makes the next version.
-  - A small change leaves the confirmed requirements as they are (wording, styling, layout, a fix that
-    restores confirmed behavior, a refactor, finishing a confirmed feature) and is made directly.
+    nothing is recorded. It gets a revised card that keeps the recorded features' numbers and
+    continues them; recording it makes the next version.
+  - A small change leaves the current requirements as they are (wording, styling, layout, a fix that
+    restores recorded behavior, a refactor, finishing a recorded feature) and is made directly.
   - A completely different request gets a card that sets `replaces_requirements`: it replaces the
     requirements and numbers its features from R1 again.
 - **Numbering.** Feature IDs are increasing `R<n>`, and a removed feature's number is never reused:
@@ -593,12 +622,12 @@ automatically for every Step and RPC.
 | `AgentState` | struct | Sequence range (`FirstRetainedSequence`, `CurrentFirstSequence`, `LastSequence`), `Status`, `PendingToolCalls`, `PendingToolIndex`, `HandoffContinuations`, `TurnRequestSequences`, `SourceChangedSinceHandoff`, `Turn`, `Running`, `AutomaticTaskTurns`, `AutomaticPlatformTurns`, `AutomaticTurnsPaused`, `SubagentsStartedWithoutUser`, `ConnectorSlugs` (every connector slug an admitted `connector_develop` call named, at most 16) |
 | `MessageWindowLock` | bool | Coordination only: serializes every writer of the message maps |
 | `WaitingInputRound` | int64 | Monotonic reconciliation watermark |
-| `PendingUserInput` | struct | `{CallID, Kind, Questions, Requirements, StartedAt}`; Kind is `""` or `requirements` |
+| `PendingUserInput` | struct | `{CallID, Kind, Questions, Requirements, StartedAt}`; Kind is `""`; `requirements` with `Requirements` only on a card a Session waited at before cards stopped waiting, which `SendMessage` answers |
 | `PendingApproval` | struct | The admitted ToolCall awaiting approval, with its wait start |
 | `PendingTimer` | struct | A model-requested durable wait (`start_timer`) |
 | `TodoList` | `{Revision, Items[{Content, Status}]}` | The agent's progress list |
-| `ConfirmedRequirements` | `{Revision, Spec, ConfirmedAt, LastFeatureNumber, ConfirmedBy *conversation.Actor}` | Written when the user confirms the requirements card; `Spec.Design` is the confirmed Flow design's reference |
-| `BuiltFlowDesign` | string, at most 71 bytes | The digest of the confirmed Flow design that a pushed, unblocked `commit_and_push` built; written only in that result's commit |
+| `ConfirmedRequirements` | `{Revision, Spec, ConfirmedAt, LastFeatureNumber, ConfirmedBy *conversation.Actor}`, at most 16 KiB rendered | The current version of the requirements, under its persisted name: written only by `RouteTool`, in the commit that records a card ([above](#requirements-cards)); `ConfirmedAt` is when it was recorded; `ConfirmedBy` is set only on a version confirmed while cards waited; `Spec.Design` is the current Flow design's reference |
+| `BuiltFlowDesign` | string, at most 71 bytes | The digest of the current Flow design that a pushed, unblocked `commit_and_push` built; written only in that result's commit |
 | `BuiltFlowDesignCommit` | string, a commit SHA | The commit that push verified, written beside `BuiltFlowDesign` |
 | `AgentInterrupt` | `{Turn, RequestedAt, EndsTurn, Actor *conversation.Actor, MarkerWritten bool}` | A Stop request for the running turn; also the lock that serializes the changes of a STARTING `Subagents` record (see Locking) |
 | `NotificationReceipts` | []string, at most 128, FIFO | IDs of the last 128 admitted notifications and workspace outcome reports (`workspace/<WorkspaceRequestID>`), written in the commit that publishes them ([notifications](notifications-and-feedback.md)) |
@@ -672,7 +701,7 @@ Session's lifetime.
 | `ArchivedMessages` | Unpadded first sequence of a 10-message chunk; `131` holds messages 131 to 140 | `ArchivedEntryChunk` | About 1,000 messages retained; exact-instance loads of the chunks that cover the current segment, and exactly the requested chunk for archive paging | Same |
 | `ContextSegmentPrompts` | Segment number; `3` | `{System, Tools}`, about 40 KB | One instance (the current segment); exact load in `CallModel` and `CompactContext` | Same |
 | `BackgroundCommands` | Task ID derived from the execution digest; `cmd-qjo5x7m2k4ab` | Status, exit code, end reason, output bytes and the WorkspaceRequestID it runs on; about 500 B | At most 64; at most 4 running; finished records beyond 32 drop the oldest | Created by `ExecuteTool` and `SettleForegroundCommand`; its end is recorded once by `AwaitBackgroundCommand` under the `NotificationReceipts` lock, or as lost by `AbandonBackgroundCommand` |
-| `FlowDesigns` | `pending` or `confirmed`, two fixed keys declared as `flowdesign.Slot` constants | `flowdesign.Design`, at most 24 KiB of canonical JSON | Two instances; exact-instance loads only: `AnswerQuestions` loads `pending`, `GetFlowDesign` both; never loaded by other Steps, RPCs or the Snapshot | `RouteTool` writes `pending` for a card with a design; `AnswerQuestions` copies it to `confirmed`, or deletes `confirmed` for a replacing card without a design ([flow design](../design-first/flow-design.md#storage)) |
+| `FlowDesigns` | `confirmed`, a fixed key declared as a `flowdesign.Slot` constant; `pending` is the key a card left while cards waited for a confirmation | `flowdesign.Design`, at most 24 KiB of canonical JSON | One live instance (an old Session may also hold `pending` until its next card); exact-instance loads only: `GetFlowDesign` loads `confirmed`; never loaded by other Steps, RPCs or the Snapshot | `RouteTool` only, in the commit that records a card: it writes `confirmed` for a card with a design, deletes it for a replacing card without one, and deletes `pending` ([flow design](../design-first/flow-design.md#storage)) |
 | `Subagents` | `flowid.AgentTaskID(sessionFlowID, callID)`, stable under retries; `k3n8q5r1` (the task ID shown to the model is `agent-k3n8q5r1`) | `SubagentRecord`, at most 2 KiB, no prompt text | At most 3 unfinished and 50 finished (a record unfinished one hour after its kind's duration counts as lost: no running place, no Sandbox hold, and the Snapshot marks it `lost`); the whole map for the Snapshot, `RouteTool` and `ExecuteTool` of `start_agent`, an exact instance for the RPCs and the other tools | `RouteTool` creates STARTING; `AdmitSubagent` writes RUNNING; the outcome notification writes the terminal state; a discard or a merge of every file writes MERGED or DISCARDED; a Stop and a failed start write STOPPED and FAILED, and a call answered without its `ExecuteTool` deletes its STARTING record. Locks: see Locking under Attributes |
 
 Instance keys come only from server-derived values (sequence, task ID, slug), never from model or
@@ -685,9 +714,9 @@ summary; the archive stops at `FirstRetainedSequence`.
 
 | Channel | Payload | Producer | Consumer and admission |
 |---|---|---|---|
-| `QueuedUserMessages` | `PendingUserMessage` | `SendMessage` | `AwaitUser`, FIFO. The client message ID is stable across the client's own retries; the Flow does not deduplicate a repeated send |
+| `QueuedUserMessages` | `PendingUserMessage` | `SendMessage`, and `InitializeSessionAgent` once for the first message the Session started with | `AwaitUser`, FIFO. The client message ID is stable across the client's own retries; the Flow does not deduplicate a repeated send; the first message is admitted once because the start Step runs once |
 | `SteeredUserMessages` | `PendingUserMessage` | `SteerMessage` | Safe boundaries, ahead of the ordinary queue; the ID is preserved |
-| `AnsweredUserInputs` | `AnsweredUserInput` | `AnswerQuestions` | `AwaitUser`; admitted only for the exact pending CallID and every question ID |
+| `AnsweredUserInputs` | `AnsweredUserInput` | `AnswerQuestions`; `SendMessage` for an old waiting card | `AwaitUser`; admitted only for the exact pending CallID and every question ID, or as the one reply to an old card, in the commit that deletes it, so a pending input has at most one answer |
 | `SessionNotifications` | `conversation.SessionNotification` (at most 4 KiB; a subagent report at most 24 KiB; fields `{ID, Kind task, delivery or connector, Source, OccurredAt}` and the kind's content) | `ReportSessionNotification` (internal; subagents, delivery sources and connector contributions, through the Service only) and this Flow's `AwaitBackgroundCommand` | `CheckSteered` (at most 16 per boundary, before steering text) and `AwaitUser` (last, `AtLeastAtMost(1, 16)`, never during a question) |
 
 `SessionNotifications` admission: the Session is ACTIVE, fewer than 32 are pending, and the ID is
@@ -731,14 +760,14 @@ minute method timeout, `CurrentMessages` loaded, `MessageWindowLock` held). Only
 
 | Step | Purpose | Options and routing |
 |---|---|---|
-| `InitializeSessionAgent` | Admit with ProjectFlow, initialize primitives | Start Step; SYNC; 30 seconds, retried for 2 minutes; locks SessionStatus and Workspace. Denial archives and completes with `admission_denied`. Then `ActivateSession` |
+| `InitializeSessionAgent` | Admit with ProjectFlow, initialize primitives, admit the first message | Start Step; SYNC; 30 seconds, retried for 2 minutes; locks SessionStatus and Workspace. Denial archives and completes with `admission_denied` and admits no message. Otherwise it publishes the first message the Session started with, if any, to `QueuedUserMessages` in the same commit. Then `ActivateSession` |
 | `ActivateSession` | Set status `waiting_for_message` | To `AwaitUser` |
 | `AwaitUser` | Wait for answers, steering, a queued message or a notification; start the turn | Locks `MessageWindowLock`, `PendingUserInput`, `PendingApproval`, `Workspace` |
 | `AnsweredInput` | Start the answer turn without checking queues | To `CompactContext` or `CallModel` |
 | `CheckSteered` | Boundary Step (see the Step graph) | Loads `CurrentMessages`; locks `MessageWindowLock`, `PendingUserInput`, `Workspace` |
 | `CompactContext`, `CallModel` | Summarize, or one model reply | SYNC; 20 minutes per attempt; heartbeat 1 minute; 3 attempts within 60 minutes, retries starting 30 seconds apart; failure routes `RecordCompactionFailure` and `RecordModelFailure` |
 | `RecordModelFailure`, `RecordCompactionFailure` | Record one bounded turn failure; end the turn | To `CheckSteered(await_user)` |
-| `RouteTool` | Admit and route the pending call | Admission for `start_agent` (the limits and the STARTING `Subagents` record, [subagents](subagents.md#start_agent)), `confirm_requirements`; wave fan-out; workspace gate G2 |
+| `RouteTool` | Admit and route the pending call | Admission for `start_agent` (the limits and the STARTING `Subagents` record, [subagents](subagents.md#start_agent)); `confirm_requirements` records the card as the next version of `ConfirmedRequirements` and its design in `FlowDesigns` and continues the turn; wave fan-out; workspace gate G2 |
 | `ExecuteTool`, `ExecuteParallelTool` | Run one tool or one wave branch; `ExecuteTool` also runs the delegation tools (`start_agent` creates the worktree and starts the SubagentFlow, `stop_task` of an agent, `merge_agent_changes`) | Policy attached per call by the dispatcher ([tool orchestration](tool-orchestration.md)); neither takes the Workspace lock; a delegation tool loads the `Subagents` records it reads (`start_agent` all of them, the others their own) |
 | `AwaitParallelToolResults` | Join a wave | `ForN` on `ParallelToolResults`; re-routes a lost read-only wave |
 | `RecordToolFailure`, `RecoverParallelToolExecution` | Record `tool_unavailable` after retries are exhausted, serial and parallel; `RecordToolFailure` also fails the STARTING record of a `start_agent` call | The model sees the result and continues; `RecordToolFailure` locks `AgentInterrupt` |
@@ -795,17 +824,17 @@ Tool execution uses only the lease:
 
 | RPC | Locks and options | Behavior |
 |---|---|---|
-| `SendMessage` | SessionStatus, `PendingUserInput` | Publish to `QueuedUserMessages`; false when not ACTIVE or a question is pending |
+| `SendMessage` | SessionStatus, `PendingUserInput` | Publish to `QueuedUserMessages`; false when not ACTIVE or a question is pending; for an old waiting requirements card, delete it and publish the message as its answer to `AnsweredUserInputs` ([above](#queued-and-steered-messages)) |
 | `SteerMessage` | SessionStatus; transactional; loads the queue | Move one queued message to steering by ID |
 | `DeleteQueuedMessage` | SessionStatus; transactional; loads the queue | Check author/owner and remove one queued message atomically; `{Deleted, NotAuthor}` |
-| `AnswerQuestions` | SessionStatus, `PendingUserInput` (and `ConfirmedRequirements` for a confirmation); loads `FlowDesigns` `pending` | Exact CallID and question IDs; delete the pending input and publish the answer; a confirmation moves the Flow design (above) |
+| `AnswerQuestions` | SessionStatus, `PendingUserInput` | Exact CallID and question IDs of a question batch; delete the pending input and publish the answer |
 | `ApproveTool` | SessionStatus, `PendingApproval`; transactional | Exact pending CallID |
 | `UpdateSessionModel` | SessionStatus, `SessionModel` | Enum model, expected revision; takes effect at the next turn |
 | `InterruptAgent` | SessionStatus, `AgentInterrupt`; loads the task records | The Stop button ([above](#stop-button)) |
 | `UpdatePreviewAutoDeploy` | SessionStatus, `PreviewAutoDeploy` and `PreviewAutoDeployChangedBy` | Set `PreviewAutoDeploy` and its optional changer under both locks; called through the Preview service ([notifications](notifications-and-feedback.md)) |
-| `GetSnapshot` | No lock; loads `CurrentMessages`, the two message Channels and the task maps | Lifecycle plus `AgentSnapshot`: projected history page (no thinking, no raw tool payloads), queued and steered messages, and a description (status, waiting round, current `Turn`, model and revision, pending input, todo list, confirmed requirements and whether their Flow design is built, task records, available tools). No RunID |
+| `GetSnapshot` | No lock; loads `CurrentMessages`, the two message Channels and the task maps | Lifecycle plus `AgentSnapshot`: projected history page (no thinking, no raw tool payloads), queued and steered messages, and a description (status, waiting round, current `Turn`, model and revision, pending input, todo list, the current requirements and whether their Flow design is built, task records, available tools). No RunID |
 | `GetArchivedMessages` | No lock | Exactly the requested chunk, projected |
-| `GetFlowDesign` | No lock; loads both `FlowDesigns` instances | The design a slot holds, or not found; the client compares its digest with the caller's and reports a stale one as `ErrFlowDesignRevisionChanged` |
+| `GetFlowDesign` | No lock; loads the `FlowDesigns` instance `confirmed` | The design the slot holds, or not found; the client compares its digest with the caller's and reports a stale one as `ErrFlowDesignRevisionChanged` |
 | `GetSessionSummary` | No lock | Lifecycle, identity, HEAD and `WorkspaceSummary{State, RequestID, Failure, FailureDetail, SandboxDeadline, Instance, InstanceID, Resources, VolumeState, InstanceUpdatedAt}`, the only projection of `Workspace` outside the Flow; it carries no lease, binding or credential |
 | `GetDexSummary`, `GetDexDisplay` | No lock | Dex Web display |
 | `CompleteProjectSession` | SessionStatus, `Revision`; loads `BackgroundCommands` | Internal; the deleting Project's one completion call: the scope must match; archives the Session with `project_cleanup_complete`, cancels every Agent branch and the workspace Steps, publishes the stop of each running background command's watch, and moves to the Step of the same name. A repeat is accepted without effect |
@@ -870,6 +899,20 @@ A pending `turn_limit` question already written before the rollout is projected 
 ordinary question and its exact CallID and options remain answerable; either answer
 starts an ordinary turn. New executions never create that pending kind.
 
+Making the requirements card stop waiting keeps open executions working. The Attribute
+`ConfirmedRequirements` keeps its name and JSON, and older versions with `ConfirmedBy` decode as
+before. A Session left at `AwaitUser` on a card holds `PendingUserInput{Kind: requirements}` and
+possibly the `FlowDesigns` instance `pending`: a message answers the card through `SendMessage`
+([above](#queued-and-steered-messages)), and the card the agent records next deletes `pending`.
+A Session in the middle of a turn under the old prompt may end its turn after the card, which a
+message resumes. The Step graph and every primitive name are unchanged. Before launch the local
+executions are reconciled explicitly: a Session left at a card on the previous build, upgraded,
+answered by a message, builds.
+
+Starting the Session with its first message keeps open executions working too: the start Step
+of an execution started without one finds no message and behaves as before, and a ProjectFlow
+without `InitialSessionRequest` starts its Session as before.
+
 ### Line budget
 
 `session_agent_flow.go` has a hard limit of 1,600 lines, like every `*_flow.go` file, because the
@@ -894,7 +937,14 @@ These settings are keys of the server configuration, which defaults and range-ch
 ## Dex Flow Changes
 
 The [SessionAgentFlow contract](#sessionagentflow-contract) remains the Flow's primitive,
-identity, Step, RPC and recovery inventory. `CheckSteered` no longer compares a turn's
+identity, Step, RPC and recovery inventory. The requirements card no longer waits: `RouteTool`
+writes `ConfirmedRequirements` (the current version) and `FlowDesigns[confirmed]`,
+`PendingUserInput` holds questions, `SendMessage` records and answers an old waiting card (under the
+`ConfirmedRequirements` lock, with `FlowDesigns[pending]` loaded), `AnswerQuestions`
+takes questions only and `GetFlowDesign` reads `confirmed` only; no Step, Channel, Stream or
+primitive name changes.
+The start Step admits the first message the Session starts with, once, into
+`QueuedUserMessages`. `CheckSteered` no longer compares a turn's
 model-call count or creates a `turn_limit` pending question; model replies in both
 executor modes can continue beyond the former bound. Neither Session nor
 SubagentFlow writes the removed counter or reporting-only mode. Already open prelaunch questions use
@@ -913,14 +963,16 @@ and the runtime (Kubernetes or Docker) owns object existence.
   Session list, `?session=` parameter or "start a session" action. While Setup runs the page shows
   "Preparing project..."; when the Project is READY it shows "Starting the agent..." and retries a
   not-found Session read for at most 30 seconds. The create page reuses the Session composer: the
-  person picks the model (Mock as well where the server offers it) and the first message, and the
-  stored creation intent carries both. Once the Session waits, Studio applies the model with
-  `UpdateSessionModel` when it differs from the Session's, then sends the first `SendMessage` with
-  the intent key as the message ID; a failed delivery keeps the intent and shows the draft.
+  person picks the model (Mock as well where the server offers it) and the first message, and
+  `CreateProject` carries both with the message's ID, so the Session starts on that model with
+  the message queued even when the tab is closed. A refused model refuses the creation, and the
+  page shows the error.
 - A Stop button next to the input, also bound to Escape, shown while a turn or task runs. It stops
   everything and sends the running `Turn` for stale-request protection.
-- The requirements card, the confirmed requirements (viewable at any time), and a one-line progress
-  indicator. The model selector below the Session controls (Opus 5.5 strongest, Sonnet 5.5 faster and
+- The requirements card as the Process Brief, building from the current version ("Building from
+  this brief · version N", viewable at any time, changed with a message), and a one-line progress
+  indicator. A card a Session still waits at from before cards stopped waiting shows read only
+  with "Reply in the chat to build or change it". The model selector below the Session controls (Opus 5.5 strongest, Sonnet 5.5 faster and
   cheaper, Haiku 4.5 cheapest, for tests), with "takes effect at the next turn" after a change, and the
   current model and effort ("Claude Opus 5.5 - medium").
 - The workspace shows its status and expiry, with "Keep running for 7 days"; after a reclaim it reads
@@ -939,13 +991,14 @@ three E2E cases with real Opus 5.5.
 
 | Area | Scenario |
 |---|---|
+| First message | A Project created with a message starts its Session on the chosen model with that message queued once and answered without a browser; a changed retry of the creation is ALREADY_EXISTS; a refused model refuses the creation |
 | Identity | Exactly one `session-<p>` per READY Project with no Flow timeout (`dexcli flow summary`); a Worker restart inside `StartProjectSession` leaves one execution and one ChildFlows entry; a repeated setup commit starts it once; deletion before READY leaves no Session, deletion right after READY ends in `admission_denied` or a cleaned child |
 | Liveness | An execution stopped with the pinned dexcli on a throwaway Project reads FAILED; commands answer `FAILED_PRECONDITION SESSION_EXECUTION_TERMINATED` while Preview configuration reads still succeed; an authorized time travel brings it back with history, queue and HEAD intact and each recovered effect applied once |
 | Model failure | A blocked provider egress past the retries runs `RecordModelFailure`; the Session stays ACTIVE and the next message succeeds; a compaction failure runs `RecordCompactionFailure` |
 | Instance | A cold start runs exactly one workspace Flow and one provisioning, and a repeated command joins; a Worker restart during a provisioning or a reclamation leaves one execution; a replacement reclaims the lost instance first; a late outcome after a replacement is declined; the `WorkspaceOutcomes` instance `ws-<n>` is consumed only by the Step that waits for that request, and a report that never arrives settles through the workspace Flow's own state |
 | Sandbox deadline | A shortened hold makes the deadline reclamation exactly the `reclaim` command and the `reclaimed` report, keeping the volume; a running task postpones reclamation; a READY Preview's `ready` notification extends it to `sandbox.previewHold`, also while a question waits; `RenewSessionWorkspace` moves the deadline; a wave dispatched seconds before the deadline makes the timer re-arm; the lend of the READY instance to a Preview command moves it one hold ahead; a Worker restart while it waits reclaims once; a running Preview is stopped first; an uncommitted file survives reclaim and resume |
-| Requirements | A new application shows the card and a small change does not; confirming writes `ConfirmedRequirements`; a repeated confirmation of the same version is not requested |
-| Flow design | A card's design is the pending one, which a revised card replaces and a stale digest cannot read; a confirmation copies it to the confirmed slot, unbuilt; a compaction keeps its outline; a blocked checkpoint leaves it unbuilt and a pushed, unblocked commit builds it; each rule a design breaks refuses the card as `invalid_user_input` |
+| Requirements | A new application shows the card and a small change does not; the card records `ConfirmedRequirements` version 1 and the turn goes on to build it; a message steered after the card makes the agent record version 2, and the next push traces revision 2; a message to an old waiting card records it and answers it (local reconciliation, as no current path creates such a card) |
+| Flow design | A card's design is the current one, which a revised card replaces and a stale digest cannot read; recorded unbuilt; a compaction keeps its outline; a blocked checkpoint leaves it unbuilt and a pushed, unblocked commit builds it, and a revised design moves `BuiltFlowDesign` at the next push; each rule a design breaks refuses the card as `invalid_user_input` |
 | Stop | One press stops the model call, a background command and a subagent; a stale `Turn` answers false; a non-interruptible tool ends the turn at the next boundary; a subagent that is still starting is marked STOPPED and answered `Stopped` at its admission, and reports STOPPED when its start was racing the Stop; with no turn running the press stops a running subagent, and its report opens no turn; "continue" resumes with published results and the STOPPED report; notification-first, input-first and Finish-first commits write one first-actor marker; a late same-Turn settlement cannot alter a newer Stop; persisted MarkerWritten survives a replacement Worker |
 | Background commands | A command's watch runs as a SubFlow, so the Session routes tools while it runs; its end publishes one notification; a stopped command publishes none; Project deletion stops each running watch before the Session completes |
 | Notifications and automatic turns | A duplicate ID publishes once; admission refuses a 33rd pending notification; caps and `AutomaticTurnsPaused` hold; a notification after Stop opens no turn |
@@ -1034,7 +1087,9 @@ real dependency acceptance; source does not promise seamless recovery.
 
 ## Resource Scalability
 
-None. Removing the Session model-call limit creates no cloud, Kubernetes,
+None. Recording the requirements card drops the `FlowDesigns` bound from two instances to one;
+the first message adds one bounded, cleared Attribute to ProjectFlow and no Session state.
+Removing the Session model-call limit creates no cloud, Kubernetes,
 Temporal, Dex or database resource and adds no control-plane call or tenant scan
 on a request, poll or event. The existing Session and workspace lifecycles and
 retention rules in this contract still govern their resources.

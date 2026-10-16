@@ -17,16 +17,22 @@ import {
   clearPendingProjectCreation,
   encodedPendingProjectCreation,
   readPendingProjectCreation,
-  storeProjectIntent,
   type PendingProjectCreation,
 } from "@/lib/project/project-intents";
 import { beginFirstRun } from "@/lib/project/stage/ProjectStageProvider";
+import { isAgentModel } from "@/lib/session/agent-types";
+import { agentModelInput } from "@/lib/session/agent-view";
 import { studioRoutes } from "@/lib/shared/studio-routes";
 import { StartupSteps } from "@/components/session/start/StartupSteps";
 import { Banner } from "@/components/ui/Banner";
 import { Button, buttonStyle } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
 
+/**
+ * Creates the Project the start page stored, with the first message of its Session and the model it runs
+ * on, so the Session starts with them on the server and needs no open tab. A retry repeats the same request
+ * IDs; a stored name the picker does not offer leaves the model to the server's default.
+ */
 export function ProjectCreationPage() {
   const router = useRouter();
   const request = useRef<PendingProjectCreation | null>(null);
@@ -67,17 +73,16 @@ export function ProjectCreationPage() {
           name: pending.name,
           managedRepository: {},
           teamSpaceId: pending.teamSpaceId,
+          initialMessage: pending.prompt,
+          messageId: pending.messageIdempotencyKey,
+          model:
+            pending.model !== null && isAgentModel(pending.model)
+              ? agentModelInput(pending.model)
+              : "AGENT_MODEL_UNSPECIFIED",
         },
         controller.signal,
       );
       if (!ownsRequest()) return;
-      // Build applies the chosen model and sends the first message once the Project's Session starts.
-      storeProjectIntent(projectId, {
-        initialMessage: pending.prompt,
-        model: pending.model,
-        mock: pending.mock,
-        idempotencyKey: pending.messageIdempotencyKey,
-      });
       clearPendingProjectCreation();
       // The new Project opens on its first conversation, the chat alone, until the agent's requirements arrive.
       beginFirstRun(projectId);

@@ -42,7 +42,7 @@ snapshot or progress.
 | File | Responsibility |
 | --- | --- |
 | `server.go` | `Server`, the dependencies bootstrap composes; `NewGRPCServer`, which registers the services with their interceptors, the account and TeamSpace services through `tenancy.Register` |
-| `project.go` | ProjectService: managed creation in a TeamSpace (a caller whom the read model shows outside a TeamSpace it holds is refused before any Flow starts; ProjectFlow's registration confirms the membership); GetProject, ListProjects (the Projects of the required TeamSpace, for its members and the administrator, in keyset pages; an entry without the caller's role is reduced to its ID, name, status, setup status, Live and TeamSpace) and the Project Watch from the read model, which waits for a new Project's row; deletion and Live removal, which return ProjectFlow's state; project configuration; and the Project snapshot with its Setup and Live pointer |
+| `project.go` | ProjectService: managed creation in a TeamSpace (a caller whom the read model shows outside a TeamSpace it holds is refused before any Flow starts; ProjectFlow's registration confirms the membership), with the Session's optional first message and model, validated and admitted as SendMessage and UpdateSessionModel are before the start and part of the creation fingerprint; GetProject, ListProjects (the Projects of the required TeamSpace, for its members and the administrator, in keyset pages; an entry without the caller's role is reduced to its ID, name, status, setup status, Live and TeamSpace) and the Project Watch from the read model, which waits for a new Project's row; deletion and Live removal, which return ProjectFlow's state; project configuration; and the Project snapshot with its Setup and Live pointer |
 | `project_member.go` | ProjectMemberService: a Project's members from the read model for a caller with `CapabilityView`, and the member changes of ProjectFlow for one with `CapabilityManageMembers`, which ProjectFlow checks again; a member added must belong to the Project's TeamSpace, which the read model shows |
 | `session.go` | SessionService: reads of the Project's one Session, the workspace renewal (`RenewWorkspace`), the Session Watch with its Agent event Streams and the live status lines of its running subagents, archived messages and the Session snapshot, whose workspace carries its start phase timings |
 | `agent.go` | AgentService: the Agent commands through one admission helper, their input checks, the model admission of each environment (`SessionModels`: a Claude key, the mock model, Local or the administrator), `ListMockScenarios` and the protobuf conversion of Agent values |
@@ -73,7 +73,7 @@ callers of it.
 
 `TestSessionActorsDexIntegration` uses the real gRPC authentication boundary, PostgreSQL read
 model, Dex Worker and Sandbox for two Builders and an owner: immutable queue/steering/history
-authors, first answer/Stop, confirmed requirements, model/auto-deploy changers and concurrent
+authors, first answer/Stop, an unattributed recorded requirements card, model/auto-deploy changers and concurrent
 author/owner deletion. It also checks the actual ACTIVE platform administrator's SessionCaller
 and Flow deletion using its SQL-authorized role; administrator password authentication remains
 outside this test. TestSessionForgedSenderEnvelopeDexIntegration launches the forged-sender

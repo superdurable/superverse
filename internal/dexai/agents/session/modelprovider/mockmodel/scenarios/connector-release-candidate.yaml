@@ -6,8 +6,8 @@
 #
 # SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-# A connector release candidate: after the user confirms a connection that
-# needs a new connector, a connector_develop subagent builds superversemock, a
+# A connector release candidate: after a card with a connection that needs a
+# new connector, a connector_develop subagent builds superversemock, a
 # complete connector copied from the library's hackernews module with its own
 # name, company, version v0.1.0 and catalog.yaml entry. Its finish commits and
 # pushes the branch and publishes the release candidate v0.1.0-rc.N of the
@@ -26,7 +26,7 @@ inputs:
   - label: "Describe the application"
     message: "Build a page that lists the top stories of our story feed."
     replies:
-      - text: "No released connector reads the story feed, so a new one is built upstream. Please confirm what I will build."
+      - text: "No released connector reads the story feed, so a new one is built upstream. Here is what I will build; tell me in the chat if anything should change."
         tool_uses:
           - name: confirm_requirements
             input:
@@ -42,9 +42,6 @@ inputs:
                   user_setup: "Nothing: the feed is public."
               user_setup: []
               acceptance: ["The page shows the top stories."]
-  - label: "Confirm the requirements"
-    requirements_confirm: true
-    replies:
       - text: "Building the superversemock connector upstream while I prepare the application."
         tool_uses:
           - name: start_agent

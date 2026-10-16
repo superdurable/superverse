@@ -13,7 +13,7 @@ Both generation and runtime decoding select string longs, string enums, default 
 - Integers must fit JavaScript's safe integer range; invalid or lossy values fail instead of silently rounding.
 - Optional fields preserve legacy null versus omitted semantics, including meaningful zero indices and revisions. Protobuf oneof helper fields are excluded.
 - Inner Agent timestamps retain the original RFC3339 string precision. Resource timestamps retain the standard protobuf Timestamp contract.
-- Tool argument strings are not recursively transformed. Queued inputs, pending questions and requirements cards, approvals, the todo list, the confirmed requirements and archive history preserve their original fields.
+- Tool argument strings are not recursively transformed. Queued inputs, pending questions (and an old waiting requirements card), approvals, the todo list, the current requirements and archive history preserve their original fields.
 - External MCP discovery fields are omitted under the user's explicit removal decision; generic tools, model adapters and the shared UI remain.
 
 Browser presentation types derive from the generated messages and these projection return types in `agent-types.ts`, which defines only the UI's own literals (`AgentStatus`, `EventStream`, `EventKind`) and checks them against the projection. Studio no longer contains the obsolete OpenAPI-generated Agent client, its code generator configuration or its generator dependency. The same-origin BFF remains the browser entry point: `lib/api/agent.ts` and `lib/api/session.ts` post each RPC to `/api/rpc/<Method>` with the Project and Session IDs it names and the caller's cancellation signal, and the server derives authorization and Flow identity independently. They import only the generated types and `lib/shared`, so the enum mapping stays in `agent-view.ts`.
@@ -36,7 +36,7 @@ None. No persistence or projection is added.
 
 ## UI/UX
 
-The shared Agent UI is retained. Studio preserves conversation history, archive paging, queued and steered input, the progress line, the requirements card and the confirmed requirements, approvals, questions, activity/text streams and workspace state. The typed wire migration does not introduce a second launcher, a generic operation resource or a fixture fallback.
+The shared Agent UI is retained. Studio preserves conversation history, archive paging, queued and steered input, the progress line, the requirements card with its current version, approvals, questions, activity/text streams and workspace state. The typed wire migration does not introduce a second launcher, a generic operation resource or a fixture fallback.
 
 ## Tests
 
@@ -67,11 +67,11 @@ not reserved. No business response contains an engine RunID. GetSession and ever
 combined Session snapshot plus the separately owned Workspace/Preview view.
 SendMessage, AnswerQuestions, UpdateSessionModel, DeleteQueuedMessage,
 SteerQueuedMessage, ResolveToolApproval (formerly ApproveTool) and InterruptAgent each return
-their own empty `<Rpc>Response`, which confirms admission only; Watch owns durable state. AnswerQuestions answers the pending input
-named by `call_id`: one answer per question of a `KIND_QUESTION`
-batch, or, for a `KIND_REQUIREMENTS` card, an `AgentRequirementsDecision` with no
-answers that either confirms the card or carries the user's requested changes as
-text. The two shapes never mix. ResolveToolApproval, which approves or denies, takes an
+their own empty `<Rpc>Response`, which confirms admission only; Watch owns durable state. AnswerQuestions answers the pending
+question batch named by `call_id` with one answer per question. A requirements card does not wait:
+the Session records it as `confirmed_requirements`, the current version, and a person changes it
+with SendMessage. A `KIND_REQUIREMENTS` pending input exists only on a Session that waited at a card
+before cards stopped waiting, and SendMessage answers it. ResolveToolApproval, which approves or denies, takes an
 explicit optional `is_approved`. A failure carries `AGENT_COMMAND_NOT_DISPATCHED`,
 `AGENT_COMMAND_NOT_ADMITTED` or, for a Session whose engine execution stopped,
 `SESSION_EXECUTION_FAILED`, `_CANCELED` or `_TERMINATED` only when the command

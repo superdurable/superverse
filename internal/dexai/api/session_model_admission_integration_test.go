@@ -98,7 +98,7 @@ func TestSessionModelAdmissionDexIntegration(t *testing.T) {
 		{"no Claude key, an ordinary account selects mock", keyless, owner, conversation.ModelMock, codes.OK},
 		{"prod, the administrator selects mock", prod, admin.AccountID, conversation.ModelMock, codes.FailedPrecondition},
 	} {
-		if got := admissionCode(t, decision.server.admitModel(ctx, decision.account, decision.model)); got != decision.want {
+		if got := admissionCode(t, admitModel(ctx, decision.server.Boundary, decision.server.models, decision.account, decision.model)); got != decision.want {
 			t.Fatalf("%s: admission answered %s, want %s", decision.name, got, decision.want)
 		}
 	}
@@ -113,7 +113,7 @@ func TestSessionModelAdmissionDexIntegration(t *testing.T) {
 		{"Local, an ordinary account", local, owner, true},
 		{"prod, the administrator", prod, admin.AccountID, false},
 	} {
-		selectable, readErr := listing.server.mockSelectable(ctx, listing.account)
+		selectable, readErr := mockSelectable(ctx, listing.server.Boundary, listing.server.models, listing.account)
 		if readErr != nil || selectable != listing.want {
 			t.Fatalf("%s: the mock model is selectable=%t (%v), want %t", listing.name, selectable, readErr, listing.want)
 		}
@@ -141,7 +141,7 @@ func TestSessionModelAdmissionDexIntegration(t *testing.T) {
 		t.Fatalf("a Session of a mock-default server starts on %q at revision %d", started.Model, started.ModelRevision)
 	}
 	for revision, model := range []conversation.Model{conversation.ModelOpus55, conversation.ModelMock} {
-		if err = local.admitModel(ctx, owner, model); err != nil {
+		if err = admitModel(ctx, local.Boundary, local.models, owner, model); err != nil {
 			t.Fatalf("Local admission refused %s for the owner: %v", model, err)
 		}
 		if err = client.UpdateSessionModel(ctx, id, agentloop.UpdateSessionModelRequest{Model: model, ExpectedRevision: uint64(revision)}); err != nil {

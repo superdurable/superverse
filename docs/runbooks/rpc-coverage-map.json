@@ -21,8 +21,7 @@
       "native-e2e"
     ],
     "/superverse.v2.AgentService/AnswerQuestions": [
-      "kind-e2e",
-      "native-e2e"
+      "kind-e2e"
     ],
     "/superverse.v2.AgentService/DeleteQueuedMessage": [],
     "/superverse.v2.AgentService/GetFlowDesign": [
@@ -147,8 +146,7 @@
       "native-e2e"
     ],
     "/superverse.v2.PreviewService/PreparePreviewSource": [
-      "kind-e2e",
-      "native-e2e"
+      "kind-e2e"
     ],
     "/superverse.v2.PreviewService/StartPreview": [
       "kind-e2e",
@@ -156,8 +154,7 @@
     ],
     "/superverse.v2.PreviewService/StopPreview": [],
     "/superverse.v2.PreviewService/UpdatePreviewAutoDeploy": [
-      "kind-e2e",
-      "native-e2e"
+      "kind-e2e"
     ],
     "/superverse.v2.ProjectMemberService/AddProjectMember": [
       "api-integration",
@@ -261,8 +258,7 @@
       "native-e2e"
     ],
     "/superverse.v2.SessionService/ListArchivedMessages": [
-      "api-integration",
-      "native-e2e"
+      "api-integration"
     ],
     "/superverse.v2.SessionService/RenewWorkspace": [
       "kind-e2e",

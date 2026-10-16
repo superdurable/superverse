@@ -26,7 +26,7 @@ produces the events in [session](session.md), and tasks and subagents in
 ## Actor projection
 
 The canonical response contract carries `Actor{account_id,email}` on public and pending user
-messages, `steered_by` on pending steering and retained public messages, `confirmed_by` on confirmed requirements and the
+messages, `steered_by` on pending steering and retained public messages, `confirmed_by` on a version of the requirements confirmed while cards waited (unset on a recorded card) and the
 model/auto-deploy changer on AgentDescription. Requests carry no actor. Public content remains
 raw user text, while the immutable provider block contains the sender envelope. A Stop marker
 carries its first actor. Historical and automatic entries may have no actor. Snapshot and archive
@@ -124,8 +124,8 @@ contributed, each read from its `ConnectorContributionFlow` ([connectors](connec
 | Conversation and work log | Retained history (`AgentMessage` pages) and paged archive reads |
 | Busy state, Stop button | Agent status, the current `Turn`, running tasks |
 | Model and effort line, model selector | The segment's model and effort, the Session's selected model and its revision |
-| Questions and requirements card | Pending user input and its kind (ordinary question or `REQUIREMENTS`) |
-| Confirmed requirements view | The confirmed requirements with their version |
+| Questions | Pending user input and its kind (ordinary question, or `REQUIREMENTS` for a card an old Session still waits at) |
+| Requirements card and Process Brief | The current requirements (`confirmed_requirements`) with their version and design reference |
 | Progress line | The todo list |
 | Tasks panel | `AgentDescription.subagents` and `background_commands`: the Session's records (Tasks in the Snapshot, above) |
 | Workspace status, "Keep running" | `SessionSnapshot.workspace` (status, `expires_at`, phase timings), joined from the `SessionWorkspaceFlow` |
@@ -145,15 +145,16 @@ and TypeScript types describe snapshots, history, events and actions.
   the reason `SESSION_EXECUTION_FAILED`, `SESSION_EXECUTION_CANCELED` or
   `SESSION_EXECUTION_TERMINATED`, which Studio presents as a FAILED Session.
 
-`AgentPendingUserInput.kind` is `KIND_QUESTION` or `KIND_REQUIREMENTS`. The
+`AgentPendingUserInput.kind` is `KIND_QUESTION`, or `KIND_REQUIREMENTS` for a card a Session
+waited at before cards stopped waiting, which a `SendMessage` answers. The
 persisted kind of a question batch is empty, so `KIND_QUESTION` is the one value that is not the
 enum prefix plus the persisted value.
 
 | Command | Request essentials |
 | --- | --- |
-| `SendMessage` | `message_id`, `text` |
+| `SendMessage` | `message_id`, `text`; to an old waiting card it is the card's reply and is not queued |
 | `SteerQueuedMessage`, `DeleteQueuedMessage` | `message_id` |
-| `AnswerQuestions` | `call_id`, and either the answers or, for the requirements card, an `AgentRequirementsDecision{is_confirmed, requested_changes}`; the Session writes the "Requirements confirmed (version N)" message itself |
+| `AnswerQuestions` | `call_id` and one answer per question of the pending batch |
 | `ResolveToolApproval` | `call_id`, `is_approved` |
 | `UpdateSessionModel` | model enum (`AGENT_MODEL_OPUS_5_5`, `AGENT_MODEL_SONNET_5_5`, `AGENT_MODEL_HAIKU_4_5`, `AGENT_MODEL_MOCK` where offered), `expected_revision` |
 | `InterruptAgent` | `turn`, taken from the Snapshot; a stale or no-op stop is refused as not admitted |
@@ -205,7 +206,8 @@ enum prefix plus the persisted value.
 - After `agent_interrupted`, text and activity from calls that started before it are
   ignored. A cancelled call can keep streaming for a short time; Studio drops it by
   `source`, so the user never sees it.
-- Pending questions, approvals and the requirements card remain explicit user actions.
+- Pending questions and approvals remain explicit user actions; the requirements card waits for
+  none and changes by message.
   Archive paging keeps the reader's position.
 - The Watch owns cancellation, visibility recovery and signed reconnect cursors. A command
   keeps the Watch open; the next snapshot owns the visible result. An ambiguous ordinary
@@ -302,19 +304,23 @@ snapshot reports:
 
 ### Requirements card
 
-When the agent asks for confirmation, a card shows four parts: the features (R1, R2, ...),
-the connections (existing and new, with their operations), what the user must prepare, and
-how acceptance works. A card with a Flow design is decided on its **Process Brief** on the
-Flow tab, which reads the card and the design together in business words; the card in the
-chat then shows its title, version and summary with **Open the brief**
+The agent shows a requirements card and goes on building it; the Session records it as the
+current version ([session](session.md#requirements-cards)). The card shows four parts: the
+features (R1, R2, ...), the connections (existing and new, with their operations), what the
+user must prepare, and how acceptance works. A card with a Flow design reads as its
+**Process Brief** on the Flow tab, the card and the design together in business words; the
+card in the chat shows its title, version and summary with **Open the brief**
 ([design before implementation](../design-first/studio.md#the-process-brief)).
 
-- **Confirm and build** answers with the user message "Requirements confirmed
-  (version N)".
-- **Request changes** takes the user's text as the answer: the Brief's **Change
-  something…**, or a message sent from the chat's composer while the card waits.
-- The card is a pending action above the composer, like a question. Confirmed requirements
-  can be opened at any time.
+- The Brief's badge reads "Building from this brief · version N". There is no Confirm and no
+  Request changes, and the composer stays enabled.
+- **Change something…** sends the person's text as a chat message and steers it, so the
+  agent applies it at its next safe boundary; any chat message changes the card too, queued
+  while a turn runs. The agent answers with a revised card, version N + 1.
+- In the chat, the card is a work item, "Recorded what to build"; the current
+  requirements can be opened at any time.
+- A card a Session still waits at from before cards stopped waiting shows read only with
+  "Reply in the chat to build or change it"; the reply is an ordinary chat message.
 - From a card with a design until its build is complete, the Flow tab draws the designed Flows
   under a Design label, and shows them by itself once per card version
   ([the Flow tab](../design-first/studio.md#the-flow-tab)).

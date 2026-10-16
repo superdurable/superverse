@@ -100,13 +100,10 @@ test("one release-newsletter prompt produces pushed, valid application source", 
   expect(users[0]?.message?.content === businessPrompt, "The original business prompt must remain unchanged").toBe(
     true,
   );
-  // The only other user messages are the confirmations of the requirements card, which waitForCompletedTurn clicks.
-  for (const answer of users.slice(1))
-    expect(answer.message?.content, "A later user message must confirm a requirements card").toMatch(
-      /^Requirements confirmed \(version \d+\)$/,
-    );
-  // Studio sends the prompt as the Session's first message; nothing else is sent.
-  expect(additionalAgentMessages).toBe(1);
+  // The requirements card does not wait, so the prompt is the only user message.
+  expect(users.length, "The business prompt is the Session's only user message").toBe(1);
+  // CreateProject carried the prompt as the Session's first message, so Studio sends no message at all.
+  expect(additionalAgentMessages).toBe(0);
   expect(session.agent?.description?.model).toBe(agentModelEnum(realModelTarget()));
 
   const commits = messages.filter(

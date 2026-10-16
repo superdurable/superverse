@@ -160,11 +160,11 @@ stage's report. Its result does not echo the arguments: it names the pushed
 for a blocked call, an explicitly unverified checkpoint) and the `tests` of the
 test stage when it ran (passed, failed, the Flows that ran and the `uncovered`
 connectors without mocks). The Session reads `blocked` from the call's own
-arguments. `requirements` traces each confirmed requirement: a feature ID of the
-confirmed version, the files or symbols that implement it, the `tests` that
-prove it and an `untested_reason` when no test can; the form is checked here,
-and the gate's test stage requires every confirmed ID with passing tests or a
-reason.
+arguments. `requirements` traces each requirement of the current version the
+Session recorded: a feature ID of that version, the files or symbols that
+implement it, the `tests` that prove it and an `untested_reason` when no test
+can; the form is checked here, and the gate's test stage requires every ID of
+the version with passing tests or a reason.
 
 ## Skills and module sources
 

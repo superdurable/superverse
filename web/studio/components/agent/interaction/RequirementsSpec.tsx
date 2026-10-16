@@ -35,35 +35,11 @@ function BulletList({ items, empty }: { items: readonly string[]; empty: string 
   );
 }
 
-/**
- * What the card's host adds to its Flow design: what it changes in the current source, the Flow tab whose
- * Process Brief holds the card's decision, and whether the design is still loading there.
- */
-export interface DesignChanges {
-  lines: readonly string[];
-  /** The Flow tab, where the Process Brief draws the design and takes the decision. */
-  href?: string;
-  /** The design is loading, so the Brief opens shortly. */
-  loading?: boolean;
-}
-
-/**
- * The card's Flow design as text: its summary, the change lines its host computes and, behind More details,
- * the outline with one line per Flow in Go names.
- */
-function DesignPart({ design, changes }: { design: NonNullable<Requirements["design"]>; changes?: DesignChanges }) {
+/** The card's Flow design as text: its summary and, behind More details, the outline with one line per Flow in Go names. */
+function DesignPart({ design }: { design: NonNullable<Requirements["design"]> }) {
   return (
     <Part title="Design">
       <p className="wrap-anywhere">{design.summary}</p>
-      {changes && changes.lines.length > 0 && (
-        <ul className="grid gap-1 text-xs" aria-label="What the design changes">
-          {changes.lines.map((line) => (
-            <li className="wrap-anywhere" key={line}>
-              {line}
-            </li>
-          ))}
-        </ul>
-      )}
       <MoreDetails surface="brief.outline" hint="outline">
         <ul className="grid gap-1 font-mono text-xs">
           {design.outline.split("\n").map((line) => (
@@ -81,7 +57,7 @@ function DesignPart({ design, changes }: { design: NonNullable<Requirements["des
  * The parts of a set of requirements: its features, its Flow design when it has one, connections, what the user
  * prepares and acceptance.
  */
-export function RequirementsSpec({ spec, designChanges }: { spec: Requirements; designChanges?: DesignChanges }) {
+export function RequirementsSpec({ spec }: { spec: Requirements }) {
   return (
     <div className="grid gap-3 text-[13px] text-ink-dim">
       <p className="wrap-anywhere">{spec.summary}</p>
@@ -95,7 +71,7 @@ export function RequirementsSpec({ spec, designChanges }: { spec: Requirements; 
           ))}
         </ol>
       </Part>
-      {spec.design && <DesignPart design={spec.design} changes={designChanges} />}
+      {spec.design && <DesignPart design={spec.design} />}
       <Part title="Connections">
         {spec.connections.length === 0 ? (
           <p className="text-ink-faint">No connections to other systems.</p>

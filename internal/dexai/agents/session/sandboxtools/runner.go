@@ -38,9 +38,9 @@ type Call struct {
 	Identity   sandboxd.InvocationIdentity
 	Lease      *workspace.Lease
 	HeadCommit string
-	// Requirements is the Session's confirmed requirements; nil before any
-	// confirmation. commit_and_push checks its trace against it, so the tool
-	// reads no Flow.
+	// Requirements is the Session's current requirements; nil before any
+	// card. commit_and_push checks its trace against it, so the tool reads no
+	// Flow.
 	Requirements *ConfirmedRequirements
 	// Root is the agent root, where commands run: the workspace for the main
 	// agent, its worktree for a subagent.
@@ -63,7 +63,7 @@ type Call struct {
 }
 
 // ConfirmedRequirements is the version and the feature IDs (R1, R2, ...) of
-// the requirements the user confirmed.
+// the current requirements.
 type ConfirmedRequirements struct {
 	Revision int64
 	IDs      []string

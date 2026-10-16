@@ -6,21 +6,22 @@
 #
 # SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-# The user asks for changes to the draft card (input 2), before anything is
-# confirmed: the Agent revises it with a third feature, keeping R1 and R2, and
-# shows it again; the confirmation of the revised card (input 3) is the first
-# version. Nothing is confirmed until then. The script touches no workspace
-# file, so a Session can run it on any READY Project.
+# The user changes the requirements while the Agent works (input 2). The first card is
+# recorded as version 1 and the turn goes on: the Agent waits on a durable timer, which a
+# steered message interrupts. The change revises the card with a third feature, keeping
+# R1 and R2, recorded as version 2. A message sent after the turn ended starts the same
+# revision in the next turn. The script touches no workspace file, so a Session can run it
+# on any READY Project.
 name: requirements-draft-changes
-title: "Requirements draft changed"
-description: "A card, a revised card with a third feature after a request for changes to the draft, then a progress list after the confirmation."
+title: "Requirements changed by a message"
+description: "A card recorded as version 1 while the Agent goes on, then a message that adds a third feature: the revised card is version 2, followed by a progress list."
 category: project_feature
 inputs:
   - label: "Describe the application"
     message: "Plan a release tracker."
     replies:
-      - thinking: "A new application, so the user confirms the requirements before I write any code."
-        text: "Here is what I plan to build. Please confirm it, or tell me what to change."
+      - thinking: "A new application, so I show the requirements before I write any code, then keep building."
+        text: "Here is what I will build. I am starting now; tell me in the chat if anything should change."
         tool_uses:
           - name: confirm_requirements
             input:
@@ -32,10 +33,17 @@ inputs:
               connections: []
               user_setup: []
               acceptance: ["The page shows the releases of the last seven days."]
-  - label: "Ask for changes to the draft"
-    requirements_change: "Let visitors filter the list by repository name."
+      - text: "Preparing the release list; a message from you now revises the requirements first."
+        tool_uses:
+          - name: start_timer
+            input: {duration_seconds: 900, reason: "Prepare the release list."}
+        expect_failure: true
+        expect_failure_text: "Error: superseded_by_steered_user_message"
+      - text: "Nothing changed, so I build version 1."
+  - label: "Change the requirements"
+    message: "Let visitors filter the list by repository name."
     replies:
-      - text: "I added the change you asked for. Please confirm the revised requirements."
+      - text: "I added the change you asked for as the next version."
         tool_uses:
           - name: confirm_requirements
             input:
@@ -48,13 +56,10 @@ inputs:
               connections: []
               user_setup: []
               acceptance: ["The page shows the releases of the last seven days.", "Typing a repository name narrows the list."]
-  - label: "Confirm the revised requirements"
-    requirements_confirm: true
-    replies:
       - tool_uses:
           - name: write_todos
             input:
               todos:
                 - {content: "Build the release list", status: in_progress}
                 - {content: "Add the repository filter", status: pending}
-      - text: "The revised requirements are confirmed, and I will build exactly these features."
+      - text: "The revised requirements are recorded as version 2, and I will build exactly these features."

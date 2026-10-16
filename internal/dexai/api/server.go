@@ -85,7 +85,7 @@ func NewGRPCServer(s *Server) *grpc.Server {
 	tenancy.Register(server, b, s.TeamSpaces, s.TeamSpaceReads, s.Members, s.Connections)
 	pb.RegisterProjectServiceServer(server, &projectServer{Boundary: b, projectIDLength: s.ProjectIDLength,
 		projects: s.Projects, members: s.Members, teamSpaces: s.TeamSpaces, setups: s.Setups, configuration: s.Configuration,
-		deployments: s.Deployments, sessions: s.Sessions, recentEvents: s.RecentEvents})
+		deployments: s.Deployments, sessions: s.Sessions, recentEvents: s.RecentEvents, models: s.SessionModels})
 	pb.RegisterProjectMemberServiceServer(server, &projectMemberServer{Boundary: b, projects: s.Projects, members: s.Members})
 	pb.RegisterSessionServiceServer(server, &sessionServer{Boundary: b, sessions: s.Sessions, sessionAgents: s.SessionAgents, subagents: s.Subagents})
 	pb.RegisterAgentServiceServer(server, &agentServer{Boundary: b, sessions: s.Sessions, sessionAgents: s.SessionAgents, models: s.SessionModels})

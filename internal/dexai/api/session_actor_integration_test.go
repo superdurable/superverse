@@ -358,8 +358,9 @@ func TestSessionActorsDexIntegration(t *testing.T) {
 	if err != nil && status.Code(err) != codes.FailedPrecondition {
 		t.Fatal(err)
 	}
+	// The steered message's turn records the card as version 1 and goes on to its end.
 	snapshot = s.await(ctx, "requirements after steering", func(v agentloop.AgentSnapshot) bool {
-		return v.Description.PendingUserInput != nil && v.Description.PendingUserInput.Kind == agentloop.PendingUserInputKindRequirements
+		return v.Description.ConfirmedRequirements != nil && v.Description.Status == agentloop.AgentStatusWaitingForMessage
 	})
 	stopped := false
 	var consumedSequence conversation.Sequence
@@ -392,38 +393,17 @@ func TestSessionActorsDexIntegration(t *testing.T) {
 	if !publicConsumed {
 		t.Fatal("consumed steering attribution missing from public history")
 	}
-	card := snapshot.Description.PendingUserInput
-	if _, err = s.agent.SendMessage(ctx, &pb.SendMessageRequest{ProjectId: project, MessageId: flowid.RandomID(24), Text: "Refused while pending", Caller: s.second}); status.Code(err) != codes.FailedPrecondition {
-		t.Fatalf("pending input admission: %v", err)
-	}
-	confirm := func(caller *pb.CallerContext) error {
-		_, err := s.agent.AnswerQuestions(ctx, &pb.AnswerQuestionsRequest{ProjectId: project, Caller: caller, Input: &pb.AgentAnswerQuestionsInput{CallId: string(card.CallID), Requirements: &pb.AgentRequirementsDecision{IsConfirmed: true}}})
-		return err
-	}
-	if err = confirm(s.second); err != nil {
-		t.Fatal(err)
-	}
-	if err = confirm(s.first); status.Code(err) != codes.FailedPrecondition {
-		t.Fatalf("second answer admitted: %v", err)
-	}
-	snapshot = s.await(ctx, "confirmed actor", func(v agentloop.AgentSnapshot) bool {
-		return v.Description.ConfirmedRequirements != nil && v.Description.Status == agentloop.AgentStatusWaitingForMessage
-	})
-	requireActor(t, snapshot.Description.ConfirmedRequirements.ConfirmedBy, s.second)
-	answered := false
-	for _, m := range snapshot.History.Messages {
-		if m.Message.AnsweredInputCallID != nil && *m.Message.AnsweredInputCallID == card.CallID {
-			requireActor(t, m.Message.Actor, s.second)
-			answered = true
-		}
-	}
-	if !answered {
-		t.Fatal("answer actor absent from history")
+	// A recorded card has no confirmer and waits for no one.
+	if recorded := snapshot.Description.ConfirmedRequirements; recorded.Revision != 1 || recorded.ConfirmedBy != nil || snapshot.Description.PendingUserInput != nil {
+		t.Fatalf("the card is not a recorded version 1 without a confirmer: %+v", recorded)
 	}
 	s.send(ctx, s.first, mockInput(t, "question-answers", 1).Content)
 	snapshot = s.await(ctx, "collaborator questions", func(v agentloop.AgentSnapshot) bool {
 		return v.Description.PendingUserInput != nil && v.Description.PendingUserInput.Kind == ""
 	})
+	if _, err = s.agent.SendMessage(ctx, &pb.SendMessageRequest{ProjectId: project, MessageId: flowid.RandomID(24), Text: "Refused while pending", Caller: s.second}); status.Code(err) != codes.FailedPrecondition {
+		t.Fatalf("pending input admission: %v", err)
+	}
 	questions := snapshot.Description.PendingUserInput
 	answers := mockInput(t, "question-answers", 2).Answers
 	questionAnswer := &pb.AgentAnswerQuestionsInput{CallId: string(questions.CallID)}
@@ -439,7 +419,7 @@ func TestSessionActorsDexIntegration(t *testing.T) {
 	snapshot = s.await(ctx, "question answer history", func(v agentloop.AgentSnapshot) bool {
 		return v.Description.Status == agentloop.AgentStatusWaitingForMessage && v.Description.PendingUserInput == nil
 	})
-	answered = false
+	answered := false
 	for _, m := range snapshot.History.Messages {
 		if m.Message.AnsweredInputCallID != nil && *m.Message.AnsweredInputCallID == questions.CallID {
 			requireActor(t, m.Message.Actor, s.second)
@@ -469,8 +449,10 @@ func TestSessionActorsDexIntegration(t *testing.T) {
 	mapped := s.public(ctx)
 	requirePublicActor(t, mapped.GetDescription().GetModelChangedBy(), s.first)
 	requirePublicActor(t, mapped.GetDescription().GetPreviewAutoDeployChangedBy(), s.second)
-	requirePublicActor(t, mapped.GetDescription().GetConfirmedRequirements().GetConfirmedBy(), s.second)
-	if mapped.GetDescription().GetModelChangedBy().GetAccountId() != s.first.GetAccountId() || mapped.GetDescription().GetConfirmedRequirements().GetConfirmedBy().GetAccountId() != s.second.GetAccountId() {
+	if mapped.GetDescription().GetConfirmedRequirements().GetConfirmedBy() != nil {
+		t.Fatal("the response mapper invented a confirmer of a recorded version")
+	}
+	if mapped.GetDescription().GetModelChangedBy().GetAccountId() != s.first.GetAccountId() {
 		t.Fatal("response mapper dropped actor")
 	}
 	// New turns move the same immutable actors through the archive boundary.

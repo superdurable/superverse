@@ -42,6 +42,7 @@ import { mockEnvironmentEvents } from "@/mock/store/delivery/environment-events"
 import { advanceMockPublishes } from "@/mock/store/delivery/publish-runs";
 import { readableTeamSpace, mockTenancy } from "@/mock/store/tenancy/team-spaces";
 import { withCallerRole } from "@/mock/store/tenancy/tenancy-snapshots";
+import { startMockSession } from "./agent-service";
 import type { MockService } from "./mock-backend";
 import { watchSnapshots } from "./store-watch";
 
@@ -78,14 +79,21 @@ function configuration(store: MockStore, target: ProjectConfigurationTarget__Out
 }
 
 export const projectService: MockService<"ProjectService"> = {
-  CreateProject: ({ requestId, name, managedRepository, teamSpaceId, caller }, { store }) => {
+  // Like Go, the first message comes with its message ID, and the new Session starts with it and the model.
+  CreateProject: (
+    { requestId, name, managedRepository, teamSpaceId, initialMessage, messageId, model, caller },
+    { store },
+  ) => {
     if (!managedRepository) throw httpError(400, "managed_repository is required");
+    if (Boolean(initialMessage.trim()) !== Boolean(messageId))
+      throw httpError(400, "initial_message and message_id are set together");
     const account = mockAccount(caller);
     const tenancy = mockTenancy(store, account);
     admitMockProject(tenancy, account, teamSpaceId);
-    const projectId = createProject(store, name, requestId || null).project.id;
-    registerMockProject(tenancy, account, teamSpaceId, projectId);
-    return { projectId };
+    const { project: created, replayed } = createProject(store, name, requestId || null);
+    registerMockProject(tenancy, account, teamSpaceId, created.id);
+    if (!replayed) startMockSession(store, created.id, model, initialMessage);
+    return { projectId: created.id };
   },
   // Every Project of the Teamspace, with the caller's role in each.
   ListProjects: ({ statuses, teamSpaceId, caller }, { store }) => {

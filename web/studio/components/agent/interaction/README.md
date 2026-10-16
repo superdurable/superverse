@@ -1,7 +1,7 @@
 # Agent interaction
 
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
-Purpose: What the Agent asks of and shows the reader: question batches, the requirements card and confirmed requirements, queued messages, todo progress, timers and background tasks.
+Purpose: What the Agent asks of and shows the reader: question batches, an old waiting requirements card, the current requirements, queued messages, todo progress, timers and background tasks.
 
 Importers: `components/agent` imports this directory.
 

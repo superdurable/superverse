@@ -10,11 +10,11 @@
 # connector meets: it searches the published catalog, which the Sandbox fetches
 # for real, finds the llm connector with its generateText operation and reports
 # in the fixed structure. Its task notification opens an automatic turn that
-# puts the choice on the requirements card as an existing connection, and the
-# user confirms the card. Nothing in the workspace changes.
+# puts the choice on the requirements card as an existing connection, which the
+# Session records as version 1. Nothing in the workspace changes.
 name: connector-select-existing
 title: "Connector selection: an existing connector"
-description: "A connector_select subagent finds the released llm connector; its report becomes the requirements card's connection, which the user confirms."
+description: "A connector_select subagent finds the released llm connector; its report becomes the requirements card's connection."
 category: project_feature
 arguments: {task: agent-aaaaaaaa}
 inputs:
@@ -31,7 +31,7 @@ inputs:
         expect_result_contains:
           - "\"task_id\":\"agent-"
       - text: "A subagent chooses the connector; I will show you the requirements when it reports."
-      - text: "The released llm connector meets the need. Please confirm what I will build."
+      - text: "The released llm connector meets the need. Here is what I will build; tell me in the chat if anything should change."
         notification: task
         tool_uses:
           - name: confirm_requirements
@@ -48,10 +48,7 @@ inputs:
                   user_setup: "Configure the model provider's API key in Studio."
               user_setup: ["Configure the llm connection in Studio."]
               acceptance: ["A pasted paragraph returns a shorter summary."]
-  - label: "Confirm the requirements"
-    requirements_confirm: true
-    replies:
-      - text: "The requirements are confirmed; the summaries use the released llm connector."
+      - text: "The requirements are recorded; the summaries use the released llm connector."
 subagents:
   select:
     kind: connector_select

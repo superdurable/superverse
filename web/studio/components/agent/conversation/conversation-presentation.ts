@@ -72,14 +72,10 @@ export type ConversationWorkItem =
   | { kind: "model"; key: string; item: ConversationModelWorkItem }
   | { kind: "tool"; key: string; group: ConversationToolGroup };
 
-/**
- * A request_user_input or confirm_requirements call of the history: its first question or the card's
- * title (the call's target) and how it ended.
- */
+/** A request_user_input call of the history: its first question (the call's target) and how it ended. */
 export interface ConversationQuestionItem {
   key: string;
   callId: string;
-  isRequirements: boolean;
   target: string;
   status: "pending" | "answered" | "cancelled" | "failed";
 }

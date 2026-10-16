@@ -42,31 +42,26 @@ import {
 import { SessionModelMenu } from "./SessionModelPicker";
 import { LiveNote, SeeOnPreview, useLiveChange, type LiveViewing } from "./LiveNote";
 import { StartupStatus } from "./start/StartupSteps";
-import { useCreationIntent } from "./start/use-creation-intent";
 import { useChatSend } from "./start/use-chat-send";
-import { useComposerText, useDraftFocus } from "./start/use-first-turn-composer";
-import { useStartingModel } from "./start/use-starting-model";
+import { useComposerText } from "./start/use-first-turn-composer";
 import { RemoteAgentOfflineNotice } from "./executor/SessionExecutorStatus";
 
-const SENDING_FIRST_MESSAGE = "Sending your description…";
+const FIRST_MESSAGE_WAITS = "Your description waits for the agent…";
 
 /**
  * The Project's Session chat: its conversation, todo progress and queued messages, the pending
- * action dock and the composer. The Project's creation intent, the model and first message the
- * person chose on the creation page, is delivered as the Session's first turn; when that fails,
- * the composer holds the message as a draft for the person to send. While a requirements card
- * waits, a message answers it with the changes the person asks for. The model sits in the ⋯ menu
- * on the composer's row. While the person views Live
+ * action dock and the composer. The Session starts with the first message and model the person
+ * chose on the creation page, which CreateProject carried; until the agent takes that message the
+ * composers wait. A message is how the person changes what the agent builds; a requirements card a
+ * Session still waits at from before cards stopped waiting takes it as its reply. The model sits in
+ * the ⋯ menu on the composer's row. While the person views Live
  * the chat stays live, and a note above the composer says that what they ask for is built on
  * Preview; once the agent made a change they asked for there, it offers See it on Preview.
  */
 export function SessionChat({ live }: { live?: LiveViewing }) {
   const state = useProjectSession();
   const mockScenarios = useMockScenarios();
-  const creation = useCreationIntent(useStartingModel(mockScenarios));
-  // The creation draft is the first message that could not be delivered.
-  const failedDraft = creation.failed ? creation.pending : null;
-  const [composerText, setComposerText] = useComposerText(state.projectId, failedDraft?.initialMessage ?? "");
+  const [composerText, setComposerText] = useComposerText(state.projectId);
   // A Step, run or item another surface asks about arrives once, as the chip and optional text.
   const { about, clearAbout, focusKey, draft } = useComposerProposal(setComposerText);
   const liveChange = useLiveChange(
@@ -75,8 +70,8 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
     state.snapshot?.description?.status === AgentStatus.WAITING_FOR_MESSAGE,
   );
   const markSent = liveChange.markSent;
-  const creationSend = creation.send;
-  const send = useChatSend({ send: creationSend, about, clearAbout, markSent });
+  const sendMessage = state.send;
+  const send = useChatSend({ send: sendMessage, about, clearAbout, markSent });
   const template = useTemplateCommit();
   const shownMessages = useMemo(() => shownChatMessages(state.messages, template), [state.messages, template]);
   const scroller = useRef<HTMLDivElement | null>(null);
@@ -151,7 +146,7 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
   const stopCommand = state.stop;
   const stop = useCallback(() => stopCommand().catch(() => undefined), [stopCommand]);
   const answerAwaitingReconciliation = pendingInput !== null && state.answeredQuestionCallId === pendingInput.callId;
-  // A waiting requirements card takes the person's message as their reply; questions are answered first.
+  // An old waiting requirements card takes the person's message as its reply; questions are answered first.
   const blockedByPending =
     pendingInput !== null && (pendingInput.kind !== "requirements" || answerAwaitingReconciliation);
   const submittingQuestionAnswers = pendingInput !== null && state.answeringQuestionCallId === pendingInput.callId;
@@ -184,8 +179,11 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
     sessionStatus,
     viewingLive: live !== undefined,
   });
-  // While the creation intent's first message is on its way, the composers wait for it.
-  const sendingFirstMessage = creation.pending !== null && !creation.failed ? SENDING_FIRST_MESSAGE : null;
+  // Until the agent takes the first message, which the Session started with, the composers wait for it.
+  const firstMessageWaits =
+    description !== null && description.lastSequence === 0 && (state.snapshot?.queued.length ?? 0) > 0
+      ? FIRST_MESSAGE_WAITS
+      : null;
   const disabledReason =
     composerDisabledReason({
       productInteractive,
@@ -194,8 +192,7 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
       snapshotCurrent: state.snapshotCurrent,
       blockedByPending,
       placeholder,
-    }) ?? sendingFirstMessage;
-  const composerInput = useDraftFocus(failedDraft?.idempotencyKey ?? null, disabledReason);
+    }) ?? firstMessageWaits;
   // A Session on the mock model takes its scenarios' inputs, answers included, from the mock composer.
   const runsMock = !remotelyExecuted && description?.model === "mock";
   const modelMenu = description && !remotelyExecuted && (
@@ -217,7 +214,7 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
         snapshotCurrent: state.snapshotCurrent,
         blockedByPending: false,
         placeholder,
-      }) ?? sendingFirstMessage);
+      }) ?? firstMessageWaits);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -317,18 +314,13 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
             )}
             {state.error && <p className="text-[12px] text-fail">{state.error}</p>}
             {state.commandError && <p className="text-[12px] text-fail">{state.commandError}</p>}
-            {creation.failed && (
-              <div className="rounded border border-line-soft bg-panel p-3 text-[12px] text-ink-dim" role="alert">
-                Your description was not sent. It waits in the composer: check the model in the ⋯ menu, then send it.
-              </div>
-            )}
           </div>
         </div>
 
         <PendingActionDock
           approval={pendingApproval}
           input={pendingInput}
-          confirmedRevision={description?.confirmedRequirements?.revision ?? 0}
+          currentRevision={description?.confirmedRequirements?.revision ?? 0}
           disabled={state.mutating || agentInteractionDisabled}
           approving={state.mutationKind === "approval"}
           answering={submittingQuestionAnswers}
@@ -339,7 +331,6 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
               : undefined
           }
           onApprove={(callId, approved) => void state.approveTool(callId, approved).catch(() => undefined)}
-          onDecide={(callId, decision) => void state.decideRequirements(callId, decision).catch(() => undefined)}
           onAnswer={(callId, answers) => void state.answerQuestions(callId, answers).catch(() => undefined)}
         />
 
@@ -351,17 +342,20 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
             catalog={mockScenarios}
             progress={description?.mockProgress ?? null}
             turnRunning={description !== null && description.status !== AgentStatus.WAITING_FOR_MESSAGE}
+            timerWait={description?.status === "waiting_for_timer"}
             tasksRunning={description !== null && hasRunningTasks(description)}
             lastSequence={description?.lastSequence ?? 0}
             pendingInput={pendingInput}
             busy={state.mutating}
             disabledReason={mockDisabledReason}
-            initial={creation.pending?.mock ?? null}
             onSend={(text) => {
               markSent();
-              return creationSend(text);
+              return sendMessage(text);
             }}
-            onDecide={state.decideRequirements}
+            onSteer={(text) => {
+              markSent();
+              return state.change(text, true);
+            }}
             onAnswer={state.answerQuestions}
             onStop={canStop ? stop : undefined}
             stopDisabled={state.mutating || !state.snapshotCurrent}
@@ -371,7 +365,6 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
         ) : (
           <Composer
             onSend={send}
-            inputRef={composerInput}
             about={about}
             onClearAbout={clearAbout}
             focusKey={focusKey + (draft?.focusRequests ?? 0)}

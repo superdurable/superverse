@@ -13,7 +13,7 @@ import { useEffect, useRef, useState } from "react";
 import { newRequestId } from "@/lib/api/transport/api-error";
 import { hasPendingProjectCreation, storePendingProjectCreation } from "@/lib/project/project-intents";
 import type { AgentModel } from "@/lib/session/agent-types";
-import { useMockScenarios, type MockInputChoice } from "@/lib/session/mock-scenarios";
+import { useMockScenarios } from "@/lib/session/mock-scenarios";
 import { studioRoutes } from "@/lib/shared/studio-routes";
 import { Composer } from "@/components/session/composer/Composer";
 import { MockComposer } from "@/components/session/mock/MockComposer";
@@ -42,8 +42,8 @@ const READING_MODELS = "Reading the model options…";
  * from the description; Advanced holds the name to change it and the model of the Session, preselected
  * on the model a new Session starts on: Sonnet, or the mock model for the platform administrator where
  * the server offers it. On the mock model the composer takes the first input of a scenario in place of
- * free text. Nothing is sent here: the choice is stored with the creation, and Build applies the model
- * and sends the message once the Session starts.
+ * free text. Nothing is sent here: the choice is stored with the creation, whose request carries the
+ * message and the model to the server, which starts the Session with them.
  */
 export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
   const router = useRouter();
@@ -76,7 +76,7 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
   }
 
   // Rejects when the creation cannot start, so that the composer keeps what the person wrote.
-  async function beginCreation(prompt: string, mock: MockInputChoice | null = null) {
+  async function beginCreation(prompt: string) {
     const projectName = editedName === null ? derivedName(prompt) : editedName.trim();
     if (model === null) throw new Error(READING_MODELS);
     if (!projectName) {
@@ -89,7 +89,6 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
         name: projectName,
         prompt,
         model,
-        mock,
         idempotencyKey: newRequestId(),
         messageIdempotencyKey: newRequestId(),
       });
@@ -124,7 +123,6 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
               sendLabel="Build"
               className="rounded-xl"
               onSend={beginCreation}
-              onDecide={noPendingInput}
               onAnswer={noPendingInput}
             />
           ) : (

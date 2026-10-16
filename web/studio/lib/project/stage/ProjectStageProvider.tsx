@@ -50,7 +50,7 @@ export interface ProjectStageState {
   hasOwnProcesses: boolean;
   /** A published version runs on Live. */
   hasPublished: boolean;
-  /** The Session's requirements card waits or was confirmed, which carries the Flow design. */
+  /** The agent recorded a version of what it builds, which carries the Flow design. */
   hasRequirements: boolean;
   /** The Preview serves, or served before it stopped, a page of the agent's own push. */
   previewServed: boolean;
@@ -75,9 +75,7 @@ function stageFacts(project: ProjectSnapshot__Output | null, session: SessionSna
       (prepared?.status === "PREVIEW_SOURCE_STATUS_READY" && own(prepared.sourceCommit)) ||
       own(preview?.sourceCommit),
     previewServed: own(preview?.sourceCommit),
-    hasRequirements:
-      description?.pendingUserInput?.kind === "KIND_REQUIREMENTS" ||
-      Number(description?.confirmedRequirements?.revision ?? 0) > 0,
+    hasRequirements: Number(description?.confirmedRequirements?.revision ?? 0) > 0,
   };
 }
 
@@ -107,7 +105,7 @@ const ProjectStageContext = createContext<ProjectStageState | null>(null);
 /**
  * The stage of the Builder's Project, from its snapshot and its Session's (`session`, null while the Project
  * has none). A Project created in this browser starts in its first conversation and switches once, never
- * back: when the Session's first requirements card waits or is confirmed, or when processes are built from
+ * back: when the agent records the Session's first requirements card, or when processes are built from
  * the agent's own push. Built stays built in this browser once seen, so a rebuild of a newer push never
  * hides what was there.
  */

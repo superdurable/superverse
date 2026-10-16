@@ -8,6 +8,7 @@
 
 // Development-only Agent commands and typed connection-dialog fixtures; never acceptance evidence.
 import { randomBytes } from "node:crypto";
+import type { AgentModel__Output } from "@/lib/generated/protobuf/superverse/v2/AgentModel";
 import type { CallerContext__Output } from "@/lib/generated/protobuf/superverse/v2/CallerContext";
 import type { RemoteAgentConnection } from "@/lib/generated/protobuf/superverse/v2/RemoteAgentConnection";
 import { rpcFailure } from "@/lib/server/grpc-client";
@@ -20,7 +21,7 @@ import { MOCK_FLOW_DESIGN } from "@/mock/fixture/agent-requests";
 import { answerQuestions, approveTool, sendMessage } from "@/mock/store/agent-scripts";
 import { deleteQueuedMessage, steerQueuedMessage } from "@/mock/store/agent-state";
 import { sendDeliveryScript } from "@/mock/store/delivery/delivery-scripts";
-import { advanceMockProgress, MOCK_SCENARIOS, SCENARIO_MARKERS } from "@/mock/store/scenarios/catalog";
+import { advanceMockProgress, MOCK_SCENARIOS } from "@/mock/store/scenarios/catalog";
 import type { MockStore } from "@/mock/store/store";
 import { requireMockProjectRole } from "@/mock/store/tenancy/project-members";
 import { mockTenancy } from "@/mock/store/tenancy/team-spaces";
@@ -48,6 +49,24 @@ function reportProgress(store: MockStore, projectId: string, text: string | null
   return true;
 }
 
+/** One user message as the mock Agent takes it: a task or delivery script, else a phrase or an ordinary turn. */
+function deliverMessage(store: MockStore, projectId: string, text: string): boolean {
+  return (
+    (sendTaskScript(store, projectId, text) ??
+      sendDeliveryScript(store, projectId, text) ??
+      sendMessage(store, projectId, text)) &&
+    reportProgress(store, projectId, text)
+  );
+}
+
+/** Like Go, the Session a creation starts runs on its model, when it names one, and takes its first message once. */
+export function startMockSession(store: MockStore, projectId: string, model: AgentModel__Output, text: string) {
+  const description = store.agents.get(projectId)?.description;
+  if (!description) return;
+  if (model !== "AGENT_MODEL_UNSPECIFIED") description.model = model;
+  if (text) deliverMessage(store, projectId, text);
+}
+
 function required(value: string | undefined, name: string): string {
   if (!value) throw notAdmitted(400, `${name} is required`);
   return value;
@@ -57,33 +76,17 @@ export const agentService: MockService<"AgentService"> = {
   SendMessage: (request, { store }) => {
     required(request.messageId, "messageId");
     const text = required(request.text, "text");
-    return command(
+    return command(store, request, () => deliverMessage(store, request.projectId, text));
+  },
+  // Answers are the scenario's next input, which carries no marker.
+  AnswerQuestions: (request, { store }) =>
+    command(
       store,
       request,
       () =>
-        (sendTaskScript(store, request.projectId, text) ??
-          sendDeliveryScript(store, request.projectId, text) ??
-          sendMessage(store, request.projectId, text)) &&
-        reportProgress(store, request.projectId, text),
-    );
-  },
-  AnswerQuestions: (request, { store }) => {
-    // A mock composer's request for changes carries its scenario marker, which the revised card leaves out.
-    const requirements = request.input?.requirements;
-    const decision = requirements && {
-      ...requirements,
-      requestedChanges: requirements.requestedChanges.replace(SCENARIO_MARKERS, ""),
-    };
-    // A request for changes carries its marker; any other answer is the scenario's next input.
-    const marked = requirements?.isConfirmed === false ? requirements.requestedChanges : null;
-    return command(
-      store,
-      request,
-      () =>
-        answerQuestions(store, request.projectId, request.input?.callId ?? "", decision ?? undefined) &&
-        reportProgress(store, request.projectId, marked),
-    );
-  },
+        answerQuestions(store, request.projectId, request.input?.callId ?? "") &&
+        reportProgress(store, request.projectId, null),
+    ),
   UpdateSessionModel: (request, { store }) => {
     const { model, expectedRevision } = request;
     if (model === "AGENT_MODEL_UNSPECIFIED" || expectedRevision === undefined)
@@ -121,9 +124,7 @@ export const agentService: MockService<"AgentService"> = {
     projectSession(store, request.projectId);
     const description = store.agents.get(request.projectId)?.description;
     const reference =
-      request.slot === "AGENT_FLOW_DESIGN_SLOT_PENDING"
-        ? description?.pendingUserInput?.requirements?.design
-        : description?.confirmedRequirements?.spec?.design;
+      request.slot === "AGENT_FLOW_DESIGN_SLOT_CONFIRMED" ? description?.confirmedRequirements?.spec?.design : null;
     if (!reference) throw httpError(404, "the Session holds no flow design in this slot");
     if (reference.digest !== request.digest)
       throw rpcFailure(409, "the Session's flow design changed", REVISION_CHANGED);

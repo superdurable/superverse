@@ -48,8 +48,8 @@ test("new account signs in, builds a template project, previews it and deploys L
   const marker = `V2 journey ${randomBytes(3).toString("hex")}`;
   // The creation page takes the first message: the heading change as a prompt, or on the mock model
   // input 1 of the build-basic scenario with the marker as its heading, as SUPERVERSE_E2E_MODEL_TARGET
-  // or the lane decides. Build sends it once the Session starts, and that first turn provisions the
-  // Session's Sandbox on demand.
+  // or the lane decides. CreateProject carries it, the Session starts with it, and that first turn
+  // provisions the Session's Sandbox on demand.
   const mock = await choosesMockModel(page);
   const created = await createProject(
     page,

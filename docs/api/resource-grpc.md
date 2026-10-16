@@ -97,7 +97,7 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 
 | RPC | Request | Response |
 | --- | --- | --- |
-| CreateProject | `request_id 2, name 3, ManagedRepositorySource managed_repository 6, team_space_id 8` | `project_id 1` |
+| CreateProject | `request_id 2, name 3, ManagedRepositorySource managed_repository 6, team_space_id 8, initial_message 9, AgentModel model 10, message_id 11` | `project_id 1` |
 | ListProjects | `int32 page_size 1, page_token 2, repeated ProjectStatus statuses 3, team_space_id 4` | `repeated ProjectSnapshot projects 1, next_page_token 2` |
 | GetProject | `project_id 1` | `ProjectSnapshot project 1` |
 | DeleteProject | `project_id 1, request_id 2, uint64 expected_revision 3` | `ProjectSnapshot project 1` |
@@ -513,9 +513,9 @@ its caller. `lib/shared/rpc-methods.ts` types both from the generated definition
 and Long, exactly what the decoder accepts, and `RpcOutput<M>` is the generated
 `<Rpc>Response__Output`. One module per browser service names its functions after the RPCs
 and keeps that service's rules, and the page sends the values the BFF used to default: a
-new `crypto.randomUUID()` SendMessage `message_id` for every send (the creation intent sends
-its stored key), RemoveLive's `live.deploymentId` and `live.revision`, and the CreateProject
-source.
+new `crypto.randomUUID()` SendMessage `message_id` for every send, RemoveLive's
+`live.deploymentId` and `live.revision`, and the CreateProject source with the first message's
+`message_id`, created once per creation and kept across its retries.
 
 ### `/api/auth`
 
@@ -615,9 +615,16 @@ Project and Setup IDs and the template revision are server-owned. CreateProject
 requires the request ID, name and `ManagedRepositorySource managed_repository = 6`.
 Setup creates a new private managed repository from the embedded template. A missing
 managed_repository is InvalidArgument before any Flow start or provider effect. There
-is no repository source choice or repository import API. The CREATE request fingerprint
-keeps its canonical encoding independently of the durable binding shape; it excludes
-provider results, credentials and the server-selected template revision.
+is no repository source choice or repository import API. CreateProject may also carry the
+Session's first message: `initial_message`, its `message_id` and the `model` the Session starts
+on. The message and its ID are validated as SendMessage validates them, and a `message_id`
+without a message, or a message without one, is InvalidArgument; the model is admitted as
+UpdateSessionModel admits it ([the table below](#session-model-update)), with the same refusals,
+before any Flow start. An unspecified model starts the Session on the server's default. The CREATE
+request fingerprint keeps its canonical encoding independently of the durable binding shape; it
+includes the message, its ID and the model, so a retry with the same `request_id` and any of them
+changed is ALREADY_EXISTS like a changed name; it excludes provider results, credentials and the
+server-selected template revision.
 CreateProject returns only project_id. GetProject and WatchProject return the current
 state, repository and accepted template revision. There is no GetApplicationInfo or
 browser configuration-discovery round trip.
@@ -641,6 +648,16 @@ typed FlowNotFound proves PENDING. Other failures stay errors. PENDING contribut
 nonexistent Setup Stream source. Each fresh snapshot rechecks Setup, adding its source and
 realigning readers once it exists. No initial CREATING state is returned as a fabricated
 current snapshot.
+
+The first message travels with the Project, not with the browser. ProjectFlow holds it in the
+Attribute `InitialSessionRequest` (`{MessageID, Text, Model}` with the creator as the author),
+installed at its start, bounded by the message limit and never synced to the read model, so the
+prompt never reaches SQL. When the Project becomes READY, `StartProjectSession` passes it to the
+Session's start and clears it in the commit of the start that succeeded. The Session starts on
+that model and its start Step queues the message once
+([session](../architecture/agent-harness-design/session.md#one-session-per-project)). A Project
+created without a message, or whose ProjectFlow started before this field existed, starts its
+Session without one.
 
 ### Initial template Design source
 
@@ -774,12 +791,12 @@ SessionService, AgentService and PreviewService address it by `project_id`. No R
 lists or stops a Session: GetSession of a Project that is not READY yet, or whose Session is
 still starting, answers NOT_FOUND, and Studio repeats that read for at most 30 seconds once
 the Project is READY. The Session starts with the default profile on the Project's AppManifest
-commit and without a message. The person chooses the model and the first message on the
-creation page, which preselects Sonnet, or the mock model for the platform administrator
-where `ListMockScenarios` offers it; once the Session starts, Studio applies the chosen model with
-UpdateSessionModel (at the snapshot's `model_revision`, free before the first message) when
-it differs from the Session's, then sends the stored creation intent as the first
-SendMessage, with the intent's key as the message ID. A new SessionSnapshot has no
+commit, on the model CreateProject named (the server's default when it named none), and with
+CreateProject's first message, if any, queued once by its start Step
+([durable creation](#durable-creation)). The person chooses the model and the first message on
+the creation page, which preselects Sonnet, or the mock model for the platform administrator
+where `ListMockScenarios` offers it, and CreateProject carries both, so the Session starts
+working without an open browser. A new SessionSnapshot has no
 `workspace`. The Session requests its workspace on first demand: its first model turn
 (repository context for the prompt), a tool dispatch that needs the workspace, an accepted
 StartPreview or PreparePreviewSource. A Preview configuration read reads stored state alone
@@ -862,9 +879,9 @@ closes only through its Project's deletion. A Sandbox instance whose engine exec
 ## Agent commands
 
 AgentService holds the seven commands to the Session Agent, `ListMockScenarios` and
-`GetFlowDesign`. `GetFlowDesign` reads the body of the Flow design of the waiting card (slot
-`PENDING`) or of the confirmed requirements (slot `CONFIRMED`) at the digest of the reference
-that `AgentRequirements.design` carries; a slot without a design is NOT_FOUND and another digest
+`GetFlowDesign`. `GetFlowDesign` reads the body of the Flow design of the current requirements
+(slot `CONFIRMED`, the only slot) at the digest of the reference that `AgentRequirements.design`
+carries; a slot without a design is NOT_FOUND and another digest
 is ABORTED with `REVISION_CHANGED` ([flow design](../architecture/design-first/flow-design.md#api)).
 Every command request starts with `project_id`, and every command response is empty:
 success confirms actual command admission, with no post-admission GetSession round trip, and the Session Watch owns the
@@ -872,7 +889,10 @@ state that follows. Studio keeps its Watch during a command and corrects accepte
 through canonical snapshots. An uncertain transport response stays an explicit command
 warning across reads, with no automatic retry of ordinary user messages. A deliberate retry
 is a new send with a new `message_id`: the Agent does not deduplicate SendMessage by
-`message_id`, so retrying a send that was in fact admitted queues a second message.
+`message_id`, so retrying a send that was in fact admitted queues a second message. SendMessage
+to a Session that still waits at a requirements card from before cards stopped waiting
+(`AgentPendingUserInput.KIND_REQUIREMENTS`) records that card as the next version of the
+requirements and answers it with the message, which is then not queued.
 
 Command rejection has two allowlisted ErrorInfo reasons in the `superverse.v2` domain, whose
 only metadata is the declared `remedy`. `AGENT_COMMAND_NOT_DISPATCHED` is emitted by the BFF only before a matched
@@ -885,8 +905,11 @@ stopped carries `SESSION_EXECUTION_FAILED`, `_CANCELED` or `_TERMINATED` instead
 displays all of them as rejection, not uncertain execution. Other errors stay uncertain; HTTP status classes, exception text and later
 snapshots do not prove command admission.
 
-AnswerQuestions answers a question batch with one answer per question, or a requirements
-card with an `AgentRequirementsDecision` and no answers. ResolveToolApproval approves or denies the pending call with an explicit
+AnswerQuestions answers a question batch with one answer per question; it refuses an old waiting
+requirements card, which only SendMessage answers. A requirements card does not wait for a command:
+the Session records each card as the next version of `confirmed_requirements` while the agent goes
+on, and a person changes it with SendMessage, which Studio may follow with SteerQueuedMessage of
+the same `message_id` to apply it at the agent's next safe boundary. ResolveToolApproval approves or denies the pending call with an explicit
 `is_approved`. A failed tool call never waits for a user decision: its result returns to
 the model.
 
@@ -981,15 +1004,14 @@ compiled into the server in name order: each `AgentMockScenario` has its `name`,
 `description`, its `category` (`CATEGORY_PRODUCT`, `CATEGORY_AGENT_FEATURE`,
 `CATEGORY_PROJECT_FEATURE`, `CATEGORY_PLATFORM_ERROR`, `CATEGORY_USER_ERROR` or
 `CATEGORY_AGENT_ERROR`, which Studio groups the scenarios by), `needs_new_project` (the scenario
-edits, merges a subagent's changes, pushes or confirms requirements, so Studio starts it only in a
+edits, merges a subagent's changes, pushes or records a requirements card, so Studio starts it only in a
 new Project), `test_action` (what only its Dex test does between its inputs; Studio does not
 offer such a scenario), the `arguments` a person may set with their `default_value`, and its `inputs` in
 order. An `AgentMockScenarioInput` has its `number` from 1, a `label` and a `kind`:
-`KIND_MESSAGE` (SendMessage) and `KIND_REQUIREMENTS_CHANGE` (AnswerQuestions with the requested
-changes) send exactly their `content`, which carries the `[[scenario:<name>#<number>]]` marker,
-followed by one `[[scenario-arg:<name>=<value>]]` per argument; `KIND_REQUIREMENTS_CONFIRM`
-confirms the pending card; `KIND_ANSWERS` answers the pending questions with `answers` in
-question order. Each mock reply reports where its scenario stands, which the Snapshot carries as
+`KIND_MESSAGE` (SendMessage) sends exactly its `content`, which carries the
+`[[scenario:<name>#<number>]]` marker, followed by one `[[scenario-arg:<name>=<value>]]` per
+argument; `KIND_ANSWERS` answers the pending questions with `answers` in question order. A
+requirements card ends no input, and a change to it is a `KIND_MESSAGE` input. Each mock reply reports where its scenario stands, which the Snapshot carries as
 `AgentDescription.mock_progress` (the scenario, the number of the input the newest mock reply
 answers and the number of the next input, 0 after the last); the mock composer offers exactly
 that next input. Studio shows the mock model only when `selectable`, and the mock model itself
@@ -1015,7 +1037,8 @@ without replacing its author. Retained and archived history keep those separate 
 
 `AgentDescription.model_changed_by` and `preview_auto_deploy_changed_by` record the accepted
 model change and effective auto-deploy toggle; `AgentConfirmedRequirements.confirmed_by`
-records the person who confirmed the requirements. Legacy entries may lack attribution,
+records the person who confirmed a version of the requirements while cards waited for a
+confirmation, and is unset on a recorded card. Legacy entries may lack attribution,
 and automatic entries carry no invented human actor. No request carries an Actor; neither
 the browser nor another client supplies attribution or authority.
 

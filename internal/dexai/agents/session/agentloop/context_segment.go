@@ -275,7 +275,7 @@ type SegmentStart struct {
 }
 
 // Text renders the segment_start text: the summary, the repository context,
-// the confirmed requirements, the todo list and the pending request, each in
+// the current requirements, the todo list and the pending request, each in
 // its own tag.
 func (start SegmentStart) Text() string {
 	text := taggedSection("context_summary", start.Summary) +

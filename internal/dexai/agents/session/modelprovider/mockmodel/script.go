@@ -74,35 +74,30 @@ type subagentScript struct {
 func (s *script) isSubagent() bool { return s.subagentKind != agenttasks.SubagentKind{} }
 
 // input is one user input with the replies that answer it. It sets exactly
-// one kind: message, requirements_confirm, requirements_change or answers.
+// one kind: message or answers.
 type input struct {
-	Label               string   `json:"label"`
-	Message             string   `json:"message"`
-	RequirementsConfirm bool     `json:"requirements_confirm"`
-	RequirementsChange  string   `json:"requirements_change"`
-	Answers             []string `json:"answers"`
-	Replies             []step   `json:"replies"`
+	Label   string   `json:"label"`
+	Message string   `json:"message"`
+	Answers []string `json:"answers"`
+	Replies []step   `json:"replies"`
 }
 
 // InputKind is how a user input reaches the Session.
 type InputKind string
 
 const (
-	// InputMessage is a message the user sends.
+	// InputMessage is a message the user sends, a change to the requirements
+	// card too.
 	InputMessage InputKind = "message"
-	// InputRequirementsConfirm confirms the requirements card.
-	InputRequirementsConfirm InputKind = "requirements_confirm"
-	// InputRequirementsChange answers the requirements card with changes.
-	InputRequirementsChange InputKind = "requirements_change"
 	// InputAnswers answers the questions of request_user_input, in order.
 	InputAnswers InputKind = "answers"
 )
 
 // carriesMarker reports whether an input of the kind is text the user writes,
-// which carries the scenario marker; the other kinds are recognized by what
-// they answer.
+// which carries the scenario marker; answers are recognized by the call they
+// answer.
 func (kind InputKind) carriesMarker() bool {
-	return kind == InputMessage || kind == InputRequirementsChange
+	return kind == InputMessage
 }
 
 // kind is the input's kind; validate requires exactly one.
@@ -110,10 +105,6 @@ func (in input) kind() InputKind {
 	switch {
 	case in.Message != "":
 		return InputMessage
-	case in.RequirementsConfirm:
-		return InputRequirementsConfirm
-	case in.RequirementsChange != "":
-		return InputRequirementsChange
 	case len(in.Answers) > 0:
 		return InputAnswers
 	default:
@@ -411,28 +402,22 @@ func (s *script) validate() error {
 // that an answer follows the reply that asks for it.
 func (s *script) validateInput(index int, in input) error {
 	kinds := 0
-	for _, set := range []bool{in.Message != "", in.RequirementsConfirm, in.RequirementsChange != "", len(in.Answers) > 0} {
+	for _, set := range []bool{in.Message != "", len(in.Answers) > 0} {
 		if set {
 			kinds++
 		}
 	}
 	switch {
 	case strings.TrimSpace(in.Label) == "" || kinds != 1 || len(in.Replies) == 0:
-		return errors.New("an input needs a label, exactly one of message, requirements_confirm, requirements_change, answers and replies")
+		return errors.New("an input needs a label, exactly one of message and answers, and replies")
 	case index == 0 && in.kind() != InputMessage:
 		return errors.New("a scenario starts with a message")
 	case slices.ContainsFunc(in.Answers, func(answer string) bool { return strings.TrimSpace(answer) == "" }):
 		return errors.New("answers must not be blank")
-	case strings.Contains(in.Message+in.RequirementsChange, "[["):
+	case strings.Contains(in.Message, "[["):
 		return errors.New("the text of an input carries no marker; Studio adds it")
 	}
-	var asking conversation.ToolName
-	switch in.kind() {
-	case InputRequirementsConfirm, InputRequirementsChange:
-		asking = conversation.ToolConfirmRequirements
-	case InputAnswers:
-		asking = conversation.ToolRequestUserInput
-	default:
+	if in.kind() != InputAnswers {
 		return nil
 	}
 	previous := s.Inputs[index-1].Replies
@@ -440,16 +425,14 @@ func (s *script) validateInput(index int, in input) error {
 		return errors.New("an answer follows an input with replies")
 	}
 	uses := previous[len(previous)-1].ToolUses
-	if len(uses) == 0 || uses[len(uses)-1].Name != asking {
-		return fmt.Errorf("an input of kind %s follows a reply whose last tool call is %s", in.kind(), asking)
+	if len(uses) == 0 || uses[len(uses)-1].Name != conversation.ToolRequestUserInput {
+		return fmt.Errorf("an input of kind %s follows a reply whose last tool call is %s", in.kind(), conversation.ToolRequestUserInput)
 	}
-	if asking == conversation.ToolRequestUserInput {
-		var questions struct {
-			Questions []json.RawMessage `json:"questions"`
-		}
-		if err := json.Unmarshal(uses[len(uses)-1].Input, &questions); err != nil || len(questions.Questions) != len(in.Answers) {
-			return errors.New("answers give one answer per question of the request_user_input call before them")
-		}
+	var questions struct {
+		Questions []json.RawMessage `json:"questions"`
+	}
+	if err := json.Unmarshal(uses[len(uses)-1].Input, &questions); err != nil || len(questions.Questions) != len(in.Answers) {
+		return errors.New("answers give one answer per question of the request_user_input call before them")
 	}
 	return nil
 }

@@ -7,13 +7,11 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 import { useCallback } from "react";
-import { useProjectSession } from "@/lib/session/SessionProvider";
 
 /**
- * The text composer's send, with what the message is about, when a surface named it, leading the text. While
- * a requirements card waits, the message answers it as the changes the person asks for (Request changes), which
- * the agent answers with a revised card; otherwise it goes through the creation intent (`send`), which delivers
- * a pending first message.
+ * The text composer's send, with what the message is about, when a surface named it, leading the text. A
+ * message is how the person changes what the agent builds: it queues while a turn runs, and a requirements
+ * card a Session still waits at takes it as its reply.
  */
 export function useChatSend({
   send,
@@ -26,17 +24,11 @@ export function useChatSend({
   clearAbout: () => void;
   markSent: () => void;
 }): (text: string) => Promise<void> {
-  const { snapshot, decideRequirements } = useProjectSession();
-  const pending = snapshot?.description.pendingUserInput;
-  const card = pending?.kind === "requirements" ? pending.callId : null;
   return useCallback(
     (text: string) => {
       markSent();
-      const message = about ? `About: ${about}\n${text}` : text;
-      const sent =
-        card === null ? send(message) : decideRequirements(card, { isConfirmed: false, requestedChanges: message });
-      return sent.then(clearAbout);
+      return send(about ? `About: ${about}\n${text}` : text).then(clearAbout);
     },
-    [about, card, clearAbout, decideRequirements, markSent, send],
+    [about, clearAbout, markSent, send],
   );
 }

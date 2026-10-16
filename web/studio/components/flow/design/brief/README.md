@@ -1,7 +1,7 @@
 # Process Brief
 
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
-Purpose: The Process Brief on the Flow tab: a requirements card and its Flow design in business words, a summary grid above the drawing, with Change something and Confirm and build.
+Purpose: The Process Brief on the Flow tab: the current requirements card and its Flow design in business words, a summary grid above the drawing, with Change something.
 
 Importers: `components/flow/scope` imports this directory.
 
@@ -21,7 +21,8 @@ flowchart LR
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
-The Brief reads a waiting or confirmed requirements card together with its Flow design
+The Brief reads the current version of the requirements, which the agent recorded when it showed the
+card and builds from at once, together with its Flow design
 ([design before implementation](../../../../../../docs/architecture/design-first/studio.md#the-process-brief)).
 `components/build/DesignSurface.tsx` hosts it through `components/flow/scope` and passes the card,
 the design, the drawing and the actions as props, so this directory reads no Session.
@@ -31,7 +32,7 @@ the design, the drawing and the actions as props, so this directory reads no Ses
 | `brief-model.ts`    | A design in business words: Steps in the canvas's reading order with its titles, what starts each process, who acts, rules and failures |
 | `ProcessBrief.tsx`  | The Brief: its header, the summary grid, More details, the drawing below and its foot                                                   |
 | `BriefSections.tsx` | The parts with their headings: grid cells, lines, the rules, the Steps, the change lines, the outline and the apps                      |
-| `BriefActions.tsx`  | Change something…, which opens a box in place with Send changes, and Confirm and build while the card waits for the person              |
+| `BriefActions.tsx`  | Change something…, which opens a box in place with Send changes: a message, steered into a running turn, that revises the card       |
 
 The summary grid holds the short parts (Starts when, People, Rules and exceptions, Apps) in three
 columns when its container (`brief`) is wide, then two, then one; container queries, never the

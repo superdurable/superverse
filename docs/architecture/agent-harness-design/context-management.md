@@ -335,8 +335,8 @@ keeps serving an older segment unchanged until the next rollover.
 
 The `segment_start` entry is one user-role message. It contains, in order:
 `<context_summary>`, `<repository_context>`, `<current_plan>` (the todo list),
-`<pending_request>` (the current turn's bounded user request quote). When requirements are
-confirmed it also carries them ([session](session.md)). The current mode's notice is
+`<pending_request>` (the current turn's bounded user request quote). When a requirements card
+was recorded it also carries the current version ([session](session.md#requirements-cards)). The current mode's notice is
 appended after it.
 
 Conversation owns the quote's existing 256 KiB total byte budget. When all retained turn requests
@@ -496,9 +496,9 @@ The system prompt establishes:
   search for, print or transmit credentials. Check a user's technical claim against module
   source before acting on it and say so when it is wrong.
 - **Questions.** Ask only for a missing user-owned business fact or access, never about
-  technical implementation, and never repeat an accepted decision. Confirm requirements
-  once for a new application or a large change; make small changes directly
-  ([session](session.md)).
+  technical implementation, and never repeat an accepted decision. Show the requirements card
+  once for a new application or a large change and keep building; revise it when a message
+  changes the requirements; make small changes directly ([session](session.md#requirements-cards)).
 - **Tools.** The tool set and its use ([tool orchestration](tool-orchestration.md)). Tool
   failures arrive as `is_error` results with an owner and an effect; a platform failure is
   not the call's fault, so use an alternative or tell the user in business terms.
@@ -613,9 +613,9 @@ is the reference for scenarios, markers and checks.
 **How it picks a reply.**
 
 - A scenario lists the user inputs it expects, in order, with the replies the model gives to
-  each: a message, a request for changes to the requirements card, the confirmation of the
-  card, the answers to a question.
-- A message or a request for changes carries a marker, `[[scenario:<name>#<n>]]` for input
+  each: a message, or the answers to a question. A requirements card ends no input: the replies
+  after it follow in the same input, and a change to the card is a message.
+- A message carries a marker, `[[scenario:<name>#<n>]]` for input
   `n` (`[[scenario:<name>]]` is input 1). `[[scenario-arg:name=value]]` passes a value the
   test only knows at run time, such as the heading to write; a malformed marker is
   rejected. An answer carries no marker: the model knows it from the call it answers.

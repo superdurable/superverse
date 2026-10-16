@@ -16,9 +16,9 @@ Before the card, the agent reads the current Flow source, so that the design of 
 Flow is complete. This is the same discovery it already does. No Sandbox call is needed to
 show the card.
 
-When it finishes the build of a confirmed design, the agent compares the Flows it built with
+When it finishes the build of a recorded design, the agent compares the Flows it built with
 the design and names every difference in its reply, or says that it built the design as
-confirmed ([differences](studio.md#differences-between-the-build-and-the-design)). Studio
+recorded ([differences](studio.md#differences-between-the-build-and-the-design)). Studio
 draws no comparison.
 
 ## The artifact
@@ -98,7 +98,7 @@ hides and folds the same Steps as the Flow that implements it.
 
 `confirm_requirements` validates the design in the `RouteTool` commit, with the card. A
 refusal is the existing `invalid_user_input` tool failure, whose message names the field and
-the rule, and no pending input is written:
+the rule, and no version is recorded:
 
 - identifiers are exported Go identifiers; Flow types end in `Flow`; names are unique where
   the table says so;
@@ -129,7 +129,7 @@ are raised only with evidence of a real design that needs more.
 
 - **Digest**: `sha256:` plus the lowercase hex SHA-256 of the design's canonical JSON (keys
   in schema order, no insignificant whitespace). It identifies a design across the card, the
-  confirmation and the read.
+  recorded version and the read.
 - **Outline**: text the server renders from the design, at most 2 KiB, truncated by whole
   Flows with "and N more Flows". One line per Flow gives its type, its main-story Steps in
   reading order with waits in brackets, and the number of its failure-handling Steps
@@ -144,22 +144,24 @@ are raised only with evidence of a real design that needs more.
 
 | State | Owner | Where |
 |---|---|---|
-| The design of the waiting card | `SessionAgentFlow` | `FlowDesigns` instance `pending`; its reference in `PendingUserInput.Requirements.Design` |
-| The confirmed design | `SessionAgentFlow` | `FlowDesigns` instance `confirmed`; its reference in `ConfirmedRequirements.Spec.Design` |
+| The current design | `SessionAgentFlow` | `FlowDesigns` instance `confirmed`; its reference in `ConfirmedRequirements.Spec.Design`, the current version of the requirements |
 | The implemented Flows | The Project's source | The prepared source's definition bundle (`projects/<projectID>/preview-source/<commit>/definitions.json`), as today |
-| Whether the confirmed design is built, and by which commit | `SessionAgentFlow` | `BuiltFlowDesign`, the digest of the confirmed design that a push built, and `BuiltFlowDesignCommit`, the commit that push verified ([build completion](#build-completion)) |
+| Whether the current design is built, and by which commit | `SessionAgentFlow` | `BuiltFlowDesign`, the digest of the current design that a push built, and `BuiltFlowDesignCommit`, the commit that push verified ([build completion](#build-completion)) |
 
 The reference is `flowdesign.Reference{Digest, Summary, Outline}`, so the card shows the design's summary without reading the body. A card without a design has none.
-Older confirmed designs are not kept. A confirmation of a card with a design replaces
-`confirmed`. A confirmation of a card without a design (a change that touches no Flow)
-carries the confirmed design forward: `Spec.Design` keeps the previous reference and
-`confirmed` stays, so the last design stays confirmed, and built if it was. Only a card that sets
-`replaces_requirements` without a design clears it: the reference is dropped and
-`confirmed` is deleted in the same commit.
+A card is recorded as the next version in the `RouteTool` commit that answers it
+([session](../agent-harness-design/session.md#requirements-cards)), so its design goes
+straight to `confirmed`. Older designs are not kept. A card with a design replaces
+`confirmed`. A card without a design (a change that touches no Flow) carries the design
+forward: `Spec.Design` keeps the previous reference and `confirmed` stays, so the last design
+stays current, and built if it was. Only a card that sets `replaces_requirements` without a
+design clears it: the reference is dropped and `confirmed` is deleted in the same commit. The
+instance `pending` held the design of a card that waited for a confirmation; it is no longer
+written, and the commit that records a card deletes what an open Session left there.
 
 ## Build completion
 
-The build of a confirmed design is complete when a `commit_and_push` call pushes without
+The build of a recorded design is complete when a `commit_and_push` call pushes without
 `blocked`: the agent calls it only when the requested application, its tests and its
 requirement trace are complete ([commit gate](../agent-harness-design/commit-gate-and-app-tests.md#the-commit_and_push-tool)).
 The commit of that result writes the Attribute `BuiltFlowDesign`, the digest of the design
@@ -167,13 +169,15 @@ that `ConfirmedRequirements` then carries, and `BuiltFlowDesignCommit`, the comm
 verified (the result's `HeadCommit`). The design is built while `BuiltFlowDesign` equals that
 digest:
 
-- a new confirmed design has a new digest, so it is unbuilt until the next such push;
-- a confirmation that carries the design forward keeps its digest, so a built design stays
+- a new recorded design has a new digest, so it is unbuilt until the next such push;
+- a card that carries the design forward keeps its digest, so a built design stays
   built;
-- a blocked push, a failed one and one while no design is confirmed write nothing.
+- a blocked push, a failed one and one while no design is recorded write nothing.
 
-No lock is added. A card ends the turn, so no confirmation runs while the agent's tools do,
-and the result's commit reads `ConfirmedRequirements` that nothing else writes meanwhile.
+No lock is added. Only `RouteTool` writes `ConfirmedRequirements`, and the conversation routes
+one call at a time: a card is recorded before or after a `commit_and_push`, never while it runs,
+so the result's commit reads a version nothing else writes meanwhile. A push that started
+before a revised card builds the earlier version; the next push builds the revision.
 Studio stops drawing the design once it is built and either the Preview's processes are built
 from the commit that built it or the Session HEAD has moved past that commit
 ([the Flow tab](studio.md#the-flow-tab)). The commit is what makes the second case exact: a later
@@ -184,25 +188,26 @@ design again until the later push's processes were built.
 ## API
 
 - **Snapshot and Watch**: `AgentRequirements` gains `AgentFlowDesignReference design = 7`
-  (`digest`, `summary`, `outline`). It reaches Studio in the pending input and in
-  `confirmed_requirements`, like the rest of the card. `AgentRequirements` also gains
+  (`digest`, `summary`, `outline`). It reaches Studio in `confirmed_requirements`, the
+  current version, like the rest of the card (and in the pending input of a card an old Session
+  still waits at). `AgentRequirements` also gains
   `bool design_built = 8`, which only `confirmed_requirements` sets: whether
-  `BuiltFlowDesign` equals the confirmed design's digest, and `string design_built_commit = 9`,
+  `BuiltFlowDesign` equals the current design's digest, and `string design_built_commit = 9`,
   set only while `design_built`: `BuiltFlowDesignCommit`.
 - **`AgentService.GetFlowDesign`** (the ninth RPC of the service): request `project_id`,
-  `slot` (`AGENT_FLOW_DESIGN_SLOT_PENDING` or `AGENT_FLOW_DESIGN_SLOT_CONFIRMED`),
+  `slot` (`AGENT_FLOW_DESIGN_SLOT_CONFIRMED`, the only slot),
   `digest`, and `CallerContext caller = 100`. Response: `AgentFlowDesign`, the typed design
   (Flows, Steps, waits as an enum `AgentFlowDesignWait.Kind`, transitions with an enum
   `AgentFlowDesignTransition.End` for `complete` and `fail`, Channels, Actions, Attributes,
   starts, removed Flows).
   - Authorization: whoever may read the Session's Snapshot.
   - Errors: NOT_FOUND when the slot holds no design. ABORTED with
-    `REVISION_CHANGED` (as the other revision fences in the resource API) when the slot holds another digest: a newer card or confirmation
+    `REVISION_CHANGED` (as the other revision fences in the resource API) when the slot holds another digest: a newer card
     replaced it, and Studio reads the Snapshot again.
 - The browser reaches it as `/api/rpc/GetFlowDesign`. No REST transport is added
   ([the current contract](../../api/resource-grpc.md)).
 - Changed: `confirm_requirements`'s tool input, and the agent-facing `AgentRequirements`
-  rendering. The tool result stays `{status: waiting_for_user, version}`.
+  rendering. The tool result is `{status: recorded, version, reason}`, and the turn goes on.
 
 ## Package placement
 
@@ -212,8 +217,8 @@ design again until the later push's processes were built.
   files, so `RequestedRequirements` calls into this package and does not grow beyond one
   call. `Requirements` gains `Design *flowdesign.Reference`.
 - `internal/dexai/agents/session`: the `FlowDesigns` declaration and the `GetFlowDesign` RPC in
-  `session_agent_flow.go` (1479 lines today, below the 1600-line cap). The copy on
-  confirmation goes beside `AnswerQuestions`' existing effect.
+  `session_agent_flow.go`, below the 1600-line cap. The write of a recorded card's design
+  (`recordFlowDesign`) goes beside `RouteTool`'s handling of `confirm_requirements`.
 - `internal/dexai/api`: the boundary mapping, with the closed sets mapped by `boundary.Enum`.
 
 ## Per-Flow contract: SessionAgentFlow
@@ -224,38 +229,37 @@ Only the differences are listed. Everything else is unchanged and stays in
 ### Identity and execution lifecycle
 
 Unchanged: the Session's FlowID, start, reuse policy, archival and retention are as in
-session.md. The design creates no Flow, Run or FlowID. A rerun or recovery of `RouteTool` or
-`AnswerQuestions` writes the same instance with the same digest.
+session.md. The design creates no Flow, Run or FlowID. A rerun or recovery of `RouteTool`
+writes the same instance with the same digest, because the next version is derived from the
+stored one inside the same commit.
 
 ### Attributes and AttributeMaps
 
 | Primitive | Type | Key | Notes |
 |---|---|---|---|
-| `FlowDesigns` (new) | AttributeMap of `flowdesign.Design` | `pending` or `confirmed`: two fixed keys declared as typed constants | Owner `SessionAgentFlow`. At most two instances of at most 24 KiB each, for the Session's lifetime. Not indexed, holds no secret. Loaded only by `AnswerQuestions` (instance `pending`) and `GetFlowDesign` (both instances), through the RPC option `LoadAttributeMapInstances` of the pinned SDK (`sdk-go` v1.5.0), which takes the fixed keys at registration. Removed with the Session's state when it ends. It is an AttributeMap with two fixed keys, not two plain Attributes, because of exact-key loading: plain Attributes load with every Step, RPC and Snapshot, while only `AnswerQuestions` and `GetFlowDesign` load these instances, so up to 2 × 24 KiB is never read with every Session Step or Snapshot. |
-| `PendingUserInput` (changed) | struct | — | `Requirements.Design` holds the reference of the `pending` instance |
-| `ConfirmedRequirements` (changed) | struct | — | `Spec.Design` holds the reference of the `confirmed` instance; the version number counts both |
-| `BuiltFlowDesign` (new) | string | — | The digest of the confirmed design that a pushed, unblocked `commit_and_push` built ([build completion](#build-completion)). Owner `SessionAgentFlow`; written only in that result's commit. At most 71 bytes for the Session's lifetime, not indexed, no secret; the Snapshot reads it. |
-| `BuiltFlowDesignCommit` (new) | string | — | The commit that the push which built the confirmed design verified, written beside `BuiltFlowDesign` in that result's commit. Owner `SessionAgentFlow`. A commit SHA of 40 characters for the Session's lifetime, not indexed, no secret; read by the Snapshot only while the design is built |
+| `FlowDesigns` | AttributeMap of `flowdesign.Design` | `confirmed`, a fixed key declared as a typed constant; `pending`, the key a waiting card used, is only deleted | Owner `SessionAgentFlow`. One live instance of at most 24 KiB for the Session's lifetime (an open Session may also hold an old `pending` until its next card). Not indexed, holds no secret. Loaded only by `GetFlowDesign` (instance `confirmed`), through the RPC option `LoadAttributeMapInstances` of the pinned SDK (`sdk-go` v1.5.0), which takes the fixed key at registration; `RouteTool` writes and deletes instances without loading them. Removed with the Session's state when it ends. It is an AttributeMap with a fixed key, not a plain Attribute, because of exact-key loading: plain Attributes load with every Step, RPC and Snapshot, while only `GetFlowDesign` loads this instance, so up to 24 KiB is never read with every Session Step or Snapshot. |
+| `PendingUserInput` | struct | — | Holds no new design; a card an old Session still waits at keeps the reference of its `pending` instance in `Requirements.Design` |
+| `ConfirmedRequirements` | struct | — | The current version: `Spec.Design` holds the reference of the `confirmed` instance; the version number counts the recorded cards |
+| `BuiltFlowDesign` | string | — | The digest of the current design that a pushed, unblocked `commit_and_push` built ([build completion](#build-completion)). Owner `SessionAgentFlow`; written only in that result's commit. At most 71 bytes for the Session's lifetime, not indexed, no secret; the Snapshot reads it. |
+| `BuiltFlowDesignCommit` | string | — | The commit that the push which built the current design verified, written beside `BuiltFlowDesign` in that result's commit. Owner `SessionAgentFlow`. A commit SHA of 40 characters for the Session's lifetime, not indexed, no secret; read by the Snapshot only while the design is built |
 
 Locking and CAS:
 
-- `RouteTool` writes `pending` under the `MessageWindowLock` it already holds. A card is
-  refused while another input is pending (`user_input_already_pending`), so no confirmation
-  can run against a `pending` that is being replaced.
-- `AnswerQuestions` keeps its locks (`PendingUserInput`, `ConfirmedRequirements`). On a
-  confirmation it loads `pending`, compares its digest with the pending reference, and writes
-  `confirmed` in the commit that writes `ConfirmedRequirements`. A digest mismatch is a
-  defect (only `RouteTool` writes `pending`, and only while no input is pending), so it
-  panics; it is not a business rejection.
-- A request for changes, or steering that deletes the pending input, leaves `pending` as it
-  is. It is unreachable without a pending reference, and the next card overwrites it. The
-  bound stays two instances with no cleanup step.
+- `RouteTool` writes `confirmed` (or deletes it for a replacing card without a design) and
+  `ConfirmedRequirements` in one commit under the `MessageWindowLock` it already holds, and
+  deletes `pending` in the same commit. It is their only writer while a turn runs; the one other
+  writer, `SendMessage`'s reply to an old waiting card, runs only while `AwaitUser` waits at that
+  card, under the `ConfirmedRequirements` lock. `AnswerQuestions` no longer touches the
+  requirements or the designs.
+- A message that answers a card an old Session still waits at records that card in the same
+  `SendMessage` commit: its `pending` design moves to `confirmed` and `pending` is deleted.
 - `GetFlowDesign` is an unlocked, nontransactional read. It compares the stored digest with
   the request's.
 
 ### Channels and ChannelMaps
 
-None added. The answer still travels on `AnsweredUserInputs`, unchanged.
+None added. A change to the card is a chat message on `QueuedUserMessages` or
+`SteeredUserMessages`, unchanged.
 
 ### Streams
 
@@ -267,21 +271,22 @@ is recovered by the next Snapshot read, and the body is always read through
 
 | Step or RPC | Change | Primitives |
 |---|---|---|
-| `RouteTool` (`confirm_requirements`) | Validates the design, writes `FlowDesigns[pending]` and puts the reference in `PendingUserInput` | writes `FlowDesigns[pending]`, `PendingUserInput` |
-| `AnswerQuestions` RPC | On confirmation, copies `pending` to `confirmed` after the digest check | loads `FlowDesigns[pending]`; writes `FlowDesigns[confirmed]`, `ConfirmedRequirements` |
-| `GetFlowDesign` RPC (new) | Returns the requested instance if its digest matches | loads both fixed instances (at most 48 KiB); read timeout as `GetSnapshot` |
-| The tool batch's result commit (`commit_and_push`) | A pushed, unblocked result writes the confirmed design's digest and the commit it verified, beside the Session HEAD and the Preview handoff it already writes | reads `ConfirmedRequirements`; writes `BuiltFlowDesign`, `BuiltFlowDesignCommit` |
-| `GetSnapshot` and the Watch | `confirmed_requirements.design_built` compares `BuiltFlowDesign` with the confirmed digest; `design_built_commit` carries `BuiltFlowDesignCommit` while it is built | reads `BuiltFlowDesign`, `BuiltFlowDesignCommit` |
+| `RouteTool` (`confirm_requirements`) | Validates the card and the design, records the next version with the design's reference and writes the design | writes `ConfirmedRequirements`, `FlowDesigns[confirmed]`; deletes `FlowDesigns[pending]` |
+| `GetFlowDesign` RPC | Returns the `confirmed` instance if its digest matches | loads the fixed instance `confirmed` (at most 24 KiB); read timeout as `GetSnapshot` |
+| The tool batch's result commit (`commit_and_push`) | A pushed, unblocked result writes the current design's digest and the commit it verified, beside the Session HEAD and the Preview handoff it already writes | reads `ConfirmedRequirements`; writes `BuiltFlowDesign`, `BuiltFlowDesignCommit` |
+| `GetSnapshot` and the Watch | `confirmed_requirements.design_built` compares `BuiltFlowDesign` with the current digest; `design_built_commit` carries `BuiltFlowDesignCommit` while it is built | reads `BuiltFlowDesign`, `BuiltFlowDesignCommit` |
 | Segment start (compaction, new segment) | Renders the outline from `ConfirmedRequirements`; no map load | reads `ConfirmedRequirements` |
 
 The design has no external effects, so nothing has to be reconciled after an uncertain
 outcome. Retries of the commits are idempotent: the same key gets the same value. Open
-executions: the new fields are optional and the AttributeMap is additive. A Session that
-started before the change decodes with no design and behaves as today. The regenerated
-`docs/flows/sv2-session-agent-flow.json` shows the new map and RPC.
+executions: the fields are optional, so a Session that started before designs existed decodes
+with no design. A Session that waits at a card from before cards stopped waiting is answered by
+a message, and its next card replaces `confirmed` and deletes `pending`
+([session](../agent-harness-design/session.md#recovery-external-effects-and-compatibility)). The
+regenerated `docs/flows/sv2-session-agent-flow.json` shows the map and RPC.
 
 ### Tests
 
 See the [README](README.md#tests): identity and recovery (reference across a compaction),
-admission (refusals), map keys and exact loads (`GetFlowDesign` per slot, stale digest),
+admission (refusals), map keys and exact loads (`GetFlowDesign` of `confirmed`, stale digest),
 and the no-design compatibility case.

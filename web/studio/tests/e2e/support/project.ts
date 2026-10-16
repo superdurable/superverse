@@ -145,7 +145,7 @@ const START_COMPOSER_PLACEHOLDER =
 
 /**
  * Chooses `realModelTarget()` in the picker and types the prompt as the first message, which Build
- * sends after it applied the model. The model is checked when this is called, before the page is touched.
+ * sends with the model in CreateProject. The model is checked when this is called, before the page is touched.
  */
 export function typePrompt(prompt: string): FirstTurnChoice {
   const model = pickerModel(realModelTarget());
@@ -155,10 +155,22 @@ export function typePrompt(prompt: string): FirstTurnChoice {
   };
 }
 /**
+ * How many copies of the creation's first message the Session holds: queued under its message ID, or in the
+ * history as a user message with its text. The Session admits it once, at its start, whatever retries came.
+ */
+function firstMessageCopies(session: SessionSnapshot__Output, request: RpcInput<"CreateProject">): number {
+  const queued = (session.agent?.queued ?? []).filter((item) => item.messageId === request.messageId).length;
+  const sent = (session.agent?.history?.messages ?? []).filter(
+    (item) => item.message?.role === "ROLE_USER" && item.message.content === request.initialMessage,
+  ).length;
+  return queued + sent;
+}
+/**
  * Creates a Project in the Teamspace through its start form and returns once it is READY and its Session, which
  * ProjectFlow starts then, exists. The name and the model are under the form's Advanced, which the step opens.
- * Studio opens the Project's first conversation at once, applies the model chosen on the start form and sends
- * its first message once the Session starts; the spec then waits for that first turn.
+ * CreateProject carries the first message and the model chosen on the start form, so the Session starts on
+ * that model with the message admitted once, without the page; Studio opens the Project's first conversation at
+ * once, and the spec then waits for that first turn.
  */
 export async function createProject(
   page: Page,
@@ -189,6 +201,9 @@ export async function createProject(
   const request: RpcInput<"CreateProject"> = response.request().postDataJSON();
   expect(request.managedRepository).toEqual({});
   expect(request.teamSpaceId).toBe(teamSpaceId);
+  expect(request.initialMessage?.trim(), "CreateProject carries the first message").toBeTruthy();
+  expect(request.messageId, "CreateProject carries the first message's ID").toBeTruthy();
+  expect(request.model, "CreateProject carries the chosen model").not.toBe("AGENT_MODEL_UNSPECIFIED");
   // Real concurrent admission recovers the original identity while Setup is
   // still running; a later retry also returns this Project after it is READY.
   const duplicates = await Promise.all(Array.from({ length: 4 }, () => rpc(page.request, "CreateProject", request)));
@@ -211,8 +226,20 @@ export async function createProject(
       intervals: [1000],
     })
     .toBe(200);
+  // The Session started on the chosen model with the first message, which the five creates admitted once.
+  await expect
+    .poll(async () => firstMessageCopies(await readSession(page, projectId), request), {
+      timeout: 60_000,
+      intervals: [1000],
+    })
+    .toBeGreaterThan(0);
+  const started = await readSession(page, projectId);
+  expect(firstMessageCopies(started, request), "the first message is admitted exactly once").toBe(1);
+  expect(started.agent?.description?.model).toBe(request.model);
   expect(await rpcResult(page.request, "CreateProject", request)).toEqual(accepted);
   expect((await rpc(page.request, "CreateProject", { ...request, name: `${name} conflict` })).status()).toBe(409);
+  const changedMessage = { ...request, initialMessage: `${request.initialMessage ?? ""} changed` };
+  expect((await rpc(page.request, "CreateProject", changedMessage)).status()).toBe(409);
   await testInfo.attach("resource-identities", {
     body: JSON.stringify({ projectId, name, studio: process.env.SUPERVERSE_E2E_BASE_URL }),
     contentType: "application/json",
@@ -261,18 +288,9 @@ export const ENDED_SESSION_STATUSES: ReadonlySet<SessionStatus__Output> = new Se
   "SESSION_STATUS_FAILED",
   "SESSION_STATUS_ARCHIVED",
 ]);
-/** Confirms the waiting card as a person does: on the Process Brief its chat card opens, else in the chat. */
-async function confirmRequirementsCard(page: Page) {
-  const confirm = page.getByRole("button", { name: "Confirm and build", exact: true });
-  const openBrief = page.getByRole("link", { name: "Open the brief", exact: true });
-  await expect(openBrief.or(confirm).first()).toBeVisible({ timeout: 60_000 });
-  if (await openBrief.isVisible()) await openBrief.click();
-  await confirm.click();
-}
 /** Waits until a turn after `afterSequence` of the Project's Session ends with a final reply. */
 export async function waitForCompletedTurn(page: Page, projectId: string, afterSequence = -1, timeoutMs = 15 * 60_000) {
   let selectedModel = "";
-  let confirmedCard = "";
   const deadline = Date.now() + timeoutMs;
   for (;;) {
     const session = await readSession(page, projectId);
@@ -283,19 +301,8 @@ export async function waitForCompletedTurn(page: Page, projectId: string, afterS
       );
     const snapshot = session.agent;
     const description = snapshot?.description;
-    const pendingInput = description?.pendingUserInput;
-    if (pendingInput?.kind === "KIND_REQUIREMENTS") {
-      if (description?.model === "AGENT_MODEL_MOCK")
-        throw new Error(`The Session of Project ${projectId} runs the mock model; its scenario confirms the card`);
-      // The one confirmation before the Agent builds: a person confirms the card in the page, once per card.
-      if (pendingInput.callId !== confirmedCard) {
-        confirmedCard = pendingInput.callId;
-        await confirmRequirementsCard(page);
-      }
-      await delay(2000);
-      continue;
-    }
-    if (pendingInput?.questions.length || description?.pendingApproval) {
+    // A requirements card never waits: the agent records it and goes on building in the same turn.
+    if (description?.pendingUserInput || description?.pendingApproval) {
       throw new Error(
         `The Session of Project ${projectId} requires user input or approval; its Agent turn is not complete`,
       );
@@ -322,8 +329,8 @@ export async function waitForCompletedTurn(page: Page, projectId: string, afterS
   });
 }
 /**
- * Waits until the Agent's turn ends at its requirements card, which it shows before it writes code for a change the
- * user confirms first, and leaves the card unconfirmed. A turn that ends without the card fails.
+ * Waits until the Agent recorded its first requirements card, version 1 or later, which it shows before it writes
+ * code and then goes on building from. A turn that ends without a card fails.
  */
 export async function waitForRequirementsCard(page: Page, projectId: string, timeoutMs = 15 * 60_000) {
   const deadline = Date.now() + timeoutMs;
@@ -332,7 +339,7 @@ export async function waitForRequirementsCard(page: Page, projectId: string, tim
     if (ENDED_SESSION_STATUSES.has(session.status))
       throw new Error(`The Session of Project ${projectId} ended before its requirements card (${session.status})`);
     const description = session.agent?.description;
-    if (description?.pendingUserInput?.kind === "KIND_REQUIREMENTS") return;
+    if (Number(description?.confirmedRequirements?.revision ?? 0) >= 1) return;
     if (description?.pendingUserInput?.questions.length || description?.pendingApproval)
       throw new Error(
         `The Session of Project ${projectId} requires user input or approval instead of a requirements card`,

@@ -11,7 +11,7 @@
 # both, Gmail recommended and Outlook as the alternative. Its task notification
 # opens an automatic turn that asks the user which one with
 # request_user_input; the answer puts the chosen connector on the requirements
-# card, which the user confirms. Nothing in the workspace changes.
+# card, which the Session records as version 1. Nothing in the workspace changes.
 name: connector-select-choice
 title: "Connector selection: a choice between connectors"
 description: "A connector_select subagent reports two connectors that could send mail; the user chooses one, which the requirements card then lists."
@@ -46,7 +46,7 @@ inputs:
   - label: "Choose Gmail"
     answers: ["Gmail"]
     replies:
-      - text: "Please confirm what I will build."
+      - text: "Here is what I will build; tell me in the chat if anything should change."
         tool_uses:
           - name: confirm_requirements
             input:
@@ -62,10 +62,7 @@ inputs:
                   user_setup: "Connect the Google account that sends the digest."
               user_setup: ["Connect the Gmail account in Studio."]
               acceptance: ["A test digest arrives in a team mailbox."]
-  - label: "Confirm the requirements"
-    requirements_confirm: true
-    replies:
-      - text: "The requirements are confirmed; the digest is sent with the released gmail connector."
+      - text: "The requirements are recorded; the digest is sent with the released gmail connector."
 subagents:
   select:
     kind: connector_select

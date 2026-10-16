@@ -395,15 +395,15 @@ func TestSessionMockTaskToolsDexIntegration(t *testing.T) {
 	}
 }
 
-// Admission of notifications from outside the Session: while a requirements
-// card waits, nothing is consumed, so 32 distinct notifications are admitted,
-// a repeated ID is admitted again without a second publish, and a 33rd
-// distinct one is refused.
+// Admission of notifications from outside the Session: while questions wait
+// for their answers, nothing is consumed, so 32 distinct notifications are
+// admitted, a repeated ID is admitted again without a second publish, and a
+// 33rd distinct one is refused.
 func TestSessionNotificationAdmissionDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
 	defer cancel()
-	session := newMockSession(t, ctx, mockInput(t, "requirements-card", 1).Content)
-	session.requirementsCard(ctx, 0)
+	session := newMockSession(t, ctx, mockInput(t, "question-answers", 1).Content)
+	session.pendingInput(ctx, "", 0)
 	notification := func(index int) conversation.SessionNotification {
 		taskID := fmt.Sprintf("cmd-admission%03d", index)
 		return conversation.SessionNotification{ID: "task/" + taskID + "/exited", Kind: conversation.NotificationKindTask, Source: conversation.NotificationSourceCommand,

@@ -48,12 +48,6 @@ export type ConnectorContribution = ReturnType<typeof connectorContributionView>
 export function isSubagentRunning(subagent: Subagent): boolean {
   return !subagent.lost && (subagent.status === "starting" || subagent.status === "running");
 }
-/** The user's answer to a requirements card: the confirmation, or the changes asked for in text. */
-export interface RequirementsDecision {
-  isConfirmed: boolean;
-  requestedChanges: string;
-}
-
 export const AgentStatus = {
   INITIALIZING: "initializing",
   WAITING_FOR_MESSAGE: "waiting_for_message",

@@ -8,21 +8,21 @@
 
 # A new operation of an existing connector: the requirements card lists the
 # released newsapi connector with an operation it does not publish yet, and
-# after the user confirms it the main agent starts a connector_develop
+# after the card, in the same turn, the main agent starts a connector_develop
 # subagent for newsapi with the contribution operation. The subagent changes
 # only the newsapi module, which leaves catalog.yaml as it is, and reports;
 # its finish commits and pushes the branch, and its task notification carries
 # the contribution.
 name: connector-develop-operation
 title: "Connector development: a new operation"
-description: "After the requirements are confirmed, a connector_develop subagent adds an operation to the existing newsapi connector on its library branch."
+description: "After the requirements card, a connector_develop subagent adds an operation to the existing newsapi connector on its library branch."
 category: project_feature
 arguments: {task: agent-aaaaaaaa}
 inputs:
   - label: "Describe the application"
     message: "Build a page that shows today's top headlines of a country."
     replies:
-      - text: "The newsapi connector exists but has no headlines operation yet, so it is added upstream. Please confirm what I will build."
+      - text: "The newsapi connector exists but has no headlines operation yet, so it is added upstream. Here is what I will build; tell me in the chat if anything should change."
         tool_uses:
           - name: confirm_requirements
             input:
@@ -38,9 +38,6 @@ inputs:
                   user_setup: "A NewsAPI key."
               user_setup: ["Create a NewsAPI key."]
               acceptance: ["The page shows ten headlines for the chosen country."]
-  - label: "Confirm the requirements"
-    requirements_confirm: true
-    replies:
       - text: "Adding the operation upstream while I work on the page."
         tool_uses:
           - name: start_agent

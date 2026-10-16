@@ -841,7 +841,7 @@ func (flow *SessionAgentFlow) openExecutorSegment(ctx dex.Context, executor remo
 	}
 	section("Older platform summary", summary, 8<<10)
 	if requirements := dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx)); requirements != nil {
-		section("Confirmed requirements", (agentloop.SegmentStart{ConfirmedRequirements: requirements}).Text(), 2<<10)
+		section("Current requirements", (agentloop.SegmentStart{ConfirmedRequirements: requirements}).Text(), 2<<10)
 	}
 	if todos := dexflow.OptionalValue(todoListAttribute.Get(ctx)); todos != nil {
 		section("Todos", (agentloop.SegmentStart{TodoList: todos}).Text(), 2<<10)

@@ -24,6 +24,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/flowdesign"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/agents/toolfailure"
 )
@@ -829,13 +830,46 @@ func currentParallelBatch(ctx dex.Context, batch agentloop.ToolBatchState) bool 
 	return true
 }
 
-// sendMessage owns the conversation data operation of SendMessage.
+// sendMessage owns the conversation data operation of SendMessage: it queues
+// the message unless questions wait for their answers. A Session that still
+// waits at a requirements card from before cards stopped waiting records that
+// card as the next version, as a card is recorded now when the Agent shows it,
+// and takes the message as the card's reply, which AwaitUser consumes; remove
+// that branch once no Session holds such a card.
 func sendMessage(ctx dex.Context, input conversation.PendingUserMessage) (*dex.RPCResult[bool], error) {
-	if !acceptsUserCommand(ctx) || dexflow.OptionalValue(pendingUserInputAttribute.Get(ctx)) != nil {
+	if !acceptsUserCommand(ctx) {
 		return rpcAccepted(false), nil
+	}
+	if pending := dexflow.OptionalValue(pendingUserInputAttribute.Get(ctx)); pending != nil {
+		if pending.Kind != agentloop.PendingUserInputKindRequirements {
+			return rpcAccepted(false), nil
+		}
+		version := recordWaitingCard(ctx, *pending.Requirements)
+		comm.MustDo(pendingUserInputAttribute.Delete(ctx))
+		comm.MustDo(answeredUserInputsChannel.Publish(ctx, agentloop.AnswerRequirementsCard(*pending, input.Value, version)))
+		return rpcAccepted(true), nil
 	}
 	comm.MustDo(queuedUserMessagesChannel.Publish(ctx, input))
 	return rpcAccepted(true), nil
+}
+
+// recordWaitingCard records the card an old Session waits at over the current
+// version, with the Flow design it left in the pending slot, and returns the
+// version it recorded.
+func recordWaitingCard(ctx dex.Context, card agentloop.Requirements) int64 {
+	stored := dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx))
+	recorded := agentloop.RecordRequirements(stored, card, time.Now().UTC())
+	var design *flowdesign.Design
+	if card.Design != nil {
+		shown := comm.Must(flowDesignsAttribute.Get(ctx, string(flowdesign.SlotPending)))
+		if shown.Digest() != card.Design.Digest {
+			panic("the pending flow design does not match the card's reference")
+		}
+		design = &shown
+	}
+	recordFlowDesign(ctx, stored, recorded.Spec.Design, design)
+	comm.MustDo(confirmedRequirementsAttribute.Set(ctx, recorded))
+	return recorded.Revision
 }
 
 // steerMessage owns the conversation data operation of SteerMessage.

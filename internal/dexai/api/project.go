@@ -19,6 +19,7 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/platform/postgres"
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost"
 	"github.com/superdurable/superversev2/internal/dexai/agents"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/api/boundary"
 	"github.com/superdurable/superversev2/internal/dexai/api/watch"
 	"github.com/superdurable/superversev2/internal/dexai/app/apptemplate"
@@ -49,11 +50,13 @@ type projectServer struct {
 	deployments     *deployments.ProjectDeployFlowClient
 	sessions        *agents.SessionFlowService
 	recentEvents    RecentTriggerEvents
+	models          SessionModels
 }
 
 // CreateProject starts a Project of a TeamSpace on a new private managed
 // repository. ProjectFlow's first Step admits it in the TeamSpace, which
 // requires the caller's membership unless the caller is the platform admin.
+// The Session's first message and model travel with it (initialSession).
 // Repeating a request returns the same Project.
 func (s *projectServer) CreateProject(ctx context.Context, in *pb.CreateProjectRequest) (*pb.CreateProjectResponse, error) {
 	account, err := s.Authenticate(ctx, in.GetCaller())
@@ -72,13 +75,22 @@ func (s *projectServer) CreateProject(ctx context.Context, in *pb.CreateProjectR
 	if err = flowid.ValidateTeamSpaceID(in.GetTeamSpaceId()); err != nil {
 		return nil, boundary.RPCStatus(err)
 	}
+	initial, err := validInitialSession(in, account)
+	if err != nil {
+		return nil, err
+	}
 	if err = s.admitCreator(ctx, account, in.GetTeamSpaceId()); err != nil {
 		return nil, err
 	}
+	if initial != nil && initial.Model != "" {
+		if err = admitModel(ctx, s.Boundary, s.models, account.AccountID, conversation.Model(initial.Model)); err != nil {
+			return nil, refusalStatus(err)
+		}
+	}
 	projectID, setupID := flowid.ProjectCreationIDs(account.AccountID, in.GetRequestId(), s.projectIDLength)
 	start := projects.ProjectStart{ProjectID: projectID, CreatorAccountID: account.AccountID, Name: in.GetName(), SetupFlowID: flowid.SetupFlowID(projectID, setupID),
-		TemplateRevision: apptemplate.Current().Revision, TeamSpaceID: in.GetTeamSpaceId(), CreatorIsPlatformAdmin: accounts.IsAdministrator(account)}
-	fingerprint := managedProjectCreationFingerprint(account.AccountID, in.GetRequestId(), in.GetName(), in.GetTeamSpaceId())
+		TemplateRevision: apptemplate.Current().Revision, TeamSpaceID: in.GetTeamSpaceId(), CreatorIsPlatformAdmin: accounts.IsAdministrator(account), InitialSession: initial}
+	fingerprint := managedProjectCreationFingerprint(account.AccountID, in.GetRequestId(), in.GetName(), in.GetTeamSpaceId(), initial)
 	start.Identity = dexflow.StartIdentity{RequestID: fingerprint, Fingerprint: fingerprint, ActorAccountID: account.AccountID}
 	if err = s.projects.Create(ctx, start); err != nil {
 		return nil, boundary.RPCStatus(err)
@@ -106,21 +118,69 @@ func (s *projectServer) admitCreator(ctx context.Context, account accounts.Accou
 	return nil
 }
 
+// validInitialSession admits the Session's first turn of a creation before any
+// Flow starts: a first message as SendMessage admits one, with its message ID,
+// and a known model, which admitModel then authorizes. It is nil when the
+// request names neither.
+func validInitialSession(in *pb.CreateProjectRequest, account accounts.AccountSummary) (*projects.SessionStartRequest, error) {
+	if in.GetInitialMessage() == "" && in.GetMessageId() == "" && in.GetModel() == pb.AgentModel_AGENT_MODEL_UNSPECIFIED {
+		return nil, nil
+	}
+	initial := &projects.SessionStartRequest{}
+	if in.GetInitialMessage() != "" || in.GetMessageId() != "" {
+		if err := boundary.ValidateMessageID(in.GetMessageId()); err != nil {
+			return nil, err
+		}
+		if err := boundary.InvalidIf(!validMessageContent(in.GetInitialMessage()), "invalid initial message content"); err != nil {
+			return nil, err
+		}
+		initial.MessageID, initial.Text = in.GetMessageId(), in.GetInitialMessage()
+		initial.AuthorAccountID, initial.AuthorEmail = account.AccountID, account.CanonicalEmail
+	}
+	if in.GetModel() != pb.AgentModel_AGENT_MODEL_UNSPECIFIED {
+		model, isKnown := sessionModels[in.GetModel()]
+		if !isKnown {
+			return nil, status.Error(codes.InvalidArgument, "a supported model is required")
+		}
+		initial.Model = string(model)
+	}
+	return initial, nil
+}
+
+// refusalStatus is the public status of a refused model admission.
+func refusalStatus(err error) error {
+	if refusal, isRefused := errors.AsType[*commandRefusalError](err); isRefused {
+		return refusal.public
+	}
+	return boundary.RPCStatus(err)
+}
+
 // managedProjectCreationFingerprint keeps the canonical CREATE request encoding
 // stable independently of the durable repository binding's shape. The fixed
 // repository values describe a template-created repository before provisioning;
 // provider results and template revisions never enter the logical identity.
-func managedProjectCreationFingerprint(accountID, requestID, name, teamSpaceID string) string {
+// The Session's first turn enters it by the digest of its message, so a retry
+// that changes the message, its ID or the model conflicts; a request without
+// one keeps the encoding it had before.
+func managedProjectCreationFingerprint(accountID, requestID, name, teamSpaceID string, initial *projects.SessionStartRequest) string {
 	type repositoryCreationIdentity struct {
 		RepositoryID, InstallationID int64
 		FullName, URL, DefaultBranch string
 		Managed                      bool
 		Generation                   uint64
 	}
+	type sessionCreationIdentity struct {
+		Model, MessageID, MessageDigest string
+	}
+	var session *sessionCreationIdentity
+	if initial != nil {
+		session = &sessionCreationIdentity{Model: initial.Model, MessageID: initial.MessageID, MessageDigest: flowid.Fingerprint(initial.Text)}
+	}
 	return flowid.Fingerprint(struct {
 		Mode, AccountID, RequestID, Name, TeamSpaceID string
 		Repository                                    repositoryCreationIdentity
-	}{"CREATE", accountID, requestID, name, teamSpaceID, repositoryCreationIdentity{Managed: true}})
+		Session                                       *sessionCreationIdentity `json:",omitempty"`
+	}{"CREATE", accountID, requestID, name, teamSpaceID, repositoryCreationIdentity{Managed: true}, session})
 }
 
 // ListProjects lists from the read model, newest first, every Project of a

@@ -116,11 +116,14 @@ turn needs the next model step.
 
 ### Questions and the requirements card
 
-`request_user_input` and `confirm_requirements` are offered to Codex. `RouteTool` sets
-`PendingUserInput` and the turn waits in `AwaitUser` as today. Codex's MCP call returns when the
+`request_user_input` and `confirm_requirements` are offered to Codex. For a question `RouteTool`
+sets `PendingUserInput` and the turn waits in `AwaitUser` as today. Codex's MCP call returns when the
 answers are recorded (the answer entry carries `AnsweredInputCallID`), or after 30 minutes with
 "the question is still open; the answers will arrive as a message", in which case the Bridge
-delivers the answer entry later as ordinary input.
+delivers the answer entry later as ordinary input. A requirements card does not wait
+([session](../agent-harness-design/session.md#requirements-cards)): `RouteTool` records it as the
+next version and answers `{"status":"recorded","version":N}`, which the Bridge returns to Codex as
+an ordinary result at once, and Codex goes on. A change to the card reaches Codex as a message.
 
 ### Tool approvals
 

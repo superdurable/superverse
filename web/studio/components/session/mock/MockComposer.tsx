@@ -11,7 +11,7 @@
 import { Fragment, useEffect, useId, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
-import type { AgentDescription, RequirementsDecision, UserInputAnswer } from "@/lib/session/agent-types";
+import type { AgentDescription, UserInputAnswer } from "@/lib/session/agent-types";
 import {
   MOCK_ARGUMENT_VALUE,
   MOCK_CATEGORIES,
@@ -22,7 +22,6 @@ import {
   mockInputText,
   nextMockInput,
   receivedMockInputs,
-  type MockInputChoice,
   type MockProgress,
   type MockScenario,
   type MockScenarioCatalog,
@@ -39,10 +38,8 @@ const FIELD =
 function blockedReason(input: MockScenarioInput, pending: PendingInput | null): string | null {
   switch (input.kind) {
     case "KIND_MESSAGE":
-      return pending === null ? null : "Answer the pending input first";
-    case "KIND_REQUIREMENTS_CONFIRM":
-    case "KIND_REQUIREMENTS_CHANGE":
-      return pending?.kind === "requirements" ? null : "Waits for the requirements card";
+      // A requirements card a Session still waits at takes the message as its reply.
+      return pending === null || pending.kind === "requirements" ? null : "Answer the pending input first";
     case "KIND_ANSWERS":
       return pending?.kind === "question" && pending.questions.length === input.answers.length
         ? null
@@ -55,28 +52,29 @@ function blockedReason(input: MockScenarioInput, pending: PendingInput | null): 
 /**
  * The composer of a Session on the mock model, which answers only its scenarios' inputs, in
  * order: a category, a scenario of it and its arguments; Send dispatches the scenario's next input
- * as its kind arrives. A message or a request for changes carries the scenario's marker; a
- * confirmation or answers resolve the pending input. Which input is next is
+ * as its kind arrives. A message carries the scenario's marker; answers resolve the pending
+ * questions. Which input is next is
  * what the newest mock reply reported (`progress`), so no input is ever chosen by hand.
  * While a turn runs, and from a send until the Session took the input, nothing can be sent, so a
- * second click cannot send an input twice. The creation page shows the same composer before the
+ * second click cannot send an input twice; only a turn that waits on a timer takes a message input,
+ * which is steered into it. The creation page shows the same composer before the
  * Session exists, where the next input is the first one of the scenario.
  */
 export function MockComposer({
   catalog,
   progress,
   turnRunning,
+  timerWait = false,
   tasksRunning = false,
   lastSequence,
   pendingInput,
   busy,
   disabledReason,
-  initial = null,
   newProject = false,
   sendLabel = "Send next input",
   className = "border-t border-line",
   onSend,
-  onDecide,
+  onSteer,
   onAnswer,
   onStop,
   stopDisabled = false,
@@ -88,6 +86,11 @@ export function MockComposer({
   progress: MockProgress;
   /** Whether the Agent is working on a turn. */
   turnRunning: boolean;
+  /**
+   * Whether the running turn waits on a durable timer, which a steered message interrupts: a scenario's
+   * next message input is then sent and steered into the turn (`onSteer`), as a change to the brief is.
+   */
+  timerWait?: boolean;
   /** Whether a background task runs, whose notification continues the scenario. */
   tasksRunning?: boolean;
   /** The Session's last entry sequence, which an input the Session took raises. */
@@ -96,17 +99,16 @@ export function MockComposer({
   busy: boolean;
   /** Why the Session takes no input now, or null. */
   disabledReason: string | null;
-  /** The scenario and argument values the composer starts with, such as those of an unsent first message. */
-  initial?: MockInputChoice | null;
   /** Whether the composer starts a new project, which offers the scenarios that change the source. */
   newProject?: boolean;
   /** The label of the send button. */
   sendLabel?: string;
   /** The frame around the composer; the Session docks it below its conversation. */
   className?: string;
-  /** Sends a message input as its text, with the scenario and argument values behind the text. */
-  onSend: (text: string, choice: MockInputChoice) => Promise<unknown>;
-  onDecide: (callId: string, decision: RequirementsDecision) => Promise<unknown>;
+  /** Sends a message input as its text, which carries the scenario's and its arguments' markers. */
+  onSend: (text: string) => Promise<unknown>;
+  /** Sends a message input and steers it into the running turn. */
+  onSteer?: (text: string) => Promise<unknown>;
   onAnswer: (callId: string, answers: readonly UserInputAnswer[]) => Promise<unknown>;
   /** Shown while a turn or a task runs; omitted otherwise. */
   onStop?: () => unknown;
@@ -120,16 +122,11 @@ export function MockComposer({
   const scenarioId = useId();
   const argumentsId = useId();
   const statusId = useId();
-  const [chosen, setChosen] = useState<string | null>(initial?.scenario ?? null);
-  const [values, setValues] = useState<Record<string, string>>(() =>
-    Object.fromEntries(
-      Object.entries(initial?.arguments ?? {}).map(([name, value]) => [`${initial?.scenario}:${name}`, value]),
-    ),
-  );
+  const [chosen, setChosen] = useState<string | null>(null);
+  const [values, setValues] = useState<Record<string, string>>({});
   // The last entry sequence when an input was sent; the Session has taken it once it grew.
   const [sentAt, setSentAt] = useState<number | null>(null);
   const awaitingInput = sentAt !== null && lastSequence <= sentAt;
-  const locked = busy || turnRunning || awaitingInput;
   // Listed by title, which the scenario select shows.
   const scenarios = [...(catalog?.scenarios ?? [])].sort((a, b) => a.title.localeCompare(b.title));
   const offered = (item: MockScenario) => mockScenarioOffered(item, progress, newProject);
@@ -144,6 +141,10 @@ export function MockComposer({
   // The scenario received every input, so Send starts it again from input 1.
   const finished = scenario !== null && received === scenario.inputs.length;
   const input = scenario?.inputs[next - 1] ?? null;
+  // A message input steers a turn that waits on a timer; any other running turn takes no input.
+  const steers = turnRunning && timerWait && onSteer !== undefined && input?.kind === "KIND_MESSAGE";
+  const working = (turnRunning && !steers) || awaitingInput;
+  const locked = busy || working;
   const argumentValues = Object.fromEntries(
     (scenario?.arguments ?? []).map(({ name, defaultValue }) => [
       name,
@@ -160,7 +161,7 @@ export function MockComposer({
           : (disabledReason ??
             (busy
               ? "A request is already running"
-              : turnRunning || awaitingInput
+              : working
                 ? "The agent is working on the last input"
                 : finished && tasksRunning
                   ? "Background tasks still run; their notifications continue the scenario"
@@ -192,13 +193,8 @@ export function MockComposer({
     try {
       switch (input.kind) {
         case "KIND_MESSAGE":
-          await onSend(mockInputText(input, argumentValues), { scenario: scenario.name, arguments: argumentValues });
-          break;
-        case "KIND_REQUIREMENTS_CHANGE":
-          await onDecide(callId, { isConfirmed: false, requestedChanges: mockInputText(input, argumentValues) });
-          break;
-        case "KIND_REQUIREMENTS_CONFIRM":
-          await onDecide(callId, { isConfirmed: true, requestedChanges: "" });
+          const text = mockInputText(input, argumentValues);
+          await (steers && onSteer ? onSteer(text) : onSend(text));
           break;
         case "KIND_ANSWERS":
           await onAnswer(

@@ -7,43 +7,29 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 /*
- * Browser-local intents that outlive a navigation: the Project being created
- * and the first message of its Session with the model the person chose for it.
- * They hold request IDs so that a retry, reload or remount repeats the same
- * request. Corrupt values are discarded and never sent. Storage errors reach
- * the caller: a creation the browser could not keep must not start.
+ * The browser-local intent of the Project being created: it outlives the navigation to the creation
+ * page and holds the request IDs, so that a retry, reload or remount repeats the same CreateProject
+ * request, which carries the Session's first message and model. Corrupt values are discarded and never
+ * sent. Storage errors reach the caller: a creation the browser could not keep must not start.
  */
 
 import { readStored, removeStored, STORAGE_KEYS, writeStored } from "@/lib/browser/storage";
 import { isRecord, type UnknownRecord } from "@/lib/shared/json";
 
 /**
- * What the person chose on the creation page for the Session's first turn: its model, as the
- * Session's model picker names it, and, on the mock model, the scenario and argument values whose
- * first input the message is. The creation page always stores a model; null is an intent stored
- * before the model was chosen there, which takes the starting model when Build delivers it. Build,
- * which owns the Session's models, checks the model name.
+ * A template-created Project in its Teamspace with the first message of its Session (`prompt`) and the
+ * model the person chose for it, as the Session's model picker names it, with stable retry identities.
+ * The creation page always stores a model; null is a creation stored before the model was chosen there,
+ * which the server starts on its default model.
  */
-type FirstMessageChoice = {
-  model: string | null;
-  mock: { scenario: string; arguments: Record<string, string> } | null;
-};
-
-/** A template-created Project in its Teamspace and the first message of its Session, with stable retry identities. */
-export type PendingProjectCreation = FirstMessageChoice & {
+export type PendingProjectCreation = {
   teamSpaceId: string;
   name: string;
   prompt: string;
+  model: string | null;
   idempotencyKey: string;
   messageIdempotencyKey: string;
 };
-
-/**
- * The creation intent of a Project: the first message of the Session that ProjectFlow starts once
- * the Project is READY, and the model it runs on. Build applies the model and sends the message
- * once. Its key is the message's ID, so a resend names the same message.
- */
-export type ProjectIntent = FirstMessageChoice & { initialMessage: string; idempotencyKey: string };
 
 function read(key: string): UnknownRecord | null {
   const encoded = readStored("session", key);
@@ -62,23 +48,6 @@ function nonEmpty(value: unknown): value is string {
   return typeof value === "string" && value.trim() !== "";
 }
 
-function isMockChoice(value: unknown): value is NonNullable<FirstMessageChoice["mock"]> {
-  return (
-    isRecord(value) &&
-    nonEmpty(value.scenario) &&
-    isRecord(value.arguments) &&
-    Object.values(value.arguments).every((argument) => typeof argument === "string")
-  );
-}
-
-/** The model and mock input of a stored value, each null when absent; null when either is invalid. */
-function readChoice(value: UnknownRecord): FirstMessageChoice | null {
-  const model = value.model ?? null;
-  const mock = value.mock ?? null;
-  if ((model === null || nonEmpty(model)) && (mock === null || isMockChoice(mock))) return { model, mock };
-  return null;
-}
-
 export function hasPendingProjectCreation(): boolean {
   return readStored("session", STORAGE_KEYS.projectCreation) !== null;
 }
@@ -91,9 +60,9 @@ export function encodedPendingProjectCreation(): string | null {
 export function readPendingProjectCreation(): PendingProjectCreation | null {
   const value = read(STORAGE_KEYS.projectCreation);
   if (!value) return null;
-  const choice = readChoice(value);
+  const model = value.model ?? null;
   if (
-    choice &&
+    (model === null || nonEmpty(model)) &&
     nonEmpty(value.teamSpaceId) &&
     nonEmpty(value.name) &&
     nonEmpty(value.prompt) &&
@@ -101,10 +70,10 @@ export function readPendingProjectCreation(): PendingProjectCreation | null {
     nonEmpty(value.idempotencyKey)
   )
     return {
-      ...choice,
       teamSpaceId: value.teamSpaceId,
       name: value.name,
       prompt: value.prompt,
+      model,
       idempotencyKey: value.idempotencyKey,
       messageIdempotencyKey: value.messageIdempotencyKey,
     };
@@ -118,21 +87,4 @@ export function storePendingProjectCreation(creation: PendingProjectCreation): v
 
 export function clearPendingProjectCreation(): void {
   removeStored("session", STORAGE_KEYS.projectCreation);
-}
-
-export function readProjectIntent(projectId: string): ProjectIntent | null {
-  const value = read(STORAGE_KEYS.projectIntent(projectId));
-  const choice = value && readChoice(value);
-  if (value && choice && nonEmpty(value.initialMessage) && nonEmpty(value.idempotencyKey))
-    return { ...choice, initialMessage: value.initialMessage, idempotencyKey: value.idempotencyKey };
-  if (value) removeStored("session", STORAGE_KEYS.projectIntent(projectId));
-  return null;
-}
-
-export function storeProjectIntent(projectId: string, intent: ProjectIntent): void {
-  writeStored("session", STORAGE_KEYS.projectIntent(projectId), JSON.stringify(intent));
-}
-
-export function clearProjectIntent(projectId: string): void {
-  removeStored("session", STORAGE_KEYS.projectIntent(projectId));
 }

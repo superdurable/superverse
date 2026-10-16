@@ -38,10 +38,10 @@ from a picked example's title or from the description; Advanced holds the name t
 Session's model picker, preselected on Sonnet or for the administrator on the mock model where the server
 offers it; the mock composer takes the first input of a scenario in place of free text when the mock model
 is chosen.
-ProjectCreationPage admits the managed source with a stable request ID, writes the
-creation intent, marks the Project's first conversation in this browser and opens the
-Builder, which applies the model and sends the first message once ProjectFlow started
-the Session. ProjectBuilder follows the Project's stage (`lib/project/stage`): the chat
+ProjectCreationPage admits the managed source with a stable request ID and the Session's
+first message with its message ID and model, which ProjectFlow starts the Session with, so the
+start needs no open tab; it marks the Project's first conversation in this browser and opens
+the Builder. ProjectBuilder follows the Project's stage (`lib/project/stage`): the chat
 alone until the agent's first requirements card or the agent's own processes, then the
 standard frame, whose tabs, Publish and Preview's status appear as they have something
 to show. ProjectPage is the Project's

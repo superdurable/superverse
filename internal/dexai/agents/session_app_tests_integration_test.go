@@ -27,7 +27,7 @@ import (
 // expectation, the second requirements_untested on a trace that leaves out R2,
 // the third test_environment_unavailable while a detached server holds the
 // engine's Dex port, and the fourth pushes with the tests stage passed and the
-// trace checked against the confirmed requirement IDs of version 1. Dex, the
+// trace checked against the recorded requirement IDs of version 1. Dex, the
 // Sandbox, the test engine and the Git host are real; only the model is the
 // mock. The server detaches from a foreground command rather than running as a
 // background task: a Session whose turn grows this long routes no further tool
@@ -36,9 +36,9 @@ import (
 func TestSessionMockAppTestsDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 2*mockTurnTimeout)
 	defer cancel()
-	session, agent := startConfirmed(t, ctx, mockInput(t, "app-tests", 1), mockInput(t, "app-tests", 2))
+	session, agent := startRecorded(t, ctx, mockInput(t, "app-tests", 1))
 	if confirmed := agent.Description.ConfirmedRequirements; confirmed == nil || len(confirmed.Spec.Features) != 2 {
-		t.Fatalf("the card was not confirmed with R1 and R2: %+v", confirmed)
+		t.Fatalf("the card was not recorded with R1 and R2: %+v", confirmed)
 	}
 	messages := agent.History.Messages
 	wantCodes := []string{toolfailure.ApplicationTestsFailed.String(), toolfailure.RequirementsUntested.String(), toolfailure.TestEnvironmentUnavailable.String(), agentloop.CommitPushedForTest}

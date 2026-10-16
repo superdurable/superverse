@@ -17,7 +17,7 @@ Other topics own what this one uses:
 |---|---|
 | Subagent Flow, worktrees, reports, limits | [subagents](subagents.md) |
 | Notification path, `connector` notifications, automatic turns | [notifications and feedback](notifications-and-feedback.md) |
-| Requirements card that lists connections | [session](session.md#requirements-confirmation) |
+| Requirements card that lists connections | [session](session.md#requirements-cards) |
 | `commit_and_push`, dexcli checks, application tests that use mocks | [commit gate and application tests](commit-gate-and-app-tests.md) |
 | Preview engine and the Preview deployment chain | [sandbox](sandbox.md), [notifications and feedback](notifications-and-feedback.md#the-deploy-preview-chain) |
 
@@ -189,8 +189,8 @@ How they fit the requirements flow:
 1. For a new application or large change the main agent starts `connector_select` with the user's
    requirements.
 2. The main agent turns its report into the `connections` of the requirements card and, when several
-   choices exist, asks with `request_user_input` first ([session](session.md#requirements-confirmation)).
-3. After the user confirms, the main agent starts one `connector_develop` per gap, in parallel up to the
+   choices exist, asks with `request_user_input` first ([session](session.md#requirements-cards)).
+3. Once the card is recorded, the main agent starts one `connector_develop` per gap, in parallel up to the
    subagent limits, and keeps working on the rest of the application.
 4. When a develop subagent completes, its notification carries the contribution (the module, the
    branch and its head commit), the Session Service submits it to the connector's
@@ -604,11 +604,12 @@ missing credentials or the test repository make the result incomplete, never a p
     repeats a publication at the same commit, and refuses a change outside the module and a version
     that is not after the latest release.
 - **Mock scenarios** (each with ordered inputs and a Dex integration test that runs it):
-  `connector-select-existing` (describe, confirm), `connector-select-choice` (describe, choose among
-  candidate connectors, confirm), `connector-develop-new`, `connector-develop-operation` (describe,
-  confirm, branch and contribution), `connector-develop-fix` (describe the defect, agree to submit a
+  `connector-select-existing` (describe; the card follows and the agent goes on),
+  `connector-select-choice` (describe, choose among candidate connectors; the card follows),
+  `connector-develop-new`, `connector-develop-operation` (describe; the card, then the branch and
+  contribution), `connector-develop-fix` (describe the defect, agree to submit a
   fix, branch and contribution) and `connector-pr-retry` (pull request creation fails until
-  `pull_request_failed`) and `connector-release-candidate` (describe, confirm, a complete new
+  `pull_request_failed`) and `connector-release-candidate` (describe; the card, then a complete new
   connector whose candidate the application uses).
 - **Release resolver.** A real released connector resolves, caches and survives eviction; a missing asset,
   a wrong digest and a mismatching identity are `CONNECTOR_RELEASE_UNAVAILABLE`.

@@ -6,20 +6,21 @@
 #
 # SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-# A new application: the Agent shows the requirements card first and builds only
-# after the user confirms it. The script touches no workspace file; it records
-# progress and reports, so a Session can run it on any READY Project. Input 2
-# confirms the card; the other requirements-* scenarios change requirements.
+# A new application: the Agent shows the requirements card first, which the
+# Session records as version 1, and keeps building in the same turn. The script
+# touches no workspace file; it records progress and reports, so a Session can
+# run it on any READY Project. The other requirements-* scenarios change
+# requirements.
 name: requirements-card
 title: "Requirements card"
-description: "A new application: the requirements card first, then, after the confirmation, a progress list and a final reply."
+description: "A new application: the requirements card first, recorded as version 1, then, in the same turn, a progress list and a final reply."
 category: project_feature
 inputs:
   - label: "Describe the application"
     message: "Build a release newsletter."
     replies:
-      - thinking: "This is a new application, so the user confirms the requirements before I write any code."
-        text: "Here is what I plan to build. Please confirm it, or tell me what to change."
+      - thinking: "This is a new application, so I show the requirements before I write any code, then keep building."
+        text: "Here is what I will build. I am starting now; tell me in the chat if anything should change."
         tool_uses:
           - name: confirm_requirements
             input:
@@ -36,13 +37,10 @@ inputs:
                   user_setup: "Connect the Gmail account that sends the newsletter."
               user_setup: ["Connect the Gmail account in Studio."]
               acceptance: ["A test newsletter arrives in the administrator's mailbox after approval."]
-  - label: "Confirm the requirements"
-    requirements_confirm: true
-    replies:
       - tool_uses:
           - name: write_todos
             input:
               todos:
                 - {content: "Build the subscription page", status: in_progress}
                 - {content: "Build the review and send flow", status: pending}
-      - text: "The requirements are confirmed, and I will build exactly these features."
+      - text: "The requirements are recorded as version 1, and I will build exactly these features."

@@ -159,7 +159,7 @@ export function composerPlaceholder({
     if (answerAwaitingReconciliation) return "Waiting for the agent to accept your answer…";
     switch (pendingInputKind) {
       case "requirements":
-        return "Reply or ask for a change…";
+        return "Reply to build it, or say what to change…";
       case "question":
         return "Answer the agent's questions before sending another message";
     }

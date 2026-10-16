@@ -81,14 +81,14 @@ func (s *mockSession) answer(ctx context.Context, request agentloop.AnswerQuesti
 
 // An input sent before the one the scenario expects is answered with a text
 // that names the expected input, and no tool runs. The scenario then passes in
-// order: the card, a request for changes with input 2's marked text, the
-// revised card and its confirmation.
+// order: the card of input 1 and the revised card of input 2, each recorded in
+// its own turn.
 func TestSessionMockInputOrderDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
 	defer cancel()
-	describe, change, confirm := mockInput(t, "requirements-draft-changes", 1), mockInput(t, "requirements-draft-changes", 2), mockInput(t, "requirements-draft-changes", 3)
-	if change.Kind != mockmodel.InputRequirementsChange || confirm.Kind != mockmodel.InputRequirementsConfirm {
-		t.Fatalf("requirements-draft-changes lists inputs 2 and 3 as %s and %s", change.Kind, confirm.Kind)
+	describe, change := mockInput(t, "requirements-amended", 1), mockInput(t, "requirements-amended", 2)
+	if describe.Kind != mockmodel.InputMessage || change.Kind != mockmodel.InputMessage {
+		t.Fatalf("requirements-amended lists inputs 1 and 2 as %s and %s", describe.Kind, change.Kind)
 	}
 	session := newMockSession(t, ctx, change.Content)
 	agent := session.finishedTurn(ctx)
@@ -98,34 +98,23 @@ func TestSessionMockInputOrderDexIntegration(t *testing.T) {
 		t.Fatalf("input 2 before input 1 was not answered with the out-of-order text alone: %+v", assistant)
 	}
 	requireMock(t, assistant[0], mockInputTokens)
-	if tools := ofRole(agent.History.Messages, conversation.MessageRoleTool); len(tools) != 0 || agent.Description.PendingUserInput != nil {
-		t.Fatalf("the out-of-order input ran %d tools or left a pending input", len(tools))
+	if tools := ofRole(agent.History.Messages, conversation.MessageRoleTool); len(tools) != 0 || agent.Description.PendingUserInput != nil || agent.Description.ConfirmedRequirements != nil {
+		t.Fatalf("the out-of-order input ran %d tools, left a pending input or recorded requirements", len(tools))
 	}
 	if agent.Description.MockProgress != nil {
 		t.Fatalf("an input out of order started the scenario: %+v", agent.Description.MockProgress)
 	}
 
+	before := agent.Description.LastSequence
 	session.send(ctx, describe.Content)
-	agent = session.requirementsCard(ctx, agent.Description.LastSequence)
-	card := *agent.Description.PendingUserInput
-	answered := session.decide(ctx, card, agentloop.RequirementsDecision{RequestedChanges: change.Content}, agent.Description.LastSequence)
-	agent = session.requirementsCard(ctx, answered.Sequence)
-	revised := *agent.Description.PendingUserInput
-	if len(revised.Requirements.Features) != 3 {
-		t.Fatalf("input 2 did not get the revised card: %+v", revised.Requirements)
+	agent = session.recordedRequirements(ctx, before, 1)
+	before = agent.Description.LastSequence
+	session.send(ctx, change.Content)
+	agent = session.recordedRequirements(ctx, before, 2)
+	if features := agent.Description.ConfirmedRequirements.Spec.Features; len(features) != 3 || features[2].ID != "R4" {
+		t.Fatalf("input 2 did not get the revised card: %+v", features)
 	}
-	answered = session.decide(ctx, revised, agentloop.RequirementsDecision{IsConfirmed: true}, answered.Sequence)
-	agent = session.waitForSnapshot(ctx, "the turn after input 3", func(agent agentloop.AgentSnapshot) bool {
-		return endsWithReplyAfter(agent, answered.Sequence)
-	})
-	requireNoFailure(t, agent.History)
-	if final := agent.History.Messages[len(agent.History.Messages)-1].Message.Content; !strings.Contains(final, "revised requirements are confirmed") {
-		t.Fatalf("the scenario did not end after its three inputs: %q", final)
-	}
-	if confirmed := agent.Description.ConfirmedRequirements; confirmed == nil || confirmed.Revision != 1 || len(confirmed.Spec.Features) != 3 {
-		t.Fatalf("the confirmation did not store the revised card as version 1: %+v", confirmed)
-	}
-	requireProgress(t, agent, conversation.MockProgress{Scenario: "requirements-draft-changes", Input: 3})
+	requireProgress(t, agent, conversation.MockProgress{Scenario: "requirements-amended", Input: 2, NextInput: 3})
 }
 
 // requireProgress fails unless the Snapshot reports the progress of the

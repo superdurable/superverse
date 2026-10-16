@@ -229,16 +229,17 @@ need is a capability gap to report.
 
 ## Confirmation artifact
 
-Confirm a new application or a large change with the user once, before code, with the
-requirements card (`confirm_requirements`): the features, the connections to external
-systems, what the user must prepare and how acceptance works, in business language. A
-large change alters the confirmed requirements: it adds, removes or changes a feature or
-a connection, or changes what the user sets up or the acceptance. Its revised card keeps
-every confirmed feature's number and never reuses a removed one; a completely different
-request gets a card that replaces the requirements and numbers from R1 again. Make a
-small change, one that leaves the confirmed requirements as they are (copy, styling,
-layout, a bug fix that restores confirmed behavior, refactoring), directly, and never ask
-again for a version the user confirmed. The design record below stays in the
+Show a new application or a large change to the user before code with the requirements
+card (`confirm_requirements`): the features, the connections to external systems, what
+the user must prepare and how acceptance works, in business language. The card does not
+wait: the Session records it as the next version and you keep building, and the user
+changes it with a message, which you answer with a revised card. A large change alters
+the current requirements: it adds, removes or changes a feature or a connection, or
+changes what the user sets up or the acceptance. Its revised card keeps every recorded
+feature's number and never reuses a removed one; a completely different request gets a
+card that replaces the requirements and numbers from R1 again. Make a small change, one
+that leaves the current requirements as they are (copy, styling, layout, a bug fix that
+restores recorded behavior, refactoring), directly. The design record below stays in the
 application's owning documentation; it is not a second confirmation for the user.
 
 A card that adds, removes or changes a Flow's Steps, waits, transitions, Channels,
@@ -276,6 +277,6 @@ Before code, record:
    capability gap;
 9. unresolved tradeoffs.
 
-A clear implementation request authorizes the work; the requirements card confirms
+A clear implementation request authorizes the work; the requirements card shows
 what a new application or a large change will be. A casual discussion response is not
 approval to implement.

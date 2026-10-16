@@ -49,7 +49,7 @@ none otherwise. It refuses to start a second binding of an Orca session, so that
   that ran before left is drained (below). Then, once per binding, the history import (the newest public
   messages within 200 messages and 512 KiB, after the last imported one, as `imported_message`
   events), and once the relay is ready, the brief (the platform's `agentContext`, then the Project's
-  name, requirements, HEAD, todo list and the last 20 entries' public messages). The relay's first
+  name, the current requirements under "Current requirements", HEAD, todo list and the last 20 entries' public messages). The relay's first
   `sync` after it starts, and the brief's, ask for `agentContext` (`context: true`). The brief
   waits up to three minutes while `agentContextState` is `pending`. After a timeout, a later
   `ready` answer delivers the platform's `<repository_context>` section once. Follow-up checks
@@ -179,8 +179,8 @@ none otherwise. It refuses to start a second binding of an Orca session, so that
   Codex turn completed, or the Bridge restarted) the placeholder is a late-result message and the answer an ordinary message.
   The wait's end keeps its answer ("the question is still open"). A question a Stop or takeover
   removes never gets an answer entry, so its call waits until Codex cancels it or the wait ends.
-  `confirm_requirements` keeps its end-turn flow: its placeholder has no status and resolves the
-  call at once; the confirmation arrives as a new message.
+  `confirm_requirements` resolves at once with its ordinary result (no status): the Session records
+  the card as the current version and the turn goes on; a change to it arrives as a new message.
 - **Reports.** One sender sends the stored reports in order, one at a time. The head gets its
   sequence (acknowledged + 1) when first sent and keeps it across resends and restarts; a sent
   report is always resent, never dropped, because the Session may have admitted it. `duplicate` is
@@ -298,7 +298,7 @@ None of these runs in CI; each needs Orca 1.4.224, Codex 0.162.x and the Native 
 7. **The owner types in Orca.** The message is reported as `user_message` and its turn belongs to
    the current generation; echoes of delivered messages are not reported.
 8. **Questions.** The `waiting_for_user` placeholder never resolves the call, with the answer in
-   the same sync page or a later one; `confirm_requirements` resolves at once with its placeholder.
+   the same sync page or a later one; `confirm_requirements` resolves at once with its recorded result.
    An answer within 30 minutes is the MCP result; an unanswered question returns
    "still open" and its answer arrives later as a message; an answer read during a full-queue scan
    is the result and is not delivered again after one rewind or several.

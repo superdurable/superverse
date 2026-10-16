@@ -6,8 +6,8 @@
 #
 # SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-# A contribution whose draft pull request cannot be opened. The user confirms a
-# card with a new connector, and a connector_develop subagent builds mockretry
+# A contribution whose draft pull request cannot be opened. The Agent shows a
+# card with a new connector, and in the same turn a connector_develop subagent builds mockretry
 # on its library branch, which its finish pushes. The contribution's Flow then
 # fails to open the pull request in the upstream library and records
 # pull_request_failed; its connector notification opens an automatic turn in
@@ -24,7 +24,7 @@ inputs:
   - label: "Describe the application"
     message: "Build a page that lists the newest entries of our retry log."
     replies:
-      - text: "No released connector reads the log, so a new one is built upstream. Please confirm what I will build."
+      - text: "No released connector reads the log, so a new one is built upstream. Here is what I will build; tell me in the chat if anything should change."
         tool_uses:
           - name: confirm_requirements
             input:
@@ -40,9 +40,6 @@ inputs:
                   user_setup: "An API key of the log service."
               user_setup: ["Create an API key of the log service."]
               acceptance: ["The page shows the ten newest entries."]
-  - label: "Confirm the requirements"
-    requirements_confirm: true
-    replies:
       - text: "Building the mockretry connector upstream."
         tool_uses:
           - name: start_agent

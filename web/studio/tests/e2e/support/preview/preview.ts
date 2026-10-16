@@ -101,7 +101,7 @@ async function expectPreviewLink(page: Page, url: string) {
  * Waits until the automatic deployment of the Session's pushed head serves it: a configured Preview deploys a push
  * by itself, so the Interface shows it READY at that commit with no Start Preview. Returns the Preview URL.
  */
-export async function awaitDeployedPreview(page: Page, projectId: string, headCommit: string) {
+async function awaitDeployedPreview(page: Page, projectId: string, headCommit: string) {
   let url = "";
   await expect
     .poll(
@@ -183,6 +183,18 @@ export async function awaitConfigurationNotice(page: Page, projectId: string, he
   await expect(notice).toHaveAttribute("data-notification-kind", "delivery", { timeout: 30_000 });
   await expect(notice).toContainText(gap);
   await expect(notice.getByTestId("problem-fix").getByRole("link", { name: "Open Setup" })).toBeVisible();
+}
+
+/**
+ * The push's automatic deployment stopped at the Session's unconfigured Preview with the configuration notice:
+ * the person configures Preview and starts it, which then serves headCommit.
+ */
+export async function configureAndStartPreview(page: Page, projectId: string, headCommit: string) {
+  await awaitConfigurationNotice(page, projectId, headCommit, "summary-model");
+  await page.goto(`/p/${projectId}/tools?tool=publishing`);
+  await configure(page, "Preview", fillTemplateSummaryConnection);
+  await startPreview(page, projectId);
+  await awaitDeployedPreview(page, projectId, headCommit);
 }
 
 /** The prompt that asks the Agent to change the template's main heading to marker and push the change. */

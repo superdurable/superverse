@@ -209,25 +209,22 @@ type flowDesignRPCOutput struct {
 	Found  bool              `json:"found"`
 }
 
-// confirmFlowDesign moves FlowDesigns to a confirmation of card over stored,
-// whose confirmed requirements carry confirmed: the card's own design becomes
-// the confirmed one, a card without one carries the confirmed design forward,
-// and a card that replaces the requirements without one deletes it.
-func confirmFlowDesign(ctx dex.Context, stored *agentloop.ConfirmedRequirements, card agentloop.Requirements, confirmed *flowdesign.Reference) {
+// recordFlowDesign moves FlowDesigns to a card recorded over stored, whose
+// version carries recorded: the card's own design becomes the current one, a
+// card without one keeps the stored design, and a card that replaces the
+// requirements without one deletes it. A design an old waiting card left is deleted.
+func recordFlowDesign(ctx dex.Context, stored *agentloop.ConfirmedRequirements, recorded *flowdesign.Reference, design *flowdesign.Design) {
 	switch {
-	case card.Design != nil:
-		design := comm.Must(flowDesignsAttribute.Get(ctx, string(flowdesign.SlotPending)))
-		if design.Digest() != card.Design.Digest {
-			panic("the pending flow design does not match the card's reference")
-		}
-		comm.MustDo(flowDesignsAttribute.Set(ctx, string(flowdesign.SlotConfirmed), design))
-	case confirmed == nil && stored != nil && stored.Spec.Design != nil:
+	case design != nil:
+		comm.MustDo(flowDesignsAttribute.Set(ctx, string(flowdesign.SlotConfirmed), *design))
+	case recorded == nil && stored != nil && stored.Spec.Design != nil:
 		comm.MustDo(flowDesignsAttribute.Delete(ctx, string(flowdesign.SlotConfirmed)))
 	}
+	comm.MustDo(flowDesignsAttribute.Delete(ctx, string(flowdesign.SlotPending)))
 }
 
 // recordBuiltDesign records, in the commit of a result that BuildsDesign,
-// that the push built the confirmed Flow design, if there is one, and its commit.
+// that the push built the current Flow design, if there is one, and its commit.
 func recordBuiltDesign(ctx dex.Context, call conversation.ToolCall, result agentloop.ToolExecutionResult) {
 	confirmed := dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx))
 	if confirmed != nil && confirmed.Spec.Design != nil && agentloop.BuildsDesign(call, result) {

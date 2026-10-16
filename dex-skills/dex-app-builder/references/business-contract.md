@@ -52,9 +52,9 @@ Actors describe participants; roles group authenticated people with the same
 visibility and allowed operations; permissions describe individual Actions.
 Default to `admin` or the existing host authorization model and justify every
 additional role. Existing implementation authorization and stated requirements
-count as confirmation. The one confirmation of a new application or a large change is
-the requirements card, asked once; do not ask again, and do not ask merely to approve
-routine design defaults. The boundary matrices must distinguish
+count as confirmation. The requirements card shows a new application or a large change
+without waiting for an answer; do not ask for an approval of it, and do not ask merely
+to approve routine design defaults. The boundary matrices must distinguish
 parallel Steps, independently started top-level Flows that communicate through
 typed RPCs or Channels, and explicitly confirmed parent-child SubFlows.
 

@@ -17,7 +17,7 @@ browser or a Bridge cannot claim one. `SessionFlowService.AuthorizeSession` retu
 |---|---|
 | `SendMessage` | `UserMessage.Actor` on the queued message; on consumption the entry's `Meta.Actor` and its sender block |
 | `SteerQueuedMessage` | `PendingUserMessage.SteeredBy`, kept on the consumed entry as `EntryMeta.SteeredBy`; the author stays the sender |
-| `AnswerQuestions` (questions, turn limit, requirements card) | the answer's `UserMessage.Actor`, then the entry; a confirmation also sets `ConfirmedRequirements.ConfirmedBy` |
+| `AnswerQuestions` (questions, turn limit) | the answer's `UserMessage.Actor`, then the entry. A message that answers a card a Session still waits at keeps its `UserMessage.Actor` the same way; a recorded card has no `ConfirmedRequirements.ConfirmedBy`, which only versions confirmed while cards waited keep |
 | `InterruptAgent` (Stop) | `AgentInterrupt.Actor` (the first Stop of a turn wins) and the Stop marker entry |
 | `UpdateSessionModel` | `SessionModel.ChangedBy`, written only when a selection is accepted; an acknowledgement at the same revision keeps the previous changer |
 | `UpdatePreviewAutoDeploy` | new Attribute `PreviewAutoDeployChangedBy`, written by the RPC that writes `PreviewAutoDeploy`, under the same lock, only when the value changes |

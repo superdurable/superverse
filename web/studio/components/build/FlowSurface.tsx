@@ -155,7 +155,7 @@ export function PreviewSource({ projectId }: { projectId: string }) {
  * The Flow: the Flow Definitions of the version the bar selects. On Preview they are the prepared
  * current source of the Project's Session; on Live, the Live Release's, read-only. Before the Session
  * exists there is no source to draw; only mock mode, which wraps this surface in its fixture catalog,
- * still draws one. From a requirements card with a Flow design until its build is complete, Preview
+ * still draws one. From a recorded requirements card with a Flow design until its build is complete, Preview
  * draws the designed Flows from the design instead, and shows them by itself once per card version.
  * Until processes are built from the agent's own push, Preview draws nothing of the template the
  * Project started from: it waits calmly, with Build processes only where a person must press it.
@@ -205,9 +205,8 @@ export function FlowSurface({
   const stage = useProjectStage();
   const own = stage.hasOwnProcesses || environment === "live";
   const agent = session?.resource?.agent?.description;
-  const cardWaits = agent?.pendingUserInput?.kind === "KIND_REQUIREMENTS";
-  // Confirmed and still unbuilt: building while the agent works, otherwise its turn ended short of a build.
-  const confirmedState = agent?.status === "STATUS_WAITING_FOR_MESSAGE" ? "stalled" : "building";
+  // Recorded and still unbuilt: building while the agent works, otherwise its turn ended short of a build.
+  const cardState = agent?.status === "STATUS_WAITING_FOR_MESSAGE" ? "stalled" : "building";
   const prepared = preparedSourceOf(session?.resource);
   // Automatic builds off, or a failed build of the latest push, wait for a person's Build processes.
   const buildNeedsYou =
@@ -232,7 +231,7 @@ export function FlowSurface({
             Open a process of the design above to see its steps. The processes show here once the agent has built them.
           </NotReady>
         ) : stage.hasRequirements ? (
-          <CardBrief state={cardWaits ? "waiting" : confirmedState} />
+          <CardBrief state={cardState} />
         ) : (
           <NotReady kind="empty" heading="Reading your description…">
             The processes the agent builds from what you describe show here.

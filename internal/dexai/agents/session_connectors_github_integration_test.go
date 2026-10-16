@@ -43,7 +43,7 @@ func TestSessionMockConnectorPullRequestRetryGitHubIntegration(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
 	defer cancel()
-	session, _ := startConfirmed(t, ctx, mockInput(t, "connector-pr-retry", 1), mockInput(t, "connector-pr-retry", 2))
+	session, _ := startRecorded(t, ctx, mockInput(t, "connector-pr-retry", 1))
 	record, _, state := session.connectorSubagent(ctx, agenttasks.SubagentConnectorDevelop)
 	made := state.Outcome.Contribution
 	if made == nil || made.Slug != "mockretry" || record.Connector == nil {

@@ -56,7 +56,7 @@ var (
 	queuedUserMessagesChannel      = dex.DefineChannel[conversation.PendingUserMessage]("QueuedUserMessages")
 	steeredUserMessagesChannel     = dex.DefineChannel[conversation.PendingUserMessage]("SteeredUserMessages")
 
-	// The Agent's todo list, confirmed requirements with their Flow designs, and what a turn
+	// The Agent's todo list, the current requirements with their Flow design, and what a turn
 	// waits for: answers, approvals, a timer and the branches of a parallel tool wave.
 	todoListAttribute              = dex.DefineAttribute[agentloop.TodoList]("TodoList")
 	confirmedRequirementsAttribute = dex.DefineAttribute[agentloop.ConfirmedRequirements]("ConfirmedRequirements")
@@ -133,10 +133,10 @@ func (flow *SessionAgentFlow) GetSteps() []dex.StepDef {
 func (flow *SessionAgentFlow) GetRPCs() []dex.RPCDef {
 	queue := []dex.ChannelDef{queuedUserMessagesChannel}
 	return []dex.RPCDef{
-		dex.DefineRPC(flow.SendMessage, userCommandRPC(false, nil, inputLock)),
+		dex.DefineRPC(flow.SendMessage, loadDesigns(userCommandRPC(false, nil, inputLock, requirementsLock), flowdesign.SlotPending)),
 		dex.DefineRPC(flow.SteerMessage, userCommandRPC(true, queue)),
 		dex.DefineRPC(flow.DeleteQueuedMessage, userCommandRPC(true, queue)),
-		dex.DefineRPC(flow.AnswerQuestions, loadDesigns(userCommandRPC(false, nil, inputLock, requirementsLock), flowdesign.SlotPending)),
+		dex.DefineRPC(flow.AnswerQuestions, userCommandRPC(false, nil, inputLock)),
 		dex.DefineRPC(flow.ApproveTool, userCommandRPC(true, nil, approvalLock)),
 		// A model selection writes only SessionModel, so it never waits for a
 		// model call; the next turn's rollover applies it.
@@ -230,7 +230,8 @@ var (
 		ExecuteRetry: shortStepRetry, ExecuteLockAttributes: []dex.AttributeLock{statusLock}}
 )
 
-// SendMessage queues a user message unless a question awaits its answers.
+// SendMessage queues a user message unless a question awaits its answers; it
+// records and answers an old requirements card a Session still waits at (sendMessage).
 func (*SessionAgentFlow) SendMessage(ctx dex.Context, input conversation.PendingUserMessage) (*dex.RPCResult[bool], error) {
 	return sendMessage(ctx, input)
 }
@@ -246,23 +247,17 @@ func (*SessionAgentFlow) DeleteQueuedMessage(ctx dex.Context, input conversation
 	return deleteQueuedMessage(ctx, input)
 }
 
-// AnswerQuestions answers the pending input in one commit (a question batch or a
-// requirements card); a confirmation stores ConfirmedRequirements in that commit.
+// AnswerQuestions answers the pending question batch in one commit.
 func (*SessionAgentFlow) AnswerQuestions(ctx dex.Context, input agentloop.AnswerQuestionsRequest) (*dex.RPCResult[bool], error) {
 	pending := dexflow.OptionalValue(pendingUserInputAttribute.Get(ctx))
 	if !acceptsUserCommand(ctx) || pending == nil || pending.CallID != input.CallID {
 		return rpcAccepted(false), nil
 	}
-	stored := dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx))
-	answer, isValid := agentloop.AnswerPendingInput(*pending, input, stored, time.Now().UTC())
+	answer, isValid := agentloop.AnswerPendingInput(*pending, input)
 	if !isValid {
 		return rpcAccepted(false), nil
 	}
 	comm.MustDo(pendingUserInputAttribute.Delete(ctx))
-	if answer.Confirmed != nil {
-		confirmFlowDesign(ctx, stored, *pending.Requirements, answer.Confirmed.Spec.Design)
-		comm.MustDo(confirmedRequirementsAttribute.Set(ctx, *answer.Confirmed))
-	}
 	comm.MustDo(answeredUserInputsChannel.Publish(ctx, agentloop.AnsweredUserInput{CallID: pending.CallID, Message: answer.Message, Description: answer.Description}))
 	return rpcAccepted(true), nil
 }
@@ -450,9 +445,9 @@ func (*SessionAgentFlow) RenewSessionWorkspace(ctx dex.Context, _ dex.None) (*de
 }
 
 // dex:group group-id:session group-label:"Session"
-// dex:explanation text:"Admit the Session, then initialize the Agent state, the entry log and an empty workspace."
+// dex:explanation text:"Admit the Session, then initialize the Agent state, the entry log, an empty workspace and the creator's first message."
 type InitializeSessionAgent struct {
-	dex.StepDefaultsNoWaitFor[dex.None]
+	dex.StepDefaultsNoWaitFor[agentloop.SessionStartInput]
 	flow *SessionAgentFlow
 }
 
@@ -462,7 +457,7 @@ func (InitializeSessionAgent) GetStepOptions() *dex.StepOptions {
 
 // Execute admits the Session with its owner; the execution exists before the admission, so a
 // lost start response never leaves cleanup membership without an execution to reconcile.
-func (step InitializeSessionAgent) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, error) {
+func (step InitializeSessionAgent) Execute(ctx dex.Context, input agentloop.SessionStartInput) (*dex.StepDecision, error) {
 	identity := readSessionIdentity(ctx)
 	admitted, err := step.flow.dependency.AdmitSession(ctx, identity)
 	if err != nil {
@@ -482,6 +477,10 @@ func (step InitializeSessionAgent) Execute(ctx dex.Context, _ dex.None) (*dex.St
 	comm.MustDo(workspaceAttribute.Set(ctx, agentloop.SessionWorkspace{}))
 	comm.MustDo(workspaceUseAttribute.Set(ctx, agentloop.WorkspaceUse{}))
 	comm.MustDo(previewAutoDeployAttribute.Set(ctx, true))
+	// The Session starts once per Project, so its first message is admitted once.
+	if input.FirstMessage != nil {
+		comm.MustDo(queuedUserMessagesChannel.Publish(ctx, *input.FirstMessage))
+	}
 	return dex.GoTo(ActivateSession{}, nil), nil
 }
 
@@ -867,7 +866,7 @@ func (step RouteTool) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, e
 	}
 	if definition.IsBuiltIn() {
 		// A timer waits, a question ends the turn like a reply does, and any
-		// other built-in call has its result.
+		// other built-in call, a requirements card too, has its result.
 		next := routeBuiltInTool(ctx, call, state)
 		if next == "" {
 			next = advancePendingTools(ctx, 1)

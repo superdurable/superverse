@@ -29,7 +29,7 @@ import (
 func TestSessionMockSlackThreadApprovalDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 2*mockTurnTimeout)
 	defer cancel()
-	session, agent := startConfirmed(t, ctx, mockInput(t, "slack-thread-approval", 1), mockInput(t, "slack-thread-approval", 2))
+	session, agent := startRecorded(t, ctx, mockInput(t, "slack-thread-approval", 1))
 	if confirmed := agent.Description.ConfirmedRequirements; confirmed == nil || len(confirmed.Spec.Features) != 3 {
 		t.Fatalf("the card was not confirmed with R1 to R3: %+v", confirmed)
 	}

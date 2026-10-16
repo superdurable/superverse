@@ -2,7 +2,8 @@
 
 The Session Agent is the coding assistant that builds a user's Dex application inside
 Superverse. Users are not developers: they describe what they want in business
-terms, confirm a short requirements card, and watch the agent work. This directory
+terms, read the short requirements card the agent builds from (and change it with a
+message), and watch the agent work. This directory
 is the single home for how that agent works: the model and its context, the tools,
 the Sandbox it runs commands in, subagents, notifications, the Studio views, and Studio.
 
@@ -12,7 +13,7 @@ Topic documents describe current behavior; package READMEs link to the full per-
 
 | Piece | What it is | Topic |
 |---|---|---|
-| Session | One long-lived conversation per Project (`SessionAgentFlow`). Owns the conversation, turns, questions, the requirements card, the Stop button, automatic turns, the request side of its Sandbox instance (the accepted lease and the Sandbox deadline) and the decision that the instance is idle. | [session.md](session.md) |
+| Session | One long-lived conversation per Project (`SessionAgentFlow`). Owns the conversation, turns, questions, the recorded requirements cards, the Stop button, automatic turns, the request side of its Sandbox instance (the accepted lease and the Sandbox deadline) and the decision that the instance is idle. | [session.md](session.md) |
 | Model and context | Claude through the official Go SDK; Opus 5.5 by default, Sonnet 5.5 or Haiku 4.5 selectable per Session, and the mock model where the server offers it. An append-only entry log, context segments and simple compaction keep the context small and the prompt cache warm. | [context-management.md](context-management.md) |
 | Tools | `bash`, `read`, `edit`, `write`, `grep`, `glob`, `commit_and_push`, platform diagnostics and agent tools. Results are sized when they are recorded; failures go back to the model with an owner and an effect, and platform faults also reach a `PlatformIssueFlow` per signature, which files one GitHub issue. A background command's watch is a `BackgroundCommandFlow` SubFlow. | [tool-orchestration.md](tool-orchestration.md) |
 | Sandbox | The per-Project workspace and its Pod instances (owned by `SessionWorkspaceFlow`, which provisions each one through a `SandboxProvisionFlow` and reclaims it at the Session's command), the Preview (`PreviewFlow`), the command ledger and process limits, the Sandbox-local Preview engine, cold start and resources. | [sandbox.md](sandbox.md) |

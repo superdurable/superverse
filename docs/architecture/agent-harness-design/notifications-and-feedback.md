@@ -778,8 +778,8 @@ Session's Preview, as in `create-project.spec.ts` and the new-project journey, t
 the deployment to end at the missing connection: the Preview is `STOPPED` with
 `PREVIEW_CONFIGURATION_INCOMPATIBLE` in the phase `deploy-preview`, and the conversation shows the
 configuration notice for the pushed commit; the person then configures and starts the Preview as
-before. `template-approval.spec.ts` configures the Preview while the requirements card waits, so the
-confirmed push deploys itself, and the case waits until the Preview is READY at the pushed head, shown
+before. `template-approval.spec.ts` configures the Preview before the agent's first turn builds, so the
+push of the recorded card deploys itself, and the case waits until the Preview is READY at the pushed head, shown
 as the deployed commit with its Open Preview link and no Start Preview, with no conversation entry. A
 missing service is an incomplete result, never a skip.
 
@@ -803,8 +803,7 @@ missing service is an incomplete result, never a skip.
 - **Preview auto-deploy.**
   - Push, then `deploy-preview` READY at that commit before the turn ends with a `ready` notification and no
     conversation entry; the deadline moves to `sandbox.previewHold`, also while a question waits.
-  - A commit pushed earlier in a turn that ends with a question or a requirements card is still
-    handed off.
+  - A commit pushed earlier in a turn that ends with a question is still handed off.
   - A disabled setting deploys nothing; a handoff consumed while disabled is not deployed later.
   - The answers of `RequestPreviewDeployment`: `ACCEPTED`, then `DUPLICATE` for a retried sequence,
     `QUEUED` replaced by a newer `QUEUED`, and `DUPLICATE` for an older sequence, sent while the

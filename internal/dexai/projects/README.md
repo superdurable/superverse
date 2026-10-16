@@ -141,6 +141,23 @@ operator starts the Session again
 (runbook).
 A Project that is no longer READY starts no Session.
 
+**The first message.** `CreateProject` may carry the creator's first message
+with its message ID and the model the Session starts on. `ProjectStart` passes
+them to ProjectFlow's start, which installs them as the Attribute
+`InitialSessionRequest` (`{MessageID, Text, Model}` and the creator as the
+author): a plain struct, owned by ProjectFlow, not indexed, holding no secret
+and, unlike the Project's other facts, without `SyncToAttributeStore`, so the
+prompt never reaches the read model. It is bounded by the message limit.
+`StartProjectSession` reads it and passes it to
+`SessionLifecycle.StartForProject`, which starts the Session on that model
+with the message for its start Step to queue once; the same Execute deletes
+the Attribute in the commit of the start that succeeded, so a retried or
+replayed attempt passes the same message and joins the one execution, and a
+start whose retries ran out keeps it for the Session's later start. Nothing
+else reads or writes it. A ProjectFlow started without it, a Project created
+without a message or an open execution from before the field existed, starts
+its Session as before.
+
 **Children.** `ProjectFlowClient.AdmitChild` registers a Setup, Session,
 Release or Deployment in the `ChildFlows` AttributeMap
 (`ChildFlowReference{FlowID, FlowType}`, keyed by the child FlowID) before the
@@ -305,7 +322,8 @@ behind the Flows. `ProjectFlowClient.Authorize` checks one `Capability` with
 one query of the row joined with the caller's account, its `project_members`
 row and its `team_space_members` row of the Project's TeamSpace, and returns a
 `ProjectProjection`: the decoded Project and its Setup's columns, with
-`Identity` and `LastCommand`, which are not synced, left zero, and the
+`Identity`, `LastCommand` and `InitialSessionRequest`, which are not synced,
+left zero, and the
 caller's effective role. The effective role (`access.effectiveRole`) is OWNER
 for the platform admin, otherwise the Project role while the account is a
 member of the TeamSpace; each role holds what the roles below it hold:
@@ -381,7 +399,13 @@ The Session start and its child membership are covered in
 `TestProjectDeletionRightAfterReadyDexIntegration`), and a start whose retries
 run out by `TestProjectSessionStartFailureDexIntegration`, which occupies the
 Session's FlowID with another RequestID before the Project exists and requires
-`SESSION_START_FAILED` in `SessionStartFailure` with `LastFailure` empty.
+`SESSION_START_FAILED` in `SessionStartFailure` with `LastFailure` empty. The
+first message that `InitialSessionRequest` carries to the Session is covered by
+`TestCreateProjectFirstMessageDexIntegration` in [`internal/api`](../api/README.md):
+the Session starts on the chosen model with the message admitted once, a same
+retry returns the Project, a changed retry is ALREADY_EXISTS, a refused model or
+message starts nothing, and ProjectFlow no longer holds the request once the
+Session started.
 
 `TestApplicationTemplateGitHubIntegration` in `platform/repohost/github` creates an
 isolated repository through the real GitHub App, confirms `archived: true`

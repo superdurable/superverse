@@ -10,10 +10,8 @@
 
 import { PendingQuestionBatch, RequirementsCard } from "@/components/agent";
 import { cx } from "@/components/ui/cx";
-import type { AgentDescription, RequirementsDecision, UserInputAnswer } from "@/lib/session/agent-types";
-import { useBriefOnScreen } from "@/lib/session/design/use-brief-on-screen";
+import type { AgentDescription, UserInputAnswer } from "@/lib/session/agent-types";
 import { ToolApprovalCard } from "./ToolApprovalCard";
-import { useCardDesign } from "./use-card-design";
 
 /**
  * Keeps blocking Agent actions above the composer so Approve, Reject and Submit stay on screen; it
@@ -28,39 +26,35 @@ type PendingApproval = NonNullable<AgentDescription["pendingApproval"]>;
 type PendingInput = NonNullable<AgentDescription["pendingUserInput"]>;
 
 /**
- * What the Agent waits for: a tool approval, requirements card or question batch.
- * With answeredBy, input cards show who answers them instead of their controls. A requirements card
- * is left out while the Flow tab shows its Process Brief.
+ * What the Agent waits for: a tool approval or question batch, or a requirements card a Session still
+ * waits at from before cards stopped waiting, which shows read only and which the next chat message
+ * answers. With answeredBy, a question batch shows who answers it instead of its controls.
  */
 export function PendingActionDock({
   approval,
   input,
-  confirmedRevision,
+  currentRevision,
   disabled,
   approving,
   answering,
   answerAwaitingReconciliation,
   answeredBy,
   onApprove,
-  onDecide,
   onAnswer,
 }: {
   approval: PendingApproval | null;
   input: PendingInput | null;
-  /** The revision of the confirmed requirements, 0 before any confirmation. */
-  confirmedRevision: number;
+  /** The revision of the current requirements, 0 before the first card. */
+  currentRevision: number;
   disabled: boolean;
   approving: boolean;
   answering: boolean;
   answerAwaitingReconciliation: boolean;
   answeredBy?: string;
   onApprove: (callId: string, approved: boolean) => void;
-  onDecide: (callId: string, decision: RequirementsDecision) => void;
   onAnswer: (callId: string, answers: readonly UserInputAnswer[]) => void;
 }) {
-  const designChanges = useCardDesign();
-  // The Brief on the Flow tab holds the card, so the dock leaves out its pointer while the Brief shows.
-  const card = useBriefOnScreen() ? null : (input?.requirements ?? null);
+  const card = input?.requirements ?? null;
   const questions = input && !input.requirements ? input : null;
   if (!approval && !card && !questions) return null;
   const inputDisabled = disabled || answerAwaitingReconciliation;
@@ -77,18 +71,7 @@ export function PendingActionDock({
           onReject={() => onApprove(approval.callId, false)}
         />
       )}
-      {input && card && (
-        <RequirementsCard
-          key={input.callId}
-          requirements={card}
-          version={confirmedRevision + 1}
-          disabled={inputDisabled}
-          isSubmitting={submitting}
-          answeredBy={answeredBy}
-          designChanges={designChanges}
-          onDecide={(decision) => onDecide(input.callId, decision)}
-        />
-      )}
+      {input && card && <RequirementsCard key={input.callId} requirements={card} version={currentRevision + 1} />}
       {questions && (
         <PendingQuestionBatch
           key={questions.callId}

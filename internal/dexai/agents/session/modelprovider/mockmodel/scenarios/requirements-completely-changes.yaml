@@ -6,22 +6,22 @@
 #
 # SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-# After a confirmation the user asks for a completely different application
-# (input 3). That is a large change whose card replaces the confirmed
+# After a recorded card the user asks for a completely different application
+# (input 2). That is a large change whose card replaces the recorded
 # requirements instead of revising them: it sets replaces_requirements, its
-# features are numbered from R1 again, and its confirmation (input 4) is the
-# next version. The script touches no workspace file, so a Session can run
+# features are numbered from R1 again, and it is recorded as the next
+# version. The script touches no workspace file, so a Session can run
 # it on any READY Project.
 name: requirements-completely-changes
 title: "Requirements replaced by a different request"
-description: "A confirmed card, then a completely different request whose new card replaces the requirements, numbered from R1, as the next version."
+description: "A recorded card, then a completely different request whose new card replaces the requirements, numbered from R1, as the next version."
 category: project_feature
 inputs:
   - label: "Describe the application"
     message: "Build a release newsletter."
     replies:
-      - thinking: "This is a new application, so the user confirms the requirements before I write any code."
-        text: "Here is what I plan to build. Please confirm it, or tell me what to change."
+      - thinking: "This is a new application, so I show the requirements before I write any code, then keep building."
+        text: "Here is what I will build. I am starting now; tell me in the chat if anything should change."
         tool_uses:
           - name: confirm_requirements
             input:
@@ -38,21 +38,18 @@ inputs:
                   user_setup: "Connect the Gmail account that sends the newsletter."
               user_setup: ["Connect the Gmail account in Studio."]
               acceptance: ["A test newsletter arrives in the administrator's mailbox after approval."]
-  - label: "Confirm the requirements"
-    requirements_confirm: true
-    replies:
       - tool_uses:
           - name: write_todos
             input:
               todos:
                 - {content: "Build the subscription page", status: in_progress}
                 - {content: "Build the review and send flow", status: pending}
-      - text: "The requirements are confirmed, and I will build exactly these features."
+      - text: "The requirements are recorded as version 1, and I will build exactly these features."
   - label: "Ask for a different application"
     message: "Drop the newsletter and build a release tracker instead."
     replies:
-      - thinking: "This replaces the application, not one of its features, so the new card replaces the confirmed requirements and numbers its features from R1 again."
-        text: "This is a different application, so these requirements replace the confirmed ones. Please confirm them, or tell me what to change."
+      - thinking: "This replaces the application, not one of its features, so the new card replaces the recorded requirements and numbers its features from R1 again."
+        text: "This is a different application, so these requirements replace the recorded ones. I am building them now; tell me in the chat if anything should change."
         tool_uses:
           - name: confirm_requirements
             input:
@@ -65,13 +62,10 @@ inputs:
               connections: []
               user_setup: []
               acceptance: ["The page shows the releases of the last seven days."]
-  - label: "Confirm the new requirements"
-    requirements_confirm: true
-    replies:
       - tool_uses:
           - name: write_todos
             input:
               todos:
                 - {content: "Build the release list", status: in_progress}
                 - {content: "Link each release to its source", status: pending}
-      - text: "The new requirements replace the newsletter, and I will build exactly these features."
+      - text: "The new requirements replace the newsletter as version 2, and I will build exactly these features."

@@ -87,8 +87,11 @@ route to the original admission's fenced RecordModelFailure or
 RecordCompactionFailure.
 
 RouteTool routes the tool call at the cursor of `AgentState.PendingToolCalls`:
-`write_todos` and `set_effort` finish there, `start_timer` waits in AwaitAgentTimer, and
-`request_user_input` and `confirm_requirements` in AwaitUser. Consecutive
+`write_todos`, `set_effort` and `confirm_requirements` finish there (a card is recorded as
+the next version of `ConfirmedRequirements`, with its design in `FlowDesigns[confirmed]`, and
+the turn goes on), `start_timer` waits in AwaitAgentTimer, and `request_user_input` in
+AwaitUser. SendMessage records and answers a requirements card a Session still waits at from
+before cards stopped waiting, and the start Step queues the first message the Session started with. Consecutive
 parallel-eligible calls fan out to ExecuteParallelTool branches joined by
 AwaitParallelToolResults; any other call runs in ExecuteTool, after AwaitToolApproval
 when it needs approval. CheckSteered commits ExecutingTool status together with the

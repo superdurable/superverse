@@ -569,7 +569,7 @@ Map/Channel/Stream declarations and exact keys remain in each Flow section.
 | --- | --- |
 | TeamSpace | `Name/TeamSpaceStatus/CreatorAccountID: string`; `ActiveCommand/LastCommand: optional<Command>`; `LastFailure: optional<dexflow.Failure>`; the `Members` and `Projects` AttributeMaps and the `TeamSpaceCommands` Channel are in the [contract](teamspace/teamspaces-and-roles.md#attributes-and-attributemaps) |
 | RepositoryBinding | `RepositoryID: int64`; `BoundProjectID/BindingStatus/AcceptedClaimID: string` (BoundProjectID is empty while unbound and keeps the releasing Project once released); `BindingGeneration: uint64` |
-| Project | `ProjectID/CreatorAccountID/Name/TemplateRevision/SetupFlowID/TeamSpaceID/ProjectStatus: string`; `RepositoryBinding: RepositoryBindingRef`; `AppManifest: optional<AppManifestSnapshot>`; `ActiveDeployment: optional<DeploymentLease>`; `CurrentLive: optional<LivePointer>`; `ProjectStorage: infra.StorageRefs`; `LiveExecution: infra.ExecutionRefs`; `ActiveCommand/LastCommand: optional<ProjectCommand>`; `LastFailure/SessionStartFailure: optional<dexflow.Failure>`; the `Members` AttributeMap ([contract](teamspace/teamspaces-and-roles.md#projectflow-changes)) |
+| Project | `ProjectID/CreatorAccountID/Name/TemplateRevision/SetupFlowID/TeamSpaceID/ProjectStatus: string`; `RepositoryBinding: RepositoryBindingRef`; `AppManifest: optional<AppManifestSnapshot>`; `ActiveDeployment: optional<DeploymentLease>`; `CurrentLive: optional<LivePointer>`; `ProjectStorage: infra.StorageRefs`; `LiveExecution: infra.ExecutionRefs`; `ActiveCommand/LastCommand: optional<ProjectCommand>`; `LastFailure/SessionStartFailure: optional<dexflow.Failure>`; `InitialSessionRequest: optional<SessionStartRequest>` (unsynced, cleared at the Session's start); the `Members` AttributeMap ([contract](teamspace/teamspaces-and-roles.md#projectflow-changes)) |
 | ProjectSetup | `ProjectID/SetupID/SourceCommit/TemplateRevision/SetupStatus: string`; `SourceRepository: RepositoryBindingRef`; `SetupPhase: string`; `AppManifestResult: optional<AppManifestSnapshot>`; `ProjectDeletionRequested: bool`; `Failure: optional<dexflow.Failure>` |
 | SessionAgent | `ProjectID/StartIdentity/HeadCommit/CloseReason/SessionStatus/Profile: string`; `SessionModel: SessionModel`; `AgentState: AgentState`; `WaitingInputRound: WaitingInputRound`; `ContextSegment: ContextSegment`; `TodoList: TodoList`; `ConfirmedRequirements: ConfirmedRequirements`; `PendingApproval: PendingApproval`; `PendingTimer: PendingTimer`; `PendingUserInput: PendingUserInput`; `AgentInterrupt: AgentInterrupt`; `NotificationReceipts: []string`; `Workspace: SessionWorkspace`; `WorkspaceUse: WorkspaceUse`; `PreviewHandoff: PreviewHandoff`; `PreviewAutoDeploy: bool`; `MessageWindowLock: bool` |
 | SandboxProvision | `Request: Request`; `Resources: sandbox.Resources`; `Checkout: Checkout`; `WorkspaceTimings: []dexflow.PhaseTiming`; `Outcome: optional<Outcome>` |
@@ -723,10 +723,12 @@ explicit deletion and resource cleanup.
 **A:** ProjectID, CreatorAccountID, TeamSpaceID, Name, ProjectStatus, RepositoryBinding,
 TemplateRevision, SetupFlowID, AppManifest, ActiveDeployment, CurrentLive,
 ProjectStorage, LiveExecution,
-ActiveCommand, LastCommand, LastFailure, SessionStartFailure, CreatedAt,
-UpdatedAt, Revision. CreatorAccountID is the creating account, a fact only;
-TeamSpaceID is the Project's TeamSpace. All of them but ProjectID and
-LastCommand sync to the read model's `projects` row through the Attribute Store
+ActiveCommand, LastCommand, LastFailure, SessionStartFailure, InitialSessionRequest,
+CreatedAt, UpdatedAt, Revision. CreatorAccountID is the creating account, a fact only;
+TeamSpaceID is the Project's TeamSpace. InitialSessionRequest is the Session's first message
+and model from CreateProject, held until StartProjectSession's successful start clears it.
+All of them but ProjectID, LastCommand and InitialSessionRequest sync to the read model's
+`projects` row through the Attribute Store
 `projects` (row key `project-{project_id}`), which ProjectFlow selects where it
 starts.
 
@@ -833,7 +835,10 @@ provider Execute without a Project lock. The Start RequestID is
 `flowid.Fingerprint(struct{ProjectID string})`, with `dex.IDReuseDisallow` and
 same-request IgnoreError, so a retried or replayed Step and a repeated
 CommitProjectSetup join the one execution; a Project that is no longer READY,
-because its deletion began, starts none. Exhausted retries go to
+because its deletion began, starts none. The Step passes InitialSessionRequest, the first
+message and model CreateProject carried, to the Session's start and deletes it in the commit
+of the start that succeeded; the Session's start Step queues the message once. Exhausted
+retries go to
 RecordProjectSessionStartFailure, which records `SESSION_START_FAILED` under
 the Revision lock while the Project stays READY, unless the Session already
 registered itself. It is the Project's own SessionStartFailure Attribute, not
@@ -1195,7 +1200,8 @@ the Project's only Session-scoped cleanup child
 example `session-a7k2`, started by ProjectFlow's StartProjectSession when the Project becomes READY,
 with `dex.IDReuseDisallow`, the Start RequestID `flowid.Fingerprint(struct{ProjectID string})` and
 same-request IgnoreError; it has no Flow timeout and creates no Sandbox. It owns the conversation
-entries, turns, questions and the requirements card, the Stop request, the notification receipts and
+entries, turns, questions and the recorded requirements cards (the current version, which a
+message changes), the first message it started with, the Stop request, the notification receipts and
 automatic-turn counters, the confirmed coding HEAD, the workspace requests with the accepted lease and
 the Sandbox deadline, the decision that the instance is idle, the Preview handoff of a pushed commit,
 and its subagent and background-command records. Its SessionWorkspaceFlow owns the Sandbox instances
@@ -1951,15 +1957,15 @@ visual spec [prototype.html](studio-setup/studio.md)): the sidebar, one 48px bar
 lined up with the columns, the Project's chat column on every surface, and one of the surfaces
 Flow, Runs, Inbox, Interface and Tools (Publishing, Setup, Permissions). A new Project is its
 conversation alone until the agent's first requirements card, then switches once to the Builder on
-the Flow tab, where the card is a Process Brief, a summary above the drawn design, and is confirmed
-there; while it waits, a chat message asks for changes to it.
+the Flow tab, where the card is a Process Brief, a summary above the drawn design, that the agent
+builds from at once ([session](agent-harness-design/session.md#requirements-cards)); a chat
+message, which the Brief's Change something… sends and steers, changes it.
 Surfaces appear when they have something to show: Runs, Tools, Publish and Preview's status once
 processes are built from the agent's own push, Inbox once something has waited for a person,
 Interface once Preview serves a page, Live once a version is published; a link to a surface still
 opens it. Each surface keeps engine detail (tool rows, model metrics, Flow and Run IDs,
 Diagnostics, raw field and event names) behind its own "More details". Until processes are built
-the bar carries the Project's stage after its name (Shaping, or Building while the agent builds a
-confirmed card); then one Preview | Live switch in the bar sets the version every surface shows
+the bar carries the Project's stage after its name (Shaping, or Building once a card is recorded); then one Preview | Live switch in the bar sets the version every surface shows
 (`?v=live`) and never changes by itself. Publish in the bar is a popover over the Release APIs: it prepares the selected version
 when needed, requires its Live configuration, and builds it with an automatic deployment fenced on
 the Live revision shown.
@@ -1988,10 +1994,10 @@ package or management iframe; the user application's Preview and Live frames (th
 - The Project has one Preview with one URL. Its credentials/configuration are
   scope-isolated from Live and are not silently copied from Live.
 - The Builder's chat opens the Project's one Session directly: "Setting up your project..." while
-  Setup runs, "Starting the agent..." until the Session answers, then the
-  stored creation intent becomes its first turn: Build applies the model the
-  person chose on the creation page when it differs from the Session's, then
-  sends the first message once. The creation page shows the Session's model
+  Setup runs, "Starting the agent..." until the Session answers, which already
+  works on the first message: CreateProject carried it with the model the person
+  chose on the creation page, and the Session started on that model with the
+  message queued once, whether or not the tab stays open. The creation page shows the Session's model
   picker under Advanced, preselected on Sonnet, or for the platform administrator
   on the mock model where the server offers it, and the mock composer replaces
   the text box when the mock model is chosen. In the chat the model picker is in the
@@ -2231,8 +2237,8 @@ hosted provider acceptance.
 1. **Registration:** register, log in, verify identity, log out, reject old session.
    Also wrong password, duplicate registration, expiry/revocation and two users.
 2. **Create:** basic template project, whose creation page takes the model and
-   the first message, its one Session opened by the Builder's chat, which applies the
-   model and sends the message, "Keep running for 7 days", real Agent UI edit, checks,
+   the first message, which CreateProject carries to its one Session, opened by the
+   Builder's chat already working on the message, "Keep running for 7 days", real Agent UI edit, checks,
    commit/push and remote SHA, Preview acceptance, Release artifact/FDG identity,
    Live business acceptance, deployment deletion/old-grant denial, project cleanup.
 3. **Template approval:** basic template project whose one fixed prompt makes the

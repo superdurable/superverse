@@ -99,8 +99,7 @@ type Input struct {
 	Number int
 	Label  string
 	Kind   InputKind
-	// Content is the exact text to send: a message or a request for changes
-	// with its marker. A confirmation and answers
+	// Content is the exact text to send: a message with its marker. Answers
 	// have none.
 	Content string
 	// Answers are the answers to the pending questions, in question order.
@@ -110,14 +109,7 @@ type Input struct {
 // Answers is the kind of pending input an input of this kind answers; false
 // for a message, which answers none.
 func (kind InputKind) Answers() (agentloop.PendingUserInputKind, bool) {
-	switch kind {
-	case InputAnswers:
-		return "", true
-	case InputRequirementsConfirm, InputRequirementsChange:
-		return agentloop.PendingUserInputKindRequirements, true
-	default:
-		return "", false
-	}
+	return "", kind == InputAnswers
 }
 
 // Catalog lists every embedded scenario in name order.
@@ -141,7 +133,7 @@ func ArgumentMarkerForTest(name, value string) string {
 
 // projectChangingTools are the tools whose effect a second run on the same
 // Project would not repeat: an edit's old text is gone, merged changes are in,
-// a pushed commit leaves nothing to push and confirmed requirements stay, with
+// a pushed commit leaves nothing to push and recorded requirements stay, with
 // their versions and the numbers of removed features.
 var projectChangingTools = []conversation.ToolName{conversation.ToolEdit, conversation.ToolMergeAgentChanges,
 	conversation.ToolCommitAndPush, conversation.ToolConfirmRequirements}
@@ -161,8 +153,6 @@ func (s *script) describe() Scenario {
 		switch input.Kind {
 		case InputMessage:
 			input.Content = in.Message + " " + inputMarker(s.Name, input.Number)
-		case InputRequirementsChange:
-			input.Content = in.RequirementsChange + " " + inputMarker(s.Name, input.Number)
 		default:
 		}
 		scenario.Inputs = append(scenario.Inputs, input)
