@@ -701,13 +701,10 @@ func isSubagentRunning(ctx dex.Context, agentID string) bool {
 	return comm.Must(record, err).Status == agenttasks.SubagentRunning
 }
 
-// admitSubagentCall admits a start_agent call in the commit of RouteTool and
-// reports whether it runs. A call that an earlier route of the same call
-// admitted runs again. Otherwise fewer than three subagents may run and fewer
-// than six may have started since the user's last message
-// (agenttasks.AdmitSubagentStart), and the admitted call writes its STARTING
-// record, which is the only creation of a record. A refused call is answered
-// with the failure the model reads and has no effect.
+// admitSubagentCall admits start_agent in RouteTool's commit. A previously
+// admitted call runs again. Otherwise fewer than three may run and fewer than
+// six may start since the user's last message (AdmitSubagentStart). Admission
+// writes its STARTING record; rejection answers the model without an effect.
 func admitSubagentCall(ctx dex.Context, call conversation.ToolCall) bool {
 	requested, err := agentloop.RequestedSubagent(call)
 	if err != nil {
@@ -727,8 +724,12 @@ func admitSubagentCall(ctx dex.Context, call conversation.ToolCall) bool {
 		appendSessionFailure(ctx, call, code, message)
 		return false
 	}
-	for _, expired := range agenttasks.ExpiredSubagents(records) {
-		comm.MustDo(subagentsAttribute.Delete(ctx, expired))
+	// Keep one cleanup ID until confirmed; later starts retry it without eviction.
+	if dexflow.ValueOrZero(pendingSubagentWorktreeCleanupAttribute.Get(ctx)) == "" {
+		if expired := agenttasks.ExpiredSubagents(records); len(expired) > 0 {
+			comm.MustDo(pendingSubagentWorktreeCleanupAttribute.Set(ctx, expired[0]))
+			comm.MustDo(subagentsAttribute.Delete(ctx, expired[0]))
+		}
 	}
 	comm.MustDo(subagentsAttribute.Set(ctx, agentID, agenttasks.NewSubagentRecord(agentID, call.ID, requested, requested.Fingerprint(ctx.FlowID(), agentID), now)))
 	state.SubagentsStartedWithoutUser, state.ConnectorSlugs = state.SubagentsStartedWithoutUser+1, agenttasks.ConnectorSlugsWith(state.ConnectorSlugs, requested)
@@ -955,6 +956,11 @@ func failSubagentStart(ctx dex.Context, call conversation.ToolCall) {
 	agentID := flowid.AgentTaskID(ctx.FlowID(), string(call.ID))
 	record, err := subagentsAttribute.Get(ctx, agentID)
 	if dexflow.IsAttributeNotFound(err) {
+		return
+	}
+	// Pending cleanup means this call created no worktree or SubagentFlow.
+	if dexflow.ValueOrZero(pendingSubagentWorktreeCleanupAttribute.Get(ctx)) != "" && comm.Must(record, err).AdmittedAt.IsZero() {
+		forgetSubagentStart(ctx, agentID)
 		return
 	}
 	if failed, isFailed := comm.Must(record, err).FailStart(time.Now().UTC()); isFailed {

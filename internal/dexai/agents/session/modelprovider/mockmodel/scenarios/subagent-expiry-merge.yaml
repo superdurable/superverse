@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# Merge the retained result after an older record and its Git refs expired.
+name: subagent-expiry-merge
+title: "Merge a retained subagent result"
+description: "A retained finished subagent still merges after another result expires."
+category: agent_feature
+arguments:
+  task: agent-k3n8q5r1
+inputs:
+  - label: "Merge the retained result"
+    message: "Merge the retained subagent's result."
+    replies:
+      - text: "Merging the retained result."
+        tool_uses:
+          - name: merge_agent_changes
+            input: {agent_id: "{{task}}", action: apply}
+        expect_result_contains:
+          - '"result":"merged"'
+      - text: "The retained result was merged."

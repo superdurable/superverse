@@ -30,6 +30,8 @@ import (
 // runtime only to observe what the Flows did; they hold no runtime state of
 // their own.
 type sandboxObjects struct {
+	// runInstance runs an operator command in the real coding instance.
+	runInstance func(ctx context.Context, r sandbox.Resources, args ...string) string
 	// released reports whether nothing of the Sandbox is left: its namespace,
 	// with everything in it, on Kind; every container, network and volume
 	// labeled with the Project's Preview scope on Docker. boundary is the
@@ -66,6 +68,9 @@ func kindSandboxObjects(t *testing.T, kubeconfig string) sandboxObjects {
 		return operatorCommand(t, ctx, "kubectl", append([]string{"--kubeconfig", kubeconfig, "--context", "kind-superverse-v2", "--request-timeout=15s"}, args...)...)
 	}
 	return sandboxObjects{
+		runInstance: func(ctx context.Context, r sandbox.Resources, args ...string) string {
+			return kubectl(ctx, append([]string{"-n", r.Boundary.Name, "exec", r.Instance.Name, "--"}, args...)...)
+		},
 		released: func(ctx context.Context, _, boundary string) bool {
 			return kubectl(ctx, "get", "namespace", boundary, "--ignore-not-found", "-o", "name") == ""
 		},
@@ -122,6 +127,13 @@ func dockerSandboxObjects(t *testing.T) sandboxObjects {
 		return map[string]string{infradocker.WorkspaceUIDLabel: r.Volume.UID}
 	}
 	return sandboxObjects{
+		runInstance: func(ctx context.Context, r sandbox.Resources, args ...string) string {
+			ids := labeled(ctx, "container", map[string]string{infradocker.InstanceUIDLabel: r.Instance.UID})
+			if len(ids) != 1 {
+				t.Fatalf("expected one coding container for instance %s, got %d", r.Instance.UID, len(ids))
+			}
+			return docker(ctx, append([]string{"exec", ids[0]}, args...)...)
+		},
 		released: func(ctx context.Context, projectID, _ string) bool {
 			scope := map[string]string{deploymentnames.ProjectLabel: projectID, deploymentnames.ScopeLabel: infra.ScopePreview.String()}
 			return len(labeled(ctx, "container", scope))+len(labeled(ctx, "network", scope))+len(labeled(ctx, "volume", scope)) == 0

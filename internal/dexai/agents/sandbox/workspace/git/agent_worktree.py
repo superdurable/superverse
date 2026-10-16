@@ -235,16 +235,19 @@ def finish(agent, _request):
     return answer
 
 
-def cleanup(agent, _request):
-    """Forget only an attempt whose checkout has already been removed."""
-    if agent.registered():
+def cleanup(agent, request):
+    """Forget a closed attempt; only explicit expiry may remove its checkout."""
+    if agent.registered() and not request.get("removeCheckout", False):
         raise HelperError("cannot clean up a registered worktree")
+    if request.get("removeCheckout", False):
+        remove_worktree(agent)
     for ref in (agent.base_ref, agent.result_ref):
         if agent.commit(ref) is not None:
             run(["update-ref", "-d", ref], agent.workspace)
-    remove(agent.worktree)
+    if not request.get("removeCheckout", False):
+        remove(agent.worktree)
+        run(["worktree", "prune"], agent.workspace)
     remove(agent.directory)
-    run(["worktree", "prune"], agent.workspace)
     return {"cleaned": True}
 
 

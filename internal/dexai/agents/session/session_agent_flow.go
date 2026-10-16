@@ -72,13 +72,14 @@ var (
 
 	// What happens beside the turn: the user's Stop, notifications and their admitted IDs, background
 	// commands with the stop of each one's watch by task ID, subagents and the Preview's automatic deployment.
-	agentInterruptAttribute             = dex.DefineAttribute[agentloop.AgentInterrupt]("AgentInterrupt")
-	notificationReceiptsAttribute       = dex.DefineAttribute[[]string]("NotificationReceipts")
-	sessionNotificationsChannel         = dex.DefineChannel[conversation.SessionNotification]("SessionNotifications")
-	backgroundCommandsAttribute         = dex.DefineAttributeMap[agenttasks.BackgroundCommand]("BackgroundCommands")
-	backgroundCommandStopsChannel       = dex.DefineChannelMap[backgroundCommandStop]("BackgroundCommandStops")
-	subagentsAttribute                  = dex.DefineAttributeMap[agenttasks.SubagentRecord]("Subagents")
-	taskWorktreesAttribute              = dex.DefineAttributeMap[agentloop.TaskWorktree]("TaskWorktrees")
+	agentInterruptAttribute                 = dex.DefineAttribute[agentloop.AgentInterrupt]("AgentInterrupt")
+	notificationReceiptsAttribute           = dex.DefineAttribute[[]string]("NotificationReceipts")
+	sessionNotificationsChannel             = dex.DefineChannel[conversation.SessionNotification]("SessionNotifications")
+	backgroundCommandsAttribute             = dex.DefineAttributeMap[agenttasks.BackgroundCommand]("BackgroundCommands")
+	backgroundCommandStopsChannel           = dex.DefineChannelMap[backgroundCommandStop]("BackgroundCommandStops")
+	subagentsAttribute                      = dex.DefineAttributeMap[agenttasks.SubagentRecord]("Subagents")
+	pendingSubagentWorktreeCleanupAttribute = dex.DefineAttribute[string]("PendingSubagentWorktreeCleanup")
+	taskWorktreesAttribute                  = dex.DefineAttributeMap[agentloop.TaskWorktree]("TaskWorktrees")
 	// ConnectorContributions is keyed by canonical connector slug; the contribution Flow owns PR and RC.
 	connectorContributionsAttribute     = dex.DefineAttributeMap[agentloop.ConnectorContributionAttempt]("ConnectorContributions")
 	previewHandoffAttribute             = dex.DefineAttribute[agentloop.PreviewHandoff]("PreviewHandoff")
@@ -182,7 +183,7 @@ func (*SessionAgentFlow) GetPersistenceSchema() dex.PersistenceSchema {
 			contextSegmentAttribute, contextSegmentPromptsAttribute, currentMessagesAttribute, archivedMessagesAttribute, todoListAttribute,
 			confirmedRequirementsAttribute, flowDesignsAttribute, builtFlowDesignAttribute, builtFlowDesignCommitAttribute, pendingUserInputAttribute, pendingApprovalAttribute, pendingTimerAttribute,
 			workspaceAttribute, workspaceUseAttribute,
-			agentInterruptAttribute, notificationReceiptsAttribute, backgroundCommandsAttribute, subagentsAttribute, connectorContributionsAttribute, taskWorktreesAttribute, previewHandoffAttribute, previewAutoDeployAttribute, previewAutoDeployChangedByAttribute,
+			agentInterruptAttribute, notificationReceiptsAttribute, backgroundCommandsAttribute, subagentsAttribute, pendingSubagentWorktreeCleanupAttribute, connectorContributionsAttribute, taskWorktreesAttribute, previewHandoffAttribute, previewAutoDeployAttribute, previewAutoDeployChangedByAttribute,
 		},
 		Channels: []dex.ChannelDef{
 			queuedUserMessagesChannel, steeredUserMessagesChannel, answeredUserInputsChannel, remoteInboxChannel,
@@ -973,6 +974,21 @@ func (step ExecuteTool) Execute(ctx dex.Context, input toolInvocation) (*dex.Ste
 	call := input.Call
 	if ctx.Attempt() == 1 && !input.Admission.Matches(currentExecutor(ctx)) {
 		return dex.GoTo(CheckSteered{}, finishToolExecution(ctx, call, agentloop.InterruptedToolResult(call, false), agentloop.ToolMessageTiming{})), nil
+	}
+	if call.Name == conversation.ToolStartAgent {
+		if expired := dexflow.ValueOrZero(pendingSubagentWorktreeCleanupAttribute.Get(ctx)); expired != "" {
+			execution, end := beginToolAttempt(ctx, call)
+			defer end()
+			err := step.flow.sandbox.CleanupExpiredAgentWorktree(execution, newSandboxCall(ctx, call), expired)
+			if errors.Is(err, sandboxtools.ErrWorkspaceUnavailable) {
+				return dex.GoTo(RequestSessionWorkspace{}, lostWorkspaceDemand(ctx, call.ID)), nil
+			}
+			if err != nil {
+				return nil, dex.ErrorWithStack(err)
+			}
+			comm.MustDo(pendingSubagentWorktreeCleanupAttribute.Delete(ctx))
+			return dex.GoTo(CheckSteered{}, agentloop.ContinueExecuteTool), nil
+		}
 	}
 	result, err := step.flow.executeTool(ctx, call)
 	if errors.Is(err, sandboxtools.ErrWorkspaceUnavailable) {

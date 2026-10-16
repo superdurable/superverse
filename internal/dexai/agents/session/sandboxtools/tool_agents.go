@@ -35,6 +35,27 @@ func AgentWorktreeArguments(agentID string, keep []string) string {
 	return string(comm.Must(json.Marshal(agentWorktreeArguments{AgentID: agentID, Keep: keep})))
 }
 
+// expiredAgentWorktreeCleanupArguments authorizes removal of a checkout whose
+// finished Session record was evicted and can no longer be merged.
+func expiredAgentWorktreeCleanupArguments(agentID string) string {
+	return string(comm.Must(json.Marshal(agentWorktreeArguments{AgentID: agentID, RemoveCheckout: true})))
+}
+
+// CleanupExpiredAgentWorktree removes the checkout and receipts of a finished
+// subagent whose Session record expired. A missing workspace remains identifiable
+// through ErrWorkspaceUnavailable so the Session can request a replacement.
+func (runner *Runner) CleanupExpiredAgentWorktree(ctx context.Context, call Call, agentID string) error {
+	call.Arguments = expiredAgentWorktreeCleanupArguments(agentID)
+	result, err := runner.Run(ctx, CleanupAgentWorktree, call)
+	if err != nil {
+		return fmt.Errorf("cleanup the expired subagent %s: %w", agentID, err)
+	}
+	if result.Failure != nil {
+		return fmt.Errorf("cleanup the expired subagent %s: %s", agentID, result.Failure.Text())
+	}
+	return nil
+}
+
 // TaskWorktreeMergeArguments adapts a server-owned Codex worktree identity to
 // the same validated merge operation used for platform subagent worktrees.
 func TaskWorktreeMergeArguments(agentID string, discard bool, paths []string) string {
@@ -50,8 +71,9 @@ func TaskWorktreeMergeArguments(agentID string, discard bool, paths []string) st
 }
 
 type agentWorktreeArguments struct {
-	AgentID string   `json:"agent_id"`
-	Keep    []string `json:"keep"`
+	AgentID        string   `json:"agent_id"`
+	Keep           []string `json:"keep"`
+	RemoveCheckout bool     `json:"remove_checkout,omitempty"`
 }
 
 // worktreeArguments decodes the platform's own arguments, so a malformed one
@@ -85,8 +107,8 @@ func (execution *Execution) finishAgentWorktree(ctx context.Context, call Call) 
 
 // cleanupAgentWorktree removes a closed task attempt's refs and receipts.
 func (execution *Execution) cleanupAgentWorktree(ctx context.Context, call Call) (Result, error) {
-	id := worktreeArguments(call).AgentID
-	if err := execution.commits.CleanupAgentWorktree(ctx, execution.executor, id); err != nil {
+	arguments := worktreeArguments(call)
+	if err := execution.commits.CleanupAgentWorktree(ctx, execution.executor, arguments.AgentID, arguments.RemoveCheckout); err != nil {
 		return Result{}, err
 	}
 	return Result{Content: "Cleaned the closed task worktree."}, nil

@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# The test installs a real Git lock file before this call. Cleanup fails on
+# every retry, so the start reports a platform failure without creating an agent.
+name: subagent-expiry-fault
+title: "Subagent expiry cleanup fault"
+description: "A Git ref lock interrupts expired worktree cleanup before another subagent starts."
+category: agent_feature
+inputs:
+  - label: "Attempt a start during cleanup failure"
+    message: "Start an investigation while the expired worktree is locked."
+    replies:
+      - text: "Trying to start an investigation."
+        tool_uses:
+          - name: start_agent
+            input:
+              description: "Blocked investigation"
+              kind: investigate
+              prompt: "Report a short result. [[subagent:subagent-expiry-fault/quick]]"
+        expect_failure: true
+        expect_failure_text: "Error: tool_unavailable"
+      - text: "The platform could not start the investigation."
+subagents:
+  quick:
+    kind: investigate
+    replies:
+      - text: "The blocked investigation unexpectedly started."

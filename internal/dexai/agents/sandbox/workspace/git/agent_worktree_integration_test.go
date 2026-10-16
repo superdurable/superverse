@@ -228,6 +228,21 @@ printf 'binary\0workspace' > image.bin; printf 'workspace new\n' > new.txt`)
 	if got := shell(t, client, "test -d "+AgentWorktreeRoot(running)+" && echo kept"); got != "kept\n" {
 		t.Fatal("the worktree of a running subagent was not kept")
 	}
+	if err := operations.CleanupAgentWorktree(testContext(t), client, running, false); err == nil || !strings.Contains(err.Error(), "cannot clean up a registered worktree") {
+		t.Fatalf("ordinary cleanup removed or accepted a registered checkout: %v", err)
+	}
+	if got := shell(t, client, "cd /workspace && test -d "+AgentWorktreeRoot(running)+" && git show-ref --quiet --verify refs/superverse/agents/"+running+"/base && echo kept"); got != "kept\n" {
+		t.Fatalf("ordinary cleanup changed the running checkout or ref: %q", got)
+	}
+	if err := operations.CleanupAgentWorktree(testContext(t), client, running, true); err != nil {
+		t.Fatalf("explicit expiry cleanup of a registered checkout: %v", err)
+	}
+	if got := shell(t, client, "cd /workspace && test ! -e "+AgentWorktreeRoot(running)+" && test ! -e .git/superverse/agents/"+running+" && ! git show-ref --quiet --verify refs/superverse/agents/"+running+"/base && echo cleaned"); got != "cleaned\n" {
+		t.Fatalf("explicit expiry cleanup retained the checkout or ref: %q", got)
+	}
+	if err := operations.CleanupAgentWorktree(testContext(t), client, running, true); err != nil {
+		t.Fatalf("repeated expiry cleanup with no checkout, refs or directory: %v", err)
+	}
 }
 
 func hasCode(err error, code toolfailure.Code) bool {

@@ -1,0 +1,39 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A short real subagent round that can be repeated in one long-lived Session
+# to exercise record expiry and worktree cleanup without spending model tokens.
+name: subagent-expiry
+title: "Subagent worktree expiry"
+description: "A quick subagent completes and reports; repeated inputs exercise retained worktrees."
+category: agent_feature
+inputs:
+  - label: "Start a quick investigation"
+    message: "Start one quick background investigation."
+    replies:
+      - text: "Starting a quick investigation."
+        tool_uses:
+          - name: start_agent
+            input:
+              description: "Quick investigation"
+              kind: change
+              prompt: "Write a short result to subgc-result.txt and report it. [[subagent:subagent-expiry/quick]]"
+        expect_result_contains:
+          - '"task_id":"agent-'
+      - text: "The investigation is running."
+      - text: "The investigation reported its result."
+        notification: task
+subagents:
+  quick:
+    kind: change
+    replies:
+      - text: "Writing the result."
+        tool_uses:
+          - name: write
+            input: {path: "subgc-result.txt", content: "subagent result\n"}
+      - text: "The quick investigation wrote subgc-result.txt."

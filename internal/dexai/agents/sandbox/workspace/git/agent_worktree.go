@@ -234,14 +234,16 @@ func (operations *GitOperations) MergeAgentChanges(ctx context.Context, client *
 	return receipt, err
 }
 
-// CleanupAgentWorktree removes the refs and merge receipts of a closed task
-// attempt. The caller first persists the successor's CleanupID, so a lost
-// answer repeats this idempotent operation before creating its new worktree.
-func (operations *GitOperations) CleanupAgentWorktree(ctx context.Context, client *sandboxd.SandboxClient, agentID string) error {
+// CleanupAgentWorktree removes a closed task attempt's refs and merge
+// receipts. Only platform expiry passes removeCheckout for a failed finish;
+// ordinary remote task cleanup refuses a still registered checkout.
+func (operations *GitOperations) CleanupAgentWorktree(ctx context.Context, client *sandboxd.SandboxClient, agentID string, removeCheckout bool) error {
 	var answer struct {
 		Cleaned bool `json:"cleaned"`
 	}
-	if err := runAgentWorktree(ctx, client, "cleanup", agentID, struct{}{}, &answer); err != nil {
+	if err := runAgentWorktree(ctx, client, "cleanup", agentID, struct {
+		RemoveCheckout bool `json:"removeCheckout"`
+	}{removeCheckout}, &answer); err != nil {
 		return err
 	}
 	if !answer.Cleaned {

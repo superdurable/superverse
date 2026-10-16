@@ -154,6 +154,18 @@ retried, and exhausted retries fail the record. `stop_task` stops one subagent, 
 of every file, closes its record. The RPC `AdmitSubagent` marks the record RUNNING
 for the subagent's first Step, and the subagent's task notification records its end
 through `ReportSessionNotification`.
+RouteTool evicts only the oldest finished record when the retained 50 are full and
+stores its ID in the optional `PendingSubagentWorktreeCleanup` string Attribute.
+Before creating the next platform subagent's worktree, ExecuteTool uses a
+separate committed attempt to clean that expired checkout, its base/result refs
+and merge receipts through the Sandbox helper. It clears the ID only after
+confirmation; an uncertain result repeats the same ID. Exhausted cleanup retries
+answer the start without an unadmitted record, leaving one pending ID for the
+next platform start. A switch to remote mode pauses this work; Project deletion
+removes the volume. No finished record that remains addressable is cleaned.
+If the Sandbox is unreachable during cleanup, the same start takes the workspace
+cold path without consuming a retry, then repeats the idempotent cleanup on the
+replacement instance, including when that worktree was already removed.
 
 The platform connector subagents follow the same path. For a `connector_develop` call, which names
 the connector's slug and the contribution, RouteTool also refuses a slug another

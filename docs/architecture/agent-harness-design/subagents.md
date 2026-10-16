@@ -62,11 +62,25 @@ shown to the user), `prompt` (at most 32 KiB) and `kind`.
    rejected call is a failure of the call with no effect, and its hint tells the model what
    to do instead: wait for a notification, stop one with `stop_task`, continue with the
    subagents it has or ask the user.
+   When the 50 finished records are full, admission evicts only the oldest finished record
+   and stores its agent ID in `PendingSubagentWorktreeCleanup` in the same commit. A pending
+   ID defers further eviction. An unfinished record is never selected.
 2. **Execution** (`ExecuteTool`, serial and SYNC: 2 minutes per attempt, retried after a
    transient fault, and not interruptible by Stop mid-call). It creates the worktree
    ([below](#worktrees)) and starts the `SubagentFlow` through the Service (the
    `AgentTaskLauncher` port) with the call, the snapshot commit, the Session's model and
    HEAD and its accepted lease. Both effects are idempotent, so a retry repeats neither.
+   Before creation, a separate committed `ExecuteTool` cleans the pending expired agent ID
+   through `CleanupAgentWorktree` with `removeCheckout: true`, then clears the ID and resumes
+   the same call. This flag is exclusive to platform expiry; ordinary remote task cleanup
+   refuses a registered checkout. Cleanup can remove one left registered after a failed save.
+   A lost answer repeats the same ID. If the Sandbox instance is unreachable, the call
+   takes `RequestSessionWorkspace` on every attempt and resumes after a new instance is ready;
+   this cleanup consumes no Dex retry, even when the checkout and refs are already absent.
+   A failed cleanup leaves it pending, answers the start
+   as unavailable after its normal retries, and removes the new unadmitted STARTING record;
+   the next start tries it again. No new worktree or SubagentFlow starts until cleanup is
+   confirmed.
    - A worktree that the Sandbox refuses (`snapshot_too_large`, `workspace_disk_low`) is a
      failure of the call before any subagent starts: the record is deleted and the start no
      longer counts against the budget. Only such a refusal deletes the record, because the
@@ -511,7 +525,16 @@ three end-to-end cases stay the only E2E; subagent paths are Dex integration tes
 - **Retention and cleanup.** Project deletion finds a running subagent by FlowType and
   `ProjectID`, stops it and waits before it releases the Sandbox's resources, and the
   release of the Pod ends their commands; no subagent execution is registered in
-  `ChildFlows`.
+  `ChildFlows`. A finished record evicted at the 50-record limit is no longer addressable by
+  `merge_agent_changes`; its base/result refs, checkout and helper plans/receipts are cleaned
+  on the next platform start. If its save had failed, eviction deliberately discards the
+  unmerged checkout when 50 finished records already exist. A Session switched to
+  remote mode cannot start a platform subagent; it retains at most one pending cleanup ID
+  until it returns to platform mode or Project deletion removes its workspace volume.
+- **Expiry cleanup recovery.** A real Git ref lock fails cleanup, keeps the one pending ID
+  and leaves no new STARTING record after exhausted retries; removing the lock lets the next
+  start finish the same cleanup before creating its own worktree. The default helper request
+  still refuses a registered checkout; only expiry requests checkout removal.
 - **Unverified until the final acceptance.** Quality of real subagent work; the real
   model's use of the delegation rules; whether `start_agent` and `merge_agent_changes` fit
   the strict grammar (the live strict-tool test measures it); the refusal below 1 GiB of
@@ -537,6 +560,17 @@ limits of three running subagents and six starts between user messages cap
 simultaneous work, while each kind's 10-, 20- or 45-minute deadline ends its
 execution. Project deletion stops running subagents and removes worktrees;
 Dex retains closed execution state for its configured retention period.
+
+The Session's existing Sandbox volume now keeps refs and merge receipts for at most
+50 finished platform subagents plus one expired ID awaiting confirmed cleanup;
+at most three unfinished subagents may still own worktrees. Cleanup occurs only
+when `start_agent` evicts a finished record, once per such start, with no per-request
+cloud control-plane call or tenant scan. Failure does not accumulate pending IDs:
+the one ID survives and a cleanup failure removes that call's unadmitted record.
+Deleting the refs makes their Git objects eligible for Git garbage collection;
+physical bytes may remain until Git maintenance or Project deletion. Remote mode
+adds no platform subagent resource and postpones this one cleanup until platform
+mode resumes or Project deletion removes the volume.
 
 Removing the call cap can grow `ArchivedMessages` further within one subagent
 execution. `CurrentMessages` stays below 20 entries and archives its oldest ten;

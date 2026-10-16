@@ -631,6 +631,7 @@ automatically for every Step and RPC.
 | `BuiltFlowDesignCommit` | string, a commit SHA | The commit that push verified, written beside `BuiltFlowDesign` |
 | `AgentInterrupt` | `{Turn, RequestedAt, EndsTurn, Actor *conversation.Actor, MarkerWritten bool}` | A Stop request for the running turn; also the lock that serializes the changes of a STARTING `Subagents` record (see Locking) |
 | `NotificationReceipts` | []string, at most 128, FIFO | IDs of the last 128 admitted notifications and workspace outcome reports (`workspace/<WorkspaceRequestID>`), written in the commit that publishes them ([notifications](notifications-and-feedback.md)) |
+| `PendingSubagentWorktreeCleanup` | optional string, one `flowid.AgentTaskID` such as `k3n8q5r1` | RouteTool records the ID of one evicted finished `Subagents` record before deleting it. `ExecuteTool` clears it only after the Sandbox confirms cleanup of that checkout, both Git refs and its plans and receipts. No secret or index; retained across retries and executor switches until cleanup or Project deletion. |
 | `PreviewHandoff`, `PreviewAutoDeploy` | `{Commit, Sequence, PublishedSequence}`, bool | Preview auto-deploy: the newest pushed commit a turn hands to the Preview, and whether the Preview deploys it (true at initialization). Fixed-size singletons; only Steps write `PreviewHandoff`, under `MessageWindowLock` ([notifications](notifications-and-feedback.md)) |
 | `PreviewAutoDeployChangedBy` | `conversation.Actor`, optional | Author of the last effective toggle; reads as nil when absent, no index; locks with `PreviewAutoDeploy`, fixed-size singleton for the Session lifetime |
 | `Workspace` | `SessionWorkspace` | The request side of the Session's Sandbox instance: the request, the accepted lease, the Sandbox deadline and the Preview's hold; see below |
@@ -673,7 +674,9 @@ Locking:
   `PreviewHandoff`, which no RPC writes. `UpdateSessionModel` locks SessionStatus and
   `SessionModel`; `InterruptAgent` locks SessionStatus and `AgentInterrupt`.
 - A `Subagents` record has these writers. `RouteTool` creates the STARTING record, which no one
-  else knows yet, after it deletes the oldest finished records beyond the retained 50. From then
+  else knows yet, after it evicts at most one oldest finished record beyond the retained 50 and
+  records its ID in `PendingSubagentWorktreeCleanup`. While that ID remains pending, no further
+  record is evicted; the next platform `start_agent` retries cleanup before creating a worktree. From then
   on a STARTING record whose subagent may have started changes only under the `AgentInterrupt`
   lock, so a Stop and an admission decide each record once: `AdmitSubagent` (RUNNING, or STOPPED
   when a Stop or the Session's end overtook the start), `FinishInterrupt`, while its Stop is still
@@ -684,9 +687,15 @@ Locking:
   loaded. A STARTING record whose subagent cannot have started is deleted without that lock, in
   the commit that answers its call: by `ExecuteTool` when the Sandbox refuses the worktree, by
   `CheckSteered` when steering supersedes the call, and by the cold-path Step that answers it
-  `workspace_unavailable`; these Steps load the `Subagents` records for it. `merge_agent_changes`
+  `workspace_unavailable`; a cleanup failure before creation also removes its unadmitted
+  record in `RecordToolFailure`, including one a Stop marked STOPPED. These Steps load the
+  `Subagents` records for it. `merge_agent_changes`
   closes an ended record (MERGED or DISCARDED) for a discard or a merge of every file, which
   nothing else writes any more.
+
+An unreachable Sandbox during pending expired-worktree cleanup routes `start_agent` through
+`RequestSessionWorkspace` on every attempt. After provisioning, the idempotent helper accepts
+an already absent checkout, refs and directory before `ExecuteTool` clears the pending ID.
 
 Growth and retention: every Attribute is a fixed-size singleton or bounded as stated. `Workspace`
 holds one instance's bounded set of references, which the next instance replaces; nothing resets it,
@@ -768,7 +777,7 @@ minute method timeout, `CurrentMessages` loaded, `MessageWindowLock` held). Only
 | `CompactContext`, `CallModel` | Summarize, or one model reply | SYNC; 20 minutes per attempt; heartbeat 1 minute; 3 attempts within 60 minutes, retries starting 30 seconds apart; failure routes `RecordCompactionFailure` and `RecordModelFailure` |
 | `RecordModelFailure`, `RecordCompactionFailure` | Record one bounded turn failure; end the turn | To `CheckSteered(await_user)` |
 | `RouteTool` | Admit and route the pending call | Admission for `start_agent` (the limits and the STARTING `Subagents` record, [subagents](subagents.md#start_agent)); `confirm_requirements` records the card as the next version of `ConfirmedRequirements` and its design in `FlowDesigns` and continues the turn; wave fan-out; workspace gate G2 |
-| `ExecuteTool`, `ExecuteParallelTool` | Run one tool or one wave branch; `ExecuteTool` also runs the delegation tools (`start_agent` creates the worktree and starts the SubagentFlow, `stop_task` of an agent, `merge_agent_changes`) | Policy attached per call by the dispatcher ([tool orchestration](tool-orchestration.md)); neither takes the Workspace lock; a delegation tool loads the `Subagents` records it reads (`start_agent` all of them, the others their own) |
+| `ExecuteTool`, `ExecuteParallelTool` | Run one tool or one wave branch; `ExecuteTool` also runs the delegation tools (`start_agent` cleans one pending expired worktree in a separate committed Execute before creating the new worktree and starting the SubagentFlow, `stop_task` of an agent, `merge_agent_changes`) | Policy attached per call by the dispatcher ([tool orchestration](tool-orchestration.md)); neither takes the Workspace lock; a delegation tool loads the `Subagents` records it reads (`start_agent` all of them, the others their own) |
 | `AwaitParallelToolResults` | Join a wave | `ForN` on `ParallelToolResults`; re-routes a lost read-only wave |
 | `RecordToolFailure`, `RecoverParallelToolExecution` | Record `tool_unavailable` after retries are exhausted, serial and parallel; `RecordToolFailure` also fails the STARTING record of a `start_agent` call | The model sees the result and continues; `RecordToolFailure` locks `AgentInterrupt` |
 | `SettleForegroundCommand` | Foreground `bash` timeout or retry exhaustion: stop and record, or settle from the ledger | Loads `CurrentMessages`, `BackgroundCommands` and the bounded `ConnectorContributions` map for recovered file-call roots; [tool orchestration](tool-orchestration.md) |
@@ -950,6 +959,16 @@ executor modes can continue beyond the former bound. Neither Session nor
 SubagentFlow writes the removed counter or reporting-only mode. Already open prelaunch questions use
 the [compatibility behavior](#recovery-external-effects-and-compatibility) above.
 
+For subagent record expiry, `RouteTool` atomically replaces the oldest finished record with
+one pending cleanup ID. The first `ExecuteTool` of the next `start_agent` removes that ID's
+checkout, refs and helper receipts through the existing Sandbox Git operation, then commits
+the cleared ID and resumes the same call in a fresh `ExecuteTool` that creates its worktree.
+An uncertain cleanup repeats by ID; exhausted retries leave the ID pending and answer the
+call without an unadmitted record. FlowID, Run, Start RequestID, Step identities, RPCs,
+Channels, ChannelMaps and Streams are unchanged. Existing open Sessions read the new optional
+Attribute as empty. Remote mode starts no platform subagents, so a switch to remote postpones
+the bounded pending cleanup until a later platform `start_agent` or Project deletion.
+
 ## Database Schema Changes
 
 None. Every durable fact of the Session is a SessionAgentFlow primitive, as listed above. The Session
@@ -1093,3 +1112,8 @@ Removing the Session model-call limit creates no cloud, Kubernetes,
 Temporal, Dex or database resource and adds no control-plane call or tenant scan
 on a request, poll or event. The existing Session and workspace lifecycles and
 retention rules in this contract still govern their resources.
+Subagent expiry adds one optional, fixed-size cleanup ID to this Flow. It removes
+the oldest finished agent's Git refs and helper directory on the next platform
+`start_agent`; one pending ID survives retries, and Project deletion removes the
+workspace volume. It creates no cloud, Kubernetes, Temporal or database resource,
+no control-plane call on a request or event, and no scan across Projects.

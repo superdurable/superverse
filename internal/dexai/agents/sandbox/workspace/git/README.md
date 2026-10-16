@@ -161,10 +161,13 @@ Every operation queries before it writes:
   (`add -A`, `commit-tree -p base`) as `refs/superverse/agents/<agent ID>/result`,
   counts its changes (`diff --numstat`) and removes the checkout; the refs keep
   the result. A saved result is reused.
-- **`CleanupAgentWorktree`** deletes the base/result refs and helper plans and
-  receipts of a closed Codex task attempt only after its successor's Session
-  record names the old ID. It refuses a registered checkout. Repeating cleanup
-  after a lost answer succeeds without touching the new attempt.
+- **`CleanupAgentWorktree`** deletes the base/result refs, checkout directory and
+  helper plans and receipts of a closed attempt only after its Session state
+  names the old ID. By default it refuses a registered checkout, preserving
+  the remote task worktree contract. Platform subagent record expiry alone sends
+  `removeCheckout: true` to remove a checkout whose finish could not save; its
+  evicted record can no longer be merged. Repeating cleanup after a lost answer
+  succeeds without touching a new attempt.
 - **`MergeAgentChanges`** merges the result into the workspace file by file,
   three ways: the base is the snapshot, ours the workspace now (snapshotted the
   same way) and theirs the result. A file only one side changed takes that
