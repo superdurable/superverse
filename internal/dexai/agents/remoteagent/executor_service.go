@@ -59,12 +59,17 @@ func (s *Connections) activate(ctx context.Context, access remoteagentdao.Access
 	if err = authorizeAccess(fresh); err != nil {
 		return bridgeapi.ActivateResponse{}, err
 	}
-	last, err := s.Sessions.Agent.ReadRemoteHead(ctx, access.ProjectID, access.ConnectionID, result.Executor.Epoch)
-	if err != nil {
-		return bridgeapi.ActivateResponse{}, err
+	last := result.Executor.Remote.ActivationSequence
+	if last == nil {
+		// A remote epoch committed by an older Worker has no recorded head.
+		legacyHead, err := s.Sessions.Agent.ReadRemoteHead(ctx, access.ProjectID, access.ConnectionID, result.Executor.Epoch)
+		if err != nil {
+			return bridgeapi.ActivateResponse{}, err
+		}
+		last = &legacyHead
 	}
 	response := bridgeapi.ActivateResponse{Epoch: result.Executor.Epoch, Generation: result.Executor.Generation,
-		Reported: result.Executor.Remote.Reported, LastSequence: uint64(last), ToolSetDigest: agentloop.RemoteToolDigest()}
+		Reported: result.Executor.Remote.Reported, LastSequence: uint64(*last), ToolSetDigest: agentloop.RemoteToolDigest()}
 	for _, definition := range agentloop.RemoteTools() {
 		response.Tools = append(response.Tools, bridgeapi.Tool{Name: string(definition.Name), Description: definition.Description,
 			InputSchema: json.RawMessage(definition.InputSchema)})

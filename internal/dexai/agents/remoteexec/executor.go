@@ -51,6 +51,8 @@ type RemoteExecutor struct {
 	Reported     uint64             `json:"reported"`
 	Consumed     uint64             `json:"consumed"`
 	ActivatedAt  time.Time          `json:"activatedAt"`
+	// Nil identifies a remote epoch admitted before activation heads were stored.
+	ActivationSequence *conversation.Sequence `json:"activationSequence,omitempty"`
 }
 
 // Consume advances Consumed past a report of this executor's epoch and

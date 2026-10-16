@@ -74,7 +74,7 @@ type Binding struct {
 }
 
 // ActivateResponse is the executor state after activation. LastSequence is
-// the conversation's last entry, Reported the highest admitted report.
+// the conversation head at remote admission, Reported the highest admitted report.
 type ActivateResponse struct {
 	Epoch         uint64 `json:"epoch"`
 	Generation    uint64 `json:"generation"`

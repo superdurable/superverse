@@ -327,6 +327,9 @@ existing Session; this design keeps only what the existing primitives cannot do.
 completed only by `CompleteProjectSession` when the Project is deleted. Pairing, activation,
 takeover, reconnection and switching modes never start a Flow, never create a new FlowID or Run,
 and never complete the Session. Retries of every new RPC and Step are idempotent as stated below.
+The connection ID and immutable pairing basis identify an activation. A new remote epoch
+captures the conversation head in the same `SetExecutor` commit; an idempotent repeat
+returns that epoch's stored head without creating a Run or advancing the cursor.
 
 **Attributes.**
 
@@ -334,7 +337,7 @@ and never complete the Session. Retries of every new RPC and Step are idempotent
 |---|---|---|---|
 | `Executor` (new) | `remoteexec.Executor` (ordinary struct) | `Mode` (`platform`/`remote`, a typed closed set), `Epoch uint64` (starts at 0, +1 on every change), `Generation uint64` (0 until the first activation, then at least 1, +1 on every change and every remote Stop; never reset), `Remote *remoteexec.RemoteExecutor`, `Handoff *remoteexec.PlatformHandoff` (the pending switch back, below) | New `executorLock`. Fixed size. Kept for the Session's life; not indexed; no secrets. |
 | | `remoteexec.PlatformHandoff` | `Epoch uint64` (the platform epoch it belongs to), `From time.Time`, `To time.Time`, `Owners []conversation.Actor` (the latest four remote connections' owners, oldest first, so the newest owner is always kept), `Reason` (a typed closed set: `switched`, `connection_removed`) | Written by `SetExecutor` in the commit that switches to `platform`, consumed (deleted) by the Step that opens the `executor` segment; see [Leaving](#entering-and-leaving-remote-mode). |
-| | `remoteexec.RemoteExecutor` | `ConnectionID`, `Owner conversation.Actor` (the connecting Builder), `Binding` (Orca and Codex versions, Orca session ID and provider thread ID, for display), `Reported uint64` (highest admitted report sequence), `Consumed uint64` (highest admitted report sequence the Session consumed; `settledThrough` is derived from it, see below), `ActivatedAt time.Time` (the commit time of the activation) | Cleared on a switch to `platform`; replaced on takeover, so both watermarks restart at 0 per epoch and stay O(1). `Reported` is written only by `SetExecutor`, `ReportRemote` and `InterruptAgent`; `Consumed` only by the consuming AwaitUser or AwaitRemoteAgent commit, all under `executorLock`; never by a read. |
+| | `remoteexec.RemoteExecutor` | `ConnectionID`, `Owner conversation.Actor` (the connecting Builder), `Binding` (Orca and Codex versions, Orca session ID and provider thread ID, for display), `Reported uint64` (highest admitted report sequence), `Consumed uint64` (highest admitted report sequence the Session consumed; `settledThrough` is derived from it, see below), `ActivatedAt time.Time` (the commit time of the activation), `ActivationSequence *conversation.Sequence` (the last canonical entry at remote admission; a non-nil pointer distinguishes a real zero head from a historical epoch with no stored head) | Cleared on a switch to `platform`; replaced on takeover, so the head and both watermarks are fixed-size per epoch and stay O(1). `SetExecutor` reads `AgentState.LastSequence` and writes `ActivationSequence` with `Executor` under `executorLock`; conversation append Steps also take `executorLock`, so the head is serialized with admission. `Reported` is written only by `SetExecutor`, `ReportRemote` and `InterruptAgent`; `Consumed` only by the consuming AwaitUser or AwaitRemoteAgent commit, all under `executorLock`; never by a read. |
 
 Every other Attribute is unchanged; [collaboration](collaboration.md#dex-flow-changes) adds the
 actor fields.
@@ -382,7 +385,7 @@ the Pod is reclaimed on schedule and the next remote tool call re-provisions it 
 
 | RPC | Kind | Purpose and checks | Primitives |
 |---|---|---|---|
-| `SetExecutor` (new) | write, `ShortRPC` locking `SessionStatus`, `Executor`, `AgentInterrupt` | Input `{Mode, ConnectionID, Owner, Binding, BasisEpoch}`; output `{Epoch, Generation}`. Admitted only when `Executor.Epoch == BasisEpoch` (nobody switched since the caller looked), or as an idempotent repeat when the connection is already the executor (returns its epoch); otherwise refused `executor_changed` with the current epoch. Interrupts a running turn as `InterruptAgent` does, except that it never cancels `AwaitUser` waiting on a question (the control item wakes it instead). Loads `RemoteInbox`'s pending messages and publishes one `ExecutorChanged` control item only when none is pending. Called only by the Session Service after it authorized a Builder ([connection](connection.md#activation-and-takeover)). | `Executor`, `AgentInterrupt`, publishes `RemoteInbox`, cancels in-flight Steps other than a question's `AwaitUser` |
+| `SetExecutor` (new) | write, `ShortRPC` locking `SessionStatus`, `Executor`, `AgentInterrupt` | Input `{Mode, ConnectionID, Owner, Binding, BasisEpoch}`; output `SetResult{Executor, Accepted, Changed}`, including `Executor.Remote.ActivationSequence` for a new remote activation and its repeat. Admitted only when `Executor.Epoch == BasisEpoch` (nobody switched since the caller looked), or as an idempotent repeat when the connection is already the executor (returns its epoch and saved activation head); otherwise refused `executor_changed` with the current epoch. On a new remote epoch, reads `AgentState.LastSequence` under the executor lock and stores it in `Executor.Remote` in the same commit. Interrupts a running turn as `InterruptAgent` does, except that it never cancels `AwaitUser` waiting on a question (the control item wakes it instead). Loads `RemoteInbox`'s pending messages and publishes one `ExecutorChanged` control item only when none is pending. Called only by the Session Service after it authorized a Builder ([connection](connection.md#activation-and-takeover)). | reads `AgentState`; writes `Executor`, `AgentInterrupt`, publishes `RemoteInbox`, cancels in-flight Steps other than a question's `AwaitUser` |
 | `ReportRemote` (new) | write, `ShortRPC` locking `Executor` | Admit one report as described under `RemoteInbox`; the report must carry the current epoch and generation. Returns the current epoch, generation and `Reported`. | `Executor`, publishes `RemoteInbox` |
 | `ReadRemote` (new) | read, unlocked; loads only `CurrentMessages` plus, when asked, exact `ArchivedMessages` chunk keys | For the current connection and epoch only: the current `Generation`, `LastSequence`, the projected entries after the sequence the Bridge names ([connection](connection.md#the-remote-agent-endpoint): first entry whole, then a 1 MiB soft budget, `examinedThrough`, the dropped range), `AgentInterrupt`, `PendingUserInput`, `ConfirmedRequirements`, `TodoList`, HEAD, the state digest and the digest of the remote tool set. A stale connection gets `executor_changed` and nothing else. **Bounded loading.** `ReadRemote` never loads a whole message map: each pass loads by exact keys either at most 16 `CurrentMessages` entries after `after` or exactly one `ArchivedMessages` chunk (10 entries), so one pass holds at most 16 entries at their admission maximum. A sync waiting for a wake-up holds no messages; only a pass that loads entries takes one of `remoteAgent.maxConcurrentReads` (default 4 per replica) slots, waiting for one within the request's deadline and answering `rate_limited` (429) after it, so a thousand idle long polls never become a thousand hydrations. **Archived entries** (a Bridge that fell behind the current window): a first pass that finds `after` below the current window answers `NeedArchiveKeys` with the next exact chunk key derived from the retained range and `after`; the client invokes `ReadRemote` again with exactly those keys loaded, and that pass re-checks connection and epoch and re-derives the keys. If retention moved the floor in between, the client retries once; a second move answers `unavailable` (503) and the Bridge retries after backoff. One deadline covers the whole operation; nothing durable is written and no full archive is loaded. **Identifiers it exposes** stay bounded: an entry's `answeredInputCallId` is sent only when it is a canonical remote call ID (`remote-<epoch>-<sequence>`, at most 48 bytes) and omitted otherwise, and a pending question's call ID is omitted unless it is one, because the Bridge can answer only its own calls; the question's text is still sent. | reads only |
 
@@ -390,6 +393,20 @@ the Pod is reclaimed on schedule and the next remote tool call re-provisions it 
 mutate recovery. A lost `ReportRemote` response is retried by the Bridge with the same sequence
 (duplicate, same answer). A lost `SetExecutor` response is retried with the same connection
 (idempotent). No new external effect happens in a Step: the Bridge, not the Flow, talks to Orca.
+`ActivateRemoteAgent` uses the saved head from the `SetExecutor` result; a message
+appended after activation is therefore above the Bridge's initial cursor. For an
+open execution whose current remote epoch was activated before the field existed,
+`ActivationSequence` is nil, so activation falls back to `ReadRemoteHead` for
+that epoch only. The existing Bridge keeps its initialized cursor when it
+reconnects, so this compatibility read does not advance it; an entirely lost
+Bridge cursor under a historical epoch retains the prior delivery limitation.
+No Flow or Step identity, primitive key, Map instance format, Channel payload,
+Stream budget, timeout, retry policy, authorization, cancellation, cleanup,
+retention or external-effect identity changes. The real HTTP/Dex integration
+scenario checks the activation head, a subsequent message's sequence and sync
+delivery, and a repeat after that message. The existing remote integration
+suite covers concurrent admission, Map selection, Channel races, Stream loss,
+restart, retention and external effects.
 
 **Where the code lives.** `session_agent_flow.go` (1,479 lines, limit 1,600) gains only the
 declarations of `Executor`, `RemoteInbox`, `executorLock`, the `AwaitRemoteAgent` Step type with its
@@ -615,6 +632,9 @@ RASUBWT adds no SQL table, column, migration, projection or second worktree owne
 
 ## UI/UX
 
+- The first message Studio sends immediately after the executor becomes remote is
+  delivered as a remote turn. The Bridge's initial delivery cursor stays at the
+  admission head even when activation is retried after that message.
 - The chat header shows the executor: "Superverse agent" or "Codex via Orca · connected by
   sam@example.com", with online, offline (last seen) or "working" state.
 - While a remote turn runs, the composer works as today: messages queue or steer, Stop stops.
@@ -629,6 +649,10 @@ RASUBWT adds no SQL table, column, migration, projection or second worktree owne
 
 ## Tests
 
+- `TestSessionRemoteActivationHeadHTTPDexIntegration` uses the real remote
+  endpoint and Dex Session: activation returns the preceding conversation head;
+  a subsequent message has a greater sequence, sync returns that message, and a
+  repeat activation after the append returns the original head.
 Dex integration tests in `internal/dexai/agents` against the real lane (Dex, Sandbox, local Git host,
 PostgreSQL) drive the real remote agent endpoint over HTTP as a Bridge would. The remote
 HTTP admission case checks `pending` at the first context read, reports a real Sandbox read
@@ -721,6 +745,9 @@ E2E happy paths are unchanged.
 
 ## Documentation
 
+- [connection](connection.md#activation-and-takeover) and
+  [remote-agent API](../../api/remote-agent.md#http-routes) define the saved
+  activation cursor and the historical epoch fallback.
 - [agent harness: session](../agent-harness-design/session.md): the step graph gains
   `AwaitRemoteAgent` and the `Executor` row; link here.
 - `internal/dexai/agents/session/README.md` and `agentloop/README.md`: the Flow contract rows.
@@ -736,6 +763,13 @@ E2E happy paths are unchanged.
   instructions; it adds no worktree-specific brief text.
 
 ## Resource Scalability
+
+The activation head adds one fixed-size sequence pointer to `Executor.Remote`
+per active remote Session. It creates no cloud, Kubernetes, Temporal, Dex, or
+database resource and no growing collection; the value is deleted with the
+Session or cleared on a platform switch or takeover. It adds no control-plane
+call or tenant scan to activation or sync. Only an already-open historical
+remote epoch retains the prior one-time head read on activation.
 
 No new cloud, Kubernetes, or database resource type. Per Session: one fixed-size Attribute; at most
 one existing Sandbox workspace is requested when remote activation finds no stored repository context, even if no tool runs.

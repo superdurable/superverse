@@ -716,8 +716,8 @@ func (client *SessionAgentFlowClient) ReadRemote(ctx context.Context, request re
 	return RemoteRead{}, errors.New("remote retained history moved twice during exact loading")
 }
 
-// ReadRemoteHead reads only canonical authority and the current sequence, without
-// selecting any entry map instance. Activation never hydrates an old chat window.
+// ReadRemoteHead is the legacy activation fallback for remote epochs created
+// before Executor.Remote stored its activation sequence.
 func (client *SessionAgentFlowClient) ReadRemoteHead(ctx context.Context, project, connection string, epoch uint64) (conversation.Sequence, error) {
 	ctx, cancel := context.WithTimeout(ctx, readRPCTimeout)
 	defer cancel()

@@ -50,7 +50,19 @@ can never undo a newer activation.
    since this pairing was created, or as an idempotent repeat when this connection is already the
    executor. It then increases the epoch and interrupts a running turn
    ([executor](executor.md#stop-and-takeover)).
-3. The answer is the new (or, for a repeat, the current) epoch. Nothing else is written.
+3. In that same commit, `SetExecutor` captures `AgentState.LastSequence` in
+   `Executor.Remote.ActivationSequence` and returns it with the new epoch. A repeat
+   returns the saved sequence even if later messages have been appended. The Bridge
+   begins sync after this sequence, so a message sent as soon as Studio observes
+   remote mode remains eligible for delivery.
+
+An execution activated before `ActivationSequence` was introduced has no saved
+value. Its repeat activation reads the current head through `ReadRemoteHead`;
+the existing Bridge retains its already initialized delivery cursor on reconnect,
+so this fallback does not move that cursor. A new activation always saves the
+head, including when it is zero. A Bridge whose local cursor was lost while
+using an older activation has only the historical head fallback and cannot
+recover entries it did not previously deliver.
 
 Consequences:
 
@@ -242,8 +254,10 @@ has 16 services.
 
 ## Dex Flow Changes
 
-`SessionAgentFlow` gains `SetExecutor`, `ReportRemote` and `ReadRemote`; their contract is in
-[executor](executor.md#dex-flow-changes). No other Flow changes. ProjectFlow's deletion keeps its
+`SessionAgentFlow` owns `SetExecutor`, `ReportRemote` and `ReadRemote`; their contract is in
+[executor](executor.md#dex-flow-changes). `SetExecutor` now saves the admission
+head inside its existing `Executor` Attribute; no new primitive is introduced.
+No other Flow changes. ProjectFlow's deletion keeps its
 single `CompleteProjectSession` call.
 
 ## Database Schema Changes

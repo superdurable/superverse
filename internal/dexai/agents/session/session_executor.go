@@ -714,6 +714,10 @@ func setExecutor(ctx dex.Context, input remoteexec.SetRequest) (remoteexec.SetRe
 		return result, nil, nil
 	}
 	state := comm.Must(agentStateAttribute.Get(ctx))
+	if result.Executor.Mode == remoteexec.ModeRemote {
+		sequence := state.LastSequence
+		result.Executor.Remote.ActivationSequence = &sequence
+	}
 	pending := dexflow.OptionalValue(agentInterruptAttribute.Get(ctx))
 	var interruption *agentInterruption
 	if pending == nil && (state.Status != agentloop.AgentStatusWaitingForMessage && state.Status != agentloop.AgentStatusInitializing) {
