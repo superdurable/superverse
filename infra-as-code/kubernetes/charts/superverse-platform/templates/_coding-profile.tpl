@@ -44,9 +44,9 @@ terminationGracePeriodSeconds: 45
 # Namespace-neutral guardrail templates published beside the Sandbox templates.
 # Superverse injects only the session namespace and ownership labels.
 namespaceBaseline:
+  # The pod selector and namespace of the platform server come from the catalog
+  # (v2.sandboxProfiles), as the server Deployment's own app label does.
   platformServer:
-    podSelector:
-      app: superverse-v2-server
     # The server's credential read endpoint, the one server port a Sandbox's Preview reaches.
     credentialReadPort: 8086
   quota:
@@ -113,6 +113,7 @@ the platform's wait for Pod absence instead.
 {{- $_ := set $coding.workspace "storageClassName" (ternary "standard" "gp3" $local) -}}
 {{- $_ := set $coding.workspace "accessMode" (ternary "ReadWriteOnce" "ReadWriteOncePod" $local) -}}
 {{- $_ := set $coding.namespaceBaseline.platformServer "namespace" $namespace -}}
+{{- $_ := set $coding.namespaceBaseline.platformServer "podSelector" (dict "app" (printf "%s-server" (include "v2.product" .))) -}}
 {{- $_ := set $profiles "codingProfile" $coding -}}
 {{- $_ := set $profiles "catalogNamespace" $namespace -}}
 {{- toJson $profiles -}}

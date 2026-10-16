@@ -541,7 +541,7 @@ class Render:
         ingress = yaml.safe_load(profile["data"]["baseline-network-policy-superverse-v2-ingress.yaml"])["spec"]["ingress"][0]
         peer = ingress["from"][0]
         self.fail_if(peer["namespaceSelector"] != {"matchLabels": {"kubernetes.io/metadata.name": self.namespace}} or
-                     peer["podSelector"] != {"matchLabels": {"app": "superverse-v2-server"}}, "coding ingress baseline does not target the catalog platform server")
+                     peer["podSelector"] != {"matchLabels": {"app": self.product + "-server"}}, "coding ingress baseline does not target the catalog platform server")
         self.fail_if(sorted(port["port"] for port in ingress["ports"]) != sorted(SANDBOX_PLATFORM_PORTS), "the platform server must reach only sandboxd and the Preview Dex")
         egress = yaml.safe_load(profile["data"]["baseline-network-policy-sandbox-egress.yaml"])["spec"]["egress"]
         server_rules = [rule for rule in egress if rule["to"][0].get("podSelector") == peer["podSelector"]]
