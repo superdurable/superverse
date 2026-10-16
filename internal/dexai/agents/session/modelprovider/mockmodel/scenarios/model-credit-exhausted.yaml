@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+name: model-credit-exhausted
+title: "Model provider credit exhausted"
+description: "The provider refuses the first call because the account has no credit."
+category: platform_error
+inputs:
+  - label: "Exhaust the provider credit"
+    message: "Ask the model with no provider credit."
+    replies:
+      - error: {status: 400, type: invalid_request_error, message: "Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."}

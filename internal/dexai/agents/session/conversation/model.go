@@ -242,14 +242,39 @@ type ModelClient interface {
 
 // ModelRejectedError is a request the API refused in a way a retry cannot
 // change, such as an invalid request or a credential problem. Code, Status and
-// Hint are what the Session records; Detail is the API's bounded explanation of
-// which part of the request it rejected, for logs and tests only. Only the
-// server's own rejections carry a Hint.
+// Hint and UserText are fixed platform wording, never provider response text.
+// Detail is the API's bounded explanation for logs and diagnostics only.
 type ModelRejectedError struct {
-	Code   string
-	Status int
-	Detail string
-	Hint   string
+	Code     string
+	Status   int
+	Detail   string
+	Hint     string
+	UserText string
+}
+
+// ModelRejectionReason is a closed rejection with its model hint and user text.
+type ModelRejectionReason struct{ code, hint, userText string }
+
+var ProviderCreditExhausted = ModelRejectionReason{
+	code:     "provider_credit_exhausted",
+	hint:     "The model provider account has run out of credit. Wait until it is topped up; then ask the user to send the message again.",
+	userText: "The model provider account has run out of credit. After it is topped up, send the message again.",
+}
+
+var ProviderSpendLimitReached = ModelRejectionReason{
+	code:     "provider_spend_limit_reached",
+	hint:     "The model provider account reached a spending limit. Wait until it resets or ask the account owner to raise it, then ask the user to send the message again.",
+	userText: "The model provider account reached a spending limit. After it resets or the account owner raises it, send the message again.",
+}
+
+var ProviderBillingProblem = ModelRejectionReason{
+	code:     "billing_error",
+	hint:     "The model provider account has a billing problem. Wait for the account owner to fix it, then ask the user to send the message again.",
+	userText: "The model provider account has a billing problem. After the account owner fixes it, send the message again.",
+}
+
+func (reason ModelRejectionReason) Rejected(status int) *ModelRejectedError {
+	return &ModelRejectedError{Code: reason.code, Status: status, Hint: reason.hint, UserText: reason.userText}
 }
 
 // ServerRejection is a model call the server refuses before any model sees
@@ -273,8 +298,8 @@ func (rejection ServerRejection) Rejected() *ModelRejectedError {
 }
 
 func (err *ModelRejectedError) Error() string {
-	if err.Detail == "" {
-		return fmt.Sprintf("model request rejected: %s (HTTP %d)", err.Code, err.Status)
+	if err.Detail != "" {
+		return fmt.Sprintf("model request rejected: %s (HTTP %d): %s", err.Code, err.Status, err.Detail)
 	}
-	return fmt.Sprintf("model request rejected: %s (HTTP %d): %s", err.Code, err.Status, err.Detail)
+	return fmt.Sprintf("model request rejected: %s (HTTP %d)", err.Code, err.Status)
 }

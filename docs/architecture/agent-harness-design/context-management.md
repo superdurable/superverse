@@ -222,6 +222,28 @@ A non-retryable error (400, 401, 403) also reports a platform issue
 The Flow never fails because of a model failure. The user can send another message and
 the next turn starts normally.
 
+The Claude adapter recognizes an exhausted prepaid balance only when Anthropic returns
+HTTP 400 `invalid_request_error` with its documented credit-balance message. Anthropic
+uses that error type for unrelated request errors too, so the message match is narrow.
+It records `provider_credit_exhausted`, with fixed model guidance and a public explanation:
+"The model provider account has run out of credit. After it is topped up, send the
+message again." The provider body is discarded. `RecordPlatformModelResult` appends
+the explanation as a durable marker and `model_failed` activity, then returns to
+`AwaitUser`; the Session remains active while its turn is stopped. Other rejection
+types retain their class and HTTP status without provider text.
+Anthropic's monthly enforced spending cap carries
+`error.details.error_code=enforced_spend_limit_reached` under `rate_limit_error`;
+that structured code takes precedence over retryable rate limiting. An account
+or workspace spending limit set by an owner uses HTTP 400 `invalid_request_error`
+with one of Anthropic's documented limit-message prefixes, so that match is also
+narrow. Both become `provider_spend_limit_reached`, with fixed guidance to wait
+for the reset or ask the account owner to raise the cap before sending again.
+Anthropic `billing_error` is classified by its error type alone as
+`billing_error`, with fixed public guidance to have the account
+owner fix billing before the user sends again. Other rejected requests retain
+their bounded API explanation in the server warning and error diagnostics;
+`publicModelRejection` removes that detail before Flow state, the marker and Studio.
+
 ## Entry log
 
 `conversation.Entry` is the value of the AttributeMaps `CurrentMessages` and

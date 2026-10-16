@@ -43,6 +43,19 @@ one there. A segment stays on one model, so one reply never mixes the two.
 | `strict_schema.go` | `StrictInputSchema`: the input schema of a strict tool as the API takes it (the SDK's transformation: lengths, ranges and defaults move into the description of their parameter), written with sorted keys so the frozen prompt's digest and the request bytes of the tools are the same in every server process. |
 | `claude_stream.go` | Stream capture with `BetaMessage.Accumulate`, live reasoning summaries, text and tool-call activity, the fallback cleanup and usage metrics. |
 
+The adapter classifies Anthropic's documented low-credit HTTP 400
+`invalid_request_error` by its specific message prefix, because the structured error
+type is shared with unrelated invalid requests. The message is inspected only for
+classification; its text never enters the resulting credit or spend-limit
+error. Other rejected requests retain a bounded API explanation in server
+warning and error diagnostics, which is removed before Flow state.
+There is no OpenAI-compatible model adapter in this package.
+The monthly enforced spend cap is identified by Anthropic's structured
+`error.details.error_code`; user-set spending caps have only documented
+message prefixes under `invalid_request_error`. Both use separate, fixed
+spending-limit guidance instead of the prepaid-credit guidance.
+`billing_error` uses its error type alone and fixed account-owner guidance.
+
 ## Tests
 
 `claude_client_live_test.go` (build tag `live`, `make test-claude-live`) calls the real

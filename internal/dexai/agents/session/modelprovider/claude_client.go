@@ -106,7 +106,6 @@ func (client *claudeClient) complete(ctx context.Context, params anthropic.BetaM
 	if err != nil {
 		err = classifyError(err)
 		if rejected, isRejected := errors.AsType[*conversation.ModelRejectedError](err); isRejected {
-			// The API's explanation names the rejected part of the request, never its content.
 			client.logger.LogAttrs(ctx, slog.LevelWarn, "Claude rejected the request", slog.String("call_id", string(request.CallID)),
 				slog.String("model", request.Model.ProviderModel()), slog.String("code", rejected.Code), slog.Int("status", rejected.Status), slog.String("detail", rejected.Detail))
 		}
@@ -214,8 +213,7 @@ func withCacheControl(block json.RawMessage) json.RawMessage {
 const maximumRejectionDetailBytes = 1 << 10
 
 // classifyError keeps a retryable failure an error for Dex to retry and turns
-// a rejection a retry cannot change into a ModelRejectedError with the API's
-// bounded explanation. The error type is read first: an error event in the
+// a rejection a retry cannot change into a ModelRejectedError. The error type is read first: an error event in the
 // middle of a stream has HTTP status 200.
 func classifyError(err error) error {
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
@@ -226,11 +224,32 @@ func classifyError(err error) error {
 		return fmt.Errorf("claude API transport: %w", err)
 	}
 	status, errorType := apiErr.StatusCode, apiErr.Type()
+	providerMessage, providerCode := providerErrorFields(apiErr)
+	// The enforced monthly cap has a structured code even though its outer
+	// error type is the same rate_limit_error used for temporary throttling.
+	if errorType == shared.ErrorTypeRateLimitError && providerCode == "enforced_spend_limit_reached" {
+		return conversation.ProviderSpendLimitReached.Rejected(status)
+	}
+	// Anthropic exposes exhausted prepaid credit as invalid_request_error,
+	// shared with unrelated request errors. Its documented message is the only
+	// discriminator; never retain the provider's response text.
+	if errorType == shared.ErrorTypeInvalidRequestError && status == http.StatusBadRequest &&
+		strings.HasPrefix(providerMessage, "Your credit balance is too low to access the Anthropic API.") {
+		return conversation.ProviderCreditExhausted.Rejected(status)
+	}
+	if errorType == shared.ErrorTypeInvalidRequestError && status == http.StatusBadRequest &&
+		(strings.HasPrefix(providerMessage, "You have reached your specified API usage limits") ||
+			strings.HasPrefix(providerMessage, "You have reached your specified workspace API usage limits")) {
+		return conversation.ProviderSpendLimitReached.Rejected(status)
+	}
+	if errorType == shared.ErrorTypeBillingError {
+		return conversation.ProviderBillingProblem.Rejected(status)
+	}
 	switch errorType {
 	case shared.ErrorTypeRateLimitError, shared.ErrorTypeOverloadedError, shared.ErrorTypeAPIError, shared.ErrorTypeTimeoutError:
 		return fmt.Errorf("claude API %s (HTTP %d, request %s)", errorType, status, apiErr.RequestID)
 	case shared.ErrorTypeInvalidRequestError, shared.ErrorTypeAuthenticationError, shared.ErrorTypePermissionError,
-		shared.ErrorTypeNotFoundError, shared.ErrorTypeBillingError:
+		shared.ErrorTypeNotFoundError:
 		return &conversation.ModelRejectedError{Code: string(errorType), Status: status, Detail: rejectionDetail(apiErr)}
 	}
 	if status >= 400 && status < 500 && status != http.StatusRequestTimeout && status != http.StatusTooManyRequests {
@@ -239,14 +258,25 @@ func classifyError(err error) error {
 	return fmt.Errorf("claude API error %q (HTTP %d, request %s)", errorType, status, apiErr.RequestID)
 }
 
-// rejectionDetail is the message of an API error body, which names the part
-// of the request it rejected, with the request ID.
+// rejectionDetail stays in server diagnostics; publicModelRejection removes it
+// before a model rejection enters Flow state.
 func rejectionDetail(apiErr *anthropic.Error) string {
+	message, _ := providerErrorFields(apiErr)
+	return comm.TruncateUTF8(strings.TrimSpace(message+" (request "+apiErr.RequestID+")"), maximumRejectionDetailBytes)
+}
+
+// providerErrorFields reads the fields needed for narrow budget classifications
+// and bounded rejection diagnostics. Budget classifications discard its text;
+// other rejections use it only in server diagnostics, never Flow payloads.
+func providerErrorFields(apiErr *anthropic.Error) (string, string) {
 	var body struct {
 		Error struct {
 			Message string `json:"message"`
+			Details struct {
+				ErrorCode string `json:"error_code"`
+			} `json:"details"`
 		} `json:"error"`
 	}
 	_ = json.Unmarshal([]byte(apiErr.RawJSON()), &body)
-	return comm.TruncateUTF8(strings.TrimSpace(body.Error.Message+" (request "+apiErr.RequestID+")"), maximumRejectionDetailBytes)
+	return strings.TrimSpace(body.Error.Message), body.Error.Details.ErrorCode
 }

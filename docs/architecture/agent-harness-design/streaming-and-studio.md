@@ -203,6 +203,12 @@ enum prefix plus the persisted value.
   sequence a call will commit. Streamed text for a call is shown only while that sequence is
   uncommitted and is dropped once a snapshot contains the committed message. Text that
   arrives before its model call is known waits in a bounded buffer.
+- A failed provider call can write `model_started` in `CallModel` and `model_failed` in
+  `RecordPlatformModelResult`, with different Stream sources but the same announced
+  message sequence. Studio pairs them by sequence and uses the durable failure marker
+  when the best-effort terminal event is lost. The snapshot's waiting status ends any
+  remaining live clock. The work log shows the marker's explanation outside its fold,
+  both on the live Watch and after a reload.
 - After `agent_interrupted`, text and activity from calls that started before it are
   ignored. A cancelled call can keep streaming for a short time; Studio drops it by
   `source`, so the user never sees it.

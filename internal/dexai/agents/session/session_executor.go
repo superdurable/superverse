@@ -141,7 +141,8 @@ type platformModelOutcome struct {
 const platformModelOutcomeLimit = 16 << 20
 
 func publicModelRejection(rejected *conversation.ModelRejectedError) *conversation.ModelRejectedError {
-	return &conversation.ModelRejectedError{Code: comm.TruncateUTF8(rejected.Code, 1024), Status: rejected.Status, Hint: comm.TruncateUTF8(rejected.Hint, 1024)}
+	return &conversation.ModelRejectedError{Code: comm.TruncateUTF8(rejected.Code, 1024), Status: rejected.Status,
+		Hint: comm.TruncateUTF8(rejected.Hint, 1024), UserText: comm.TruncateUTF8(rejected.UserText, 1024)}
 }
 
 // Preflight bounds encoded allocation, including HTML escaping, before the
@@ -550,10 +551,11 @@ func (code modelFailureCode) failure(detail string) turnFailure {
 // turnFailure is a bounded record of a model call that ended its turn: an
 // error class, its hint and status, never provider text.
 type turnFailure struct {
-	code   string
-	hint   string
-	status int
-	detail string
+	code     string
+	hint     string
+	userText string
+	status   int
+	detail   string
 }
 
 // modelFailure classifies the error of a model call: a rejection keeps its
@@ -567,11 +569,14 @@ func modelFailure(err error) turnFailure {
 	case rejected.Code == summaryUnavailable.name:
 		return summaryUnavailable.failure("")
 	default:
-		return turnFailure{code: rejected.Code, hint: rejected.Hint, status: rejected.Status}
+		return turnFailure{code: rejected.Code, hint: rejected.Hint, userText: rejected.UserText, status: rejected.Status}
 	}
 }
 
 func (failure turnFailure) description() string {
+	if failure.userText != "" {
+		return failure.userText
+	}
 	text := failure.code
 	if failure.detail != "" {
 		text += " (" + failure.detail + ")"
@@ -582,18 +587,25 @@ func (failure turnFailure) description() string {
 	return text
 }
 
+// modelFailureMarkerPrefix marks the durable notice and its matching activity.
+const modelFailureMarkerPrefix = "Model call failed: "
+
 // recordTurnFailure ends a turn after a failed model call: a marker notice the
 // UI shows after a reload, which the model also reads with the failure's hint,
 // and the model_failed activity. The trailing gap holds the turn's user entry,
 // so the notice is a system entry.
 func recordTurnFailure(ctx dex.Context, failure turnFailure) {
 	description := failure.description()
-	notice := "The previous model request ended without a usable reply: " + description + ". The turn ended; continue from here when the user replies."
+	punctuated := description
+	if !strings.HasSuffix(punctuated, ".") {
+		punctuated += "."
+	}
+	notice := "The previous model request ended without a usable reply: " + punctuated + " The turn ended; continue from here when the user replies."
 	if failure.hint != "" {
 		notice += "\nhint: " + failure.hint
 	}
-	sequence := appendEntry(ctx, conversation.NoticeEntry(conversation.EntryRoleSystem, notice, "Model call failed: "+description))
-	writeActivity(ctx, conversation.AgentEvent{Kind: conversation.EventKindModelFailed, Message: "Model call failed: " + description + ".", MessageSequence: &sequence})
+	sequence := appendEntry(ctx, conversation.NoticeEntry(conversation.EntryRoleSystem, notice, modelFailureMarkerPrefix+description))
+	writeActivity(ctx, conversation.AgentEvent{Kind: conversation.EventKindModelFailed, Message: modelFailureMarkerPrefix + punctuated, MessageSequence: &sequence})
 }
 
 // completeCompaction returns only an outcome. A tool-bearing first reply

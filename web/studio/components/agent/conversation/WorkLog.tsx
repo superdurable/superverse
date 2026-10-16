@@ -23,6 +23,7 @@ import {
   type ConversationTurn,
   type ConversationWorkItem,
 } from "./conversation-presentation";
+import { MODEL_FAILURE_MARKER_PREFIX } from "./conversation-work-items";
 import { workLogCalls } from "./conversation-timing";
 
 /** One operation of the log: a model call, a tool call or a repeated tool group. */
@@ -51,7 +52,7 @@ function TurnWork({ turn, markers }: { turn: ConversationTurn; markers: readonly
   const { models, tools } = workLogCalls(turn.operations);
   const notes = markers.length + turn.fallbacks.length + turn.historicalActivities.length + turn.liveActivities.length;
   if (models.length + tools.length + notes === 0) return null;
-  const failure = failureNote(turn.operations);
+  const failure = failureNote(turn.operations, markers);
   return (
     <div className="flex flex-col gap-1 text-caption text-ink-faint" data-testid="work-log">
       <MoreDetails surface={SURFACE} label={models.length + tools.length > 0 ? workSummary(turn, tools) : undefined}>
@@ -101,7 +102,9 @@ function spokenDuration(milliseconds: number | null): string | null {
 }
 
 /** The line a failed model or tool call keeps outside the fold, saying whether work went on after it. */
-function failureNote(operations: readonly ConversationWorkItem[]): string | null {
+function failureNote(operations: readonly ConversationWorkItem[], markers: readonly SequencedMessage[]): string | null {
+  const modelFailure = markers.findLast((entry) => entry.message.content.startsWith(MODEL_FAILURE_MARKER_PREFIX));
+  if (modelFailure) return modelFailure.message.content;
   const statuses = operations.flatMap((operation) =>
     operation.kind === "model" ? [operation.item.status] : operation.group.calls.map((item) => item.status),
   );

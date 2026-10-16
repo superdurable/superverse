@@ -8,7 +8,12 @@
 
 import { test, expect } from "@/tests/e2e/support/coverage/spec-coverage";
 import { register } from "@/tests/e2e/support/account";
-import { chooseMockFirstInput, choosesMockModel, waitForFirstMockInput } from "@/tests/e2e/support/mock/mock-composer";
+import {
+  chooseMockFirstInput,
+  choosesMockModel,
+  sendMockInput,
+  waitForFirstMockInput,
+} from "@/tests/e2e/support/mock/mock-composer";
 import { awaitConfigurationNotice } from "@/tests/e2e/support/preview/preview";
 import { createProject, deleteProject, readSession } from "@/tests/e2e/support/project";
 import { createTeamSpace } from "@/tests/e2e/support/teamspace/teamspace";
@@ -70,5 +75,57 @@ test("a refused Preview start shows what happened, why, Open Setup and the folde
 
   await fix.click();
   await expect(page).toHaveURL(new RegExp(`/p/${projectId}/tools\\?tool=setup`));
+  await deleteProject(page, projectId);
+});
+
+const creditExplanation =
+  "The model provider account has run out of credit. After it is topped up, send the message again.";
+
+test("a provider credit rejection explains the fix and stops the turn live and after reload", async ({
+  page,
+}, testInfo) => {
+  test.setTimeout(20 * 60_000);
+  await register(page);
+  const teamSpaceId = await createTeamSpace(page);
+  if (!(await choosesMockModel(page))) throw new Error("The credit rejection case runs on the mock model");
+  const { projectId } = await createProject(
+    page,
+    teamSpaceId,
+    chooseMockFirstInput("model-credit-exhausted"),
+    testInfo,
+  );
+  const status = async () => {
+    const session = await readSession(page, projectId);
+    const marker = session.agent?.history?.messages?.findLast((item) =>
+      item.message?.content?.startsWith("Model call failed:"),
+    );
+    return marker && session.agent?.description?.status === "STATUS_WAITING_FOR_MESSAGE" ? marker.message?.content : "";
+  };
+  await expect.poll(status, { timeout: 60_000 }).toBe(`Model call failed: ${creditExplanation}`);
+  await page.goto(`/p/${projectId}/flow`);
+  // This literal also catches drift from Go's modelFailureMarkerPrefix.
+  await expect(page.getByTestId("work-log-failure").last()).toHaveText(`Model call failed: ${creditExplanation}`);
+  await expect(page.getByTestId("work-log").getByText("Running", { exact: true })).toHaveCount(0);
+
+  // A second rejection reaches the open Watch, then a fresh snapshot on reload.
+  const before = Number((await readSession(page, projectId)).agent?.description?.lastSequence ?? 0);
+  await sendMockInput(page, projectId, "model-credit-exhausted", 1);
+  await expect
+    .poll(
+      async () => {
+        const session = await readSession(page, projectId);
+        return (
+          session.agent?.description?.status === "STATUS_WAITING_FOR_MESSAGE" &&
+          Number(session.agent.description.lastSequence) > before
+        );
+      },
+      { timeout: 60_000 },
+    )
+    .toBe(true);
+  await expect(page.getByTestId("work-log-failure").last()).toHaveText(`Model call failed: ${creditExplanation}`);
+  await expect(page.getByTestId("work-log").getByText("Running", { exact: true })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByTestId("work-log-failure").last()).toHaveText(`Model call failed: ${creditExplanation}`);
+  await expect(page.getByTestId("work-log").getByText("Running", { exact: true })).toHaveCount(0);
   await deleteProject(page, projectId);
 });

@@ -27,6 +27,8 @@ import { activityBelongsToLiveTurn, durationOf, messageInterval, timestamp } fro
 
 const MODEL_TERMINAL = new Set(["model_completed", "model_failed"]);
 export const MODEL_LIFECYCLE = new Set(["model_started", ...MODEL_TERMINAL]);
+// Mirrors Go's modelFailureMarkerPrefix in session_executor.go.
+export const MODEL_FAILURE_MARKER_PREFIX = "Model call failed: ";
 
 /** Appends each assistant message's model call and its tool groups and questions to the turn. */
 export function appendDurableWork(turn: ConversationTurn, context: PresentationContext) {
@@ -189,6 +191,16 @@ export function appendUnanchoredModels(context: PresentationContext) {
   const unplaced: (ActivityStreamEvent | LiveTextEntry)[] = [];
   for (const [source, activities] of context.activity.bySource) {
     if (context.usedModelSources.has(source)) continue;
+    const sequence = activities.find((event) => event.value.messageSequence !== null)?.value.messageSequence;
+    if (
+      sequence !== null &&
+      sequence !== undefined &&
+      !activities.some((event) => event.value.kind === "model_started") &&
+      context.activity.bySequence
+        .get(sequence)
+        ?.some((event) => event.source !== source && event.value.kind === "model_started")
+    )
+      continue;
     const turn = turnForUnanchoredModel(activities, context);
     if (turn) {
       const model = unanchoredModelItem(source, activities, context);
@@ -221,21 +233,38 @@ function unanchoredModelItem(
   activities: readonly ActivityStreamEvent[],
   context: PresentationContext,
 ): ConversationModelWorkItem {
-  const terminal = activities.findLast((event) => MODEL_TERMINAL.has(event.value.kind));
-  const failed = terminal?.value.kind === "model_failed";
+  const sequence = activities.find((event) => event.value.messageSequence !== null)?.value.messageSequence;
+  // The model call and RecordPlatformModelResult are separate Steps, so their
+  // Stream sources differ. Their announced message sequence joins the terminal
+  // activity; the durable marker also recovers when the Stream was lost.
+  const terminal =
+    activities.findLast((event) => MODEL_TERMINAL.has(event.value.kind)) ??
+    (sequence === null || sequence === undefined
+      ? undefined
+      : context.activity.bySequence.get(sequence)?.findLast((event) => event.value.kind === "model_failed"));
+  const marker = context.messages.find(
+    (entry) =>
+      entry.sequence === sequence &&
+      entry.message.role === "system" &&
+      entry.message.content.startsWith(MODEL_FAILURE_MARKER_PREFIX),
+  );
+  const failed = terminal?.value.kind === "model_failed" || marker !== undefined;
+  const running = !failed && terminal === undefined && context.isModelRunning;
   const start = modelStartedAt(activities);
-  const end = timestamp(terminal?.createdAt);
+  const end = timestamp(
+    terminal?.createdAt ?? marker?.message.createdAt ?? (running ? undefined : activities.at(-1)?.createdAt),
+  );
   const effectiveEnd = end ?? context.nowMs;
   const interval = start === null || effectiveEnd < start ? null : ([start, effectiveEnd] as const);
   return {
     key: `model-${source}`,
     messageSequence: null,
-    status: failed ? "failed" : terminal ? "complete" : "running",
+    status: failed ? "failed" : terminal ? "complete" : running ? "running" : "unknown",
     reasoning: claimReasoning(source, context),
     durationMs: durationOf(interval),
     interval,
-    clockStartedAt: end === null ? start : null,
-    summary: modelSummary(null, failed, terminal === undefined),
+    clockStartedAt: running ? start : null,
+    summary: modelSummary(null, failed, running),
     attemptCount: maximumAttempt(activities),
     metrics: null,
   };

@@ -223,15 +223,19 @@ type stepUsage struct {
 
 // stepError answers the call with an Anthropic error instead of a reply.
 type stepError struct {
-	Status  int       `json:"status"`
-	Type    errorType `json:"type"`
-	Message string    `json:"message"`
+	Status    int       `json:"status"`
+	Type      errorType `json:"type"`
+	Message   string    `json:"message"`
+	ErrorCode string    `json:"error_code"`
 }
 
 // validate requires an HTTP error status and an Anthropic error class.
 func (failure stepError) validate() error {
 	if failure.Status < 400 || failure.Status > 599 || !slices.Contains(errorTypes, failure.Type) {
 		return errors.New("an error needs an HTTP status of 400 to 599 and an Anthropic error type")
+	}
+	if failure.ErrorCode != "" && (failure.ErrorCode != "enforced_spend_limit_reached" || failure.Type != rateLimitError) {
+		return errors.New("an error_code must be the rate limit's enforced spend limit")
 	}
 	return nil
 }
@@ -242,6 +246,7 @@ type errorType string
 const (
 	invalidRequestError errorType = "invalid_request_error"
 	authenticationError errorType = "authentication_error"
+	billingError        errorType = "billing_error"
 	permissionError     errorType = "permission_error"
 	notFoundError       errorType = "not_found_error"
 	requestTooLarge     errorType = "request_too_large"
@@ -251,7 +256,7 @@ const (
 )
 
 // errorTypes are the error classes a step may answer with: every one.
-var errorTypes = []errorType{invalidRequestError, authenticationError, permissionError, notFoundError, requestTooLarge, rateLimitError, apiError, overloadedError}
+var errorTypes = []errorType{invalidRequestError, authenticationError, billingError, permissionError, notFoundError, requestTooLarge, rateLimitError, apiError, overloadedError}
 
 // maximumRepeat bounds one step's repetitions.
 const maximumRepeat = 1000

@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+name: model-billing-error
+title: "Model provider billing problem"
+description: "The provider refuses the first call because the account has a billing problem."
+category: platform_error
+inputs:
+  - label: "Encounter a provider billing problem"
+    message: "Ask the model with a provider billing problem."
+    replies:
+      - error: {status: 402, type: billing_error, message: "The account has a payment problem."}

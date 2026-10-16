@@ -20,3 +20,8 @@ flowchart LR
   self --> d6["lib/shared/problem"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
+
+A failed model call may have lifecycle events from two Dex Steps with distinct Stream
+sources. The work log joins them by the announced message sequence, closes its clock
+from the snapshot's waiting state, and uses the durable failure marker to show the
+explanation after reconnect or reload.

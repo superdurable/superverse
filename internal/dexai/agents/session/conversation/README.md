@@ -57,6 +57,14 @@ validates itself when it is decoded.
 | `request_assembly.go` | `AssembleRequest`: a segment's entries as request messages, gap by gap, with its invariants and the cache anchor. |
 | `messages.go` | Message identity, roles, `AgentMessage`, history and queue values, and `PendingRequestText`, the envelope-preserving bounded turn quote. |
 | `model.go` | The supported models and efforts, the `ModelClient` port with its request, reply and rejection, metrics and segment prompts. |
+
+`ProviderCreditExhausted` declares the rejection code, fixed model hint and public
+text together. `ModelRejectedError` carries those values through the Session without
+provider response text in Flow state; `Detail` is bounded API diagnostic text
+that the adapter logs and `publicModelRejection` removes before Flow state.
+`ProviderSpendLimitReached` declares the corresponding fixed guidance for spending
+caps.
+`ProviderBillingProblem` declares fixed guidance for `billing_error`.
 | `tool_call.go` | Tool names, the `ToolSpec`, `ToolCall`, outcomes and measurements. |
 | `tool_failure.go` | `ToolFailure`, the owner, effect, hint and text of a failed tool call as the model reads it. |
 | `events.go` | Activity events, input consumption, the provider writers and todo item statuses. |

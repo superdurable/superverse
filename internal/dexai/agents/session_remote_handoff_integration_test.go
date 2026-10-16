@@ -42,6 +42,10 @@ func TestSessionRemoteShortHandoffHTTPDexIntegration(t *testing.T) {
 	}
 	head := before.Session.Identity.HeadCommit
 	remote := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
+	listed, err := api.ListRemoteAgentConnections(ctx, &pb.ListRemoteAgentConnectionsRequest{ProjectId: session.identity.ProjectID, Caller: caller})
+	if err != nil || len(listed.GetConnections()) != 1 || listed.GetCurrentConnectionId() != "" || listed.GetConnections()[0].GetStatus() != pb.RemoteAgentConnectionStatus_REMOTE_AGENT_CONNECTION_STATUS_PAIRED {
+		t.Fatalf("the real API did not list the paired but inactive remote connection: %v", err)
+	}
 	var active bridgeapi.ActivateResponse
 	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "short-handoff", ProviderThreadID: "short-handoff", HostLabel: "integration host"}}, &active, http.StatusOK)
 	if active.Epoch != 1 || active.Generation != 1 {

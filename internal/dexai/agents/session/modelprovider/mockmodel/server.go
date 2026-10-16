@@ -103,7 +103,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if answer.failure != nil {
-		writeError(w, answer.failure.Status, answer.failure.Type, answer.failure.Message)
+		writeErrorWithCode(w, answer.failure.Status, answer.failure.Type, answer.failure.Message, answer.failure.ErrorCode)
 		return
 	}
 	// The Session stores the progress with the reply, where Studio reads which input comes next.
@@ -187,6 +187,9 @@ type errorBody struct {
 	Error struct {
 		Type    errorType `json:"type"`
 		Message string    `json:"message"`
+		Details *struct {
+			ErrorCode string `json:"error_code"`
+		} `json:"details,omitempty"`
 	} `json:"error"`
 	RequestID string `json:"request_id"`
 }
@@ -194,8 +197,17 @@ type errorBody struct {
 // writeError answers with an Anthropic error body. A write error means the
 // client is gone, which leaves nothing to report.
 func writeError(w http.ResponseWriter, status int, class errorType, message string) {
+	writeErrorWithCode(w, status, class, message, "")
+}
+
+func writeErrorWithCode(w http.ResponseWriter, status int, class errorType, message, errorCode string) {
 	body := errorBody{Type: "error", RequestID: requestID}
 	body.Error.Type, body.Error.Message = class, message
+	if errorCode != "" {
+		body.Error.Details = &struct {
+			ErrorCode string `json:"error_code"`
+		}{ErrorCode: errorCode}
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("request-id", requestID)
 	w.WriteHeader(status)

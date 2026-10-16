@@ -399,7 +399,7 @@ func TestSessionMockCompactionFailureDexIntegration(t *testing.T) {
 // The model-failure scenario answers the first call with the 400 the API gives
 // an invalid request. The turn records the failure as a marker the user sees,
 // and the Session returns to waiting for a message instead of ending. The
-// rejection is a platform failure, which CallModel reports beside the turn to
+// rejection is a platform failure, which RecordPlatformModelResult reports beside the turn to
 // the PlatformIssueFlow of its signature; the deployed server names no issue
 // repository, so that Flow only logs it (platformIssueReports reads the
 // engine history, requireLoggedIssues the Flow). The next scenario's input then
@@ -421,6 +421,7 @@ func TestSessionMockModelFailureDexIntegration(t *testing.T) {
 	if !strings.Contains(failure, "invalid_request_error") || !strings.Contains(failure, "HTTP 400") {
 		t.Fatalf("the turn did not record the mock rejection: %q", failure)
 	}
+	requireModelFailureActivity(t, ctx, session, "Model call failed: invalid_request_error, HTTP 400.")
 	snapshot, err := session.client.GetSnapshot(ctx, session.id)
 	if err != nil || snapshot.Session.Status != agentloop.SessionStatusActive {
 		t.Fatalf("the Session did not stay active after the failed turn (%v)", err)
@@ -429,7 +430,7 @@ func TestSessionMockModelFailureDexIntegration(t *testing.T) {
 	if len(reports) != 1 {
 		t.Fatalf("expected the report of the rejected model call, got %d: %+v", len(reports), reports)
 	}
-	requireBesideTurn(t, reports[0], "CallModel")
+	requireBesideTurn(t, reports[0], "RecordPlatformModelResult")
 	session.requireLoggedIssues(ctx, reports)
 	if incident := reports[0].incident; incident.CallID != "" || incident.Tool != "" || incident.Code != "invalid_request_error" || incident.ErrorType != "http_400" {
 		t.Fatalf("the report does not name the rejected model call: %+v", incident)
@@ -439,6 +440,96 @@ func TestSessionMockModelFailureDexIntegration(t *testing.T) {
 	session.send(ctx, mockInput(t, "explain", 1).Content)
 	agent = session.finishedTurnAfter(ctx, agent.Description.LastSequence)
 	requireProgress(t, agent, conversation.MockProgress{Scenario: "explain", Input: 1})
+}
+
+// A real Dex turn through the mock Claude API proves that a rejected credit
+// balance is classified once, shown in plain words, and ends at AwaitUser.
+func TestSessionMockModelCreditExhaustedDexIntegration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
+	defer cancel()
+	session := newMockSession(t, ctx, mockInput(t, "model-credit-exhausted", 1).Content)
+	agent := session.finishedTurn(ctx)
+	if agent.Description.Status != agentloop.AgentStatusWaitingForMessage {
+		t.Fatalf("the failed turn did not stop: %s", agent.Description.Status)
+	}
+	const explanation = "The model provider account has run out of credit. After it is topped up, send the message again."
+	markers := 0
+	for _, message := range agent.History.Messages {
+		if message.Message.Role != conversation.MessageRoleSystem || !strings.HasPrefix(message.Message.Content, "Model call failed:") {
+			continue
+		}
+		markers++
+		if message.Message.Content != "Model call failed: "+explanation || strings.Contains(message.Message.Content, "invalid_request_error") {
+			t.Fatalf("the credit rejection is not explained safely: %q", message.Message.Content)
+		}
+	}
+	if markers != 1 || len(replies(agent.History)) != 0 {
+		t.Fatalf("wanted one failure marker and no assistant reply; got %d markers", markers)
+	}
+	requireModelFailureActivity(t, ctx, session, "Model call failed: "+explanation)
+}
+
+func TestSessionMockModelSpendLimitDexIntegration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
+	defer cancel()
+	session := newMockSession(t, ctx, mockInput(t, "model-spend-limit", 1).Content)
+	agent := session.finishedTurn(ctx)
+	const explanation = "The model provider account reached a spending limit. After it resets or the account owner raises it, send the message again."
+	markers := 0
+	for _, message := range agent.History.Messages {
+		if message.Message.Role != conversation.MessageRoleSystem || !strings.HasPrefix(message.Message.Content, "Model call failed:") {
+			continue
+		}
+		markers++
+		if message.Message.Content != "Model call failed: "+explanation {
+			t.Fatalf("the spending limit was not explained safely: %q", message.Message.Content)
+		}
+	}
+	if markers != 1 || len(replies(agent.History)) != 0 {
+		t.Fatalf("wanted one spending-limit marker and no assistant reply; got %d markers", markers)
+	}
+	requireModelFailureActivity(t, ctx, session, "Model call failed: "+explanation)
+}
+
+func TestSessionMockModelBillingErrorDexIntegration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
+	defer cancel()
+	session := newMockSession(t, ctx, mockInput(t, "model-billing-error", 1).Content)
+	agent := session.finishedTurn(ctx)
+	const explanation = "The model provider account has a billing problem. After the account owner fixes it, send the message again."
+	markers := 0
+	for _, message := range agent.History.Messages {
+		if message.Message.Role != conversation.MessageRoleSystem || !strings.HasPrefix(message.Message.Content, "Model call failed:") {
+			continue
+		}
+		markers++
+		if message.Message.Content != "Model call failed: "+explanation {
+			t.Fatalf("the billing problem was not explained safely: %q", message.Message.Content)
+		}
+	}
+	if markers != 1 || len(replies(agent.History)) != 0 {
+		t.Fatalf("wanted one billing marker and no assistant reply; got %d markers", markers)
+	}
+	requireModelFailureActivity(t, ctx, session, "Model call failed: "+explanation)
+}
+
+func requireModelFailureActivity(t *testing.T, ctx context.Context, session *mockSession, expected string) {
+	t.Helper()
+	var resume sessionagent.ResumeToken
+	for range 128 {
+		event, err := session.client.ReadEvent(ctx, session.id, sessionagent.EventStreamActivity, resume)
+		if err != nil {
+			t.Fatalf("read model failure activity: %v", err)
+		}
+		resume = event.ResumeToken
+		if event.Activity.Kind == conversation.EventKindModelFailed {
+			if event.Activity.Message != expected {
+				t.Fatalf("model failure activity = %q, want %q", event.Activity.Message, expected)
+			}
+			return
+		}
+	}
+	t.Fatal("model failure activity was absent from the retained stream")
 }
 
 // The tool-failure scenario runs a command that is only blanks. It never runs,

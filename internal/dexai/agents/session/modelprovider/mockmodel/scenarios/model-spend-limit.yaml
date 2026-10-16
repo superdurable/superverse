@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+name: model-spend-limit
+title: "Model provider spending limit reached"
+description: "The provider refuses the first call after the monthly spending cap."
+category: platform_error
+inputs:
+  - label: "Reach the provider spending limit"
+    message: "Ask the model after reaching the provider spending limit."
+    replies:
+      - error: {status: 429, type: rate_limit_error, error_code: enforced_spend_limit_reached, message: "You have reached your API usage limits: the organization has crossed its monthly API usage threshold."}
