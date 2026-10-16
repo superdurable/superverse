@@ -78,8 +78,10 @@ type BuildResult struct {
 	// Failure says why a FAILED build failed: a classification or a bounded
 	// provider message, never build output, which can carry source or
 	// credential material.
-	Failure  string   `json:"failure,omitempty"`
-	Payloads Payloads `json:"releaseArtifactPayloads"`
+	Failure string `json:"failure,omitempty"`
+	// FailureCategory is an admitted, bounded provider category; empty for local providers.
+	FailureCategory FailureCategory `json:"failureCategory,omitempty"`
+	Payloads        Payloads        `json:"releaseArtifactPayloads"`
 	// Timings are the phases of a finished build that the provider measured,
 	// in the order it first entered them.
 	Timings []BuildPhaseTiming `json:"phaseTimings,omitempty"`

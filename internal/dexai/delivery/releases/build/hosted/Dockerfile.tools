@@ -11,19 +11,25 @@ COPY internal ./internal
 COPY cmd/tools/app-manifest ./cmd/tools/app-manifest
 RUN --network=none go build -trimpath -o /out/app-manifest ./cmd/tools/app-manifest
 ARG TARGETARCH
+ARG DEXCLI_VERSION
+ARG HOSTED_BUILD_TOOLS_VERSION
 RUN set -eu; case "$TARGETARCH" in \
       amd64) digest=8299979482b73315829eafead4c99bc18dacb9a305153c3763bd0f412aad6558 ;; \
       arm64) digest=996a4ac0f1dc9229de18e2535d74372fa131928ad6831294606b12dd81028347 ;; \
       *) exit 64 ;; \
     esac; \
-    curl --fail --silent --show-error --location "https://github.com/superdurable/dex/releases/download/cli-v1.10.1/dexcli_v1.10.1_linux_${TARGETARCH}.tar.gz" -o /tmp/dexcli.tar.gz; \
+    test -n "$DEXCLI_VERSION"; test -n "$HOSTED_BUILD_TOOLS_VERSION"; \
+    curl --fail --silent --show-error --location "https://github.com/superdurable/dex/releases/download/cli-v${DEXCLI_VERSION}/dexcli_v${DEXCLI_VERSION}_linux_${TARGETARCH}.tar.gz" -o /tmp/dexcli.tar.gz; \
     printf '%s  %s\n' "$digest" /tmp/dexcli.tar.gz | sha256sum --check; \
     mkdir /tmp/dexcli; tar -xzf /tmp/dexcli.tar.gz -C /tmp/dexcli; \
     install -m 0755 /tmp/dexcli/dexcli /out/dexcli
 
 FROM public.ecr.aws/docker/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
 COPY --from=build /out/app-manifest /out/dexcli /usr/local/bin/
-LABEL io.superdurable.hosted-build-tools="v1" io.superdurable.dexcli="1.10.1"
+ARG DEXCLI_VERSION
+ARG HOSTED_BUILD_TOOLS_VERSION
+RUN test -n "$DEXCLI_VERSION" && test -n "$HOSTED_BUILD_TOOLS_VERSION"
+LABEL io.superdurable.hosted-build-tools="$HOSTED_BUILD_TOOLS_VERSION" io.superdurable.dexcli="$DEXCLI_VERSION"
 ENV GOTOOLCHAIN=local CGO_ENABLED=0
 USER 65532:65532
 WORKDIR /workspace

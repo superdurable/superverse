@@ -40,7 +40,8 @@ def pin(pattern: str, relative: str, label: str) -> re.Match[str]:
 
 def check_pins() -> tuple[str, str, str]:
     """Return the SDK version, dexcli version and dexcli commit after checking every copy."""
-    lock = json.loads(read("infra-as-code/source-lock.json"))["dex"]
+    source_lock = json.loads(read("infra-as-code/source-lock.json"))
+    lock = source_lock["dex"]
     sdk = pin(rf"^\s*github\.com/superdurable/dex/sdk-go\s+v({SEMVER})\s*$", "go.mod", "Dex Go SDK").group(1)
     cli = pin(rf"^DEXCLI_VERSION := v({SEMVER})$", "Makefile", "Makefile dexcli").group(1)
     commit = lock["cliCommit"]
@@ -61,9 +62,15 @@ def check_pins() -> tuple[str, str, str]:
     hosted = dict(re.findall(r"(amd64|arm64)\) digest=([a-f0-9]{64})", tools))
     if any(hosted.get(architecture) != checksums["linux_" + architecture] for architecture in ("amd64", "arm64")):
         raise DexVersionError("hosted dexcli archive checksums differ from the installer")
-    if (f"cli-v{cli}/dexcli_v{cli}_linux_" not in tools or f'io.superdurable.dexcli="{cli}"' not in tools or
-            f'labels.get("io.superdurable.dexcli") != "{cli}"' not in read("internal/dexai/delivery/releases/build/hosted/runner.py")):
+    if ('cli-v${DEXCLI_VERSION}/dexcli_v${DEXCLI_VERSION}_linux_' not in tools or
+            'io.superdurable.dexcli="$DEXCLI_VERSION"' not in tools or
+            'io.superdurable.hosted-build-tools="$HOSTED_BUILD_TOOLS_VERSION"' not in tools):
         raise DexVersionError("hosted toolchain and admission do not match the dexcli pin")
+    contract = {"hosted-build-tools": source_lock["hostedBuildTools"]["version"], "dexcli": cli}
+    if not re.fullmatch(r"v[0-9]+", contract["hosted-build-tools"]):
+        raise DexVersionError("invalid hosted build-tools contract version")
+    if read("internal/dexai/delivery/releases/build/hosted/build-contract.generated.json") != json.dumps(contract, indent=2) + "\n":
+        raise DexVersionError("embedded hosted build-tools contract differs from the source-lock")
 
     image = pin(rf'  image: \{{repository: docker.io/superdurable/dex-server, tag: "v({SEMVER})", digest: "(sha256:[a-f0-9]{{64}})"',
                 "infra-as-code/kubernetes/charts/superverse-platform/values.yaml", "platform Dex chart image")
@@ -89,11 +96,16 @@ def check_binary(binary: Path, cli: str, commit: str) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dexcli-binary", type=Path, help="Also verify an existing dexcli binary's version and commit")
+    parser.add_argument("--docker-build-args", action="store_true", help="Emit reviewed Docker build arguments from source-lock.json")
     args = parser.parse_args()
     sdk, cli, commit = check_pins()
     if args.dexcli_binary:
         check_binary(args.dexcli_binary, cli, commit)
-    print(f"Dex SDK {sdk}; dexcli {cli}, its commit and checksums, and the platform Dex image pins agree")
+    if args.docker_build_args:
+        hosted = json.loads(read("infra-as-code/source-lock.json"))["hostedBuildTools"]["version"]
+        print(f"--build-arg DEXCLI_VERSION={cli} --build-arg HOSTED_BUILD_TOOLS_VERSION={hosted}")
+    else:
+        print(f"Dex SDK {sdk}; dexcli {cli}, its commit and checksums, and the platform Dex image pins agree")
 
 
 if __name__ == "__main__":

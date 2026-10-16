@@ -66,7 +66,8 @@ type hostedHead struct {
 	AdmittedAt     time.Time             `json:"admittedAt,omitempty"`
 	// Failure says why a CANCELLED or FAILED build ended, bounded by
 	// boundedFailure.
-	Failure string `json:"failure,omitempty"`
+	Failure         string                `json:"failure,omitempty"`
+	FailureCategory build.FailureCategory `json:"failureCategory,omitempty"`
 	// CodeBuild is CodeBuild's measurement of the phases before the runner,
 	// kept once the build terminated because CodeBuild history expires.
 	CodeBuild codeBuildPhases `json:"codeBuildPhases,omitzero"`
@@ -134,6 +135,9 @@ func (b *Builder) readHead(ctx context.Context, in build.BuildRequest) (*hostedH
 	}
 	if head.Schema != hostedHeadSchema || !flowid.IsSHA256Digest(head.ExecutorDigest) || !b.executorImage.MatchString(head.HostImage) || !sameHostedIdentity(head.Request, in) {
 		return nil, "", fmt.Errorf("%w: admission %s has another schema, executor or request identity", errHostedConflict, key)
+	}
+	if head.FailureCategory != 0 && head.FailureCategory.Name() == "" {
+		return nil, "", fmt.Errorf("%w: admission %s has an unknown failure category", errHostedConflict, key)
 	}
 	// The caller validated in, which the head's request equals but for its
 	// attempt.
@@ -204,6 +208,33 @@ func (b *Builder) readResult(ctx context.Context, in build.BuildRequest, ref obj
 	return result, objectstore.ObjectRef{Key: key, Version: version, Digest: objectstore.Digest(data), MediaType: objectstore.MediaTypeJSON}, nil
 }
 
+// readFailureCategory accepts only the runner's bounded record at the key
+// derived from the admitted request. An absent record is platform-owned.
+func (b *Builder) readFailureCategory(ctx context.Context, h *hostedHead) (build.FailureCategory, error) {
+	key := b.attemptPrefix(h.Request) + "failure.json"
+	data, _, _, err := b.getObject(ctx, key, "", 1024)
+	if platform.HasAWSErrorCode(err, "NoSuchKey", "NotFound") {
+		return build.FailureUnclassifiedPlatform, nil
+	}
+	if err != nil {
+		return 0, fmt.Errorf("read hosted failure category: %w", err)
+	}
+	var record struct {
+		Schema         string `json:"schemaVersion"`
+		ExecutorDigest string `json:"executorDigest"`
+		BuildID        string `json:"buildId"`
+		Category       string `json:"category"`
+	}
+	if err := decodeHosted(data, &record); err != nil {
+		return 0, err
+	}
+	category, known := build.ParseFailureCategory(record.Category)
+	if record.Schema != "superverse.dev/hosted-build-failure/v1" || record.ExecutorDigest != h.ExecutorDigest || record.BuildID != h.BuildID || !known {
+		return 0, fmt.Errorf("%w: hosted failure record has another schema, executor, build or category", errHostedConflict)
+	}
+	return category, nil
+}
+
 // finish records only an already observed provider termination, its exact
 // immutable output, CodeBuild's measured phases and, for FAILED, its reason.
 // This remains readable after CodeBuild history expires.
@@ -224,6 +255,7 @@ func (b *Builder) finish(ctx context.Context, h *hostedHead, phase hostedPhase, 
 	latest.Phase = phase
 	latest.Result = ref
 	latest.Failure = failure
+	latest.FailureCategory = h.FailureCategory
 	latest.CodeBuild = h.CodeBuild
 	return b.writeHead(ctx, h.Request, latest, etag)
 }

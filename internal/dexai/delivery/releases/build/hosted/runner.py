@@ -38,6 +38,7 @@ def blocking_diagnostics(graph):
 MAX_ARTIFACT = 32 * 1024 * 1024
 MAX_IMAGE_ARCHIVE = 2 * 1024 * 1024 * 1024
 SOURCE_DEADLINE = None
+FAILURE_CATEGORY = "hostPreparation"
 PROCESS_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 
@@ -209,6 +210,8 @@ def validate_image_archive(path, image):
 
 
 def build_image(config, request, source, work, profile, bridge_id, image):
+    global FAILURE_CATEGORY
+    FAILURE_CATEGORY = "hostPreparation"
     owner = uuid.uuid4().hex
     name = "sv2-buildkit-" + owner
     recipe, output = work / "recipe", work / "image"
@@ -290,9 +293,15 @@ provenanceEnvDir = "/empty-provenance"
             args += ["--opt", "label:superverse-v2." + key + "=" + request[key]]
         for key, value in sorted(build_args.items()):
             args += ["--opt", "build-arg:" + key + "=" + value]
+        FAILURE_CATEGORY = "imageBuild"
         run(args, timeout=2400)
     finally:
-        remove_container(name, owner)
+        try:
+            remove_container(name, owner)
+        except Exception:
+            FAILURE_CATEGORY = "hostPreparation"
+            raise
+    FAILURE_CATEGORY = "resultPublication"
     archive = output / "image.tar"
     validate_image_archive(archive, image)
     run(["docker", "load", "--input", str(archive)], timeout=300)
@@ -300,7 +309,7 @@ provenanceEnvDir = "/empty-provenance"
 
 
 def main():
-    global SOURCE_DEADLINE
+    global SOURCE_DEADLINE, FAILURE_CATEGORY
     host = time.time(), time.monotonic_ns()
     config = json.loads(base64.b64decode(os.environ["SV2_BUILD_CONFIG"], validate=True))
     request = config["request"]
@@ -316,6 +325,7 @@ def main():
     # unexpected symlink before a file is passed into the trusted outer process.
     if any(item.is_symlink() for item in source.rglob("*")):
         raise ValueError("source archive contains a link")
+    FAILURE_CATEGORY = "invalidFlowDefinition"
     manifest_bytes = bounded(source / "dex-app.yaml", 4 * 1024 * 1024)
     manifest = json.loads(manifest_bytes)
     entries = manifest.get("flowDefinitions")
@@ -323,6 +333,7 @@ def main():
         raise ValueError("missing or oversized Flow declaration list")
     profile = config["profile"]
     parts = [base64.b64decode(profile[name], validate=True) for name in ("manifest", "dockerfile")]
+    FAILURE_CATEGORY = "hostPreparation"
     if hashlib.sha256(b"\0".join(parts)).hexdigest() != request["buildProfileDigest"]:
         raise ValueError("build profile fingerprint mismatch")
     tool = config["toolImage"]
@@ -335,7 +346,9 @@ def main():
     # Exact image digest is the authority; this label guards accidental use of
     # the coding image, which has a different toolchain contract.
     labels = json.loads(run(["docker", "image", "inspect", tool, "--format", "{{json .Config.Labels}}"] )) or {}
-    if labels.get("io.superdurable.hosted-build-tools") != "v1" or labels.get("io.superdurable.dexcli") != "1.10.1":
+    contract = config["toolContract"]
+    if labels.get("io.superdurable.hosted-build-tools") != contract["hosted-build-tools"] or labels.get("io.superdurable.dexcli") != contract["dexcli"]:
+        FAILURE_CATEGORY = "unsupportedBuildTools"
         raise ValueError("unsupported immutable build tools")
     timings = [timing("HOST_PREPARATION", *host)]
     with tempfile.TemporaryDirectory(prefix="sv2-hosted-") as temporary:
@@ -358,11 +371,13 @@ def main():
         # packages; accepted source is read only. Offline strict FDG checks below
         # still reject missing dependencies or checksums.
         with measured(timings, "DEPENDENCY_PREPARATION"):
+            FAILURE_CATEGORY = "dependencyDownload"
             for module in ("/workspace", "/workspace/tools/openapi"):
                 tool_command(container, ["--network", "bridge", "--dns", "1.1.1.1", "--dns", "8.8.8.8",
                      "--sysctl", "net.ipv6.conf.all.disable_ipv6=1", "--sysctl", "net.ipv6.conf.default.disable_ipv6=1", "--entrypoint", "go", tool,
                      "-C", module, "mod", "download"], timeout=600)
         with measured(timings, "ANALYSIS"):
+            FAILURE_CATEGORY = "invalidFlowDefinition"
             manifest_artifacts = json.loads(tool_command(container, ["--network", "none", "--entrypoint", "app-manifest", tool,
                  "--manifest", "/workspace/dex-app.yaml", "--source-commit", request["sourceCommitSha"],
                  "--project-id", request["projectId"], "--release-id", request["releaseId"]], timeout=30))
@@ -400,8 +415,10 @@ def main():
         if not request.get("sourceOnly"):
             image = config["repositoryURI"] + ":" + config["imageTag"]
             with measured(timings, "COMPILATION"):
+                FAILURE_CATEGORY = "imageBuild"
                 build_image(config, request, source, work, profile, bridge_id, image)
             with measured(timings, "IMAGE_PUBLICATION"):
+                FAILURE_CATEGORY = "resultPublication"
                 run(["docker", "push", image], timeout=600)
                 images = json.loads(run(["aws", "ecr", "describe-images", "--region", config["region"],
                              "--registry-id", config["accountId"], "--repository-name", config["repositoryURI"].split("/", 1)[1],
@@ -414,6 +431,7 @@ def main():
                   "artifactReference": artifact_reference, "imageId": image_digest,
                   "releaseArtifactPayloads": payloads, "phaseTimings": timings}
         result_file = work / "result.json"
+        FAILURE_CATEGORY = "resultPublication"
         result_file.write_bytes(encoded(result)); result_file.chmod(0o600)
         published = json.loads(run(["aws", "s3api", "put-object", "--region", config["region"], "--bucket", config["bucket"], "--expected-bucket-owner", config["accountId"],
             "--key", config["resultKey"], "--body", str(result_file), "--content-type", "application/json",
@@ -434,5 +452,21 @@ if __name__ == "__main__":
     try:
         main()
     except Exception:
-        # Provider output and app source stay out of generic error messages.
-        raise SystemExit("Hosted release build did not complete") from None
+        # One closed, fixed category reaches the log and the attempt's private
+        # failure object. Neither provider output nor exception text crosses it.
+        try:
+            SOURCE_DEADLINE = None
+            config = json.loads(base64.b64decode(os.environ["SV2_BUILD_CONFIG"], validate=True))
+            categories = config["failureCategories"]
+            category = categories.get(FAILURE_CATEGORY, categories["unclassifiedPlatform"])
+            with tempfile.TemporaryDirectory(prefix="sv2-failure-") as directory:
+                failure = Path(directory) / "failure.json"
+                failure.write_bytes(encoded({"schemaVersion": "superverse.dev/hosted-build-failure/v1", "executorDigest": config["executorDigest"],
+                                             "buildId": os.environ["CODEBUILD_BUILD_ID"], "category": category}))
+                run(["aws", "s3api", "put-object", "--region", config["region"], "--bucket", config["bucket"],
+                     "--expected-bucket-owner", config["accountId"], "--key", config["failureKey"], "--body", str(failure),
+                     "--content-type", "application/json", "--server-side-encryption", "aws:kms", "--ssekms-key-id", config["kmsKeyARN"],
+                     "--if-none-match", "*"], timeout=30)
+        except Exception:
+            category = "unclassified platform failure"
+        raise SystemExit("Hosted release build did not complete: " + category.replace("-", " ")) from None

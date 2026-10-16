@@ -358,6 +358,9 @@ func (r *ReleaseBuildRevision) observe(o buildObservation) (string, error) {
 		kind, message := failureBuildUnknown, "The build provider cannot confirm the outcome of the build; inspect it before a retry."
 		if o.State == build.BuildFailed {
 			kind, message = failureBuildFailed, "The build failed: "+cmp.Or(o.Failure, "the build provider gave no reason")+"."
+			if o.FailureCategory.Class() == build.FailureClassPlatform {
+				kind = failureBuildPlatform
+			}
 		}
 		r.Failure, r.FailureOwner = kind.failure(r.Operation.Phase, message), kind.owner
 		return "", nil
@@ -550,6 +553,7 @@ type buildObservation struct {
 	ImageReference, ImageDigest string
 	Provenance                  provenance
 	Failure                     string
+	FailureCategory             build.FailureCategory
 	Timings                     []dexflow.PhaseTiming
 }
 

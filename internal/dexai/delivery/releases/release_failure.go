@@ -32,6 +32,8 @@ var (
 	failureSourceInvalid = releaseFailureKind{"RELEASE_SOURCE_FAILED", conversation.DeliveryOwnerApplication, dexflow.RemedyAskAgent}
 	// failureBuildFailed is a build the provider reported FAILED.
 	failureBuildFailed = releaseFailureKind{"BUILD_FAILED", conversation.DeliveryOwnerApplication, dexflow.RemedyAskAgent}
+	// failureBuildPlatform is a hosted build precondition or infrastructure failure.
+	failureBuildPlatform = releaseFailureKind{"BUILD_FAILED", conversation.DeliveryOwnerPlatform, dexflow.RemedyPublishAgain}
 	// failureBuildUnknown is a build whose outcome the provider cannot confirm.
 	failureBuildUnknown = releaseFailureKind{"BUILD_UNKNOWN", conversation.DeliveryOwnerPlatform, dexflow.RemedyContactOperator}
 	// failureBuildIncomplete is a draft the freeze refused with its gaps.

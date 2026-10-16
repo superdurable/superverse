@@ -147,12 +147,14 @@ func (b *Builder) validate(in build.BuildRequest) (build.Profile, error) {
 // profile. One accepted attempt cannot adopt a new tool image or trusted runner.
 func (b *Builder) executorDigest() string {
 	return objectstore.Digest(comm.Must(json.Marshal(struct {
-		HostImage    string `json:"HostImage"`
-		ToolImage    string `json:"ToolImage"`
-		RunnerDigest string `json:"RunnerDigest"`
-		Environment  string `json:"Environment"`
-		Compute      string `json:"Compute"`
-	}{b.config.HostImage, b.config.ToolImage, objectstore.Digest(hostedRunner), string(cb.EnvironmentTypeArmContainer), string(cb.ComputeTypeBuildGeneral1Large)})))
+		HostImage      string `json:"HostImage"`
+		ToolImage      string `json:"ToolImage"`
+		RunnerDigest   string `json:"RunnerDigest"`
+		ContractDigest string `json:"ContractDigest"`
+		CategoryDigest string `json:"CategoryDigest"`
+		Environment    string `json:"Environment"`
+		Compute        string `json:"Compute"`
+	}{b.config.HostImage, b.config.ToolImage, objectstore.Digest(hostedRunner), objectstore.Digest(hostedBuildContract), objectstore.Digest(comm.Must(json.Marshal(build.FailureCategoryContract()))), string(cb.EnvironmentTypeArmContainer), string(cb.ComputeTypeBuildGeneral1Large)})))
 }
 
 func sameHostedIdentity(a, c build.BuildRequest) bool { a.Attempt = 0; c.Attempt = 0; return a == c }
@@ -205,6 +207,10 @@ func (b *Builder) inspectHead(ctx context.Context, in build.BuildRequest, h *hos
 	case hostedCancelled, hostedFailed:
 		result.State = build.BuildFailed
 		result.Failure = h.Failure
+		result.FailureCategory = h.FailureCategory
+		if result.FailureCategory == 0 {
+			result.FailureCategory = build.FailureUnclassifiedPlatform
+		}
 		result.Timings = h.CodeBuild.timings(nil)
 		return result, nil
 	case hostedReady:
@@ -426,7 +432,7 @@ func (b *Builder) dispatch(ctx context.Context, in build.BuildRequest, h *hosted
 		if writeErr := b.writeHead(ctx, in, latest, latestETag); writeErr != nil {
 			return build.BuildResult{}, writeErr
 		}
-		return build.BuildResult{State: build.BuildFailed, Attempt: in.Attempt, Failure: latest.Failure}, nil
+		return build.BuildResult{State: build.BuildFailed, Attempt: in.Attempt, Failure: latest.Failure, FailureCategory: build.FailureUnclassifiedPlatform}, nil
 	}
 	var limited *cb.AccountLimitExceededException
 	if errors.As(err, &limited) {
@@ -549,9 +555,16 @@ func (b *Builder) observe(ctx context.Context, h *hostedHead, v cb.Build) (build
 		h.CodeBuild = measureCodeBuild(v)
 		_, ref, err := b.readResult(ctx, h.Request, objectstore.ObjectRef{})
 		if errors.Is(err, errHostedResultMissing) && v.BuildStatus != cb.StatusTypeSucceeded {
-			// A build without a result reports only CodeBuild's phases.
+			// A build without a result reports CodeBuild's phases and the
+			// runner's fixed category, when its private record exists.
+			category, categoryErr := b.readFailureCategory(ctx, h)
+			if categoryErr != nil {
+				return build.BuildResult{}, categoryErr
+			}
+			h.FailureCategory = category
 			h.Failure = codeBuildFailure(v)
 			result.Failure = h.Failure
+			result.FailureCategory = category
 			result.Timings = h.CodeBuild.timings(nil)
 			if err = b.finish(ctx, h, hostedFailed, objectstore.ObjectRef{}, h.Failure); err != nil {
 				return build.BuildResult{}, err

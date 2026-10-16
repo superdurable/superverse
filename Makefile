@@ -192,6 +192,10 @@ check-test-lanes:
 check-dex-versions:
 	@python3 scripts/check-dex-versions.py
 
+.PHONY: build-hosted-tools
+build-hosted-tools:
+	@docker build --platform linux/arm64 -f internal/dexai/delivery/releases/build/hosted/Dockerfile.tools $$(python3 scripts/check-dex-versions.py --docker-build-args) -t "$${HOSTED_BUILD_TOOLS_TAG:?set HOSTED_BUILD_TOOLS_TAG}" .
+
 # Registered Flow graphs must retain explicit control boundaries and zero diagnostics.
 check-flow-definition: install-dexcli
 	@python3 scripts/check-flow-definitions.py "$(DEXCLI_BINARY)"

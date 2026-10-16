@@ -137,8 +137,12 @@ func (f *ProjectReleaseFlow) finishSource(ctx context.Context, s Snapshot, p sou
 	defer cancel()
 	switch {
 	case observed.State == build.BuildFailed:
-		// The provider's strict analysis rejected the commit's source.
-		return PreparedReleaseSource{}, fmt.Errorf("%w: the build provider reports %s: %s", errSourceInvalid, observed.State, cmp.Or(observed.Failure, "no reason given"))
+		// A hosted precondition is platform-owned. Local provider failures
+		// without a category retain their existing application classification.
+		if observed.FailureCategory.Class() == build.FailureClassPlatform {
+			return PreparedReleaseSource{}, fmt.Errorf("%w: the build provider reports %s (%s): %s", errSourceRejected, observed.State, observed.FailureCategory.Name(), cmp.Or(observed.Failure, "no reason given"))
+		}
+		return PreparedReleaseSource{}, fmt.Errorf("%w: the build provider reports %s (%s): %s", errSourceInvalid, observed.State, observed.FailureCategory.Name(), cmp.Or(observed.Failure, "no reason given"))
 	case observed.State != build.BuildReady:
 		return PreparedReleaseSource{}, fmt.Errorf("%w: the build provider reports %s: %s", errSourceRejected, observed.State, cmp.Or(observed.Failure, "no reason given"))
 	case observed.ImageDigest != "" || observed.ImageReference != "":
@@ -267,7 +271,7 @@ func (f *ProjectReleaseFlow) startBuild(ctx context.Context, s Snapshot, r Relea
 }
 
 func observation(request build.BuildRequest, result build.BuildResult) buildObservation {
-	return buildObservation{State: result.State, Operation: buildOperation{ID: result.OperationID, Attempt: request.Attempt}, ImageReference: result.ImageReference, ImageDigest: result.ImageDigest, Provenance: provenance{Provider: "release-builder", BuildID: result.OperationID, SourceCommit: request.SourceCommit, BuildProfileDigest: request.ProfileDigest, ImageReference: result.ImageReference, ImageDigest: result.ImageDigest}, Failure: result.Failure, Timings: providerTimings(result.Timings)}
+	return buildObservation{State: result.State, Operation: buildOperation{ID: result.OperationID, Attempt: request.Attempt}, ImageReference: result.ImageReference, ImageDigest: result.ImageDigest, Provenance: provenance{Provider: "release-builder", BuildID: result.OperationID, SourceCommit: request.SourceCommit, BuildProfileDigest: request.ProfileDigest, ImageReference: result.ImageReference, ImageDigest: result.ImageDigest}, Failure: result.Failure, FailureCategory: result.FailureCategory, Timings: providerTimings(result.Timings)}
 }
 
 // providerTimings are the phases a provider measured, at most

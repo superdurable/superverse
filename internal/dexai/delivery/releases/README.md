@@ -435,7 +435,9 @@ Project cleanup's CancellationRequested fences is told nobody.
 | --- | --- | --- | --- | --- |
 | H1 | CommitReleasePublishingSource | `RELEASE_SOURCE_FAILED` decided by PrepareReleasePublishingSource for the commit's own source (`errSourceInvalid`): the build provider's strict analysis of its manifest and Flow Definitions failed, or its dex-app.yaml is invalid (`appmanifest.ErrInvalidAppManifest`) | application | ask the Agent |
 | H1 | same | `RELEASE_SOURCE_FAILED` for any other refusal (`errSourceRejected`: actor, Project, commit, provider result or rendered image), from RecordReleaseFailure (exhausted retries or the wait limit) and without a build provider at AdmitRelease | platform | publish again |
+| H1 | same | `RELEASE_SOURCE_FAILED` after a hosted builder's fixed platform failure category (including unsupported build tools or a missing category) | platform | publish again |
 | H2 | CommitReleaseBuildRevision | `BUILD_FAILED`, a build the provider reported failed | application | ask the Agent |
+| H2 | same | `BUILD_FAILED` with a hosted builder's fixed platform failure category | platform | publish again |
 | H2 | same | `BUILD_UNKNOWN` | platform | contact the operator |
 | H2 | same | a rejected automatic deployment (`AutoDeployFailure`, its rejection code; the build stays READY) | platform | publish again |
 | H3 | RecordReleaseBuildFailure | `RELEASE_BUILD_FAILED` of a draft that FreezeReleaseBuildConfiguration refused with its gaps, "Configure ... in Setup · Live, then publish again." | configuration | open Setup |
@@ -460,6 +462,12 @@ commit's Live draft, and FreezeReleaseBuildConfiguration moves straight to
 RecordReleaseBuildFailure with them in `releaseBuildStepInput.Gaps`, which
 records "Configure ... in Setup · Live, then publish again". A
 refusal without gaps stays an error that the Step asks again.
+
+The hosted provider's fixed `FailureCategory` rides in a build observation and
+determines application versus platform ownership for a FAILED build; an old
+observation without the field keeps the local provider's application behavior.
+The FlowID, Step IDs, requests, retained Attributes, Channels and Streams are
+unchanged; no new Run is created for this classification.
 
 NotifyReleaseFailure takes the failure as its input, a `DeliveryFailure`
 built by the hook from the state it commits: the ID, the Project, the source

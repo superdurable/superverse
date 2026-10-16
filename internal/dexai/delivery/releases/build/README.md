@@ -79,5 +79,6 @@ to be reused on the second build so rerunning downloads cannot hide a failure.
 | --- | --- |
 | `builder.go` | The `Builder` port |
 | `build_request.go` | Build requests, results with their measured phases, identities and image tags |
+| `failure_category.go` | The typed hosted failure categories and their ownership, passed to the runner and retained by the provider |
 | `build_profile.go` | The embedded build profiles in `build-profiles/` |
 | `localbuilder/` | The Local Kind build fixture, a Python service that `local.Builder` calls; it keeps its directory because the Kind behavior fingerprint hashes its file names |

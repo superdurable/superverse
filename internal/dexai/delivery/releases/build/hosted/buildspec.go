@@ -26,11 +26,16 @@ import (
 //go:embed runner.py
 var hostedRunner []byte
 
+// Generated from infra-as-code/source-lock.json by update-dex-versions.py.
+//
+//go:embed build-contract.generated.json
+var hostedBuildContract []byte
+
 // startInput is the one StartBuild call of an admitted attempt. Its inputs are
 // trusted constants, so encoding them cannot fail.
 func (b *Builder) startInput(in build.BuildRequest, profile build.Profile, source objectstore.ObjectRef) *codebuild.StartBuildInput {
 	encode := base64.StdEncoding.EncodeToString
-	config := map[string]any{"executorDigest": b.executorDigest(), "request": in, "projectName": b.config.ProjectName, "sourceVersion": source.Version, "repositoryURI": b.config.RepositoryURI, "imageTag": b.tag(in), "region": b.config.Region, "accountId": b.config.AccountID, "bucket": b.config.Bucket, "resultKey": b.attemptPrefix(in) + "result.json", "kmsKeyARN": b.config.KMSKeyARN, "toolImage": b.config.ToolImage, "hostImage": b.config.HostImage, "profile": map[string]string{"manifest": encode(profile.Manifest), "dockerfile": encode(profile.Dockerfile)}}
+	config := map[string]any{"executorDigest": b.executorDigest(), "request": in, "projectName": b.config.ProjectName, "sourceVersion": source.Version, "repositoryURI": b.config.RepositoryURI, "imageTag": b.tag(in), "region": b.config.Region, "accountId": b.config.AccountID, "bucket": b.config.Bucket, "resultKey": b.attemptPrefix(in) + "result.json", "failureKey": b.attemptPrefix(in) + "failure.json", "kmsKeyARN": b.config.KMSKeyARN, "toolImage": b.config.ToolImage, "hostImage": b.config.HostImage, "toolContract": json.RawMessage(hostedBuildContract), "failureCategories": build.FailureCategoryNames(), "profile": map[string]string{"manifest": encode(profile.Manifest), "dockerfile": encode(profile.Dockerfile)}}
 	data := comm.Must(json.Marshal(config))
 	// JSON is a YAML subset. No repository buildspec, shell expansion from app
 	// inputs, artifacts hook or secondary source can execute in the trusted host.

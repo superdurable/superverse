@@ -123,7 +123,45 @@ The server constructs `Builder` only outside Local Kind. It checks each of these
 | `builds.hosted.toolImage` | Reviewed immutable `<registry>/<ecr_prefix>/build-tools@sha256:…` image built from `Dockerfile.tools`, with the Go toolchain, `dexcli` and this revision's `app-manifest` executable |
 | `builds.hosted.hostImage` | Reviewed immutable `<registry>/<ecr_prefix>/build-host@sha256:…` CodeBuild host image, also used for the credential-free BuildKit container |
 
-`Dockerfile.tools` builds the tool image from the repository root; its immutable published digest must be supplied explicitly. The runner accepts only a tool image whose `io.superdurable.hosted-build-tools` and `io.superdurable.dexcli` labels match `Dockerfile.tools`, which rejects local-source overlays and the coding image. No unpublished SDK dependency is selected.
+`infra-as-code/source-lock.json` declares the hosted build-tools version and
+Dex CLI pin. `make build-hosted-tools` reads that lock for the Docker build
+arguments and `Dockerfile.tools` uses them for the Dex archive and both image
+labels. `scripts/update-dex-versions.py` regenerates the server's embedded
+`build-contract.generated.json`; `scripts/check-dex-versions.py` rejects drift.
+The server puts this contract into the CodeBuild request and includes its
+digest in the executor identity. The runner checks the exact pulled image
+against those labels. The immutable published digest must be supplied
+explicitly; no unpublished SDK dependency is selected.
+
+The runner writes one fixed category to CodeBuild's log on failure and tries
+to publish the same category as a small KMS encrypted `failure.json` at the
+attempt's exact S3 prefix. The hosted provider verifies the object owner,
+encryption, build and executor identities before using the category; a missing
+object is platform-owned. `build/failure_category.go` is the typed closed set
+and owns each category's application or platform class. Invalid Flow definitions
+and application image compilation are application-owned. Dependency download
+errors are conservatively platform-owned because the runner cannot distinguish
+a bad module/checksum from a network failure without exposing provider output.
+Failure objects are removed by the existing whole-Release job-prefix cleanup.
+
+## Resource Scalability
+
+This change creates no AWS service, Kubernetes object, Flow, database row or
+per-tenant process. A failed hosted build attempt may add one small encrypted
+S3 `failure.json` version under its existing per-build attempt prefix. The
+attempt is bounded by `build.MaxAttempt` (10,000 per build revision); the
+existing whole-Release cleanup deletes the object and its versions, while an
+open Release retains them. The shared bucket has [no object-count limit](https://docs.aws.amazon.com/AmazonS3/latest/userguide/BucketRestrictions.html);
+AWS states at least [3,500 writes and 5,500 reads per second per partitioned
+prefix](https://docs.aws.amazon.com/AmazonS3/latest/userguide/optimizing-performance.html),
+with no fixed maximum prefix count (checked 2026-10-16). Counts grow with
+failed attempts rather than requests or polls and remain linear at 10,000
+Projects and 100,000 deployments. The promotion verifier adds at most two
+`BatchGetImage` requests and one `GetDownloadUrlForLayer` request per reviewed
+plan, never per application request or event. AWS lists adjustable regional
+defaults of [2,000 and 3,000 requests per second](https://docs.aws.amazon.com/AmazonECR/latest/userguide/service-quotas.html)
+respectively, with no published fixed maximum (checked 2026-10-16). The
+verifier performs no tenant scan, and no runtime cache or worker is added.
 
 The CodeBuild host image requires Linux ARM64, Python 3, AWS CLI v2 with conditional S3 PutObject, a running Docker daemon/CLI, BuildKit `v0.25.1` (`buildkitd` and `buildctl`), `runc`, `iptables` and `ip6tables`. The image must be reviewed to contain no baked credentials or Docker registry configuration. Host/tool image references must belong to `<ecr_prefix>/{build-host,build-tools}` in the configured account/region. The source is supplied in `Dockerfile.host`, `daemon.json` and `start-docker.py`; `host-inputs.json` records actual official registry descriptors/archive checksums. These are source pins, not a published image digest.
 
