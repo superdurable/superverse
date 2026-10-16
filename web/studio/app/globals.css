@@ -180,7 +180,7 @@
 @layer theme {
   :root {
     color-scheme: light;
-    /* The mark's two flats, read raw by components/shell/DexMark.tsx. Pair separation 3.07. */
+    /* The mark's two strokes, read raw by components/shell/DexMark.tsx. Pair separation 3.07. */
     --brand-track: #00321b;
     --brand-head: #008650;
     /* A ring first, a blur second. */
@@ -235,8 +235,8 @@
 
     --shadow-lift: 0 0 0 1px var(--color-line-soft), 0 10px 28px -12px rgba(0, 0, 0, 0.78);
     --focus-ring: 0 0 0 3px rgba(137, 190, 255, 0.3);
-    /* Both flats lift, or the track bottoms out at 1.20 on the dark card. */
-    --brand-track: #42845f;
+    /* The bar goes near-white on dark, as in dex-ui logo/pipe-d; the chevron lifts to the CTA green. */
+    --brand-track: #f6f8f4;
     --brand-head: #70eea9;
   }
 
