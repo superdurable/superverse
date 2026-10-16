@@ -4,7 +4,10 @@ A Superverse project repository starts from the platform's go-react-v1
 application template. Read its `AGENTS.md` first: it names the exact files to
 change and the reference Flow to copy. Inspect `.superverse/template.json`,
 `go.mod`, `dex-app.yaml` and the Makefile before changing dependencies, and use
-`make bootstrap` as the first dependency command.
+`make bootstrap` as the first dependency command. The platform starts the
+bootstrap command that `.superverse/template.json` declares when it checks the
+workspace out, so your `make bootstrap` waits for that run and then restores
+only what changed since: unchanged lockfiles reinstall nothing.
 
 Dex Server is backward compatible with every earlier SDK release, and the
 platform keeps its Dex Server at the newest stable release. The application is

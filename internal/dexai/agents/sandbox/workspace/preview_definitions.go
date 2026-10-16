@@ -116,24 +116,25 @@ func (c *Capabilities) generateDefinitions(ctx context.Context, binding Binding,
 
 // checkWorktreeDefinitions is the commit gate's git.WorktreeDefinitionCheck:
 // the same generator renders the tree that committing the working tree would
-// create, without staging anything, and returns its Flows. A rejection wraps
-// git.ErrFlowDefinitionsRejected with the generator's complete reason, which
-// the gate bounds.
-func checkWorktreeDefinitions(ctx context.Context, client *sandboxd.SandboxClient) ([]git.RenderedFlow, error) {
+// create, without staging anything, and returns the tree and its Flows. A
+// rejection wraps git.ErrFlowDefinitionsRejected with the generator's complete
+// reason, which the gate bounds.
+func checkWorktreeDefinitions(ctx context.Context, client *sandboxd.SandboxClient) (git.RenderedSource, error) {
 	output, err := runDefinitionsProgram(ctx, client, sandboxd.PlatformExecutionID("worktree-definitions"), worktreeDefinitionsTimeout, "--worktree")
 	if err != nil {
-		return nil, err
+		return git.RenderedSource{}, err
 	}
 	if output.ExitCode != 0 {
-		return nil, fmt.Errorf("%w: exit code %d: %s", git.ErrFlowDefinitionsRejected, output.ExitCode, strings.TrimSpace(output.Stderr))
+		return git.RenderedSource{}, fmt.Errorf("%w: exit code %d: %s", git.ErrFlowDefinitionsRejected, output.ExitCode, strings.TrimSpace(output.Stderr))
 	}
-	var rendered struct {
-		Flows []git.RenderedFlow `json:"flows"`
-	}
+	var rendered git.RenderedSource
 	if err = json.Unmarshal([]byte(output.Stdout), &rendered); err != nil {
-		return nil, fmt.Errorf("read the rendered Flows: %w", err)
+		return git.RenderedSource{}, fmt.Errorf("read the rendered Flows: %w", err)
 	}
-	return rendered.Flows, nil
+	if !flowid.IsCommitSHA(rendered.Tree) { // a tree ID has the form of a commit ID
+		return git.RenderedSource{}, fmt.Errorf("the Flow definition generator named the invalid tree %q", rendered.Tree)
+	}
+	return rendered, nil
 }
 
 // runDefinitionsProgram runs the generator in one mode. It runs repository
@@ -153,6 +154,6 @@ func runDefinitionsProgram(ctx context.Context, client *sandboxd.SandboxClient, 
 }
 
 // CheckWorktreeDefinitionsForTest is checkWorktreeDefinitions for the tests.
-func CheckWorktreeDefinitionsForTest(ctx context.Context, client *sandboxd.SandboxClient) ([]git.RenderedFlow, error) {
+func CheckWorktreeDefinitionsForTest(ctx context.Context, client *sandboxd.SandboxClient) (git.RenderedSource, error) {
 	return checkWorktreeDefinitions(ctx, client)
 }

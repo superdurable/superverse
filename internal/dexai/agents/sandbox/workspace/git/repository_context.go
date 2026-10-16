@@ -63,6 +63,35 @@ func (g workspaceGit) readTemplateManifest(ctx context.Context) (templateManifes
 	return manifest, nil
 }
 
+// bootstrapCommand is the command of .superverse/template.json that restores
+// the dependencies, which the platform starts when it checks a workspace out.
+const bootstrapCommand = "bootstrap"
+
+// DeclaredBootstrap reads the bootstrap command of HEAD's template manifest:
+// its arguments, or none when HEAD has no manifest or the manifest declares no
+// bootstrap command. refusal says why a declared command cannot be started.
+func (operations *GitOperations) DeclaredBootstrap(ctx context.Context, client *sandboxd.SandboxClient) (arguments []string, refusal string, err error) {
+	shown, err := workspaceGit{client: client}.git(ctx, "show", "HEAD:"+templateManifestPath)
+	switch {
+	case err != nil && shown.exitCode != 0:
+		return nil, "", nil
+	case err != nil:
+		return nil, "", commandError("read committed template manifest", shown, err)
+	}
+	var manifest templateManifest
+	if err = json.Unmarshal([]byte(shown.stdout), &manifest); err != nil {
+		return nil, "the committed template manifest does not decode", nil
+	}
+	command, declared := manifest.Commands[bootstrapCommand]
+	switch {
+	case !declared:
+		return nil, "", nil
+	case !makeCommandPattern.MatchString(command):
+		return nil, fmt.Sprintf("the template manifest declares the unsupported bootstrap command %q", comm.TruncateUTF8(command, 128)), nil
+	}
+	return strings.Fields(command), "", nil
+}
+
 // RepositoryContext derives bounded, trusted prompt context from the checked-out
 // HEAD: the top-level entries, the template's declared paths and commands, and
 // its AGENTS.md file map.

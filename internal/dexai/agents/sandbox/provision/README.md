@@ -1,7 +1,7 @@
 # Sandbox provisioning
 
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
-Purpose: Provisions one Sandbox instance of a Session: one SandboxProvisionFlow execution creates its Pod on the Session's volume, checks the repository out, verifies it and reports the outcome.
+Purpose: Provisions one Sandbox instance of a Session: one SandboxProvisionFlow execution creates its Pod on the Session's volume, checks the repository out, starts its bootstrap, verifies it and reports the outcome.
 
 Callers: `internal/dexai/agents`, `internal/dexai/agents/diagnostics`, `internal/dexai/agents/sandbox/sessionworkspace`, `internal/dexai/agents/session` and `internal/dexai/bootstrap` import this package.
 
@@ -44,13 +44,14 @@ never deletes anything.
 | `sandbox_provision_flow_client.go` | `provisionFlowID`, `SandboxProvisionFlowClient`: the idempotent start and the retained read that reports a stopped engine execution as failed `WORKSPACE_EXECUTION_STOPPED` |
 | `sandbox_provision_flow_dependency.go` | `SandboxProvisionFlowDependency`, the report of the outcome to the SessionWorkspaceFlow |
 | `sandbox_provision_flow_bootstrap.go` | `SandboxProvisionFlowBootstrap`: the Flow with the instance provider and the workspace transport, and its client |
-| `provision_outcome.go` | `Request`, `Checkout`, `Outcome` and its struct-typed `OutcomeStatus` and `reportAnswer`, `Snapshot` with the READY lease, the wait limits, the failure codes and the initial Attributes |
+| `provision_outcome.go` | `Request`, `Checkout`, `Bootstrap`, `Outcome` and its struct-typed `OutcomeStatus` and `reportAnswer`, `Snapshot` with the READY lease, the wait limits, the failure codes and the initial Attributes |
 
 ## Dex Flow Changes
 
 | Fact | Single owner |
 | --- | --- |
-| How one provisioning went: the resources it found, its checkout, its outcome and how the workspace Flow answered its report | one `SandboxProvisionFlow` execution |
+| How one provisioning went: the resources it found, its checkout, the start of its bootstrap, its outcome and how the workspace Flow answered its report | one `SandboxProvisionFlow` execution |
+| Whether the bootstrap command has run, and its output | the Pod's command ledger (`superverse-exec`), run `platform-bootstrap-<workspaceRequestID>`; the template's `.local/bootstrap.lock` serializes it with the agent's own runs |
 | The instance from the outcome on: its state, resources, lease, reclamation and what outlives the Pod | `SessionWorkspaceFlow` (`Instance` Attribute) |
 | The accepted lease and the Sandbox deadline | `SessionAgentFlow` (`Workspace` Attribute) |
 | What exists in Kubernetes | Kubernetes, through deterministic names and ownership labels; recorded UIDs are "changed underneath us" guards |
@@ -104,6 +105,7 @@ There is **no AttributeMap**. Every Attribute is an ordinary singleton value.
 | `Checkout` | `Checkout` struct: the HEAD the checkout recorded, which the lease expects, and the volume state (`ABSENT`, `CLEAN`, `DIRTY` or `UNKNOWN`) |
 | `WorkspaceTimings` | ordinary `[]dexflow.PhaseTiming`: `provision` then `checkout`, ended by the outcome; at most two entries |
 | `Outcome` | nullable `*Outcome`: the status, the resources, the checkout, the `*dexflow.Failure` of a failed one, and `Reported` (`admitted`, `declined` or `undelivered`) with the cause of an undelivered report. Nil until the provisioning ended |
+| `Bootstrap` | `Bootstrap` struct `{Declared bool, CommandID string, StartedAt time.Time, Refusal string}`: whether HEAD's `.superverse/template.json` declares `commands.bootstrap`, the command ledger run that `StartWorkspaceBootstrap` started (`platform-bootstrap-ws-41`) and its start, or why no run was started, or that a start whose retries ran out was not confirmed. Written once by that Step or by `RecordProvisionFailure`; missing (the zero value) until then and in executions that passed the Step before it existed |
 
 - Owner: this execution is the only writer, and its Steps form one chain, so
   no Step holds a lock and none needs CAS.
@@ -113,7 +115,9 @@ There is **no AttributeMap**. Every Attribute is an ordinary singleton value.
 - Secrets: none. The lease binds provider identities only; Git credentials are
   minted inside the workspace transport and never enter an Attribute.
 - Loading: ordinary Attributes are delivered to every handler.
-- Growth and retention: fixed size; nothing needs cleanup.
+- Growth and retention: fixed size; nothing needs cleanup. The bootstrap run
+  ends at its 15-minute lifetime or with the Pod, and the ledger removes it two
+  hours after it ended.
 
 ### Channels and ChannelMaps
 
@@ -127,12 +131,14 @@ None. The phases of `WorkspaceTimings` are the durable cold-path measurement.
 
 ```mermaid
 flowchart TD
-  ProvisionInstance -->|Ready| CheckoutWorkspace --> VerifyInstanceHealthy --> ReportProvisionOutcome
+  ProvisionInstance -->|Ready| CheckoutWorkspace --> StartWorkspaceBootstrap --> VerifyInstanceHealthy --> ReportProvisionOutcome
   ProvisionInstance -->|refused| ReportProvisionOutcome
   CheckoutWorkspace -->|refused| ReportProvisionOutcome
   VerifyInstanceHealthy -->|unhealthy| ReportProvisionOutcome
   ProvisionInstance -.->|retries exhausted, wait limit| RecordProvisionFailure
   CheckoutWorkspace -.-> RecordProvisionFailure
+  StartWorkspaceBootstrap -.-> RecordProvisionFailure
+  RecordProvisionFailure -->|bootstrap not started| VerifyInstanceHealthy
   VerifyInstanceHealthy -.-> RecordProvisionFailure
   RecordProvisionFailure -->|failed outcome| ReportProvisionOutcome
   ReportProvisionOutcome --> Completed((GracefulComplete))
@@ -156,6 +162,20 @@ flowchart TD
   reconciles the repository before it repeats a Git effect. A refusal the
   workspace reports as a typed failure, or a repository bound under another
   repository host than this server's, records `CHECKOUT_FAILED` at once.
+- `StartWorkspaceBootstrap` (`dexflow.ProviderStepOptions()`, each attempt
+  within 40 s) reads `commands.bootstrap` of HEAD's `.superverse/template.json`
+  (`git.DeclaredBootstrap`; only a `make <target>` command is started) and, through
+  `workspace.Capabilities.StartBootstrap`, asks the command ledger for the run
+  `platform-bootstrap-<workspaceRequestID>` before it begins it: a foreground run in
+  the workspace root with the tool environment and a 15-minute lifetime, which takes
+  none of the four background slots. It never waits for the command, so READY is
+  not delayed. A repeated attempt finds the run an earlier one began, and the
+  ledger's begin answers the same run for the same ID and command, so nothing
+  starts twice. A ledger refusal or an undeclarable command is recorded as
+  `Refusal`; an error is retried and, once the retries run out,
+  `RecordProvisionFailure` records it and continues with the health check: the
+  bootstrap never fails a provisioning, and the agent's own `make bootstrap`
+  restores what a missing run did not.
 - `VerifyInstanceHealthy` (`dexflow.PollingStepOptions(5m)`) provisions again,
   which adopts only the recorded UIDs, until the Sandbox is Ready, then reaches
   sandboxd: a Sandbox or Service replaced since is refused
@@ -168,7 +188,9 @@ flowchart TD
   it ended (`declined`). The answer is recorded and the
   execution completes.
 - `RecordProvisionFailure` (`dexflow.StateStepOptions()`) is the failure route
-  of every provider Step and of the report. For a provider Step it records the
+  of every provider Step and of the report. For `StartWorkspaceBootstrap` it
+  records the final error as the bootstrap's `Refusal` and goes on to
+  `VerifyInstanceHealthy`. For another provider Step it records the
   failed outcome with the code of that Step, the timeout code when the engine
   ended it at its wait limit (`PROVISION_DEADLINE`), and the final error
   (`ctx.RecoveryError().Detail`), then reports it. For the report it records
@@ -205,8 +227,11 @@ workspace Flow reclaims them before its next instance, or the deleting Project r
 by label. A late outcome after the deletion is only recorded `declined`.
 
 Compatibility: a new Flow type that replaced the instance lifecycle of
-SandboxFlow before launch ([the current contract](../../../../../docs/architecture/agent-harness-design/sandbox.md));
-no open execution of an earlier graph exists.
+SandboxFlow before launch ([the current contract](../../../../../docs/architecture/agent-harness-design/sandbox.md)).
+`StartWorkspaceBootstrap` and the `Bootstrap` Attribute were added on
+2026-10-15: an open execution in `CheckoutWorkspace` takes the new Step on its
+next decision, and one past it has no `Bootstrap`, which reads as the zero
+value. Provisionings are short-lived, so no other open execution is affected.
 
 ## Database Schema Changes
 
@@ -224,6 +249,10 @@ they are also visible through `GetProvision` and `dexcli flow state`.
 
 ## Tests
 
+- `TestPlatformBootstrapRacesAgentDexIntegration` (`../../`): the provisioning
+  records the started run `platform-bootstrap-<instance>`, and the build-basic
+  scenario's own `make bootstrap` waits for it and restores nothing again; its
+  first commit gate passes.
 - `TestRetainedProvisionReadsDexIntegration` (`SUPERVERSE_TEST_LANE`,
   `SUPERVERSE_TEST_DEX_ADDRESS`, `SUPERVERSE_TEST_RETAINED_PROJECT_ID`,
   `SUPERVERSE_TEST_RETAINED_WORKSPACE_REQUEST_ID`): `GetProvision` and the

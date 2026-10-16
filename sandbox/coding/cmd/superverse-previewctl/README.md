@@ -66,12 +66,14 @@ which the caller cannot override: `PORT=3000`, `HOST=0.0.0.0`,
 
 ## Application test engine
 
-`superverse-previewctl apptest run [--run-id ID] [--timeout 6m] [--report-dir DIR] -- COMMAND...`
+`superverse-previewctl apptest run [--run-id ID] [--timeout 6m] [--hold-until FILE [--hold-timeout 15m]] [--report-dir DIR] -- COMMAND...`
 runs COMMAND against a fresh engine that exists only for this run. Unlike the
 other commands it prints no JSON answer: it passes the command's output through,
 prints one summary line and exits with the command's code. The template's
-`make test-app` calls it, and the commit gate's test stage runs
-`apptest run --run-id <gate-...> --timeout 6m -- make test-app`.
+`make test-app` calls it, and the commit gate starts
+`apptest run --run-id <gate-...> --timeout 6m --hold-until /tmp/superverse-apptest-release-<gate-...> --hold-timeout 12m -- make test-app`
+with its static stage and releases it once the static and definitions stages
+passed.
 
 - **Foreground, in the caller's process group.** sandboxd's kill of the group
   ends the command and the engine with it; SIGTERM or SIGINT stops the command
@@ -98,6 +100,14 @@ prints one summary line and exits with the command's code. The template's
   report directory, `report/` of the run by default, empty at the start of the
   run; the connector mocks write their calls there) and
   `SUPERVERSE_APPTEST_RUN` (the run directory).
+- **Hold.** With `--hold-until FILE` (an absolute path), the run takes the
+  lock and starts the engine as usual, then looks for FILE every 100 ms. Once
+  FILE exists, the run removes it and runs the command, and its deadline starts
+  again with the whole `--timeout`; `durationMs` then counts from the release.
+  Until the release the deadline is `--hold-timeout` (default 15 minutes, at
+  most 30), which also bounds the queue wait; a hold that passes it exits 124
+  with phase `held` after its teardown. A caller that does not release kills
+  the run's process group, which ends the engine with it.
 - **Timeout.** At the deadline the command and every descendant get SIGTERM,
   then SIGKILL after 5 seconds; the run exits 124 after its teardown. Whenever
   the command ends, the processes it left in the run's process group that PID 1
@@ -125,7 +135,7 @@ prints one summary line and exits with the command's code. The template's
 
 `summary.json` is the contract with the commit gate
 (`internal/dexai/agents/sandbox/workspace/git/commit_application_tests.go`):
-`runId`, `directory`, `kept`, `phase` (`queued`, `engine` or `command`),
+`runId`, `directory`, `kept`, `phase` (`queued`, `engine`, `held` or `command`),
 `exitCode`, `timedOut`, `durationMs`, `engineError`, `executions` (Flow type to
 status to count), `executionsError`, `unhealthy` (`flowId`, `flowType`,
 `status`, `step`, `attempt`, `usageError`, `failure`), `unhealthyTotal`,

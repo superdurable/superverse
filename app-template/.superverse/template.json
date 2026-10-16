@@ -4,6 +4,7 @@
   "openapiSpec": "openapi/openapi.yaml",
   "agentInstructions": "AGENTS.md",
   "commands": {
+    "bootstrap": "make bootstrap",
     "checkStatic": "make check-static",
     "testApplication": "make test-app"
   }

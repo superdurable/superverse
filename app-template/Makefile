@@ -4,11 +4,12 @@ RUN ?=
 APPTEST_FLAGS := -tags apptest -count=1 -timeout 5m
 
 .PHONY: bootstrap generate check-fdg-v2 check-static test-app
+# The platform starts bootstrap with the workspace; a second run waits for the
+# first, and generate (so check-static and test-app) waits for a run in progress.
 bootstrap:
-	go mod download
-	go -C tools/openapi mod download
-	npm --prefix web ci
+	./scripts/bootstrap.sh
 generate:
+	@mkdir -p .local && if command -v flock >/dev/null; then flock -s .local/bootstrap.lock true; fi
 	./scripts/generate-openapi.sh
 check-fdg-v2:
 	python3 ./scripts/render-flow-definitions.py

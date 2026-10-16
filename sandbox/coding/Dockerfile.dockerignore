@@ -13,3 +13,13 @@
 !app-template/tools/openapi/
 !app-template/tools/openapi/go.mod
 !app-template/tools/openapi/go.sum
+!app-template/openapi/
+!app-template/openapi/openapi.yaml
+!app-template/cmd/
+!app-template/cmd/**
+!app-template/internal/
+!app-template/internal/**
+app-template/internal/api/generated/
+!app-template/web/
+!app-template/web/package.json
+!app-template/web/package-lock.json

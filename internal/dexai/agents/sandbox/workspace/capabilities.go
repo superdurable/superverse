@@ -10,10 +10,16 @@ package workspace
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/git"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/sandboxd"
 )
+
+// bootstrapLifetime bounds the platform's run of the template's bootstrap
+// command; the command ledger stops it then.
+const bootstrapLifetime = 15 * time.Minute
 
 // Capabilities is the workspace facade the Session Agent and the Sandbox
 // provider share: one transport pool and the Git protocol on top of it. It owns
@@ -83,4 +89,48 @@ func (c *Capabilities) Inspect(ctx context.Context, binding Binding) (dirty bool
 		return struct{}{}, inspectErr
 	})
 	return dirty, head, err
+}
+
+// BootstrapStart is how StartBootstrap went: whether HEAD declares a bootstrap
+// command, when its ledger run started, or why none was started.
+type BootstrapStart struct {
+	Declared  bool
+	StartedAt time.Time
+	Refusal   string
+}
+
+// StartBootstrap starts the bootstrap command that HEAD's template manifest
+// declares as the foreground command ledger run id in the workspace root, and
+// returns without waiting for it. It asks the ledger first, so a repeated call
+// answers the run an earlier one started and never starts a second.
+func (c *Capabilities) StartBootstrap(ctx context.Context, binding Binding, id sandboxd.ExecutionID) (BootstrapStart, error) {
+	return withSandbox(ctx, c.resolver, binding, func(client *sandboxd.SandboxClient) (BootstrapStart, error) {
+		command, refusal, err := c.git.DeclaredBootstrap(ctx, client)
+		switch {
+		case err != nil:
+			return BootstrapStart{}, err
+		case refusal != "":
+			return BootstrapStart{Declared: true, Refusal: refusal}, nil
+		case len(command) == 0:
+			return BootstrapStart{}, nil
+		}
+		ledger := client.CommandLedger()
+		status, err := ledger.Status(ctx, id, 0, sandboxd.CommandOutputView{})
+		if err != nil {
+			return BootstrapStart{}, fmt.Errorf("read the bootstrap run: %w", err)
+		}
+		if status.State == sandboxd.CommandNotFound {
+			status, err = ledger.Begin(ctx, sandboxd.CommandRequest{ID: id, WorkingDirectory: sandboxd.WorkspaceRoot, Command: command, Lifetime: bootstrapLifetime})
+			if err != nil {
+				return BootstrapStart{}, fmt.Errorf("start the bootstrap run: %w", err)
+			}
+		}
+		start := BootstrapStart{Declared: true}
+		if status.Refusal != "" {
+			start.Refusal = fmt.Sprintf("the command ledger refused the bootstrap run: %s %s", status.Refusal, status.Reason)
+		} else if status.StartedAt != nil {
+			start.StartedAt = status.StartedAt.UTC()
+		}
+		return start, nil
+	})
 }

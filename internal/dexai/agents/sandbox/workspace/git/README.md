@@ -51,7 +51,11 @@ reports clean or dirty without changing anything.
 `CommitAndPush` first validates the repository, then runs the commit gate
 (`commit_source_checks.go`) unless the turn is a blocked handoff. Its stages
 stop at the first failure and report their start and end to the call's
-progress:
+progress. The static and definitions stages run side by side (the definitions
+program renders an isolated archive and shares no file with the builds) and
+report their end once both ended; when both fail, the static failure is the
+result. The tests stage's run starts with them and holds its engine until the
+gate releases it:
 
 1. **manifest**: a bounded 1 MiB read within 30 seconds validates `dex-app.yaml`
    with the same `appmanifest` parser as Preview and Release, and the working tree's
@@ -66,15 +70,21 @@ progress:
 3. **definitions** (two minutes): the injected `WorktreeDefinitionCheck`,
    `workspace.checkWorktreeDefinitions`, renders every declared Flow of the tree
    the next commit would hold with the platform's dexcli, as Preview and Release
-   render a pushed commit, and returns them (`RenderedFlow`: the Flow type and
-   each connector Step's connection, module and wired branches). A rejection is
-   `flow_definition_invalid` with the last 7 KiB of its diagnostics. Then the mock
+   render a pushed commit, and returns that tree with them (`RenderedSource`:
+   the tree ID and each `renderedFlow`, the Flow type and each connector Step's
+   connection, module and wired branches). A rejection is
+   `flow_definition_invalid` with the last 7 KiB of its diagnostics. After a
+   passed static stage, because it reads the generated packages, the mock
    guard: `go list -deps ./...` with default tags must not reach
    `.../sdkgo/connectormock`, else `connector_mock_in_production` names the
    importing packages.
-4. **tests** (6.5 minutes, `commit_application_tests.go`), when HEAD declares
-   `testApplication`: `superverse-previewctl apptest run --run-id gate-<sha256(callID)[:16]>-<nonce>
-   --timeout 6m -- make test-app` in the tool environment, whose summary line
+4. **tests** (6.5 minutes from the release, `commit_application_tests.go`), when
+   HEAD declares `testApplication`: `superverse-previewctl apptest run --run-id gate-<sha256(callID)[:16]>-<nonce>
+   --timeout 6m --hold-until /tmp/superverse-apptest-release-<run-id> --hold-timeout 12m -- make test-app`
+   in the tool environment (`heldTestRun`), started with the static stage, so it
+   queues for the engine lock and starts the engine meanwhile. Once the static
+   and definitions stages passed, the gate writes the release file; otherwise it
+   cancels the run, which kills its process group with the engine. Its summary line
    ([previewctl](../../../../../../sandbox/coding/cmd/superverse-previewctl/README.md#application-test-engine))
    the stage checks. `application_tests_failed`: the command failed or timed out, or an
    execution's active Step failed at least 3 attempts or with an SDK usage error.
@@ -84,8 +94,8 @@ progress:
    in the report's `Uncovered`. `requirements_untested`: with confirmed
    requirements, an ID that is missing from the trace, names no test and no
    `untested_reason`, or names a test that did not pass in this run.
-   `test_environment_unavailable`: the run queued past its deadline, the engine
-   did not start twice, or the summary or the executions could not be read. The
+   `test_environment_unavailable`: the run queued or was held past its deadline,
+   the engine did not start twice, or the summary or the executions could not be read. The
    failure lists up to 6 failing tests, the engine excerpts, the coverage and
    requirement lines, the run directory and the `make test-app RUN=...` that reruns
    the named tests, within 7 KiB.
@@ -93,11 +103,16 @@ progress:
 A clean tree at the HEAD the Session already confirmed runs only the manifest
 stage; the other stages are `skipped`. A failure is an application failure whose message, at most 8 KiB, names
 the stage, its duration and the cause; an unobserved exit or transport error stays
-uncertain. A passed gate returns every stage with its duration and, when the
-tests stage ran, its `ApplicationTestReport` (passed, failed, Flows that ran and
-the uncovered connectors).
+uncertain. A passed gate returns every stage with its duration, the tree it
+verified (the rendered tree, or HEAD's tree for a clean accepted HEAD) and, when
+the tests stage ran, its `ApplicationTestReport` (passed, failed, Flows that ran
+and the uncovered connectors). The gate keeps no result cache.
 
-`CommitAndPush` then stages every change, commits with a process-scoped committer identity and the turn marker
+`CommitAndPush` then stages every change and requires the staged tree to be the
+verified one (`requireVerifiedTree`): a file that changed after the gate rendered
+the tree, such as a tracked file the tests wrote, fails `source_check_failed`
+with the changed paths, and the index is reset so nothing stays staged. It
+commits with a process-scoped committer identity and the turn marker
 `SuperVerse-Turn: <sha256(callID)>` (a 72-byte subject that never splits a UTF-8
 character), and publishes without force. Git ancestry, not the newest call ID,
 decides the next step: local behind is a checked fast-forward, local ahead a
@@ -269,8 +284,12 @@ These tests call an owned, disposable real sandboxd (`SUPERVERSE_TEST_SANDBOX_GR
   checkout at `SUPERVERSE_TEST_SOURCE_CHECK_COMMIT` and the pinned dexcli in the
   Sandbox. It compiles the real application, renders its Flows with the real
   generator and runs its API tests on the image's real test engine: every stage
-  passes with durations, three tests, one Flow that ran and the llm connector
-  listed as untested; a deployment-schema error, a previously accepted invalid
+  passes with durations (logged as `duration_ms`), the definitions stage
+  starting beside the static stage, three tests, one Flow that ran and the llm
+  connector listed as untested, and the unchanged tree stages as the verified
+  one; a failure of both the static and the definitions stage reports static;
+  a test that writes a tracked file passes the stages and fails the tree check
+  without staging a file; a deployment-schema error, a previously accepted invalid
   HEAD, a changed or removed `checkStatic`, a removed `testApplication`, a
   TypeScript error after more than 6 KiB of output on each stream, a Step without
   a group behind a disabled template FDG check, a failing assertion

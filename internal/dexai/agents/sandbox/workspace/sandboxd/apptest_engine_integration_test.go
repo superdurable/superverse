@@ -33,6 +33,7 @@ type apptestSummary struct {
 	Kept       bool                      `json:"kept"`
 	Phase      string                    `json:"phase"`
 	ExitCode   int                       `json:"exitCode"`
+	DurationMS int64                     `json:"durationMs"`
 	TimedOut   bool                      `json:"timedOut"`
 	Executions map[string]map[string]int `json:"executions"`
 }
@@ -44,6 +45,9 @@ type apptestSummary struct {
 // past the deadline and a command past its timeout exit 124 after teardown,
 // killing the caller's process group leaves no engine process or listener,
 // the orphans of a command end with it, and at most three failed run directories stay.
+// A held run starts its engine and runs its command only after its release
+// file appeared, with the whole timeout from then; a hold past its deadline
+// exits 124 after teardown, and killing a held run leaves no listener.
 func TestApplicationTestEngineActualSandbox(t *testing.T) {
 	container := sandboxdtest.StartCodingContainerForTest(t)
 	client := container.Client()
@@ -139,6 +143,56 @@ func TestApplicationTestEngineActualSandbox(t *testing.T) {
 		}
 	})
 
+	t.Run("a held run starts its engine and runs its command after the release", func(t *testing.T) {
+		suffix := time.Now().Format("150405.000000000")
+		release, marker := "/tmp/apptest-release-"+suffix, "/tmp/apptest-held-ran-"+suffix
+		var wait sync.WaitGroup
+		var held apptestSummary
+		var output string
+		wait.Go(func() {
+			output, held = runRequest(t, client, heldApptestRequest(release, "2m", "5s", "bash", "-c", "touch "+marker+"; sleep 2; echo held-command-ran"))
+		})
+		awaitEngine(t, client)
+		// Held longer than the run's timeout, which starts at the release.
+		time.Sleep(6 * time.Second)
+		if ran := shell(t, client, "test -e "+marker+" && echo ran || echo held"); ran != "held" {
+			t.Fatal("the held run ran its command before the release")
+		}
+		shell(t, client, "touch "+release)
+		wait.Wait()
+		if held.ExitCode != 0 || held.Phase != "command" || !strings.Contains(output, "held-command-ran") || held.DurationMS >= 5_000 {
+			t.Fatalf("the released run: %+v\n%s", held, output)
+		}
+		if left := shell(t, client, "test -e "+release+" && echo left || echo consumed"); left != "consumed" {
+			t.Fatalf("the run left its release file %s", release)
+		}
+		requireNoEngine(t, client)
+	})
+
+	t.Run("a hold past its deadline exits 124 after teardown", func(t *testing.T) {
+		output, held := runRequest(t, client, heldApptestRequest("/tmp/apptest-release-never", "10s", "1m", "echo", "never"))
+		if held.ExitCode != 124 || held.Phase != "held" || strings.Contains(output, "never\n") {
+			t.Fatalf("the unreleased run: %+v\n%s", held, output)
+		}
+		requireNoEngine(t, client)
+	})
+
+	t.Run("killing a held run's process group leaves no process or listener", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+			_, _ = client.RunToExit(ctx, heldApptestRequest("/tmp/apptest-release-killed", "2m", "1m", "echo", "never"))
+		}()
+		awaitEngine(t, client)
+		cancel()
+		<-done
+		requireNoEngine(t, client)
+		if _, summary := runApptest(t, client, "2m", "true"); summary.ExitCode != 0 {
+			t.Fatalf("the run after a killed held one: %+v", summary)
+		}
+	})
+
 	t.Run("failed runs keep at most three directories", func(t *testing.T) {
 		for range 4 {
 			if _, summary := runApptest(t, client, "2m", "false"); summary.ExitCode != 1 || !summary.Kept {
@@ -161,13 +215,28 @@ func apptestRequest(timeout string, command ...string) sandboxd.StartRequest {
 	}
 }
 
+// heldApptestRequest is apptestRequest for a run held until release exists.
+func heldApptestRequest(release, holdTimeout, timeout string, command ...string) sandboxd.StartRequest {
+	request := apptestRequest(timeout, command...)
+	request.Arguments = append([]string{"superverse-previewctl", "apptest", "run", "--hold-until", release, "--hold-timeout", holdTimeout, "--timeout", timeout, "--"}, command...)
+	return request
+}
+
 // runApptest runs one apptest run to its exit and returns its output and its
 // summary line.
 func runApptest(t *testing.T, client *sandboxd.SandboxClient, timeout string, command ...string) (string, apptestSummary) {
 	t.Helper()
+	return runRequest(t, client, apptestRequest(timeout, command...))
+}
+
+// runRequest runs one apptest run of request to its exit and returns its
+// output and its summary line.
+func runRequest(t *testing.T, client *sandboxd.SandboxClient, request sandboxd.StartRequest) (string, apptestSummary) {
+	t.Helper()
+	command := request.Arguments
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
-	output, err := client.RunToExit(ctx, apptestRequest(timeout, command...))
+	output, err := client.RunToExit(ctx, request)
 	if err != nil {
 		t.Errorf("apptest run %v: %v", command, err)
 		return "", apptestSummary{}

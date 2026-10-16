@@ -39,7 +39,7 @@ type CommitResult struct {
 // CommitAndPush commits every workspace change of the call request.CallID and
 // publishes the local HEAD to the default branch without force. Unless the
 // call hands off a blocked checkpoint, the source gate runs first and reports
-// each stage to progress.
+// each stage to progress, and the commit holds exactly the tree it verified.
 //
 // Git ancestry, not callID, decides what is published: the workspace may hold
 // commits of earlier calls. Local behind remote is a checked fast-forward,
@@ -61,12 +61,14 @@ func (operations *GitOperations) CommitAndPush(ctx context.Context, client *sand
 	if err != nil {
 		return CommitResult{}, err
 	}
-	result, err := g.commitAndPush(ctx, repository.DefaultBranch, request.CallID, request.Summary)
+	result, err := g.commitAndPush(ctx, repository.DefaultBranch, request.CallID, request.Summary, gate.tree)
 	result.SourceGate = gate
 	return result, err
 }
 
-func (g workspaceGit) commitAndPush(ctx context.Context, branch, callID, summary string) (CommitResult, error) {
+// commitAndPush commits and publishes the workspace; verified is the tree the
+// source gate verified, empty for a blocked handoff.
+func (g workspaceGit) commitAndPush(ctx context.Context, branch, callID, summary, verified string) (CommitResult, error) {
 	g.clearStaleTurnBases(ctx, callID)
 	rebaseActive, err := g.isRebaseActive(ctx)
 	if err != nil {
@@ -81,6 +83,11 @@ func (g workspaceGit) commitAndPush(ctx context.Context, branch, callID, summary
 	}
 	if err = g.step(ctx, "stage workspace changes", "add", "--all"); err != nil {
 		return CommitResult{}, err
+	}
+	if verified != "" {
+		if err = g.requireVerifiedTree(ctx, verified); err != nil {
+			return CommitResult{}, err
+		}
 	}
 	quiet, quietErr := g.git(ctx, "diff", "--cached", "--quiet")
 	created := quietErr != nil && quiet.exitCode == 1
@@ -134,6 +141,31 @@ func (g workspaceGit) commitAndPush(ctx context.Context, branch, callID, summary
 		return CommitResult{}, err
 	}
 	return CommitResult{CommitSHA: local, previousHeadSHA: previousHead, created: createdByTurn}, nil
+}
+
+// requireVerifiedTree refuses a staged tree other than the one the source gate
+// verified: a file changed after the gate rendered the tree, such as one that
+// the tests or a background command wrote, and no check saw the change. The
+// refusal unstages everything, which leaves the working tree as it is.
+func (g workspaceGit) requireVerifiedTree(ctx context.Context, verified string) error {
+	staged, err := g.git(ctx, "write-tree")
+	if err != nil {
+		return commandError("inspect the staged tree", staged, err)
+	}
+	tree := strings.TrimSpace(staged.stdout)
+	if tree == verified {
+		return nil
+	}
+	changed, err := g.git(ctx, "diff", "--name-only", "--no-renames", verified, tree)
+	if err != nil {
+		return commandError("compare the staged tree with the verified one", changed, err)
+	}
+	if err = g.step(ctx, "unstage the unverified tree", "reset", "--quiet"); err != nil {
+		return err
+	}
+	paths := boundedLines(changed.stdout, 20, func(line string) bool { return line != "" && !strings.ContainsRune(line, '\x00') })
+	return sandboxd.NewToolFailure(toolfailure.SourceCheckFailed, fmt.Errorf("these files changed after the source gate verified the working tree, so nothing was committed: %s; keep checks and tests from writing tracked files, then retry commit_and_push",
+		comm.TruncateUTF8(strings.Join(paths, ", "), 2<<10)))
 }
 
 // turnBase returns the HEAD before the commit of callID and whether callID

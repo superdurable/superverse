@@ -19,9 +19,10 @@ one command Channel, never through polling callbacks
   provisioning never interleave and one volume carries one Pod; it starts each instance's
   provisioning, reclaims Pods, keeps the volume and reports every outcome to the Session.
 - `SandboxProvisionFlow` provisions one instance. One execution creates the Pod on the
-  Project's volume, checks the repository out, verifies the instance, reports its outcome
-  once to the workspace Flow and completes. It has no command, timer or reclamation, and it
-  deletes nothing.
+  Project's volume, checks the repository out, starts the template's bootstrap command
+  without waiting for it, verifies the instance, reports its outcome once to the workspace
+  Flow and completes. It has no command of its own, timer or reclamation, and it deletes
+  nothing.
 - `PreviewFlow` serves the Project's Preview on the instance the Session lends it. One
   execution lives from the first Preview command until the Project is deleted.
 
@@ -842,13 +843,16 @@ Contract: [the provisioning README](../../../internal/dexai/agents/sandbox/provi
   the workspace Flow (`ReportProvisionOutcome`) completes the execution with
   `dex.GracefulComplete(Receipt{ProjectID, WorkspaceRequestID, Status})`. The workspace Flow
   copies what it keeps into `Instance`, so nothing depends on the retained execution.
-- **Attributes.** `Request`, `Resources`, `Checkout`, `WorkspaceTimings` and `Outcome`; no
-  AttributeMap, Channel, ChannelMap or Stream; no lock, because the Steps form one chain.
+- **Attributes.** `Request`, `Resources`, `Checkout`, `WorkspaceTimings`, `Outcome` and
+  `Bootstrap` (`{Declared, CommandID, StartedAt, Refusal}`); no AttributeMap, Channel,
+  ChannelMap or Stream; no lock, because the Steps form one chain.
 - **Steps.** `ProvisionInstance` (`PollingStepOptions(30m)`), `CheckoutWorkspace` (15 minutes),
-  `VerifyInstanceHealthy` (5 minutes), `ReportProvisionOutcome` and the failure route
-  `RecordProvisionFailure` (`PROVISION_FAILED`, `PROVISION_DEADLINE`, `CHECKOUT_FAILED`,
-  `INSTANCE_UNHEALTHY`, `WORKSPACE_PROFILE_MISMATCH`, `WORKSPACE_VOLUME_IN_USE`); the whole
-  provisioning is bounded by `provision.Budget` (55 minutes). RPCs `GetProvision`,
+  `StartWorkspaceBootstrap` (`ProviderStepOptions`), `VerifyInstanceHealthy` (5 minutes),
+  `ReportProvisionOutcome` and the failure route `RecordProvisionFailure` (`PROVISION_FAILED`,
+  `PROVISION_DEADLINE`, `CHECKOUT_FAILED`, `INSTANCE_UNHEALTHY`, `WORKSPACE_PROFILE_MISMATCH`,
+  `WORKSPACE_VOLUME_IN_USE`), which records a bootstrap that did not start and goes on to
+  the health check, so the bootstrap never fails a provisioning; the whole provisioning is
+  bounded by `provision.Budget` (55 minutes). RPCs `GetProvision`,
   `GetDexSummary` and `GetDexDisplay`; the client reads a provisioning without an outcome
   whose engine execution stopped as failed `WORKSPACE_EXECUTION_STOPPED`.
 
@@ -912,6 +916,30 @@ The durable `WorkspaceTimings` (`provision`, `checkout`) of each provisioning, w
 workspace Flow keeps in `Instance.Timings` and Studio shows, and `PreviewState.Timings` of
 each start, record both paths. No placeholder Pod, image pre-pull or warm pool is part of the current design.
 
+What follows a usable Sandbox is the dependency restore and the first build, and two
+measures take them off the agent's path:
+
+- **Seeded caches.** The coding image carries a Go build cache and an npm cache of the
+  application template, built by the image's own toolchain in its runtime environment and
+  paths (`/workspace`, the module cache under `/tmp/superverse-tool-execution`), read-only
+  under `/opt/superverse` ([the coding image](../../../sandbox/coding/README.md#toolchain-and-caches)).
+  The template's `make bootstrap` copies them into the Pod's own caches once, so a new
+  project's first generation, vet, build and test compile reuse the template's compiled
+  dependencies and the ogen tool instead of compiling them. Measured on 2026-10-15 in a
+  container of the image with 2 CPUs: the copy of the 374 MB build cache 1.1 s (4.9 s on
+  the image's first, page-cache-cold read); `make generate` 2.7 s instead of 27 s; the test
+  compile 2.4 s instead of 11.6 s; `go build -v ./...` compiles no dependency.
+- **Platform-started bootstrap.** `SandboxProvisionFlow`'s `StartWorkspaceBootstrap` starts
+  the bootstrap command HEAD's `.superverse/template.json` declares (`commands.bootstrap`,
+  `make bootstrap`) as the foreground command ledger run `platform-bootstrap-<workspaceRequestID>`
+  (lifetime 15 minutes, none of the four background slots) right after the checkout, and
+  does not wait for it: READY is not delayed. The template's bootstrap takes the exclusive
+  `flock` `.local/bootstrap.lock`, so the agent's own `make bootstrap` waits for the
+  platform's run and then finds the dependencies current; `make generate`, which
+  `check-static` and `test-app` run first, waits for a run in progress through the shared
+  lock. A resumed instance runs it again: the module and build caches are the new Pod's,
+  while `web/node_modules` on the volume is kept unless the npm lockfile changed.
+
 ## Resources
 
 | Component | Budget | Lives in |
@@ -931,7 +959,13 @@ builds of the main agent, up to three subagents' builds and at most one applicat
 engine (about 300 MiB), all in a 4 GiB container. That is why subagent commands run with
 `nice -n 10`, `GOMAXPROCS=2` and a bounded Node heap, why at most three subagents run at
 once, and why test engines queue ([subagents](subagents.md#resource-rules),
-[commit gate](commit-gate-and-app-tests.md)).
+[commit gate](commit-gate-and-app-tests.md)). The commit gate starts its test engine beside
+its static stage, so the engine's memory overlaps the static builds for that stage.
+
+The seeded caches add 424 MB to the coding image (116 MB gzip-compressed): one more layer
+to pull on each new node and one more copy in the registry per promoted digest. The first
+bootstrap of a Pod writes the 374 MB build cache into its `/tmp`, the size the build cache
+reaches after the first gate anyway, within the 2 GiB `/tmp` budget.
 
 ## Phase timings
 

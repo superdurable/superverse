@@ -95,11 +95,11 @@ Under `/opt/superverse/dex-skills/`:
 
 ## Commands
 
-- `make bootstrap` restores Go and npm dependencies (once per workspace).
+- `make bootstrap` restores Go and npm dependencies; the platform started
+  it already, so yours waits for it.
 - `make generate` regenerates the OpenAPI server and client.
 - `make check-fdg-v2` validates every Flow, including its state loads.
-- `make test-app RUN=<regexp>` generates the contracts and runs the selected
-  API tests.
+- `make test-app RUN=<regexp>` generates and runs the selected API tests.
 - `commit_and_push` runs the whole gate: `make check-static`, the platform's
   Flow-definition check, then `make test-app` with coverage and the
-  requirement trace (each confirmed ID with its passing tests).
+  requirement trace (confirmed IDs with passing tests).

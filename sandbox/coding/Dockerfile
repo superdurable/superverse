@@ -77,7 +77,7 @@ RUN --mount=type=cache,id=coding-sandbox-app-go-mod,target=/go/pkg/mod \
     mkdir -p /out/go-module-proxy \
     && cp -a /go/pkg/mod/cache/download/. /out/go-module-proxy/
 
-FROM --platform=${TARGETPLATFORM} ${NODE_IMAGE} AS coding-base
+FROM --platform=${TARGETPLATFORM} ${NODE_IMAGE} AS coding-tools
 ARG TARGETARCH
 ARG DEXCLI_VERSION=1.6.4
 ARG TEMPORAL_CLI_VERSION=1.8.1
@@ -152,3 +152,35 @@ EXPOSE 3000 8080 8801 9090
 # tini is PID 1: it reaps the orphans of detached Preview processes and
 # forwards termination to sandboxd. The coding profile's Pod command is the same.
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/sandboxd"]
+
+# The application template's Go build cache and npm cache, built by the image's
+# own toolchain with its runtime environment and paths: Go keys a cache entry by
+# the compiler, the package directory and its sources, so a project that starts
+# from the template in /workspace finds its dependencies, the ogen tool and its
+# unchanged packages already compiled. Its commands are those of make generate
+# (the Go half), make check-static and make test-app.
+FROM coding-tools AS app-build-cache
+COPY --chown=1000:1000 app-template/go.mod app-template/go.sum /workspace/
+COPY --chown=1000:1000 app-template/tools/openapi/go.mod app-template/tools/openapi/go.sum /workspace/tools/openapi/
+COPY --chown=1000:1000 app-template/openapi/ /workspace/openapi/
+COPY --chown=1000:1000 app-template/cmd/ /workspace/cmd/
+COPY --chown=1000:1000 app-template/internal/ /workspace/internal/
+COPY --chown=1000:1000 app-template/web/package.json app-template/web/package-lock.json /workspace/web/
+RUN go mod download \
+    && go -C tools/openapi mod download \
+    && go -C tools/openapi tool ogen --target ../../internal/api/generated --package generated ../../openapi/openapi.yaml \
+    && go vet ./... \
+    && go vet -tags apptest ./... \
+    && go build ./... \
+    && go test -tags apptest -count=1 -timeout 5m -run '^$' ./internal/apptest \
+    && rm -f "$(go env GOCACHE)/trim.txt"
+RUN npm --prefix web ci \
+    && rm -rf "${npm_config_cache}/_logs" "${npm_config_cache}/_update-notifier-last-checked"
+
+# The coding image. The seeds are root-owned and read-only; the template's
+# make bootstrap copies them into the Pod's own caches under /tmp.
+FROM coding-tools AS coding-base
+COPY --from=app-build-cache --chown=0:0 /tmp/go-build/ /opt/superverse/go-build-cache-seed/
+COPY --from=app-build-cache --chown=0:0 /tmp/npm-cache/ /opt/superverse/npm-cache-seed/
+ENV SUPERVERSE_GO_BUILD_CACHE_SEED=/opt/superverse/go-build-cache-seed \
+    SUPERVERSE_NPM_CACHE_SEED=/opt/superverse/npm-cache-seed

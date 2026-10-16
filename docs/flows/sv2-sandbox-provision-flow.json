@@ -9,9 +9,9 @@
     "name": "SandboxProvisionFlow",
     "startStepId": "step:ProvisionInstance",
     "span": {
-      "startLine": 39,
+      "startLine": 48,
       "startColumn": 1,
-      "endLine": 47,
+      "endLine": 57,
       "endColumn": 2
     }
   },
@@ -23,9 +23,9 @@
       "parentId": "step:CheckoutWorkspace",
       "phase": "execute",
       "span": {
-        "startLine": 140,
+        "startLine": 153,
         "startColumn": 1,
-        "endLine": 176,
+        "endLine": 189,
         "endColumn": 2
       }
     },
@@ -36,9 +36,9 @@
       "parentId": "step:ProvisionInstance",
       "phase": "execute",
       "span": {
-        "startLine": 100,
+        "startLine": 113,
         "startColumn": 1,
-        "endLine": 128,
+        "endLine": 141,
         "endColumn": 2
       }
     },
@@ -49,22 +49,22 @@
       "parentId": "step:RecordProvisionFailure",
       "phase": "execute",
       "span": {
-        "startLine": 259,
+        "startLine": 295,
         "startColumn": 1,
-        "endLine": 269,
+        "endLine": 309,
         "endColumn": 2
       }
     },
     {
-      "id": "decision:rpc:GetDexDisplay:81:9",
+      "id": "decision:rpc:GetDexDisplay:93:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetDexDisplay",
       "phase": "rpc",
       "span": {
-        "startLine": 81,
+        "startLine": 93,
         "startColumn": 9,
-        "endLine": 84,
+        "endLine": 97,
         "endColumn": 4
       },
       "decision": {
@@ -72,15 +72,15 @@
       }
     },
     {
-      "id": "decision:rpc:GetDexSummary:73:9",
+      "id": "decision:rpc:GetDexSummary:84:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetDexSummary",
       "phase": "rpc",
       "span": {
-        "startLine": 73,
+        "startLine": 84,
         "startColumn": 9,
-        "endLine": 73,
+        "endLine": 84,
         "endColumn": 65
       },
       "decision": {
@@ -88,15 +88,15 @@
       }
     },
     {
-      "id": "decision:rpc:GetProvision:60:9",
+      "id": "decision:rpc:GetProvision:70:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetProvision",
       "phase": "rpc",
       "span": {
-        "startLine": 60,
+        "startLine": 70,
         "startColumn": 9,
-        "endLine": 67,
+        "endLine": 78,
         "endColumn": 4
       },
       "decision": {
@@ -104,16 +104,16 @@
       }
     },
     {
-      "id": "decision:step:CheckoutWorkspace:167:10",
+      "id": "decision:step:CheckoutWorkspace:180:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:CheckoutWorkspace",
       "condition": "errors.As(err, \u0026known) || errors.Is(err, repohost.ErrOtherHost)",
       "phase": "execute",
       "span": {
-        "startLine": 167,
+        "startLine": 180,
         "startColumn": 10,
-        "endLine": 167,
+        "endLine": 180,
         "endColumn": 58
       },
       "decision": {
@@ -121,33 +121,16 @@
       }
     },
     {
-      "id": "decision:step:CheckoutWorkspace:175:9",
+      "id": "decision:step:CheckoutWorkspace:188:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:CheckoutWorkspace",
       "condition": "!(errors.As(err, \u0026known) || errors.Is(err, repohost.ErrOtherHost))",
       "phase": "execute",
       "span": {
-        "startLine": 175,
+        "startLine": 188,
         "startColumn": 9,
-        "endLine": 175,
-        "endColumn": 56
-      },
-      "decision": {
-        "type": "goTo"
-      }
-    },
-    {
-      "id": "decision:step:ProvisionInstance:123:10",
-      "kind": "decision",
-      "name": "goTo",
-      "parentId": "step:ProvisionInstance",
-      "condition": "refused != noFailure",
-      "phase": "execute",
-      "span": {
-        "startLine": 123,
-        "startColumn": 10,
-        "endLine": 123,
+        "endLine": 188,
         "endColumn": 58
       },
       "decision": {
@@ -155,16 +138,33 @@
       }
     },
     {
-      "id": "decision:step:ProvisionInstance:127:9",
+      "id": "decision:step:ProvisionInstance:136:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:ProvisionInstance",
+      "condition": "refused != noFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 136,
+        "startColumn": 10,
+        "endLine": 136,
+        "endColumn": 58
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:ProvisionInstance:140:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ProvisionInstance",
       "condition": "!(refused != noFailure)",
       "phase": "execute",
       "span": {
-        "startLine": 127,
+        "startLine": 140,
         "startColumn": 9,
-        "endLine": 127,
+        "endLine": 140,
         "endColumn": 52
       },
       "decision": {
@@ -172,16 +172,33 @@
       }
     },
     {
-      "id": "decision:step:RecordProvisionFailure:265:10",
+      "id": "decision:step:RecordProvisionFailure:299:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RecordProvisionFailure",
+      "condition": "dexflow.RecoveryStep(ctx) == dex.GetFinalStepType(StartWorkspaceBootstrap{})",
+      "phase": "execute",
+      "span": {
+        "startLine": 299,
+        "startColumn": 10,
+        "endLine": 299,
+        "endColumn": 57
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RecordProvisionFailure:305:10",
       "kind": "decision",
       "name": "gracefulComplete",
       "parentId": "step:RecordProvisionFailure",
-      "condition": "dexflow.RecoveryStep(ctx) == dex.GetFinalStepType(ReportProvisionOutcome{})",
+      "condition": "!(dexflow.RecoveryStep(ctx) == dex.GetFinalStepType(StartWorkspaceBootstrap{})) and dexflow.RecoveryStep(ctx) == dex.GetFinalStepType(ReportProvisionOutcome{})",
       "phase": "execute",
       "span": {
-        "startLine": 265,
+        "startLine": 305,
         "startColumn": 10,
-        "endLine": 265,
+        "endLine": 305,
         "endColumn": 43
       },
       "decision": {
@@ -189,16 +206,16 @@
       }
     },
     {
-      "id": "decision:step:RecordProvisionFailure:268:9",
+      "id": "decision:step:RecordProvisionFailure:308:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RecordProvisionFailure",
-      "condition": "!(dexflow.RecoveryStep(ctx) == dex.GetFinalStepType(ReportProvisionOutcome{}))",
+      "condition": "!(dexflow.RecoveryStep(ctx) == dex.GetFinalStepType(StartWorkspaceBootstrap{})) and !(dexflow.RecoveryStep(ctx) == dex.GetFinalStepType(ReportProvisionOutcome{}))",
       "phase": "execute",
       "span": {
-        "startLine": 268,
+        "startLine": 308,
         "startColumn": 9,
-        "endLine": 268,
+        "endLine": 308,
         "endColumn": 57
       },
       "decision": {
@@ -206,15 +223,15 @@
       }
     },
     {
-      "id": "decision:step:ReportProvisionOutcome:248:9",
+      "id": "decision:step:ReportProvisionOutcome:284:9",
       "kind": "decision",
       "name": "gracefulComplete",
       "parentId": "step:ReportProvisionOutcome",
       "phase": "execute",
       "span": {
-        "startLine": 248,
+        "startLine": 284,
         "startColumn": 9,
-        "endLine": 248,
+        "endLine": 284,
         "endColumn": 42
       },
       "decision": {
@@ -222,15 +239,31 @@
       }
     },
     {
-      "id": "decision:step:VerifyInstanceHealthy:221:9",
+      "id": "decision:step:StartWorkspaceBootstrap:211:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:StartWorkspaceBootstrap",
+      "phase": "execute",
+      "span": {
+        "startLine": 211,
+        "startColumn": 9,
+        "endLine": 211,
+        "endColumn": 56
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:VerifyInstanceHealthy:257:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:VerifyInstanceHealthy",
       "phase": "execute",
       "span": {
-        "startLine": 221,
+        "startLine": 257,
         "startColumn": 9,
-        "endLine": 221,
+        "endLine": 257,
         "endColumn": 57
       },
       "decision": {
@@ -238,13 +271,27 @@
       }
     },
     {
+      "id": "resource:attribute:BootstrapAttribute",
+      "kind": "attribute",
+      "name": "Bootstrap",
+      "span": {
+        "startLine": 32,
+        "startColumn": 2,
+        "endLine": 32,
+        "endColumn": 73
+      },
+      "resource": {
+        "valueType": "Bootstrap"
+      }
+    },
+    {
       "id": "resource:attribute:CheckoutAttribute",
       "kind": "attribute",
       "name": "Checkout",
       "span": {
-        "startLine": 21,
+        "startLine": 29,
         "startColumn": 2,
-        "endLine": 21,
+        "endLine": 29,
         "endColumn": 71
       },
       "resource": {
@@ -256,9 +303,9 @@
       "kind": "attribute",
       "name": "Outcome",
       "span": {
-        "startLine": 23,
+        "startLine": 31,
         "startColumn": 2,
-        "endLine": 23,
+        "endLine": 31,
         "endColumn": 70
       },
       "resource": {
@@ -270,9 +317,9 @@
       "kind": "attribute",
       "name": "Request",
       "span": {
-        "startLine": 19,
+        "startLine": 27,
         "startColumn": 2,
-        "endLine": 19,
+        "endLine": 27,
         "endColumn": 69
       },
       "resource": {
@@ -284,9 +331,9 @@
       "kind": "attribute",
       "name": "Resources",
       "span": {
-        "startLine": 20,
+        "startLine": 28,
         "startColumn": 2,
-        "endLine": 20,
+        "endLine": 28,
         "endColumn": 81
       },
       "resource": {
@@ -298,9 +345,9 @@
       "kind": "attribute",
       "name": "WorkspaceTimings",
       "span": {
-        "startLine": 22,
+        "startLine": 30,
         "startColumn": 2,
-        "endLine": 22,
+        "endLine": 30,
         "endColumn": 92
       },
       "resource": {
@@ -312,9 +359,9 @@
       "kind": "rpc",
       "name": "GetDexDisplay",
       "span": {
-        "startLine": 80,
+        "startLine": 92,
         "startColumn": 1,
-        "endLine": 85,
+        "endLine": 98,
         "endColumn": 2
       }
     },
@@ -323,9 +370,9 @@
       "kind": "rpc",
       "name": "GetDexSummary",
       "span": {
-        "startLine": 72,
+        "startLine": 83,
         "startColumn": 1,
-        "endLine": 74,
+        "endLine": 85,
         "endColumn": 2
       }
     },
@@ -334,9 +381,9 @@
       "kind": "rpc",
       "name": "GetProvision",
       "span": {
-        "startLine": 59,
+        "startLine": 69,
         "startColumn": 1,
-        "endLine": 68,
+        "endLine": 79,
         "endColumn": 2
       }
     },
@@ -346,9 +393,9 @@
       "name": "CheckoutWorkspace",
       "phase": "execute",
       "span": {
-        "startLine": 42,
+        "startLine": 51,
         "startColumn": 3,
-        "endLine": 42,
+        "endLine": 51,
         "endColumn": 42
       },
       "metadata": {
@@ -362,9 +409,9 @@
       "phase": "execute",
       "start": true,
       "span": {
-        "startLine": 41,
+        "startLine": 50,
         "startColumn": 3,
-        "endLine": 41,
+        "endLine": 50,
         "endColumn": 47
       },
       "metadata": {
@@ -377,13 +424,13 @@
       "name": "RecordProvisionFailure",
       "phase": "execute",
       "span": {
-        "startLine": 45,
+        "startLine": 55,
         "startColumn": 3,
-        "endLine": 45,
+        "endLine": 55,
         "endColumn": 47
       },
       "metadata": {
-        "explanation": "Record the failure of a Step whose retries ran out or whose wait limit passed, with the final error, and report it; an undelivered report completes."
+        "explanation": "Record the failure of a Step whose retries ran out or whose wait limit passed, with the final error, and report it; an undelivered report completes, and a bootstrap that did not start goes on to the health check."
       }
     },
     {
@@ -392,13 +439,28 @@
       "name": "ReportProvisionOutcome",
       "phase": "execute",
       "span": {
-        "startLine": 44,
+        "startLine": 54,
         "startColumn": 3,
-        "endLine": 44,
+        "endLine": 54,
         "endColumn": 47
       },
       "metadata": {
         "explanation": "Report the outcome to the SessionWorkspaceFlow, which admits it only while it waits for this instance, then complete."
+      }
+    },
+    {
+      "id": "step:StartWorkspaceBootstrap",
+      "kind": "step",
+      "name": "StartWorkspaceBootstrap",
+      "phase": "execute",
+      "span": {
+        "startLine": 52,
+        "startColumn": 3,
+        "endLine": 52,
+        "endColumn": 48
+      },
+      "metadata": {
+        "explanation": "Start the bootstrap command the checked-out template declares as a command ledger run, without waiting for it; an error is recorded and never fails the provisioning."
       }
     },
     {
@@ -407,9 +469,9 @@
       "name": "VerifyInstanceHealthy",
       "phase": "execute",
       "span": {
-        "startLine": 43,
+        "startLine": 53,
         "startColumn": 3,
-        "endLine": 43,
+        "endLine": 53,
         "endColumn": 46
       },
       "metadata": {
@@ -421,162 +483,150 @@
     {
       "id": "edge:0001",
       "kind": "transition",
-      "from": "decision:step:CheckoutWorkspace:167:10",
+      "from": "decision:step:CheckoutWorkspace:180:10",
       "to": "step:ReportProvisionOutcome",
       "label": "GoTo",
       "span": {
-        "startLine": 167,
+        "startLine": 180,
         "startColumn": 10,
-        "endLine": 167,
+        "endLine": 180,
         "endColumn": 58
       }
     },
     {
       "id": "edge:0002",
       "kind": "transition",
-      "from": "decision:step:CheckoutWorkspace:175:9",
-      "to": "step:VerifyInstanceHealthy",
+      "from": "decision:step:CheckoutWorkspace:188:9",
+      "to": "step:StartWorkspaceBootstrap",
       "label": "GoTo",
       "span": {
-        "startLine": 175,
+        "startLine": 188,
         "startColumn": 9,
-        "endLine": 175,
-        "endColumn": 56
+        "endLine": 188,
+        "endColumn": 58
       }
     },
     {
       "id": "edge:0003",
       "kind": "transition",
-      "from": "decision:step:ProvisionInstance:123:10",
+      "from": "decision:step:ProvisionInstance:136:10",
       "to": "step:ReportProvisionOutcome",
       "label": "GoTo",
       "span": {
-        "startLine": 123,
+        "startLine": 136,
         "startColumn": 10,
-        "endLine": 123,
+        "endLine": 136,
         "endColumn": 58
       }
     },
     {
       "id": "edge:0004",
       "kind": "transition",
-      "from": "decision:step:ProvisionInstance:127:9",
+      "from": "decision:step:ProvisionInstance:140:9",
       "to": "step:CheckoutWorkspace",
       "label": "GoTo",
       "span": {
-        "startLine": 127,
+        "startLine": 140,
         "startColumn": 9,
-        "endLine": 127,
+        "endLine": 140,
         "endColumn": 52
       }
     },
     {
       "id": "edge:0005",
       "kind": "transition",
-      "from": "decision:step:RecordProvisionFailure:268:9",
-      "to": "step:ReportProvisionOutcome",
+      "from": "decision:step:RecordProvisionFailure:299:10",
+      "to": "step:VerifyInstanceHealthy",
       "label": "GoTo",
       "span": {
-        "startLine": 268,
-        "startColumn": 9,
-        "endLine": 268,
+        "startLine": 299,
+        "startColumn": 10,
+        "endLine": 299,
         "endColumn": 57
       }
     },
     {
       "id": "edge:0006",
       "kind": "transition",
-      "from": "decision:step:VerifyInstanceHealthy:221:9",
+      "from": "decision:step:RecordProvisionFailure:308:9",
       "to": "step:ReportProvisionOutcome",
       "label": "GoTo",
       "span": {
-        "startLine": 221,
+        "startLine": 308,
         "startColumn": 9,
-        "endLine": 221,
+        "endLine": 308,
         "endColumn": 57
       }
     },
     {
       "id": "edge:0007",
+      "kind": "transition",
+      "from": "decision:step:StartWorkspaceBootstrap:211:9",
+      "to": "step:VerifyInstanceHealthy",
+      "label": "GoTo",
+      "span": {
+        "startLine": 211,
+        "startColumn": 9,
+        "endLine": 211,
+        "endColumn": 56
+      }
+    },
+    {
+      "id": "edge:0008",
+      "kind": "transition",
+      "from": "decision:step:VerifyInstanceHealthy:257:9",
+      "to": "step:ReportProvisionOutcome",
+      "label": "GoTo",
+      "span": {
+        "startLine": 257,
+        "startColumn": 9,
+        "endLine": 257,
+        "endColumn": 57
+      }
+    },
+    {
+      "id": "edge:0009",
       "kind": "resource_read",
-      "from": "resource:attribute:CheckoutAttribute",
-      "to": "rpc:GetProvision",
+      "from": "resource:attribute:BootstrapAttribute",
+      "to": "rpc:GetDexDisplay",
       "label": "Get",
       "span": {
-        "startLine": 63,
-        "startColumn": 31,
-        "endLine": 63,
-        "endColumn": 57
+        "startLine": 96,
+        "startColumn": 36,
+        "endLine": 96,
+        "endColumn": 63
       },
       "metadata": {
         "phase": "rpc"
       }
     },
     {
-      "id": "edge:0008",
-      "kind": "resource_read",
-      "from": "resource:attribute:CheckoutAttribute",
-      "to": "step:CheckoutWorkspace",
-      "label": "Get",
-      "span": {
-        "startLine": 63,
-        "startColumn": 31,
-        "endLine": 63,
-        "endColumn": 57
-      },
-      "metadata": {
-        "function": "SandboxProvisionFlow.GetProvision",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0009",
-      "kind": "resource_read",
-      "from": "resource:attribute:CheckoutAttribute",
-      "to": "step:ProvisionInstance",
-      "label": "Get",
-      "span": {
-        "startLine": 63,
-        "startColumn": 31,
-        "endLine": 63,
-        "endColumn": 57
-      },
-      "metadata": {
-        "function": "SandboxProvisionFlow.GetProvision",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
       "id": "edge:0010",
       "kind": "resource_read",
-      "from": "resource:attribute:CheckoutAttribute",
-      "to": "step:RecordProvisionFailure",
+      "from": "resource:attribute:BootstrapAttribute",
+      "to": "rpc:GetProvision",
       "label": "Get",
       "span": {
-        "startLine": 63,
-        "startColumn": 31,
-        "endLine": 63,
-        "endColumn": 57
+        "startLine": 77,
+        "startColumn": 34,
+        "endLine": 77,
+        "endColumn": 61
       },
       "metadata": {
-        "function": "SandboxProvisionFlow.GetProvision",
-        "phase": "execute",
-        "via": "helper"
+        "phase": "rpc"
       }
     },
     {
       "id": "edge:0011",
       "kind": "resource_read",
-      "from": "resource:attribute:CheckoutAttribute",
-      "to": "step:ReportProvisionOutcome",
+      "from": "resource:attribute:BootstrapAttribute",
+      "to": "step:CheckoutWorkspace",
       "label": "Get",
       "span": {
-        "startLine": 63,
-        "startColumn": 31,
-        "endLine": 63,
-        "endColumn": 57
+        "startLine": 77,
+        "startColumn": 34,
+        "endLine": 77,
+        "endColumn": 61
       },
       "metadata": {
         "function": "SandboxProvisionFlow.GetProvision",
@@ -587,14 +637,14 @@
     {
       "id": "edge:0012",
       "kind": "resource_read",
-      "from": "resource:attribute:CheckoutAttribute",
-      "to": "step:VerifyInstanceHealthy",
+      "from": "resource:attribute:BootstrapAttribute",
+      "to": "step:ProvisionInstance",
       "label": "Get",
       "span": {
-        "startLine": 63,
-        "startColumn": 31,
-        "endLine": 63,
-        "endColumn": 57
+        "startLine": 77,
+        "startColumn": 34,
+        "endLine": 77,
+        "endColumn": 61
       },
       "metadata": {
         "function": "SandboxProvisionFlow.GetProvision",
@@ -605,46 +655,50 @@
     {
       "id": "edge:0013",
       "kind": "resource_read",
-      "from": "resource:attribute:OutcomeAttribute",
-      "to": "rpc:GetDexDisplay",
+      "from": "resource:attribute:BootstrapAttribute",
+      "to": "step:RecordProvisionFailure",
       "label": "Get",
       "span": {
-        "startLine": 83,
-        "startColumn": 31,
-        "endLine": 83,
-        "endColumn": 56
+        "startLine": 77,
+        "startColumn": 34,
+        "endLine": 77,
+        "endColumn": 61
       },
       "metadata": {
-        "phase": "rpc"
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
       }
     },
     {
       "id": "edge:0014",
       "kind": "resource_read",
-      "from": "resource:attribute:OutcomeAttribute",
-      "to": "rpc:GetProvision",
+      "from": "resource:attribute:BootstrapAttribute",
+      "to": "step:ReportProvisionOutcome",
       "label": "Get",
       "span": {
-        "startLine": 66,
-        "startColumn": 29,
-        "endLine": 66,
-        "endColumn": 54
+        "startLine": 77,
+        "startColumn": 34,
+        "endLine": 77,
+        "endColumn": 61
       },
       "metadata": {
-        "phase": "rpc"
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
       }
     },
     {
       "id": "edge:0015",
       "kind": "resource_read",
-      "from": "resource:attribute:OutcomeAttribute",
-      "to": "step:CheckoutWorkspace",
+      "from": "resource:attribute:BootstrapAttribute",
+      "to": "step:StartWorkspaceBootstrap",
       "label": "Get",
       "span": {
-        "startLine": 66,
-        "startColumn": 29,
-        "endLine": 66,
-        "endColumn": 54
+        "startLine": 77,
+        "startColumn": 34,
+        "endLine": 77,
+        "endColumn": 61
       },
       "metadata": {
         "function": "SandboxProvisionFlow.GetProvision",
@@ -655,14 +709,14 @@
     {
       "id": "edge:0016",
       "kind": "resource_read",
-      "from": "resource:attribute:OutcomeAttribute",
-      "to": "step:ProvisionInstance",
+      "from": "resource:attribute:BootstrapAttribute",
+      "to": "step:VerifyInstanceHealthy",
       "label": "Get",
       "span": {
-        "startLine": 66,
-        "startColumn": 29,
-        "endLine": 66,
-        "endColumn": 54
+        "startLine": 77,
+        "startColumn": 34,
+        "endLine": 77,
+        "endColumn": 61
       },
       "metadata": {
         "function": "SandboxProvisionFlow.GetProvision",
@@ -673,32 +727,30 @@
     {
       "id": "edge:0017",
       "kind": "resource_read",
-      "from": "resource:attribute:OutcomeAttribute",
-      "to": "step:RecordProvisionFailure",
+      "from": "resource:attribute:CheckoutAttribute",
+      "to": "rpc:GetProvision",
       "label": "Get",
       "span": {
-        "startLine": 66,
-        "startColumn": 29,
-        "endLine": 66,
-        "endColumn": 54
+        "startLine": 73,
+        "startColumn": 31,
+        "endLine": 73,
+        "endColumn": 57
       },
       "metadata": {
-        "function": "SandboxProvisionFlow.GetProvision",
-        "phase": "execute",
-        "via": "helper"
+        "phase": "rpc"
       }
     },
     {
       "id": "edge:0018",
       "kind": "resource_read",
-      "from": "resource:attribute:OutcomeAttribute",
-      "to": "step:ReportProvisionOutcome",
+      "from": "resource:attribute:CheckoutAttribute",
+      "to": "step:CheckoutWorkspace",
       "label": "Get",
       "span": {
-        "startLine": 66,
-        "startColumn": 29,
-        "endLine": 66,
-        "endColumn": 54
+        "startLine": 73,
+        "startColumn": 31,
+        "endLine": 73,
+        "endColumn": 57
       },
       "metadata": {
         "function": "SandboxProvisionFlow.GetProvision",
@@ -709,14 +761,14 @@
     {
       "id": "edge:0019",
       "kind": "resource_read",
-      "from": "resource:attribute:OutcomeAttribute",
-      "to": "step:VerifyInstanceHealthy",
+      "from": "resource:attribute:CheckoutAttribute",
+      "to": "step:ProvisionInstance",
       "label": "Get",
       "span": {
-        "startLine": 66,
-        "startColumn": 29,
-        "endLine": 66,
-        "endColumn": 54
+        "startLine": 73,
+        "startColumn": 31,
+        "endLine": 73,
+        "endColumn": 57
       },
       "metadata": {
         "function": "SandboxProvisionFlow.GetProvision",
@@ -727,46 +779,50 @@
     {
       "id": "edge:0020",
       "kind": "resource_read",
-      "from": "resource:attribute:RequestAttribute",
-      "to": "rpc:GetDexDisplay",
+      "from": "resource:attribute:CheckoutAttribute",
+      "to": "step:RecordProvisionFailure",
       "label": "Get",
       "span": {
-        "startLine": 82,
-        "startColumn": 24,
-        "endLine": 82,
-        "endColumn": 49
+        "startLine": 73,
+        "startColumn": 31,
+        "endLine": 73,
+        "endColumn": 57
       },
       "metadata": {
-        "phase": "rpc"
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
       }
     },
     {
       "id": "edge:0021",
       "kind": "resource_read",
-      "from": "resource:attribute:RequestAttribute",
-      "to": "rpc:GetProvision",
+      "from": "resource:attribute:CheckoutAttribute",
+      "to": "step:ReportProvisionOutcome",
       "label": "Get",
       "span": {
-        "startLine": 61,
+        "startLine": 73,
         "startColumn": 31,
-        "endLine": 61,
-        "endColumn": 56
+        "endLine": 73,
+        "endColumn": 57
       },
       "metadata": {
-        "phase": "rpc"
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
       }
     },
     {
       "id": "edge:0022",
       "kind": "resource_read",
-      "from": "resource:attribute:RequestAttribute",
-      "to": "step:CheckoutWorkspace",
+      "from": "resource:attribute:CheckoutAttribute",
+      "to": "step:StartWorkspaceBootstrap",
       "label": "Get",
       "span": {
-        "startLine": 61,
+        "startLine": 73,
         "startColumn": 31,
-        "endLine": 61,
-        "endColumn": 56
+        "endLine": 73,
+        "endColumn": 57
       },
       "metadata": {
         "function": "SandboxProvisionFlow.GetProvision",
@@ -777,14 +833,14 @@
     {
       "id": "edge:0023",
       "kind": "resource_read",
-      "from": "resource:attribute:RequestAttribute",
-      "to": "step:ProvisionInstance",
+      "from": "resource:attribute:CheckoutAttribute",
+      "to": "step:VerifyInstanceHealthy",
       "label": "Get",
       "span": {
-        "startLine": 61,
+        "startLine": 73,
         "startColumn": 31,
-        "endLine": 61,
-        "endColumn": 56
+        "endLine": 73,
+        "endColumn": 57
       },
       "metadata": {
         "function": "SandboxProvisionFlow.GetProvision",
@@ -795,49 +851,45 @@
     {
       "id": "edge:0024",
       "kind": "resource_read",
-      "from": "resource:attribute:RequestAttribute",
-      "to": "step:RecordProvisionFailure",
+      "from": "resource:attribute:OutcomeAttribute",
+      "to": "rpc:GetDexDisplay",
       "label": "Get",
       "span": {
-        "startLine": 61,
-        "startColumn": 31,
-        "endLine": 61,
-        "endColumn": 56
+        "startLine": 95,
+        "startColumn": 33,
+        "endLine": 95,
+        "endColumn": 58
       },
       "metadata": {
-        "function": "SandboxProvisionFlow.GetProvision",
-        "phase": "execute",
-        "via": "helper"
+        "phase": "rpc"
       }
     },
     {
       "id": "edge:0025",
       "kind": "resource_read",
-      "from": "resource:attribute:RequestAttribute",
-      "to": "step:ReportProvisionOutcome",
+      "from": "resource:attribute:OutcomeAttribute",
+      "to": "rpc:GetProvision",
       "label": "Get",
       "span": {
-        "startLine": 61,
+        "startLine": 76,
         "startColumn": 31,
-        "endLine": 61,
+        "endLine": 76,
         "endColumn": 56
       },
       "metadata": {
-        "function": "SandboxProvisionFlow.GetProvision",
-        "phase": "execute",
-        "via": "helper"
+        "phase": "rpc"
       }
     },
     {
       "id": "edge:0026",
       "kind": "resource_read",
-      "from": "resource:attribute:RequestAttribute",
-      "to": "step:VerifyInstanceHealthy",
+      "from": "resource:attribute:OutcomeAttribute",
+      "to": "step:CheckoutWorkspace",
       "label": "Get",
       "span": {
-        "startLine": 61,
+        "startLine": 76,
         "startColumn": 31,
-        "endLine": 61,
+        "endLine": 76,
         "endColumn": 56
       },
       "metadata": {
@@ -849,30 +901,32 @@
     {
       "id": "edge:0027",
       "kind": "resource_read",
-      "from": "resource:attribute:ResourcesAttribute",
-      "to": "rpc:GetProvision",
+      "from": "resource:attribute:OutcomeAttribute",
+      "to": "step:ProvisionInstance",
       "label": "Get",
       "span": {
-        "startLine": 62,
+        "startLine": 76,
         "startColumn": 31,
-        "endLine": 62,
-        "endColumn": 58
+        "endLine": 76,
+        "endColumn": 56
       },
       "metadata": {
-        "phase": "rpc"
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
       }
     },
     {
       "id": "edge:0028",
       "kind": "resource_read",
-      "from": "resource:attribute:ResourcesAttribute",
-      "to": "step:CheckoutWorkspace",
+      "from": "resource:attribute:OutcomeAttribute",
+      "to": "step:RecordProvisionFailure",
       "label": "Get",
       "span": {
-        "startLine": 62,
+        "startLine": 76,
         "startColumn": 31,
-        "endLine": 62,
-        "endColumn": 58
+        "endLine": 76,
+        "endColumn": 56
       },
       "metadata": {
         "function": "SandboxProvisionFlow.GetProvision",
@@ -883,14 +937,14 @@
     {
       "id": "edge:0029",
       "kind": "resource_read",
-      "from": "resource:attribute:ResourcesAttribute",
-      "to": "step:ProvisionInstance",
+      "from": "resource:attribute:OutcomeAttribute",
+      "to": "step:ReportProvisionOutcome",
       "label": "Get",
       "span": {
-        "startLine": 62,
+        "startLine": 76,
         "startColumn": 31,
-        "endLine": 62,
-        "endColumn": 58
+        "endLine": 76,
+        "endColumn": 56
       },
       "metadata": {
         "function": "SandboxProvisionFlow.GetProvision",
@@ -901,14 +955,14 @@
     {
       "id": "edge:0030",
       "kind": "resource_read",
-      "from": "resource:attribute:ResourcesAttribute",
-      "to": "step:RecordProvisionFailure",
+      "from": "resource:attribute:OutcomeAttribute",
+      "to": "step:StartWorkspaceBootstrap",
       "label": "Get",
       "span": {
-        "startLine": 62,
+        "startLine": 76,
         "startColumn": 31,
-        "endLine": 62,
-        "endColumn": 58
+        "endLine": 76,
+        "endColumn": 56
       },
       "metadata": {
         "function": "SandboxProvisionFlow.GetProvision",
@@ -919,14 +973,14 @@
     {
       "id": "edge:0031",
       "kind": "resource_read",
-      "from": "resource:attribute:ResourcesAttribute",
-      "to": "step:ReportProvisionOutcome",
+      "from": "resource:attribute:OutcomeAttribute",
+      "to": "step:VerifyInstanceHealthy",
       "label": "Get",
       "span": {
-        "startLine": 62,
+        "startLine": 76,
         "startColumn": 31,
-        "endLine": 62,
-        "endColumn": 58
+        "endLine": 76,
+        "endColumn": 56
       },
       "metadata": {
         "function": "SandboxProvisionFlow.GetProvision",
@@ -937,32 +991,30 @@
     {
       "id": "edge:0032",
       "kind": "resource_read",
-      "from": "resource:attribute:ResourcesAttribute",
-      "to": "step:VerifyInstanceHealthy",
+      "from": "resource:attribute:RequestAttribute",
+      "to": "rpc:GetDexDisplay",
       "label": "Get",
       "span": {
-        "startLine": 62,
-        "startColumn": 31,
-        "endLine": 62,
-        "endColumn": 58
+        "startLine": 94,
+        "startColumn": 26,
+        "endLine": 94,
+        "endColumn": 51
       },
       "metadata": {
-        "function": "SandboxProvisionFlow.GetProvision",
-        "phase": "execute",
-        "via": "helper"
+        "phase": "rpc"
       }
     },
     {
       "id": "edge:0033",
       "kind": "resource_read",
-      "from": "resource:attribute:WorkspaceTimingsAttribute",
+      "from": "resource:attribute:RequestAttribute",
       "to": "rpc:GetProvision",
       "label": "Get",
       "span": {
-        "startLine": 64,
-        "startColumn": 41,
-        "endLine": 64,
-        "endColumn": 75
+        "startLine": 71,
+        "startColumn": 31,
+        "endLine": 71,
+        "endColumn": 56
       },
       "metadata": {
         "phase": "rpc"
@@ -971,14 +1023,14 @@
     {
       "id": "edge:0034",
       "kind": "resource_read",
-      "from": "resource:attribute:WorkspaceTimingsAttribute",
+      "from": "resource:attribute:RequestAttribute",
       "to": "step:CheckoutWorkspace",
       "label": "Get",
       "span": {
-        "startLine": 64,
-        "startColumn": 41,
-        "endLine": 64,
-        "endColumn": 75
+        "startLine": 71,
+        "startColumn": 31,
+        "endLine": 71,
+        "endColumn": 56
       },
       "metadata": {
         "function": "SandboxProvisionFlow.GetProvision",
@@ -989,14 +1041,14 @@
     {
       "id": "edge:0035",
       "kind": "resource_read",
-      "from": "resource:attribute:WorkspaceTimingsAttribute",
+      "from": "resource:attribute:RequestAttribute",
       "to": "step:ProvisionInstance",
       "label": "Get",
       "span": {
-        "startLine": 64,
-        "startColumn": 41,
-        "endLine": 64,
-        "endColumn": 75
+        "startLine": 71,
+        "startColumn": 31,
+        "endLine": 71,
+        "endColumn": 56
       },
       "metadata": {
         "function": "SandboxProvisionFlow.GetProvision",
@@ -1007,14 +1059,14 @@
     {
       "id": "edge:0036",
       "kind": "resource_read",
-      "from": "resource:attribute:WorkspaceTimingsAttribute",
+      "from": "resource:attribute:RequestAttribute",
       "to": "step:RecordProvisionFailure",
       "label": "Get",
       "span": {
-        "startLine": 64,
-        "startColumn": 41,
-        "endLine": 64,
-        "endColumn": 75
+        "startLine": 71,
+        "startColumn": 31,
+        "endLine": 71,
+        "endColumn": 56
       },
       "metadata": {
         "function": "SandboxProvisionFlow.GetProvision",
@@ -1025,14 +1077,14 @@
     {
       "id": "edge:0037",
       "kind": "resource_read",
-      "from": "resource:attribute:WorkspaceTimingsAttribute",
+      "from": "resource:attribute:RequestAttribute",
       "to": "step:ReportProvisionOutcome",
       "label": "Get",
       "span": {
-        "startLine": 64,
-        "startColumn": 41,
-        "endLine": 64,
-        "endColumn": 75
+        "startLine": 71,
+        "startColumn": 31,
+        "endLine": 71,
+        "endColumn": 56
       },
       "metadata": {
         "function": "SandboxProvisionFlow.GetProvision",
@@ -1043,14 +1095,14 @@
     {
       "id": "edge:0038",
       "kind": "resource_read",
-      "from": "resource:attribute:WorkspaceTimingsAttribute",
-      "to": "step:VerifyInstanceHealthy",
+      "from": "resource:attribute:RequestAttribute",
+      "to": "step:StartWorkspaceBootstrap",
       "label": "Get",
       "span": {
-        "startLine": 64,
-        "startColumn": 41,
-        "endLine": 64,
-        "endColumn": 75
+        "startLine": 71,
+        "startColumn": 31,
+        "endLine": 71,
+        "endColumn": 56
       },
       "metadata": {
         "function": "SandboxProvisionFlow.GetProvision",
@@ -1060,252 +1112,266 @@
     },
     {
       "id": "edge:0039",
-      "kind": "resource_write",
-      "from": "step:CheckoutWorkspace",
-      "to": "resource:attribute:CheckoutAttribute",
-      "label": "Set",
+      "kind": "resource_read",
+      "from": "resource:attribute:RequestAttribute",
+      "to": "step:VerifyInstanceHealthy",
+      "label": "Get",
       "span": {
-        "startLine": 173,
-        "startColumn": 14,
-        "endLine": 173,
-        "endColumn": 52
+        "startLine": 71,
+        "startColumn": 31,
+        "endLine": 71,
+        "endColumn": 56
       },
       "metadata": {
-        "phase": "execute"
-      }
-    },
-    {
-      "id": "edge:0040",
-      "kind": "resource_write",
-      "from": "step:CheckoutWorkspace",
-      "to": "resource:attribute:OutcomeAttribute",
-      "label": "Set",
-      "span": {
-        "startLine": 297,
-        "startColumn": 14,
-        "endLine": 297,
-        "endColumn": 49
-      },
-      "metadata": {
-        "function": "recordOutcome",
+        "function": "SandboxProvisionFlow.GetProvision",
         "phase": "execute",
         "via": "helper"
       }
     },
     {
-      "id": "edge:0041",
-      "kind": "resource_write",
-      "from": "step:CheckoutWorkspace",
-      "to": "resource:attribute:ResourcesAttribute",
-      "label": "Set",
+      "id": "edge:0040",
+      "kind": "resource_read",
+      "from": "resource:attribute:ResourcesAttribute",
+      "to": "rpc:GetProvision",
+      "label": "Get",
       "span": {
-        "startLine": 295,
-        "startColumn": 14,
-        "endLine": 295,
-        "endColumn": 54
+        "startLine": 72,
+        "startColumn": 31,
+        "endLine": 72,
+        "endColumn": 58
       },
       "metadata": {
-        "function": "recordOutcome",
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0041",
+      "kind": "resource_read",
+      "from": "resource:attribute:ResourcesAttribute",
+      "to": "step:CheckoutWorkspace",
+      "label": "Get",
+      "span": {
+        "startLine": 72,
+        "startColumn": 31,
+        "endLine": 72,
+        "endColumn": 58
+      },
+      "metadata": {
+        "function": "SandboxProvisionFlow.GetProvision",
         "phase": "execute",
         "via": "helper"
       }
     },
     {
       "id": "edge:0042",
-      "kind": "resource_write",
-      "from": "step:CheckoutWorkspace",
-      "to": "resource:attribute:WorkspaceTimingsAttribute",
-      "label": "Set",
+      "kind": "resource_read",
+      "from": "resource:attribute:ResourcesAttribute",
+      "to": "step:ProvisionInstance",
+      "label": "Get",
       "span": {
-        "startLine": 174,
-        "startColumn": 14,
-        "endLine": 174,
-        "endColumn": 104
+        "startLine": 72,
+        "startColumn": 31,
+        "endLine": 72,
+        "endColumn": 58
       },
       "metadata": {
-        "phase": "execute"
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
       }
     },
     {
       "id": "edge:0043",
-      "kind": "failure_transition",
-      "from": "step:CheckoutWorkspace",
+      "kind": "resource_read",
+      "from": "resource:attribute:ResourcesAttribute",
       "to": "step:RecordProvisionFailure",
-      "label": "Execute failure",
+      "label": "Get",
       "span": {
-        "startLine": 138,
-        "startColumn": 65,
-        "endLine": 138,
-        "endColumn": 134
+        "startLine": 72,
+        "startColumn": 31,
+        "endLine": 72,
+        "endColumn": 58
       },
       "metadata": {
-        "skipWaitFor": true
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
       }
     },
     {
       "id": "edge:0044",
-      "kind": "resource_write",
-      "from": "step:ProvisionInstance",
-      "to": "resource:attribute:OutcomeAttribute",
-      "label": "Set",
+      "kind": "resource_read",
+      "from": "resource:attribute:ResourcesAttribute",
+      "to": "step:ReportProvisionOutcome",
+      "label": "Get",
       "span": {
-        "startLine": 297,
-        "startColumn": 14,
-        "endLine": 297,
-        "endColumn": 49
+        "startLine": 72,
+        "startColumn": 31,
+        "endLine": 72,
+        "endColumn": 58
       },
       "metadata": {
-        "function": "recordOutcome",
+        "function": "SandboxProvisionFlow.GetProvision",
         "phase": "execute",
         "via": "helper"
       }
     },
     {
       "id": "edge:0045",
-      "kind": "resource_write",
-      "from": "step:ProvisionInstance",
-      "to": "resource:attribute:ResourcesAttribute",
-      "label": "Set",
+      "kind": "resource_read",
+      "from": "resource:attribute:ResourcesAttribute",
+      "to": "step:StartWorkspaceBootstrap",
+      "label": "Get",
       "span": {
-        "startLine": 125,
-        "startColumn": 14,
-        "endLine": 125,
-        "endColumn": 54
+        "startLine": 72,
+        "startColumn": 31,
+        "endLine": 72,
+        "endColumn": 58
       },
       "metadata": {
-        "phase": "execute"
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
       }
     },
     {
       "id": "edge:0046",
-      "kind": "resource_write",
-      "from": "step:ProvisionInstance",
-      "to": "resource:attribute:WorkspaceTimingsAttribute",
-      "label": "Set",
+      "kind": "resource_read",
+      "from": "resource:attribute:ResourcesAttribute",
+      "to": "step:VerifyInstanceHealthy",
+      "label": "Get",
       "span": {
-        "startLine": 126,
-        "startColumn": 14,
-        "endLine": 126,
-        "endColumn": 121
+        "startLine": 72,
+        "startColumn": 31,
+        "endLine": 72,
+        "endColumn": 58
       },
       "metadata": {
-        "phase": "execute"
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
       }
     },
     {
       "id": "edge:0047",
-      "kind": "failure_transition",
-      "from": "step:ProvisionInstance",
-      "to": "step:RecordProvisionFailure",
-      "label": "Execute failure",
+      "kind": "resource_read",
+      "from": "resource:attribute:WorkspaceTimingsAttribute",
+      "to": "rpc:GetProvision",
+      "label": "Get",
       "span": {
-        "startLine": 98,
-        "startColumn": 53,
-        "endLine": 98,
-        "endColumn": 122
+        "startLine": 74,
+        "startColumn": 41,
+        "endLine": 74,
+        "endColumn": 75
       },
       "metadata": {
-        "skipWaitFor": true
+        "phase": "rpc"
       }
     },
     {
       "id": "edge:0048",
-      "kind": "resource_write",
-      "from": "step:RecordProvisionFailure",
-      "to": "resource:attribute:OutcomeAttribute",
-      "label": "Set",
+      "kind": "resource_read",
+      "from": "resource:attribute:WorkspaceTimingsAttribute",
+      "to": "step:CheckoutWorkspace",
+      "label": "Get",
       "span": {
-        "startLine": 264,
-        "startColumn": 15,
-        "endLine": 264,
-        "endColumn": 50
+        "startLine": 74,
+        "startColumn": 41,
+        "endLine": 74,
+        "endColumn": 75
       },
       "metadata": {
-        "phase": "execute"
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
       }
     },
     {
       "id": "edge:0049",
-      "kind": "resource_write",
-      "from": "step:RecordProvisionFailure",
-      "to": "resource:attribute:ResourcesAttribute",
-      "label": "Set",
+      "kind": "resource_read",
+      "from": "resource:attribute:WorkspaceTimingsAttribute",
+      "to": "step:ProvisionInstance",
+      "label": "Get",
       "span": {
-        "startLine": 295,
-        "startColumn": 14,
-        "endLine": 295,
-        "endColumn": 54
+        "startLine": 74,
+        "startColumn": 41,
+        "endLine": 74,
+        "endColumn": 75
       },
       "metadata": {
-        "function": "recordOutcome",
+        "function": "SandboxProvisionFlow.GetProvision",
         "phase": "execute",
         "via": "helper"
       }
     },
     {
       "id": "edge:0050",
-      "kind": "resource_write",
-      "from": "step:RecordProvisionFailure",
-      "to": "resource:attribute:WorkspaceTimingsAttribute",
-      "label": "Set",
+      "kind": "resource_read",
+      "from": "resource:attribute:WorkspaceTimingsAttribute",
+      "to": "step:RecordProvisionFailure",
+      "label": "Get",
       "span": {
-        "startLine": 296,
-        "startColumn": 14,
-        "endLine": 296,
-        "endColumn": 104
+        "startLine": 74,
+        "startColumn": 41,
+        "endLine": 74,
+        "endColumn": 75
       },
       "metadata": {
-        "function": "recordOutcome",
+        "function": "SandboxProvisionFlow.GetProvision",
         "phase": "execute",
         "via": "helper"
       }
     },
     {
       "id": "edge:0051",
-      "kind": "resource_write",
-      "from": "step:ReportProvisionOutcome",
-      "to": "resource:attribute:OutcomeAttribute",
-      "label": "Set",
+      "kind": "resource_read",
+      "from": "resource:attribute:WorkspaceTimingsAttribute",
+      "to": "step:ReportProvisionOutcome",
+      "label": "Get",
       "span": {
-        "startLine": 247,
-        "startColumn": 14,
-        "endLine": 247,
-        "endColumn": 49
+        "startLine": 74,
+        "startColumn": 41,
+        "endLine": 74,
+        "endColumn": 75
       },
       "metadata": {
-        "phase": "execute"
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
       }
     },
     {
       "id": "edge:0052",
-      "kind": "failure_transition",
-      "from": "step:ReportProvisionOutcome",
-      "to": "step:RecordProvisionFailure",
-      "label": "Execute failure",
+      "kind": "resource_read",
+      "from": "resource:attribute:WorkspaceTimingsAttribute",
+      "to": "step:StartWorkspaceBootstrap",
+      "label": "Get",
       "span": {
-        "startLine": 234,
-        "startColumn": 37,
-        "endLine": 234,
-        "endColumn": 106
+        "startLine": 74,
+        "startColumn": 41,
+        "endLine": 74,
+        "endColumn": 75
       },
       "metadata": {
-        "skipWaitFor": true
+        "function": "SandboxProvisionFlow.GetProvision",
+        "phase": "execute",
+        "via": "helper"
       }
     },
     {
       "id": "edge:0053",
-      "kind": "resource_write",
-      "from": "step:VerifyInstanceHealthy",
-      "to": "resource:attribute:OutcomeAttribute",
-      "label": "Set",
+      "kind": "resource_read",
+      "from": "resource:attribute:WorkspaceTimingsAttribute",
+      "to": "step:VerifyInstanceHealthy",
+      "label": "Get",
       "span": {
-        "startLine": 297,
-        "startColumn": 14,
-        "endLine": 297,
-        "endColumn": 49
+        "startLine": 74,
+        "startColumn": 41,
+        "endLine": 74,
+        "endColumn": 75
       },
       "metadata": {
-        "function": "recordOutcome",
+        "function": "SandboxProvisionFlow.GetProvision",
         "phase": "execute",
         "via": "helper"
       }
@@ -1313,32 +1379,30 @@
     {
       "id": "edge:0054",
       "kind": "resource_write",
-      "from": "step:VerifyInstanceHealthy",
-      "to": "resource:attribute:ResourcesAttribute",
+      "from": "step:CheckoutWorkspace",
+      "to": "resource:attribute:CheckoutAttribute",
       "label": "Set",
       "span": {
-        "startLine": 295,
+        "startLine": 186,
         "startColumn": 14,
-        "endLine": 295,
-        "endColumn": 54
+        "endLine": 186,
+        "endColumn": 52
       },
       "metadata": {
-        "function": "recordOutcome",
-        "phase": "execute",
-        "via": "helper"
+        "phase": "execute"
       }
     },
     {
       "id": "edge:0055",
       "kind": "resource_write",
-      "from": "step:VerifyInstanceHealthy",
-      "to": "resource:attribute:WorkspaceTimingsAttribute",
+      "from": "step:CheckoutWorkspace",
+      "to": "resource:attribute:OutcomeAttribute",
       "label": "Set",
       "span": {
-        "startLine": 296,
+        "startLine": 337,
         "startColumn": 14,
-        "endLine": 296,
-        "endColumn": 104
+        "endLine": 337,
+        "endColumn": 49
       },
       "metadata": {
         "function": "recordOutcome",
@@ -1348,14 +1412,316 @@
     },
     {
       "id": "edge:0056",
+      "kind": "resource_write",
+      "from": "step:CheckoutWorkspace",
+      "to": "resource:attribute:ResourcesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 335,
+        "startColumn": 14,
+        "endLine": 335,
+        "endColumn": 54
+      },
+      "metadata": {
+        "function": "recordOutcome",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0057",
+      "kind": "resource_write",
+      "from": "step:CheckoutWorkspace",
+      "to": "resource:attribute:WorkspaceTimingsAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 187,
+        "startColumn": 14,
+        "endLine": 187,
+        "endColumn": 104
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0058",
+      "kind": "failure_transition",
+      "from": "step:CheckoutWorkspace",
+      "to": "step:RecordProvisionFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 151,
+        "startColumn": 65,
+        "endLine": 151,
+        "endColumn": 134
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0059",
+      "kind": "resource_write",
+      "from": "step:ProvisionInstance",
+      "to": "resource:attribute:OutcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 337,
+        "startColumn": 14,
+        "endLine": 337,
+        "endColumn": 49
+      },
+      "metadata": {
+        "function": "recordOutcome",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0060",
+      "kind": "resource_write",
+      "from": "step:ProvisionInstance",
+      "to": "resource:attribute:ResourcesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 138,
+        "startColumn": 14,
+        "endLine": 138,
+        "endColumn": 54
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0061",
+      "kind": "resource_write",
+      "from": "step:ProvisionInstance",
+      "to": "resource:attribute:WorkspaceTimingsAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 139,
+        "startColumn": 14,
+        "endLine": 139,
+        "endColumn": 121
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0062",
+      "kind": "failure_transition",
+      "from": "step:ProvisionInstance",
+      "to": "step:RecordProvisionFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 111,
+        "startColumn": 53,
+        "endLine": 111,
+        "endColumn": 122
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0063",
+      "kind": "resource_write",
+      "from": "step:RecordProvisionFailure",
+      "to": "resource:attribute:BootstrapAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 298,
+        "startColumn": 15,
+        "endLine": 298,
+        "endColumn": 135
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0064",
+      "kind": "resource_write",
+      "from": "step:RecordProvisionFailure",
+      "to": "resource:attribute:OutcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 304,
+        "startColumn": 15,
+        "endLine": 304,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0065",
+      "kind": "resource_write",
+      "from": "step:RecordProvisionFailure",
+      "to": "resource:attribute:ResourcesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 335,
+        "startColumn": 14,
+        "endLine": 335,
+        "endColumn": 54
+      },
+      "metadata": {
+        "function": "recordOutcome",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0066",
+      "kind": "resource_write",
+      "from": "step:RecordProvisionFailure",
+      "to": "resource:attribute:WorkspaceTimingsAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 336,
+        "startColumn": 14,
+        "endLine": 336,
+        "endColumn": 104
+      },
+      "metadata": {
+        "function": "recordOutcome",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0067",
+      "kind": "resource_write",
+      "from": "step:ReportProvisionOutcome",
+      "to": "resource:attribute:OutcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 283,
+        "startColumn": 14,
+        "endLine": 283,
+        "endColumn": 49
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0068",
+      "kind": "failure_transition",
+      "from": "step:ReportProvisionOutcome",
+      "to": "step:RecordProvisionFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 270,
+        "startColumn": 37,
+        "endLine": 270,
+        "endColumn": 106
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0069",
+      "kind": "resource_write",
+      "from": "step:StartWorkspaceBootstrap",
+      "to": "resource:attribute:BootstrapAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 210,
+        "startColumn": 14,
+        "endLine": 210,
+        "endColumn": 73
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0070",
+      "kind": "failure_transition",
+      "from": "step:StartWorkspaceBootstrap",
+      "to": "step:RecordProvisionFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 199,
+        "startColumn": 37,
+        "endLine": 199,
+        "endColumn": 106
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0071",
+      "kind": "resource_write",
+      "from": "step:VerifyInstanceHealthy",
+      "to": "resource:attribute:OutcomeAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 337,
+        "startColumn": 14,
+        "endLine": 337,
+        "endColumn": 49
+      },
+      "metadata": {
+        "function": "recordOutcome",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0072",
+      "kind": "resource_write",
+      "from": "step:VerifyInstanceHealthy",
+      "to": "resource:attribute:ResourcesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 335,
+        "startColumn": 14,
+        "endLine": 335,
+        "endColumn": 54
+      },
+      "metadata": {
+        "function": "recordOutcome",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0073",
+      "kind": "resource_write",
+      "from": "step:VerifyInstanceHealthy",
+      "to": "resource:attribute:WorkspaceTimingsAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 336,
+        "startColumn": 14,
+        "endLine": 336,
+        "endColumn": 104
+      },
+      "metadata": {
+        "function": "recordOutcome",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0074",
       "kind": "failure_transition",
       "from": "step:VerifyInstanceHealthy",
       "to": "step:RecordProvisionFailure",
       "label": "Execute failure",
       "span": {
-        "startLine": 186,
+        "startLine": 222,
         "startColumn": 50,
-        "endLine": 186,
+        "endLine": 222,
         "endColumn": 119
       },
       "metadata": {
@@ -1371,6 +1737,7 @@
       "stepIds": [
         "step:ProvisionInstance",
         "step:CheckoutWorkspace",
+        "step:StartWorkspaceBootstrap",
         "step:VerifyInstanceHealthy",
         "step:ReportProvisionOutcome",
         "step:RecordProvisionFailure"
@@ -1397,6 +1764,12 @@
           "valueType": "json",
           "editable": false,
           "description": "Outcome and how the Session workspace answered its report"
+        },
+        {
+          "attributeKey": "Bootstrap",
+          "valueType": "json",
+          "editable": false,
+          "description": "Start of the template's bootstrap command"
         }
       ]
     },

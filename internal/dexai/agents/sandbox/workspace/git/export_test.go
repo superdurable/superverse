@@ -23,6 +23,16 @@ func (operations *GitOperations) VerifyApplicationSource(ctx context.Context, cl
 	return operations.verifyApplicationSource(ctx, client, repository, request, progress)
 }
 
+// StageVerifiedTreeForTest stages the working tree as the commit does and
+// requires the tree that the passed gate verified, without committing.
+func StageVerifiedTreeForTest(ctx context.Context, client *sandboxd.SandboxClient, gate SourceGate) error {
+	g := workspaceGit{client: client}
+	if err := g.step(ctx, "stage workspace changes", "add", "--all"); err != nil {
+		return err
+	}
+	return g.requireVerifiedTree(ctx, gate.tree)
+}
+
 // The tests name these constants.
 const (
 	SourceGatePassedForTest  = sourceGatePassed

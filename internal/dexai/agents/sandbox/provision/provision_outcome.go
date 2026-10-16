@@ -20,6 +20,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/git"
+	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/sandboxd"
 	"github.com/superdurable/superversev2/internal/dexai/projects/infra"
 )
 
@@ -109,15 +110,43 @@ type Outcome struct {
 }
 
 // Snapshot is one provisioning, read from its Attributes. Request is fixed by
-// the start; Resources, Checkout and WorkspaceTimings are observations of the
-// Steps; Outcome is nil until the provisioning ended, and once it is set no
-// Step causes another provider effect.
+// the start; Resources, Checkout, WorkspaceTimings and Bootstrap are
+// observations of the Steps; Outcome is nil until the provisioning ended, and
+// once it is set no Step causes another provider effect.
 type Snapshot struct {
 	Request          Request
 	Resources        sandbox.Resources
 	Checkout         Checkout
 	WorkspaceTimings []dexflow.PhaseTiming
 	Outcome          *Outcome
+	Bootstrap        Bootstrap
+}
+
+// Bootstrap is how the provisioning started the bootstrap command of the
+// checked-out template, which nothing waits for: the command ledger run
+// CommandID and when it started, or Refusal, why no run was started or that a
+// start whose retries ran out was not confirmed. Declared is false when HEAD declares no
+// bootstrap command; the zero Bootstrap is a start not yet attempted.
+type Bootstrap struct {
+	Declared  bool
+	CommandID string
+	StartedAt time.Time
+	Refusal   string
+}
+
+// bootstrapCommandID is the command ledger ID of the instance's bootstrap
+// run, such as platform-bootstrap-ws-41.
+func (r Request) bootstrapCommandID() sandboxd.ExecutionID {
+	return sandboxd.ExecutionID("platform-bootstrap-" + r.WorkspaceRequestID)
+}
+
+// recordedBootstrap is the Bootstrap of a start of run id.
+func recordedBootstrap(id sandboxd.ExecutionID, started workspace.BootstrapStart) Bootstrap {
+	bootstrap := Bootstrap{Declared: started.Declared, StartedAt: started.StartedAt, Refusal: started.Refusal}
+	if started.Declared && started.Refusal == "" {
+		bootstrap.CommandID = string(id)
+	}
+	return bootstrap
 }
 
 // recordHead records the commit of a checkout: GitHub serves the Preview
@@ -193,6 +222,9 @@ const (
 	// reachRoundTimeout bounds one connection to sandboxd, including the
 	// ten-second startup of a native port-forward.
 	reachRoundTimeout = 20 * time.Second
+	// bootstrapStartTimeout bounds one attempt to start the bootstrap: a Git
+	// read and two command ledger calls, within the provider attempt.
+	bootstrapStartTimeout = 40 * time.Second
 )
 
 // Budget bounds a whole provisioning: the wait limits of its provider Steps

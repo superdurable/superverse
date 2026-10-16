@@ -47,6 +47,10 @@ const (
 	passThroughBytes   = 512 << 10
 	defaultTestTimeout = 6 * time.Minute
 	maximumTestTimeout = 30 * time.Minute
+	// defaultHoldTimeout bounds a held run's queue wait, engine start and wait
+	// for its release; releaseInterval is how often it looks for the file.
+	defaultHoldTimeout = 15 * time.Minute
+	releaseInterval    = 100 * time.Millisecond
 	// commandStopGrace is how long the command and the engine have between
 	// SIGTERM and SIGKILL.
 	commandStopGrace = 5 * time.Second
@@ -71,17 +75,24 @@ const (
 	phaseQueued testRunPhase = "queued"
 	// phaseEngine: the engine did not start twice; the command never ran.
 	phaseEngine testRunPhase = "engine"
+	// phaseHeld: a held run's hold deadline passed before its release.
+	phaseHeld testRunPhase = "held"
 	// phaseCommand: the command ran to its exit or its timeout.
 	phaseCommand testRunPhase = "command"
 )
 
 var runIDPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,63}$`)
 
-const apptestUsage = "usage: superverse-previewctl apptest run [--run-id ID] [--timeout 6m] [--report-dir DIR] -- COMMAND [ARGUMENT]"
+const apptestUsage = "usage: superverse-previewctl apptest run [--run-id ID] [--timeout 6m] [--hold-until FILE [--hold-timeout 15m]] [--report-dir DIR] -- COMMAND [ARGUMENT]"
 
 // testRun is one apptest run: its identity, its directories and its deadline.
+// A held run (release set) starts its engine and then waits until the release
+// file exists; its deadline is the hold deadline until then, and the release
+// restarts its clock with the whole timeout for the command.
 type testRun struct {
 	id, directory, reportDirectory string
+	release                        string
+	timeout                        time.Duration
 	started, deadline              time.Time
 }
 
@@ -121,17 +132,25 @@ func parseTestRun(arguments []string) (testRun, []string, error) {
 	id := set.String("run-id", "", "the run's directory name")
 	timeout := set.Duration("timeout", defaultTestTimeout, "the deadline of the run, queue wait included")
 	reportDirectory := set.String("report-dir", "", "where the tests and mocks write their reports")
+	release := set.String("hold-until", "", "an absolute path whose file releases the started engine to the command")
+	holdTimeout := set.Duration("hold-timeout", defaultHoldTimeout, "the deadline of a held run until its release, queue wait included")
 	if err := set.Parse(arguments[1:]); err != nil || set.NArg() == 0 || arguments[len(arguments)-set.NArg()-1] != "--" {
 		return testRun{}, nil, errors.New(apptestUsage)
 	}
 	if *id == "" {
 		*id = "run-" + time.Now().UTC().Format("20060102-150405") + "-" + randomSuffix()
 	}
-	if !runIDPattern.MatchString(*id) || *timeout <= 0 || *timeout > maximumTestTimeout {
-		return testRun{}, nil, fmt.Errorf("--run-id must match %s and --timeout must be positive and at most %s", runIDPattern, maximumTestTimeout)
+	if !runIDPattern.MatchString(*id) || *timeout <= 0 || *timeout > maximumTestTimeout || *holdTimeout <= 0 || *holdTimeout > maximumTestTimeout {
+		return testRun{}, nil, fmt.Errorf("--run-id must match %s and --timeout and --hold-timeout must be positive and at most %s", runIDPattern, maximumTestTimeout)
+	}
+	if *release != "" && !filepath.IsAbs(*release) {
+		return testRun{}, nil, errors.New("--hold-until must be an absolute path")
 	}
 	started := time.Now()
-	run := testRun{id: *id, directory: filepath.Join(apptestRuns, *id), started: started, deadline: started.Add(*timeout)}
+	run := testRun{id: *id, directory: filepath.Join(apptestRuns, *id), release: *release, timeout: *timeout, started: started, deadline: started.Add(*timeout)}
+	if run.release != "" {
+		run.deadline = started.Add(*holdTimeout)
+	}
 	if err := os.MkdirAll(apptestRuns, 0o700); err != nil {
 		return testRun{}, nil, err
 	}
@@ -155,7 +174,7 @@ func randomSuffix() string {
 }
 
 // execute runs the phases of the run and returns its exit code.
-func (r testRun) execute(ctx context.Context, command []string, summary *testRunSummary) int {
+func (r *testRun) execute(ctx context.Context, command []string, summary *testRunSummary) int {
 	lock, err := r.acquireEngine(ctx)
 	if err != nil {
 		summary.Phase, summary.EngineError = phaseQueued, err.Error()
@@ -167,16 +186,25 @@ func (r testRun) execute(ctx context.Context, command []string, summary *testRun
 	defer func() { _ = lock.Close() }()
 	stopLeftoverEngine()
 	pruneRunDirectories(r.id)
-	engine, err := startTestEngine(ctx, r)
+	engine, err := startTestEngine(ctx, *r)
 	if err == nil {
 		defer engine.stop()
 	} else {
 		fmt.Fprintf(os.Stderr, "superverse-previewctl: the test engine did not start, trying once more: %v\n", err)
-		if engine, err = startTestEngine(ctx, r); err != nil {
+		if engine, err = startTestEngine(ctx, *r); err != nil {
 			summary.Phase, summary.EngineError = phaseEngine, err.Error()
 			return exitEngineUnavailable
 		}
 		defer engine.stop()
+	}
+	if r.release != "" {
+		if err = r.awaitRelease(ctx); err != nil {
+			summary.Phase, summary.EngineError = phaseHeld, err.Error()
+			if ctx.Err() != nil {
+				return exitStopped
+			}
+			return exitTimedOut
+		}
 	}
 	summary.Phase = phaseCommand
 	code, timedOut := r.runCommand(ctx, command)
@@ -184,7 +212,7 @@ func (r testRun) execute(ctx context.Context, command []string, summary *testRun
 		return exitStopped
 	}
 	summary.TimedOut = timedOut
-	collectRunSummary(ctx, r, summary)
+	collectRunSummary(ctx, *r, summary)
 	if timedOut {
 		return exitTimedOut
 	}
@@ -214,6 +242,29 @@ func (r testRun) acquireEngine(ctx context.Context) (*os.File, error) {
 		}
 		if time.Now().After(r.deadline) {
 			return nil, fmt.Errorf("other application test runs held the engine until the %s deadline passed", r.deadline.Sub(r.started).Round(time.Second))
+		}
+	}
+}
+
+// awaitRelease waits, with the engine running, until the release file exists,
+// removes it and starts the run's clock again with the whole timeout.
+func (r *testRun) awaitRelease(ctx context.Context) error {
+	ticker := time.NewTicker(releaseInterval)
+	defer ticker.Stop()
+	for {
+		if _, err := os.Stat(r.release); err == nil {
+			_ = os.Remove(r.release)
+			r.started = time.Now()
+			r.deadline = r.started.Add(r.timeout)
+			return nil
+		}
+		if time.Now().After(r.deadline) {
+			return fmt.Errorf("the run was held until its %s deadline passed without a release", r.deadline.Sub(r.started).Round(time.Second))
+		}
+		select {
+		case <-ctx.Done():
+			return errors.New("the run was stopped while it was held")
+		case <-ticker.C:
 		}
 	}
 }

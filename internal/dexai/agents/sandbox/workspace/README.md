@@ -127,9 +127,11 @@ a source path outside the archive. It has one mode per owner:
 - **worktree** (`checkWorktreeDefinitions`, the commit gate's
   `git.WorktreeDefinitionCheck`, injected by `NewCapabilities`): the tree that
   committing every change would create, written through a copy of the index,
-  so neither the index nor the working tree changes. It returns nothing but
+  so neither the index nor the working tree changes. It returns that tree's ID
+  with its rendered Flows (`git.RenderedSource`), which the commit must hold, or
   the rejection, which wraps `git.ErrFlowDefinitionsRejected`, and runs for at
-  most two minutes under a fresh platform execution ID.
+  most two minutes under a fresh platform execution ID. It renders an isolated
+  archive, so the gate runs it beside its static stage.
 
 A generator that rejects the source is `ErrPreviewDefinitionsRejected` with the
 1.5 KiB tail of its stderr, which names the failing command, its exit code and
@@ -139,11 +141,23 @@ such as a tree that is not the commit's export, exits with 2 and is an error
 that may be asked again, never a rejection. A transport error keeps its cause
 and leaves the outcome unknown.
 
+## Bootstrap
+
+`StartBootstrap` is the provisioning's start of the bootstrap command that
+HEAD's `.superverse/template.json` declares (`commands.bootstrap`, a
+`make <target>` command): it reads the manifest at HEAD, asks the command
+ledger for the run ID the caller names and begins it only when the ledger has
+no such run, as a foreground run in the workspace root with a 15-minute
+lifetime, and returns at once with the run's start (`BootstrapStart`). An
+undeclarable command or a ledger refusal is the answer's `Refusal`; any other
+error leaves the start unknown and may be asked again, which finds the run
+instead of starting another.
+
 ## Files
 
 | File | Responsibility |
 | --- | --- |
-| `capabilities.go` | Facade shared by Session tools and the Sandbox provider |
+| `capabilities.go` | Facade shared by Session tools and the Sandbox provider, with the bootstrap start |
 | `lease.go` | `Lease` and `Binding`, the persisted accepted capability |
 | `sandbox_resolver.go` | Transport pool |
 | `preview.go`, `preview_definitions.go`, `preview_definitions.py` | The Preview supervisor's commands and Flow Definition generation |

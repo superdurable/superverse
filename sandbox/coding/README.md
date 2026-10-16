@@ -25,6 +25,27 @@ what a new project starts with. Applications may select newer releases, which
 download through the public proxy fallback. The read-only proxy is
 `/opt/superverse/go-module-proxy`.
 
+The `app-build-cache` stage seeds the template's build caches. It starts from
+the image itself (`coding-tools`), so it has the final toolchain, environment
+and user, copies the template's Go sources, OpenAPI document and npm manifests
+to `/workspace`, as a new project has them, and runs the commands of the
+template's gate: the Go half of `make generate` (ogen), both `go vet` runs,
+`go build ./...`, the API test compile and `npm --prefix web ci`. Go keys a
+build cache entry by the compiler, the package directory and its sources, and
+the module cache path is the runtime one, so the entries match a new project's.
+The final `coding-base` stage copies the Go build cache to
+`/opt/superverse/go-build-cache-seed` (374 MB) and the npm cache to
+`/opt/superverse/npm-cache-seed` (31 MB), root-owned and read-only, and names
+them in `SUPERVERSE_GO_BUILD_CACHE_SEED` and `SUPERVERSE_NPM_CACHE_SEED`. The
+template's `make bootstrap` copies the build cache once into the Pod's
+`$GOCACHE` (`cp -R -n`, fresh modification times, so Go's trimming keeps them;
+an entry Go cannot verify is a miss) and the npm cache before an `npm ci`. The
+image's smoke test builds the template from the frozen context with the seed
+restored and fails when `go build -v ./...` compiles a package outside the
+template module. A template source change therefore rebuilds the image; the
+coding fingerprint names the template's Go sources, `openapi/openapi.yaml` and
+the npm manifests.
+
 The image ENV owns the toolchain cache paths: Go modules under
 `/tmp/superverse-tool-execution/go/pkg/mod`, the Go build cache and the npm
 cache under `/tmp`, XDG config and cache under `/tmp/superverse-tool-execution`.
@@ -102,7 +123,8 @@ docker build \
 
 ```
 
-Kind, Native and hosted builds use the single `coding-base` target. The
+Kind, Native and hosted builds use the single `coding-base` target, the last
+stage; `coding-tools` and `app-build-cache` are its build stages. The
 application's own `go.mod` selects every Dex and Connector module; no workspace
 overlay replaces them. Dex CLI is installed by the repository's
 `scripts/install-pinned-binary.sh` with its pinned platform checksums. Immutable

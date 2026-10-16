@@ -74,12 +74,23 @@ def component_inputs(component):
     if component == "studio":
         return files_under("web/studio") | {"api/superverse/v2/superverse.proto", ".dockerignore"}
     if component == "coding":
-        # Skills are Markdown read by the Agent; the template manifests prewarm its modules;
-        # the BuildProfile selects the Go and Node base images.
-        return (files_under("sandbox/coding") | files_under("dex-skills", documents=True)
-                | {"scripts/install-pinned-binary.sh", "internal/dexai/delivery/releases/build/build-profiles/go-react-v1/profile.json",
-                   "app-template/go.mod", "app-template/go.sum", "app-template/tools/openapi/go.mod", "app-template/tools/openapi/go.sum"})
+        # Skills are Markdown read by the Agent; the template manifests prewarm its modules and its
+        # sources seed the image's build caches; the BuildProfile selects the Go and Node base images.
+        return (files_under("sandbox/coding") | files_under("dex-skills", documents=True) | template_cache_inputs()
+                | {"scripts/install-pinned-binary.sh", "internal/dexai/delivery/releases/build/build-profiles/go-react-v1/profile.json"})
     raise ValueError("Unknown image component: " + component)
+
+
+def template_cache_inputs():
+    """The application template's files that its Go build cache and npm cache seeds are built from.
+
+    The generated API packages are ignored by Git and generated again in the build, so a checkout that ran
+    the template's checks has the same inputs as a clean one.
+    """
+    sources = files_under("app-template/cmd") | files_under("app-template/internal", tests=True)
+    return ({name for name in sources if not name.startswith("app-template/internal/api/generated/")}
+            | {"app-template/go.mod", "app-template/go.sum", "app-template/tools/openapi/go.mod", "app-template/tools/openapi/go.sum",
+               "app-template/openapi/openapi.yaml", "app-template/web/package.json", "app-template/web/package-lock.json"})
 
 
 def fingerprint(names):

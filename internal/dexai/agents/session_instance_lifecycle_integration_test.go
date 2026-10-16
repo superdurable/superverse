@@ -10,11 +10,13 @@ package agents
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"net"
 	"net/http"
 	"net/url"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -76,6 +78,58 @@ func TestSandboxProvisionStartJoinsDexIntegration(t *testing.T) {
 		t.Fatalf("the repeated start of %s started or changed an execution", flowID)
 	}
 	t.Logf("FlowID=%s cold-started %s through its only provisioning %s, which a repeated start joined", session.id, ready.InstanceID, flowID)
+}
+
+// TestPlatformBootstrapRacesAgentDexIntegration runs build-basic on a fresh
+// Project, whose script runs the template's make bootstrap before its first
+// push. The provisioning started the bootstrap the template declares as the
+// command ledger run platform-bootstrap-<instance> before the instance was
+// READY, without waiting for it; the scenario's own make bootstrap waited for
+// that run's lock and restored nothing again, and the first commit gate passed
+// on the restored caches. The log names each gate stage's duration_ms.
+func TestPlatformBootstrapRacesAgentDexIntegration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
+	defer cancel()
+	started := time.Now().UTC()
+	session := newMockSession(t, ctx, mockInput(t, "build-basic", 1).Content)
+	agent := session.finishedTurn(ctx)
+	requireNoFailure(t, agent.History)
+	ready := session.workspace(ctx)
+	provisioned, err := session.provisions.Get(ctx, session.identity.ProjectID, ready.InstanceID)
+	if err != nil {
+		t.Fatalf("the provisioning of %s did not read (%T)", ready.InstanceID, err)
+	}
+	bootstrap := provisioned.Bootstrap
+	if !bootstrap.Declared || bootstrap.CommandID != "platform-bootstrap-"+ready.InstanceID || bootstrap.Refusal != "" ||
+		bootstrap.StartedAt.Before(started.Add(-time.Minute)) || bootstrap.StartedAt.After(time.Now().Add(time.Minute)) {
+		t.Fatalf("the provisioning of %s did not start the declared bootstrap: %+v", ready.InstanceID, bootstrap)
+	}
+	messages := agent.History.Messages
+	if result := toolResult(t, messages, conversation.ToolBash, 1); result.Outcome != conversation.ToolOutcomeSucceeded {
+		t.Fatalf("the scenario's make bootstrap ended %s", result.Outcome)
+	}
+	if output := session.toolResultContent(ctx, messages, conversation.ToolBash, 1); !strings.Contains(output, "web/node_modules already matches web/package-lock.json") {
+		t.Fatalf("the scenario's make bootstrap restored the dependencies again instead of waiting for the platform's run:\n%s", output)
+	}
+	if got := toolResult(t, messages, conversation.ToolCommitAndPush, 0); got.ResultCode != agentloop.CommitPushedForTest {
+		t.Fatalf("the first commit_and_push ended as %q (%s)", got.ResultCode, got.Outcome)
+	}
+	var report struct {
+		Gate struct {
+			Stages []struct {
+				Stage      string `json:"stage"`
+				Status     string `json:"status"`
+				DurationMS int64  `json:"duration_ms"`
+			} `json:"stages"`
+		} `json:"gate"`
+	}
+	if err = json.Unmarshal([]byte(session.toolResultContent(ctx, messages, conversation.ToolCommitAndPush, 0)), &report); err != nil {
+		t.Fatalf("the pushed result is not the commit report: %v", err)
+	}
+	for _, stage := range report.Gate.Stages {
+		t.Logf("gate stage %s %s duration_ms=%d", stage.Stage, stage.Status, stage.DurationMS)
+	}
+	t.Logf("FlowID=%s instance %s started the bootstrap %s at %s", session.id, ready.InstanceID, bootstrap.CommandID, bootstrap.StartedAt.Format(time.RFC3339Nano))
 }
 
 // TestSandboxReclaimStopsPreviewDexIntegration serves the Project's Preview on

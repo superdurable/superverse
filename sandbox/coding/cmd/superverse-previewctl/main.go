@@ -59,7 +59,7 @@ type answer struct {
 	Path            string `json:"path,omitempty"`
 }
 
-const usage = "usage: superverse-previewctl environment ensure|status|stop | source ensure --commit SHA | begin --commit SHA | status | stop | shutdown [--timeout DURATION] | supervise | apptest run [--run-id ID] [--timeout 6m] [--report-dir DIR] -- COMMAND [ARGUMENT]"
+const usage = "usage: superverse-previewctl environment ensure|status|stop | source ensure --commit SHA | begin --commit SHA | status | stop | shutdown [--timeout DURATION] | supervise | apptest run [--run-id ID] [--timeout 6m] [--hold-until FILE [--hold-timeout 15m]] [--report-dir DIR] -- COMMAND [ARGUMENT]"
 
 // The commands of the command line, as README.md spells them.
 const (

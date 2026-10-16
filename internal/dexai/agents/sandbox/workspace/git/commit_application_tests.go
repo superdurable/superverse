@@ -27,10 +27,17 @@ import (
 )
 
 const (
-	// testStageTimeout bounds the test stage; the engine run gets 30 seconds
-	// less, which leaves room for its teardown and summary.
-	testStageTimeout = 6*time.Minute + 30*time.Second
+	// The test run starts beside the static stage and holds its engine until
+	// the gate releases it: the hold, queue wait included, ends at
+	// testHoldTimeout, after the static stage's limit and the mock guard. Its
+	// tests get testRunTimeout from the release; the process limit adds 30
+	// seconds for the teardown and summary.
+	testHoldTimeout  = 12 * time.Minute
 	testRunTimeout   = "6m"
+	testRunLimit     = testHoldTimeout + 6*time.Minute + 30*time.Second
+	testReleaseLimit = 30 * time.Second
+	// testReleasePrefix names the release file of a held run by its run ID.
+	testReleasePrefix = "/tmp/superverse-apptest-release-"
 	// connectorMockPackage is the connectors library's mock contract, which
 	// only the application's API tests may import.
 	connectorMockPackage = "github.com/superdurable/dex-connectors-library/sdkgo/connectormock"
@@ -53,6 +60,8 @@ const (
 	testRunPhaseQueued testRunPhase = "queued"
 	// testRunPhaseEngine: the engine did not start twice.
 	testRunPhaseEngine testRunPhase = "engine"
+	// testRunPhaseHeld: the hold deadline passed before the release.
+	testRunPhaseHeld testRunPhase = "held"
 )
 
 // testOutcome is the outcome of one test that the template harness records.
@@ -165,17 +174,67 @@ func isConnectorMock(importPath string) bool {
 	return importPath == connectorMockPackage || strings.HasPrefix(importPath, connectorMockPackage+"/")
 }
 
-// runApplicationTests runs the declared testApplication target on a fresh test
-// engine and checks the run: the tests passed, every rendered Flow ran, every
+// heldTestRun is the test stage's run of the declared testApplication target,
+// started with the static stage: superverse-previewctl apptest run takes the
+// engine lock, starts a fresh engine and waits for the release file before it
+// runs the target. A run that is never released is killed with its process
+// group, engine included.
+type heldTestRun struct {
+	release string
+	cancel  context.CancelFunc
+	done    chan struct{}
+	result  processResult
+	err     error
+}
+
+// startHeldTests starts the held run of command for the call of request.
+func (g workspaceGit) startHeldTests(ctx context.Context, command string, request CommitRequest) *heldTestRun {
+	id := testRunIdentity(request.CallID)
+	ctx, cancel := context.WithCancel(ctx)
+	run := &heldTestRun{release: testReleasePrefix + id, cancel: cancel, done: make(chan struct{})}
+	arguments := append([]string{"superverse-previewctl", "apptest", "run", "--run-id", id, "--timeout", testRunTimeout,
+		"--hold-until", run.release, "--hold-timeout", testHoldTimeout.String(), "--"}, strings.Fields(command)...)
+	go func() {
+		defer close(run.done)
+		run.result, run.err = g.run(ctx, sandboxd.ToolProcessEnvironment(sandboxd.WorkspaceRoot), testRunLimit, arguments...)
+	}()
+	return run
+}
+
+// releaseTests lets the held run start the tests.
+func (run *heldTestRun) releaseTests(ctx context.Context, g workspaceGit) error {
+	released, err := g.run(ctx, sandboxd.ToolProcessEnvironment(sandboxd.WorkspaceRoot), testReleaseLimit, "touch", run.release)
+	if err != nil {
+		return commandError("release the test run", released, err)
+	}
+	return nil
+}
+
+// wait returns the held run's output once it ended.
+func (run *heldTestRun) wait() (processResult, error) {
+	<-run.done
+	return run.result, run.err
+}
+
+// stop kills the held run unless it already ended, and waits for its end.
+func (run *heldTestRun) stop() {
+	run.cancel()
+	<-run.done
+}
+
+// runApplicationTests releases the held run of the declared testApplication
+// target and checks it: the tests passed, every rendered Flow ran, every
 // wired branch of a mocked connector was returned, the engine stayed healthy
 // and the confirmed requirements are traced to passing tests.
-func (g workspaceGit) runApplicationTests(ctx context.Context, command string, request CommitRequest, flows []RenderedFlow) (*ApplicationTestReport, error) {
+func (g workspaceGit) runApplicationTests(ctx context.Context, command string, request CommitRequest, flows []renderedFlow, held *heldTestRun) (*ApplicationTestReport, error) {
+	if err := held.releaseTests(ctx, g); err != nil {
+		return nil, err
+	}
 	mocked, err := g.mockedConnectors(ctx, flows)
 	if err != nil {
 		return nil, err
 	}
-	arguments := append([]string{"superverse-previewctl", "apptest", "run", "--run-id", testRunIdentity(request.CallID), "--timeout", testRunTimeout, "--"}, strings.Fields(command)...)
-	result, err := g.run(ctx, sandboxd.ToolProcessEnvironment(sandboxd.WorkspaceRoot), testStageTimeout, arguments...)
+	result, err := held.wait()
 	if errors.Is(err, sandboxd.ErrProcessNotStarted) {
 		return nil, sandboxd.NewToolFailure(toolfailure.PlatformCommandUnavailable, fmt.Errorf("start superverse-previewctl apptest: %w", err))
 	}
@@ -188,7 +247,9 @@ func (g workspaceGit) runApplicationTests(ctx context.Context, command string, r
 		return nil, sandboxd.NewToolFailure(toolfailure.TestEnvironmentUnavailable, fmt.Errorf("the test engine exited with code %d without its summary\n%s", result.exitCode, commandTail(result, maximumTestOutputTailBytes)))
 	}
 	switch {
-	case run.Phase == testRunPhaseQueued || run.Phase == testRunPhaseEngine:
+	case run.Phase == testRunPhaseQueued || run.Phase == testRunPhaseEngine || run.Phase == testRunPhaseHeld:
+		// A run that never reached its command left the release file behind.
+		_, _ = g.run(ctx, sandboxd.ToolProcessEnvironment(sandboxd.WorkspaceRoot), testReleaseLimit, "rm", "-f", held.release)
 		return nil, sandboxd.NewToolFailure(toolfailure.TestEnvironmentUnavailable, errors.New(comm.TruncateUTF8(run.EngineError, 2<<10)))
 	case run.ExecutionsError != "":
 		return nil, sandboxd.NewToolFailure(toolfailure.TestEnvironmentUnavailable, fmt.Errorf("the test engine's executions could not be read: %s", comm.TruncateUTF8(run.ExecutionsError, 2<<10)))
@@ -226,7 +287,7 @@ func readTestRunSummary(stdout string) (applicationTestRun, bool) {
 
 // mockedConnectors reports, for each connector module the rendered Flows use,
 // whether it ships its generated mock package, such as .../llm/llmmock.
-func (g workspaceGit) mockedConnectors(ctx context.Context, flows []RenderedFlow) (map[string]bool, error) {
+func (g workspaceGit) mockedConnectors(ctx context.Context, flows []renderedFlow) (map[string]bool, error) {
 	mocked := map[string]bool{}
 	modules := map[string]string{}
 	var packages []string
@@ -315,7 +376,7 @@ func (f *testStageFindings) checkOutcome(result processResult, report *Applicati
 // checkCoverage requires an execution of every rendered Flow and a returned
 // call of every wired branch of a mocked connector; a connector without mocks
 // is waived and listed.
-func (f *testStageFindings) checkCoverage(flows []RenderedFlow, mocked map[string]bool, report *ApplicationTestReport) {
+func (f *testStageFindings) checkCoverage(flows []renderedFlow, mocked map[string]bool, report *ApplicationTestReport) {
 	type wired struct{ connection, operation, branch string }
 	returned := map[wired]bool{}
 	for _, call := range f.run.ConnectorCalls {

@@ -19,6 +19,8 @@ DIGEST = re.compile(r"sha256:[a-f0-9]{64}\Z")
 INDEX_TYPES = {"application/vnd.oci.image.index.v1+json", "application/vnd.docker.distribution.manifest.list.v2+json"}
 MANIFEST_TYPES = {"application/vnd.oci.image.manifest.v1+json", "application/vnd.docker.distribution.manifest.v2+json"}
 CONFIG_TYPES = {"application/vnd.oci.image.config.v1+json", "application/vnd.docker.container.image.v1+json"}
+# BuildKit gives an attestation manifest the OCI empty descriptor ({}) as its config; an image config never is.
+ATTESTATION_CONFIG_TYPES = CONFIG_TYPES | {"application/vnd.oci.empty.v1+json"}
 MAX_METADATA = 16 * 1024 * 1024
 # The runtime fields a Docker image must share with the platform config blob it was accepted as.
 RUNTIME_CONFIG_KEYS = ("Env", "Entrypoint", "Cmd", "WorkingDir", "User", "Labels")
@@ -84,7 +86,7 @@ def graph(read, root_digest, platform):
         require(attestation_ref["mediaType"] in MANIFEST_TYPES and attestation.get("schemaVersion") == 2 and
                 attestation.get("mediaType") == attestation_ref["mediaType"], "Unsupported attestation manifest")
         attestation_config = descriptor(attestation.get("config"))
-        require(attestation_config["mediaType"] in CONFIG_TYPES, "Unsupported attestation config")
+        require(attestation_config["mediaType"] in ATTESTATION_CONFIG_TYPES, "Unsupported attestation config")
         content(attestation_config, "blob")
         attestation_layers = attestation.get("layers", [])
         require(isinstance(attestation_layers, list) and 1 <= len(attestation_layers) <= 16, "Attestation content exceeds its bound")

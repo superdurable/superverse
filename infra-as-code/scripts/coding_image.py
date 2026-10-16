@@ -31,6 +31,24 @@ from private_files import write_private, write_private_json
 
 AGENT_SANDBOX_REPOSITORY = "kubernetes-sigs/agent-sandbox"
 
+# The template's sources from the frozen context, in /workspace as a new project has them: with the image's build
+# cache seed restored, make generate's Go half and a build compile none of its packages outside the template module.
+TEMPLATE_BUILD_CHECK = """set -euo pipefail
+cp -R /opt/superverse-template-source/. /workspace/
+cd /workspace
+cp -R -n "$SUPERVERSE_GO_BUILD_CACHE_SEED/." "$(go env GOCACHE)/"
+go mod download
+go -C tools/openapi mod download
+go -C tools/openapi tool ogen --target ../../internal/api/generated --package generated ../../openapi/openapi.yaml > /dev/null 2>&1
+module="$(go list -m)"
+compiled="$(go build -v ./... 2>&1 | grep -v -e "^${module}\\$" -e "^${module}/" || true)"
+if [ -n "${compiled}" ]; then
+  echo "the template build compiled packages that the image's build cache seed should hold:" >&2
+  echo "${compiled}" >&2
+  exit 1
+fi
+"""
+
 
 class CodingImage:
     """One lane's build of the coding image: the local tag it builds and the private directory of its context and receipt."""
@@ -74,7 +92,7 @@ class CodingImage:
                 "externalContexts": {name: {"commit": value["commit"], "archiveSHA256": value["archiveSHA256"]} for name, value in receipt["externalContexts"].items()}}
 
     def verify_tools(self):
-        """Run the image's tool smoke test in a container this call alone owns and removes."""
+        """Run the image's tool smoke test and its template build check, each in a container this call alone owns and removes."""
         # A unique label owns only this validation container, never a port or name match.
         owner = uuid.uuid4().hex
         label = "superverse-v2.coding-verification=" + owner
@@ -93,6 +111,9 @@ class CodingImage:
                  " && test -x /usr/local/libexec/superverse/dexcli && test -x /usr/local/libexec/superverse/temporal && /usr/bin/tini --version"
                  " && test -d /var/lib/superverse/preview"],
                 timeout=180)
+            run(["docker", "run", "--rm", "--name", "sv2-coding-verification-" + owner + "-template", "--label", label, "--entrypoint", "/bin/bash",
+                 "--volume", str(self.directory / "context" / "app-template") + ":/opt/superverse-template-source:ro", self.tag, "-c", TEMPLATE_BUILD_CHECK],
+                timeout=300)
         finally:
             for container_id in owned_containers():
                 try:

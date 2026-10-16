@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/superdurable/superversev2/internal/comm"
@@ -33,18 +34,25 @@ const (
 
 // WorktreeDefinitionCheck renders, with the platform's dexcli, every Flow that
 // the next commit of the working tree declares, as Preview and Release render a
-// pushed commit, and returns them. A rejected source returns an error that
-// wraps ErrFlowDefinitionsRejected and ends with the reason; any other error
-// leaves the outcome unobserved.
-type WorktreeDefinitionCheck func(ctx context.Context, client *sandboxd.SandboxClient) ([]RenderedFlow, error)
+// pushed commit, and returns them with the Git tree it rendered. A rejected
+// source returns an error that wraps ErrFlowDefinitionsRejected and ends with
+// the reason; any other error leaves the outcome unobserved.
+type WorktreeDefinitionCheck func(ctx context.Context, client *sandboxd.SandboxClient) (RenderedSource, error)
+
+// RenderedSource is what the definitions stage rendered: the Git tree that
+// committing the working tree would create, and its Flows.
+type RenderedSource struct {
+	Tree  string         `json:"tree"`
+	Flows []renderedFlow `json:"flows"`
+}
 
 // ErrFlowDefinitionsRejected means the platform's Flow definition check
 // rejected the working tree.
 var ErrFlowDefinitionsRejected = errors.New("the platform rejected the Flow definitions")
 
-// RenderedFlow is one Flow of the next commit as the definitions stage
+// renderedFlow is one Flow of the next commit as the definitions stage
 // rendered it: its type and its connector Steps with their wired branches.
-type RenderedFlow struct {
+type renderedFlow struct {
 	SourcePath     string                  `json:"sourcePath"`
 	FlowType       string                  `json:"flowType"`
 	ConnectorSteps []renderedConnectorStep `json:"connectorSteps"`
@@ -78,10 +86,12 @@ type SourceGateStage struct {
 }
 
 // SourceGate is a passed commit gate: every stage and, when the test stage
-// ran, its report.
+// ran, its report. tree is the Git tree the gate verified, which the commit
+// must hold.
 type SourceGate struct {
 	Stages []SourceGateStage
 	Tests  *ApplicationTestReport
+	tree   string
 }
 
 // gateStage names a stage of the gate, as its result and failures spell it.
@@ -122,6 +132,13 @@ type gateCommands struct {
 //     engine, their Flow and branch coverage, the engine's health and the
 //     requirement trace.
 //
+// The definitions program renders an isolated archive of the tree, which
+// shares no file with the builds, so it runs beside the static stage, and the
+// test engine starts meanwhile and waits for its release; a failure of both is
+// reported for static. The mock guard reads the generated packages, so it
+// follows the static stage. The result names the rendered tree, which the
+// commit must hold (requireVerifiedTree).
+//
 // A clean tree at the HEAD the Session already accepted runs the manifest stage
 // only: it may predate this host schema, but its builds are not repeated. The
 // gate keeps no cache.
@@ -155,31 +172,24 @@ func (operations *GitOperations) verifyApplicationSource(ctx context.Context, cl
 		if commands.tests != "" {
 			gate.skip(stageTests)
 		}
-		return gate.result, nil
+		gate.result.tree, err = g.headTree(ctx)
+		return gate.result, err
 	}
-	if err = gate.stage(stageStatic, func() error { return g.runSourceCheck(ctx, commands.static) }); err != nil {
-		return SourceGate{}, err
+	var held *heldTestRun
+	if commands.tests != "" {
+		held = g.startHeldTests(ctx, commands.tests, request)
+		defer held.stop()
 	}
-	var flows []RenderedFlow
-	err = gate.stage(stageDefinitions, func() error {
-		var checkErr error
-		flows, checkErr = operations.CheckDefinitions(ctx, client)
-		if errors.Is(checkErr, ErrFlowDefinitionsRejected) {
-			return sandboxd.NewToolFailure(toolfailure.FlowDefinitionInvalid, fmt.Errorf("%s\nPreview and Release render the pushed commit the same way; fix every reported problem, then retry commit_and_push", comm.TailUTF8(checkErr.Error(), maximumDefinitionsReportBytes)))
-		}
-		if checkErr != nil {
-			return checkErr
-		}
-		return g.rejectProductionMocks(ctx)
-	})
+	rendered, err := operations.checkStaticAndDefinitions(ctx, g, client, commands.static, &gate)
 	if err != nil {
 		return SourceGate{}, err
 	}
-	if commands.tests == "" {
+	gate.result.tree = rendered.Tree
+	if held == nil {
 		return gate.result, nil
 	}
 	err = gate.stage(stageTests, func() error {
-		report, testErr := g.runApplicationTests(ctx, commands.tests, request, flows)
+		report, testErr := g.runApplicationTests(ctx, commands.tests, request, rendered.Flows, held)
 		gate.result.Tests = report
 		return testErr
 	})
@@ -187,6 +197,53 @@ func (operations *GitOperations) verifyApplicationSource(ctx context.Context, cl
 		return SourceGate{}, err
 	}
 	return gate.result, nil
+}
+
+// checkStaticAndDefinitions runs the static stage and, beside it, the
+// rendering of the definitions stage, whose mock guard follows a passed static
+// stage. Both stages report their end once both ended, the failure the gate
+// returns last.
+func (operations *GitOperations) checkStaticAndDefinitions(ctx context.Context, g workspaceGit, client *sandboxd.SandboxClient, command string, gate *sourceGateRun) (RenderedSource, error) {
+	gate.started(stageStatic)
+	gate.started(stageDefinitions)
+	var rendered RenderedSource
+	var renderErr error
+	var renderTime time.Duration
+	var rendering sync.WaitGroup
+	rendering.Go(func() {
+		started := time.Now()
+		rendered, renderErr = operations.CheckDefinitions(ctx, client)
+		renderTime = time.Since(started)
+	})
+	started := time.Now()
+	staticErr := g.runSourceCheck(ctx, command)
+	staticTime := time.Since(started)
+	rendering.Wait()
+	if errors.Is(renderErr, ErrFlowDefinitionsRejected) {
+		renderErr = sandboxd.NewToolFailure(toolfailure.FlowDefinitionInvalid, fmt.Errorf("%s\nPreview and Release render the pushed commit the same way; fix every reported problem, then retry commit_and_push", comm.TailUTF8(renderErr.Error(), maximumDefinitionsReportBytes)))
+	}
+	if staticErr != nil && renderErr != nil {
+		// Both failed: the definitions failure is shown, the static one returned.
+		_ = gate.ended(stageDefinitions, renderTime, renderErr)
+	}
+	if err := gate.ended(stageStatic, staticTime, staticErr); err != nil {
+		return RenderedSource{}, err
+	}
+	if renderErr == nil {
+		started = time.Now()
+		renderErr = g.rejectProductionMocks(ctx)
+		renderTime += time.Since(started)
+	}
+	return rendered, gate.ended(stageDefinitions, renderTime, renderErr)
+}
+
+// headTree is the Git tree of HEAD.
+func (g workspaceGit) headTree(ctx context.Context) (string, error) {
+	result, err := g.git(ctx, "rev-parse", "HEAD^{tree}")
+	if err != nil {
+		return "", commandError("resolve the tree of HEAD", result, err)
+	}
+	return strings.TrimSpace(result.stdout), nil
 }
 
 // sourceGateRun times the stages of one gate and reports each to progress.
@@ -198,10 +255,20 @@ type sourceGateRun struct {
 // stage runs one stage. A typed failure becomes the stage's report; any other
 // error leaves the stage's outcome unobserved and keeps its cause.
 func (run *sourceGateRun) stage(name gateStage, check func() error) error {
-	run.progress("Source gate: " + string(name) + " started")
+	run.started(name)
 	started := time.Now()
 	err := check()
-	elapsed := time.Since(started)
+	return run.ended(name, time.Since(started), err)
+}
+
+func (run *sourceGateRun) started(name gateStage) {
+	run.progress("Source gate: " + string(name) + " started")
+}
+
+// ended records a passed stage, or turns the stage's typed failure into its
+// report and keeps the cause of any other error, which leaves the stage's
+// outcome unobserved.
+func (run *sourceGateRun) ended(name gateStage, elapsed time.Duration, err error) error {
 	shown := elapsed.Round(time.Second)
 	var failure *sandboxd.ToolFailure
 	switch {

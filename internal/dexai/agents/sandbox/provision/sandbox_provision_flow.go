@@ -29,6 +29,7 @@ var (
 	CheckoutAttribute         = dex.DefineAttribute[Checkout]("Checkout")
 	WorkspaceTimingsAttribute = dex.DefineAttribute[[]dexflow.PhaseTiming]("WorkspaceTimings")
 	OutcomeAttribute          = dex.DefineAttribute[*Outcome]("Outcome")
+	BootstrapAttribute        = dex.DefineAttribute[Bootstrap]("Bootstrap")
 )
 
 // SandboxProvisionFlow provisions one Sandbox instance of a Session: it creates, checks out and verifies
@@ -41,13 +42,14 @@ type SandboxProvisionFlow struct {
 }
 
 func (f *SandboxProvisionFlow) GetPersistenceSchema() dex.PersistenceSchema {
-	return dex.PersistenceSchema{Attributes: []dex.AttributeDef{RequestAttribute, ResourcesAttribute, CheckoutAttribute, WorkspaceTimingsAttribute, OutcomeAttribute}}
+	return dex.PersistenceSchema{Attributes: []dex.AttributeDef{RequestAttribute, ResourcesAttribute, CheckoutAttribute, WorkspaceTimingsAttribute, OutcomeAttribute, BootstrapAttribute}}
 }
 
 func (f *SandboxProvisionFlow) GetSteps() []dex.StepDef {
 	return []dex.StepDef{
 		dex.DefineStartStep(ProvisionInstance{f: f}),
 		dex.DefineStep(CheckoutWorkspace{f: f}),
+		dex.DefineStep(StartWorkspaceBootstrap{f: f}),
 		dex.DefineStep(VerifyInstanceHealthy{f: f}),
 		dex.DefineStep(ReportProvisionOutcome{f: f}),
 		dex.DefineStep(RecordProvisionFailure{f: f}),
@@ -71,7 +73,8 @@ func (*SandboxProvisionFlow) GetProvision(ctx dex.Context, _ dex.None) (*dex.RPC
 		Checkout:         comm.Must(CheckoutAttribute.Get(ctx)),
 		WorkspaceTimings: dexflow.ValueOrZero(WorkspaceTimingsAttribute.Get(ctx)),
 		// The Outcome is nil until the provisioning ended, and nil reads back as missing.
-		Outcome: dexflow.Optional(OutcomeAttribute.Get(ctx)),
+		Outcome:   dexflow.Optional(OutcomeAttribute.Get(ctx)),
+		Bootstrap: dexflow.ValueOrZero(BootstrapAttribute.Get(ctx)),
 	}}, nil
 }
 
@@ -85,10 +88,12 @@ func (*SandboxProvisionFlow) GetDexSummary(ctx dex.Context, _ dex.None) (*dex.RP
 //
 // dex:field attribute-key:Request value-type:json editable:false description:"Requested instance"
 // dex:field attribute-key:Outcome value-type:json editable:false description:"Outcome and how the Session workspace answered its report"
+// dex:field attribute-key:Bootstrap value-type:json editable:false description:"Start of the template's bootstrap command"
 func (*SandboxProvisionFlow) GetDexDisplay(ctx dex.Context, _ dex.None) (*dex.RPCResult[map[string]any], error) {
 	return &dex.RPCResult[map[string]any]{Output: map[string]any{
-		"Request": comm.Must(RequestAttribute.Get(ctx)),
-		"Outcome": dexflow.Optional(OutcomeAttribute.Get(ctx)),
+		"Request":   comm.Must(RequestAttribute.Get(ctx)),
+		"Outcome":   dexflow.Optional(OutcomeAttribute.Get(ctx)),
+		"Bootstrap": dexflow.ValueOrZero(BootstrapAttribute.Get(ctx)),
 	}}, nil
 }
 
@@ -180,6 +185,29 @@ func (step CheckoutWorkspace) Execute(ctx dex.Context, _ dex.None) (*dex.StepDec
 	s.Checkout.recordHead(out)
 	comm.MustDo(CheckoutAttribute.Set(ctx, s.Checkout))
 	comm.MustDo(WorkspaceTimingsAttribute.Set(ctx, dexflow.EndPhase(s.WorkspaceTimings, time.Now().UTC())))
+	return dex.GoTo(StartWorkspaceBootstrap{f: step.f}, nil), nil
+}
+
+// dex:group group-id:provision group-label:"Provision"
+// dex:explanation text:"Start the bootstrap command the checked-out template declares as a command ledger run, without waiting for it; an error is recorded and never fails the provisioning."
+type StartWorkspaceBootstrap struct {
+	dex.StepDefaultsNoWaitFor[dex.None]
+	f *SandboxProvisionFlow
+}
+
+func (step StartWorkspaceBootstrap) GetStepOptions() *dex.StepOptions {
+	return dexflow.ProviderStepOptions(dex.ProceedToOnExecuteFailure(RecordProvisionFailure{f: step.f}, nil))
+}
+func (step StartWorkspaceBootstrap) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, error) {
+	s := readSnapshot(ctx)
+	id := s.Request.bootstrapCommandID()
+	call, cancel := context.WithTimeout(ctx, bootstrapStartTimeout)
+	defer cancel()
+	started, err := step.f.workspace.StartBootstrap(call, s.instance().Binding(), id)
+	if err != nil {
+		return nil, dex.ErrorWithStack(fmt.Errorf("start the workspace bootstrap %s: %w", id, err))
+	}
+	comm.MustDo(BootstrapAttribute.Set(ctx, recordedBootstrap(id, started)))
 	return dex.GoTo(VerifyInstanceHealthy{f: step.f}, nil), nil
 }
 
@@ -257,7 +285,7 @@ func (step ReportProvisionOutcome) Execute(ctx dex.Context, _ dex.None) (*dex.St
 }
 
 // dex:group group-id:provision group-label:"Provision"
-// dex:explanation text:"Record the failure of a Step whose retries ran out or whose wait limit passed, with the final error, and report it; an undelivered report completes."
+// dex:explanation text:"Record the failure of a Step whose retries ran out or whose wait limit passed, with the final error, and report it; an undelivered report completes, and a bootstrap that did not start goes on to the health check."
 type RecordProvisionFailure struct {
 	dex.StepDefaultsNoWaitFor[dex.None]
 	f *SandboxProvisionFlow
@@ -266,6 +294,10 @@ type RecordProvisionFailure struct {
 func (RecordProvisionFailure) GetStepOptions() *dex.StepOptions { return dexflow.StateStepOptions() }
 func (step RecordProvisionFailure) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, error) {
 	s := readSnapshot(ctx)
+	if dexflow.RecoveryStep(ctx) == dex.GetFinalStepType(StartWorkspaceBootstrap{}) {
+		comm.MustDo(BootstrapAttribute.Set(ctx, Bootstrap{Refusal: "the bootstrap start was not confirmed: " + dexflow.RecoveryDetail(ctx)}))
+		return dex.GoTo(VerifyInstanceHealthy{f: step.f}, nil), nil
+	}
 	if dexflow.RecoveryStep(ctx) == dex.GetFinalStepType(ReportProvisionOutcome{}) {
 		outcome := *s.Outcome
 		outcome.Reported, outcome.ReportCause = reportUndelivered, dexflow.RecoveryDetail(ctx)

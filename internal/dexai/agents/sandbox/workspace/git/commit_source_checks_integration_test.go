@@ -31,7 +31,11 @@ import (
 // real template, its restored dependencies and the platform's pinned dexcli. It
 // compiles the actual application and renders its Flows with the platform's own
 // generator; no scripted compiler, renderer, substituted transport or provider
-// response is used. Every change it makes to the checkout is restored.
+// response is used. Every change it makes to the checkout is restored. The
+// static and definitions stages run side by side, a failure of both reports
+// static, and the commit stages only the tree the gate verified: a tracked file
+// that the tests write fails the tree check. The log names each stage's
+// duration_ms, for comparison across builds of the image.
 func TestApplicationSourceGateActualSandbox(t *testing.T) {
 	expected := os.Getenv("SUPERVERSE_TEST_SOURCE_CHECK_COMMIT")
 	if !flowid.IsCommitSHA(expected) {
@@ -65,15 +69,25 @@ func TestApplicationSourceGateActualSandbox(t *testing.T) {
 			t.Fatalf("stage %d is %+v, want %s passed", index, result.Stages[index], stage)
 		}
 	}
-	// The template's reference tests run TextSummaryFlow; the llm connector has
-	// no mocks yet, so its branches are waived and listed.
-	if tests := result.Tests; tests == nil || tests.Passed != 3 || tests.Failed != 0 || tests.Flows != 1 ||
-		len(tests.Uncovered) != 1 || !strings.Contains(tests.Uncovered[0], "llm") {
-		t.Fatalf("the test stage must report the reference tests and the waived llm connector: %+v", result.Tests)
+	// The template's nine reference tests run TextSummaryFlow through the llm
+	// connector's mocks, so nothing is waived.
+	if tests := result.Tests; tests == nil || tests.Passed != 9 || tests.Failed != 0 || tests.Flows != 1 || len(tests.Uncovered) != 0 {
+		t.Fatalf("the test stage must report the template's reference tests with nothing uncovered: %+v", result.Tests)
 	}
-	if result.Stages[1].DurationMS <= 0 || result.Stages[3].DurationMS <= 0 || len(progress) != 8 {
+	if result.Stages[1].DurationMS <= 0 || result.Stages[2].DurationMS <= 0 || result.Stages[3].DurationMS <= 0 || len(progress) != 8 {
 		t.Fatalf("stages must report durations and at most two progress lines each: %+v %q", result.Stages, progress)
 	}
+	if progress[2] != "Source gate: static started" || progress[3] != "Source gate: definitions started" || !strings.HasPrefix(progress[4], "Source gate: static passed") {
+		t.Fatalf("the definitions stage must start beside the static stage and end after it: %q", progress)
+	}
+	for _, stage := range result.Stages {
+		t.Logf("stage %s %s duration_ms=%d", stage.Stage, stage.Status, stage.DurationMS)
+	}
+	// The verified tree is the one the commit stages.
+	if err = git.StageVerifiedTreeForTest(sandbox.ctx, sandbox.client, result); err != nil {
+		t.Fatalf("the unchanged working tree must stage the verified tree: %v", err)
+	}
+	sandbox.git("reset", "--quiet")
 
 	// The template's local checker historically omitted this deployment field.
 	// Read the actual invalid file through sandboxd and reject it before builds
@@ -124,19 +138,48 @@ EOF`)
 	sandbox.requireUnchanged(head)
 	sandbox.git("checkout", "--", ".")
 
+	// A Step without a group fails both the template's own FDG check in the
+	// static stage and the platform's: the static failure is the gate's
+	// report, and the definitions failure is only shown as progress before it.
+	sandbox.shell(`sed -i '/dex:group group-id:intake/d' internal/process/text_summary_flow.go`)
+	_, progress, err = sandbox.verify(gate, unaccepted)
+	report = requireApplicationFailure(t, err, toolfailure.SourceCheckFailed, "stage static failed", "make check-static exited with code")
+	if strings.Contains(report, "stage definitions") || !slices.ContainsFunc(progress, func(line string) bool { return strings.HasPrefix(line, "Source gate: definitions failed") }) ||
+		!strings.HasPrefix(progress[len(progress)-1], "Source gate: static failed") {
+		t.Fatalf("a double failure must report static and show the definitions failure first: %q\n%s", progress, report)
+	}
+	sandbox.requireUnchanged(head)
+	sandbox.git("checkout", "--", ".")
+
 	// With the template's own FDG check removed from its Makefile, the
-	// platform's check still rejects a Step without a group, and it stages
-	// nothing: it renders the next commit through a copy of the index.
+	// platform's check still rejects a Step without a group while the static
+	// stage passes, and it stages nothing: it renders the next commit through a
+	// copy of the index.
 	sandbox.shell(`python3 - <<'EOF'
 from pathlib import Path
 makefile = Path("Makefile")
 makefile.write_text(makefile.read_text().replace("\tpython3 ./scripts/render-flow-definitions.py\n", "\ttrue\n"))
 EOF`)
 	sandbox.shell(`sed -i '/dex:group group-id:intake/d' internal/process/text_summary_flow.go`)
-	_, _, err = sandbox.verify(gate, unaccepted)
+	_, progress, err = sandbox.verify(gate, unaccepted)
 	requireApplicationFailure(t, err, toolfailure.FlowDefinitionInvalid, "stage definitions failed", "v2_step_group", "internal/process/text_summary_flow.go")
+	if !slices.ContainsFunc(progress, func(line string) bool { return strings.HasPrefix(line, "Source gate: static passed") }) {
+		t.Fatalf("the static stage must pass beside the failing definitions stage: %q", progress)
+	}
 	sandbox.requireUnchanged(head)
 	sandbox.git("checkout", "--", ".")
+
+	// A test that writes a tracked file passes every stage, but the tree the
+	// commit would stage is not the one the gate verified: nothing is staged.
+	sandbox.shell(`printf '//go:build apptest\n\npackage apptest\n\nimport "os"\n\nfunc init() {\n\tif file, err := os.OpenFile("../../LICENSE", os.O_APPEND|os.O_WRONLY, 0); err == nil {\n\t\t_, _ = file.WriteString("\\n")\n\t\t_ = file.Close()\n\t}\n}\n' > internal/apptest/tracked_write_test.go`)
+	if result, _, err = sandbox.verify(gate, unaccepted); err != nil || result.Tests == nil {
+		t.Fatalf("a test that writes a tracked file still passes the stages: %+v %v", result.Tests, err)
+	}
+	err = git.StageVerifiedTreeForTest(sandbox.ctx, sandbox.client, result)
+	requireApplicationFailure(t, err, toolfailure.SourceCheckFailed, "changed after the source gate verified", "LICENSE")
+	sandbox.requireUnchanged(head)
+	sandbox.git("checkout", "--", ".")
+	sandbox.shell("rm internal/apptest/tracked_write_test.go")
 
 	// A failing assertion fails the test stage with the test's own message and
 	// the command that reruns it.
@@ -173,7 +216,7 @@ EOF`)
 	requireApplicationFailure(t, err, toolfailure.RequirementsUntested, "R2 names TestTextSummaryNeverWritten, which did not run", "R3 is not in the requirement trace")
 	confirmed.Items[1].Tests = confirmed.Items[1].Tests[:1]
 	confirmed.Items = append(confirmed.Items, git.TracedRequirement{ID: "R3", UntestedReason: "The llm connector has no mocks yet."})
-	if result, _, err = sandbox.verifyTraced(gate, unaccepted, confirmed); err != nil || result.Tests == nil || result.Tests.Passed != 3 {
+	if result, _, err = sandbox.verifyTraced(gate, unaccepted, confirmed); err != nil || result.Tests == nil || result.Tests.Passed != 9 {
 		t.Fatalf("a complete trace must pass: %+v %v", result.Tests, err)
 	}
 

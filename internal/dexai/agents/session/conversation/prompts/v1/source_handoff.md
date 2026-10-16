@@ -16,11 +16,13 @@ business Flows in imported or already-developed applications; this rule applies
 to the starter reference, not existing user work.
 
 Prepare locked dependencies once in a fresh checkout before generation or
-checks. Read the template's bootstrap command and use it (normally
-`make bootstrap`, including `npm --prefix web ci` and the declared Go modules).
-Do not repeatedly run checks with missing generator executables or reinstall
-unchanged dependencies after every edit. This restores the committed lockfiles;
-it is not a dependency upgrade.
+checks. The platform starts the bootstrap command the template declares
+(normally `make bootstrap`: `npm --prefix web ci` and the declared Go modules)
+when it checks the workspace out; run it yourself once before the first
+generation or check, which waits for the platform's run and then restores only
+what changed. Do not repeatedly run checks with missing generator executables
+or reinstall unchanged dependencies after every edit. This restores the
+committed lockfiles; it is not a dependency upgrade.
 
 The commit_and_push tool runs the committed source gate: the checkStatic target
 (generation, strict FDG, formatting/modules/vet, type checking and both

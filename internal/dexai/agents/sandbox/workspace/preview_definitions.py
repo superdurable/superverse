@@ -111,8 +111,8 @@ def head_definitions(commit):
 def worktree_tree():
     """The commit gate's mode: the tree that committing every change of the
     working tree would create, written through a copy of the index so that
-    neither the index nor the working tree changes. The gate reads the rendered
-    Flows (rendered_flow) from stdout."""
+    neither the index nor the working tree changes. The gate reads the tree and
+    the rendered Flows (rendered_flow) from stdout, and commits only that tree."""
     index = command(["git", "rev-parse", "--git-path", "index"]).decode().strip()
     with tempfile.TemporaryDirectory(prefix="superverse-worktree-index-") as directory:
         environment = dict(os.environ, GIT_INDEX_FILE=os.path.join(directory, "index"))
@@ -144,8 +144,9 @@ def pinned_definitions(tree, commit):
 # source with 1.
 try:
     if sys.argv[1] == "--worktree":
-        flows = [rendered_flow(definition) for definition in render(worktree_tree())]
-        print(json.dumps({"flows": flows}, separators=(",", ":")))
+        tree = worktree_tree()
+        flows = [rendered_flow(definition) for definition in render(tree)]
+        print(json.dumps({"tree": tree, "flows": flows}, separators=(",", ":")))
     elif sys.argv[1] == "--pinned":
         print(json.dumps(pinned_definitions(sys.argv[2], sys.argv[3]), separators=(",", ":")))
     else:
