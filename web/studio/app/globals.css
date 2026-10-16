@@ -112,6 +112,7 @@
   --color-accent-subtle: #e4f0ff;
   --color-accent-wash: rgba(52, 101, 159, 0.08);
   --color-accent-wash-strong: rgba(52, 101, 159, 0.16);
+  --color-selection: #a9c8f2; /* selected text, distinct from the autofill and focus tints */
 
   /* Done. The CTA's hue at a lower lightness, 6.0 apart for a deuteranope. */
   --color-pass: #1c754a; /* 4.88                                              */
@@ -236,6 +237,7 @@
     --color-accent-subtle: #10253e;
     --color-accent-wash: rgba(137, 190, 255, 0.1);
     --color-accent-wash-strong: rgba(137, 190, 255, 0.22);
+    --color-selection: #2f5f9e;
 
     --color-pass: #7cd09f; /* 9.26                                            */
     --color-pass-subtle: #072c19;
@@ -280,7 +282,7 @@
 
   /* Opaque, and the ink is set too, so selected-text contrast is a constant. */
   ::selection {
-    background: var(--color-accent-subtle);
+    background: var(--color-selection);
     color: var(--color-ink);
   }
 

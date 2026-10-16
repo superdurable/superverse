@@ -23,6 +23,8 @@ type Mode = "login" | "register";
 
 const FIELD = cx(
   "mt-1.5 w-full rounded-md border border-line bg-well px-3 py-2 font-normal text-ink focus:border-accent focus:shadow-(--focus-ring) focus:outline-none",
+  // Browser autofill paints its own tint; keep the field colours so selected text stays readable.
+  "autofill:shadow-[inset_0_0_0_100px_var(--color-well)] autofill:[-webkit-text-fill-color:var(--color-ink)]",
 );
 
 const COPY = {
@@ -51,6 +53,7 @@ export function AccountForm({ mode }: { mode: Mode }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const copy = COPY[mode];
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -86,13 +89,23 @@ export function AccountForm({ mode }: { mode: Mode }) {
           </label>
           <label className="block text-sm font-medium text-ink-dim">
             Password
-            <input
-              name="password"
-              aria-label="Password"
-              type="password"
-              autoComplete={copy.passwordAutoComplete}
-              className={FIELD}
-            />
+            <span className="relative block">
+              <input
+                name="password"
+                aria-label="Password"
+                type={showPassword ? "text" : "password"}
+                autoComplete={copy.passwordAutoComplete}
+                className={cx(FIELD, "pr-16")}
+              />
+              <button
+                type="button"
+                aria-pressed={showPassword}
+                onClick={() => setShowPassword((shown) => !shown)}
+                className="absolute inset-y-0 right-2 mt-1.5 rounded px-2 text-xs font-medium text-accent hover:underline focus-visible:outline-2 focus-visible:outline-accent"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </span>
           </label>
           {error && <Banner role="alert">{error}</Banner>}
           <Button type="submit" variant="primary" disabled={busy} className="w-full">
