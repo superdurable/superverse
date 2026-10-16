@@ -293,7 +293,7 @@ The current contracts for ProjectReleaseFlow and ProjectDeployFlow are in their 
 
 The plan had each polling round check the cancellation. The pinned SDK reads an Attribute from the
 invocation's own writes or from the values the invocation was started with
-(`getAttributeValue`, `sdk-go@v1.5.0/dex/invocation.go:493-533`), so a polling attempt never sees
+(`getAttributeValue`, `sdk-go@v1.10.1/dex/invocation.go:493-533`), so a polling attempt never sees
 a cancellation that an RPC committed after the attempt began. Reading the Flow's own snapshot
 through its client from the round would be a self-RPC. So the RPC that admits a cancellation ends
 the Steps that may be running: its result cancels them (`RPCResult.CancelSteps`,
@@ -500,7 +500,7 @@ answers from the provider's record, and the commit runs once under the locks.
   goes. Admission keeps its order: replay first, then the Preview validation, then this check. The
   freeze is unchanged.
 - Open executions: Dex decodes Attribute values with `encoding/json`, which ignores the old keys
-  (`sdk-go@v1.5.0/dex/value.go:320-328`); the synced `releases.prepared_source` keeps them until the
+  (`sdk-go@v1.10.1/dex/value.go:320-328`); the synced `releases.prepared_source` keeps them until the
   Release's next write rewrites the row.
 
 #### Compatibility for open executions

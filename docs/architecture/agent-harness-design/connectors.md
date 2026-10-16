@@ -401,7 +401,7 @@ how it is checked:
 - **Switching.** The agent runs `go get <module>@<version>`, writes the version into the connection of
   `dex-app.yaml`, and commits and pushes; the Preview deployment, the Release and the Live deployment
   then run as for a release.
-- **Accepted versions.** dexcli `cli-v1.6.4`, AppManifest registration and the configuration host
+- **Accepted versions.** dexcli `cli-v1.10.1`, AppManifest registration and the configuration host
   accept `vX.Y.Z-rc.N` beside `vX.Y.Z`; pseudo-versions, branches and `replace` stay refused. The
   configuration host reads official releases from the connectors library and candidates from
   `connectorlibrary.Library.ReleaseCandidateDownloadURL`: the upstream library's releases, or the

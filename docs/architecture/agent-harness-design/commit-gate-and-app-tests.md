@@ -282,8 +282,9 @@ and expansions above 10,000 expressions as unresolved). Before the release the n
 examples of the connectors library and Dex's own examples. The Dex repository's rules apply: its PRs and docs
 never mention Superverse, and each release needs the owner's approval.
 
-Superverse pins dexcli v1.6.2, the Dex Server v1.5.0 (whose breaking change to the Web configuration,
-superdurable/dex, needed no chart setting) and the Go SDK v1.5.0:
+At this design's release, Superverse pinned dexcli v1.6.2, Dex Server v1.5.0
+(whose breaking change to the Web configuration needed no chart setting) and
+Go SDK v1.5.0. The current pins are in [the platform specification](../superverse-v2.md):
 
 - **Pins.** `scripts/update-dex-versions.py` rewrites every copy that `scripts/check-dex-versions.py` verifies:
   the Makefile's `DEXCLI_VERSION`, `scripts/install-pinned-binary.sh` (commit and the four platform

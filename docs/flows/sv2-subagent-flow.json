@@ -9,9 +9,9 @@
     "name": "SubagentFlow",
     "startStepId": "step:InitializeSubagent",
     "span": {
-      "startLine": 68,
+      "startLine": 76,
       "startColumn": 1,
-      "endLine": 80,
+      "endLine": 88,
       "endColumn": 2
     }
   },
@@ -23,9 +23,9 @@
       "parentId": "rpc:StopSubagent",
       "phase": "rpc",
       "span": {
-        "startLine": 129,
+        "startLine": 137,
         "startColumn": 1,
-        "endLine": 143,
+        "endLine": 151,
         "endColumn": 2
       }
     },
@@ -36,9 +36,9 @@
       "parentId": "step:ApplySubagentAdmission",
       "phase": "execute",
       "span": {
-        "startLine": 249,
+        "startLine": 257,
         "startColumn": 1,
-        "endLine": 265,
+        "endLine": 273,
         "endColumn": 2
       }
     },
@@ -49,9 +49,9 @@
       "parentId": "step:AwaitSubagentDeadline",
       "phase": "execute",
       "span": {
-        "startLine": 291,
+        "startLine": 299,
         "startColumn": 1,
-        "endLine": 300,
+        "endLine": 308,
         "endColumn": 2
       }
     },
@@ -62,9 +62,9 @@
       "parentId": "step:AwaitSubagentParallelToolResults",
       "phase": "execute",
       "span": {
-        "startLine": 613,
+        "startLine": 621,
         "startColumn": 1,
-        "endLine": 626,
+        "endLine": 634,
         "endColumn": 2
       }
     },
@@ -75,9 +75,9 @@
       "parentId": "step:BeginSubagentFinish",
       "phase": "execute",
       "span": {
-        "startLine": 670,
+        "startLine": 678,
         "startColumn": 1,
-        "endLine": 676,
+        "endLine": 684,
         "endColumn": 2
       }
     },
@@ -88,9 +88,9 @@
       "parentId": "step:CallSubagentModel",
       "phase": "execute",
       "span": {
-        "startLine": 317,
+        "startLine": 325,
         "startColumn": 1,
-        "endLine": 362,
+        "endLine": 370,
         "endColumn": 2
       }
     },
@@ -101,9 +101,9 @@
       "parentId": "step:CompactSubagentContext",
       "phase": "execute",
       "span": {
-        "startLine": 379,
+        "startLine": 387,
         "startColumn": 1,
-        "endLine": 402,
+        "endLine": 410,
         "endColumn": 2
       }
     },
@@ -114,9 +114,9 @@
       "parentId": "step:ExecuteSubagentTool",
       "phase": "execute",
       "span": {
-        "startLine": 481,
+        "startLine": 489,
         "startColumn": 1,
-        "endLine": 503,
+        "endLine": 511,
         "endColumn": 2
       }
     },
@@ -127,9 +127,9 @@
       "parentId": "step:FinishSubagent",
       "phase": "execute",
       "span": {
-        "startLine": 695,
+        "startLine": 703,
         "startColumn": 1,
-        "endLine": 713,
+        "endLine": 721,
         "endColumn": 2
       }
     },
@@ -140,9 +140,9 @@
       "parentId": "step:InitializeSubagent",
       "phase": "execute",
       "span": {
-        "startLine": 194,
+        "startLine": 202,
         "startColumn": 1,
-        "endLine": 215,
+        "endLine": 223,
         "endColumn": 2
       }
     },
@@ -153,9 +153,9 @@
       "parentId": "step:RecordSubagentToolFailure",
       "phase": "execute",
       "span": {
-        "startLine": 544,
+        "startLine": 552,
         "startColumn": 1,
-        "endLine": 554,
+        "endLine": 562,
         "endColumn": 2
       }
     },
@@ -166,9 +166,9 @@
       "parentId": "step:RefreshFinishingWorkspace",
       "phase": "execute",
       "span": {
-        "startLine": 730,
+        "startLine": 738,
         "startColumn": 1,
-        "endLine": 743,
+        "endLine": 751,
         "endColumn": 2
       }
     },
@@ -179,9 +179,9 @@
       "parentId": "step:RefreshSubagentWorkspace",
       "phase": "execute",
       "span": {
-        "startLine": 646,
+        "startLine": 654,
         "startColumn": 1,
-        "endLine": 658,
+        "endLine": 666,
         "endColumn": 2
       }
     },
@@ -192,9 +192,9 @@
       "parentId": "step:RouteSubagentTools",
       "phase": "execute",
       "span": {
-        "startLine": 435,
+        "startLine": 443,
         "startColumn": 1,
-        "endLine": 456,
+        "endLine": 464,
         "endColumn": 2
       }
     },
@@ -205,22 +205,22 @@
       "parentId": "step:SettleSubagentCommand",
       "phase": "execute",
       "span": {
-        "startLine": 519,
+        "startLine": 527,
         "startColumn": 1,
-        "endLine": 533,
+        "endLine": 541,
         "endColumn": 2
       }
     },
     {
-      "id": "decision:rpc:GetDexDisplay:172:9",
+      "id": "decision:rpc:GetDexDisplay:180:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetDexDisplay",
       "phase": "rpc",
       "span": {
-        "startLine": 172,
+        "startLine": 180,
         "startColumn": 9,
-        "endLine": 174,
+        "endLine": 182,
         "endColumn": 4
       },
       "decision": {
@@ -228,15 +228,15 @@
       }
     },
     {
-      "id": "decision:rpc:GetDexSummary:163:9",
+      "id": "decision:rpc:GetDexSummary:171:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetDexSummary",
       "phase": "rpc",
       "span": {
-        "startLine": 163,
+        "startLine": 171,
         "startColumn": 9,
-        "endLine": 163,
+        "endLine": 171,
         "endColumn": 65
       },
       "decision": {
@@ -244,15 +244,15 @@
       }
     },
     {
-      "id": "decision:rpc:GetSubagentSnapshot:157:9",
+      "id": "decision:rpc:GetSubagentSnapshot:165:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetSubagentSnapshot",
       "phase": "rpc",
       "span": {
-        "startLine": 157,
+        "startLine": 165,
         "startColumn": 9,
-        "endLine": 157,
+        "endLine": 165,
         "endColumn": 59
       },
       "decision": {
@@ -260,16 +260,16 @@
       }
     },
     {
-      "id": "decision:rpc:StopSubagent:133:10",
+      "id": "decision:rpc:StopSubagent:141:10",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:StopSubagent",
       "condition": "status == StatusInitializing",
       "phase": "rpc",
       "span": {
-        "startLine": 133,
+        "startLine": 141,
         "startColumn": 10,
-        "endLine": 133,
+        "endLine": 141,
         "endColumn": 38
       },
       "decision": {
@@ -277,16 +277,16 @@
       }
     },
     {
-      "id": "decision:rpc:StopSubagent:136:10",
+      "id": "decision:rpc:StopSubagent:144:10",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:StopSubagent",
       "condition": "status == StatusRunning",
       "phase": "rpc",
       "span": {
-        "startLine": 136,
+        "startLine": 144,
         "startColumn": 10,
-        "endLine": 139,
+        "endLine": 147,
         "endColumn": 26
       },
       "decision": {
@@ -348,16 +348,16 @@
       }
     },
     {
-      "id": "decision:rpc:StopSubagent:141:10",
+      "id": "decision:rpc:StopSubagent:149:10",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:StopSubagent",
       "condition": "default",
       "phase": "rpc",
       "span": {
-        "startLine": 141,
+        "startLine": 149,
         "startColumn": 10,
-        "endLine": 141,
+        "endLine": 149,
         "endColumn": 79
       },
       "decision": {
@@ -365,16 +365,16 @@
       }
     },
     {
-      "id": "decision:step:ApplySubagentAdmission:254:10",
+      "id": "decision:step:ApplySubagentAdmission:262:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ApplySubagentAdmission",
       "condition": " == answer.Stopped",
       "phase": "execute",
       "span": {
-        "startLine": 254,
+        "startLine": 262,
         "startColumn": 10,
-        "endLine": 254,
+        "endLine": 262,
         "endColumn": 48
       },
       "decision": {
@@ -382,16 +382,16 @@
       }
     },
     {
-      "id": "decision:step:ApplySubagentAdmission:258:10",
+      "id": "decision:step:ApplySubagentAdmission:266:10",
       "kind": "decision",
       "name": "gracefulComplete",
       "parentId": "step:ApplySubagentAdmission",
       "condition": " == !answer.Admitted",
       "phase": "execute",
       "span": {
-        "startLine": 258,
+        "startLine": 266,
         "startColumn": 10,
-        "endLine": 258,
+        "endLine": 266,
         "endColumn": 110
       },
       "decision": {
@@ -399,16 +399,16 @@
       }
     },
     {
-      "id": "decision:step:ApplySubagentAdmission:261:10",
+      "id": "decision:step:ApplySubagentAdmission:269:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ApplySubagentAdmission",
       "condition": " == dexflow.ValueOrZero(stopRequestAttribute.Get(ctx))",
       "phase": "execute",
       "span": {
-        "startLine": 261,
+        "startLine": 269,
         "startColumn": 10,
-        "endLine": 261,
+        "endLine": 269,
         "endColumn": 129
       },
       "decision": {
@@ -416,16 +416,16 @@
       }
     },
     {
-      "id": "decision:step:ApplySubagentAdmission:264:9",
+      "id": "decision:step:ApplySubagentAdmission:272:9",
       "kind": "decision",
       "name": "goToMany",
       "parentId": "step:ApplySubagentAdmission",
       "condition": "otherwise",
       "phase": "execute",
       "span": {
-        "startLine": 264,
+        "startLine": 272,
         "startColumn": 9,
-        "endLine": 264,
+        "endLine": 272,
         "endColumn": 165
       },
       "decision": {
@@ -433,16 +433,16 @@
       }
     },
     {
-      "id": "decision:step:AwaitSubagentDeadline:293:10",
+      "id": "decision:step:AwaitSubagentDeadline:301:10",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:AwaitSubagentDeadline",
       "condition": "statusOf(comm.Must(statusAttribute.Get(ctx))) != StatusRunning",
       "phase": "execute",
       "span": {
-        "startLine": 293,
+        "startLine": 301,
         "startColumn": 10,
-        "endLine": 293,
+        "endLine": 301,
         "endColumn": 23
       },
       "decision": {
@@ -450,16 +450,16 @@
       }
     },
     {
-      "id": "decision:step:AwaitSubagentDeadline:296:9",
+      "id": "decision:step:AwaitSubagentDeadline:304:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:AwaitSubagentDeadline",
       "condition": "!(statusOf(comm.Must(statusAttribute.Get(ctx))) != StatusRunning)",
       "phase": "execute",
       "span": {
-        "startLine": 296,
+        "startLine": 304,
         "startColumn": 9,
-        "endLine": 299,
+        "endLine": 307,
         "endColumn": 25
       },
       "decision": {
@@ -517,16 +517,16 @@
       }
     },
     {
-      "id": "decision:step:AwaitSubagentParallelToolResults:616:10",
+      "id": "decision:step:AwaitSubagentParallelToolResults:624:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:AwaitSubagentParallelToolResults",
       "condition": "lost != nil \u0026\u0026 lostWorkspace(ctx, lost.Call.ID)",
       "phase": "execute",
       "span": {
-        "startLine": 616,
+        "startLine": 624,
         "startColumn": 10,
-        "endLine": 616,
+        "endLine": 624,
         "endColumn": 51
       },
       "decision": {
@@ -534,16 +534,16 @@
       }
     },
     {
-      "id": "decision:step:AwaitSubagentParallelToolResults:619:10",
+      "id": "decision:step:AwaitSubagentParallelToolResults:627:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:AwaitSubagentParallelToolResults",
       "condition": "!(lost != nil \u0026\u0026 lostWorkspace(ctx, lost.Call.ID)) and finishToolBatch(ctx, batch)",
       "phase": "execute",
       "span": {
-        "startLine": 619,
+        "startLine": 627,
         "startColumn": 10,
-        "endLine": 619,
+        "endLine": 627,
         "endColumn": 45
       },
       "decision": {
@@ -551,16 +551,16 @@
       }
     },
     {
-      "id": "decision:step:AwaitSubagentParallelToolResults:623:10",
+      "id": "decision:step:AwaitSubagentParallelToolResults:631:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:AwaitSubagentParallelToolResults",
       "condition": "!(lost != nil \u0026\u0026 lostWorkspace(ctx, lost.Call.ID)) and !(finishToolBatch(ctx, batch)) and plan.compacts",
       "phase": "execute",
       "span": {
-        "startLine": 623,
+        "startLine": 631,
         "startColumn": 10,
-        "endLine": 623,
+        "endLine": 631,
         "endColumn": 81
       },
       "decision": {
@@ -568,16 +568,16 @@
       }
     },
     {
-      "id": "decision:step:AwaitSubagentParallelToolResults:625:9",
+      "id": "decision:step:AwaitSubagentParallelToolResults:633:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:AwaitSubagentParallelToolResults",
       "condition": "!(lost != nil \u0026\u0026 lostWorkspace(ctx, lost.Call.ID)) and !(finishToolBatch(ctx, batch)) and !(plan.compacts)",
       "phase": "execute",
       "span": {
-        "startLine": 625,
+        "startLine": 633,
         "startColumn": 9,
-        "endLine": 625,
+        "endLine": 633,
         "endColumn": 75
       },
       "decision": {
@@ -585,16 +585,16 @@
       }
     },
     {
-      "id": "decision:step:BeginSubagentFinish:672:10",
+      "id": "decision:step:BeginSubagentFinish:680:10",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:BeginSubagentFinish",
       "condition": "statusOf(comm.Must(statusAttribute.Get(ctx))) != StatusRunning",
       "phase": "execute",
       "span": {
-        "startLine": 672,
+        "startLine": 680,
         "startColumn": 10,
-        "endLine": 672,
+        "endLine": 680,
         "endColumn": 23
       },
       "decision": {
@@ -602,16 +602,16 @@
       }
     },
     {
-      "id": "decision:step:BeginSubagentFinish:675:9",
+      "id": "decision:step:BeginSubagentFinish:683:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:BeginSubagentFinish",
       "condition": "!(statusOf(comm.Must(statusAttribute.Get(ctx))) != StatusRunning)",
       "phase": "execute",
       "span": {
-        "startLine": 675,
+        "startLine": 683,
         "startColumn": 9,
-        "endLine": 675,
+        "endLine": 683,
         "endColumn": 121
       },
       "decision": {
@@ -625,16 +625,16 @@
       }
     },
     {
-      "id": "decision:step:CallSubagentModel:343:10",
+      "id": "decision:step:CallSubagentModel:351:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:CallSubagentModel",
       "condition": "isRejected",
       "phase": "execute",
       "span": {
-        "startLine": 343,
+        "startLine": 351,
         "startColumn": 10,
-        "endLine": 343,
+        "endLine": 351,
         "endColumn": 120
       },
       "decision": {
@@ -642,16 +642,16 @@
       }
     },
     {
-      "id": "decision:step:CallSubagentModel:353:10",
+      "id": "decision:step:CallSubagentModel:361:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:CallSubagentModel",
       "condition": "!(isRejected) and  == next.finish != nil",
       "phase": "execute",
       "span": {
-        "startLine": 353,
+        "startLine": 361,
         "startColumn": 10,
-        "endLine": 353,
+        "endLine": 361,
         "endColumn": 55
       },
       "decision": {
@@ -659,16 +659,16 @@
       }
     },
     {
-      "id": "decision:step:CallSubagentModel:355:10",
+      "id": "decision:step:CallSubagentModel:363:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:CallSubagentModel",
       "condition": "!(isRejected) and  == next.routes",
       "phase": "execute",
       "span": {
-        "startLine": 355,
+        "startLine": 363,
         "startColumn": 10,
-        "endLine": 355,
+        "endLine": 363,
         "endColumn": 45
       },
       "decision": {
@@ -676,16 +676,16 @@
       }
     },
     {
-      "id": "decision:step:CallSubagentModel:359:10",
+      "id": "decision:step:CallSubagentModel:367:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:CallSubagentModel",
       "condition": "!(isRejected) and next.compacts || plan.compacts",
       "phase": "execute",
       "span": {
-        "startLine": 359,
+        "startLine": 367,
         "startColumn": 10,
-        "endLine": 359,
+        "endLine": 367,
         "endColumn": 81
       },
       "decision": {
@@ -693,16 +693,16 @@
       }
     },
     {
-      "id": "decision:step:CallSubagentModel:361:9",
+      "id": "decision:step:CallSubagentModel:369:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:CallSubagentModel",
       "condition": "!(isRejected) and !(next.compacts || plan.compacts)",
       "phase": "execute",
       "span": {
-        "startLine": 361,
+        "startLine": 369,
         "startColumn": 9,
-        "endLine": 361,
+        "endLine": 369,
         "endColumn": 75
       },
       "decision": {
@@ -710,16 +710,16 @@
       }
     },
     {
-      "id": "decision:step:CompactSubagentContext:393:10",
+      "id": "decision:step:CompactSubagentContext:401:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:CompactSubagentContext",
       "condition": "isRejected",
       "phase": "execute",
       "span": {
-        "startLine": 393,
+        "startLine": 401,
         "startColumn": 10,
-        "endLine": 393,
+        "endLine": 401,
         "endColumn": 161
       },
       "decision": {
@@ -727,16 +727,16 @@
       }
     },
     {
-      "id": "decision:step:CompactSubagentContext:401:9",
+      "id": "decision:step:CompactSubagentContext:409:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:CompactSubagentContext",
       "condition": "!(isRejected)",
       "phase": "execute",
       "span": {
-        "startLine": 401,
+        "startLine": 409,
         "startColumn": 9,
-        "endLine": 401,
+        "endLine": 409,
         "endColumn": 99
       },
       "decision": {
@@ -744,15 +744,15 @@
       }
     },
     {
-      "id": "decision:step:ExecuteSubagentParallelTool:579:9",
+      "id": "decision:step:ExecuteSubagentParallelTool:587:9",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:ExecuteSubagentParallelTool",
       "phase": "execute",
       "span": {
-        "startLine": 579,
+        "startLine": 587,
         "startColumn": 9,
-        "endLine": 579,
+        "endLine": 587,
         "endColumn": 22
       },
       "decision": {
@@ -760,16 +760,16 @@
       }
     },
     {
-      "id": "decision:step:ExecuteSubagentTool:489:10",
+      "id": "decision:step:ExecuteSubagentTool:497:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ExecuteSubagentTool",
       "condition": " == errors.Is(err, sandboxtools.ErrWorkspaceUnavailable) \u0026\u0026 lostWorkspace(ctx, call.ID)",
       "phase": "execute",
       "span": {
-        "startLine": 489,
+        "startLine": 497,
         "startColumn": 10,
-        "endLine": 489,
+        "endLine": 497,
         "endColumn": 51
       },
       "decision": {
@@ -777,16 +777,16 @@
       }
     },
     {
-      "id": "decision:step:ExecuteSubagentTool:496:10",
+      "id": "decision:step:ExecuteSubagentTool:504:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ExecuteSubagentTool",
       "condition": "finishToolExecution(ctx, call, result, timing)",
       "phase": "execute",
       "span": {
-        "startLine": 496,
+        "startLine": 504,
         "startColumn": 10,
-        "endLine": 496,
+        "endLine": 504,
         "endColumn": 45
       },
       "decision": {
@@ -794,16 +794,16 @@
       }
     },
     {
-      "id": "decision:step:ExecuteSubagentTool:500:10",
+      "id": "decision:step:ExecuteSubagentTool:508:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ExecuteSubagentTool",
       "condition": "!(finishToolExecution(ctx, call, result, timing)) and plan.compacts",
       "phase": "execute",
       "span": {
-        "startLine": 500,
+        "startLine": 508,
         "startColumn": 10,
-        "endLine": 500,
+        "endLine": 508,
         "endColumn": 81
       },
       "decision": {
@@ -811,16 +811,16 @@
       }
     },
     {
-      "id": "decision:step:ExecuteSubagentTool:502:9",
+      "id": "decision:step:ExecuteSubagentTool:510:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ExecuteSubagentTool",
       "condition": "!(finishToolExecution(ctx, call, result, timing)) and !(plan.compacts)",
       "phase": "execute",
       "span": {
-        "startLine": 502,
+        "startLine": 510,
         "startColumn": 9,
-        "endLine": 502,
+        "endLine": 510,
         "endColumn": 75
       },
       "decision": {
@@ -828,16 +828,16 @@
       }
     },
     {
-      "id": "decision:step:FinishSubagent:703:10",
+      "id": "decision:step:FinishSubagent:711:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:FinishSubagent",
       "condition": " == errors.Is(err, sandboxtools.ErrWorkspaceUnavailable) \u0026\u0026 finish.Refreshes \u003c maximumWorkspaceLosses",
       "phase": "execute",
       "span": {
-        "startLine": 703,
+        "startLine": 711,
         "startColumn": 10,
-        "endLine": 703,
+        "endLine": 711,
         "endColumn": 55
       },
       "decision": {
@@ -845,16 +845,16 @@
       }
     },
     {
-      "id": "decision:step:FinishSubagent:712:9",
+      "id": "decision:step:FinishSubagent:720:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:FinishSubagent",
       "condition": "otherwise",
       "phase": "execute",
       "span": {
-        "startLine": 712,
+        "startLine": 720,
         "startColumn": 9,
-        "endLine": 712,
+        "endLine": 720,
         "endColumn": 50
       },
       "decision": {
@@ -862,16 +862,16 @@
       }
     },
     {
-      "id": "decision:step:InitializeSubagent:201:10",
+      "id": "decision:step:InitializeSubagent:209:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:InitializeSubagent",
       "condition": "!answer.Admitted",
       "phase": "execute",
       "span": {
-        "startLine": 201,
+        "startLine": 209,
         "startColumn": 10,
-        "endLine": 201,
+        "endLine": 209,
         "endColumn": 52
       },
       "decision": {
@@ -879,16 +879,16 @@
       }
     },
     {
-      "id": "decision:step:InitializeSubagent:214:9",
+      "id": "decision:step:InitializeSubagent:222:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:InitializeSubagent",
       "condition": "!(!answer.Admitted)",
       "phase": "execute",
       "span": {
-        "startLine": 214,
+        "startLine": 222,
         "startColumn": 9,
-        "endLine": 214,
+        "endLine": 222,
         "endColumn": 51
       },
       "decision": {
@@ -896,15 +896,15 @@
       }
     },
     {
-      "id": "decision:step:RecordSubagentAdmissionFailure:235:9",
+      "id": "decision:step:RecordSubagentAdmissionFailure:243:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RecordSubagentAdmissionFailure",
       "phase": "execute",
       "span": {
-        "startLine": 235,
+        "startLine": 243,
         "startColumn": 9,
-        "endLine": 235,
+        "endLine": 243,
         "endColumn": 47
       },
       "decision": {
@@ -912,15 +912,15 @@
       }
     },
     {
-      "id": "decision:step:RecordSubagentFailure:423:9",
+      "id": "decision:step:RecordSubagentFailure:431:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RecordSubagentFailure",
       "phase": "execute",
       "span": {
-        "startLine": 423,
+        "startLine": 431,
         "startColumn": 9,
-        "endLine": 423,
+        "endLine": 431,
         "endColumn": 109
       },
       "decision": {
@@ -928,15 +928,15 @@
       }
     },
     {
-      "id": "decision:step:RecordSubagentOutcome:772:9",
+      "id": "decision:step:RecordSubagentOutcome:780:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RecordSubagentOutcome",
       "phase": "execute",
       "span": {
-        "startLine": 772,
+        "startLine": 780,
         "startColumn": 9,
-        "endLine": 772,
+        "endLine": 780,
         "endColumn": 47
       },
       "decision": {
@@ -944,16 +944,16 @@
       }
     },
     {
-      "id": "decision:step:RecordSubagentToolFailure:547:10",
+      "id": "decision:step:RecordSubagentToolFailure:555:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RecordSubagentToolFailure",
       "condition": "finishToolExecution(ctx, call, agentloop.UnfinishedToolResult(call, exhaustedRetriesMessage, dexflow.RecoveryDetail(ctx)), agentloop.ToolMessageTiming{})",
       "phase": "execute",
       "span": {
-        "startLine": 547,
+        "startLine": 555,
         "startColumn": 10,
-        "endLine": 547,
+        "endLine": 555,
         "endColumn": 45
       },
       "decision": {
@@ -961,16 +961,16 @@
       }
     },
     {
-      "id": "decision:step:RecordSubagentToolFailure:551:10",
+      "id": "decision:step:RecordSubagentToolFailure:559:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RecordSubagentToolFailure",
       "condition": "!(finishToolExecution(ctx, call, agentloop.UnfinishedToolResult(call, exhaustedRetriesMessage, dexflow.RecoveryDetail(ctx)), agentloop.ToolMessageTiming{})) and plan.compacts",
       "phase": "execute",
       "span": {
-        "startLine": 551,
+        "startLine": 559,
         "startColumn": 10,
-        "endLine": 551,
+        "endLine": 559,
         "endColumn": 81
       },
       "decision": {
@@ -978,16 +978,16 @@
       }
     },
     {
-      "id": "decision:step:RecordSubagentToolFailure:553:9",
+      "id": "decision:step:RecordSubagentToolFailure:561:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RecordSubagentToolFailure",
       "condition": "!(finishToolExecution(ctx, call, agentloop.UnfinishedToolResult(call, exhaustedRetriesMessage, dexflow.RecoveryDetail(ctx)), agentloop.ToolMessageTiming{})) and !(plan.compacts)",
       "phase": "execute",
       "span": {
-        "startLine": 553,
+        "startLine": 561,
         "startColumn": 9,
-        "endLine": 553,
+        "endLine": 561,
         "endColumn": 75
       },
       "decision": {
@@ -995,15 +995,15 @@
       }
     },
     {
-      "id": "decision:step:RecordUndeliveredReport:829:9",
+      "id": "decision:step:RecordUndeliveredReport:837:9",
       "kind": "decision",
       "name": "gracefulComplete",
       "parentId": "step:RecordUndeliveredReport",
       "phase": "execute",
       "span": {
-        "startLine": 829,
+        "startLine": 837,
         "startColumn": 9,
-        "endLine": 829,
+        "endLine": 837,
         "endColumn": 82
       },
       "decision": {
@@ -1011,15 +1011,15 @@
       }
     },
     {
-      "id": "decision:step:RecoverSubagentParallelToolExecution:595:9",
+      "id": "decision:step:RecoverSubagentParallelToolExecution:603:9",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:RecoverSubagentParallelToolExecution",
       "phase": "execute",
       "span": {
-        "startLine": 595,
+        "startLine": 603,
         "startColumn": 9,
-        "endLine": 595,
+        "endLine": 603,
         "endColumn": 22
       },
       "decision": {
@@ -1027,16 +1027,16 @@
       }
     },
     {
-      "id": "decision:step:RefreshFinishingWorkspace:738:10",
+      "id": "decision:step:RefreshFinishingWorkspace:746:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RefreshFinishingWorkspace",
       "condition": "refreshed.Closed",
       "phase": "execute",
       "span": {
-        "startLine": 738,
+        "startLine": 746,
         "startColumn": 10,
-        "endLine": 738,
+        "endLine": 746,
         "endColumn": 51
       },
       "decision": {
@@ -1044,16 +1044,16 @@
       }
     },
     {
-      "id": "decision:step:RefreshFinishingWorkspace:742:9",
+      "id": "decision:step:RefreshFinishingWorkspace:750:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RefreshFinishingWorkspace",
       "condition": "!(refreshed.Closed)",
       "phase": "execute",
       "span": {
-        "startLine": 742,
+        "startLine": 750,
         "startColumn": 9,
-        "endLine": 742,
+        "endLine": 750,
         "endColumn": 84
       },
       "decision": {
@@ -1061,16 +1061,16 @@
       }
     },
     {
-      "id": "decision:step:RefreshSubagentWorkspace:653:10",
+      "id": "decision:step:RefreshSubagentWorkspace:661:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RefreshSubagentWorkspace",
       "condition": "refreshed.Closed",
       "phase": "execute",
       "span": {
-        "startLine": 653,
+        "startLine": 661,
         "startColumn": 10,
-        "endLine": 653,
+        "endLine": 661,
         "endColumn": 149
       },
       "decision": {
@@ -1078,16 +1078,16 @@
       }
     },
     {
-      "id": "decision:step:RefreshSubagentWorkspace:657:9",
+      "id": "decision:step:RefreshSubagentWorkspace:665:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RefreshSubagentWorkspace",
       "condition": "!(refreshed.Closed)",
       "phase": "execute",
       "span": {
-        "startLine": 657,
+        "startLine": 665,
         "startColumn": 9,
-        "endLine": 657,
+        "endLine": 665,
         "endColumn": 44
       },
       "decision": {
@@ -1095,15 +1095,15 @@
       }
     },
     {
-      "id": "decision:step:ReportSubagentOutcome:814:9",
+      "id": "decision:step:ReportSubagentOutcome:822:9",
       "kind": "decision",
       "name": "gracefulComplete",
       "parentId": "step:ReportSubagentOutcome",
       "phase": "execute",
       "span": {
-        "startLine": 814,
+        "startLine": 822,
         "startColumn": 9,
-        "endLine": 814,
+        "endLine": 822,
         "endColumn": 82
       },
       "decision": {
@@ -1111,34 +1111,17 @@
       }
     },
     {
-      "id": "decision:step:RouteSubagentTools:440:11",
+      "id": "decision:step:RouteSubagentTools:448:11",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RouteSubagentTools",
       "condition": "route == routeAnswered and advancePastCall(ctx)",
       "phase": "execute",
       "span": {
-        "startLine": 440,
+        "startLine": 448,
         "startColumn": 11,
-        "endLine": 440,
+        "endLine": 448,
         "endColumn": 46
-      },
-      "decision": {
-        "type": "goTo"
-      }
-    },
-    {
-      "id": "decision:step:RouteSubagentTools:442:10",
-      "kind": "decision",
-      "name": "goTo",
-      "parentId": "step:RouteSubagentTools",
-      "condition": "route == routeAnswered and !(advancePastCall(ctx))",
-      "phase": "execute",
-      "span": {
-        "startLine": 442,
-        "startColumn": 10,
-        "endLine": 442,
-        "endColumn": 100
       },
       "decision": {
         "type": "goTo"
@@ -1147,14 +1130,31 @@
     {
       "id": "decision:step:RouteSubagentTools:450:10",
       "kind": "decision",
-      "name": "goToMany",
+      "name": "goTo",
       "parentId": "step:RouteSubagentTools",
-      "condition": "route == routeWave",
+      "condition": "route == routeAnswered and !(advancePastCall(ctx))",
       "phase": "execute",
       "span": {
         "startLine": 450,
         "startColumn": 10,
         "endLine": 450,
+        "endColumn": 100
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RouteSubagentTools:458:10",
+      "kind": "decision",
+      "name": "goToMany",
+      "parentId": "step:RouteSubagentTools",
+      "condition": "route == routeWave",
+      "phase": "execute",
+      "span": {
+        "startLine": 458,
+        "startColumn": 10,
+        "endLine": 458,
         "endColumn": 36
       },
       "decision": {
@@ -1162,16 +1162,16 @@
       }
     },
     {
-      "id": "decision:step:RouteSubagentTools:455:9",
+      "id": "decision:step:RouteSubagentTools:463:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RouteSubagentTools",
       "condition": "otherwise",
       "phase": "execute",
       "span": {
-        "startLine": 455,
+        "startLine": 463,
         "startColumn": 9,
-        "endLine": 455,
+        "endLine": 463,
         "endColumn": 75
       },
       "decision": {
@@ -1179,16 +1179,16 @@
       }
     },
     {
-      "id": "decision:step:SettleSubagentCommand:526:10",
+      "id": "decision:step:SettleSubagentCommand:534:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:SettleSubagentCommand",
       "condition": "finishToolExecution(ctx, call, result, timing)",
       "phase": "execute",
       "span": {
-        "startLine": 526,
+        "startLine": 534,
         "startColumn": 10,
-        "endLine": 526,
+        "endLine": 534,
         "endColumn": 45
       },
       "decision": {
@@ -1196,16 +1196,16 @@
       }
     },
     {
-      "id": "decision:step:SettleSubagentCommand:530:10",
+      "id": "decision:step:SettleSubagentCommand:538:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:SettleSubagentCommand",
       "condition": "!(finishToolExecution(ctx, call, result, timing)) and plan.compacts",
       "phase": "execute",
       "span": {
-        "startLine": 530,
+        "startLine": 538,
         "startColumn": 10,
-        "endLine": 530,
+        "endLine": 538,
         "endColumn": 81
       },
       "decision": {
@@ -1213,16 +1213,16 @@
       }
     },
     {
-      "id": "decision:step:SettleSubagentCommand:532:9",
+      "id": "decision:step:SettleSubagentCommand:540:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:SettleSubagentCommand",
       "condition": "!(finishToolExecution(ctx, call, result, timing)) and !(plan.compacts)",
       "phase": "execute",
       "span": {
-        "startLine": 532,
+        "startLine": 540,
         "startColumn": 9,
-        "endLine": 532,
+        "endLine": 540,
         "endColumn": 75
       },
       "decision": {
@@ -1234,9 +1234,9 @@
       "kind": "attribute",
       "name": "AgentState",
       "span": {
-        "startLine": 36,
+        "startLine": 44,
         "startColumn": 2,
-        "endLine": 36,
+        "endLine": 44,
         "endColumn": 90
       },
       "resource": {
@@ -1248,9 +1248,9 @@
       "kind": "attribute",
       "name": "ArchivedMessages",
       "span": {
-        "startLine": 41,
+        "startLine": 49,
         "startColumn": 2,
-        "endLine": 41,
+        "endLine": 49,
         "endColumn": 110
       },
       "resource": {
@@ -1263,9 +1263,9 @@
       "kind": "attribute",
       "name": "Config",
       "span": {
-        "startLine": 29,
+        "startLine": 37,
         "startColumn": 2,
-        "endLine": 29,
+        "endLine": 37,
         "endColumn": 62
       },
       "resource": {
@@ -1277,9 +1277,9 @@
       "kind": "attribute",
       "name": "ContextSegment",
       "span": {
-        "startLine": 38,
+        "startLine": 46,
         "startColumn": 2,
-        "endLine": 38,
+        "endLine": 46,
         "endColumn": 98
       },
       "resource": {
@@ -1291,9 +1291,9 @@
       "kind": "attribute",
       "name": "ContextSegmentPrompts",
       "span": {
-        "startLine": 39,
+        "startLine": 47,
         "startColumn": 2,
-        "endLine": 39,
+        "endLine": 47,
         "endColumn": 111
       },
       "resource": {
@@ -1306,9 +1306,9 @@
       "kind": "attribute",
       "name": "CurrentMessages",
       "span": {
-        "startLine": 40,
+        "startLine": 48,
         "startColumn": 2,
-        "endLine": 40,
+        "endLine": 48,
         "endColumn": 96
       },
       "resource": {
@@ -1321,9 +1321,9 @@
       "kind": "attribute",
       "name": "Identity",
       "span": {
-        "startLine": 23,
+        "startLine": 31,
         "startColumn": 2,
-        "endLine": 23,
+        "endLine": 31,
         "endColumn": 82
       },
       "resource": {
@@ -1335,9 +1335,9 @@
       "kind": "attribute",
       "name": "MessageWindowLock",
       "span": {
-        "startLine": 37,
+        "startLine": 45,
         "startColumn": 2,
-        "endLine": 37,
+        "endLine": 45,
         "endColumn": 81
       },
       "resource": {
@@ -1349,9 +1349,9 @@
       "kind": "attribute",
       "name": "Outcome",
       "span": {
-        "startLine": 32,
+        "startLine": 40,
         "startColumn": 2,
-        "endLine": 32,
+        "endLine": 40,
         "endColumn": 64
       },
       "resource": {
@@ -1363,9 +1363,9 @@
       "kind": "attribute",
       "name": "ProjectID",
       "span": {
-        "startLine": 26,
+        "startLine": 34,
         "startColumn": 2,
-        "endLine": 26,
+        "endLine": 34,
         "endColumn": 142
       },
       "resource": {
@@ -1377,9 +1377,9 @@
       "kind": "attribute",
       "name": "Start",
       "span": {
-        "startLine": 24,
+        "startLine": 32,
         "startColumn": 2,
-        "endLine": 24,
+        "endLine": 32,
         "endColumn": 63
       },
       "resource": {
@@ -1391,9 +1391,9 @@
       "kind": "attribute",
       "name": "SubagentStatus",
       "span": {
-        "startLine": 28,
+        "startLine": 36,
         "startColumn": 2,
-        "endLine": 28,
+        "endLine": 36,
         "endColumn": 149
       },
       "resource": {
@@ -1405,9 +1405,9 @@
       "kind": "attribute",
       "name": "StopRequest",
       "span": {
-        "startLine": 30,
+        "startLine": 38,
         "startColumn": 2,
-        "endLine": 30,
+        "endLine": 38,
         "endColumn": 65
       },
       "resource": {
@@ -1419,9 +1419,9 @@
       "kind": "attribute",
       "name": "Workspace",
       "span": {
-        "startLine": 31,
+        "startLine": 39,
         "startColumn": 2,
-        "endLine": 31,
+        "endLine": 39,
         "endColumn": 68
       },
       "resource": {
@@ -1433,9 +1433,9 @@
       "kind": "channel",
       "name": "ParallelToolResults",
       "span": {
-        "startLine": 42,
+        "startLine": 50,
         "startColumn": 2,
-        "endLine": 42,
+        "endLine": 50,
         "endColumn": 98
       },
       "resource": {
@@ -1448,9 +1448,9 @@
       "kind": "stream",
       "name": "AgentActivity",
       "span": {
-        "startLine": 48,
+        "startLine": 56,
         "startColumn": 2,
-        "endLine": 48,
+        "endLine": 56,
         "endColumn": 93
       },
       "resource": {
@@ -1462,9 +1462,9 @@
       "kind": "stream",
       "name": "AssistantText",
       "span": {
-        "startLine": 47,
+        "startLine": 55,
         "startColumn": 2,
-        "endLine": 47,
+        "endLine": 55,
         "endColumn": 76
       },
       "resource": {
@@ -1476,9 +1476,9 @@
       "kind": "stream",
       "name": "ReasoningSummary",
       "span": {
-        "startLine": 46,
+        "startLine": 54,
         "startColumn": 2,
-        "endLine": 46,
+        "endLine": 54,
         "endColumn": 79
       },
       "resource": {
@@ -1490,9 +1490,9 @@
       "kind": "rpc",
       "name": "GetDexDisplay",
       "span": {
-        "startLine": 171,
+        "startLine": 179,
         "startColumn": 1,
-        "endLine": 175,
+        "endLine": 183,
         "endColumn": 2
       }
     },
@@ -1501,9 +1501,9 @@
       "kind": "rpc",
       "name": "GetDexSummary",
       "span": {
-        "startLine": 162,
+        "startLine": 170,
         "startColumn": 1,
-        "endLine": 164,
+        "endLine": 172,
         "endColumn": 2
       }
     },
@@ -1512,9 +1512,9 @@
       "kind": "rpc",
       "name": "GetSubagentSnapshot",
       "span": {
-        "startLine": 147,
+        "startLine": 155,
         "startColumn": 1,
-        "endLine": 158,
+        "endLine": 166,
         "endColumn": 2
       }
     },
@@ -1523,9 +1523,9 @@
       "kind": "rpc",
       "name": "StopSubagent",
       "span": {
-        "startLine": 129,
+        "startLine": 137,
         "startColumn": 1,
-        "endLine": 143,
+        "endLine": 151,
         "endColumn": 2
       }
     },
@@ -1535,9 +1535,9 @@
       "name": "ApplySubagentAdmission",
       "phase": "execute",
       "span": {
-        "startLine": 70,
+        "startLine": 78,
         "startColumn": 56,
-        "endLine": 70,
+        "endLine": 78,
         "endColumn": 106
       },
       "metadata": {
@@ -1550,9 +1550,9 @@
       "name": "AwaitSubagentDeadline",
       "phase": "wait_for+execute",
       "span": {
-        "startLine": 71,
+        "startLine": 79,
         "startColumn": 3,
-        "endLine": 71,
+        "endLine": 79,
         "endColumn": 42
       },
       "metadata": {
@@ -1565,9 +1565,9 @@
       "name": "AwaitSubagentParallelToolResults",
       "phase": "wait_for+execute",
       "span": {
-        "startLine": 75,
+        "startLine": 83,
         "startColumn": 59,
-        "endLine": 75,
+        "endLine": 83,
         "endColumn": 119
       },
       "metadata": {
@@ -1580,9 +1580,9 @@
       "name": "BeginSubagentFinish",
       "phase": "execute",
       "span": {
-        "startLine": 76,
+        "startLine": 84,
         "startColumn": 57,
-        "endLine": 76,
+        "endLine": 84,
         "endColumn": 94
       },
       "metadata": {
@@ -1595,9 +1595,9 @@
       "name": "CallSubagentModel",
       "phase": "execute",
       "span": {
-        "startLine": 72,
+        "startLine": 80,
         "startColumn": 3,
-        "endLine": 72,
+        "endLine": 80,
         "endColumn": 48
       },
       "metadata": {
@@ -1610,9 +1610,9 @@
       "name": "CompactSubagentContext",
       "phase": "execute",
       "span": {
-        "startLine": 72,
+        "startLine": 80,
         "startColumn": 50,
-        "endLine": 72,
+        "endLine": 80,
         "endColumn": 100
       },
       "metadata": {
@@ -1625,9 +1625,9 @@
       "name": "ExecuteSubagentParallelTool",
       "phase": "execute",
       "span": {
-        "startLine": 74,
+        "startLine": 82,
         "startColumn": 58,
-        "endLine": 74,
+        "endLine": 82,
         "endColumn": 113
       },
       "metadata": {
@@ -1640,9 +1640,9 @@
       "name": "ExecuteSubagentTool",
       "phase": "execute",
       "span": {
-        "startLine": 73,
+        "startLine": 81,
         "startColumn": 51,
-        "endLine": 73,
+        "endLine": 81,
         "endColumn": 98
       },
       "metadata": {
@@ -1655,9 +1655,9 @@
       "name": "FinishSubagent",
       "phase": "execute",
       "span": {
-        "startLine": 76,
+        "startLine": 84,
         "startColumn": 96,
-        "endLine": 76,
+        "endLine": 84,
         "endColumn": 138
       },
       "metadata": {
@@ -1671,9 +1671,9 @@
       "phase": "execute",
       "start": true,
       "span": {
-        "startLine": 70,
+        "startLine": 78,
         "startColumn": 3,
-        "endLine": 70,
+        "endLine": 78,
         "endColumn": 54
       },
       "metadata": {
@@ -1686,9 +1686,9 @@
       "name": "RecordSubagentAdmissionFailure",
       "phase": "execute",
       "span": {
-        "startLine": 70,
+        "startLine": 78,
         "startColumn": 108,
-        "endLine": 70,
+        "endLine": 78,
         "endColumn": 156
       },
       "metadata": {
@@ -1701,9 +1701,9 @@
       "name": "RecordSubagentFailure",
       "phase": "execute",
       "span": {
-        "startLine": 72,
+        "startLine": 80,
         "startColumn": 102,
-        "endLine": 72,
+        "endLine": 80,
         "endColumn": 141
       },
       "metadata": {
@@ -1716,9 +1716,9 @@
       "name": "RecordSubagentOutcome",
       "phase": "execute",
       "span": {
-        "startLine": 77,
+        "startLine": 85,
         "startColumn": 58,
-        "endLine": 77,
+        "endLine": 85,
         "endColumn": 97
       },
       "metadata": {
@@ -1731,9 +1731,9 @@
       "name": "RecordSubagentToolFailure",
       "phase": "execute",
       "span": {
-        "startLine": 74,
+        "startLine": 82,
         "startColumn": 3,
-        "endLine": 74,
+        "endLine": 82,
         "endColumn": 56
       },
       "metadata": {
@@ -1746,9 +1746,9 @@
       "name": "RecordUndeliveredReport",
       "phase": "execute",
       "span": {
-        "startLine": 78,
+        "startLine": 86,
         "startColumn": 3,
-        "endLine": 78,
+        "endLine": 86,
         "endColumn": 44
       },
       "metadata": {
@@ -1761,9 +1761,9 @@
       "name": "RecoverSubagentParallelToolExecution",
       "phase": "execute",
       "span": {
-        "startLine": 75,
+        "startLine": 83,
         "startColumn": 3,
-        "endLine": 75,
+        "endLine": 83,
         "endColumn": 57
       },
       "metadata": {
@@ -1776,9 +1776,9 @@
       "name": "RefreshFinishingWorkspace",
       "phase": "execute",
       "span": {
-        "startLine": 77,
+        "startLine": 85,
         "startColumn": 3,
-        "endLine": 77,
+        "endLine": 85,
         "endColumn": 56
       },
       "metadata": {
@@ -1791,9 +1791,9 @@
       "name": "RefreshSubagentWorkspace",
       "phase": "execute",
       "span": {
-        "startLine": 76,
+        "startLine": 84,
         "startColumn": 3,
-        "endLine": 76,
+        "endLine": 84,
         "endColumn": 55
       },
       "metadata": {
@@ -1806,9 +1806,9 @@
       "name": "ReportSubagentOutcome",
       "phase": "execute",
       "span": {
-        "startLine": 77,
+        "startLine": 85,
         "startColumn": 99,
-        "endLine": 77,
+        "endLine": 85,
         "endColumn": 148
       },
       "metadata": {
@@ -1821,9 +1821,9 @@
       "name": "RouteSubagentTools",
       "phase": "execute",
       "span": {
-        "startLine": 73,
+        "startLine": 81,
         "startColumn": 3,
-        "endLine": 73,
+        "endLine": 81,
         "endColumn": 49
       },
       "metadata": {
@@ -1836,9 +1836,9 @@
       "name": "SettleSubagentCommand",
       "phase": "execute",
       "span": {
-        "startLine": 73,
+        "startLine": 81,
         "startColumn": 100,
-        "endLine": 73,
+        "endLine": 81,
         "endColumn": 149
       },
       "metadata": {
@@ -1846,15 +1846,15 @@
       }
     },
     {
-      "id": "wait:AwaitSubagentDeadline:286:9",
+      "id": "wait:AwaitSubagentDeadline:294:9",
       "kind": "wait",
       "name": "until",
       "parentId": "step:AwaitSubagentDeadline",
       "phase": "wait_for",
       "span": {
-        "startLine": 286,
+        "startLine": 294,
         "startColumn": 9,
-        "endLine": 286,
+        "endLine": 294,
         "endColumn": 83
       },
       "wait": {
@@ -1866,9 +1866,9 @@
             "label": "max(deadline.Sub(ctx.FirstAttemptAt()), time.Second) timer",
             "expression": "max(deadline.Sub(ctx.FirstAttemptAt()), time.Second)",
             "span": {
-              "startLine": 286,
+              "startLine": 294,
               "startColumn": 19,
-              "endLine": 286,
+              "endLine": 294,
               "endColumn": 82
             }
           }
@@ -1876,15 +1876,15 @@
       }
     },
     {
-      "id": "wait:AwaitSubagentParallelToolResults:608:9",
+      "id": "wait:AwaitSubagentParallelToolResults:616:9",
       "kind": "wait",
       "name": "until",
       "parentId": "step:AwaitSubagentParallelToolResults",
       "phase": "wait_for",
       "span": {
-        "startLine": 608,
+        "startLine": 616,
         "startColumn": 9,
-        "endLine": 608,
+        "endLine": 616,
         "endColumn": 86
       },
       "wait": {
@@ -1897,9 +1897,9 @@
             "resourceId": "resource:channel:parallelToolResultsChannel",
             "expression": "batch.BatchID, len(batch.Records)",
             "span": {
-              "startLine": 608,
+              "startLine": 616,
               "startColumn": 19,
-              "endLine": 608,
+              "endLine": 616,
               "endColumn": 85
             }
           }
@@ -1911,912 +1911,912 @@
     {
       "id": "edge:0001",
       "kind": "cancel",
-      "from": "decision:rpc:StopSubagent:136:10",
+      "from": "decision:rpc:StopSubagent:144:10",
       "to": "step:AwaitSubagentDeadline",
       "label": "CancelSteps",
       "span": {
-        "startLine": 137,
+        "startLine": 145,
         "startColumn": 4,
-        "endLine": 137,
+        "endLine": 145,
         "endColumn": 27
       }
     },
     {
       "id": "edge:0002",
       "kind": "cancel",
-      "from": "decision:rpc:StopSubagent:136:10",
+      "from": "decision:rpc:StopSubagent:144:10",
       "to": "step:AwaitSubagentParallelToolResults",
       "label": "CancelSteps",
       "span": {
-        "startLine": 138,
+        "startLine": 146,
         "startColumn": 104,
-        "endLine": 138,
+        "endLine": 146,
         "endColumn": 138
       }
     },
     {
       "id": "edge:0003",
       "kind": "cancel",
-      "from": "decision:rpc:StopSubagent:136:10",
+      "from": "decision:rpc:StopSubagent:144:10",
       "to": "step:BeginSubagentFinish",
       "label": "CancelSteps",
       "span": {
-        "startLine": 139,
+        "startLine": 147,
         "startColumn": 4,
-        "endLine": 139,
+        "endLine": 147,
         "endColumn": 25
       }
     },
     {
       "id": "edge:0004",
       "kind": "cancel",
-      "from": "decision:rpc:StopSubagent:136:10",
+      "from": "decision:rpc:StopSubagent:144:10",
       "to": "step:CallSubagentModel",
       "label": "CancelSteps",
       "span": {
-        "startLine": 137,
+        "startLine": 145,
         "startColumn": 29,
-        "endLine": 137,
+        "endLine": 145,
         "endColumn": 48
       }
     },
     {
       "id": "edge:0005",
       "kind": "cancel",
-      "from": "decision:rpc:StopSubagent:136:10",
+      "from": "decision:rpc:StopSubagent:144:10",
       "to": "step:CompactSubagentContext",
       "label": "CancelSteps",
       "span": {
-        "startLine": 137,
+        "startLine": 145,
         "startColumn": 50,
-        "endLine": 137,
+        "endLine": 145,
         "endColumn": 74
       }
     },
     {
       "id": "edge:0006",
       "kind": "cancel",
-      "from": "decision:rpc:StopSubagent:136:10",
+      "from": "decision:rpc:StopSubagent:144:10",
       "to": "step:ExecuteSubagentParallelTool",
       "label": "CancelSteps",
       "span": {
-        "startLine": 138,
+        "startLine": 146,
         "startColumn": 33,
-        "endLine": 138,
+        "endLine": 146,
         "endColumn": 62
       }
     },
     {
       "id": "edge:0007",
       "kind": "cancel",
-      "from": "decision:rpc:StopSubagent:136:10",
+      "from": "decision:rpc:StopSubagent:144:10",
       "to": "step:ExecuteSubagentTool",
       "label": "CancelSteps",
       "span": {
-        "startLine": 137,
+        "startLine": 145,
         "startColumn": 123,
-        "endLine": 137,
+        "endLine": 145,
         "endColumn": 144
       }
     },
     {
       "id": "edge:0008",
       "kind": "transition",
-      "from": "decision:rpc:StopSubagent:136:10",
+      "from": "decision:rpc:StopSubagent:144:10",
       "to": "step:FinishSubagent",
       "label": "fan-out",
       "span": {
-        "startLine": 136,
+        "startLine": 144,
         "startColumn": 68,
-        "endLine": 136,
+        "endLine": 144,
         "endColumn": 193
       }
     },
     {
       "id": "edge:0009",
       "kind": "cancel",
-      "from": "decision:rpc:StopSubagent:136:10",
+      "from": "decision:rpc:StopSubagent:144:10",
       "to": "step:RecordSubagentFailure",
       "label": "CancelSteps",
       "span": {
-        "startLine": 137,
+        "startLine": 145,
         "startColumn": 76,
-        "endLine": 137,
+        "endLine": 145,
         "endColumn": 99
       }
     },
     {
       "id": "edge:0010",
       "kind": "cancel",
-      "from": "decision:rpc:StopSubagent:136:10",
+      "from": "decision:rpc:StopSubagent:144:10",
       "to": "step:RecordSubagentToolFailure",
       "label": "CancelSteps",
       "span": {
-        "startLine": 138,
+        "startLine": 146,
         "startColumn": 4,
-        "endLine": 138,
+        "endLine": 146,
         "endColumn": 31
       }
     },
     {
       "id": "edge:0011",
       "kind": "cancel",
-      "from": "decision:rpc:StopSubagent:136:10",
+      "from": "decision:rpc:StopSubagent:144:10",
       "to": "step:RecoverSubagentParallelToolExecution",
       "label": "CancelSteps",
       "span": {
-        "startLine": 138,
+        "startLine": 146,
         "startColumn": 64,
-        "endLine": 138,
+        "endLine": 146,
         "endColumn": 102
       }
     },
     {
       "id": "edge:0012",
       "kind": "cancel",
-      "from": "decision:rpc:StopSubagent:136:10",
+      "from": "decision:rpc:StopSubagent:144:10",
       "to": "step:RefreshSubagentWorkspace",
       "label": "CancelSteps",
       "span": {
-        "startLine": 138,
+        "startLine": 146,
         "startColumn": 140,
-        "endLine": 138,
+        "endLine": 146,
         "endColumn": 166
       }
     },
     {
       "id": "edge:0013",
       "kind": "cancel",
-      "from": "decision:rpc:StopSubagent:136:10",
+      "from": "decision:rpc:StopSubagent:144:10",
       "to": "step:RouteSubagentTools",
       "label": "CancelSteps",
       "span": {
-        "startLine": 137,
+        "startLine": 145,
         "startColumn": 101,
-        "endLine": 137,
+        "endLine": 145,
         "endColumn": 121
       }
     },
     {
       "id": "edge:0014",
       "kind": "cancel",
-      "from": "decision:rpc:StopSubagent:136:10",
+      "from": "decision:rpc:StopSubagent:144:10",
       "to": "step:SettleSubagentCommand",
       "label": "CancelSteps",
       "span": {
-        "startLine": 137,
+        "startLine": 145,
         "startColumn": 146,
-        "endLine": 137,
+        "endLine": 145,
         "endColumn": 169
       }
     },
     {
       "id": "edge:0015",
       "kind": "transition",
-      "from": "decision:step:ApplySubagentAdmission:254:10",
+      "from": "decision:step:ApplySubagentAdmission:262:10",
       "to": "step:ReportSubagentOutcome",
       "label": "GoTo",
       "span": {
-        "startLine": 254,
+        "startLine": 262,
         "startColumn": 10,
-        "endLine": 254,
+        "endLine": 262,
         "endColumn": 48
       }
     },
     {
       "id": "edge:0016",
       "kind": "transition",
-      "from": "decision:step:ApplySubagentAdmission:261:10",
+      "from": "decision:step:ApplySubagentAdmission:269:10",
       "to": "step:FinishSubagent",
       "label": "GoTo",
       "span": {
-        "startLine": 261,
+        "startLine": 269,
         "startColumn": 10,
-        "endLine": 261,
+        "endLine": 269,
         "endColumn": 129
       }
     },
     {
       "id": "edge:0017",
       "kind": "transition",
-      "from": "decision:step:ApplySubagentAdmission:264:9",
+      "from": "decision:step:ApplySubagentAdmission:272:9",
       "to": "step:AwaitSubagentDeadline",
       "label": "fan-out",
       "span": {
-        "startLine": 264,
+        "startLine": 272,
         "startColumn": 120,
-        "endLine": 264,
+        "endLine": 272,
         "endColumn": 164
       }
     },
     {
       "id": "edge:0018",
       "kind": "transition",
-      "from": "decision:step:ApplySubagentAdmission:264:9",
+      "from": "decision:step:ApplySubagentAdmission:272:9",
       "to": "step:CallSubagentModel",
       "label": "fan-out",
       "span": {
-        "startLine": 264,
+        "startLine": 272,
         "startColumn": 22,
-        "endLine": 264,
+        "endLine": 272,
         "endColumn": 118
       }
     },
     {
       "id": "edge:0019",
       "kind": "cancel",
-      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "from": "decision:step:AwaitSubagentDeadline:304:9",
       "to": "step:AwaitSubagentParallelToolResults",
       "label": "CancelSteps",
       "span": {
-        "startLine": 298,
+        "startLine": 306,
         "startColumn": 103,
-        "endLine": 298,
+        "endLine": 306,
         "endColumn": 137
       }
     },
     {
       "id": "edge:0020",
       "kind": "cancel",
-      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "from": "decision:step:AwaitSubagentDeadline:304:9",
       "to": "step:BeginSubagentFinish",
       "label": "CancelSteps",
       "span": {
-        "startLine": 299,
+        "startLine": 307,
         "startColumn": 3,
-        "endLine": 299,
+        "endLine": 307,
         "endColumn": 24
       }
     },
     {
       "id": "edge:0021",
       "kind": "cancel",
-      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "from": "decision:step:AwaitSubagentDeadline:304:9",
       "to": "step:CallSubagentModel",
       "label": "CancelSteps",
       "span": {
-        "startLine": 297,
+        "startLine": 305,
         "startColumn": 3,
-        "endLine": 297,
+        "endLine": 305,
         "endColumn": 22
       }
     },
     {
       "id": "edge:0022",
       "kind": "cancel",
-      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "from": "decision:step:AwaitSubagentDeadline:304:9",
       "to": "step:CompactSubagentContext",
       "label": "CancelSteps",
       "span": {
-        "startLine": 297,
+        "startLine": 305,
         "startColumn": 24,
-        "endLine": 297,
+        "endLine": 305,
         "endColumn": 48
       }
     },
     {
       "id": "edge:0023",
       "kind": "cancel",
-      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "from": "decision:step:AwaitSubagentDeadline:304:9",
       "to": "step:ExecuteSubagentParallelTool",
       "label": "CancelSteps",
       "span": {
-        "startLine": 298,
+        "startLine": 306,
         "startColumn": 32,
-        "endLine": 298,
+        "endLine": 306,
         "endColumn": 61
       }
     },
     {
       "id": "edge:0024",
       "kind": "cancel",
-      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "from": "decision:step:AwaitSubagentDeadline:304:9",
       "to": "step:ExecuteSubagentTool",
       "label": "CancelSteps",
       "span": {
-        "startLine": 297,
+        "startLine": 305,
         "startColumn": 97,
-        "endLine": 297,
+        "endLine": 305,
         "endColumn": 118
       }
     },
     {
       "id": "edge:0025",
       "kind": "transition",
-      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "from": "decision:step:AwaitSubagentDeadline:304:9",
       "to": "step:FinishSubagent",
       "label": "GoTo",
       "span": {
-        "startLine": 296,
+        "startLine": 304,
         "startColumn": 9,
-        "endLine": 296,
+        "endLine": 304,
         "endColumn": 129
       }
     },
     {
       "id": "edge:0026",
       "kind": "cancel",
-      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "from": "decision:step:AwaitSubagentDeadline:304:9",
       "to": "step:RecordSubagentFailure",
       "label": "CancelSteps",
       "span": {
-        "startLine": 297,
+        "startLine": 305,
         "startColumn": 50,
-        "endLine": 297,
+        "endLine": 305,
         "endColumn": 73
       }
     },
     {
       "id": "edge:0027",
       "kind": "cancel",
-      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "from": "decision:step:AwaitSubagentDeadline:304:9",
       "to": "step:RecordSubagentToolFailure",
       "label": "CancelSteps",
       "span": {
-        "startLine": 298,
+        "startLine": 306,
         "startColumn": 3,
-        "endLine": 298,
+        "endLine": 306,
         "endColumn": 30
       }
     },
     {
       "id": "edge:0028",
       "kind": "cancel",
-      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "from": "decision:step:AwaitSubagentDeadline:304:9",
       "to": "step:RecoverSubagentParallelToolExecution",
       "label": "CancelSteps",
       "span": {
-        "startLine": 298,
+        "startLine": 306,
         "startColumn": 63,
-        "endLine": 298,
+        "endLine": 306,
         "endColumn": 101
       }
     },
     {
       "id": "edge:0029",
       "kind": "cancel",
-      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "from": "decision:step:AwaitSubagentDeadline:304:9",
       "to": "step:RefreshSubagentWorkspace",
       "label": "CancelSteps",
       "span": {
-        "startLine": 298,
+        "startLine": 306,
         "startColumn": 139,
-        "endLine": 298,
+        "endLine": 306,
         "endColumn": 165
       }
     },
     {
       "id": "edge:0030",
       "kind": "cancel",
-      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "from": "decision:step:AwaitSubagentDeadline:304:9",
       "to": "step:RouteSubagentTools",
       "label": "CancelSteps",
       "span": {
-        "startLine": 297,
+        "startLine": 305,
         "startColumn": 75,
-        "endLine": 297,
+        "endLine": 305,
         "endColumn": 95
       }
     },
     {
       "id": "edge:0031",
       "kind": "cancel",
-      "from": "decision:step:AwaitSubagentDeadline:296:9",
+      "from": "decision:step:AwaitSubagentDeadline:304:9",
       "to": "step:SettleSubagentCommand",
       "label": "CancelSteps",
       "span": {
-        "startLine": 297,
+        "startLine": 305,
         "startColumn": 120,
-        "endLine": 297,
+        "endLine": 305,
         "endColumn": 143
       }
     },
     {
       "id": "edge:0032",
       "kind": "transition",
-      "from": "decision:step:AwaitSubagentParallelToolResults:616:10",
+      "from": "decision:step:AwaitSubagentParallelToolResults:624:10",
       "to": "step:RefreshSubagentWorkspace",
       "label": "GoTo",
       "span": {
-        "startLine": 616,
+        "startLine": 624,
         "startColumn": 10,
-        "endLine": 616,
+        "endLine": 624,
         "endColumn": 51
       }
     },
     {
       "id": "edge:0033",
       "kind": "transition",
-      "from": "decision:step:AwaitSubagentParallelToolResults:619:10",
+      "from": "decision:step:AwaitSubagentParallelToolResults:627:10",
       "to": "step:RouteSubagentTools",
       "label": "GoTo",
       "span": {
-        "startLine": 619,
+        "startLine": 627,
         "startColumn": 10,
-        "endLine": 619,
+        "endLine": 627,
         "endColumn": 45
       }
     },
     {
       "id": "edge:0034",
       "kind": "transition",
-      "from": "decision:step:AwaitSubagentParallelToolResults:623:10",
+      "from": "decision:step:AwaitSubagentParallelToolResults:631:10",
       "to": "step:CompactSubagentContext",
       "label": "GoTo",
       "span": {
-        "startLine": 623,
+        "startLine": 631,
         "startColumn": 10,
-        "endLine": 623,
+        "endLine": 631,
         "endColumn": 81
       }
     },
     {
       "id": "edge:0035",
       "kind": "transition",
-      "from": "decision:step:AwaitSubagentParallelToolResults:625:9",
+      "from": "decision:step:AwaitSubagentParallelToolResults:633:9",
       "to": "step:CallSubagentModel",
       "label": "GoTo",
       "span": {
-        "startLine": 625,
+        "startLine": 633,
         "startColumn": 9,
-        "endLine": 625,
+        "endLine": 633,
         "endColumn": 75
       }
     },
     {
       "id": "edge:0036",
       "kind": "cancel",
-      "from": "decision:step:BeginSubagentFinish:675:9",
+      "from": "decision:step:BeginSubagentFinish:683:9",
       "to": "step:AwaitSubagentDeadline",
       "label": "CancelSteps",
       "span": {
-        "startLine": 675,
+        "startLine": 683,
         "startColumn": 97,
-        "endLine": 675,
+        "endLine": 683,
         "endColumn": 120
       }
     },
     {
       "id": "edge:0037",
       "kind": "transition",
-      "from": "decision:step:BeginSubagentFinish:675:9",
+      "from": "decision:step:BeginSubagentFinish:683:9",
       "to": "step:FinishSubagent",
       "label": "GoTo",
       "span": {
-        "startLine": 675,
+        "startLine": 683,
         "startColumn": 9,
-        "endLine": 675,
+        "endLine": 683,
         "endColumn": 84
       }
     },
     {
       "id": "edge:0038",
       "kind": "transition",
-      "from": "decision:step:CallSubagentModel:343:10",
+      "from": "decision:step:CallSubagentModel:351:10",
       "to": "step:BeginSubagentFinish",
       "label": "GoTo",
       "span": {
-        "startLine": 343,
+        "startLine": 351,
         "startColumn": 10,
-        "endLine": 343,
+        "endLine": 351,
         "endColumn": 120
       }
     },
     {
       "id": "edge:0039",
       "kind": "transition",
-      "from": "decision:step:CallSubagentModel:353:10",
+      "from": "decision:step:CallSubagentModel:361:10",
       "to": "step:BeginSubagentFinish",
       "label": "GoTo",
       "span": {
-        "startLine": 353,
+        "startLine": 361,
         "startColumn": 10,
-        "endLine": 353,
+        "endLine": 361,
         "endColumn": 55
       }
     },
     {
       "id": "edge:0040",
       "kind": "transition",
-      "from": "decision:step:CallSubagentModel:355:10",
+      "from": "decision:step:CallSubagentModel:363:10",
       "to": "step:RouteSubagentTools",
       "label": "GoTo",
       "span": {
-        "startLine": 355,
+        "startLine": 363,
         "startColumn": 10,
-        "endLine": 355,
+        "endLine": 363,
         "endColumn": 45
       }
     },
     {
       "id": "edge:0041",
       "kind": "transition",
-      "from": "decision:step:CallSubagentModel:359:10",
+      "from": "decision:step:CallSubagentModel:367:10",
       "to": "step:CompactSubagentContext",
       "label": "GoTo",
       "span": {
-        "startLine": 359,
+        "startLine": 367,
         "startColumn": 10,
-        "endLine": 359,
+        "endLine": 367,
         "endColumn": 81
       }
     },
     {
       "id": "edge:0042",
       "kind": "transition",
-      "from": "decision:step:CallSubagentModel:361:9",
+      "from": "decision:step:CallSubagentModel:369:9",
       "to": "step:CallSubagentModel",
       "label": "GoTo",
       "span": {
-        "startLine": 361,
+        "startLine": 369,
         "startColumn": 9,
-        "endLine": 361,
+        "endLine": 369,
         "endColumn": 75
       }
     },
     {
       "id": "edge:0043",
       "kind": "transition",
-      "from": "decision:step:CompactSubagentContext:393:10",
+      "from": "decision:step:CompactSubagentContext:401:10",
       "to": "step:BeginSubagentFinish",
       "label": "GoTo",
       "span": {
-        "startLine": 393,
+        "startLine": 401,
         "startColumn": 10,
-        "endLine": 393,
+        "endLine": 401,
         "endColumn": 161
       }
     },
     {
       "id": "edge:0044",
       "kind": "transition",
-      "from": "decision:step:CompactSubagentContext:401:9",
+      "from": "decision:step:CompactSubagentContext:409:9",
       "to": "step:CallSubagentModel",
       "label": "GoTo",
       "span": {
-        "startLine": 401,
+        "startLine": 409,
         "startColumn": 9,
-        "endLine": 401,
+        "endLine": 409,
         "endColumn": 99
       }
     },
     {
       "id": "edge:0045",
       "kind": "transition",
-      "from": "decision:step:ExecuteSubagentTool:489:10",
+      "from": "decision:step:ExecuteSubagentTool:497:10",
       "to": "step:RefreshSubagentWorkspace",
       "label": "GoTo",
       "span": {
-        "startLine": 489,
+        "startLine": 497,
         "startColumn": 10,
-        "endLine": 489,
+        "endLine": 497,
         "endColumn": 51
       }
     },
     {
       "id": "edge:0046",
       "kind": "transition",
-      "from": "decision:step:ExecuteSubagentTool:496:10",
+      "from": "decision:step:ExecuteSubagentTool:504:10",
       "to": "step:RouteSubagentTools",
       "label": "GoTo",
       "span": {
-        "startLine": 496,
+        "startLine": 504,
         "startColumn": 10,
-        "endLine": 496,
+        "endLine": 504,
         "endColumn": 45
       }
     },
     {
       "id": "edge:0047",
       "kind": "transition",
-      "from": "decision:step:ExecuteSubagentTool:500:10",
+      "from": "decision:step:ExecuteSubagentTool:508:10",
       "to": "step:CompactSubagentContext",
       "label": "GoTo",
       "span": {
-        "startLine": 500,
+        "startLine": 508,
         "startColumn": 10,
-        "endLine": 500,
+        "endLine": 508,
         "endColumn": 81
       }
     },
     {
       "id": "edge:0048",
       "kind": "transition",
-      "from": "decision:step:ExecuteSubagentTool:502:9",
+      "from": "decision:step:ExecuteSubagentTool:510:9",
       "to": "step:CallSubagentModel",
       "label": "GoTo",
       "span": {
-        "startLine": 502,
+        "startLine": 510,
         "startColumn": 9,
-        "endLine": 502,
+        "endLine": 510,
         "endColumn": 75
       }
     },
     {
       "id": "edge:0049",
       "kind": "transition",
-      "from": "decision:step:FinishSubagent:703:10",
+      "from": "decision:step:FinishSubagent:711:10",
       "to": "step:RefreshFinishingWorkspace",
       "label": "GoTo",
       "span": {
-        "startLine": 703,
+        "startLine": 711,
         "startColumn": 10,
-        "endLine": 703,
+        "endLine": 711,
         "endColumn": 55
       }
     },
     {
       "id": "edge:0050",
       "kind": "transition",
-      "from": "decision:step:FinishSubagent:712:9",
+      "from": "decision:step:FinishSubagent:720:9",
       "to": "step:RecordSubagentOutcome",
       "label": "GoTo",
       "span": {
-        "startLine": 712,
+        "startLine": 720,
         "startColumn": 9,
-        "endLine": 712,
+        "endLine": 720,
         "endColumn": 50
       }
     },
     {
       "id": "edge:0051",
       "kind": "transition",
-      "from": "decision:step:InitializeSubagent:201:10",
+      "from": "decision:step:InitializeSubagent:209:10",
       "to": "step:ApplySubagentAdmission",
       "label": "GoTo",
       "span": {
-        "startLine": 201,
+        "startLine": 209,
         "startColumn": 10,
-        "endLine": 201,
+        "endLine": 209,
         "endColumn": 52
       }
     },
     {
       "id": "edge:0052",
       "kind": "transition",
-      "from": "decision:step:InitializeSubagent:214:9",
+      "from": "decision:step:InitializeSubagent:222:9",
       "to": "step:ApplySubagentAdmission",
       "label": "GoTo",
       "span": {
-        "startLine": 214,
+        "startLine": 222,
         "startColumn": 9,
-        "endLine": 214,
+        "endLine": 222,
         "endColumn": 51
       }
     },
     {
       "id": "edge:0053",
       "kind": "transition",
-      "from": "decision:step:RecordSubagentAdmissionFailure:235:9",
+      "from": "decision:step:RecordSubagentAdmissionFailure:243:9",
       "to": "step:ReportSubagentOutcome",
       "label": "GoTo",
       "span": {
-        "startLine": 235,
+        "startLine": 243,
         "startColumn": 9,
-        "endLine": 235,
+        "endLine": 243,
         "endColumn": 47
       }
     },
     {
       "id": "edge:0054",
       "kind": "transition",
-      "from": "decision:step:RecordSubagentFailure:423:9",
+      "from": "decision:step:RecordSubagentFailure:431:9",
       "to": "step:BeginSubagentFinish",
       "label": "GoTo",
       "span": {
-        "startLine": 423,
+        "startLine": 431,
         "startColumn": 9,
-        "endLine": 423,
+        "endLine": 431,
         "endColumn": 109
       }
     },
     {
       "id": "edge:0055",
       "kind": "transition",
-      "from": "decision:step:RecordSubagentOutcome:772:9",
+      "from": "decision:step:RecordSubagentOutcome:780:9",
       "to": "step:ReportSubagentOutcome",
       "label": "GoTo",
       "span": {
-        "startLine": 772,
+        "startLine": 780,
         "startColumn": 9,
-        "endLine": 772,
+        "endLine": 780,
         "endColumn": 47
       }
     },
     {
       "id": "edge:0056",
       "kind": "transition",
-      "from": "decision:step:RecordSubagentToolFailure:547:10",
+      "from": "decision:step:RecordSubagentToolFailure:555:10",
       "to": "step:RouteSubagentTools",
       "label": "GoTo",
       "span": {
-        "startLine": 547,
+        "startLine": 555,
         "startColumn": 10,
-        "endLine": 547,
+        "endLine": 555,
         "endColumn": 45
       }
     },
     {
       "id": "edge:0057",
       "kind": "transition",
-      "from": "decision:step:RecordSubagentToolFailure:551:10",
+      "from": "decision:step:RecordSubagentToolFailure:559:10",
       "to": "step:CompactSubagentContext",
       "label": "GoTo",
       "span": {
-        "startLine": 551,
+        "startLine": 559,
         "startColumn": 10,
-        "endLine": 551,
+        "endLine": 559,
         "endColumn": 81
       }
     },
     {
       "id": "edge:0058",
       "kind": "transition",
-      "from": "decision:step:RecordSubagentToolFailure:553:9",
+      "from": "decision:step:RecordSubagentToolFailure:561:9",
       "to": "step:CallSubagentModel",
       "label": "GoTo",
       "span": {
-        "startLine": 553,
+        "startLine": 561,
         "startColumn": 9,
-        "endLine": 553,
+        "endLine": 561,
         "endColumn": 75
       }
     },
     {
       "id": "edge:0059",
       "kind": "transition",
-      "from": "decision:step:RefreshFinishingWorkspace:738:10",
+      "from": "decision:step:RefreshFinishingWorkspace:746:10",
       "to": "step:RecordSubagentOutcome",
       "label": "GoTo",
       "span": {
-        "startLine": 738,
+        "startLine": 746,
         "startColumn": 10,
-        "endLine": 738,
+        "endLine": 746,
         "endColumn": 51
       }
     },
     {
       "id": "edge:0060",
       "kind": "transition",
-      "from": "decision:step:RefreshFinishingWorkspace:742:9",
+      "from": "decision:step:RefreshFinishingWorkspace:750:9",
       "to": "step:FinishSubagent",
       "label": "GoTo",
       "span": {
-        "startLine": 742,
+        "startLine": 750,
         "startColumn": 9,
-        "endLine": 742,
+        "endLine": 750,
         "endColumn": 84
       }
     },
     {
       "id": "edge:0061",
       "kind": "transition",
-      "from": "decision:step:RefreshSubagentWorkspace:653:10",
+      "from": "decision:step:RefreshSubagentWorkspace:661:10",
       "to": "step:BeginSubagentFinish",
       "label": "GoTo",
       "span": {
-        "startLine": 653,
+        "startLine": 661,
         "startColumn": 10,
-        "endLine": 653,
+        "endLine": 661,
         "endColumn": 149
       }
     },
     {
       "id": "edge:0062",
       "kind": "transition",
-      "from": "decision:step:RefreshSubagentWorkspace:657:9",
+      "from": "decision:step:RefreshSubagentWorkspace:665:9",
       "to": "step:RouteSubagentTools",
       "label": "GoTo",
       "span": {
-        "startLine": 657,
+        "startLine": 665,
         "startColumn": 9,
-        "endLine": 657,
+        "endLine": 665,
         "endColumn": 44
       }
     },
     {
       "id": "edge:0063",
       "kind": "transition",
-      "from": "decision:step:RouteSubagentTools:440:11",
+      "from": "decision:step:RouteSubagentTools:448:11",
       "to": "step:RouteSubagentTools",
       "label": "GoTo",
       "span": {
-        "startLine": 440,
+        "startLine": 448,
         "startColumn": 11,
-        "endLine": 440,
+        "endLine": 448,
         "endColumn": 46
       }
     },
     {
       "id": "edge:0064",
       "kind": "transition",
-      "from": "decision:step:RouteSubagentTools:442:10",
+      "from": "decision:step:RouteSubagentTools:450:10",
       "to": "step:CallSubagentModel",
       "label": "GoTo",
       "span": {
-        "startLine": 442,
+        "startLine": 450,
         "startColumn": 10,
-        "endLine": 442,
+        "endLine": 450,
         "endColumn": 100
       }
     },
     {
       "id": "edge:0065",
       "kind": "transition",
-      "from": "decision:step:RouteSubagentTools:450:10",
+      "from": "decision:step:RouteSubagentTools:458:10",
       "to": "step:AwaitSubagentParallelToolResults",
       "label": "fan-out",
       "multiplicity": "×N",
       "span": {
-        "startLine": 444,
+        "startLine": 452,
         "startColumn": 35,
-        "endLine": 444,
+        "endLine": 452,
         "endColumn": 92
       }
     },
     {
       "id": "edge:0066",
       "kind": "transition",
-      "from": "decision:step:RouteSubagentTools:450:10",
+      "from": "decision:step:RouteSubagentTools:458:10",
       "to": "step:ExecuteSubagentParallelTool",
       "label": "fan-out",
       "multiplicity": "×N",
       "span": {
-        "startLine": 448,
+        "startLine": 456,
         "startColumn": 34,
-        "endLine": 448,
+        "endLine": 456,
         "endColumn": 117
       }
     },
     {
       "id": "edge:0067",
       "kind": "transition",
-      "from": "decision:step:RouteSubagentTools:455:9",
+      "from": "decision:step:RouteSubagentTools:463:9",
       "to": "step:ExecuteSubagentTool",
       "label": "GoTo",
       "span": {
-        "startLine": 455,
+        "startLine": 463,
         "startColumn": 9,
-        "endLine": 455,
+        "endLine": 463,
         "endColumn": 75
       }
     },
     {
       "id": "edge:0068",
       "kind": "transition",
-      "from": "decision:step:SettleSubagentCommand:526:10",
+      "from": "decision:step:SettleSubagentCommand:534:10",
       "to": "step:RouteSubagentTools",
       "label": "GoTo",
       "span": {
-        "startLine": 526,
+        "startLine": 534,
         "startColumn": 10,
-        "endLine": 526,
+        "endLine": 534,
         "endColumn": 45
       }
     },
     {
       "id": "edge:0069",
       "kind": "transition",
-      "from": "decision:step:SettleSubagentCommand:530:10",
+      "from": "decision:step:SettleSubagentCommand:538:10",
       "to": "step:CompactSubagentContext",
       "label": "GoTo",
       "span": {
-        "startLine": 530,
+        "startLine": 538,
         "startColumn": 10,
-        "endLine": 530,
+        "endLine": 538,
         "endColumn": 81
       }
     },
     {
       "id": "edge:0070",
       "kind": "transition",
-      "from": "decision:step:SettleSubagentCommand:532:9",
+      "from": "decision:step:SettleSubagentCommand:540:9",
       "to": "step:CallSubagentModel",
       "label": "GoTo",
       "span": {
-        "startLine": 532,
+        "startLine": 540,
         "startColumn": 9,
-        "endLine": 532,
+        "endLine": 540,
         "endColumn": 75
       }
     },
@@ -2827,9 +2827,9 @@
       "to": "rpc:GetSubagentSnapshot",
       "label": "Get",
       "span": {
-        "startLine": 154,
+        "startLine": 162,
         "startColumn": 36,
-        "endLine": 154,
+        "endLine": 162,
         "endColumn": 64
       },
       "metadata": {
@@ -2843,9 +2843,9 @@
       "to": "step:ApplySubagentAdmission",
       "label": "Get",
       "span": {
-        "startLine": 264,
+        "startLine": 272,
         "startColumn": 83,
-        "endLine": 264,
+        "endLine": 272,
         "endColumn": 111
       },
       "metadata": {
@@ -2861,9 +2861,9 @@
       "to": "step:AwaitSubagentParallelToolResults",
       "label": "Get",
       "span": {
-        "startLine": 618,
+        "startLine": 626,
         "startColumn": 5,
-        "endLine": 618,
+        "endLine": 626,
         "endColumn": 32
       },
       "metadata": {
@@ -2879,9 +2879,9 @@
       "to": "step:CallSubagentModel",
       "label": "Get",
       "span": {
-        "startLine": 320,
+        "startLine": 328,
         "startColumn": 21,
-        "endLine": 320,
+        "endLine": 328,
         "endColumn": 49
       },
       "metadata": {
@@ -2895,9 +2895,9 @@
       "to": "step:CompactSubagentContext",
       "label": "Get",
       "span": {
-        "startLine": 382,
+        "startLine": 390,
         "startColumn": 21,
-        "endLine": 382,
+        "endLine": 390,
         "endColumn": 49
       },
       "metadata": {
@@ -2911,9 +2911,9 @@
       "to": "step:ExecuteSubagentTool",
       "label": "Get",
       "span": {
-        "startLine": 482,
+        "startLine": 490,
         "startColumn": 46,
-        "endLine": 482,
+        "endLine": 490,
         "endColumn": 74
       },
       "metadata": {
@@ -2927,9 +2927,9 @@
       "to": "step:FinishSubagent",
       "label": "Get",
       "span": {
-        "startLine": 696,
+        "startLine": 704,
         "startColumn": 12,
-        "endLine": 696,
+        "endLine": 704,
         "endColumn": 45
       },
       "metadata": {
@@ -2945,9 +2945,9 @@
       "to": "step:InitializeSubagent",
       "label": "Get",
       "span": {
-        "startLine": 213,
+        "startLine": 221,
         "startColumn": 2,
-        "endLine": 213,
+        "endLine": 221,
         "endColumn": 72
       },
       "metadata": {
@@ -2963,9 +2963,9 @@
       "to": "step:RecordSubagentToolFailure",
       "label": "Get",
       "span": {
-        "startLine": 545,
+        "startLine": 553,
         "startColumn": 46,
-        "endLine": 545,
+        "endLine": 553,
         "endColumn": 74
       },
       "metadata": {
@@ -2979,9 +2979,9 @@
       "to": "step:RouteSubagentTools",
       "label": "Get",
       "span": {
-        "startLine": 453,
+        "startLine": 461,
         "startColumn": 46,
-        "endLine": 453,
+        "endLine": 461,
         "endColumn": 74
       },
       "metadata": {
@@ -2995,9 +2995,9 @@
       "to": "step:SettleSubagentCommand",
       "label": "Get",
       "span": {
-        "startLine": 520,
+        "startLine": 528,
         "startColumn": 46,
-        "endLine": 520,
+        "endLine": 528,
         "endColumn": 74
       },
       "metadata": {
@@ -3011,9 +3011,9 @@
       "to": "step:CallSubagentModel",
       "label": "Get",
       "span": {
-        "startLine": 325,
+        "startLine": 333,
         "startColumn": 34,
-        "endLine": 325,
+        "endLine": 333,
         "endColumn": 120
       },
       "metadata": {
@@ -3027,9 +3027,9 @@
       "to": "step:CompactSubagentContext",
       "label": "Get",
       "span": {
-        "startLine": 387,
+        "startLine": 395,
         "startColumn": 34,
-        "endLine": 387,
+        "endLine": 395,
         "endColumn": 120
       },
       "metadata": {
@@ -3043,9 +3043,9 @@
       "to": "rpc:GetSubagentSnapshot",
       "label": "Get",
       "span": {
-        "startLine": 153,
+        "startLine": 161,
         "startColumn": 88,
-        "endLine": 153,
+        "endLine": 161,
         "endColumn": 112
       },
       "metadata": {
@@ -3059,9 +3059,9 @@
       "to": "step:AwaitSubagentDeadline",
       "label": "Get",
       "span": {
-        "startLine": 285,
+        "startLine": 293,
         "startColumn": 24,
-        "endLine": 285,
+        "endLine": 293,
         "endColumn": 48
       },
       "metadata": {
@@ -3075,9 +3075,9 @@
       "to": "step:ExecuteSubagentParallelTool",
       "label": "Get",
       "span": {
-        "startLine": 570,
+        "startLine": 578,
         "startColumn": 17,
-        "endLine": 570,
+        "endLine": 578,
         "endColumn": 55
       },
       "metadata": {
@@ -3093,9 +3093,9 @@
       "to": "step:ExecuteSubagentTool",
       "label": "Get",
       "span": {
-        "startLine": 483,
+        "startLine": 491,
         "startColumn": 17,
-        "endLine": 483,
+        "endLine": 491,
         "endColumn": 49
       },
       "metadata": {
@@ -3111,9 +3111,9 @@
       "to": "step:ApplySubagentAdmission",
       "label": "Get",
       "span": {
-        "startLine": 264,
+        "startLine": 272,
         "startColumn": 83,
-        "endLine": 264,
+        "endLine": 272,
         "endColumn": 111
       },
       "metadata": {
@@ -3129,9 +3129,9 @@
       "to": "step:AwaitSubagentParallelToolResults",
       "label": "Get",
       "span": {
-        "startLine": 618,
+        "startLine": 626,
         "startColumn": 5,
-        "endLine": 618,
+        "endLine": 626,
         "endColumn": 32
       },
       "metadata": {
@@ -3147,9 +3147,9 @@
       "to": "step:CallSubagentModel",
       "label": "Get",
       "span": {
-        "startLine": 318,
+        "startLine": 326,
         "startColumn": 23,
-        "endLine": 318,
+        "endLine": 326,
         "endColumn": 55
       },
       "metadata": {
@@ -3163,9 +3163,9 @@
       "to": "step:CompactSubagentContext",
       "label": "Get",
       "span": {
-        "startLine": 380,
+        "startLine": 388,
         "startColumn": 23,
-        "endLine": 380,
+        "endLine": 388,
         "endColumn": 55
       },
       "metadata": {
@@ -3179,9 +3179,9 @@
       "to": "step:ExecuteSubagentTool",
       "label": "Get",
       "span": {
-        "startLine": 495,
+        "startLine": 503,
         "startColumn": 5,
-        "endLine": 495,
+        "endLine": 503,
         "endColumn": 51
       },
       "metadata": {
@@ -3197,9 +3197,9 @@
       "to": "step:InitializeSubagent",
       "label": "Get",
       "span": {
-        "startLine": 213,
+        "startLine": 221,
         "startColumn": 2,
-        "endLine": 213,
+        "endLine": 221,
         "endColumn": 72
       },
       "metadata": {
@@ -3215,9 +3215,9 @@
       "to": "step:RecordSubagentToolFailure",
       "label": "Get",
       "span": {
-        "startLine": 546,
+        "startLine": 554,
         "startColumn": 5,
-        "endLine": 546,
+        "endLine": 554,
         "endColumn": 158
       },
       "metadata": {
@@ -3233,9 +3233,9 @@
       "to": "step:RouteSubagentTools",
       "label": "Get",
       "span": {
-        "startLine": 436,
+        "startLine": 444,
         "startColumn": 18,
-        "endLine": 436,
+        "endLine": 444,
         "endColumn": 32
       },
       "metadata": {
@@ -3251,9 +3251,9 @@
       "to": "step:SettleSubagentCommand",
       "label": "Get",
       "span": {
-        "startLine": 525,
+        "startLine": 533,
         "startColumn": 5,
-        "endLine": 525,
+        "endLine": 533,
         "endColumn": 51
       },
       "metadata": {
@@ -3269,9 +3269,9 @@
       "to": "step:CallSubagentModel",
       "label": "Get",
       "span": {
-        "startLine": 319,
+        "startLine": 327,
         "startColumn": 23,
-        "endLine": 319,
+        "endLine": 327,
         "endColumn": 84
       },
       "metadata": {
@@ -3285,9 +3285,9 @@
       "to": "step:CompactSubagentContext",
       "label": "Get",
       "span": {
-        "startLine": 381,
+        "startLine": 389,
         "startColumn": 23,
-        "endLine": 381,
+        "endLine": 389,
         "endColumn": 84
       },
       "metadata": {
@@ -3301,9 +3301,9 @@
       "to": "step:AwaitSubagentParallelToolResults",
       "label": "Get",
       "span": {
-        "startLine": 618,
+        "startLine": 626,
         "startColumn": 5,
-        "endLine": 618,
+        "endLine": 626,
         "endColumn": 32
       },
       "metadata": {
@@ -3319,9 +3319,9 @@
       "to": "step:CallSubagentModel",
       "label": "Get",
       "span": {
-        "startLine": 323,
+        "startLine": 331,
         "startColumn": 21,
-        "endLine": 323,
+        "endLine": 331,
         "endColumn": 87
       },
       "metadata": {
@@ -3335,9 +3335,9 @@
       "to": "step:CompactSubagentContext",
       "label": "Get",
       "span": {
-        "startLine": 385,
+        "startLine": 393,
         "startColumn": 21,
-        "endLine": 385,
+        "endLine": 393,
         "endColumn": 87
       },
       "metadata": {
@@ -3351,9 +3351,9 @@
       "to": "step:ExecuteSubagentTool",
       "label": "Get",
       "span": {
-        "startLine": 495,
+        "startLine": 503,
         "startColumn": 5,
-        "endLine": 495,
+        "endLine": 503,
         "endColumn": 51
       },
       "metadata": {
@@ -3369,9 +3369,9 @@
       "to": "step:FinishSubagent",
       "label": "Get",
       "span": {
-        "startLine": 710,
+        "startLine": 718,
         "startColumn": 37,
-        "endLine": 710,
+        "endLine": 718,
         "endColumn": 55
       },
       "metadata": {
@@ -3387,9 +3387,9 @@
       "to": "step:InitializeSubagent",
       "label": "Get",
       "span": {
-        "startLine": 213,
+        "startLine": 221,
         "startColumn": 2,
-        "endLine": 213,
+        "endLine": 221,
         "endColumn": 72
       },
       "metadata": {
@@ -3405,9 +3405,9 @@
       "to": "step:RecordSubagentToolFailure",
       "label": "Get",
       "span": {
-        "startLine": 546,
+        "startLine": 554,
         "startColumn": 5,
-        "endLine": 546,
+        "endLine": 554,
         "endColumn": 158
       },
       "metadata": {
@@ -3423,9 +3423,9 @@
       "to": "step:RouteSubagentTools",
       "label": "Get",
       "span": {
-        "startLine": 436,
+        "startLine": 444,
         "startColumn": 18,
-        "endLine": 436,
+        "endLine": 444,
         "endColumn": 32
       },
       "metadata": {
@@ -3441,9 +3441,9 @@
       "to": "step:SettleSubagentCommand",
       "label": "Get",
       "span": {
-        "startLine": 525,
+        "startLine": 533,
         "startColumn": 5,
-        "endLine": 525,
+        "endLine": 533,
         "endColumn": 51
       },
       "metadata": {
@@ -3459,9 +3459,9 @@
       "to": "rpc:GetSubagentSnapshot",
       "label": "Get",
       "span": {
-        "startLine": 148,
+        "startLine": 156,
         "startColumn": 31,
-        "endLine": 148,
+        "endLine": 156,
         "endColumn": 57
       },
       "metadata": {
@@ -3475,9 +3475,9 @@
       "to": "step:ApplySubagentAdmission",
       "label": "Get",
       "span": {
-        "startLine": 258,
+        "startLine": 266,
         "startColumn": 59,
-        "endLine": 258,
+        "endLine": 266,
         "endColumn": 85
       },
       "metadata": {
@@ -3491,9 +3491,9 @@
       "to": "step:ExecuteSubagentParallelTool",
       "label": "Get",
       "span": {
-        "startLine": 570,
+        "startLine": 578,
         "startColumn": 17,
-        "endLine": 570,
+        "endLine": 578,
         "endColumn": 55
       },
       "metadata": {
@@ -3509,9 +3509,9 @@
       "to": "step:ExecuteSubagentTool",
       "label": "Get",
       "span": {
-        "startLine": 483,
+        "startLine": 491,
         "startColumn": 17,
-        "endLine": 483,
+        "endLine": 491,
         "endColumn": 49
       },
       "metadata": {
@@ -3527,9 +3527,9 @@
       "to": "step:FinishSubagent",
       "label": "Get",
       "span": {
-        "startLine": 699,
+        "startLine": 707,
         "startColumn": 9,
-        "endLine": 699,
+        "endLine": 707,
         "endColumn": 41
       },
       "metadata": {
@@ -3545,9 +3545,9 @@
       "to": "step:InitializeSubagent",
       "label": "Get",
       "span": {
-        "startLine": 195,
+        "startLine": 203,
         "startColumn": 40,
-        "endLine": 195,
+        "endLine": 203,
         "endColumn": 66
       },
       "metadata": {
@@ -3561,9 +3561,9 @@
       "to": "step:RecordUndeliveredReport",
       "label": "Get",
       "span": {
-        "startLine": 826,
+        "startLine": 834,
         "startColumn": 33,
-        "endLine": 826,
+        "endLine": 834,
         "endColumn": 59
       },
       "metadata": {
@@ -3577,9 +3577,9 @@
       "to": "step:RefreshFinishingWorkspace",
       "label": "Get",
       "span": {
-        "startLine": 732,
+        "startLine": 740,
         "startColumn": 56,
-        "endLine": 732,
+        "endLine": 740,
         "endColumn": 82
       },
       "metadata": {
@@ -3593,9 +3593,9 @@
       "to": "step:RefreshSubagentWorkspace",
       "label": "Get",
       "span": {
-        "startLine": 648,
+        "startLine": 656,
         "startColumn": 56,
-        "endLine": 648,
+        "endLine": 656,
         "endColumn": 82
       },
       "metadata": {
@@ -3609,9 +3609,9 @@
       "to": "step:ReportSubagentOutcome",
       "label": "Get",
       "span": {
-        "startLine": 794,
+        "startLine": 802,
         "startColumn": 40,
-        "endLine": 794,
+        "endLine": 802,
         "endColumn": 66
       },
       "metadata": {
@@ -3625,9 +3625,9 @@
       "to": "rpc:GetDexDisplay",
       "label": "Get",
       "span": {
-        "startLine": 173,
+        "startLine": 181,
         "startColumn": 91,
-        "endLine": 173,
+        "endLine": 181,
         "endColumn": 116
       },
       "metadata": {
@@ -3641,9 +3641,9 @@
       "to": "rpc:GetSubagentSnapshot",
       "label": "Get",
       "span": {
-        "startLine": 153,
+        "startLine": 161,
         "startColumn": 146,
-        "endLine": 153,
+        "endLine": 161,
         "endColumn": 171
       },
       "metadata": {
@@ -3657,9 +3657,9 @@
       "to": "step:RecordUndeliveredReport",
       "label": "Get",
       "span": {
-        "startLine": 826,
+        "startLine": 834,
         "startColumn": 72,
-        "endLine": 826,
+        "endLine": 834,
         "endColumn": 97
       },
       "metadata": {
@@ -3673,9 +3673,9 @@
       "to": "step:ReportSubagentOutcome",
       "label": "Get",
       "span": {
-        "startLine": 794,
+        "startLine": 802,
         "startColumn": 115,
-        "endLine": 794,
+        "endLine": 802,
         "endColumn": 140
       },
       "metadata": {
@@ -3689,9 +3689,9 @@
       "to": "rpc:GetSubagentSnapshot",
       "label": "Get",
       "span": {
-        "startLine": 149,
+        "startLine": 157,
         "startColumn": 15,
-        "endLine": 149,
+        "endLine": 157,
         "endColumn": 42
       },
       "metadata": {
@@ -3705,9 +3705,9 @@
       "to": "rpc:GetSubagentSnapshot",
       "label": "Get",
       "span": {
-        "startLine": 148,
+        "startLine": 156,
         "startColumn": 70,
-        "endLine": 148,
+        "endLine": 156,
         "endColumn": 93
       },
       "metadata": {
@@ -3721,9 +3721,9 @@
       "to": "rpc:StopSubagent",
       "label": "Get",
       "span": {
-        "startLine": 136,
+        "startLine": 144,
         "startColumn": 173,
-        "endLine": 136,
+        "endLine": 144,
         "endColumn": 191
       },
       "metadata": {
@@ -3739,9 +3739,9 @@
       "to": "step:ApplySubagentAdmission",
       "label": "Get",
       "span": {
-        "startLine": 261,
+        "startLine": 269,
         "startColumn": 109,
-        "endLine": 261,
+        "endLine": 269,
         "endColumn": 127
       },
       "metadata": {
@@ -3757,9 +3757,9 @@
       "to": "step:AwaitSubagentDeadline",
       "label": "Get",
       "span": {
-        "startLine": 296,
+        "startLine": 304,
         "startColumn": 109,
-        "endLine": 296,
+        "endLine": 304,
         "endColumn": 127
       },
       "metadata": {
@@ -3775,9 +3775,9 @@
       "to": "step:BeginSubagentFinish",
       "label": "Get",
       "span": {
-        "startLine": 675,
+        "startLine": 683,
         "startColumn": 64,
-        "endLine": 675,
+        "endLine": 683,
         "endColumn": 82
       },
       "metadata": {
@@ -3793,9 +3793,9 @@
       "to": "step:CompactSubagentContext",
       "label": "Get",
       "span": {
-        "startLine": 398,
+        "startLine": 406,
         "startColumn": 65,
-        "endLine": 398,
+        "endLine": 406,
         "endColumn": 88
       },
       "metadata": {
@@ -3809,9 +3809,9 @@
       "to": "step:FinishSubagent",
       "label": "Get",
       "span": {
-        "startLine": 699,
+        "startLine": 707,
         "startColumn": 9,
-        "endLine": 699,
+        "endLine": 707,
         "endColumn": 41
       },
       "metadata": {
@@ -3827,9 +3827,9 @@
       "to": "step:InitializeSubagent",
       "label": "Get",
       "span": {
-        "startLine": 195,
+        "startLine": 203,
         "startColumn": 79,
-        "endLine": 195,
+        "endLine": 203,
         "endColumn": 102
       },
       "metadata": {
@@ -3843,9 +3843,9 @@
       "to": "step:RefreshFinishingWorkspace",
       "label": "Get",
       "span": {
-        "startLine": 742,
+        "startLine": 750,
         "startColumn": 64,
-        "endLine": 742,
+        "endLine": 750,
         "endColumn": 82
       },
       "metadata": {
@@ -3861,9 +3861,9 @@
       "to": "step:ReportSubagentOutcome",
       "label": "Get",
       "span": {
-        "startLine": 794,
+        "startLine": 802,
         "startColumn": 79,
-        "endLine": 794,
+        "endLine": 802,
         "endColumn": 102
       },
       "metadata": {
@@ -3877,9 +3877,9 @@
       "to": "rpc:GetDexDisplay",
       "label": "Get",
       "span": {
-        "startLine": 173,
+        "startLine": 181,
         "startColumn": 31,
-        "endLine": 173,
+        "endLine": 181,
         "endColumn": 55
       },
       "metadata": {
@@ -3893,9 +3893,9 @@
       "to": "rpc:GetSubagentSnapshot",
       "label": "Get",
       "span": {
-        "startLine": 153,
+        "startLine": 161,
         "startColumn": 30,
-        "endLine": 153,
+        "endLine": 161,
         "endColumn": 54
       },
       "metadata": {
@@ -3909,9 +3909,9 @@
       "to": "rpc:StopSubagent",
       "label": "Get",
       "span": {
-        "startLine": 130,
+        "startLine": 138,
         "startColumn": 38,
-        "endLine": 130,
+        "endLine": 138,
         "endColumn": 62
       },
       "metadata": {
@@ -3925,9 +3925,9 @@
       "to": "step:AwaitSubagentDeadline",
       "label": "Get",
       "span": {
-        "startLine": 292,
+        "startLine": 300,
         "startColumn": 24,
-        "endLine": 292,
+        "endLine": 300,
         "endColumn": 48
       },
       "metadata": {
@@ -3941,9 +3941,9 @@
       "to": "step:BeginSubagentFinish",
       "label": "Get",
       "span": {
-        "startLine": 671,
+        "startLine": 679,
         "startColumn": 24,
-        "endLine": 671,
+        "endLine": 679,
         "endColumn": 48
       },
       "metadata": {
@@ -3957,9 +3957,9 @@
       "to": "step:ApplySubagentAdmission",
       "label": "Get",
       "span": {
-        "startLine": 259,
+        "startLine": 267,
         "startColumn": 27,
-        "endLine": 259,
+        "endLine": 267,
         "endColumn": 56
       },
       "metadata": {
@@ -3973,9 +3973,9 @@
       "to": "step:AwaitSubagentParallelToolResults",
       "label": "Get",
       "span": {
-        "startLine": 615,
+        "startLine": 623,
         "startColumn": 20,
-        "endLine": 615,
+        "endLine": 623,
         "endColumn": 52
       },
       "metadata": {
@@ -3991,9 +3991,9 @@
       "to": "step:CompactSubagentContext",
       "label": "Get",
       "span": {
-        "startLine": 398,
+        "startLine": 406,
         "startColumn": 25,
-        "endLine": 398,
+        "endLine": 406,
         "endColumn": 52
       },
       "metadata": {
@@ -4007,9 +4007,9 @@
       "to": "step:ExecuteSubagentParallelTool",
       "label": "Get",
       "span": {
-        "startLine": 570,
+        "startLine": 578,
         "startColumn": 17,
-        "endLine": 570,
+        "endLine": 578,
         "endColumn": 55
       },
       "metadata": {
@@ -4025,9 +4025,9 @@
       "to": "step:ExecuteSubagentTool",
       "label": "Get",
       "span": {
-        "startLine": 483,
+        "startLine": 491,
         "startColumn": 17,
-        "endLine": 483,
+        "endLine": 491,
         "endColumn": 49
       },
       "metadata": {
@@ -4043,9 +4043,9 @@
       "to": "step:FinishSubagent",
       "label": "Get",
       "span": {
-        "startLine": 696,
+        "startLine": 704,
         "startColumn": 12,
-        "endLine": 696,
+        "endLine": 704,
         "endColumn": 45
       },
       "metadata": {
@@ -4061,9 +4061,9 @@
       "to": "step:InitializeSubagent",
       "label": "Get",
       "span": {
-        "startLine": 195,
+        "startLine": 203,
         "startColumn": 115,
-        "endLine": 195,
+        "endLine": 203,
         "endColumn": 142
       },
       "metadata": {
@@ -4077,9 +4077,9 @@
       "to": "step:RefreshFinishingWorkspace",
       "label": "Get",
       "span": {
-        "startLine": 731,
+        "startLine": 739,
         "startColumn": 18,
-        "endLine": 731,
+        "endLine": 739,
         "endColumn": 45
       },
       "metadata": {
@@ -4093,9 +4093,9 @@
       "to": "step:RefreshSubagentWorkspace",
       "label": "Get",
       "span": {
-        "startLine": 647,
+        "startLine": 655,
         "startColumn": 18,
-        "endLine": 647,
+        "endLine": 655,
         "endColumn": 45
       },
       "metadata": {
@@ -4109,9 +4109,9 @@
       "to": "step:SettleSubagentCommand",
       "label": "Get",
       "span": {
-        "startLine": 521,
+        "startLine": 529,
         "startColumn": 25,
-        "endLine": 521,
+        "endLine": 529,
         "endColumn": 59
       },
       "metadata": {
@@ -4127,9 +4127,9 @@
       "to": "step:AwaitSubagentParallelToolResults",
       "label": "GetConditionResults",
       "span": {
-        "startLine": 614,
+        "startLine": 622,
         "startColumn": 58,
-        "endLine": 614,
+        "endLine": 622,
         "endColumn": 124
       },
       "metadata": {
@@ -4143,9 +4143,9 @@
       "to": "step:RecordSubagentOutcome",
       "label": "AllInstanceKeys",
       "span": {
-        "startLine": 763,
+        "startLine": 771,
         "startColumn": 27,
-        "endLine": 763,
+        "endLine": 771,
         "endColumn": 74
       },
       "metadata": {
@@ -4159,9 +4159,9 @@
       "to": "step:RecordSubagentOutcome",
       "label": "PendingMessages",
       "span": {
-        "startLine": 764,
+        "startLine": 772,
         "startColumn": 37,
-        "endLine": 764,
+        "endLine": 772,
         "endColumn": 94
       },
       "metadata": {
@@ -4172,12 +4172,12 @@
       "id": "edge:0151",
       "kind": "wait_condition",
       "from": "resource:channel:parallelToolResultsChannel",
-      "to": "wait:AwaitSubagentParallelToolResults:608:9",
+      "to": "wait:AwaitSubagentParallelToolResults:616:9",
       "label": "ParallelToolResults[batch.BatchID].for len(batch.Records)",
       "span": {
-        "startLine": 608,
+        "startLine": 616,
         "startColumn": 19,
-        "endLine": 608,
+        "endLine": 616,
         "endColumn": 85
       },
       "metadata": {
@@ -4191,9 +4191,9 @@
       "to": "resource:attribute:statusAttribute",
       "label": "Set",
       "span": {
-        "startLine": 135,
+        "startLine": 143,
         "startColumn": 15,
-        "endLine": 135,
+        "endLine": 143,
         "endColumn": 65
       },
       "metadata": {
@@ -4207,9 +4207,9 @@
       "to": "resource:attribute:stopRequestAttribute",
       "label": "Set",
       "span": {
-        "startLine": 132,
+        "startLine": 140,
         "startColumn": 15,
-        "endLine": 132,
+        "endLine": 140,
         "endColumn": 50
       },
       "metadata": {
@@ -4223,9 +4223,9 @@
       "to": "resource:attribute:outcomeAttribute",
       "label": "Set",
       "span": {
-        "startLine": 252,
+        "startLine": 260,
         "startColumn": 15,
-        "endLine": 252,
+        "endLine": 260,
         "endColumn": 180
       },
       "metadata": {
@@ -4239,9 +4239,9 @@
       "to": "resource:attribute:statusAttribute",
       "label": "Set",
       "span": {
-        "startLine": 253,
+        "startLine": 261,
         "startColumn": 15,
-        "endLine": 253,
+        "endLine": 261,
         "endColumn": 63
       },
       "metadata": {
@@ -4255,9 +4255,9 @@
       "to": "resource:attribute:statusAttribute",
       "label": "Set",
       "span": {
-        "startLine": 295,
+        "startLine": 303,
         "startColumn": 14,
-        "endLine": 295,
+        "endLine": 303,
         "endColumn": 64
       },
       "metadata": {
@@ -4271,9 +4271,9 @@
       "to": "resource:attribute:agentStateAttribute",
       "label": "Set",
       "span": {
-        "startLine": 618,
+        "startLine": 626,
         "startColumn": 5,
-        "endLine": 618,
+        "endLine": 626,
         "endColumn": 32
       },
       "metadata": {
@@ -4289,9 +4289,9 @@
       "to": "resource:attribute:archivedMessagesAttribute",
       "label": "Set",
       "span": {
-        "startLine": 618,
+        "startLine": 626,
         "startColumn": 5,
-        "endLine": 618,
+        "endLine": 626,
         "endColumn": 32
       },
       "metadata": {
@@ -4307,9 +4307,9 @@
       "to": "resource:attribute:contextSegmentAttribute",
       "label": "Set",
       "span": {
-        "startLine": 618,
+        "startLine": 626,
         "startColumn": 5,
-        "endLine": 618,
+        "endLine": 626,
         "endColumn": 32
       },
       "metadata": {
@@ -4325,9 +4325,9 @@
       "to": "resource:attribute:currentMessagesAttribute",
       "label": "Delete",
       "span": {
-        "startLine": 618,
+        "startLine": 626,
         "startColumn": 5,
-        "endLine": 618,
+        "endLine": 626,
         "endColumn": 32
       },
       "metadata": {
@@ -4343,9 +4343,9 @@
       "to": "resource:attribute:currentMessagesAttribute",
       "label": "Set",
       "span": {
-        "startLine": 618,
+        "startLine": 626,
         "startColumn": 5,
-        "endLine": 618,
+        "endLine": 626,
         "endColumn": 32
       },
       "metadata": {
@@ -4361,9 +4361,9 @@
       "to": "resource:attribute:workspaceAttribute",
       "label": "Set",
       "span": {
-        "startLine": 615,
+        "startLine": 623,
         "startColumn": 20,
-        "endLine": 615,
+        "endLine": 623,
         "endColumn": 52
       },
       "metadata": {
@@ -4379,9 +4379,9 @@
       "to": "resource:stream:agentActivityStream",
       "label": "Write",
       "span": {
-        "startLine": 618,
+        "startLine": 626,
         "startColumn": 5,
-        "endLine": 618,
+        "endLine": 626,
         "endColumn": 32
       },
       "metadata": {
@@ -4400,9 +4400,9 @@
       "to": "resource:attribute:statusAttribute",
       "label": "Set",
       "span": {
-        "startLine": 674,
+        "startLine": 682,
         "startColumn": 14,
-        "endLine": 674,
+        "endLine": 682,
         "endColumn": 64
       },
       "metadata": {
@@ -4416,9 +4416,9 @@
       "to": "resource:attribute:agentStateAttribute",
       "label": "Set",
       "span": {
-        "startLine": 350,
+        "startLine": 358,
         "startColumn": 10,
-        "endLine": 350,
+        "endLine": 358,
         "endColumn": 61
       },
       "metadata": {
@@ -4434,9 +4434,9 @@
       "to": "resource:attribute:archivedMessagesAttribute",
       "label": "Set",
       "span": {
-        "startLine": 350,
+        "startLine": 358,
         "startColumn": 10,
-        "endLine": 350,
+        "endLine": 358,
         "endColumn": 61
       },
       "metadata": {
@@ -4452,9 +4452,9 @@
       "to": "resource:attribute:contextSegmentAttribute",
       "label": "Set",
       "span": {
-        "startLine": 350,
+        "startLine": 358,
         "startColumn": 10,
-        "endLine": 350,
+        "endLine": 358,
         "endColumn": 61
       },
       "metadata": {
@@ -4470,9 +4470,9 @@
       "to": "resource:attribute:currentMessagesAttribute",
       "label": "Delete",
       "span": {
-        "startLine": 350,
+        "startLine": 358,
         "startColumn": 10,
-        "endLine": 350,
+        "endLine": 358,
         "endColumn": 61
       },
       "metadata": {
@@ -4488,9 +4488,9 @@
       "to": "resource:attribute:currentMessagesAttribute",
       "label": "Set",
       "span": {
-        "startLine": 350,
+        "startLine": 358,
         "startColumn": 10,
-        "endLine": 350,
+        "endLine": 358,
         "endColumn": 61
       },
       "metadata": {
@@ -4506,9 +4506,9 @@
       "to": "resource:stream:agentActivityStream",
       "label": "Write",
       "span": {
-        "startLine": 334,
+        "startLine": 342,
         "startColumn": 2,
-        "endLine": 334,
+        "endLine": 342,
         "endColumn": 161
       },
       "metadata": {
@@ -4527,9 +4527,9 @@
       "to": "resource:stream:assistantTextStream",
       "label": "Write",
       "span": {
-        "startLine": 337,
+        "startLine": 345,
         "startColumn": 81,
-        "endLine": 337,
+        "endLine": 345,
         "endColumn": 103
       },
       "metadata": {
@@ -4546,9 +4546,9 @@
       "to": "resource:stream:reasoningSummaryStream",
       "label": "Write",
       "span": {
-        "startLine": 338,
+        "startLine": 346,
         "startColumn": 81,
-        "endLine": 338,
+        "endLine": 346,
         "endColumn": 103
       },
       "metadata": {
@@ -4565,9 +4565,9 @@
       "to": "step:RecordSubagentFailure",
       "label": "Execute failure",
       "span": {
-        "startLine": 311,
+        "startLine": 319,
         "startColumn": 27,
-        "endLine": 311,
+        "endLine": 319,
         "endColumn": 86
       },
       "metadata": {
@@ -4581,9 +4581,9 @@
       "to": "resource:attribute:agentStateAttribute",
       "label": "Set",
       "span": {
-        "startLine": 399,
+        "startLine": 407,
         "startColumn": 12,
-        "endLine": 399,
+        "endLine": 407,
         "endColumn": 82
       },
       "metadata": {
@@ -4599,9 +4599,9 @@
       "to": "resource:attribute:archivedMessagesAttribute",
       "label": "Set",
       "span": {
-        "startLine": 399,
+        "startLine": 407,
         "startColumn": 12,
-        "endLine": 399,
+        "endLine": 407,
         "endColumn": 82
       },
       "metadata": {
@@ -4617,9 +4617,9 @@
       "to": "resource:attribute:contextSegmentAttribute",
       "label": "Set",
       "span": {
-        "startLine": 399,
+        "startLine": 407,
         "startColumn": 12,
-        "endLine": 399,
+        "endLine": 407,
         "endColumn": 82
       },
       "metadata": {
@@ -4635,9 +4635,9 @@
       "to": "resource:attribute:contextSegmentPromptsAttribute",
       "label": "Delete",
       "span": {
-        "startLine": 399,
+        "startLine": 407,
         "startColumn": 12,
-        "endLine": 399,
+        "endLine": 407,
         "endColumn": 82
       },
       "metadata": {
@@ -4653,9 +4653,9 @@
       "to": "resource:attribute:contextSegmentPromptsAttribute",
       "label": "Set",
       "span": {
-        "startLine": 399,
+        "startLine": 407,
         "startColumn": 12,
-        "endLine": 399,
+        "endLine": 407,
         "endColumn": 82
       },
       "metadata": {
@@ -4671,9 +4671,9 @@
       "to": "resource:attribute:currentMessagesAttribute",
       "label": "Delete",
       "span": {
-        "startLine": 399,
+        "startLine": 407,
         "startColumn": 12,
-        "endLine": 399,
+        "endLine": 407,
         "endColumn": 82
       },
       "metadata": {
@@ -4689,9 +4689,9 @@
       "to": "resource:attribute:currentMessagesAttribute",
       "label": "Set",
       "span": {
-        "startLine": 399,
+        "startLine": 407,
         "startColumn": 12,
-        "endLine": 399,
+        "endLine": 407,
         "endColumn": 82
       },
       "metadata": {
@@ -4707,9 +4707,9 @@
       "to": "resource:stream:agentActivityStream",
       "label": "Write",
       "span": {
-        "startLine": 400,
+        "startLine": 408,
         "startColumn": 29,
-        "endLine": 400,
+        "endLine": 408,
         "endColumn": 194
       },
       "metadata": {
@@ -4726,9 +4726,9 @@
       "to": "step:RecordSubagentFailure",
       "label": "Execute failure",
       "span": {
-        "startLine": 373,
+        "startLine": 381,
         "startColumn": 27,
-        "endLine": 373,
+        "endLine": 381,
         "endColumn": 86
       },
       "metadata": {
@@ -4742,9 +4742,9 @@
       "to": "resource:channel:parallelToolResultsChannel",
       "label": "Publish",
       "span": {
-        "startLine": 578,
+        "startLine": 586,
         "startColumn": 14,
-        "endLine": 578,
+        "endLine": 586,
         "endColumn": 83
       },
       "metadata": {
@@ -4758,9 +4758,9 @@
       "to": "resource:stream:agentActivityStream",
       "label": "Write",
       "span": {
-        "startLine": 570,
+        "startLine": 578,
         "startColumn": 17,
-        "endLine": 570,
+        "endLine": 578,
         "endColumn": 55
       },
       "metadata": {
@@ -4779,9 +4779,9 @@
       "to": "step:RecoverSubagentParallelToolExecution",
       "label": "Execute failure",
       "span": {
-        "startLine": 564,
+        "startLine": 572,
         "startColumn": 42,
-        "endLine": 564,
+        "endLine": 572,
         "endColumn": 144
       },
       "metadata": {
@@ -4795,9 +4795,9 @@
       "to": "resource:attribute:agentStateAttribute",
       "label": "Set",
       "span": {
-        "startLine": 495,
+        "startLine": 503,
         "startColumn": 5,
-        "endLine": 495,
+        "endLine": 503,
         "endColumn": 51
       },
       "metadata": {
@@ -4813,9 +4813,9 @@
       "to": "resource:attribute:archivedMessagesAttribute",
       "label": "Set",
       "span": {
-        "startLine": 495,
+        "startLine": 503,
         "startColumn": 5,
-        "endLine": 495,
+        "endLine": 503,
         "endColumn": 51
       },
       "metadata": {
@@ -4831,9 +4831,9 @@
       "to": "resource:attribute:contextSegmentAttribute",
       "label": "Set",
       "span": {
-        "startLine": 495,
+        "startLine": 503,
         "startColumn": 5,
-        "endLine": 495,
+        "endLine": 503,
         "endColumn": 51
       },
       "metadata": {
@@ -4849,9 +4849,9 @@
       "to": "resource:attribute:currentMessagesAttribute",
       "label": "Delete",
       "span": {
-        "startLine": 495,
+        "startLine": 503,
         "startColumn": 5,
-        "endLine": 495,
+        "endLine": 503,
         "endColumn": 51
       },
       "metadata": {
@@ -4867,9 +4867,9 @@
       "to": "resource:attribute:currentMessagesAttribute",
       "label": "Set",
       "span": {
-        "startLine": 495,
+        "startLine": 503,
         "startColumn": 5,
-        "endLine": 495,
+        "endLine": 503,
         "endColumn": 51
       },
       "metadata": {
@@ -4885,9 +4885,9 @@
       "to": "resource:attribute:workspaceAttribute",
       "label": "Set",
       "span": {
-        "startLine": 488,
+        "startLine": 496,
         "startColumn": 63,
-        "endLine": 488,
+        "endLine": 496,
         "endColumn": 90
       },
       "metadata": {
@@ -4903,9 +4903,9 @@
       "to": "resource:stream:agentActivityStream",
       "label": "Write",
       "span": {
-        "startLine": 483,
+        "startLine": 491,
         "startColumn": 17,
-        "endLine": 483,
+        "endLine": 491,
         "endColumn": 49
       },
       "metadata": {
@@ -4924,9 +4924,9 @@
       "to": "step:RecordSubagentToolFailure",
       "label": "Execute failure",
       "span": {
-        "startLine": 476,
+        "startLine": 484,
         "startColumn": 42,
-        "endLine": 476,
+        "endLine": 484,
         "endColumn": 117
       },
       "metadata": {
@@ -4940,9 +4940,9 @@
       "to": "step:SettleSubagentCommand",
       "label": "Execute failure",
       "span": {
-        "startLine": 474,
+        "startLine": 482,
         "startColumn": 43,
-        "endLine": 474,
+        "endLine": 482,
         "endColumn": 102
       },
       "metadata": {
@@ -4956,9 +4956,9 @@
       "to": "step:RecordSubagentOutcome",
       "label": "Execute failure",
       "span": {
-        "startLine": 690,
+        "startLine": 698,
         "startColumn": 19,
-        "endLine": 690,
+        "endLine": 698,
         "endColumn": 78
       },
       "metadata": {
@@ -4972,9 +4972,9 @@
       "to": "resource:attribute:agentStateAttribute",
       "label": "Set",
       "span": {
-        "startLine": 212,
+        "startLine": 220,
         "startColumn": 14,
-        "endLine": 212,
+        "endLine": 220,
         "endColumn": 49
       },
       "metadata": {
@@ -4988,9 +4988,9 @@
       "to": "resource:attribute:archivedMessagesAttribute",
       "label": "Set",
       "span": {
-        "startLine": 213,
+        "startLine": 221,
         "startColumn": 2,
-        "endLine": 213,
+        "endLine": 221,
         "endColumn": 72
       },
       "metadata": {
@@ -5006,9 +5006,9 @@
       "to": "resource:attribute:configAttribute",
       "label": "Set",
       "span": {
-        "startLine": 205,
+        "startLine": 213,
         "startColumn": 14,
-        "endLine": 205,
+        "endLine": 213,
         "endColumn": 46
       },
       "metadata": {
@@ -5022,9 +5022,9 @@
       "to": "resource:attribute:contextSegmentAttribute",
       "label": "Set",
       "span": {
-        "startLine": 213,
+        "startLine": 221,
         "startColumn": 2,
-        "endLine": 213,
+        "endLine": 221,
         "endColumn": 72
       },
       "metadata": {
@@ -5040,9 +5040,9 @@
       "to": "resource:attribute:contextSegmentPromptsAttribute",
       "label": "Set",
       "span": {
-        "startLine": 213,
+        "startLine": 221,
         "startColumn": 2,
-        "endLine": 213,
+        "endLine": 221,
         "endColumn": 72
       },
       "metadata": {
@@ -5058,9 +5058,9 @@
       "to": "resource:attribute:currentMessagesAttribute",
       "label": "Delete",
       "span": {
-        "startLine": 213,
+        "startLine": 221,
         "startColumn": 2,
-        "endLine": 213,
+        "endLine": 221,
         "endColumn": 72
       },
       "metadata": {
@@ -5076,9 +5076,9 @@
       "to": "resource:attribute:currentMessagesAttribute",
       "label": "Set",
       "span": {
-        "startLine": 213,
+        "startLine": 221,
         "startColumn": 2,
-        "endLine": 213,
+        "endLine": 221,
         "endColumn": 72
       },
       "metadata": {
@@ -5094,9 +5094,9 @@
       "to": "resource:attribute:messageWindowLockAttribute",
       "label": "Set",
       "span": {
-        "startLine": 209,
+        "startLine": 217,
         "startColumn": 14,
-        "endLine": 209,
+        "endLine": 217,
         "endColumn": 56
       },
       "metadata": {
@@ -5110,9 +5110,9 @@
       "to": "resource:attribute:workspaceAttribute",
       "label": "Set",
       "span": {
-        "startLine": 206,
+        "startLine": 214,
         "startColumn": 14,
-        "endLine": 206,
+        "endLine": 214,
         "endColumn": 45
       },
       "metadata": {
@@ -5126,9 +5126,9 @@
       "to": "step:RecordSubagentAdmissionFailure",
       "label": "Execute failure",
       "span": {
-        "startLine": 187,
+        "startLine": 195,
         "startColumn": 41,
-        "endLine": 187,
+        "endLine": 195,
         "endColumn": 109
       },
       "metadata": {
@@ -5142,9 +5142,9 @@
       "to": "resource:attribute:outcomeAttribute",
       "label": "Set",
       "span": {
-        "startLine": 233,
+        "startLine": 241,
         "startColumn": 14,
-        "endLine": 233,
+        "endLine": 241,
         "endColumn": 147
       },
       "metadata": {
@@ -5158,9 +5158,9 @@
       "to": "resource:attribute:statusAttribute",
       "label": "Set",
       "span": {
-        "startLine": 234,
+        "startLine": 242,
         "startColumn": 14,
-        "endLine": 234,
+        "endLine": 242,
         "endColumn": 61
       },
       "metadata": {
@@ -5174,9 +5174,9 @@
       "to": "resource:attribute:outcomeAttribute",
       "label": "Set",
       "span": {
-        "startLine": 769,
+        "startLine": 777,
         "startColumn": 14,
-        "endLine": 770,
+        "endLine": 778,
         "endColumn": 93
       },
       "metadata": {
@@ -5190,9 +5190,9 @@
       "to": "resource:attribute:statusAttribute",
       "label": "Set",
       "span": {
-        "startLine": 771,
+        "startLine": 779,
         "startColumn": 14,
-        "endLine": 771,
+        "endLine": 779,
         "endColumn": 55
       },
       "metadata": {
@@ -5206,9 +5206,9 @@
       "to": "resource:channel:parallelToolResultsChannel",
       "label": "Delete",
       "span": {
-        "startLine": 765,
+        "startLine": 773,
         "startColumn": 16,
-        "endLine": 765,
+        "endLine": 773,
         "endColumn": 83
       },
       "metadata": {
@@ -5222,9 +5222,9 @@
       "to": "resource:attribute:agentStateAttribute",
       "label": "Set",
       "span": {
-        "startLine": 546,
+        "startLine": 554,
         "startColumn": 5,
-        "endLine": 546,
+        "endLine": 554,
         "endColumn": 158
       },
       "metadata": {
@@ -5240,9 +5240,9 @@
       "to": "resource:attribute:archivedMessagesAttribute",
       "label": "Set",
       "span": {
-        "startLine": 546,
+        "startLine": 554,
         "startColumn": 5,
-        "endLine": 546,
+        "endLine": 554,
         "endColumn": 158
       },
       "metadata": {
@@ -5258,9 +5258,9 @@
       "to": "resource:attribute:contextSegmentAttribute",
       "label": "Set",
       "span": {
-        "startLine": 546,
+        "startLine": 554,
         "startColumn": 5,
-        "endLine": 546,
+        "endLine": 554,
         "endColumn": 158
       },
       "metadata": {
@@ -5276,9 +5276,9 @@
       "to": "resource:attribute:currentMessagesAttribute",
       "label": "Delete",
       "span": {
-        "startLine": 546,
+        "startLine": 554,
         "startColumn": 5,
-        "endLine": 546,
+        "endLine": 554,
         "endColumn": 158
       },
       "metadata": {
@@ -5294,9 +5294,9 @@
       "to": "resource:attribute:currentMessagesAttribute",
       "label": "Set",
       "span": {
-        "startLine": 546,
+        "startLine": 554,
         "startColumn": 5,
-        "endLine": 546,
+        "endLine": 554,
         "endColumn": 158
       },
       "metadata": {
@@ -5312,9 +5312,9 @@
       "to": "resource:stream:agentActivityStream",
       "label": "Write",
       "span": {
-        "startLine": 546,
+        "startLine": 554,
         "startColumn": 5,
-        "endLine": 546,
+        "endLine": 554,
         "endColumn": 158
       },
       "metadata": {
@@ -5333,9 +5333,9 @@
       "to": "resource:attribute:outcomeAttribute",
       "label": "Set",
       "span": {
-        "startLine": 828,
+        "startLine": 836,
         "startColumn": 14,
-        "endLine": 828,
+        "endLine": 836,
         "endColumn": 48
       },
       "metadata": {
@@ -5349,9 +5349,9 @@
       "to": "resource:channel:parallelToolResultsChannel",
       "label": "Publish",
       "span": {
-        "startLine": 593,
+        "startLine": 601,
         "startColumn": 14,
-        "endLine": 594,
+        "endLine": 602,
         "endColumn": 109
       },
       "metadata": {
@@ -5365,9 +5365,9 @@
       "to": "resource:attribute:workspaceAttribute",
       "label": "Set",
       "span": {
-        "startLine": 741,
+        "startLine": 749,
         "startColumn": 14,
-        "endLine": 741,
+        "endLine": 749,
         "endColumn": 45
       },
       "metadata": {
@@ -5381,9 +5381,9 @@
       "to": "step:RecordSubagentOutcome",
       "label": "Execute failure",
       "span": {
-        "startLine": 725,
+        "startLine": 733,
         "startColumn": 54,
-        "endLine": 725,
+        "endLine": 733,
         "endColumn": 113
       },
       "metadata": {
@@ -5397,9 +5397,9 @@
       "to": "resource:attribute:workspaceAttribute",
       "label": "Set",
       "span": {
-        "startLine": 656,
+        "startLine": 664,
         "startColumn": 14,
-        "endLine": 656,
+        "endLine": 664,
         "endColumn": 45
       },
       "metadata": {
@@ -5413,9 +5413,9 @@
       "to": "step:RecordSubagentFailure",
       "label": "Execute failure",
       "span": {
-        "startLine": 638,
+        "startLine": 646,
         "startColumn": 54,
-        "endLine": 638,
+        "endLine": 646,
         "endColumn": 113
       },
       "metadata": {
@@ -5429,9 +5429,9 @@
       "to": "resource:attribute:outcomeAttribute",
       "label": "Set",
       "span": {
-        "startLine": 813,
+        "startLine": 821,
         "startColumn": 14,
-        "endLine": 813,
+        "endLine": 821,
         "endColumn": 48
       },
       "metadata": {
@@ -5445,9 +5445,9 @@
       "to": "step:RecordUndeliveredReport",
       "label": "Execute failure",
       "span": {
-        "startLine": 785,
+        "startLine": 793,
         "startColumn": 53,
-        "endLine": 785,
+        "endLine": 793,
         "endColumn": 114
       },
       "metadata": {
@@ -5461,9 +5461,9 @@
       "to": "resource:attribute:agentStateAttribute",
       "label": "Set",
       "span": {
-        "startLine": 436,
+        "startLine": 444,
         "startColumn": 18,
-        "endLine": 436,
+        "endLine": 444,
         "endColumn": 32
       },
       "metadata": {
@@ -5479,9 +5479,9 @@
       "to": "resource:attribute:archivedMessagesAttribute",
       "label": "Set",
       "span": {
-        "startLine": 436,
+        "startLine": 444,
         "startColumn": 18,
-        "endLine": 436,
+        "endLine": 444,
         "endColumn": 32
       },
       "metadata": {
@@ -5497,9 +5497,9 @@
       "to": "resource:attribute:contextSegmentAttribute",
       "label": "Set",
       "span": {
-        "startLine": 436,
+        "startLine": 444,
         "startColumn": 18,
-        "endLine": 436,
+        "endLine": 444,
         "endColumn": 32
       },
       "metadata": {
@@ -5515,9 +5515,9 @@
       "to": "resource:attribute:currentMessagesAttribute",
       "label": "Delete",
       "span": {
-        "startLine": 436,
+        "startLine": 444,
         "startColumn": 18,
-        "endLine": 436,
+        "endLine": 444,
         "endColumn": 32
       },
       "metadata": {
@@ -5533,9 +5533,9 @@
       "to": "resource:attribute:currentMessagesAttribute",
       "label": "Set",
       "span": {
-        "startLine": 436,
+        "startLine": 444,
         "startColumn": 18,
-        "endLine": 436,
+        "endLine": 444,
         "endColumn": 32
       },
       "metadata": {
@@ -5551,9 +5551,9 @@
       "to": "resource:stream:agentActivityStream",
       "label": "Write",
       "span": {
-        "startLine": 436,
+        "startLine": 444,
         "startColumn": 18,
-        "endLine": 436,
+        "endLine": 444,
         "endColumn": 32
       },
       "metadata": {
@@ -5572,9 +5572,9 @@
       "to": "resource:attribute:agentStateAttribute",
       "label": "Set",
       "span": {
-        "startLine": 525,
+        "startLine": 533,
         "startColumn": 5,
-        "endLine": 525,
+        "endLine": 533,
         "endColumn": 51
       },
       "metadata": {
@@ -5590,9 +5590,9 @@
       "to": "resource:attribute:archivedMessagesAttribute",
       "label": "Set",
       "span": {
-        "startLine": 525,
+        "startLine": 533,
         "startColumn": 5,
-        "endLine": 525,
+        "endLine": 533,
         "endColumn": 51
       },
       "metadata": {
@@ -5608,9 +5608,9 @@
       "to": "resource:attribute:contextSegmentAttribute",
       "label": "Set",
       "span": {
-        "startLine": 525,
+        "startLine": 533,
         "startColumn": 5,
-        "endLine": 525,
+        "endLine": 533,
         "endColumn": 51
       },
       "metadata": {
@@ -5626,9 +5626,9 @@
       "to": "resource:attribute:currentMessagesAttribute",
       "label": "Delete",
       "span": {
-        "startLine": 525,
+        "startLine": 533,
         "startColumn": 5,
-        "endLine": 525,
+        "endLine": 533,
         "endColumn": 51
       },
       "metadata": {
@@ -5644,9 +5644,9 @@
       "to": "resource:attribute:currentMessagesAttribute",
       "label": "Set",
       "span": {
-        "startLine": 525,
+        "startLine": 533,
         "startColumn": 5,
-        "endLine": 525,
+        "endLine": 533,
         "endColumn": 51
       },
       "metadata": {
@@ -5662,9 +5662,9 @@
       "to": "resource:stream:agentActivityStream",
       "label": "Write",
       "span": {
-        "startLine": 525,
+        "startLine": 533,
         "startColumn": 5,
-        "endLine": 525,
+        "endLine": 533,
         "endColumn": 51
       },
       "metadata": {
@@ -5683,9 +5683,9 @@
       "to": "step:RecordSubagentToolFailure",
       "label": "Execute failure",
       "span": {
-        "startLine": 516,
+        "startLine": 524,
         "startColumn": 95,
-        "endLine": 516,
+        "endLine": 524,
         "endColumn": 170
       },
       "metadata": {
@@ -5693,7 +5693,13 @@
       }
     }
   ],
-  "diagnostics": [],
+  "diagnostics": [
+    {
+      "severity": "warning",
+      "code": "v2_step_group_shape",
+      "message": "group \"workspace\" is neither one run of Steps that lead to each other nor one choice that a single Step makes; it falls into 2 parts: RefreshSubagentWorkspace; RefreshFinishingWorkspace. Split it so that each group does one thing"
+    }
+  ],
   "groups": [
     {
       "id": "lifecycle",

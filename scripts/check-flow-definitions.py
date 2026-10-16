@@ -115,7 +115,7 @@ def main():
     environment = {**os.environ, "GOWORK": "off"}
     failures = []
     for name, stem, flow in FLOWS:
-        source = "internal/" + stem + ".go"
+        source = "internal/dexai/" + stem + ".go"
         target = ROOT / "docs/flows" / ("sv2-" + name + "-flow.json")
         try:
             result = subprocess.run([str(cli), "visualize", source, "--language", "go", "--schema-version", "2.0", "--json"],

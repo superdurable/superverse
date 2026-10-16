@@ -9,23 +9,23 @@
     "name": "BackgroundCommandFlow",
     "startStepId": "step:WatchBackgroundCommand",
     "span": {
-      "startLine": 32,
+      "startLine": 40,
       "startColumn": 1,
-      "endLine": 34,
+      "endLine": 42,
       "endColumn": 2
     }
   },
   "nodes": [
     {
-      "id": "decision:rpc:GetDexDisplay:62:9",
+      "id": "decision:rpc:GetDexDisplay:70:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetDexDisplay",
       "phase": "rpc",
       "span": {
-        "startLine": 62,
+        "startLine": 70,
         "startColumn": 9,
-        "endLine": 62,
+        "endLine": 70,
         "endColumn": 110
       },
       "decision": {
@@ -33,15 +33,15 @@
       }
     },
     {
-      "id": "decision:rpc:GetDexSummary:55:9",
+      "id": "decision:rpc:GetDexSummary:63:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetDexSummary",
       "phase": "rpc",
       "span": {
-        "startLine": 55,
+        "startLine": 63,
         "startColumn": 9,
-        "endLine": 55,
+        "endLine": 63,
         "endColumn": 110
       },
       "decision": {
@@ -49,15 +49,15 @@
       }
     },
     {
-      "id": "decision:step:RecordBackgroundCommandLost:97:9",
+      "id": "decision:step:RecordBackgroundCommandLost:105:9",
       "kind": "decision",
       "name": "gracefulComplete",
       "parentId": "step:RecordBackgroundCommandLost",
       "phase": "execute",
       "span": {
-        "startLine": 97,
+        "startLine": 105,
         "startColumn": 9,
-        "endLine": 97,
+        "endLine": 105,
         "endColumn": 137
       },
       "decision": {
@@ -65,15 +65,15 @@
       }
     },
     {
-      "id": "decision:step:WatchBackgroundCommand:83:9",
+      "id": "decision:step:WatchBackgroundCommand:91:9",
       "kind": "decision",
       "name": "gracefulComplete",
       "parentId": "step:WatchBackgroundCommand",
       "phase": "execute",
       "span": {
-        "startLine": 83,
+        "startLine": 91,
         "startColumn": 9,
-        "endLine": 83,
+        "endLine": 91,
         "endColumn": 34
       },
       "decision": {
@@ -85,9 +85,9 @@
       "kind": "attribute",
       "name": "TaskID",
       "span": {
-        "startLine": 15,
+        "startLine": 23,
         "startColumn": 5,
-        "endLine": 15,
+        "endLine": 23,
         "endColumn": 60
       },
       "resource": {
@@ -99,9 +99,9 @@
       "kind": "rpc",
       "name": "GetDexDisplay",
       "span": {
-        "startLine": 61,
+        "startLine": 69,
         "startColumn": 1,
-        "endLine": 63,
+        "endLine": 71,
         "endColumn": 2
       }
     },
@@ -110,9 +110,9 @@
       "kind": "rpc",
       "name": "GetDexSummary",
       "span": {
-        "startLine": 54,
+        "startLine": 62,
         "startColumn": 1,
-        "endLine": 56,
+        "endLine": 64,
         "endColumn": 2
       }
     },
@@ -122,9 +122,9 @@
       "name": "RecordBackgroundCommandLost",
       "phase": "execute",
       "span": {
-        "startLine": 33,
+        "startLine": 41,
         "startColumn": 80,
-        "endLine": 33,
+        "endLine": 41,
         "endColumn": 125
       },
       "metadata": {
@@ -138,9 +138,9 @@
       "phase": "execute",
       "start": true,
       "span": {
-        "startLine": 33,
+        "startLine": 41,
         "startColumn": 23,
-        "endLine": 33,
+        "endLine": 41,
         "endColumn": 78
       },
       "metadata": {
@@ -156,9 +156,9 @@
       "to": "rpc:GetDexDisplay",
       "label": "Get",
       "span": {
-        "startLine": 62,
+        "startLine": 70,
         "startColumn": 83,
-        "endLine": 62,
+        "endLine": 70,
         "endColumn": 107
       },
       "metadata": {
@@ -172,9 +172,9 @@
       "to": "rpc:GetDexSummary",
       "label": "Get",
       "span": {
-        "startLine": 55,
+        "startLine": 63,
         "startColumn": 83,
-        "endLine": 55,
+        "endLine": 63,
         "endColumn": 107
       },
       "metadata": {
@@ -188,9 +188,9 @@
       "to": "step:RecordBackgroundCommandLost",
       "label": "Execute failure",
       "span": {
-        "startLine": 75,
+        "startLine": 83,
         "startColumn": 87,
-        "endLine": 75,
+        "endLine": 83,
         "endColumn": 164
       },
       "metadata": {

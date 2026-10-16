@@ -8,9 +8,9 @@
   "flow": {
     "name": "RepositoryBindingFlow",
     "span": {
-      "startLine": 71,
+      "startLine": 79,
       "startColumn": 1,
-      "endLine": 73,
+      "endLine": 81,
       "endColumn": 2
     }
   },
@@ -22,9 +22,9 @@
       "parentId": "rpc:ClaimRepository",
       "phase": "rpc",
       "span": {
-        "startLine": 118,
+        "startLine": 126,
         "startColumn": 1,
-        "endLine": 136,
+        "endLine": 144,
         "endColumn": 2
       }
     },
@@ -35,23 +35,23 @@
       "parentId": "rpc:ReleaseRepository",
       "phase": "rpc",
       "span": {
-        "startLine": 140,
+        "startLine": 148,
         "startColumn": 1,
-        "endLine": 153,
+        "endLine": 161,
         "endColumn": 2
       }
     },
     {
-      "id": "decision:rpc:ClaimRepository:121:10",
+      "id": "decision:rpc:ClaimRepository:129:10",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:ClaimRepository",
       "condition": "b.Status == StatusReleased",
       "phase": "rpc",
       "span": {
-        "startLine": 121,
+        "startLine": 129,
         "startColumn": 10,
-        "endLine": 121,
+        "endLine": 129,
         "endColumn": 110
       },
       "decision": {
@@ -59,16 +59,16 @@
       }
     },
     {
-      "id": "decision:rpc:ClaimRepository:128:10",
+      "id": "decision:rpc:ClaimRepository:136:10",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:ClaimRepository",
       "condition": "!(b.Status == StatusReleased) and b.Status == StatusBound",
       "phase": "rpc",
       "span": {
-        "startLine": 128,
+        "startLine": 136,
         "startColumn": 10,
-        "endLine": 128,
+        "endLine": 136,
         "endColumn": 58
       },
       "decision": {
@@ -76,16 +76,16 @@
       }
     },
     {
-      "id": "decision:rpc:ClaimRepository:135:9",
+      "id": "decision:rpc:ClaimRepository:143:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:ClaimRepository",
       "condition": "!(b.Status == StatusReleased) and !(b.Status == StatusBound)",
       "phase": "rpc",
       "span": {
-        "startLine": 135,
+        "startLine": 143,
         "startColumn": 9,
-        "endLine": 135,
+        "endLine": 143,
         "endColumn": 96
       },
       "decision": {
@@ -93,15 +93,15 @@
       }
     },
     {
-      "id": "decision:rpc:GetDexDisplay:175:9",
+      "id": "decision:rpc:GetDexDisplay:183:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetDexDisplay",
       "phase": "rpc",
       "span": {
-        "startLine": 175,
+        "startLine": 183,
         "startColumn": 9,
-        "endLine": 175,
+        "endLine": 183,
         "endColumn": 115
       },
       "decision": {
@@ -109,15 +109,15 @@
       }
     },
     {
-      "id": "decision:rpc:GetDexSummary:170:9",
+      "id": "decision:rpc:GetDexSummary:178:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetDexSummary",
       "phase": "rpc",
       "span": {
-        "startLine": 170,
+        "startLine": 178,
         "startColumn": 9,
-        "endLine": 170,
+        "endLine": 178,
         "endColumn": 117
       },
       "decision": {
@@ -125,15 +125,15 @@
       }
     },
     {
-      "id": "decision:rpc:GetRepositoryBinding:103:9",
+      "id": "decision:rpc:GetRepositoryBinding:111:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetRepositoryBinding",
       "phase": "rpc",
       "span": {
-        "startLine": 103,
+        "startLine": 111,
         "startColumn": 9,
-        "endLine": 113,
+        "endLine": 121,
         "endColumn": 4
       },
       "decision": {
@@ -141,16 +141,16 @@
       }
     },
     {
-      "id": "decision:rpc:ReleaseRepository:143:10",
+      "id": "decision:rpc:ReleaseRepository:151:10",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:ReleaseRepository",
       "condition": "!b.releasableBy(in)",
       "phase": "rpc",
       "span": {
-        "startLine": 143,
+        "startLine": 151,
         "startColumn": 10,
-        "endLine": 143,
+        "endLine": 151,
         "endColumn": 113
       },
       "decision": {
@@ -158,16 +158,16 @@
       }
     },
     {
-      "id": "decision:rpc:ReleaseRepository:146:10",
+      "id": "decision:rpc:ReleaseRepository:154:10",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:ReleaseRepository",
       "condition": "!(!b.releasableBy(in)) and b.Status == StatusReleased",
       "phase": "rpc",
       "span": {
-        "startLine": 146,
+        "startLine": 154,
         "startColumn": 10,
-        "endLine": 146,
+        "endLine": 154,
         "endColumn": 80
       },
       "decision": {
@@ -175,16 +175,16 @@
       }
     },
     {
-      "id": "decision:rpc:ReleaseRepository:151:9",
+      "id": "decision:rpc:ReleaseRepository:159:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:ReleaseRepository",
       "condition": "!(!b.releasableBy(in)) and !(b.Status == StatusReleased)",
       "phase": "rpc",
       "span": {
-        "startLine": 151,
+        "startLine": 159,
         "startColumn": 9,
-        "endLine": 152,
+        "endLine": 160,
         "endColumn": 90
       },
       "decision": {
@@ -192,15 +192,15 @@
       }
     },
     {
-      "id": "decision:step:CompleteRepositoryBinding:165:9",
+      "id": "decision:step:CompleteRepositoryBinding:173:9",
       "kind": "decision",
       "name": "gracefulComplete",
       "parentId": "step:CompleteRepositoryBinding",
       "phase": "execute",
       "span": {
-        "startLine": 165,
+        "startLine": 173,
         "startColumn": 9,
-        "endLine": 165,
+        "endLine": 173,
         "endColumn": 54
       },
       "decision": {
@@ -212,9 +212,9 @@
       "kind": "attribute",
       "name": "AcceptedClaimID",
       "span": {
-        "startLine": 24,
+        "startLine": 32,
         "startColumn": 2,
-        "endLine": 24,
+        "endLine": 32,
         "endColumn": 66
       },
       "resource": {
@@ -226,9 +226,9 @@
       "kind": "attribute",
       "name": "BindingGeneration",
       "span": {
-        "startLine": 21,
+        "startLine": 29,
         "startColumn": 2,
-        "endLine": 21,
+        "endLine": 29,
         "endColumn": 70
       },
       "resource": {
@@ -240,9 +240,9 @@
       "kind": "attribute",
       "name": "BindingStatus",
       "span": {
-        "startLine": 23,
+        "startLine": 31,
         "startColumn": 2,
-        "endLine": 23,
+        "endLine": 31,
         "endColumn": 143
       },
       "resource": {
@@ -254,9 +254,9 @@
       "kind": "attribute",
       "name": "BoundProjectID",
       "span": {
-        "startLine": 20,
+        "startLine": 28,
         "startColumn": 2,
-        "endLine": 20,
+        "endLine": 28,
         "endColumn": 67
       },
       "resource": {
@@ -268,9 +268,9 @@
       "kind": "attribute",
       "name": "CreatedAt",
       "span": {
-        "startLine": 14,
+        "startLine": 22,
         "startColumn": 2,
-        "endLine": 14,
+        "endLine": 22,
         "endColumn": 71
       },
       "resource": {
@@ -282,9 +282,9 @@
       "kind": "attribute",
       "name": "RepositoryID",
       "span": {
-        "startLine": 19,
+        "startLine": 27,
         "startColumn": 2,
-        "endLine": 19,
+        "endLine": 27,
         "endColumn": 64
       },
       "resource": {
@@ -296,9 +296,9 @@
       "kind": "attribute",
       "name": "Revision",
       "span": {
-        "startLine": 13,
+        "startLine": 21,
         "startColumn": 2,
-        "endLine": 13,
+        "endLine": 21,
         "endColumn": 67
       },
       "resource": {
@@ -310,9 +310,9 @@
       "kind": "attribute",
       "name": "StartIdentity",
       "span": {
-        "startLine": 12,
+        "startLine": 20,
         "startColumn": 2,
-        "endLine": 12,
+        "endLine": 20,
         "endColumn": 87
       },
       "resource": {
@@ -324,9 +324,9 @@
       "kind": "attribute",
       "name": "UpdatedAt",
       "span": {
-        "startLine": 15,
+        "startLine": 23,
         "startColumn": 2,
-        "endLine": 15,
+        "endLine": 23,
         "endColumn": 71
       },
       "resource": {
@@ -338,9 +338,9 @@
       "kind": "rpc",
       "name": "ClaimRepository",
       "span": {
-        "startLine": 118,
+        "startLine": 126,
         "startColumn": 1,
-        "endLine": 136,
+        "endLine": 144,
         "endColumn": 2
       }
     },
@@ -349,9 +349,9 @@
       "kind": "rpc",
       "name": "GetDexDisplay",
       "span": {
-        "startLine": 174,
+        "startLine": 182,
         "startColumn": 1,
-        "endLine": 176,
+        "endLine": 184,
         "endColumn": 2
       }
     },
@@ -360,9 +360,9 @@
       "kind": "rpc",
       "name": "GetDexSummary",
       "span": {
-        "startLine": 169,
+        "startLine": 177,
         "startColumn": 1,
-        "endLine": 171,
+        "endLine": 179,
         "endColumn": 2
       }
     },
@@ -371,9 +371,9 @@
       "kind": "rpc",
       "name": "GetRepositoryBinding",
       "span": {
-        "startLine": 102,
+        "startLine": 110,
         "startColumn": 1,
-        "endLine": 114,
+        "endLine": 122,
         "endColumn": 2
       }
     },
@@ -382,9 +382,9 @@
       "kind": "rpc",
       "name": "ReleaseRepository",
       "span": {
-        "startLine": 140,
+        "startLine": 148,
         "startColumn": 1,
-        "endLine": 153,
+        "endLine": 161,
         "endColumn": 2
       }
     },
@@ -394,9 +394,9 @@
       "name": "CompleteRepositoryBinding",
       "phase": "execute",
       "span": {
-        "startLine": 72,
+        "startLine": 80,
         "startColumn": 23,
-        "endLine": 72,
+        "endLine": 80,
         "endColumn": 73
       },
       "metadata": {
@@ -408,13 +408,13 @@
     {
       "id": "edge:0001",
       "kind": "transition",
-      "from": "decision:rpc:ReleaseRepository:151:9",
+      "from": "decision:rpc:ReleaseRepository:159:9",
       "to": "step:CompleteRepositoryBinding",
       "label": "fan-out",
       "span": {
-        "startLine": 152,
+        "startLine": 160,
         "startColumn": 33,
-        "endLine": 152,
+        "endLine": 160,
         "endColumn": 88
       }
     },
@@ -425,9 +425,9 @@
       "to": "rpc:ClaimRepository",
       "label": "Get",
       "span": {
-        "startLine": 112,
+        "startLine": 120,
         "startColumn": 27,
-        "endLine": 112,
+        "endLine": 120,
         "endColumn": 51
       },
       "metadata": {
@@ -443,9 +443,9 @@
       "to": "rpc:GetRepositoryBinding",
       "label": "Get",
       "span": {
-        "startLine": 112,
+        "startLine": 120,
         "startColumn": 27,
-        "endLine": 112,
+        "endLine": 120,
         "endColumn": 51
       },
       "metadata": {
@@ -459,9 +459,9 @@
       "to": "rpc:ReleaseRepository",
       "label": "Get",
       "span": {
-        "startLine": 112,
+        "startLine": 120,
         "startColumn": 27,
-        "endLine": 112,
+        "endLine": 120,
         "endColumn": 51
       },
       "metadata": {
@@ -477,9 +477,9 @@
       "to": "step:CompleteRepositoryBinding",
       "label": "Get",
       "span": {
-        "startLine": 112,
+        "startLine": 120,
         "startColumn": 27,
-        "endLine": 112,
+        "endLine": 120,
         "endColumn": 51
       },
       "metadata": {
@@ -495,9 +495,9 @@
       "to": "rpc:ClaimRepository",
       "label": "Get",
       "span": {
-        "startLine": 110,
+        "startLine": 118,
         "startColumn": 27,
-        "endLine": 110,
+        "endLine": 118,
         "endColumn": 53
       },
       "metadata": {
@@ -513,9 +513,9 @@
       "to": "rpc:GetRepositoryBinding",
       "label": "Get",
       "span": {
-        "startLine": 110,
+        "startLine": 118,
         "startColumn": 27,
-        "endLine": 110,
+        "endLine": 118,
         "endColumn": 53
       },
       "metadata": {
@@ -529,9 +529,9 @@
       "to": "rpc:ReleaseRepository",
       "label": "Get",
       "span": {
-        "startLine": 110,
+        "startLine": 118,
         "startColumn": 27,
-        "endLine": 110,
+        "endLine": 118,
         "endColumn": 53
       },
       "metadata": {
@@ -547,9 +547,9 @@
       "to": "step:CompleteRepositoryBinding",
       "label": "Get",
       "span": {
-        "startLine": 110,
+        "startLine": 118,
         "startColumn": 27,
-        "endLine": 110,
+        "endLine": 118,
         "endColumn": 53
       },
       "metadata": {
@@ -565,9 +565,9 @@
       "to": "rpc:ClaimRepository",
       "label": "Get",
       "span": {
-        "startLine": 111,
+        "startLine": 119,
         "startColumn": 27,
-        "endLine": 111,
+        "endLine": 119,
         "endColumn": 49
       },
       "metadata": {
@@ -583,9 +583,9 @@
       "to": "rpc:GetDexDisplay",
       "label": "Get",
       "span": {
-        "startLine": 175,
+        "startLine": 183,
         "startColumn": 90,
-        "endLine": 175,
+        "endLine": 183,
         "endColumn": 112
       },
       "metadata": {
@@ -599,9 +599,9 @@
       "to": "rpc:GetRepositoryBinding",
       "label": "Get",
       "span": {
-        "startLine": 111,
+        "startLine": 119,
         "startColumn": 27,
-        "endLine": 111,
+        "endLine": 119,
         "endColumn": 49
       },
       "metadata": {
@@ -615,9 +615,9 @@
       "to": "rpc:ReleaseRepository",
       "label": "Get",
       "span": {
-        "startLine": 111,
+        "startLine": 119,
         "startColumn": 27,
-        "endLine": 111,
+        "endLine": 119,
         "endColumn": 49
       },
       "metadata": {
@@ -633,9 +633,9 @@
       "to": "step:CompleteRepositoryBinding",
       "label": "Get",
       "span": {
-        "startLine": 111,
+        "startLine": 119,
         "startColumn": 27,
-        "endLine": 111,
+        "endLine": 119,
         "endColumn": 49
       },
       "metadata": {
@@ -651,9 +651,9 @@
       "to": "rpc:ClaimRepository",
       "label": "Get",
       "span": {
-        "startLine": 109,
+        "startLine": 117,
         "startColumn": 27,
-        "endLine": 109,
+        "endLine": 117,
         "endColumn": 50
       },
       "metadata": {
@@ -669,9 +669,9 @@
       "to": "rpc:GetDexSummary",
       "label": "Get",
       "span": {
-        "startLine": 170,
+        "startLine": 178,
         "startColumn": 91,
-        "endLine": 170,
+        "endLine": 178,
         "endColumn": 114
       },
       "metadata": {
@@ -685,9 +685,9 @@
       "to": "rpc:GetRepositoryBinding",
       "label": "Get",
       "span": {
-        "startLine": 109,
+        "startLine": 117,
         "startColumn": 27,
-        "endLine": 109,
+        "endLine": 117,
         "endColumn": 50
       },
       "metadata": {
@@ -701,9 +701,9 @@
       "to": "rpc:ReleaseRepository",
       "label": "Get",
       "span": {
-        "startLine": 109,
+        "startLine": 117,
         "startColumn": 27,
-        "endLine": 109,
+        "endLine": 117,
         "endColumn": 50
       },
       "metadata": {
@@ -719,9 +719,9 @@
       "to": "step:CompleteRepositoryBinding",
       "label": "Get",
       "span": {
-        "startLine": 109,
+        "startLine": 117,
         "startColumn": 27,
-        "endLine": 109,
+        "endLine": 117,
         "endColumn": 50
       },
       "metadata": {
@@ -737,9 +737,9 @@
       "to": "rpc:ClaimRepository",
       "label": "Get",
       "span": {
-        "startLine": 105,
+        "startLine": 113,
         "startColumn": 27,
-        "endLine": 105,
+        "endLine": 113,
         "endColumn": 55
       },
       "metadata": {
@@ -755,9 +755,9 @@
       "to": "rpc:GetRepositoryBinding",
       "label": "Get",
       "span": {
-        "startLine": 105,
+        "startLine": 113,
         "startColumn": 27,
-        "endLine": 105,
+        "endLine": 113,
         "endColumn": 55
       },
       "metadata": {
@@ -771,9 +771,9 @@
       "to": "rpc:ReleaseRepository",
       "label": "Get",
       "span": {
-        "startLine": 105,
+        "startLine": 113,
         "startColumn": 27,
-        "endLine": 105,
+        "endLine": 113,
         "endColumn": 55
       },
       "metadata": {
@@ -789,9 +789,9 @@
       "to": "step:CompleteRepositoryBinding",
       "label": "Get",
       "span": {
-        "startLine": 105,
+        "startLine": 113,
         "startColumn": 27,
-        "endLine": 105,
+        "endLine": 113,
         "endColumn": 55
       },
       "metadata": {
@@ -807,9 +807,9 @@
       "to": "rpc:ClaimRepository",
       "label": "Get",
       "span": {
-        "startLine": 108,
+        "startLine": 116,
         "startColumn": 27,
-        "endLine": 108,
+        "endLine": 116,
         "endColumn": 48
       },
       "metadata": {
@@ -825,9 +825,9 @@
       "to": "rpc:GetRepositoryBinding",
       "label": "Get",
       "span": {
-        "startLine": 108,
+        "startLine": 116,
         "startColumn": 27,
-        "endLine": 108,
+        "endLine": 116,
         "endColumn": 48
       },
       "metadata": {
@@ -841,9 +841,9 @@
       "to": "rpc:ReleaseRepository",
       "label": "Get",
       "span": {
-        "startLine": 108,
+        "startLine": 116,
         "startColumn": 27,
-        "endLine": 108,
+        "endLine": 116,
         "endColumn": 48
       },
       "metadata": {
@@ -859,9 +859,9 @@
       "to": "step:CompleteRepositoryBinding",
       "label": "Get",
       "span": {
-        "startLine": 108,
+        "startLine": 116,
         "startColumn": 27,
-        "endLine": 108,
+        "endLine": 116,
         "endColumn": 48
       },
       "metadata": {
@@ -877,9 +877,9 @@
       "to": "rpc:ClaimRepository",
       "label": "Get",
       "span": {
-        "startLine": 107,
+        "startLine": 115,
         "startColumn": 27,
-        "endLine": 107,
+        "endLine": 115,
         "endColumn": 54
       },
       "metadata": {
@@ -895,9 +895,9 @@
       "to": "rpc:GetRepositoryBinding",
       "label": "Get",
       "span": {
-        "startLine": 107,
+        "startLine": 115,
         "startColumn": 27,
-        "endLine": 107,
+        "endLine": 115,
         "endColumn": 54
       },
       "metadata": {
@@ -911,9 +911,9 @@
       "to": "rpc:ReleaseRepository",
       "label": "Get",
       "span": {
-        "startLine": 107,
+        "startLine": 115,
         "startColumn": 27,
-        "endLine": 107,
+        "endLine": 115,
         "endColumn": 54
       },
       "metadata": {
@@ -929,9 +929,9 @@
       "to": "step:CompleteRepositoryBinding",
       "label": "Get",
       "span": {
-        "startLine": 107,
+        "startLine": 115,
         "startColumn": 27,
-        "endLine": 107,
+        "endLine": 115,
         "endColumn": 54
       },
       "metadata": {
@@ -947,9 +947,9 @@
       "to": "rpc:ClaimRepository",
       "label": "Get",
       "span": {
-        "startLine": 104,
+        "startLine": 112,
         "startColumn": 27,
-        "endLine": 104,
+        "endLine": 112,
         "endColumn": 59
       },
       "metadata": {
@@ -965,9 +965,9 @@
       "to": "rpc:GetRepositoryBinding",
       "label": "Get",
       "span": {
-        "startLine": 104,
+        "startLine": 112,
         "startColumn": 27,
-        "endLine": 104,
+        "endLine": 112,
         "endColumn": 59
       },
       "metadata": {
@@ -981,9 +981,9 @@
       "to": "rpc:ReleaseRepository",
       "label": "Get",
       "span": {
-        "startLine": 104,
+        "startLine": 112,
         "startColumn": 27,
-        "endLine": 104,
+        "endLine": 112,
         "endColumn": 59
       },
       "metadata": {
@@ -999,9 +999,9 @@
       "to": "step:CompleteRepositoryBinding",
       "label": "Get",
       "span": {
-        "startLine": 104,
+        "startLine": 112,
         "startColumn": 27,
-        "endLine": 104,
+        "endLine": 112,
         "endColumn": 59
       },
       "metadata": {
@@ -1017,9 +1017,9 @@
       "to": "rpc:ClaimRepository",
       "label": "Get",
       "span": {
-        "startLine": 106,
+        "startLine": 114,
         "startColumn": 27,
-        "endLine": 106,
+        "endLine": 114,
         "endColumn": 55
       },
       "metadata": {
@@ -1035,9 +1035,9 @@
       "to": "rpc:GetRepositoryBinding",
       "label": "Get",
       "span": {
-        "startLine": 106,
+        "startLine": 114,
         "startColumn": 27,
-        "endLine": 106,
+        "endLine": 114,
         "endColumn": 55
       },
       "metadata": {
@@ -1051,9 +1051,9 @@
       "to": "rpc:ReleaseRepository",
       "label": "Get",
       "span": {
-        "startLine": 106,
+        "startLine": 114,
         "startColumn": 27,
-        "endLine": 106,
+        "endLine": 114,
         "endColumn": 55
       },
       "metadata": {
@@ -1069,9 +1069,9 @@
       "to": "step:CompleteRepositoryBinding",
       "label": "Get",
       "span": {
-        "startLine": 106,
+        "startLine": 114,
         "startColumn": 27,
-        "endLine": 106,
+        "endLine": 114,
         "endColumn": 55
       },
       "metadata": {
@@ -1087,9 +1087,9 @@
       "to": "resource:attribute:AcceptedClaimID",
       "label": "Set",
       "span": {
-        "startLine": 131,
+        "startLine": 139,
         "startColumn": 14,
-        "endLine": 131,
+        "endLine": 139,
         "endColumn": 50
       },
       "metadata": {
@@ -1103,9 +1103,9 @@
       "to": "resource:attribute:BindingGeneration",
       "label": "Set",
       "span": {
-        "startLine": 132,
+        "startLine": 140,
         "startColumn": 14,
-        "endLine": 132,
+        "endLine": 140,
         "endColumn": 56
       },
       "metadata": {
@@ -1119,9 +1119,9 @@
       "to": "resource:attribute:BindingStatus",
       "label": "Set",
       "span": {
-        "startLine": 133,
+        "startLine": 141,
         "startColumn": 14,
-        "endLine": 133,
+        "endLine": 141,
         "endColumn": 49
       },
       "metadata": {
@@ -1135,9 +1135,9 @@
       "to": "resource:attribute:BoundProjectID",
       "label": "Set",
       "span": {
-        "startLine": 130,
+        "startLine": 138,
         "startColumn": 14,
-        "endLine": 130,
+        "endLine": 138,
         "endColumn": 51
       },
       "metadata": {
@@ -1151,9 +1151,9 @@
       "to": "resource:attribute:RepositoryRevision",
       "label": "Set",
       "span": {
-        "startLine": 197,
+        "startLine": 205,
         "startColumn": 14,
-        "endLine": 197,
+        "endLine": 205,
         "endColumn": 83
       },
       "metadata": {
@@ -1169,9 +1169,9 @@
       "to": "resource:attribute:RepositoryUpdatedAt",
       "label": "Set",
       "span": {
-        "startLine": 198,
+        "startLine": 206,
         "startColumn": 14,
-        "endLine": 198,
+        "endLine": 206,
         "endColumn": 60
       },
       "metadata": {
@@ -1187,9 +1187,9 @@
       "to": "resource:attribute:BindingStatus",
       "label": "Set",
       "span": {
-        "startLine": 149,
+        "startLine": 157,
         "startColumn": 14,
-        "endLine": 149,
+        "endLine": 157,
         "endColumn": 52
       },
       "metadata": {
@@ -1203,9 +1203,9 @@
       "to": "resource:attribute:BoundProjectID",
       "label": "Set",
       "span": {
-        "startLine": 148,
+        "startLine": 156,
         "startColumn": 14,
-        "endLine": 148,
+        "endLine": 156,
         "endColumn": 51
       },
       "metadata": {
@@ -1219,9 +1219,9 @@
       "to": "resource:attribute:RepositoryRevision",
       "label": "Set",
       "span": {
-        "startLine": 197,
+        "startLine": 205,
         "startColumn": 14,
-        "endLine": 197,
+        "endLine": 205,
         "endColumn": 83
       },
       "metadata": {
@@ -1237,9 +1237,9 @@
       "to": "resource:attribute:RepositoryUpdatedAt",
       "label": "Set",
       "span": {
-        "startLine": 198,
+        "startLine": 206,
         "startColumn": 14,
-        "endLine": 198,
+        "endLine": 206,
         "endColumn": 60
       },
       "metadata": {

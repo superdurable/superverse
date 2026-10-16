@@ -43,7 +43,7 @@ All unaffected declarations and map-key/loading rules remain those of the baseli
 Preview owns `PreparedPreviewSource` (the existing struct of status, request/instance/generation,
 commit, exact definitions reference/revision, safe failure and `repohost.CommitVersion`). Automatic
 admission records PREPARING with its command/commit. ReadPreviewSourceVersion commits the Git-owned version in a short metadata Step
-before the compilation Step; sdk-go v1.5.0 stages Attribute.Set until invocation success. Thus an
+before the compilation Step; sdk-go v1.10.1 stages Attribute.Set until invocation success. Thus an
 in-Step save alone cannot expose an intermediate building version; successful generation atomically saves READY and its matching `AppManifest`.
 Build failure records FAILED only while this command's preparation remains PREPARING. Later
 configuration/refusal failures do not invalidate READY processes. `PreviewState` independently
@@ -75,7 +75,7 @@ its resources; it is no longer silently cancelled for naming that earlier worksp
 Preview: None. Session declarations, producers/consumers and budgets are unchanged:
 `ReasoningSummary<string>`, `AssistantText<string>`, `AgentActivity<conversation.AgentEvent>`,
 each 10 MiB **shared across instances of the Flow type and Stream name**, verified against
-pinned sdk-go v1.5.0 `dex/stream.go` on 2026-10-12. No added Stream writes. Delivery is best
+pinned sdk-go v1.10.1 `dex/stream.go` on 2026-10-15. No added Stream writes. Delivery is best
 effort, may truncate, and resumes by token; Snapshot and CurrentMessages/ArchivedMessages
 recover after disconnect. Streams are never authoritative process-build records.
 

@@ -29,10 +29,25 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/sandboxtools"
 )
 
-func (step RequestSessionWorkspace) executeRequestWorkspace(ctx dex.Context, demand workspaceDemand) (*dex.StepDecision, error) {
+type workspaceRequestBranch uint8
+
+const (
+	workspaceRequestEnd workspaceRequestBranch = iota
+	workspaceRequestSend
+	workspaceRequestApply
+	workspaceRequestResume
+)
+
+type workspaceRequestChoice struct {
+	branch workspaceRequestBranch
+	demand workspaceDemand
+	next   agentloop.Continuation
+}
+
+func (step RequestSessionWorkspace) planRequestWorkspace(ctx dex.Context, demand workspaceDemand) workspaceRequestChoice {
 	ws := dexflow.ValueOrZero(workspaceAttribute.Get(ctx))
 	if !acceptsUserCommand(ctx) {
-		return dex.DeadEnd(), nil
+		return workspaceRequestChoice{}
 	}
 	plan := ws.PlanRequest(demand.ResumeAt, demand.Lost, demand.CallID, newWorkspaceRequestID(ctx))
 	if plan.ChangesWorkspace() {
@@ -42,20 +57,20 @@ func (step RequestSessionWorkspace) executeRequestWorkspace(ctx dex.Context, dem
 	case agentloop.WorkspaceOpened:
 		// The previous request's Sandbox deadline ends with it; the request is durable before its command.
 		demand.RequestID = ws.RequestID
-		return dex.GoTo(SendWorkspaceCommand{}, demand).CancelSteps(AwaitSandboxDeadline{}), nil
+		return workspaceRequestChoice{branch: workspaceRequestSend, demand: demand}
 	case agentloop.WorkspaceUsableWithoutContext:
 		// Read the repository context now instead of waiting for the next instance.
 		demand.RequestID, demand.PromptOnly = ws.RequestID, true
-		return dex.GoTo(ApplySessionWorkspace{}, demand), nil
+		return workspaceRequestChoice{branch: workspaceRequestApply, demand: demand}
 	case agentloop.WorkspaceInFlight, agentloop.WorkspaceJoined:
-		return dex.DeadEnd(), nil
+		return workspaceRequestChoice{}
 	case agentloop.WorkspaceUsable, agentloop.WorkspaceLossesExhausted:
 		// Nothing to request: resume below.
 	}
 	if next := step.flow.resumeAfterWorkspace(ctx, demand, plan == agentloop.WorkspaceUsable); next != "" {
-		return dex.GoTo(CheckSteered{}, next), nil
+		return workspaceRequestChoice{branch: workspaceRequestResume, next: next}
 	}
-	return dex.DeadEnd(), nil
+	return workspaceRequestChoice{}
 }
 
 // taskCall is the trusted call of a task operation on the instance of lease.

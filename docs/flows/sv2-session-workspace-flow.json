@@ -9,9 +9,9 @@
     "name": "SessionWorkspaceFlow",
     "startStepId": "step:AwaitWorkspaceCommand",
     "span": {
-      "startLine": 36,
+      "startLine": 44,
       "startColumn": 1,
-      "endLine": 42,
+      "endLine": 50,
       "endColumn": 2
     }
   },
@@ -23,9 +23,9 @@
       "parentId": "rpc:CompleteSessionWorkspace",
       "phase": "rpc",
       "span": {
-        "startLine": 132,
+        "startLine": 140,
         "startColumn": 1,
-        "endLine": 141,
+        "endLine": 149,
         "endColumn": 2
       }
     },
@@ -36,9 +36,9 @@
       "parentId": "rpc:ReportProvisionOutcome",
       "phase": "rpc",
       "span": {
-        "startLine": 96,
+        "startLine": 104,
         "startColumn": 1,
-        "endLine": 105,
+        "endLine": 113,
         "endColumn": 2
       }
     },
@@ -49,9 +49,9 @@
       "parentId": "step:AwaitProvisioningOutcome",
       "phase": "execute",
       "span": {
-        "startLine": 226,
+        "startLine": 234,
         "startColumn": 1,
-        "endLine": 247,
+        "endLine": 255,
         "endColumn": 2
       }
     },
@@ -62,9 +62,9 @@
       "parentId": "step:AwaitWorkspaceCommand",
       "phase": "execute",
       "span": {
-        "startLine": 157,
+        "startLine": 165,
         "startColumn": 1,
-        "endLine": 178,
+        "endLine": 186,
         "endColumn": 2
       }
     },
@@ -75,9 +75,9 @@
       "parentId": "step:ProvisionInstance",
       "phase": "execute",
       "span": {
-        "startLine": 193,
+        "startLine": 201,
         "startColumn": 1,
-        "endLine": 205,
+        "endLine": 213,
         "endColumn": 2
       }
     },
@@ -88,9 +88,9 @@
       "parentId": "step:ReclaimInstance",
       "phase": "execute",
       "span": {
-        "startLine": 262,
+        "startLine": 270,
         "startColumn": 1,
-        "endLine": 283,
+        "endLine": 291,
         "endColumn": 2
       }
     },
@@ -101,9 +101,9 @@
       "parentId": "step:RecordReclaimFailure",
       "phase": "execute",
       "span": {
-        "startLine": 317,
+        "startLine": 325,
         "startColumn": 1,
-        "endLine": 330,
+        "endLine": 338,
         "endColumn": 2
       }
     },
@@ -114,23 +114,23 @@
       "parentId": "step:ReportToSession",
       "phase": "execute",
       "span": {
-        "startLine": 345,
+        "startLine": 353,
         "startColumn": 1,
-        "endLine": 364,
+        "endLine": 372,
         "endColumn": 2
       }
     },
     {
-      "id": "decision:rpc:CompleteSessionWorkspace:135:10",
+      "id": "decision:rpc:CompleteSessionWorkspace:143:10",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:CompleteSessionWorkspace",
       "condition": "admission.Closed",
       "phase": "rpc",
       "span": {
-        "startLine": 135,
+        "startLine": 143,
         "startColumn": 10,
-        "endLine": 135,
+        "endLine": 143,
         "endColumn": 44
       },
       "decision": {
@@ -138,16 +138,16 @@
       }
     },
     {
-      "id": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "id": "decision:rpc:CompleteSessionWorkspace:147:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:CompleteSessionWorkspace",
       "condition": "!(admission.Closed)",
       "phase": "rpc",
       "span": {
-        "startLine": 139,
+        "startLine": 147,
         "startColumn": 9,
-        "endLine": 140,
+        "endLine": 148,
         "endColumn": 187
       },
       "decision": {
@@ -189,15 +189,15 @@
       }
     },
     {
-      "id": "decision:rpc:GetDexDisplay:125:9",
+      "id": "decision:rpc:GetDexDisplay:133:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetDexDisplay",
       "phase": "rpc",
       "span": {
-        "startLine": 125,
+        "startLine": 133,
         "startColumn": 9,
-        "endLine": 127,
+        "endLine": 135,
         "endColumn": 4
       },
       "decision": {
@@ -205,15 +205,15 @@
       }
     },
     {
-      "id": "decision:rpc:GetDexSummary:117:9",
+      "id": "decision:rpc:GetDexSummary:125:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetDexSummary",
       "phase": "rpc",
       "span": {
-        "startLine": 117,
+        "startLine": 125,
         "startColumn": 9,
-        "endLine": 117,
+        "endLine": 125,
         "endColumn": 65
       },
       "decision": {
@@ -221,15 +221,15 @@
       }
     },
     {
-      "id": "decision:rpc:GetSessionWorkspace:112:9",
+      "id": "decision:rpc:GetSessionWorkspace:120:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetSessionWorkspace",
       "phase": "rpc",
       "span": {
-        "startLine": 112,
+        "startLine": 120,
         "startColumn": 9,
-        "endLine": 112,
+        "endLine": 120,
         "endColumn": 51
       },
       "decision": {
@@ -237,33 +237,16 @@
       }
     },
     {
-      "id": "decision:rpc:ReportProvisionOutcome:104:9",
-      "kind": "decision",
-      "name": "rpcResult",
-      "parentId": "rpc:ReportProvisionOutcome",
-      "condition": "!(instance.InstanceID != report.WorkspaceRequestID)",
-      "phase": "rpc",
-      "span": {
-        "startLine": 104,
-        "startColumn": 9,
-        "endLine": 104,
-        "endColumn": 43
-      },
-      "decision": {
-        "type": "rpcResult"
-      }
-    },
-    {
-      "id": "decision:rpc:ReportProvisionOutcome:99:10",
+      "id": "decision:rpc:ReportProvisionOutcome:107:10",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:ReportProvisionOutcome",
       "condition": "instance.InstanceID != report.WorkspaceRequestID",
       "phase": "rpc",
       "span": {
-        "startLine": 99,
+        "startLine": 107,
         "startColumn": 10,
-        "endLine": 99,
+        "endLine": 107,
         "endColumn": 45
       },
       "decision": {
@@ -271,15 +254,32 @@
       }
     },
     {
-      "id": "decision:rpc:SubmitWorkspaceCommand:91:9",
+      "id": "decision:rpc:ReportProvisionOutcome:112:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:ReportProvisionOutcome",
+      "condition": "!(instance.InstanceID != report.WorkspaceRequestID)",
+      "phase": "rpc",
+      "span": {
+        "startLine": 112,
+        "startColumn": 9,
+        "endLine": 112,
+        "endColumn": 43
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:SubmitWorkspaceCommand:99:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:SubmitWorkspaceCommand",
       "phase": "rpc",
       "span": {
-        "startLine": 91,
+        "startLine": 99,
         "startColumn": 9,
-        "endLine": 91,
+        "endLine": 99,
         "endColumn": 107
       },
       "decision": {
@@ -287,16 +287,16 @@
       }
     },
     {
-      "id": "decision:step:AwaitProvisioningOutcome:237:10",
+      "id": "decision:step:AwaitProvisioningOutcome:245:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:AwaitProvisioningOutcome",
       "condition": "provisioning == nil",
       "phase": "execute",
       "span": {
-        "startLine": 237,
+        "startLine": 245,
         "startColumn": 10,
-        "endLine": 237,
+        "endLine": 245,
         "endColumn": 50
       },
       "decision": {
@@ -304,16 +304,16 @@
       }
     },
     {
-      "id": "decision:step:AwaitProvisioningOutcome:246:9",
+      "id": "decision:step:AwaitProvisioningOutcome:254:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:AwaitProvisioningOutcome",
       "condition": "!(provisioning == nil)",
       "phase": "execute",
       "span": {
-        "startLine": 246,
+        "startLine": 254,
         "startColumn": 9,
-        "endLine": 246,
+        "endLine": 254,
         "endColumn": 42
       },
       "decision": {
@@ -321,16 +321,16 @@
       }
     },
     {
-      "id": "decision:step:AwaitWorkspaceCommand:171:10",
+      "id": "decision:step:AwaitWorkspaceCommand:179:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:AwaitWorkspaceCommand",
       "condition": "default",
       "phase": "execute",
       "span": {
-        "startLine": 171,
+        "startLine": 179,
         "startColumn": 10,
-        "endLine": 171,
+        "endLine": 179,
         "endColumn": 43
       },
       "decision": {
@@ -338,16 +338,16 @@
       }
     },
     {
-      "id": "decision:step:AwaitWorkspaceCommand:175:10",
+      "id": "decision:step:AwaitWorkspaceCommand:183:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:AwaitWorkspaceCommand",
       "condition": "reclaims",
       "phase": "execute",
       "span": {
-        "startLine": 175,
+        "startLine": 183,
         "startColumn": 10,
-        "endLine": 175,
+        "endLine": 183,
         "endColumn": 43
       },
       "decision": {
@@ -355,16 +355,16 @@
       }
     },
     {
-      "id": "decision:step:AwaitWorkspaceCommand:177:9",
+      "id": "decision:step:AwaitWorkspaceCommand:185:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:AwaitWorkspaceCommand",
       "condition": "!(reclaims)",
       "phase": "execute",
       "span": {
-        "startLine": 177,
+        "startLine": 185,
         "startColumn": 9,
-        "endLine": 177,
+        "endLine": 185,
         "endColumn": 44
       },
       "decision": {
@@ -372,15 +372,15 @@
       }
     },
     {
-      "id": "decision:step:CompleteSessionWorkspace:393:9",
+      "id": "decision:step:CompleteSessionWorkspace:401:9",
       "kind": "decision",
       "name": "gracefulComplete",
       "parentId": "step:CompleteSessionWorkspace",
       "phase": "execute",
       "span": {
-        "startLine": 393,
+        "startLine": 401,
         "startColumn": 9,
-        "endLine": 393,
+        "endLine": 401,
         "endColumn": 89
       },
       "decision": {
@@ -388,16 +388,16 @@
       }
     },
     {
-      "id": "decision:step:ProvisionInstance:199:10",
+      "id": "decision:step:ProvisionInstance:207:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ProvisionInstance",
       "condition": "errors.Is(err, ErrWorkspaceStartRejected)",
       "phase": "execute",
       "span": {
-        "startLine": 199,
+        "startLine": 207,
         "startColumn": 10,
-        "endLine": 199,
+        "endLine": 207,
         "endColumn": 50
       },
       "decision": {
@@ -405,16 +405,16 @@
       }
     },
     {
-      "id": "decision:step:ProvisionInstance:204:9",
+      "id": "decision:step:ProvisionInstance:212:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ProvisionInstance",
       "condition": "!(errors.Is(err, ErrWorkspaceStartRejected))",
       "phase": "execute",
       "span": {
-        "startLine": 204,
+        "startLine": 212,
         "startColumn": 9,
-        "endLine": 204,
+        "endLine": 212,
         "endColumn": 51
       },
       "decision": {
@@ -422,16 +422,16 @@
       }
     },
     {
-      "id": "decision:step:ReclaimInstance:267:10",
+      "id": "decision:step:ReclaimInstance:275:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ReclaimInstance",
       "condition": "errors.Is(err, ErrRefused)",
       "phase": "execute",
       "span": {
-        "startLine": 267,
+        "startLine": 275,
         "startColumn": 10,
-        "endLine": 267,
+        "endLine": 275,
         "endColumn": 48
       },
       "decision": {
@@ -439,16 +439,16 @@
       }
     },
     {
-      "id": "decision:step:ReclaimInstance:277:10",
+      "id": "decision:step:ReclaimInstance:285:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ReclaimInstance",
       "condition": "!(errors.Is(err, ErrRefused)) and task.Command.Kind == CommandProvision",
       "phase": "execute",
       "span": {
-        "startLine": 277,
+        "startLine": 285,
         "startColumn": 10,
-        "endLine": 277,
+        "endLine": 285,
         "endColumn": 45
       },
       "decision": {
@@ -456,16 +456,16 @@
       }
     },
     {
-      "id": "decision:step:ReclaimInstance:282:9",
+      "id": "decision:step:ReclaimInstance:290:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ReclaimInstance",
       "condition": "!(errors.Is(err, ErrRefused)) and !(task.Command.Kind == CommandProvision)",
       "phase": "execute",
       "span": {
-        "startLine": 282,
+        "startLine": 290,
         "startColumn": 9,
-        "endLine": 282,
+        "endLine": 290,
         "endColumn": 42
       },
       "decision": {
@@ -473,15 +473,15 @@
       }
     },
     {
-      "id": "decision:step:RecordProvisionFailure:304:9",
+      "id": "decision:step:RecordProvisionFailure:312:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RecordProvisionFailure",
       "phase": "execute",
       "span": {
-        "startLine": 304,
+        "startLine": 312,
         "startColumn": 9,
-        "endLine": 304,
+        "endLine": 312,
         "endColumn": 42
       },
       "decision": {
@@ -489,16 +489,16 @@
       }
     },
     {
-      "id": "decision:step:RecordReclaimFailure:325:10",
+      "id": "decision:step:RecordReclaimFailure:333:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RecordReclaimFailure",
       "condition": "task.Command.Kind != CommandProvision",
       "phase": "execute",
       "span": {
-        "startLine": 325,
+        "startLine": 333,
         "startColumn": 10,
-        "endLine": 325,
+        "endLine": 333,
         "endColumn": 48
       },
       "decision": {
@@ -506,16 +506,16 @@
       }
     },
     {
-      "id": "decision:step:RecordReclaimFailure:329:9",
+      "id": "decision:step:RecordReclaimFailure:337:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RecordReclaimFailure",
       "condition": "!(task.Command.Kind != CommandProvision)",
       "phase": "execute",
       "span": {
-        "startLine": 329,
+        "startLine": 337,
         "startColumn": 9,
-        "endLine": 329,
+        "endLine": 337,
         "endColumn": 42
       },
       "decision": {
@@ -523,15 +523,15 @@
       }
     },
     {
-      "id": "decision:step:RecordReportFailure:378:9",
+      "id": "decision:step:RecordReportFailure:386:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RecordReportFailure",
       "phase": "execute",
       "span": {
-        "startLine": 378,
+        "startLine": 386,
         "startColumn": 9,
-        "endLine": 378,
+        "endLine": 386,
         "endColumn": 47
       },
       "decision": {
@@ -539,16 +539,16 @@
       }
     },
     {
-      "id": "decision:step:ReportToSession:358:10",
+      "id": "decision:step:ReportToSession:366:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ReportToSession",
       "condition": "admitted || outcome.Kind == OutcomeReclaimed || instance.InstanceID != outcome.WorkspaceRequestID || !instance.needsReclaim()",
       "phase": "execute",
       "span": {
-        "startLine": 358,
+        "startLine": 366,
         "startColumn": 10,
-        "endLine": 358,
+        "endLine": 366,
         "endColumn": 48
       },
       "decision": {
@@ -556,16 +556,16 @@
       }
     },
     {
-      "id": "decision:step:ReportToSession:363:9",
+      "id": "decision:step:ReportToSession:371:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ReportToSession",
       "condition": "!(admitted || outcome.Kind == OutcomeReclaimed || instance.InstanceID != outcome.WorkspaceRequestID || !instance.needsReclaim())",
       "phase": "execute",
       "span": {
-        "startLine": 363,
+        "startLine": 371,
         "startColumn": 9,
-        "endLine": 363,
+        "endLine": 371,
         "endColumn": 49
       },
       "decision": {
@@ -577,9 +577,9 @@
       "kind": "attribute",
       "name": "Instance",
       "span": {
-        "startLine": 19,
+        "startLine": 27,
         "startColumn": 2,
-        "endLine": 19,
+        "endLine": 27,
         "endColumn": 64
       },
       "resource": {
@@ -591,9 +591,9 @@
       "kind": "attribute",
       "name": "Outcome",
       "span": {
-        "startLine": 20,
+        "startLine": 28,
         "startColumn": 2,
-        "endLine": 20,
+        "endLine": 28,
         "endColumn": 62
       },
       "resource": {
@@ -605,9 +605,9 @@
       "kind": "attribute",
       "name": "Admission",
       "span": {
-        "startLine": 21,
+        "startLine": 29,
         "startColumn": 2,
-        "endLine": 21,
+        "endLine": 29,
         "endColumn": 66
       },
       "resource": {
@@ -619,9 +619,9 @@
       "kind": "attribute",
       "name": "ProjectID",
       "span": {
-        "startLine": 18,
+        "startLine": 26,
         "startColumn": 2,
-        "endLine": 18,
+        "endLine": 26,
         "endColumn": 63
       },
       "resource": {
@@ -633,9 +633,9 @@
       "kind": "channel",
       "name": "ProvisionOutcomes",
       "span": {
-        "startLine": 24,
+        "startLine": 32,
         "startColumn": 2,
-        "endLine": 24,
+        "endLine": 32,
         "endColumn": 87
       },
       "resource": {
@@ -648,9 +648,9 @@
       "kind": "channel",
       "name": "WorkspaceCommands",
       "span": {
-        "startLine": 23,
+        "startLine": 31,
         "startColumn": 2,
-        "endLine": 23,
+        "endLine": 31,
         "endColumn": 85
       },
       "resource": {
@@ -662,9 +662,9 @@
       "kind": "rpc",
       "name": "CompleteSessionWorkspace",
       "span": {
-        "startLine": 132,
+        "startLine": 140,
         "startColumn": 1,
-        "endLine": 141,
+        "endLine": 149,
         "endColumn": 2
       }
     },
@@ -673,9 +673,9 @@
       "kind": "rpc",
       "name": "GetDexDisplay",
       "span": {
-        "startLine": 124,
+        "startLine": 132,
         "startColumn": 1,
-        "endLine": 128,
+        "endLine": 136,
         "endColumn": 2
       }
     },
@@ -684,9 +684,9 @@
       "kind": "rpc",
       "name": "GetDexSummary",
       "span": {
-        "startLine": 116,
+        "startLine": 124,
         "startColumn": 1,
-        "endLine": 118,
+        "endLine": 126,
         "endColumn": 2
       }
     },
@@ -695,9 +695,9 @@
       "kind": "rpc",
       "name": "GetSessionWorkspace",
       "span": {
-        "startLine": 109,
+        "startLine": 117,
         "startColumn": 1,
-        "endLine": 113,
+        "endLine": 121,
         "endColumn": 2
       }
     },
@@ -706,9 +706,9 @@
       "kind": "rpc",
       "name": "ReportProvisionOutcome",
       "span": {
-        "startLine": 96,
+        "startLine": 104,
         "startColumn": 1,
-        "endLine": 105,
+        "endLine": 113,
         "endColumn": 2
       }
     },
@@ -717,9 +717,9 @@
       "kind": "rpc",
       "name": "SubmitWorkspaceCommand",
       "span": {
-        "startLine": 80,
+        "startLine": 88,
         "startColumn": 1,
-        "endLine": 92,
+        "endLine": 100,
         "endColumn": 2
       }
     },
@@ -729,9 +729,9 @@
       "name": "AwaitProvisioningOutcome",
       "phase": "wait_for+execute",
       "span": {
-        "startLine": 38,
+        "startLine": 46,
         "startColumn": 96,
-        "endLine": 38,
+        "endLine": 46,
         "endColumn": 148
       },
       "metadata": {
@@ -745,9 +745,9 @@
       "phase": "wait_for+execute",
       "start": true,
       "span": {
-        "startLine": 38,
+        "startLine": 46,
         "startColumn": 3,
-        "endLine": 38,
+        "endLine": 46,
         "endColumn": 47
       },
       "metadata": {
@@ -760,9 +760,9 @@
       "name": "CompleteSessionWorkspace",
       "phase": "execute",
       "span": {
-        "startLine": 40,
+        "startLine": 48,
         "startColumn": 87,
-        "endLine": 40,
+        "endLine": 48,
         "endColumn": 129
       },
       "metadata": {
@@ -775,9 +775,9 @@
       "name": "ProvisionInstance",
       "phase": "execute",
       "span": {
-        "startLine": 38,
+        "startLine": 46,
         "startColumn": 49,
-        "endLine": 38,
+        "endLine": 46,
         "endColumn": 94
       },
       "metadata": {
@@ -790,9 +790,9 @@
       "name": "ReclaimInstance",
       "phase": "execute",
       "span": {
-        "startLine": 39,
+        "startLine": 47,
         "startColumn": 3,
-        "endLine": 39,
+        "endLine": 47,
         "endColumn": 46
       },
       "metadata": {
@@ -805,9 +805,9 @@
       "name": "RecordProvisionFailure",
       "phase": "execute",
       "span": {
-        "startLine": 39,
+        "startLine": 47,
         "startColumn": 48,
-        "endLine": 39,
+        "endLine": 47,
         "endColumn": 88
       },
       "metadata": {
@@ -820,9 +820,9 @@
       "name": "RecordReclaimFailure",
       "phase": "execute",
       "span": {
-        "startLine": 39,
+        "startLine": 47,
         "startColumn": 90,
-        "endLine": 39,
+        "endLine": 47,
         "endColumn": 128
       },
       "metadata": {
@@ -835,9 +835,9 @@
       "name": "RecordReportFailure",
       "phase": "execute",
       "span": {
-        "startLine": 40,
+        "startLine": 48,
         "startColumn": 48,
-        "endLine": 40,
+        "endLine": 48,
         "endColumn": 85
       },
       "metadata": {
@@ -850,9 +850,9 @@
       "name": "ReportToSession",
       "phase": "execute",
       "span": {
-        "startLine": 40,
+        "startLine": 48,
         "startColumn": 3,
-        "endLine": 40,
+        "endLine": 48,
         "endColumn": 46
       },
       "metadata": {
@@ -860,15 +860,15 @@
       }
     },
     {
-      "id": "wait:AwaitProvisioningOutcome:221:9",
+      "id": "wait:AwaitProvisioningOutcome:229:9",
       "kind": "wait",
       "name": "anyOf",
       "parentId": "step:AwaitProvisioningOutcome",
       "phase": "wait_for",
       "span": {
-        "startLine": 221,
+        "startLine": 229,
         "startColumn": 9,
-        "endLine": 221,
+        "endLine": 229,
         "endColumn": 119
       },
       "wait": {
@@ -881,9 +881,9 @@
             "resourceId": "resource:channel:provisionOutcomesChannel",
             "expression": "task.Command.WorkspaceRequestID",
             "span": {
-              "startLine": 221,
+              "startLine": 229,
               "startColumn": 19,
-              "endLine": 221,
+              "endLine": 229,
               "endColumn": 83
             }
           },
@@ -893,9 +893,9 @@
             "label": "provisioningWaitBudget timer",
             "expression": "provisioningWaitBudget",
             "span": {
-              "startLine": 221,
+              "startLine": 229,
               "startColumn": 85,
-              "endLine": 221,
+              "endLine": 229,
               "endColumn": 118
             }
           }
@@ -903,15 +903,15 @@
       }
     },
     {
-      "id": "wait:AwaitWorkspaceCommand:152:9",
+      "id": "wait:AwaitWorkspaceCommand:160:9",
       "kind": "wait",
       "name": "until",
       "parentId": "step:AwaitWorkspaceCommand",
       "phase": "wait_for",
       "span": {
-        "startLine": 152,
+        "startLine": 160,
         "startColumn": 9,
-        "endLine": 152,
+        "endLine": 160,
         "endColumn": 53
       },
       "wait": {
@@ -923,9 +923,9 @@
             "label": "WorkspaceCommands.for 1",
             "resourceId": "resource:channel:workspaceCommandsChannel",
             "span": {
-              "startLine": 152,
+              "startLine": 160,
               "startColumn": 19,
-              "endLine": 152,
+              "endLine": 160,
               "endColumn": 52
             }
           }
@@ -937,325 +937,325 @@
     {
       "id": "edge:0001",
       "kind": "cancel",
-      "from": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "from": "decision:rpc:CompleteSessionWorkspace:147:9",
       "to": "step:AwaitProvisioningOutcome",
       "label": "CancelSteps",
       "span": {
-        "startLine": 140,
+        "startLine": 148,
         "startColumn": 49,
-        "endLine": 140,
+        "endLine": 148,
         "endColumn": 75
       }
     },
     {
       "id": "edge:0002",
       "kind": "cancel",
-      "from": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "from": "decision:rpc:CompleteSessionWorkspace:147:9",
       "to": "step:AwaitWorkspaceCommand",
       "label": "CancelSteps",
       "span": {
-        "startLine": 140,
+        "startLine": 148,
         "startColumn": 3,
-        "endLine": 140,
+        "endLine": 148,
         "endColumn": 26
       }
     },
     {
       "id": "edge:0003",
       "kind": "transition",
-      "from": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "from": "decision:rpc:CompleteSessionWorkspace:147:9",
       "to": "step:CompleteSessionWorkspace",
       "label": "fan-out",
       "span": {
-        "startLine": 139,
+        "startLine": 147,
         "startColumn": 75,
-        "endLine": 139,
+        "endLine": 147,
         "endColumn": 122
       }
     },
     {
       "id": "edge:0004",
       "kind": "cancel",
-      "from": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "from": "decision:rpc:CompleteSessionWorkspace:147:9",
       "to": "step:ProvisionInstance",
       "label": "CancelSteps",
       "span": {
-        "startLine": 140,
+        "startLine": 148,
         "startColumn": 28,
-        "endLine": 140,
+        "endLine": 148,
         "endColumn": 47
       }
     },
     {
       "id": "edge:0005",
       "kind": "cancel",
-      "from": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "from": "decision:rpc:CompleteSessionWorkspace:147:9",
       "to": "step:ReclaimInstance",
       "label": "CancelSteps",
       "span": {
-        "startLine": 140,
+        "startLine": 148,
         "startColumn": 77,
-        "endLine": 140,
+        "endLine": 148,
         "endColumn": 94
       }
     },
     {
       "id": "edge:0006",
       "kind": "cancel",
-      "from": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "from": "decision:rpc:CompleteSessionWorkspace:147:9",
       "to": "step:RecordProvisionFailure",
       "label": "CancelSteps",
       "span": {
-        "startLine": 140,
+        "startLine": 148,
         "startColumn": 96,
-        "endLine": 140,
+        "endLine": 148,
         "endColumn": 120
       }
     },
     {
       "id": "edge:0007",
       "kind": "cancel",
-      "from": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "from": "decision:rpc:CompleteSessionWorkspace:147:9",
       "to": "step:RecordReclaimFailure",
       "label": "CancelSteps",
       "span": {
-        "startLine": 140,
+        "startLine": 148,
         "startColumn": 122,
-        "endLine": 140,
+        "endLine": 148,
         "endColumn": 144
       }
     },
     {
       "id": "edge:0008",
       "kind": "cancel",
-      "from": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "from": "decision:rpc:CompleteSessionWorkspace:147:9",
       "to": "step:RecordReportFailure",
       "label": "CancelSteps",
       "span": {
-        "startLine": 140,
+        "startLine": 148,
         "startColumn": 165,
-        "endLine": 140,
+        "endLine": 148,
         "endColumn": 186
       }
     },
     {
       "id": "edge:0009",
       "kind": "cancel",
-      "from": "decision:rpc:CompleteSessionWorkspace:139:9",
+      "from": "decision:rpc:CompleteSessionWorkspace:147:9",
       "to": "step:ReportToSession",
       "label": "CancelSteps",
       "span": {
-        "startLine": 140,
+        "startLine": 148,
         "startColumn": 146,
-        "endLine": 140,
+        "endLine": 148,
         "endColumn": 163
       }
     },
     {
       "id": "edge:0010",
       "kind": "transition",
-      "from": "decision:step:AwaitProvisioningOutcome:237:10",
+      "from": "decision:step:AwaitProvisioningOutcome:245:10",
       "to": "step:RecordProvisionFailure",
       "label": "GoTo",
       "span": {
-        "startLine": 237,
+        "startLine": 245,
         "startColumn": 10,
-        "endLine": 237,
+        "endLine": 245,
         "endColumn": 50
       }
     },
     {
       "id": "edge:0011",
       "kind": "transition",
-      "from": "decision:step:AwaitProvisioningOutcome:246:9",
+      "from": "decision:step:AwaitProvisioningOutcome:254:9",
       "to": "step:ReportToSession",
       "label": "GoTo",
       "span": {
-        "startLine": 246,
+        "startLine": 254,
         "startColumn": 9,
-        "endLine": 246,
+        "endLine": 254,
         "endColumn": 42
       }
     },
     {
       "id": "edge:0012",
       "kind": "transition",
-      "from": "decision:step:AwaitWorkspaceCommand:171:10",
+      "from": "decision:step:AwaitWorkspaceCommand:179:10",
       "to": "step:ReportToSession",
       "label": "GoTo",
       "span": {
-        "startLine": 171,
+        "startLine": 179,
         "startColumn": 10,
-        "endLine": 171,
+        "endLine": 179,
         "endColumn": 43
       }
     },
     {
       "id": "edge:0013",
       "kind": "transition",
-      "from": "decision:step:AwaitWorkspaceCommand:175:10",
+      "from": "decision:step:AwaitWorkspaceCommand:183:10",
       "to": "step:ReclaimInstance",
       "label": "GoTo",
       "span": {
-        "startLine": 175,
+        "startLine": 183,
         "startColumn": 10,
-        "endLine": 175,
+        "endLine": 183,
         "endColumn": 43
       }
     },
     {
       "id": "edge:0014",
       "kind": "transition",
-      "from": "decision:step:AwaitWorkspaceCommand:177:9",
+      "from": "decision:step:AwaitWorkspaceCommand:185:9",
       "to": "step:ProvisionInstance",
       "label": "GoTo",
       "span": {
-        "startLine": 177,
+        "startLine": 185,
         "startColumn": 9,
-        "endLine": 177,
+        "endLine": 185,
         "endColumn": 44
       }
     },
     {
       "id": "edge:0015",
       "kind": "transition",
-      "from": "decision:step:ProvisionInstance:199:10",
+      "from": "decision:step:ProvisionInstance:207:10",
       "to": "step:RecordProvisionFailure",
       "label": "GoTo",
       "span": {
-        "startLine": 199,
+        "startLine": 207,
         "startColumn": 10,
-        "endLine": 199,
+        "endLine": 207,
         "endColumn": 50
       }
     },
     {
       "id": "edge:0016",
       "kind": "transition",
-      "from": "decision:step:ProvisionInstance:204:9",
+      "from": "decision:step:ProvisionInstance:212:9",
       "to": "step:AwaitProvisioningOutcome",
       "label": "GoTo",
       "span": {
-        "startLine": 204,
+        "startLine": 212,
         "startColumn": 9,
-        "endLine": 204,
+        "endLine": 212,
         "endColumn": 51
       }
     },
     {
       "id": "edge:0017",
       "kind": "transition",
-      "from": "decision:step:ReclaimInstance:267:10",
+      "from": "decision:step:ReclaimInstance:275:10",
       "to": "step:RecordReclaimFailure",
       "label": "GoTo",
       "span": {
-        "startLine": 267,
+        "startLine": 275,
         "startColumn": 10,
-        "endLine": 267,
+        "endLine": 275,
         "endColumn": 48
       }
     },
     {
       "id": "edge:0018",
       "kind": "transition",
-      "from": "decision:step:ReclaimInstance:277:10",
+      "from": "decision:step:ReclaimInstance:285:10",
       "to": "step:ProvisionInstance",
       "label": "GoTo",
       "span": {
-        "startLine": 277,
+        "startLine": 285,
         "startColumn": 10,
-        "endLine": 277,
+        "endLine": 285,
         "endColumn": 45
       }
     },
     {
       "id": "edge:0019",
       "kind": "transition",
-      "from": "decision:step:ReclaimInstance:282:9",
+      "from": "decision:step:ReclaimInstance:290:9",
       "to": "step:ReportToSession",
       "label": "GoTo",
       "span": {
-        "startLine": 282,
+        "startLine": 290,
         "startColumn": 9,
-        "endLine": 282,
+        "endLine": 290,
         "endColumn": 42
       }
     },
     {
       "id": "edge:0020",
       "kind": "transition",
-      "from": "decision:step:RecordProvisionFailure:304:9",
+      "from": "decision:step:RecordProvisionFailure:312:9",
       "to": "step:ReportToSession",
       "label": "GoTo",
       "span": {
-        "startLine": 304,
+        "startLine": 312,
         "startColumn": 9,
-        "endLine": 304,
+        "endLine": 312,
         "endColumn": 42
       }
     },
     {
       "id": "edge:0021",
       "kind": "transition",
-      "from": "decision:step:RecordReclaimFailure:325:10",
+      "from": "decision:step:RecordReclaimFailure:333:10",
       "to": "step:AwaitWorkspaceCommand",
       "label": "GoTo",
       "span": {
-        "startLine": 325,
+        "startLine": 333,
         "startColumn": 10,
-        "endLine": 325,
+        "endLine": 333,
         "endColumn": 48
       }
     },
     {
       "id": "edge:0022",
       "kind": "transition",
-      "from": "decision:step:RecordReclaimFailure:329:9",
+      "from": "decision:step:RecordReclaimFailure:337:9",
       "to": "step:ReportToSession",
       "label": "GoTo",
       "span": {
-        "startLine": 329,
+        "startLine": 337,
         "startColumn": 9,
-        "endLine": 329,
+        "endLine": 337,
         "endColumn": 42
       }
     },
     {
       "id": "edge:0023",
       "kind": "transition",
-      "from": "decision:step:RecordReportFailure:378:9",
+      "from": "decision:step:RecordReportFailure:386:9",
       "to": "step:AwaitWorkspaceCommand",
       "label": "GoTo",
       "span": {
-        "startLine": 378,
+        "startLine": 386,
         "startColumn": 9,
-        "endLine": 378,
+        "endLine": 386,
         "endColumn": 47
       }
     },
     {
       "id": "edge:0024",
       "kind": "transition",
-      "from": "decision:step:ReportToSession:358:10",
+      "from": "decision:step:ReportToSession:366:10",
       "to": "step:AwaitWorkspaceCommand",
       "label": "GoTo",
       "span": {
-        "startLine": 358,
+        "startLine": 366,
         "startColumn": 10,
-        "endLine": 358,
+        "endLine": 366,
         "endColumn": 48
       }
     },
     {
       "id": "edge:0025",
       "kind": "transition",
-      "from": "decision:step:ReportToSession:363:9",
+      "from": "decision:step:ReportToSession:371:9",
       "to": "step:ReclaimInstance",
       "label": "GoTo",
       "span": {
-        "startLine": 363,
+        "startLine": 371,
         "startColumn": 9,
-        "endLine": 363,
+        "endLine": 371,
         "endColumn": 49
       }
     },
@@ -1266,9 +1266,9 @@
       "to": "rpc:GetDexDisplay",
       "label": "Get",
       "span": {
-        "startLine": 126,
+        "startLine": 134,
         "startColumn": 25,
-        "endLine": 126,
+        "endLine": 134,
         "endColumn": 51
       },
       "metadata": {
@@ -1282,9 +1282,9 @@
       "to": "rpc:GetSessionWorkspace",
       "label": "Get",
       "span": {
-        "startLine": 110,
+        "startLine": 118,
         "startColumn": 94,
-        "endLine": 110,
+        "endLine": 118,
         "endColumn": 120
       },
       "metadata": {
@@ -1298,9 +1298,9 @@
       "to": "rpc:ReportProvisionOutcome",
       "label": "Get",
       "span": {
-        "startLine": 97,
+        "startLine": 105,
         "startColumn": 24,
-        "endLine": 97,
+        "endLine": 105,
         "endColumn": 50
       },
       "metadata": {
@@ -1314,9 +1314,9 @@
       "to": "step:AwaitProvisioningOutcome",
       "label": "Get",
       "span": {
-        "startLine": 227,
+        "startLine": 235,
         "startColumn": 24,
-        "endLine": 227,
+        "endLine": 235,
         "endColumn": 50
       },
       "metadata": {
@@ -1330,9 +1330,9 @@
       "to": "step:AwaitWorkspaceCommand",
       "label": "Get",
       "span": {
-        "startLine": 159,
+        "startLine": 167,
         "startColumn": 29,
-        "endLine": 159,
+        "endLine": 167,
         "endColumn": 55
       },
       "metadata": {
@@ -1346,9 +1346,9 @@
       "to": "step:ProvisionInstance",
       "label": "Get",
       "span": {
-        "startLine": 194,
+        "startLine": 202,
         "startColumn": 24,
-        "endLine": 194,
+        "endLine": 202,
         "endColumn": 50
       },
       "metadata": {
@@ -1362,9 +1362,9 @@
       "to": "step:ReclaimInstance",
       "label": "Get",
       "span": {
-        "startLine": 263,
+        "startLine": 271,
         "startColumn": 24,
-        "endLine": 263,
+        "endLine": 271,
         "endColumn": 50
       },
       "metadata": {
@@ -1378,9 +1378,9 @@
       "to": "step:RecordProvisionFailure",
       "label": "Get",
       "span": {
-        "startLine": 296,
+        "startLine": 304,
         "startColumn": 24,
-        "endLine": 296,
+        "endLine": 304,
         "endColumn": 50
       },
       "metadata": {
@@ -1394,9 +1394,9 @@
       "to": "step:RecordReclaimFailure",
       "label": "Get",
       "span": {
-        "startLine": 318,
+        "startLine": 326,
         "startColumn": 32,
-        "endLine": 318,
+        "endLine": 326,
         "endColumn": 58
       },
       "metadata": {
@@ -1410,9 +1410,9 @@
       "to": "step:ReportToSession",
       "label": "Get",
       "span": {
-        "startLine": 356,
+        "startLine": 364,
         "startColumn": 24,
-        "endLine": 356,
+        "endLine": 364,
         "endColumn": 50
       },
       "metadata": {
@@ -1426,9 +1426,9 @@
       "to": "rpc:GetDexDisplay",
       "label": "Get",
       "span": {
-        "startLine": 126,
+        "startLine": 134,
         "startColumn": 87,
-        "endLine": 126,
+        "endLine": 134,
         "endColumn": 112
       },
       "metadata": {
@@ -1442,9 +1442,9 @@
       "to": "rpc:GetSessionWorkspace",
       "label": "Get",
       "span": {
-        "startLine": 111,
+        "startLine": 119,
         "startColumn": 34,
-        "endLine": 111,
+        "endLine": 119,
         "endColumn": 59
       },
       "metadata": {
@@ -1458,9 +1458,9 @@
       "to": "rpc:CompleteSessionWorkspace",
       "label": "Get",
       "span": {
-        "startLine": 133,
+        "startLine": 141,
         "startColumn": 35,
-        "endLine": 133,
+        "endLine": 141,
         "endColumn": 62
       },
       "metadata": {
@@ -1474,9 +1474,9 @@
       "to": "rpc:GetSessionWorkspace",
       "label": "Get",
       "span": {
-        "startLine": 111,
+        "startLine": 119,
         "startColumn": 90,
-        "endLine": 111,
+        "endLine": 119,
         "endColumn": 117
       },
       "metadata": {
@@ -1490,9 +1490,9 @@
       "to": "rpc:SubmitWorkspaceCommand",
       "label": "Get",
       "span": {
-        "startLine": 84,
+        "startLine": 92,
         "startColumn": 35,
-        "endLine": 84,
+        "endLine": 92,
         "endColumn": 62
       },
       "metadata": {
@@ -1506,9 +1506,9 @@
       "to": "rpc:GetSessionWorkspace",
       "label": "Get",
       "span": {
-        "startLine": 110,
+        "startLine": 118,
         "startColumn": 44,
-        "endLine": 110,
+        "endLine": 118,
         "endColumn": 71
       },
       "metadata": {
@@ -1522,9 +1522,9 @@
       "to": "step:AwaitProvisioningOutcome",
       "label": "Get",
       "span": {
-        "startLine": 228,
+        "startLine": 236,
         "startColumn": 79,
-        "endLine": 228,
+        "endLine": 236,
         "endColumn": 106
       },
       "metadata": {
@@ -1538,9 +1538,9 @@
       "to": "step:CompleteSessionWorkspace",
       "label": "Get",
       "span": {
-        "startLine": 393,
+        "startLine": 401,
         "startColumn": 59,
-        "endLine": 393,
+        "endLine": 401,
         "endColumn": 86
       },
       "metadata": {
@@ -1554,9 +1554,9 @@
       "to": "step:ProvisionInstance",
       "label": "Get",
       "span": {
-        "startLine": 196,
+        "startLine": 204,
         "startColumn": 63,
-        "endLine": 196,
+        "endLine": 204,
         "endColumn": 90
       },
       "metadata": {
@@ -1570,9 +1570,9 @@
       "to": "step:ReclaimInstance",
       "label": "Get",
       "span": {
-        "startLine": 264,
+        "startLine": 272,
         "startColumn": 74,
-        "endLine": 264,
+        "endLine": 272,
         "endColumn": 101
       },
       "metadata": {
@@ -1586,9 +1586,9 @@
       "to": "step:ReportToSession",
       "label": "Get",
       "span": {
-        "startLine": 346,
+        "startLine": 354,
         "startColumn": 78,
-        "endLine": 346,
+        "endLine": 354,
         "endColumn": 105
       },
       "metadata": {
@@ -1602,9 +1602,9 @@
       "to": "rpc:ReportProvisionOutcome",
       "label": "Size",
       "span": {
-        "startLine": 101,
+        "startLine": 109,
         "startColumn": 47,
-        "endLine": 101,
+        "endLine": 109,
         "endColumn": 108
       },
       "metadata": {
@@ -1615,12 +1615,12 @@
       "id": "edge:0048",
       "kind": "wait_condition",
       "from": "resource:channel:provisionOutcomesChannel",
-      "to": "wait:AwaitProvisioningOutcome:221:9",
+      "to": "wait:AwaitProvisioningOutcome:229:9",
       "label": "ProvisionOutcomes[task.Command.WorkspaceRequestID].for 1",
       "span": {
-        "startLine": 221,
+        "startLine": 229,
         "startColumn": 19,
-        "endLine": 221,
+        "endLine": 229,
         "endColumn": 83
       },
       "metadata": {
@@ -1634,9 +1634,9 @@
       "to": "step:AwaitWorkspaceCommand",
       "label": "GetConditionResults",
       "span": {
-        "startLine": 158,
+        "startLine": 166,
         "startColumn": 43,
-        "endLine": 158,
+        "endLine": 166,
         "endColumn": 92
       },
       "metadata": {
@@ -1650,9 +1650,9 @@
       "to": "step:CompleteSessionWorkspace",
       "label": "PendingMessages",
       "span": {
-        "startLine": 390,
+        "startLine": 398,
         "startColumn": 36,
-        "endLine": 390,
+        "endLine": 398,
         "endColumn": 81
       },
       "metadata": {
@@ -1663,12 +1663,12 @@
       "id": "edge:0051",
       "kind": "wait_condition",
       "from": "resource:channel:workspaceCommandsChannel",
-      "to": "wait:AwaitWorkspaceCommand:152:9",
+      "to": "wait:AwaitWorkspaceCommand:160:9",
       "label": "WorkspaceCommands.for 1",
       "span": {
-        "startLine": 152,
+        "startLine": 160,
         "startColumn": 19,
-        "endLine": 152,
+        "endLine": 160,
         "endColumn": 52
       },
       "metadata": {
@@ -1682,9 +1682,9 @@
       "to": "resource:attribute:admissionAttribute",
       "label": "Set",
       "span": {
-        "startLine": 138,
+        "startLine": 146,
         "startColumn": 14,
-        "endLine": 138,
+        "endLine": 146,
         "endColumn": 52
       },
       "metadata": {
@@ -1698,9 +1698,9 @@
       "to": "resource:channel:provisionOutcomesChannel",
       "label": "Publish",
       "span": {
-        "startLine": 102,
+        "startLine": 110,
         "startColumn": 15,
-        "endLine": 102,
+        "endLine": 110,
         "endColumn": 87
       },
       "metadata": {
@@ -1714,9 +1714,9 @@
       "to": "resource:attribute:admissionAttribute",
       "label": "Set",
       "span": {
-        "startLine": 88,
+        "startLine": 96,
         "startColumn": 15,
-        "endLine": 88,
+        "endLine": 96,
         "endColumn": 53
       },
       "metadata": {
@@ -1730,9 +1730,9 @@
       "to": "resource:channel:workspaceCommandsChannel",
       "label": "Publish",
       "span": {
-        "startLine": 89,
+        "startLine": 97,
         "startColumn": 15,
-        "endLine": 89,
+        "endLine": 97,
         "endColumn": 61
       },
       "metadata": {
@@ -1746,9 +1746,9 @@
       "to": "resource:attribute:InstanceAttribute",
       "label": "Set",
       "span": {
-        "startLine": 240,
+        "startLine": 248,
         "startColumn": 14,
-        "endLine": 240,
+        "endLine": 248,
         "endColumn": 50
       },
       "metadata": {
@@ -1762,9 +1762,9 @@
       "to": "resource:attribute:OutcomeAttribute",
       "label": "Set",
       "span": {
-        "startLine": 245,
+        "startLine": 253,
         "startColumn": 14,
-        "endLine": 245,
+        "endLine": 253,
         "endColumn": 54
       },
       "metadata": {
@@ -1778,9 +1778,9 @@
       "to": "step:RecordProvisionFailure",
       "label": "Execute failure",
       "span": {
-        "startLine": 215,
+        "startLine": 223,
         "startColumn": 37,
-        "endLine": 215,
+        "endLine": 223,
         "endColumn": 97
       },
       "metadata": {
@@ -1794,9 +1794,9 @@
       "to": "resource:attribute:InstanceAttribute",
       "label": "Set",
       "span": {
-        "startLine": 173,
+        "startLine": 181,
         "startColumn": 14,
-        "endLine": 173,
+        "endLine": 181,
         "endColumn": 50
       },
       "metadata": {
@@ -1810,9 +1810,9 @@
       "to": "resource:attribute:OutcomeAttribute",
       "label": "Set",
       "span": {
-        "startLine": 170,
+        "startLine": 178,
         "startColumn": 15,
-        "endLine": 170,
+        "endLine": 178,
         "endColumn": 55
       },
       "metadata": {
@@ -1826,9 +1826,9 @@
       "to": "resource:channel:workspaceCommandsChannel",
       "label": "Delete",
       "span": {
-        "startLine": 391,
+        "startLine": 399,
         "startColumn": 15,
-        "endLine": 391,
+        "endLine": 399,
         "endColumn": 70
       },
       "metadata": {
@@ -1842,9 +1842,9 @@
       "to": "step:RecordProvisionFailure",
       "label": "Execute failure",
       "span": {
-        "startLine": 188,
+        "startLine": 196,
         "startColumn": 37,
-        "endLine": 188,
+        "endLine": 196,
         "endColumn": 97
       },
       "metadata": {
@@ -1858,9 +1858,9 @@
       "to": "resource:attribute:InstanceAttribute",
       "label": "Set",
       "span": {
-        "startLine": 276,
+        "startLine": 284,
         "startColumn": 15,
-        "endLine": 276,
+        "endLine": 284,
         "endColumn": 51
       },
       "metadata": {
@@ -1874,9 +1874,9 @@
       "to": "resource:attribute:OutcomeAttribute",
       "label": "Set",
       "span": {
-        "startLine": 281,
+        "startLine": 289,
         "startColumn": 14,
-        "endLine": 281,
+        "endLine": 289,
         "endColumn": 54
       },
       "metadata": {
@@ -1890,9 +1890,9 @@
       "to": "step:RecordReclaimFailure",
       "label": "Execute failure",
       "span": {
-        "startLine": 257,
+        "startLine": 265,
         "startColumn": 51,
-        "endLine": 257,
+        "endLine": 265,
         "endColumn": 109
       },
       "metadata": {
@@ -1906,9 +1906,9 @@
       "to": "resource:attribute:InstanceAttribute",
       "label": "Set",
       "span": {
-        "startLine": 301,
+        "startLine": 309,
         "startColumn": 14,
-        "endLine": 301,
+        "endLine": 309,
         "endColumn": 50
       },
       "metadata": {
@@ -1922,9 +1922,9 @@
       "to": "resource:attribute:OutcomeAttribute",
       "label": "Set",
       "span": {
-        "startLine": 303,
+        "startLine": 311,
         "startColumn": 14,
-        "endLine": 303,
+        "endLine": 311,
         "endColumn": 54
       },
       "metadata": {
@@ -1938,9 +1938,9 @@
       "to": "resource:attribute:InstanceAttribute",
       "label": "Set",
       "span": {
-        "startLine": 323,
+        "startLine": 331,
         "startColumn": 14,
-        "endLine": 323,
+        "endLine": 331,
         "endColumn": 50
       },
       "metadata": {
@@ -1954,9 +1954,9 @@
       "to": "resource:attribute:OutcomeAttribute",
       "label": "Set",
       "span": {
-        "startLine": 328,
+        "startLine": 336,
         "startColumn": 14,
-        "endLine": 328,
+        "endLine": 336,
         "endColumn": 54
       },
       "metadata": {
@@ -1970,9 +1970,9 @@
       "to": "resource:attribute:OutcomeAttribute",
       "label": "Set",
       "span": {
-        "startLine": 377,
+        "startLine": 385,
         "startColumn": 14,
-        "endLine": 377,
+        "endLine": 385,
         "endColumn": 48
       },
       "metadata": {
@@ -1986,9 +1986,9 @@
       "to": "resource:attribute:InstanceAttribute",
       "label": "Set",
       "span": {
-        "startLine": 362,
+        "startLine": 370,
         "startColumn": 14,
-        "endLine": 362,
+        "endLine": 370,
         "endColumn": 50
       },
       "metadata": {
@@ -2002,9 +2002,9 @@
       "to": "resource:attribute:OutcomeAttribute",
       "label": "Set",
       "span": {
-        "startLine": 355,
+        "startLine": 363,
         "startColumn": 14,
-        "endLine": 355,
+        "endLine": 363,
         "endColumn": 48
       },
       "metadata": {
@@ -2018,9 +2018,9 @@
       "to": "step:RecordReportFailure",
       "label": "Execute failure",
       "span": {
-        "startLine": 340,
+        "startLine": 348,
         "startColumn": 37,
-        "endLine": 340,
+        "endLine": 348,
         "endColumn": 94
       },
       "metadata": {
@@ -2028,7 +2028,13 @@
       }
     }
   ],
-  "diagnostics": [],
+  "diagnostics": [
+    {
+      "severity": "warning",
+      "code": "v2_step_group_shape",
+      "message": "group \"command\" is neither one run of Steps that lead to each other nor one choice that a single Step makes; it falls into 2 parts: AwaitWorkspaceCommand, ReportToSession; CompleteSessionWorkspace. Split it so that each group does one thing"
+    }
+  ],
   "groups": [
     {
       "id": "command",

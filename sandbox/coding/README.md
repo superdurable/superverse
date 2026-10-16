@@ -3,7 +3,7 @@
 This image is the tool execution environment inside each Agent Sandbox
 `Sandbox`. It implements sandbox image contract revision 8 (coding profile
 `coding-v4`) and combines the pinned Agent Sandbox daemon (`sandboxd`) with
-`tini` as PID 1, Git, Go, Node.js, npm, Python 3, ripgrep, Dex CLI 1.5.0,
+`tini` as PID 1, Git, Go, Node.js, npm, Python 3, ripgrep, Dex CLI 1.10.1,
 Temporal CLI 1.8.1, Chromium Headless Shell, the image's own commands
 `superverse-exec`, `superverse-files` and `superverse-previewctl`, and a
 prewarmed proxy of the module graph of the repository's `app-template/` (its

@@ -108,7 +108,7 @@ an external system to PreviewFlow, and AGENTS.md requires waiting for an externa
 long-running Execute through `dexflow.PollUntil`; a `WaitFor` may wait only for the Flow's own
 Channels, RPCs and business timers. Each round is the completion long poll itself (no
 fixed-interval status read), the round timeout (40 s) covers the 30 s wait, and the Step needs no browser and holds no
-lock, so it never delays the Session or PreviewFlow's commands. The pinned SDK (v1.5.0) gives an
+lock, so it never delays the Session or PreviewFlow's commands. The pinned SDK (v1.10.1) gives an
 Execute no way to refresh Attributes, and a heartbeat's details are not an Attribute commit, so every
 decision that depends on current state is made in `SettleRunObservations`, under the lock, from a
 fresh read.

@@ -33,10 +33,6 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/toolfailure"
 )
 
-// ConnectorContributions is keyed by the canonical connector slug. It holds
-// only the remote worktree attempt; ConnectorContributionFlow owns PR and RC.
-var connectorContributionsAttribute = dex.DefineAttributeMap[agentloop.ConnectorContributionAttempt]("ConnectorContributions")
-
 const connectorContributorSkill = "/opt/superverse/dex-skills/dex-connector-contributor/SKILL.md"
 
 func isRemoteWorktreeTool(name conversation.ToolName) bool {

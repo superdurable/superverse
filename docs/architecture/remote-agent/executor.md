@@ -460,7 +460,8 @@ example `superversemock`. Its ordinary struct value contains `Contribution` (`ne
 `SUBMITTED`, `FAILED`), `StartCallID`, `Attempt`, `SubmitCallID`, `Summary`, `Result`
 and `SubmittedAt`. RouteTool writes the map under its interrupt lock; ExecuteTool
 loads exactly the slug, and file tools may load the at most 16 keys to select a
-trusted worktree root. `AgentState.ConnectorSlugs` remains the platform subagent
+trusted worktree root. `SettleForegroundCommand` declares that whole-map load
+for recovered file calls. `AgentState.ConnectorSlugs` remains the platform subagent
 admission list; the union with this map enforces 16 distinct slugs across both modes
 and supplies Snapshot's contribution lookup for Studio. No secret or credential is
 stored in the map. Entries remain for the Session lifetime to preserve admission

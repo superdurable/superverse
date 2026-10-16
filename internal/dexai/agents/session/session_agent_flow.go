@@ -79,6 +79,8 @@ var (
 	backgroundCommandStopsChannel       = dex.DefineChannelMap[backgroundCommandStop]("BackgroundCommandStops")
 	subagentsAttribute                  = dex.DefineAttributeMap[agenttasks.SubagentRecord]("Subagents")
 	taskWorktreesAttribute              = dex.DefineAttributeMap[agentloop.TaskWorktree]("TaskWorktrees")
+	// ConnectorContributions is keyed by canonical connector slug; the contribution Flow owns PR and RC.
+	connectorContributionsAttribute     = dex.DefineAttributeMap[agentloop.ConnectorContributionAttempt]("ConnectorContributions")
 	previewHandoffAttribute             = dex.DefineAttribute[agentloop.PreviewHandoff]("PreviewHandoff")
 	previewAutoDeployAttribute          = dex.DefineAttribute[bool]("PreviewAutoDeploy")
 	previewAutoDeployChangedByAttribute = dex.DefineAttribute[conversation.Actor]("PreviewAutoDeployChangedBy")
@@ -1105,11 +1107,11 @@ type SettleForegroundCommand struct {
 	flow *SessionAgentFlow
 }
 
-// GetStepOptions: the Step stops or reads one command and holds no lock, so
-// user RPCs never wait for the Sandbox.
+// GetStepOptions holds no lock. ConnectorContributions is loaded because recovered
+// file calls may resolve a path against its open worktrees.
 func (SettleForegroundCommand) GetStepOptions() *dex.StepOptions {
 	return &dex.StepOptions{ExecuteMethodTimeout: time.Minute, HeartbeatTimeout: time.Minute, ExecuteDurability: dex.StepDurabilitySync,
-		ExecuteRetry: shortStepRetry, ExecuteLoadAttributeMaps: []dex.AttributeDef{currentMessagesAttribute, backgroundCommandsAttribute},
+		ExecuteRetry: shortStepRetry, ExecuteLoadAttributeMaps: []dex.AttributeDef{currentMessagesAttribute, backgroundCommandsAttribute, connectorContributionsAttribute},
 		ExecuteFailure: dex.ProceedToOnExecuteFailure(RecordToolFailure{}, recordToolFailureStepOptions)}
 }
 
@@ -1288,7 +1290,17 @@ type RequestSessionWorkspace struct {
 func (RequestSessionWorkspace) GetStepOptions() *dex.StepOptions { return workspaceRequestStepOptions }
 
 func (step RequestSessionWorkspace) Execute(ctx dex.Context, demand workspaceDemand) (*dex.StepDecision, error) {
-	return step.executeRequestWorkspace(ctx, demand)
+	choice := step.planRequestWorkspace(ctx, demand)
+	switch choice.branch {
+	case workspaceRequestSend:
+		return dex.GoTo(SendWorkspaceCommand{}, choice.demand).CancelSteps(AwaitSandboxDeadline{}), nil
+	case workspaceRequestApply:
+		return dex.GoTo(ApplySessionWorkspace{}, choice.demand), nil
+	case workspaceRequestResume:
+		return dex.GoTo(CheckSteered{}, choice.next), nil
+	default:
+		return dex.DeadEnd(), nil
+	}
 }
 
 // dex:group group-id:workspace group-label:"Workspace"

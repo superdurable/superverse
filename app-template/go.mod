@@ -10,7 +10,7 @@ require (
 	github.com/superdurable/dex-connectors-library/connectors/superdurable/llm v0.22.1
 	github.com/superdurable/dex-connectors-library/sdkgo v0.29.1
 	github.com/superdurable/dex/blob-cache-go v0.1.1
-	github.com/superdurable/dex/sdk-go v1.5.0
+	github.com/superdurable/dex/sdk-go v1.10.1
 	go.opentelemetry.io/otel v1.46.0
 	go.opentelemetry.io/otel/metric v1.46.0
 	go.opentelemetry.io/otel/trace v1.46.0

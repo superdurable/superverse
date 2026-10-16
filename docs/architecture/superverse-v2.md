@@ -304,7 +304,7 @@ records that the later package moves changed no Flow.
 | Source | Authority |
 | --- | --- |
 | Dex skills | `dex-skills/`, Superverse-owned source (the current contract) |
-| Platform | Go SDK `v1.5.0`, Server `v1.6.1`, CLI `v1.6.4`; kept at the newest stable release |
+| Platform | Go SDK `v1.10.1`, Server `v1.10.1`, CLI `v1.10.1`; kept at the newest stable release |
 | New-project template | `app-template/`, served as `app-template@<tree ID>` (the current contract) |
 
 Do not upgrade generated application dependencies merely because the

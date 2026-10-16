@@ -335,7 +335,7 @@ def main():
     # Exact image digest is the authority; this label guards accidental use of
     # the coding image, which has a different toolchain contract.
     labels = json.loads(run(["docker", "image", "inspect", tool, "--format", "{{json .Config.Labels}}"] )) or {}
-    if labels.get("io.superdurable.hosted-build-tools") != "v1" or labels.get("io.superdurable.dexcli") != "1.6.4":
+    if labels.get("io.superdurable.hosted-build-tools") != "v1" or labels.get("io.superdurable.dexcli") != "1.10.1":
         raise ValueError("unsupported immutable build tools")
     timings = [timing("HOST_PREPARATION", *host)]
     with tempfile.TemporaryDirectory(prefix="sv2-hosted-") as temporary:

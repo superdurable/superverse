@@ -12,18 +12,18 @@ COPY cmd/tools/app-manifest ./cmd/tools/app-manifest
 RUN --network=none go build -trimpath -o /out/app-manifest ./cmd/tools/app-manifest
 ARG TARGETARCH
 RUN set -eu; case "$TARGETARCH" in \
-      amd64) digest=c9bf12f4c2b0a3460b9f4757f164a06be5f608e56bc908a93f98d35ec3cafcad ;; \
-      arm64) digest=13e66c168cf55679643daf88c5a17476433ea248ff5cf0dd7a51feedc0356978 ;; \
+      amd64) digest=8299979482b73315829eafead4c99bc18dacb9a305153c3763bd0f412aad6558 ;; \
+      arm64) digest=996a4ac0f1dc9229de18e2535d74372fa131928ad6831294606b12dd81028347 ;; \
       *) exit 64 ;; \
     esac; \
-    curl --fail --silent --show-error --location "https://github.com/superdurable/dex/releases/download/cli-v1.6.4/dexcli_v1.6.4_linux_${TARGETARCH}.tar.gz" -o /tmp/dexcli.tar.gz; \
+    curl --fail --silent --show-error --location "https://github.com/superdurable/dex/releases/download/cli-v1.10.1/dexcli_v1.10.1_linux_${TARGETARCH}.tar.gz" -o /tmp/dexcli.tar.gz; \
     printf '%s  %s\n' "$digest" /tmp/dexcli.tar.gz | sha256sum --check; \
     mkdir /tmp/dexcli; tar -xzf /tmp/dexcli.tar.gz -C /tmp/dexcli; \
     install -m 0755 /tmp/dexcli/dexcli /out/dexcli
 
 FROM public.ecr.aws/docker/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
 COPY --from=build /out/app-manifest /out/dexcli /usr/local/bin/
-LABEL io.superdurable.hosted-build-tools="v1" io.superdurable.dexcli="1.6.4"
+LABEL io.superdurable.hosted-build-tools="v1" io.superdurable.dexcli="1.10.1"
 ENV GOTOOLCHAIN=local CGO_ENABLED=0
 USER 65532:65532
 WORKDIR /workspace

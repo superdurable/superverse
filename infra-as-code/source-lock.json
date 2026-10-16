@@ -1,10 +1,10 @@
 {
   "dex": {
-    "server": "1.6.1",
-    "cli": "1.6.4",
-    "goSDK": "1.5.0",
-    "serverImageDigest": "sha256:4938936477d82b4b8243f209d8555de7eaad5767adf89f38d513b8721ac14763",
-    "cliCommit": "e45b26026ed5f841f72946f5a9be4c963f5b5eb4"
+    "server": "1.10.1",
+    "cli": "1.10.1",
+    "goSDK": "1.10.1",
+    "serverImageDigest": "sha256:5772a52519f65f3faf59a350deabc0e382d2678d4065ffc266d534ee06ca2872",
+    "cliCommit": "80480c2d50813680c5dd5a3c90bf807d1884b6cb"
   },
   "kind": "0.33.0",
   "kindNodeImage": "kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5",
