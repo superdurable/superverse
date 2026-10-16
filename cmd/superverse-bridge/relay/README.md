@@ -279,7 +279,7 @@ connection.
 
 ## Scenarios to run against real Orca
 
-None of these runs in CI; each needs a supported Orca (1.4.224 or 1.4.225), Codex 0.162.x and the Native lane's endpoint.
+None of these runs in CI; each needs Orca 1.4.x, Codex 0.162.x and the Native lane's endpoint.
 
 1. **Full queue, pending send, later tool result.** Codex waits on a slow Superverse tool (a long
    `bash`); Builders send more than 64 Studio messages; Orca holds the first steer `pending`. The

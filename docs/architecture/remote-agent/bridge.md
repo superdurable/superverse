@@ -197,11 +197,11 @@ space), and the call timing trace (three files of at most 4 MiB).
   permission from Orca upstream) remains a future compatibility improvement.
 - **Versions.** The Orca version comes from `status.get` (`appVersion`); no RPC reports Codex's,
   so the Bridge runs `codex --version` itself. `agentSession` is not a published Orca API: its methods and fences change between
-  releases. The Bridge accepts an explicit allow-list of exact Orca versions and Codex minor
-  versions (currently Orca 1.4.224 and 1.4.225, Codex 0.162.x) and refuses others with a message naming the
-  supported versions. Each new Orca release is added only after the compatibility check passes on
-  it. The design asks Orca upstream for a stable session API; until then this maintenance cost is
-  accepted.
+  releases. The Bridge accepts explicit Orca and Codex minor lines (Orca 1.4.x and Codex 0.162.x)
+  and refuses others with a message naming the supported lines. ORCACHECK verified the starting
+  releases; the prefix check also accepts later patches in those lines. A new minor line requires a
+  compatibility check before it is added. The design asks Orca upstream for a stable session API;
+  until then this maintenance cost is accepted.
 - No terminal automation and no screen scraping: a missing capability is reported as incompatible.
 
 ## Orca plugin

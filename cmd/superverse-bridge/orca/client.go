@@ -30,12 +30,20 @@ import (
 	"github.com/superdurable/superversev2/internal/comm"
 )
 
-// The versions the Bridge was checked against (ORCACHECK): exact Orca
-// releases and Codex minor versions.
+// Accept Orca and Codex patch releases within these minor lines. ORCACHECK
+// verified their starting releases.
 var (
-	supportedOrcaVersions  = []string{"1.4.224", "1.4.225"}
+	supportedOrcaVersions  = []string{"1.4."}
 	supportedCodexVersions = []string{"0.162."}
 )
+
+func supportedVersion(version string, prefixes []string) bool {
+	return slices.ContainsFunc(prefixes, func(prefix string) bool { return strings.HasPrefix(version, prefix) })
+}
+
+func supportedVersionLines(prefixes []string) string {
+	return strings.Join(prefixes, "x, ") + "x"
+}
 
 const (
 	codexVersionTTL     = 5 * time.Minute
@@ -93,9 +101,9 @@ func (client *Client) Runtime(ctx context.Context) (relay.Runtime, error) {
 	if err != nil {
 		return relay.Runtime{}, err
 	}
-	if !slices.Contains(supportedOrcaVersions, status.AppVersion) {
+	if !supportedVersion(status.AppVersion, supportedOrcaVersions) {
 		return relay.Runtime{}, fmt.Errorf("orca %s is not supported; supported Orca versions: %s",
-			status.AppVersion, strings.Join(supportedOrcaVersions, ", "))
+			status.AppVersion, supportedVersionLines(supportedOrcaVersions))
 	}
 	codex, err := client.codexVersion(ctx)
 	if err != nil {
@@ -124,10 +132,9 @@ func (client *Client) codexVersion(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("run codex --version: %w", err)
 	}
 	version := codexVersionPattern.FindString(string(output))
-	supported := slices.ContainsFunc(supportedCodexVersions, func(prefix string) bool { return strings.HasPrefix(version, prefix) })
-	if !supported {
-		return "", fmt.Errorf("codex %q is not supported; supported Codex versions: %s.x",
-			strings.TrimSpace(comm.TruncateUTF8(string(output), 200)), strings.Join(supportedCodexVersions, "x, "))
+	if !supportedVersion(version, supportedCodexVersions) {
+		return "", fmt.Errorf("codex %q is not supported; supported Codex versions: %s",
+			strings.TrimSpace(comm.TruncateUTF8(string(output), 200)), supportedVersionLines(supportedCodexVersions))
 	}
 	client.mu.Lock()
 	client.codex, client.codexAt = version, time.Now()

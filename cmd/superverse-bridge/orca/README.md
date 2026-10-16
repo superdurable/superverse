@@ -6,8 +6,8 @@ Callers: `cmd/superverse-bridge`.
 
 Dependencies: `cmd/superverse-bridge/relay`, `cmd/superverse-bridge/state` and `internal/comm`; it calls the Orca runtime's local socket and runs `codex --version`.
 
-The Orca runtime protocol is confined by this adapter and is
-pinned to Orca 1.4.224 or 1.4.225 and Codex 0.162.x.
+The Orca runtime protocol is confined by this adapter and accepts
+Orca 1.4.x and Codex 0.162.x.
 
 - **Transport** (`transport.go`). `orca-runtime.json` in `$ORCA_USER_DATA_PATH` or Orca's default
   directory gives the runtime ID, the unix socket and the owner token; all three change on every
@@ -19,7 +19,7 @@ pinned to Orca 1.4.224 or 1.4.225 and Codex 0.162.x.
   uncertain. The token is only in the request
   line, which never reaches an error or a log.
 - **Allow-list.** `status.get`, `session.tabs.listAll`, `agentSession.create`, `send`, `cancel`,
-  `history`, `queuedMessageDelete`, `close` and `reveal`; any other method panics. Orca must be 1.4.224 or 1.4.225
+  `history`, `queuedMessageDelete`, `close` and `reveal`; any other method panics. Orca must be 1.4.x
   (`status.get` `appVersion`) and Codex 0.162.x (`codex --version` through the login shell, as Orca
   resolves it, cached for 5 minutes).
 - **Fingerprint** (`canonical.go`). Every mutation carries `payloadFingerprint`, the SHA-256 of
@@ -53,8 +53,8 @@ pinned to Orca 1.4.224 or 1.4.225 and Codex 0.162.x.
   when it names one of those worktrees, and returns it as `id:<worktreeId>`.
 - **Create and cancel** resend identical params when unanswered (Orca's ledger replays them).
   `CreateSession` mints the session ID (`sv-` and 24 hex digits) in the worktree `ResolveWorktree`
-  returned. The Bridge sends `{envelope, worktree, agent}` to both supported Orca versions.
-  Both also accept optional `resumeFrom` and `tabId` (`tabId` is the desktop window's own
+  returned. The Bridge sends `{envelope, worktree, agent}` to Orca 1.4.x.
+  The inspected 1.4.224 and 1.4.225 releases also accept optional `resumeFrom` and `tabId` (`tabId` is the desktop window's own
   provisional chat tab); 1.4.225 additionally accepts `firstMessage` and `options`, which the
   Bridge does not send. Orca publishes the chat's tab to the
   runtime's session-tab inventory (`session.tabs.listAll`, paired clients) with `activate: true`,
