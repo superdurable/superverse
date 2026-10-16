@@ -46,7 +46,7 @@ decisions in their own commits.
 
 | File | Owns |
 | --- | --- |
-| `agent_state.go` | `AgentState` with the turn's interruptible work in flight, the automatic-turn counters (`AutomaticTaskTurns`, `AutomaticPlatformTurns`) and the subagents started since the user's last turn (`SubagentsStartedWithoutUser`), Agent statuses and interaction modes, continuations, the bounds every Session shares and the conversation view. |
+| `agent_state.go` | `AgentState` with the turn's interruptible work in flight, automatic-turn and subagent counters, Agent statuses and interaction modes, continuations, `TaskWorktree` with its typed state and bounded admission/eviction, and the conversation view. |
 | `session.go` | Session identity, lifecycle values and close reasons, the source handoff rule (an `edit`, a `write` and a `merge_agent_changes` that applied files change source) the Preview handoff (`PreviewHandoff`): the commit a succeeded, pushed and unblocked `commit_and_push` hands to the Preview at its result's sequence, published once with the tool result, and the request that switches the Preview's automatic deployment (`PreviewAutoDeployRequest`); such a push also completes the build of the confirmed Flow design (`BuildsDesign`). |
 | `session_workspace.go` | The Session's accepted Sandbox capability, its repository context, the plans of a workspace demand (a ready-only demand, a deployment's, wakes nothing; a subagent's takes the usable lease, and its lost lease revokes the instance) and a cold-path request, grants, losses, the Sandbox deadline and lifecycle values. |
 | `conversation_turn.go` | Turn start and steering, the continuation after a model reply or an output-limit stop, model reply kinds and the entry-window bounds and keys; the admission and delivery of Session notifications and the automatic turns they open under `AutomaticTurnBounds` (task and connector notifications against the task bound, an application-owned delivery failure of HEAD against the platform bound); the Stop button's admission and turn end. |
@@ -67,7 +67,8 @@ first pending Stop keeps its actor; the Stop entry names that author. Automatic 
 
 `RemoteTools` derives the remote executor's sorted catalog from the Session catalog,
 excluding `platformOnlyTools`: `start_agent`, `merge_agent_changes`, `set_effort` and `start_timer`.
-The catalog marks `start_connector_contribution` and `submit_connector_contribution`
+The catalog marks `start_connector_contribution`, `submit_connector_contribution`,
+`open_task_worktree` and `merge_task_worktree`
 `RemoteOnly`; `SessionTools` excludes that marked set, and the scenario checker
 requires a remote HTTP Dex test for it.
 `RemoteAgentContext` contains `conversation.RemoteAgentPrompt`,

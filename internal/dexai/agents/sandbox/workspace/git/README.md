@@ -161,6 +161,10 @@ Every operation queries before it writes:
   (`add -A`, `commit-tree -p base`) as `refs/superverse/agents/<agent ID>/result`,
   counts its changes (`diff --numstat`) and removes the checkout; the refs keep
   the result. A saved result is reused.
+- **`CleanupAgentWorktree`** deletes the base/result refs and helper plans and
+  receipts of a closed Codex task attempt only after its successor's Session
+  record names the old ID. It refuses a registered checkout. Repeating cleanup
+  after a lost answer succeeds without touching the new attempt.
 - **`MergeAgentChanges`** merges the result into the workspace file by file,
   three ways: the base is the snapshot, ours the workspace now (snapshotted the
   same way) and theirs the result. A file only one side changed takes that
@@ -190,7 +194,7 @@ Every operation queries before it writes:
 | `process.go` | `GitOperations`, the `Repository` it serves and the trusted Git command runner |
 | `checkout.go`, `commit.go`, `commit_source_checks.go`, `commit_application_tests.go` | Checkout and inspection, commit and push, the commit gate, its test stage with the mock guard |
 | `repository_context.go` | The committed template manifest and the trusted repository prompt context |
-| `agent_worktree.go`, `agent_worktree.py` | Subagent worktrees: creation from a snapshot, finishing into the result ref, the per-file three-way merge with its plan and receipt, and their typed refusals |
+| `agent_worktree.go`, `agent_worktree.py` | Subagent and Codex task worktrees: creation from a snapshot, finishing into the result ref, the per-file three-way merge with its plan and receipt, idempotent cleanup of a closed task attempt, and typed refusals |
 | `connector_contribution.go`, `connector_contribution.py` | Connector contributions: the `ConnectorLibrary` port, the library worktree of a develop subagent and its finish (verify, commit as the committer, push without force, receipt, release candidate) |
 
 ## Connector contributions

@@ -20,6 +20,7 @@ var regexMap = map[string]ogenregex.Regexp{
 	"^[A-Z][A-Za-z0-9]*$":                    ogenregex.MustCompile("^[A-Z][A-Za-z0-9]*$"),
 	"^[A-Z][A-Za-z0-9]*Flow$":                ogenregex.MustCompile("^[A-Z][A-Za-z0-9]*Flow$"),
 	"^[a-z0-9](?:[a-z0-9-]{0,34}[a-z0-9])?$": ogenregex.MustCompile("^[a-z0-9](?:[a-z0-9-]{0,34}[a-z0-9])?$"),
+	"^[a-z][a-z0-9-]{0,31}$":                 ogenregex.MustCompile("^[a-z][a-z0-9-]{0,31}$"),
 	"^[a-z][a-z0-9-]{1,62}$":                 ogenregex.MustCompile("^[a-z][a-z0-9-]{1,62}$"),
 }
 
@@ -1269,6 +1270,76 @@ func (s *MergeAgentChangesAction) UnmarshalText(data []byte) error {
 	}
 }
 
+// Ref: #
+type MergeTaskWorktree struct {
+	// Name returned by open_task_worktree.
+	Name string `json:"name"`
+	// Discard this worktree's changes instead of applying them.
+	Discard OptBool `json:"discard"`
+	// Apply only these workspace-relative files or directories. Omit to apply every changed file. Cannot
+	// be used with discard.
+	Paths []string `json:"paths"`
+}
+
+// GetName returns the value of Name.
+func (s *MergeTaskWorktree) GetName() string {
+	return s.Name
+}
+
+// GetDiscard returns the value of Discard.
+func (s *MergeTaskWorktree) GetDiscard() OptBool {
+	return s.Discard
+}
+
+// GetPaths returns the value of Paths.
+func (s *MergeTaskWorktree) GetPaths() []string {
+	return s.Paths
+}
+
+// SetName sets the value of Name.
+func (s *MergeTaskWorktree) SetName(val string) {
+	s.Name = val
+}
+
+// SetDiscard sets the value of Discard.
+func (s *MergeTaskWorktree) SetDiscard(val OptBool) {
+	s.Discard = val
+}
+
+// SetPaths sets the value of Paths.
+func (s *MergeTaskWorktree) SetPaths(val []string) {
+	s.Paths = val
+}
+
+// Ref: #
+type OpenTaskWorktree struct {
+	// Stable name for one Codex subagent checkout, such as build-ui. Opening it after a completed merge or
+	// discard starts a new attempt.
+	Name string `json:"name"`
+	// The bounded task the Codex subagent will do in this checkout.
+	Reason string `json:"reason"`
+}
+
+// GetName returns the value of Name.
+func (s *OpenTaskWorktree) GetName() string {
+	return s.Name
+}
+
+// GetReason returns the value of Reason.
+func (s *OpenTaskWorktree) GetReason() string {
+	return s.Reason
+}
+
+// SetName sets the value of Name.
+func (s *OpenTaskWorktree) SetName(val string) {
+	s.Name = val
+}
+
+// SetReason sets the value of Reason.
+func (s *OpenTaskWorktree) SetReason(val string) {
+	s.Reason = val
+}
+
 // NewOptBash returns new OptBash with value set to v.
 func NewOptBash(v Bash) OptBash {
 	return OptBash{
@@ -1861,6 +1932,98 @@ func (o OptMergeAgentChanges) Get() (v MergeAgentChanges, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptMergeAgentChanges) Or(d MergeAgentChanges) MergeAgentChanges {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptMergeTaskWorktree returns new OptMergeTaskWorktree with value set to v.
+func NewOptMergeTaskWorktree(v MergeTaskWorktree) OptMergeTaskWorktree {
+	return OptMergeTaskWorktree{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptMergeTaskWorktree is optional MergeTaskWorktree.
+type OptMergeTaskWorktree struct {
+	Value MergeTaskWorktree
+	Set   bool
+}
+
+// IsSet returns true if OptMergeTaskWorktree was set.
+func (o OptMergeTaskWorktree) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptMergeTaskWorktree) Reset() {
+	var v MergeTaskWorktree
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptMergeTaskWorktree) SetTo(v MergeTaskWorktree) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptMergeTaskWorktree) Get() (v MergeTaskWorktree, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptMergeTaskWorktree) Or(d MergeTaskWorktree) MergeTaskWorktree {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptOpenTaskWorktree returns new OptOpenTaskWorktree with value set to v.
+func NewOptOpenTaskWorktree(v OpenTaskWorktree) OptOpenTaskWorktree {
+	return OptOpenTaskWorktree{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptOpenTaskWorktree is optional OpenTaskWorktree.
+type OptOpenTaskWorktree struct {
+	Value OpenTaskWorktree
+	Set   bool
+}
+
+// IsSet returns true if OptOpenTaskWorktree was set.
+func (o OptOpenTaskWorktree) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptOpenTaskWorktree) Reset() {
+	var v OpenTaskWorktree
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptOpenTaskWorktree) SetTo(v OpenTaskWorktree) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptOpenTaskWorktree) Get() (v OpenTaskWorktree, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptOpenTaskWorktree) Or(d OpenTaskWorktree) OpenTaskWorktree {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -3639,6 +3802,8 @@ type ToolInputs struct {
 	StartAgentInput                  OptStartAgent                  `json:"StartAgentInput"`
 	StartConnectorContributionInput  OptStartConnectorContribution  `json:"StartConnectorContributionInput"`
 	SubmitConnectorContributionInput OptSubmitConnectorContribution `json:"SubmitConnectorContributionInput"`
+	OpenTaskWorktreeInput            OptOpenTaskWorktree            `json:"OpenTaskWorktreeInput"`
+	MergeTaskWorktreeInput           OptMergeTaskWorktree           `json:"MergeTaskWorktreeInput"`
 	MergeAgentChangesInput           OptMergeAgentChanges           `json:"MergeAgentChangesInput"`
 }
 
@@ -3745,6 +3910,16 @@ func (s *ToolInputs) GetStartConnectorContributionInput() OptStartConnectorContr
 // GetSubmitConnectorContributionInput returns the value of SubmitConnectorContributionInput.
 func (s *ToolInputs) GetSubmitConnectorContributionInput() OptSubmitConnectorContribution {
 	return s.SubmitConnectorContributionInput
+}
+
+// GetOpenTaskWorktreeInput returns the value of OpenTaskWorktreeInput.
+func (s *ToolInputs) GetOpenTaskWorktreeInput() OptOpenTaskWorktree {
+	return s.OpenTaskWorktreeInput
+}
+
+// GetMergeTaskWorktreeInput returns the value of MergeTaskWorktreeInput.
+func (s *ToolInputs) GetMergeTaskWorktreeInput() OptMergeTaskWorktree {
+	return s.MergeTaskWorktreeInput
 }
 
 // GetMergeAgentChangesInput returns the value of MergeAgentChangesInput.
@@ -3855,6 +4030,16 @@ func (s *ToolInputs) SetStartConnectorContributionInput(val OptStartConnectorCon
 // SetSubmitConnectorContributionInput sets the value of SubmitConnectorContributionInput.
 func (s *ToolInputs) SetSubmitConnectorContributionInput(val OptSubmitConnectorContribution) {
 	s.SubmitConnectorContributionInput = val
+}
+
+// SetOpenTaskWorktreeInput sets the value of OpenTaskWorktreeInput.
+func (s *ToolInputs) SetOpenTaskWorktreeInput(val OptOpenTaskWorktree) {
+	s.OpenTaskWorktreeInput = val
+}
+
+// SetMergeTaskWorktreeInput sets the value of MergeTaskWorktreeInput.
+func (s *ToolInputs) SetMergeTaskWorktreeInput(val OptMergeTaskWorktree) {
+	s.MergeTaskWorktreeInput = val
 }
 
 // SetMergeAgentChangesInput sets the value of MergeAgentChangesInput.
@@ -4056,6 +4241,14 @@ func (s *Grep) setDefaults() {
 	{
 		val := bool(false)
 		s.CaseInsensitive.SetTo(val)
+	}
+}
+
+// setDefaults set default value of fields.
+func (s *MergeTaskWorktree) setDefaults() {
+	{
+		val := bool(false)
+		s.Discard.SetTo(val)
 	}
 }
 
@@ -7393,6 +7586,263 @@ func (s *MergeAgentChangesAction) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode implements json.Marshaler.
+func (s *MergeTaskWorktree) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *MergeTaskWorktree) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("name")
+		e.Str(s.Name)
+	}
+	{
+		if s.Discard.Set {
+			e.FieldStart("discard")
+			s.Discard.Encode(e)
+		}
+	}
+	{
+		if s.Paths != nil {
+			e.FieldStart("paths")
+			e.ArrStart()
+			for _, elem := range s.Paths {
+				e.Str(elem)
+			}
+			e.ArrEnd()
+		}
+	}
+}
+
+var jsonFieldsNameOfMergeTaskWorktree = [3]string{
+	0: "name",
+	1: "discard",
+	2: "paths",
+}
+
+// Decode decodes MergeTaskWorktree from json.
+func (s *MergeTaskWorktree) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode MergeTaskWorktree to nil")
+	}
+	var requiredBitSet [1]uint8
+	s.setDefaults()
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "name":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Name = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"name\"")
+			}
+		case "discard":
+			if err := func() error {
+				s.Discard.Reset()
+				if err := s.Discard.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"discard\"")
+			}
+		case "paths":
+			if err := func() error {
+				s.Paths = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.Paths = append(s.Paths, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"paths\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode MergeTaskWorktree")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfMergeTaskWorktree) {
+					name = jsonFieldsNameOfMergeTaskWorktree[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *MergeTaskWorktree) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *MergeTaskWorktree) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *OpenTaskWorktree) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *OpenTaskWorktree) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("name")
+		e.Str(s.Name)
+	}
+	{
+		e.FieldStart("reason")
+		e.Str(s.Reason)
+	}
+}
+
+var jsonFieldsNameOfOpenTaskWorktree = [2]string{
+	0: "name",
+	1: "reason",
+}
+
+// Decode decodes OpenTaskWorktree from json.
+func (s *OpenTaskWorktree) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode OpenTaskWorktree to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "name":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Name = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"name\"")
+			}
+		case "reason":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Reason = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"reason\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode OpenTaskWorktree")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfOpenTaskWorktree) {
+					name = jsonFieldsNameOfOpenTaskWorktree[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *OpenTaskWorktree) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OpenTaskWorktree) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes Bash as json.
 func (o OptBash) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -7822,6 +8272,72 @@ func (s OptMergeAgentChanges) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptMergeAgentChanges) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes MergeTaskWorktree as json.
+func (o OptMergeTaskWorktree) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes MergeTaskWorktree from json.
+func (o *OptMergeTaskWorktree) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptMergeTaskWorktree to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptMergeTaskWorktree) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptMergeTaskWorktree) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes OpenTaskWorktree as json.
+func (o OptOpenTaskWorktree) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes OpenTaskWorktree from json.
+func (o *OptOpenTaskWorktree) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptOpenTaskWorktree to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptOpenTaskWorktree) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptOpenTaskWorktree) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -10752,6 +11268,18 @@ func (s *ToolInputs) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.OpenTaskWorktreeInput.Set {
+			e.FieldStart("OpenTaskWorktreeInput")
+			s.OpenTaskWorktreeInput.Encode(e)
+		}
+	}
+	{
+		if s.MergeTaskWorktreeInput.Set {
+			e.FieldStart("MergeTaskWorktreeInput")
+			s.MergeTaskWorktreeInput.Encode(e)
+		}
+	}
+	{
 		if s.MergeAgentChangesInput.Set {
 			e.FieldStart("MergeAgentChangesInput")
 			s.MergeAgentChangesInput.Encode(e)
@@ -10759,7 +11287,7 @@ func (s *ToolInputs) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfToolInputs = [22]string{
+var jsonFieldsNameOfToolInputs = [24]string{
 	0:  "ConnectorCatalogInput",
 	1:  "CommitAndPushInput",
 	2:  "ConfirmRequirementsInput",
@@ -10781,7 +11309,9 @@ var jsonFieldsNameOfToolInputs = [22]string{
 	18: "StartAgentInput",
 	19: "StartConnectorContributionInput",
 	20: "SubmitConnectorContributionInput",
-	21: "MergeAgentChangesInput",
+	21: "OpenTaskWorktreeInput",
+	22: "MergeTaskWorktreeInput",
+	23: "MergeAgentChangesInput",
 }
 
 // Decode decodes ToolInputs from json.
@@ -11001,6 +11531,26 @@ func (s *ToolInputs) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"SubmitConnectorContributionInput\"")
+			}
+		case "OpenTaskWorktreeInput":
+			if err := func() error {
+				s.OpenTaskWorktreeInput.Reset()
+				if err := s.OpenTaskWorktreeInput.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"OpenTaskWorktreeInput\"")
+			}
+		case "MergeTaskWorktreeInput":
+			if err := func() error {
+				s.MergeTaskWorktreeInput.Reset()
+				if err := s.MergeTaskWorktreeInput.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"MergeTaskWorktreeInput\"")
 			}
 		case "MergeAgentChangesInput":
 			if err := func() error {
@@ -13822,6 +14372,147 @@ func (s MergeAgentChangesAction) Validate() error {
 	}
 }
 
+func (s *MergeTaskWorktree) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:     0,
+			MinLengthSet:  false,
+			MaxLength:     0,
+			MaxLengthSet:  false,
+			Email:         false,
+			Hostname:      false,
+			Regex:         regexMap["^[a-z][a-z0-9-]{0,31}$"],
+			MinNumeric:    0,
+			MinNumericSet: false,
+			MaxNumeric:    0,
+			MaxNumericSet: false,
+		}).Validate(string(s.Name)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "name",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Paths == nil {
+			return nil // optional
+		}
+		if err := (validate.Array{
+			MinLength:    1,
+			MinLengthSet: true,
+			MaxLength:    200,
+			MaxLengthSet: true,
+		}).ValidateLength(len(s.Paths)); err != nil {
+			return errors.Wrap(err, "array")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Paths {
+			if err := func() error {
+				if err := (validate.String{
+					MinLength:     1,
+					MinLengthSet:  true,
+					MaxLength:     4096,
+					MaxLengthSet:  true,
+					Email:         false,
+					Hostname:      false,
+					Regex:         nil,
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(elem)); err != nil {
+					return errors.Wrap(err, "string")
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "paths",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *OpenTaskWorktree) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:     0,
+			MinLengthSet:  false,
+			MaxLength:     0,
+			MaxLengthSet:  false,
+			Email:         false,
+			Hostname:      false,
+			Regex:         regexMap["^[a-z][a-z0-9-]{0,31}$"],
+			MinNumeric:    0,
+			MinNumericSet: false,
+			MaxNumeric:    0,
+			MaxNumericSet: false,
+		}).Validate(string(s.Name)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "name",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:     1,
+			MinLengthSet:  true,
+			MaxLength:     200,
+			MaxLengthSet:  true,
+			Email:         false,
+			Hostname:      false,
+			Regex:         nil,
+			MinNumeric:    0,
+			MinNumericSet: false,
+			MaxNumeric:    0,
+			MaxNumericSet: false,
+		}).Validate(string(s.Reason)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "reason",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *Read) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -15519,6 +16210,42 @@ func (s *ToolInputs) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "SubmitConnectorContributionInput",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.OpenTaskWorktreeInput.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OpenTaskWorktreeInput",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.MergeTaskWorktreeInput.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "MergeTaskWorktreeInput",
 			Error: err,
 		})
 	}

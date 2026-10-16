@@ -56,8 +56,39 @@ func (driver *remoteConnectorDriver) call(ctx context.Context, name conversation
 	report := bridgeapi.Report{Epoch: driver.epoch, Generation: driver.generation, Sequence: driver.sequence,
 		ToolCall: &bridgeapi.ToolCall{Name: string(name), Arguments: encoded}}
 	var accepted bridgeapi.ReportResponse
-	driver.remote.post(ctx, bridgeapi.PathReport, report, &accepted, http.StatusOK)
-	if accepted.Duplicate || accepted.Reported != driver.sequence {
+	uncertain := false
+	reportCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer cancel()
+	backoff := time.Second
+	for {
+		status, data, err := driver.remote.request(reportCtx, bridgeapi.PathReport, report)
+		if err == nil && status == http.StatusOK {
+			if err := json.Unmarshal(data, &accepted); err != nil {
+				driver.remote.t.Fatalf("remote report invalid typed response (%T)", err)
+			}
+			break
+		}
+		retryable := err != nil
+		if err == nil {
+			var refusal bridgeapi.ErrorBody
+			if json.Unmarshal(data, &refusal) == nil && refusal.Code != "" {
+				retryable = refusal.Code.Status() == status && refusal.Code.Transient()
+			} else {
+				retryable = status == http.StatusBadGateway || status == http.StatusServiceUnavailable || status == http.StatusGatewayTimeout
+			}
+		}
+		if !retryable {
+			driver.remote.t.Fatalf("remote report returned non-retryable HTTP %d", status)
+		}
+		uncertain = true
+		select {
+		case <-reportCtx.Done():
+			driver.remote.t.Fatalf("remote report remained unavailable: %v", reportCtx.Err())
+		case <-time.After(backoff):
+		}
+		backoff = min(2*backoff, time.Minute)
+	}
+	if (accepted.Duplicate && !uncertain) || accepted.Reported != driver.sequence {
 		driver.remote.t.Fatal("connector call was not admitted once")
 	}
 	id := fmt.Sprintf("remote-%d-%d", driver.epoch, driver.sequence)

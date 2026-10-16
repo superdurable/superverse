@@ -199,6 +199,7 @@ func serialToolStepOptions(call conversation.ToolCall) *dex.StepOptions {
 	options := parallelToolStepOptions(agentloop.CatalogTool(call.Name))
 	options.ExecuteLoadAttributeMaps = messageMaps
 	configureConnectorToolOptions(options, call)
+	configureTaskWorktreeToolOptions(options, call)
 	switch agentID, isSubagent := subagentOfCall(call); {
 	case call.Name == conversation.ToolStartAgent:
 		// The new worktree keeps the worktrees of the unfinished subagents.
@@ -225,7 +226,7 @@ func commandStepOptions(call conversation.ToolCall) *dex.StepOptions {
 func parallelToolStepOptions(definition agentloop.ToolDefinition) *dex.StepOptions {
 	return &dex.StepOptions{
 		ExecuteMethodTimeout:     definition.AttemptTimeout,
-		ExecuteLoadAttributeMaps: connectorToolMapLoads(definition.Name),
+		ExecuteLoadAttributeMaps: remoteWorktreeFileMapLoads(definition.Name),
 		HeartbeatTimeout:         time.Minute,
 		ExecuteDurability:        toolExecuteDurability(definition),
 		ExecuteRetry: &dex.RetryPolicy{
@@ -241,10 +242,10 @@ func parallelToolStepOptions(definition agentloop.ToolDefinition) *dex.StepOptio
 // command ledger, a delegation tool on the Session's subagents and any other
 // as a branch of a wave runs it.
 func (flow *SessionAgentFlow) executeTool(ctx dex.Context, call conversation.ToolCall) (agentloop.ToolExecutionResult, error) {
-	if call.Name == conversation.ToolStartConnectorContribution || call.Name == conversation.ToolSubmitConnectorContribution {
+	if isRemoteWorktreeTool(call.Name) {
 		execution, end := beginToolAttempt(ctx, call)
 		defer end()
-		return flow.executeConnectorTool(ctx, execution, call)
+		return flow.executeRemoteWorktreeTool(ctx, execution, call)
 	}
 	if call.Name == conversation.ToolBash {
 		return flow.executeCommand(ctx, call)
@@ -778,6 +779,7 @@ func (flow *SessionAgentFlow) startSubagent(ctx dex.Context, execution context.C
 	for _, unfinished := range agenttasks.UnfinishedSubagents(records, time.Now()) {
 		keep = append(keep, unfinished.AgentID)
 	}
+	keep = append(keep, openTaskWorktreeIDs(ctx)...)
 	// A connector_develop subagent works in a worktree of the connectors library.
 	sandboxCall, create := newSandboxCall(ctx, call), sandboxtools.CreateAgentWorktree
 	sandboxCall.Arguments = sandboxtools.AgentWorktreeArguments(agentID, keep)

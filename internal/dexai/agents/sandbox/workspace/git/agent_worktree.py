@@ -23,6 +23,8 @@ writes, so a repeated operation repeats nothing it finished:
            first. A merge of selected paths has its own plan and receipt and
            leaves the other files mergeable; a discard or a merge of every
            file closes the changes, so every later call answers its receipt
+  cleanup  remove refs and receipts of a closed attempt after Session state
+           retained its final receipt or superseded the closed record
 """
 import hashlib
 import json
@@ -233,6 +235,19 @@ def finish(agent, _request):
     return answer
 
 
+def cleanup(agent, _request):
+    """Forget only an attempt whose checkout has already been removed."""
+    if agent.registered():
+        raise HelperError("cannot clean up a registered worktree")
+    for ref in (agent.base_ref, agent.result_ref):
+        if agent.commit(ref) is not None:
+            run(["update-ref", "-d", ref], agent.workspace)
+    remove(agent.worktree)
+    remove(agent.directory)
+    run(["worktree", "prune"], agent.workspace)
+    return {"cleaned": True}
+
+
 def tree_entries(agent, old, new):
     """The files that differ between two trees: path -> ((old mode, old oid), (new mode, new oid))."""
     listed = run(["diff-tree", "-r", "-z", "--no-renames", "--no-commit-id", old, new], agent.workspace).stdout.split(b"\0")
@@ -428,7 +443,7 @@ def merge(agent, request):
     return receipt
 
 
-OPERATIONS = {"create": create, "finish": finish, "merge": merge}
+OPERATIONS = {"create": create, "finish": finish, "merge": merge, "cleanup": cleanup}
 
 
 def main():

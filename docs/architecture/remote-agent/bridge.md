@@ -66,6 +66,9 @@ Project has at most one active binding (its executor).
    the Superverse Sandbox and changes only through the `superverse` tools. It also directs
    Codex to choose published connectors through `connector_catalog` and the Dex skills and to
    tell the user when remote mode cannot yet contribute a new connector or a fix.
+   The server-owned remote instructions also tell Codex to open an application task worktree
+   before a Codex subagent edits, keep that subagent inside the returned path, and have the
+   parent merge and resolve conflicts. The Bridge adds no task-worktree instructions.
    While `agentContextState` is `pending`, it waits up to three minutes. The wait start is stored
    in `progress.json` across restarts. If the wait expires, it sends the brief; when context later
    becomes `ready`, it sends exactly the platform-provided `<repository_context>` section once,

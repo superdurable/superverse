@@ -1,0 +1,24 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,31}$",
+      "description": "Name returned by open_task_worktree."
+    },
+    "discard": {
+      "type": "boolean",
+      "default": false,
+      "description": "Discard this worktree's changes instead of applying them."
+    },
+    "paths": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 200,
+      "description": "Apply only these workspace-relative files or directories. Omit to apply every changed file. Cannot be used with discard.",
+      "items": {"type": "string", "minLength": 1, "maxLength": 4096}
+    }
+  }
+}

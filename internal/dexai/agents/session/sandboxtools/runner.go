@@ -121,9 +121,10 @@ var (
 // with FinishAgentWorktree, and MergeAgentChanges is the catalog tool
 // merge_agent_changes.
 var (
-	CreateAgentWorktree Tool = (*Execution).createAgentWorktree
-	FinishAgentWorktree Tool = (*Execution).finishAgentWorktree
-	MergeAgentChanges   Tool = (*Execution).mergeAgentChanges
+	CreateAgentWorktree  Tool = (*Execution).createAgentWorktree
+	FinishAgentWorktree  Tool = (*Execution).finishAgentWorktree
+	CleanupAgentWorktree Tool = (*Execution).cleanupAgentWorktree
+	MergeAgentChanges    Tool = (*Execution).mergeAgentChanges
 	// A connector_develop subagent's root is a worktree of the connectors
 	// library instead, which its finish commits and pushes.
 	CreateContributionWorktree Tool = (*Execution).createContributionWorktree

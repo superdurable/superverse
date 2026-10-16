@@ -25,6 +25,8 @@ const (
 	ToolCommitAndPush               ToolName = "commit_and_push"
 	ToolStartConnectorContribution  ToolName = "start_connector_contribution"
 	ToolSubmitConnectorContribution ToolName = "submit_connector_contribution"
+	ToolOpenTaskWorktree            ToolName = "open_task_worktree"
+	ToolMergeTaskWorktree           ToolName = "merge_task_worktree"
 )
 
 // Delegation tools start the Session's subagents and merge what they changed

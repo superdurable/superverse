@@ -9,9 +9,12 @@
 package agentloop
 
 import (
+	"slices"
 	"time"
 
+	"github.com/superdurable/superversev2/internal/comm/flowid"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteexec"
+	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/git"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 )
@@ -165,6 +168,83 @@ const (
 	ConnectorContributionSubmitted ConnectorContributionAttemptStatus = "SUBMITTED"
 	ConnectorContributionFailed    ConnectorContributionAttemptStatus = "FAILED"
 )
+
+// TaskWorktree is one Codex-owned checkout of the Session workspace. The
+// Session owns admission and the Git helper owns the snapshots and receipts.
+type TaskWorktree struct {
+	Name         string              `json:"name"`
+	WorktreeID   string              `json:"worktree_id"`
+	WorktreePath string              `json:"worktree_path"`
+	BaseCommit   string              `json:"base_commit,omitempty"`
+	Attempt      uint64              `json:"attempt"`
+	CleanupID    string              `json:"cleanup_id,omitempty"`
+	Status       TaskWorktreeStatus  `json:"status"`
+	OpenCallID   conversation.CallID `json:"open_call_id"`
+	MergeCallID  conversation.CallID `json:"merge_call_id,omitempty"`
+	Receipt      *git.MergeReceipt   `json:"receipt,omitempty"`
+	ClosedAt     *time.Time          `json:"closed_at,omitempty"`
+}
+
+// TaskWorktreeStatus is the checkout and merge state, independent of a turn.
+type TaskWorktreeStatus string
+
+const (
+	TaskWorktreeOpen      TaskWorktreeStatus = "OPEN"
+	TaskWorktreeSaved     TaskWorktreeStatus = "SAVED"
+	TaskWorktreeMerged    TaskWorktreeStatus = "MERGED"
+	TaskWorktreeDiscarded TaskWorktreeStatus = "DISCARDED"
+)
+
+const (
+	MaximumOpenTaskWorktrees = 3
+	maximumTaskWorktreeNames = 16
+)
+
+// AdmitTaskWorktree selects one stable attempt and, when full, the oldest
+// closed record to evict. The new attempt's CleanupID keeps that old ref
+// reachable until ExecuteTool deletes it, so the map and refs stay bounded.
+// CallID participates in the derived ID because an evicted name has no
+// retained attempt counter; the attempt field is informational while present.
+func AdmitTaskWorktree(records map[string]TaskWorktree, flowID, name string, callID conversation.CallID) (TaskWorktree, string, bool) {
+	current, exists := records[name]
+	if exists && (current.Status == TaskWorktreeOpen || current.Status == TaskWorktreeSaved || current.OpenCallID == callID) {
+		return current, "", true
+	}
+	open := 0
+	for _, record := range records {
+		if record.Status == TaskWorktreeOpen {
+			open++
+		}
+	}
+	if open >= MaximumOpenTaskWorktrees {
+		return TaskWorktree{}, "", false
+	}
+	var evicted, cleanupID string
+	if exists {
+		cleanupID = current.WorktreeID
+	} else if len(records) >= maximumTaskWorktreeNames {
+		closed := make([]TaskWorktree, 0, len(records))
+		for _, record := range records {
+			if record.Status == TaskWorktreeMerged || record.Status == TaskWorktreeDiscarded {
+				closed = append(closed, record)
+			}
+		}
+		if len(closed) == 0 {
+			return TaskWorktree{}, "", false
+		}
+		slices.SortFunc(closed, func(left, right TaskWorktree) int {
+			return left.ClosedAt.Compare(*right.ClosedAt)
+		})
+		evicted, cleanupID = closed[0].Name, closed[0].WorktreeID
+	}
+	attempt := current.Attempt + 1
+	if !exists {
+		attempt = 1
+	}
+	id := flowid.AgentTaskID(flowID, "task-worktree:"+name+":"+string(callID))
+	return TaskWorktree{Name: name, WorktreeID: id, WorktreePath: git.AgentWorktreeRoot(id), Attempt: attempt,
+		CleanupID: cleanupID, Status: TaskWorktreeOpen, OpenCallID: callID}, evicted, true
+}
 
 // RunningKind is the kind of work a turn has in flight.
 type RunningKind string

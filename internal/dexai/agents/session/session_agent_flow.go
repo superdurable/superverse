@@ -78,6 +78,7 @@ var (
 	backgroundCommandsAttribute         = dex.DefineAttributeMap[agenttasks.BackgroundCommand]("BackgroundCommands")
 	backgroundCommandStopsChannel       = dex.DefineChannelMap[backgroundCommandStop]("BackgroundCommandStops")
 	subagentsAttribute                  = dex.DefineAttributeMap[agenttasks.SubagentRecord]("Subagents")
+	taskWorktreesAttribute              = dex.DefineAttributeMap[agentloop.TaskWorktree]("TaskWorktrees")
 	previewHandoffAttribute             = dex.DefineAttribute[agentloop.PreviewHandoff]("PreviewHandoff")
 	previewAutoDeployAttribute          = dex.DefineAttribute[bool]("PreviewAutoDeploy")
 	previewAutoDeployChangedByAttribute = dex.DefineAttribute[conversation.Actor]("PreviewAutoDeployChangedBy")
@@ -179,7 +180,7 @@ func (*SessionAgentFlow) GetPersistenceSchema() dex.PersistenceSchema {
 			contextSegmentAttribute, contextSegmentPromptsAttribute, currentMessagesAttribute, archivedMessagesAttribute, todoListAttribute,
 			confirmedRequirementsAttribute, flowDesignsAttribute, builtFlowDesignAttribute, builtFlowDesignCommitAttribute, pendingUserInputAttribute, pendingApprovalAttribute, pendingTimerAttribute,
 			workspaceAttribute, workspaceUseAttribute,
-			agentInterruptAttribute, notificationReceiptsAttribute, backgroundCommandsAttribute, subagentsAttribute, connectorContributionsAttribute, previewHandoffAttribute, previewAutoDeployAttribute, previewAutoDeployChangedByAttribute,
+			agentInterruptAttribute, notificationReceiptsAttribute, backgroundCommandsAttribute, subagentsAttribute, connectorContributionsAttribute, taskWorktreesAttribute, previewHandoffAttribute, previewAutoDeployAttribute, previewAutoDeployChangedByAttribute,
 		},
 		Channels: []dex.ChannelDef{
 			queuedUserMessagesChannel, steeredUserMessagesChannel, answeredUserInputsChannel, remoteInboxChannel,
@@ -201,11 +202,11 @@ var (
 	workspaceLock    = dex.LockAttribute(workspaceAttribute)
 	interruptLock    = dex.LockAttribute(agentInterruptAttribute)
 	receiptsLock     = dex.LockAttribute(notificationReceiptsAttribute)
-	taskMaps         = []dex.AttributeDef{backgroundCommandsAttribute, subagentsAttribute, connectorContributionsAttribute}
+	taskMaps         = []dex.AttributeDef{backgroundCommandsAttribute, subagentsAttribute, connectorContributionsAttribute, taskWorktreesAttribute}
 	shortStepRetry   = dexflow.StepRetry(2 * time.Minute)
 	// Steps that admit, stop, fail or forget a subagent's start load its records; a STARTING
 	// record whose subagent may have started is written only under the AgentInterrupt lock.
-	taskMessageMaps = []dex.AttributeDef{currentMessagesAttribute, subagentsAttribute, backgroundCommandsAttribute, connectorContributionsAttribute}
+	taskMessageMaps = []dex.AttributeDef{currentMessagesAttribute, subagentsAttribute, backgroundCommandsAttribute, connectorContributionsAttribute, taskWorktreesAttribute}
 
 	// The Steps that consume notifications lock Workspace, whose deadline a
 	// task's end extends, and AgentInterrupt, which applies a Stop.
@@ -877,6 +878,9 @@ func (step RouteTool) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, e
 		return dex.GoTo(CheckSteered{}, advancePendingTools(ctx, 1)), nil
 	}
 	if call.Name == conversation.ToolStartConnectorContribution && !admitConnectorContribution(ctx, call) {
+		return dex.GoTo(CheckSteered{}, advancePendingTools(ctx, 1)), nil
+	}
+	if call.Name == conversation.ToolOpenTaskWorktree && !admitTaskWorktree(ctx, call) {
 		return dex.GoTo(CheckSteered{}, advancePendingTools(ctx, 1)), nil
 	}
 	if batch, needsWorkspace := agentloop.ParallelToolBatch(toolNames, state); len(batch.Records) > 0 {

@@ -62,6 +62,12 @@
     "SubmitConnectorContributionInput": {
       "$ref": "#/$defs/SubmitConnectorContributionInput"
     },
+    "OpenTaskWorktreeInput": {
+      "$ref": "#/$defs/OpenTaskWorktreeInput"
+    },
+    "MergeTaskWorktreeInput": {
+      "$ref": "#/$defs/MergeTaskWorktreeInput"
+    },
     "MergeAgentChangesInput": {
       "$ref": "#/$defs/MergeAgentChangesInput"
     }
@@ -128,6 +134,12 @@
     },
     "SubmitConnectorContributionInput": {
       "$ref": "schema/submit_connector_contribution.json"
+    },
+    "OpenTaskWorktreeInput": {
+      "$ref": "schema/open_task_worktree.json"
+    },
+    "MergeTaskWorktreeInput": {
+      "$ref": "schema/merge_task_worktree.json"
     },
     "MergeAgentChangesInput": {
       "$ref": "schema/merge_agent_changes.json"

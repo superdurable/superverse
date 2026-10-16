@@ -59,6 +59,8 @@ var (
 	CommitAndPush               = mustSchema(conversation.ToolCommitAndPush, (*generated.CommitAndPush).Validate)
 	StartConnectorContribution  = mustSchema(conversation.ToolStartConnectorContribution, (*generated.StartConnectorContribution).Validate)
 	SubmitConnectorContribution = mustSchema(conversation.ToolSubmitConnectorContribution, (*generated.SubmitConnectorContribution).Validate)
+	OpenTaskWorktree            = mustSchema(conversation.ToolOpenTaskWorktree, (*generated.OpenTaskWorktree).Validate)
+	MergeTaskWorktree           = mustSchema(conversation.ToolMergeTaskWorktree, (*generated.MergeTaskWorktree).Validate)
 	// The platform tools' inputs.
 	ReadDeliveryStatus  = mustSchema(conversation.ToolReadDeliveryStatus, (*generated.ReadDeliveryStatus).Validate)
 	ReadPlatformFlow    = mustSchema(conversation.ToolReadPlatformFlow, (*generated.ReadPlatformFlow).Validate)

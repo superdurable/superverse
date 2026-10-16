@@ -39,6 +39,25 @@ var connectorContributionsAttribute = dex.DefineAttributeMap[agentloop.Connector
 
 const connectorContributorSkill = "/opt/superverse/dex-skills/dex-connector-contributor/SKILL.md"
 
+func isRemoteWorktreeTool(name conversation.ToolName) bool {
+	switch name {
+	case conversation.ToolStartConnectorContribution, conversation.ToolSubmitConnectorContribution,
+		conversation.ToolOpenTaskWorktree, conversation.ToolMergeTaskWorktree:
+		return true
+	}
+	return false
+}
+
+func (flow *SessionAgentFlow) executeRemoteWorktreeTool(ctx dex.Context, execution context.Context, call conversation.ToolCall) (agentloop.ToolExecutionResult, error) {
+	switch call.Name {
+	case conversation.ToolStartConnectorContribution, conversation.ToolSubmitConnectorContribution:
+		return flow.executeConnectorTool(ctx, execution, call)
+	case conversation.ToolOpenTaskWorktree, conversation.ToolMergeTaskWorktree:
+		return flow.executeTaskWorktreeTool(ctx, execution, call)
+	}
+	panic("unknown remote worktree tool")
+}
+
 func connectorContributionSlugs(ctx dex.Context, platform []string) []string {
 	slugs := slices.Clone(platform)
 	for _, slug := range connectorContributionsAttribute.AllInstanceKeys(ctx) {
@@ -234,6 +253,10 @@ func (flow *SessionAgentFlow) executeConnectorTool(ctx dex.Context, execution co
 // path of an OPEN remote contribution. The file helper still confines it and
 // forbids .git relative to that selected root.
 func connectorFileRoot(ctx dex.Context, call conversation.ToolCall) string {
+	return connectorPathRoot(ctx, fileToolPath(call))
+}
+
+func fileToolPath(call conversation.ToolCall) string {
 	var path string
 	switch call.Name {
 	case conversation.ToolRead:
@@ -257,28 +280,50 @@ func connectorFileRoot(ctx dex.Context, call conversation.ToolCall) string {
 			path = input.Path.Value
 		}
 	}
+	return path
+}
+
+func connectorPathRoot(ctx dex.Context, path string) string {
 	if !filepath.IsAbs(path) {
 		return ""
 	}
 	for _, slug := range connectorContributionsAttribute.AllInstanceKeys(ctx) {
 		record := comm.Must(connectorContributionsAttribute.Get(ctx, slug))
-		if record.Status == agentloop.ConnectorContributionOpen && strings.HasPrefix(path, record.WorktreePath+"/") {
+		if record.Status == agentloop.ConnectorContributionOpen && withinRoot(path, record.WorktreePath) {
 			return record.WorktreePath
 		}
 	}
 	return ""
 }
 
-func connectorToolMapLoads(name conversation.ToolName) []dex.AttributeDef {
+func withinRoot(path, root string) bool {
+	clean := filepath.Clean(path)
+	return clean == root || strings.HasPrefix(clean, root+"/")
+}
+
+func taskWorktreePathRoot(ctx dex.Context, path string) string {
+	if !filepath.IsAbs(path) {
+		return ""
+	}
+	for _, name := range taskWorktreesAttribute.AllInstanceKeys(ctx) {
+		record := comm.Must(taskWorktreesAttribute.Get(ctx, name))
+		if record.Status == agentloop.TaskWorktreeOpen && record.BaseCommit != "" && withinRoot(path, record.WorktreePath) {
+			return record.WorktreePath
+		}
+	}
+	return ""
+}
+
+func remoteWorktreeFileMapLoads(name conversation.ToolName) []dex.AttributeDef {
 	switch name {
 	case conversation.ToolRead, conversation.ToolEdit, conversation.ToolWrite, conversation.ToolGrep, conversation.ToolGlob:
-		return []dex.AttributeDef{connectorContributionsAttribute}
+		return []dex.AttributeDef{connectorContributionsAttribute, taskWorktreesAttribute}
 	}
 	return nil
 }
 
 func configureConnectorToolOptions(options *dex.StepOptions, call conversation.ToolCall) {
-	options.ExecuteLoadAttributeMaps = append(options.ExecuteLoadAttributeMaps, connectorToolMapLoads(call.Name)...)
+	options.ExecuteLoadAttributeMaps = append(options.ExecuteLoadAttributeMaps, remoteWorktreeFileMapLoads(call.Name)...)
 	if slug := connectorSlugOfCall(call); slug != "" {
 		options.ExecuteLoadAttributeMapInstances = []dex.AttributeMapLoad{connectorContributionsAttribute.Load(slug)}
 	}
@@ -286,9 +331,193 @@ func configureConnectorToolOptions(options *dex.StepOptions, call conversation.T
 
 func sandboxCallRoot(ctx dex.Context, call conversation.ToolCall) string {
 	if currentExecutor(ctx).Mode == remoteexec.ModeRemote {
-		if root := connectorFileRoot(ctx, call); root != "" {
+		path := fileToolPath(call)
+		if root := taskWorktreePathRoot(ctx, path); root != "" {
+			return root
+		}
+		if root := connectorPathRoot(ctx, path); root != "" {
 			return root
 		}
 	}
 	return sandboxd.WorkspaceRoot
+}
+
+func taskWorktreeNameOfCall(call conversation.ToolCall) string {
+	switch call.Name {
+	case conversation.ToolOpenTaskWorktree:
+		input, err := toolinput.OpenTaskWorktree.Decode(call.Arguments.String())
+		if err == nil {
+			return input.Name
+		}
+	case conversation.ToolMergeTaskWorktree:
+		input, err := toolinput.MergeTaskWorktree.Decode(call.Arguments.String())
+		if err == nil {
+			return input.Name
+		}
+	}
+	return ""
+}
+
+func openTaskWorktreeIDs(ctx dex.Context) []string {
+	ids := make([]string, 0, agentloop.MaximumOpenTaskWorktrees)
+	for _, name := range taskWorktreesAttribute.AllInstanceKeys(ctx) {
+		record := comm.Must(taskWorktreesAttribute.Get(ctx, name))
+		if record.Status == agentloop.TaskWorktreeOpen {
+			ids = append(ids, record.WorktreeID)
+		}
+	}
+	return ids
+}
+
+// admitTaskWorktree reserves a stable attempt under RouteTool's interrupt lock.
+func admitTaskWorktree(ctx dex.Context, call conversation.ToolCall) bool {
+	input, err := toolinput.OpenTaskWorktree.Decode(call.Arguments.String())
+	if err != nil {
+		appendSessionFailure(ctx, call, toolfailure.InvalidArguments, err.Error())
+		return false
+	}
+	records := make(map[string]agentloop.TaskWorktree)
+	for _, name := range taskWorktreesAttribute.AllInstanceKeys(ctx) {
+		records[name] = comm.Must(taskWorktreesAttribute.Get(ctx, name))
+	}
+	record, evicted, admitted := agentloop.AdmitTaskWorktree(records, ctx.FlowID(), input.Name, call.ID)
+	if !admitted {
+		appendSessionFailure(ctx, call, toolfailure.TaskWorktreeLimitReached, "This Session allows three open task worktrees and retains at most sixteen names.")
+		return false
+	}
+	if evicted != "" {
+		comm.MustDo(taskWorktreesAttribute.Delete(ctx, evicted))
+	}
+	comm.MustDo(taskWorktreesAttribute.Set(ctx, input.Name, record))
+	return true
+}
+
+func configureTaskWorktreeToolOptions(options *dex.StepOptions, call conversation.ToolCall) {
+	if call.Name == conversation.ToolOpenTaskWorktree {
+		options.ExecuteLoadAttributeMaps = append(options.ExecuteLoadAttributeMaps, taskWorktreesAttribute, subagentsAttribute)
+	} else if name := taskWorktreeNameOfCall(call); name != "" {
+		options.ExecuteLoadAttributeMapInstances = append(options.ExecuteLoadAttributeMapInstances, taskWorktreesAttribute.Load(name))
+	}
+}
+
+func taskWorktreeResult(payload any) agentloop.ToolExecutionResult {
+	return agentloop.ToolExecutionResult{Content: string(comm.Must(json.Marshal(payload))), Outcome: conversation.ToolOutcomeSucceeded}
+}
+
+func taskWorktreeOpenResult(record agentloop.TaskWorktree) agentloop.ToolExecutionResult {
+	return taskWorktreeResult(map[string]any{
+		"name": record.Name, "worktree_path": record.WorktreePath, "base_commit": record.BaseCommit,
+		"status": record.Status, "attempt": record.Attempt,
+		"instruction": "Give this path to the Codex subagent and keep its edits under it. For bash, start with cd '" + record.WorktreePath + "' && because bash starts in /workspace.",
+	})
+}
+
+func (flow *SessionAgentFlow) executeTaskWorktreeTool(ctx dex.Context, execution context.Context, call conversation.ToolCall) (agentloop.ToolExecutionResult, error) {
+	name := taskWorktreeNameOfCall(call)
+	if name == "" {
+		return agentloop.SessionFailureResult(toolfailure.InvalidArguments, "invalid task worktree arguments"), nil
+	}
+	record, err := taskWorktreesAttribute.Get(ctx, name)
+	if dexflow.IsAttributeNotFound(err) {
+		return agentloop.SessionFailureResult(toolfailure.TaskNotFound, "open the task worktree first"), nil
+	}
+	if err != nil {
+		return agentloop.ToolExecutionResult{}, err
+	}
+	switch call.Name {
+	case conversation.ToolOpenTaskWorktree:
+		if record.Status != agentloop.TaskWorktreeOpen {
+			return taskWorktreeResult(map[string]any{"name": name, "status": record.Status, "base_commit": record.BaseCommit}), nil
+		}
+		if record.BaseCommit != "" {
+			return taskWorktreeOpenResult(record), nil
+		}
+		if record.CleanupID != "" {
+			cleanupCall := newSandboxCall(ctx, call)
+			cleanupCall.Arguments = sandboxtools.AgentWorktreeArguments(record.CleanupID, nil)
+			cleaned, err := flow.sandbox.Run(execution, sandboxtools.CleanupAgentWorktree, cleanupCall)
+			if err != nil {
+				return agentloop.ToolExecutionResult{}, err
+			}
+			if cleaned.Failure != nil {
+				return agentloop.SandboxToolResult(cleaned), nil
+			}
+			record.CleanupID = ""
+			comm.MustDo(taskWorktreesAttribute.Set(ctx, name, record))
+		}
+		keep := openTaskWorktreeIDs(ctx)
+		for _, unfinished := range agenttasks.UnfinishedSubagents(loadedSubagents(ctx), time.Now()) {
+			keep = append(keep, unfinished.AgentID)
+		}
+		sandboxCall := newSandboxCall(ctx, call)
+		sandboxCall.Arguments = sandboxtools.AgentWorktreeArguments(record.WorktreeID, keep)
+		created, err := flow.sandbox.Run(execution, sandboxtools.CreateAgentWorktree, sandboxCall)
+		if err != nil {
+			return agentloop.ToolExecutionResult{}, err
+		}
+		if created.Failure != nil {
+			if git.IsCreationRefusal(created.Failure.Code) {
+				comm.MustDo(taskWorktreesAttribute.Delete(ctx, name))
+			}
+			return agentloop.SandboxToolResult(created), nil
+		}
+		record.BaseCommit = created.Worktree.Base
+		comm.MustDo(taskWorktreesAttribute.Set(ctx, name, record))
+		return taskWorktreeOpenResult(record), nil
+	case conversation.ToolMergeTaskWorktree:
+		input := comm.Must(toolinput.MergeTaskWorktree.Decode(call.Arguments.String()))
+		if input.Discard.Value && len(input.Paths) > 0 {
+			return agentloop.SessionFailureResult(toolfailure.InvalidArguments, "paths apply only to merges"), nil
+		}
+		if record.Status == agentloop.TaskWorktreeMerged || record.Status == agentloop.TaskWorktreeDiscarded {
+			return taskWorktreeResult(record.Receipt), nil
+		}
+		if record.BaseCommit == "" && !input.Discard.Value {
+			return agentloop.SessionFailureResult(toolfailure.InvalidArguments, "the task worktree was not created"), nil
+		}
+		if record.Status == agentloop.TaskWorktreeOpen {
+			sandboxCall := newSandboxCall(ctx, call)
+			sandboxCall.Arguments = sandboxtools.AgentWorktreeArguments(record.WorktreeID, nil)
+			finished, err := flow.sandbox.Run(execution, sandboxtools.FinishAgentWorktree, sandboxCall)
+			if err != nil {
+				return agentloop.ToolExecutionResult{}, err
+			}
+			if finished.Failure != nil {
+				return agentloop.SandboxToolResult(finished), nil
+			}
+			if record.BaseCommit == "" && finished.Finished.Missing {
+				now := time.Now().UTC()
+				record.Status, record.MergeCallID, record.ClosedAt = agentloop.TaskWorktreeDiscarded, call.ID, &now
+				record.Receipt = &git.MergeReceipt{Outcome: git.MergeDiscarded}
+				comm.MustDo(taskWorktreesAttribute.Set(ctx, name, record))
+				return taskWorktreeResult(record.Receipt), nil
+			}
+			if record.BaseCommit == "" {
+				record.BaseCommit = finished.Finished.Base
+			}
+			record.Status = agentloop.TaskWorktreeSaved
+			comm.MustDo(taskWorktreesAttribute.Set(ctx, name, record))
+		}
+		sandboxCall := newSandboxCall(ctx, call)
+		sandboxCall.Arguments = sandboxtools.TaskWorktreeMergeArguments(record.WorktreeID, input.Discard.Value, input.Paths)
+		merged, err := flow.sandbox.Run(execution, sandboxtools.MergeAgentChanges, sandboxCall)
+		if err != nil {
+			return agentloop.ToolExecutionResult{}, err
+		}
+		if merged.Failure != nil {
+			return agentloop.SandboxToolResult(merged), nil
+		}
+		record.MergeCallID, record.Receipt = call.ID, merged.Merge
+		now := time.Now().UTC()
+		if input.Discard.Value {
+			record.Status = agentloop.TaskWorktreeDiscarded
+			record.ClosedAt = &now
+		} else if len(input.Paths) == 0 {
+			record.Status = agentloop.TaskWorktreeMerged
+			record.ClosedAt = &now
+		}
+		comm.MustDo(taskWorktreesAttribute.Set(ctx, name, record))
+		return taskWorktreeResult(merged.Merge), nil
+	}
+	panic("unknown task worktree tool")
 }

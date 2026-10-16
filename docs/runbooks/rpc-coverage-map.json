@@ -248,10 +248,14 @@
       "kind-e2e",
       "native-e2e"
     ],
-    "/superverse.v2.RemoteAgentService/CreateRemoteAgentPairing": [],
+    "/superverse.v2.RemoteAgentService/CreateRemoteAgentPairing": [
+      "native-e2e"
+    ],
     "/superverse.v2.RemoteAgentService/ListRemoteAgentConnections": [],
     "/superverse.v2.RemoteAgentService/RevokeRemoteAgentConnection": [],
-    "/superverse.v2.RemoteAgentService/SetSessionExecutor": [],
+    "/superverse.v2.RemoteAgentService/SetSessionExecutor": [
+      "native-e2e"
+    ],
     "/superverse.v2.SessionService/GetSession": [
       "api-integration",
       "kind-e2e",

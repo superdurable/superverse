@@ -234,6 +234,22 @@ func (operations *GitOperations) MergeAgentChanges(ctx context.Context, client *
 	return receipt, err
 }
 
+// CleanupAgentWorktree removes the refs and merge receipts of a closed task
+// attempt. The caller first persists the successor's CleanupID, so a lost
+// answer repeats this idempotent operation before creating its new worktree.
+func (operations *GitOperations) CleanupAgentWorktree(ctx context.Context, client *sandboxd.SandboxClient, agentID string) error {
+	var answer struct {
+		Cleaned bool `json:"cleaned"`
+	}
+	if err := runAgentWorktree(ctx, client, "cleanup", agentID, struct{}{}, &answer); err != nil {
+		return err
+	}
+	if !answer.Cleaned {
+		return sandboxd.NewToolFailure(toolfailure.PlatformCommandUnavailable, errors.New("worktree cleanup had no confirmation"))
+	}
+	return nil
+}
+
 // runAgentWorktree runs one helper operation for agentID with request on its
 // stdin and decodes its answer: a refusal is the tool failure of its code, a
 // helper error is transient, and an answer outside the contract is a platform

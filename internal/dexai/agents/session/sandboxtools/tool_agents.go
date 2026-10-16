@@ -35,6 +35,20 @@ func AgentWorktreeArguments(agentID string, keep []string) string {
 	return string(comm.Must(json.Marshal(agentWorktreeArguments{AgentID: agentID, Keep: keep})))
 }
 
+// TaskWorktreeMergeArguments adapts a server-owned Codex worktree identity to
+// the same validated merge operation used for platform subagent worktrees.
+func TaskWorktreeMergeArguments(agentID string, discard bool, paths []string) string {
+	action := generated.MergeAgentChangesActionApply
+	if discard {
+		action = generated.MergeAgentChangesActionDiscard
+	}
+	return string(comm.Must(json.Marshal(struct {
+		AgentID string                            `json:"agent_id"`
+		Action  generated.MergeAgentChangesAction `json:"action"`
+		Paths   []string                          `json:"paths,omitempty"`
+	}{AgentID: flowid.SubagentTaskID(agentID), Action: action, Paths: paths})))
+}
+
 type agentWorktreeArguments struct {
 	AgentID string   `json:"agent_id"`
 	Keep    []string `json:"keep"`
@@ -67,6 +81,15 @@ func (execution *Execution) finishAgentWorktree(ctx context.Context, call Call) 
 		return Result{}, err
 	}
 	return Result{Content: fmt.Sprintf("Saved %d changed file(s).", finished.Files), Finished: &finished}, nil
+}
+
+// cleanupAgentWorktree removes a closed task attempt's refs and receipts.
+func (execution *Execution) cleanupAgentWorktree(ctx context.Context, call Call) (Result, error) {
+	id := worktreeArguments(call).AgentID
+	if err := execution.commits.CleanupAgentWorktree(ctx, execution.executor, id); err != nil {
+		return Result{}, err
+	}
+	return Result{Content: "Cleaned the closed task worktree."}, nil
 }
 
 // ContributionArguments are the trusted arguments of the contribution

@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "reason"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,31}$",
+      "description": "Stable name for one Codex subagent checkout, such as build-ui. Opening it after a completed merge or discard starts a new attempt."
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "The bounded task the Codex subagent will do in this checkout."
+    }
+  }
+}

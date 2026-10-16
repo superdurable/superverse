@@ -210,6 +210,12 @@ var toolCatalog = []ToolDefinition{
 	remoteOnly(uninterruptible(longRunning(sandboxTool(conversation.ToolSubmitConnectorContribution,
 		"Verify, commit and push the open connector worktree as the GitHub App, then submit it for a draft pull request and release candidate. The result confirms acceptance; connector notifications report publication or failure later.",
 		toolinput.SubmitConnectorContribution.JSONSchema(), WorkspaceAccessMutating, sandboxtools.FinishContribution, 15*time.Minute)))),
+	remoteOnly(uninterruptible(longRunning(sandboxTool(conversation.ToolOpenTaskWorktree,
+		"Open one isolated worktree of the application for a Codex subagent. It snapshots the current workspace, including uncommitted files, and returns its path and base commit. Give the subagent that path and keep its work there. A repeated open of an active name returns it; opening after merge or discard starts a new attempt. At most three checkouts are open.",
+		toolinput.OpenTaskWorktree.JSONSchema(), WorkspaceAccessMutating, sandboxtools.CreateAgentWorktree, 2*time.Minute)))),
+	remoteOnly(uninterruptible(longRunning(sandboxTool(conversation.ToolMergeTaskWorktree,
+		"Finish a Codex subagent's worktree and merge its changes into the workspace, or discard them. paths applies selected files and leaves the rest mergeable. The receipt lists applied, conflicting, unchanged and unknown paths; resolve conflicts in the workspace before continuing. A repeated merge returns its recorded receipt.",
+		toolinput.MergeTaskWorktree.JSONSchema(), WorkspaceAccessMutating, sandboxtools.MergeAgentChanges, 3*time.Minute)))),
 	// The delegation tools. The Session runs start_agent itself: it creates the
 	// subagent's worktree and starts its SubagentFlow. Both may run for a while
 	// and must finish their effects, so Stop never cancels them.

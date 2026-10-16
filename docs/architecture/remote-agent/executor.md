@@ -423,7 +423,8 @@ only make sense to the platform model:
 - **Offered**: `read`, `edit`, `write`, `grep`, `glob`, `bash`, `read_task_output`, `stop_task`
   (commands only), `commit_and_push`, `connector_catalog`, `read_delivery_status`,
   `read_platform_flow`, `read_live_app_runs`, `start_connector_contribution`,
-  `submit_connector_contribution`, `request_user_input`, `confirm_requirements`,
+  `submit_connector_contribution`, `open_task_worktree`, `merge_task_worktree`,
+  `request_user_input`, `confirm_requirements`,
   `write_todos` (shown as the progress list in Studio), and `watch_preview_run` once RUNFEEDBACK
   adds it ([run feedback](run-feedback.md#scope)).
 - **Not offered**: `start_agent`, `merge_agent_changes` (platform subagents), `set_effort`,
@@ -499,6 +500,99 @@ on submit and remaining workspace state is removed on Project deletion. The
 existing local Git host and contribution Flow are per Project/slug, with no
 resource per tool call or generation.
 
+### Codex task worktrees (RASUBWT)
+
+**Identity and execution lifecycle.** `SessionAgentFlow` remains the one top-level
+`session-<projectID>` (for example `session-project-42`) started by Project readiness
+with `flowid.Fingerprint(struct{ProjectID string})` as Start RequestID and
+`IDReuseDisallow`. The Project supplies the business ID. Neither tool starts a Flow,
+SubagentFlow, model call or Run. A remote HTTP report has the existing
+`remote-<epoch>-<sequence>` CallID; duplicate reports are refused at the sequence
+watermark and a retried ExecuteTool retains that ID. An open attempt's eight-character
+worktree ID is `flowid.AgentTaskID(SessionFlowID,
+"task-worktree:"+name+":"+OpenCallID)`, for example the name `build-ui` and CallID
+`remote-7-42` derive an ID such as `k3n8q5r1`. The name is a lower-case letter
+followed by up to 31 lower-case letters, digits or hyphens. Opening an active
+name returns its existing path and base; a new call after a final merge or discard
+creates a new attempt and ID. Repeating the old call cannot start that new attempt.
+After a partial merge the checkout is saved and the name stays mergeable; it cannot
+be reopened until the remaining changes are fully merged or discarded. Business
+completion is the final merge or discard of a task attempt. Session archival and
+read-only state occur only at Project deletion; engine completion and its retention
+follow `CompleteProjectSession`, independently of task completion. Codex's own
+subagents are outside Dex; no parent/child execution or cross-Flow transfer exists.
+
+**Attributes and AttributeMaps.** New `TaskWorktrees` is
+`dex.AttributeMap[agentloop.TaskWorktree]`, keyed by the exact validated task name,
+for example `TaskWorktrees/build-ui`. Its ordinary struct value contains `Name`,
+`WorktreeID`, `WorktreePath`, `BaseCommit`, `Attempt`, `CleanupID`, typed `Status`
+(`OPEN`, `SAVED`, `MERGED`, `DISCARDED`), `OpenCallID`, `MergeCallID`, the typed Git
+merge `Receipt` (`outcome`, applied, conflicts with kinds, unchanged, unknown), and
+`ClosedAt`. The Session owns admission and this record; the Git helper owns the
+snapshot commits and merge receipts on the workspace volume. No indexed fields,
+query endpoint, credential or secret is added. `RouteTool` loads the bounded map
+and writes under `interruptLock`; `ExecuteTool` loads the exact name for merge,
+or the map and `Subagents` to build an open's `keep` set. File tools load the at
+most 16 keys and select only a registered `OPEN` root with a prepared base;
+`superverse-files` still rejects the selected root's `.git` metadata. A worktree
+path outside an open record falls back to the workspace root and is refused by
+the file helper. `bash` retains its `/workspace` working directory; Codex uses
+`cd '<returned path>' && ...`. The map has at most 16 names, with the oldest
+closed name evicted before another name is admitted. At most three records are
+`OPEN`; this count is separate from platform subagents. A closed name can
+reuse its map key with a new ID. Each successor carries the old ID in
+`CleanupID`, then the helper idempotently deletes its refs and receipts before
+creating the successor. Thus at most 16 closed attempts' refs, three open
+checkouts and three cleanup-pending predecessors persist. Records and remaining
+volume state are removed on Project deletion. Platform `start_agent` and remote
+open pass all unfinished platform subagent IDs and all `OPEN` task-worktree IDs
+to `CreateAgentWorktree` as `keep`; neither can save another's live checkout.
+
+**Channels and ChannelMaps.** None added or changed. `RemoteInbox` and its
+Report producer (`ReportRemote`), sole Session consumer, sequence admission,
+eight-message/2 MiB pending budget, duplicate watermark, Stop generation fence
+and stale/termination handling are the [existing remote branch](#the-remote-branch-of-a-turn)
+and [Session contract](#dex-flow-changes). No task-specific ChannelMap key exists.
+
+**Streams.** None added or changed. `AgentActivity` remains best effort, with its
+existing 10 MiB `dex.DefineStream` budget, shared by all SessionAgentFlow
+instances for that Stream name in the pinned SDK v1.5.0; it may lose events. The canonical
+`CurrentMessages`/`ArchivedMessages` tool results and `TaskWorktrees` record
+recover after loss or disconnect. `AssistantText` and `ReasoningSummary` keep
+their existing producers, consumers, budgets and resume behavior.
+
+**Steps, RPCs and recovery.** `ReportRemote` authorizes the connected owner,
+checks epoch/generation/sequence and publishes the request to `RemoteInbox`.
+`ReadRemote` returns canonical tool results after reconnection. `RouteTool`
+authorizes against the remote-only catalog and admits an open under
+`interruptLock`; `ExecuteTool` invokes the existing accepted Sandbox lease and
+`CreateAgentWorktree`, `FinishAgentWorktree`, `MergeAgentChanges`, plus
+`CleanupAgentWorktree` for a predecessor. No new RPC or Step identity is added.
+An open has a two-minute attempt timeout, a merge three minutes; both use the
+catalog's four transient retries with two-second initial backoff and 30-second
+maximum, tool heartbeat and uninterruptible settlement. The Session Step graph
+continues to serialize mutating calls. The helper queries base/result refs,
+registered checkout, merge plan and receipt before each effect; cleanup checks
+for a registered checkout and deletes only a closed predecessor's refs. A lost
+answer is recovered by repeating the same call and ID. A typed creation refusal
+deletes the empty admission; other uncertain failures retain it for recovery.
+An `OPEN` record without `BaseCommit` refuses an ordinary merge. An explicit
+discard first calls `FinishAgentWorktree`: `Missing` means creation never
+completed, so the Session records an empty discarded receipt and close time;
+otherwise finish saves and removes the checkout and the Git helper records the
+discard receipt. This also handles creation that succeeded but whose answer was
+lost. The closed attempt can be evicted or reopened after its refs are cleaned.
+No checkout holding Codex edits is removed through this path without a discard
+request.
+Invalid paths, a fourth open checkout, a seventeenth name without a closed
+record, and `discard` with `paths` are call failures. Stop and executor switch
+preserve open Codex checkouts; the platform has its separate subagent cap and
+keeps those IDs when opening a worktree. Sandbox reclaim removes only the
+instance and retains its workspace volume. `CompleteProjectSession` and
+`CompleteSessionWorkspace` at Project deletion end the Session and delete the
+volume. No old Flow/Step identity or persisted field changes meaning; old
+open executions have an absent, empty map.
+
 **Routing.** Today `RouteTool` resolves a call against `ContextSegment.ToolNames`, the set frozen for
 the platform model's segment. Remote mode never opens or compacts a segment, so a fresh Session has
 none and an older platform segment names tools Codex must not use (`start_agent`). In remote mode
@@ -516,6 +610,7 @@ remote call exactly like a model's.
 ## Database Schema Changes
 
 None in the Session. The connection credential table is in [connection](connection.md).
+RASUBWT adds no SQL table, column, migration, projection or second worktree owner.
 
 ## UI/UX
 
@@ -528,17 +623,31 @@ None in the Session. The connection credential table is in [connection](connecti
   happens to a running turn ("the current work stops").
 - Offline: a banner "Codex is offline; messages are kept until it reconnects" with the two
   actions above. Nothing switches automatically.
+- RASUBWT uses the existing tool-call rows for open and merge receipts; it adds no Studio
+  component. The path, base and conflict list are in the ordinary tool result.
 
 ## Tests
 
 Dex integration tests in `internal/dexai/agents` against the real lane (Dex, Sandbox, local Git host,
-PostgreSQL), driving the real remote agent endpoint over HTTP as a Bridge would; the remote
+PostgreSQL) drive the real remote agent endpoint over HTTP as a Bridge would. The remote
 HTTP admission case checks `pending` at the first context read, reports a real Sandbox read
 while provisioning is in flight, then checks its tool result, `SettledThrough`, `ready`, and
 the AGENTS.md content in `<repository_context>`. A forced real-dependency provisioning failure
 needs a local Git fixture whose committed template manifest is malformed before activation;
 until it exists, the `unavailable` path is unverified by integration tests.
-agent's decisions come from the test, the way an E2E test drives Studio:
+
+`TestSessionRemoteTaskWorktreeHTTPDexIntegration` opens two checkouts, edits separate and shared
+files through remote file tools, merges clean and conflicting results, checks partial and
+duplicate merge receipts, discards a third, reopens its name with old-ref cleanup, checks the
+three-checkout refusal and verifies path confinement. It also induces a real Git
+failure during creation, then verifies an ordinary merge refuses the unprepared
+record while discard closes it and permits cleanup and reopening.
+`TestSessionRemoteTaskWorktreePlatformKeepHTTPDexIntegration` switches to platform mode,
+starts a real platform subagent through the mock model and checks that its worktree creation
+keeps the still-open Codex checkout. The existing three E2E cases and the
+Native lane cover the end-to-end application path. No scripted Orca is used;
+the platform-switch test uses the approved mock model.
+The remote agent's decisions come from the test, the way an E2E test drives Studio:
 
 - Activation, a delivered message, a tool call that edits and commits in the Sandbox, the
   result returned, the Preview handoff deployed right after the push while the turn continues, turn
@@ -621,6 +730,9 @@ E2E happy paths are unchanged.
   added to the list of SessionAgentFlow behaviours. The paragraph on the Session's Flow RPCs needs no
   new exception: remote mode makes no Flow RPC, and Run observation is registered by the API with
   PreviewFlow, not by the Session.
+- `remote_agent.md`, this executor contract and the Session, agentloop, sandboxtools and Git
+  READMEs describe Codex task worktrees and their cleanup. The Bridge forwards server-owned
+  instructions; it adds no worktree-specific brief text.
 
 ## Resource Scalability
 
@@ -635,3 +747,19 @@ entries at their admission maximum plus the SDK's decode copies (RAEXEC records 
 worst case per entry); waiters for a slot are bounded by `remoteAgent.maxLongPolls` and give up at
 their request deadline. Dex load per connected
 Bridge is in [connection](connection.md#resource-scalability).
+
+RASUBWT adds a bounded set of Git worktrees and refs inside each existing Sandbox workspace
+volume: up to three open checkouts and 16 retained closed name records, with at most one
+predecessor awaiting cleanup for each newly admitted open. Finishing removes a checkout;
+the next open of its name or eviction of its closed record removes old refs and receipts;
+Project deletion removes the volume. A new snapshot copies at most 100 MiB of uncommitted
+and untracked files and is refused below 1 GiB free, as the existing Git helper requires.
+There is no new AWS, Kubernetes, Temporal, Dex Flow, SQL or network resource to apply an
+account, region, cluster, namespace, load-balancer, API or object quota to. The governing
+limit is the existing workspace volume capacity and the three/16 application bounds;
+their failure scale is the fourth open checkout, seventeenth name with no closed entry,
+or helper disk refusal. Per-request root selection scans at most 16 records of this
+Session, never tenants. The tools make no IAM, EKS, Temporal Cloud, load-balancer, DNS or
+certificate control-plane call per request, poll or event. At 10,000 Projects and 100,000
+deployments, resource count remains one existing workspace per live Session and no
+resource per deployment generation; volume cleanup follows Project deletion.

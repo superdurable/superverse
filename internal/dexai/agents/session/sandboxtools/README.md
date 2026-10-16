@@ -65,7 +65,7 @@ express: byte bounds, NUL, blank text and workspace-relative paths.
 | `tool_files.go` | `read`, `edit`, `write`, `grep` and `glob` through the image's `superverse-files` helper |
 | `tool_connector_catalog.go` | `connector_catalog` over the official published catalog |
 | `tool_git.go` | `commit_and_push` |
-| `tool_agents.go` | The subagent worktree operations: the creation for `start_agent`, the finish of a subagent and `merge_agent_changes`, and a `connector_develop` subagent's worktree of the connectors library: its creation (`CreateContributionWorktree`) and its finish with the contribution (`FinishContribution`), with their trusted arguments (`ContributionArguments`) |
+| `tool_agents.go` | The subagent and remote task worktree operations: creation, finish, merge and cleanup with trusted identities, and a `connector_develop` subagent's worktree of the connectors library: its creation (`CreateContributionWorktree`) and finish (`FinishContribution`) |
 
 ## Subagents
 

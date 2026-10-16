@@ -156,10 +156,11 @@ var (
 
 // Delegation to subagents that the call asks for too often or too early.
 var (
-	SubagentLimitReached  = callCode("subagent_limit_reached", "Three subagents already run. Wait for a task notification before you start another, or stop one with stop_task.")
-	SubagentBudgetReached = callCode("subagent_budget_reached", "Six subagents were started since the user's last message. Continue with the subagents you have, or ask the user before you start more.")
-	SnapshotTooLarge      = callCode("snapshot_too_large", "The uncommitted and untracked files of the workspace exceed 100 MiB, which a subagent's worktree would copy. Commit, delete or ignore the large files first.")
-	AgentNotFinished      = callCode("agent_not_finished", "The subagent is still running. Wait for its task notification before you merge or discard its changes.")
+	SubagentLimitReached     = callCode("subagent_limit_reached", "Three subagents already run. Wait for a task notification before you start another, or stop one with stop_task.")
+	TaskWorktreeLimitReached = callCode("task_worktree_limit_reached", "Three task worktrees are open, or sixteen names are currently retained. Merge or discard an open worktree, or continue with an existing name.")
+	SubagentBudgetReached    = callCode("subagent_budget_reached", "Six subagents were started since the user's last message. Continue with the subagents you have, or ask the user before you start more.")
+	SnapshotTooLarge         = callCode("snapshot_too_large", "The uncommitted and untracked files of the workspace exceed 100 MiB, which a subagent's worktree would copy. Commit, delete or ignore the large files first.")
+	AgentNotFinished         = callCode("agent_not_finished", "The subagent is still running. Wait for its task notification before you merge or discard its changes.")
 	// A connector_develop subagent works on the branch of its connector, which
 	// one subagent at a time may change.
 	ConnectorContributionRunning = callCode("connector_contribution_running", "A connector_develop subagent already works on this connector. "+

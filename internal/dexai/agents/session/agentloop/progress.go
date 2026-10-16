@@ -101,6 +101,7 @@ func ToolTarget(call conversation.ToolCall) string {
 		FlowID      string `json:"flow_id"`
 		TaskID      string `json:"task_id"`
 		AgentID     string `json:"agent_id"`
+		Name        string `json:"name"`
 		FlowType    string `json:"flow_type"`
 		Operation   string `json:"operation"`
 		Release     string `json:"release_id"`
@@ -121,6 +122,8 @@ func ToolTarget(call conversation.ToolCall) string {
 		target = arguments.Description
 	case conversation.ToolMergeAgentChanges:
 		target = arguments.AgentID
+	case conversation.ToolOpenTaskWorktree, conversation.ToolMergeTaskWorktree:
+		target = arguments.Name
 	case conversation.ToolRead, conversation.ToolEdit, conversation.ToolWrite:
 		target = arguments.Path
 	case conversation.ToolGrep, conversation.ToolGlob:
