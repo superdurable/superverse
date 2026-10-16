@@ -21,8 +21,9 @@ import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Icons";
 import { AgentStatus, hasRunningTasks, hasRunningWork } from "@/lib/session/agent-types";
 import { connectorContributionView } from "@/lib/session/agent-view";
-import { useMockScenarios, withoutMockMarkersInMessages } from "@/lib/session/mock-scenarios";
+import { useMockScenarios } from "@/lib/session/mock-scenarios";
 import { useComposerProposal } from "@/lib/session/ComposerDraftProvider";
+import { useTemplateCommit } from "@/lib/project/stage/ProjectStageProvider";
 import { useProjectSession } from "@/lib/session/SessionProvider";
 import { isWorkspacePaused, isWorkspacePreparing, isWorkspaceRetainedDirty } from "@/lib/session/session-status";
 import { Composer } from "@/components/session/composer/Composer";
@@ -36,22 +37,26 @@ import {
   notificationLinks,
   agentStatusLabel,
   pendingQueueActions,
+  shownChatMessages,
 } from "./session-chat-state";
-import { SessionModelPicker } from "./SessionModelPicker";
-import { WorkspaceStartup } from "./SessionStatusIndicators";
+import { SessionModelMenu } from "./SessionModelPicker";
 import { LiveNote, SeeOnPreview, useLiveChange, type LiveViewing } from "./LiveNote";
+import { StartupStatus } from "./start/StartupSteps";
 import { useCreationIntent } from "./start/use-creation-intent";
+import { useChatSend } from "./start/use-chat-send";
 import { useComposerText, useDraftFocus } from "./start/use-first-turn-composer";
 import { useStartingModel } from "./start/use-starting-model";
 import { RemoteAgentOfflineNotice } from "./executor/SessionExecutorStatus";
 
-const SENDING_FIRST_MESSAGE = "Sending your first message…";
+const SENDING_FIRST_MESSAGE = "Sending your description…";
 
 /**
  * The Project's Session chat: its conversation, todo progress and queued messages, the pending
  * action dock and the composer. The Project's creation intent, the model and first message the
  * person chose on the creation page, is delivered as the Session's first turn; when that fails,
- * the composer holds the message as a draft for the person to send. While the person views Live
+ * the composer holds the message as a draft for the person to send. While a requirements card
+ * waits, a message answers it with the changes the person asks for. The model sits in the ⋯ menu
+ * on the composer's row. While the person views Live
  * the chat stays live, and a note above the composer says that what they ask for is built on
  * Preview; once the agent made a change they asked for there, it offers See it on Preview.
  */
@@ -70,17 +75,10 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
     state.snapshot?.description?.status === AgentStatus.WAITING_FOR_MESSAGE,
   );
   const markSent = liveChange.markSent;
-  // The composer's send goes through the creation intent, which delivers a pending first message;
-  // what the message is about, when a surface named it, leads the text.
   const creationSend = creation.send;
-  const send = useCallback(
-    (text: string) => {
-      markSent();
-      return creationSend(about ? `About: ${about}\n${text}` : text).then(clearAbout);
-    },
-    [about, clearAbout, creationSend, markSent],
-  );
-  const shownMessages = useMemo(() => withoutMockMarkersInMessages(state.messages), [state.messages]);
+  const send = useChatSend({ send: creationSend, about, clearAbout, markSent });
+  const template = useTemplateCommit();
+  const shownMessages = useMemo(() => shownChatMessages(state.messages, template), [state.messages, template]);
   const scroller = useRef<HTMLDivElement | null>(null);
   const followsTail = useRef(true);
 
@@ -152,8 +150,10 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
   const canStop = productInteractive && agentReady && description !== null && hasRunningWork(description);
   const stopCommand = state.stop;
   const stop = useCallback(() => stopCommand().catch(() => undefined), [stopCommand]);
-  const blockedByPending = pendingInput !== null;
   const answerAwaitingReconciliation = pendingInput !== null && state.answeredQuestionCallId === pendingInput.callId;
+  // A waiting requirements card takes the person's message as their reply; questions are answered first.
+  const blockedByPending =
+    pendingInput !== null && (pendingInput.kind !== "requirements" || answerAwaitingReconciliation);
   const submittingQuestionAnswers = pendingInput !== null && state.answeringQuestionCallId === pendingInput.callId;
   const pendingMessages = mapPendingMessages(state.snapshot?.queued ?? [], state.snapshot?.steered ?? []);
   const linksOfNotification = useMemo(() => notificationLinks(state.projectId), [state.projectId]);
@@ -198,6 +198,16 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
   const composerInput = useDraftFocus(failedDraft?.idempotencyKey ?? null, disabledReason);
   // A Session on the mock model takes its scenarios' inputs, answers included, from the mock composer.
   const runsMock = !remotelyExecuted && description?.model === "mock";
+  const modelMenu = description && !remotelyExecuted && (
+    <SessionModelMenu
+      model={description.model}
+      contextModel={description.contextModel}
+      effort={description.effort}
+      mockSelectable={mockScenarios?.selectable ?? false}
+      disabled={state.mutating || agentInteractionDisabled}
+      onSelect={(model) => void state.updateModel(model, description.modelRevision).catch(() => undefined)}
+    />
+  );
   const mockDisabledReason = answerAwaitingReconciliation
     ? placeholder
     : (composerDisabledReason({
@@ -280,14 +290,12 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
               disabled={state.mutating || agentInteractionDisabled}
               {...pendingQueueActions(state.snapshot?.queued ?? [], state, setComposerText)}
             />
-            {lifecycle && !productInteractive && (
-              <div className="rounded border border-line-soft bg-panel p-3 text-[12px] text-ink-dim">{lifecycle}</div>
-            )}
-            {workspacePreparing && (
-              <div className="rounded border border-line-soft bg-panel p-3 text-[12px] text-ink-dim">
-                <Spinner className="mr-2 inline h-3.5 w-3.5" /> Preparing workspace for this tool…
-              </div>
-            )}
+            <StartupStatus
+              messages={shownMessages}
+              description={description}
+              lifecycle={productInteractive ? null : lifecycle}
+              workspacePreparing={workspacePreparing}
+            />
             {workspacePaused && (
               <div
                 className="rounded border border-line-soft bg-panel p-3 text-[12px] text-ink-dim"
@@ -299,11 +307,11 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
             )}
             {workspaceRetainedDirty && (
               <div className="rounded border border-line-soft bg-panel p-3 text-[12px] text-ink-dim">
-                Workspace storage was retained because it contains uncommitted or unverified changes.
+                The workspace was kept because it has changes that are not committed or checked yet.
               </div>
             )}
             {productInteractive && description?.status !== AgentStatus.WAITING_FOR_MESSAGE && (
-              <div className="flex items-center gap-2 text-[12px] text-ink-faint">
+              <div className="flex items-center gap-2 text-caption text-ink-faint" role="status">
                 <Spinner className="h-3.5 w-3.5" /> {agentStatusLabel(description?.status)}
               </div>
             )}
@@ -311,7 +319,7 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
             {state.commandError && <p className="text-[12px] text-fail">{state.commandError}</p>}
             {creation.failed && (
               <div className="rounded border border-line-soft bg-panel p-3 text-[12px] text-ink-dim" role="alert">
-                Your first message was not sent. It waits in the composer: check the model, then send it.
+                Your description was not sent. It waits in the composer: check the model in the ⋯ menu, then send it.
               </div>
             )}
           </div>
@@ -334,21 +342,6 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
           onDecide={(callId, decision) => void state.decideRequirements(callId, decision).catch(() => undefined)}
           onAnswer={(callId, answers) => void state.answerQuestions(callId, answers).catch(() => undefined)}
         />
-
-        <WorkspaceStartup />
-
-        {description && !remotelyExecuted && (
-          <SessionModelPicker
-            model={description.model}
-            contextModel={description.contextModel}
-            effort={description.effort}
-            mockSelectable={mockScenarios?.selectable ?? false}
-            disabled={state.mutating || agentInteractionDisabled}
-            onSelect={(model) => {
-              void state.updateModel(model, description.modelRevision).catch(() => undefined);
-            }}
-          />
-        )}
 
         {live && <LiveNote live={live} />}
 
@@ -373,6 +366,7 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
             onStop={canStop ? stop : undefined}
             stopDisabled={state.mutating || !state.snapshotCurrent}
             stopping={state.stopping}
+            menu={modelMenu}
           />
         ) : (
           <Composer
@@ -391,6 +385,7 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
             onStop={canStop ? stop : undefined}
             stopDisabled={state.mutating || !state.snapshotCurrent}
             stopping={state.stopping}
+            menu={modelMenu}
           />
         )}
       </aside>

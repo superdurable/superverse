@@ -62,13 +62,13 @@ import {
 } from "@/mock/store/tenancy/tenancy-snapshots";
 import type { MockService } from "./mock-backend";
 
-/** The caller's account and the store's TeamSpaces, which the caller has joined. */
+/** The caller's account and the store's Teamspaces, which the caller has joined. */
 function tenancyOf(store: MockStore, caller: CallerContext__Output | null) {
   const account = mockAccount(caller);
   return { account, tenancy: mockTenancy(store, account) };
 }
 
-/** Every member change answers with all the members and the TeamSpace's new revision. */
+/** Every member change answers with all the members and the Teamspace's new revision. */
 function teamSpaceMembers(teamSpace: MockTeamSpace) {
   return { members: mockTeamSpaceMembers(teamSpace), revision: teamSpace.revision };
 }

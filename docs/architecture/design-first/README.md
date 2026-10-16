@@ -16,7 +16,7 @@ names in the chat how what it built differs from the design. Nothing blocks on a
 |---|---|---|
 | Flow design | A compact, typed description of the proposed Flows: Steps with their groups and explanations, what each Step waits for, the transitions between Steps, Channels, Actions and Attributes, and which feature (R1, R2...) each Step serves. It is an optional `design` part of `confirm_requirements`, which the server validates. | [flow-design.md](flow-design.md) |
 | Storage and API | `SessionAgentFlow` owns the design. The card and the confirmed requirements carry a small reference (digest and outline). The body lives in a two-instance AttributeMap `FlowDesigns` (`pending`, `confirmed`) that one read RPC serves. | [flow-design.md](flow-design.md#storage) |
-| Rendering and confirmation | Studio expands the design into an FDG 2.0-shaped graph and draws it on the Flow tab in place of the Flows it changes, outside the Flow Definition catalog, under a Design label. Each Step is marked new or changed against the current source. The card keeps its two actions. | [studio.md](studio.md) |
+| Rendering and confirmation | Studio expands the design into an FDG 2.0-shaped graph and draws it on the Flow tab in place of the Flows it changes, outside the Flow Definition catalog, under a Design label. Each Step is marked new or changed against the current source. The card's Process Brief beside it holds the card's two actions. | [studio.md](studio.md) |
 | Build completion | A pushed, unblocked `commit_and_push` marks the confirmed design built. Once the Preview's processes are built from that push, the implemented Flows replace the design on the Flow tab. | [flow-design.md](flow-design.md#build-completion) |
 | Differences | When the build is complete, the agent compares what it built with the confirmed design and names each difference in its reply. Studio draws no comparison. | [studio.md](studio.md#differences-between-the-build-and-the-design) |
 
@@ -52,9 +52,12 @@ cross-Project view of designs would have to justify a projection on its own.
 
 See [studio.md](studio.md). In short:
 
-- The requirements card adds a **Design** part: the design summary and outline, one line per
-  Flow of what it changes (new, changed or removed, with the Steps and Actions that change),
-  and **Open design**, a link to the Flow tab.
+- A requirements card with a design shows as its **Process Brief** on the Flow tab: a summary
+  grid in business words (what starts it, who acts, the rules, the apps) above the drawn
+  design, with what it does, what to prepare, when it is done, the features and what it
+  changes behind **More details**. A person confirms it there with **Confirm and build**, and
+  asks for changes with **Change something…** or a chat message; the card in the chat points
+  there with **Open the brief** from other tabs.
 - From the card until the build is complete, the Flow tab draws the designed Flows in place
   of the ones they change, under a label: "Design · waiting for your confirmation", then
   "Design · building", then "Design · built, building processes". Steps are marked new or
@@ -64,7 +67,8 @@ See [studio.md](studio.md). In short:
   Flow tab's entry carries a **Design** marker.
 - When the build is complete and its processes are built, the implemented Flows replace the
   design. The agent's reply names any difference from the design. The canvas never does.
-- **Confirmed requirements** show the confirmed design's summary and outline as text.
+- **Confirmed requirements** show the confirmed design's summary and outline as text; the
+  Brief folds to a **Brief** button above the diagram that reopens it read only.
 
 ## Tests
 
@@ -79,7 +83,7 @@ that drive it (`make check-mock-scenarios`).
 | `TestSessionMockSummaryApprovalDesignBuiltDexIntegration` | The `summary-approval` push through the commit gate, pushed and unblocked, makes `design_built` true with `design_built_commit` the pushed head, and the final reply says the design was built as confirmed. |
 | New scenario `design-refused` and `TestSessionMockDesignRefusedDexIntegration` | A transition to an undeclared Step, an unreachable Step, a wait on an undeclared Channel, a feature ID the card lacks and an oversized design are each refused with `invalid_user_input` and no pending input. The corrected card is admitted. |
 | `TestSessionMockRequirementsCardDexIntegration`, unchanged | A card without a design behaves as before. Its reference is absent, and `GetFlowDesign` answers NOT_FOUND. |
-| `template-approval.spec.ts`, extended (Native lane) | With the Flow tab open, the card arrives and the tab shows `TextSummaryFlow` from the design at once, under "Design · waiting for your confirmation", compared with the template's initial design: the Result stage is marked changed, `AwaitSummaryApproval` in it new and `GenerateSummary` changed, with no Runs or Start; the card says "TextSummaryFlow · changed: adds AwaitSummaryApproval, Approve summary; changes GenerateSummary". Confirm: the label says "Design · building". After the push and the automatic process build, the implemented `TextSummaryFlow` replaces the design: its Result stage carries no mark and the label is gone. |
+| `template-approval.spec.ts`, extended (Native lane) | With the Flow tab open, the card arrives and the tab shows `TextSummaryFlow` from the design at once, under "Design · waiting for your confirmation", compared with the template's initial design: the Result stage is marked changed, `AwaitSummaryApproval` in it new and `GenerateSummary` changed, with no Runs or Start; the Process Brief keeps the outline behind More details and says "Text summary · changed: adds Await summary approval, Approve summary; changes Generate summary", and the chat's card links to it. Confirm: the label says "Design · building". After the push and the automatic process build, the implemented `TextSummaryFlow` replaces the design: its Result stage carries no mark and the label is gone. |
 
 The comparator and the design view are Studio code. The extended spec covers them and records
 them in the Studio coverage map. No new E2E case exists. Whether the agent names a difference
@@ -93,7 +97,7 @@ real-model run checks it.
   `BuiltFlowDesignCommit`, the design reference), the RPC list (`GetFlowDesign`) and the large/small change rule for
   design-only deviations.
 - [Streaming and Studio](../agent-harness-design/streaming-and-studio.md#requirements-card):
-  the card's Design part and the Flow tab's design view.
+  the card, its Process Brief and the Flow tab's design view.
 - [Resource API contract](../../api/resource-grpc.md),
   [agent transport parity](../../api/agent-transport-parity.md) and
   `api/superverse/v2/superverse.proto`: `AgentService.GetFlowDesign` and the design messages.

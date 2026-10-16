@@ -13,11 +13,16 @@ import { SelectedRunPanel } from "./SelectedRunPanel";
 import { RUN_COPY } from "./run-copy";
 import { RunHeader } from "./RunHeader";
 import { StepActions } from "@/components/flow/run/step/StepActions";
+import { StepTimeTravel } from "@/components/flow/run/step/StepTimeTravel";
+import { FailureBlock } from "@/components/flow/run/failure/FailureBlock";
+import { runEndedFailed } from "@/components/flow/run/failure/failure-copy";
 import { hasMultipleActions, type ActionableStep } from "@/components/flow/canvas/model/actionable-steps";
 import type { StepContextView } from "@/components/flow/canvas/model/step-context";
 import type { SelectedStepStatus } from "@/components/flow/canvas/FlowCanvas";
 import type { Reason } from "@/components/flow/canvas/model/run-overlay";
+import { stepName } from "@/lib/shared/format";
 import { cx } from "@/components/ui/cx";
+import { MoreDetails } from "@/components/ui/reveal/MoreDetails";
 import {
   BLOCK_HEAD,
   CLOSE,
@@ -41,11 +46,13 @@ const BAND_LABEL_TONE = {
 
 /**
  * Run facts and Actions stay put; only the top band follows the canvas. Actions are never
- * hidden behind a tab or a scroll, because they are the reason an Admin opened the run.
+ * hidden behind a tab or a scroll, because they are the reason an Admin opened the run. A failed
+ * Step, or a run that ended as failed, leads the drawer in business terms with what can be done.
  */
 export function RunDetailDrawer({
   flowType,
   flowId,
+  title,
   definition,
   definitionRevision,
   summary,
@@ -56,11 +63,14 @@ export function RunDetailDrawer({
   reloadKey,
   onStranded,
   onStopped,
+  onRetried,
   onClose,
 }: {
   flowType: string;
   /** Empty when nothing is selected: the drawer then explains the Step alone. */
   flowId: string;
+  /** The run's name as its row says it; empty while unknown. */
+  title: string;
   definition: FlowV2Definition;
   definitionRevision: string;
   summary: FlowSummary | null;
@@ -71,17 +81,46 @@ export function RunDetailDrawer({
   reloadKey: number;
   onStranded?: (flowID: string) => void;
   onStopped: () => void;
+  /** A failed Step was started again, so the run should be read again. */
+  onRetried: () => void;
   onClose: () => void;
 }) {
   const hasRun = flowId !== "";
+  const reason = selectedStepStatus?.reason ?? null;
+  // The Step as the canvas titles it: the drawer's Step context is of the same selected Step.
+  const shownStep =
+    selectedStepStatus && stepContext?.stepType === selectedStepStatus.stepType
+      ? stepContext.title
+      : stepName(selectedStepStatus?.stepType ?? "");
+  // The selected Step's failure, or the run's when the run itself failed; the band then need not repeat it.
+  const runFailed = runEndedFailed(summary?.flowStatusCode);
+  const candidate = selectedStepStatus?.failure ?? null;
+  const failure = candidate && (candidate.atSelectedStep || runFailed) ? candidate : null;
+  const showFailure = hasRun && selectedStepStatus !== null && (failure !== null || runFailed);
+  const bandReason = reason?.tone === "failed" && failure?.atSelectedStep ? null : reason;
+  const stepActions = hasRun && selectedStepStatus && (
+    <StepActions
+      flowType={flowType}
+      flowId={flowId}
+      summary={summary}
+      stepType={selectedStepStatus.stepType}
+      waitsForPerson={
+        selectedStepStatus.isBlocking &&
+        actionable.some((step) => step.stepType === selectedStepStatus.stepType && step.state === "current")
+      }
+      failure={failure}
+      inline={showFailure}
+      onRetried={onRetried}
+    />
+  );
   return (
     <section
-      aria-label={hasRun ? flowId : (stepContext?.stepType ?? RUN_COPY.thisStep)}
+      aria-label={hasRun ? flowId : (stepContext?.title ?? RUN_COPY.thisStep)}
       className="flex min-h-0 min-w-0 animate-panel-in flex-col overflow-y-auto border-l border-line-faint bg-panel motion-reduce:animate-none dark:bg-transparent"
       data-step-only={hasRun ? undefined : "true"}
     >
       {hasRun ? (
-        <RunHeader key={flowId} flowId={flowId} summary={summary} onStopped={onStopped} />
+        <RunHeader key={flowId} flowId={flowId} title={title} summary={summary} onStopped={onStopped} />
       ) : (
         <div className="flex items-baseline gap-2 border-b border-line-faint px-4 pt-3 pb-2.5">
           <span className={LABEL}>{RUN_COPY.stepOnly}</span>
@@ -90,39 +129,38 @@ export function RunDetailDrawer({
           </button>
         </div>
       )}
+      {showFailure && (
+        <FailureBlock
+          failure={failure}
+          flowStatusCode={summary?.flowStatusCode}
+          tools={failure && summary && <StepTimeTravel flowId={flowId} summary={summary} stepType={failure.stepType} />}
+        >
+          {stepActions}
+        </FailureBlock>
+      )}
       {hasRun && hasMultipleActions(actionable) && <ActionProgress steps={actionable} />}
       {hasRun && selectedStepStatus && (
-        <div
-          className="grid gap-0.5 border-b border-line-faint bg-panel px-4 py-2.5"
-          data-tone={selectedStepStatus.reason?.tone}
-        >
+        <div className="grid gap-0.5 border-b border-line-faint bg-panel px-4 py-2.5" data-tone={reason?.tone}>
           <span
             className={cx(
               "text-[10px] tracking-wider uppercase",
-              selectedStepStatus.reason ? BAND_LABEL_TONE[selectedStepStatus.reason.tone] : "text-ink-faint",
+              reason ? BAND_LABEL_TONE[reason.tone] : "text-ink-faint",
             )}
           >
             {selectedStepStatus.isBlocking ? RUN_COPY.waitingAt : RUN_COPY.showingStep}
           </span>
-          <span className="font-mono text-[13px] text-ink">{selectedStepStatus.stepType}</span>
-          {selectedStepStatus.reason && (
-            <span className="text-[11px]/[1.45] text-ink-faint">{selectedStepStatus.reason.text}</span>
+          <span className={STEP_NAME} title={selectedStepStatus.stepType}>
+            {shownStep}
+          </span>
+          {bandReason && <span className="text-caption text-ink-dim">{bandReason.text}</span>}
+          {bandReason?.detail && (
+            <MoreDetails surface="runs.step-reason" className="mt-0.5">
+              <p className="text-caption wrap-anywhere text-ink-faint">{bandReason.detail}</p>
+            </MoreDetails>
           )}
         </div>
       )}
-      {hasRun && selectedStepStatus && (
-        <StepActions
-          flowType={flowType}
-          flowId={flowId}
-          summary={summary}
-          stepType={selectedStepStatus.stepType}
-          waitsForPerson={
-            selectedStepStatus.isBlocking &&
-            actionable.some((step) => step.stepType === selectedStepStatus.stepType && step.state === "current")
-          }
-          failure={selectedStepStatus.reason?.tone === "failed" ? selectedStepStatus.reason.text : null}
-        />
-      )}
+      {!showFailure && stepActions}
       {hasRun && (
         <SelectedRunPanel
           key={`${flowType}:${flowId}`}
@@ -155,19 +193,28 @@ function StepContextBlock({ view, ruled }: { view: StepContextView; ruled: boole
   return (
     <div className={cx("mt-4 px-4 pt-3.5 pb-5", ruled && "border-t border-line-faint")}>
       <div className={BLOCK_HEAD}>{RUN_COPY.thisStep}</div>
-      <p className={STEP_NAME}>{view.stepType}</p>
+      <p className={STEP_NAME} title={view.stepType}>
+        {view.title}
+      </p>
       <p className={PURPOSE}>{view.explanation ?? RUN_COPY.noPurpose}</p>
       {view.connector && (
-        <div className="my-2.5 grid gap-1 rounded-md border border-line-soft p-2.5 text-xs text-ink-dim">
-          <b>{view.connector.connectorId}</b>
-          <span>
-            {view.connector.operationId} · {view.connector.operationKind}
-          </span>
+        <div className="my-2.5 grid gap-1 rounded-md border border-line-soft p-2.5 text-caption text-ink-dim">
           <span>Connection: {view.connector.connectionName || "Unnamed"}</span>
-          <span>Version: {view.connector.moduleVersion || "Unsupported"}</span>
           <FlowLink className={cx(LINK, "font-semibold")} to={{ surface: "configuration" }}>
             Configure connection
           </FlowLink>
+          <MoreDetails surface="runs.step-connector">
+            <dl className="grid grid-cols-[max-content_1fr] gap-x-2 font-mono text-caption text-ink-faint">
+              <dt>Connector</dt>
+              <dd className="wrap-anywhere">{view.connector.connectorId}</dd>
+              <dt>Operation</dt>
+              <dd className="wrap-anywhere">
+                {view.connector.operationId} · {view.connector.operationKind}
+              </dd>
+              <dt>Version</dt>
+              <dd className="wrap-anywhere">{view.connector.moduleVersion || "Unsupported"}</dd>
+            </dl>
+          </MoreDetails>
         </div>
       )}
       <dl className={cx(FACTS, "mt-2.5")}>
@@ -206,11 +253,12 @@ function ActionProgress({ steps }: { steps: readonly ActionableStep[] }) {
             {/* The open gate is the one thing here worth emphasis. */}
             <span
               className={cx(
-                "font-mono text-[11px] wrap-anywhere",
+                "text-caption wrap-anywhere",
                 step.state === "current" ? "font-semibold text-ink" : "text-ink-faint",
               )}
+              title={step.stepType}
             >
-              {step.stepType}
+              {stepName(step.stepType)}
             </span>
           </li>
         ))}

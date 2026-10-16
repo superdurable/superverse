@@ -20,7 +20,7 @@ import { mockBackend } from "@/mock/backend/mock-backend";
 import { isStudioMockEnabled } from "@/mock/enabled";
 
 // The workspace reads the signed-in account once per document, in mock mode too; every page below it works in
-// one TeamSpace at a time.
+// one Teamspace at a time.
 export default async function WorkspaceLayout({ children }: { children: ReactNode }) {
   const requestHeaders = await headers();
   const caller = callerFromCookieHeader(requestHeaders.get("cookie"));

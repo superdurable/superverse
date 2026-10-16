@@ -304,14 +304,15 @@ snapshot reports:
 
 When the agent asks for confirmation, a card shows four parts: the features (R1, R2, ...),
 the connections (existing and new, with their operations), what the user must prepare, and
-how acceptance works. A card with a Flow design adds a fifth, **Design**: the design's summary
-and its outline, one line per Flow with its main-story Steps and the number of its
-failure-handling Steps, then what it changes in the current source and **Open design**
-([design before implementation](../design-first/studio.md#the-card)).
+how acceptance works. A card with a Flow design is decided on its **Process Brief** on the
+Flow tab, which reads the card and the design together in business words; the card in the
+chat then shows its title, version and summary with **Open the brief**
+([design before implementation](../design-first/studio.md#the-process-brief)).
 
-- **Confirm and start building** answers with the user message "Requirements confirmed
+- **Confirm and build** answers with the user message "Requirements confirmed
   (version N)".
-- **Request changes** takes the user's text as the answer.
+- **Request changes** takes the user's text as the answer: the Brief's **Change
+  something…**, or a message sent from the chat's composer while the card waits.
 - The card is a pending action above the composer, like a question. Confirmed requirements
   can be opened at any time.
 - From a card with a design until its build is complete, the Flow tab draws the designed Flows

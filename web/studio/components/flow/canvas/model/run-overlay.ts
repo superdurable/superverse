@@ -63,7 +63,9 @@ export interface StepExecution {
   waitFor: { status: PhaseStatus; conditions: RunCondition[] } | null;
   execute: { status: PhaseStatus };
   attempts: number;
+  /** The error the last failed attempt returned, and the type the worker named for it. */
   lastFailure?: string;
+  lastFailureType?: string;
   startedAt?: number;
   /** Where a completed execution said it would go next, so the canvas can draw it before it starts. */
   nextStepTypes?: string[];
@@ -143,17 +145,19 @@ export function activeStepTypes(overlay: RunOverlay): string[] {
   });
 }
 
-/** Decision verbs surprising enough to name on the card. `goTo` never is. */
+/** Decision verbs surprising enough to name on the card, in plain words. `goTo` never is. */
 const SURPRISING: Record<string, string> = {
-  deadEnd: "this branch stops here",
-  forceFail: "the whole flow was failed",
-  forceComplete: "the whole flow was completed early",
-  forceCompleteIfChannelsEmpty: "completed because the queues were empty",
+  deadEnd: "This path of the process ends here",
+  forceFail: "The process stopped here and counts as failed",
+  forceComplete: "The process finished early here",
+  forceCompleteIfChannelsEmpty: "The process finished here because nothing else was waiting",
 };
 
 export interface Reason {
   text: string;
   tone: "blocked" | "failed" | "terminal";
+  /** The engine's own words behind the line, such as an error or a Channel name; absent when the line is all. */
+  detail?: string;
 }
 
 /**
@@ -167,35 +171,39 @@ export function stepReason(overlay: RunOverlay, stepType: string): Reason | null
   return reasonLine(latest, overlay.now) ?? terminalReason(latest.decisionType);
 }
 
-/** One templated line explaining why a Step is blocked or failed. */
+/** One templated line explaining why a Step is blocked or failed; the engine's words go to `detail`. */
 function reasonLine(exec: StepExecution, nowMs: number): Reason | null {
   const w = exec.waitFor;
   const since = exec.startedAt === undefined ? "" : ` · ${formatCoarseElapsed(exec.startedAt, nowMs)}`;
 
   if (w !== null && w.status === "failed") {
-    return { text: `the wait failed${exec.lastFailure === undefined ? "" : ` — ${exec.lastFailure}`}`, tone: "failed" };
+    return { text: "Failed while waiting", tone: "failed", detail: exec.lastFailure };
   }
   if (exec.execute.status === "failed") {
-    const n = exec.attempts > 1 ? ` after ${exec.attempts} attempts` : "";
-    return {
-      text: `failed${n}${exec.lastFailure === undefined ? "" : ` — ${exec.lastFailure}`}`,
-      tone: "failed",
-    };
+    const n = exec.attempts > 1 ? ` after ${exec.attempts} tries` : "";
+    return { text: `Failed${n}`, tone: "failed", detail: exec.lastFailure };
   }
   if (w !== null && isBlockedStatus(w.status)) {
     const pending = w.conditions.filter((c) => !c.satisfied);
-    if (pending.length === 0) {
-      // The Go analyser resolves no conditions, so a blocked wait can legitimately list none.
-      return { text: `waiting — the analyser did not say on what${since}`, tone: "blocked" };
-    }
+    // The Go analyser resolves no conditions, so a blocked wait can legitimately list none.
+    if (pending.length === 0) return { text: `Waiting${since}`, tone: "blocked" };
     const chans = pending.filter((c) => c.kind === "channel").map((c) => c.label);
     const timers = pending.filter((c) => c.kind === "timer").map((c) => c.label);
     const subs = pending.filter((c) => c.kind === "subflow").map((c) => c.label);
     const parts: string[] = [];
-    if (chans.length > 0) parts.push(`someone to publish ${chans.join(" or ")}`);
-    if (subs.length > 0) parts.push(`${subs.length} child flow${subs.length === 1 ? "" : "s"}`);
-    if (timers.length > 0) parts.push(timers.join(" or "));
-    return { text: `waiting for ${parts.join(", or ")}${since}`, tone: "blocked" };
+    if (chans.length > 0) parts.push("a person");
+    if (subs.length > 0) parts.push(subs.length === 1 ? "another process" : `${subs.length} other processes`);
+    if (timers.length > 0) parts.push("a timer");
+    const detail = [
+      chans.length > 0 && `Channel ${chans.join(" or ")}`,
+      subs.length > 0 && `SubFlow ${subs.join(" or ")}`,
+      timers.length > 0 && `Timer ${timers.join(" or ")}`,
+    ].filter(Boolean);
+    return {
+      text: `Waiting for ${parts.join(" or ")}${since}`,
+      tone: "blocked",
+      detail: `Waits on ${detail.join(", or ")}`,
+    };
   }
   return null;
 }
@@ -204,7 +212,7 @@ function reasonLine(exec: StepExecution, nowMs: number): Reason | null {
 function terminalReason(verb: string | undefined): Reason | null {
   if (verb === undefined) return null;
   const said = SURPRISING[verb];
-  return said === undefined ? null : { text: `${verb} — ${said}`, tone: "terminal" };
+  return said === undefined ? null : { text: said, tone: "terminal", detail: `Decision ${verb}` };
 }
 
 /** The hover text for the segmented bar: a count per status, plus the wait-kind breakdown. */

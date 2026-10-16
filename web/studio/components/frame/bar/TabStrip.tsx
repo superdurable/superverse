@@ -25,7 +25,8 @@ export interface SurfaceTab {
  * open show only their icon, then the open one too; only past the last fit do they scroll. `before`
  * holds the process picker and `after` the tool tabs and +; the bar measures all of them (`navRef` and the others).
  * `badges` adds a count, such as items waiting in the Inbox, and `notes` says in the tab's accessible
- * name what a badge marks. The open tab's underline is the environment's colour.
+ * name what a badge marks. A tab that appeared since the person last looked carries a small dot until it
+ * is opened (`fresh`). The open tab's underline is the environment's colour.
  */
 export function TabStrip({
   tabs,
@@ -35,6 +36,7 @@ export function TabStrip({
   after,
   badges,
   notes,
+  fresh,
   fit,
   navRef,
   beforeRef,
@@ -50,6 +52,8 @@ export function TabStrip({
   badges?: Partial<Record<ProjectSurface, ReactNode>>;
   /** What a tab's badge says, added to its accessible name, such as "setup needs you". */
   notes?: Partial<Record<ProjectSurface, string>>;
+  /** Tabs that appeared and were not opened since. */
+  fresh?: ReadonlySet<ProjectSurface>;
   fit: BarFit;
   /** The parts the bar measures to choose its fit. */
   navRef: RefObject<HTMLElement | null>;
@@ -84,6 +88,15 @@ export function TabStrip({
               <Glyph name={glyph} className="size-4.5" />
               {(fit === "labels" || (fit === "open" && open)) && <span>{label}</span>}
               {badges?.[surface]}
+              {/* A tab's own mark, such as Setup needing a person, says more than that it is new. */}
+              {fresh?.has(surface) && !open && !badges?.[surface] && (
+                <span
+                  aria-hidden="true"
+                  title="New"
+                  className="mt-3.5 -ml-0.5 size-1.5 shrink-0 self-start rounded-full bg-accent"
+                  data-testid="new-tab-mark"
+                />
+              )}
             </Link>
           );
         })}

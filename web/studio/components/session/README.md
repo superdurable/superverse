@@ -5,7 +5,7 @@ Purpose: Binds the page's Session to the Agent UI: the chat and its rail, compos
 
 Importers: `components/project` imports this directory.
 
-Imports: it imports `components/agent`, `components/flow/scope`, `components/session/composer`, `components/session/executor`, `components/session/mock`, `components/session/remoteagent`, `components/session/start`, `components/ui`, `components/ui/menu`, `components/ui/problem`, `components/ui/timings`, `lib/api`, `lib/browser`, `lib/project`, `lib/session`, `lib/session/design`, `lib/shared` and `lib/shared/problem`.
+Imports: it imports `components/agent`, `components/flow/scope`, `components/session/composer`, `components/session/executor`, `components/session/mock`, `components/session/remoteagent`, `components/session/start`, `components/ui`, `components/ui/menu`, `components/ui/problem`, `components/ui/reveal`, `components/ui/timings`, `lib/api`, `lib/browser`, `lib/project`, `lib/project/stage`, `lib/session`, `lib/session/design`, `lib/shared` and `lib/shared/problem`.
 
 ```mermaid
 flowchart LR
@@ -21,14 +21,16 @@ flowchart LR
   self --> d7["components/ui"]
   self --> d8["components/ui/menu"]
   self --> d9["components/ui/problem"]
-  self --> d10["components/ui/timings"]
-  self --> d11["lib/api"]
-  self --> d12["lib/browser"]
-  self --> d13["lib/project"]
-  self --> d14["lib/session"]
-  self --> d15["lib/session/design"]
-  self --> d16["lib/shared"]
-  self --> d17["lib/shared/problem"]
+  self --> d10["components/ui/reveal"]
+  self --> d11["components/ui/timings"]
+  self --> d12["lib/api"]
+  self --> d13["lib/browser"]
+  self --> d14["lib/project"]
+  self --> d15["lib/project/stage"]
+  self --> d16["lib/session"]
+  self --> d17["lib/session/design"]
+  self --> d18["lib/shared"]
+  self --> d19["lib/shared/problem"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 

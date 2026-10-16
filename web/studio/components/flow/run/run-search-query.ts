@@ -143,16 +143,19 @@ export function hasAdvancedQuery(query: RunQuery): boolean {
  * is not a query and the filters the list was searched with stay stable while the next is edited.
  */
 export function useRunQuery(definition: SearchableDefinition | undefined, initial: RunQuery = EMPTY_RUN_QUERY) {
+  // The view's own scope, which Clear returns to: the Inbox's open runs, or every run.
+  const [scope] = useState(initial);
   const [query, setQuery] = useState<RunQuery>(initial);
-  const [applied, setApplied] = useState<SearchFilter[]>(() =>
-    definition === undefined ? [] : toSearchFilters(initial, definition, Date.now()),
-  );
+  const [applied, setApplied] = useState<{ query: RunQuery; filters: SearchFilter[] }>(() => ({
+    query: initial,
+    filters: definition === undefined ? [] : toSearchFilters(initial, definition, Date.now()),
+  }));
 
   const apply = useCallback(
     (next: RunQuery) => {
       if (definition === undefined) return;
       setQuery(next);
-      setApplied(toSearchFilters(next, definition, Date.now()));
+      setApplied({ query: next, filters: toSearchFilters(next, definition, Date.now()) });
     },
     [definition],
   );
@@ -160,8 +163,22 @@ export function useRunQuery(definition: SearchableDefinition | undefined, initia
   return {
     query,
     setQuery,
-    appliedFilters: applied,
+    appliedFilters: applied.filters,
+    /** How many controls the list was searched with differ from the view's own scope. */
+    activeFilters: changedControls(applied.query, scope),
     submit: useCallback(() => apply(query), [apply, query]),
-    clear: useCallback(() => apply(EMPTY_RUN_QUERY), [apply]),
+    clear: useCallback(() => apply(scope), [apply, scope]),
   };
+}
+
+/** The controls of `query` that differ from `scope`; an attribute counts once, and only with a value. */
+function changedControls(query: RunQuery, scope: RunQuery): number {
+  const attribute = (of: RunQuery) =>
+    of.attributeValue.trim() === "" ? "" : `${of.attributeKey}:${of.attributeValue}`;
+  return [
+    query.status !== scope.status,
+    query.since !== scope.since,
+    query.flowId.trim() !== scope.flowId.trim(),
+    attribute(query) !== attribute(scope),
+  ].filter(Boolean).length;
 }

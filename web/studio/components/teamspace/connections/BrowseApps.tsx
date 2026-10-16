@@ -25,7 +25,7 @@ const SEARCH =
   "w-full rounded-lg border border-line bg-panel px-3 py-2 text-[13px] text-ink placeholder:text-ink-faint focus:border-accent focus:shadow-(--focus-ring) focus:outline-none";
 
 /**
- * Add an app: the catalog's released connectors, searchable, each with what the TeamSpace already has of it.
+ * Add an app: the catalog's released connectors, searchable, each with what the Teamspace already has of it.
  * Connect opens the new connection's editor in its card; saving returns to Connections, and an app's sign-in
  * returns there too. `?app=<connector>` opens one app's editor at once, as the suggestions on Connections do.
  */

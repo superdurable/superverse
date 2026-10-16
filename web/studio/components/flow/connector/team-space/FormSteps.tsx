@@ -45,12 +45,12 @@ export function Disclosure({ label, children }: { label: string; children: React
 }
 
 /**
- * What a connector's platform installation shares beyond the TeamSpace, by connector ID: every
- * TeamSpace that connects one Slack workspace through Superverse's app shares its one installation.
+ * What a connector's platform installation shares beyond the Teamspace, by connector ID: every
+ * Teamspace that connects one Slack workspace through Superverse's app shares its one installation.
  */
 const SHARED_PLATFORM_INSTALLATION: Record<string, string> = {
   slack:
-    "TeamSpaces that connect the same Slack workspace with Superverse's app share its bot: its channels, its events and an uninstall. Use your own app to keep them apart.",
+    "Teamspaces that connect the same Slack workspace with Superverse's app share its bot: its channels, its events and an uninstall. Use your own app to keep them apart.",
 };
 
 /** Whether an authorization uses the platform's own OAuth application or the person's. */

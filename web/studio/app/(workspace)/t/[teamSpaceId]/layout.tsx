@@ -9,7 +9,7 @@
 import type { ReactNode } from "react";
 import { TeamSpaceGate } from "@/components/teamspace/TeamSpaceGate";
 
-// A TeamSpace's pages open once the TeamSpace the URL names is read; the workspace's TeamSpaceProvider reads it.
+// A Teamspace's pages open once the Teamspace the URL names is read; the workspace's TeamSpaceProvider reads it.
 export default function TeamSpaceLayout({ children }: { children: ReactNode }) {
   return <TeamSpaceGate>{children}</TeamSpaceGate>;
 }

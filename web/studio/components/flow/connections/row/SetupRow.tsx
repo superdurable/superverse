@@ -37,7 +37,7 @@ import {
 } from "@/components/flow/connections/model/row-model";
 
 /** A connector's logo from the catalog, or its initials on a tile. */
-function Logo({ name, svg }: { name: string; svg: string }) {
+export function ConnectorLogo({ name, svg }: { name: string; svg: string }) {
   if (svg)
     return (
       // A data URI keeps the logo out of the network and the page's markup alike.
@@ -164,7 +164,7 @@ export function SetupRow({
         onClick={toggleFromRow}
       >
         <span className="flex min-w-0 items-center gap-2.5">
-          <Logo name={name} svg={entry?.logoSvg ?? ""} />
+          <ConnectorLogo name={name} svg={entry?.logoSvg ?? ""} />
           <span className="min-w-0">
             <b className="block truncate font-semibold text-ink">{name}</b>
             <small className="block truncate text-[12px] text-ink-faint" title={connection.connectionName}>

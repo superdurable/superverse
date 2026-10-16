@@ -27,13 +27,16 @@ import { useFrameLinks } from "./use-frame-links";
 
 type SwitchWords = Pick<
   ComponentProps<typeof EnvironmentSwitch>,
-  "previewStatus" | "liveStatus" | "saving" | "previewWord"
+  "previewStatus" | "liveStatus" | "saving" | "previewWord" | "previewDot"
 >;
 
 /**
  * The Builder: one 48px bar over the chat column and one surface. The chat belongs to the Project, so
  * it stays put on every surface, Process and version; only builders have it. The caller chooses the
- * surface's content and the chat; the frame draws everything around them.
+ * surface's content and the chat; the frame draws everything around them. In a new Project's first
+ * conversation (`conversation`) the chat is the whole page under a bar with only the Project's name and
+ * its actions; the chat stays mounted through the switch to the standard frame. Until processes are built
+ * the bar carries the Project's stage after its name in place of the Preview | Live switch.
  */
 export function ProjectFrame({
   projectId,
@@ -46,6 +49,11 @@ export function ProjectFrame({
   role,
   liveOnly = false,
   hasLive,
+  conversation = false,
+  environmentSwitch = true,
+  stageBadge,
+  surfaces,
+  fresh,
   switchWords,
   processes,
   process,
@@ -58,7 +66,7 @@ export function ProjectFrame({
   children,
 }: {
   projectId: string;
-  /** The Project's TeamSpace, whose Projects the project switch lists; null while it is read. */
+  /** The Project's Teamspace, whose Projects the project switch lists; null while it is read. */
   teamSpaceId: string | null;
   projectName: string;
   surface: ProjectSurface;
@@ -71,8 +79,18 @@ export function ProjectFrame({
   /** The role works on Live only: the switch holds Live alone. */
   liveOnly?: boolean;
   hasLive: boolean;
+  /** A new Project's first conversation: the chat alone. */
+  conversation?: boolean;
+  /** The Preview | Live switch shows: not before processes are built. */
+  environmentSwitch?: boolean;
+  /** How far the Project has come, after its name, such as Shaping. */
+  stageBadge?: ReactNode;
+  /** The tabs with something to show, of those the role opens; all of them when absent. */
+  surfaces?: ReadonlySet<ProjectSurface>;
+  /** Tabs that appeared and were not opened since. */
+  fresh?: ReadonlySet<ProjectSurface>;
   switchWords?: SwitchWords;
-  /** The Processes of the version shown, which the picker at the head of the tabs offers. */
+  /** The Processes of the version shown, which the picker at the head of the tabs offers from two on. */
   processes: readonly PickerProcess[];
   /** The picked Process (Flow Type), or null for all of them. */
   process: string | null;
@@ -94,6 +112,7 @@ export function ProjectFrame({
   const builds = canBuild(role);
   const router = useRouter();
   const pins = usePinnedTools();
+  const tabs = surfacesFor(role).filter((id) => !surfaces || surfaces.has(id));
   const pinTool = (next: ProjectTool) => {
     pins.pin(next);
     router.push(links.pinnedToolHref(next));
@@ -109,74 +128,95 @@ export function ProjectFrame({
   return (
     <div ref={frameRef} style={paneWidthStyle(chatColumn)} className="flex h-full min-h-0 w-full min-w-0 flex-col">
       <ProjectBar
+        // The first conversation's bar has none of the parts that fit around tabs; the switch draws them afresh.
+        key={conversation ? "conversation" : "builder"}
         environment={shown}
         left={
-          <>
+          conversation ? (
             <ProjectMenu projectId={projectId} name={projectName} teamSpaceId={teamSpaceId} role={role} />
-            <EnvironmentSwitch
-              environment={shown}
-              hasLive={hasLive}
-              liveOnly={liveOnly}
-              hrefOf={links.environmentHref}
-              // Every fix opens a builder's surface or tool.
-              fixHrefOf={builds ? links.fixHref : undefined}
-              {...switchWords}
-            />
-          </>
+          ) : (
+            <>
+              <ProjectMenu projectId={projectId} name={projectName} teamSpaceId={teamSpaceId} role={role} />
+              {stageBadge}
+              {environmentSwitch && (
+                <EnvironmentSwitch
+                  environment={shown}
+                  hasLive={hasLive}
+                  liveOnly={liveOnly}
+                  hrefOf={links.environmentHref}
+                  // Every fix opens a builder's surface or tool.
+                  fixHrefOf={builds ? links.fixHref : undefined}
+                  {...switchWords}
+                />
+              )}
+            </>
+          )
         }
-        tabs={surfacesFor(role).map((id) => ({ surface: id, label: SURFACES[id].label, glyph: SURFACES[id].glyph }))}
+        tabs={
+          conversation ? [] : tabs.map((id) => ({ surface: id, label: SURFACES[id].label, glyph: SURFACES[id].glyph }))
+        }
         current={pinnedView ? null : surface}
         hrefOf={links.surfaceHref}
         tabsAfter={
-          builds ? (
+          // Pinned tools show beside the tabs once Tools does.
+          builds && !conversation && (tabs.includes("tools") || pinnedView) ? (
             <PinnedTabs
               tools={(Object.keys(TOOLS) as ProjectTool[]).map((id) => ({ tool: id, ...TOOLS[id] }))}
               pinned={pins.pinned}
               current={pinnedView ? tool : null}
               hrefOf={links.pinnedToolHref}
-              onPin={pinTool}
               onUnpin={unpinTool}
             />
           ) : undefined
         }
         tabsBefore={
-          surface === "tools" ? undefined : (
+          // The picker narrows to one Process, which needs two to choose from.
+          surface === "tools" || conversation || processes.length < 2 ? undefined : (
             <ProcessPicker processes={processes} current={process} hrefOf={links.processHref} />
           )
         }
-        chatOpen={builds && !chatColumn.isCollapsed}
+        chatOpen={builds && !conversation && !chatColumn.isCollapsed}
         badges={
           setupNeedsYou
             ? { ...badges, tools: <NeedsYouMark title="Setup needs you" className="mt-3.5 -ml-0.5 self-start" /> }
             : badges
         }
         notes={setupNeedsYou ? { tools: "setup needs you" } : undefined}
+        fresh={fresh}
         actions={actions}
       />
       <div ref={bodyRef} className="flex min-h-0 min-w-0 flex-1">
         {builds && (
-          <ChatColumn column={chatColumn} targetRef={frameRef} measureRef={bodyRef} status={chatStatus}>
+          <ChatColumn
+            column={chatColumn}
+            targetRef={frameRef}
+            measureRef={bodyRef}
+            status={chatStatus}
+            alone={conversation}
+          >
             {chat}
           </ChatColumn>
         )}
-        <main
-          aria-label={SURFACES[surface].label}
-          className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-panel"
-        >
-          {surface === "tools" ? (
-            <ToolsLayout
-              current={tool}
-              alone={pinnedView}
-              hrefOf={links.toolHref}
-              onPin={pinTool}
-              needsYou={setupNeedsYou ? { setup: "Setup needs you" } : undefined}
-            >
-              {children}
-            </ToolsLayout>
-          ) : (
-            children
-          )}
-        </main>
+        {!(builds && conversation) && (
+          <main
+            aria-label={SURFACES[surface].label}
+            className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-panel"
+          >
+            {surface === "tools" ? (
+              <ToolsLayout
+                current={tool}
+                alone={pinnedView}
+                hrefOf={links.toolHref}
+                onPin={pinTool}
+                needsYou={setupNeedsYou ? { setup: "Setup needs you" } : undefined}
+              >
+                {children}
+              </ToolsLayout>
+            ) : (
+              children
+            )}
+          </main>
+        )}
       </div>
     </div>
   );

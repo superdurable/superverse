@@ -1,7 +1,7 @@
 # lib/server/connector-oauth
 
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
-Purpose: Starts a TeamSpace connection's OAuth authorization and completes its provider callback, binding the two with a signed route cookie.
+Purpose: Starts a Teamspace connection's OAuth authorization and completes its provider callback, binding the two with a signed route cookie.
 
 Importers: `app` imports this directory.
 
@@ -25,7 +25,7 @@ request plus `returnPath`, a path of Studio's own origin. It answers the
 provider page to open and sets a version-7 route cookie: host-only, HttpOnly,
 SameSite=Lax, Secure on HTTPS, restricted to the callback path, signed with
 `BROWSER_SIGNING_KEY`, and binding the actor, the login's digest, the state's
-digest, the origin, the TeamSpace connection and the return path for at most
+digest, the origin, the Teamspace connection and the return path for at most
 ten minutes. Go owns the provider policy, so the BFF checks only that the
 authorization URL is an absolute http or https URL without userinfo or
 fragment that carries one state.

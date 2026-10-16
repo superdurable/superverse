@@ -287,7 +287,7 @@ test("Flow API binds exact targets and rejects revoked sessions immediately", as
     const forged = `sv2.${Buffer.from(JSON.stringify({ ...first.caller, accountId: `untrusted-${randomUUID()}` })).toString("base64url")}`;
     const forgedContext = await newContext(forged);
     const other = await login(input.nonOwner);
-    // Outside the Project's TeamSpace, or without a role in the Project, the reads below are refused.
+    // Outside the Project's Teamspace, or without a role in the Project, the reads below are refused.
     requireProbe(
       other.account.accountId !== first.account.accountId && other.account.isAdmin === false,
       "Non-owner fixture must be a different ordinary ACTIVE account without a role in the Project",

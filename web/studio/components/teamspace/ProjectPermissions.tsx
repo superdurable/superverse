@@ -19,8 +19,8 @@ import { AddProjectMember, PROJECT_ROLE_ITEMS, ROLE_NOTE } from "./ProjectShare"
 
 /**
  * Tools, Permissions: the Project's members, one role each. Its owners, and the platform admin, add members of
- * the Project's TeamSpace, change roles and remove members; a Project keeps at least one owner. A member who left
- * the TeamSpace keeps the row, but the role grants nothing until they return.
+ * the Project's Teamspace, change roles and remove members; a Project keeps at least one owner. A member who left
+ * the Teamspace keeps the row, but the role grants nothing until they return.
  */
 export function ProjectPermissions({
   projectId,
@@ -47,7 +47,7 @@ export function ProjectPermissions({
       fixed: only,
       muted: !member.isTeamSpaceMember,
       note: !member.isTeamSpaceMember
-        ? "Left the TeamSpace: this role grants nothing until they return"
+        ? "Left the Teamspace: this role grants nothing until they return"
         : only
           ? "The only owner: a project keeps at least one"
           : undefined,

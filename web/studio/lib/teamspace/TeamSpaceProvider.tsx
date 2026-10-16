@@ -31,7 +31,7 @@ import type { TeamSpaceSnapshot__Output } from "@/lib/generated/protobuf/superve
 import { delay } from "@/lib/shared/async";
 
 /**
- * A TeamSpace created a moment ago, and its creator's membership, reach the read model within seconds; until then
+ * A Teamspace created a moment ago, and its creator's membership, reach the read model within seconds; until then
  * its read is NotFound or refused, so both are asked again for this long.
  */
 const APPEARS_WITHIN_MILLISECONDS = 10_000;
@@ -39,23 +39,23 @@ const APPEARS_WITHIN_MILLISECONDS = 10_000;
 interface Read {
   teamSpaceId: string;
   teamSpace: TeamSpaceSnapshot__Output | null;
-  /** NotFound past the time a new TeamSpace takes to appear, or a refused read. */
+  /** NotFound past the time a new Teamspace takes to appear, or a refused read. */
   missing: boolean;
   error: string;
 }
 
 interface CurrentTeamSpace {
-  /** The TeamSpace the page works in; null before the account has one. */
+  /** The Teamspace the page works in; null before the account has one. */
   teamSpaceId: string | null;
   /** Its snapshot; null while it is read. */
   teamSpace: TeamSpaceSnapshot__Output | null;
   missing: boolean;
   error: string;
-  /** The Builder names the open Project's TeamSpace, which its URL does not. */
+  /** The Builder names the open Project's Teamspace, which its URL does not. */
   follow: (teamSpaceId: string) => void;
-  /** A write answered with the TeamSpace as it is now, such as a rename. */
+  /** A write answered with the Teamspace as it is now, such as a rename. */
   accept: (teamSpace: TeamSpaceSnapshot__Output) => void;
-  /** A member change answered with the TeamSpace's new revision, which the next rename is fenced on. */
+  /** A member change answered with the Teamspace's new revision, which the next rename is fenced on. */
   noteRevision: (revision: string) => void;
   reload: () => void;
 }
@@ -72,15 +72,15 @@ function teamSpaceIdFromPath(pathname: string): string | null {
   }
 }
 
-/** The newer of two snapshots of one TeamSpace: the read model may answer with one older than a write's. */
+/** The newer of two snapshots of one Teamspace: the read model may answer with one older than a write's. */
 function newer(current: TeamSpaceSnapshot__Output | null, next: TeamSpaceSnapshot__Output) {
   return current && BigInt(current.revision) > BigInt(next.revision) ? current : next;
 }
 
 /**
- * The TeamSpace the signed-in pages work in: the one a `/t/{id}` page names, else the open Project's, else the
- * one last open in this browser. One read per TeamSpace serves the sidebar and the TeamSpace's pages; a read for
- * another TeamSpace, or a late one, never replaces the current one.
+ * The Teamspace the signed-in pages work in: the one a `/t/{id}` page names, else the open Project's, else the
+ * one last open in this browser. One read per Teamspace serves the sidebar and the Teamspace's pages; a read for
+ * another Teamspace, or a late one, never replaces the current one.
  */
 export function TeamSpaceProvider({ children }: { children: ReactNode }) {
   const fromPath = teamSpaceIdFromPath(usePathname());
@@ -128,7 +128,7 @@ export function TeamSpaceProvider({ children }: { children: ReactNode }) {
           return settle({
             teamSpace: null,
             missing: absent,
-            error: errorMessage(reason, "Could not read the TeamSpace"),
+            error: errorMessage(reason, "Could not read the Teamspace"),
           });
         }
       }

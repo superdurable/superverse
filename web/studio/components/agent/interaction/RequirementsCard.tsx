@@ -8,8 +8,9 @@
 
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonStyle } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import type { Requirements, RequirementsDecision } from "@/lib/session/agent-types";
@@ -23,7 +24,10 @@ export interface RequirementsCardProps {
   isSubmitting?: boolean;
   /** Set when another control decides the card, which the card then names instead of its controls. */
   answeredBy?: string;
-  /** What its Flow design changes and where it is drawn, which the card's host knows. */
+  /**
+   * What its Flow design changes and the Flow tab whose Process Brief draws it, which the card's host knows.
+   * With that Brief the card is only a pointer to it, so the decision has one place.
+   */
   designChanges?: DesignChanges;
   onDecide: (decision: RequirementsDecision) => void;
 }
@@ -38,9 +42,42 @@ const CARD = cx(
   "max-md:max-h-[calc(min(72dvh,36rem)-1.5rem)]",
 );
 
+/** In the dock while the Process Brief holds the decision: what waits, and the way to the Brief. */
+function BriefPointer({
+  requirements,
+  version,
+  isSubmitting,
+  designChanges,
+}: Pick<RequirementsCardProps, "requirements" | "version" | "isSubmitting"> & { designChanges: DesignChanges }) {
+  return (
+    <section
+      className="grid gap-1 rounded-[10px] border border-busy-rule bg-busy-subtle p-2.5 text-body text-ink-dim"
+      aria-label="Requirements to confirm"
+      aria-busy={isSubmitting}
+    >
+      <Eyebrow>Waiting for you</Eyebrow>
+      <strong className="font-semibold wrap-anywhere text-ink">
+        {requirements.title} · version {String(version)}
+      </strong>
+      <p className="line-clamp-2 wrap-anywhere">{requirements.summary}</p>
+      {designChanges.href ? (
+        <Link className={cx(buttonStyle("accent", "sm"), "mt-1 justify-self-start")} href={designChanges.href}>
+          Open the brief
+        </Link>
+      ) : (
+        <p className="mt-1 text-caption text-ink-faint" role="status">
+          Preparing the brief…
+        </p>
+      )}
+    </section>
+  );
+}
+
 /**
  * What the Agent will build, for the one confirmation before it writes code: the user confirms it, or
- * asks for changes in text, which the Agent answers with a revised card.
+ * asks for changes in text, which the Agent answers with a revised card. A card whose Flow design the
+ * Flow tab draws is decided in its Process Brief there, and the card points to it; another card keeps
+ * its own controls.
  */
 export function RequirementsCard({
   requirements,
@@ -56,6 +93,15 @@ export function RequirementsCard({
   const requestChanges = () => {
     if (!disabled && requestedChanges !== "") onDecide({ isConfirmed: false, requestedChanges });
   };
+  if (designChanges?.href || (requirements.design && designChanges?.loading))
+    return (
+      <BriefPointer
+        requirements={requirements}
+        version={version}
+        isSubmitting={isSubmitting}
+        designChanges={designChanges}
+      />
+    );
   return (
     <section className={CARD} aria-label="Requirements to confirm" aria-busy={isSubmitting}>
       <div>
@@ -97,7 +143,7 @@ export function RequirementsCard({
                 onDecide({ isConfirmed: true, requestedChanges: "" });
               }}
             >
-              Confirm and start building
+              Confirm and build
             </Button>
           </div>
         </div>

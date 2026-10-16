@@ -7,7 +7,7 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 // Explicit in-memory development fixtures. No provider calls or credential values; a connection name selects
-// a TeamSpace connection of the mock TeamSpaceConnectionService by its ID.
+// a Teamspace connection of the mock TeamSpaceConnectionService by its ID.
 // Project configuration drafts, and the /dex Configuration routes that read and change them.
 import { createHash } from "node:crypto";
 import type { Struct } from "@/lib/generated/protobuf/google/protobuf/Struct";
@@ -55,7 +55,7 @@ export interface MockAppManifest {
   environment: Struct;
 }
 
-/** The native controls' values; the fixture connection name's selected TeamSpace connection holds the credential. */
+/** The native controls' values; the fixture connection name's selected Teamspace connection holds the credential. */
 export interface MockNativeConfiguration extends MockNativeValues {
   configuration: { model?: string };
 }
@@ -125,7 +125,7 @@ export function mockConfigurationDraft(
 }
 
 /**
- * What a draft lacks for its source: until a TeamSpace connection is selected, the fixture connection,
+ * What a draft lacks for its source: until a Teamspace connection is selected, the fixture connection,
  * so Setup, the Preview panel and a Preview notice show a gap, then the fixtures' own gaps; on Live a
  * connection tied to one address says it never follows. Go reports the real gaps.
  */

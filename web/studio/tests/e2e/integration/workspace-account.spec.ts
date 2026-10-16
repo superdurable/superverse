@@ -181,7 +181,7 @@ test("Workspace reads the account once per document and retains it across real n
     calls = new AccountCalls(log);
     phase = "initial Workspace document";
     await page.goto("/");
-    // The fixture account owns a Project, so / opens its TeamSpace, whose Home lists it.
+    // The fixture account owns a Project, so / opens its Teamspace, whose Home lists it.
     await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
     const documentOrigin = await page.evaluate(() => performance.timeOrigin);
     await observe(1, 1);
@@ -194,16 +194,19 @@ test("Workspace reads the account once per document and retains it across real n
     await expect(page.getByRole("navigation", { name: "Surface" })).toBeVisible();
     await accountMenu(page);
     await observe(1, 1);
-    phase = "Tools navigation in the Builder bar";
-    await page.getByRole("navigation", { name: "Surface" }).getByRole("link", { name: "Tools", exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`/p/${input.projectId}/tools`));
-    await accountMenu(page);
-    await observe(1, 1);
     phase = "Project details navigation";
     await page.getByRole("button", { name: /, switch project$/ }).click();
     await page.getByRole("link", { name: "Project details", exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/p/${input.projectId}$`));
     await expect(page.getByRole("link", { name: "Open the project", exact: true })).toBeVisible();
+    await accountMenu(page);
+    await observe(1, 1);
+    // The Builder shows a tab only once it has something to show, so Tools opens from Project details,
+    // whose link to Publishing names it whatever the fixture Project has built.
+    phase = "Tools navigation from Project details";
+    await page.getByRole("link", { name: "Publishing", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/p/${input.projectId}/tools`));
+    await expect(page.getByRole("navigation", { name: "Surface" }).getByRole("link", { name: "Tools" })).toBeVisible();
     await accountMenu(page);
     await observe(1, 1);
     expect(await page.evaluate(() => performance.timeOrigin)).toBe(documentOrigin);

@@ -14,8 +14,8 @@ import { errorMessage } from "@/lib/api/transport/api-error";
 import type { RecentTriggerEvent__Output } from "@/lib/generated/protobuf/superverse/v2/RecentTriggerEvent";
 import { timestampToISO } from "@/lib/shared/protobuf";
 
-/** The relay keeps no Watch: an open panel reads the list again at this interval. */
-const POLL_MS = 5000;
+/** The relay keeps no Watch: the list is read again at this interval while the page is visible. */
+const POLL_MS = 10_000;
 
 export interface RecentTriggerEvents {
   events: RecentTriggerEvent__Output[];
@@ -29,7 +29,7 @@ export interface RecentTriggerEvents {
   loaded: boolean;
 }
 
-/** The scope's recent Slack events, read every 5 seconds while `open`. */
+/** The scope's recent trigger events, read every 10 seconds while `open` and the page is visible. */
 export function useRecentTriggerEvents(
   projectId: string,
   scope: "PROJECT_SCOPE_PREVIEW" | "PROJECT_SCOPE_LIVE",
@@ -50,6 +50,10 @@ export function useRecentTriggerEvents(
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const load = () => {
+      if (document.visibilityState !== "visible") {
+        timer = setTimeout(load, POLL_MS);
+        return;
+      }
       listRecentTriggerEvents({ projectId, scope }, controller.signal).then(
         (response) => {
           if (controller.signal.aborted) return;

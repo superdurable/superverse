@@ -11,7 +11,7 @@ import { readUnary } from "@/lib/api/transport/read-unary";
 import { unary } from "@/lib/api/transport/unary";
 import type { RpcInput, RpcOutput } from "@/lib/shared/rpc-methods";
 
-// Browser client of TeamSpaceMemberService. Every change answers with all the members and the TeamSpace's new
+// Browser client of TeamSpaceMemberService. Every change answers with all the members and the Teamspace's new
 // revision, so the page shows its own change without reading again.
 
 export async function listTeamSpaceMembers(
@@ -36,7 +36,7 @@ export function setTeamSpaceMemberRole(
   return unary("SetTeamSpaceMemberRole", input, { signal });
 }
 
-/** Refused while the member is the only owner of a Project of the TeamSpace; the refusal names the Projects. */
+/** Refused while the member is the only owner of a Project of the Teamspace; the refusal names the Projects. */
 export function removeTeamSpaceMember(
   input: Required<RpcInput<"RemoveTeamSpaceMember">>,
   signal: AbortSignal,

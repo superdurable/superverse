@@ -125,7 +125,7 @@ export function createFailedSeedProject(): MockProject {
   };
 }
 
-/** A Project of the seed TeamSpace in which a signed-in account has no role. */
+/** A Project of the seed Teamspace in which a signed-in account has no role. */
 export function createOtherSeedProject(): MockProject {
   return { ...createSeedProject(), id: OTHER_PROJECT_ID, displayName: "Supplier onboarding" };
 }

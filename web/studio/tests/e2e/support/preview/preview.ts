@@ -11,7 +11,8 @@ import type { AgentNotification__Output } from "@/lib/generated/protobuf/superve
 import type { RpcOutput } from "@/lib/shared/rpc-methods";
 import { configure, fillTemplateSummaryConnection } from "@/tests/e2e/support/configuration";
 import { exerciseTextSummaryInApplication, exerciseTextSummaryInStudio } from "@/tests/e2e/support/flow-run";
-import { expectStartPhases, readSession } from "@/tests/e2e/support/project";
+import { readSession } from "@/tests/e2e/support/project";
+import { expectStartPhases } from "./start-phases";
 import { rpcAnswered, rpcResult, UUID } from "@/tests/e2e/support/studio-api";
 
 // The Project's Preview: starting it from the Interface, the automatic deployment of a push and its
@@ -170,11 +171,15 @@ export async function awaitConfigurationNotice(page: Page, projectId: string, he
     )
     .toBe(true);
   await page.goto(`/p/${projectId}/flow`);
-  // The notice shows the refusal as a problem whose fix opens Setup; the commit is only in its folded details.
-  const notice = page
+  // The notice says what the Preview still needs and offers Setup; the commit is only in its More details,
+  // which one notice opens for all of them.
+  const notices = page
     .getByTestId("notification-notice")
-    .filter({ has: page.getByTestId("problem-what").filter({ hasText: "Preview needs configuration" }) })
-    .filter({ has: page.getByTestId("problem-details").filter({ hasText: headCommit }) });
+    .filter({ has: page.getByTestId("problem-what").filter({ hasText: "Preview needs a few settings" }) });
+  const details = notices.first().locator('[data-more-details="chat.notice"] > button');
+  await expect(details).toBeVisible({ timeout: 30_000 });
+  if ((await details.getAttribute("aria-expanded")) !== "true") await details.click();
+  const notice = notices.filter({ has: page.getByTestId("problem-details").filter({ hasText: headCommit }) });
   await expect(notice).toHaveAttribute("data-notification-kind", "delivery", { timeout: 30_000 });
   await expect(notice).toContainText(gap);
   await expect(notice.getByTestId("problem-fix").getByRole("link", { name: "Open Setup" })).toBeVisible();
@@ -216,7 +221,7 @@ export async function previewTemplateEdit(
 
 /**
  * Switches the Builder's bar from Preview to Live and back, and requires every surface to follow:
- * the Flow says Live is read only, Runs lists Live runs with Live's events beside them, the Interface
+ * the Flow says Live is read only, Runs lists Live runs and reads Live's events, the Interface
  * shows the Live address, and the chat says changes are built on Preview; back on Preview the
  * Interface frames the Preview.
  */
@@ -229,14 +234,22 @@ export async function expectSurfacesFollowVersion(page: Page, projectId: string,
   await expect(page.getByText(/read only here/).first()).toBeVisible({ timeout: 60_000 });
   await expect(page.getByTestId("live-note")).toBeVisible();
   const surfaces = page.getByRole("navigation", { name: "Surface" });
+  // Runs reads what Live's triggers received, for Live: the bar's Live has no Setup at hand to say
+  // whether a process relays a trigger, so the run list names events once some arrive.
+  const liveEvents = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === "/api/rpc/ListRecentTriggerEvents" &&
+      response.request().postDataJSON()?.scope === "PROJECT_SCOPE_LIVE",
+    { timeout: 60_000 },
+  );
   await surfaces.getByRole("link", { name: "Runs", exact: true }).click({ timeout: 30_000 });
   await expect(page).toHaveURL(new RegExp(`/p/${projectId}/runs\\?.*v=live`));
   await expect(page.getByText("Runs · Live", { exact: true })).toBeVisible({ timeout: 60_000 });
-  // Beside the runs, Events lists what Live's triggers received.
-  await page.getByRole("tab", { name: "Events", exact: true }).click();
-  await expect(page.getByRole("region", { name: "Recent events received by Live", exact: true })).toBeVisible({
-    timeout: 30_000,
-  });
+  // The template relays no trigger, so nothing reached Live and the list names no events.
+  const events = await liveEvents;
+  expect(events.ok()).toBe(true);
+  expect((await events.json()).events ?? []).toEqual([]);
+  await expect(page.getByRole("button", { name: /^Events received/ })).toHaveCount(0);
   await surfaces.getByRole("link", { name: "Interface", exact: true }).click({ timeout: 30_000 });
   // The Interface shows Live's page under its address bar, which opens and copies the address.
   await expect(page.getByText(liveURL, { exact: true })).toBeVisible({ timeout: 30_000 });

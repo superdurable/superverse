@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: Places a decoded Flow into one Scene: stages or Steps, the main lines drawn and the jumps docked as chips, ELK placement and group bands.
 
-Importers: `components/flow/canvas`, `components/flow/canvas/camera`, `components/flow/canvas/render` and `components/flow/map` import this directory.
+Importers: `components/flow/canvas`, `components/flow/canvas/camera`, `components/flow/canvas/render`, `components/flow/design`, `components/flow/design/brief` and `components/flow/map` import this directory.
 
 Imports: it imports `components/flow/canvas/model` and `lib/shared`.
 
@@ -13,7 +13,9 @@ flowchart LR
   c0["components/flow/canvas"] --> self
   c1["components/flow/canvas/camera"] --> self
   c2["components/flow/canvas/render"] --> self
-  c3["components/flow/map"] --> self
+  c3["components/flow/design"] --> self
+  c4["components/flow/design/brief"] --> self
+  c5["components/flow/map"] --> self
   self --> d0["components/flow/canvas/model"]
   self --> d1["lib/shared"]
 ```

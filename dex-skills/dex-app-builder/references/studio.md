@@ -24,9 +24,12 @@ Studio derives Runs and Inbox (its Work Queue) from:
 - eligible Action RPCs for operator operations.
 
 A Run list row shows the Display `title` and `status` slot values when that
-Attribute is indexed or also returned by Summary; otherwise it shows the Flow ID
-and engine status. The Run detail shows slotted Display fields first, in slot
-order.
+Attribute is indexed or also returned by Summary; otherwise it shows the
+process name with the start time and the engine status. A title slot is
+expected, not optional: every Flow a person sees declares one built from
+business data, such as `Refund R-1042 · Acme · $320`
+([syntax](fdg-authoring.md#summary-and-display)). The Run detail shows slotted
+Display fields first, in slot order.
 
 ## Management UI design
 

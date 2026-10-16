@@ -91,7 +91,7 @@ export async function loadRecordedFlowRuns(epochMs: number): Promise<RecordedFlo
 const UTC_TIME = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(\.\d+)?Z$/;
 
 /** A deep copy of `value` with every UTC time moved by `seconds`. */
-function shiftTimes<T>(value: T, seconds: number): T {
+export function shiftTimes<T>(value: T, seconds: number): T {
   return JSON.parse(JSON.stringify(value), (_key, entry: unknown) => {
     const time = typeof entry === "string" ? UTC_TIME.exec(entry) : null;
     if (!time) return entry;

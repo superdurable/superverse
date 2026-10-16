@@ -8,15 +8,14 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { renewWorkspace } from "@/lib/api/session";
 import { useSingleFlight } from "@/lib/browser/use-single-flight";
 import { useSessionResource } from "@/lib/session/SessionProvider";
 import { isWorkspacePaused, workspaceDeadline } from "@/lib/session/session-status";
 import { formatRemainingTime } from "@/lib/shared/format";
-import { cx } from "@/components/ui/cx";
-import { Glyph } from "@/components/ui/Glyph";
-import { POPOVER_ITEM, PopoverCard, usePopover } from "@/components/ui/Popover";
+import { Button } from "@/components/ui/Button";
+import { MoreDetails } from "@/components/ui/reveal/MoreDetails";
 import { PhaseTimings } from "@/components/ui/timings/PhaseTimings";
 
 /** The phases of a workspace start in order: the Sandbox becoming ready, then the repository checkout. */
@@ -26,15 +25,10 @@ const WORKSPACE_PHASE_LABELS: Readonly<Record<string, string>> = {
 };
 
 type SessionConnectionState = "complete" | "connected" | "connecting" | "reconnecting";
-function useConnectionState() {
+function useConnectionState(): SessionConnectionState {
   const session = useSessionResource();
   const active = session?.status === "SESSION_STATUS_ACTIVE";
-  const state: SessionConnectionState = !active
-    ? "complete"
-    : session.streamState === "idle"
-      ? "connecting"
-      : session.streamState;
-  return { state };
+  return !active ? "complete" : session.streamState === "idle" ? "connecting" : session.streamState;
 }
 
 function connectionLabel(state: SessionConnectionState): string {
@@ -45,15 +39,15 @@ function connectionLabel(state: SessionConnectionState): string {
   return "Connecting to live updates";
 }
 
+/** An amber dot beside the chat's heading while live updates reconnect; nothing while they are live. */
 export function SessionConnectionIndicator() {
-  const { state } = useConnectionState();
-  if (state === "complete") return null;
-  const connected = state === "connected";
+  const state = useConnectionState();
+  if (state !== "reconnecting") return null;
   const label = connectionLabel(state);
   return (
     <span
       aria-label={label}
-      className={connected ? "h-1.5 w-1.5 shrink-0 rounded-full bg-pass" : "h-1.5 w-1.5 shrink-0 rounded-full bg-busy"}
+      className="h-1.5 w-1.5 shrink-0 rounded-full bg-busy"
       data-session-connection={state}
       role="status"
       title={label}
@@ -61,104 +55,63 @@ export function SessionConnectionIndicator() {
   );
 }
 
-/** The clock mark beside the workspace's time. */
-function ClockMark() {
+/**
+ * The chat header's More details, a card below the link: whether live updates are connected, how
+ * long the workspace is kept with Keep running for 7 days, and where the time of its last start went.
+ * Nothing once the Session is no longer active and has no workspace to tell about.
+ */
+export function SessionDetails() {
+  const state = useConnectionState();
+  const workspace = useSessionResource()?.resource?.workspace;
+  if (state === "complete" && !workspace) return null;
   return (
-    <svg aria-hidden="true" className="h-3 w-3" fill="none" viewBox="0 0 16 16">
-      <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M8 4.75V8l2.25 1.5" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5" />
-    </svg>
+    <MoreDetails surface="chat.header" className="relative flex items-center">
+      <div className="absolute top-full right-0 z-20 mt-1.5 flex w-72 max-w-[85vw] flex-col gap-2 rounded-lg border border-line-soft bg-panel p-3 text-caption text-ink-dim shadow-(--shadow-lift)">
+        {state !== "complete" && <p data-session-connection-detail={state}>{connectionLabel(state)}</p>}
+        <WorkspaceKept />
+        <WorkspaceStartup />
+      </div>
+    </MoreDetails>
   );
 }
 
 /**
- * The Session's workspace: how long the ready Sandbox stays after the agent last used it, as a button
- * that opens "Keep running for 7 days", or that the Session paused it and kept its files. Nothing
- * while no workspace is ready or paused.
+ * The Session's workspace: how long the ready Sandbox stays after the agent last used it, with "Keep
+ * running for 7 days", which moves the Sandbox deadline to seven days from now, or that the Session
+ * paused it and kept its files. Nothing while no workspace is ready or paused.
  */
-export function WorkspaceStatusIndicator() {
-  const resource = useSessionResource()?.resource ?? null;
+function WorkspaceKept() {
+  const session = useSessionResource();
+  const resource = session?.resource ?? null;
   const deadline = resource ? workspaceDeadline(resource) : null;
   const paused = resource !== null && isWorkspacePaused(resource);
   const now = useMinuteClock(deadline);
-  const anchor = useRef<HTMLDivElement>(null);
-  const popover = usePopover(anchor);
-
-  if (paused) {
-    const label = "Workspace paused; your files are kept";
-    return (
-      <span
-        aria-label={label}
-        className="inline-flex shrink-0 items-center gap-1 text-[11px] text-ink-faint"
-        data-workspace-status="paused"
-        role="status"
-        title={label}
-      >
-        <svg aria-hidden="true" className="h-3 w-3" fill="none" viewBox="0 0 16 16">
-          <path d="M6 4.5v7M10 4.5v7" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5" />
-        </svg>
-        Paused
-      </span>
-    );
-  }
-  if (!deadline) return null;
-  const remaining = formatRemainingTime(deadline, now);
-  const label = `Workspace kept for ${remaining} more; the agent's work extends it`;
-  return (
-    <div ref={anchor} className="relative flex shrink-0">
-      <button
-        type="button"
-        aria-label={label}
-        title={label}
-        aria-expanded={popover.open}
-        aria-haspopup="dialog"
-        onClick={popover.toggle}
-        className="inline-flex items-center gap-1 rounded-md px-1.25 py-0.5 text-[11px] text-ink-faint tabular-nums hover:bg-hover hover:text-ink focus-visible:shadow-(--focus-ring) focus-visible:outline-none aria-expanded:bg-hover aria-expanded:text-ink"
-        data-workspace-status="ready"
-        data-testid="workspace-timer"
-      >
-        <ClockMark />
-        {remaining}
-      </button>
-      {popover.open && (
-        <PopoverCard anchorRef={anchor} label="Keep the workspace running" className="w-72">
-          <WorkspaceKeepRunning remaining={remaining} />
-        </PopoverCard>
-      )}
-    </div>
-  );
-}
-
-/**
- * What the timer's popover holds: how long the ready workspace stays, and "Keep running for 7 days",
- * which moves the Sandbox deadline to seven days from now.
- */
-function WorkspaceKeepRunning({ remaining }: { remaining: string }) {
-  const session = useSessionResource();
   const action = useSingleFlight<"renew">();
   const [notRenewed, setNotRenewed] = useState(false);
-  if (!session) return null;
+  if (paused) {
+    return (
+      <p data-workspace-status="paused" role="status">
+        Workspace paused; your files are kept.
+      </p>
+    );
+  }
+  if (!session || !deadline) return null;
   const renew = () =>
     action.run("renew", async (signal) => {
       setNotRenewed(!(await renewWorkspace({ projectId: session.projectId }, signal)));
       await session.refresh(signal, true);
     });
   return (
-    <div data-workspace-keep-running>
-      <p className="px-2.25 pt-1.5 pb-2 text-[12.5px]/snug text-ink-dim tabular-nums">
-        The agent&apos;s workspace stays {remaining} more after its last work. Its files are kept either way.
+    <div className="flex flex-col items-start gap-1.5" data-workspace-status="ready" data-workspace-keep-running>
+      <p className="tabular-nums" data-testid="workspace-timer">
+        Workspace kept for {formatRemainingTime(deadline, now)} more; the agent&apos;s work extends it. Its files are
+        kept either way.
       </p>
-      <button
-        type="button"
-        disabled={action.busy !== null}
-        onClick={() => void renew()}
-        className={cx(POPOVER_ITEM, "disabled:opacity-50")}
-      >
-        <Glyph name="clock" />
+      <Button size="sm" disabled={action.busy !== null} onClick={() => void renew()}>
         {action.busy !== null ? "Keeping it running…" : "Keep running for 7 days"}
-      </button>
+      </Button>
       {(action.error || notRenewed) && (
-        <p role="alert" className="px-2.25 pt-1 pb-1.5 text-[12px] text-fail">
+        <p role="alert" className="text-fail">
           {action.error || "The workspace is not running; the agent's next change starts it again."}
         </p>
       )}
@@ -170,12 +123,12 @@ function WorkspaceKeepRunning({ remaining }: { remaining: string }) {
  * Where the time of the current Sandbox instance's start went, opened on demand. Nothing while the instance
  * provisions, whose phases the Session receives with its outcome, or once it is reclaimed.
  */
-export function WorkspaceStartup() {
+function WorkspaceStartup() {
   const workspace = useSessionResource()?.resource?.workspace;
   const settled = workspace?.status === "WORKSPACE_STATUS_READY" || workspace?.status === "WORKSPACE_STATUS_FAILED";
   if (!workspace || !settled || workspace.phaseTimings.length === 0) return null;
   return (
-    <details className="shrink-0 px-3 py-1 text-[12px] text-ink-faint" data-workspace-startup>
+    <details className="text-ink-faint" data-workspace-startup>
       <summary className="cursor-pointer">Workspace startup</summary>
       <PhaseTimings title="Startup phases" timings={workspace.phaseTimings} labels={WORKSPACE_PHASE_LABELS} />
     </details>

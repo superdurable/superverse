@@ -8,16 +8,41 @@
 
 // What the Session chat shows for a Session snapshot: lifecycle text, composer gating, pending messages
 // and the links of its notices.
-import type { NotificationLinks, PendingMessageQueueItem } from "@/components/agent";
-import type { AgentDescription, NotificationLink, PendingUserMessage } from "@/lib/session/agent-types";
+import { needsConfiguration, type NotificationLinks, type PendingMessageQueueItem } from "@/components/agent";
+import type {
+  AgentDescription,
+  NotificationLink,
+  PendingUserMessage,
+  SequencedMessage,
+} from "@/lib/session/agent-types";
 import type { KnownSessionStatus } from "@/lib/session/session-status";
+import { withoutMockMarkersInMessages } from "@/lib/session/mock-scenarios";
 import { studioRoutes } from "@/lib/shared/studio-routes";
 
 /** What the Agent waits for the user to answer. */
 export type PendingInputKind = NonNullable<AgentDescription["pendingUserInput"]>["kind"];
 
-export function agentStatusLabel(value: string | undefined) {
-  return value?.replaceAll("_", " ") ?? "connecting";
+/** What the agent is doing, as a person would say it; empty while it waits for a message. */
+export function agentStatusLabel(value: AgentDescription["status"] | undefined): string {
+  switch (value) {
+    case undefined:
+      return "Connecting…";
+    case "initializing":
+      return "Starting the agent…";
+    case "waiting_for_message":
+      return "";
+    case "compacting_context":
+      return "Summarizing the conversation so far…";
+    case "calling_model":
+      return "Thinking…";
+    case "routing_tool":
+    case "executing_tool":
+      return "Working…";
+    case "waiting_for_tool_approval":
+      return "Waiting for your approval";
+    case "waiting_for_timer":
+      return "Waiting before it goes on…";
+  }
 }
 
 /**
@@ -57,7 +82,12 @@ export function notificationLinks(projectId: string): NotificationLinks {
         remedy: "FAILURE_REMEDY_REAUTHORIZE",
       },
     ];
-    const fix = fixes.filter((link) => link.remedy === notification.remedy);
+    // A notice that lacks settings and declares no remedy is completed in Setup all the same.
+    const remedy =
+      notification.remedy === "FAILURE_REMEDY_UNSPECIFIED" && needsConfiguration(notification)
+        ? "FAILURE_REMEDY_OPEN_SETUP"
+        : notification.remedy;
+    const fix = fixes.filter((link) => link.remedy === remedy);
     switch (notification.source) {
       case "preview": {
         const preview = studioRoutes.projectSurface(projectId, "interface");
@@ -129,7 +159,7 @@ export function composerPlaceholder({
     if (answerAwaitingReconciliation) return "Waiting for the agent to accept your answer…";
     switch (pendingInputKind) {
       case "requirements":
-        return "Confirm the requirements or ask for changes before sending another message";
+        return "Reply or ask for a change…";
       case "question":
         return "Answer the agent's questions before sending another message";
     }
@@ -163,7 +193,7 @@ export function composerDisabledReason({
   placeholder: string;
 }): string | null {
   if (!productInteractive) return lifecycle ?? "Waiting for the session to become available…";
-  if (!agentReady) return "Waiting for the agent to initialize…";
+  if (!agentReady) return "Starting the agent…";
   if (!snapshotCurrent) return "Could not read the latest session state; waiting for the next update…";
   if (blockedByPending) return placeholder;
   return null;
@@ -193,4 +223,18 @@ export function pendingQueueActions(
     },
     onDelete: (messageId: string) => void commands.deleteMessage(messageId).catch(() => undefined),
   };
+}
+
+/**
+ * The conversation as the chat shows it: without mock markers, and without notices that the template's own
+ * commit lacks settings. The Preview tries the commit the Project started from before the agent pushes
+ * anything, and the person never asked for that version.
+ */
+export function shownChatMessages(messages: readonly SequencedMessage[], templateCommit: string): SequencedMessage[] {
+  const shown = withoutMockMarkersInMessages(messages);
+  if (!templateCommit) return shown;
+  return shown.filter(({ message }) => {
+    const notification = message.notification;
+    return !(notification && needsConfiguration(notification) && notification.commit === templateCommit);
+  });
 }

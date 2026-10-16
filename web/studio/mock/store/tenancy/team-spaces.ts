@@ -6,7 +6,7 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-// Explicit development data only: TeamSpaces, their members and the Projects' members of mock mode.
+// Explicit development data only: Teamspaces, their members and the Projects' members of mock mode.
 import type { AccountSnapshot__Output } from "@/lib/generated/protobuf/superverse/v2/AccountSnapshot";
 import { rpcFailure } from "@/lib/server/grpc-client";
 import { httpError } from "@/lib/server/request-body";
@@ -15,7 +15,7 @@ import { mockAccountByEmail } from "@/mock/store/accounts";
 import { nowIso, randomHex } from "@/mock/store/clock";
 import type { MockStore } from "@/mock/store/store";
 
-/** A TeamSpace role and a Project role, as TeamSpaceFlow and ProjectFlow persist them. */
+/** A Teamspace role and a Project role, as TeamSpaceFlow and ProjectFlow persist them. */
 export type MockTeamSpaceRole = "ADMIN" | "MEMBER";
 export type MockProjectRole = "OWNER" | "BUILDER" | "OPERATOR";
 
@@ -30,7 +30,7 @@ export interface MockMember<R> {
 export interface MockTeamSpace {
   id: string;
   name: string;
-  /** A TeamSpace starts READY; DELETED ones stay, unlisted. */
+  /** A Teamspace starts READY; DELETED ones stay, unlisted. */
   status: "READY" | "DELETING" | "DELETED";
   creatorAccountId: string;
   revision: number;
@@ -43,15 +43,15 @@ export interface MockTenancy {
   teamSpaces: Map<string, MockTeamSpace>;
   /** Admitted creations, keyed `${accountId}:${requestId}`, with the name they were made with. */
   admissions: Map<string, { teamSpaceId: string; name: string }>;
-  /** Every Project's TeamSpace, by Project ID. */
+  /** Every Project's Teamspace, by Project ID. */
   projectTeamSpace: Map<string, string>;
   /** Every Project's members by account ID, kept when the Project is deleted. */
   projectMembers: Map<string, Map<string, MockMember<MockProjectRole>>>;
-  /** The signed-in accounts that joined the seed TeamSpaces. */
+  /** The signed-in accounts that joined the seed Teamspaces. */
   joined: Set<string>;
 }
 
-/** People of the seed TeamSpace who never sign in to mock mode. */
+/** People of the seed Teamspace who never sign in to mock mode. */
 const PEOPLE = {
   priya: { accountId: "0000000000000000000000000000a001", email: "priya@example.com" },
   sam: { accountId: "0000000000000000000000000000a002", email: "sam@example.com" },
@@ -91,7 +91,7 @@ function seedTeamSpace(id: string, name: string, people: MockMember<MockTeamSpac
   };
 }
 
-// The seed TeamSpaces: Customer Ops holds the seed Projects, Finance none.
+// The seed Teamspaces: Customer Ops holds the seed Projects, Finance none.
 function createTenancy(store: MockStore): MockTenancy {
   const ops = seedTeamSpace("custops1", "Customer Ops", [
     seeded(PEOPLE.priya, "ADMIN"),
@@ -122,7 +122,7 @@ function createTenancy(store: MockStore): MockTenancy {
 }
 
 /**
- * The store's TeamSpaces, with `account` in them: an account's first call makes it an admin of Customer Ops,
+ * The store's Teamspaces, with `account` in them: an account's first call makes it an admin of Customer Ops,
  * a member of Finance and the owner and operator of two seed Projects, as every account sees the seed Project.
  */
 /** The store's tenancy once an account has read it; null before. */
@@ -146,29 +146,29 @@ export function mockTenancy(store: MockStore, account: AccountSnapshot__Output):
   return tenancy;
 }
 
-/** The caller's role in the TeamSpace, or null outside it. */
+/** The caller's role in the Teamspace, or null outside it. */
 export function teamSpaceRoleOf(teamSpace: MockTeamSpace, account: AccountSnapshot__Output): MockTeamSpaceRole | null {
   return teamSpace.members.get(account.accountId)?.role ?? null;
 }
 
-/** A TeamSpace the caller may read: a member's, or any for the platform admin. */
+/** A Teamspace the caller may read: a member's, or any for the platform admin. */
 export function readableTeamSpace(
   tenancy: MockTenancy,
   account: AccountSnapshot__Output,
   teamSpaceId: string,
 ): MockTeamSpace {
   const teamSpace = tenancy.teamSpaces.get(teamSpaceId);
-  if (!teamSpace || teamSpace.status === "DELETED") throw httpError(404, "TeamSpace not found");
-  if (!account.isAdmin && !teamSpaceRoleOf(teamSpace, account)) throw httpError(403, "Not a member of this TeamSpace");
+  if (!teamSpace || teamSpace.status === "DELETED") throw httpError(404, "Teamspace not found");
+  if (!account.isAdmin && !teamSpaceRoleOf(teamSpace, account)) throw httpError(403, "Not a member of this Teamspace");
   return teamSpace;
 }
 
-/** A READY TeamSpace whose admins, or the platform admin, change it. */
+/** A READY Teamspace whose admins, or the platform admin, change it. */
 function administeredTeamSpace(tenancy: MockTenancy, account: AccountSnapshot__Output, teamSpaceId: string) {
   const teamSpace = readableTeamSpace(tenancy, account, teamSpaceId);
   if (!account.isAdmin && teamSpaceRoleOf(teamSpace, account) !== "ADMIN")
-    throw httpError(403, "Only an admin of this TeamSpace changes it");
-  if (teamSpace.status !== "READY") throw httpError(409, "The TeamSpace is being deleted");
+    throw httpError(403, "Only an admin of this Teamspace changes it");
+  if (teamSpace.status !== "READY") throw httpError(409, "The Teamspace is being deleted");
   return teamSpace;
 }
 
@@ -184,11 +184,11 @@ export function createMockTeamSpace(
   name: string,
 ): string {
   const trimmed = name.trim();
-  if (!trimmed || trimmed.length > 80) throw httpError(400, "A TeamSpace name has 1 to 80 characters");
+  if (!trimmed || trimmed.length > 80) throw httpError(400, "A Teamspace name has 1 to 80 characters");
   const key = `${account.accountId}:${requestId}`;
   const admitted = tenancy.admissions.get(key);
   if (admitted) {
-    if (admitted.name !== trimmed) throw httpError(409, "This request already created another TeamSpace");
+    if (admitted.name !== trimmed) throw httpError(409, "This request already created another Teamspace");
     return admitted.teamSpaceId;
   }
   const at = nowIso();
@@ -207,7 +207,7 @@ export function createMockTeamSpace(
   return id;
 }
 
-/** The caller's TeamSpaces, every one for the platform admin, oldest first; DELETED never. */
+/** The caller's Teamspaces, every one for the platform admin, oldest first; DELETED never. */
 export function listMockTeamSpaces(tenancy: MockTenancy, account: AccountSnapshot__Output): MockTeamSpace[] {
   return [...tenancy.teamSpaces.values()].filter(
     (teamSpace) => teamSpace.status !== "DELETED" && (account.isAdmin || teamSpaceRoleOf(teamSpace, account)),
@@ -221,22 +221,22 @@ export function renameMockTeamSpace(
 ): MockTeamSpace {
   const teamSpace = administeredTeamSpace(tenancy, account, input.teamSpaceId);
   if (String(teamSpace.revision) !== input.expectedRevision)
-    throw rpcFailure(409, "The TeamSpace changed since it was read", REVISION_CHANGED);
+    throw rpcFailure(409, "The Teamspace changed since it was read", REVISION_CHANGED);
   const name = input.name.trim();
-  if (!name || name.length > 80) throw httpError(400, "A TeamSpace name has 1 to 80 characters");
+  if (!name || name.length > 80) throw httpError(400, "A Teamspace name has 1 to 80 characters");
   teamSpace.name = name;
   changed(teamSpace);
   return teamSpace;
 }
 
-/** Only the platform admin deletes a TeamSpace; the mock ends the deletion at once, after its Projects. */
+/** Only the platform admin deletes a Teamspace; the mock ends the deletion at once, after its Projects. */
 export function deleteMockTeamSpace(
   tenancy: MockTenancy,
   account: AccountSnapshot__Output,
   teamSpaceId: string,
   deleteProject: (projectId: string) => void,
 ): MockTeamSpace {
-  if (!account.isAdmin) throw httpError(403, "Only the platform administrator deletes a TeamSpace");
+  if (!account.isAdmin) throw httpError(403, "Only the platform administrator deletes a Teamspace");
   const teamSpace = readableTeamSpace(tenancy, account, teamSpaceId);
   if (teamSpace.status === "READY") {
     teamSpace.status = "DELETING";
@@ -265,7 +265,7 @@ function keepAnAdmin(teamSpace: MockTeamSpace, accountId: string, role: MockTeam
   const admins = [...teamSpace.members.values()].filter(
     (item) => item.role === "ADMIN" && item.accountId !== accountId,
   );
-  if (role !== "ADMIN" && admins.length === 0) throw httpError(409, "A TeamSpace keeps at least one admin");
+  if (role !== "ADMIN" && admins.length === 0) throw httpError(409, "A Teamspace keeps at least one admin");
 }
 
 /** Adds a registered account; the count is of the Projects in which a returning member still holds a role. */
@@ -281,7 +281,7 @@ export function addMockTeamSpaceMember(
   const current = teamSpace.members.get(added.accountId);
   if (current?.role === role) return { teamSpace, regainedProjectCount: 0 };
   if (current) throw httpError(409, `${added.email} is already a member; change their role instead`);
-  if (teamSpace.members.size >= 500) throw httpError(409, "A TeamSpace holds at most 500 members");
+  if (teamSpace.members.size >= 500) throw httpError(409, "A Teamspace holds at most 500 members");
   teamSpace.members.set(added.accountId, member(added, role, account.accountId));
   changed(teamSpace);
   const regainedProjectCount = [...tenancy.projectTeamSpace].filter(
@@ -298,7 +298,7 @@ export function setMockTeamSpaceMemberRole(
   const teamSpace = administeredTeamSpace(tenancy, account, input.teamSpaceId);
   const role = teamSpaceRole(input.role);
   const current = teamSpace.members.get(input.accountId);
-  if (!current) throw httpError(404, "Not a member of this TeamSpace");
+  if (!current) throw httpError(404, "Not a member of this Teamspace");
   if (current.role === role) return teamSpace;
   keepAnAdmin(teamSpace, input.accountId, role);
   current.role = role;
@@ -306,7 +306,7 @@ export function setMockTeamSpaceMemberRole(
   return teamSpace;
 }
 
-/** Refused while the member is the only owner of a Project of the TeamSpace, which the message names. */
+/** Refused while the member is the only owner of a Project of the Teamspace, which the message names. */
 export function removeMockTeamSpaceMember(
   tenancy: MockTenancy,
   account: AccountSnapshot__Output,

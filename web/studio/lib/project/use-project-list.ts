@@ -13,14 +13,14 @@ import { ApiError } from "@/lib/api/transport/api-error";
 import { usePagedList } from "@/lib/browser/use-paged-list";
 import { delay } from "@/lib/shared/async";
 
-/** How long a new TeamSpace or membership may take to reach the read model that admits ListProjects. */
+/** How long a new Teamspace or membership may take to reach the read model that admits ListProjects. */
 const ADMITTED_WITHIN_MILLISECONDS = 10_000;
 
 /**
- * Every Project of the TeamSpace with the caller's role in each, 25 a page with Load more, newest first as
- * ListProjects returns them; deleted Projects are dropped. Without a TeamSpace nothing is read. A new
+ * Every Project of the Teamspace with the caller's role in each, 25 a page with Load more, newest first as
+ * ListProjects returns them; deleted Projects are dropped. Without a Teamspace nothing is read. A new
  * `reloadKey`, such as the page's path, reads the first page again and keeps the shown rows until it arrives.
- * A TeamSpace the read model does not show the caller yet (404 or 403) is read again for ten seconds.
+ * A Teamspace the read model does not show the caller yet (404 or 403) is read again for ten seconds.
  */
 export function useProjectList(teamSpaceId: string | null, reloadKey: unknown) {
   return usePagedList({

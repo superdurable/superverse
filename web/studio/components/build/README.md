@@ -5,7 +5,7 @@ Purpose: The Flow and Interface surfaces: the Flow Definitions of the version sh
 
 Importers: `components/project`, `components/project/setup` and `mock/surface` import this directory.
 
-Imports: it imports `components/flow/scope`, `components/frame/status`, `components/project/activity`, `components/ui`, `components/ui/problem`, `components/ui/timings`, `lib/api`, `lib/api/transport`, `lib/browser`, `lib/flow`, `lib/generated/protobuf`, `lib/project`, `lib/project/setup`, `lib/session`, `lib/session/design`, `lib/shared`, `lib/shared/problem` and `lib/shared/version`.
+Imports: it imports `components/flow/scope`, `components/frame/status`, `components/project/activity`, `components/ui`, `components/ui/problem`, `components/ui/timings`, `lib/api`, `lib/api/transport`, `lib/browser`, `lib/flow`, `lib/generated/protobuf`, `lib/project`, `lib/project/setup`, `lib/project/stage`, `lib/session`, `lib/session/design`, `lib/shared`, `lib/shared/problem` and `lib/shared/version`.
 
 ```mermaid
 flowchart LR
@@ -26,10 +26,11 @@ flowchart LR
   self --> d10["lib/generated/protobuf"]
   self --> d11["lib/project"]
   self --> d12["lib/project/setup"]
-  self --> d13["lib/session"]
-  self --> d14["lib/session/design"]
-  self --> d15["lib/shared"]
-  self --> d16["lib/shared/problem"]
-  self --> d17["lib/shared/version"]
+  self --> d13["lib/project/stage"]
+  self --> d14["lib/session"]
+  self --> d15["lib/session/design"]
+  self --> d16["lib/shared"]
+  self --> d17["lib/shared/problem"]
+  self --> d18["lib/shared/version"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->

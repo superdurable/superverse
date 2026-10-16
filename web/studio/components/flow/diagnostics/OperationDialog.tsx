@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { errorMessage } from "@/lib/api/transport/api-error";
 import { Banner } from "@/components/ui/Banner";
-import { Button } from "@/components/ui/Button";
+import { Button, type ButtonVariant } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
 import { Dialog } from "@/components/ui/Dialog";
 import { Eyebrow } from "@/components/ui/Eyebrow";
@@ -68,9 +68,9 @@ export const OPERATION_CONTROL = cx(
 );
 
 /**
- * The modal around a destructive Flow operation, the same in Runs and Diagnostics. It opens when
- * mounted, so each opening starts from fresh form state, and it cannot be dismissed while the
- * operation is in flight.
+ * The modal around a Flow operation, the same in Runs and Diagnostics. It opens when mounted, so each
+ * opening starts from fresh form state, and it cannot be dismissed while the operation is in flight.
+ * Its submit button repeats the title; it reads as destructive unless the operation says otherwise.
  */
 export function OperationDialog({
   titleId,
@@ -80,17 +80,20 @@ export function OperationDialog({
   dismissLabel,
   busyLabel,
   canSubmit,
+  submitVariant = "danger",
   operation,
   onClose,
   children,
 }: {
   titleId: string;
-  eyebrow: string;
+  /** A small line above the title; none when the title says enough. */
+  eyebrow?: string;
   title: string;
   closeLabel: string;
   dismissLabel: string;
   busyLabel: string;
   canSubmit: boolean;
+  submitVariant?: ButtonVariant;
   operation: DiagnosticOperation;
   onClose: () => void;
   children: ReactNode;
@@ -106,7 +109,7 @@ export function OperationDialog({
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <Eyebrow className="mb-1.5">{eyebrow}</Eyebrow>
+          {eyebrow && <Eyebrow className="mb-1.5">{eyebrow}</Eyebrow>}
           <h2 id={titleId} className="m-0 text-base font-semibold tracking-normal text-ink">
             {title}
           </h2>
@@ -121,7 +124,7 @@ export function OperationDialog({
         <Button disabled={submitting} onClick={onClose}>
           {dismissLabel}
         </Button>
-        <Button variant="danger" disabled={submitting || !canSubmit} onClick={submit}>
+        <Button variant={submitVariant} disabled={submitting || !canSubmit} onClick={submit}>
           {submitting ? busyLabel : title}
         </Button>
       </div>

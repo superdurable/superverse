@@ -1,23 +1,27 @@
 # Studio: the design on the card and the Flow tab
 
-Studio shows the design on the requirements card and draws it on the Flow tab, with the canvas
-that draws implemented Flows, until the build of the confirmed design is complete. Then the
-implemented Flows replace it. The card keeps its two actions
-([README](README.md#the-pieces)).
+Studio draws the design on the Flow tab, with the canvas that draws implemented Flows, below
+the summary of the card's **Process Brief**, until the build of the confirmed design is
+complete. Then the implemented Flows replace it. A person still confirms the card: a card with a
+design is decided on its Brief, which holds Confirm and build, and the card in the chat points
+there ([README](README.md#the-pieces)). A card that does not wait for an answer is planned as a
+separate Session change.
 
 ## Where the code lives
 
 - The shared Agent UI (`components/agent`) may import neither `components/flow` nor the
-  transport (`web/studio/eslint.config.mjs`). So the card shows the design as text: the
-  summary, the outline and the change lines that its host computes, with the Open design
-  link its host passes (`DesignChanges`), as it gets its other callbacks. It gains no graph.
+  transport (`web/studio/eslint.config.mjs`). So the card learns from its host
+  (`DesignChanges`) where the Brief is, or that its design is still loading, as it gets its
+  other callbacks, and then only points there. A card without a design, or whose design did
+  not load, keeps its own controls and shows the design as text. It gains no graph.
 - `components/flow/design` (the ninth directory of `components/flow`) holds:
   - the design expansion (`design-graph.ts`);
   - the comparator and the card's change lines (`design-compare.ts`);
-  - the design view (`DesignFlowView.tsx`) and its Step panel (`DesignStepPanel.tsx`).
+  - the design view (`DesignFlowView.tsx`) and its Step panel (`DesignStepPanel.tsx`);
+  - the Process Brief (`brief/`).
 
   `components/flow/scope` exports the view lazily (`LazyDesignFlowView`), as it exports the
-  canvas, and the change lines and the design's type through `flow-design.ts`.
+  canvas, and the change lines and the Brief through `flow-design.ts`.
   `components/flow/canvas/model` already holds 10 files, so nothing is added there.
 - `FlowCanvas` finds its graph in the catalog and needs the Flow API for run overlays. Its body
   below the decoded `FlowModel` is `FlowGraphCanvas`, which takes the model, its groups, an
@@ -105,27 +109,68 @@ compared by their Step type, like any other Step.
 
 ## The card
 
-The card keeps its four parts and its two actions
-([streaming and Studio](../agent-harness-design/streaming-and-studio.md#requirements-card)),
-and adds a fifth, **Design**, when the card carries a design:
+A card without a design keeps its four parts and its two actions
+([streaming and Studio](../agent-harness-design/streaming-and-studio.md#requirements-card)).
+A card with a design is decided on its Process Brief: in the chat it shows only its title,
+version and summary, "Waiting for you" and **Open the brief**, a link to the Flow tab at the
+design's first Flow ("Preparing the brief…" while the design loads). The chat leaves this
+pointer out while the Flow tab shows the Brief (`web/studio/lib/session/design/use-brief-on-screen.ts`).
+When the design does not load, the card keeps its controls and adds a fifth part, **Design**:
+the design summary and, behind **More details**, the outline.
 
-- the design summary and the outline, one line per Flow with its main story;
-- what the design changes, when the current source is prepared at the Session's HEAD or is
-  the template's initial design (`web/studio/lib/project/initial-template-design.ts`), one
-  line per Flow:
-  - "TextSummaryFlow · changed: adds AwaitSummaryApproval, Approve summary; changes
-    GenerateSummary" (Steps and Actions added, Steps changed, Steps and Actions removed);
-  - "ReleaseNewsletterFlow · new: 4 Steps, Approve newsletter";
-  - "TextSummaryFlow · unchanged";
-  - and "Removes OldFlow" for the Flows the design removes;
-- otherwise one line, "Not compared: build the processes of the current version to see what
-  changes." (Build processes is the existing control);
-- **Open design**, a link to the Flow tab at the design's first Flow.
+While a card waits, the chat's composer stays open ("Reply or ask for a change…"): a message
+answers the card as a request for changes with that text, as the Brief's **Change
+something…** does.
 
-Confirm and Request changes stay on the card only, so there is one place to decide.
-Requesting changes works as today: the person's text is the answer, the agent revises, and
-the revised card carries the revised design. **Confirmed requirements** show the confirmed
-design's summary and outline as text.
+## The Process Brief
+
+The Brief (`components/flow/design/brief`) reads the card and its design together, in the
+words a business person would use. It is one column: a header, a summary grid of short parts,
+**More details**, the drawn design below the grid and the actions at its foot.
+
+- **Header**: the card's title, "Brief · draft N" (the version a confirmation has, or the
+  confirmed one) and one badge: **Waiting for you** while the card waits for the person,
+  **Building from this brief** once it is confirmed. A
+  card whose agent stopped short of building carries no badge; the Flow tab says so above it.
+- **Summary grid**, three columns when the Flow area is wide, then two, then one as it
+  narrows (container queries, never the viewport). A part shows only when it has content:
+  - **Starts when**: per process, the wait of its start Step, or that Step with its
+    explanation; a process another one starts says so;
+  - **People**: each Action's label and where a person chooses it;
+  - **Rules and exceptions**: one short line per ordinary way out with a condition,
+    "<condition> → <Step>" in the canvas's titles ("Done" or "Stops as failed" for an end),
+    and "+N failure-handling steps" for the Steps the canvas folds away;
+  - **Apps**: each connection as a chip with the name people know; whether it is new or
+    existing, its need, what the person sets up and its operations behind the part's own
+    **More details**.
+
+  "I assumed" and "Needs you · N" take the cells after Apps once the card carries them.
+- **More details** (`brief.more`): **What it does** (the card's summary and the design's),
+  **You need to prepare**, **Done when** (acceptance), **Features** (R1, R2, ...), what the
+  design changes against the current version when the current source is prepared at the
+  Session's HEAD or is the template's initial design
+  (`web/studio/lib/project/initial-template-design.ts`), one line per Flow in the names the
+  canvas shows:
+  - "Text summary · changed: adds Await summary approval, Approve summary; changes Generate
+    summary" (Steps and Actions added, Steps changed, Steps and Actions removed);
+  - "Release newsletter · new: 5 steps, Approve newsletter";
+  - "Text summary · unchanged";
+  - and "Removes Old" for the Flows the design removes;
+
+  and the outline in Go names.
+- **The drawing**: the design of the Flow the tab shows, full width below the grid, drawn left
+  to right with its stages closed; the reader may change the direction or open stages. A new
+  drawing traces in from its start to its finish. The summary above it keeps to the top part
+  and scrolls on its own, so the drawing always shows. There is no Steps list: the drawing is
+  the steps. A card without a design shows the same grid with no drawing.
+- **Actions**: **Change something…** opens a small box in place with **Send changes**. While
+  the card waits, the text is its request for changes: the agent revises, and the revised card
+  carries the revised design. Once it is confirmed, the text goes to the agent as an ordinary
+  message. **Confirm and build** shows while the card waits for the person. On the mock model
+  the foot names the mock composer instead, which sends every answer.
+
+**Confirmed requirements** in the chat show the confirmed design's summary and its outline
+behind **More details**.
 
 ## The Flow tab
 
@@ -149,16 +194,16 @@ see it, and only on Preview; Live always shows what Live runs.
 - **Marks.** The designed Steps are marked **new** or **changed** against the current
   source, when it is the Session HEAD's. A closed stage carries **new** when all its marked
   Steps are new and **changed** when any is marked.
-- **Step panel.** The explanation, the wait in words, the ways out with their conditions
-  (failure routes named as failure handling), and the features the Step serves with their
-  text from the card.
+- **Step panel.** Under the Step's title: the explanation, the wait in words, the ways out
+  with their conditions (failure routes named as failure handling), and the features the
+  Step serves with their text from the card; its Go names behind **More details**.
 - **Controls.** A designed Flow has no Runs, Start or Actions; the design view offers none.
   The Build processes control stays above it.
 - **Arrival.** When a card with a design arrives while the Flow tab is open, the tab shows the
   design at once, at its first Flow. This happens once per card version, recorded in the
   browser, so a reload does not move the person again. On any other tab the Flow tab's entry
   carries a **Design** marker until the Flow tab shows that version, which it then does by
-  itself. **Open design** goes to the Flow tab.
+  itself. **Open the brief** goes to the Flow tab.
 - **Replacement.** Once the design is built and the Preview's processes are built from the
   commit that built it, the implemented Flows replace the design and the label goes. The
   Preview builds them for each pushed commit while its automatic process build is on;
@@ -189,11 +234,12 @@ and needs no card.
 
 ## Accessibility and states
 
-- The Design part of the card is a list with headings, and the label is text. Marks (**new**,
+- The Brief is a region whose parts are regions named by their headings, and the label is
+  text. Marks (**new**,
   **changed**) are text badges above the Step card and part of its accessible name, never
   color alone and never a dashed, faded or ghosted card: on every Flow canvas a dashed card
   means failure handling.
-- Open design is a link, so the browser's history works.
+- Open the brief is a link, so the browser's history works.
 - Loading uses `NotReady`'s placeholder, and a failed read uses its error state with retry.
   NOT_FOUND (a slot without a design) draws no design.
 - Mock mode has a fixture design for the requirements fixture (`web/studio/mock/`), selected

@@ -17,13 +17,15 @@ import { PaneResizeHandle, type CollapsibleColumn } from "@/components/ui/pane/P
 /**
  * The Project's chat, the same conversation on every surface. Dragged narrow it folds to a 40px rail
  * that holds only the chat's icon, which opens it again; the conversation stays mounted while folded,
- * so a draft and the scroll position survive.
+ * so a draft and the scroll position survive. Alone, in a new Project's first conversation, it is the
+ * whole page, centred, and it stays mounted through the switch to the standard Builder.
  */
 export function ChatColumn({
   column,
   targetRef,
   measureRef,
   status,
+  alone = false,
   children,
 }: {
   column: CollapsibleColumn;
@@ -32,43 +34,58 @@ export function ChatColumn({
   measureRef: RefObject<HTMLElement | null>;
   /** Beside the heading: the live connection and the workspace's time. */
   status?: ReactNode;
+  /** The chat is the whole page: no fold, no resize, its column centred. */
+  alone?: boolean;
   children: ReactNode;
 }) {
-  const folded = column.isCollapsed;
+  const folded = column.isCollapsed && !alone;
   return (
     <section
       aria-label="Project chat"
       data-folded={folded ? "true" : undefined}
-      className="relative flex min-h-0 w-(--chat-w) shrink-0 flex-col border-r border-line-soft bg-bg"
+      data-alone={alone ? "true" : undefined}
+      className={cx(
+        "relative flex min-h-0 flex-col bg-bg",
+        alone ? "min-w-0 flex-1 items-center" : "w-(--chat-w) shrink-0 border-r border-line-soft",
+      )}
     >
       {folded && (
         <div className="flex min-h-0 flex-1 flex-col pt-2">
           <PaneRail glyph="chat" label="Open the chat" onExpand={column.expand} />
         </div>
       )}
-      <div className={cx("flex min-h-0 flex-1 flex-col", folded && "hidden")}>
-        <div className="flex h-9.5 shrink-0 items-center gap-2 border-b border-line-faint pr-1.5 pl-3.5">
-          <h2 className="text-[13px] font-semibold text-ink">Project chat</h2>
+      <div className={cx("flex min-h-0 flex-1 flex-col", folded && "hidden", alone && "w-full max-w-180")}>
+        <div
+          className={cx(
+            "flex h-9.5 shrink-0 items-center gap-2 pr-1.5 pl-3.5",
+            alone ? "justify-end" : "border-b border-line-faint",
+          )}
+        >
+          {!alone && <h2 className="text-[13px] font-semibold text-ink">Project chat</h2>}
           {status}
-          <button
-            type="button"
-            aria-label="Fold the chat"
-            title="Fold the chat"
-            onClick={column.collapse}
-            className="ml-auto grid size-7 place-items-center rounded-md text-ink-faint hover:bg-hover hover:text-ink focus-visible:shadow-(--focus-ring) focus-visible:outline-none"
-          >
-            <Glyph name="chevronLeft" />
-          </button>
+          {!alone && (
+            <button
+              type="button"
+              aria-label="Fold the chat"
+              title="Fold the chat"
+              onClick={column.collapse}
+              className="ml-auto grid size-7 place-items-center rounded-md text-ink-faint hover:bg-hover hover:text-ink focus-visible:shadow-(--focus-ring) focus-visible:outline-none"
+            >
+              <Glyph name="chevronLeft" />
+            </button>
+          )}
         </div>
         {children}
       </div>
-      <PaneResizeHandle
-        column={column}
-        targetRef={targetRef}
-        measureRef={measureRef}
-        ariaLabel="Resize the chat; drag narrow to fold it into a rail"
-        onToggle={column.toggle}
-      />
+      {!alone && (
+        <PaneResizeHandle
+          column={column}
+          targetRef={targetRef}
+          measureRef={measureRef}
+          ariaLabel="Resize the chat; drag narrow to fold it into a rail"
+          onToggle={column.toggle}
+        />
+      )}
     </section>
   );
 }

@@ -6,7 +6,7 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-// Explicit development data only: the TeamSpace connections of mock mode. Entered credential values are
+// Explicit development data only: the Teamspace connections of mock mode. Entered credential values are
 // discarded; a connection keeps only the names of its stored credential fields.
 import type { AccountSnapshot__Output } from "@/lib/generated/protobuf/superverse/v2/AccountSnapshot";
 import type { TeamSpaceConnectionSnapshot } from "@/lib/generated/protobuf/superverse/v2/TeamSpaceConnectionSnapshot";
@@ -38,7 +38,7 @@ export interface MockConnection {
   updatedAt: string;
   /**
    * The Project scopes that use the connection, `${projectId}:${scope}`. The Configuration fixture's
-   * selections do not reach the TeamSpace's connections, so mock mode records none.
+   * selections do not reach the Teamspace's connections, so mock mode records none.
    */
   usages: Set<string>;
 }
@@ -116,7 +116,7 @@ function refused(status: number, reason: ConnectionRefusal, message: string) {
   return rpcFailure(status, message, { reason, domain: "superverse.v2", metadata: {} });
 }
 
-/** Whether the caller manages the TeamSpace's connections: an admin, or a builder of one of its Projects. */
+/** Whether the caller manages the Teamspace's connections: an admin, or a builder of one of its Projects. */
 function manages(tenancy: MockTenancy, teamSpace: MockTeamSpace, account: AccountSnapshot__Output): boolean {
   if (account.isAdmin || teamSpaceRoleOf(teamSpace, account) === "ADMIN") return true;
   return [...tenancy.projectTeamSpace].some(([projectId, teamSpaceId]) => {
@@ -125,16 +125,16 @@ function manages(tenancy: MockTenancy, teamSpace: MockTeamSpace, account: Accoun
   });
 }
 
-/** A READY TeamSpace whose connections the caller manages. */
+/** A READY Teamspace whose connections the caller manages. */
 export function managedTeamSpace(tenancy: MockTenancy, account: AccountSnapshot__Output, teamSpaceId: string) {
   const teamSpace = readableTeamSpace(tenancy, account, teamSpaceId);
   if (!manages(tenancy, teamSpace, account))
-    throw httpError(403, "Only a TeamSpace admin or a builder of one of its Projects manages its connections");
-  if (teamSpace.status !== "READY") throw httpError(409, "The TeamSpace is being deleted");
+    throw httpError(403, "Only a Teamspace admin or a builder of one of its Projects manages its connections");
+  if (teamSpace.status !== "READY") throw httpError(409, "The Teamspace is being deleted");
   return teamSpace;
 }
 
-/** The TeamSpace's connections of the statuses, newest first. */
+/** The Teamspace's connections of the statuses, newest first. */
 export function listMockConnections(
   tenancy: MockTenancy,
   teamSpaceId: string,
@@ -151,7 +151,7 @@ export function listMockConnections(
     .sort((first, second) => second.createdAt.localeCompare(first.createdAt));
 }
 
-/** What a connection name's view shows of the TeamSpace connection it selects, as the configuration host does. */
+/** What a connection name's view shows of the Teamspace connection it selects, as the configuration host does. */
 export function mockSelectedConnection(tenancy: MockTenancy, connectionId: string) {
   const found = mockConnections(tenancy).byId.get(connectionId);
   return (
@@ -199,7 +199,7 @@ export function createMockConnection(
   }
   if (!input.name.trim() || input.name.length > 80) throw httpError(400, "A connection name has 1 to 80 characters");
   if (listMockConnections(tenancy, input.teamSpaceId, "", []).some((item) => item.name === input.name))
-    throw refused(409, "CONNECTION_NAME_TAKEN", "Another connection of this TeamSpace has that name");
+    throw refused(409, "CONNECTION_NAME_TAKEN", "Another connection of this Teamspace has that name");
   const at = nowIso();
   const connectionId = `c${randomHex(11)}`;
   connections.byId.set(connectionId, {
@@ -276,7 +276,7 @@ export function startMockAuthorization(
     return state;
   }
   if (listMockConnections(tenancy, target.teamSpaceId, "", []).some((item) => item.name === target.name))
-    throw refused(409, "CONNECTION_NAME_TAKEN", "Another connection of this TeamSpace has that name");
+    throw refused(409, "CONNECTION_NAME_TAKEN", "Another connection of this Teamspace has that name");
   attempts.set(state, { accountId: account.accountId, creation: target });
   return state;
 }

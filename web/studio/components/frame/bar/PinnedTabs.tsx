@@ -12,7 +12,6 @@ import Link from "next/link";
 import type { ProjectTool } from "@/lib/shared/studio-routes";
 import { cx } from "@/components/ui/cx";
 import { Glyph, type GlyphName } from "@/components/ui/Glyph";
-import { ActionMenu } from "@/components/ui/menu/ActionMenu";
 
 /** One tool as the bar shows it. */
 export interface BarTool {
@@ -22,15 +21,14 @@ export interface BarTool {
 }
 
 /**
- * The tools pinned as tabs after the surface tabs, each closable, and the + that opens a tool as a
- * tab. Pinned tabs are remembered per browser.
+ * The tools pinned as tabs after the surface tabs, each closable. A tool is pinned from the Tools list;
+ * pinned tabs are remembered per browser.
  */
 export function PinnedTabs({
   tools,
   pinned,
   current,
   hrefOf,
-  onPin,
   onUnpin,
 }: {
   tools: readonly BarTool[];
@@ -38,7 +36,6 @@ export function PinnedTabs({
   /** The pinned tool open now, or null. */
   current: ProjectTool | null;
   hrefOf: (tool: ProjectTool) => string;
-  onPin: (tool: ProjectTool) => void;
   onUnpin: (tool: ProjectTool) => void;
 }) {
   return (
@@ -83,22 +80,6 @@ export function PinnedTabs({
           </span>
         );
       })}
-      <ActionMenu
-        label="Open a tool as a tab"
-        glyph="plus"
-        glyphClassName="size-4.5"
-        align="start"
-        triggerClassName="inline-flex items-center px-2.5 text-ink-faint hover:text-ink focus-visible:shadow-[inset_0_0_0_2px_var(--color-accent-rule)] focus-visible:outline-none aria-expanded:text-ink"
-        items={[
-          { heading: "Open a tool as a tab" },
-          ...tools.map((entry) => ({
-            label: entry.label,
-            glyph: entry.glyph,
-            hint: pinned.includes(entry.tool) ? "open" : undefined,
-            onSelect: () => onPin(entry.tool),
-          })),
-        ]}
-      />
     </>
   );
 }

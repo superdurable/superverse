@@ -10,17 +10,17 @@
 
 import type { TodoItem } from "@/lib/session/agent-types";
 
-/** The Agent's own todo list as one read-only line: how many items are done and the one in progress. */
+/** The Agent's own todo list as one read-only line: how many items are done and the one it works on now. */
 export function TodoProgress({ items }: { items: readonly TodoItem[] }) {
   if (items.length === 0) return null;
   const completedCount = items.filter((item) => item.status === "completed").length;
   const current = items.find((item) => item.status === "in_progress");
   return (
-    <p className="text-[12px] text-ink-faint">
+    <p className="text-caption text-ink-faint">
       <span className="font-medium text-ink-dim">
-        Progress {completedCount}/{items.length}
+        {completedCount} of {items.length} done
       </span>
-      {current !== undefined && `: ${current.content}`}
+      {current !== undefined && ` · Now: ${current.content}`}
     </p>
   );
 }

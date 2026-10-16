@@ -24,6 +24,9 @@ import {
   WaitingRunsProvider,
 } from "@/lib/project/WaitingRunsProvider";
 import { liveStatusOf, previewStatusOf, setupNeedsYou } from "@/lib/project/setup/environment-status";
+import { leaveFirstRun, ProjectStageProvider, useProjectStage } from "@/lib/project/stage/ProjectStageProvider";
+import { preloadSwitchViews } from "@/components/flow/scope/LazyFlowViews";
+import { availableSurfaces, useRevealedSurfaces } from "@/lib/project/stage/revealed-surfaces";
 import { PreviewStartWord } from "@/components/build/PreviewStart";
 import { ProjectShare } from "@/components/teamspace/ProjectShare";
 import { draftWords, PreviewDraftProvider, usePreviewDraft } from "@/lib/project/setup/PreviewDraftProvider";
@@ -47,6 +50,7 @@ import { SessionChatStatus } from "@/components/session/SessionChatStatus";
 import { SessionConversation } from "@/components/session/SessionConversation";
 import { ElementPicker } from "@/components/session/composer/ElementPicker";
 import { usePaletteEntries } from "@/components/shell/palette/use-palette-entries";
+import { Badge } from "@/components/ui/badge/Badge";
 import { NotReady } from "@/components/ui/NotReady";
 import { Button } from "@/components/ui/Button";
 
@@ -55,6 +59,10 @@ import { Button } from "@/components/ui/Button";
  * switch with each environment's status and how far Live is behind, Publish, and the runs waiting
  * for a person, read once for the Inbox tab's count and the project map's cards.
  * The Builder's layout keeps it mounted while the surface below it changes.
+ *
+ * It follows the Project's stage (`useProjectStage`): a Project created in this browser opens on its
+ * first conversation, the chat alone, and switches once to the standard frame on the Flow tab. There,
+ * for those who build, a tab, Publish and Preview's status appear only once they have something to show.
  *
  * The person's role in the Project, which the server returns with it, decides what the frame shows (the
  * mock's role lens may set it instead): an operator sees Live only, with no chat and none of the Preview's
@@ -100,10 +108,12 @@ export function ProjectBuilder(props: BuilderProps) {
     >
       <WaitingRunsProvider runs={waiting}>
         <PreviewDraftProvider projectId={props.projectId} source={setupSource}>
-          <ComposerDraftProvider onPropose={openChatColumn}>
-            <BuilderFrame {...props} role={role} />
-            <ElementPicker />
-          </ComposerDraftProvider>
+          <ProjectStageProvider projectId={props.projectId} session={resource ?? null}>
+            <ComposerDraftProvider onPropose={openChatColumn}>
+              <BuilderFrame {...props} role={role} />
+              <ElementPicker />
+            </ComposerDraftProvider>
+          </ProjectStageProvider>
         </PreviewDraftProvider>
       </WaitingRunsProvider>
     </ProcessDefinitionsProvider>
@@ -141,37 +151,68 @@ function BuilderFrame({ projectId, role, persistentQuery, children }: BuilderPro
     `${live?.revision}:${project?.activeDeployment?.deploymentId}`,
   );
   const savingWords = previewDraft && !liveOnly ? draftWords(previewDraft.all) : null;
-  const previewStatus = session
-    ? previewStatusOf(session.resource?.preview ?? null, previewDraft?.configuration ?? null)
-    : undefined;
-  const previewPrepared = session?.resource?.preview?.preparedSource;
   const builds = canBuild(role);
+  const stage = useProjectStage();
+  const own = stage.hasOwnProcesses;
+  // A link to another surface leaves the first conversation for good; the Flow's own URL keeps it.
+  const conversation = builds && stage.stage === "conversation" && surface === "flow";
+  useEffect(() => {
+    if (builds && surface !== "flow") leaveFirstRun(projectId);
+  }, [builds, projectId, surface]);
+  useEffect(() => {
+    if (conversation) preloadSwitchViews();
+  }, [conversation]);
+  // Until processes are built the bar names the stage in place of Preview | Live: Building from a confirmed card
+  // while the agent works on it or its built design's processes are being built, else Shaping.
+  const shaping = builds && !liveOnly && (stage.stage === "conversation" || stage.stage === "shaping");
+  const agent = session?.resource?.agent?.description;
+  const building =
+    Number(agent?.confirmedRequirements?.revision ?? 0) > 0 &&
+    agent?.pendingUserInput?.kind !== "KIND_REQUIREMENTS" &&
+    (agent?.status !== "STATUS_WAITING_FOR_MESSAGE" || Boolean(agent.confirmedRequirements?.spec?.designBuilt));
+  // Preview's status counts once processes are built from the agent's own push: before, it is the template's.
+  const previewStatus =
+    session && own
+      ? previewStatusOf(session.resource?.preview ?? null, previewDraft?.configuration ?? null, stage.templateCommit)
+      : undefined;
+  const previewPrepared = session?.resource?.preview?.preparedSource;
   const waiting = useWaitingRuns();
   const waitingTotal = waiting ? [...waiting.values()].reduce((sum, count) => sum + count, 0) : 0;
+  const tabs = useRevealedSurfaces(
+    projectId,
+    builds && !liveOnly && stage.known && !conversation ? availableSurfaces(stage, waitingTotal) : null,
+    conversation ? null : surface,
+  );
+  // Those who build see the tabs with something to show; an operator sees every tab the role opens.
+  const visible = builds && !liveOnly ? tabs.shown : undefined;
   // A Flow design shows on Preview to those who build; its Flows join the picker, and the Flow tab's entry
   // carries a marker until the Flow tab shows it.
   const design = useFlowDesign(builds && shown === "preview");
   const designShown = useDesignShown(projectId, design?.key ?? null).shown;
   const designedFlows = new Set(design?.body?.flows.map((flow) => flow.flowType) ?? []);
+  // The template's own processes are not the person's: none show before the agent's own are built.
+  const processes = own || liveOnly ? definitions.processes : [];
   const projectName = project?.name ?? "Project";
   const teamSpaceId = project?.teamSpaceId || null;
-  // The sidebar shows the open Project's TeamSpace, which the Project's URL does not name.
+  // The sidebar shows the open Project's Teamspace, which the Project's URL does not name.
   const { follow } = useTeamSpace();
   useEffect(() => {
     if (teamSpaceId) follow(teamSpaceId);
   }, [follow, teamSpaceId]);
   usePaletteEntries([
-    ...definitions.processes.map((item) => ({
+    ...processes.map((item) => ({
       label: `${projectName} ▸ ${processName(item.flowType)}`,
       hint: "process",
       href: studioRoutes.projectSurface(projectId, "flow", { flowType: item.flowType }),
     })),
-    ...surfacesFor(role).map((id) => ({
-      label: `${projectName} ▸ ${SURFACES[id].label}`,
-      hint: "surface",
-      href: links.surfaceHref(id),
-    })),
-    ...(builds
+    ...surfacesFor(role)
+      .filter((id) => !visible || visible.has(id))
+      .map((id) => ({
+        label: `${projectName} ▸ ${SURFACES[id].label}`,
+        hint: "surface",
+        href: links.surfaceHref(id),
+      })),
+    ...(builds && (!visible || visible.has("tools"))
       ? (Object.keys(TOOLS) as ProjectTool[]).map((id) => ({
           label: `${projectName} ▸ ${TOOLS[id].label}`,
           hint: "tool",
@@ -210,44 +251,49 @@ function BuilderFrame({ projectId, role, persistentQuery, children }: BuilderPro
         role={role}
         liveOnly={liveOnly}
         hasLive={Boolean(live)}
+        conversation={conversation}
+        environmentSwitch={!shaping}
+        stageBadge={
+          shaping &&
+          stage.stage === "shaping" && (
+            <Badge tone={building ? "accent" : "neutral"} data-testid="project-stage">
+              {building ? "Building" : "Shaping"}
+            </Badge>
+          )
+        }
+        surfaces={visible}
+        fresh={visible && tabs.fresh}
         persistentQuery={persistentQuery}
         badges={{
           flow:
             design && !designShown && surface !== "flow" ? (
-              <span
-                className="rounded-full bg-accent-subtle px-1.5 text-[10.5px] font-medium text-accent"
-                title="The agent's Flow design is on the Flow tab"
-                data-testid="design-marker"
-              >
+              <Badge tone="accent" title="The agent's Flow design is on the Flow tab" data-testid="design-marker">
                 Design
-              </span>
+              </Badge>
             ) : undefined,
           inbox:
             waitingTotal > 0 ? (
-              <span
-                className="rounded-full bg-busy-subtle px-1.5 text-[10.5px] font-medium text-busy"
-                title={`${waitingCount(waitingTotal)} waiting for a person`}
-                data-testid="inbox-count"
-              >
+              <Badge tone="busy" title={`${waitingCount(waitingTotal)} waiting for a person`} data-testid="inbox-count">
                 {waitingCount(waitingTotal)}
-              </span>
+              </Badge>
             ) : undefined,
         }}
         processes={[
-          ...definitions.processes.map((item) => ({
+          ...processes.map((item) => ({
             flowType: item.flowType,
             name: processName(item.flowType),
             changed: shown === "preview" && definitions.changedSinceLive.has(item.flowType),
             designed: designedFlows.has(item.flowType),
           })),
           ...[...designedFlows]
-            .filter((flowType) => !definitions.processes.some((item) => item.flowType === flowType))
+            .filter((flowType) => !processes.some((item) => item.flowType === flowType))
             .map((flowType) => ({ flowType, name: processName(flowType), designed: true })),
         ]}
         process={process}
         setupNeedsYou={builds && !liveOnly && setupNeedsYou(previewDraft?.configuration ?? null)}
         switchWords={{
           previewStatus,
+          previewDot: own || liveOnly,
           // A stopped Preview's word opens Start, on every tab, for those who build.
           previewWord:
             builds && previewStatus?.kind === "STOPPED" && previewStatus.word
@@ -293,7 +339,7 @@ function BuilderFrame({ projectId, role, persistentQuery, children }: BuilderPro
                 owner={role === "owner"}
               />
             )}
-            {builds && (
+            {builds && own && !conversation && (
               <PublishButton
                 projectId={projectId}
                 environment={shown}

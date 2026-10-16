@@ -164,7 +164,7 @@ necessary.
 
 | Management need | Studio capability |
 | --- | --- |
-| List and filter business records | Model each record as a Run, expose supported search criteria as Indexed Attributes, and return additional list fields from the Summary RPC. |
+| List and filter business records | Model each record as a Run, name it with a Display title slot built from business data (such as `Refund R-1042 · Acme · $320`), expose supported search criteria as Indexed Attributes, and return additional list fields from the Summary RPC. |
 | Inspect one record | Return detail fields and UI slots from the Display RPC. |
 | Perform a business operation | Register an RPC with Action metadata, a typed input form, current-state condition, and one required permission. |
 | Find assigned or actionable work | Inbox discovers Runs from Action permission history; opening a Run rechecks current Action eligibility. |

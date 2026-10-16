@@ -13,9 +13,9 @@ import { unary } from "@/lib/api/transport/unary";
 import { required } from "@/lib/shared/protobuf";
 import type { RpcInput, RpcOutput } from "@/lib/shared/rpc-methods";
 
-// Browser client of TeamSpaceService: TeamSpaces, their Home and their deletion.
+// Browser client of TeamSpaceService: Teamspaces, their Home and their deletion.
 
-/** Starts a TeamSpace with the caller as its admin; a retry with the same request ID is the same TeamSpace. */
+/** Starts a Teamspace with the caller as its admin; a retry with the same request ID is the same Teamspace. */
 export async function createTeamSpace(
   input: Required<RpcInput<"CreateTeamSpace">>,
   signal: AbortSignal,
@@ -23,7 +23,7 @@ export async function createTeamSpace(
   return (await unary("CreateTeamSpace", input, { signal })).teamSpaceId;
 }
 
-/** The caller's TeamSpaces, or every one for the platform admin. */
+/** The caller's Teamspaces, or every one for the platform admin. */
 export function listTeamSpaces(
   input: RpcInput<"ListTeamSpaces">,
   signal: AbortSignal,
@@ -32,23 +32,23 @@ export function listTeamSpaces(
 }
 
 export async function getTeamSpace(teamSpaceId: string, signal: AbortSignal): Promise<TeamSpaceSnapshot__Output> {
-  return required((await readUnary("GetTeamSpace", { teamSpaceId }, { signal })).teamSpace, "TeamSpace");
+  return required((await readUnary("GetTeamSpace", { teamSpaceId }, { signal })).teamSpace, "Teamspace");
 }
 
-/** Renames the TeamSpace the page read at `expectedRevision`; a TeamSpace that changed since is REVISION_CHANGED. */
+/** Renames the Teamspace the page read at `expectedRevision`; a Teamspace that changed since is REVISION_CHANGED. */
 export async function renameTeamSpace(
   input: Required<RpcInput<"RenameTeamSpace">>,
   signal: AbortSignal,
 ): Promise<TeamSpaceSnapshot__Output> {
-  return required((await unary("RenameTeamSpace", input, { signal })).teamSpace, "renamed TeamSpace");
+  return required((await unary("RenameTeamSpace", input, { signal })).teamSpace, "renamed Teamspace");
 }
 
-/** Accepts the deletion of the TeamSpace with its Projects; only the platform admin may. */
+/** Accepts the deletion of the Teamspace with its Projects; only the platform admin may. */
 export async function deleteTeamSpace(
   input: Required<RpcInput<"DeleteTeamSpace">>,
   signal: AbortSignal,
 ): Promise<TeamSpaceSnapshot__Output> {
-  return required((await unary("DeleteTeamSpace", input, { signal })).teamSpace, "deleted TeamSpace");
+  return required((await unary("DeleteTeamSpace", input, { signal })).teamSpace, "deleted Teamspace");
 }
 
 export async function getTeamSpaceOverview(

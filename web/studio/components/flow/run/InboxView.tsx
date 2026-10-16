@@ -6,6 +6,7 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
+import { useState } from "react";
 import { RUNNING_FLOW_STATUS_CODE, SEARCH_STATUS_VALUES } from "@/lib/api/flow/flow-status";
 import { useFlowHost } from "@/lib/flow/FlowHostProvider";
 import { FlowLink } from "@/components/flow/frame/FlowLink";
@@ -29,7 +30,8 @@ import {
  * Inbox: what has arrived for the reader, with no canvas. It shares the run list and case panel
  * with Runs; what differs is the default scope (open runs only) and that evidence comes before the
  * Actions. "See the process" opens the same run in Runs. Under all processes the list holds every
- * Flow type's waiting items, merged by time.
+ * Flow type's waiting items, merged by time. An Action that leaves its run with nothing to act on
+ * clears the item: the list is read again without it, and the next item opens.
  */
 export function InboxView() {
   const { column, shellRef, bodyRef } = useRunListColumn("inbox", {
@@ -41,6 +43,24 @@ export function InboxView() {
   // Under all processes the selected item's own Flow type draws its panel.
   const entry = column.shownEntry;
   const host = useFlowHost();
+  /** The confirmation of the last Action, shown above the item it left open. */
+  const [done, setDone] = useState<{ text: string; shownFor: string } | null>(null);
+  /** The item an Action cleared, kept out of the list until a read that began after the Action. */
+  const [cleared, setCleared] = useState<{ flowId: string; reads: number } | null>(null);
+  const hiddenFlowId = cleared && cleared.reads === column.search.reads ? cleared.flowId : undefined;
+
+  const onActed = (actedOn: string, outcome: { action: string; waiting: boolean }) => {
+    if (outcome.waiting) {
+      setDone({ text: INBOX_COPY.done(outcome.action), shownFor: actedOn });
+      column.search.runSearch();
+      return;
+    }
+    const next = column.search.flows.find((flow) => flow.flowId !== actedOn && flow.flowId !== hiddenFlowId);
+    setDone({ text: INBOX_COPY.done(outcome.action), shownFor: next?.flowId ?? "" });
+    setCleared({ flowId: actedOn, reads: column.search.reads });
+    route.open(next?.flowId);
+    column.search.runSearch();
+  };
 
   return (
     <FlowFrame className="min-h-0" ref={shellRef} style={paneWidthStyle(column.pane)}>
@@ -52,11 +72,22 @@ export function InboxView() {
           heading={INBOX_COPY.appName}
           headerNote={INBOX_COPY.liveNote}
           emptyText={INBOX_COPY.clear}
+          hiddenFlowId={hiddenFlowId}
         />
         <section className={CASE_COLUMN} aria-label={flowId || INBOX_COPY.appName}>
+          {done && done.shownFor === flowId && (
+            <p
+              className="mx-4 mt-3 flex items-baseline gap-2 rounded-lg bg-pass-subtle px-2.5 py-2 text-caption text-pass"
+              role="status"
+              data-testid="inbox-done"
+            >
+              <span aria-hidden="true">✓</span>
+              {done.text}
+            </p>
+          )}
           {flowId && entry && host.environment === "live" && (
             <p
-              className="mx-4 mt-3 flex items-start gap-2 rounded-lg bg-busy-subtle px-2.5 py-2 text-[12.5px] text-busy"
+              className="mx-4 mt-3 flex items-start gap-2 rounded-lg bg-busy-subtle px-2.5 py-2 text-caption text-busy"
               data-testid="inbox-live-note"
             >
               <span aria-hidden="true">●</span>
@@ -69,9 +100,11 @@ export function InboxView() {
               definition={entry.definition}
               definitionRevision={catalog.definitionRevision}
               flowId={flowId}
+              title={column.selectedTitle}
               flowStatusCode={column.selectedFlow?.flowStatusCode}
               flowType={entry.flowType}
               order="evidence-first"
+              onActed={(outcome) => onActed(flowId, outcome)}
               onStranded={column.rememberStranded}
               footer={
                 <>
@@ -88,7 +121,10 @@ export function InboxView() {
               }
             />
           ) : (
-            <p className={EMPTY}>{INBOX_COPY.selectPrompt}</p>
+            // An empty list already says nothing is waiting.
+            column.search.flows.some((flow) => flow.flowId !== hiddenFlowId) && (
+              <p className={EMPTY}>{INBOX_COPY.selectPrompt}</p>
+            )
           )}
         </section>
       </div>

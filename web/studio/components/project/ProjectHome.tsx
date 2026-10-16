@@ -41,8 +41,8 @@ function statusWords(project: ProjectSnapshot__Output): { words: string; live: b
 }
 
 /**
- * A TeamSpace's Projects as cards, newest first, each with the person's role in it and opening its Builder,
- * and New project; a Project in which the person has no role is listed but does not open. A TeamSpace without
+ * A Teamspace's Projects as cards, newest first, each with the person's role in it and opening its Builder,
+ * and New project; a Project in which the person has no role is listed but does not open. A Teamspace without
  * Projects starts its first one here.
  */
 export function ProjectHome({ teamSpaceId }: { teamSpaceId: string }) {
@@ -52,7 +52,7 @@ export function ProjectHome({ teamSpaceId }: { teamSpaceId: string }) {
   return (
     <main className="min-h-0 flex-1 overflow-y-auto px-8 pt-6.5 pb-15 max-sm:px-4">
       <h2 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">Projects</h2>
-      <p className="mt-0.5 mb-5.5 text-[13.5px] text-ink-faint">Every project of this TeamSpace, newest first.</p>
+      <p className="mt-0.5 mb-5.5 text-[13.5px] text-ink-faint">Every project of this Teamspace, newest first.</p>
       {projects.error && <p className="mb-3 text-sm text-fail">{projects.error}</p>}
       <div className="grid max-w-5xl grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-3">
         {!projects.loaded &&

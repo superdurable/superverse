@@ -13,7 +13,7 @@ import type { ConfigurationItem } from "@/lib/generated/protobuf/superverse/v2/C
 import type { ConfigurationRequirementGap__Output } from "@/lib/generated/protobuf/superverse/v2/ConfigurationRequirementGap";
 import { MOCK_SLACK_CHANNELS, MOCK_SLACK_CONNECTOR, mockSlackManifest } from "@/mock/fixture/connector-manifest";
 
-/** A scope's Slack values: the TeamSpace connection its name selects and each binding's channel. */
+/** A scope's Slack values: the Teamspace connection its name selects and each binding's channel. */
 export interface MockSlackValues {
   selectedConnectionId?: string;
   channels: Record<string, string>;
@@ -79,7 +79,7 @@ export function slackGaps(values: MockSlackValues): ConfigurationRequirementGap_
   }));
 }
 
-/** The channel another Project of the TeamSpace already listens to, which Setup warns about. */
+/** The channel another Project of the Teamspace already listens to, which Setup warns about. */
 const SHARED_CHANNEL = { channelId: "C0SUPPORT", projectName: "Failed template app" };
 
 /** The Slack items of a Preview draft against the applied values, by key. */

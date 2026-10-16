@@ -26,7 +26,7 @@ import { githubJSON, repositoryFile } from "@/tests/e2e/support/repository-host"
 import { array, object } from "@/tests/e2e/support/json-assert";
 import { ownerFixture } from "@/tests/e2e/support/private-files";
 import { privateOwnerStateDirectory, rpcResult } from "@/tests/e2e/support/studio-api";
-import { openTeamSpace } from "@/tests/e2e/support/teamspace/teamspace";
+import { openTeamSpace, START_HEADING } from "@/tests/e2e/support/teamspace/teamspace";
 
 // This retained journey uses the real Studio, model, GitHub, Sandbox, builder,
 // Project Dex and application APIs. Owner credentials remain in private state.
@@ -56,12 +56,8 @@ test("sign in, implement a GreetingFlow and execute its durable result on Live",
   );
   await signIn(page, owner);
   expect((await loginResponse).ok()).toBe(true);
-  // A fresh owner lands on its first TeamSpace's creation, or on an empty TeamSpace's first Project.
-  await expect(
-    page
-      .getByRole("heading", { name: "Create a project." })
-      .or(page.getByRole("heading", { name: "Create your TeamSpace." })),
-  ).toBeVisible();
+  // A fresh owner gets its first Teamspace without a question, and an empty Teamspace offers its first Project.
+  await expect(page.getByRole("heading", { name: START_HEADING })).toBeVisible({ timeout: 60_000 });
   await save({ loginVerified: true, credentialsFile: loginFile });
   await context.storageState({ path: join(directory, "studio-storage-state.json") });
   await chmod(join(directory, "studio-storage-state.json"), 0o600);

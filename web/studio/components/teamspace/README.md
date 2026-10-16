@@ -1,7 +1,7 @@
-# TeamSpace pages
+# Teamspace pages
 
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
-Purpose: The TeamSpace switcher, creation and landing, page gate, Home header, People, a Project's Permissions and Share, and the Project role chip.
+Purpose: The Teamspace switcher, creation and landing, page gate, Home header, People, a Project's Permissions and Share, and the Project role chip.
 
 Importers: `app`, `components/frame/bar`, `components/project` and `components/shell` import this directory.
 
@@ -26,17 +26,21 @@ flowchart LR
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
-The pages read the TeamSpace through `lib/teamspace`'s provider, which the workspace layout owns, so the sidebar and
-the page share one read. A TeamSpace created a moment ago is waited for, since it reaches the read model within
-seconds. Every write runs through `useSingleFlight`; a rename fenced on a revision that changed answers
-`REVISION_CHANGED`, which the header reports before showing the TeamSpace as it is now. Only the platform admin
-sees Delete TeamSpace, which asks for the TeamSpace's name.
+An account without a Teamspace never names one: `/` (`TeamSpaceLanding`) creates its first one, named from the
+email (a company domain gives "Acme", a personal mail provider "Maya's team"), with one fixed request ID, so every
+tab, reload and retry creates the same one; only a failed creation shows the form, filled with the name it tried.
 
-People and Permissions share `MemberTable`. Only a TeamSpace's admins (and the platform admin) change its members,
+The pages read the Teamspace through `lib/teamspace`'s provider, which the workspace layout owns, so the sidebar and
+the page share one read. A Teamspace created a moment ago is waited for, since it reaches the read model within
+seconds. Every write runs through `useSingleFlight`; a rename fenced on a revision that changed answers
+`REVISION_CHANGED`, which the header reports before showing the Teamspace as it is now. Only the platform admin
+sees Delete Teamspace, which asks for the Teamspace's name.
+
+People and Permissions share `MemberTable`. Only a Teamspace's admins (and the platform admin) change its members,
 and only a Project's owners (the platform admin reads as one) change the Project's; the only admin or owner has no
-select or Remove, and a member who left the TeamSpace stays listed in a Project with a role that grants nothing.
+select or Remove, and a member who left the Teamspace stays listed in a Project with a role that grants nothing.
 Every change answers with all the members, which the page shows at once; a rule the server refuses, such as
 removing the only owner of a Project, shows the server's message.
 
-`ProjectShare` is the bar's Share: an owner adds a member of the TeamSpace with a role through `AddProjectMember`,
+`ProjectShare` is the bar's Share: an owner adds a member of the Teamspace with a role through `AddProjectMember`,
 the same form Permissions shows, and anyone copies the link to the page shown.

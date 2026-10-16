@@ -11,7 +11,7 @@
 import type { ConfigurationRequirementGap__Output } from "@/lib/generated/protobuf/superverse/v2/ConfigurationRequirementGap";
 import { MOCK_STRIPE_CONNECTOR, mockStripeManifest } from "@/mock/fixture/connector-manifest";
 
-/** A scope's Stripe values: the TeamSpace connection its name selects. */
+/** A scope's Stripe values: the Teamspace connection its name selects. */
 export interface MockStripeValues {
   selectedConnectionId?: string;
 }

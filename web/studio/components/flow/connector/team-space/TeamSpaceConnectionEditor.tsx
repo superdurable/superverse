@@ -25,7 +25,7 @@ const NAME_INPUT =
   "rounded-md border border-line bg-panel px-2.5 py-1.5 text-[13px] text-ink focus:border-accent focus:shadow-(--focus-ring) focus:outline-none";
 
 /**
- * A TeamSpace connection's editor: a new connection of a connector release, or an existing one, with the
+ * A Teamspace connection's editor: a new connection of a connector release, or an existing one, with the
  * connector's own form. A key is saved at once; an OAuth method leaves for the provider, which returns the
  * person to `returnPath`. A changed key or sign-in reaches every Project that uses the connection at its next
  * read, and its settings reach a Preview at its next start and Live with its next release.
@@ -106,7 +106,7 @@ export function TeamSpaceConnectionEditor({
             required
             value={name}
           />
-          <small className={NOTE}>Projects of this TeamSpace pick the connection by this name.</small>
+          <small className={NOTE}>Projects of this Teamspace pick the connection by this name.</small>
         </label>
       )}
       {error && (

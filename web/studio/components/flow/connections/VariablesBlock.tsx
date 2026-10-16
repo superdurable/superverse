@@ -41,7 +41,7 @@ function valueText(json: string): string {
 }
 
 /** A side's environment form, read again whenever the side's catalog does. */
-function useEnvironment(side: SetupSide | null) {
+export function useEnvironment(side: SetupSide | null) {
   const [snapshot, setSnapshot] = useState<ApplicationEnvironmentSnapshot | null>(null);
   const client = side?.scope.client ?? null;
   const revision = side?.catalog.configurationRevision ?? "";
@@ -204,7 +204,7 @@ function VariableControl({
  * A variable's control on one side with what became of its autosave: a change made elsewhere since this tab
  * read it is never overwritten silently, and taking theirs shows it.
  */
-function VariableCell(props: Parameters<typeof VariableControl>[0]) {
+export function VariableCell(props: Parameters<typeof VariableControl>[0]) {
   const [generation, setGeneration] = useState(0);
   const key = draftItemKey({ kind: "KIND_ENVIRONMENT", environmentName: props.field.name });
   return (

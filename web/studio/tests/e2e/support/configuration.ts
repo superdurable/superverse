@@ -143,7 +143,7 @@ async function readPrivateOpenAIKey(): Promise<string> {
   return credentials.apiKey;
 }
 
-/** A selection of a connection the TeamSpace does not hold, replayed from a saved one, which Go refuses. */
+/** A selection of a connection the Teamspace does not hold, replayed from a saved one, which Go refuses. */
 async function expectRejectedSelection(page: Page, saved: Response) {
   const original = await saved.request().allHeaders();
   const headers = Object.fromEntries(
@@ -196,7 +196,7 @@ export async function connectionPicker(checklist: Locator, connectionName: strin
   return picker;
 }
 
-// Selects a TeamSpace connection for an llm connection name in the Setup table on screen, on `side`:
+// Selects a Teamspace connection for an llm connection name in the Setup table on screen, on `side`:
 // Preview's column, or the next publish's on the Preview tab's Next publish column or the Live tab.
 async function fillOpenAIConnection(page: Page, key: string, connectionName: string, side: SetupSide) {
   const checklist = page.getByTestId("setup-checklist");
@@ -204,12 +204,12 @@ async function fillOpenAIConnection(page: Page, key: string, connectionName: str
   return fillSetupConnection(page, checklist, key, connectionName, side);
 }
 
-/** The action row of a connection name's dropdown that creates a TeamSpace connection in its row. */
+/** The action row of a connection name's dropdown that creates a Teamspace connection in its row. */
 const NEW_CONNECTION = "New connection…";
 
 /**
  * A connection name in Tools, Setup: a dropdown that already resolves to a connection keeps it, whether it is
- * one the side chose or "Same as Preview" of Preview's; otherwise it takes the TeamSpace's first listed
+ * one the side chose or "Same as Preview" of Preview's; otherwise it takes the Teamspace's first listed
  * connection, which an earlier case or side created, or New connection… creates one inline in the row with the
  * openai provider, the key and the browser cases' model, and selects it for that side.
  */
@@ -239,12 +239,12 @@ async function fillSetupConnection(
     await listbox.getByRole("option", { name: NEW_CONNECTION, exact: true }).click();
     const editor = checklist.getByTestId("new-connection-inline").getByTestId("team-space-connection-editor");
     await editor.getByLabel("Connection name", { exact: true }).fill(`OpenAI ${Date.now().toString(36)}`);
-    await chooseOption(editor.getByRole("button", { name: /^provider/ }), "openai");
+    await chooseOption(editor.getByRole("button", { name: /^Provider/ }), "openai");
     // The model is an optional setting, folded until opened.
-    const model = editor.getByLabel(/^model/);
+    const model = editor.getByLabel(/^Model/);
     if (!(await model.isVisible())) await editor.getByRole("button", { name: /^Optional settings/ }).click();
     await model.fill("gpt-5-mini");
-    await safeFill(editor.getByLabel(/^api_key/), key);
+    await safeFill(editor.getByLabel(/^API key/), key);
     await editor.getByRole("button", { name: "Save", exact: true }).click();
   }
   const answer = await saved;

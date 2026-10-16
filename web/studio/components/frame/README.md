@@ -36,4 +36,8 @@ surface's content, and the frame draws everything around them.
   is exactly as wide as the chat and the tabs start where the surface does.
 - `use-frame-links.ts` keeps the version (`?v=live`) and the caller's persistent parameters on every
   move between surfaces, and keeps the surface on every move between versions.
+- `conversation` draws a new Project's first conversation: the chat alone, centred, under a bar with only
+  the Project's name and its actions. `ChatColumn` keeps the chat mounted through the switch to the
+  standard frame. `surfaces` limits the tabs to those with something to show and `fresh` marks the ones
+  not opened since they appeared; the caller decides both.
 - Widths and folded rails are per browser (`STORAGE_KEYS`), never shared.

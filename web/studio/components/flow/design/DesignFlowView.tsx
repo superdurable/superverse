@@ -11,10 +11,12 @@ import { safeDecode } from "@/components/flow/canvas/model/decode-flow-definitio
 import type { StepModel } from "@/components/flow/canvas/model/flow-model";
 import { groupsFromDefinition } from "@/components/flow/canvas/model/step-groups";
 import { FlowGraphCanvas } from "@/components/flow/canvas/FlowGraphCanvas";
+import type { Direction } from "@/components/flow/canvas/layout/scene";
 import { EMPTY } from "@/components/flow/frame/workspace-styles";
 import { compareFlow, decodeDesignedFlow, type CurrentGraphs } from "./design-compare";
 import type { FlowDesign } from "./design-graph";
 import { designPhaseLabel, type DesignPhase } from "@/lib/shared/design-phase";
+import { processName, stepName } from "@/lib/shared/format";
 import { DesignStepPanel } from "./DesignStepPanel";
 
 /**
@@ -28,6 +30,7 @@ export function DesignFlowView({
   phase,
   current,
   features,
+  direction,
 }: {
   flowType: string;
   design: FlowDesign;
@@ -35,6 +38,8 @@ export function DesignFlowView({
   /** The current source's graphs; null when they are not the Session head's, so nothing is marked. */
   current: CurrentGraphs;
   features: readonly { id: string; text: string }[];
+  /** The way it first reads, which the reader may change; the canvas's own default when absent. */
+  direction?: Direction;
 }) {
   const designed = design.flows.find((flow) => flow.flowType === flowType);
   const decoded = useMemo(() => (designed ? decodeDesignedFlow(designed) : null), [designed]);
@@ -53,9 +58,14 @@ export function DesignFlowView({
     },
     [designed, features],
   );
-  if (!designed || !decoded) return <div className={EMPTY}>The design of {flowType} could not be drawn.</div>;
+  if (!designed || !decoded)
+    return <div className={EMPTY}>The design of {processName(flowType)} could not be drawn.</div>;
 
-  const removed = [...design.removedFlows, ...(comparison?.removedSteps ?? []), ...(comparison?.removedActions ?? [])];
+  const removed = [
+    ...design.removedFlows.map(processName),
+    ...(comparison?.removedSteps ?? []).map(stepName),
+    ...(comparison?.removedActions ?? []),
+  ];
   return (
     <section
       aria-label="Flow design"
@@ -80,6 +90,7 @@ export function DesignFlowView({
         marks={comparison?.marks}
         renderPanel={renderPanel}
         fitKey={`design|${design.digest}|${flowType}`}
+        initialDirection={direction}
       />
     </section>
   );

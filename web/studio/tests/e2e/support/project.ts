@@ -80,53 +80,15 @@ export function expectPhaseTimings(timings: readonly PhaseTiming__Output[], requ
   expect(phases).toEqual(expect.arrayContaining([...required]));
 }
 
-/** The phases a Preview start measures in order, with the labels the Preview panel gives them. */
-const PREVIEW_START_PHASES = [
-  ["configuration", "Validating configuration"],
-  ["environment", "Starting engine"],
-  ["grant", "Authorizing"],
-  ["application", "Building app"],
-  ["route", "Exposing route"],
-] as const;
-
-/** The phases a workspace start measures in order. */
-const WORKSPACE_START_PHASES = ["provision", "checkout"] as const;
-
-/**
- * Requires the READY Preview to carry the five phases of its start and the Session's workspace the two of its
- * start, all ended and in order, and the Preview panel to list the Preview's with their labels.
- */
-export async function expectStartPhases(page: Page, projectId: string) {
-  const { preview, workspace } = await readSession(page, projectId);
-  const previewPhases = PREVIEW_START_PHASES.map(([phase]) => phase);
-  expectPhaseTimings(preview?.phaseTimings ?? [], previewPhases);
-  expect(
-    preview?.phaseTimings.map((timing) => timing.phase),
-    "the Preview phases follow the start",
-  ).toEqual(previewPhases);
-  expectPhaseTimings(workspace?.phaseTimings ?? [], WORKSPACE_START_PHASES);
-  expect(
-    workspace?.phaseTimings.map((timing) => timing.phase),
-    "the workspace phases follow its start",
-  ).toEqual([...WORKSPACE_START_PHASES]);
-  // The last start's phases are under the Interface's Details, beside the history, whose starts list theirs too.
-  const panel = page.getByRole("region", { name: "Project Preview" });
-  const phases = panel.getByRole("region", { name: "Preview start phases", exact: true });
-  await expect(async () => {
-    if (!(await phases.isVisible())) await panel.getByText("Details", { exact: true }).click();
-    await expect(phases).toBeVisible({ timeout: 2_000 });
-  }).toPass({ timeout: 60_000 });
-  for (const [, label] of PREVIEW_START_PHASES) await expect(phases.getByText(label, { exact: true })).toBeVisible();
-}
-
 /**
  * Keeps the Project's READY workspace running for seven days with "Keep running for 7 days", which the
- * chat header's workspace timer opens, and requires its Sandbox deadline to be about seven days ahead.
+ * chat header's More details shows, and requires its Sandbox deadline to be about seven days ahead.
  */
 export async function keepWorkspaceRunning(page: Page, projectId: string) {
   const keep = page.getByRole("button", { name: "Keep running for 7 days", exact: true });
+  const details = page.locator('[data-more-details="chat.header"] > button');
   await expect(async () => {
-    if (!(await keep.isVisible())) await page.getByTestId("workspace-timer").click();
+    if (!(await keep.isVisible()) && (await details.getAttribute("aria-expanded")) !== "true") await details.click();
     await expect(keep).toBeVisible({ timeout: 2_000 });
   }).toPass({ timeout: 60_000 });
   const clicked = Date.now();
@@ -134,7 +96,7 @@ export async function keepWorkspaceRunning(page: Page, projectId: string) {
   expect(response.ok()).toBe(true);
   const answer: RpcOutput<"RenewWorkspace"> = await response.json();
   expect(answer.renewed, "The READY workspace must be renewed").toBe(true);
-  await page.keyboard.press("Escape");
+  await details.click();
   const deadline = Number((await readSession(page, projectId)).workspace?.expiresAt?.seconds) * 1000;
   const week = 7 * 24 * 60 * 60 * 1000;
   expect(deadline).toBeGreaterThanOrEqual(clicked + week - 60_000);
@@ -177,6 +139,10 @@ export function realModelTarget(): string {
     );
   return target;
 }
+/** The start page's composer, which takes the description of the process as the first message. */
+const START_COMPOSER_PLACEHOLDER =
+  "For example: when a customer asks for a refund by email, a support lead approves it in Slack and Stripe pays it back…";
+
 /**
  * Chooses `realModelTarget()` in the picker and types the prompt as the first message, which Build
  * sends after it applied the model. The model is checked when this is called, before the page is touched.
@@ -185,14 +151,14 @@ export function typePrompt(prompt: string): FirstTurnChoice {
   const model = pickerModel(realModelTarget());
   return async (page) => {
     await chooseOption(page.getByRole("button", { name: "Model", exact: true }), model);
-    await page.getByPlaceholder("Describe the app you want to build…").fill(prompt);
+    await page.getByPlaceholder(START_COMPOSER_PLACEHOLDER).fill(prompt);
   };
 }
 /**
- * Creates a Project in the TeamSpace through its start form and returns once it is READY and its Session, which
- * ProjectFlow starts then, exists. Studio opens the Flow at once, applies the model chosen on the
- * start form and sends its first message once the Session starts; the spec then waits for that
- * first turn.
+ * Creates a Project in the Teamspace through its start form and returns once it is READY and its Session, which
+ * ProjectFlow starts then, exists. The name and the model are under the form's Advanced, which the step opens.
+ * Studio opens the Project's first conversation at once, applies the model chosen on the start form and sends
+ * its first message once the Session starts; the spec then waits for that first turn.
  */
 export async function createProject(
   page: Page,
@@ -204,8 +170,11 @@ export async function createProject(
   const name = `V2 E2E ${randomBytes(4).toString("hex")}`;
   const start = `/t/${teamSpaceId}/projects/start`;
   if (new URL(page.url()).pathname !== start) await page.goto(start);
-  await expect(page.getByRole("heading", { name: "Create a project." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What process should Dex run?" })).toBeVisible();
   await expect(page.getByText("Existing repository", { exact: true })).toHaveCount(0);
+  // Advanced stays open in this browser once opened.
+  const advanced = page.getByRole("button", { name: "Advanced", exact: true });
+  if ((await advanced.getAttribute("aria-expanded")) !== "true") await advanced.click();
   await page.getByLabel("Project name", { exact: true }).fill(name);
   await chooseFirstTurn(page);
   const responsePromise = page.waitForResponse(
@@ -292,6 +261,14 @@ export const ENDED_SESSION_STATUSES: ReadonlySet<SessionStatus__Output> = new Se
   "SESSION_STATUS_FAILED",
   "SESSION_STATUS_ARCHIVED",
 ]);
+/** Confirms the waiting card as a person does: on the Process Brief its chat card opens, else in the chat. */
+async function confirmRequirementsCard(page: Page) {
+  const confirm = page.getByRole("button", { name: "Confirm and build", exact: true });
+  const openBrief = page.getByRole("link", { name: "Open the brief", exact: true });
+  await expect(openBrief.or(confirm).first()).toBeVisible({ timeout: 60_000 });
+  if (await openBrief.isVisible()) await openBrief.click();
+  await confirm.click();
+}
 /** Waits until a turn after `afterSequence` of the Project's Session ends with a final reply. */
 export async function waitForCompletedTurn(page: Page, projectId: string, afterSequence = -1, timeoutMs = 15 * 60_000) {
   let selectedModel = "";
@@ -313,7 +290,7 @@ export async function waitForCompletedTurn(page: Page, projectId: string, afterS
       // The one confirmation before the Agent builds: a person confirms the card in the page, once per card.
       if (pendingInput.callId !== confirmedCard) {
         confirmedCard = pendingInput.callId;
-        await page.getByRole("button", { name: "Confirm and start building", exact: true }).click();
+        await confirmRequirementsCard(page);
       }
       await delay(2000);
       continue;

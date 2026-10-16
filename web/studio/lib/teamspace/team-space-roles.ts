@@ -8,7 +8,7 @@
 
 import type { TeamSpaceRole__Output } from "@/lib/generated/protobuf/superverse/v2/TeamSpaceRole";
 
-/** A person's role in a TeamSpace: admins change its members and name; members see all of its Projects. */
+/** A person's role in a Teamspace: admins change its members and name; members see all of its Projects. */
 export type TeamSpaceRole = "admin" | "member";
 
 /** Each role with the word the switcher and People show. */
@@ -23,7 +23,7 @@ const SERVER_ROLES = {
   TEAM_SPACE_ROLE_MEMBER: "member",
 } as const satisfies Record<TeamSpaceRole__Output, TeamSpaceRole | null>;
 
-/** The role a TeamSpace snapshot's `caller_role` names; null outside the TeamSpace, as for the platform admin. */
+/** The role a Teamspace snapshot's `caller_role` names; null outside the Teamspace, as for the platform admin. */
 export function teamSpaceRoleOf(callerRole: TeamSpaceRole__Output): TeamSpaceRole | null {
   return SERVER_ROLES[callerRole];
 }

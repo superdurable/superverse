@@ -87,7 +87,7 @@ export const projectService: MockService<"ProjectService"> = {
     registerMockProject(tenancy, account, teamSpaceId, projectId);
     return { projectId };
   },
-  // Every Project of the TeamSpace, with the caller's role in each.
+  // Every Project of the Teamspace, with the caller's role in each.
   ListProjects: ({ statuses, teamSpaceId, caller }, { store }) => {
     if (!teamSpaceId) throw httpError(400, "team_space_id is required");
     const account = mockAccount(caller);

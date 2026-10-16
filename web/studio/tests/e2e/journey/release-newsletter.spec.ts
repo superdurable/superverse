@@ -27,6 +27,7 @@ import { ownerFixture } from "@/tests/e2e/support/private-files";
 import { privateOwnerStateDirectory, rpcPosted, rpcResult } from "@/tests/e2e/support/studio-api";
 import type { SessionSnapshot__Output } from "@/lib/generated/protobuf/superverse/v2/SessionSnapshot";
 import type { AgentSequencedMessage__Output } from "@/lib/generated/protobuf/superverse/v2/AgentSequencedMessage";
+import appTemplateDesign from "@/lib/generated/template-design/app-template.json";
 import { openTeamSpace } from "@/tests/e2e/support/teamspace/teamspace";
 
 // The exact prompt of the test-environment Session yamc/79nvnqsa, unchanged.
@@ -82,8 +83,13 @@ test("one release-newsletter prompt produces pushed, valid application source", 
   const created = await createProject(page, await openTeamSpace(page), typePrompt(businessPrompt), info);
   const initial = await readProject(page, created.projectId);
   expect(initial.templateRevision).toMatch(/^app-template@[0-9a-f]{40}$/);
-  // The Flow opens on the project map, whose card names the template's Flow Type.
-  await expect(page.getByTestId("project-map").getByRole("link", { name: /TextSummaryFlow/ })).toBeVisible();
+  // The server created the Project from the template revision whose design Studio compares Flow designs with.
+  expect(initial.templateRevision).toBe(appTemplateDesign.templateRevision);
+  // A new Project opens on its first conversation: the chat is the whole page, with no tabs and nothing of the
+  // template it started from, until the agent's first requirements card switches it to the Builder's Flow tab.
+  await expect(page.getByRole("region", { name: "Project chat" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Surface" })).toHaveCount(0);
+  await expect(page.getByTestId("project-map")).toHaveCount(0);
 
   await waitForCompletedTurn(page, created.projectId, -1, 60 * 60_000);
   const completedAt = new Date();

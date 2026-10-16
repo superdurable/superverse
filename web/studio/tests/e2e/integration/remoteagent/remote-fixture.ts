@@ -133,7 +133,7 @@ class RemoteFixture {
       people[0].role !== "TEAM_SPACE_ROLE_MEMBER" ||
       people[0].accountId === this.#ownerAccountId
     )
-      throw new Error("Builder fixture must identify one ordinary TeamSpace MEMBER");
+      throw new Error("Builder fixture must identify one ordinary Teamspace MEMBER");
     const members = await rpcResult(this.page.request, "ListProjectMembers", { projectId: this.fixture.projectId });
     if (members.members.some((member) => member.accountId === people[0].accountId))
       throw new Error("Builder fixture already has a Project role; this test cannot own that membership");
@@ -166,7 +166,7 @@ class RemoteFixture {
       project.callerRole !== "PROJECT_ROLE_OWNER" ||
       project.teamSpaceId !== current.teamSpaceId
     )
-      throw new Error("Navigation fixture must be a READY owner Project in the same TeamSpace");
+      throw new Error("Navigation fixture must be a READY owner Project in the same Teamspace");
     return project;
   }
 

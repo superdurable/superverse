@@ -11,6 +11,7 @@
 import { PendingQuestionBatch, RequirementsCard } from "@/components/agent";
 import { cx } from "@/components/ui/cx";
 import type { AgentDescription, RequirementsDecision, UserInputAnswer } from "@/lib/session/agent-types";
+import { useBriefOnScreen } from "@/lib/session/design/use-brief-on-screen";
 import { ToolApprovalCard } from "./ToolApprovalCard";
 import { useCardDesign } from "./use-card-design";
 
@@ -28,7 +29,8 @@ type PendingInput = NonNullable<AgentDescription["pendingUserInput"]>;
 
 /**
  * What the Agent waits for: a tool approval, requirements card or question batch.
- * With answeredBy, input cards show who answers them instead of their controls.
+ * With answeredBy, input cards show who answers them instead of their controls. A requirements card
+ * is left out while the Flow tab shows its Process Brief.
  */
 export function PendingActionDock({
   approval,
@@ -57,7 +59,10 @@ export function PendingActionDock({
   onAnswer: (callId: string, answers: readonly UserInputAnswer[]) => void;
 }) {
   const designChanges = useCardDesign();
-  if (!approval && !input) return null;
+  // The Brief on the Flow tab holds the card, so the dock leaves out its pointer while the Brief shows.
+  const card = useBriefOnScreen() ? null : (input?.requirements ?? null);
+  const questions = input && !input.requirements ? input : null;
+  if (!approval && !card && !questions) return null;
   const inputDisabled = disabled || answerAwaitingReconciliation;
   const submitting = answering || answerAwaitingReconciliation;
   return (
@@ -72,10 +77,10 @@ export function PendingActionDock({
           onReject={() => onApprove(approval.callId, false)}
         />
       )}
-      {input?.requirements && (
+      {input && card && (
         <RequirementsCard
           key={input.callId}
-          requirements={input.requirements}
+          requirements={card}
           version={confirmedRevision + 1}
           disabled={inputDisabled}
           isSubmitting={submitting}
@@ -84,14 +89,14 @@ export function PendingActionDock({
           onDecide={(decision) => onDecide(input.callId, decision)}
         />
       )}
-      {input && !input.requirements && (
+      {questions && (
         <PendingQuestionBatch
-          key={input.callId}
-          questions={input.questions}
+          key={questions.callId}
+          questions={questions.questions}
           disabled={inputDisabled}
           isSubmitting={submitting}
           answeredBy={answeredBy}
-          onSubmit={(answers) => onAnswer(input.callId, answers)}
+          onSubmit={(answers) => onAnswer(questions.callId, answers)}
         />
       )}
     </div>

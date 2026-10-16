@@ -34,10 +34,10 @@ The remote listener must explicitly allow the development Bridge fixture.
 
 The multi-person cases also require `builder: {email, password}` in the private
 fixture. This must name a registered ordinary account, distinct from the owner
-and administrator, already a MEMBER of the same TeamSpace with no Project role.
+and administrator, already a MEMBER of the same Teamspace with no Project role.
 The test resolves its actual account ID, adds only that exact Builder membership
 and removes it on cleanup. The navigation case requires `otherProjectId`, a
-distinct READY Project owned by the primary account in the same TeamSpace.
+distinct READY Project owned by the primary account in the same Teamspace.
 
 `switch-gate.ts` delays exactly one Project/epoch-matched browser command before
 dispatch. Watches and other requests continue normally. The test must observe

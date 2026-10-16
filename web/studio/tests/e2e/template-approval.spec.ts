@@ -70,26 +70,33 @@ test("template project Agent adds a summary approval that Preview and an operato
   // The first turn ends at the requirements card, before any change.
   if (mock) await waitForFirstMockInput(page, created.projectId, "summary-approval");
   else await waitForRequirementsCard(page, created.projectId, 10 * 60_000);
-  // The scripted card carries the Flow design of the approval: the card shows its summary and one
-  // outline line per Flow, the main story in reading order and the failure-handling count.
+  // The scripted card carries the Flow design of the approval. The card arrived while the Flow tab was open, so
+  // the tab shows it at once as its Process Brief: a summary grid above the drawn design, where the mock composer
+  // answers the card on the mock model. The chat leaves out its pointer while the Brief shows. Behind the Brief's
+  // More details are the outline, one line per Flow with the main story in reading order and the
+  // failure-handling count, and what the design changes against the template's initial design in the names
+  // the canvas shows.
   if (mock) {
-    const card = page.getByRole("region", { name: "Design", exact: true });
-    await expect(card).toContainText(
+    await expect(page).toHaveURL(/[?&]flowType=TextSummaryFlow(&|$)/);
+    const brief = page.getByRole("region", { name: "Brief", exact: true });
+    await expect(brief.getByText("Waiting for you", { exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open the brief" })).toHaveCount(0);
+    await brief.locator('[data-more-details="brief.more"]').getByRole("button").click();
+    await expect(brief.getByRole("region", { name: "Outline", exact: true })).toContainText(
       "TextSummaryFlow: PrepareSummary, GenerateSummary, AwaitSummaryApproval [Approve summary], SaveSummaryResult, RecordSummaryFailure; +1 failure-handling Step",
     );
-    // The card arrived while the Flow tab was open, so the tab draws the design at once, compared with the
-    // template's initial design: the Result stage that holds the approval Step is changed and the Step new,
-    // GenerateSummary changed, and nothing starts a run.
-    await expect(page).toHaveURL(/[?&]flowType=TextSummaryFlow(&|$)/);
+    await expect(brief.getByRole("list", { name: "What the design changes" })).toHaveText(
+      "Text summary · changed: adds Await summary approval, Approve summary; changes Generate summary",
+    );
+    // Below the summary the diagram shows its marks, fitted whole: the Result stage that holds the approval Step
+    // is changed and the Step new, GenerateSummary changed, and nothing starts a run.
     const design = page.getByRole("region", { name: "Flow design" });
     await expect(design).toContainText("Design · waiting for your confirmation");
+    await design.getByRole("button", { name: "Fit", exact: true }).click();
     await design.getByRole("button", { name: /^Result, 3 steps, changed\. Open the stage\.$/ }).click();
     await expect(design.getByRole("button", { name: /^Await summary approval\b.*, new$/ })).toBeVisible();
     await expect(design.getByRole("button", { name: /^Generate summary\b.*, changed$/ })).toBeVisible();
     await expect(design.getByRole("button", { name: /^(Test run|Live run|Start)/ })).toHaveCount(0);
-    await expect(card.getByRole("list", { name: "What the design changes" })).toHaveText(
-      "TextSummaryFlow · changed: adds AwaitSummaryApproval, Approve summary; changes GenerateSummary",
-    );
   }
   // While the card waits, the person configures the Project's Preview, so the push of the
   // confirmed change deploys itself.
@@ -97,7 +104,7 @@ test("template project Agent adds a summary approval that Preview and an operato
   await configure(page, "Preview", fillTemplateSummaryConnection);
   await page.goto(`/p/${created.projectId}/flow`);
   // Input 2 confirms the card through the mock composer and builds the approval; with a real model
-  // the completed-turn wait confirms it with Confirm and start building.
+  // the completed-turn wait confirms it with Confirm and build on the Process Brief.
   if (mock)
     await runMockScenario(page, created.projectId, "summary-approval", {
       inputs: [2],
@@ -133,7 +140,7 @@ test("template project Agent adds a summary approval that Preview and an operato
 
   const live = await publishLive(page, created.projectId, fillTemplateSummaryConnection);
   expect(live.release.sourceCommit).toBe(session.headCommit);
-  // A second account joins the TeamSpace through People and the Project as its operator through Permissions,
+  // A second account joins the Teamspace through People and the Project as its operator through Permissions,
   // then sees Live only and approves the Live run there.
   const operator = await browser.newContext({ baseURL: process.env.SUPERVERSE_E2E_BASE_URL });
   const operatorPage = await operator.newPage();

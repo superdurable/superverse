@@ -20,7 +20,7 @@ export type Editing =
   | { kind: "new"; connectorId: string };
 
 /**
- * One app of the TeamSpace with its connections, those that need someone first. "Add another" opens a new
+ * One app of the Teamspace with its connections, those that need someone first. "Add another" opens a new
  * connection's editor at the top of the card, under the next free name.
  */
 export function AppCard({

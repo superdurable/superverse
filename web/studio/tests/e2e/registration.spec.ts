@@ -8,9 +8,9 @@
 
 import { test, expect } from "@/tests/e2e/support/coverage/spec-coverage";
 import { identity, register, signIn } from "@/tests/e2e/support/account";
-import { createTeamSpace } from "@/tests/e2e/support/teamspace/teamspace";
+import { createTeamSpace, START_HEADING } from "@/tests/e2e/support/teamspace/teamspace";
 
-test("registration persists an account that creates its TeamSpace; logout revokes the session and login recovers it", async ({
+test("registration persists an account that creates its Teamspace; logout revokes the session and login recovers it", async ({
   page,
   context,
 }) => {
@@ -31,10 +31,12 @@ test("registration persists an account that creates its TeamSpace; logout revoke
   expect(cookie?.sameSite).toBe("Lax");
   if (page.url().startsWith("https:")) expect(cookie?.secure).toBe(true);
 
-  // A new account starts its first TeamSpace, whose Home offers its first Project.
+  // A new account gets its first Teamspace without a question, named from its email's company domain
+  // (example.com), and its Home offers the first Project.
   const teamSpaceId = await createTeamSpace(page);
+  await expect(page.getByRole("button", { name: /^Example · admin/ })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Create a project." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: START_HEADING })).toBeVisible();
   await page.locator('summary[aria-label="Account"]').click();
   // The sidebar's account row names the account too; the open menu's own line is the one checked.
   await expect(page.getByTestId("account-menu").getByRole("paragraph").first()).toHaveText(account.email);
@@ -55,6 +57,6 @@ test("registration persists an account that creates its TeamSpace; logout revoke
 
   await signIn(page, account);
   expect((await (await page.request.get("/api/auth/session")).json()).accountId).toBe(first.accountId);
-  // Signed in again, Studio opens the account's TeamSpace.
+  // Signed in again, Studio opens the account's Teamspace.
   await expect(page).toHaveURL(new RegExp(`/t/${teamSpaceId}$`));
 });

@@ -24,16 +24,17 @@ import { StartFlowDialog } from "@/components/flow/run/start/StartFlowDialog";
 import { FlowFrame } from "@/components/flow/frame/FlowFrame";
 import { RUN_COPY } from "@/components/flow/run/detail/run-copy";
 import { RunDetailDrawer } from "@/components/flow/run/detail/RunDetailDrawer";
-import { RunListColumn, useRunListColumn } from "./RunListColumn";
+import { fallbackRunTitle } from "@/components/flow/run/detail/ui-slots";
+import { RunListColumn, useRunListColumn, type RunListEvents } from "./RunListColumn";
 
 /**
  * Runs: pick a run and see the whole Flow with the Step it is at ringed "now"; click a Step to open
  * the drawer with its state, the run's Actions and what a builder may do there. The list folds to a
  * rail of status icons. Under all processes the list holds every Flow type's runs, and the canvas
- * draws the selected run's own Flow. `events`, the events the environment's triggers received,
- * joins the list as Runs | Events.
+ * draws the selected run's own Flow. `events`, what the environment's triggers received, sits around
+ * the list; `empty` replaces the list's empty text while nothing narrows it.
  */
-export function RunsView({ events }: { events?: ReactNode }) {
+export function RunsView({ events, empty }: { events?: RunListEvents; empty?: ReactNode }) {
   const { column, shellRef, bodyRef } = useRunListColumn("runs");
   const { route, search } = column;
   const { flowId, catalog } = route;
@@ -45,6 +46,8 @@ export function RunsView({ events }: { events?: ReactNode }) {
   const [actionable, setActionable] = useState<ActionableStep[]>([]);
   const [summary, setSummary] = useState<FlowSummary | null>(null);
   const [tick, setTick] = useState(0);
+  /** Bumped when a retry started the open run again, so the canvas reads it at once. */
+  const [runReloadKey, setRunReloadKey] = useState(0);
   /** Bumped to tell the canvas to drop its Step selection. */
   const [deselectKey, setDeselectKey] = useState(0);
   /** Bumped when the open run is picked again: the canvas returns to where the run is. */
@@ -74,6 +77,10 @@ export function RunsView({ events }: { events?: ReactNode }) {
 
   // The drawer opens on a Step click, and only then.
   const showDrawer = stepView !== null;
+  // The selected run's name, as its row says it; before the list has it, its process and start.
+  const runTitle =
+    column.selectedTitle ??
+    (summary?.flowId === flowId && summary ? fallbackRunTitle(summary.flowType, summary.startTime) : "");
   const canStart = Boolean(catalog.startFlow?.enabled && startEntry?.definition.start);
   const startLabel = onLive ? RUN_COPY.liveRun : RUN_COPY.testRun;
   return (
@@ -94,6 +101,7 @@ export function RunsView({ events }: { events?: ReactNode }) {
             onLive ? RUN_COPY.liveRunsHeading : host.environment ? RUN_COPY.previewRunsHeading : RUN_COPY.runsHeading
           }
           emptyText={RUN_COPY.noRuns}
+          empty={empty}
           events={events}
           onRefocus={() => setRefocusKey((key) => key + 1)}
           headerAction={
@@ -115,8 +123,11 @@ export function RunsView({ events }: { events?: ReactNode }) {
               {flowId && (
                 // Beside the canvas controls when the canvas has room for both, else on a line below them.
                 <div className="pointer-events-none absolute top-2.5 left-3 z-5 flex max-w-[calc(100%-32rem)] min-w-0 items-center gap-2 text-[12.5px] text-ink-faint @max-[54rem]/canvas:top-14 @max-[54rem]/canvas:max-w-[calc(100%-1.5rem)]">
-                  <span className="min-w-0 truncate rounded-lg border border-line-soft bg-panel px-2.25 py-1">
-                    <span className="font-mono text-ink">{flowId}</span> · {onLive ? "Live" : "Preview"}
+                  <span
+                    className="min-w-0 truncate rounded-lg border border-line-soft bg-panel px-2.25 py-1"
+                    title={flowId}
+                  >
+                    <span className="text-ink">{runTitle || flowId}</span> · {onLive ? "Live" : "Preview"}
                   </span>
                   {!showDrawer && (
                     <span className="shrink-0 rounded-lg border border-line-soft bg-panel px-2.25 py-1">
@@ -137,6 +148,7 @@ export function RunsView({ events }: { events?: ReactNode }) {
                 onSummary={setSummary}
                 showStepPanel={false}
                 onTick={onTick}
+                reloadKey={runReloadKey}
               />
             </>
           ) : (
@@ -163,6 +175,7 @@ export function RunsView({ events }: { events?: ReactNode }) {
                 definition={entry.definition}
                 definitionRevision={catalog.definitionRevision}
                 flowId={flowId}
+                title={runTitle}
                 flowStatusCode={column.selectedFlow?.flowStatusCode}
                 flowType={entry.flowType}
                 reloadKey={tick}
@@ -170,6 +183,10 @@ export function RunsView({ events }: { events?: ReactNode }) {
                 summary={summary?.flowId === flowId ? summary : null}
                 onClose={() => setDeselectKey((previous) => previous + 1)}
                 onStopped={search.runSearch}
+                onRetried={() => {
+                  setRunReloadKey((key) => key + 1);
+                  search.runSearch();
+                }}
                 onStranded={column.rememberStranded}
               />
             )}
@@ -193,9 +210,9 @@ export function RunsView({ events }: { events?: ReactNode }) {
           live={onLive}
           onClose={() => setStartOpen(false)}
           onDefinitionChanged={handleDefinitionError}
-          onStarted={(startedFlowID) => {
+          onStarted={(startedFlowID, words) => {
             setStartOpen(false);
-            setStartNotice(`Started ${startedFlowID}.`);
+            setStartNotice(words);
             search.runSearch();
             route.open(startedFlowID);
           }}

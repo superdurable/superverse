@@ -36,8 +36,8 @@ const FIELD = cx(
 );
 
 /**
- * People: a TeamSpace's members and their TeamSpace role. Its admins, and the platform admin, add registered
- * accounts by email, change roles and remove members; a TeamSpace keeps at least one admin, and the only owner of
+ * People: a Teamspace's members and their Teamspace role. Its admins, and the platform admin, add registered
+ * accounts by email, change roles and remove members; a Teamspace keeps at least one admin, and the only owner of
  * a Project stays until another owner is made. Being a member grants nothing inside a Project.
  */
 export function PeoplePage() {
@@ -60,7 +60,7 @@ export function PeoplePage() {
       email: member.email,
       role: teamSpaceRoleOf(member.role) ?? "member",
       fixed: only,
-      note: only ? "The only admin: a TeamSpace keeps at least one" : undefined,
+      note: only ? "The only admin: a Teamspace keeps at least one" : undefined,
     };
   });
   const changed = (answer: { members: typeof members; revision: string }) => {
@@ -135,7 +135,7 @@ export function PeoplePage() {
       ) : (
         <div className="max-w-3xl">
           <MemberTable
-            label="TeamSpace members"
+            label="Teamspace members"
             rows={rows}
             roles={ROLES}
             selfId={account?.accountId ?? null}

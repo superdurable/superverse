@@ -25,7 +25,8 @@ test("Studio pairs a remote executor, renders its reply and takes over with the 
     const current = await client.activate("Studio integration host");
     await expect(executor).toHaveAttribute("data-session-executor", "remote");
     await expect(executor.locator("summary")).toContainText("Codex via Orca");
-    await expect(page.getByLabel("Model", { exact: true })).toHaveCount(0);
+    // The model is the Superverse agent's: a remote executor shows no chat options with its picker.
+    await expect(page.getByRole("button", { name: "Chat options", exact: true })).toHaveCount(0);
     await client.post("report", {
       ...current,
       sequence: 1,
@@ -44,7 +45,9 @@ test("Studio pairs a remote executor, renders its reply and takes over with the 
     expect(command.basisEpoch).toBe(authority.epoch);
     expect(typeof command.basisEpoch).toBe("string");
     await expect(executor).toHaveAttribute("data-session-executor", "platform");
+    await page.getByRole("button", { name: "Chat options", exact: true }).click();
     await expect(page.getByLabel("Model", { exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
     // UsePlatform revokes exactly its replaced credential after committing.
     const refused = await client.post("report", { ...current, sequence: 2, turnCompleted: true }, 401);
     expect(refused.code).toBe("unauthorized");

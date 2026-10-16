@@ -44,7 +44,7 @@ function initialOf(name: string) {
 }
 
 /**
- * The sidebar's Projects: every Project of the TeamSpace, one row each with its initial tile, name, the
+ * The sidebar's Projects: every Project of the Teamspace, one row each with its initial tile, name, the
  * person's role in it and lifecycle mark, the open one highlighted. A Project in which the person has no role is
  * not a link.
  */
@@ -75,7 +75,7 @@ export function SidebarProjects({
       <ul className="flex min-h-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto pb-2">
         {projects.items.length === 0 && !projects.error && (
           <li className={cx("px-5 py-1 text-[12.5px] whitespace-nowrap text-ink-faint", labelClassName)}>
-            {!teamSpaceId ? "No TeamSpace yet" : projects.loaded ? "No projects yet" : "Loading projects…"}
+            {!teamSpaceId ? "No Teamspace yet" : projects.loaded ? "No projects yet" : "Loading projects…"}
           </li>
         )}
         {projects.error && (

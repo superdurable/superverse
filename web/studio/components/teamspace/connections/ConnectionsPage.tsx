@@ -43,7 +43,7 @@ function oauthNotice(search: URLSearchParams): { text: string; failed: boolean }
 }
 
 /**
- * Connections: the TeamSpace's apps, one card each with its connections, the ones that need someone first. Each
+ * Connections: the Teamspace's apps, one card each with its connections, the ones that need someone first. Each
  * connection says which Projects use it on Preview and Live; it opens in place to edit, sign in again or delete.
  * Adding another connection of an app stays in its card; a new app comes from the catalog, behind "Add
  * connection" and a few suggestions at the bottom. A changed key or sign-in reaches every Project at its next
@@ -164,7 +164,7 @@ export function ConnectionsPage() {
         {(readError || action.error) && <Banner role="alert">{action.error || readError}</Banner>}
         {!canManage && (
           <p className="rounded-lg border border-line-soft px-3 py-2.5 text-[13px] text-ink-dim" role="note">
-            You can see these connections. A TeamSpace admin, or a builder of one of its Projects, can add and change
+            You can see these connections. A Teamspace admin, or a builder of one of its Projects, can add and change
             them.
           </p>
         )}

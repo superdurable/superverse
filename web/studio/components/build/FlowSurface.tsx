@@ -13,7 +13,9 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef } from "react";
 import { useProcessDefinitions } from "@/lib/project/ProcessDefinitionsProvider";
 import { useProjectResource } from "@/lib/project/ProjectResourceProvider";
+import { useProjectStage } from "@/lib/project/stage/ProjectStageProvider";
 import { useWaitingRuns, waitingCount } from "@/lib/project/WaitingRunsProvider";
+import { preparedSourceOf } from "@/lib/session/session-status";
 import { useSessionResource } from "@/lib/session/SessionProvider";
 import { useDesignShown } from "@/lib/session/design/use-design-shown";
 import { useFlowDesign } from "@/lib/session/design/use-flow-design";
@@ -28,7 +30,7 @@ import { NotReady } from "@/components/ui/NotReady";
 import { Glyph } from "@/components/ui/Glyph";
 import { processName } from "@/lib/shared/format";
 import { versionNumber } from "@/lib/shared/version/version";
-import { DesignBar, DesignSurface } from "./DesignSurface";
+import { CardBrief, DesignBar, DesignSurface } from "./DesignSurface";
 import { PreviewSourceControl } from "./PreviewSourceControl";
 
 /** The Flow of the picked Process, or the project map when none is picked. */
@@ -85,7 +87,9 @@ function FlowView({ environment }: { environment: ProjectEnvironment }) {
             ? (flowType) => {
                 const count = waiting.get(flowType) ?? 0;
                 const words =
-                  count === 0 ? "no runs waiting" : `${waitingCount(count)} open run${count > 1 ? "s" : ""} waiting`;
+                  count === 0
+                    ? "no runs need a person"
+                    : `${waitingCount(count)} need${count === 1 ? "s" : ""} a person`;
                 return `${words} · ${onLive ? "Live" : "Preview"}`;
               }
             : undefined
@@ -153,6 +157,8 @@ export function PreviewSource({ projectId }: { projectId: string }) {
  * exists there is no source to draw; only mock mode, which wraps this surface in its fixture catalog,
  * still draws one. From a requirements card with a Flow design until its build is complete, Preview
  * draws the designed Flows from the design instead, and shows them by itself once per card version.
+ * Until processes are built from the agent's own push, Preview draws nothing of the template the
+ * Project started from: it waits calmly, with Build processes only where a person must press it.
  */
 export function FlowSurface({
   projectId,
@@ -196,13 +202,42 @@ export function FlowSurface({
     if (changed) replaceQuery((query) => ["flowId", "runId"].forEach((name) => query.delete(name)));
   }, [headCommit, replaceQuery, source]);
 
+  const stage = useProjectStage();
+  const own = stage.hasOwnProcesses || environment === "live";
+  const agent = session?.resource?.agent?.description;
+  const cardWaits = agent?.pendingUserInput?.kind === "KIND_REQUIREMENTS";
+  // Confirmed and still unbuilt: building while the agent works, otherwise its turn ended short of a build.
+  const confirmedState = agent?.status === "STATUS_WAITING_FOR_MESSAGE" ? "stalled" : "building";
+  const prepared = preparedSourceOf(session?.resource);
+  // Automatic builds off, or a failed build of the latest push, wait for a person's Build processes.
+  const buildNeedsYou =
+    !(session?.resource?.agent?.description?.isPreviewAutoDeployEnabled ?? true) ||
+    (prepared?.status === "PREVIEW_SOURCE_STATUS_FAILED" && prepared.sourceCommit === headCommit);
+  const strip = session && (own || buildNeedsYou) ? <PreviewSource projectId={projectId} /> : null;
   const canvas = <FlowView environment={environment} />;
   let body;
   if (design && drawsDesign && requested)
     body = (
       <>
-        {session && <PreviewSource projectId={projectId} />}
+        {strip}
         <DesignSurface design={design} flowType={requested} />
+      </>
+    );
+  else if (!own)
+    body = (
+      <>
+        {strip}
+        {design ? (
+          <NotReady kind="empty" heading="Not built yet">
+            Open a process of the design above to see its steps. The processes show here once the agent has built them.
+          </NotReady>
+        ) : stage.hasRequirements ? (
+          <CardBrief state={cardWaits ? "waiting" : confirmedState} />
+        ) : (
+          <NotReady kind="empty" heading="Reading your description…">
+            The processes the agent builds from what you describe show here.
+          </NotReady>
+        )}
       </>
     );
   else if (fixtureCatalog) body = canvas;
@@ -220,7 +255,7 @@ export function FlowSurface({
   else
     body = session ? (
       <>
-        <PreviewSource projectId={projectId} />
+        {strip}
         <SessionFlowScope projectId={projectId} source="prepared">
           {canvas}
         </SessionFlowScope>

@@ -38,11 +38,11 @@ The failed-rebuild case needs `SUPERVERSE_E2E_FAILED_REBUILD_PROJECT` and
 `SUPERVERSE_E2E_FAILED_REBUILD_COMMIT`: that Release must have a newer failed
 build while its earlier READY build still serves Live. It checks the deployed
 catalog and its Deployment ID header, and that Live Runs issue no GetRelease
-preflight. It observes the Start Flow button without clicking it.
+preflight. It observes the Live run button without clicking it.
 
-`oauth-connection.spec.ts` authorizes an oauth2-http v0.1.0 TeamSpace
+`oauth-connection.spec.ts` authorizes an oauth2-http v0.1.0 Teamspace
 connection through the real Studio, BFF, Go server and the lane's Keycloak:
-a new TeamSpace's Connections page adds the app from its catalog, Keycloak's
+a new Teamspace's Connections page adds the app from its catalog, Keycloak's
 login consents, and the callback creates the connection and returns to the
 page with it connected. A second connection's refused consent returns
 `OAUTH_DENIED` and leaves no connection.
@@ -61,7 +61,7 @@ the phase and the commit. It deletes the Project at the end.
 
 `setup-draft.spec.ts` registers an account, creates a template Project on the mock model and lets
 its first push reach the Preview, which lacks the `summary-model` connection. Setup has no Apply button;
-Preview's state under its column lists the gap as a link that focuses its row. Selecting the TeamSpace connection in
+Preview's state under its column lists the gap as a link that focuses its row. Selecting the Teamspace connection in
 Setup's Preview column autosaves, and Setup applies it on its own: `StartPreview` with
 `apply_configuration` and the saved revision, and the Preview runs. An edit of a variable autosaves and
 is applied on its own the same way. A second tab's write of the same setting makes this tab's next write

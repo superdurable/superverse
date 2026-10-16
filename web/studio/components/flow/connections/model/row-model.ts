@@ -19,6 +19,7 @@ import {
 import { draftItemKey, type ConfigurationDraftQueue } from "@/lib/api/flow/draft/configuration-draft";
 import type { ConnectorCatalogEntry, TeamSpaceConnection } from "@/lib/api/flow/team-space-connection";
 import type { ConfigurationItem__Output } from "@/lib/generated/protobuf/superverse/v2/ConfigurationItem";
+import { processName, stepName } from "@/lib/shared/format";
 import { needsSignIn, triggerWords } from "./connection-words";
 import type { ConnectionSession } from "./use-scope-catalog";
 
@@ -48,12 +49,12 @@ export interface SetupSide {
   items: Map<string, SetupItem> | null;
 }
 
-/** What every row shares: the TeamSpace, its connections, the catalog and how to name what Live runs now. */
+/** What every row shares: the Teamspace, its connections, the catalog and how to name what Live runs now. */
 export interface SetupTable {
   teamSpaceId: string;
   /** Live's name in a waiting dot's words, "Live V12"; null before the first publish, when nothing waits. */
   live: string | null;
-  /** The TeamSpace's connections by connector, null while they are read. */
+  /** The Teamspace's connections by connector, null while they are read. */
   choices: Map<string, TeamSpaceConnection[] | string> | null;
   reloadChoices: () => Promise<void>;
   catalog: Map<string, ConnectorCatalogEntry>;
@@ -66,8 +67,9 @@ export interface SetupTable {
 /** A setting group under a row: a trigger binding or a Step, with the units it is set with. */
 export interface SettingGroup {
   key: string;
+  /** The trigger in its connector's words, or the Step's name in words. */
   title: string;
-  /** The raw name, in a hover hint. */
+  /** The raw names, in a hover hint. */
   hint: string;
   detail: string;
   units: ConnectorUIUnit[];
@@ -119,9 +121,9 @@ export function settingGroups(connection: ConnectionView, manifest: ReleaseManif
         flowType: use.flowName,
         stepType: use.stepName,
       }),
-      title: use.stepName || use.stepId,
-      hint: `${use.operationId} in ${use.flowName}`,
-      detail: use.flowName,
+      title: use.stepName ? stepName(use.stepName) : use.stepId,
+      hint: `${use.stepName || use.stepId}: ${use.operationId} in ${use.flowName}`,
+      detail: processName(use.flowName),
       units: use.configurationUI.units,
       use: { kind: "operation", operationId: use.operationId, flowType: use.flowName, stepType: use.stepName },
       problem: "",
@@ -166,7 +168,7 @@ export function sideConnection(side: SetupSide | null, connection: ConnectionVie
 
 /**
  * Whether the next publish listens where Preview listens: a trigger binding that follows Preview's
- * settings over the same TeamSpace connection, so both would answer each event.
+ * settings over the same Teamspace connection, so both would answer each event.
  */
 export function listensWithPreview(side: SetupSide | null, connection: ConnectionView, key: string): boolean {
   if (side?.name !== "next") return false;

@@ -5,7 +5,7 @@ Purpose: The fixture Project surface inside the Builder frame with its role lens
 
 Importers: `app` imports this directory.
 
-Imports: it imports `components/build`, `components/flow/scope`, `components/frame`, `components/project`, `components/project/activity`, `components/ui`, `lib/shared`, `lib/teamspace`, `mock/fixture`, `mock/store`, `mock/store/delivery` and `mock/store/setup`.
+Imports: it imports `components/build`, `components/flow/scope`, `components/frame`, `components/project`, `components/project/activity`, `components/project/setup`, `components/ui`, `lib/shared`, `lib/teamspace`, `mock/fixture`, `mock/store`, `mock/store/delivery` and `mock/store/setup`.
 
 ```mermaid
 flowchart LR
@@ -16,12 +16,13 @@ flowchart LR
   self --> d2["components/frame"]
   self --> d3["components/project"]
   self --> d4["components/project/activity"]
-  self --> d5["components/ui"]
-  self --> d6["lib/shared"]
-  self --> d7["lib/teamspace"]
-  self --> d8["mock/fixture"]
-  self --> d9["mock/store"]
-  self --> d10["mock/store/delivery"]
-  self --> d11["mock/store/setup"]
+  self --> d5["components/project/setup"]
+  self --> d6["components/ui"]
+  self --> d7["lib/shared"]
+  self --> d8["lib/teamspace"]
+  self --> d9["mock/fixture"]
+  self --> d10["mock/store"]
+  self --> d11["mock/store/delivery"]
+  self --> d12["mock/store/setup"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->

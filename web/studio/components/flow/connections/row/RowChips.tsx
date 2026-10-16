@@ -38,7 +38,7 @@ export function RowChips({
 }: {
   sides: (SetupSide | null)[];
   connection: ConnectionView;
-  /** A TeamSpace connection's name by its ID. */
+  /** A Teamspace connection's name by its ID. */
   nameOf: (connectionId: string) => string;
 }) {
   return (

@@ -76,7 +76,9 @@ export function AccountForm({ mode }: { mode: Mode }) {
       <section className="m-auto w-full max-w-md rounded-xl border border-line-soft bg-panel p-8 shadow-(--shadow-lift) max-xs:p-6">
         <BrandMark />
         <h1 className="mt-6 text-2xl font-semibold">{copy.heading}</h1>
-        <p className="mt-2 text-sm text-ink-dim">Build and manage your personal projects.</p>
+        <p className="mt-2 text-sm text-ink-dim">
+          Describe how a process works in plain words. Dex builds it and runs it.
+        </p>
         <form className="mt-6 flex flex-col gap-4" onSubmit={(event) => void submit(event)}>
           <label className="block text-sm font-medium text-ink-dim">
             Email

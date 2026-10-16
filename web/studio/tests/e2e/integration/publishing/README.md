@@ -24,7 +24,7 @@ popover marks it "not in the Preview record" and keeps Publish disabled until a 
 characters is written, and the server refuses a build of it without one (`PREVIEW_VALIDATION_REQUIRED`);
 it is published with a reason, which Tools, Publishing's history shows. The scenario's second version
 runs on Preview; the popover names the version it replaces, the new and no longer used settings, and
-the connection and TeamSpace connection Live will run with, and the build records the Preview start.
+the connection and Teamspace connection Live will run with, and the build records the Preview start.
 The popover on the Live tab then publishes a waiting environment value of the version Live runs: it
 lists only that change beside Live's value, no Preview run is needed, and a new deployment of the same
 Release runs the new configuration.

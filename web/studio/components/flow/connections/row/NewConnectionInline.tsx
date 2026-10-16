@@ -12,6 +12,7 @@ import { connectorDisplayName, type ConnectionView } from "@/lib/api/flow/connec
 import type { TeamSpaceConnection } from "@/lib/api/flow/team-space-connection";
 import { TeamSpaceConnectionEditor } from "@/components/flow/connector/team-space/TeamSpaceConnectionEditor";
 import { Button } from "@/components/ui/Button";
+import { cx } from "@/components/ui/cx";
 import { Glyph } from "@/components/ui/Glyph";
 import type { SetupSideName } from "@/components/flow/connections/model/row-model";
 
@@ -73,9 +74,9 @@ export function useAuthorizationReturn(
 }
 
 /**
- * A new TeamSpace connection, inline in its row: the TeamSpace's connection form for the connector release
+ * A new Teamspace connection, inline in its row: the Teamspace's connection form for the connector release
  * the connection name declares. A key is saved at once; OAuth creates the connection when the sign-in
- * completes. Either way it is selected for the side that asked, and any Project of the TeamSpace can pick
+ * completes. Either way it is selected for the side that asked, and any Project of the Teamspace can pick
  * it. A connector tied to one address says the connection is that side's own, with the side's address.
  */
 export function NewConnectionInline({
@@ -84,6 +85,7 @@ export function NewConnectionInline({
   side,
   endpointBound,
   address,
+  compact = false,
   onSaved,
   onCancel,
 }: {
@@ -94,6 +96,8 @@ export function NewConnectionInline({
   endpointBound: string;
   /** The side's address, for a connection tied to one. */
   address: string;
+  /** In a narrow column, such as Runs' Try it, rather than under a Setup row. */
+  compact?: boolean;
   onSaved: (connectionId: string) => Promise<void>;
   onCancel: () => void;
 }) {
@@ -102,7 +106,10 @@ export function NewConnectionInline({
   return (
     <section
       aria-label={`New ${name} connection for ${SIDE_NAMES[side]}`}
-      className="mx-3.5 my-2 grid gap-2.5 rounded-[10px] border-[1.5px] border-accent-rule bg-panel px-3.5 py-3 text-[13px] @min-[780px]/tool:ml-12"
+      className={cx(
+        "grid gap-2.5 rounded-[10px] border-[1.5px] border-accent-rule bg-panel text-[13px]",
+        compact ? "px-2.5 py-2.5" : "mx-3.5 my-2 px-3.5 py-3 @min-[780px]/tool:ml-12",
+      )}
       data-testid="new-connection-inline"
     >
       <div className="flex items-center justify-between gap-2">
@@ -144,13 +151,13 @@ export function NewConnectionInline({
         onCancel={onCancel}
       />
       <p className="text-[12px] text-ink-faint">
-        Saved to the TeamSpace&apos;s connections, so any project there can pick it.
+        Saved to the Teamspace&apos;s connections, so any project there can pick it.
       </p>
     </section>
   );
 }
 
-/** A selected TeamSpace connection's editor, inline in its row's Connection settings. */
+/** A selected Teamspace connection's editor, inline in its row's Connection settings. */
 export function ConnectionSettingsInline({
   teamSpaceId,
   connection,

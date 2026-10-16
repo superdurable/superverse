@@ -117,6 +117,6 @@ test("Live Runs keep the deployed build's catalog after a failed rebuild of the 
   const response = await definitions;
   expect(response.ok()).toBe(true);
   expect(response.request().headers()["x-superverse-deployment-id"]).toBe(project?.live?.deploymentId);
-  await expect(page.getByRole("button", { name: "Start Flow", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Live run", exact: true })).toBeVisible();
   expect(releaseReads).toHaveLength(0);
 });

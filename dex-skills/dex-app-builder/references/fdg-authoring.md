@@ -91,7 +91,13 @@ such as `type Status string`.
 
 Use `ui-slot:title`, `subtitle`, `status`, `recommendation`, or `reason`.
 Each slot except `reason` is unique within one view. Ordinary fields need no
-slot. Summary is always read-only. Editable Display fields must be `string`,
+slot.
+
+Every Flow a person sees in Runs or Inbox declares a `ui-slot:title` Display
+field. Its Attribute is a `string` the Flow sets from business data as soon as
+it has it, such as `Refund R-1042 · Acme · $320`, never the Flow ID or a status,
+and Summary also returns it (or it is indexed) so the run list can name each
+run. Without one, Studio names a run by its process and start time. Summary is always read-only. Editable Display fields must be `string`,
 `int64`, `double`, `bool` or `datetime`. Keep structured business results in
 their owning Attribute and expose its actual FDG type instead of duplicating
 business state for presentation.

@@ -17,7 +17,7 @@ import {
 } from "@/components/flow/canvas/model/flow-model";
 import { groupsFromDefinition, type StepGroup } from "@/components/flow/canvas/model/step-groups";
 import { hasStages } from "@/components/flow/canvas/layout/layout-flow";
-import { connectorName } from "@/components/flow/canvas/layout/step-card";
+import { connectorName, stepTitle } from "@/components/flow/canvas/layout/step-card";
 
 interface ProcessStep {
   id: string;
@@ -74,7 +74,7 @@ export function processCards(definitions: FlowDefinitionCatalog | null): Process
   const cards: ProcessCard[] = flows.map(({ flowType, flow, groups }) => {
     const steps = orderedSteps(flow).map((step) => ({
       id: step.id,
-      label: step.label,
+      label: stepTitle(step),
       who: whoActs(flow, step),
       ...(step.connector ? { app: connectorName(step.connector.connectorId) } : {}),
     }));

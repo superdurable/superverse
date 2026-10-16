@@ -265,7 +265,8 @@ Tools ▸ Publishing have no Publish of their own. On the Preview tab it shows:
 5. **Reason.** A version never started on Preview needs a short reason, at most 500 code points,
    sent as `preview_skip_reason`; Publish stays disabled until it is filled, as the build admission
    already requires. The prototype's checkbox is not adopted.
-6. **Publish V13**, beside "Compare with Live", which lists the versions it adds.
+6. **Publish V13**, the popover's one button. There is no "Compare with Live": the version
+   choice already names the versions ahead of Live.
 
 The popover prepares a version's Release when it has none (`use-publish-check.ts`), never again
 for one whose preparation failed. `publish/publish-commands.ts` runs Publish: it writes what Setup
@@ -351,9 +352,12 @@ holds `publish-stages.ts`, `use-publish-progress.ts` (the Release and Deployment
 
 
 
-- **Runs | Events.** The Runs column (`flow/run/RunListColumn.tsx`) gains a Runs | Events switch.
-  Its Events slot is filled through `flow/scope` with `project/activity/RecentEvents`, for Preview
-  and Live ([recent events](observability.md#recent-events-received)).
+- **Recent events.** The Runs column (`flow/run/RunListColumn.tsx`) puts what the environment's
+  triggers received around its runs: one line above them while recent events did not arrive, with
+  its fix (Start, Ask the agent, or Copy details for the operator), and the log folded at its foot
+  as "Events received". `project/activity/RecentEventsProvider` reads them once for both, through
+  `flow/scope`, for Preview and Live, only where a process relays a trigger or events arrived
+  ([recent events](observability.md#recent-events-received)).
 - **The Interface pane.** Stop, the start's phases and its problem move from the Preview menu into
   `build/PreviewPanel` and `InterfaceSurface` ([the Interface](#the-interface)).
 - **The chat header's timer.** The workspace timer of `session/SessionStatusIndicators.tsx`
@@ -373,8 +377,9 @@ holds `publish-stages.ts`, `use-publish-progress.ts` (the Release and Deployment
 
 - `components/project/activity/` renders the per-environment timeline (`ListEnvironmentEvents`)
   and the recent events panel (`ListRecentTriggerEvents`).
-- Each recent event row shows time, type, channel and fate. The fate links to the run once the
-  external item reports a FlowID.
+- Each recent event row shows its kind in words, time and fate; its raw fields (type, channel and
+  team IDs, connection, HTTP status, duration, event ID) wait behind its More details. The fate
+  links to the run once the external item reports a FlowID.
 
 ## Mock development
 

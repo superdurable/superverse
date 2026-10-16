@@ -5,7 +5,7 @@ Purpose: Studio's only entry into the Flow UI: binds it to a Project-scoped Flow
 
 Importers: `components/build`, `components/project`, `components/publishing/publish`, `components/session`, `components/teamspace/connections` and `mock/surface` import this directory.
 
-Imports: it imports `components/flow/canvas`, `components/flow/connections`, `components/flow/connector/team-space`, `components/flow/design`, `components/flow/diagnostics`, `components/flow/frame`, `components/flow/map`, `components/flow/run`, `components/ui`, `lib/api/flow`, `lib/api/transport`, `lib/browser`, `lib/flow`, `lib/project`, `lib/session` and `lib/shared`.
+Imports: it imports `components/flow/canvas`, `components/flow/connections`, `components/flow/connector/team-space`, `components/flow/design`, `components/flow/design/brief`, `components/flow/diagnostics`, `components/flow/frame`, `components/flow/map`, `components/flow/run`, `components/flow/run/tryit`, `components/ui`, `lib/api/flow`, `lib/api/transport`, `lib/browser`, `lib/flow`, `lib/project`, `lib/project/setup`, `lib/session` and `lib/shared`.
 
 ```mermaid
 flowchart LR
@@ -20,18 +20,21 @@ flowchart LR
   self --> d1["components/flow/connections"]
   self --> d2["components/flow/connector/team-space"]
   self --> d3["components/flow/design"]
-  self --> d4["components/flow/diagnostics"]
-  self --> d5["components/flow/frame"]
-  self --> d6["components/flow/map"]
-  self --> d7["components/flow/run"]
-  self --> d8["components/ui"]
-  self --> d9["lib/api/flow"]
-  self --> d10["lib/api/transport"]
-  self --> d11["lib/browser"]
-  self --> d12["lib/flow"]
-  self --> d13["lib/project"]
-  self --> d14["lib/session"]
-  self --> d15["lib/shared"]
+  self --> d4["components/flow/design/brief"]
+  self --> d5["components/flow/diagnostics"]
+  self --> d6["components/flow/frame"]
+  self --> d7["components/flow/map"]
+  self --> d8["components/flow/run"]
+  self --> d9["components/flow/run/tryit"]
+  self --> d10["components/ui"]
+  self --> d11["lib/api/flow"]
+  self --> d12["lib/api/transport"]
+  self --> d13["lib/browser"]
+  self --> d14["lib/flow"]
+  self --> d15["lib/project"]
+  self --> d16["lib/project/setup"]
+  self --> d17["lib/session"]
+  self --> d18["lib/shared"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 

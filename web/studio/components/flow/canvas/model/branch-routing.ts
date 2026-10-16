@@ -97,11 +97,11 @@ export function fanOutOf(step: StepModel): number {
 }
 
 /**
- * The case values that send this Step to `targetStepId`, as a line's label: `"reply"` for
- * `update.Kind == "reply"`. Null unless the Step routes on one name (`discriminantOf`) and every
- * branch to that target is a case on it, so a label never paraphrases a general condition.
+ * The case values that send this Step to `targetStepId`: `reply` for `update.Kind == "reply"`. Null
+ * unless the Step routes on one name (`discriminantOf`) and every branch to that target is a case on
+ * it, so a label never paraphrases a general condition.
  */
-export function caseLabel(step: StepModel, targetStepId: string): string | null {
+export function caseValues(step: StepModel, targetStepId: string): string[] | null {
   const key = discriminantOf(step);
   if (key === null) return null;
   const values: string[] = [];
@@ -111,5 +111,10 @@ export function caseLabel(step: StepModel, targetStepId: string): string | null 
     if (c === null || c.key !== key) return null;
     values.push(...c.values.map((v) => v.replace(/^["']|["']$/g, "")));
   }
-  return values.length > 0 ? [...new Set(values)].join(" / ") : null;
+  return values.length > 0 ? [...new Set(values)] : null;
+}
+
+/** The case values to `targetStepId` as a line's label, such as `reply / forward`. */
+export function caseLabel(step: StepModel, targetStepId: string): string | null {
+  return caseValues(step, targetStepId)?.join(" / ") ?? null;
 }

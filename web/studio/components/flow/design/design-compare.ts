@@ -10,6 +10,7 @@ import type { FlowDefinitionGraph } from "@/lib/api/flow/flow-definition";
 import { safeDecode } from "@/components/flow/canvas/model/decode-flow-definition";
 import { stepById, type FlowModel, type StepModel } from "@/components/flow/canvas/model/flow-model";
 import type { StepMarkText } from "@/components/flow/canvas/FlowGraphCanvas";
+import { processName, stepName } from "@/lib/shared/format";
 import { designGraph, type DesignedFlow, type FlowDesign } from "./design-graph";
 
 /**
@@ -177,33 +178,37 @@ function compareDesign(design: FlowDesign, current: CurrentGraphs): FlowComparis
   });
 }
 
-/** What a comparison says in one line, such as "TextSummaryFlow · changed: adds AwaitSummaryApproval, Approve summary; changes GenerateSummary". */
+/**
+ * What a comparison says in one line, in the names people read on the canvas, such as "Text summary · changed:
+ * adds Await summary approval, Approve summary; changes Generate summary".
+ */
 function changeLine(comparison: FlowComparison): string {
-  const { flowType, status } = comparison;
-  if (status === "unchanged") return `${flowType} · unchanged`;
+  const { status } = comparison;
+  const flow = processName(comparison.flowType);
+  if (status === "unchanged") return `${flow} · unchanged`;
   if (status === "new") {
     const steps = comparison.addedSteps.length;
     const actions = comparison.addedActions.length > 0 ? `, ${comparison.addedActions.join(", ")}` : "";
-    return `${flowType} · new: ${steps} Step${steps === 1 ? "" : "s"}${actions}`;
+    return `${flow} · new: ${steps} step${steps === 1 ? "" : "s"}${actions}`;
   }
-  const added = [...comparison.addedSteps, ...comparison.addedActions];
-  const removed = [...comparison.removedSteps, ...comparison.removedActions];
+  const added = [...comparison.addedSteps.map(stepName), ...comparison.addedActions];
+  const removed = [...comparison.removedSteps.map(stepName), ...comparison.removedActions];
   const parts = [
     added.length > 0 ? `adds ${added.join(", ")}` : "",
-    comparison.changedSteps.length > 0 ? `changes ${comparison.changedSteps.join(", ")}` : "",
+    comparison.changedSteps.length > 0 ? `changes ${comparison.changedSteps.map(stepName).join(", ")}` : "",
     removed.length > 0 ? `removes ${removed.join(", ")}` : "",
   ].filter((part) => part !== "");
   if (parts.length === 0) {
-    const channels = [...comparison.addedChannels, ...comparison.removedChannels];
-    parts.push(`changes its Channels ${channels.join(", ")}`);
+    const channels = [...comparison.addedChannels, ...comparison.removedChannels].map(stepName);
+    parts.push(`changes the messages it waits for: ${channels.join(", ")}`);
   }
-  return `${flowType} · changed: ${parts.join("; ")}`;
+  return `${flow} · changed: ${parts.join("; ")}`;
 }
 
 /** The card's lines of what the design changes; one note instead when the current source is not the head's. */
 export function designChangeLines(design: FlowDesign, current: CurrentGraphs): string[] {
   const comparisons = compareDesign(design, current);
   if (comparisons === null) return ["Not compared: build the processes of the current version to see what changes."];
-  const removed = design.removedFlows.length > 0 ? [`Removes ${design.removedFlows.join(", ")}`] : [];
+  const removed = design.removedFlows.length > 0 ? [`Removes ${design.removedFlows.map(processName).join(", ")}`] : [];
   return [...comparisons.map(changeLine), ...removed];
 }

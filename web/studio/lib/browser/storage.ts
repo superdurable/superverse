@@ -20,7 +20,7 @@ export const STORAGE_KEYS = {
   chatWidth: "superverse.studio.chat-w.v1",
   /** The Tools list's width; the rail width when folded. */
   toolsWidth: "superverse.studio.tools-w.v1",
-  /** The TeamSpace last open in this browser, which `/` opens again. */
+  /** The Teamspace last open in this browser, which `/` opens again. */
   teamSpace: "superverse.studio.team-space.v1",
   /** The tools pinned as tabs, as a JSON array of tool names. */
   pinnedTools: "superverse.studio.pinned-tools.v1",
@@ -35,8 +35,14 @@ export const STORAGE_KEYS = {
   publishSkipReason: (projectId: string) => `superversev2.publish-skip-reason.v1:${projectId}`,
   /** The card version whose Flow design the Flow tab last showed of a Project, so a reload does not move the person. */
   designShown: (projectId: string) => `superversev2.design-shown.v1:${projectId}`,
+  /** Whether one surface's "More details" fold is open, per browser. */
+  moreDetails: (surface: string) => `superversev2.more-details.v1:${surface}`,
   /** What to do once a Project is ready, in session storage. */
   projectIntent: (projectId: string) => `superversev2.project-intent.v3:${projectId}`,
+  /** How far a Project created in this browser has come from its first conversation; absent for any other. */
+  projectStage: (projectId: string) => `superversev2.project-stage.v1:${projectId}`,
+  /** The Builder tabs a Project has shown in this browser and those not visited since they appeared, as JSON. */
+  projectTabs: (projectId: string) => `superversev2.project-tabs.v1:${projectId}`,
 } as const;
 
 type StorageArea = "local" | "session";

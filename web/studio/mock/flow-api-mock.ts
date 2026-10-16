@@ -21,13 +21,15 @@ import {
   type RecordedFlowRun,
   type RecordedFlowRuns,
 } from "@/mock/fixture/flow-runs";
-import { clockStartMs } from "@/mock/store/clock";
+import { startTryItRun, tryItStartFlow, visibleRuns } from "@/mock/fixture/try-it-runs";
+import { withFailedRuns } from "@/mock/fixture/failed-runs";
+import { clockStartMs, nowIso } from "@/mock/store/clock";
 import { nativeConfigurationFixture } from "@/mock/store/configuration";
 import { getStudioMockStore, type MockStore } from "@/mock/store/store";
 import { mockSelectedConnection } from "@/mock/store/tenancy/connections";
 import { existingMockTenancy } from "@/mock/store/tenancy/team-spaces";
 
-/** A connections answer with what each name's selected TeamSpace connection shows, as Go adds it. */
+/** A connections answer with what each name's selected Teamspace connection shows, as Go adds it. */
 function withSelectedConnections(store: MockStore, result: object): object {
   const tenancy = existingMockTenancy(store);
   if (!tenancy || !("connections" in result) || !Array.isArray(result.connections)) return result;
@@ -49,7 +51,7 @@ function withSelectedConnections(store: MockStore, result: object): object {
  *
  * Flow execution mutations are unavailable in fixture mode, so the recorded runs never change.
  */
-const MUTATIONS = new Set(["POST flows/stop", "POST v2/actions", "PATCH v2/display"]);
+const MUTATIONS = new Set(["POST flows/stop", "POST flows/time-travel", "POST v2/actions", "PATCH v2/display"]);
 
 /**
  * The recorded runs never record anything new, so every history wait and Stream read finds nothing. Like the
@@ -58,9 +60,10 @@ const MUTATIONS = new Set(["POST flows/stop", "POST v2/actions", "PATCH v2/displ
  */
 const POLL_WINDOW_MS = 30_000;
 
-// The runs were recorded when the mock clock started, so the seed data and the runs share one moment.
+// The runs were recorded when the mock clock started, so the seed data and the runs share one moment. Two
+// invented failed runs join them, so Runs can show a failure.
 let recordedRuns: Promise<RecordedFlowRuns> | undefined;
-const loadRuns = () => (recordedRuns ??= loadRecordedFlowRuns(clockStartMs()));
+const loadRuns = () => (recordedRuns ??= loadRecordedFlowRuns(clockStartMs()).then(withFailedRuns));
 
 function jsonResponse(body: unknown, status = 200): Response {
   return Response.json(body, { status, headers: { "cache-control": "no-store", "x-content-type-options": "nosniff" } });
@@ -75,7 +78,10 @@ async function readJson<T>(request: Request): Promise<T> {
 }
 
 async function projectCatalog() {
-  return buildDefinitionDexCatalog(MOCK_DEFINITION_REVISION, await loadProjectFlowDefinitions(), "studio-mock");
+  const built = buildDefinitionDexCatalog(MOCK_DEFINITION_REVISION, await loadProjectFlowDefinitions(), "studio-mock");
+  // The `try-it` Setup fixture lets Runs start test runs.
+  const startFlow = tryItStartFlow();
+  return startFlow ? { ...built, catalog: { ...built.catalog, startFlow } } : built;
 }
 
 /** The unscoped /dex/api fixture route, which exists only in mock mode. */
@@ -135,7 +141,14 @@ async function answerFlowApi(request: Request, path: string[]): Promise<Response
   }
   if (route === "GET flow-definitions") return jsonResponse((await projectCatalog()).definitions);
   if (route === "GET v2/catalog") return jsonResponse((await projectCatalog()).catalog);
-  const { runs, blobs } = await loadRuns();
+  const recorded = await loadRuns();
+  const { blobs } = recorded;
+  const runs = visibleRuns(recorded.runs);
+  if (route === "POST v2/start" || route === "POST v2/start/recover") {
+    const recover = route.endsWith("/recover");
+    const answer = startTryItRun(recorded.runs, await readJson(request), { recover, now: nowIso() });
+    return jsonResponse(answer.body, answer.status);
+  }
   // A read that must be a POST: its body carries a Flow type and search filters.
   if (route === "POST v2/search")
     return jsonResponse({ flows: searchRuns(runs, await readJson(request)), nextPageToken: "" });
@@ -170,19 +183,22 @@ function searchRuns(
 }
 
 /** Whether a row passes one filter of the kinds Runs and Inbox send. */
-function passes(row: FlowSearchRow, { field, operator, values: [expected] }: SearchFilter): boolean {
+function passes(row: FlowSearchRow, { field, operator, values }: SearchFilter): boolean {
+  const [expected] = values;
   const actual =
     field === "executionStatus"
       ? row.flowStatus
       : field === "flowId"
         ? row.flowId
-        : field === "startTime"
-          ? row.startTime
+        : field === "startTime" || field === "closeTime"
+          ? row[field]
           : row.indexedAttributes[field];
-  const ordered = (value: unknown) => (field === "startTime" ? Date.parse(String(value)) : Number(value));
+  const ordered = (value: unknown) => (field.endsWith("Time") ? Date.parse(String(value)) : Number(value));
   switch (operator) {
     case "eq":
       return actual === expected;
+    case "in":
+      return values.includes(actual);
     case "contains":
       return typeof actual === "string" && actual.includes(String(expected));
     case "gte":

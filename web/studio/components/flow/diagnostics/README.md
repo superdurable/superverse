@@ -5,7 +5,7 @@ Purpose: The Diagnostics pages of a Flow and one run: overview, live state, Stre
 
 Importers: `components/flow/run/detail`, `components/flow/run/step` and `components/flow/scope` import this directory.
 
-Imports: it imports `components/flow/diagnostics/event`, `components/flow/diagnostics/graph`, `components/flow/diagnostics/timeline`, `components/flow/diagnostics/value`, `components/flow/frame`, `components/ui`, `components/ui/menu`, `components/ui/pane`, `lib/api/flow`, `lib/api/transport`, `lib/browser`, `lib/flow` and `lib/shared`.
+Imports: it imports `components/flow/diagnostics/event`, `components/flow/diagnostics/graph`, `components/flow/diagnostics/timeline`, `components/flow/diagnostics/value`, `components/flow/frame`, `components/ui`, `components/ui/menu`, `components/ui/pane`, `components/ui/reveal`, `lib/api/flow`, `lib/api/transport`, `lib/browser`, `lib/flow` and `lib/shared`.
 
 ```mermaid
 flowchart LR
@@ -21,10 +21,11 @@ flowchart LR
   self --> d5["components/ui"]
   self --> d6["components/ui/menu"]
   self --> d7["components/ui/pane"]
-  self --> d8["lib/api/flow"]
-  self --> d9["lib/api/transport"]
-  self --> d10["lib/browser"]
-  self --> d11["lib/flow"]
-  self --> d12["lib/shared"]
+  self --> d8["components/ui/reveal"]
+  self --> d9["lib/api/flow"]
+  self --> d10["lib/api/transport"]
+  self --> d11["lib/browser"]
+  self --> d12["lib/flow"]
+  self --> d13["lib/shared"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->

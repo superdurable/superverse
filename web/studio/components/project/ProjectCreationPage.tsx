@@ -20,20 +20,20 @@ import {
   storeProjectIntent,
   type PendingProjectCreation,
 } from "@/lib/project/project-intents";
+import { beginFirstRun } from "@/lib/project/stage/ProjectStageProvider";
 import { studioRoutes } from "@/lib/shared/studio-routes";
+import { StartupSteps } from "@/components/session/start/StartupSteps";
 import { Banner } from "@/components/ui/Banner";
 import { Button, buttonStyle } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
-import { Eyebrow } from "@/components/ui/Eyebrow";
-import { Spinner } from "@/components/ui/Icons";
 
 export function ProjectCreationPage() {
   const router = useRouter();
   const request = useRef<PendingProjectCreation | null>(null);
   const inFlight = useRef<AbortController | null>(null);
   const mounted = useRef(false);
-  const [projectName, setProjectName] = useState("Starting your project");
-  // Where Back to New project leads: the start form of the TeamSpace the request names.
+  const [projectName, setProjectName] = useState("Your new project");
+  // Where Start over and Describe a project lead: the start form of the Teamspace the request names.
   const [startHref, setStartHref] = useState(studioRoutes.home);
   const [error, setError] = useState<string | null>(null);
   const [missingIntent, setMissingIntent] = useState(false);
@@ -79,6 +79,8 @@ export function ProjectCreationPage() {
         idempotencyKey: pending.messageIdempotencyKey,
       });
       clearPendingProjectCreation();
+      // The new Project opens on its first conversation, the chat alone, until the agent's requirements arrive.
+      beginFirstRun(projectId);
       router.replace(studioRoutes.projectSurface(projectId, "flow"));
     } catch (reason) {
       if (ownsRequest()) setError(errorMessage(reason, "Could not create project"));
@@ -108,24 +110,22 @@ export function ProjectCreationPage() {
   return (
     <main className="flex min-h-0 min-w-0 flex-1 items-center-safe justify-center-safe overflow-y-auto p-8 max-sm:p-4">
       <div className="w-full max-w-2xl">
-        <Eyebrow>Project lifecycle</Eyebrow>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">{projectName}</h1>
+        <h1 className="text-display font-semibold tracking-tight">{projectName}</h1>
 
-        {!missingIntent && (
+        {!missingIntent && !error && (
+          <div className="mt-6 grid justify-items-start gap-2">
+            <StartupSteps current="project" />
+            <p className="text-body text-ink-dim">
+              Your description goes to the agent as soon as the project is ready.
+            </p>
+          </div>
+        )}
+        {!missingIntent && error && (
           <section className="mt-6 rounded-lg border border-line-soft bg-well p-5">
-            <div className="flex items-center gap-3">
-              {!error && <Spinner className="h-4 w-4" />}
-              <div>
-                <h2 className="font-medium text-ink">
-                  {error ? "Project admission needs another attempt" : "Admitting project"}
-                </h2>
-                <p className="mt-1 text-sm text-ink-dim">
-                  {error
-                    ? "Retry if the provider failure was temporary, or return to start a new request."
-                    : "Securing the project identity before repository provisioning begins…"}
-                </p>
-              </div>
-            </div>
+            <h2 className="text-title font-medium text-ink">The project was not created</h2>
+            <p className="mt-1 text-reading text-ink-dim">
+              Try again. If it keeps failing, start over from the description.
+            </p>
           </section>
         )}
 
@@ -133,20 +133,20 @@ export function ProjectCreationPage() {
           <div className="mt-4">
             <Banner>{error}</Banner>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Button onClick={() => void admitProject()}>Retry project admission</Button>
-              <Button onClick={returnToCreation}>Back to project creation</Button>
+              <Button onClick={() => void admitProject()}>Try again</Button>
+              <Button onClick={returnToCreation}>Start over</Button>
             </div>
           </div>
         )}
 
         {missingIntent && (
           <section className="mt-6 rounded-lg border border-line-soft bg-panel p-5">
-            <h2 className="font-medium">No pending project request</h2>
-            <p className="mt-2 text-sm text-ink-dim">
-              Start a new project so Studio has a name and initial request to submit.
+            <h2 className="text-title font-medium">Nothing to set up</h2>
+            <p className="mt-2 text-reading text-ink-dim">
+              This page sets up a project you just described. Describe one to start.
             </p>
             <Link href={startHref} className={cx(buttonStyle(), "mt-4")}>
-              Back to New project
+              Describe a project
             </Link>
           </section>
         )}

@@ -19,14 +19,18 @@ export { FlowFrame } from "@/components/flow/frame/FlowFrame";
 
 /**
  * Runs of the catalog's Flow Types, or one run's diagnostics with ?diagnostics=true. The caller's
- * `events`, what the environment's triggers received, shows beside the runs as Runs | Events.
+ * `events`, what the environment's triggers received, sits around the runs: a problem line above
+ * them and the log below. `empty` replaces the list's empty text while no filter narrows it.
  */
-export function RunsSurface({ events }: { events?: ReactNode } = {}) {
+export function RunsSurface({
+  events,
+  empty,
+}: { events?: { notice: ReactNode; log: ReactNode }; empty?: ReactNode } = {}) {
   const { flowType, flowId, runId, diagnostics } = useFlowRouteParams();
   if (diagnostics) return <LazyDiagnosticsView key={`${flowId}:${runId}`} />;
   return (
     <FlowDefinitionGate surfaceName="Runs">
-      <LazyRunsView key={flowType} events={events} />
+      <LazyRunsView key={flowType} events={events} empty={empty} />
     </FlowDefinitionGate>
   );
 }

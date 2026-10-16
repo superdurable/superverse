@@ -24,8 +24,12 @@ import { InterfaceSurface } from "@/components/build/InterfaceSurface";
 import { LiveFlowScope, SessionFlowScope } from "@/components/flow/scope/FlowScope";
 import { PreviewStartButton } from "@/components/build/PreviewStart";
 import { InboxSurface, RunsSurface } from "@/components/flow/scope/FlowSurfaces";
+import { TryItSurface } from "@/components/flow/scope/TryItSurface";
+import { PreviewAutoApply } from "@/components/project/setup/PreviewAutoApply";
 import { NotReady } from "@/components/ui/NotReady";
-import { RecentEvents } from "./activity/RecentEvents";
+import { RecentEventsLog } from "./activity/RecentEvents";
+import { RecentEventsProvider } from "./activity/RecentEventsProvider";
+import { RecentEventsProblem } from "./activity/RecentEventsProblem";
 import { ProjectToolContent } from "./ProjectToolContent";
 
 /**
@@ -121,35 +125,57 @@ function SurfaceContent({
       return <ProjectToolContent projectId={projectId} tool={tool} environment={toolEnvironment} />;
     case "runs":
     case "inbox": {
-      const view =
-        surface === "runs" ? (
-          <RunsSurface
-            events={<RecentEvents projectId={projectId} environment={environment === "live" ? "Live" : "Preview"} />}
-          />
-        ) : (
-          <InboxSurface />
-        );
-      if (environment === "preview")
-        return (
+      const runs = surface === "runs";
+      // Runs names what the environment's triggers received: a problem line above the runs and the log
+      // below them. The Preview's own Start fixes what did not reach it, so the Runs list, shown only
+      // while the Preview runs, offers none.
+      const view = runs ? (
+        <RunsSurface
+          events={{ notice: <RecentEventsProblem />, log: <RecentEventsLog /> }}
+          empty={
+            environment === "preview" ? (
+              <TryItSurface projectId={projectId} autoApply={<PreviewAutoApply projectId={projectId} />} />
+            ) : undefined
+          }
+        />
+      ) : (
+        <InboxSurface />
+      );
+      const start = <PreviewStartButton projectId={projectId} />;
+      const content =
+        environment === "preview" ? (
           <SessionFlowScope
             key={`preview:${projectId}`}
             projectId={projectId}
             source="running"
-            start={<PreviewStartButton projectId={projectId} />}
+            start={
+              runs ? (
+                <>
+                  <RecentEventsProblem />
+                  {start}
+                </>
+              ) : (
+                start
+              )
+            }
           >
             {view}
           </SessionFlowScope>
-        );
-      if (!liveKey)
-        return (
+        ) : !liveKey ? (
           <NotReady kind="empty" heading="Nothing is Live yet">
             Runs and Inbox items on Live appear once a version is published. Publish from Tools, Publishing.
           </NotReady>
+        ) : (
+          <LiveFlowScope key={`live:${liveKey}`} projectId={projectId} releaseId={releaseId}>
+            {view}
+          </LiveFlowScope>
         );
-      return (
-        <LiveFlowScope key={`live:${liveKey}`} projectId={projectId} releaseId={releaseId}>
-          {view}
-        </LiveFlowScope>
+      return runs ? (
+        <RecentEventsProvider projectId={projectId} environment={environment === "live" ? "Live" : "Preview"}>
+          {content}
+        </RecentEventsProvider>
+      ) : (
+        content
       );
     }
   }

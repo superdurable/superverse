@@ -5,7 +5,7 @@ Purpose: The per-environment timeline and the recent trigger events: Preview's s
 
 Importers: `components/build`, `components/project`, `components/publishing` and `mock/surface` import this directory.
 
-Imports: it imports `components/publishing/timings`, `components/ui`, `components/ui/problem`, `components/ui/timings`, `lib/api`, `lib/api/transport`, `lib/browser`, `lib/generated/protobuf`, `lib/project/setup`, `lib/shared`, `lib/shared/problem` and `lib/shared/version`.
+Imports: it imports `components/publishing/timings`, `components/ui`, `components/ui/problem`, `components/ui/reveal`, `components/ui/timings`, `lib/api`, `lib/api/transport`, `lib/browser`, `lib/flow`, `lib/generated/protobuf`, `lib/project/setup`, `lib/shared`, `lib/shared/problem` and `lib/shared/version`.
 
 ```mermaid
 flowchart LR
@@ -17,14 +17,16 @@ flowchart LR
   self --> d0["components/publishing/timings"]
   self --> d1["components/ui"]
   self --> d2["components/ui/problem"]
-  self --> d3["components/ui/timings"]
-  self --> d4["lib/api"]
-  self --> d5["lib/api/transport"]
-  self --> d6["lib/browser"]
-  self --> d7["lib/generated/protobuf"]
-  self --> d8["lib/project/setup"]
-  self --> d9["lib/shared"]
-  self --> d10["lib/shared/problem"]
-  self --> d11["lib/shared/version"]
+  self --> d3["components/ui/reveal"]
+  self --> d4["components/ui/timings"]
+  self --> d5["lib/api"]
+  self --> d6["lib/api/transport"]
+  self --> d7["lib/browser"]
+  self --> d8["lib/flow"]
+  self --> d9["lib/generated/protobuf"]
+  self --> d10["lib/project/setup"]
+  self --> d11["lib/shared"]
+  self --> d12["lib/shared/problem"]
+  self --> d13["lib/shared/version"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->

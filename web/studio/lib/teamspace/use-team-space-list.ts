@@ -12,7 +12,7 @@ import { listTeamSpaces } from "@/lib/api/tenancy/team-space";
 import { usePagedList } from "@/lib/browser/use-paged-list";
 
 /**
- * The caller's TeamSpaces, every one for the platform admin, 25 a page with Load more. A new `reloadKey` reads
+ * The caller's Teamspaces, every one for the platform admin, 25 a page with Load more. A new `reloadKey` reads
  * the first page again and keeps the shown rows until it arrives.
  */
 export function useTeamSpaceList(reloadKey: unknown) {

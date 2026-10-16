@@ -9,6 +9,7 @@
 // Named Setup fixtures a mock page can ask for with `?setupFixture=`, so each Setup state can be seen
 // without clicking through a publish first. Development only.
 import { MOCK_CONNECTOR } from "@/mock/fixture/connector-manifest";
+import { enableTryItRuns } from "@/mock/fixture/try-it-runs";
 import { nowIso, randomHex } from "@/mock/store/clock";
 import {
   invalidateConfigurationDraft,
@@ -18,11 +19,11 @@ import {
 } from "@/mock/store/configuration";
 import { buildMockRelease, prepareMockRelease } from "@/mock/store/publishing";
 import { SEED_HEAD_COMMIT } from "@/mock/store/seed";
-import { preparePreviewSource, type MockStore } from "@/mock/store/store";
+import { preparePreviewSource, startPreview, type MockStore } from "@/mock/store/store";
 import { markOwn } from "@/mock/store/setup/next-publish";
 import { admittedStart, applyValues, recordStart, type MockPreviewSetup } from "@/mock/store/setup/preview-setup";
 
-/** The TeamSpace connection the seed TeamSpace holds for the fixture connector. */
+/** The Teamspace connection the seed Teamspace holds for the fixture connector. */
 const SEED_CONNECTION = "c0000000seed";
 /** The seed Project's older main commit, which the later publish puts on Live. */
 const OLDER_COMMIT = "dddddddddddddddddddddddddddddddddddddddd";
@@ -143,7 +144,7 @@ function slack(store: MockStore, projectId: string) {
   invalidateConfigurationDraft(preview);
 }
 
-/** The seed TeamSpace's Slack and Stripe connections, which the next-publish fixtures select on Preview. */
+/** The seed Teamspace's Slack and Stripe connections, which the next-publish fixtures select on Preview. */
 const SLACK_CONNECTION = "c000000slack";
 const STRIPE_CONNECTION = "c00000stripe";
 
@@ -235,6 +236,20 @@ function endpointBound(store: MockStore, projectId: string) {
   applyPreview(store, projectId);
 }
 
+/**
+ * Runs' Try it: Preview runs the prepared head on a configuration with nothing connected yet, Runs and Inbox hide the recorded runs
+ * and test runs start, so Runs opens on what the version needs and the start form.
+ */
+function tryIt(store: MockStore, projectId: string) {
+  const session = store.sessions.get(projectId);
+  if (session && session.preview.state !== "READY") {
+    prepared(store, projectId);
+    applyPreview(store, projectId);
+    startPreview(store, projectId);
+  }
+  enableTryItRuns();
+}
+
 /** Waiting settings and a connection tied to one address, which the mock page draws in a narrow tool panel. */
 function narrow(store: MockStore, projectId: string) {
   waiting(store, projectId);
@@ -252,6 +267,7 @@ const SETUP_FIXTURES = {
   waiting,
   "endpoint-bound": endpointBound,
   narrow,
+  "try-it": tryIt,
 } as const satisfies Record<string, (store: MockStore, projectId: string) => void>;
 
 /** The fixture that draws Setup's tool panel narrow, below the 780px at which its rows show chips. */

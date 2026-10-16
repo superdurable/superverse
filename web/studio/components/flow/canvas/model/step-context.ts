@@ -6,6 +6,7 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
+import { stepName } from "@/lib/shared/format";
 import { predecessors, stepById, successors, type Actor, type FlowModel, type StepModel } from "./flow-model";
 import type { StepGroup } from "./step-groups";
 
@@ -16,6 +17,8 @@ interface StepFact {
 
 export interface StepContextView {
   stepType: string;
+  /** The Step as the canvas titles it. */
+  title: string;
   /** The Step's declared purpose, or null when the Flow never said. Never invented. */
   explanation: string | null;
   facts: StepFact[];
@@ -24,11 +27,11 @@ export interface StepContextView {
 
 /** Who moves this Step along. The graph knows this; a reader should not have to infer it. */
 const ACTOR_PHRASE: Record<Actor, string> = {
-  external: "a person or system outside the flow",
-  child: "a SubFlow",
-  clock: "a timer",
-  machine: "the flow itself",
-  unknown: "not stated",
+  external: "A person or another system",
+  child: "Another process",
+  clock: "A timer",
+  machine: "The process itself",
+  unknown: "Not stated",
 };
 
 /**
@@ -47,8 +50,8 @@ export function stepContext(flow: FlowModel, step: StepModel, groups: readonly S
   facts.push({ label: "Who acts", value: ACTOR_PHRASE[step.actor] });
 
   const reachedFrom = step.isStart
-    ? "the flow starts here"
-    : stepTypesOf(flow, predecessors(flow, step.id, "transition"));
+    ? "The process starts here"
+    : stepTitlesOf(flow, predecessors(flow, step.id, "transition"));
   if (reachedFrom !== "") facts.push({ label: "Reached from", value: reachedFrom });
 
   // The wait phase already carries one prose line, paraphrased with identifiers verbatim.
@@ -56,22 +59,31 @@ export function stepContext(flow: FlowModel, step: StepModel, groups: readonly S
     facts.push({ label: "Waits for", value: step.waitFor.sentence });
   }
 
-  const goesTo = stepTypesOf(flow, successors(flow, step.id, "transition"));
+  const goesTo = stepTitlesOf(flow, successors(flow, step.id, "transition"));
   if (goesTo !== "") facts.push({ label: "Then goes to", value: goesTo });
 
-  const onFailure = stepTypesOf(flow, successors(flow, step.id, "failure_transition"));
+  const onFailure = stepTitlesOf(flow, successors(flow, step.id, "failure_transition"));
   if (onFailure !== "") facts.push({ label: "If it fails", value: onFailure });
 
   return {
     stepType: step.stepType,
+    title: titleOf(step),
     explanation: step.explanation ?? null,
     facts,
     connector: step.connector,
   };
 }
 
-/** The distinct StepTypes of these Step ids, comma-separated; ids that name no Step are skipped. */
-function stepTypesOf(flow: FlowModel, stepIds: string[]): string {
-  const stepTypes = stepIds.flatMap((id) => stepById(flow, id)?.stepType ?? []);
-  return [...new Set(stepTypes)].join(", ");
+/** The distinct Step titles of these Step ids, comma-separated; ids that name no Step are skipped. */
+function stepTitlesOf(flow: FlowModel, stepIds: string[]): string {
+  const titles = stepIds.flatMap((id) => {
+    const step = stepById(flow, id);
+    return step ? titleOf(step) : [];
+  });
+  return [...new Set(titles)].join(", ");
+}
+
+/** The title the canvas gives a Step (layout's stepTitle): its display name, or its type in words. */
+function titleOf(step: StepModel): string {
+  return step.label === step.stepType ? stepName(step.stepType) : step.label;
 }

@@ -1949,18 +1949,28 @@ Preserve Studio conversation, keyboard behavior, focus, cancellation and explici
 mock development. A Project page is the Builder ([the current contract](studio-setup/studio.md),
 visual spec [prototype.html](studio-setup/studio.md)): the sidebar, one 48px bar
 lined up with the columns, the Project's chat column on every surface, and one of the surfaces
-Flow, Runs, Inbox, Interface and Tools (Publishing, Connectors, Permissions, Configuration). One
-Preview | Live switch in the bar sets the version every surface shows (`?v=live`) and never changes
-by itself. Publish in the bar is a popover over the Release APIs: it prepares the selected version
+Flow, Runs, Inbox, Interface and Tools (Publishing, Setup, Permissions). A new Project is its
+conversation alone until the agent's first requirements card, then switches once to the Builder on
+the Flow tab, where the card is a Process Brief, a summary above the drawn design, and is confirmed
+there; while it waits, a chat message asks for changes to it.
+Surfaces appear when they have something to show: Runs, Tools, Publish and Preview's status once
+processes are built from the agent's own push, Inbox once something has waited for a person,
+Interface once Preview serves a page, Live once a version is published; a link to a surface still
+opens it. Each surface keeps engine detail (tool rows, model metrics, Flow and Run IDs,
+Diagnostics, raw field and event names) behind its own "More details". Until processes are built
+the bar carries the Project's stage after its name (Shaping, or Building while the agent builds a
+confirmed card); then one Preview | Live switch in the bar sets the version every surface shows
+(`?v=live`) and never changes by itself. Publish in the bar is a popover over the Release APIs: it prepares the selected version
 when needed, requires its Live configuration, and builds it with an automatic deployment fenced on
 the Live revision shown.
 All Dex management UI source is local to Studio, with no shared Dex component
 package or management iframe; the user application's Preview and Live frames (the Live one approved on 2026-10-14) remain isolated.
 
 - Add immediate email/password registration and login. Ordinary users see
-  personal projects; the administrator can access all projects. With the TeamSpace
-  work, Home lists the selected TeamSpace's Projects with the caller's role
-  ([Studio](teamspace/api-and-studio.md#studio)).
+  personal projects; the administrator can access all projects. With the Teamspace
+  work, Home lists the selected Teamspace's Projects with the caller's role
+  ([Studio](teamspace/api-and-studio.md#studio)); an account without a Teamspace gets one,
+  named from its email, created with one stable request ID.
 - Tools, Publishing has Config and Deploy tabs. Config uses a searchable list of the latest
   100 main commits, native forms and Save & Build; Deploy selects a Release
   and its last successful exact build.
@@ -1977,14 +1987,16 @@ package or management iframe; the user application's Preview and Live frames (th
   listing cannot establish that no Release exists.
 - The Project has one Preview with one URL. Its credentials/configuration are
   scope-isolated from Live and are not silently copied from Live.
-- The Builder's chat opens the Project's one Session directly: "Preparing project..." while
+- The Builder's chat opens the Project's one Session directly: "Setting up your project..." while
   Setup runs, "Starting the agent..." until the Session answers, then the
   stored creation intent becomes its first turn: Build applies the model the
   person chose on the creation page when it differs from the Session's, then
   sends the first message once. The creation page shows the Session's model
-  picker and composer, preselected on Sonnet, or for the platform administrator
+  picker under Advanced, preselected on Sonnet, or for the platform administrator
   on the mock model where the server offers it, and the mock composer replaces
-  the text box when the mock model is chosen. There is no Session list, start
+  the text box when the mock model is chosen. In the chat the model picker is in the
+  composer's menu, each turn is one line with its work log under More details, and
+  notices that the template's own commit lacks settings are left out. There is no Session list, start
   action, `?session=` or Session Stop.
 - A new Session shows no workspace. A Session does not close when its
   instance is reclaimed at the Sandbox deadline: with a usable lease

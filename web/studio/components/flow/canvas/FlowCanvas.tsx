@@ -43,6 +43,7 @@ function FlowCanvasContent({
   flowId = "",
   onSummary,
   onTick,
+  reloadKey = 0,
   ...canvas
 }: Pick<
   GraphCanvasProps,
@@ -60,6 +61,8 @@ function FlowCanvasContent({
   onSummary?: (summary: FlowSummary | null) => void;
   /** Fired on every run poll, so a host can refresh on the same beat. */
   onTick?: () => void;
+  /** Bumped when the host changed the run, such as a retried Step, so it is read again at once. */
+  reloadKey?: number;
 }) {
   const client = useFlowRequestScope(`${flowType}:${flowId}`);
   const { definitions } = useFlowCatalog();
@@ -107,7 +110,7 @@ function FlowCanvasContent({
       controller.abort();
       if (timer !== undefined) window.clearInterval(timer);
     };
-  }, [client, flowId, onSummary, onTick]);
+  }, [client, flowId, onSummary, onTick, reloadKey]);
 
   const selected = useMemo(
     () =>

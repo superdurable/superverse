@@ -22,7 +22,7 @@ import { usePageEntries, type PaletteEntry } from "./use-palette-entries";
 const SHOWN = 12;
 
 /**
- * Jump to (⌘K or Ctrl K): the TeamSpace's Home, New project and every Project the person has a role in, and the
+ * Jump to (⌘K or Ctrl K): the Teamspace's Home, New project and every Project the person has a role in, and the
  * open Project's Processes, surfaces and tools, filtered as the person types; arrows move, Enter opens, Escape
  * closes.
  */

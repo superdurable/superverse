@@ -9,24 +9,16 @@
 import { useMemo, useState } from "react";
 import { useFlowApi } from "@/lib/flow/FlowApiProvider";
 import type { FlowHistoryEvent, FlowSummary } from "@/lib/api/flow/flow-types";
-import { timeTravelFlow, type TimeTravelRequest } from "@/lib/api/flow/flow-diagnostics";
+import {
+  TIME_TRAVEL_STEP_METHOD,
+  TIME_TRAVEL_TYPE,
+  timeTravelFlow,
+  type TimeTravelRequest,
+} from "@/lib/api/flow/flow-diagnostics";
 import { useFlowNavigation } from "@/lib/flow/FlowNavigationProvider";
 import { stepContext, stepExecutionId, stepMethod } from "@/lib/api/flow/flow-history";
 import { Dropdown } from "@/components/ui/menu/Dropdown";
 import { OPERATION_CONTROL, OperationDialog, OperationField, useDiagnosticOperation } from "./OperationDialog";
-
-/** The Dex TimeTravelType and TimeTravelStepMethod enum values. */
-const TIME_TRAVEL_TYPE = {
-  BEGINNING: 1,
-  HISTORY_EVENT_TIME: 2,
-  STEP_TYPE: 3,
-  STEP_EXECUTION_ID: 4,
-} as const;
-
-const TIME_TRAVEL_STEP_METHOD = {
-  WAIT_FOR: 1,
-  EXECUTE: 2,
-} as const;
 
 const timeTravelTypes = [
   { value: TIME_TRAVEL_TYPE.BEGINNING, label: "Beginning" },

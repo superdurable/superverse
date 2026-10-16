@@ -19,8 +19,8 @@ import { Glyph } from "@/components/ui/Glyph";
 import { POPOVER_ITEM, PopoverCard, usePopover } from "@/components/ui/Popover";
 
 /**
- * The Project's name at the head of the bar with the person's role in it; it opens the switch to another
- * Project of its TeamSpace, where each Project shows the person's role too, or that they have none.
+ * The Project's name at the head of the bar, with the person's role in it unless they own it; it opens the
+ * switch to another Project of its Teamspace, where each Project shows the person's role, or that they have none.
  */
 export function ProjectMenu({
   projectId,
@@ -49,7 +49,7 @@ export function ProjectMenu({
         <span className="min-w-0 truncate">{name}</span>
         <Glyph name="chevronDown" className="size-3.5" />
       </button>
-      <ProjectRoleChip role={role} />
+      {role !== "owner" && <ProjectRoleChip role={role} />}
       {popover.open && (
         <ProjectList projectId={projectId} teamSpaceId={teamSpaceId} anchorRef={anchor} onPick={popover.close} />
       )}

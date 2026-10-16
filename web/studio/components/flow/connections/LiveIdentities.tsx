@@ -21,7 +21,7 @@ import {
 
 /**
  * Who Live will act as and where it listens once this draft is published: each connection name with
- * the TeamSpace connection it selects and that connection's state, and each trigger with its channel,
+ * the Teamspace connection it selects and that connection's state, and each trigger with its channel,
  * named as Slack lists it or by its ID when the list is unavailable. Runs inside the draft's
  * FlowApiProvider; `version` changes whenever the draft does.
  */
@@ -55,11 +55,11 @@ export function LiveIdentities({ version }: { version: string }) {
               {" → "}
               {connection.selectedConnection ? (
                 <>
-                  TeamSpace connection <b className="font-semibold">{connection.selectedConnection.name}</b>
+                  Teamspace connection <b className="font-semibold">{connection.selectedConnection.name}</b>
                   <span className="text-ink-faint"> ({state.words})</span>
                 </>
               ) : (
-                <span className="text-fail">no TeamSpace connection selected</span>
+                <span className="text-fail">no Teamspace connection selected</span>
               )}
             </span>
             {(connection.triggerUses ?? []).map((use) => {

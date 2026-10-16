@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: Product-free UI primitives: the class joiner `cx`, Button, Dialog, Popover, Banner, Chip and Eyebrow, icons and glyphs, the phase timing list and the not-ready placeholder, with resizable panes in `pane/`.
 
-Importers: `components/agent/**` (2), `components/build`, `components/flow/**` (21), `components/frame/**` (3), `components/project/**` (2), `components/publishing/**` (3), `components/session/**` (5), `components/shell/**` (2), `components/teamspace/**` (2), `components/ui/**` (3) and `mock/surface` import this directory.
+Importers: `components/agent/**` (2), `components/build`, `components/flow/**` (24), `components/frame/**` (3), `components/project/**` (3), `components/publishing/**` (3), `components/session/**` (6), `components/shell/**` (2), `components/teamspace/**` (2), `components/ui/**` (5) and `mock/surface` import this directory.
 
 Imports: it imports no other Studio directory and calls no remote API.
 
@@ -12,14 +12,14 @@ flowchart LR
   self["components/ui"]
   c0["components/agent/** (2)"] --> self
   c1["components/build"] --> self
-  c2["components/flow/** (21)"] --> self
+  c2["components/flow/** (24)"] --> self
   c3["components/frame/** (3)"] --> self
-  c4["components/project/** (2)"] --> self
+  c4["components/project/** (3)"] --> self
   c5["components/publishing/** (3)"] --> self
-  c6["components/session/** (5)"] --> self
+  c6["components/session/** (6)"] --> self
   c7["components/shell/** (2)"] --> self
   c8["components/teamspace/** (2)"] --> self
-  c9["components/ui/** (3)"] --> self
+  c9["components/ui/** (5)"] --> self
   c10["mock/surface"] --> self
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->

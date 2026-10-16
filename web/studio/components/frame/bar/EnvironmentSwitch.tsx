@@ -15,8 +15,9 @@ import { EnvironmentStatusTab, type TabStatus } from "@/components/frame/status/
  * Preview | Live: which environment every surface shows, each with one status dot. A word follows an
  * environment's name only when something is off, and it leads to the fix (`fixHrefOf`, which those
  * who cannot fix it go without), or is the fix itself (`previewWord`, such as a stopped Preview's Start).
- * Without a Live deployment the Live name is a label that says so; a role that works on Live only sees
- * Live alone. A pending Setup write adds "Saving…" after them.
+ * Live joins with the first publish; a role that works on Live only sees Live alone, a label that says so
+ * until something is published. Preview's dot waits for processes built from the agent's own push
+ * (`previewDot`). A pending Setup write adds "Saving…" after them.
  */
 export function EnvironmentSwitch({
   environment,
@@ -27,6 +28,7 @@ export function EnvironmentSwitch({
   previewStatus,
   liveStatus,
   previewWord,
+  previewDot = true,
   saving,
 }: {
   environment: ProjectEnvironment;
@@ -40,6 +42,8 @@ export function EnvironmentSwitch({
   liveStatus?: TabStatus;
   /** Takes the place of Preview's word when given: a word that acts, such as Start for a stopped Preview. */
   previewWord?: (selected: boolean) => ReactNode;
+  /** Preview has a status to show: false draws its name alone. */
+  previewDot?: boolean;
   /** What the bar says of unsaved Setup writes, such as "Saving…". */
   saving?: ReactNode;
 }) {
@@ -58,22 +62,25 @@ export function EnvironmentSwitch({
             name="Preview"
             selected={environment === "preview"}
             href={hrefOf("preview")}
-            status={previewStatus ?? null}
-            fixHref={fixHref("preview", previewStatus)}
-            word={previewWord?.(environment === "preview")}
+            status={previewDot ? (previewStatus ?? null) : null}
+            dot={previewDot}
+            fixHref={previewDot ? fixHref("preview", previewStatus) : null}
+            word={previewDot ? previewWord?.(environment === "preview") : undefined}
             testId="environment-preview"
           />
         )}
-        <EnvironmentStatusTab
-          environment="live"
-          name="Live"
-          selected={environment === "live" || (liveOnly && !hasLive)}
-          href={hasLive ? hrefOf("live") : null}
-          status={liveStatus ?? null}
-          title={hasLive ? undefined : "Live: not published yet. Live appears with the first publish."}
-          fixHref={fixHref("live", liveStatus)}
-          testId="environment-live"
-        />
+        {(hasLive || liveOnly) && (
+          <EnvironmentStatusTab
+            environment="live"
+            name="Live"
+            selected={environment === "live" || liveOnly}
+            href={hasLive ? hrefOf("live") : null}
+            status={liveStatus ?? null}
+            title={hasLive ? undefined : "Live: not published yet. Live appears with the first publish."}
+            fixHref={fixHref("live", liveStatus)}
+            testId="environment-live"
+          />
+        )}
       </div>
       {saving}
     </div>

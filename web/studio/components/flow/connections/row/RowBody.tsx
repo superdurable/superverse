@@ -70,7 +70,7 @@ function Line({
   );
 }
 
-/** A side's selected TeamSpace connection in a few words, with Edit, which opens its editor inline. */
+/** A side's selected Teamspace connection in a few words, with Edit, which opens its editor inline. */
 function SettingsCell({
   side,
   connection,
@@ -101,7 +101,7 @@ function SettingsCell({
         .join(" · ");
   return (
     <span className="flex min-w-0 items-center gap-1 text-[12px] whitespace-nowrap text-ink-faint">
-      <span className="min-w-0 truncate">{facts || "a TeamSpace connection"}</span>
+      <span className="min-w-0 truncate">{facts || "a Teamspace connection"}</span>
       <Button
         variant="quiet"
         size="sm"
@@ -118,7 +118,7 @@ function SettingsCell({
 
 /**
  * Under a row: on a narrow panel, the connection on each side; then Connection settings, an Edit for each
- * side that opens the TeamSpace connection's editor inline, or the New connection form a dropdown opened;
+ * side that opens the Teamspace connection's editor inline, or the New connection form a dropdown opened;
  * then each trigger and Step that has settings, each setting with a control per side.
  */
 export function RowBody({

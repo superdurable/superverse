@@ -19,7 +19,9 @@ import {
   type SearchableDefinition,
 } from "./run-search-query";
 import { TypedValueInput } from "@/components/flow/run/detail/TypedValueInput";
+import { Badge } from "@/components/ui/badge/Badge";
 import { Button } from "@/components/ui/Button";
+import { Glyph } from "@/components/ui/Glyph";
 import { Dropdown } from "@/components/ui/menu/Dropdown";
 import { cx } from "@/components/ui/cx";
 import { FIELD, LABEL } from "@/components/flow/frame/workspace-styles";
@@ -27,6 +29,37 @@ import { FIELD, LABEL } from "@/components/flow/frame/workspace-styles";
 /** The search controls are smaller than a case's, so the column keeps its width for the runs. */
 const SEARCH_FIELD = cx(FIELD, "text-xs");
 const SEARCH_LABEL = cx(LABEL, "mb-1 block");
+
+/**
+ * The run search folded behind one Filter control, so the list leads. The control says how many
+ * controls narrow the list beyond the view's own scope, and a folded filter still applies.
+ */
+export function RunFilter({ activeFilters, ...search }: Parameters<typeof RunSearch>[0] & { activeFilters: number }) {
+  const [open, setOpen] = useState(activeFilters > 0);
+  return (
+    <div className="mb-1.5 shrink-0" data-zone="find">
+      <Button
+        variant="quiet"
+        size="sm"
+        className="-ml-2 inline-flex items-center gap-1.5"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
+        <Glyph name="sliders" className="size-3.5" />
+        {SEARCH_COPY.filter}
+        {activeFilters > 0 && <Badge>{activeFilters}</Badge>}
+      </Button>
+      {open && (
+        <section
+          className="mt-1 rounded-md border border-line-faint bg-panel px-2.25 pt-2 pb-0.5"
+          aria-label={SEARCH_COPY.filter}
+        >
+          <RunSearch {...search} />
+        </section>
+      )}
+    </div>
+  );
+}
 
 /**
  * Status and time in front; attribute comparisons and an exact Flow ID behind a disclosure.

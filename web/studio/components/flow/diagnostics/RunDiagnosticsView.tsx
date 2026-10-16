@@ -9,6 +9,7 @@
 import { FlowLink } from "@/components/flow/frame/FlowLink";
 import { usesCurrentDefinition } from "@/lib/flow/definition-binding";
 import { useFlowCatalog } from "@/lib/flow/FlowCatalogProvider";
+import { useFlowHost } from "@/lib/flow/FlowHostProvider";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { formatDate, formatDuration } from "@/lib/shared/format";
 import type { FlowHistoryEvent } from "@/lib/api/flow/flow-types";
@@ -90,6 +91,8 @@ export function RunDiagnosticsView({
   breadcrumb: ReactNode;
 }) {
   const { catalog } = useFlowCatalog();
+  // Stopping a run and rerunning it from an event are for those who build the Project, as in the run drawer.
+  const { canIntervene } = useFlowHost();
   const [live, setLive] = useState(true);
   const {
     summary,
@@ -165,16 +168,20 @@ export function RunDiagnosticsView({
             </label>
             <Button onClick={() => void navigator.clipboard.writeText(window.location.href)}>Copy link</Button>
             <Button onClick={() => void refresh()}>Refresh</Button>
-            <Button
-              variant="danger"
-              disabled={!summary || isTerminalFlowStatusCode(summary.flowStatusCode)}
-              onClick={() => setStopOpen(true)}
-            >
-              Stop
-            </Button>
-            <Button variant="danger" onClick={() => setTimeTravel({ event: selectedEvent ? selected : null })}>
-              Time Travel
-            </Button>
+            {canIntervene && (
+              <Button
+                variant="danger"
+                disabled={!summary || isTerminalFlowStatusCode(summary.flowStatusCode)}
+                onClick={() => setStopOpen(true)}
+              >
+                Stop
+              </Button>
+            )}
+            {canIntervene && (
+              <Button variant="danger" onClick={() => setTimeTravel({ event: selectedEvent ? selected : null })}>
+                Time Travel
+              </Button>
+            )}
           </div>
         </div>
         {summary && (
@@ -287,7 +294,7 @@ export function RunDiagnosticsView({
         )}
       </div>
 
-      {summary && timeTravel && (
+      {summary && timeTravel && canIntervene && (
         <TimeTravelDialog
           summary={summary}
           events={history}
@@ -295,7 +302,7 @@ export function RunDiagnosticsView({
           onClose={() => setTimeTravel(null)}
         />
       )}
-      {summary && stopOpen && (
+      {summary && stopOpen && canIntervene && (
         <StopFlowDialog summary={summary} onClose={() => setStopOpen(false)} onStopped={() => void refresh()} />
       )}
     </div>

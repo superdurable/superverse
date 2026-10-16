@@ -1,7 +1,7 @@
 # components/flow/connector/team-space
 
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
-Purpose: A TeamSpace connection's editor with the connector's own form, and the picker that chooses one for a Project's connection name.
+Purpose: A Teamspace connection's editor with the connector's own form, and the picker that chooses one for a Project's connection name.
 
 Importers: `components/flow/connections/row` and `components/flow/scope` import this directory.
 
@@ -29,7 +29,7 @@ same connection. An OAuth method leaves for the provider through
 outcome. Where the platform offers its own OAuth application for the method,
 the form offers it first.
 
-The picker lists the TeamSpace's connections of the declared connector, major
+The picker lists the Teamspace's connections of the declared connector, major
 version and method and selects one through the caller's `onSelect`, or creates
 one from the declared release, which may be a release candidate, and selects
 it. Its `pick` query parameter brings an authorization back to the same

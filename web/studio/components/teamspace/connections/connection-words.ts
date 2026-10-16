@@ -79,5 +79,5 @@ export function appName(connectorId: string, catalog: ConnectorCatalogEntry[]): 
   return catalog.find((entry) => entry.connectorId === connectorId)?.displayName || connectorId;
 }
 
-/** Apps a TeamSpace often adds first, offered under Add more apps when the catalog lists them. */
+/** Apps a Teamspace often adds first, offered under Add more apps when the catalog lists them. */
 export const SUGGESTED_APPS = ["slack", "gmail", "google-sheets", "notion", "hubspot", "stripe", "openai", "github"];

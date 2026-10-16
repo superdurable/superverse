@@ -52,8 +52,8 @@ export const FACT = cx("col-span-full grid grid-cols-subgrid");
 export const FACT_TERM = cx("self-center text-[10px] tracking-wider text-ink-faint uppercase");
 export const FACT_VALUE = cx("min-w-0 text-xs/[1.45] wrap-anywhere text-ink-dim");
 
-/** A Step type or other identifier named in a case. */
-export const STEP_NAME = cx("m-0 font-mono text-xs text-ink");
+/** A Step named in a case, by the title the canvas gives it. */
+export const STEP_NAME = cx("m-0 text-body font-semibold text-ink");
 export const PURPOSE = cx("mt-0.5 text-xs/normal text-ink-dim");
 
 /** A numbered or checked mark in a sequence of steps; `data-state` says where the sequence is. */

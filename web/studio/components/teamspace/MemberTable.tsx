@@ -17,7 +17,7 @@ export interface MemberRow<R extends string> {
   accountId: string;
   email: string;
   role: R;
-  /** Why the row reads differently, such as the only admin, or a member who left the TeamSpace. */
+  /** Why the row reads differently, such as the only admin, or a member who left the Teamspace. */
   note?: string;
   /** Nothing about the row can change, such as the only admin or owner. */
   fixed?: boolean;

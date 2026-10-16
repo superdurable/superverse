@@ -42,20 +42,8 @@ function Outline({ card }: { card: ProcessCard }) {
 }
 
 /**
- * A process's one-line summary. No Flow Definition carries one yet: `dex:explanation` describes Steps,
- * not the Flow, so the line says so until the analyser emits one for the Flow.
- */
-function Summary() {
-  return (
-    <span className="text-[12.5px] text-ink-faint italic" title="Shown here once the Flow definition describes it">
-      No one-line summary yet
-    </span>
-  );
-}
-
-/**
- * The Flow tab without a picked Process: the project map, one card per Process of the version shown
- * with its Steps and who acts at each, an arrow where one Process starts another, a marker on a
+ * The Flow tab without a picked Process: the project map, one card per Process of the version shown,
+ * named as people say it, with its Steps and who acts at each, an arrow where one Process starts another, a marker on a
  * Process whose definition differs between Preview and Live, and, once they are read, its runs
  * waiting for a person in the version shown. A card opens its Process.
  */
@@ -132,19 +120,17 @@ export function ProjectMap({
               className="flex min-w-0 flex-col gap-2.5 rounded-xl border border-line-soft bg-panel p-3.5 text-left hover:border-line hover:shadow-(--shadow-lift) focus-visible:shadow-(--focus-ring) focus-visible:outline-none"
               data-process={card.flowType}
               data-pick={names(card.flowType)}
+              // The Flow type is the code's name for the process; a builder who wants it finds it on hover.
+              title={card.flowType}
             >
-              <span className="flex flex-col">
-                <span className="flex items-center gap-2">
-                  <b className="text-[15px] font-semibold text-ink">{names(card.flowType)}</b>
-                  {changed.has(card.flowType) && (
-                    <span className="rounded-full bg-busy-subtle px-1.5 text-[10.5px] font-medium text-busy">
-                      {changedLabel}
-                    </span>
-                  )}
-                </span>
-                <span className="font-mono text-[11px] text-ink-faint">{card.flowType}</span>
+              <span className="flex items-center gap-2">
+                <b className="text-[15px] font-semibold text-ink">{names(card.flowType)}</b>
+                {changed.has(card.flowType) && (
+                  <span className="rounded-full bg-busy-subtle px-1.5 text-[10.5px] font-medium text-busy">
+                    {changedLabel}
+                  </span>
+                )}
               </span>
-              <Summary />
               <Outline card={card} />
               <span className="flex flex-col gap-0.5 text-xs text-ink-faint">
                 <span>

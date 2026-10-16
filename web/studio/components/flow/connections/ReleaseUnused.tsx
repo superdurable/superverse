@@ -13,7 +13,7 @@ import { createFlowApiClient } from "@/lib/api/transport/flow-api-client";
 import { Button } from "@/components/ui/Button";
 
 /**
- * Lets go of the TeamSpace connections that versions before the current Live one used, so the TeamSpace can
+ * Lets go of the Teamspace connections that versions before the current Live one used, so the Teamspace can
  * delete them; Go keeps those the current Live version selects and refuses while a deployment runs.
  */
 export function ReleaseUnused({ path, catalog }: { path: string; catalog: ConnectionsResponse }) {

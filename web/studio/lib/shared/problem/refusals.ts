@@ -18,16 +18,16 @@ const DEPLOYMENT_KEY = "deploymentId";
 const DEPLOYMENT_ID = /^[a-z0-9](?:[a-z0-9-]{0,34}[a-z0-9])?$/;
 
 /**
- * The refusals of a TeamSpace connection request that Studio branches on, as Go names them in the
+ * The refusals of a Teamspace connection request that Studio branches on, as Go names them in the
  * ErrorInfo reason (internal/tenancy/connections RefusalReason, and DEPLOYMENT_IN_PROGRESS of a
  * release of unused connections), each with what Studio tells the person.
  */
 const CONNECTION_REFUSALS = {
-  CONNECTOR_VERSION_UNSUPPORTED: "This connector version predates TeamSpace connections; use a newer release.",
+  CONNECTOR_VERSION_UNSUPPORTED: "This connector version predates Teamspace connections; use a newer release.",
   CONNECTION_SCOPES_DIFFER: "The connection was authorized for other OAuth scopes; reauthorize it for this version.",
   CONNECTION_DELETED: "The connection was deleted.",
   CONNECTION_IN_USE: "A Project still uses this connection.",
-  CONNECTION_NAME_TAKEN: "Another connection of this TeamSpace has that name.",
+  CONNECTION_NAME_TAKEN: "Another connection of this Teamspace has that name.",
   OAUTH_DENIED: "The provider denied the authorization.",
   DEPLOYMENT_IN_PROGRESS: "A deployment is in progress; release unused connections after it.",
 } as const;

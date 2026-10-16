@@ -9,7 +9,7 @@
 import { redirect } from "next/navigation";
 import { studioRoutes } from "@/lib/shared/studio-routes";
 
-// A Project starts in a TeamSpace: the earlier address leads to the TeamSpace the person opens.
+// A Project starts in a Teamspace: the earlier address leads to the Teamspace the person opens.
 export default function ProjectStartRoute() {
   redirect(studioRoutes.home);
 }

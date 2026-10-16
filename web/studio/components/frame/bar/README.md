@@ -5,7 +5,7 @@ Purpose: The Builder's one 48px bar: the Project switch, the Preview | Live swit
 
 Importers: `components/frame` imports this directory.
 
-Imports: it imports `components/frame/status`, `components/teamspace`, `components/ui`, `components/ui/menu`, `lib/project`, `lib/project/setup`, `lib/shared` and `lib/teamspace`.
+Imports: it imports `components/frame/status`, `components/teamspace`, `components/ui`, `lib/project`, `lib/project/setup`, `lib/shared` and `lib/teamspace`.
 
 ```mermaid
 flowchart LR
@@ -14,10 +14,9 @@ flowchart LR
   self --> d0["components/frame/status"]
   self --> d1["components/teamspace"]
   self --> d2["components/ui"]
-  self --> d3["components/ui/menu"]
-  self --> d4["lib/project"]
-  self --> d5["lib/project/setup"]
-  self --> d6["lib/shared"]
-  self --> d7["lib/teamspace"]
+  self --> d3["lib/project"]
+  self --> d4["lib/project/setup"]
+  self --> d5["lib/shared"]
+  self --> d6["lib/teamspace"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->

@@ -16,7 +16,7 @@ import { getFlowDisplay, invokeFlowAction, updateFlowDisplayField } from "@/lib/
 import { usesCurrentDefinition, unavailableDefinitionMessage } from "@/lib/flow/definition-binding";
 import { FlowLink } from "@/components/flow/frame/FlowLink";
 import { actionUserInput } from "./flow-actions";
-import { LIVENESS_COPY } from "./run-copy";
+import { LIVENESS_COPY, RUN_COPY } from "./run-copy";
 import { absorb, classifyReadFailure, nothingHeld } from "./read-liveness";
 import { leadFields } from "./ui-slots";
 import { useFlowCatalog } from "@/lib/flow/FlowCatalogProvider";
@@ -26,6 +26,7 @@ import { TypedValueInput, editableValue, parseTypedValue } from "./TypedValueInp
 import { ActionForms, type ActiveQRScanner } from "./ActionForms";
 import { Button } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
+import { MoreDetails } from "@/components/ui/reveal/MoreDetails";
 import {
   BLOCK,
   CASE,
@@ -34,6 +35,7 @@ import {
   CASE_TITLE,
   ERROR,
   FACT,
+  FACT_TERM,
   FACTS,
   FIELD,
   LINK,
@@ -63,6 +65,7 @@ interface FieldEditing {
 export function SelectedRunPanel({
   flowType,
   flowId,
+  title,
   definition,
   definitionRevision,
   flowStatusCode,
@@ -75,6 +78,8 @@ export function SelectedRunPanel({
 }: {
   flowType: string;
   flowId: string;
+  /** The run's name as its row says it, shown with the heading in place of the Flow ID. */
+  title?: string;
   definition: FlowV2Definition;
   definitionRevision: string;
   /** From the search row, so a dead worker can be told apart from a closed run. */
@@ -89,8 +94,11 @@ export function SelectedRunPanel({
   order: "actions-first" | "evidence-first";
   /** False when the host already names the run, so it is not named twice. */
   showHeading?: boolean;
-  /** An Action succeeded, so whatever the run was waiting for has moved on. */
-  onActed?: () => void;
+  /**
+   * An Action succeeded, so whatever the run was waiting for has moved on: the Action's label, and
+   * whether the run, read again, still offers an Action.
+   */
+  onActed?: (outcome: { action: string; waiting: boolean }) => void;
   /** Reported up so the list can mark the row; a search cannot discover this. */
   onStranded?: (flowID: string) => void;
 }) {
@@ -107,25 +115,28 @@ export function SelectedRunPanel({
   const [actionValues, setActionValues] = useState<Record<string, Record<string, string>>>({});
   const [activeQRScanner, setActiveQRScanner] = useState<ActiveQRScanner | null>(null);
 
-  const loadDisplay = useCallback(async () => {
+  /** Reads the run's Display again; what it read, or null when it read nothing. */
+  const loadDisplay = useCallback(async (): Promise<FlowDisplay | null> => {
     try {
       const summary = await getFlowSummary(client, flowId);
       setBinding(summary);
       if (!usesCurrentDefinition(summary, definitionRevision)) {
         setHeld(nothingHeld<FlowDisplay>());
-        return;
+        return null;
       }
       const display = await getFlowDisplay(client, { flowType, flowId }, { definitionRevision });
       setHeld((prior) => absorb(prior, { state: "ok", value: display }));
+      return display;
     } catch (loadError) {
       if (handleDefinitionError(loadError)) {
         setHeld(nothingHeld<FlowDisplay>());
-        return;
+        return null;
       }
       // Only knowable once somebody opens the run: a search says nothing about its worker.
       const outcome = classifyReadFailure<FlowDisplay>(loadError, flowStatusCode);
       if (outcome.state === "stranded") onStranded?.(flowId);
       setHeld((prior) => absorb(prior, outcome));
+      return null;
     }
   }, [client, definitionRevision, flowId, flowStatusCode, flowType, handleDefinitionError, onStranded]);
 
@@ -176,8 +187,12 @@ export function SelectedRunPanel({
         },
         { definitionRevision },
       );
-      await loadDisplay();
-      onActed?.();
+      const after = await loadDisplay();
+      // A read that failed says nothing either way, so the run is taken to wait still.
+      onActed?.({
+        action: action.label,
+        waiting: after === null || (after.isActive && after.eligibleActions.length > 0),
+      });
     } catch (failure) {
       if (handleDefinitionError(failure)) return;
       setActionError(errorMessage(failure, String(failure)));
@@ -231,7 +246,11 @@ export function SelectedRunPanel({
     <div className={RUN_CASE}>
       {(showHeading || footer || held.liveness === "stale") && (
         <div className={CASE_HEAD}>
-          {showHeading && <span className={CASE_TITLE}>{flowId}</span>}
+          {showHeading && (
+            <span className={CASE_TITLE} title={flowId}>
+              {title || flowId}
+            </span>
+          )}
           {showHeading && result && <span className={CASE_STATUS}>{result.flowStatus}</span>}
           {held.liveness === "stale" && (
             <span className="ml-auto text-[11px] text-fail">{LIVENESS_COPY.staleShort}</span>
@@ -258,6 +277,16 @@ export function SelectedRunPanel({
           {fields}
           {actions}
         </>
+      )}
+      {showHeading && (
+        <MoreDetails surface="runs.run-ids" className={BLOCK}>
+          <dl className={FACTS}>
+            <div className={FACT}>
+              <dt className={FACT_TERM}>{RUN_COPY.flowId}</dt>
+              <dd className="min-w-0 font-mono text-caption wrap-anywhere text-ink-dim">{flowId}</dd>
+            </div>
+          </dl>
+        </MoreDetails>
       )}
       {activeQRScanner && (
         <QrCodeScannerDialog

@@ -66,7 +66,8 @@ export type TabStatus = Pick<EnvironmentStatus<string>, "kind" | "tone" | "word"
  * An environment of the bar: its one dot and its name, which makes every surface show that
  * environment (a label only without a target, `href` null). A word follows only when something is off,
  * and leads to the fix when `fixHref` names one. The whole status is the hover hint and part of the
- * name's accessible text.
+ * name's accessible text. Without `dot` the name stands alone, as Preview's does before anything of the
+ * agent's own is built.
  */
 export function EnvironmentStatusTab({
   environment,
@@ -74,6 +75,7 @@ export function EnvironmentStatusTab({
   selected,
   href,
   status,
+  dot = true,
   title,
   fixHref,
   word,
@@ -84,6 +86,7 @@ export function EnvironmentStatusTab({
   selected: boolean;
   href: string | null;
   status: TabStatus | null;
+  dot?: boolean;
   title?: string;
   /** Where the word leads, or null when it leads nowhere. */
   fixHref: string | null;
@@ -95,16 +98,18 @@ export function EnvironmentStatusTab({
   const hint = title ?? (status ? `${name}: ${status.detail}` : name);
   const label = (
     <>
-      <span
-        aria-hidden="true"
-        className={cx(
-          "size-2 shrink-0 rounded-full border-[1.5px]",
-          selected && (tone === "ok" || tone === "plain")
-            ? cx("border-panel", tone === "ok" && "bg-panel")
-            : statusDotClass(environment, tone),
-          selected && tone !== "ok" && tone !== "plain" && "ring-1 ring-panel",
-        )}
-      />
+      {dot && (
+        <span
+          aria-hidden="true"
+          className={cx(
+            "size-2 shrink-0 rounded-full border-[1.5px]",
+            selected && (tone === "ok" || tone === "plain")
+              ? cx("border-panel", tone === "ok" && "bg-panel")
+              : statusDotClass(environment, tone),
+            selected && tone !== "ok" && tone !== "plain" && "ring-1 ring-panel",
+          )}
+        />
+      )}
       {name}
       {status && <span className="sr-only">: {status.detail}</span>}
     </>

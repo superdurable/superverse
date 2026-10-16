@@ -134,7 +134,7 @@ test("Publish needs a Preview run or a reason, states its consequences and publi
         await consequences.getByRole("button", { name: "The connections Live uses" }).click();
         const identities = shown.getByTestId("live-identities");
         await expect(identities).toContainText("summary-model");
-        await expect(identities).toContainText("TeamSpace connection");
+        await expect(identities).toContainText("Teamspace connection");
         await expect(shown.getByTestId(`publish-version-${newer}`)).toContainText("ran on Preview at");
       },
     });

@@ -26,8 +26,8 @@ flowchart LR
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
-The sidebar works in the current TeamSpace (`lib/teamspace`): its switcher row opens the person's TeamSpaces,
-SidebarProjects lists every Project of the TeamSpace with the person's role in it and refreshes them, and the Team
+The sidebar works in the current Teamspace (`lib/teamspace`): its switcher row opens the person's Teamspaces,
+SidebarProjects lists every Project of the Teamspace with the person's role in it and refreshes them, and the Team
 section below them (Connections, then People) stays in view while the Projects scroll. A Project in
 which the person has no role carries only its name, status, setup status and Live presence and is not a link, because
 its page cannot load. A Project with a role links to its Builder.

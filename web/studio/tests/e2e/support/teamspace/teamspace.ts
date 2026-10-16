@@ -7,55 +7,62 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 import { expect, type Page } from "@playwright/test";
-import { randomBytes } from "node:crypto";
-import type { RpcOutput } from "@/lib/shared/rpc-methods";
+import { takeFirstTeamSpace } from "@/tests/e2e/support/account";
 import { chooseOption, rpc, rpcAnswered } from "@/tests/e2e/support/studio-api";
 
 /** How long a change takes to reach the read model, which every read and authorization uses. */
 const READ_MODEL_MS = 60_000;
 
+/** The start page of an empty Teamspace's Home, which offers its first Project. */
+export const START_HEADING = "What process should Dex run?";
+
 /**
- * Creates a TeamSpace from `/`, the landing of an account without one, and returns its ID once its Home offers to
- * create the first Project. A repeated create of the page's request names the same TeamSpace.
+ * The first Teamspace of an account registered a moment ago, which Studio creates without a question, named
+ * from the email: the one `register` saw created, or, for an account without one, the one `/` creates. Returns
+ * its ID once its Home offers the first Project. A repeated create of the page's request names the same
+ * Teamspace.
  */
 export async function createTeamSpace(page: Page): Promise<string> {
-  const name = `E2E team ${randomBytes(3).toString("hex")}`;
-  if (new URL(page.url()).pathname !== "/") await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Create your TeamSpace." })).toBeVisible();
-  await page.getByLabel("TeamSpace name", { exact: true }).fill(name);
-  const answered = page.waitForResponse(rpcAnswered("CreateTeamSpace"));
-  await page.getByRole("button", { name: "Create TeamSpace", exact: true }).click();
-  const response = await answered;
-  expect(response.ok()).toBe(true);
-  const accepted: RpcOutput<"CreateTeamSpace"> = await response.json();
+  let first = takeFirstTeamSpace(page);
+  if (!first) {
+    const answered = page.waitForResponse(rpcAnswered("CreateTeamSpace"), { timeout: READ_MODEL_MS });
+    await page.goto("/");
+    const response = await answered;
+    first = {
+      status: response.status(),
+      request: response.request().postDataJSON(),
+      accepted: response.ok() ? await response.json() : { teamSpaceId: "" },
+    };
+  }
+  expect(first.status).toBe(200);
+  const { accepted, request } = first;
   expect(accepted.teamSpaceId).toMatch(/^[a-z0-9]+$/);
-  const replay = await rpc(page.request, "CreateTeamSpace", response.request().postDataJSON());
+  expect(request.name).toMatch(/\S/);
+  const replay = await rpc(page.request, "CreateTeamSpace", request);
   expect(await replay.json()).toEqual(accepted);
   await expect(page).toHaveURL(new RegExp(`/t/${accepted.teamSpaceId}$`));
-  await expect(page.getByRole("heading", { name: "Create a project." })).toBeVisible({ timeout: READ_MODEL_MS });
+  await expect(page.getByRole("heading", { name: START_HEADING })).toBeVisible({ timeout: READ_MODEL_MS });
+  const name = String(request.name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   await expect(page.getByRole("button", { name: new RegExp(`^${name} · admin`) })).toBeVisible();
   return accepted.teamSpaceId;
 }
 
 /**
- * The TeamSpace `/` opens for the signed-in account: the one it last opened or its first, or a new one when it
- * has none, as for an account registered a moment ago.
+ * The Teamspace `/` opens for the signed-in account: the one it last opened or its first, or the one Studio
+ * creates when it has none, as for an account registered a moment ago.
  */
 export async function openTeamSpace(page: Page): Promise<string> {
-  await page.goto("/");
-  const landing = page.getByRole("heading", { name: "Create your TeamSpace." });
+  if (takeFirstTeamSpace(page)) await page.waitForURL(/\/t\/[^/]+$/);
+  else await page.goto("/");
   await expect(
-    landing.or(page.getByRole("heading", { name: "Projects" }).or(page.getByText("Create a project."))),
-  ).toBeVisible({
-    timeout: READ_MODEL_MS,
-  });
-  if (await landing.isVisible()) return createTeamSpace(page);
+    page.getByRole("heading", { name: "Projects" }).or(page.getByRole("heading", { name: START_HEADING })),
+  ).toBeVisible({ timeout: READ_MODEL_MS });
   const id = new URL(page.url()).pathname.match(/^\/t\/([^/]+)/)?.[1];
-  if (!id) throw new Error("The landing opened no TeamSpace");
+  if (!id) throw new Error("The landing opened no Teamspace");
   return decodeURIComponent(id);
 }
 
-/** Adds the registered account `email` to the TeamSpace through People, as one of its admins does. */
+/** Adds the registered account `email` to the Teamspace through People, as one of its admins does. */
 export async function addTeamSpaceMember(page: Page, teamSpaceId: string, email: string, role: "admin" | "member") {
   await page.goto(`/t/${teamSpaceId}/people`);
   const form = page.getByRole("form", { name: "Add a person" });
@@ -64,13 +71,13 @@ export async function addTeamSpaceMember(page: Page, teamSpaceId: string, email:
   const answered = page.waitForResponse(rpcAnswered("AddTeamSpaceMember"));
   await form.getByRole("button", { name: "Add", exact: true }).click();
   expect((await answered).ok()).toBe(true);
-  const members = page.getByRole("table", { name: "TeamSpace members" });
+  const members = page.getByRole("table", { name: "Teamspace members" });
   await expect(members.getByRole("row").filter({ hasText: email })).toBeVisible();
 }
 
 /**
- * Gives a member of the Project's TeamSpace a role through Tools, Permissions, as one of its owners does. The
- * TeamSpace's new member reaches the read model the list reads within seconds.
+ * Gives a member of the Project's Teamspace a role through Tools, Permissions, as one of its owners does. The
+ * Teamspace's new member reaches the read model the list reads within seconds.
  */
 export async function addProjectMember(
   page: Page,
@@ -79,13 +86,13 @@ export async function addProjectMember(
   role: "owner" | "builder" | "operator",
 ) {
   const form = page.getByRole("form", { name: "Add to the project" });
-  const person = form.getByRole("button", { name: "A member of the TeamSpace", exact: true });
+  const person = form.getByRole("button", { name: "A member of the Teamspace", exact: true });
   await expect
     .poll(
       async () => {
         await page.goto(`/p/${projectId}/tools?tool=permissions`);
         await expect(person).toBeVisible({ timeout: 30_000 });
-        // The list of the TeamSpace's people loads after the page; with nobody to add, the dropdown is off.
+        // The list of the Teamspace's people loads after the page; with nobody to add, the dropdown is off.
         await expect(person).not.toHaveText(/^Loading/, { timeout: 30_000 });
         if (await person.isDisabled()) return 0;
         await person.click();

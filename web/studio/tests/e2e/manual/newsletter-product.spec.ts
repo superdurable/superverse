@@ -41,7 +41,7 @@ async function reuseConnections(page: Page, teamSpaceId: string) {
         found.set(connection.name, connection);
     }
     if (!response.nextPageToken) break;
-    if (response.nextPageToken === pageToken) throw new Error("TeamSpace connection cursor did not advance");
+    if (response.nextPageToken === pageToken) throw new Error("Teamspace connection cursor did not advance");
     pageToken = response.nextPageToken;
   } while (true);
 
@@ -49,7 +49,7 @@ async function reuseConnections(page: Page, teamSpaceId: string) {
     const name = namesFor(provider).find((candidate) => found.has(candidate)) ?? nameFor(provider);
     const connection = found.get(name);
     if (connection?.credentialStatus !== "CREDENTIAL_STATUS_READY")
-      throw new Error(`${name} is not Connected; reauthorize it on the TeamSpace Connections page`);
+      throw new Error(`${name} is not Connected; reauthorize it on the Teamspace Connections page`);
     const row = page.getByTestId("setup-connection").filter({ hasText: `newsletter-${provider}` });
     const choice = row.getByRole("button", { name: new RegExp(`connection newsletter-${provider}$`) });
     await expect(choice).toBeEnabled();
@@ -297,21 +297,21 @@ test("manual real-provider newsletter from a mock-built application", async ({ p
   else {
     let editor = await newConnection(page, "newsletter-slack");
     await editor.getByRole("button", { name: /^Optional settings/ }).click();
-    await safeFill(editor.getByLabel(/^app_token/), secret.slack.appToken);
+    await safeFill(editor.getByLabel(/^App token/), secret.slack.appToken);
     await authorize(page, editor, secret.slack);
 
     editor = await newConnection(page, "newsletter-github");
     await authorize(page, editor, secret.github);
 
     editor = await newConnection(page, "newsletter-openai");
-    await editor.getByRole("button", { name: /^provider/ }).click();
+    await editor.getByRole("button", { name: /^Provider/ }).click();
     await page
-      .getByRole("listbox", { name: /^provider/ })
+      .getByRole("listbox", { name: /^Provider/ })
       .getByRole("option", { name: "openai" })
       .click();
-    await safeFill(editor.getByLabel(/^api_key/), secret.openai.apiKey);
+    await safeFill(editor.getByLabel(/^API key/), secret.openai.apiKey);
     await editor.getByRole("button", { name: /^Optional settings/ }).click();
-    await editor.getByLabel(/^model/).fill(secret.openai.model);
+    await editor.getByLabel(/^Model/).fill(secret.openai.model);
     await editor.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByTestId("team-space-connection-editor")).toHaveCount(0);
 

@@ -23,6 +23,7 @@ const MOCK_SCRIPT_PHRASES = {
   SHOW_TOOLS: "show tools",
   ASK_QUESTIONS: "ask questions",
   CONFIRM_REQUIREMENTS: "confirm requirements",
+  CONFIRM_PLAIN_REQUIREMENTS: "confirm plain requirements",
   NEED_APPROVAL: "need approval",
   TOOL_FAILED: "tool failed",
   SHOW_TODOS: "show todos",
@@ -170,6 +171,9 @@ export function sendMessage(store: MockStore, projectId: string, content: string
     bumpWaitingRound(agent);
   } else if (phrase === MOCK_SCRIPT_PHRASES.CONFIRM_REQUIREMENTS) {
     showRequirementsCard(agent, MOCK_REQUIREMENTS);
+  } else if (phrase === MOCK_SCRIPT_PHRASES.CONFIRM_PLAIN_REQUIREMENTS) {
+    // A card without a Flow design, which the Flow tab shows as the Brief alone.
+    showRequirementsCard(agent, { ...MOCK_REQUIREMENTS, design: null });
   } else if (phrase === MOCK_SCRIPT_PHRASES.NEED_APPROVAL) {
     agent.description.status = "STATUS_WAITING_FOR_TOOL_APPROVAL";
     agent.description.pendingApproval = {

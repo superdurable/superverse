@@ -32,6 +32,7 @@ export function ProjectBar({
   tabsAfter,
   badges,
   notes,
+  fresh,
   actions,
 }: {
   /** The environment every surface shows. */
@@ -46,6 +47,8 @@ export function ProjectBar({
   badges?: Partial<Record<ProjectSurface, ReactNode>>;
   /** What a tab's badge says, for the tab's accessible name. */
   notes?: Partial<Record<ProjectSurface, string>>;
+  /** Tabs that appeared and were not opened since, each with a small dot. */
+  fresh?: ReadonlySet<ProjectSurface>;
   actions?: ReactNode;
 }) {
   const header = useRef<HTMLElement>(null);
@@ -83,20 +86,24 @@ export function ProjectBar({
       >
         {left}
       </div>
-      <TabStrip
-        tabs={tabs}
-        current={current}
-        hrefOf={hrefOf}
-        before={tabsBefore}
-        after={tabsAfter}
-        badges={badges}
-        notes={notes}
-        fit={fit}
-        navRef={nav}
-        beforeRef={before}
-        tabsRef={tabStrip}
-        afterRef={after}
-      />
+      {/* A new Project's first conversation has no tabs at all. */}
+      {(tabs.length > 0 || tabsBefore || tabsAfter) && (
+        <TabStrip
+          tabs={tabs}
+          current={current}
+          hrefOf={hrefOf}
+          before={tabsBefore}
+          after={tabsAfter}
+          badges={badges}
+          notes={notes}
+          fresh={fresh}
+          fit={fit}
+          navRef={nav}
+          beforeRef={before}
+          tabsRef={tabStrip}
+          afterRef={after}
+        />
+      )}
       <div ref={actionBlock} className="ml-auto flex shrink-0 items-center gap-2 pl-2.5">
         {actions}
       </div>

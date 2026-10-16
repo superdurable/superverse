@@ -31,7 +31,7 @@ export const PROJECT_ROLE_ITEMS = (Object.keys(PROJECT_ROLES) as ProjectRole[]).
 export const ROLE_NOTE = "Each role includes everything after it.";
 
 /**
- * Adds a member of the Project's TeamSpace with one role: Tools ▸ Permissions and the bar's Share use it alike.
+ * Adds a member of the Project's Teamspace with one role: Tools ▸ Permissions and the bar's Share use it alike.
  * Only an owner sees it; the server refuses anyone else.
  */
 export function AddProjectMember({
@@ -78,16 +78,16 @@ export function AddProjectMember({
             stacked ? "grid gap-1 text-[12.5px] text-ink-dim" : "grid min-w-60 flex-1 gap-1 text-[12.5px] text-ink-dim"
           }
         >
-          A member of the TeamSpace
+          A member of the Teamspace
           <Dropdown
-            label="A member of the TeamSpace"
+            label="A member of the Teamspace"
             size="md"
             disabled={candidates.length === 0}
             value={added || null}
             onChange={setAdded}
             placeholder={
               people.members === null
-                ? "Loading the TeamSpace's people…"
+                ? "Loading the Teamspace's people…"
                 : candidates.length
                   ? "Choose a person"
                   : "Everyone is in"
@@ -132,7 +132,7 @@ export function AddProjectMember({
 }
 
 /**
- * The bar's Share: a small popover to invite a member of the TeamSpace into the Project, for its owners, and to
+ * The bar's Share: a small popover to invite a member of the Teamspace into the Project, for its owners, and to
  * copy the link to what this page shows, which members open as it is. Who has access is in Tools ▸ Permissions.
  */
 export function ProjectShare({

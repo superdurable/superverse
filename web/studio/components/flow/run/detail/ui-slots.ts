@@ -8,6 +8,7 @@
 
 import type { FlowV2Definition, FlowV2Field } from "@/lib/api/flow/flow-definition";
 import type { FlowSearchRow } from "@/lib/api/flow/flow-types";
+import { formatMonthDayTime, formatTimeOfDay, processName } from "@/lib/shared/format";
 
 /**
  * Where a Flow says each of its Attributes belongs, read off the Display contract.
@@ -47,10 +48,10 @@ export function fieldsBySlot(definition: FlowV2Definition): UISlots {
  * the same for a Flow that filled every slot and one that filled none.
  */
 export interface RunRow {
-  /** Names the run to a person. The Flow ID when nothing better is declared. */
+  /** Names the run to a person: its process and start time when nothing better is declared. */
   title: string;
-  /** True when the title is the Flow ID, so the row can stop repeating it. */
-  titleIsFlowID: boolean;
+  /** True when the title is the process and start time, so the row can stop repeating them. */
+  titleIsFallback: boolean;
   /** Where the run has got to, in the Flow's own words when it has any. */
   status: string;
 }
@@ -59,10 +60,21 @@ export function runRow(flow: FlowSearchRow, slots: UISlots): RunRow {
   const title = firstValue(flow, slots.get("title"));
   const status = firstValue(flow, slots.get("status"));
   return {
-    title: title ?? flow.flowId,
-    titleIsFlowID: title === null,
+    title: title ?? fallbackRunTitle(flow.flowType, flow.startTime),
+    titleIsFallback: title === null,
     status: status ?? flow.flowStatus,
   };
+}
+
+/**
+ * A run's name when its Flow declares no title: "Text summary · 2:23 PM", with the day once it is not
+ * today. The Flow ID names nothing a person reads, so it stays in the run's More details.
+ */
+export function fallbackRunTitle(flowType: string, startTime: string | null): string {
+  const started = startTime === null ? null : new Date(startTime);
+  const today = started !== null && started.toDateString() === new Date().toDateString();
+  const when = startTime === null ? "" : today ? formatTimeOfDay(startTime) : formatMonthDayTime(startTime);
+  return when ? `${processName(flowType)} · ${when}` : processName(flowType);
 }
 
 /**

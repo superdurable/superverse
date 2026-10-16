@@ -13,8 +13,8 @@ import { readPrivateJSON } from "@/tests/e2e/support/private-files";
 import { safeFill } from "@/tests/e2e/support/studio-api";
 
 /*
- * A TeamSpace connection authorized with OAuth through the real Studio, BFF, Go server and the lane's Keycloak,
- * with the published oauth2-http v0.1.0 connector: a new TeamSpace's Connections page adds the app from its catalog
+ * A Teamspace connection authorized with OAuth through the real Studio, BFF, Go server and the lane's Keycloak,
+ * with the published oauth2-http v0.1.0 connector: a new Teamspace's Connections page adds the app from its catalog
  * with its endpoints, client and scopes, Authorize leaves for Keycloak's login, the callback completes the caller's own
  * attempt, which creates the connection, and returns to the page, which shows it connected. A denied consent
  * returns with OAUTH_DENIED and leaves no connection.
@@ -49,12 +49,10 @@ function keycloak() {
   };
 }
 
-/** Creates a TeamSpace through Home's form and opens its Connections page. */
+/** Opens the Connections page of the Teamspace Studio created for the account registered a moment ago. */
 async function openConnections(page: Page) {
-  await page.getByLabel("TeamSpace name", { exact: true }).fill(`OAuth ${Date.now().toString(36)}`);
-  await page.getByRole("button", { name: "Create TeamSpace", exact: true }).click();
   await expect(page).toHaveURL(/\/t\/[a-z0-9]{8}$/);
-  // The read model holds the new TeamSpace a moment after its creation; Home counts its member then.
+  // The read model holds the new Teamspace a moment after its creation; Home counts its member then.
   await expect(page.getByTestId("team-space-counts")).toContainText("1 member", { timeout: 60_000 });
   await page.getByRole("link", { name: "Connections", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Connections", exact: true, level: 2 })).toBeVisible();
@@ -68,16 +66,16 @@ async function fillOAuthConnection(page: Page, name: string, provider: ReturnTyp
   await app.getByRole("button", { name: /^(Connect|Add another)$/ }).click();
   const editor = app.getByTestId("team-space-connection-editor");
   await editor.getByLabel("Connection name", { exact: true }).fill(name);
-  await editor.getByLabel(/^authorizationEndpoint/).fill(provider.authorizationEndpoint);
-  await editor.getByLabel(/^tokenEndpoint/).fill(provider.tokenEndpoint);
-  await editor.getByLabel(/^scopes/).fill('["openid"]');
-  await editor.getByLabel(/^apiBaseUrl/).fill(provider.apiBaseUrl);
+  await editor.getByLabel(/^Authorization endpoint/).fill(provider.authorizationEndpoint);
+  await editor.getByLabel(/^Token endpoint/).fill(provider.tokenEndpoint);
+  await editor.getByLabel(/^Scopes/).fill('["openid"]');
+  await editor.getByLabel(/^API base URL/).fill(provider.apiBaseUrl);
   await editor.getByLabel(/^OAuth client ID/).fill(CLIENT_ID);
   await safeFill(editor.getByLabel(/^OAuth client secret/), provider.clientSecret);
   return editor;
 }
 
-test("an OAuth TeamSpace connection authorizes through Keycloak and returns connected", async ({ page }) => {
+test("an OAuth Teamspace connection authorizes through Keycloak and returns connected", async ({ page }) => {
   test.setTimeout(5 * 60_000);
   const provider = keycloak();
   await register(page);

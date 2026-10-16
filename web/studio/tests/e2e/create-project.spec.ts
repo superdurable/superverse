@@ -53,7 +53,7 @@ const EXPLANATION_PROMPT = [
   "This is an explanation request: do not change files, invoke tools or ask for a product decision.",
 ].join(" ");
 
-// Another freshly registered account, outside the TeamSpace, neither lists nor reads the TeamSpace, the Project
+// Another freshly registered account, outside the Teamspace, neither lists nor reads the Teamspace, the Project
 // or its Session.
 async function expectHiddenFromOtherAccount(browser: Browser, teamSpaceId: string, projectId: string) {
   const other = await browser.newContext({ baseURL: process.env.SUPERVERSE_E2E_BASE_URL });
@@ -80,7 +80,7 @@ async function expectStrictBusinessRoutes(page: Page, teamSpaceId: string, proje
   expect((await post("CreateProject", { ...missingSource, importedRepository: { repositoryId: "1" } })).status()).toBe(
     400,
   );
-  // Every Project belongs to a TeamSpace.
+  // Every Project belongs to a Teamspace.
   const noTeamSpace = { requestId: randomUUID(), name: rejectedName, managedRepository: {} };
   expect((await post("CreateProject", noTeamSpace)).status()).toBe(400);
   expect((await post("ListImportableRepositories", {})).status()).toBe(404);
@@ -170,7 +170,7 @@ test("template project edits, pushes, previews, deploys Live twice, denies old g
     if (mock) await fillEnvironmentValue(page, "SUMMARY_GREETING", "From project acceptance");
     // A UI session's signed nonce is longer than a configuration resource ID.
     // Drive both business RPCs through Studio's BFF and require the configuration
-    // host's coded result, before this Project selects its TeamSpace connection.
+    // host's coded result, before this Project selects its Teamspace connection.
     const configurationBase = `/dex/projects/${projectId}/configuration/preview`;
     const listed = await page.request.get(`${configurationBase}/api/v2/connector-connections`);
     expect(listed.ok()).toBe(true);

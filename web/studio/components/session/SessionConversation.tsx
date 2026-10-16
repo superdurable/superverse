@@ -9,20 +9,20 @@
 "use client";
 
 import { NotReady } from "@/components/ui/NotReady";
-import { Spinner } from "@/components/ui/Icons";
 import { useProjectResource } from "@/lib/project/ProjectResourceProvider";
 import { useSessionResource } from "@/lib/session/SessionProvider";
 import { studioRoutes } from "@/lib/shared/studio-routes";
 import type { LiveViewing } from "./LiveNote";
 import { SessionChat } from "./SessionChat";
+import { StartupSteps, type StartupStep } from "./start/StartupSteps";
 import { failureProblem } from "@/lib/shared/problem/problem";
 import { ProblemPanel } from "@/components/ui/problem/ProblemPanel";
 
-function Waiting({ children }: { children: string }) {
+/** Before the Session exists: the startup steps, at the one the Project is at. */
+function Waiting({ step }: { step: StartupStep }) {
   return (
-    <div className="flex min-h-0 items-center justify-center gap-2 text-[14px] text-ink-faint" role="status">
-      <Spinner className="h-3.5 w-3.5" />
-      {children}
+    <div className="flex min-h-0 items-center justify-center p-4">
+      <StartupSteps current={step} />
     </div>
   );
 }
@@ -49,7 +49,7 @@ export function SessionConversation({ projectId, live }: { projectId: string; li
       </aside>
     );
   }
-  if (project?.status === "PROJECT_STATUS_CREATING") return <Waiting>Preparing project…</Waiting>;
+  if (project?.status === "PROJECT_STATUS_CREATING") return <Waiting step="project" />;
   if (project?.sessionStartFailure && !owner?.resource) {
     return (
       <aside className="flex min-h-0 flex-col">
@@ -60,7 +60,7 @@ export function SessionConversation({ projectId, live }: { projectId: string; li
       </aside>
     );
   }
-  if (!owner || (owner.loading && !owner.resource)) return <Waiting>Starting the agent…</Waiting>;
+  if (!owner || (owner.loading && !owner.resource)) return <Waiting step="agent" />;
   if (owner.resource?.projectId !== projectId) {
     return (
       <aside className="flex min-h-0 flex-col">

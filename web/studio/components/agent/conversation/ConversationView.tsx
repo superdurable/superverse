@@ -9,12 +9,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { cx } from "@/components/ui/cx";
+import { Badge, type BadgeTone } from "@/components/ui/badge/Badge";
 import type { ActivityStreamEvent, LiveTextEntry, SequencedMessage } from "@/lib/session/agent-types";
 import { ConversationClockProvider } from "./ConversationClockProvider";
 import { ConversationMessage, type NotificationLinks } from "./ConversationMessage";
 import { MarkdownContent } from "./MarkdownContent";
-import { OperationStatus, WorkLog } from "./WorkLog";
+import { EarlierActivity, WorkLog } from "./WorkLog";
 import {
   buildConversationPresentation,
   type ConversationPendingWait,
@@ -35,49 +35,41 @@ export interface ConversationViewProps {
   notificationLinks?: NotificationLinks;
 }
 
-/** A bordered block of the transcript: live assistant text and activity disclosures. */
-const CARD = cx("rounded-lg border border-line-soft bg-panel px-3 py-2.5");
+/** How a question or requirements card of the history ended, in words, and its badge tone. */
+function questionState(item: ConversationQuestionItem): { label: string; tone: BadgeTone } {
+  switch (item.status) {
+    case "pending":
+      return {
+        label: item.isRequirements ? "Waiting for you to confirm what to build" : "Waiting for your answer",
+        tone: "busy",
+      };
+    case "answered":
+      return { label: "Answered", tone: "pass" };
+    case "cancelled":
+      return { label: "Cancelled", tone: "neutral" };
+    case "failed":
+      return { label: "No longer waiting", tone: "neutral" };
+  }
+}
 
+/** A question or requirements card the agent showed: how it ended and its first question or title. */
 function QuestionCard({ item }: { item: ConversationQuestionItem }) {
+  const { label, tone } = questionState(item);
   return (
     <article
-      className="my-3 rounded-xl border border-line-soft bg-panel px-4 py-3.5 text-xs/normal text-ink-dim"
+      aria-label={item.isRequirements ? "What to build" : "Question"}
+      className="flex flex-col items-start gap-1.5 rounded-lg border border-line-soft bg-panel px-3 py-2.5 text-body text-ink-dim"
       data-status={item.status}
     >
-      <div className="flex items-center justify-between gap-3 text-[11px] text-ink-faint">
-        <strong className="font-semibold">
-          {item.isRequirements ? "Assistant asked you to confirm the requirements" : "Assistant requested input"}
-        </strong>
-        <OperationStatus value={item.status} />
-      </div>
-      {item.target ? <p className="mt-2 wrap-anywhere">{item.target}</p> : null}
+      <Badge tone={tone}>{label}</Badge>
+      {item.target ? <p className="wrap-anywhere">{item.target}</p> : null}
     </article>
   );
 }
 
-function ActivityDetails({
-  entries,
-  label = "Historical activity",
-}: {
-  entries: readonly (ActivityStreamEvent | LiveTextEntry)[];
-  label?: string;
-}) {
-  if (entries.length === 0) return null;
-  return (
-    <details className={cx(CARD, "text-xs text-ink-dim")}>
-      <summary className="cursor-pointer">
-        {label} · {entries.length} event
-        {entries.length === 1 ? "" : "s"}
-      </summary>
-      <ol className="mt-2 list-decimal pl-5">
-        {entries.map((entry, index) => (
-          <li key={("resumeToken" in entry ? entry.resumeToken : entry.source) + String(index)}>
-            {typeof entry.value === "string" ? entry.value : entry.value.message}
-          </li>
-        ))}
-      </ol>
-    </details>
-  );
+/** Whether a message is a system marker, which its turn's work log shows instead of the conversation. */
+function isMarker(entry: SequencedMessage): boolean {
+  return entry.message.role === "system" && entry.message.content !== "";
 }
 
 function hasUnfinishedTools(messages: readonly SequencedMessage[]): boolean {
@@ -109,28 +101,22 @@ export function ConversationView({
   return (
     <ConversationClockProvider active={isLive}>
       <section className="flex flex-col gap-4" aria-label="Conversation">
-        <ActivityDetails entries={presentation.earlierActivity} />
+        <EarlierActivity entries={presentation.earlierActivity} />
         {presentation.turns.map((turn) => (
           <section className="flex flex-col gap-4" aria-label="Conversation turn" key={turn.key}>
-            {turn.messages.map((entry) => (
-              <ConversationMessage entry={entry} key={entry.sequence} notificationLinks={notificationLinks} />
-            ))}
-            <ActivityDetails entries={turn.historicalActivities} />
-            <WorkLog turn={turn} />
-            {turn.fallbacks.map((event) => (
-              <p className="text-xs text-ink-faint" key={event.resumeToken}>
-                {event.value.message}
-              </p>
-            ))}
+            {turn.messages
+              .filter((entry) => !isMarker(entry))
+              .map((entry) => (
+                <ConversationMessage entry={entry} key={entry.sequence} notificationLinks={notificationLinks} />
+              ))}
+            <WorkLog turn={turn} markers={turn.messages.filter(isMarker)} />
             {turn.questions.map((question) => (
               <QuestionCard item={question} key={question.key} />
             ))}
-            <ActivityDetails entries={turn.liveActivities} label="Current activity" />
           </section>
         ))}
         {assistant?.value ? (
-          <div className={cx(CARD, "text-[13px]")} data-testid="live-assistant-message">
-            <span className="text-[11px] text-ink-faint">Assistant · {streamState}</span>
+          <div className="text-body" aria-busy={streamState === "streaming"} data-testid="live-assistant-message">
             <MarkdownContent value={assistant.value} />
           </div>
         ) : null}

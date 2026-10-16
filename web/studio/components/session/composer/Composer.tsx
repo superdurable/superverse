@@ -8,7 +8,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent, type RefObject } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { Button } from "@/components/ui/Button";
 import { Glyph } from "@/components/ui/Glyph";
 
@@ -38,6 +38,7 @@ export function Composer({
   focusKey,
   picking,
   onPick,
+  menu,
 }: {
   onSend: (text: string) => unknown;
   value?: string;
@@ -62,6 +63,8 @@ export function Composer({
   /** The element picker: point at a Step, run or item to ask about it. */
   picking?: boolean;
   onPick?: () => void;
+  /** A menu beside Send, such as the Session's ⋯ menu with its model. */
+  menu?: ReactNode;
 }) {
   const [localText, setLocalText] = useState("");
   const ownTextarea = useRef<HTMLTextAreaElement | null>(null);
@@ -197,6 +200,7 @@ export function Composer({
               {stopping ? "Stopping…" : "Stop"}
             </Button>
           )}
+          {menu}
           <button
             type="button"
             aria-label="Send"

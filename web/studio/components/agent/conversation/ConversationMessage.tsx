@@ -9,7 +9,9 @@
 "use client";
 
 import Link from "next/link";
+import { buttonStyle } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
+import { MoreDetails } from "@/components/ui/reveal/MoreDetails";
 import type { AgentNotification, NotificationLink, SequencedMessage } from "@/lib/session/agent-types";
 import { formatMonthDayTime } from "@/lib/shared/format";
 import { reportedProblem } from "@/lib/shared/problem/problem";
@@ -18,23 +20,6 @@ import { MarkdownContent } from "./MarkdownContent";
 
 /** The links a page offers for a notification, such as where to configure what a failed deployment lacks. */
 export type NotificationLinks = (notification: AgentNotification) => readonly NotificationLink[];
-
-/** A marker of the conversation, such as a compaction: its text between two rules, never a chat bubble. */
-function ConversationMarker({ entry }: { entry: SequencedMessage }) {
-  const { content, createdAt } = entry.message;
-  return (
-    <div
-      className="flex items-center gap-3 text-xs text-ink-faint"
-      data-message-sequence={entry.sequence}
-      data-testid="conversation-marker"
-      title={formatMonthDayTime(createdAt)}
-    >
-      <span aria-hidden="true" className="h-px flex-1 bg-line-soft" />
-      <span className="max-w-[80%] text-center wrap-anywhere">{content}</span>
-      <span aria-hidden="true" className="h-px flex-1 bg-line-soft" />
-    </div>
-  );
-}
 
 /** What a delivery notification is about, by its source; tasks and connectors deliver nothing. */
 function deliverySubject(source: AgentNotification["source"]): string {
@@ -52,6 +37,20 @@ function deliverySubject(source: AgentNotification["source"]): string {
   }
 }
 
+/**
+ * Whether a delivery notice reports settings the Project lacks, which Setup completes, rather than a
+ * failure: its owner is the configuration, its remedy is Setup, or it names what is missing.
+ */
+export function needsConfiguration(notification: AgentNotification): boolean {
+  return (
+    notification.kind === "delivery" &&
+    notification.outcome !== "ready" &&
+    (notification.owner === "configuration" ||
+      notification.remedy === "FAILURE_REMEDY_OPEN_SETUP" ||
+      notification.gapCount > 0)
+  );
+}
+
 /** The title of a notification notice by what it reports. */
 function notificationTitle(notification: AgentNotification): string {
   switch (notification.kind) {
@@ -60,7 +59,11 @@ function notificationTitle(notification: AgentNotification): string {
     case "delivery": {
       const subject = deliverySubject(notification.source);
       if (notification.outcome === "ready") return `${subject} is ready`;
-      return notification.gapCount > 0 ? `${subject} needs configuration` : `${subject} failed`;
+      if (needsConfiguration(notification))
+        return notification.source === "preview"
+          ? "Preview needs a few settings before it can start"
+          : `${subject} needs a few settings first`;
+      return `${subject} failed`;
     }
     case "connector":
       switch (notification.connectorEvent) {
@@ -118,6 +121,68 @@ function DeliveryProblem({
   );
 }
 
+/** A technical line of a notice's details, shown only when it has a value. */
+function Detail({ name, value }: { name: string; value: string }) {
+  return value ? (
+    <>
+      <dt>{name}</dt>
+      <dd className="wrap-anywhere whitespace-pre-wrap">{value}</dd>
+    </>
+  ) : null;
+}
+
+/**
+ * A delivery that waits for settings, in plain words: what it still needs, the Setup link that
+ * completes it and the page's other links, with the server's reason, the code, the phase and the
+ * commit one click away.
+ */
+function ConfigurationNeeded({
+  notification,
+  links,
+}: {
+  notification: AgentNotification;
+  links: readonly NotificationLink[];
+}) {
+  const hidden = notification.gapCount - notification.gaps.length;
+  const setup = links.find((link) => link.remedy === "FAILURE_REMEDY_OPEN_SETUP");
+  const why = notification.message.split(" Cause: ");
+  return (
+    <div className="mt-1 grid gap-1.5">
+      {notification.gaps.length > 0 && (
+        <>
+          <p>It still needs:</p>
+          <ul className="list-disc pl-5" aria-label="Missing configuration">
+            {[...notification.gaps, ...(hidden > 0 ? [`and ${hidden} more`] : [])].map((gap) => (
+              <li key={gap} className="wrap-anywhere">
+                {gap}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {setup && (
+        <div data-testid="problem-fix">
+          <Link href={setup.href} className={buttonStyle("accent", "sm")}>
+            {setup.label}
+          </Link>
+        </div>
+      )}
+      <NoticeLinks links={links.filter((link) => link !== setup)} />
+      <MoreDetails surface="chat.notice">
+        <dl className="grid grid-cols-[auto_1fr] gap-x-2 font-mono text-ink-faint" data-testid="problem-details">
+          <Detail name="Why" value={why[0] ?? ""} />
+          <Detail name="Code" value={notification.code} />
+          <Detail name="Phase" value={notification.phase} />
+          <Detail name="Version" value={notification.version} />
+          <Detail name="Commit" value={notification.commit} />
+          <Detail name="Time" value={notification.occurredAt} />
+          <Detail name="Cause" value={why.slice(1).join(" Cause: ")} />
+        </dl>
+      </MoreDetails>
+    </div>
+  );
+}
+
 /**
  * A Session notification as a notice, never a user bubble: an automated report of something that
  * happened outside the Agent's turn, which the Agent reads. A delivery is the platform variant: a
@@ -133,11 +198,12 @@ function NotificationNotice({
   links: readonly NotificationLink[];
 }) {
   const isDelivery = notification.kind === "delivery";
+  const configuration = needsConfiguration(notification);
   return (
     <div
       role="status"
       className={cx(
-        "rounded-lg border px-3 py-2 text-xs text-ink-dim",
+        "rounded-lg border px-3 py-2 text-caption text-ink-dim",
         !isDelivery && "border-line-soft bg-well",
         isDelivery && notification.outcome === "failure" && "border-fail-rule bg-fail-subtle",
         isDelivery && notification.outcome !== "failure" && "border-busy-rule bg-busy-subtle",
@@ -147,11 +213,22 @@ function NotificationNotice({
       data-notification-kind={notification.kind}
       data-notification-source={notification.source}
     >
-      <div className="flex items-center justify-between gap-3 text-[11px] text-ink-faint">
-        <strong className="font-semibold">{notificationTitle(notification)}</strong>
-        <time dateTime={notification.occurredAt}>{formatMonthDayTime(notification.occurredAt)}</time>
+      <div
+        className={cx(
+          "flex items-center justify-between gap-3",
+          configuration ? "text-body text-ink" : "text-[11px] text-ink-faint",
+        )}
+      >
+        <strong className="font-semibold" data-testid={configuration ? "problem-what" : undefined}>
+          {notificationTitle(notification)}
+        </strong>
+        <time className="shrink-0 text-caption text-ink-faint" dateTime={notification.occurredAt}>
+          {formatMonthDayTime(notification.occurredAt)}
+        </time>
       </div>
-      {isDelivery && notification.outcome !== "ready" ? (
+      {configuration ? (
+        <ConfigurationNeeded notification={notification} links={links} />
+      ) : isDelivery && notification.outcome !== "ready" ? (
         <DeliveryProblem notification={notification} links={links} />
       ) : (
         <>
@@ -165,8 +242,8 @@ function NotificationNotice({
 }
 
 /**
- * A durable user or assistant message with its time, a notification as a notice, or a system marker
- * as a divider line; a tool result renders nothing, because the work log shows its call.
+ * A durable user or assistant message with its time, or a notification as a notice; a system marker
+ * and a tool result render nothing, because the turn's work log shows them.
  */
 export function ConversationMessage({
   entry,
@@ -176,7 +253,6 @@ export function ConversationMessage({
   notificationLinks?: NotificationLinks;
 }) {
   const { role, content, createdAt, notification, answeredInputCallId } = entry.message;
-  if (role === "system") return content ? <ConversationMarker entry={entry} /> : null;
   if (role === "notification")
     return notification ? (
       <NotificationNotice entry={entry} notification={notification} links={notificationLinks?.(notification) ?? []} />

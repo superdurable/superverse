@@ -27,26 +27,35 @@ export function autoApplyDue(commands: ReturnType<typeof usePreviewCommands>, he
 }
 
 /**
+ * The update each Project last sent on its own, shared by every mounted copy of the hook (Setup's page and
+ * Runs' Try it), so a burst of changes is applied once wherever it was made.
+ */
+const triedByProject = new Map<string, string>();
+
+/**
  * Applies Setup's saved Preview settings on their own once the edits settle: one apply per burst of changes.
  * While a push's update runs, apply is not allowed, so Setup waits for it. An apply is never repeated for the
  * same configuration revision and the same push update, so a refused or failed one waits for the next change,
- * a push's update that overtook it, or the problem's Apply again, instead of repeating.
+ * a push's update that overtook it, or the problem's Apply again, instead of repeating. Mount it wherever a
+ * person saves Preview's settings: Setup's page and Runs' Try it.
  */
 export function useAutoApply(commands: ReturnType<typeof usePreviewCommands>, headCommit: string) {
   const due = autoApplyDue(commands, headCommit);
+  const project = commands.session.resource?.projectId ?? "";
   const update = commands.preview?.automaticDeployment;
   const revision = JSON.stringify([commands.configuration?.revision ?? "", update?.commit ?? "", update?.status ?? ""]);
-  const tried = useRef("");
   const act = useRef(commands.act);
   useEffect(() => {
     act.current = commands.act;
   });
   useEffect(() => {
-    if (!due || tried.current === revision) return;
+    if (!due || triedByProject.get(project) === revision) return;
     const timer = setTimeout(() => {
-      tried.current = revision;
+      // Another mounted copy may have sent this update while the timer ran.
+      if (triedByProject.get(project) === revision) return;
+      triedByProject.set(project, revision);
       void act.current("apply");
     }, SETTLE_MS);
     return () => clearTimeout(timer);
-  }, [due, revision]);
+  }, [due, project, revision]);
 }

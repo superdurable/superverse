@@ -29,6 +29,7 @@ import {
 import { projectConnectionWriter, type ProjectConnectionWriter } from "@/lib/api/flow/draft/scope-writes";
 import { loadPickerOptions } from "@/components/flow/connector/native/picker-options";
 import { isWorking } from "./connection-words";
+import type { SetupItem, SetupSide, SetupSideName } from "./row-model";
 import { channelOf } from "./setting-defaults";
 
 /** A working connection's UI session and its writer, or why the session did not open. */
@@ -84,7 +85,26 @@ export function useScopeCatalog(scope: FlowApiScopeBinding | null, version: stri
 }
 
 /**
- * The UI session of each working connection of a scope, opened once per connection, TeamSpace connection
+ * One column's reads: its catalog, its UI sessions and the server's items, as a side of Setup's table or of
+ * Try it's checklist; null until the catalog is read.
+ */
+export function useScopeSide(
+  name: SetupSideName,
+  scope: FlowApiScopeBinding | null,
+  version: string,
+  items: Map<string, SetupItem> | null,
+): { side: SetupSide | null; error: string; catalog: ConnectionsResponse | null } {
+  const { catalog, error, queue } = useScopeCatalog(scope, version);
+  const sessions = useConnectionSessions(scope, catalog);
+  const side = useMemo(
+    () => (scope && catalog && queue ? { name, scope, queue, catalog, sessions, items } : null),
+    [name, scope, catalog, queue, sessions, items],
+  );
+  return { side, error, catalog };
+}
+
+/**
+ * The UI session of each working connection of a scope, opened once per connection, Teamspace connection
  * and credential, so a save elsewhere neither reopens it nor remounts the forms on it. The writer follows
  * the newest catalog, whose revisions fence its writes.
  */
@@ -145,7 +165,7 @@ export function useConnectionSessions(
 }
 
 /**
- * The release manifest of each connector the catalog declares, read through the TeamSpace's connection
+ * The release manifest of each connector the catalog declares, read through the Teamspace's connection
  * form, so a trigger reads in its connector's words before it is connected.
  */
 export function useReleaseManifests(catalog: ConnectionsResponse | null, teamSpaceId: string) {
@@ -185,11 +205,11 @@ export function useReleaseManifests(catalog: ConnectionsResponse | null, teamSpa
   return read?.key === key ? read.manifests : new Map<string, ReleaseManifest>();
 }
 
-/** The TeamSpace's connections of each connector, by connector ID, or why they could not be read. */
+/** The Teamspace's connections of each connector, by connector ID, or why they could not be read. */
 export type TeamSpaceChoices = Map<string, TeamSpaceConnection[] | string>;
 
 /**
- * The TeamSpace's connections of each connector of `connectorIds`, which every connection dropdown of
+ * The Teamspace's connections of each connector of `connectorIds`, which every connection dropdown of
  * the table offers; `reload` reads them again, as after a new connection.
  */
 export function useTeamSpaceChoices(teamSpaceId: string, connectorIds: readonly string[]) {

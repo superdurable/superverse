@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import type { FlowHistoryEvent, FlowState, FlowSummary } from "@/lib/api/flow/flow-types";
+import { useFlowHost } from "@/lib/flow/FlowHostProvider";
 import { asRecord, asRecordArray, stringField } from "@/lib/shared/json";
 import { JsonView } from "@/components/flow/diagnostics/value/JsonView";
 import { FailureDetails } from "@/components/flow/diagnostics/event/FailureDetails";
@@ -75,6 +76,8 @@ export function LiveFlowState({
   onDeleteChannelMessage: (channelName: string, messageId: string) => Promise<void>;
 }) {
   const [collapsedActiveStepIds, setCollapsedActiveStepIds] = useState<Set<string>>(() => new Set());
+  // Deleting a queued message changes the run, so like Stop it is for those who build the Project.
+  const { canIntervene } = useFlowHost();
   const attributesExpand = useSectionExpand("overview:expand:attributes");
   const channelsExpand = useSectionExpand("overview:expand:channels");
   const activeStepIds = state?.activeStepExecutions.map((step) => step.stepExecutionId) ?? [];
@@ -243,13 +246,15 @@ export function LiveFlowState({
                       <code className="mt-1 block wrap-anywhere">{message.messageId}</code>
                       <JsonView value={message.value} label="Value" />
                     </div>
-                    <Button
-                      variant="danger"
-                      disabled={deletingChannelMessage === message.messageId}
-                      onClick={() => void onDeleteChannelMessage(message.channelName, message.messageId)}
-                    >
-                      {deletingChannelMessage === message.messageId ? "Deleting…" : "Delete"}
-                    </Button>
+                    {canIntervene && (
+                      <Button
+                        variant="danger"
+                        disabled={deletingChannelMessage === message.messageId}
+                        onClick={() => void onDeleteChannelMessage(message.channelName, message.messageId)}
+                      >
+                        {deletingChannelMessage === message.messageId ? "Deleting…" : "Delete"}
+                      </Button>
+                    )}
                   </div>
                 ))}
                 <p className={MUTED}>

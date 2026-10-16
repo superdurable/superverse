@@ -67,7 +67,7 @@ function nextPublishItem<T>(
   };
 }
 
-/** The TeamSpace connection a connection name selects for the next publish, or "Same as Preview". */
+/** The Teamspace connection a connection name selects for the next publish, or "Same as Preview". */
 export function nextPublishSelectionItem(catalog: ConnectionsResponse, connection: ConnectionView, follows: boolean) {
   return nextPublishItem(selectionDraftItem(catalog, connection), follows, (client, revision) =>
     writeItem(client, catalog, connection, selectionPath(connection), FOLLOW_PREVIEW, revision),

@@ -59,3 +59,17 @@ export const LazyLiveIdentities = dynamic(
   () => import("@/components/flow/connections/LiveIdentities").then((m) => m.LiveIdentities),
   { ssr: false, loading: () => <p role="status">Reading the connections…</p> },
 );
+
+/**
+ * Fetches the views a new Project opens on at its first-run switch while its conversation is still the whole page,
+ * so the switch, which comes mid-session, never waits on a download that a dropped connection could fail. A failed
+ * fetch is tried again when the view renders.
+ */
+export function preloadSwitchViews(): void {
+  void Promise.all([
+    import("@/lib/flow/FlowCatalogProvider"),
+    import("@/components/flow/map/ProjectMap"),
+    import("@/components/flow/design/DesignFlowView"),
+    import("@/components/flow/canvas/FlowCanvas"),
+  ]).catch(() => undefined);
+}

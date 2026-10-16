@@ -8,7 +8,7 @@
 
 "use client";
 
-import { Fragment, useEffect, useId, useState } from "react";
+import { Fragment, useEffect, useId, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
 import type { AgentDescription, RequirementsDecision, UserInputAnswer } from "@/lib/session/agent-types";
@@ -81,6 +81,7 @@ export function MockComposer({
   onStop,
   stopDisabled = false,
   stopping = false,
+  menu,
 }: {
   catalog: MockScenarioCatalog | null;
   /** Where the newest mock reply left its scenario (AgentDescription.mockProgress). */
@@ -112,6 +113,8 @@ export function MockComposer({
   stopDisabled?: boolean;
   /** The Session admitted a Stop and its work is ending. */
   stopping?: boolean;
+  /** A menu beside Send, such as the Session's ⋯ menu with its model. */
+  menu?: ReactNode;
 }) {
   const categoryId = useId();
   const scenarioId = useId();
@@ -308,6 +311,7 @@ export function MockComposer({
               {stopping ? "Stopping…" : "Stop"}
             </Button>
           )}
+          {menu}
           {(scenario === null || offered(scenario)) && (
             <Button variant="primary" disabled={reason !== null} onClick={() => void send()}>
               {finished ? "Start again" : sendLabel}

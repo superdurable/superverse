@@ -137,7 +137,9 @@ function createStore(origin: string): MockStore {
   const project = createSeedProject();
   const failedProject = createFailedSeedProject();
   const otherProject = createOtherSeedProject();
+  // The seed Project's Preview served its head before it stopped, so its processes are its own.
   const session = createSeedSession(project.id);
+  session.preview.sourceCommit = SEED_HEAD_COMMIT;
   const agent = createSeedConversation(nowIso(-90_000));
   return {
     origin,
@@ -324,11 +326,11 @@ export function startPreview(store: MockStore, projectId: string): MockSession["
 }
 
 /**
- * With "Update the Preview after every push" on, the Preview deploys the commit the Agent pushed, as
- * the turn end hands it over. The applied configuration, or the draft on a first start, serves it at once, the source
- * prepared for it; otherwise the configuration lacks the fixture requirement, which a configuration
- * notice tells unless the last deployment was refused for the same gaps, and the Preview keeps what
- * it served.
+ * With "Update the Preview after every push" on, the push builds its processes, whatever the
+ * configuration, as Go does, and the Preview deploys the commit the Agent pushed, as the turn end hands
+ * it over. The applied configuration, or the draft on a first start, serves it at once; otherwise the
+ * configuration lacks the fixture requirement, which a configuration notice tells unless the last
+ * deployment was refused for the same gaps, and the Preview keeps what it served.
  */
 export function deployPushedCommit(store: MockStore, session: MockSession, agent: MockAgent) {
   const commit = session.headCommitSha;
@@ -340,17 +342,17 @@ export function deployPushedCommit(store: MockStore, session: MockSession, agent
     JSON.stringify(session.preview.configurationGaps) === JSON.stringify(gaps);
   session.preview.automaticDeployment = { commit, status: gaps.length ? "INCOMPATIBLE" : "READY", updatedAt: nowIso() };
   session.preview.configurationGaps = gaps;
+  session.preview.preparedSource = {
+    status: "PREVIEW_SOURCE_STATUS_READY",
+    requestId: `auto-deploy-${randomHex(6)}`,
+    workspaceRequestId: session.workspace.workspaceRequestId,
+    generation: String(session.workspace.generation),
+    sourceCommit: commit,
+    definitionRevision: MOCK_DEFINITION_REVISION,
+  };
+  draft.sourceCommit = commit;
+  draft.appManifest.sourceCommit = commit;
   if (gaps.length === 0) {
-    session.preview.preparedSource = {
-      status: "PREVIEW_SOURCE_STATUS_READY",
-      requestId: `auto-deploy-${randomHex(6)}`,
-      workspaceRequestId: session.workspace.workspaceRequestId,
-      generation: String(session.workspace.generation),
-      sourceCommit: commit,
-      definitionRevision: MOCK_DEFINITION_REVISION,
-    };
-    draft.sourceCommit = commit;
-    draft.appManifest.sourceCommit = commit;
     recordPushedStart(draft, commit, true);
     startPreview(store, session.projectId);
     return;

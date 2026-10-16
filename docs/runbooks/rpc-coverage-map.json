@@ -260,7 +260,8 @@
       "native-e2e"
     ],
     "/superverse.v2.SessionService/ListArchivedMessages": [
-      "api-integration"
+      "api-integration",
+      "native-e2e"
     ],
     "/superverse.v2.SessionService/RenewWorkspace": [
       "kind-e2e",

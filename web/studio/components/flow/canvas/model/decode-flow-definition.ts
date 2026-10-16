@@ -15,7 +15,8 @@
  *  - `actor` comes from wait-condition kinds, `waitFor === null` from `phase`.
  *  - Wait sentences paraphrase framework words and keep Channel and Timer identifiers verbatim.
  *  - A guard label is the last ` and ` clause with double negation undone.
- *  - Near-identical decisions group into one branch; parallel transitions merge, keeping every guard.
+ *  - Near-identical decisions group into one branch; parallel transitions merge, keeping every guard
+ *    and every Connector outcome (`generated`) they are taken on.
  *  - Transitions come in source order, the order a Step's code declares its ways out, which the
  *    canvas's main line follows. The analyser sorts edges by node id, which puts line 992 after 1022.
  *  - `opensGates` joins rpc-publish->channel with channel-condition->wait.
@@ -286,9 +287,11 @@ function decodeTransitions(
       continue;
     }
     const condition = byId.get(e.from)?.condition;
+    const outcome = e.metadata?.connectorBranch === true && e.label ? e.label : undefined;
     const key = `${fromOwner.id}->${toNode.id}:${e.kind}`;
     const prior = byPair.get(key);
     if (prior !== undefined) {
+      if (outcome !== undefined && !prior.outcomes.includes(outcome)) prior.outcomes.push(outcome);
       if (condition !== undefined) prior.mergedGuards.push(condition);
       prior.guard = `${prior.mergedGuards.length} conditions`;
       continue;
@@ -300,6 +303,7 @@ function decodeTransitions(
       kind: e.kind as Transition["kind"],
       guard: simplifyGuard(condition),
       mergedGuards: condition === undefined ? [] : [condition],
+      outcomes: outcome === undefined ? [] : [outcome],
       multiplicity: e.multiplicity,
       isSelfLoop: fromOwner.id === toNode.id,
     });

@@ -14,28 +14,28 @@ import { useTeamSpace } from "@/lib/teamspace/TeamSpaceProvider";
 import { NotReady } from "@/components/ui/NotReady";
 
 /**
- * The pages of one TeamSpace, once it is read: a TeamSpace created a moment ago is waited for, one the person
+ * The pages of one Teamspace, once it is read: a Teamspace created a moment ago is waited for, one the person
  * cannot open or that is gone says so, and one being deleted shows nothing else.
  */
 export function TeamSpaceGate({ children }: { children: ReactNode }) {
   const { teamSpace, missing, error } = useTeamSpace();
-  const elsewhere = { label: "Open your TeamSpaces", href: studioRoutes.home };
+  const elsewhere = { label: "Open your Teamspaces", href: studioRoutes.home };
   if (missing)
     return (
-      <NotReady kind="unavailable" heading="This TeamSpace is not open to you" action={elsewhere}>
-        It does not exist, it was deleted, or you are not one of its members. An admin of the TeamSpace can add you.
+      <NotReady kind="unavailable" heading="This Teamspace is not open to you" action={elsewhere}>
+        It does not exist, it was deleted, or you are not one of its members. An admin of the Teamspace can add you.
       </NotReady>
     );
   if (error)
     return (
-      <NotReady kind="error" heading="This TeamSpace did not load" retry>
+      <NotReady kind="error" heading="This Teamspace did not load" retry>
         {error}
       </NotReady>
     );
   if (!teamSpace)
     return (
-      <NotReady kind="placeholder" heading="Opening the TeamSpace">
-        Reading the TeamSpace…
+      <NotReady kind="placeholder" heading="Opening the Teamspace">
+        Reading the Teamspace…
       </NotReady>
     );
   if (teamSpace.status === "TEAM_SPACE_STATUS_DELETING")

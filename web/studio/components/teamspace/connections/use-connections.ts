@@ -19,9 +19,9 @@ import { useProjectList } from "@/lib/project/use-project-list";
 import { useTeamSpace } from "@/lib/teamspace/TeamSpaceProvider";
 
 /**
- * What both Connections pages read: the TeamSpace's connections, the catalog with its logos, the Projects by
+ * What both Connections pages read: the Teamspace's connections, the catalog with its logos, the Projects by
  * name, and whether the caller manages connections. Go decides that on every change; the pages only leave out
- * actions the caller's roles cannot take: a TeamSpace admin, the platform admin, or an owner or builder of one of
+ * actions the caller's roles cannot take: a Teamspace admin, the platform admin, or an owner or builder of one of
  * its Projects manages them, and a Project list still loading counts as managing.
  */
 export function useConnections() {

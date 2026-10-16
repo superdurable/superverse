@@ -64,7 +64,7 @@ const APPS: Record<string, { name: string; monogram: string }> = {
 };
 
 /** The `llm` connector reaches any model provider, so it is "AI model", not an app. */
-const MODEL_CONNECTOR = "llm";
+export const MODEL_CONNECTOR = "llm";
 
 function appOf(connectorId: string): { name: string; monogram: string } {
   const known = APPS[connectorId];
@@ -253,7 +253,7 @@ function pillOf(run: RunState | null, person: boolean): RunPill | undefined {
   if (run === null) return undefined;
   if (run.planned) return { status: "planned", text: "Next" };
   const status = cardStatus(run.current);
-  const base = (status === "waiting" || status === "pending") && person ? "Waiting for you" : PILL_TEXT[status];
+  const base = (status === "waiting" || status === "pending") && person ? "Waiting for a person" : PILL_TEXT[status];
   const count = run.executions.length;
   return { status, text: count > 1 ? `${base} ×${count}` : base };
 }

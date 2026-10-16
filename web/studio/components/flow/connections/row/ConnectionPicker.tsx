@@ -23,7 +23,7 @@ import {
   type SetupTable,
 } from "@/components/flow/connections/model/row-model";
 
-/** The option that makes the next publish's selection follow Preview's; no TeamSpace connection has this ID. */
+/** The option that makes the next publish's selection follow Preview's; no Teamspace connection has this ID. */
 const SAME_AS_PREVIEW = "\u0000same-as-preview";
 
 const CREDENTIAL_WORDS: Record<string, string> = {
@@ -32,7 +32,7 @@ const CREDENTIAL_WORDS: Record<string, string> = {
   CREDENTIAL_STATUS_REAUTHORIZATION_REQUIRED: "sign in again",
 };
 
-/** The name of the TeamSpace connection an item's JSON value selects, or what it says without one. */
+/** The name of the Teamspace connection an item's JSON value selects, or what it says without one. */
 function selectedName(json: string, choices: readonly TeamSpaceConnection[], none: string): string {
   let id = "";
   try {
@@ -44,7 +44,7 @@ function selectedName(json: string, choices: readonly TeamSpaceConnection[], non
 }
 
 /**
- * The connection a connection name uses on one side: the TeamSpace's connections of its connector, major
+ * The connection a connection name uses on one side: the Teamspace's connections of its connector, major
  * version and method, and New connection…, which `onNew` opens in the row. The next publish's starts with
  * "Same as Preview", unless the connector is tied to one address, which the menu note then says. Green only
  * marks a connection that works; red, nothing that works yet; a blue dot, a value Live does not run yet.
@@ -138,7 +138,7 @@ export function ConnectionPicker({
       align={next ? "end" : "start"}
       placeholder={
         table.choices === null
-          ? "Loading the TeamSpace's connections…"
+          ? "Loading the Teamspace's connections…"
           : refusal && next
             ? "Needs its own"
             : "Not connected"

@@ -6,7 +6,7 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-// The generated messages of the mock's TeamSpaces and members, which the backend's codec round trip completes.
+// The generated messages of the mock's Teamspaces and members, which the backend's codec round trip completes.
 import type { AccountSnapshot__Output } from "@/lib/generated/protobuf/superverse/v2/AccountSnapshot";
 import type { ProjectMemberSnapshot } from "@/lib/generated/protobuf/superverse/v2/ProjectMemberSnapshot";
 import type { ProjectSnapshot } from "@/lib/generated/protobuf/superverse/v2/ProjectSnapshot";
@@ -49,7 +49,7 @@ export function mockTeamSpaceMembers(teamSpace: MockTeamSpace): TeamSpaceMemberS
   }));
 }
 
-/** A Project's members, each marked by whether it still belongs to the Project's TeamSpace. */
+/** A Project's members, each marked by whether it still belongs to the Project's Teamspace. */
 export function mockProjectMemberSnapshots(
   tenancy: MockTenancy,
   projectId: string,
@@ -66,7 +66,7 @@ export function mockProjectMemberSnapshots(
   }));
 }
 
-/** The counts of a TeamSpace's Home; DELETED Projects do not count. */
+/** The counts of a Teamspace's Home; DELETED Projects do not count. */
 export function mockTeamSpaceOverview(
   store: MockStore,
   tenancy: MockTenancy,
@@ -86,8 +86,8 @@ export function mockTeamSpaceOverview(
 }
 
 /**
- * A Project snapshot with its TeamSpace and the caller's role. A listed Project in which the caller has no role
- * carries only what a TeamSpace member may see of it.
+ * A Project snapshot with its Teamspace and the caller's role. A listed Project in which the caller has no role
+ * carries only what a Teamspace member may see of it.
  */
 export function withCallerRole(
   snapshot: ProjectSnapshot,

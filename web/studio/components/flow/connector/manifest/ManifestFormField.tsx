@@ -8,7 +8,12 @@
 
 import { useId } from "react";
 import type { ManifestField } from "@/lib/api/flow/connector";
-import { descriptionParts, isManifestFieldInputRequired, manifestFieldDefaultText } from "./manifest-fields";
+import {
+  descriptionParts,
+  isManifestFieldInputRequired,
+  manifestFieldDefaultText,
+  manifestFieldLabel,
+} from "./manifest-fields";
 import { cx } from "@/components/ui/cx";
 import { Dropdown } from "@/components/ui/menu/Dropdown";
 import { FIELD, FIELD_LABEL, LINK, NOTE } from "@/components/flow/frame/workspace-styles";
@@ -17,7 +22,7 @@ import { FIELD, FIELD_LABEL, LINK, NOTE } from "@/components/flow/frame/workspac
 
 const storedCredentialPlaceholder = "Stored - leave blank to keep";
 
-/** One manifest field; a stored credential may be left blank to keep it. */
+/** One manifest field, labelled in words with its name on hover; a stored credential may be left blank to keep it. */
 export function ManifestFormField({
   field,
   prefix,
@@ -33,7 +38,8 @@ export function ManifestFormField({
 }) {
   return (
     <FormField
-      label={field.name}
+      label={manifestFieldLabel(field)}
+      fieldName={field.name}
       name={`${prefix}:${field.name}`}
       placeholder={stored ? storedCredentialPlaceholder : undefined}
       required={!stored && isManifestFieldInputRequired(field)}
@@ -50,6 +56,7 @@ export function ManifestFormField({
 export function FormField({
   inputId,
   label,
+  fieldName,
   name,
   placeholder,
   required,
@@ -62,6 +69,8 @@ export function FormField({
 }: {
   inputId?: string;
   label: string;
+  /** The name the code gives the field, shown on hover when the label is in words. */
+  fieldName?: string;
   name: string;
   placeholder?: string;
   required: boolean;
@@ -81,7 +90,7 @@ export function FormField({
   return (
     <div className="grid min-w-0 gap-1">
       <label className="grid min-w-0 gap-1">
-        <span className={FIELD_LABEL}>
+        <span className={FIELD_LABEL} title={fieldName && fieldName !== label ? fieldName : undefined}>
           {label}
           {required ? " *" : ""}
         </span>

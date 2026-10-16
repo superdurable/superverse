@@ -11,7 +11,7 @@ import { sendFlowApiJson, type FlowApiClient } from "@/lib/api/transport/flow-ap
 
 /**
  * The project's Connector connection names and their release manifests, and the ConnectorService
- * operations on them: each name selects a TeamSpace connection, and each Flow operation and trigger
+ * operations on them: each name selects a Teamspace connection, and each Flow operation and trigger
  * has its settings. Every write is fenced by the revisions the page read, so a concurrent change is
  * rejected instead of overwritten.
  */
@@ -66,9 +66,9 @@ export interface ConnectionView {
   modulePath?: string;
   /** The connector release the AppManifest declares; stored settings and credentials name no release. */
   moduleVersion?: string;
-  /** The major version, which a selected TeamSpace connection shares. */
+  /** The major version, which a selected Teamspace connection shares. */
   versionLine?: string;
-  /** The TeamSpace connection the name selects, and what the Project's page may show of it. */
+  /** The Teamspace connection the name selects, and what the Project's page may show of it. */
   sharedConnectionId?: string;
   selectedConnection?: { name: string; connectionStatus: string; credentialStatus: string; manifestVersion: string };
   provider?: string;

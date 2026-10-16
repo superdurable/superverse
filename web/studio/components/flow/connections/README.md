@@ -3,14 +3,15 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: Tools, Setup's table: a row per connection with its settings under it, then the variables, in a Preview column and a Next publish column, each autosaved.
 
-Importers: `components/flow/scope` imports this directory.
+Importers: `components/flow/run/tryit` and `components/flow/scope` import this directory.
 
 Imports: it imports `components/flow/connections/model`, `components/flow/connections/row`, `components/flow/connector/native`, `components/ui`, `components/ui/menu`, `lib/api/flow`, `lib/api/flow/draft`, `lib/api/transport`, `lib/browser`, `lib/flow` and `lib/shared`.
 
 ```mermaid
 flowchart LR
   self["components/flow/connections"]
-  c0["components/flow/scope"] --> self
+  c0["components/flow/run/tryit"] --> self
+  c1["components/flow/scope"] --> self
   self --> d0["components/flow/connections/model"]
   self --> d1["components/flow/connections/row"]
   self --> d2["components/flow/connector/native"]
@@ -34,5 +35,5 @@ the viewport): controls in the row when wide, status chips below 780px, stacked 
 in Preview's channel. `VariablesBlock.tsx` lists
 the variables, required first and the optional ones folded, each with a control per column; a secret
 shows only whether it is set and never follows Preview. On the Live tab, "Release connections older Live
-versions used" lets the TeamSpace delete connections no current version selects; `LiveIdentities.tsx`
+versions used" lets the Teamspace delete connections no current version selects; `LiveIdentities.tsx`
 lists who and where Live runs as, for the publish wizard.

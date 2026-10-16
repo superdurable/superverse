@@ -69,18 +69,18 @@ function tool(projectId: string, name: ProjectTool, query?: Query): string {
 }
 
 export const studioRoutes = {
-  /** Opens the TeamSpace last open in this browser, or offers to create the first one. */
+  /** Opens the Teamspace last open in this browser, or offers to create the first one. */
   home: "/",
   login: "/login",
   register: "/register",
-  /** A TeamSpace's Home. */
+  /** A Teamspace's Home. */
   teamSpace,
   teamSpacePeople: (teamSpaceId: string) => `${teamSpace(teamSpaceId)}/people`,
-  /** The TeamSpace's connections, which its Projects' connection names select. */
+  /** The Teamspace's connections, which its Projects' connection names select. */
   teamSpaceConnections: (teamSpaceId: string) => `${teamSpace(teamSpaceId)}/connections`,
-  /** The catalog of apps a new TeamSpace connection is made from. */
+  /** The catalog of apps a new Teamspace connection is made from. */
   teamSpaceConnectionCatalog: (teamSpaceId: string) => `${teamSpace(teamSpaceId)}/connections/browse`,
-  /** The form that starts a new Project in the TeamSpace. */
+  /** The form that starts a new Project in the Teamspace. */
   projectStart: (teamSpaceId: string) => `${teamSpace(teamSpaceId)}/projects/start`,
   projectCreation: "/projects/new",
   project,

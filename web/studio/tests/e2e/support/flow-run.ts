@@ -83,7 +83,7 @@ async function startSummaryInStudio(
     (response) => new URL(response.url()).pathname.endsWith("/api/v2/start") && response.request().method() === "POST",
   );
   await dialog
-    .getByRole("button", { name: environment === "live" ? "Start live run" : "Start Flow", exact: true })
+    .getByRole("button", { name: environment === "live" ? "Start live run" : "Start test run", exact: true })
     .click();
   const response = await accepted;
   expect(response.ok()).toBe(true);
@@ -200,7 +200,7 @@ async function expectLinesKeptThroughPolls(page: Page) {
 }
 
 /**
- * Opens Diagnostics of an open run from its drawer and requires its recorded
+ * Opens Diagnostics of an open run from its drawer's More details and requires its recorded
  * history to render: the run's summary, history and live state read through
  * the Flow API, the open run long-polls for its next event, and the Timeline
  * lists the recorded events from the start of the run. A wait that finds nothing
@@ -209,6 +209,12 @@ async function expectLinesKeptThroughPolls(page: Page) {
  */
 async function expectDiagnostics(page: Page, run: StudioSummaryRun) {
   await openWaitingStep(page, run);
+  // The way into Diagnostics waits with the run's identities behind the drawer's More details,
+  // which stays open in this browser once opened.
+  const runIds = page
+    .getByRole("region", { name: run.flowId, exact: true })
+    .locator('[data-more-details="runs.run-ids"] > button');
+  if ((await runIds.getAttribute("aria-expanded")) !== "true") await runIds.click();
   const flowRead = (name: string) =>
     page.waitForResponse((response) => {
       const url = new URL(response.url());

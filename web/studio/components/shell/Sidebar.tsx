@@ -49,8 +49,8 @@ const PROJECT_SIDEBAR: PaneBounds = {
 };
 
 /**
- * The signed-in sidebar on every page: the mark, the TeamSpace switcher, Jump to, New project, Home, the
- * TeamSpace's Projects, its Team section (Connections, People) kept in view below them, and the theme and
+ * The signed-in sidebar on every page: the mark, the Teamspace switcher, Jump to, New project, Home, the
+ * Teamspace's Projects, its Team section (Connections, People) kept in view below them, and the theme and
  * account at the foot. Dragged narrow it folds to a rail of icons and tiles, which opens over the
  * page after a short hover; a double-click or Enter on its edge toggles it. Its width is remembered
  * per browser, separately on the account's pages and inside a Project.
@@ -114,7 +114,7 @@ export function Sidebar({
             <span className={cx("min-w-0 truncate", label)}>Jump to</span>
             <kbd className={cx("ml-auto font-mono text-[11px] text-ink-faint", label)}>⌘K</kbd>
           </button>
-          {/* Every member of a TeamSpace, and the platform admin, may start a Project in it. */}
+          {/* Every member of a Teamspace, and the platform admin, may start a Project in it. */}
           {teamSpaceId && (
             <Link
               href={studioRoutes.projectStart(teamSpaceId)}

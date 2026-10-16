@@ -18,7 +18,7 @@ interface FlowHost {
   canIntervene: boolean;
   /** Hands the Project's chat something to ask about, with optional text; absent outside the Builder. */
   askAgent?: (about: string, text?: string) => void;
-  /** The Project's TeamSpace, whose connections its connection names select; absent outside the Builder. */
+  /** The Project's Teamspace, whose connections its connection names select; absent outside the Builder. */
   teamSpaceId?: string | null;
 }
 

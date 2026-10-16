@@ -154,6 +154,8 @@ export interface Transition {
   guard: string | null;
   /** Parallel transitions merge; this holds every guard that collapsed into one line. */
   mergedGuards: string[];
+  /** The Connector outcomes it is taken on, such as `generated`, from edges marked `connectorBranch`. */
+  outcomes: string[];
   multiplicity?: string;
   isSelfLoop: boolean;
 }

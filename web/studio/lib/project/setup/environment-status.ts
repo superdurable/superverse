@@ -108,16 +108,23 @@ function phaseInProgress(preview: PreviewSnapshot__Output): string | null {
 /**
  * The Preview's one status, from its snapshot and the configuration of its prepared source (null
  * while that is read). A failure counts only while the newest recorded start failed or was refused,
- * so a failed start never shows as starting. Running says no word; a start, a stop, a failure, Setup
- * that keeps the Preview from starting and a stopped Preview do. Unapplied changes are normal while
- * editing: they say no word, and only `setupNeedsYou` marks them.
+ * so a failed start never shows as starting, and never when that start ran `templateCommit`, the
+ * template the Project started from, which is not the person's work. Running says no word; a start, a
+ * stop, a failure, Setup that keeps the Preview from starting and a stopped Preview do. Unapplied
+ * changes are normal while editing: they say no word, and only `setupNeedsYou` marks them.
  */
 export function previewStatusOf(
   preview: PreviewSnapshot__Output | null,
   configuration: ProjectConfigurationSnapshot__Output | null,
+  templateCommit = "",
 ): EnvironmentStatus<PreviewStatusKind> {
   const newest = preview?.recentStarts.at(-1);
-  if (preview?.failure && (newest?.outcome === "START_OUTCOME_FAILED" || newest?.outcome === "START_OUTCOME_REFUSED")) {
+  const ownStart = !templateCommit || newest?.sourceCommit !== templateCommit;
+  if (
+    preview?.failure &&
+    ownStart &&
+    (newest?.outcome === "START_OUTCOME_FAILED" || newest?.outcome === "START_OUTCOME_REFUSED")
+  ) {
     const problem = failureProblem(preview.failure, { operation: "Starting the Preview" });
     return status("FAILED", "fail", "failed", INTERFACE, `failed: ${problem.title}`, problem);
   }

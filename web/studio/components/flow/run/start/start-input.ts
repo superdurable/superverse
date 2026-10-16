@@ -7,6 +7,7 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 import type { FlowV2StartInputSchema } from "@/lib/api/flow/flow-definition";
+import { suggestedValue, type StartField } from "./start-labels";
 
 export interface StartInputDraft {
   mode: "value" | "null" | "omitted";
@@ -29,23 +30,39 @@ export interface SerializedStartInput {
 
 let nextMapEntryID = 1;
 
-export function createStartInputDraft(schema: FlowV2StartInputSchema, omitted = false): StartInputDraft {
+/**
+ * A draft of `schema`, filled with its default or first example when it declares one. An optional field
+ * starts left out unless it suggests a value, and an enum starts on its suggestion or its first value.
+ */
+export function createStartInputDraft(
+  schema: FlowV2StartInputSchema,
+  omitted = false,
+  field?: StartField,
+): StartInputDraft {
+  const suggested = suggestedValue(schema, field);
   const fields: Record<string, StartInputDraft> = {};
-  for (const field of schema.fields ?? []) {
-    fields[field.name] = createStartInputDraft(field.schema, !field.required);
+  for (const child of schema.fields ?? []) {
+    fields[child.name] = createStartInputDraft(child.schema, !child.required, child);
   }
   const items =
     schema.kind === "array" && schema.fixedLength !== undefined
       ? Array.from({ length: schema.fixedLength }, () => createStartInputDraft(requiredSchema(schema.items)))
       : [];
+  const scalar = scalarText(suggested);
+  const isOption = (value: string) => schema.enumValues?.some((option) => option.value.toString() === value);
   return {
-    mode: omitted ? "omitted" : schema.kind === "null" ? "null" : "value",
-    scalar: schema.enumValues?.[0]?.value.toString() ?? "",
-    booleanValue: false,
+    mode: omitted && suggested === undefined ? "omitted" : schema.kind === "null" ? "null" : "value",
+    scalar: schema.enumValues ? (isOption(scalar) ? scalar : (schema.enumValues[0]?.value.toString() ?? "")) : scalar,
+    booleanValue: suggested === true,
     fields,
     items,
     entries: [],
   };
+}
+
+/** A suggested scalar as the text its input holds; empty for none or a structured value. */
+function scalarText(value: unknown): string {
+  return typeof value === "string" || typeof value === "number" || typeof value === "bigint" ? String(value) : "";
 }
 
 export function createMapEntry(schema: FlowV2StartInputSchema) {
@@ -67,7 +84,7 @@ function serializeValue(
   if (draft.mode === "omitted") return undefined;
   if (draft.mode === "null" || schema.kind === "null") {
     if (schema.kind !== "null" && !schema.nullable) {
-      errors.push({ path, message: "This field cannot be null." });
+      errors.push({ path, message: "This needs a value." });
     }
     return "null";
   }
@@ -83,7 +100,7 @@ function serializeValue(
         !/^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$/.test(draft.scalar) ||
         !Number.isFinite(Number(draft.scalar))
       ) {
-        errors.push({ path, message: "Enter a finite number." });
+        errors.push({ path, message: "Enter a number." });
       }
       return draft.scalar || "0";
     case "boolean":
@@ -93,13 +110,13 @@ function serializeValue(
       for (const field of schema.fields ?? []) {
         const fieldDraft = draft.fields[field.name];
         if (!fieldDraft) {
-          if (field.required) errors.push({ path: `${path}.${field.name}`, message: "This field is required." });
+          if (field.required) errors.push({ path: `${path}.${field.name}`, message: "This needs a value." });
           continue;
         }
         const value = serializeValue(field.schema, fieldDraft, `${path}.${field.name}`, errors);
         if (value !== undefined) members.push(`${JSON.stringify(field.name)}:${value}`);
         if (field.required && value === undefined) {
-          errors.push({ path: `${path}.${field.name}`, message: "This field is required." });
+          errors.push({ path: `${path}.${field.name}`, message: "This needs a value." });
         }
       }
       return `{${members.join(",")}}`;
@@ -126,7 +143,7 @@ function serializeValue(
       return `{${members.join(",")}}`;
     }
     default:
-      errors.push({ path, message: `Unsupported input kind ${(schema as { kind: string }).kind}.` });
+      errors.push({ path, message: `This form cannot fill a ${(schema as { kind: string }).kind} value.` });
       return "null";
   }
 }
@@ -136,7 +153,7 @@ function validateString(schema: FlowV2StartInputSchema, value: string, path: str
     errors.push({ path, message: "Choose one of the available values." });
   }
   if (schema.format === "date-time" && !isRFC3339(value)) {
-    errors.push({ path, message: "Enter a valid RFC3339 date and time." });
+    errors.push({ path, message: "Enter a date and time." });
   }
 }
 

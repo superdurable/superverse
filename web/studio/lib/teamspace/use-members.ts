@@ -58,7 +58,7 @@ function useMemberList<T>(key: string | null, read: (signal: AbortSignal) => Pro
   return { members: shown?.members ?? null, error: shown?.error ?? "", replace, reload };
 }
 
-/** The TeamSpace's members, which every member may read. */
+/** The Teamspace's members, which every member may read. */
 export function useTeamSpaceMembers(teamSpaceId: string | null) {
   return useMemberList(teamSpaceId, (signal) => listTeamSpaceMembers(teamSpaceId ?? "", signal));
 }

@@ -23,7 +23,7 @@ import {
 } from "@/lib/project/setup/preview-validation";
 import type { ReleaseVersions } from "@/lib/project/use-release-versions";
 import { errorProblem } from "@/lib/shared/problem/problem";
-import { versionLabel, versionNumber } from "@/lib/shared/version/version";
+import { versionNumber } from "@/lib/shared/version/version";
 import { Button } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
 import { Glyph } from "@/components/ui/Glyph";
@@ -109,7 +109,6 @@ export function PublishPopover({
   const check = usePublishCheck(projectId, commit, previewSource);
   const publish = usePublish(projectId);
   const [reason, setReason] = useSkipReason(projectId);
-  const [comparing, setComparing] = useState(false);
   const { refresh } = check;
   useEffect(() => {
     if (publish.moved) refresh();
@@ -140,7 +139,6 @@ export function PublishPopover({
       },
     );
   };
-  const between = commit ? ahead.slice(ahead.findIndex((item) => item.sourceCommit === commit)) : [];
 
   return (
     <PopoverCard
@@ -272,11 +270,6 @@ export function PublishPopover({
               />
             )}
             <div className="mt-2 flex items-center justify-end gap-2 border-t border-line-faint px-1 pt-2">
-              {!liveMode && between.length > 0 && (
-                <Button aria-expanded={comparing} onClick={() => setComparing((value) => !value)}>
-                  {comparing ? "Hide changes" : "Compare with Live"}
-                </Button>
-              )}
               <Button
                 variant="primary"
                 disabled={blocked}
@@ -305,20 +298,6 @@ export function PublishPopover({
                     : `Publish ${versionNumber(version)}`}
               </Button>
             </div>
-            {comparing && (
-              <div className={NOTE} data-testid="publish-compare">
-                <b className="block text-ink">
-                  {live
-                    ? `What ${versionNumber(version)} adds to Live ${versionNumber(live.version)}`
-                    : "Everything is new"}
-                </b>
-                {between.map((item) => (
-                  <span key={item.sourceCommit} className="block truncate">
-                    {versionLabel(item.version)}
-                  </span>
-                ))}
-              </div>
-            )}
           </>
         )}
       </div>

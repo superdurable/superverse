@@ -157,6 +157,19 @@ export async function stopFlow(
   await sendFlowApiJson(client, "/api/flows/stop", "POST", stop, { signal });
 }
 
+/** The Dex TimeTravelType and TimeTravelStepMethod enum values. */
+export const TIME_TRAVEL_TYPE = {
+  BEGINNING: 1,
+  HISTORY_EVENT_TIME: 2,
+  STEP_TYPE: 3,
+  STEP_EXECUTION_ID: 4,
+} as const;
+
+export const TIME_TRAVEL_STEP_METHOD = {
+  WAIT_FOR: 1,
+  EXECUTE: 2,
+} as const;
+
 /** Where a Time Travel starts the new run; only the fields of the chosen Dex TimeTravelType are set. */
 export interface TimeTravelRequest {
   flowId: string;

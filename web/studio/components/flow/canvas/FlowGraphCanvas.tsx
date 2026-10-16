@@ -19,6 +19,7 @@ import type { Box, Direction, Scene } from "@/components/flow/canvas/layout/scen
 import { useStageScene } from "./use-stage-scene";
 import { detourMessage, hasDetour, isFailureHandling, runDetourSources, withDetours } from "./failure-detours";
 import { CanvasControls } from "./CanvasControls";
+import { runFailure, type RunFailure } from "./run-failure";
 import { CanvasLegend } from "./CanvasLegend";
 import type { StepGroup } from "@/components/flow/canvas/model/step-groups";
 import { actionableSteps, type ActionableStep } from "@/components/flow/canvas/model/actionable-steps";
@@ -35,6 +36,8 @@ export interface SelectedStepStatus {
   reason: Reason | null;
   /** True when this is the Step the run is waiting on. */
   isBlocking: boolean;
+  /** This Step's failure, or the run's latest one when this Step did not fail. */
+  failure: RunFailure | null;
 }
 
 /** A text mark on a Step's card, such as a design's "new" or "changed"; never colour alone. */
@@ -78,12 +81,15 @@ export function FlowGraphCanvas({
   markNow = false,
   showStepPanel = true,
   isRunLoaded = true,
+  initialDirection = "tb",
 }: {
   flowType: string;
   flow: FlowModel;
   groups: StepGroup[];
   /** Changes when a new drawing should fit the view; opening a stage or a panel keeps the reader's place. */
   fitKey: string;
+  /** The way the Flow first reads; the reader's own choice then stays. */
+  initialDirection?: Direction;
   /** False while the run that `overlay` will show is still loading, so the last drawing stays on screen. */
   isRunLoaded?: boolean;
   overlay?: RunOverlay | null;
@@ -104,8 +110,8 @@ export function FlowGraphCanvas({
   onActionable?: (steps: ActionableStep[]) => void;
 }) {
   const canvasRef = useRef<HTMLDivElement>(null);
-  // A Flow reads top-down, as Zapier draws it; left-right stays the reader's choice.
-  const [direction, setDirection] = useState<Direction>("tb");
+  // A Flow reads top-down, as Zapier draws it, unless its host says otherwise; then the reader chooses.
+  const [direction, setDirection] = useState<Direction>(initialDirection);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   /** Auto-focus selects a Step for the reader; only their own click should fade the rest. */
   const [selectedByReader, setSelectedByReader] = useState(false);
@@ -182,8 +188,9 @@ export function FlowGraphCanvas({
       stepType: selectedStep.stepType,
       reason: stepReason(overlay, selectedStep.stepType),
       isBlocking: selectedStep.stepType === blockingStepType,
+      failure: runFailure(flow, overlay, selectedStep.stepType),
     });
-  }, [blockingStepType, onSelectedStepStatus, overlay, selectedStep]);
+  }, [blockingStepType, flow, onSelectedStepStatus, overlay, selectedStep]);
 
   const panel = useMemo(() => (selectedStep ? stepDefinition(flow, selectedStep) : null), [flow, selectedStep]);
 

@@ -16,7 +16,7 @@ import { studioRoutes } from "@/lib/shared/studio-routes";
 
 /**
  * What the waiting card's Flow design changes in the current source, which is compared only when it is the
- * Session head's or the template's initial design, and the Flow tab that draws it.
+ * Session head's or the template's initial design, and the Flow tab that draws it; only `loading` while it loads.
  */
 export function useCardDesign(): DesignChanges | undefined {
   const design = useFlowDesign(true);
@@ -25,7 +25,12 @@ export function useCardDesign(): DesignChanges | undefined {
   const head = session?.resource?.headCommit;
   const projectId = session?.projectId;
   const body = design?.phase === "waiting" ? design.body : null;
+  const loading = design?.phase === "waiting" && !body && !design.error;
+  // A waiting card without a design is shown alone on the Flow tab, so the chat points there too.
+  const bare = !design && session?.resource?.agent?.description?.pendingUserInput?.kind === "KIND_REQUIREMENTS";
   return useMemo(() => {
+    if (loading) return { lines: [], loading };
+    if (bare && projectId) return { lines: [], href: studioRoutes.projectSurface(projectId, "flow") };
     if (!body || !projectId) return undefined;
     const current = currentSource && currentSource.commit === head ? currentSource.graphs : null;
     const first = body.flows[0]?.flowType;
@@ -33,5 +38,5 @@ export function useCardDesign(): DesignChanges | undefined {
       lines: designChangeLines(body, current),
       href: first ? studioRoutes.projectSurface(projectId, "flow", { flowType: first }) : undefined,
     };
-  }, [body, currentSource, head, projectId]);
+  }, [bare, body, currentSource, head, loading, projectId]);
 }

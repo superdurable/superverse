@@ -29,7 +29,7 @@ type FirstMessageChoice = {
   mock: { scenario: string; arguments: Record<string, string> } | null;
 };
 
-/** A template-created Project in its TeamSpace and the first message of its Session, with stable retry identities. */
+/** A template-created Project in its Teamspace and the first message of its Session, with stable retry identities. */
 export type PendingProjectCreation = FirstMessageChoice & {
   teamSpaceId: string;
   name: string;

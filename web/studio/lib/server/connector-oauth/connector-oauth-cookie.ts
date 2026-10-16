@@ -15,14 +15,14 @@ import { FlowApiJson } from "@/lib/server/flow/flow-api-json";
 
 /**
  * A signed, short-lived navigation receipt that brings the provider's OAuth redirect back to the
- * Studio page that started a TeamSpace connection's authorization. Go still authenticates the
+ * Studio page that started a Teamspace connection's authorization. Go still authenticates the
  * caller and completes only the caller's own attempt, which its state names.
  */
 const connectorOAuthCallbackPath = "/api/connector-oauth/callback";
 const cookieName = "sv2_connector_oauth_route";
 const MAX_AGE_SECONDS = 600;
 const MAX_RETURN_PATH = 512;
-// Version 7 names a TeamSpace connection and the page to return to; an earlier cookie restarts authorization.
+// Version 7 names a Teamspace connection and the page to return to; an earlier cookie restarts authorization.
 const VERSION = 7;
 
 /** What the callback needs of the authorization it completes. */

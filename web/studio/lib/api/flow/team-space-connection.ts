@@ -21,7 +21,7 @@ import { readUnary } from "@/lib/api/transport/read-unary";
 import { postJson, unary } from "@/lib/api/transport/unary";
 import { required } from "@/lib/shared/protobuf";
 
-// Browser client of TeamSpaceConnectionService: a TeamSpace's connections, which the database owns, and the
+// Browser client of TeamSpaceConnectionService: a Teamspace's connections, which the database owns, and the
 // connection editor's writer. Requests carry settings and credentials as JSON strings.
 
 export type TeamSpaceConnection = TeamSpaceConnectionSnapshot__Output;
@@ -35,7 +35,7 @@ export async function listConnectorCatalog(signal: AbortSignal): Promise<Connect
   return (await readUnary("ListConnectorCatalog", {}, { signal })).connectors;
 }
 
-/** The TeamSpace's ACTIVE connections, newest first, of one connector when `connectorId` names it. */
+/** The Teamspace's ACTIVE connections, newest first, of one connector when `connectorId` names it. */
 export async function listTeamSpaceConnections(
   teamSpaceId: string,
   connectorId: string,
@@ -157,7 +157,7 @@ export async function openConnectionForm(
 }
 
 /**
- * The editor's writer for one TeamSpace connection. A new connection is created on the first save, under one
+ * The editor's writer for one Teamspace connection. A new connection is created on the first save, under one
  * request ID, so a retried save is the same connection; `onCreated` hears its ID. A new OAuth connection is
  * created instead when its authorization completes, which returns to `returnPath` with its ID.
  */

@@ -21,7 +21,7 @@ export async function listProjectMembers(
   return (await readUnary("ListProjectMembers", { projectId }, { signal })).members;
 }
 
-/** Adds a member of the Project's TeamSpace. */
+/** Adds a member of the Project's Teamspace. */
 export function addProjectMember(
   input: Required<RpcInput<"AddProjectMember">>,
   signal: AbortSignal,

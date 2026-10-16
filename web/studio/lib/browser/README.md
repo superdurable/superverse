@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: Browser-only utilities: storage with every stored key, the theme preference, single-flight user actions, URL query updates and paged lists.
 
-Importers: `app`, `components/build`, `components/flow/connections`, `components/flow/connections/row`, `components/flow/diagnostics`, `components/flow/frame`, `components/flow/scope`, `components/frame`, `components/frame/status`, `components/project`, `components/project/activity`, `components/project/setup`, `components/publishing`, `components/publishing/progress`, `components/publishing/publish`, `components/session`, `components/session/executor`, `components/shell`, `components/teamspace`, `components/teamspace/connections`, `components/ui/pane`, `lib/project`, `lib/session/design` and `lib/teamspace` import this directory.
+Importers: `app`, `components/build`, `components/flow/connections`, `components/flow/connections/row`, `components/flow/diagnostics`, `components/flow/frame`, `components/flow/scope`, `components/frame`, `components/frame/status`, `components/project`, `components/project/activity`, `components/project/setup`, `components/publishing`, `components/publishing/progress`, `components/publishing/publish`, `components/session`, `components/session/executor`, `components/shell`, `components/teamspace`, `components/teamspace/connections`, `components/ui/pane`, `components/ui/reveal`, `lib/project`, `lib/project/stage`, `lib/session/design` and `lib/teamspace` import this directory.
 
 Imports: it imports `lib/api/transport` and `lib/shared`.
 
@@ -31,9 +31,11 @@ flowchart LR
   c18["components/teamspace"] --> self
   c19["components/teamspace/connections"] --> self
   c20["components/ui/pane"] --> self
-  c21["lib/project"] --> self
-  c22["lib/session/design"] --> self
-  c23["lib/teamspace"] --> self
+  c21["components/ui/reveal"] --> self
+  c22["lib/project"] --> self
+  c23["lib/project/stage"] --> self
+  c24["lib/session/design"] --> self
+  c25["lib/teamspace"] --> self
   self --> d0["lib/api/transport"]
   self --> d1["lib/shared"]
 ```

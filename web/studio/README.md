@@ -6,9 +6,12 @@ business gRPC services defined in `api/superverse/v2/superverse.proto`
 ([the current contract](../../docs/api/resource-grpc.md)).
 
 Home (`/`) lists the account's Projects; an account without one sees the start
-form there, which also lives at `/projects/start`. Creation asks for a project name, the
-model of its Session and the first Agent message, with the Session's own model picker and
-composer. CreateProject always
+form there, which also lives at `/projects/start`. An account without a Teamspace gets one,
+named from its email. The start form asks what process Dex should run: the description is the
+first Agent message, a template from the gallery fills it in, and the project name (derived from
+the description) and the Session's model sit under Advanced. A new Project opens on its
+conversation alone and switches once to the Builder when the agent's first requirements card
+arrives. CreateProject always
 sends the required managedRepository field; Setup creates a private repository
 from the embedded template. Pending creation and Agent intent session-storage
 keys are v3, with stable request IDs, cancellation, retry and stale-response
@@ -20,7 +23,6 @@ Authoritative references:
 - [Agent protobuf projection](../../docs/api/agent-protobuf-contract.md)
 - [Architecture](../../docs/architecture/superverse-v2.md)
 - [Real-dependency acceptance](tests/e2e/README.md)
-
 
 ## Commands
 
@@ -84,10 +86,10 @@ the current contract.
 | --- | --- |
 | [`app`](app/README.md) | The Next.js routes: signed-in and sign-in pages, the BFF route handlers and the `/dex` Flow API routes, and the only files that choose mock or production code. |
 | [`components/agent`](components/agent/README.md) | The shared Agent UI's single entry `index.ts`; Studio reaches the conversation and interaction presentation only through this entry. |
-| [`components/agent/conversation`](components/agent/conversation/README.md) | Renders an Agent conversation from committed messages, activity and live text: turns, messages, notices, markers, Markdown, the work log with compact tool rows and model metrics, and the live clock. |
+| [`components/agent/conversation`](components/agent/conversation/README.md) | Renders an Agent conversation: turns, messages, notices, Markdown and each turn's work as one plain line, with its full log, markers and metrics folded, on a live clock. |
 | [`components/agent/interaction`](components/agent/interaction/README.md) | What the Agent asks of and shows the reader: question batches, the requirements card and confirmed requirements, queued messages, todo progress, timers and background tasks. |
 | [`components/build`](components/build/README.md) | The Flow and Interface surfaces: the Flow Definitions of the version shown, the Preview with its source, Start and Stop, problem, phases and history, and the automatic-builds switch. |
-| [`components/flow/canvas`](components/flow/canvas/README.md) | Draws a Flow Definition on a React Flow canvas, by stage or by Step, with its controls, legend and Step panel, optionally overlaid with one run. |
+| [`components/flow/canvas`](components/flow/canvas/README.md) | Draws a Flow Definition on a React Flow canvas, by stage or by Step, with its controls, legend and Step panel, optionally overlaid with one run and its failure. |
 | [`components/flow/canvas/camera`](components/flow/canvas/camera/README.md) | Frames what the canvas shows: a Step with the Steps around it, legibly; the entrance trace of a new drawing; one eased move per change. |
 | [`components/flow/canvas/layout`](components/flow/canvas/layout/README.md) | Places a decoded Flow into one Scene: stages or Steps, the main lines drawn and the jumps docked as chips, ELK placement and group bands. |
 | [`components/flow/canvas/model`](components/flow/canvas/model/README.md) | Decodes a Flow Definition into the canvas model and derives what the canvas shows: guards, branches, Step groups and context, actionable Steps and a run overlay. |
@@ -98,19 +100,22 @@ the current contract.
 | [`components/flow/connector/manifest`](components/flow/connector/manifest/README.md) | Form controls and rules for the fields a connector manifest declares: inputs and defaults, authorization methods, and JSON Pointer reads and merges of unit values. |
 | [`components/flow/connector/native`](components/flow/connector/native/README.md) | The native units a connector manifest declares, the host that runs their declared provider commands and saves their values, model ID rules and picker options. |
 | [`components/flow/connector/native/model`](components/flow/connector/native/model/README.md) | Projects each model provider's listing into the model picker's options, one module per provider, with the listing notices they share. |
-| [`components/flow/connector/team-space`](components/flow/connector/team-space/README.md) | A TeamSpace connection's editor with the connector's own form, and the picker that chooses one for a Project's connection name. |
-| [`components/flow/design`](components/flow/design/README.md) | Draws an agent's Flow design with the Flow canvas under its Design label, and compares it with the current source for its marks and the card's change lines. |
+| [`components/flow/connector/team-space`](components/flow/connector/team-space/README.md) | A Teamspace connection's editor with the connector's own form, and the picker that chooses one for a Project's connection name. |
+| [`components/flow/design`](components/flow/design/README.md) | Draws an agent's Flow design with the Flow canvas under its Design label, compares it with the current source for marks and change lines, and holds its Process Brief. |
+| [`components/flow/design/brief`](components/flow/design/brief/README.md) | The Process Brief on the Flow tab: a requirements card and its Flow design in business words, a summary grid above the drawing, with Change something and Confirm and build. |
 | [`components/flow/diagnostics`](components/flow/diagnostics/README.md) | The Diagnostics pages of a Flow and one run: overview, live state, Streams, the run record, and the Stop, Time Travel and channel operation dialogs. |
 | [`components/flow/diagnostics/event`](components/flow/diagnostics/event/README.md) | Renders the details of one history event: its Step method sections, effects, failure and the Step options it ran with. |
 | [`components/flow/diagnostics/graph`](components/flow/diagnostics/graph/README.md) | Reconstructs and draws a run's execution graph from its history events, without applying a newer Flow Definition. |
 | [`components/flow/diagnostics/timeline`](components/flow/diagnostics/timeline/README.md) | A run's Timeline of history events, the selected event's sidebar and the dashed connector that joins the selected card to it. |
 | [`components/flow/diagnostics/value`](components/flow/diagnostics/value/README.md) | Renders the values a run's history carries: typed fields, structured and JSON values, Step options and decisions, waiting conditions and persistence groups. |
 | [`components/flow/frame`](components/flow/frame/README.md) | What every Flow view shares: the FlowFrame root, links to a Flow target, pane presets with their storage keys, and the Runs workspace class constants. |
-| [`components/flow/map`](components/flow/map/README.md) | The Flow tab's project map: a card per valid Flow Type with its one-line summary, its stages, apps, child Flows and change markers. |
-| [`components/flow/run`](components/flow/run/README.md) | The Runs and Inbox views: the run list column with Runs | Events, search and its query, run groups, and the hooks that search runs and route Flow types. |
+| [`components/flow/map`](components/flow/map/README.md) | The Flow tab's project map: a card per valid Flow Type, named as people say it, with its stages, apps, child Flows and change markers. |
+| [`components/flow/run`](components/flow/run/README.md) | The Runs and Inbox views: the run list column with its health strip, Filter and events slots, run groups, the run search and the hook that routes Flow types. |
 | [`components/flow/run/detail`](components/flow/run/detail/README.md) | The selected run's drawer: header, Display and Actions, QR code input, typed values, UI slots, run copy and the liveness of what the reader holds. |
-| [`components/flow/run/start`](components/flow/run/start/README.md) | The Start Flow dialog with its schema-driven input form and typed start input, including recovery of a start whose response was uncertain. |
-| [`components/flow/run/step`](components/flow/run/step/README.md) | What a reader may do at the clicked Step of a run: open its Inbox item, Time travel, ask the agent, or fix a Live failure on Preview. |
+| [`components/flow/run/failure`](components/flow/run/failure/README.md) | A failed Step or run at the top of the run drawer in business terms: what happened, what happens now, the engine's words behind More details. |
+| [`components/flow/run/start`](components/flow/run/start/README.md) | A process's start form in business words, inline or in its dialog, with typed start input and recovery of a start whose response was uncertain. |
+| [`components/flow/run/step`](components/flow/run/step/README.md) | What a reader may do at a run's clicked Step: open its Inbox item, ask the agent, retry a failed Step, have the agent fix it, or Time travel. |
+| [`components/flow/run/tryit`](components/flow/run/tryit/README.md) | Runs' first view before Preview has a run: what the version still needs, connected in place with Setup's controls, then the process's start form inline. |
 | [`components/flow/scope`](components/flow/scope/README.md) | Studio's only entry into the Flow UI: binds it to a Project-scoped Flow API, supplies navigation and the catalog notice, and loads its views on demand. |
 | [`components/frame`](components/frame/README.md) | The Project Builder's frame: the bar, the chat column with its rail, Tools' list, the links between surfaces and versions, and the surface registry. |
 | [`components/frame/bar`](components/frame/bar/README.md) | The Builder's one 48px bar: the Project switch, the Preview | Live switch, the surface tabs, the actions, and how far the bar gives way when narrow. |
@@ -118,6 +123,7 @@ the current contract.
 | [`components/project`](components/project/README.md) | The Project pages: the start form, Project creation, Project details, the Project's one Session provider, the surfaces and tools inside the Builder frame, and Setup on either tab. |
 | [`components/project/activity`](components/project/activity/README.md) | The per-environment timeline and the recent trigger events: Preview's starts, Live's publishes and deployments, each with version, outcome and problem. |
 | [`components/project/setup`](components/project/setup/README.md) | Setup's pieces above the table: the bar with Preview's line and the Next publish line, and the Live tab's banner. |
+| [`components/project/templates`](components/project/templates/README.md) | The start page's process templates: their typed catalog, the gallery that fills the composer with one, and the Project name a description gives. |
 | [`components/publishing`](components/publishing/README.md) | Tools, Publishing: the publish in progress, what is Live with Stop Live, every version with its builds, rollback after its consequences, and Live's history. |
 | [`components/publishing/progress`](components/publishing/progress/README.md) | One publish in Tools ▸ Publishing: its header with Cancel, the five-stage bar, a failure's problem, and the inline build log. |
 | [`components/publishing/publish`](components/publishing/publish/README.md) | The bar's Publish button and its popover: the version, what blocks it, what to check, what happens, the skip reason, and Publish. |
@@ -127,15 +133,17 @@ the current contract.
 | [`components/session/executor`](components/session/executor/README.md) | Shows the Session executor, SQL-derived remote liveness, offline notice, and epoch-fenced return to Superverse while keeping connection dialog ownership with its caller. |
 | [`components/session/mock`](components/session/mock/README.md) | The mock model's composer, in a Session and on the creation page: it picks a category, a scenario and its arguments, and sends the next input as its kind arrives. |
 | [`components/session/remoteagent`](components/session/remoteagent/README.md) | Shows Builder connection risk acknowledgement, one-time pairing and safe connection metadata through Studio's typed business API. |
-| [`components/session/start`](components/session/start/README.md) | A new Session's first turn: the model the creation page starts on and the creation intent the chat applies and sends once the Session waits. |
+| [`components/session/start`](components/session/start/README.md) | A new Session's first turn and the composer's send: the starting model, the creation intent the chat sends once the Session waits, and replies to a waiting card. |
 | [`components/shell`](components/shell/README.md) | The app frame: the sign-in and registration form, the signed-in sidebar with its rail, Projects, Team, theme and account, the account pages' bar, and the brand marks. |
 | [`components/shell/palette`](components/shell/palette/README.md) | Jump to (⌘K or Ctrl K): Home, New project, every Project, and the Processes, surfaces and tools the open Builder offers. |
-| [`components/teamspace`](components/teamspace/README.md) | The TeamSpace switcher, creation and landing, page gate, Home header, People, a Project's Permissions and Share, and the Project role chip. |
-| [`components/teamspace/connections`](components/teamspace/connections/README.md) | The TeamSpace's Connections page: its connections by connector and major version, the Projects using each, and their creation, editing and deletion. |
+| [`components/teamspace`](components/teamspace/README.md) | The Teamspace switcher, creation and landing, page gate, Home header, People, a Project's Permissions and Share, and the Project role chip. |
+| [`components/teamspace/connections`](components/teamspace/connections/README.md) | The Teamspace's Connections page: its connections by connector and major version, the Projects using each, and their creation, editing and deletion. |
 | [`components/ui`](components/ui/README.md) | Product-free UI primitives: the class joiner `cx`, Button, Dialog, Popover, Banner, Chip and Eyebrow, icons and glyphs, the phase timing list and the not-ready placeholder, with resizable panes in `pane/`. |
-| [`components/ui/menu`](components/ui/menu/README.md) | The one dropdown for every single choice and the ⋮ action menu, both on the popover card, with their shared rows and listbox keyboard handling. |
+| [`components/ui/badge`](components/ui/badge/README.md) | The one small pill for a state, a count or a label beside a name, in the five tones the palette licenses. |
+| [`components/ui/menu`](components/ui/menu/README.md) | The one dropdown for every single choice, on the popover card, with its rows and listbox keyboard handling. |
 | [`components/ui/pane`](components/ui/pane/README.md) | Resizable panes: the pixel resize handle with its rail and remembered width, the list column, and the drag and keyboard gestures they share. |
 | [`components/ui/problem`](components/ui/problem/README.md) | The one problem panel every failure uses: what happened, why, one remedy button and the folded technical details. |
+| [`components/ui/reveal`](components/ui/reveal/README.md) | The "More details" fold every surface uses to keep engine detail out of its default view, remembered open per surface in this browser. |
 | [`components/ui/timings`](components/ui/timings/README.md) | The list of the phases a Preview start, a build or a deployment measured, each with its label and duration. |
 | [`lib/account`](lib/account/README.md) | `AccountProvider`, which gives the signed-in pages the account their layout read once. |
 | [`lib/api`](lib/api/README.md) | Browser clients of the BFF, one module per browser service with functions named after its RPCs, and the account client that reaches AccountService through `/api/auth`. |
@@ -148,16 +156,17 @@ the current contract.
 | [`lib/project`](lib/project/README.md) | Project resources: the Project Watch provider and list, resource Watches, release versions, Process definitions, waiting runs, configuration reads, requirement gap names, creation intents and the template's Design. |
 | [`lib/project/publishing`](lib/project/publishing/README.md) | A publish's five stages from its phase timings, the publish in progress with its Watches, the build log read, and the Publish popover's version check. |
 | [`lib/project/setup`](lib/project/setup/README.md) | Setup's shared state: each environment's status, the Preview draft, Live's next-publish layer with its items, and the gap links. |
+| [`lib/project/stage`](lib/project/stage/README.md) | How far a Project has come, from its first conversation to built and Live, and the Builder tabs it has shown in this browser. |
 | [`lib/server`](lib/server/README.md) | The server-only BFF core: the gRPC client and its `RpcBackend` seam, the Server-Sent Events relay, `/api/auth`, the caller cookie, same-origin checks and bounded request bodies. |
-| [`lib/server/connector-oauth`](lib/server/connector-oauth/README.md) | Starts a TeamSpace connection's OAuth authorization and completes its provider callback, binding the two with a signed route cookie. |
+| [`lib/server/connector-oauth`](lib/server/connector-oauth/README.md) | Starts a Teamspace connection's OAuth authorization and completes its provider callback, binding the two with a signed route cookie. |
 | [`lib/server/flow`](lib/server/flow/README.md) | Serves the `/dex` Flow API routes and the Session source catalog: maps each URL to a named Flow API RPC and checks CSRF. |
 | [`lib/server/rpc`](lib/server/rpc/README.md) | Serves `/api/rpc/<Method>` for the six browser services through a fail-closed allowlist and a strict descriptor-driven request decoder. |
 | [`lib/session`](lib/session/README.md) | The page-owned Session: `SessionProvider`, its owner hook with the single Watch and the Agent commands, the reducer, the Agent protobuf projection, message merging and the mock scenarios. |
-| [`lib/session/design`](lib/session/design/README.md) | Reads which Flow design the Flow tab draws from the Session Snapshot, reads its body once per digest, and remembers which card version the Flow tab showed. |
+| [`lib/session/design`](lib/session/design/README.md) | Reads which Flow design the Flow tab draws from the Session Snapshot, reads its body once per digest, remembers which card version it showed, and whether its Brief shows. |
 | [`lib/shared`](lib/shared/README.md) | Pure code both sides use: protobuf and JSON types, formatting, abort and delay, RPC method types, Session command errors, Project availability, Flow Definition catalogs and Studio routes. |
 | [`lib/shared/problem`](lib/shared/problem/README.md) | The one problem format's copy: remedy buttons, what-happened phrases, gap phrases, refusal texts and the builders that turn a failure, an error or a notice into a problem. |
 | [`lib/shared/version`](lib/shared/version/README.md) | How Studio names a commit: "V12 · subject" from the version the server froze with each record, never a cut hash. |
-| [`lib/teamspace`](lib/teamspace/README.md) | The current TeamSpace of the signed-in pages with its one read, the TeamSpace list, and the closed sets of TeamSpace and Project roles. |
+| [`lib/teamspace`](lib/teamspace/README.md) | The current Teamspace of the signed-in pages with its one read, the Teamspace list, and the closed sets of Teamspace and Project roles. |
 | [`mock`](mock/README.md) | Mock mode for local presentation: the mock switch, the `/dex` Flow API mock and the mock application page, selected only by `app/` route files. |
 | [`mock/backend`](mock/backend/README.md) | Provides explicit development business-service fixtures through generated protobuf codecs and store Watches, without production fallback or acceptance evidence. |
 | [`mock/fixture`](mock/fixture/README.md) | The Flow Definition fixtures of mock mode and their classification, the Flow runs recorded from Local Kind that the `/dex` mock serves, and the mock Agent's questions and requirements card. |
@@ -166,7 +175,7 @@ the current contract.
 | [`mock/store/scenarios`](mock/store/scenarios/README.md) | The mock model's scenario catalog of Studio mock mode, whose inputs drive the mock Agent's scripts through the mock composer, and the markers its phrases ignore. |
 | [`mock/store/setup`](mock/store/setup/README.md) | The mock's Setup state: the Preview's applied configuration and starts, Live's next-publish layer resolved against current Live, and the Slack and Stripe fixture connections. |
 | [`mock/store/tasks`](mock/store/tasks/README.md) | The mock Agent's background commands and subagents in Studio mock mode: their task scripts, the live line of a running subagent and the Stop button that stops them. |
-| [`mock/store/tenancy`](mock/store/tenancy/README.md) | The TeamSpaces, their members and the Projects' members of Studio mock mode, with the rules TeamSpaceFlow and ProjectFlow keep and the caller's role in each. |
+| [`mock/store/tenancy`](mock/store/tenancy/README.md) | The Teamspaces, their members and the Projects' members of Studio mock mode, with the rules TeamSpaceFlow and ProjectFlow keep and the caller's role in each. |
 | [`mock/store/validation`](mock/store/validation/README.md) | Checks Preview evidence when the mock store admits a release build. |
 | [`mock/surface`](mock/surface/README.md) | The fixture Project surface inside the Builder frame with its role lens and the named Setup fixtures, which mock routes render in place of the production surface. |
 | [`scripts`](scripts/README.md) | Generators and checks of the Studio source: protobuf types, consumed pins, the module graph, the module and styling rules, and these directory READMEs. |
@@ -183,7 +192,7 @@ the current contract.
 | [`tests/e2e/support/coverage`](tests/e2e/support/coverage/README.md) | Records, for each passing E2E spec, the Studio source files whose code ran in its browser pages, for the committed coverage map. |
 | [`tests/e2e/support/mock`](tests/e2e/support/mock/README.md) | Drives the mock model's composer: whether the lane offers it and the Session runs it, the first input chosen on the creation page, and each later input in order. |
 | [`tests/e2e/support/preview`](tests/e2e/support/preview/README.md) | The specs' Preview steps: starting it from the Interface, awaiting a push's automatic deployment or its configuration notice, and previewing the template's heading edit. |
-| [`tests/e2e/support/teamspace`](tests/e2e/support/teamspace/README.md) | E2E steps of a TeamSpace's people: create or open a TeamSpace, add a member in People, give a Project role in Permissions and open a Project as an operator. |
+| [`tests/e2e/support/teamspace`](tests/e2e/support/teamspace/README.md) | E2E steps of a Teamspace's people: create or open a Teamspace, add a member in People, give a Project role in Permissions and open a Project as an operator. |
 
 <!-- END GENERATED MODULE TABLE -->
 
@@ -298,8 +307,8 @@ per-browser preference.
 
 The bar's Preview | Live switch has one status dot per environment
 (`lib/project/setup/environment-status.ts`) and says a word only when something is
-off: *starting* or *updating*, *failed*, *stopped* or *needs setup* on Preview,
-*publishing* or *publish failed* on Live. A word with a fix links to it: the
+off: _starting_ or _updating_, _failed_, _stopped_ or _needs setup_ on Preview,
+_publishing_ or _publish failed_ on Live. A word with a fix links to it: the
 Interface, Setup at the first missing item, or Tools ▸ Publishing. Unapplied changes
 say no word; while Setup's Preview column lacks items or has changes to apply, the Tools tab
 and its Setup entry carry an amber "Setup needs you" mark. The

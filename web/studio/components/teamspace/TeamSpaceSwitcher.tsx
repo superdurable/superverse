@@ -22,7 +22,7 @@ import { Glyph } from "@/components/ui/Glyph";
 import { POPOVER_ITEM, PopoverCard, usePopover } from "@/components/ui/Popover";
 import { TeamSpaceCreateForm } from "./TeamSpaceCreateForm";
 
-/** The caller's word for a TeamSpace: its role there, or "platform admin" for the administrator outside it. */
+/** The caller's word for a Teamspace: its role there, or "platform admin" for the administrator outside it. */
 function roleWord(teamSpace: TeamSpaceSnapshot__Output, isAdmin: boolean): string {
   const role = teamSpaceRoleOf(teamSpace.callerRole);
   return role ? TEAM_SPACE_ROLES[role].word : isAdmin ? "platform admin" : "";
@@ -43,8 +43,8 @@ function Tile({ name, current }: { name: string; current?: boolean }) {
 }
 
 /**
- * The sidebar's TeamSpace row: the current TeamSpace with the person's role in it. It opens the person's
- * TeamSpaces, every one for the platform admin, and New TeamSpace. The sidebar passes its row and rail-label
+ * The sidebar's Teamspace row: the current Teamspace with the person's role in it. It opens the person's
+ * Teamspaces, every one for the platform admin, and New Teamspace. The sidebar passes its row and rail-label
  * classes, which this row shares.
  */
 export function TeamSpaceSwitcher({ rowClassName, labelClassName }: { rowClassName: string; labelClassName?: string }) {
@@ -53,7 +53,7 @@ export function TeamSpaceSwitcher({ rowClassName, labelClassName }: { rowClassNa
   const anchor = useRef<HTMLDivElement>(null);
   const popover = usePopover(anchor);
   const [creating, setCreating] = useState(false);
-  const name = teamSpace?.name ?? "TeamSpaces";
+  const name = teamSpace?.name ?? "Teamspaces";
   const word = teamSpace ? roleWord(teamSpace, Boolean(account?.isAdmin)) : "";
   return (
     <div ref={anchor} className="relative">
@@ -63,7 +63,7 @@ export function TeamSpaceSwitcher({ rowClassName, labelClassName }: { rowClassNa
         aria-haspopup="dialog"
         onClick={popover.toggle}
         aria-label={`${name}${word ? ` · ${word}` : ""}`}
-        title={`${name}${word ? ` · ${word}` : ""} · switch TeamSpace`}
+        title={`${name}${word ? ` · ${word}` : ""} · switch Teamspace`}
         className={cx(rowClassName, "h-10")}
       >
         <Tile name={name} current />
@@ -86,9 +86,9 @@ export function TeamSpaceSwitcher({ rowClassName, labelClassName }: { rowClassNa
         />
       )}
       {creating && (
-        <Dialog onDismiss={() => setCreating(false)} aria-label="New TeamSpace">
+        <Dialog onDismiss={() => setCreating(false)} aria-label="New Teamspace">
           <div className="grid gap-3 p-5">
-            <h2 className="text-[17px] font-semibold text-ink">New TeamSpace</h2>
+            <h2 className="text-[17px] font-semibold text-ink">New Teamspace</h2>
             <TeamSpaceCreateForm onCreated={() => setCreating(false)} onCancel={() => setCreating(false)} />
           </div>
         </Dialog>
@@ -97,7 +97,7 @@ export function TeamSpaceSwitcher({ rowClassName, labelClassName }: { rowClassNa
   );
 }
 
-/** Mounted only while open, so opening reads the TeamSpaces again. */
+/** Mounted only while open, so opening reads the Teamspaces again. */
 function TeamSpaceList({
   anchorRef,
   currentId,
@@ -113,9 +113,9 @@ function TeamSpaceList({
 }) {
   const list = useTeamSpaceList("switcher");
   return (
-    <PopoverCard anchorRef={anchorRef} label="Switch TeamSpace" className="max-h-[70vh] w-72">
+    <PopoverCard anchorRef={anchorRef} label="Switch Teamspace" className="max-h-[70vh] w-72">
       <p className="px-2.25 pt-1 pb-1.5 text-[11px] tracking-[0.07em] text-ink-faint uppercase">
-        {isAdmin ? "Every TeamSpace" : "Your TeamSpaces"}
+        {isAdmin ? "Every Teamspace" : "Your Teamspaces"}
       </p>
       {list.items.map((item) => (
         <Link
@@ -135,7 +135,7 @@ function TeamSpaceList({
           {item.teamSpaceId === currentId && <Glyph name="check" className="size-3.5 shrink-0" />}
         </Link>
       ))}
-      {!list.loaded && <p className="px-2.25 py-1.75 text-ink-faint">Loading TeamSpaces…</p>}
+      {!list.loaded && <p className="px-2.25 py-1.75 text-ink-faint">Loading Teamspaces…</p>}
       {list.error && <p className="px-2.25 py-1.75 text-fail">{list.error}</p>}
       {list.nextPageToken && (
         <button
@@ -150,7 +150,7 @@ function TeamSpaceList({
       <hr className="mx-0.5 my-1 border-line-faint" />
       <button type="button" onClick={onCreate} className={POPOVER_ITEM}>
         <Glyph name="plus" />
-        New TeamSpace
+        New Teamspace
       </button>
     </PopoverCard>
   );

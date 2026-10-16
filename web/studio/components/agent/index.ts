@@ -7,7 +7,7 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 export { ConversationView } from "@/components/agent/conversation/ConversationView";
-export type { NotificationLinks } from "@/components/agent/conversation/ConversationMessage";
+export { needsConfiguration, type NotificationLinks } from "@/components/agent/conversation/ConversationMessage";
 export { AgentTasksPanel } from "@/components/agent/interaction/AgentTasksPanel";
 export { TimerCard } from "@/components/agent/interaction/TimerCard";
 export { TodoProgress } from "@/components/agent/interaction/TodoProgress";

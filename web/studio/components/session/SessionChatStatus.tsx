@@ -12,9 +12,12 @@ import { useState } from "react";
 import { useSessionResource } from "@/lib/session/SessionProvider";
 import { SessionExecutorStatus } from "./executor/SessionExecutorStatus";
 import { RemoteAgentDialog } from "./remoteagent/RemoteAgentDialog";
-import { SessionConnectionIndicator, WorkspaceStatusIndicator } from "./SessionStatusIndicators";
+import { SessionConnectionIndicator, SessionDetails } from "./SessionStatusIndicators";
 
-/** Beside the chat's heading: whether live updates are connected, and how long the workspace is kept. */
+/**
+ * Beside the chat's heading: a dot while live updates reconnect, the agent that works in the chat, and
+ * More details with the live updates, the workspace's time and its startup.
+ */
 export function SessionChatStatus({ projectId, canManage }: { projectId: string; canManage: boolean }) {
   const session = useSessionResource();
   // Navigation or lost management permission discards acknowledgement and codes.
@@ -28,10 +31,10 @@ function ChatStatus({ projectId, canManage }: { projectId: string; canManage: bo
   const session = useSessionResource();
   const canConnect = canManage && session?.projectId === projectId && session.status === "SESSION_STATUS_ACTIVE";
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 items-center gap-2">
       <SessionConnectionIndicator />
-      <WorkspaceStatusIndicator />
       <SessionExecutorStatus canManage={canConnect} onConnect={() => setConnect(true)} />
+      <SessionDetails />
       {connect && canConnect && (
         <RemoteAgentDialog key={projectId} projectId={projectId} onClose={() => setConnect(false)} />
       )}

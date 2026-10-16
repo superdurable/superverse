@@ -5,14 +5,15 @@ Purpose: What the Agent asks of and shows the reader: question batches, the requ
 
 Importers: `components/agent` imports this directory.
 
-Imports: it imports `components/ui`, `lib/session` and `lib/shared`.
+Imports: it imports `components/ui`, `components/ui/reveal`, `lib/session` and `lib/shared`.
 
 ```mermaid
 flowchart LR
   self["components/agent/interaction"]
   c0["components/agent"] --> self
   self --> d0["components/ui"]
-  self --> d1["lib/session"]
-  self --> d2["lib/shared"]
+  self --> d1["components/ui/reveal"]
+  self --> d2["lib/session"]
+  self --> d3["lib/shared"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->

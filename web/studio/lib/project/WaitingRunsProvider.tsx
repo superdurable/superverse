@@ -10,6 +10,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { getFlowCatalog, searchFlows } from "@/lib/api/flow/flow-run";
+import { RUNNING_FLOW_STATUS_CODE, SEARCH_STATUS_VALUES } from "@/lib/api/flow/flow-status";
 import { createFlowApiClient, type ObservedFlowTarget } from "@/lib/api/transport/flow-api-client";
 import type { PreviewSnapshot__Output } from "@/lib/generated/protobuf/superverse/v2/PreviewSnapshot";
 import type { ProjectLive__Output } from "@/lib/generated/protobuf/superverse/v2/ProjectLive";
@@ -19,6 +20,8 @@ import { flowApiRoutes, type ProjectEnvironment } from "@/lib/shared/studio-rout
 const WAITING_PAGE = 50;
 /** Waiting runs change as people act; the frame reads them again this often, and on every surface change. */
 const REREAD_MS = 60_000;
+/** A run keeps its Action permission history after it closes, so only running ones are waiting, as in the Inbox. */
+const RUNNING = { field: "executionStatus", operator: "eq", values: [SEARCH_STATUS_VALUES[RUNNING_FLOW_STATUS_CODE]] };
 
 /** Where the waiting runs are read: the running Preview or the Live deployment, with what identifies it. */
 interface WaitingRunsTarget {
@@ -81,7 +84,7 @@ export function useReadWaitingRuns(target: WaitingRunsTarget | null, rereadKey: 
         flowTypes.map((flowType) =>
           searchFlows(
             client,
-            { flowType, workQueueOnly: true, filters: [], pageSize: WAITING_PAGE },
+            { flowType, workQueueOnly: true, filters: [RUNNING], pageSize: WAITING_PAGE },
             { definitionRevision: catalog.definitionRevision, signal: controller.signal },
           ),
         ),

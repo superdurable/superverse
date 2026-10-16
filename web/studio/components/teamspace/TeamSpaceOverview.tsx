@@ -26,16 +26,16 @@ const FIELD = cx(
   "w-full rounded-lg border border-line bg-panel px-3 py-1.5 text-base text-ink focus:border-accent focus:shadow-(--focus-ring) focus:outline-none",
 );
 
-/** What a fenced write that found the TeamSpace changed says; the page then shows the TeamSpace as it is. */
-const CHANGED = "Someone changed this TeamSpace meanwhile, so nothing was saved. This is it now; try again.";
+/** What a fenced write that found the Teamspace changed says; the page then shows the Teamspace as it is. */
+const CHANGED = "Someone changed this Teamspace meanwhile, so nothing was saved. This is it now; try again.";
 
 function count(value: number, one: string, many: string) {
   return `${value} ${value === 1 ? one : many}`;
 }
 
 /**
- * A TeamSpace's Home header: its name, which its admins rename, and how many members, projects and Live
- * projects it has. The platform admin deletes the TeamSpace from here, after typing its name.
+ * A Teamspace's Home header: its name, which its admins rename, and how many members, projects and Live
+ * projects it has. The platform admin deletes the Teamspace from here, after typing its name.
  */
 export function TeamSpaceOverview() {
   const account = useAccount();
@@ -53,7 +53,7 @@ export function TeamSpaceOverview() {
     getTeamSpaceOverview(teamSpaceId, controller.signal).then(
       (value) => !controller.signal.aborted && setOverview(value),
       (reason: unknown) =>
-        !controller.signal.aborted && setError(errorMessage(reason, "Could not count the TeamSpace")),
+        !controller.signal.aborted && setError(errorMessage(reason, "Could not count the Teamspace")),
     );
     return () => controller.abort();
   }, [teamSpaceId, revision]);
@@ -62,7 +62,7 @@ export function TeamSpaceOverview() {
   const manages = teamSpaceRoleOf(teamSpace.callerRole) === "admin" || Boolean(account?.isAdmin);
   const shown = overview?.teamSpace?.teamSpaceId === teamSpaceId ? overview : null;
   return (
-    <section aria-label="TeamSpace" className="shrink-0 border-b border-line-soft px-8 pt-6 pb-5 max-sm:px-4">
+    <section aria-label="Teamspace" className="shrink-0 border-b border-line-soft px-8 pt-6 pb-5 max-sm:px-4">
       {renaming ? (
         <RenameForm
           teamSpace={teamSpace}
@@ -82,7 +82,7 @@ export function TeamSpaceOverview() {
           )}
           {account?.isAdmin && (
             <Button size="sm" variant="danger" className="ml-auto" onClick={() => setDeleting(true)}>
-              Delete TeamSpace…
+              Delete Teamspace…
             </Button>
           )}
         </div>
@@ -113,7 +113,7 @@ function RenameForm({
 }: {
   teamSpace: TeamSpaceSnapshot__Output;
   onDone: (renamed: TeamSpaceSnapshot__Output | null) => void;
-  /** The TeamSpace changed since the page read it: read it again. */
+  /** The Teamspace changed since the page read it: read it again. */
   onChanged: () => void;
 }) {
   const [name, setName] = useState(teamSpace.name);
@@ -134,9 +134,9 @@ function RenameForm({
     });
   };
   return (
-    <form className="grid max-w-md gap-2" onSubmit={submit} aria-label="Rename the TeamSpace">
+    <form className="grid max-w-md gap-2" onSubmit={submit} aria-label="Rename the Teamspace">
       <label className="grid gap-1 text-sm font-medium text-ink-dim">
-        TeamSpace name
+        Teamspace name
         <input
           className={FIELD}
           value={name}
@@ -158,7 +158,7 @@ function RenameForm({
   );
 }
 
-/** The second confirmation of a TeamSpace's deletion: its name, typed. */
+/** The second confirmation of a Teamspace's deletion: its name, typed. */
 function DeleteDialog({
   teamSpace,
   projectCount,
@@ -188,7 +188,7 @@ function DeleteDialog({
           apps are deleted with it, its connections too, and its members lose access. This cannot be undone.
         </p>
         <label className="grid gap-1 text-sm font-medium text-ink-dim">
-          Type the TeamSpace&apos;s name to confirm
+          Type the Teamspace&apos;s name to confirm
           <input
             className={FIELD}
             value={typed}
@@ -203,7 +203,7 @@ function DeleteDialog({
         {action.error && <Banner role="alert">{action.error}</Banner>}
         <div className="flex gap-2">
           <Button type="submit" size="sm" variant="danger" disabled={!confirmed || action.busy !== null}>
-            {action.busy ? "Deleting…" : "Delete TeamSpace"}
+            {action.busy ? "Deleting…" : "Delete Teamspace"}
           </Button>
           <Button type="button" size="sm" onClick={() => onClose(null)} disabled={action.busy !== null}>
             Cancel

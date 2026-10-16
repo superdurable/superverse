@@ -38,6 +38,10 @@ export const RUN_COPY = {
   resizeDrawer: "Resize the run drawer",
   elapsed: "Running for",
   closed: "Closed",
+  started: "Started",
+  runId: "Run ID",
+  flowId: "Flow ID",
+  diagnostics: "Diagnostics",
 } as const;
 
 /**
@@ -45,20 +49,24 @@ export const RUN_COPY = {
  * may be offered, not who must act, so the Inbox says what it read and where it read it.
  */
 export const INBOX_COPY = {
-  appName: "Work Queue",
+  appName: "Inbox",
   liveNote: "live",
   clear: "Nothing is waiting. Items appear here when a run reaches a step that waits for a person.",
   liveItem: "A real item on Live. If you act here, you act on the live application.",
   selectPrompt: "Select a run to see what it reports and which Actions are available.",
   seeProcess: "See the process",
   close: "Close this item",
+  /** What a succeeded Action says; the response says nothing of what follows, so neither does this. */
+  done(action: string): string {
+    return `${action}: done`;
+  },
 } as const;
 
 /** How fresh a run list or a run's Display is, in Runs and the Inbox alike. */
 export const LIVENESS_COPY = {
   loading: "Asking the process…",
   unreachable: "Cannot reach the process, so this list is not the whole picture.",
-  stale: "Showing the last answer — the process did not respond just now.",
+  stale: "Showing the last answer: the process did not respond just now.",
   staleShort: "stale",
   /**
    * Dex routes a Flow RPC to the worker that owns the run, so this run is unreadable for
@@ -87,6 +95,6 @@ export const SEARCH_COPY = {
   search: "Search",
   searching: "Searching…",
   clear: "Clear",
-  findHeading: "Find runs",
+  filter: "Filter",
   flowTypeLabel: "Flow type",
 } as const;

@@ -6,7 +6,7 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-// Explicit development data only: the Projects' TeamSpaces, members and the caller's role in them.
+// Explicit development data only: the Projects' Teamspaces, members and the caller's role in them.
 import type { AccountSnapshot__Output } from "@/lib/generated/protobuf/superverse/v2/AccountSnapshot";
 import { httpError } from "@/lib/server/request-body";
 import { nowIso } from "@/mock/store/clock";
@@ -22,7 +22,7 @@ import {
 
 /**
  * The caller's effective role in a Project: its Project role while it is a member of the Project's
- * TeamSpace, OWNER for the platform admin, null otherwise.
+ * Teamspace, OWNER for the platform admin, null otherwise.
  */
 export function mockProjectRole(
   tenancy: MockTenancy,
@@ -42,14 +42,14 @@ export function requireMockProjectRole(tenancy: MockTenancy, account: AccountSna
   return role;
 }
 
-/** Whether the caller may create a Project in the TeamSpace: a member of it while READY, or the platform admin. */
+/** Whether the caller may create a Project in the Teamspace: a member of it while READY, or the platform admin. */
 export function admitMockProject(tenancy: MockTenancy, account: AccountSnapshot__Output, teamSpaceId: string) {
   if (!teamSpaceId) throw httpError(400, "team_space_id is required");
   const teamSpace = readableTeamSpace(tenancy, account, teamSpaceId);
-  if (teamSpace.status !== "READY") throw httpError(409, "The TeamSpace is being deleted");
+  if (teamSpace.status !== "READY") throw httpError(409, "The Teamspace is being deleted");
 }
 
-/** Registers a new Project in its TeamSpace with its creator as the owner, as ProjectFlow's first Step does. */
+/** Registers a new Project in its Teamspace with its creator as the owner, as ProjectFlow's first Step does. */
 export function registerMockProject(
   tenancy: MockTenancy,
   account: AccountSnapshot__Output,
@@ -61,15 +61,15 @@ export function registerMockProject(
   tenancy.projectMembers.set(projectId, new Map([[account.accountId, member(account, "OWNER", account.accountId)]]));
 }
 
-/** Deleting a Project needs its owner, an admin of its TeamSpace or the platform admin. */
+/** Deleting a Project needs its owner, an admin of its Teamspace or the platform admin. */
 export function requireMockProjectDeletion(tenancy: MockTenancy, account: AccountSnapshot__Output, projectId: string) {
   const teamSpace = tenancy.teamSpaces.get(tenancy.projectTeamSpace.get(projectId) ?? "");
   if (teamSpace && teamSpaceRoleOf(teamSpace, account) === "ADMIN") return;
   if (mockProjectRole(tenancy, account, projectId) !== "OWNER")
-    throw httpError(403, "Only an owner of this project or an admin of its TeamSpace deletes it");
+    throw httpError(403, "Only an owner of this project or an admin of its Teamspace deletes it");
 }
 
-/** The Projects of the TeamSpace, in the order the store keeps them. */
+/** The Projects of the Teamspace, in the order the store keeps them. */
 export function mockTeamSpaceProjects(tenancy: MockTenancy, teamSpaceId: string, projects: Iterable<MockProject>) {
   return [...projects].filter((project) => tenancy.projectTeamSpace.get(project.id) === teamSpaceId);
 }
@@ -114,7 +114,7 @@ function changed(project: MockProject) {
   project.updatedAt = nowIso();
 }
 
-/** Adds a member of the Project's TeamSpace; adding one with the same role changes nothing. */
+/** Adds a member of the Project's Teamspace; adding one with the same role changes nothing. */
 export function addMockProjectMember(
   tenancy: MockTenancy,
   account: AccountSnapshot__Output,
@@ -125,7 +125,7 @@ export function addMockProjectMember(
   const role = projectRole(input.role);
   const teamSpace = tenancy.teamSpaces.get(tenancy.projectTeamSpace.get(project.id) ?? "");
   const person = teamSpace?.members.get(input.accountId);
-  if (!person) throw httpError(409, "Only members of the project's TeamSpace join it");
+  if (!person) throw httpError(409, "Only members of the project's Teamspace join it");
   const current = members.get(input.accountId);
   if (current?.role === role) return members;
   if (current) throw httpError(409, `${person.email} is already in this project; change their role instead`);

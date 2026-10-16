@@ -115,9 +115,7 @@ function applyEvent(execution: StepExecution, event: FlowHistoryEvent): void {
     if (decisionType) execution.decisionType = decisionType;
     const next = nextStepTypes(decision);
     if (next.length > 0) execution.nextStepTypes = next;
-    if (failed) {
-      execution.lastFailure = failureMessage(event.payload.output) ?? execution.lastFailure;
-    }
+    if (failed) recordFailure(execution, asRecord(event.payload.output).failure);
   }
   const attempt = Math.max(
     numberField(context.finalAttempt),
@@ -136,7 +134,7 @@ function applyActive(execution: StepExecution, active: ActiveStepExecution): voi
     execution.execute = { status: "running" };
   }
   if (active.lastFailureInfo) {
-    execution.lastFailure = failureMessage(active.lastFailureInfo) ?? execution.lastFailure;
+    recordFailure(execution, active.lastFailureInfo);
     const attempt = numberField(asRecord(active.lastFailureInfo).attempt);
     if (attempt > 0) execution.attempts = Math.max(execution.attempts, attempt);
   }
@@ -191,10 +189,18 @@ function decisionKindFromStepDecision(decision: Record<string, unknown>): string
   return closeVerb;
 }
 
-function failureMessage(value: unknown): string | undefined {
-  const failure = asRecord(asRecord(value).failure);
-  const direct = asRecord(value);
-  return stringField(failure.message) || stringField(direct.message) || undefined;
+/**
+ * A failed attempt's error as Dex records it (StepMethodFailure): the worker's own words when the Step
+ * returned an error, else the server's detail, else the backend error.
+ */
+function recordFailure(execution: StepExecution, value: unknown): void {
+  const failure = asRecord(value);
+  const details = asRecord(failure.details);
+  const message =
+    stringField(details.originalWorkerErrorDetail) || stringField(details.detail) || stringField(failure.backendError);
+  if (message) execution.lastFailure = message;
+  const type = stringField(details.originalWorkerErrorType);
+  if (type) execution.lastFailureType = type;
 }
 
 function epochMs(value: unknown): number | undefined {

@@ -44,7 +44,7 @@ test("Real last-seen expiry keeps remote authority; reconnect delivers the ordin
     if (!seen || !Number.isFinite(Date.parse(seen))) throw new Error("Canonical SQL last-seen is unavailable");
     const menu = page.locator("[data-session-executor]");
     await expect(menu).toHaveAttribute("data-session-executor", "remote");
-    await expect(page.getByLabel("Model", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Chat options", exact: true })).toHaveCount(0);
     // No bearer request, heartbeats, clock replacement or projection mutation
     // occurs in this interval. GetSession reads the real SQL-derived timestamp.
     await expect
@@ -63,7 +63,7 @@ test("Real last-seen expiry keeps remote authority; reconnect delivers the ordin
       .toBeGreaterThan(90_000);
     await expect(page.locator("[data-remote-offline]")).toBeVisible({ timeout: 20_000 });
     await expect(menu).toHaveAttribute("data-session-executor", "remote");
-    await expect(page.getByLabel("Model", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Chat options", exact: true })).toHaveCount(0);
     const text = `Offline ordinary input ${randomUUID()}`;
     const posted = page.waitForRequest(rpcPosted("SendMessage"));
     const answered = page.waitForResponse(rpcAnswered("SendMessage"));
@@ -96,7 +96,7 @@ test("Real last-seen expiry keeps remote authority; reconnect delivers the ordin
       .not.toBe(seen);
     await page.reload();
     await expect(page.locator("[data-remote-offline]")).toHaveCount(0);
-    await expect(page.getByLabel("Model", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Chat options", exact: true })).toHaveCount(0);
     await client.post("report", { ...fence, sequence: 2, turnCompleted: true });
     await expect
       .poll(

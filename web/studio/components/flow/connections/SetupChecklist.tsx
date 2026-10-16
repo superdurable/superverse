@@ -6,10 +6,10 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-import { useEffect, useMemo, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import type { FlowApiScopeBinding } from "@/lib/flow/FlowApiProvider";
 import { useFlowHost } from "@/lib/flow/FlowHostProvider";
-import { connectionKey, connectorDisplayName, type ConnectionsResponse } from "@/lib/api/flow/connector";
+import { connectionKey, connectorDisplayName } from "@/lib/api/flow/connector";
 import { studioRoutes } from "@/lib/shared/studio-routes";
 import { cx } from "@/components/ui/cx";
 import {
@@ -19,38 +19,16 @@ import {
   SETUP_HINTS,
 } from "@/components/flow/connections/model/connection-words";
 import { ReleaseUnused } from "./ReleaseUnused";
-import {
-  type SetupItem,
-  type SetupSide,
-  type SetupSideName,
-  type SetupTable,
-} from "@/components/flow/connections/model/row-model";
+import { type SetupItem, type SetupSideName, type SetupTable } from "@/components/flow/connections/model/row-model";
 import { useReplyChannelDefaults } from "@/components/flow/connections/model/setting-defaults";
 import { SetupRow } from "@/components/flow/connections/row/SetupRow";
 import {
-  useConnectionSessions,
   useConnectorCatalog,
   useReleaseManifests,
-  useScopeCatalog,
+  useScopeSide,
   useTeamSpaceChoices,
 } from "@/components/flow/connections/model/use-scope-catalog";
 import { VariablesBlock } from "./VariablesBlock";
-
-/** One column's reads: its catalog, its UI sessions and the server's items, as a side of the table. */
-function useSide(
-  name: SetupSideName,
-  scope: FlowApiScopeBinding | null,
-  version: string,
-  items: Map<string, SetupItem> | null,
-): { side: SetupSide | null; error: string; catalog: ConnectionsResponse | null } {
-  const { catalog, error, queue } = useScopeCatalog(scope, version);
-  const sessions = useConnectionSessions(scope, catalog);
-  const side = useMemo(
-    () => (scope && catalog && queue ? { name, scope, queue, catalog, sessions, items } : null),
-    [name, scope, catalog, queue, sessions, items],
-  );
-  return { side, error, catalog };
-}
 
 /** What the bar above the table says from what only the table reads: the connector names. */
 export interface SetupNotes {
@@ -179,8 +157,8 @@ export function SetupChecklist({
   onNotes?: (notes: SetupNotes) => void;
 }) {
   const liveTab = preview === null;
-  const previewSide = useSide("preview", preview, version, items.preview);
-  const nextSide = useSide("next", next, version, items.next);
+  const previewSide = useScopeSide("preview", preview, version, items.preview);
+  const nextSide = useScopeSide("next", next, version, items.next);
   const primary = liveTab ? nextSide : previewSide;
   const teamSpaceId = useFlowHost().teamSpaceId ?? "";
   const catalog = primary.catalog;
@@ -248,7 +226,7 @@ export function SetupChecklist({
           className="mt-2.5 justify-self-start text-[12.5px] text-accent hover:underline"
           href={studioRoutes.teamSpaceConnections(teamSpaceId)}
         >
-          The TeamSpace&apos;s connections ›
+          The Teamspace&apos;s connections ›
         </a>
       )}
       {liveTab && <ReleaseUnused path={next.basePath} catalog={catalog} />}

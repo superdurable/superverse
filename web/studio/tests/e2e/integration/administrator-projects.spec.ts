@@ -103,11 +103,11 @@ async function snapshot(page: Page, projectId: string, cursor = ""): Promise<Rpc
   );
 }
 
-// Actual Studio/BFF/gRPC, TeamSpace and Project Flows, the read model, the repository host, the runtime and
-// project Dex. This scenario owns two new TeamSpaces, each with one managed Project, deletes them and revokes all
+// Actual Studio/BFF/gRPC, Teamspace and Project Flows, the read model, the repository host, the runtime and
+// project Dex. This scenario owns two new Teamspaces, each with one managed Project, deletes them and revokes all
 // its logins. Provider credentials and response payloads never enter test attachments.
 test.use({ trace: "off", screenshot: "off", video: "off" });
-test("administrator lists, observes and manages the TeamSpaces and Projects of different accounts", async ({
+test("administrator lists, observes and manages the Teamspaces and Projects of different accounts", async ({
   browser,
   page,
   context,
@@ -164,7 +164,7 @@ test("administrator lists, observes and manages the TeamSpaces and Projects of d
       expect(registered.account.isAdmin === false).toBe(true);
       expect(owner.accountId.length > 0).toBe(true);
       await registration.dispose();
-      // Each owner works in a TeamSpace of their own, which they create and administer.
+      // Each owner works in a Teamspace of their own, which they create and administer.
       const teamSpace = await rpc(
         ownerContext.request,
         "CreateTeamSpace",
@@ -226,7 +226,7 @@ test("administrator lists, observes and manages the TeamSpaces and Projects of d
     }
     expect(owners[0].accountId !== owners[1].accountId).toBe(true);
     phase = "administrator listing and principal-bound pages";
-    // The administrator lists every TeamSpace, belonging to none of them, and every Project of each as its owner.
+    // The administrator lists every Teamspace, belonging to none of them, and every Project of each as its owner.
     await expect
       .poll(
         async () => {
@@ -259,7 +259,7 @@ test("administrator lists, observes and manages the TeamSpaces and Projects of d
       const teamSpaceId = owner.teamSpaceId!;
       const personal = (await expectRpc(owner.context.request, "ListProjects", { teamSpaceId }, 200))!;
       expect(personal.projects.every((project) => project.creatorAccountId === owner.accountId)).toBe(true);
-      // The other owner is outside this TeamSpace: it neither reads nor lists it.
+      // The other owner is outside this Teamspace: it neither reads nor lists it.
       await expectRpc(other.context.request, "GetTeamSpace", { teamSpaceId }, 403);
       await expectRpc(other.context.request, "ListProjects", { teamSpaceId }, 403);
       const first = await snapshot(page, projectId);
@@ -301,19 +301,19 @@ test("administrator lists, observes and manages the TeamSpaces and Projects of d
       cleaned.add(projectId);
       await expectRpc(context.request, "GetProject", { projectId }, 403);
     }
-    // Only the administrator deletes a TeamSpace: the first from its Home, after typing its name, the second
+    // Only the administrator deletes a Teamspace: the first from its Home, after typing its name, the second
     // through the API. Their Projects are deleted already, so each deletion ends soon.
     for (const [index, owner] of owners.entries()) {
-      phase = `TeamSpace ${index + 1} administrator deletion`;
+      phase = `Teamspace ${index + 1} administrator deletion`;
       const teamSpaceId = owner.teamSpaceId!;
       await expectRpc(owner.context.request, "DeleteTeamSpace", { teamSpaceId, requestId: randomUUID() }, 403);
       if (index === 0) {
         await page.goto(`/t/${teamSpaceId}`);
-        await page.getByRole("button", { name: "Delete TeamSpace…", exact: true }).click();
+        await page.getByRole("button", { name: "Delete Teamspace…", exact: true }).click();
         const dialog = page.getByRole("dialog", { name: `Delete ${owner.teamSpaceName}` });
-        const confirm = dialog.getByRole("button", { name: "Delete TeamSpace", exact: true });
+        const confirm = dialog.getByRole("button", { name: "Delete Teamspace", exact: true });
         await expect(confirm).toBeDisabled();
-        await dialog.getByLabel("Type the TeamSpace's name to confirm", { exact: true }).fill(owner.teamSpaceName);
+        await dialog.getByLabel("Type the Teamspace's name to confirm", { exact: true }).fill(owner.teamSpaceName);
         await confirm.click();
         await expect(page.getByRole("heading", { name: `${owner.teamSpaceName} is being deleted` })).toBeVisible();
       } else await expectRpc(context.request, "DeleteTeamSpace", { teamSpaceId, requestId: randomUUID() }, 200);
@@ -354,7 +354,7 @@ test("administrator lists, observes and manages the TeamSpaces and Projects of d
       }
       if (owner.teamSpaceId && !deletedTeamSpaces.has(owner.teamSpaceId))
         failures.push(
-          new Error(`TeamSpace ${owner.teamSpaceId} remains; the administrator deletes it after its Projects`),
+          new Error(`Teamspace ${owner.teamSpaceId} remains; the administrator deletes it after its Projects`),
         );
       try {
         const logout = await owner.context.request.post("/api/auth/logout", { headers: { origin }, timeout: 15_000 });

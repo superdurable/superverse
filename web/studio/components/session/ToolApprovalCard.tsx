@@ -10,10 +10,25 @@
 
 import { Button } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
+import { MoreDetails } from "@/components/ui/reveal/MoreDetails";
+import { isRecord } from "@/lib/shared/json";
+
+/** What the agent asks to do, read from its arguments: the description and command it sent, when it did. */
+function requestOf(argumentsJson: string): { description: string; command: string } {
+  let value: unknown = null;
+  try {
+    value = JSON.parse(argumentsJson);
+  } catch {
+    // Arguments that are not JSON show only in the details.
+  }
+  const text = (key: string) => (isRecord(value) && typeof value[key] === "string" ? value[key] : "");
+  return { description: text("description"), command: text("command") };
+}
 
 /**
- * A tool call waiting for approval, with its arguments as the opaque JSON the Agent sent. Amber,
- * because an approval is the one thing blocking on a person.
+ * A tool call waiting for approval, in plain words: what the agent wants to do and the command it
+ * would run, with the tool and the opaque JSON the Agent sent one click away. Amber, because an
+ * approval is the one thing blocking on a person.
  */
 export function ToolApprovalCard({
   toolName,
@@ -31,15 +46,23 @@ export function ToolApprovalCard({
   onReject: () => void;
 }) {
   const label = isSubmitting ? "Processing…" : null;
+  const { description, command } = requestOf(argumentsJson);
+  const tool = toolName.replaceAll(/_+/g, " ").trim();
   return (
     <section className="rounded-lg border border-busy-rule bg-busy-subtle p-3" aria-label="Approval required">
       <Eyebrow>Approval required</Eyebrow>
-      <p className="mt-2 mb-1.5 text-[13px] font-medium tracking-wide text-ink-dim">
-        tool call: {toolName.replaceAll(/_+/g, " ").trim()}
-      </p>
-      <pre className="max-h-[min(240px,40dvh)] overflow-auto rounded-lg border border-line-soft bg-well px-3 py-2.5 font-mono text-xs/normal wrap-anywhere whitespace-pre-wrap text-ink">
-        {argumentsJson}
-      </pre>
+      <p className="mt-2 text-body font-medium text-ink">{description || `Use the ${tool} tool`}</p>
+      {command && (
+        <pre className="mt-1.5 max-h-[min(160px,30dvh)] overflow-auto rounded-lg border border-line-soft bg-well px-3 py-2 font-mono text-caption wrap-anywhere whitespace-pre-wrap text-ink">
+          {command}
+        </pre>
+      )}
+      <MoreDetails surface="chat.approval" className="mt-2">
+        <p className="text-caption text-ink-dim">Tool: {toolName}</p>
+        <pre className="mt-1 max-h-[min(240px,40dvh)] overflow-auto rounded-lg border border-line-soft bg-well px-3 py-2.5 font-mono text-caption wrap-anywhere whitespace-pre-wrap text-ink">
+          {argumentsJson}
+        </pre>
+      </MoreDetails>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button variant="primary" disabled={disabled} onClick={onApprove}>
           {label ?? "Approve"}

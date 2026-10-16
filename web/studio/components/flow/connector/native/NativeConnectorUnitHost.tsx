@@ -26,7 +26,7 @@ import {
   jsonPointerValue,
   mergeUnitValue,
 } from "@/components/flow/connector/manifest/json-pointer";
-import { isManifestFieldInputRequired } from "@/components/flow/connector/manifest/manifest-fields";
+import { isManifestFieldInputRequired, manifestFieldLabel } from "@/components/flow/connector/manifest/manifest-fields";
 import { linkifiedDescription } from "@/components/flow/connector/manifest/ManifestFormField";
 import { CompactConnectorUnit, type NextPublishChoice } from "./CompactConnectorUnit";
 import { DraftItemNote, useDraftSnapshot } from "./DraftItemNote";
@@ -184,7 +184,7 @@ export function ConnectionStudioField({
   onError: (message: string) => void;
 }) {
   // A model is the connection's default model, as the full unit titles it; other fields keep their names.
-  const name = field.studioUnit?.port === "model" ? "Default model" : field.name;
+  const name = field.studioUnit?.port === "model" ? "Default model" : manifestFieldLabel(field);
   const target = connectionFieldUnitTarget(field, connection);
   const save = useDebouncedSave(async (value: Record<string, unknown>) => {
     try {
@@ -211,8 +211,8 @@ export function ConnectionStudioField({
     );
   return (
     <div className="grid min-w-0 gap-1">
-      <span className={FIELD_LABEL}>
-        {field.name}
+      <span className={FIELD_LABEL} title={field.name}>
+        {manifestFieldLabel(field)}
         {isManifestFieldInputRequired(field) ? " *" : ""}
       </span>
       {field.description && <small className={NOTE}>{linkifiedDescription(field.description)}</small>}
@@ -243,7 +243,7 @@ function connectionFieldUnitTarget(
 }
 
 /**
- * A TeamSpace connection's setting is its own write, outside a Project scope's configuration: the newest
+ * A Teamspace connection's setting is its own write, outside a Project scope's configuration: the newest
  * edit is written after a typing pause, or at once for a pick, and still written when the form closes.
  */
 function useDebouncedSave(write: (value: Record<string, unknown>) => Promise<void>) {

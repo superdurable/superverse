@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: The autosave queue of one configuration scope per tab: one compare-and-swap write at a time, each on the revision the previous returned.
 
-Importers: `components/flow/connections`, `components/flow/connections/model`, `components/flow/connections/row`, `components/flow/connector/native`, `components/project`, `components/publishing/publish`, `lib/flow` and `lib/project/setup` import this directory.
+Importers: `components/flow/connections`, `components/flow/connections/model`, `components/flow/connections/row`, `components/flow/connector/native`, `components/flow/run/tryit`, `components/project`, `components/publishing/publish`, `lib/flow` and `lib/project/setup` import this directory.
 
 Imports: it imports `lib/api/flow`, `lib/api/transport` and `lib/generated/protobuf`.
 
@@ -14,10 +14,11 @@ flowchart LR
   c1["components/flow/connections/model"] --> self
   c2["components/flow/connections/row"] --> self
   c3["components/flow/connector/native"] --> self
-  c4["components/project"] --> self
-  c5["components/publishing/publish"] --> self
-  c6["lib/flow"] --> self
-  c7["lib/project/setup"] --> self
+  c4["components/flow/run/tryit"] --> self
+  c5["components/project"] --> self
+  c6["components/publishing/publish"] --> self
+  c7["lib/flow"] --> self
+  c8["lib/project/setup"] --> self
   self --> d0["lib/api/flow"]
   self --> d1["lib/api/transport"]
   self --> d2["lib/generated/protobuf"]

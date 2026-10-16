@@ -26,7 +26,7 @@ import type { FlowApiClient } from "@/lib/api/transport/flow-api-client";
 
 /*
  * The writes of one Project scope's configuration items, each fenced on the revision the autosave queue
- * names and answering the revision it made: a connection name's TeamSpace connection, and the settings
+ * names and answering the revision it made: a connection name's Teamspace connection, and the settings
  * of a Flow operation or trigger binding that uses it.
  */
 
@@ -106,7 +106,7 @@ export function settingsDraftItem(
 }
 
 /**
- * Selects the TeamSpace connection a connection name uses in this scope, on `configurationRevision`; a Live
+ * Selects the Teamspace connection a connection name uses in this scope, on `configurationRevision`; a Live
  * selection lands on the draft. Answers the revision the selection made.
  */
 async function selectTeamSpaceConnection(
@@ -156,7 +156,7 @@ export async function writeItem(
   return written.configurationRevision;
 }
 
-/** The TeamSpace connection a connection name selects, as an item of the scope's autosave queue. */
+/** The Teamspace connection a connection name selects, as an item of the scope's autosave queue. */
 export function selectionDraftItem(catalog: ConnectionsResponse, connection: ConnectionView): DraftItem<string> {
   return {
     key: draftItemKey({
