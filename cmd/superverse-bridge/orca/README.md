@@ -101,7 +101,8 @@ pinned to Orca 1.4.224 and Codex 0.162.x.
   subagent produced in the shared journal (one with an `agentId`): the history import, the events
   and the turn state read only the conversation's own rows, as Orca's root predicate does. A root
   assistant message's `subagent-group` block is read separately for activity: each agent ID produces
-  one short started line with its label and one finished line when its state settles. The block's
+  one short started line with its label and one finished line when Orca records `settledAt` (or
+  marks a recovered agent `unverifiable` without that timestamp). The block's
   message text and every subagent row stay out of imported history. A reset
   restarts from the journal's current end.
 - **Resume.** `ResumeSession` accepts only an open `agent-session` tab of agent `codex`, waits up to

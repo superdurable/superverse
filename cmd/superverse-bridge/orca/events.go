@@ -57,6 +57,12 @@ const (
 	superverseServer = "superverse"
 )
 
+// Orca can settle a recovered subagent as unverifiable without settledAt.
+// Its other subagent states stay open strings in the journal schema.
+type subagentState string
+
+const subagentStateUnverifiable subagentState = "unverifiable"
+
 type cursor struct {
 	Epoch    string `json:"epoch"`
 	Sequence uint64 `json:"sequence"`
@@ -160,9 +166,10 @@ type itemBody struct {
 		Type   string `json:"type"`
 		Text   string `json:"text"`
 		Agents []struct {
-			ID    string `json:"id"`
-			Label string `json:"label"`
-			State string `json:"state"`
+			ID        string        `json:"id"`
+			Label     string        `json:"label"`
+			State     subagentState `json:"state"`
+			SettledAt *int64        `json:"settledAt"`
 		} `json:"agents"`
 	} `json:"blocks"`
 	UserItemID  string `json:"userItemId"`
@@ -463,7 +470,7 @@ func (seen *seenItems) events(page historyPage, turnMessages func(turn renderIte
 							TurnID: item.turnItemID(), MessageID: item.ItemID, Text: "Codex subagent started: " + label})
 						activity.started = true
 					}
-					if (agent.State == "done" || agent.State == stateCompleted || agent.State == "failed" || agent.State == "stopped" || agent.State == "cancelled") && !activity.finished {
+					if (agent.SettledAt != nil || agent.State == subagentStateUnverifiable) && !activity.finished {
 						events = append(events, relay.Event{Kind: relay.EventActivity, Position: position,
 							TurnID: item.turnItemID(), MessageID: item.ItemID, Text: "Codex subagent finished"})
 						activity.finished = true

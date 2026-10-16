@@ -125,7 +125,10 @@ Project has at most one active binding (its executor).
   32 events per report: completed assistant messages, user messages the owner
   typed in Orca, a short summary of Codex activity (its subagents starting and finishing, a local
   command it ran, or a pending approval), and turn completion. Subagent activity comes from
-  `subagent-group` blocks on root assistant rows; rows bearing `agentId` are never imported.
+  `subagent-group` blocks on root assistant rows. A non-empty agent `settledAt` marks its finish;
+  Orca recovery can mark an agent `unverifiable` without that timestamp, which also marks its
+  finish. The Bridge emits each start and finish once per message item and agent ID, and rows
+  bearing `agentId` are never imported.
   Echoes of messages the Bridge delivered are
   recognized by the Orca message ID that `send` returned and are not reported. Hidden reasoning and
   raw tool output are never reported.
