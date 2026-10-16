@@ -450,7 +450,7 @@ message TeamSpaceMemberSnapshot {
 // ---------------------------------------------------------------------------------------------
 
 // The named connector configurations and credentials of one TeamSpace, one per connector major version.
-// The database owns them (internal/tenancy/connections); Projects select them per connection name and scope.
+// The database owns them (internal/dexai/tenancy/connections); Projects select them per connection name and scope.
 service TeamSpaceConnectionService {
   rpc ListConnectorCatalog(ListConnectorCatalogRequest) returns (ListConnectorCatalogResponse);
   rpc ListTeamSpaceConnections(ListTeamSpaceConnectionsRequest) returns (ListTeamSpaceConnectionsResponse);

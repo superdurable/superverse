@@ -23,12 +23,12 @@ fi
 scratch_directory=$(mktemp -d "${TMPDIR:-/tmp}/superverse-app-template.XXXXXX")
 trap 'rm -r "$scratch_directory"' EXIT HUP INT TERM
 
-archive="$repository_root/internal/app/apptemplate/app-template.tar"
+archive="$repository_root/internal/dexai/app/apptemplate/app-template.tar"
 design="$repository_root/web/studio/lib/generated/template-design/app-template.json"
 cp "$archive" "$scratch_directory/app-template.tar"
 cp "$design" "$scratch_directory/app-template.json"
 
-GOWORK=off go generate "$repository_root/internal/app/apptemplate"
+GOWORK=off go generate "$repository_root/internal/dexai/app/apptemplate"
 
 if ! cmp -s "$scratch_directory/app-template.tar" "$archive" || ! cmp -s "$scratch_directory/app-template.json" "$design"; then
   echo "app-template/ changed: run make generate-app-template and commit the archive and design" >&2

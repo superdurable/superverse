@@ -132,7 +132,7 @@ Claude model, and which, is the platform developer's decision: ask before the ru
 profile refuses to run without `SUPERVERSE_E2E_MODEL_TARGET` (`mock`, or a model such as `anthropic/claude-opus-5-5`) and records it as
 `modelTarget` in the receipt. `release attest` accepts only a receipt deployed from the unchanged `local-kind-acceptance.yaml`, requires
 its `modelTarget` and copies it into the attestation, so the release record shows which model the accepted run used
-([mock model](../internal/agents/README.md)).
+([mock model](../internal/dexai/agents/README.md)).
 Every deployment takes `ANTHROPIC_API_KEY` from the ignored `.env` file at the root of the
 main checkout, which every worktree shares, whenever it is there, and a profile whose new Sessions
 start on a Claude model requires it; `make test-claude-live` and `make test-integration` read the same file unless

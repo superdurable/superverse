@@ -3,10 +3,10 @@
 These are deltas against the current contracts. The unchanged parts stay as their owning
 documents describe them:
 
-- PreviewFlow: [`internal/agents/sandbox/preview/README.md`](../../../internal/agents/sandbox/preview/README.md)
+- PreviewFlow: [`internal/dexai/agents/sandbox/preview/README.md`](../../../internal/dexai/agents/sandbox/preview/README.md)
   and [sandbox.md](../agent-harness-design/sandbox.md).
-- ProjectReleaseFlow: [`internal/delivery/releases/README.md`](../../../internal/delivery/releases/README.md).
-- ProjectDeployFlow: [`internal/delivery/deployments/README.md`](../../../internal/delivery/deployments/README.md).
+- ProjectReleaseFlow: [`internal/dexai/delivery/releases/README.md`](../../../internal/dexai/delivery/releases/README.md).
+- ProjectDeployFlow: [`internal/dexai/delivery/deployments/README.md`](../../../internal/dexai/delivery/deployments/README.md).
 
 STUDIOSETUP adds or renames no Flow type, Step identity, Channel, ChannelMap or Stream.
 The Live next-publish layer and cancellation add one Step, one Attribute and two RPCs: see [next publish and cancellation](#next-publish-and-cancellation).
@@ -30,7 +30,7 @@ Changed: a command now carries its actor and whether it applies configuration.
   `start-preview`, from `StartPreviewRequest.apply_configuration` and `configuration_revision`.
   The revision is the draft revision the user saw (review 1). Both take part in the repeat
   comparison.
-- The Agent's own Preview start (`internal/agents/session_flow_service_preview.go:82`) sends
+- The Agent's own Preview start (`internal/dexai/agents/session_flow_service_preview.go:82`) sends
   `start-preview` with an empty actor and `ApplyConfiguration = false`, so the Agent never
   applies drafts.
 - Both fields take part in the exact-repeat check of `admit`
@@ -118,7 +118,7 @@ it does today.
 - **Errors.** The new failure definitions carry `remedy` and `owner`
   ([error contract](observability.md#error-contract)). `PREVIEW_CONFIGURATION_FAILED`'s message
   loses its stale "Open Build Configuration".
-- **Tests** (Dex integration, real Dex and MinIO, under `internal/agents`). Each is a scenario
+- **Tests** (Dex integration, real Dex and MinIO, under `internal/dexai/agents`). Each is a scenario
   with these steps:
   - **Apply, push, verify.** Apply, change a draft field, push a commit (deploy-preview). The
     Preview runs the *applied* revision, `RecentStarts` holds both starts, and the diff counts
@@ -137,7 +137,7 @@ it does today.
 ### Identity and execution lifecycle
 
 Unchanged: FlowID `release-<projectID>-<commit>`, for example
-`release-a7k2-3f9c…` (`internal/delivery/releases/project_release_flow_client.go:33-36`), and its
+`release-a7k2-3f9c…` (`internal/dexai/delivery/releases/project_release_flow_client.go:33-36`), and its
 start, reuse and build revision identity.
 
 Also unchanged:
@@ -193,7 +193,7 @@ No Step is added or renamed.
 - **Admission** happens in the client's build path (`project_release_flow_client_build.go`)
   before the RPC that admits the build. It reads the Preview through the Flow's dependency port.
   `ProjectReleaseFlowDependency` gains `PreviewValidation(ctx, projectID, commit)`, which returns
-  the newest `READY` `RecentStarts` entry of that commit. `internal/bootstrap`'s adapter
+  the newest `READY` `RecentStarts` entry of that commit. `internal/dexai/bootstrap`'s adapter
   implements it through `PreviewFlowClient` (`PreviewValidationReader`; see
   [cross-scope reads](#cross-scope-reads-go-through-ports)). `delivery/releases` never imports
   the Preview package.
@@ -216,7 +216,7 @@ No Step is added or renamed.
   today. The validation is part of the admitted request, so a retry cannot change it.
 - **Rollback is exempt.** A rollback is `StartDeployment` of an existing READY build, so this
   admission never runs for it, and the original build keeps its validation.
-- **Tests** (Dex integration in `internal/delivery/releases`, real Dex, Postgres and MinIO,
+- **Tests** (Dex integration in `internal/dexai/delivery/releases`, real Dex, Postgres and MinIO,
   local builder):
   - A build without a Preview start and without a reason is refused.
   - With a reason, it is admitted, and the reason is in the projection.
@@ -259,7 +259,7 @@ None changed. `DeploymentProgress` is unchanged.
 
 ## Configuration host (no Flow)
 
-The configuration host is not a Flow. It resolves the next-publish layer, computes item differences, reads exact versions through its ports and freezes a copy for each build. The [configuration host README](../../../internal/studio/confighost/README.md) owns its implementation.
+The configuration host is not a Flow. It resolves the next-publish layer, computes item differences, reads exact versions through its ports and freezes a copy for each build. The [configuration host README](../../../internal/dexai/studio/confighost/README.md) owns its implementation.
 
 ### Cross-scope reads go through ports
 
@@ -267,17 +267,17 @@ The configuration host is not a Flow. It resolves the next-publish layer, comput
 exact version and digest, and hands the host the decoded document with secret references
 stripped ([configuration-drafts](configuration-drafts.md#reading-previews-applied-object-from-a-live-request)).
 
-The host serves one scope. `internal/projects/config` cannot import PreviewFlow, because
+The host serves one scope. `internal/dexai/projects/config` cannot import PreviewFlow, because
 `preview` already imports `projects/config` (`preview_configuration.go:14`). It cannot read
 deployments either: `projects/config` imports `delivery/releases` (`prepared_configuration.go:12`),
 and `deployments` imports `projects/config`. So every cross-scope read is a port that its
-consumer declares and `internal/bootstrap` implements by reading PreviewFlow and
+consumer declares and `internal/dexai/bootstrap` implements by reading PreviewFlow and
 ProjectDeployFlow through their clients:
 
 | Port (declared by) | Answers | Used for |
 |---|---|---|
-| `config.PreviewReader` (existing, `internal/projects/config/configuration.go:50-55`), gaining a method | A Project's Preview `AppliedConfiguration` ref, and the pinned configuration object of its READY Live deployment | Live items that follow Preview resolve from its applied snapshot; other Projects' bindings support `CHANNEL_SHARED` |
-| `PreviewValidationReader` (`internal/delivery/releases`, a method of `ProjectReleaseFlowDependency`) | The newest READY `RecentStarts` entry of a commit | Build admission (PUBGATE) |
+| `config.PreviewReader` (existing, `internal/dexai/projects/config/configuration.go:50-55`), gaining a method | A Project's Preview `AppliedConfiguration` ref, and the pinned configuration object of its READY Live deployment | Live items that follow Preview resolve from its applied snapshot; other Projects' bindings support `CHANNEL_SHARED` |
+| `PreviewValidationReader` (`internal/dexai/delivery/releases`, a method of `ProjectReleaseFlowDependency`) | The newest READY `RecentStarts` entry of a commit | Build admission (PUBGATE) |
 
 `projects/config` passes the resolved snapshot refs into the host request. The host stays one
 scope and reads only the objects it is handed. The `CHANNEL_SHARED` lookup lives in
@@ -512,9 +512,9 @@ produced since the current contract. `docs/flows` is regenerated.
 
 #### Tests
 
-Real-dependency Dex integration tests in `internal/agents`, next to
+Real-dependency Dex integration tests in `internal/dexai/agents`, next to
 `live_retirement_integration_test.go` (real Dex, Postgres, MinIO, the local build service and the
-lane's Live runtime, the mock model only), and in `internal/delivery/releases` for the builder:
+lane's Live runtime, the mock model only), and in `internal/dexai/delivery/releases` for the builder:
 
 - **Cancel before the provider.** Cancel right after `StartReleaseBuild`: CANCELLED with
   `provider_settled`, the provider holds nothing for the build, and a new build with
@@ -705,7 +705,7 @@ produced since the current contract. `docs/flows` is regenerated.
 
 #### Tests
 
-Real-dependency Dex integration tests in `internal/agents` on the lane's real Live runtime:
+Real-dependency Dex integration tests in `internal/dexai/agents` on the lane's real Live runtime:
 
 - **Before the lease.** Cancel right after `StartDeployment`: CANCELLED, no lease, no generation
   object, and Project deletion acknowledges the deployment.
@@ -745,7 +745,7 @@ These are business API RPCs, not Flow RPCs; each reaches a Flow only through its
   the read model's columns. `EnvironmentEvent.Kind` gains `KIND_PUBLISH_CANCELLED = 6`, derived from
   CANCELLED build and deployment rows.
 - **Reasons.** `RELEASE_BUILD_NOT_CANCELLABLE`, `RELEASE_BUILD_DEPLOYING` and
-  `DEPLOYMENT_NOT_CANCELLABLE` join `internal/api/boundary/error_reasons.go`, each with its remedy,
+  `DEPLOYMENT_NOT_CANCELLABLE` join `internal/dexai/api/boundary/error_reasons.go`, each with its remedy,
   and `RELEASE_CONFIGURATION_CONFLICT` is gone.
 - **The log read.** `Builder.ReadLog(ctx, request, cursor)` returns whole lines, at most 64 KiB: the
   hosted builder reads CloudWatch `GetLogEvents` from the head with `nextForwardToken` as the
@@ -753,8 +753,8 @@ These are business API RPCs, not Flow RPCs; each reaches a Flow only through its
   build restarts at its new log. The log group and stream always come from the build's admission
   record, never from the cursor, so a forged cursor can only fail. `LogTail` becomes a read from
   the end. Each page is redacted on the server with the build's `ConfiguredValues` and the
-  Project's infrastructure names; the redactor moves from `internal/agents/diagnostics`
-  (`project_diagnostics.go:120-200`) into `internal/projects/config`'s existing
+  Project's infrastructure names; the redactor moves from `internal/dexai/agents/diagnostics`
+  (`project_diagnostics.go:120-200`) into `internal/dexai/projects/config`'s existing
   `configured_values.go` as `OutputRedaction`, so the package keeps nine files. Nothing is stored and secret values are held only for one redaction, so each read costs two
   retained Flow reads, the frozen configuration's values and one provider log read. The local
   fixture keeps only the last 256 KiB of a job log (`MAX_JOB_LOG`), so its offsets count from the

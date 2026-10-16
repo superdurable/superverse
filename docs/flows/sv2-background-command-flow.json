@@ -3,7 +3,7 @@
   "valid": true,
   "source": {
     "language": "go",
-    "path": "internal/agents/session/backgroundcommand/background_command_flow.go"
+    "path": "internal/dexai/agents/session/backgroundcommand/background_command_flow.go"
   },
   "flow": {
     "name": "BackgroundCommandFlow",

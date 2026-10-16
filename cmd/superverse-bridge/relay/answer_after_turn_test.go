@@ -15,7 +15,7 @@ import (
 	"testing"
 
 	"github.com/superdurable/superversev2/cmd/superverse-bridge/state"
-	"github.com/superdurable/superversev2/internal/agents/remoteagent/bridgeapi"
+	"github.com/superdurable/superversev2/internal/dexai/agents/remoteagent/bridgeapi"
 )
 
 // scriptedAnswerOrca replaces only the Orca boundary for the owner-approved

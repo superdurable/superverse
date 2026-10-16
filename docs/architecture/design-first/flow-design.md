@@ -24,7 +24,7 @@ draws no comparison.
 ## The artifact
 
 `confirm_requirements` gains an optional `design` object (strict schema in
-`internal/agents/session/toolinput/tool_inputs.json`):
+`internal/dexai/agents/session/toolinput/tool_inputs.json`):
 
 | Field | Type | Rules |
 |---|---|---|
@@ -206,15 +206,15 @@ design again until the later push's processes were built.
 
 ## Package placement
 
-- `internal/agents/session/flowdesign` (new; the Session's tenth sub-package, which reaches
+- `internal/dexai/agents/session/flowdesign` (new; the Session's tenth sub-package, which reaches
   the limit of 10): the design
   types, validation, canonical JSON with digest, and outline. `agentloop` already has its 10
   files, so `RequestedRequirements` calls into this package and does not grow beyond one
   call. `Requirements` gains `Design *flowdesign.Reference`.
-- `internal/agents/session`: the `FlowDesigns` declaration and the `GetFlowDesign` RPC in
+- `internal/dexai/agents/session`: the `FlowDesigns` declaration and the `GetFlowDesign` RPC in
   `session_agent_flow.go` (1479 lines today, below the 1600-line cap). The copy on
   confirmation goes beside `AnswerQuestions`' existing effect.
-- `internal/api`: the boundary mapping, with the closed sets mapped by `boundary.Enum`.
+- `internal/dexai/api`: the boundary mapping, with the closed sets mapped by `boundary.Enum`.
 
 ## Per-Flow contract: SessionAgentFlow
 

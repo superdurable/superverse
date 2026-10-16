@@ -124,7 +124,7 @@ prints one summary line and exits with the command's code. The template's
   most 64 KiB.
 
 `summary.json` is the contract with the commit gate
-(`internal/agents/sandbox/workspace/git/commit_application_tests.go`):
+(`internal/dexai/agents/sandbox/workspace/git/commit_application_tests.go`):
 `runId`, `directory`, `kept`, `phase` (`queued`, `engine` or `command`),
 `exitCode`, `timedOut`, `durationMs`, `engineError`, `executions` (Flow type to
 status to count), `executionsError`, `unhealthy` (`flowId`, `flowType`,
@@ -185,9 +185,9 @@ The coding image keeps the real `dexcli` and `temporal` in
 ## Verification
 
 `apptest run` is verified by `TestApplicationTestEngineActualSandbox`
-(`internal/agents/sandbox/workspace/sandboxd`) in a container of the coding
+(`internal/dexai/agents/sandbox/workspace/sandboxd`) in a container of the coding
 image that the test owns, and through the commit gate by
-`TestApplicationSourceGateActualSandbox` ([runbook](../../../../internal/agents/README.md)).
+`TestApplicationSourceGateActualSandbox` ([runbook](../../../../internal/dexai/agents/README.md)).
 The Preview commands have no integration test package; they are verified with
 the real binaries in a container of the coding image (Part B test 1):
 

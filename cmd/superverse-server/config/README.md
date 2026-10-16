@@ -1,7 +1,7 @@
 # Server configuration
 
 This package is the one place the Superverse server's settings are defined, defaulted,
-loaded and validated. `cmd/superverse-server` loads it, `internal/bootstrap` composes the
+loaded and validated. `cmd/superverse-server` loads it, `internal/dexai/bootstrap` composes the
 server from it, and `make check-config` loads and validates every profile that is checked
 in next to `config.go`. Only those three, `cmd/tools/check-config` and the layering rule
 in `scripts/check-package-layers.py` may import it.
@@ -55,10 +55,10 @@ Dex and Worker Service names, and fixes `dex.workerHeadless`, `environment`, `lo
 
 | Key | Meaning | Default | Range or rule |
 | --- | --- | --- | --- |
-| `environment` | The [deployment-name catalog](../../../internal/platform/deploymentnames/README.md) entry of this server | `test` | `test`, `staging` or `prod`; any other name is an error |
+| `environment` | The [deployment-name catalog](../../../internal/comm/platform/deploymentnames/README.md) entry of this server | `test` | `test`, `staging` or `prod`; any other name is an error |
 | `localKind` | The local lanes, Local Kind and Local Native | `false` | `true` only with `environment: test` |
 | `runtime` | Where project workloads run: `kubernetes`, the server's cluster (Local Kind and the hosted environments), or `docker`, the local Docker Engine of Local Native, where the server starts without a Kubernetes API | `kubernetes` | `kubernetes` or `docker`; `docker` only with `localKind` and `environment: test`, and the `native` keys only with `docker` |
-| `repohost` | The Git host of every Project repository: `github`, or the [local Git host](../../../internal/platform/repohost/localgit/README.md) inside the server | `github` | `github` or `localgit`; any other name is an error; `localgit` only with `localKind` |
+| `repohost` | The Git host of every Project repository: `github`, or the [local Git host](../../../internal/comm/platform/repohost/localgit/README.md) inside the server | `github` | `github` or `localgit`; any other name is an error; `localgit` only with `localKind` |
 
 A new Project's repository is named `<prefix>-<name slug>-<projectID>`. No key sets the prefix: server
 composition derives it from `runtime`, `localKind` and `environment`, whichever `repohost` is selected.
@@ -112,7 +112,7 @@ define the slug.
 | `thinkingPrefixMismatch` | What the API does with a replayed thinking block that fails its conversation check | `drop_block` | `drop_block` or `error` |
 | `taskTurns` | Consecutive turns that task notifications open before automatic continuation pauses | `5` | `0` to `100` |
 | `platformTurns` | Consecutive turns that application-owned delivery failures of the Session's HEAD, such as a Preview whose application failed, open before automatic continuation pauses; `0` opens none | `3` | `0` to `100` |
-| `mockModel` | Start the [mock model](../../../internal/agents/session/modelprovider/mockmodel/README.md) in this process and offer it to every Session as the model `mock`, besides the Claude models: any account selects it in Local Kind and Native, only the administrator elsewhere | `false` | refused in `prod` |
+| `mockModel` | Start the [mock model](../../../internal/dexai/agents/session/modelprovider/mockmodel/README.md) in this process and offer it to every Session as the model `mock`, besides the Claude models: any account selects it in Local Kind and Native, only the administrator elsewhere | `false` | refused in `prod` |
 
 ### `sandbox`
 
@@ -200,7 +200,7 @@ each incident. Every local profile in this directory leaves it empty. The hosted
 Terraform inputs select the configured issue repository through its private installation ID; prod leaves it empty.
 
 `connectors` names the upstream connectors library that `connector_develop` subagents contribute to
-([connectorlibrary](../../../internal/platform/connectorlibrary/README.md)) and the App's installation on it, a further
+([connectorlibrary](../../../internal/comm/platform/connectorlibrary/README.md)) and the App's installation on it, a further
 installation of the same App, so `appId` and the App private key are needed whatever the `repohost`. Hosted environments
 name `superdurable/dex-connectors-library` (Terraform, `github_app.connectors_installation_id`), and
 `local-kind-acceptance.yaml` names its GitHub test copy `superdurable/dex-connectors-library-test`. Without it, the

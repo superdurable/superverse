@@ -47,6 +47,7 @@
       "native-e2e"
     ],
     "/superverse.v2.ApplicationEnvironmentService/SaveApplicationEnvironment": [
+      "kind-e2e",
       "native-e2e"
     ],
     "/superverse.v2.ConnectorService/InvokeProviderCommand": [

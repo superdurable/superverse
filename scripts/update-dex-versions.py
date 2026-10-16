@@ -89,12 +89,12 @@ def update_repository(sdk_version: str, cli_version: str, cli_commit: str, check
         replace("scripts/install-pinned-binary.sh", rf'^    "dexcli v[^" ]+ {platform}"\) echo [a-f0-9]{{64}} ;;$',
                 f'    "dexcli v{cli_version} {platform}") echo {checksums[platform]} ;;')
     replace("sandbox/coding/Dockerfile", r"^ARG DEXCLI_VERSION=[^\s]+$", f"ARG DEXCLI_VERSION={cli_version}")
-    tools = "internal/delivery/releases/build/hosted/Dockerfile.tools"
+    tools = "internal/dexai/delivery/releases/build/hosted/Dockerfile.tools"
     for architecture in ("amd64", "arm64"):
         replace(tools, rf"({architecture}\) digest=)[a-f0-9]{{64}}", r"\g<1>" + checksums["linux_" + architecture])
     replace(tools, r"cli-v[0-9.]+/dexcli_v[0-9.]+_linux_", f"cli-v{cli_version}/dexcli_v{cli_version}_linux_")
     replace(tools, r'io\.superdurable\.dexcli="[0-9.]+"', f'io.superdurable.dexcli="{cli_version}"')
-    replace("internal/delivery/releases/build/hosted/runner.py", r'(labels\.get\("io\.superdurable\.dexcli"\) != ")[0-9.]+', r"\g<1>" + cli_version)
+    replace("internal/dexai/delivery/releases/build/hosted/runner.py", r'(labels\.get\("io\.superdurable\.dexcli"\) != ")[0-9.]+', r"\g<1>" + cli_version)
 
     lock_path = ROOT / "infra-as-code/source-lock.json"
     lock = json.loads(lock_path.read_text(encoding="utf-8"))

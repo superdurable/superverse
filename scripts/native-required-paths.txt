@@ -6,11 +6,11 @@
 # path segments, * one segment's text.
 
 # The Docker packages, the only ones that import the Docker Engine client, with their Docker tests.
-internal/platform/dockerapi/**
-internal/projects/infra/docker/**
-internal/agents/sandbox/docker/**
-internal/delivery/deployments/docker/**
-internal/bootstrap/docker.go
+internal/comm/platform/dockerapi/**
+internal/dexai/projects/infra/docker/**
+internal/dexai/agents/sandbox/docker/**
+internal/dexai/delivery/deployments/docker/**
+internal/dexai/bootstrap/docker.go
 
 # The Native lane: its launcher with the Compose stack, and its profile.
 infra-as-code/scripts/native/**

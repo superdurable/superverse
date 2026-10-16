@@ -21,8 +21,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/superdurable/superversev2/internal/agents/remoteagent/bridgeapi"
 	"github.com/superdurable/superversev2/internal/comm"
+	"github.com/superdurable/superversev2/internal/dexai/agents/remoteagent/bridgeapi"
 )
 
 // The local protocol between mcp and serve: over the 0600 Unix socket in the

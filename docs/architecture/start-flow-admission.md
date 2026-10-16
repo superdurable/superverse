@@ -153,7 +153,7 @@ The actual Project-to-Setup call runs in Execute, with SYNC handler timeout30s,
 external deadline20s and two minutes of retries. Exhaustion records
 SETUP_FAILED without claiming the child is absent. Its late successful handoff
 clears only that failure; deletion fences child admission before effects. See
-[Project](../../internal/projects/README.md#dex-flow-changes).
+[Project](../../internal/dexai/projects/README.md#dex-flow-changes).
 The Session-to-workspace and workspace-to-provisioning calls likewise belong to durable
 Execute: the Session's SendWorkspaceCommand Step (`dexflow.ProviderStepOptions()`, no
 lock) submits its command, starting the Project's SessionWorkspaceFlow on the first one,
@@ -266,9 +266,9 @@ replaced by them before launch.
 
 The workspace, provisioning and Preview Attribute, Channel, Stream, Step and RPC
 inventory is specified in [the architecture](superverse-v2.md#sandbox-instance-flows), the
-[Session workspace](../../internal/agents/sandbox/sessionworkspace/README.md), the
-[provisioning](../../internal/agents/sandbox/provision/README.md) and the
-[Preview](../../internal/agents/sandbox/preview/README.md) READMEs; this boundary
+[Session workspace](../../internal/dexai/agents/sandbox/sessionworkspace/README.md), the
+[provisioning](../../internal/dexai/agents/sandbox/provision/README.md) and the
+[Preview](../../internal/dexai/agents/sandbox/preview/README.md) READMEs; this boundary
 declares no AttributeMap, ChannelMap or Stream of its own.
 
 Exact retries do not create another FlowID or intentionally another RunID.
@@ -316,7 +316,7 @@ it is an independent top-level Flow and not a Project child
 ### Platform issue reports
 
 A platform failure of a Session is filed by the `PlatformIssueFlow` of its signature
-([the platform issue reports](../../internal/agents/platformissue/README.md)), an
+([the platform issue reports](../../internal/dexai/agents/platformissue/README.md)), an
 independent top-level Flow that belongs to no Project.
 
 - Identity. One FlowID per signature and environment, `platform-issue-<env>-<sig16>`, for
@@ -365,7 +365,7 @@ the instance identity but never a lease or a RunID.
 ## Tests
 
 Registration replay and password conflict are real PostgreSQL tests of the
-[Account service](../../internal/tenancy/accounts/README.md#tests). The Session's start identity,
+[Account service](../../internal/dexai/tenancy/accounts/README.md#tests). The Session's start identity,
 a repeated setup commit, a joined and a conflicting start, and deletion before
 and right after READY are Dex integration tests
 (`TestProjectSessionIdentityDexIntegration`,
@@ -382,7 +382,7 @@ checks are not evidence of those behaviors.
 
 The provisioning and Preview starts require real Dex/Temporal and Kubernetes
 scenarios against the pinned Server. Their Dex integration tests are written and
-compiled (the [Session Service tests](../../internal/agents/README.md#tests)); none
+compiled (the [Session Service tests](../../internal/dexai/agents/README.md#tests)); none
 is recorded as observed here:
 
 - The Session's start creates no `sandbox-provision-<projectID>-<workspaceRequestID>`
@@ -413,15 +413,15 @@ is recorded as observed here:
 
 ## Documentation
 
-[Session](../../internal/agents/README.md),
-[Project](../../internal/projects/README.md), [Sandbox](../../internal/agents/sandbox/README.md),
-[Release](../../internal/delivery/releases/README.md) and [Deployment](../../internal/delivery/deployments/README.md)
+[Session](../../internal/dexai/agents/README.md),
+[Project](../../internal/dexai/projects/README.md), [Sandbox](../../internal/dexai/agents/sandbox/README.md),
+[Release](../../internal/dexai/delivery/releases/README.md) and [Deployment](../../internal/dexai/delivery/deployments/README.md)
 retain the complete owning inventories. The Session's start is specified in
 [the current contract](agent-harness-design/session.md), the provisioning and
 Preview starts in [the current contract](agent-harness-design/sandbox.md), the
-[provisioning](../../internal/agents/sandbox/provision/README.md) and
-[Preview](../../internal/agents/sandbox/preview/README.md) READMEs, the subagent start in the
-[subagent](../../internal/agents/session/subagent/README.md) README; the Session side of
+[provisioning](../../internal/dexai/agents/sandbox/provision/README.md) and
+[Preview](../../internal/dexai/agents/sandbox/preview/README.md) READMEs, the subagent start in the
+[subagent](../../internal/dexai/agents/session/subagent/README.md) README; the Session side of
 the workspace commands are specified in the [Sandbox design](agent-harness-design/sandbox.md#gates-and-the-cold-path)
 and their wiring in [composition](agent-harness-design/composition.md). Root rules require this start boundary in
 future review. Historical source fingerprints and acceptance receipts are retained.

@@ -6,7 +6,7 @@ outside the business protocol: it is not in `api/superverse/v2/superverse.proto`
 never calls it, it bypasses the Studio BFF and carries no `CallerContext`. The connector
 SDK's `projectconfig` package (`sdkgo`) is its only client; its README ("Shared
 connections") states the same contract from the client's side. The owning package is
-[`internal/tenancy/connections`](../../internal/tenancy/connections/README.md); the design is
+[`internal/dexai/tenancy/connections`](../../internal/dexai/tenancy/connections/README.md); the design is
 [connections](../architecture/teamspace/connections.md#the-read-endpoint-and-scope-tokens)
 and [the current contract](../architecture/teamspace/connections.md).
 

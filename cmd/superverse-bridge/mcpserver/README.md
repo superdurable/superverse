@@ -4,7 +4,7 @@ Purpose: Serves the Superverse tools to Codex as a stdio MCP server and forwards
 
 Callers: `cmd/superverse-bridge` (the `mcp` command, and `serve`, `status` and `disconnect` through the local socket).
 
-Dependencies: `internal/agents/remoteagent/bridgeapi` and `internal/comm`; it calls no remote API, only serve's local socket.
+Dependencies: `internal/dexai/agents/remoteagent/bridgeapi` and `internal/comm`; it calls no remote API, only serve's local socket.
 
 ## MCP
 

@@ -4,8 +4,8 @@ Two per-replica hot paths of the business API: the Studio Runs target, which an
 open run canvas polls about every 5 seconds, and the resource Watch, which
 streams Dex progress. This document is the contract of what they cache, what
 they always read afresh, and how fast a lost access ends a Watch. The
-[`studio/runs`](../../internal/studio/runs/README.md) and
-[`api/watch`](../../internal/api/watch/README.md) packages implement it.
+[`studio/runs`](../../internal/dexai/studio/runs/README.md) and
+[`api/watch`](../../internal/dexai/api/watch/README.md) packages implement it.
 
 ## Problem
 
@@ -94,7 +94,7 @@ recorded identity that the dial verified, which also determines the address:
 - Leases are reference-counted: a retired entry closes when its last request
   releases it, so retirement never cuts a running request. Expiry is checked on
   access and the LRU tail is retired on insert; there is no janitor goroutine.
-  `Runs.Close`, which `internal/bootstrap` calls at shutdown, retires every
+  `Runs.Close`, which `internal/dexai/bootstrap` calls at shutdown, retires every
   entry.
 - The size is the server setting `studio.runsDexConnections` (default 128,
   1 to 4096; [configuration reference](../../cmd/superverse-server/config/README.md#studio)).

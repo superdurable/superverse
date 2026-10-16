@@ -28,4 +28,4 @@ declarations never reach the browser, so no spec records them.
 `scripts/studio-coverage-map.py` merges the records into `tests/e2e/coverage-map.json`, replacing only the specs that
 ran, and `make affected-specs` reads the map to name the specs that run the files a change touches; the evidence check
 requires one of them for each such file
-([integration verification](../../../../../../internal/agents/README.md)).
+([integration verification](../../../../../../internal/dexai/agents/README.md)).

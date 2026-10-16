@@ -66,7 +66,7 @@ OS/architecture, Node version, cache format, the complete Studio/API Git trees
 and validation workflow identity, with no restore prefix. Any source, exported
 type, configuration or dependency change therefore invalidates all typed lint
 results, including unchanged consumers. Every validation still runs on a cache
-hit. See [Actions usage and approval](../../internal/agents/README.md)
+hit. See [Actions usage and approval](../../internal/dexai/agents/README.md)
 before adding work or exceeding an authorized remote run budget.
 
 ## Modules

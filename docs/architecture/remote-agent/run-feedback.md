@@ -192,7 +192,7 @@ None.
 - [notifications and feedback](../agent-harness-design/notifications-and-feedback.md): the `run`
   source and its row in the failure owners table.
 - [tool orchestration](../agent-harness-design/tool-orchestration.md): `watch_preview_run`.
-- `internal/agents/sandbox/preview/README.md`: the PreviewFlow contract rows.
+- `internal/dexai/agents/sandbox/preview/README.md`: the PreviewFlow contract rows.
 - AGENTS.md, CLAUDE.md, `.cursor/rules/planning.mdc`: the application-RunID exception and the
   Session's new Flow RPC.
 

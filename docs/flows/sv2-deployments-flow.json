@@ -3,7 +3,7 @@
   "valid": true,
   "source": {
     "language": "go",
-    "path": "internal/delivery/deployments/project_deploy_flow.go"
+    "path": "internal/dexai/delivery/deployments/project_deploy_flow.go"
   },
   "flow": {
     "name": "ProjectDeployFlow",

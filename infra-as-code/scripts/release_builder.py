@@ -8,7 +8,7 @@
 
 """The local release builder of either lane: its trusted AppManifest tool and its command.
 
-The builder (internal/delivery/releases/build/localbuilder/server.py) runs the coding image by Docker's immutable ID,
+The builder (internal/dexai/delivery/releases/build/localbuilder/server.py) runs the coding image by Docker's immutable ID,
 not a mutable tag, so no tag can swap its toolchain. It fetches Project source from the origin of the repository host
 the server uses: the local Git host on this machine, or GitHub. With the local Git host it also redirects the
 connectors library to the host's copy, so a release candidate of a lane's contribution builds. Each lane passes its
@@ -24,7 +24,7 @@ from image_identity import docker_image_id
 from operator_errors import require
 from paths import ROOT, STATE
 
-SERVER = ROOT / "internal/delivery/releases/build/localbuilder/server.py"
+SERVER = ROOT / "internal/dexai/delivery/releases/build/localbuilder/server.py"
 
 
 def builder_command(*, token_file, tool_image, repository_host, local_git_url, arguments=()):

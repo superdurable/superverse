@@ -3,15 +3,15 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Connects integration tests to an actual Dex Server and checks engine state, never substituting a Flow, Worker or dependency.
 
-Callers: `internal/platform/postgres/postgrestest` and `internal/projects/projecttest` import this package.
+Callers: `internal/comm/platform/postgres/postgrestest` and `internal/dexai/projects/projecttest` import this package.
 
 Dependencies: it imports `internal/comm/flowid` and calls the Dex Flow API.
 
 ```mermaid
 flowchart LR
   self["internal/comm/dexflow/dexflowtest"]
-  c0["internal/platform/postgres/postgrestest"] --> self
-  c1["internal/projects/projecttest"] --> self
+  c0["internal/comm/platform/postgres/postgrestest"] --> self
+  c1["internal/dexai/projects/projecttest"] --> self
   self --> d0["internal/comm/flowid"]
   self --> e0(["Dex Flow API"])
 ```
@@ -43,11 +43,11 @@ the chart's server configuration and `infra.HostFromContainers`, and
 `make check-test-lanes` fails when one differs. The same check refuses a test
 that builds a Dex client or Worker with `dex.NewClient` or `dex.NewWorker`
 instead of this package. The lane inputs are tabled in the
-[integration verification runbook](../../../agents/README.md).
+[integration verification runbook](../../../dexai/agents/README.md).
 
 `LanePostgres` returns the lane's PostgreSQL address, Kind's forward or the
 effective Native run layer's `postgres` port, and the lane's private file of
-its role passwords; `internal/platform/postgres/postgrestest` connects with
+its role passwords; `internal/comm/platform/postgres/postgrestest` connects with
 them.
 
 `ProjectChildIDsForTest` lists through Dex search the Release or Deployment Flows

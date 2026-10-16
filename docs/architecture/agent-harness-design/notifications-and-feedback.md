@@ -107,7 +107,7 @@ Producers retry within minutes, far inside it.
 ### Admission
 
 `ReportSessionNotification` is an internal RPC of SessionAgentFlow. It is reached only through
-`SessionFlowService` (`internal/agents/session_flow_service_tasks.go`, which the delivery
+`SessionFlowService` (`internal/dexai/agents/session_flow_service_tasks.go`, which the delivery
 sources reach through `session_flow_service_feedback.go` and the connector contributions through
 `session_flow_service_connectors.go`); no API handler and no Flow calls it directly. The Session's
 own Step `AwaitBackgroundCommand` publishes into the same Channel under the same rules without an
@@ -192,7 +192,7 @@ Superverse notification (automated report, not written by the user):
 ```
 
 The instruction for acting on a notification is part of the frozen system prompt
-(`internal/agents/session/conversation/prompts/v1/platform_event.md`), not repeated in each
+(`internal/dexai/agents/session/conversation/prompts/v1/platform_event.md`), not repeated in each
 entry. It tells the model to:
 
 - decide whether the application source at the notified commit causes a failure, using
@@ -347,7 +347,7 @@ deployment whose preparation fails leaves it as it was.
      <sha>` into `$S/source/<sha>` with a commit marker. The call is idempotent and keeps at most
      two trees: the running one and the candidate. A commit missing from the repository is refused
      `PREVIEW_SOURCE_NOT_PREPARED`.
-   - It runs the definitions program `internal/agents/sandbox/workspace/preview_definitions.py` in
+   - It runs the definitions program `internal/dexai/agents/sandbox/workspace/preview_definitions.py` in
      its pinned mode `--pinned <tree> <sha>`: no HEAD, status or source-changed checks; the tree
      must lie under `$S/source/` and its marker must name the commit; strict FDG 2.0 through
      `dexcli visualize` inside the tree; it returns the definitions and the digest of the tree's

@@ -7,7 +7,7 @@ Preview and Live gateway and a local registry
 as one Docker Compose project, and every Sandbox, Preview and Live workload as containers that the server's `docker`
 runtime creates by the Docker runtime. It uses no Kind cluster.
 It is the lane of every change that touches no Kind path; `make required-lanes` names when Local Kind runs it instead
-([local lanes](../../internal/agents/README.md)), and only the Local Kind acceptance on `local-kind-acceptance.yaml`, with the model the platform developer
+([local lanes](../../internal/dexai/agents/README.md)), and only the Local Kind acceptance on `local-kind-acceptance.yaml`, with the model the platform developer
 decided on, satisfies the AWS publication gate. It serves ports of its own and takes no lock of Kind's, so it runs
 [beside Local Kind](#beside-local-kind).
 
@@ -62,7 +62,7 @@ decided on, satisfies the AWS publication gate. It serves ports of its own and t
 The server's environment holds only secrets, all generated and retained in the lane's state directory: the
 platform MinIO credentials, the cookie signing key, the build token file and the local Git signing key, plus
 `ANTHROPIC_API_KEY` from the main checkout's `.env` whenever it is there. `native.yaml` offers the mock model and
-starts new Sessions on it ([mock model](../../internal/agents/README.md)); with the key a Session may switch to a
+starts new Sessions on it ([mock model](../../internal/dexai/agents/README.md)); with the key a Session may switch to a
 Claude model. Studio receives the lane's own browser signing key, its public origin and the server's address.
 
 | Boundary | Address |
@@ -112,7 +112,7 @@ instances roughly double host load. Dex reads can time out under heavy load , so
 | `--studio` | Serves | Use |
 | --- | --- | --- |
 | `dev` (default) | `next dev` from the checkout; edits reload in place | Development. Never acceptance; `native e2e` refuses it. |
-| `build` | The production build with browser source maps, copied into the run directory, laid out as in the Studio image | `native e2e`, which also refreshes the [Studio coverage map](../../internal/agents/README.md) from its three cases. Startup and acceptance bind the Studio source fingerprint and build ID. |
+| `build` | The production build with browser source maps, copied into the run directory, laid out as in the Studio image | `native e2e`, which also refreshes the [Studio coverage map](../../internal/dexai/agents/README.md) from its three cases. Startup and acceptance bind the Studio source fingerprint and build ID. |
 
 Go server changes need a new run: stop it and start again. The Compose project, the lane's data and the Projects
 survive.
@@ -123,7 +123,7 @@ A Dex integration test reaches Native through these inputs; the Kind lane's are 
 ([Local Kind](../../infra-as-code/README.md#local-kind)). `SUPERVERSE_TEST_NATIVE_INSTANCE` defaults to `default`;
 the guard reads the selected instance's effective run layer, and
 `dexflowtest` fails a test at once when `SUPERVERSE_TEST_LANE` is missing or any address belongs to
-the other lane ([lane inputs](../../internal/agents/README.md)).
+the other lane ([lane inputs](../../internal/dexai/agents/README.md)).
 
 ```sh
 SUPERVERSE_TEST_LANE=native SUPERVERSE_TEST_NATIVE_INSTANCE=default SUPERVERSE_TEST_NATIVE_RUN_ID=<run-id> \
@@ -144,7 +144,7 @@ A Playwright spec run directly takes `SUPERVERSE_E2E_BASE_URL=http://localhost:2
 `--config <profile>` layers a server configuration profile over `native.yaml`, below the run's own layer, as
 `kind deploy --config` does on Kind: a test that needs a setting other than the lane's default, such as a short
 `sandbox.hold` or `sandbox.previewHold`, names it and repeats it as a test input
-([integration verification](../../internal/agents/README.md)). Startup validates the layers with the server's own loader,
+([integration verification](../../internal/dexai/agents/README.md)). Startup validates the layers with the server's own loader,
 and the run binds the profile's digest like `native.yaml`'s; `native e2e` records both in its receipt.
 
 ## State
@@ -213,8 +213,8 @@ still fail readiness. A candidate with missing Worker identity also fails readin
 ## Local Git host
 
 The lane's Projects keep their repositories in the local Git host inside the server
-([the current contract](../../internal/platform/repohost/localgit/README.md),
-[package](../../internal/platform/repohost/localgit/README.md)), selected by `repohost: localgit` of `native.yaml`.
+([the current contract](../../internal/comm/platform/repohost/localgit/README.md),
+[package](../../internal/comm/platform/repohost/localgit/README.md)), selected by `repohost: localgit` of `native.yaml`.
 The bare repositories `superverse-local/localnative-<name slug>-<projectID>.git`, such as
 `localnative-myapp-a7k2`, are in `.local/superverse-v2/native/git`; a deleted
 Project's repository is archived, not removed. Read a Project's repository name from its snapshot (`fullName` of

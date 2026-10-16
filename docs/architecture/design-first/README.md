@@ -102,7 +102,7 @@ real-model run checks it.
   [agent transport parity](../../api/agent-transport-parity.md) and
   `api/superverse/v2/superverse.proto`: `AgentService.GetFlowDesign` and the design messages.
 - `docs/flows/sv2-session-agent-flow.json`, regenerated.
-- The Session prompt (`internal/agents/session/conversation/prompts/v1/session.md`), the
+- The Session prompt (`internal/dexai/agents/session/conversation/prompts/v1/session.md`), the
   in-repo `dex-skills/dex-app-builder` (`SKILL.md`, `references/product-discovery.md`
   "Confirmation artifact"). `app-template/AGENTS.md` stays as it is: it is at the size the
   agent's repository context inlines, and the skill carries the rules. The design guidance quotes the rules of
@@ -112,9 +112,9 @@ real-model run checks it.
   then say the same thing in one pass. The prompt also tells the agent to name, when a build
   of a confirmed design is complete, every difference between what it built and the design.
 - The mock model README (new scenarios), the package README of the new
-  `internal/agents/session/flowdesign`, the Studio READMEs of `components/flow/design` and
+  `internal/dexai/agents/session/flowdesign`, the Studio READMEs of `components/flow/design` and
   `lib/session/design`, the Studio mock README, and the test rows of
-  [integration verification](../../../internal/agents/README.md).
+  [integration verification](../../../internal/dexai/agents/README.md).
 - the current contract, recording
   decisions 1, 3 and 6 above.
 

@@ -42,7 +42,7 @@ def release_identity(url):
 
 
 def profile_identity():
-    directory = ROOT / "internal/delivery/releases/build/build-profiles/go-react-v1"
+    directory = ROOT / "internal/dexai/delivery/releases/build/build-profiles/go-react-v1"
     parts = [(directory / name).read_bytes() for name in ("profile.json", "Dockerfile")]
     require(json.loads(parts[0]).get("id") == "go-react-v1", "Published dependencies require the go-react-v1 BuildProfile")
     return {"id": "go-react-v1", "version": "bp1", "sha256": hashlib.sha256(parts[0]).hexdigest(),

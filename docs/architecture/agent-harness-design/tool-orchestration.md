@@ -51,7 +51,7 @@ flowchart LR
   diag --> platform["platform Dex, Kubernetes,<br/>Project resources"]
 ```
 
-- **Server side** (`internal/agents/session/sandboxtools`, `internal/agents/diagnostics`): strict
+- **Server side** (`internal/dexai/agents/session/sandboxtools`, `internal/dexai/agents/diagnostics`): strict
   argument decoding, helper requests and responses, failure classification, the platform Git
   protocol and commit gate, the connector catalog, and the three platform tools. The Runner reads
   no Flow: `Call` carries the tool name, arguments, `Identity{FlowID, CallID}`, the accepted lease,
@@ -143,7 +143,7 @@ optional parameters that count against the strict limit.
 | `read_live_app_runs` | `operation` (`search`, `summary`, `state`, `history`, `logs`) | `flow_type`, `flow_id`, `filters[]` (at most 8), `after_event_id`, `page_size`, `tail_lines` (1 to 200) |
 
 The optional parameters of the strict tools stay well within the limit of 24, counting nested
-optional properties. The exact schemas live in `internal/agents/session/toolinput/schema/*.json`.
+optional properties. The exact schemas live in `internal/dexai/agents/session/toolinput/schema/*.json`.
 `grep.path` is a literal existing file or directory and `glob.path` is a literal
 existing directory; wildcards in either field are never expanded. A Go module
 directory can be resolved with `go list -m -f '{{.Dir}}' <module>`.
@@ -374,7 +374,7 @@ A background command runs for up to 3,300 seconds (`agenttasks.BackgroundCommand
 watch is one long polling Step, so it runs in its own Flow, `BackgroundCommandFlow`, a Dex SubFlow
 of the Session: the Session only waits for it while the command runs, so its turns, its tool routing
 and its move to a new Run never wait for the command. The per-Flow contract is in the
-[backgroundcommand README](../../../internal/agents/session/backgroundcommand/README.md).
+[backgroundcommand README](../../../internal/dexai/agents/session/backgroundcommand/README.md).
 
 - **Start.** The Step that records the command (`ExecuteTool`, or `SettleForegroundCommand` when a
   foreground command moves to the background) writes its `BackgroundCommands` record and moves to
@@ -465,7 +465,7 @@ model's reconciliation; the platform's gates never trust them.
 ### Failure type
 
 Every code is declared once, with its owner and its hint, as a struct-typed value of the package
-`internal/agents/toolfailure` (`toolfailure.Code`), so no code is a string literal elsewhere and a
+`internal/dexai/agents/toolfailure` (`toolfailure.Code`), so no code is a string literal elsewhere and a
 stored tool result keeps the code's spelling. `sandboxd/tool_failure.go` defines
 `ToolFailure{code, effect, cause, detail}`; the owner is the code's.
 
@@ -507,7 +507,7 @@ detail: <at most 2 KiB, no secrets; omitted when empty>
 For example:
 
 ```text
-Error: edit_no_match — old_string was not found in internal/app/summary.go
+Error: edit_no_match — old_string was not found in internal/dexai/app/summary.go
 owner: call · effect: none
 hint: Read the file again and copy old_string exactly, including whitespace and indentation.
 ```
@@ -519,7 +519,7 @@ business terms. A failure with effect `partial` or `unknown` tells the model to 
 
 ### Codes
 
-Hint text lives next to each code in `internal/agents/toolfailure/code.go`; the owner's hint closes
+Hint text lives next to each code in `internal/dexai/agents/toolfailure/code.go`; the owner's hint closes
 the hint of a platform code unless the code's own hint replaces it.
 
 **Owner `call`, effect `none`**
@@ -622,7 +622,7 @@ change nothing.
 
 `executeTool` hands a platform call to the constructor-injected `session.ProjectDiagnosticsReader`
 with the Session identity read from the Flow's own Attributes. No argument names a Project or a
-Session. [`internal/agents/diagnostics`](../../../internal/agents/diagnostics/README.md) implements it:
+Session. [`internal/dexai/agents/diagnostics`](../../../internal/dexai/agents/diagnostics/README.md) implements it:
 
 | Tool | Reads |
 |---|---|
@@ -651,7 +651,7 @@ A platform fault should reach the maintainers without the user's involvement. Th
 `ReportPlatformIssue` is a side branch of the Step that records the fault: it runs beside the turn,
 never blocks it and never changes a tool result. It starts, or joins, the `PlatformIssueFlow` of the
 fault's signature, which files one GitHub issue per signature; the per-Flow contract is in the
-[platform issue README](../../../internal/agents/platformissue/README.md).
+[platform issue README](../../../internal/dexai/agents/platformissue/README.md).
 
 - **Triggers.** `ExecuteTool` and `SettleForegroundCommand` when the recorded result has owner
   `platform`; `RecordToolFailure`; the join of a parallel wave, once for each distinct signature of
@@ -660,10 +660,10 @@ fault's signature, which files one GitHub issue per signature; the per-Flow cont
   `ReportPlatformIssue` in one decision. A compaction's rejection is not reported (a 401 or 403 recurs
   in the next model call), nor is a wave result recorded after a Stop.
 - **Call chain.** `ReportPlatformIssue` calls `SessionAgentFlowDependency.ReportPlatformIssue`;
-  `SessionFlowService` implements it in `internal/agents/session_flow_service_issues.go`, maps
+  `SessionFlowService` implements it in `internal/dexai/agents/session_flow_service_issues.go`, maps
   the incident and starts the signature's Flow through `PlatformIssueFlowClient.Report`. The Flow's
-  provider Step `EnsurePlatformIssue` calls `EnsureIssue` of `internal/platform/githubissues`, which acts through
-  `internal/platform/githubapp`, and `LabelPlatformIssue` calls its `LabelIssue` for an issue GitHub
+  provider Step `EnsurePlatformIssue` calls `EnsureIssue` of `internal/comm/platform/githubissues`, which acts through
+  `internal/comm/platform/githubapp`, and `LabelPlatformIssue` calls its `LabelIssue` for an issue GitHub
   opened without the label.
 - **Identity and deduplication.** The signature is the SHA-256 of the owner, tool, code and error type
   (the engine's type of the final error, or `http_<status>` for a model rejection), never of a message
@@ -828,10 +828,10 @@ reported as static checks, not as integration evidence.
 ## Documentation
 
 This document owns the tool catalog, the failure model and the platform tools.
-`internal/agents/session/toolinput/README.md` describes schema generation;
-`internal/agents/session/sandboxtools/README.md` and `internal/agents/diagnostics/README.md` describe
+`internal/dexai/agents/session/toolinput/README.md` describes schema generation;
+`internal/dexai/agents/session/sandboxtools/README.md` and `internal/dexai/agents/diagnostics/README.md` describe
 their packages and link here; the `backgroundcommand` and `platformissue` READMEs own the per-Flow
 contracts of `BackgroundCommandFlow` and `PlatformIssueFlow`. The prompt
-`internal/agents/session/conversation/prompts/v1/session.md` carries the tool-use guidance for the
+`internal/dexai/agents/session/conversation/prompts/v1/session.md` carries the tool-use guidance for the
 model.
 

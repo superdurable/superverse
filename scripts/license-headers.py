@@ -40,7 +40,7 @@ EXCLUDED_PREFIXES = (
     "docs/", "app-template/", "dex-skills/", "web/studio/proto/google/rpc/",
     "infra-as-code/kubernetes/charts/superverse-platform/charts/controller/",
     "gen/", "web/studio/lib/generated/", ".github/", ".claude/", ".cursor/",
-    "node_modules/", "internal/app/apptemplate/app-template.tar",
+    "node_modules/", "internal/dexai/app/apptemplate/app-template.tar",
 )
 
 

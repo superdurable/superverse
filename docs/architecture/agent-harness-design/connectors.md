@@ -122,7 +122,7 @@ Rules the platform enforces:
 
 ## How the configuration host resolves releases
 
-The configuration host (`internal/studio/confighost`) validates a Project's configuration against the
+The configuration host (`internal/dexai/studio/confighost`) validates a Project's configuration against the
 release each declared connection names. It resolves only exact official releases.
 
 1. **Input.** The AppManifest registered for a source commit lists each connection as a
@@ -316,7 +316,7 @@ Each contributed connector of a Project is one `ConnectorContributionFlow` execu
 `connector-contribution-<projectID>-<slug>`, for example `connector-contribution-a7k2-newsapi`, which
 owns the contribution record; the Session keeps no copy, and the Snapshot reads the contributions
 through the Service. The per-Flow contract is in the
-[contribution README](../../../internal/agents/session/contribution/README.md).
+[contribution README](../../../internal/dexai/agents/session/contribution/README.md).
 
 - **Start.** The Session Service, in `ReportSubagentOutcome`, once the Session admitted the report of a
   COMPLETED develop subagent that carries a contribution, with the Start RequestID
@@ -385,7 +385,7 @@ how it is checked:
   (`release-candidate`, `ui-artifact` for a Studio UI, `release-artifact`), pushes the tag to the
   local Git host's copy, and the server stores the assets in the host's release store, which serves
   them at GitHub's download path
-  ([local Git host](../../../internal/platform/repohost/localgit/README.md#release-assets)). The
+  ([local Git host](../../../internal/comm/platform/repohost/localgit/README.md#release-assets)). The
   Flow's Step then only confirms them.
 - **Refusal.** A candidate that the library's rules refuse, such as a version that is not after the
   latest release, is `release_candidate_refused` in the finish, or a failed candidate in the Flow; the
@@ -503,7 +503,7 @@ StartFlow, FlowID, Step, AttributeMap, Channel or Stream to the Session:
 
 ### ConnectorContributionFlow
 
-The per-Flow contract is owned by the [contribution README](../../../internal/agents/session/contribution/README.md);
+The per-Flow contract is owned by the [contribution README](../../../internal/dexai/agents/session/contribution/README.md);
 its role is described under [Contributions](#contributions).
 
 - **Identity.** FlowID `connector-contribution-<projectID>-<slug>` (`flowid.ConnectorContributionFlowID`),
@@ -623,12 +623,12 @@ provider behavior of a new connector is recorded as unverified.
   `dex-app-builder` guidance on confirming requirements and contributing a missing connector;
   `app-template/AGENTS.md` and `dex-skills` read module source through `go list -m -f '{{.Dir}}'`
   (`make generate-app-template` after changing the template).
-- Package READMEs: [contribution](../../../internal/agents/session/contribution/README.md) (the Flow),
-  [connectorlibrary](../../../internal/platform/connectorlibrary/README.md) (the server's library and the
-  upstream client), the [workspace Git package](../../../internal/agents/sandbox/workspace/git/README.md)
-  (the contribution helper) and the [local Git host](../../../internal/platform/repohost/localgit/README.md)
+- Package READMEs: [contribution](../../../internal/dexai/agents/session/contribution/README.md) (the Flow),
+  [connectorlibrary](../../../internal/comm/platform/connectorlibrary/README.md) (the server's library and the
+  upstream client), the [workspace Git package](../../../internal/dexai/agents/sandbox/workspace/git/README.md)
+  (the contribution helper) and the [local Git host](../../../internal/comm/platform/repohost/localgit/README.md)
   (the library's copy).
 - `docs/api/resource-grpc.md` documents the contributions in the Snapshot, with their release
   candidates. the current contract records the release
-  candidates; the [local build service](../../../internal/delivery/releases/build/localbuilder/README.md#release-candidates)
+  candidates; the [local build service](../../../internal/dexai/delivery/releases/build/localbuilder/README.md#release-candidates)
   owns the `bp3` redirect.

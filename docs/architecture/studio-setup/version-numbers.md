@@ -26,10 +26,10 @@ hash:
   - "Ancestors minus 1" can be computed in one call on GitHub and with real `git` on the local
     Git host, so both hosts compute the same definition.
 - **The platform keeps the default branch linear**, so the two definitions agree:
-  - The first commit is the template's root (`internal/platform/repohost/host.go:42-46`).
+  - The first commit is the template's root (`internal/comm/platform/repohost/host.go:42-46`).
   - The Agent publishes HEAD without force, and a divergence is rebased before anything is
-    pushed (`internal/agents/sandbox/workspace/git/commit.go:31-39`).
-  - The local Git host publishes without force (`internal/platform/repohost/localgit/host.go:275`).
+    pushed (`internal/dexai/agents/sandbox/workspace/git/commit.go:31-39`).
+  - The local Git host publishes without force (`internal/comm/platform/repohost/localgit/host.go:275`).
   - The platform creates no merge commits.
   - Only an outside writer with repository access could add a merge. Even then, a commit's
     number never changes, and the number strictly increases along the branch; it only skips
@@ -41,10 +41,10 @@ hash:
   the Project's default branch, so every version has a number and there is no "unnumbered" case.
   - A Release already refuses a commit that `main` does not reach. `PrepareReleasePublishingSource`
     calls `ValidateReleaseCommit(…, "main", commit)` and rejects `repohost.ErrCommitUnreachable`
-    (`internal/delivery/releases/project_release_flow_phases.go:90-97`; the contract is at
+    (`internal/dexai/delivery/releases/project_release_flow_phases.go:90-97`; the contract is at
     `repohost/host.go:53-55, 96-98`).
   - Both Preview build paths resolve their commit through `ReadPreviewSourceVersion`
-    (`internal/agents/sandbox/preview/preview_flow.go`): a manual build inspects clean workspace
+    (`internal/dexai/agents/sandbox/preview/preview_flow.go`): a manual build inspects clean workspace
     HEAD; `deploy-preview` uses its pinned pushed commit. `readPreviewSourceVersion` and the final
     `registerPreviewAppManifest` (`preview_configuration.go`) each call
     `ValidateReleaseCommit(…, "main", commit)` before describing that commit. A manual start
@@ -73,21 +73,21 @@ type CommitVersion struct {
 }
 ```
 
-`CommitVersion` lives in `internal/platform/repohost`. Each host computes it as described above:
+`CommitVersion` lives in `internal/comm/platform/repohost`. Each host computes it as described above:
 
 - local Git: `git rev-list --count` plus `git log -1 --format=%s`;
 - GitHub: one GraphQL query for the history count and the message.
 
 Every caller uses the same branch, `main`, as the Release does: `ListReleaseCandidates`
-(`internal/api/release.go:47`), the Release check and the Preview check.
+(`internal/dexai/api/release.go:47`), the Release check and the Preview check.
 
 The number belongs to the Git commit and is copied into these records:
 
 | Record | Where it is computed | Carried by |
 |---|---|---|
-| Release | `PrepareReleasePublishingSource` (`internal/delivery/releases/project_release_flow.go:451`), which already holds `repohost.Host` (`:52`) | `PreparedReleaseSource.Version`. This is persisted in the existing `releases.prepared_source` JSONB column (`internal/platform/postgres/migrations/0002_read_model.sql:41`), so **migration 0006 needs no column**. Deployments, the Live pointer and the timeline read it through the release they name. |
+| Release | `PrepareReleasePublishingSource` (`internal/dexai/delivery/releases/project_release_flow.go:451`), which already holds `repohost.Host` (`:52`) | `PreparedReleaseSource.Version`. This is persisted in the existing `releases.prepared_source` JSONB column (`internal/comm/platform/postgres/migrations/0002_read_model.sql:41`), so **migration 0006 needs no column**. Deployments, the Live pointer and the timeline read it through the release they name. |
 | Preview source | `ReadPreviewSourceVersion` publishes the name before compilation; `PreparePreviewSource` reads it again when registering the final manifest, through `PreviewConfiguration.host` | `PreparedPreviewSource.Version`, then `PreviewState.Version` when it serves (`serve` in `preview_snapshot.go`), and each `RecentStarts` entry's `Version` |
-| Release candidates | `ListReleaseCandidates` (`internal/api/release.go:34-55`), for each listed commit | The response only. Answers are cached in process by commit SHA, at most 1024 entries; a commit's answer never changes. This is a per-request server read, never a per-render one. |
+| Release candidates | `ListReleaseCandidates` (`internal/dexai/api/release.go:34-55`), for each listed commit | The response only. Answers are cached in process by commit SHA, at most 1024 entries; a commit's answer never changes. This is a per-request server read, never a per-render one. |
 
 - Open records created before this change have no `Version`. The release projection's JSONB
   lacks the field, and Studio shows "Version not recorded" with the hash folded. A Release or

@@ -42,15 +42,15 @@ generate-proto: install-buf
 	@BUF='$(BUF)' python3 scripts/check-proto-services.py --write
 
 generate-go:
-	@go generate ./internal/agents/session/toolinput
-	@go generate ./internal/agents/session/conversation
+	@go generate ./internal/dexai/agents/session/toolinput
+	@go generate ./internal/dexai/agents/session/conversation
 
 generate-web:
 	@npm --prefix web/studio run generate:protobuf
 
 # Pack app-template/ into the embedded archive and render its Studio initial design.
 generate-app-template: install-dexcli
-	@DEXCLI="$(DEXCLI_BINARY)" go generate ./internal/app/apptemplate
+	@DEXCLI="$(DEXCLI_BINARY)" go generate ./internal/dexai/app/apptemplate
 
 # Refresh the generated summary block of every internal/ package README.
 generate-package-readmes:
@@ -239,7 +239,7 @@ test-e2e:
 	npm --prefix web/studio run test:e2e
 
 test-claude-live:
-	@$(WITH_CLAUDE_KEY) go test -tags=live -count=1 -run '^TestLiveClaude' ./internal/agents/session/modelprovider
+	@$(WITH_CLAUDE_KEY) go test -tags=live -count=1 -run '^TestLiveClaude' ./internal/dexai/agents/session/modelprovider
 
 lint: lint-go lint-web lint-workflows
 

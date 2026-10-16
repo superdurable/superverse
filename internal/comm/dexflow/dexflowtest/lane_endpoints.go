@@ -66,7 +66,7 @@ var laneInputs = []struct {
 // configuration (infra-as-code/kubernetes/charts/superverse-platform/templates/_server-config.tpl)
 // in the cluster's namespace (NAMESPACE in cluster.py), and the Worker host is
 // what a container reaches the host as (HostFromContainers in
-// internal/projects/infra). scripts/check-test-lanes.py, part of
+// internal/dexai/projects/infra). scripts/check-test-lanes.py, part of
 // `make check-go-rules`, fails when one of them changes without the other.
 const (
 	kindDex          = "127.0.0.1:28811"

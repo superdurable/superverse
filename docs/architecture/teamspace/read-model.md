@@ -152,17 +152,17 @@ ID in `current_live`, names the owner type's Go fields (PascalCase, since those 
 have no JSON tags); such paths stay few, and each has a DAO integration test whose data
 is a value the Flow writes. Not-found is a sentinel and other errors wrap the
 operation. The pool and
-transaction helpers and the migrations live in `internal/platform/postgres`; DAOs import
+transaction helpers and the migrations live in `internal/comm/platform/postgres`; DAOs import
 only it and `internal/comm`.
 
 | Package | Tables and queries |
 |---|---|
-| `internal/tenancy/accountdao` | `accounts`, `login_sessions` |
-| `internal/tenancy/memberdao` | `team_space_members`, `project_members` (read-only): member lists, "the only owner of a Project", "an owner or builder of any Project" |
-| `internal/tenancy/teamspacedao` | `team_spaces`: a member's TeamSpaces, the overview |
-| `internal/tenancy/connectiondao` | The three connection tables ([connections.md](connections.md)) |
-| `internal/projects/projectdao` | `projects` with its Setup columns: a member's Projects, details, the authorization join |
-| `internal/delivery/deliverydao` | `releases`, `release_build_revisions`, `deployments`: lists, details, the Live Runs target join |
+| `internal/dexai/tenancy/accountdao` | `accounts`, `login_sessions` |
+| `internal/dexai/tenancy/memberdao` | `team_space_members`, `project_members` (read-only): member lists, "the only owner of a Project", "an owner or builder of any Project" |
+| `internal/dexai/tenancy/teamspacedao` | `team_spaces`: a member's TeamSpaces, the overview |
+| `internal/dexai/tenancy/connectiondao` | The three connection tables ([connections.md](connections.md)) |
+| `internal/dexai/projects/projectdao` | `projects` with its Setup columns: a member's Projects, details, the authorization join |
+| `internal/dexai/delivery/deliverydao` | `releases`, `release_build_revisions`, `deployments`: lists, details, the Live Runs target join |
 
 ## Synced tables
 

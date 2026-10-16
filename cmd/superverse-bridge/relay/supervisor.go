@@ -21,7 +21,7 @@ import (
 	"github.com/superdurable/superversev2/cmd/superverse-bridge/mcpserver"
 	"github.com/superdurable/superversev2/cmd/superverse-bridge/platform"
 	"github.com/superdurable/superversev2/cmd/superverse-bridge/state"
-	"github.com/superdurable/superversev2/internal/agents/remoteagent/bridgeapi"
+	"github.com/superdurable/superversev2/internal/dexai/agents/remoteagent/bridgeapi"
 )
 
 // Supervisor runs the relays of every binding in the state directory and

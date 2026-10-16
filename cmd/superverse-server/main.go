@@ -19,7 +19,7 @@ import (
 	"syscall"
 
 	"github.com/superdurable/superversev2/cmd/superverse-server/config"
-	"github.com/superdurable/superversev2/internal/bootstrap"
+	"github.com/superdurable/superversev2/internal/dexai/bootstrap"
 )
 
 // configFileVariable names the configuration files, comma separated, later

@@ -3,7 +3,7 @@
   "valid": true,
   "source": {
     "language": "go",
-    "path": "internal/agents/session/session_agent_flow.go"
+    "path": "internal/dexai/agents/session/session_agent_flow.go"
   },
   "flow": {
     "name": "SessionAgentFlow",

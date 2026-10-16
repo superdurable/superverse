@@ -14,7 +14,7 @@ image resets `PATH`.
 The platform's Session Agent, the provisioning of its instances and its
 Preview run in the trusted platform namespace and reach this container only
 through `sandboxd`, bound to one
-instance's workspace (`internal/agents/sandbox/workspace`). Generated code,
+instance's workspace (`internal/dexai/agents/sandbox/workspace`). Generated code,
 file changes and build commands run here.
 
 ## Toolchain and caches

@@ -82,10 +82,10 @@ enum FailureOwner {
 One owner for each part of the contract (review 8):
 
 - **Owner.** There is one Go closed set, `conversation.DeliveryOwner`
-  (`internal/agents/session/conversation/notification.go:256-260`), which PreviewFlow already
-  uses. `releases.FailureOwner` (`internal/delivery/releases/delivery_feedback.go:36`) is replaced
+  (`internal/dexai/agents/session/conversation/notification.go:256-260`), which PreviewFlow already
+  uses. `releases.FailureOwner` (`internal/dexai/delivery/releases/delivery_feedback.go:36`) is replaced
   by it in REMEDY: `releases` sits at a higher level than `conversation`, so it may import it. The
-  mapping `deliveryOwner` (`internal/agents/session_flow_service_feedback.go:135`) then
+  mapping `deliveryOwner` (`internal/dexai/agents/session_flow_service_feedback.go:135`) then
   disappears. `boundary.Enum` maps the one set to the protobuf `FailureOwner` once, and
   `make check-proto-enums` proves coverage.
 - **Remedy.** The remedy is declared only on the server, beside each failure code's message:
@@ -160,7 +160,7 @@ are the Live history of Tools ▸ Publishing and a folded History on the Live In
 
 ### Placement and bounds
 
-`internal/tenancy/slackrelay/recent_events.go` is a new file, the package's fifth non-test file.
+`internal/dexai/tenancy/slackrelay/recent_events.go` is a new file, the package's fifth non-test file.
 
 - `recentEvents` holds a ring of 50 entries per scope (`projectID/scope`), for at most 512
   scopes. The least recently written scope is evicted first.
@@ -221,8 +221,8 @@ The fates `STARTED_RUN` (with FlowID), `DELIVERED_TO_RUN` (with FlowID) and `FIL
 
 - `ConnectorService.ListRecentTriggerEvents(project_id, scope)` returns the scope's entries,
   newest first.
-- `internal/api` declares the port `RecentTriggerEvents` that it consumes, and
-  `internal/bootstrap` injects the relay.
+- `internal/dexai/api` declares the port `RecentTriggerEvents` that it consumes, and
+  `internal/dexai/bootstrap` injects the relay.
 - Authorization is the Project's: builder for Preview, operator for Live.
 - The panel is the Events view of the Runs column (Runs | Events), for Preview and Live, since
    removed the environment tab's menu (the current contract). It polls every 5 s while open; there is
@@ -231,7 +231,7 @@ The fates `STARTED_RUN` (with FlowID), `DELIVERED_TO_RUN` (with FlowID) and `FIL
 ### Tests
 
 The tests use no scripted receiver; an `httptest` handler standing in for the application is a
-forbidden substitute (review 9). They extend `internal/agents/slack_relay_integration_test.go`,
+forbidden substitute (review 9). They extend `internal/dexai/agents/slack_relay_integration_test.go`,
 whose scenario application is a real application with a real `sdkgo/webhooktrigger` receiver
 behind the lane's gateway. They cover:
 
@@ -244,7 +244,7 @@ behind the lane's gateway. They cover:
 - the byte truncation;
 - the 51st entry evicting the oldest;
 - no text in an entry;
-- the API authorization, in `internal/api`.
+- the API authorization, in `internal/dexai/api`.
 
 ## Publishing stages
 
@@ -255,7 +255,7 @@ the release and deployment Flows already record: `ReleaseBuildRevisionSnapshot.p
 `DeploymentSnapshot.phase_timings`, labelled by `components/publishing/timings/phase-labels.ts`.
 `lib/project/publishing/publish-stages.ts` declares the stages once, each with its phases. The
 backend freezes the configuration before it builds (FreezeReleaseBuildConfiguration runs first and
-its timing comes first, `internal/delivery/releases/README.md`), so Lock settings comes before
+its timing comes first, `internal/dexai/delivery/releases/README.md`), so Lock settings comes before
 Build; this corrects the prototype's order.
 
 | Stage | Phases and facts | Cancel |
@@ -328,7 +328,7 @@ Hosted build-log reads require hosted verification.
 - **Redaction.** Every line is redacted on the server before it is returned, as the Agent's build
   log tail is today: configured values of at least 8 bytes from the build revision's frozen
   configuration, longest first, then the Project's infrastructure names. The redactor moved from
-  `internal/agents/diagnostics` to `internal/projects/config` as `OutputRedaction`, so both reads
+  `internal/dexai/agents/diagnostics` to `internal/dexai/projects/config` as `OutputRedaction`, so both reads
   use one.
 - **Never stored.** The platform reads the builder's own log on each call; nothing is copied into a
   Flow, the read model or a file.
@@ -342,7 +342,7 @@ Hosted build-log reads require hosted verification.
 - **Cost.** Per replica the viewers of one page share one read and its result for 2 seconds, and
   a token bucket of `builds.logReadsPerSecond` (default 2, burst 4) bounds the reads it starts; a
   throttled provider read backs off per build from 4 seconds to a minute. Nothing is stored
-  ([deployments](../../../internal/delivery/deployments/README.md#build-logs)). The
+  ([deployments](../../../internal/dexai/delivery/deployments/README.md#build-logs)). The
   `GetLogEvents` quota, its source and date, and the number of viewed builds at which it binds are
   in [flow changes](flow-changes.md#api-additions).
 

@@ -57,12 +57,12 @@ def check_pins() -> tuple[str, str, str]:
     if pin(rf"^ARG DEXCLI_VERSION=({SEMVER})$", "sandbox/coding/Dockerfile", "coding image dexcli").group(1) != cli:
         raise DexVersionError("coding image dexcli version differs from the source-lock")
 
-    tools = read("internal/delivery/releases/build/hosted/Dockerfile.tools")
+    tools = read("internal/dexai/delivery/releases/build/hosted/Dockerfile.tools")
     hosted = dict(re.findall(r"(amd64|arm64)\) digest=([a-f0-9]{64})", tools))
     if any(hosted.get(architecture) != checksums["linux_" + architecture] for architecture in ("amd64", "arm64")):
         raise DexVersionError("hosted dexcli archive checksums differ from the installer")
     if (f"cli-v{cli}/dexcli_v{cli}_linux_" not in tools or f'io.superdurable.dexcli="{cli}"' not in tools or
-            f'labels.get("io.superdurable.dexcli") != "{cli}"' not in read("internal/delivery/releases/build/hosted/runner.py")):
+            f'labels.get("io.superdurable.dexcli") != "{cli}"' not in read("internal/dexai/delivery/releases/build/hosted/runner.py")):
         raise DexVersionError("hosted toolchain and admission do not match the dexcli pin")
 
     image = pin(rf'  image: \{{repository: docker.io/superdurable/dex-server, tag: "v({SEMVER})", digest: "(sha256:[a-f0-9]{{64}})"',

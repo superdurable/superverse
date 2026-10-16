@@ -3,7 +3,7 @@
   "valid": true,
   "source": {
     "language": "go",
-    "path": "internal/agents/sandbox/provision/sandbox_provision_flow.go"
+    "path": "internal/dexai/agents/sandbox/provision/sandbox_provision_flow.go"
   },
   "flow": {
     "name": "SandboxProvisionFlow",

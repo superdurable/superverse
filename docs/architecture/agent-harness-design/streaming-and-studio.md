@@ -158,7 +158,7 @@ enum prefix plus the persisted value.
 | `UpdateSessionModel` | model enum (`AGENT_MODEL_OPUS_5_5`, `AGENT_MODEL_SONNET_5_5`, `AGENT_MODEL_HAIKU_4_5`, `AGENT_MODEL_MOCK` where offered), `expected_revision` |
 | `InterruptAgent` | `turn`, taken from the Snapshot; a stale or no-op stop is refused as not admitted |
 
-- The conversion section of `internal/api/agent.go` maps domain values to typed protobuf;
+- The conversion section of `internal/dexai/api/agent.go` maps domain values to typed protobuf;
   the nested Agent enums map through `boundary.Enum` by their prefixed names
   (`ROLE_ASSISTANT`, `KIND_TOOL_PROGRESS`). Studio's `agent-view` projection maps them
   back to the shared UI's lowercase literals. Pending-approval arguments remain opaque

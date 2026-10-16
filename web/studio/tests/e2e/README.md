@@ -438,7 +438,7 @@ three-case acceptance gate.
 ## Mock model
 
 New Sessions on Local Kind and Native start on the mock model
-([runbook](../../../../internal/agents/README.md)), but the creation page
+([runbook](../../../../internal/dexai/agents/README.md)), but the creation page
 preselects Sonnet for a non-admin account, which needs the Claude key, so the specs of those
 lanes choose Mock explicitly; a real-model run is never automatic. A spec reads the
 Session's model from its Snapshot (`runsMockModel` in `support/mock/`).

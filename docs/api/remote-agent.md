@@ -5,7 +5,7 @@ credential; it does not select, activate or run an executor. The Session alone
 owns executor mode, epoch and current connection. The executor layer supplies activation,
 takeover, sync, reports, cancellation and the remote execution branch separately.
 The Bridge wire contract is generated neither from the business proto nor from
-Studio: its single owner is `internal/agents/remoteagent/bridgeapi`.
+Studio: its single owner is `internal/dexai/agents/remoteagent/bridgeapi`.
 
 ## Authentication and admission
 
@@ -130,8 +130,8 @@ use this read. SQL authentication and periodic liveness do not.
 The executor layer adds remote branching, fenced report admission and bounded
 handoff to the same Session. Its `RemoteInbox` Channel, existing interrupt/tool
 admission fields, Steps, RPCs, persistence and recovery are owned by the
-[Session inventory](../../internal/agents/session/README.md#executor-and-remote-turn-contract)
-and [typed domain seam](../../internal/agents/remoteexec/README.md).
+[Session inventory](../../internal/dexai/agents/session/README.md#executor-and-remote-turn-contract)
+and [typed domain seam](../../internal/dexai/agents/remoteexec/README.md).
 Connection rows authenticate credentials; they never confer executor authority.
 
 `SetSessionExecutor` is a Builder-authorized BFF command with the exact observed

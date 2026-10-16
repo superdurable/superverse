@@ -3,7 +3,7 @@
   "valid": true,
   "source": {
     "language": "go",
-    "path": "internal/delivery/releases/project_release_flow.go"
+    "path": "internal/dexai/delivery/releases/project_release_flow.go"
   },
   "flow": {
     "name": "ProjectReleaseFlow",

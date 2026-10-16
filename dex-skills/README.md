@@ -11,16 +11,16 @@ applications. The [Agent harness contract](../docs/architecture/agent-harness-de
   `connector_develop` subagent that builds or fixes one connector of the public
   connectors library in a worktree the platform prepared. It is adapted from the
   library's public contributor skill, and it is also the end of that subagent's
-  system prompt: `internal/agents/session/conversation` embeds a copy, which
+  system prompt: `internal/dexai/agents/session/conversation` embeds a copy, which
   `make generate-go` refreshes and `make check-generated` checks.
 
 ## How the Agent reads them
 
 1. The [Coding image](../sandbox/coding/Dockerfile) copies this directory to
    `/opt/superverse/dex-skills/` inside the Sandbox.
-2. [Repository context](../internal/agents/sandbox/workspace/git/repository_context.go)
+2. [Repository context](../internal/dexai/agents/sandbox/workspace/git/repository_context.go)
    advertises the App Builder entry path and includes the template's `AGENTS.md`
-   file map. [Session prompt preparation](../internal/agents/session/session_workspace.go)
+   file map. [Session prompt preparation](../internal/dexai/agents/session/session_workspace.go)
    appends this context to the Agent's system prompt. Skill contents are not
    automatically inserted.
 3. The Agent reads relevant files on demand with its file tools, which treat

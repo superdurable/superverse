@@ -27,8 +27,8 @@ import (
 	"time"
 
 	"github.com/superdurable/superversev2/cmd/superverse-bridge/trace"
-	"github.com/superdurable/superversev2/internal/agents/remoteagent/bridgeapi"
 	"github.com/superdurable/superversev2/internal/comm"
+	"github.com/superdurable/superversev2/internal/dexai/agents/remoteagent/bridgeapi"
 )
 
 // SessionEnvironment names the Orca session whose tools mcp serves; Codex

@@ -801,7 +801,7 @@ by this topic.
 
 ### SessionWorkspaceFlow
 
-Contract: [the Session workspace README](../../../internal/agents/sandbox/sessionworkspace/README.md).
+Contract: [the Session workspace README](../../../internal/dexai/agents/sandbox/sessionworkspace/README.md).
 
 - **Identity.** FlowID `session-workspace-<projectID>`, for example `session-workspace-a7k2`
   (`flowid.SessionWorkspaceFlowID`), one execution per Project. The Session's first workspace
@@ -829,7 +829,7 @@ Contract: [the Session workspace README](../../../internal/agents/sandbox/sessio
 
 ### SandboxProvisionFlow
 
-Contract: [the provisioning README](../../../internal/agents/sandbox/provision/README.md).
+Contract: [the provisioning README](../../../internal/dexai/agents/sandbox/provision/README.md).
 
 - **Identity.** FlowID `sandbox-provision-<projectID>-<workspaceRequestID>`, for example
   `sandbox-provision-a7k2-ws-41` (`flowid.SandboxProvisionFlowID`); one execution is one
@@ -854,7 +854,7 @@ Contract: [the provisioning README](../../../internal/agents/sandbox/provision/R
 
 ### PreviewFlow
 
-Contract: [the Preview README](../../../internal/agents/sandbox/preview/README.md).
+Contract: [the Preview README](../../../internal/dexai/agents/sandbox/preview/README.md).
 
 - **Identity.** FlowID `preview-<projectID>`, for example `preview-a7k2`
   (`flowid.PreviewFlowID`), the Project's one Preview, started on its first Preview command in
@@ -921,7 +921,7 @@ each start, record both paths. No placeholder Pod, image pre-pull or warm pool i
 | Server | 250m / 256 MiB to 2 CPU / 2 GiB | `server.resources` |
 | Studio | 100m / 192 MiB to 1 CPU / 1 GiB | `studio.resources` |
 | Sandbox controller | 25m / 64 MiB to 500m / 256 MiB | `sandboxController.resources` |
-| Live Project Dex | 100m / 256 MiB to 2 CPU / 2 GiB | `internal/projects/infra/kube/resources.go` |
+| Live Project Dex | 100m / 256 MiB to 2 CPU / 2 GiB | `internal/dexai/projects/infra/kube/resources.go` |
 | Deployed application default | 100m / 128 MiB to 2 CPU / 1 GiB | `live_serving_application.go` |
 | Platform nodes | t4g.large on demand (test and staging); gVisor Sandbox nodes and, apart from them, gVisor Live application nodes from Karpenter, Spot backed by On-Demand; ceilings per environment in `node_pool_limits`  | `environments/{test,staging}/cloud.tfvars`, `terraform/cloud/karpenter.tf` and the chart's node pools |
 
@@ -1014,11 +1014,11 @@ change needs are named in [composition](composition.md#local-lanes). Assertions 
 retained state and single external effects, never an unchanged Run.
 
 The tests that run each Flow, and the scenarios no real-dependency test runs yet, are listed
-in the package READMEs of [the Session workspace](../../../internal/agents/sandbox/sessionworkspace/README.md#tests),
-[the provisioning](../../../internal/agents/sandbox/provision/README.md#tests),
-[the Preview](../../../internal/agents/sandbox/preview/README.md#tests),
-[the Kubernetes instances](../../../internal/agents/sandbox/kube/README.md) and
-[the Docker instances](../../../internal/agents/sandbox/docker/README.md). The coverage they
+in the package READMEs of [the Session workspace](../../../internal/dexai/agents/sandbox/sessionworkspace/README.md#tests),
+[the provisioning](../../../internal/dexai/agents/sandbox/provision/README.md#tests),
+[the Preview](../../../internal/dexai/agents/sandbox/preview/README.md#tests),
+[the Kubernetes instances](../../../internal/dexai/agents/sandbox/kube/README.md) and
+[the Docker instances](../../../internal/dexai/agents/sandbox/docker/README.md). The coverage they
 keep, by area:
 
 - **Identity and admission.** A Session start creates no workspace Flow and no provisioning;
@@ -1070,7 +1070,7 @@ keep, by area:
 
 ## Documentation
 
-This document owns the Sandbox design; the package READMEs of `internal/agents/sandbox` and
+This document owns the Sandbox design; the package READMEs of `internal/dexai/agents/sandbox` and
 its `sessionworkspace`, `provision`, `preview`, `kube`, `docker` and `workspace` packages own
 the per-Flow contracts and the file tables. The commands keep their own READMEs, which carry
 exact flags and JSON shapes: the

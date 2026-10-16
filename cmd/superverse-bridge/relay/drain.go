@@ -15,7 +15,7 @@ import (
 
 	"github.com/superdurable/superversev2/cmd/superverse-bridge/mcpserver"
 	"github.com/superdurable/superversev2/cmd/superverse-bridge/state"
-	"github.com/superdurable/superversev2/internal/agents/remoteagent/bridgeapi"
+	"github.com/superdurable/superversev2/internal/dexai/agents/remoteagent/bridgeapi"
 )
 
 // The answers to an MCP call while the relay does not accept new work.

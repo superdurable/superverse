@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Derives the stable FlowIDs, server-assigned business IDs and Start RequestID fingerprints of the platform Flows, and checks the formats of identifiers that callers supply.
 
-Callers: `cmd/tools/app-manifest`, `internal/agents/**` (15), `internal/api/**` (3), `internal/app/appmanifest`, `internal/comm/dexflow/dexflowtest`, `internal/delivery/**` (4), `internal/platform/**` (3), `internal/projects/**` (9), `internal/studio/**` (3) and `internal/tenancy/**` (4) import this package.
+Callers: `cmd/tools/app-manifest`, `internal/comm/**` (4) and `internal/dexai/**` (39) import this package.
 
 Dependencies: it imports `internal/comm`.
 
@@ -11,15 +11,8 @@ Dependencies: it imports `internal/comm`.
 flowchart LR
   self["internal/comm/flowid"]
   c0["cmd/tools/app-manifest"] --> self
-  c1["internal/agents/** (15)"] --> self
-  c2["internal/api/** (3)"] --> self
-  c3["internal/app/appmanifest"] --> self
-  c4["internal/comm/dexflow/dexflowtest"] --> self
-  c5["internal/delivery/** (4)"] --> self
-  c6["internal/platform/** (3)"] --> self
-  c7["internal/projects/** (9)"] --> self
-  c8["internal/studio/** (3)"] --> self
-  c9["internal/tenancy/** (4)"] --> self
+  c1["internal/comm/** (4)"] --> self
+  c2["internal/dexai/** (39)"] --> self
   self --> d0["internal/comm"]
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->

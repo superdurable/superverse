@@ -32,4 +32,4 @@ def local_image(name):
 
 def names_for(environment):
     """Static resource names of one environment, shared with Go and Terraform."""
-    return json.loads((ROOT / "internal/platform/deploymentnames/environments.json").read_text())[environment]
+    return json.loads((ROOT / "internal/comm/platform/deploymentnames/environments.json").read_text())[environment]

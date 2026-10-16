@@ -20,8 +20,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/superdurable/superversev2/internal/agents/remoteagent/bridgeapi"
 	"github.com/superdurable/superversev2/internal/comm"
+	"github.com/superdurable/superversev2/internal/dexai/agents/remoteagent/bridgeapi"
 )
 
 const (

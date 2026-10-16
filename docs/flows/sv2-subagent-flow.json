@@ -3,7 +3,7 @@
   "valid": true,
   "source": {
     "language": "go",
-    "path": "internal/agents/session/subagent/subagent_flow.go"
+    "path": "internal/dexai/agents/session/subagent/subagent_flow.go"
   },
   "flow": {
     "name": "SubagentFlow",

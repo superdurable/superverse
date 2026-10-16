@@ -307,7 +307,7 @@ so no reason is asked for.
 image reuse for an unchanged commit today (`project_release_flow_phases.go:131-140` and `:257`,
 where each build revision records its own provider operation and image). The builder has no
 skip-when-image-exists path; only its BuildKit cache mounts speed up a rebuild
-(`internal/delivery/releases/build/README.md`, the cache sections). Reusing a READY image of the
+(`internal/dexai/delivery/releases/build/README.md`, the cache sections). Reusing a READY image of the
 same commit and build profile is a possible later optimization, outside the current design.
 
 ## Tools ▸ Publishing

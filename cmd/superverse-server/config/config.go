@@ -20,11 +20,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/superdurable/superversev2/internal/agents/session/conversation"
-	"github.com/superdurable/superversev2/internal/platform/deploymentnames"
-	"github.com/superdurable/superversev2/internal/platform/eventqueue"
-	"github.com/superdurable/superversev2/internal/platform/repohost"
-	"github.com/superdurable/superversev2/internal/projects/infra"
+	"github.com/superdurable/superversev2/internal/comm/platform/deploymentnames"
+	"github.com/superdurable/superversev2/internal/comm/platform/eventqueue"
+	"github.com/superdurable/superversev2/internal/comm/platform/repohost"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/dexai/projects/infra"
 	"gopkg.in/yaml.v3"
 )
 

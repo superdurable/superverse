@@ -4,7 +4,7 @@ Purpose: Keeps the Bridge's local state in a 0700 directory of atomically writte
 
 Callers: `cmd/superverse-bridge`, `cmd/superverse-bridge/mcpserver` and `cmd/superverse-bridge/relay`.
 
-Dependencies: `internal/agents/remoteagent/bridgeapi` and `internal/comm`; it calls no remote API.
+Dependencies: `internal/dexai/agents/remoteagent/bridgeapi` and `internal/comm`; it calls no remote API.
 
 The directory is `--state-dir`, else `$SUPERVERSE_BRIDGE_STATE_DIR`, else `superverse-bridge` under
 the user's configuration directory (`~/Library/Application Support` on macOS, `~/.config` on Linux).

@@ -4,7 +4,7 @@ Purpose: Calls the remote agent endpoint as one Bridge connection: pair, activat
 
 Callers: `cmd/superverse-bridge` and `cmd/superverse-bridge/relay`.
 
-Dependencies: `internal/agents/remoteagent/bridgeapi` and `internal/comm`; it calls the remote agent endpoint over HTTPS.
+Dependencies: `internal/dexai/agents/remoteagent/bridgeapi` and `internal/comm`; it calls the remote agent endpoint over HTTPS.
 
 - The endpoint is an origin; it must be HTTPS unless it is a loopback address (the Native lane).
 - Every request body is checked against its `bridgeapi` limit (and a report against

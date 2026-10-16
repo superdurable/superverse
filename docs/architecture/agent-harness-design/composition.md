@@ -39,8 +39,8 @@ Other names describe the domain they own (Session identity, tool input schema, A
 
 ```mermaid
 flowchart LR
-  api["internal/api"] --> service
-  subgraph agents["internal/agents: SessionFlowService"]
+  api["internal/dexai/api"] --> service
+  subgraph agents["internal/dexai/agents: SessionFlowService"]
     service["SessionFlowService"]
   end
   service --> pc["ProjectFlowClient"]
@@ -86,28 +86,28 @@ package is full goes into a new package split along a responsibility seam.
 
 | Package | Owns |
 |---|---|
-| `internal/agents` | The Session Service: `SessionFlowService`, in the files `session_flow_service.go` (the type and its reads), `_workspace.go` (the workspace commands, the start and observation of a provisioning and its report, the workspace Flow's report to the Session, lending the instance to the Preview), `_preview.go`, `_feedback.go` (delivery feedback: the deployment request of a turn's pushed commit, the Preview's outcome and the Live failures as notifications), `_cleanup.go` (a deleting Project's pass and its release by label), `_project.go`, `_configuration.go`, `_tasks.go` (subagents, background command watches and notification coordination), `_connectors.go` (connector contributions) and `_issues.go` (platform issue reports) |
-| `internal/agents/session` | `SessionAgentFlow`, its client, bootstrap, `SessionAgentFlowDependency`, and the primitive-bound helpers |
-| `internal/agents/session/agentloop` | Pure loop decisions and the static tool catalog |
-| `internal/agents/session/conversation` | Entries, request assembly, notifications and the embedded prompts |
-| `internal/agents/session/modelprovider` | The Claude adapter and the `ModelProfile` table ([context management](context-management.md)) |
-| `internal/agents/session/toolinput` | JSON Schemas, generated input types and strict decoding |
-| `internal/agents/session/sandboxtools` | Sandbox tool execution; never imports `session` |
-| `internal/agents/session/agenttasks` | Subagent and background-command records, task IDs, kinds, limits and notification types shared by the Session and the SubagentFlow, and `AgentTaskLauncher` |
-| `internal/agents/session/subagent` | `SubagentFlow`, its client, bootstrap, `SubagentFlowDependency`, context, tools, outcome and the connector contribution of a develop subagent |
-| `internal/agents/session/backgroundcommand` | `BackgroundCommandFlow`, the SubFlow that watches one background command in the ledger, its client (the stop of a watch) and bootstrap |
-| `internal/agents/session/contribution` | `ConnectorContributionFlow`, its client, bootstrap and `ConnectorContributionFlowDependency` |
-| `internal/agents/platformissue` | `PlatformIssueFlow`, its client, bootstrap and `PlatformIssueFlowDependency` |
-| `internal/agents/sandbox` | `sandbox.InstanceProvider`, `Instance`, `Resources` and the typed refusals of provisioning; declares no Flow |
-| `internal/agents/sandbox/sessionworkspace` | `SessionWorkspaceFlow`, its client, bootstrap, `SessionWorkspaceFlowDependency` and the reclamation of an instance |
-| `internal/agents/sandbox/provision` | `SandboxProvisionFlow`, its client, bootstrap and `SandboxProvisionFlowDependency` |
-| `internal/agents/sandbox/preview` | `PreviewFlow`, its client, `PreviewFlowDependency` and `PreviewConfiguration`; no bootstrap, because the Preview holds no process-local resource |
-| `internal/agents/sandbox/kube`, `internal/agents/sandbox/docker` | The Kubernetes and the Docker `InstanceProvider` ([provider packages](#provider-packages)) |
-| `internal/agents/sandbox/workspace` | The pooled Sandbox transport and the Git and Preview operations shared by Agent and Sandbox; transport only, imports no Flow client |
-| `internal/agents/diagnostics` | The read-only platform tools' server-side reader |
-| `internal/platform/dockerapi` | The Docker Engine API on its unix socket as raw REST, built like `kubeapi`; only the Docker implementation packages import it |
-| `internal/platform/githubissues`, `internal/platform/connectorlibrary` | The issue repository of platform faults, and the server's connectors library with the upstream pull request client ([connectors](connectors.md)) |
-| `internal/bootstrap` | The composition root; `kubernetes.go` and `docker.go` build the runtime-specific providers |
+| `internal/dexai/agents` | The Session Service: `SessionFlowService`, in the files `session_flow_service.go` (the type and its reads), `_workspace.go` (the workspace commands, the start and observation of a provisioning and its report, the workspace Flow's report to the Session, lending the instance to the Preview), `_preview.go`, `_feedback.go` (delivery feedback: the deployment request of a turn's pushed commit, the Preview's outcome and the Live failures as notifications), `_cleanup.go` (a deleting Project's pass and its release by label), `_project.go`, `_configuration.go`, `_tasks.go` (subagents, background command watches and notification coordination), `_connectors.go` (connector contributions) and `_issues.go` (platform issue reports) |
+| `internal/dexai/agents/session` | `SessionAgentFlow`, its client, bootstrap, `SessionAgentFlowDependency`, and the primitive-bound helpers |
+| `internal/dexai/agents/session/agentloop` | Pure loop decisions and the static tool catalog |
+| `internal/dexai/agents/session/conversation` | Entries, request assembly, notifications and the embedded prompts |
+| `internal/dexai/agents/session/modelprovider` | The Claude adapter and the `ModelProfile` table ([context management](context-management.md)) |
+| `internal/dexai/agents/session/toolinput` | JSON Schemas, generated input types and strict decoding |
+| `internal/dexai/agents/session/sandboxtools` | Sandbox tool execution; never imports `session` |
+| `internal/dexai/agents/session/agenttasks` | Subagent and background-command records, task IDs, kinds, limits and notification types shared by the Session and the SubagentFlow, and `AgentTaskLauncher` |
+| `internal/dexai/agents/session/subagent` | `SubagentFlow`, its client, bootstrap, `SubagentFlowDependency`, context, tools, outcome and the connector contribution of a develop subagent |
+| `internal/dexai/agents/session/backgroundcommand` | `BackgroundCommandFlow`, the SubFlow that watches one background command in the ledger, its client (the stop of a watch) and bootstrap |
+| `internal/dexai/agents/session/contribution` | `ConnectorContributionFlow`, its client, bootstrap and `ConnectorContributionFlowDependency` |
+| `internal/dexai/agents/platformissue` | `PlatformIssueFlow`, its client, bootstrap and `PlatformIssueFlowDependency` |
+| `internal/dexai/agents/sandbox` | `sandbox.InstanceProvider`, `Instance`, `Resources` and the typed refusals of provisioning; declares no Flow |
+| `internal/dexai/agents/sandbox/sessionworkspace` | `SessionWorkspaceFlow`, its client, bootstrap, `SessionWorkspaceFlowDependency` and the reclamation of an instance |
+| `internal/dexai/agents/sandbox/provision` | `SandboxProvisionFlow`, its client, bootstrap and `SandboxProvisionFlowDependency` |
+| `internal/dexai/agents/sandbox/preview` | `PreviewFlow`, its client, `PreviewFlowDependency` and `PreviewConfiguration`; no bootstrap, because the Preview holds no process-local resource |
+| `internal/dexai/agents/sandbox/kube`, `internal/dexai/agents/sandbox/docker` | The Kubernetes and the Docker `InstanceProvider` ([provider packages](#provider-packages)) |
+| `internal/dexai/agents/sandbox/workspace` | The pooled Sandbox transport and the Git and Preview operations shared by Agent and Sandbox; transport only, imports no Flow client |
+| `internal/dexai/agents/diagnostics` | The read-only platform tools' server-side reader |
+| `internal/comm/platform/dockerapi` | The Docker Engine API on its unix socket as raw REST, built like `kubeapi`; only the Docker implementation packages import it |
+| `internal/comm/platform/githubissues`, `internal/comm/platform/connectorlibrary` | The issue repository of platform faults, and the server's connectors library with the upstream pull request client ([connectors](connectors.md)) |
+| `internal/dexai/bootstrap` | The composition root; `kubernetes.go` and `docker.go` build the runtime-specific providers |
 
 `session` never imports `subagent`: the Session starts and stops subagents through the narrow port
 `AgentTaskLauncher`, which the Service implements. `subagent` imports neither `session` nor `agents`; it
@@ -169,7 +169,7 @@ command, the provisioning's report, the retained read and the end at the Project
 borrows from the Session bootstrap and does not close, and returns the `SandboxProvisionFlowClient`: the
 idempotent start, and the retained read that reports a stopped engine execution as failed
 `WORKSPACE_EXECUTION_STOPPED`. `PreviewFlow` has no bootstrap type, because it holds no process-local
-resource of its own: `internal/bootstrap` builds the Flow with the shared instance provider and
+resource of its own: `internal/dexai/bootstrap` builds the Flow with the shared instance provider and
 capabilities, the deployment names, the public route settings (`infra.PublicRoutes`; the instance provider
 publishes the route), the Project client, its dependency and a `PreviewConfiguration`
 (AppManifest registration, configuration pins and grant generations in the Project's Live storage), and the
@@ -212,19 +212,19 @@ uses. The Flow's contract, limits and Steps are in [subagents](subagents.md).
 
 | Interface | Declared in | Methods | Implemented by | Consumer |
 |---|---|---|---|---|
-| `SessionAgentFlowDependency` | `internal/agents/session` | `AdmitSession`, `ProvisionWorkspace`, `ReclaimWorkspace`, `ObserveWorkspace`, `NotifyPreviewWorkspace`, `RequestPreviewDeployment`, `ReportPlatformIssue`, `StopBackgroundCommandWatch`, and the embedded `AgentTaskLauncher` | `SessionFlowService` | `SessionAgentFlow` |
-| `AgentTaskLauncher` | `internal/agents/session/agenttasks` | `StartSubagent` for an admitted record, `StopSubagent` | `SessionFlowService` (`session_flow_service_tasks.go`) | `SessionAgentFlow` Steps `ExecuteTool` (`start_agent`, `stop_task`) and `InterruptAgent` |
-| `SubagentFlowDependency` | `internal/agents/session/subagent` | `AdmitSubagent`, `RefreshSubagentWorkspace`, `ReportSubagentOutcome` | `SessionFlowService` (`session_flow_service_tasks.go`) | `SubagentFlow` |
-| `SessionWorkspaceFlowDependency` | `internal/agents/sandbox/sessionworkspace` | `StartProvisioning`, `ObserveProvisioning`, `ReleasePreviewInstance` (the Preview's `reclaim`), `ReportWorkspaceOutcome` (the Session RPC of that name) | `SessionFlowService` (`session_flow_service_workspace.go`) | `SessionWorkspaceFlow` Steps `ProvisionInstance`, `AwaitProvisioningOutcome`, `ReclaimInstance` and `ReportToSession` |
-| `SandboxProvisionFlowDependency` | `internal/agents/sandbox/provision` | `ReportProvisionOutcome`, the workspace Flow RPC of that name | `SessionFlowService` | `SandboxProvisionFlow` |
-| `ConnectorContributionFlowDependency` | `internal/agents/session/contribution` | `AdmitConnectorContribution`, `ReportConnectorEvent` | `SessionFlowService` (`session_flow_service_connectors.go`) | `ConnectorContributionFlow` |
-| `PlatformIssueFlowDependency` | `internal/agents/platformissue` | `EnsureIssue`, `LabelIssue` | `githubissues` (the issue repository) | `PlatformIssueFlow` Steps `EnsurePlatformIssue` and `LabelPlatformIssue` |
-| `PreviewFlowDependency` | `internal/agents/sandbox/preview` | `AcquireSessionWorkspace` (ready-only for a deployment) and `ReportPreviewOutcome`, the Preview's outcome as a notification | `SessionFlowService` | `PreviewFlow` Steps `AcquireSessionWorkspace` and `NotifyPreviewOutcome` |
-| `SessionLifecycle` | `internal/projects` | `StartForProject(ctx, project)`, `CleanupProjectSession(ctx, projectID)` | `SessionFlowService` | `ProjectFlow` |
-| `PreviewReader` | `internal/projects/config` | `ReadPreviewTarget(ctx, projectID)` | `SessionFlowService` | The Preview-scope configuration read |
+| `SessionAgentFlowDependency` | `internal/dexai/agents/session` | `AdmitSession`, `ProvisionWorkspace`, `ReclaimWorkspace`, `ObserveWorkspace`, `NotifyPreviewWorkspace`, `RequestPreviewDeployment`, `ReportPlatformIssue`, `StopBackgroundCommandWatch`, and the embedded `AgentTaskLauncher` | `SessionFlowService` | `SessionAgentFlow` |
+| `AgentTaskLauncher` | `internal/dexai/agents/session/agenttasks` | `StartSubagent` for an admitted record, `StopSubagent` | `SessionFlowService` (`session_flow_service_tasks.go`) | `SessionAgentFlow` Steps `ExecuteTool` (`start_agent`, `stop_task`) and `InterruptAgent` |
+| `SubagentFlowDependency` | `internal/dexai/agents/session/subagent` | `AdmitSubagent`, `RefreshSubagentWorkspace`, `ReportSubagentOutcome` | `SessionFlowService` (`session_flow_service_tasks.go`) | `SubagentFlow` |
+| `SessionWorkspaceFlowDependency` | `internal/dexai/agents/sandbox/sessionworkspace` | `StartProvisioning`, `ObserveProvisioning`, `ReleasePreviewInstance` (the Preview's `reclaim`), `ReportWorkspaceOutcome` (the Session RPC of that name) | `SessionFlowService` (`session_flow_service_workspace.go`) | `SessionWorkspaceFlow` Steps `ProvisionInstance`, `AwaitProvisioningOutcome`, `ReclaimInstance` and `ReportToSession` |
+| `SandboxProvisionFlowDependency` | `internal/dexai/agents/sandbox/provision` | `ReportProvisionOutcome`, the workspace Flow RPC of that name | `SessionFlowService` | `SandboxProvisionFlow` |
+| `ConnectorContributionFlowDependency` | `internal/dexai/agents/session/contribution` | `AdmitConnectorContribution`, `ReportConnectorEvent` | `SessionFlowService` (`session_flow_service_connectors.go`) | `ConnectorContributionFlow` |
+| `PlatformIssueFlowDependency` | `internal/dexai/agents/platformissue` | `EnsureIssue`, `LabelIssue` | `githubissues` (the issue repository) | `PlatformIssueFlow` Steps `EnsurePlatformIssue` and `LabelPlatformIssue` |
+| `PreviewFlowDependency` | `internal/dexai/agents/sandbox/preview` | `AcquireSessionWorkspace` (ready-only for a deployment) and `ReportPreviewOutcome`, the Preview's outcome as a notification | `SessionFlowService` | `PreviewFlow` Steps `AcquireSessionWorkspace` and `NotifyPreviewOutcome` |
+| `SessionLifecycle` | `internal/dexai/projects` | `StartForProject(ctx, project)`, `CleanupProjectSession(ctx, projectID)` | `SessionFlowService` | `ProjectFlow` |
+| `PreviewReader` | `internal/dexai/projects/config` | `ReadPreviewTarget(ctx, projectID)` | `SessionFlowService` | The Preview-scope configuration read |
 | `repositoryContextReader` | Each consuming package (`session`, `subagent`) | `RepositoryContext(ctx, lease)` | `*workspace.Capabilities` | `SessionAgentFlow` and `SubagentFlow` |
 | `ProjectDiagnosticsReader` | Each consuming package (`session`, `subagent`) | `ReadDiagnostics(ctx, identity, call)` | `*diagnostics.ProjectDiagnostics` | The read-only platform tools of the Session and of subagents |
-| `releases.DeliveryFeedback` | `internal/delivery/releases` | `ReportDeliveryFailure(ctx, DeliveryFailure)` | `SessionFlowService` (`session_flow_service_feedback.go`) | `ProjectReleaseFlow` and `ProjectDeployFlow` Steps `NotifyReleaseFailure` and `NotifyDeploymentFailure` |
+| `releases.DeliveryFeedback` | `internal/dexai/delivery/releases` | `ReportDeliveryFailure(ctx, DeliveryFailure)` | `SessionFlowService` (`session_flow_service_feedback.go`) | `ProjectReleaseFlow` and `ProjectDeployFlow` Steps `NotifyReleaseFailure` and `NotifyDeploymentFailure` |
 
 Consumers declare the interfaces they use, so `subagent` needs no import of `session`; one implementation
 satisfies both declarations of a shared port. Every `SessionAgentFlowDependency` method is called from a Step of the Session and never from the Sandbox
@@ -307,7 +307,7 @@ Operations, by file:
   [reads](#reads-preview-configuration-and-deletion).
 - **Cleanup (`_cleanup.go`).** See [reads](#reads-preview-configuration-and-deletion).
 
-`git.HostCredentials` (`internal/agents/sandbox/workspace/git/credentials.go`) mints Git credentials
+`git.HostCredentials` (`internal/dexai/agents/sandbox/workspace/git/credentials.go`) mints Git credentials
 over the active `repohost.Host`, GitHub or the local Git host. `RepositoryCredential`
 requires a repository of the host's configured installation, mints a short-lived token for exactly that
 repository and caches it in memory per repository until five minutes before expiry, with at most 256
@@ -316,10 +316,10 @@ repository uses a second client for its own installation ([connectors](connector
 
 ## Bootstrap wiring
 
-`internal/bootstrap` composes the Flow bootstraps, Flow clients and Services into the server. It receives
+`internal/dexai/bootstrap` composes the Flow bootstraps, Flow clients and Services into the server. It receives
 the validated [configuration](#configuration), `composition.go` builds the providers and each domain in
 order, and `serve.go` runs the listeners. Configuration that is missing or invalid fails before any
-listener starts. In outline (`internal/bootstrap/composition.go`):
+listener starts. In outline (`internal/dexai/bootstrap/composition.go`):
 
 ```go
 sessionService := &agents.SessionFlowService{Projects: projectClient, Logger: logger}
@@ -383,7 +383,7 @@ range and combination, and the package README is the reference for every key: it
 - **Loading.** `cmd/superverse-server` reads `SUPERVERSE_CONFIG_FILE`, a comma-separated list of YAML
   files applied in order, later files overriding earlier ones. Decoding is strict: an unknown key, an
   out-of-range value or a forbidden combination stops the server before any listener starts. Only
-  `cmd/superverse-server`, `cmd/tools/check-config` and `internal/bootstrap` import the package, which
+  `cmd/superverse-server`, `cmd/tools/check-config` and `internal/dexai/bootstrap` import the package, which
   `scripts/check-package-layers.py` enforces.
 - **Secrets stay in the environment.** The Claude API key, the GitHub App private key, the cookie signing
   key, AWS credentials, the local builder token and the local Git signing key come from the server's
@@ -447,21 +447,21 @@ binary ([context management](context-management.md#mock-model-for-tests)).
 ## Repository host
 
 Every Git repository operation of the platform goes through `repohost.Host` in
-`internal/platform/repohost`: managed repositories (create, find, archive, read, template
+`internal/comm/platform/repohost`: managed repositories (create, find, archive, read, template
 initialization), file and commit reads, release commit validation, and the repository credential, clone
 URL and credential scope that a Sandbox or the builder uses. Its errors are typed and host-independent
 (repository not found or unreadable, commit unreachable, outcome unknown, permission denied), so failure
 classification does not depend on the host. The key `repohost` selects the implementation, and
-`internal/bootstrap` injects it into ProjectSetupFlow, ProjectFlow, ProjectReleaseFlow, the Preview
+`internal/dexai/bootstrap` injects it into ProjectSetupFlow, ProjectFlow, ProjectReleaseFlow, the Preview
 configuration, the release API and the Git credentials.
 
 | Implementation | Package | Profiles |
 |---|---|---|
-| GitHub | `internal/platform/repohost/github` | hosted environments and `local-kind-acceptance.yaml` |
-| Local Git host | `internal/platform/repohost/localgit` | `local-kind.yaml` and `native.yaml` |
+| GitHub | `internal/comm/platform/repohost/github` | hosted environments and `local-kind-acceptance.yaml` |
+| Local Git host | `internal/comm/platform/repohost/localgit` | `local-kind.yaml` and `native.yaml` |
 
 - **GitHub App authentication** (the App JWT, installation tokens and the HTTP client) lives in
-  `internal/platform/githubapp`, shared by the GitHub host, platform issue reporting and connector pull
+  `internal/comm/platform/githubapp`, shared by the GitHub host, platform issue reporting and connector pull
   requests.
 - **The local Git host** runs inside the server process, like the mock model, so Native needs no
   extra deployment. It is pure Go (go-git), because the server image has no `git`:
@@ -488,10 +488,10 @@ A capability with several implementations has one shape:
 
 - the parent package holds only the interface, value types and typed errors;
 - each implementation is its own sub-package, such as `x/local`, `x/hosted`, `x/github` or `x/localgit`;
-- callers import only the parent, and `internal/bootstrap` is the only production importer of an
+- callers import only the parent, and `internal/dexai/bootstrap` is the only production importer of an
   implementation: it selects, builds and injects it (a test may import the implementation it exercises);
 - an implementation never imports another except the edges `scripts/check-package-layers.py` records; a
-  shared helper such as `internal/platform/githubapp` is its own package.
+  shared helper such as `internal/comm/platform/githubapp` is its own package.
 
 `scripts/check-package-layers.py` enforces the last two rules. Its recorded edges are the Sandbox and Live
 serving implementations, which build on the project infrastructure of their runtime (`sandbox/kube` and
@@ -500,19 +500,19 @@ Kubernetes test fixture, which composes `infra/kube/local`.
 
 | Capability | Interface | Implementations |
 |---|---|---|
-| Repository host | `internal/platform/repohost` | `github`, `localgit` |
-| Release builder | `internal/delivery/releases/build` | `build/local`, `build/hosted` |
+| Repository host | `internal/comm/platform/repohost` | `github`, `localgit` |
+| Release builder | `internal/dexai/delivery/releases/build` | `build/local`, `build/hosted` |
 | Sandbox instances | `sandbox.InstanceProvider` | `sandbox/kube`, `sandbox/docker` |
-| Project infrastructure | the role interfaces `Storage`, `Execution`, `Grants`, `Cleanup`, `Connections` and `Redactor` in `internal/projects/infra` | `infra/kube` (backends `infra/kube/local` and `infra/kube/hosted`), `infra/docker` |
+| Project infrastructure | the role interfaces `Storage`, `Execution`, `Grants`, `Cleanup`, `Connections` and `Redactor` in `internal/dexai/projects/infra` | `infra/kube` (backends `infra/kube/local` and `infra/kube/hosted`), `infra/docker` |
 | Live serving and application diagnostics | `deployments.Serving` | `deployments/kube`, `deployments/docker` |
 
 Two axes are kept apart: the runtime where workloads run (Kubernetes or Docker) and the backend that stores
 and executes (MinIO and Temporal start-dev, or S3, Temporal Cloud and IAM). Local Kind is Kubernetes with
 local backends, AWS is Kubernetes with hosted backends, and Local Native is Docker with local backends.
 The `kube` implementations of the Sandbox instances and Live serving build on `infra/kube` and the `docker`
-ones on `infra/docker`, and only `internal/bootstrap` imports an implementation in production. The Docker
+ones on `infra/docker`, and only `internal/dexai/bootstrap` imports an implementation in production. The Docker
 implementations share one raw REST client of the
-Docker Engine API, `internal/platform/dockerapi`, as the Kubernetes ones share `kubeapi`. Persisted references
+Docker Engine API, `internal/comm/platform/dockerapi`, as the Kubernetes ones share `kubeapi`. Persisted references
 keep their JSON keys when their Go fields take runtime-neutral names, and the Docker objects fill them by the
 identity mapping of the Local Native decision (0016), whose Sandbox part is in
 [sandbox](sandbox.md#instance-model). `objectstore` (one API for MinIO and S3) has a single implementation
@@ -543,7 +543,7 @@ and keeps its flat shape.
   15 seconds after a replacement starts (`preStop`), so Dex reaches the new Worker before the old one
   stops.
 - Kubernetes code lives only in the Kubernetes packages: only `kubeapi`, `infra/kube` (with its
-  sub-packages), `sandbox/kube`, `deployments/kube` and `internal/bootstrap/kubernetes.go` may import
+  sub-packages), `sandbox/kube`, `deployments/kube` and `internal/dexai/bootstrap/kubernetes.go` may import
   `kubeapi`, and tests that use `kubeapitest` live there too; `scripts/check-package-layers.py` enforces it.
   Likewise only `dockerapi`, `infra/docker` (with its test fixture), `sandbox/docker` and
   `deployments/docker` import the Docker Engine API client.
@@ -645,7 +645,7 @@ count Flow RPCs. The identity-fencing limits of the transport are recorded in [s
   duplicated Attributes. Public progress adapters combine these reads with the
   best-effort Agent Streams. The Session `Revision` does not replace message sequence or Snapshot
   reconciliation. The conversion from Snapshot, activity and archive messages to protobuf is in
-  `internal/api/agent.go` ([streaming and Studio](streaming-and-studio.md)).
+  `internal/dexai/api/agent.go` ([streaming and Studio](streaming-and-studio.md)).
 - **Preview configuration.** `SessionFlowService.ReadPreviewTarget(ctx, projectID)` reads only stored state and
   never reaches a workspace: the Session's `HeadCommit` from the retained summary, the prepared source object
   for that commit through `PreviewFlowClient.ReadPreparedSource` (no Flow call), and Live storage from
@@ -707,7 +707,7 @@ None. Wiring changes no screen.
 ## Tests
 
 - `make check-flow-registry` builds the Dex SDK registry of every server Flow as the server bootstrap builds
-  it (`internal/bootstrap/flow_registry.go`), and `make check-flow-definition` regenerates the fourteen
+  it (`internal/dexai/bootstrap/flow_registry.go`), and `make check-flow-definition` regenerates the fourteen
   graphs in `docs/flows` and checks them for drift.
 - Dex integration tests start the real bootstraps in the test process with the mock model: a READY
   Project starts exactly one Session; a Worker restart leaves one execution; a subagent start admits through
@@ -731,8 +731,8 @@ None. Wiring changes no screen.
 ## Documentation
 
 This document owns the wiring and the Flow-layer naming rules; AGENTS.md carries the rules and must stay
-synchronized with CLAUDE.md and `.cursor/rules/planning.mdc`. `internal/agents/README.md`, the Session and
-subagent package READMEs and `internal/bootstrap/README.md` carry the package file maps and are regenerated
+synchronized with CLAUDE.md and `.cursor/rules/planning.mdc`. `internal/dexai/agents/README.md`, the Session and
+subagent package READMEs and `internal/dexai/bootstrap/README.md` carry the package file maps and are regenerated
 with `make generate-package-readmes`. The README of `cmd/superverse-server/config` is the settings
 reference, with a separate table of the secret environment variables; the runbooks link to it.
 

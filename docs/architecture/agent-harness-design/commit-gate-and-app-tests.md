@@ -131,7 +131,7 @@ flowchart LR
 |---|---|---|---|---|
 | 1 | manifest | `dex-app.yaml` meets the host's deployment schema (a bounded 1 MiB read, parsed by the `appmanifest` parser Preview and Release use). The working tree keeps every gate command that HEAD's `.superverse/template.json` declares: `checkStatic`, and `testApplication` once declared | 30 s | `source_check_failed`, `source_gate_weakened` |
 | 2 | static | The declared `checkStatic` make target in the tool environment: generate, `make check-fdg-v2` (every Flow rendered by the pinned dexcli), gofmt, `go mod tidy -diff`, `go vet` (also with `-tags apptest`), `go build`, the web build | 10 min | `source_check_failed` |
-| 3 | definitions | The platform's dexcli renders every Flow the next commit would hold, with no diagnostic, through the `--worktree` mode of `internal/agents/sandbox/workspace/preview_definitions.py`; it stages nothing. Then the mock guard: `go list -deps ./...` with default tags must not include `.../sdkgo/connectormock` | 2 min | `flow_definition_invalid`, `connector_mock_in_production` |
+| 3 | definitions | The platform's dexcli renders every Flow the next commit would hold, with no diagnostic, through the `--worktree` mode of `internal/dexai/agents/sandbox/workspace/preview_definitions.py`; it stages nothing. Then the mock guard: `go list -deps ./...` with default tags must not include `.../sdkgo/connectormock` | 2 min | `flow_definition_invalid`, `connector_mock_in_production` |
 | 4 | tests | When HEAD declares `testApplication`: `superverse-previewctl apptest run --run-id gate-<sha256(callID)[:16]>-<nonce> --timeout 6m -- make test-app`, then the [stage 4 checks](#stage-4-checks) | 6.5 min | `application_tests_failed`, `application_tests_incomplete`, `requirements_untested`, `test_environment_unavailable` |
 | 5 | commit and push | [Commit and push](#commit-and-push) | | the Git codes |
 
@@ -261,7 +261,7 @@ superdurable/dex, needed no chart setting) and the Go SDK v1.5.0:
 
 - **Pins.** `scripts/update-dex-versions.py` rewrites every copy that `scripts/check-dex-versions.py` verifies:
   the Makefile's `DEXCLI_VERSION`, `scripts/install-pinned-binary.sh` (commit and the four platform
-  checksums), `sandbox/coding/Dockerfile`, `internal/delivery/releases/build/hosted/Dockerfile.tools` (URL,
+  checksums), `sandbox/coding/Dockerfile`, `internal/dexai/delivery/releases/build/hosted/Dockerfile.tools` (URL,
   digests, label), the label check in `runner.py`, `infra-as-code/source-lock.json` and, with
   `--server-version` and a digest, the chart and Terraform pins of the platform Dex Server; with
   `--sdk-go-version` the root `go.mod`. `app-template/go.mod` is edited by hand to the matching minimum SDK,
@@ -459,12 +459,12 @@ result, never a skip.
 
 Static checks (`check-app-template`, `check-dex-versions`, `check-flow-definitions`, generation drift) are reported as
 static checks. The gate's own live tests need `SUPERVERSE_TEST_SANDBOX_GRPC` and `SUPERVERSE_TEST_SANDBOX_HTTP`
-([runbook](../../../internal/agents/README.md)).
+([runbook](../../../internal/dexai/agents/README.md)).
 
 ## Documentation
 
 This document owns the gate, the trace, the dexcli checks and the application tests. The Git protocol keeps its
-package README (`internal/agents/sandbox/workspace/git/README.md`); `sandbox/coding/cmd/superverse-previewctl/README.md`
-documents `apptest`; The [Agent package README](../../../internal/agents/README.md) describes development checks. Application source
+package README (`internal/dexai/agents/sandbox/workspace/git/README.md`); `sandbox/coding/cmd/superverse-previewctl/README.md`
+documents `apptest`; The [Agent package README](../../../internal/dexai/agents/README.md) describes development checks. Application source
 handoff requires the staged gate and that connector mocks never enter production code.
 

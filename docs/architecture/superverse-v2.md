@@ -84,9 +84,9 @@ Sandbox behavior.
 
 After verifying V2 gRPC/BFF parity, remove old cross-repository export facades,
 standalone HTTP/OpenAPI entrypoints and `cmd/superagent`. Place the Session Agent
-in `internal/agents/session` and its sub-packages (see
+in `internal/dexai/agents/session` and its sub-packages (see
 the current contract); Sandbox
-transport and Git live under `internal/agents/sandbox/workspace`. The
+transport and Git live under `internal/dexai/agents/sandbox/workspace`. The
 root proto owns business transport. Studio consumes its local transport-free
 Agent components and generated proto types.
 Do not retain a second server or manual duplicate browser DTO contract.
@@ -146,7 +146,7 @@ enforces; each package README carries its Purpose, its callers and its
 dependencies, generated from the imports. A capability with several
 implementations keeps its interface in the parent package and each
 implementation in a sub-package of its own (`kube`, `docker`, `local`, `hosted`,
-`github`, `localgit`): only `internal/bootstrap` imports an implementation, only
+`github`, `localgit`): only `internal/dexai/bootstrap` imports an implementation, only
 the `kube` packages, `platform/kubeapi` and `bootstrap/kubernetes.go` import the
 Kubernetes API client, and only the `docker` packages and `platform/dockerapi`
 import the Docker Engine API client. Every
@@ -157,106 +157,106 @@ package owns the following;
 
 | Package | Purpose |
 | --- | --- |
-| [`agents`](../../internal/agents/README.md) | Coordinates each Project's one Session across its Project, Session Agent, provisioning and Preview Flows for the API and those Flows: start, reads, workspace cold path, Preview commands, cleanup. |
-| [`agents/diagnostics`](../../internal/agents/diagnostics/README.md) | Runs the Session Agent's read-only platform tools on the server for the Session's own Project, redacted and bounded, without the workspace. |
-| [`agents/platformissue`](../../internal/agents/platformissue/README.md) | Files the platform faults of one signature as one GitHub issue: PlatformIssueFlow finds or opens it by the signature's label, records the outcome and completes. |
-| [`agents/remoteagent`](../../internal/agents/remoteagent/README.md) | Owns remote agent pairing, credential authorization and the independent Bridge HTTP endpoint while Session owns executor authority. |
-| [`agents/remoteagent/bridgeapi`](../../internal/agents/remoteagent/bridgeapi/README.md) | Declares the remote agent endpoint's paths, body limits, JSON requests, responses, reports and error codes, shared by the endpoint and the Bridge. |
-| [`agents/remoteagentdao`](../../internal/agents/remoteagentdao/README.md) | Owns PostgreSQL remote connection credentials, bounded pairing admission, revocation and liveness without owning the Session executor. |
-| [`agents/remoteexec`](../../internal/agents/remoteexec/README.md) | Defines Session executor admission, report fences, bounded inbox items, stable remote calls, public delivery and platform handoff metadata without transport or credentials. |
-| [`agents/sandbox`](../../internal/agents/sandbox/README.md) | Defines a Session's Sandbox instance, its resources and the InstanceProvider runtime that creates, exposes and removes them; the sub-packages provision instances and serve Previews. |
-| [`agents/sandbox/docker`](../../internal/agents/sandbox/docker/README.md) | Runs a Session's Sandbox instances as hardened Docker containers of the coding image on its own network and workspace volumes, and exposes and reclaims them by exact identity. |
-| [`agents/sandbox/kube`](../../internal/agents/sandbox/kube/README.md) | Applies the Kubernetes resources of Sandbox instances from the coding profile, checks and exposes their Preview, and deletes them by UID, behind `sandbox.InstanceProvider`. |
-| [`agents/sandbox/preview`](../../internal/agents/sandbox/preview/README.md) | Serves a Project's Preview: one PreviewFlow execution per Project runs its Preview commands on the current Sandbox instance of the Project's Session, which it acquires from the Session. |
-| [`agents/sandbox/provision`](../../internal/agents/sandbox/provision/README.md) | Provisions one Sandbox instance of a Session: one SandboxProvisionFlow execution creates its Pod on the Session's volume, checks the repository out, verifies it and reports the outcome. |
-| [`agents/sandbox/sessionworkspace`](../../internal/agents/sandbox/sessionworkspace/README.md) | Owns a Project Session's Sandbox instances in one SessionWorkspaceFlow: runs the Session's provision and reclaim commands one at a time and reports each outcome. |
-| [`agents/sandbox/workspace`](../../internal/agents/sandbox/workspace/README.md) | Gives Session tools and the Sandbox provider one admitted Sandbox's workspace: the pooled sandboxd transport resolved from an accepted lease and the Preview supervisor. |
-| [`agents/sandbox/workspace/git`](../../internal/agents/sandbox/workspace/git/README.md) | Runs the platform's own Git commands in a Session's Sandbox for checkout, Agent commits and subagent worktrees, with a trusted environment and per-operation repository credentials. |
-| [`agents/sandbox/workspace/sandboxd`](../../internal/agents/sandbox/workspace/sandboxd/README.md) | Speaks the sandboxd file and process protocols of exactly one Sandbox, and runs the coding image's JSON helpers, for the workspace, Git and Agent tool packages. |
-| [`agents/sandbox/workspace/sandboxd/sandboxdtest`](../../internal/agents/sandbox/workspace/sandboxd/sandboxdtest/README.md) | Connects integration tests of the Sandbox workspace packages to an owned, disposable real sandboxd: one the environment names, or a coding image container the test runs. |
-| [`agents/session`](../../internal/agents/session/README.md) | Owns SessionAgentFlow, the durable coding Agent of a Project's one Session, for the Session Service and API: its Flow, client, bootstrap and every helper that touches its primitives. |
-| [`agents/session/agentloop`](../../internal/agents/session/agentloop/README.md) | Computes the Session Agent's pure loop decisions for SessionAgentFlow: state machine, turns, questions, context segments, tool catalog, batches and results, without touching Flow primitives. |
-| [`agents/session/agenttasks`](../../internal/agents/session/agenttasks/README.md) | Holds the task records of the Session Agent's background commands and subagents, their kinds, bounds and admission, the subagent start and launcher port, and the task notifications they send. |
-| [`agents/session/backgroundcommand`](../../internal/agents/session/backgroundcommand/README.md) | Follows one background command of a Session in the Sandbox's command ledger, as a Dex SubFlow of the Session, until the command ends. |
-| [`agents/session/contribution`](../../internal/agents/session/contribution/README.md) | Owns ConnectorContributionFlow, one connector a Project's Session contributes to the connectors library: its record, its draft pull request and its client and bootstrap. |
-| [`agents/session/conversation`](../../internal/agents/session/conversation/README.md) | Defines the values SessionAgentFlow exchanges with its model: the append-only entry log and its public view, request assembly, requests and replies, tool calls, activity events and prompts. |
-| [`agents/session/flowdesign`](../../internal/agents/session/flowdesign/README.md) | Owns the Flow design a requirements card carries: its validation, canonical JSON, digest and outline, and the main story it shares with the Flow canvas. |
-| [`agents/session/modelprovider`](../../internal/agents/session/modelprovider/README.md) | Implements the Session Agent's model client over the Claude Messages API: model profiles, byte-exact replay of stored blocks, streamed summaries and tool activity, fallback cleanup and error classification. |
-| [`agents/session/modelprovider/mockmodel`](../../internal/agents/session/modelprovider/mockmodel/README.md) | Serves the mock model: a loopback Claude Messages API whose embedded scenarios answer ordered user inputs, so Sessions run real tools without model cost. |
-| [`agents/session/sandboxtools`](../../internal/agents/session/sandboxtools/README.md) | Runs the Sandbox tools of the Session Agent and its subagents over an accepted workspace lease, without any Flow access: files, commands, Git, subagent worktrees and the Connector catalog. |
-| [`agents/session/subagent`](../../internal/agents/session/subagent/README.md) | Runs a Session's subagents: each SubagentFlow execution works on one bounded task in its own git worktree, with its own conversation and tools, and reports its end. |
-| [`agents/session/toolinput`](../../internal/agents/session/toolinput/README.md) | Owns the JSON Schemas the model sees for each Session Agent tool and the strict decoding of tool arguments against them. |
-| [`agents/toolfailure`](../../internal/agents/toolfailure/README.md) | Declares, once each, the tool failure codes the Session Agent's model reads, with their owner, hint and source-gate flag, and the owners and effects of a failed call. |
-| [`api`](../../internal/api/README.md) | Serves the business gRPC services that the Studio BFF calls, one file per service domain, mapping each RPC onto its owning Flow client or Service. |
-| [`api/boundary`](../../internal/api/boundary/README.md) | Holds the trust boundary every business gRPC handler shares: caller authentication, panic recovery, request input checks, list paging and the mapping of errors to public statuses. |
-| [`api/remoteagent`](../../internal/api/remoteagent/README.md) | Authorizes Builder pairing, connection reads, removal and platform executor selection through the generated resource contract. |
-| [`api/tenancy`](../../internal/api/tenancy/README.md) | Serves AccountService, TeamSpaceService and TeamSpaceMemberService: accounts, TeamSpaces and their members, written through TeamSpaceFlow and read from the read model. |
-| [`api/watch`](../../internal/api/watch/README.md) | Serves a resource to API Watch RPCs as authoritative snapshots followed by best-effort Dex Stream progress, with signed resume cursors and realignment on loss. |
-| [`app/appmanifest`](../../internal/app/appmanifest/README.md) | Owns the application contracts a project's source declares, for Release, Preview and Studio: the dex-app.yaml manifest, its connector and environment requirements and strict Flow Definition Graphs. |
-| [`app/apptemplate`](../../internal/app/apptemplate/README.md) | Embeds the go-react-v1 application template that Project setup pushes into new managed repositories, with its revision and locally computed Git object IDs. |
-| [`bootstrap`](../../internal/bootstrap/README.md) | Assembles and runs the single Superverse server process for `cmd/superverse-server`: configuration, providers, Flows, Flow clients, Services, the Dex Worker, the business gRPC server and health endpoints. |
 | [`comm`](../../internal/comm/README.md) | Holds the domain-free helpers every package shares: `Must`/`MustDo` for bug-only errors, UTF-8-safe text cuts, strict JSON decoding and long poll windows on the local clock. |
 | [`comm/dexflow`](../../internal/comm/dexflow/README.md) | Holds the Dex plumbing Flow packages share: persisted failure, progress and start identity shapes, failure causes, initial Attributes, option presets, polling, long-call heartbeats, lock-retrying RPCs and retained reads. |
 | [`comm/dexflow/dexflowtest`](../../internal/comm/dexflow/dexflowtest/README.md) | Connects integration tests to an actual Dex Server and checks engine state, never substituting a Flow, Worker or dependency. |
 | [`comm/flowid`](../../internal/comm/flowid/README.md) | Derives the stable FlowIDs, server-assigned business IDs and Start RequestID fingerprints of the platform Flows, and checks the formats of identifiers that callers supply. |
+| [`comm/platform`](../../internal/comm/platform/README.md) | Classifies the outcomes of Kubernetes, AWS, S3, GitHub and gRPC provider calls for every adapter and business package, without reading error text. |
+| [`comm/platform/connectorlibrary`](../../internal/comm/platform/connectorlibrary/README.md) | Reaches the connectors library that connector_develop subagents contribute to: fetch and push remotes, the committing bot identity and the upstream library's draft pull requests. |
+| [`comm/platform/deploymentnames`](../../internal/comm/platform/deploymentnames/README.md) | Declares the deployment environments and owns their static, operator-selected names (prefixes, clusters, registries, IAM paths and domains) that Go, Terraform, Helm and the infra scripts share. |
+| [`comm/platform/dockerapi`](../../internal/comm/platform/dockerapi/README.md) | Gives the Docker runtime packages one raw REST client of the Docker Engine API on its unix socket, with the container, network, volume and image calls they build on. |
+| [`comm/platform/eventqueue`](../../internal/comm/platform/eventqueue/README.md) | Declares the bounded, best-effort keyed queue that the Slack event relay offers events to and consumes them from, with its limits and typed refusals. |
+| [`comm/platform/eventqueue/memory`](../../internal/comm/platform/eventqueue/memory/README.md) | Implements the event queue in one process's memory: per-key FIFO sub-queues, total item and byte limits, and bounded concurrent consumption. |
+| [`comm/platform/githubapp`](../../internal/comm/platform/githubapp/README.md) | Authenticates as one installation of the GitHub App by signing its JWT and minting installation and repository tokens, and calls the GitHub REST API with them. |
+| [`comm/platform/githubissues`](../../internal/comm/platform/githubissues/README.md) | Files each platform incident once as a GitHub issue, found or opened by the label of its signature, as one installation of the GitHub App. |
+| [`comm/platform/kubeapi`](../../internal/comm/platform/kubeapi/README.md) | Gives every Kubernetes provider one HTTP client of the Kubernetes API and the unstructured-object toolkit it builds and reads resources with. |
+| [`comm/platform/kubeapi/kubeapitest`](../../internal/comm/platform/kubeapi/kubeapitest/README.md) | Connects integration tests to the real Kubernetes API of the isolated Local Kind cluster as the platform server's ServiceAccount. |
+| [`comm/platform/objectstore`](../../internal/comm/platform/objectstore/README.md) | Stores the immutable, versioned payloads that owning Flows reference by ObjectRef, content-addressed by SHA-256 and verified on every read. |
+| [`comm/platform/postgres`](../../internal/comm/platform/postgres/README.md) | Opens the server's PostgreSQL pool, runs transactions, applies the embedded schema migrations under an advisory lock and shares the read model's paging and row decoding. |
+| [`comm/platform/postgres/postgrestest`](../../internal/comm/platform/postgres/postgrestest/README.md) | Connects integration tests to the PostgreSQL of the local lane that SUPERVERSE_TEST_LANE names, never substituting the database. |
+| [`comm/platform/repohost`](../../internal/comm/platform/repohost/README.md) | Defines the Git host interface, its repository, commit and credential values and its typed errors, so every caller works with GitHub and the local Git host alike. |
+| [`comm/platform/repohost/github`](../../internal/comm/platform/repohost/github/README.md) | Implements the repository host on GitHub for Project setup, Releases and Sandbox Git: repository reads, scoped credentials, managed repositories and template initialization. |
+| [`comm/platform/repohost/localgit`](../../internal/comm/platform/repohost/localgit/README.md) | Hosts bare Git repositories inside the server for the local lanes, served over smart HTTP with repository-scoped credentials and a read-only JSON interface for the end-to-end tests. |
+| [`comm/platform/repohost/localgit/releases`](../../internal/comm/platform/repohost/localgit/releases/README.md) | Keeps the release assets of the local Git host's repositories as immutable files and serves them read-only at GitHub's download path. |
 | [`comm/signedtoken`](../../internal/comm/signedtoken/README.md) | Seals short-lived claims into HMAC-SHA256 tokens with a key derived per purpose by HKDF, so any server replica opens what another sealed without shared state. |
-| [`delivery/deliverydao`](../../internal/delivery/deliverydao/README.md) | Reads the releases, release_build_revisions and deployments tables that the platform Dex Attribute Store writes, and the Live Runs target join. |
-| [`delivery/deployments`](../../internal/delivery/deployments/README.md) | Owns Live deployments for the API and Releases: ProjectDeployFlow deploys one exact Release build, Serving serves its generations and PublishingFlowService links Releases to configuration and automatic deployment. |
-| [`delivery/deployments/docker`](../../internal/delivery/deployments/docker/README.md) | Serves each Live deployment generation as a Docker container of its Release image on its own network, moves the project's Live route to it and reads its log for diagnostics. |
-| [`delivery/deployments/generationapp`](../../internal/delivery/deployments/generationapp/README.md) | A Live application that the deployment integration tests build in several versions to observe which generation's Worker runs each Step of an open Flow. |
-| [`delivery/deployments/kube`](../../internal/delivery/deployments/kube/README.md) | Serves each Live deployment generation as an application Deployment and Service in the project namespace, activates its route and reads its environment and log, for `deployments.Serving`. |
-| [`delivery/releases`](../../internal/delivery/releases/README.md) | Owns Releases for the API and Live deployment: ProjectReleaseFlow prepares one main-branch commit's source, builds its immutable build revisions through the build port and cleans them up. |
-| [`delivery/releases/build`](../../internal/delivery/releases/build/README.md) | Declares the `Builder` port that builds Release images for ProjectReleaseFlow, its wire types and the embedded build profiles, which the `local` and `hosted` packages implement. |
-| [`delivery/releases/build/hosted`](../../internal/delivery/releases/build/hosted/README.md) | Builds Releases on CodeBuild, pushes the images to ECR and keeps its admission receipts in S3 outside Local Kind, behind the `build.Builder` port. |
-| [`delivery/releases/build/local`](../../internal/delivery/releases/build/local/README.md) | Builds Release images through the authenticated Local Kind build fixture on the host, behind the `build.Builder` port. |
-| [`platform`](../../internal/platform/README.md) | Classifies the outcomes of Kubernetes, AWS, S3, GitHub and gRPC provider calls for every adapter and business package, without reading error text. |
-| [`platform/connectorlibrary`](../../internal/platform/connectorlibrary/README.md) | Reaches the connectors library that connector_develop subagents contribute to: fetch and push remotes, the committing bot identity and the upstream library's draft pull requests. |
-| [`platform/deploymentnames`](../../internal/platform/deploymentnames/README.md) | Declares the deployment environments and owns their static, operator-selected names (prefixes, clusters, registries, IAM paths and domains) that Go, Terraform, Helm and the infra scripts share. |
-| [`platform/dockerapi`](../../internal/platform/dockerapi/README.md) | Gives the Docker runtime packages one raw REST client of the Docker Engine API on its unix socket, with the container, network, volume and image calls they build on. |
-| [`platform/eventqueue`](../../internal/platform/eventqueue/README.md) | Declares the bounded, best-effort keyed queue that the Slack event relay offers events to and consumes them from, with its limits and typed refusals. |
-| [`platform/eventqueue/memory`](../../internal/platform/eventqueue/memory/README.md) | Implements the event queue in one process's memory: per-key FIFO sub-queues, total item and byte limits, and bounded concurrent consumption. |
-| [`platform/githubapp`](../../internal/platform/githubapp/README.md) | Authenticates as one installation of the GitHub App by signing its JWT and minting installation and repository tokens, and calls the GitHub REST API with them. |
-| [`platform/githubissues`](../../internal/platform/githubissues/README.md) | Files each platform incident once as a GitHub issue, found or opened by the label of its signature, as one installation of the GitHub App. |
-| [`platform/kubeapi`](../../internal/platform/kubeapi/README.md) | Gives every Kubernetes provider one HTTP client of the Kubernetes API and the unstructured-object toolkit it builds and reads resources with. |
-| [`platform/kubeapi/kubeapitest`](../../internal/platform/kubeapi/kubeapitest/README.md) | Connects integration tests to the real Kubernetes API of the isolated Local Kind cluster as the platform server's ServiceAccount. |
-| [`platform/objectstore`](../../internal/platform/objectstore/README.md) | Stores the immutable, versioned payloads that owning Flows reference by ObjectRef, content-addressed by SHA-256 and verified on every read. |
-| [`platform/postgres`](../../internal/platform/postgres/README.md) | Opens the server's PostgreSQL pool, runs transactions, applies the embedded schema migrations under an advisory lock and shares the read model's paging and row decoding. |
-| [`platform/postgres/postgrestest`](../../internal/platform/postgres/postgrestest/README.md) | Connects integration tests to the PostgreSQL of the local lane that SUPERVERSE_TEST_LANE names, never substituting the database. |
-| [`platform/repohost`](../../internal/platform/repohost/README.md) | Defines the Git host interface, its repository, commit and credential values and its typed errors, so every caller works with GitHub and the local Git host alike. |
-| [`platform/repohost/github`](../../internal/platform/repohost/github/README.md) | Implements the repository host on GitHub for Project setup, Releases and Sandbox Git: repository reads, scoped credentials, managed repositories and template initialization. |
-| [`platform/repohost/localgit`](../../internal/platform/repohost/localgit/README.md) | Hosts bare Git repositories inside the server for the local lanes, served over smart HTTP with repository-scoped credentials and a read-only JSON interface for the end-to-end tests. |
-| [`platform/repohost/localgit/releases`](../../internal/platform/repohost/localgit/releases/README.md) | Keeps the release assets of the local Git host's repositories as immutable files and serves them read-only at GitHub's download path. |
-| [`projects`](../../internal/projects/README.md) | Owns Projects for the API, Sessions, Releases and Deployments: ProjectFlow keeps each Project's identity, repository, Live lease, commands and child membership, and starts its one Session. |
-| [`projects/config`](../../internal/projects/config/README.md) | Authorizes and admits the configuration of a project's scopes for the platform's Flows and Studio, serving each scope through a pooled in-process configuration host. |
-| [`projects/infra`](../../internal/projects/infra/README.md) | Declares the roles through which the platform consumes a project's storage, Temporal, Dex and workload grants, with the references, targets and errors they share. |
-| [`projects/infra/docker`](../../internal/projects/infra/docker/README.md) | Provisions, reaches and removes each project's Live network, MinIO, Temporal and Dex containers in the local Docker Engine, grants workloads that storage and serves the gateway its routes. |
-| [`projects/infra/docker/dockertest`](../../internal/projects/infra/docker/dockertest/README.md) | Gives integration tests the Docker runtime of the local engine with the pinned images and a gateway of their own, and checks that a deleted project leaves nothing. |
-| [`projects/infra/docker/dockertest/configprobe`](../../internal/projects/infra/docker/dockertest/configprobe/README.md) | Loads a workload's project configuration through the Connector SDK from its grant environment, as an application starts, for the Docker integration tests. |
-| [`projects/infra/kube`](../../internal/projects/infra/kube/README.md) | Provisions, reaches and removes each project's Live namespace, Dex, storage and Temporal in the Kubernetes cluster, and grants Live and Preview workloads that storage. |
-| [`projects/infra/kube/connect`](../../internal/projects/infra/kube/connect/README.md) | Dials a project's Live Dex or a Sandbox's Preview Dex and checks the Live application Worker, after verifying the accepted namespace, controller and Service identities. |
-| [`projects/infra/kube/hosted`](../../internal/projects/infra/kube/hosted/README.md) | Implements the project cloud account of hosted environments for project infrastructure: S3 buckets, IAM roles with EKS Pod Identity and Temporal Cloud namespaces and keys. |
-| [`projects/infra/kube/hosted/identity`](../../internal/projects/infra/kube/hosted/identity/README.md) | Owns hosted IAM roles, Pod Identity associations, policy documents, grant lifecycle, and cloud resource ownership tags. |
-| [`projects/infra/kube/hosted/storage`](../../internal/projects/infra/kube/hosted/storage/README.md) | Creates, verifies, and deletes hosted project buckets and exposes their object clients. |
-| [`projects/infra/kube/kubetest`](../../internal/projects/infra/kube/kubetest/README.md) | Gives integration tests the Kubernetes runtime of the isolated Local Kind cluster as the platform server, so tests outside the Kubernetes packages need not import the Kubernetes API client. |
-| [`projects/infra/kube/local`](../../internal/projects/infra/kube/local/README.md) | Runs a Local Kind project's own MinIO and Temporal start-dev in its namespace and grants workloads the storage with MinIO service accounts, for the Kubernetes runtime. |
-| [`projects/projectdao`](../../internal/projects/projectdao/README.md) | Reads the projects table, which the platform Dex Attribute Store writes from ProjectFlow and ProjectSetupFlow: one Project, its authorization join and the keyset-paged list. |
-| [`projects/projecttest`](../../internal/projects/projecttest/README.md) | Gives integration tests throwaway READY Projects of their own, created and deleted through ProjectFlow as the business API does, never substituting a Flow or dependency. |
-| [`projects/repobinding`](../../internal/projects/repobinding/README.md) | Owns the exclusive binding of each managed repository to one Project for Project setup and deletion, through RepositoryBindingFlow claims and releases. |
-| [`projects/setup`](../../internal/projects/setup/README.md) | Owns Project setup attempts for ProjectFlow: ProjectSetupFlow prepares the repository, template, app manifest and configuration storage, then hands them to the Project. |
-| [`studio/confighost`](../../internal/studio/confighost/README.md) | Hosts one project scope's configuration, its selections of TeamSpace connections and their provider UI sessions in process for the project configuration boundary, in the scope's versioned storage. |
-| [`studio/confighost/configitems`](../../internal/studio/confighost/configitems/README.md) | Models configuration items and resolves them: the Preview head against its applied version, and Live's next publish from its layer, Preview's applied version and current Live. |
-| [`studio/confighost/connectormanifest`](../../internal/studio/confighost/connectormanifest/README.md) | Resolves and verifies official Connector releases, validates values against their manifests, resolves their value sources and grants, and sends their OAuth token and identity requests. |
-| [`studio/flowapi`](../../internal/studio/flowapi/README.md) | Serves the Dex Flow UI document operations in process for Studio Runs: catalog, search, Display, edits, Actions, Start and RunID-bearing engine diagnostics. |
-| [`studio/flowapi/fdg`](../../internal/studio/flowapi/fdg/README.md) | Defines and validates the Flow Definition Graph 2.0 contract for the Flow API, configuration host and Studio Runs: bundles, typed values, Start input and visibility queries. |
-| [`studio/runs`](../../internal/studio/runs/README.md) | Authorizes Studio Runs operations against an exact serving Live deployment or Session Preview for the API and serves them through the Flow API in process. |
-| [`tenancy/accountdao`](../../internal/tenancy/accountdao/README.md) | Reads and writes the accounts and login_sessions tables: registration, login admission, token authentication, revocation and the platform admin check. |
-| [`tenancy/accounts`](../../internal/tenancy/accounts/README.md) | Registers, logs in, logs out and authenticates accounts, which the database owns, with Argon2id password records and HMAC-signed login tokens. |
-| [`tenancy/connectiondao`](../../internal/tenancy/connectiondao/README.md) | Reads and writes the TeamSpace connection, usage and scope token tables: creation, settings, refresh leases, credential commits, usages, deletion and read authorization. |
-| [`tenancy/connections`](../../internal/tenancy/connections/README.md) | Reads TeamSpace connection credentials for applications and the platform, refreshing and minting them as manifests declare, and records which Project scopes use which connection. |
-| [`tenancy/memberdao`](../../internal/tenancy/memberdao/README.md) | Reads the team_space_members and project_members child tables that the platform Dex Attribute Store writes from the Members maps of TeamSpaceFlow and ProjectFlow. |
-| [`tenancy/slackrelay`](../../internal/tenancy/slackrelay/README.md) | Receives the platform Slack application's signed events, routes them to registered scopes, queues and delivers them signed to applications' public trigger routes. |
-| [`tenancy/teamspacedao`](../../internal/tenancy/teamspacedao/README.md) | Reads the team_spaces table, which the platform Dex Attribute Store writes from TeamSpaceFlow: a member's TeamSpaces, keyset-paged, and one TeamSpace with its Home counts. |
-| [`tenancy/teamspaces`](../../internal/tenancy/teamspaces/README.md) | TeamSpaceFlow owns one TeamSpace: its name, its members and their admin or member role, the registry of its Projects, and its deletion. |
+| [`dexai/agents`](../../internal/dexai/agents/README.md) | Coordinates each Project's one Session across its Project, Session Agent, provisioning and Preview Flows for the API and those Flows: start, reads, workspace cold path, Preview commands, cleanup. |
+| [`dexai/agents/diagnostics`](../../internal/dexai/agents/diagnostics/README.md) | Runs the Session Agent's read-only platform tools on the server for the Session's own Project, redacted and bounded, without the workspace. |
+| [`dexai/agents/platformissue`](../../internal/dexai/agents/platformissue/README.md) | Files the platform faults of one signature as one GitHub issue: PlatformIssueFlow finds or opens it by the signature's label, records the outcome and completes. |
+| [`dexai/agents/remoteagent`](../../internal/dexai/agents/remoteagent/README.md) | Owns remote agent pairing, credential authorization and the independent Bridge HTTP endpoint while Session owns executor authority. |
+| [`dexai/agents/remoteagent/bridgeapi`](../../internal/dexai/agents/remoteagent/bridgeapi/README.md) | Declares the remote agent endpoint's paths, body limits, JSON requests, responses, reports and error codes, shared by the endpoint and the Bridge. |
+| [`dexai/agents/remoteagentdao`](../../internal/dexai/agents/remoteagentdao/README.md) | Owns PostgreSQL remote connection credentials, bounded pairing admission, revocation and liveness without owning the Session executor. |
+| [`dexai/agents/remoteexec`](../../internal/dexai/agents/remoteexec/README.md) | Defines Session executor admission, report fences, bounded inbox items, stable remote calls, public delivery and platform handoff metadata without transport or credentials. |
+| [`dexai/agents/sandbox`](../../internal/dexai/agents/sandbox/README.md) | Defines a Session's Sandbox instance, its resources and the InstanceProvider runtime that creates, exposes and removes them; the sub-packages provision instances and serve Previews. |
+| [`dexai/agents/sandbox/docker`](../../internal/dexai/agents/sandbox/docker/README.md) | Runs a Session's Sandbox instances as hardened Docker containers of the coding image on its own network and workspace volumes, and exposes and reclaims them by exact identity. |
+| [`dexai/agents/sandbox/kube`](../../internal/dexai/agents/sandbox/kube/README.md) | Applies the Kubernetes resources of Sandbox instances from the coding profile, checks and exposes their Preview, and deletes them by UID, behind `sandbox.InstanceProvider`. |
+| [`dexai/agents/sandbox/preview`](../../internal/dexai/agents/sandbox/preview/README.md) | Serves a Project's Preview: one PreviewFlow execution per Project runs its Preview commands on the current Sandbox instance of the Project's Session, which it acquires from the Session. |
+| [`dexai/agents/sandbox/provision`](../../internal/dexai/agents/sandbox/provision/README.md) | Provisions one Sandbox instance of a Session: one SandboxProvisionFlow execution creates its Pod on the Session's volume, checks the repository out, verifies it and reports the outcome. |
+| [`dexai/agents/sandbox/sessionworkspace`](../../internal/dexai/agents/sandbox/sessionworkspace/README.md) | Owns a Project Session's Sandbox instances in one SessionWorkspaceFlow: runs the Session's provision and reclaim commands one at a time and reports each outcome. |
+| [`dexai/agents/sandbox/workspace`](../../internal/dexai/agents/sandbox/workspace/README.md) | Gives Session tools and the Sandbox provider one admitted Sandbox's workspace: the pooled sandboxd transport resolved from an accepted lease and the Preview supervisor. |
+| [`dexai/agents/sandbox/workspace/git`](../../internal/dexai/agents/sandbox/workspace/git/README.md) | Runs the platform's own Git commands in a Session's Sandbox for checkout, Agent commits and subagent worktrees, with a trusted environment and per-operation repository credentials. |
+| [`dexai/agents/sandbox/workspace/sandboxd`](../../internal/dexai/agents/sandbox/workspace/sandboxd/README.md) | Speaks the sandboxd file and process protocols of exactly one Sandbox, and runs the coding image's JSON helpers, for the workspace, Git and Agent tool packages. |
+| [`dexai/agents/sandbox/workspace/sandboxd/sandboxdtest`](../../internal/dexai/agents/sandbox/workspace/sandboxd/sandboxdtest/README.md) | Connects integration tests of the Sandbox workspace packages to an owned, disposable real sandboxd: one the environment names, or a coding image container the test runs. |
+| [`dexai/agents/session`](../../internal/dexai/agents/session/README.md) | Owns SessionAgentFlow, the durable coding Agent of a Project's one Session, for the Session Service and API: its Flow, client, bootstrap and every helper that touches its primitives. |
+| [`dexai/agents/session/agentloop`](../../internal/dexai/agents/session/agentloop/README.md) | Computes the Session Agent's pure loop decisions for SessionAgentFlow: state machine, turns, questions, context segments, tool catalog, batches and results, without touching Flow primitives. |
+| [`dexai/agents/session/agenttasks`](../../internal/dexai/agents/session/agenttasks/README.md) | Holds the task records of the Session Agent's background commands and subagents, their kinds, bounds and admission, the subagent start and launcher port, and the task notifications they send. |
+| [`dexai/agents/session/backgroundcommand`](../../internal/dexai/agents/session/backgroundcommand/README.md) | Follows one background command of a Session in the Sandbox's command ledger, as a Dex SubFlow of the Session, until the command ends. |
+| [`dexai/agents/session/contribution`](../../internal/dexai/agents/session/contribution/README.md) | Owns ConnectorContributionFlow, one connector a Project's Session contributes to the connectors library: its record, its draft pull request and its client and bootstrap. |
+| [`dexai/agents/session/conversation`](../../internal/dexai/agents/session/conversation/README.md) | Defines the values SessionAgentFlow exchanges with its model: the append-only entry log and its public view, request assembly, requests and replies, tool calls, activity events and prompts. |
+| [`dexai/agents/session/flowdesign`](../../internal/dexai/agents/session/flowdesign/README.md) | Owns the Flow design a requirements card carries: its validation, canonical JSON, digest and outline, and the main story it shares with the Flow canvas. |
+| [`dexai/agents/session/modelprovider`](../../internal/dexai/agents/session/modelprovider/README.md) | Implements the Session Agent's model client over the Claude Messages API: model profiles, byte-exact replay of stored blocks, streamed summaries and tool activity, fallback cleanup and error classification. |
+| [`dexai/agents/session/modelprovider/mockmodel`](../../internal/dexai/agents/session/modelprovider/mockmodel/README.md) | Serves the mock model: a loopback Claude Messages API whose embedded scenarios answer ordered user inputs, so Sessions run real tools without model cost. |
+| [`dexai/agents/session/sandboxtools`](../../internal/dexai/agents/session/sandboxtools/README.md) | Runs the Sandbox tools of the Session Agent and its subagents over an accepted workspace lease, without any Flow access: files, commands, Git, subagent worktrees and the Connector catalog. |
+| [`dexai/agents/session/subagent`](../../internal/dexai/agents/session/subagent/README.md) | Runs a Session's subagents: each SubagentFlow execution works on one bounded task in its own git worktree, with its own conversation and tools, and reports its end. |
+| [`dexai/agents/session/toolinput`](../../internal/dexai/agents/session/toolinput/README.md) | Owns the JSON Schemas the model sees for each Session Agent tool and the strict decoding of tool arguments against them. |
+| [`dexai/agents/toolfailure`](../../internal/dexai/agents/toolfailure/README.md) | Declares, once each, the tool failure codes the Session Agent's model reads, with their owner, hint and source-gate flag, and the owners and effects of a failed call. |
+| [`dexai/api`](../../internal/dexai/api/README.md) | Serves the business gRPC services that the Studio BFF calls, one file per service domain, mapping each RPC onto its owning Flow client or Service. |
+| [`dexai/api/boundary`](../../internal/dexai/api/boundary/README.md) | Holds the trust boundary every business gRPC handler shares: caller authentication, panic recovery, request input checks, list paging and the mapping of errors to public statuses. |
+| [`dexai/api/remoteagent`](../../internal/dexai/api/remoteagent/README.md) | Authorizes Builder pairing, connection reads, removal and platform executor selection through the generated resource contract. |
+| [`dexai/api/tenancy`](../../internal/dexai/api/tenancy/README.md) | Serves AccountService, TeamSpaceService and TeamSpaceMemberService: accounts, TeamSpaces and their members, written through TeamSpaceFlow and read from the read model. |
+| [`dexai/api/watch`](../../internal/dexai/api/watch/README.md) | Serves a resource to API Watch RPCs as authoritative snapshots followed by best-effort Dex Stream progress, with signed resume cursors and realignment on loss. |
+| [`dexai/app/appmanifest`](../../internal/dexai/app/appmanifest/README.md) | Owns the application contracts a project's source declares, for Release, Preview and Studio: the dex-app.yaml manifest, its connector and environment requirements and strict Flow Definition Graphs. |
+| [`dexai/app/apptemplate`](../../internal/dexai/app/apptemplate/README.md) | Embeds the go-react-v1 application template that Project setup pushes into new managed repositories, with its revision and locally computed Git object IDs. |
+| [`dexai/bootstrap`](../../internal/dexai/bootstrap/README.md) | Assembles and runs the single Superverse server process for `cmd/superverse-server`: configuration, providers, Flows, Flow clients, Services, the Dex Worker, the business gRPC server and health endpoints. |
+| [`dexai/delivery/deliverydao`](../../internal/dexai/delivery/deliverydao/README.md) | Reads the releases, release_build_revisions and deployments tables that the platform Dex Attribute Store writes, and the Live Runs target join. |
+| [`dexai/delivery/deployments`](../../internal/dexai/delivery/deployments/README.md) | Owns Live deployments for the API and Releases: ProjectDeployFlow deploys one exact Release build, Serving serves its generations and PublishingFlowService links Releases to configuration and automatic deployment. |
+| [`dexai/delivery/deployments/docker`](../../internal/dexai/delivery/deployments/docker/README.md) | Serves each Live deployment generation as a Docker container of its Release image on its own network, moves the project's Live route to it and reads its log for diagnostics. |
+| [`dexai/delivery/deployments/generationapp`](../../internal/dexai/delivery/deployments/generationapp/README.md) | A Live application that the deployment integration tests build in several versions to observe which generation's Worker runs each Step of an open Flow. |
+| [`dexai/delivery/deployments/kube`](../../internal/dexai/delivery/deployments/kube/README.md) | Serves each Live deployment generation as an application Deployment and Service in the project namespace, activates its route and reads its environment and log, for `deployments.Serving`. |
+| [`dexai/delivery/releases`](../../internal/dexai/delivery/releases/README.md) | Owns Releases for the API and Live deployment: ProjectReleaseFlow prepares one main-branch commit's source, builds its immutable build revisions through the build port and cleans them up. |
+| [`dexai/delivery/releases/build`](../../internal/dexai/delivery/releases/build/README.md) | Declares the `Builder` port that builds Release images for ProjectReleaseFlow, its wire types and the embedded build profiles, which the `local` and `hosted` packages implement. |
+| [`dexai/delivery/releases/build/hosted`](../../internal/dexai/delivery/releases/build/hosted/README.md) | Builds Releases on CodeBuild, pushes the images to ECR and keeps its admission receipts in S3 outside Local Kind, behind the `build.Builder` port. |
+| [`dexai/delivery/releases/build/local`](../../internal/dexai/delivery/releases/build/local/README.md) | Builds Release images through the authenticated Local Kind build fixture on the host, behind the `build.Builder` port. |
+| [`dexai/projects`](../../internal/dexai/projects/README.md) | Owns Projects for the API, Sessions, Releases and Deployments: ProjectFlow keeps each Project's identity, repository, Live lease, commands and child membership, and starts its one Session. |
+| [`dexai/projects/config`](../../internal/dexai/projects/config/README.md) | Authorizes and admits the configuration of a project's scopes for the platform's Flows and Studio, serving each scope through a pooled in-process configuration host. |
+| [`dexai/projects/infra`](../../internal/dexai/projects/infra/README.md) | Declares the roles through which the platform consumes a project's storage, Temporal, Dex and workload grants, with the references, targets and errors they share. |
+| [`dexai/projects/infra/docker`](../../internal/dexai/projects/infra/docker/README.md) | Provisions, reaches and removes each project's Live network, MinIO, Temporal and Dex containers in the local Docker Engine, grants workloads that storage and serves the gateway its routes. |
+| [`dexai/projects/infra/docker/dockertest`](../../internal/dexai/projects/infra/docker/dockertest/README.md) | Gives integration tests the Docker runtime of the local engine with the pinned images and a gateway of their own, and checks that a deleted project leaves nothing. |
+| [`dexai/projects/infra/docker/dockertest/configprobe`](../../internal/dexai/projects/infra/docker/dockertest/configprobe/README.md) | Loads a workload's project configuration through the Connector SDK from its grant environment, as an application starts, for the Docker integration tests. |
+| [`dexai/projects/infra/kube`](../../internal/dexai/projects/infra/kube/README.md) | Provisions, reaches and removes each project's Live namespace, Dex, storage and Temporal in the Kubernetes cluster, and grants Live and Preview workloads that storage. |
+| [`dexai/projects/infra/kube/connect`](../../internal/dexai/projects/infra/kube/connect/README.md) | Dials a project's Live Dex or a Sandbox's Preview Dex and checks the Live application Worker, after verifying the accepted namespace, controller and Service identities. |
+| [`dexai/projects/infra/kube/hosted`](../../internal/dexai/projects/infra/kube/hosted/README.md) | Implements the project cloud account of hosted environments for project infrastructure: S3 buckets, IAM roles with EKS Pod Identity and Temporal Cloud namespaces and keys. |
+| [`dexai/projects/infra/kube/hosted/identity`](../../internal/dexai/projects/infra/kube/hosted/identity/README.md) | Owns hosted IAM roles, Pod Identity associations, policy documents, grant lifecycle, and cloud resource ownership tags. |
+| [`dexai/projects/infra/kube/hosted/storage`](../../internal/dexai/projects/infra/kube/hosted/storage/README.md) | Creates, verifies, and deletes hosted project buckets and exposes their object clients. |
+| [`dexai/projects/infra/kube/kubetest`](../../internal/dexai/projects/infra/kube/kubetest/README.md) | Gives integration tests the Kubernetes runtime of the isolated Local Kind cluster as the platform server, so tests outside the Kubernetes packages need not import the Kubernetes API client. |
+| [`dexai/projects/infra/kube/local`](../../internal/dexai/projects/infra/kube/local/README.md) | Runs a Local Kind project's own MinIO and Temporal start-dev in its namespace and grants workloads the storage with MinIO service accounts, for the Kubernetes runtime. |
+| [`dexai/projects/projectdao`](../../internal/dexai/projects/projectdao/README.md) | Reads the projects table, which the platform Dex Attribute Store writes from ProjectFlow and ProjectSetupFlow: one Project, its authorization join and the keyset-paged list. |
+| [`dexai/projects/projecttest`](../../internal/dexai/projects/projecttest/README.md) | Gives integration tests throwaway READY Projects of their own, created and deleted through ProjectFlow as the business API does, never substituting a Flow or dependency. |
+| [`dexai/projects/repobinding`](../../internal/dexai/projects/repobinding/README.md) | Owns the exclusive binding of each managed repository to one Project for Project setup and deletion, through RepositoryBindingFlow claims and releases. |
+| [`dexai/projects/setup`](../../internal/dexai/projects/setup/README.md) | Owns Project setup attempts for ProjectFlow: ProjectSetupFlow prepares the repository, template, app manifest and configuration storage, then hands them to the Project. |
+| [`dexai/studio/confighost`](../../internal/dexai/studio/confighost/README.md) | Hosts one project scope's configuration, its selections of TeamSpace connections and their provider UI sessions in process for the project configuration boundary, in the scope's versioned storage. |
+| [`dexai/studio/confighost/configitems`](../../internal/dexai/studio/confighost/configitems/README.md) | Models configuration items and resolves them: the Preview head against its applied version, and Live's next publish from its layer, Preview's applied version and current Live. |
+| [`dexai/studio/confighost/connectormanifest`](../../internal/dexai/studio/confighost/connectormanifest/README.md) | Resolves and verifies official Connector releases, validates values against their manifests, resolves their value sources and grants, and sends their OAuth token and identity requests. |
+| [`dexai/studio/flowapi`](../../internal/dexai/studio/flowapi/README.md) | Serves the Dex Flow UI document operations in process for Studio Runs: catalog, search, Display, edits, Actions, Start and RunID-bearing engine diagnostics. |
+| [`dexai/studio/flowapi/fdg`](../../internal/dexai/studio/flowapi/fdg/README.md) | Defines and validates the Flow Definition Graph 2.0 contract for the Flow API, configuration host and Studio Runs: bundles, typed values, Start input and visibility queries. |
+| [`dexai/studio/runs`](../../internal/dexai/studio/runs/README.md) | Authorizes Studio Runs operations against an exact serving Live deployment or Session Preview for the API and serves them through the Flow API in process. |
+| [`dexai/tenancy/accountdao`](../../internal/dexai/tenancy/accountdao/README.md) | Reads and writes the accounts and login_sessions tables: registration, login admission, token authentication, revocation and the platform admin check. |
+| [`dexai/tenancy/accounts`](../../internal/dexai/tenancy/accounts/README.md) | Registers, logs in, logs out and authenticates accounts, which the database owns, with Argon2id password records and HMAC-signed login tokens. |
+| [`dexai/tenancy/connectiondao`](../../internal/dexai/tenancy/connectiondao/README.md) | Reads and writes the TeamSpace connection, usage and scope token tables: creation, settings, refresh leases, credential commits, usages, deletion and read authorization. |
+| [`dexai/tenancy/connections`](../../internal/dexai/tenancy/connections/README.md) | Reads TeamSpace connection credentials for applications and the platform, refreshing and minting them as manifests declare, and records which Project scopes use which connection. |
+| [`dexai/tenancy/memberdao`](../../internal/dexai/tenancy/memberdao/README.md) | Reads the team_space_members and project_members child tables that the platform Dex Attribute Store writes from the Members maps of TeamSpaceFlow and ProjectFlow. |
+| [`dexai/tenancy/slackrelay`](../../internal/dexai/tenancy/slackrelay/README.md) | Receives the platform Slack application's signed events, routes them to registered scopes, queues and delivers them signed to applications' public trigger routes. |
+| [`dexai/tenancy/teamspacedao`](../../internal/dexai/tenancy/teamspacedao/README.md) | Reads the team_spaces table, which the platform Dex Attribute Store writes from TeamSpaceFlow: a member's TeamSpaces, keyset-paged, and one TeamSpace with its Home counts. |
+| [`dexai/tenancy/teamspaces`](../../internal/dexai/tenancy/teamspaces/README.md) | TeamSpaceFlow owns one TeamSpace: its name, its members and their admin or member role, the registry of its Projects, and its deletion. |
 
 <!-- END GENERATED PACKAGE TABLE -->
 
@@ -608,10 +608,10 @@ are never exposed through generic summaries.
 ### Accounts
 
 Accounts and login sessions are rows of the PostgreSQL `accounts` and
-`login_sessions` tables, written only through `internal/tenancy/accountdao`; no
+`login_sessions` tables, written only through `internal/dexai/tenancy/accountdao`; no
 AccountFlow exists ([accounts](teamspace/accounts.md),
 [the current contract](teamspace/read-model.md) and the
-[Account service](../../internal/tenancy/accounts/README.md)). The canonical email,
+[Account service](../../internal/dexai/tenancy/accounts/README.md)). The canonical email,
 unique per account, trims surrounding whitespace and lowercases ASCII, without
 provider-specific dot or plus-tag rewriting. An account holds a random AccountID,
 the Argon2id `password_record`, a credential revision and an authentication epoch;
@@ -664,7 +664,7 @@ the real PostgreSQL tests of registration, login, logout and rejection.
 
 FlowID: `repository-<repositoryID>`, using the repository host's immutable numeric
 ID: GitHub's, or the monotonic, never reused ID of the
-[local Git host](../../internal/platform/repohost/localgit/README.md) in the local lanes.
+[local Git host](../../internal/comm/platform/repohost/localgit/README.md) in the local lanes.
 Lifetime: UNBOUND from its start (generation 0) until the Setup's claim, BOUND
 to one Project's generation, then RELEASED, which completes the execution.
 Every release follows the archive of the repository (Project deletion and
@@ -715,7 +715,7 @@ InstallationID:int64; FullName, URL and DefaultBranch:string; Generation:uint64.
 Project and Setup admission carry no repository seed; their repository Attributes
 start empty and only Setup records the managed provider identity.
 There is no alternate working branch, pinned import base or repository ownership
-selector. See [the owning inventory](../../internal/projects/README.md).
+selector. See [the owning inventory](../../internal/dexai/projects/README.md).
 
 FlowID: `project-<projectID>`. Lifetime: authoritative project entity through
 explicit deletion and resource cleanup.
@@ -824,7 +824,7 @@ DeleteProject remains available. A late exact Setup handoff sets READY and clear
 only that start failure. No new primitive/channel/stream/index is introduced.
 Existing waiting orphan Projects are not automatically migrated. The full changed
 Step contract and real interrupted-client source are in
-[the owning inventory](../../internal/projects/README.md#dex-flow-changes).
+[the owning inventory](../../internal/dexai/projects/README.md#dex-flow-changes).
 
 StartProjectSession starts the READY Project's one Session,
 `session-<projectID>`, through `SessionLifecycle.StartForProject`
@@ -861,7 +861,7 @@ is refused before any archive call (`ErrOtherHost`: REPOSITORY_HOST_MISMATCH, na
 to run the server with), since this server's host would read the repository as absent and
 archival would succeed without archiving it. Budget expiry records
 CLEANUP_TIMEOUT. No primitive, RPC, Flow/Step identity or persistence shape
-changes; the [owning Step contract](../../internal/projects/README.md#dex-flow-changes)
+changes; the [owning Step contract](../../internal/dexai/projects/README.md#dex-flow-changes)
 describes cancellation, retry and compatibility. The repository host owns repository archival
 state; ProjectFlow alone owns deletion admission, phase and completion.
 
@@ -1208,7 +1208,7 @@ database is introduced. On the normal path its Sandbox tools make no Flow RPC, S
 read. The complete contract (every Attribute, AttributeMap, Channel, ChannelMap, Stream, Step, RPC
 and recovery rule) is in [the Session design](agent-harness-design/session.md#sessionagentflow-contract);
 the surrounding topics are listed in the [harness README](agent-harness-design/README.md#the-pieces),
-and the package file map in the [Session README](../../internal/agents/session/README.md).
+and the package file map in the [Session README](../../internal/dexai/agents/session/README.md).
 
 ### SubagentFlow
 
@@ -1220,8 +1220,8 @@ conversation, tools, git worktree and limits; its terminal `Outcome` (COMPLETED,
 TIMED_OUT or DENIED) is reported to the Session as a `task` notification, and its changes reach the
 workspace only through `merge_agent_changes`. It is not a Project child; a deleting Project finds it
 by FlowType and `ProjectID`. The design is in [subagents](agent-harness-design/subagents.md), the
-per-Flow contract in the [subagent README](../../internal/agents/session/subagent/README.md), and the
-records, kinds and bounds in [agenttasks](../../internal/agents/session/agenttasks/README.md).
+per-Flow contract in the [subagent README](../../internal/dexai/agents/session/subagent/README.md), and the
+records, kinds and bounds in [agenttasks](../../internal/dexai/agents/session/agenttasks/README.md).
 
 ### PlatformIssueFlow
 
@@ -1232,7 +1232,7 @@ it, and its label query before the write is the admission check of a run that re
 belongs to no Project and files one GitHub issue per signature, or only logs the incident where the
 server names no issue repository. The design is in
 [tool orchestration](agent-harness-design/tool-orchestration.md#platform-issue-reporting) and the
-per-Flow contract in the [platform issue README](../../internal/agents/platformissue/README.md).
+per-Flow contract in the [platform issue README](../../internal/dexai/agents/platformissue/README.md).
 
 ### BackgroundCommandFlow
 
@@ -1243,7 +1243,7 @@ execution; it completes with the command's end, and the Session records the end 
 `task` notification. Dex does not stop a SubFlow with its parent, so the Session's close stops each
 running watch through its ChannelMap `BackgroundCommandStops`. The design is in
 [tool orchestration](agent-harness-design/tool-orchestration.md#background-commands) and the per-Flow
-contract in the [backgroundcommand README](../../internal/agents/session/backgroundcommand/README.md).
+contract in the [backgroundcommand README](../../internal/dexai/agents/session/backgroundcommand/README.md).
 
 ### ConnectorContributionFlow
 
@@ -1253,7 +1253,7 @@ One connector a Project's Session contributed to the connectors library through 
 subagent's report, with `dex.IDReuseDisallow` and a RequestID fingerprinting the Session, the slug, the
 branch and the head commit; it owns the contribution record and opens the draft pull request, and the
 deleting Project closes it. The design is in [connectors](agent-harness-design/connectors.md#contributions)
-and the per-Flow contract in the [contribution README](../../internal/agents/session/contribution/README.md).
+and the per-Flow contract in the [contribution README](../../internal/dexai/agents/session/contribution/README.md).
 
 ### Sandbox instance Flows
 
@@ -1269,14 +1269,14 @@ workspace Flow and the Preview and releases every resource by label ([ProjectFlo
 `session-workspace-<projectID>`, one execution per Project, started by the
 Session's first workspace command (`dex.IDReuseDisallow`); runs the Session's `provision` and
 `reclaim` commands one at a time, so one volume carries one Pod, and reports each outcome to the
-Session. Contract: [the Session workspace README](../../internal/agents/sandbox/sessionworkspace/README.md).
+Session. Contract: [the Session workspace README](../../internal/dexai/agents/sandbox/sessionworkspace/README.md).
 
 #### SandboxProvisionFlow
 
 `sandbox-provision-<projectID>-<workspaceRequestID>`, one execution per
 instance (`dex.IDReuseDisallow`, so a retry joins); creates the Pod on the Project's volume, checks
 the repository out, verifies the instance and reports the outcome to the workspace Flow. Contract:
-[the provisioning README](../../internal/agents/sandbox/provision/README.md).
+[the provisioning README](../../internal/dexai/agents/sandbox/provision/README.md).
 
 #### PreviewFlow
 
@@ -1286,7 +1286,7 @@ command or automatic deployment; serves the Preview on the Sandbox-local engine
 it, deploys each pushed commit on request and reports its outcomes to the Session
 ([the current contract](agent-harness-design/sandbox.md)). Build owns Preview
 and Publishing owns Live only (the current contract).
-Contract: [the Preview README](../../internal/agents/sandbox/preview/README.md).
+Contract: [the Preview README](../../internal/dexai/agents/sandbox/preview/README.md).
 
 The design (the lease and its instance identity, the cold path, the Sandbox deadline and the
 reclamation, the Preview engine, source preparation and start chain, grants, Runs, the route and
@@ -1309,7 +1309,7 @@ without ending the engine execution. Failed or pending builds preserve the last
 READY build. Only Project cleanup completes the Flow.
 
 The complete per-Flow review is
-[the Release contract](../../internal/delivery/releases/README.md). Ordinary
+[the Release contract](../../internal/dexai/delivery/releases/README.md). Ordinary
 singleton Attributes hold the identity, recipe, PreparedSource,
 ActiveBuildRevisionID and ReadyBuildRevisionID, and
 `ReleaseBuildRevisions<ReleaseBuildRevision>` uses the exact key `build-<UUIDv4>`.
@@ -1473,7 +1473,7 @@ application's, VerifyReleaseAndConfiguration the configuration's and every
 other phase the platform's. The notification's ID
 `deployment/<deploymentID>/g<generation>/r<revision>` names the lease
 generation and the Revision of the FAILED commit. The
-[Live deployment contract](../../internal/delivery/deployments/README.md)
+[Live deployment contract](../../internal/dexai/delivery/deployments/README.md)
 declares every Step deadline, retry policy and recovery route.
 
 **RPCs:** GetProjectDeployment, RequestLiveDeployment, RequestProjectCleanup,
@@ -1491,8 +1491,8 @@ ProductionPromotion Flows.
 
 ConnectorConnectionFlow and OAuthAuthorizationFlow remain absent from the platform
 registry. No replacement Flow, Attribute, Map, Channel, Stream, Step or index is
-introduced. `internal/projects/config` coordinates owner-authorized source and scope;
-`internal/studio/confighost` runs the audited configuration/OAuth handlers in the
+introduced. `internal/dexai/projects/config` coordinates owner-authorized source and scope;
+`internal/dexai/studio/confighost` runs the audited configuration/OAuth handlers in the
 existing Go process. The released `sdkgo/projectconfig` v0.26.0 standard storage
 package defines configuration, credential, OAuth and exchange records shared with
 application SDKs; the platform writes `v1alpha2` connection records. A scope's
@@ -1588,9 +1588,9 @@ reader init container or Preview configuration file is used. Preview's private
 storage credential file remains; admission and grant-scope validation are retained.
 
 Full source/storage and host lifetime contracts are in
-[Project configuration](../../internal/projects/config/README.md), and the
+[Project configuration](../../internal/dexai/projects/config/README.md), and the
 application environment, credential and OAuth contracts in the
-[configuration host](../../internal/studio/confighost/README.md).
+[configuration host](../../internal/dexai/studio/confighost/README.md).
 
 
 
@@ -1712,7 +1712,7 @@ execution identities; new V2 executions use the renamed primitive/Step contract.
 ### Release and Deployment recovery admission
 
 PrepareRelease/StartReleaseBuild implement the per-commit contract in
-[Release](../../internal/delivery/releases/README.md).
+[Release](../../internal/dexai/delivery/releases/README.md).
 Each build has its own exact map entry and bounded recovery receipts; there is no
 128-build lifetime cap. The following recovery rules apply to Deployment, which
 retains at most 128 accepted request receipts in ProviderOperationRefs.Requests. Each is
@@ -1831,7 +1831,7 @@ ACTIVE Session, an accepted READY workspace and a READY Preview. Writes bind
 the observed WorkspaceRequestID and Generation, not Generation alone. The running
 Preview definitions come from its accepted reference, never the next prepared
 source. Changed selection cancels old UI requests and closes its Start form.
-`internal/studio/runs` invokes the imported Flow API adapter in process and the
+`internal/dexai/studio/runs` invokes the imported Flow API adapter in process and the
 public pinned Dex gRPC client. Infrastructure verifies Namespace/Service ownership
 and UID before dialing fixed port 8801: a Live scope's Dex Service, or for Preview
 the Sandbox's own Service (`connect.DialSandboxDex`), which also verifies the
@@ -1910,9 +1910,9 @@ ProjectStatus transitions DELETING to DELETED; no Deleted flag or Boolean index.
 ## Database Schema Changes
 
 PostgreSQL holds `accounts` and `login_sessions` (migration `0001`), written by the
-server only through `internal/tenancy/accountdao`; the synced tables of the read model
+server only through `internal/dexai/tenancy/accountdao`; the synced tables of the read model
 (`0002`) and of the TeamSpaces and memberships (`0003`); the TeamSpace connection
-tables (`0004`); and the `schema_migrations` ledger that `internal/platform/postgres`
+tables (`0004`); and the `schema_migrations` ledger that `internal/comm/platform/postgres`
 keeps ([read model](teamspace/read-model.md), [connections](teamspace/connections.md),
 [infrastructure](teamspace/infrastructure.md)). A synced
 table is a projection written only by the Dex Attribute Store, never a second
@@ -2122,9 +2122,9 @@ have not yet completed a real HCP/ECR/AWS run. See the
 release runbook. Provider lockfiles remain
 recorded.
 
-The [project infrastructure roles](../../internal/projects/infra/README.md), which
-the [Kubernetes runtime](../../internal/projects/infra/kube/README.md) implements
-with a Local Kind backend and a [hosted backend](../../internal/projects/infra/kube/hosted/README.md),
+The [project infrastructure roles](../../internal/dexai/projects/infra/README.md), which
+the [Kubernetes runtime](../../internal/dexai/projects/infra/kube/README.md) implements
+with a Local Kind backend and a [hosted backend](../../internal/dexai/projects/infra/kube/hosted/README.md),
 own concrete isolated S3/KMS, workload IAM/Pod Identity and Temporal Cloud
 effects behind the existing Project, Deployment and Sandbox Steps. Accepted
 Flow references retain business authority; provider generations and UID checks
@@ -2438,7 +2438,7 @@ configuration rather than asking the user to create a replacement integration.
 
 ### Template automation boundary
 
-New projects receive the committable files of `app-template/` with Git file modes preserved; the template contains no repository automation, so the reused GitHub App permissions are unchanged. `go generate ./internal/app/apptemplate` packs them into the embedded archive, and `make check-app-template` fails on drift. Every new repository receives this template.
+New projects receive the committable files of `app-template/` with Git file modes preserved; the template contains no repository automation, so the reused GitHub App permissions are unchanged. `go generate ./internal/dexai/app/apptemplate` packs them into the embedded archive, and `make check-app-template` fails on drift. Every new repository receives this template.
 
 Workspace account display is read once by the server layout per new document and shared with all headers via the generated AccountSnapshot context. Menu toggles and client navigation do not fetch /api/auth/session. This display is not authentication authority; see [API ownership](../api/resource-grpc.md#workspace-account-display).
 

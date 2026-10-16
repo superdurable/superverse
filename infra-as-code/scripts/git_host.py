@@ -8,7 +8,7 @@
 
 """The local Git host of a local lane: its files on this machine and the credentials its tooling needs.
 
-The local Git host (internal/platform/repohost/localgit) runs inside the server. Each lane keeps its own bare
+The local Git host (internal/comm/platform/repohost/localgit) runs inside the server. Each lane keeps its own bare
 repositories and signing key in its private state directory, because each lane has its own Dex data and Projects:
 Kind in .local/superverse-v2 (the Kind node mounts its git directory into the server Pod), Native in
 .local/superverse-v2/native. The end-to-end runner derives its administrator token from the lane's key, and the host

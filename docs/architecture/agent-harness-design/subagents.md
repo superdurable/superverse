@@ -196,7 +196,7 @@ of this design.
 ## Worktrees
 
 A subagent's worktree is a git worktree of the workspace repository, created, finished and
-merged by one helper process per operation (`internal/agents/sandbox/workspace/git/agent_worktree.go`
+merged by one helper process per operation (`internal/dexai/agents/sandbox/workspace/git/agent_worktree.go`
 runs the helper program that no model input selects). Every operation queries before it
 writes. No helper Git command takes an optional lock (`GIT_OPTIONAL_LOCKS=0`), so the status
 read of a snapshot never rewrites the workspace's index or holds its lock against a Git command
@@ -389,8 +389,8 @@ The Snapshot lists tasks from the records for Studio; the conversation never car
 
 The complete per-Flow review contract of `SubagentFlow` (identity, every Attribute and
 AttributeMap, the ChannelMap, the Streams, the Steps, RPCs, external-effect identities and
-recovery) is owned by the [subagent package README](../../../internal/agents/session/subagent/README.md),
-and the records, kinds and bounds by [agenttasks](../../../internal/agents/session/agenttasks/README.md).
+recovery) is owned by the [subagent package README](../../../internal/dexai/agents/session/subagent/README.md),
+and the records, kinds and bounds by [agenttasks](../../../internal/dexai/agents/session/agenttasks/README.md).
 The Session's primitives for subagents (the `Subagents` map, `AdmitSubagent`, `InterruptAgent`)
 are declared in [session](session.md); their semantics are above. In outline:
 
@@ -431,13 +431,13 @@ are declared in [session](session.md); their semantics are above. In outline:
   `ReportSubagentOutcome` and `RecordUndeliveredReport`; RPCs `StopSubagent`,
   `GetSubagentSnapshot`, `GetDexSummary` and `GetDexDisplay`. The generated graph is
   `docs/flows/sv2-subagent-flow.json`.
-- **Packages.** `internal/agents/session/subagent` holds the Flow, its client, bootstrap and
+- **Packages.** `internal/dexai/agents/session/subagent` holds the Flow, its client, bootstrap and
   dependency; `SubagentFlowClient` fronts exactly this Flow (the start, `StopSubagent`, the
   retained read, the search by FlowType and `ProjectID` that Project cleanup uses and the
   activity read the Session's Watch relays). `SubagentFlowDependency` is what the Flow consumes
   from the Session Service: the admission, the lease refresh and the report.
-  `internal/agents/session/agenttasks` declares `AgentTaskLauncher`, which the Session consumes.
-  The Session Service implements both in `internal/agents/session_flow_service_tasks.go`
+  `internal/dexai/agents/session/agenttasks` declares `AgentTaskLauncher`, which the Session consumes.
+  The Session Service implements both in `internal/dexai/agents/session_flow_service_tasks.go`
   ([composition](composition.md)); the Flow reaches the Session only through that Service.
 
 ## Database Schema Changes
@@ -523,10 +523,10 @@ This document owns the subagent design: when the main agent delegates, its three
 worktrees and the merge, the lease, the resource rules, the reports and the stop.
 [session](session.md) lists the Session primitives and links here;
 [start-flow-admission](../start-flow-admission.md) lists the `SubagentFlow` StartFlow call
-site; the README of [`session/subagent`](../../../internal/agents/session/subagent/README.md)
+site; the README of [`session/subagent`](../../../internal/dexai/agents/session/subagent/README.md)
 owns the per-Flow contract and the README of `session/agenttasks` the records and bounds; the
 SubagentFlow section of [the specification](../superverse-v2.md#subagentflow) summarizes them.
-The Git helpers' README (`internal/agents/sandbox/workspace/git`) describes the worktree
+The Git helpers' README (`internal/dexai/agents/sandbox/workspace/git`) describes the worktree
 operations and the merge receipt.
 
 ## Resource Scalability

@@ -7,7 +7,7 @@ against the current Session (message keys and retention below), and extends it t
 
 ## Actors
 
-`conversation.Actor{AccountID, Email}` is declared once in `internal/agents/session/conversation`.
+`conversation.Actor{AccountID, Email}` is declared once in `internal/dexai/agents/session/conversation`.
 The Session Service builds it from the authenticated account; no request carries an actor, so a
 browser or a Bridge cannot claim one. `SessionFlowService.AuthorizeSession` returns
 `SessionCaller{FlowID, Actor, Role}` instead of the FlowID alone (the platform admin counts as

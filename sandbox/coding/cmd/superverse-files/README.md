@@ -88,6 +88,6 @@ paths from ripgrep's messages:
 
 ## Verification
 
-`TestFileHelperActualSandbox` in `internal/agents/sandbox/workspace/sandboxd`
+`TestFileHelperActualSandbox` in `internal/dexai/agents/sandbox/workspace/sandboxd`
 runs every operation through the real sandboxd of a coding image container,
 including the path rules, the permission failures and the repeat of an edit.

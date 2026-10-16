@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Holds the domain-free helpers every package shares: `Must`/`MustDo` for bug-only errors, UTF-8-safe text cuts, strict JSON decoding and long poll windows on the local clock.
 
-Callers: `cmd/**` (5), `internal/agents/**` (20), `internal/api/**` (4), `internal/app/**` (2), `internal/bootstrap`, `internal/comm/**` (3), `internal/delivery/**` (6), `internal/platform/**` (6), `internal/projects/**` (10), `internal/studio/**` (5) and `internal/tenancy/**` (4) import this package.
+Callers: `cmd/**` (5), `internal/comm/**` (9) and `internal/dexai/**` (52) import this package.
 
 Dependencies: it imports no other package of this module and calls no remote API.
 
@@ -11,16 +11,8 @@ Dependencies: it imports no other package of this module and calls no remote API
 flowchart LR
   self["internal/comm"]
   c0["cmd/** (5)"] --> self
-  c1["internal/agents/** (20)"] --> self
-  c2["internal/api/** (4)"] --> self
-  c3["internal/app/** (2)"] --> self
-  c4["internal/bootstrap"] --> self
-  c5["internal/comm/** (3)"] --> self
-  c6["internal/delivery/** (6)"] --> self
-  c7["internal/platform/** (6)"] --> self
-  c8["internal/projects/** (10)"] --> self
-  c9["internal/studio/** (5)"] --> self
-  c10["internal/tenancy/** (4)"] --> self
+  c1["internal/comm/** (9)"] --> self
+  c2["internal/dexai/** (52)"] --> self
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 

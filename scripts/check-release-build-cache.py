@@ -19,7 +19,7 @@ import time
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
-PROFILE = ROOT / "internal/delivery/releases/build/build-profiles/go-react-v1"
+PROFILE = ROOT / "internal/dexai/delivery/releases/build/build-profiles/go-react-v1"
 
 
 def run(arguments, *, log=None):

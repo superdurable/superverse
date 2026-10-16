@@ -39,9 +39,9 @@ owns what reaches the browser.
 
 | Code | Owns |
 | --- | --- |
-| `internal/agents/session/modelprovider` | The Claude client, `ModelProfile`, stream capture and error classification. |
-| `internal/agents/session/conversation` | `Entry`, request assembly (`request_assembly.go`) and the embedded prompts. |
-| `internal/agents/session` | The Steps that call the model and apply the decisions below: `CallModel`, `CompactContext`, `RecordModelFailure`, `RecordCompactionFailure`. |
+| `internal/dexai/agents/session/modelprovider` | The Claude client, `ModelProfile`, stream capture and error classification. |
+| `internal/dexai/agents/session/conversation` | `Entry`, request assembly (`request_assembly.go`) and the embedded prompts. |
+| `internal/dexai/agents/session` | The Steps that call the model and apply the decisions below: `CallModel`, `CompactContext`, `RecordModelFailure`, `RecordCompactionFailure`. |
 
 Decisions (compaction trigger, rollover, effort, stop-reason routing) are functions over
 values. The Steps read and write the Flow primitives and apply them in their own
@@ -478,7 +478,7 @@ Token counts come from the response's `usage`, not from byte estimates.
 
 ## Prompts
 
-Prompts are embedded in the binary under `internal/agents/session/conversation/`. A
+Prompts are embedded in the binary under `internal/dexai/agents/session/conversation/`. A
 change to the system prompt or a tool definition changes `PromptDigest` and reaches open
 Sessions through [rollover](#rollover).
 
@@ -567,11 +567,11 @@ not reliably take the path a test needs. The mock model replaces it in every tes
 the final acceptance. It is a controlled test dependency; Dex, Kind or Docker, the Sandbox and the
 GitHub test repositories stay real.
 
-**What it is.** A small Go HTTP service (`internal/agents/session/modelprovider/mockmodel`)
+**What it is.** A small Go HTTP service (`internal/dexai/agents/session/modelprovider/mockmodel`)
 that implements the part of the Claude Messages API the Agent uses, including streaming SSE:
 text, thinking (with fake signatures), `tool_use`, `usage` (so tests can drive compaction) and
 `stop_reason`. The real Claude client code runs unchanged: request assembly, stream parsing
-and storage. The [package README](../../../internal/agents/session/modelprovider/mockmodel/README.md)
+and storage. The [package README](../../../internal/dexai/agents/session/modelprovider/mockmodel/README.md)
 is the reference for scenarios, markers and checks.
 
 **How it runs.**

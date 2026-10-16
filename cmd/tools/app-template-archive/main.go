@@ -7,8 +7,8 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 // Command app-template-archive packs app-template/ into the archive embedded by
-// internal/app/apptemplate and renders the matching Studio initial design. It runs
-// through `go generate ./internal/app/apptemplate`; the output is deterministic so
+// internal/dexai/app/apptemplate and renders the matching Studio initial design. It runs
+// through `go generate ./internal/dexai/app/apptemplate`; the output is deterministic so
 // scripts/check-app-template.sh can detect drift.
 package main
 
@@ -27,7 +27,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/superdurable/superversev2/internal/app/apptemplate"
+	"github.com/superdurable/superversev2/internal/dexai/app/apptemplate"
 )
 
 func main() {
@@ -53,7 +53,7 @@ func run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if err = os.WriteFile(filepath.Join(root, "internal", "app", "apptemplate", "app-template.tar"), archive, 0o600); err != nil {
+	if err = os.WriteFile(filepath.Join(root, "internal", "dexai", "app", "apptemplate", "app-template.tar"), archive, 0o600); err != nil {
 		return err
 	}
 	// The template's own FDG script owns strict rendering and digests.

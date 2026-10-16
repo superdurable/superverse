@@ -33,7 +33,7 @@
 
 ## Migrations
 
-- Files `internal/platform/postgres/migrations/NNNN_*.sql`, embedded in the binary:
+- Files `internal/comm/platform/postgres/migrations/NNNN_*.sql`, embedded in the binary:
   `0001` accounts and login sessions, `0002` the synced Project, Release and Deployment
   tables, `0003` TeamSpaces and members, `0004` connections, `0005` the Slack event relay's
   provider account columns and trigger registrations
@@ -67,7 +67,7 @@
 - Platform OAuth applications ([connections.md](connections.md#oauth-clients)): the key
   `connections.platformClients` maps `<connector>/<method>` to `{clientId, scopes}`, and
   the secret `SUPERVERSE_CONNECTOR_OAUTH_CLIENT_SECRETS`, read in
-  `internal/bootstrap/secrets.go`, is a JSON map from the same keys to the client
+  `internal/dexai/bootstrap/secrets.go`, is a JSON map from the same keys to the client
   secrets. The server refuses to start when a configured client has no secret. The local
   profiles configure none; an environment adds entries as PLATAPP registers applications.
 - Kind and EKS gain a NetworkPolicy that lets Project namespaces and Sandboxes reach the
@@ -88,7 +88,7 @@ holds its configuration and network paths.
 
 ### Configuration
 
-- The secret `SUPERVERSE_SLACK_SIGNING_SECRET`, read in `internal/bootstrap/secrets.go`,
+- The secret `SUPERVERSE_SLACK_SIGNING_SECRET`, read in `internal/dexai/bootstrap/secrets.go`,
   is the platform Slack application's Signing Secret. Never a configuration key. The
   public events listener serves only when it is set, and the server refuses to start when
   `connections.platformClients` has a `slack/...` entry without it. Hosted environments add
@@ -120,24 +120,24 @@ A Project's application port is public on both scopes today, and the relay deliv
 those routes; it adds no port to the application or the Sandbox:
 
 - Live: an HTTPRoute on the project Gateway to the serving generation's Service, which follows
-  each redeployment (`internal/delivery/deployments/kube/live_serving_route.go`,
+  each redeployment (`internal/dexai/delivery/deployments/kube/live_serving_route.go`,
   `live_serving.go:52-55`); on Local Native, the lane gateway's route to the Live container
-  (`internal/delivery/deployments/docker/route.go`).
+  (`internal/dexai/delivery/deployments/docker/route.go`).
 - Preview: an HTTPRoute on the project Gateway to the Sandbox's port 3000
-  (`internal/agents/sandbox/kube/instance_provisioner_preview.go`); on Local Native,
+  (`internal/dexai/agents/sandbox/kube/instance_provisioner_preview.go`); on Local Native,
   the lane gateway's route to the coding container's published port 3000.
 
 The server reaches these routes exactly as it already probes them when it activates a Live
 generation or exposes a Preview:
 
-- AWS: the public URL itself (`internal/projects/infra/kube/hosted/backend.go`), through
+- AWS: the public URL itself (`internal/dexai/projects/infra/kube/hosted/backend.go`), through
   the platform load balancer's wildcard rule and the Envoy proxies of the project Gateway. The server's platform NetworkPolicy already allows
   egress to public addresses on 443 (`network-policy.yaml:30-34`), so no rule is added.
 - Local Kind: the Envoy proxies of the project Gateway, which route the Live and Preview hosts
-  by Host header to those Services (`internal/projects/infra/kube/local/backend.go`,
+  by Host header to those Services (`internal/dexai/projects/infra/kube/local/backend.go`,
   `project-gateway.yaml`); the chart's server policies are not rendered on Kind.
 - Local Native: the lane's gateway, with the route's Host header
-  (`internal/projects/infra/docker/routes.go`), on the host loopback.
+  (`internal/dexai/projects/infra/docker/routes.go`), on the host loopback.
 
 The public events listener:
 
@@ -157,14 +157,14 @@ The public events listener:
 
 ### Code layout
 
-- `internal/tenancy/slackrelay/`: the events endpoint, routing, the registration handler,
+- `internal/dexai/tenancy/slackrelay/`: the events endpoint, routing, the registration handler,
   the uninstall handling and the delivery consumer. It reaches the scopes' public routes
-  through a port it declares, which `internal/bootstrap` implements with the public routes
+  through a port it declares, which `internal/dexai/bootstrap` implements with the public routes
   and probe base the deployments and the Preview already use, so `tenancy` imports no
   `projects`, `agents` or `delivery` package.
-- `internal/platform/eventqueue/` with the interface, the item type and the typed errors,
-  and `internal/platform/eventqueue/memory/`, the only implementation, which only
-  `internal/bootstrap` imports.
+- `internal/comm/platform/eventqueue/` with the interface, the item type and the typed errors,
+  and `internal/comm/platform/eventqueue/memory/`, the only implementation, which only
+  `internal/dexai/bootstrap` imports.
 
 ## Dex
 
@@ -178,15 +178,15 @@ The public events listener:
 
 `internal/` keeps its ten entries:
 
-- `internal/tenancy/accounts/` and `internal/tenancy/accountdao/` (both exist), beside
-  `internal/tenancy/teamspaces/` (TeamSpaceFlow), `internal/tenancy/connections/`
+- `internal/dexai/tenancy/accounts/` and `internal/dexai/tenancy/accountdao/` (both exist), beside
+  `internal/dexai/tenancy/teamspaces/` (TeamSpaceFlow), `internal/dexai/tenancy/connections/`
   (connections and the read endpoint) and the DAO packages `memberdao`, `teamspacedao`
   and `connectiondao`;
-- `internal/projects/projectdao` and `internal/delivery/deliverydao`;
-- `internal/platform/postgres/` for the pool, transactions and migrations (exists);
-- `internal/api/tenancy/` for the account, TeamSpace, member and connection services.
+- `internal/dexai/projects/projectdao` and `internal/dexai/delivery/deliverydao`;
+- `internal/comm/platform/postgres/` for the pool, transactions and migrations (exists);
+- `internal/dexai/api/tenancy/` for the account, TeamSpace, member and connection services.
 
-Project members stay in `internal/projects` (`project_flow_members.go`); the Project's
+Project members stay in `internal/dexai/projects` (`project_flow_members.go`); the Project's
 connection selection stays in the configuration host. A child imports its parent
 (`projects` imports `tenancy/*`); TeamSpaceFlow reaches Projects and connections through
 the `ProjectCleanup` and `ConnectionCleanup` ports the bootstrap injects (`teamspaces`

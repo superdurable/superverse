@@ -1,4 +1,4 @@
 # The completed-turn answer delivery check covers these bridge boundaries.
 cmd/superverse-bridge/**
-internal/agents/remoteagent/**
-internal/agents/remoteexec/**
+internal/dexai/agents/remoteagent/**
+internal/dexai/agents/remoteexec/**

@@ -39,7 +39,7 @@ import (
 )
 
 const (
-	boundaryPackage = "github.com/superdurable/superversev2/internal/api/boundary"
+	boundaryPackage = "github.com/superdurable/superversev2/internal/dexai/api/boundary"
 	protoPackage    = "superverse.v2"
 )
 

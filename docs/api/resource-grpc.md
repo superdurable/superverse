@@ -246,7 +246,7 @@ mechanically.
 2. **M2. Identity.** IDs are flat string fields at the start of the request, in hierarchy
    order (`project_id`, then the child ID). There are no Ref or Mutation messages. The only
    shared target DTOs are `ProjectConfigurationTarget {project_id 1, ProjectScope scope 2,
-   release_id 4}`, which `internal/projects/config` consumes, and `FlowApiContext`. A
+   release_id 4}`, which `internal/dexai/projects/config` consumes, and `FlowApiContext`. A
    Project has one Session, so the Session, its Agent commands and its Preview are
    addressed by `project_id` alone.
 3. **M3. Caller.** Every request except RegisterAccountRequest and LoginRequest has
@@ -343,7 +343,7 @@ Every value comes from a write in the owning code; the Go names are the domain c
 | PreviewDeploymentStatus | RUNNING, READY, INCOMPATIBLE, FAILED, SKIPPED, CANCELLED | `preview.Deployment*`; UNSPECIFIED while only a queued request exists | PreviewDeploymentSnapshot.status |
 | ConfigurationRequirementGap.Kind (`KIND_`) | CONNECTION_REQUIRED, AUTHORIZATION_REQUIRED, CONNECTION_INCOMPLETE, TRIGGER_BINDING_REQUIRED, TRIGGER_BINDING_INVALID, OPERATION_CONFIGURATION_REQUIRED, ENVIRONMENT_REQUIRED | `appmanifest.Gap*`, mapped by `appmanifest.RequirementGapSnapshots` beside each kind | ProjectConfigurationSnapshot.requirement_gaps, PreviewSnapshot.configuration_gaps |
 | ProjectScope | PREVIEW, LIVE | `infra.Scope.Kind`, mapped only by `infra.ScopeOf` | ProjectConfigurationTarget, ProjectConfigurationSnapshot, FlowApiTarget |
-| ConfigurationStatus | DRAFT, NEEDS_REVIEW, READY | `internal/projects/config` | ProjectConfigurationSnapshot.status |
+| ConfigurationStatus | DRAFT, NEEDS_REVIEW, READY | `internal/dexai/projects/config` | ProjectConfigurationSnapshot.status |
 | ReleaseStatus | PENDING, DRAFT, BUILDING, READY, FAILED, RECOVERING, REMOVING, REMOVED, CANCELLED (a build revision a person cancelled) | `releases.Status`, one set for a Release, its prepared source and each build revision | ReleaseSnapshot, PreparedReleaseSourceSnapshot, ReleaseBuildRevisionSnapshot, ListReleases filter |
 | FailureRemedy | OPEN_SETUP, APPLY_AGAIN, ASK_AGENT, REAUTHORIZE, FREE_WORKSPACE, PUBLISH_AGAIN, CONTACT_OPERATOR, CANCEL_DEPLOYMENT (the deployment that `RELEASE_BUILD_DEPLOYING` names in its ErrorInfo metadata `deploymentId`) | `dexflow.FailureRemedy`, declared with each failure code and ErrorInfo reason; UNSPECIFIED on a failure recorded before it | Failure.remedy, AgentNotification.remedy, ErrorInfo metadata `remedy` |
 | FailureOwner | APPLICATION, CONFIGURATION, PLATFORM | `conversation.DeliveryOwner`, recorded beside a Preview, Release build or source failure, derived from a Deployment's phase; UNSPECIFIED elsewhere | Failure.owner |
@@ -376,13 +376,13 @@ Every value comes from a write in the owning code; the Go names are the domain c
 - There is no AccountStatus, ConfigurationValidationStatus, ReleaseSourceStatus or
   BuildRevisionStatus enum: an Account is always ACTIVE to the API, a validation receipt
   only exists for a success, and the Release statuses form one set.
-- Go maps in one place, `internal/api/boundary`. `boundary.Enum[E](domain)` looks up
+- Go maps in one place, `internal/dexai/api/boundary`. `boundary.Enum[E](domain)` looks up
   `<UPPER_SNAKE(enum name)>_<upper(domain)>` through the enum descriptor; `""` maps to the
   zero value, and any other unknown value is a programming error that panics and returns
   Internal for that RPC. `boundary.domainValue` turns a request enum back into its domain
   value; a zero or undeclared number is InvalidArgument. List handlers pass the domain
   values to the Dex search, and the Agent Resolution and Action are lower-cased.
-  `internal/projects/config` and `internal/studio/runs` cannot import `internal/api`, so
+  `internal/dexai/projects/config` and `internal/dexai/studio/runs` cannot import `internal/dexai/api`, so
   they use the generated constants directly and map scope through
   `infra.ScopeOf(pb.ProjectScope)`; anything other than PREVIEW or LIVE yields an invalid
   Scope that `Validate` rejects.
@@ -487,7 +487,7 @@ installation IDs, embed one resource in another or join results into a second pr
    | DeploymentService | `DEPLOYMENT_NOT_CANCELLABLE` |
 
    The metadata that crosses is `remedy`: the `FailureRemedy` value name the server
-   declared with the reason (`internal/api/boundary/error_reasons.go`, the connection
+   declared with the reason (`internal/dexai/api/boundary/error_reasons.go`, the connection
    refusals and the stopped Session, which declare it with their own sets), and, for
    `RELEASE_BUILD_DEPLOYING` only, `deploymentId`, the deployment its remedy
    `CANCEL_DEPLOYMENT` cancels, when it is a deployment ID. Studio reads the fix from them and
@@ -573,7 +573,7 @@ Authentication has no cache: every request makes the one query above, so a Logou
 epoch change takes effect on the next request of every instance, and the process-local
 caller cache and its `SUPERVERSE_AUTH_CACHE_TTL_SECONDS` setting no longer exist. There is
 no BFF scope cache either. Every Flow API operation authenticates the same way before
-reading its resource. See the [Account service](../../internal/tenancy/accounts/README.md).
+reading its resource. See the [Account service](../../internal/dexai/tenancy/accounts/README.md).
 
 Registration and login return the account summary plus the new login, never the password
 record. `AccountLogin {account, session_token, expires_at}` answers both RegisterAccount
@@ -1259,7 +1259,7 @@ NOT_FOUND. ProjectReleaseFlow stops the provider build and ends the revision `CA
 and the Release's status mirrors it, as for a failure; the Release stays open, and a new build is
 admitted afterwards as after a failure. A cancellation the provider cannot confirm still ends
 `CANCELLED`, without `provider_settled` and with the failure `BUILD_CANCEL_UNCONFIRMED`
-([releases](../../internal/delivery/releases/README.md#build-cancellation)).
+([releases](../../internal/dexai/delivery/releases/README.md#build-cancellation)).
 
 GetReleaseBuildLog reads one page of a build revision's provider log from `cursor` (empty from the
 start, at most 1024 bytes, InvalidArgument for a cursor no page returned), for the build
@@ -1270,9 +1270,9 @@ and nothing is stored. Per replica the viewers of one page share one read for 2 
 token bucket of `builds.logReadsPerSecond` (default 2, burst 4) bounds the reads it starts; a read
 beyond it, or one the provider throttled, answers an empty page at the same cursor with a longer
 `retry_after_ms` instead of failing
-([deployments](../../internal/delivery/deployments/README.md#build-logs)). The hosted builder reads
+([deployments](../../internal/dexai/delivery/deployments/README.md#build-logs)). The hosted builder reads
 CloudWatch's `nextForwardToken`, the local one a byte offset
-([build port](../../internal/delivery/releases/build/README.md)).
+([build port](../../internal/dexai/delivery/releases/build/README.md)).
 
 ## Deployments
 
@@ -1317,7 +1317,7 @@ revokes the generation's grant, removes its generation and releases its Project 
 `CANCELLED` with its `Cancellation` as `DeploymentSnapshot.cancellation`. The running Live, its
 generation, route and Worker endpoint, its connection usages and its Slack trigger registrations
 are untouched. A deployment of a Project being deleted is still `CANCELLING` and ends `REMOVED`
-([deployments](../../internal/delivery/deployments/README.md#cancellation-by-a-person)).
+([deployments](../../internal/dexai/delivery/deployments/README.md#cancellation-by-a-person)).
 `ListEnvironmentEvents` lists a cancelled build or deployment of Live as `KIND_PUBLISH_CANCELLED`.
 Migration `0009_publish_cancellation.sql` adds the nullable `cancellation` columns of
 `release_build_revisions` and `deployments`, which only the Dex Attribute Store sync writes.
@@ -1377,7 +1377,7 @@ A Live read (`scope` LIVE) returns Live's next publish
 resolves for the target's source. Live's settings for the next publish are one sparse
 next-publish layer per Project that holds only Live's own items; an item it does not hold
 follows Preview's applied value, or current Live's when Preview's applied version lacks it
-([configuration host](../../internal/studio/confighost/README.md#live-next-publish-layer)). The
+([configuration host](../../internal/dexai/studio/confighost/README.md#live-next-publish-layer)). The
 read lists the `items` by `ConfigurationItemKey{kind, connector_id, connection_name, trigger_name,
 binding_name, operation_id, flow_type, step_type, environment_name}`: `FOLLOWS_PREVIEW` (the layer
 does not hold it), `OWN` (the layer holds Live's own value) and `NO_LONGER_USED` (current Live has
@@ -1489,9 +1489,9 @@ it.
 
 `TeamSpaceConnectionService` serves a TeamSpace's named connector configurations and
 credentials, one connector major version each. The database owns them
-([connections](../../internal/tenancy/connections/README.md)); no Flow does, and every
+([connections](../../internal/dexai/tenancy/connections/README.md)); no Flow does, and every
 request is one strongly consistent query or transaction. The read model decides who may do
-what ([`internal/api/tenancy`](../../internal/api/tenancy/README.md)):
+what ([`internal/dexai/api/tenancy`](../../internal/dexai/api/tenancy/README.md)):
 
 - A member of the TeamSpace, or the platform admin, lists and reads its connections, with
   the Projects and scopes that use each one. Any authenticated caller lists the connector
@@ -1593,7 +1593,7 @@ compilation.
 The Flow API is the API of the embedded Dex Flow UI: Runs, diagnostics, connectors and the
 application environment of one served application. It is the same term everywhere:
 `FlowApiTarget`, `FlowApiContext` and `FlowApiDocument` in the proto, `flow_api.go` in
-`internal/api` over the domain packages `internal/studio/{runs,confighost,flowapi}`, and
+`internal/dexai/api` over the domain packages `internal/dexai/studio/{runs,confighost,flowapi}`, and
 `lib/server/flow/` (`handleFlowApiRequest`, `dispatchFlowApiRequest`, `flowApiTarget`,
 `FlowApiPurpose = 'runs' | 'configuration'`) and `lib/api/flow/` in Studio. Studio reaches
 it only through its fixed `/dex/...` routes, which keep their URLs; browser fields cannot
@@ -1645,7 +1645,7 @@ tabs.
 The Go Runs service reads and verifies exact FDG bytes and digest before exposing a
 catalog. Query, Display, field update, action, StartFlow and RecoverFlowStart require the
 exact DefinitionRevision; diagnostic reads may omit it, and supplied revisions still match.
-`internal/studio/runs` derives the fixed Worker and target revision and calls a typed
+`internal/dexai/studio/runs` derives the fixed Worker and target revision and calls a typed
 operation of the imported Flow adapter in process, which calls the pinned public Dex SDK
 over authenticated, resource-selected private gRPC; no trusted browser header or network
 Dex Web endpoint supplies these values. Infrastructure verifies the accepted
@@ -1697,8 +1697,8 @@ against the Preview's source), `/dex/projects/:projectId/configuration/live/next
 `/dex/projects/:projectId/configuration/preview`, which expose only native
 configuration APIs, never Connector HTML or an arbitrary provider target, and Preview
 publishing links redirect to Build Configuration. See
-[Project configuration](../../internal/projects/config/README.md) for canonical keys and
-private host lifetime, and the [configuration host](../../internal/studio/confighost/README.md)
+[Project configuration](../../internal/dexai/projects/config/README.md) for canonical keys and
+private host lifetime, and the [configuration host](../../internal/dexai/studio/confighost/README.md)
 for shared credential semantics. Credential values are never included in mapping errors
 or acceptance receipts.
 
@@ -1732,7 +1732,7 @@ and every definitive failure clear the cookie and return to the page with
 `oauth=success&connection=<id>`, or `oauth=failed` and the refusal's reason; a transient
 failure keeps it, so a reload retries. The callback is classified as a mutation despite its
 browser GET. Stored token answers reconcile response loss and fence credential
-publication under the connection's lease ([connections](../../internal/tenancy/connections/README.md)).
+publication under the connection's lease ([connections](../../internal/dexai/tenancy/connections/README.md)).
 No platform OAuth Flow, mirrored state or new credential store is added.
 
 Actual-dependency acceptance must cover the real Studio, BFF and gRPC path, real scoped
@@ -1798,7 +1798,7 @@ until `READY`; a Preview-scope configuration read without a `READY` instance ret
 Sandbox deadline yields a `CLOSED` workspace while the Session stays `ACTIVE`, and the next
 demand provisions a new instance on the same volume; Project deletion completes with a
 never-requested, provisioning, `READY`, reclaimed or failed instance. The Dex integration
-scenarios of the [Session Service](../../internal/agents/README.md#tests) cover the Flow
+scenarios of the [Session Service](../../internal/dexai/agents/README.md#tests) cover the Flow
 side; the BFF scenarios are required, not yet claimed.
 
 Mock and unit tests are not acceptance. The Go services enforce the fresh resource, UID,

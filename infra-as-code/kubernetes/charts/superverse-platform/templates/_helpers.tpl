@@ -111,7 +111,7 @@ docker.io/nginxinc/nginx-unprivileged@sha256:ed04ec1ff34502c339ee5c3ae3f85544239
 {{/*
 The Envoy Gateway of the project routes: the namespace that holds its controller, its Gateway
 "projects" and the proxies' Service, and the domain one label below which every project host lies.
-Go derives the same names (internal/projects/infra/kube/addresses.go, infra.PublicRoutes.Host).
+Go derives the same names (internal/dexai/projects/infra/kube/addresses.go, infra.PublicRoutes.Host).
 */}}
 {{- define "v2.gatewayNamespace" -}}{{ include "v2.product" . }}-gateway{{- end -}}
 {{- define "v2.gatewayService" -}}projects-gateway{{- end -}}

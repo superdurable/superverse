@@ -19,8 +19,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/superdurable/superversev2/internal/app/appmanifest"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
+	"github.com/superdurable/superversev2/internal/dexai/app/appmanifest"
 )
 
 func render() error {

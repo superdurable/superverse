@@ -3,7 +3,7 @@
   "valid": true,
   "source": {
     "language": "go",
-    "path": "internal/tenancy/teamspaces/team_space_flow.go"
+    "path": "internal/dexai/tenancy/teamspaces/team_space_flow.go"
   },
   "flow": {
     "name": "TeamSpaceFlow",

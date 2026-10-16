@@ -271,7 +271,7 @@ CREATE INDEX remote_agent_connections_project ON remote_agent_connections (proje
 GRANT SELECT, INSERT, UPDATE, DELETE ON remote_agent_connections TO superverse_server;
 ```
 
-- **Writer**: only `internal/agents/remoteagent` through `remoteagentdao`. Not a Dex-synced table.
+- **Writer**: only `internal/dexai/agents/remoteagent` through `remoteagentdao`. Not a Dex-synced table.
 - **Why a table and not the Flow**: authentication of every Bridge request must not read a Flow
   (AGENTS.md: authentication goes through SQL), and pairing exists before any Session write. The
   table holds credentials, their basis epoch and liveness only; the executor and the current epoch

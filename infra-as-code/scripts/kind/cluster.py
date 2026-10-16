@@ -48,7 +48,7 @@ FORWARDS = {
     "temporal": Forward("temporal", 27233, 7233, True),
     "temporal_ui": Forward("temporal", 28233, 8233, True),
     "minio": Forward("minio", 29000, 9000, True),
-    # The server's database, for the integration tests (internal/platform/postgres/postgrestest).
+    # The server's database, for the integration tests (internal/comm/platform/postgres/postgrestest).
     "postgres": Forward("postgres", 28432, 5432, True),
     "dex": Forward("superverse-v2-dex", 28811, 8801, True),
     "dex_web": Forward("superverse-v2-dex", 28812, 8802, True),

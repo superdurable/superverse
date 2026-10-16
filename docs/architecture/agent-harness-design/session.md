@@ -1,7 +1,7 @@
 # Session
 
 The Session is the Project's one long-lived coding conversation. It is a single Dex Flow,
-`SessionAgentFlow` (`internal/agents/session/session_agent_flow.go`), that owns the
+`SessionAgentFlow` (`internal/dexai/agents/session/session_agent_flow.go`), that owns the
 conversation, its turns, the questions and the requirements card the agent puts to the
 user, the Stop button, automatic turns, and the request side of the Sandbox instance the
 agent works in: it asks for an instance, holds the accepted lease and the Sandbox deadline,
@@ -954,7 +954,7 @@ three E2E cases with real Opus 5.5.
 | Zero Flow RPC | After READY a turn of read, search, edit, command and `commit_and_push` logs no `session workspace cold path` line and adds no event to the workspace, provisioning or Preview executions |
 | Close | Project deletion calls `CompleteProjectSession` once, ends the workspace Flow, finds and stops the running subagents by FlowType and `ProjectID`, ends the Preview and releases every Sandbox resource by label; a deletion during a provisioning, during a reclamation and after an abnormal Session end leaves nothing; a release failure keeps the Project DELETING until a retried deletion |
 
-The scenarios run in the Dex integration tests of `internal/agents` (`session_*_integration_test.go`)
+The scenarios run in the Dex integration tests of `internal/dexai/agents` (`session_*_integration_test.go`)
 and of the Session's sub-packages; their package READMEs list them.
 
 Not verified without a safe repeatable trigger: refusals and fallback. Behavior that depends on model
@@ -964,16 +964,16 @@ output is recorded as observed.
 
 This document owns the Session contract. [Composition](composition.md) owns the wiring;
 [superverse-v2.md](../superverse-v2.md#sessionagentflow) carries a summary and links here, and the
-[Session package README](../../../internal/agents/session/README.md) keeps the file table and the
+[Session package README](../../../internal/dexai/agents/session/README.md) keeps the file table and the
 Step graph narrative. the current contract records one
 Session per Project and [the current contract](sandbox.md) the
-instance lifecycle. The prompt `internal/agents/session/conversation/prompts/v1/session.md` and the
+instance lifecycle. The prompt `internal/dexai/agents/session/conversation/prompts/v1/session.md` and the
 notices carry the rules for requirements, progress, delegation and business-language progress text.
 The append-only context, Flow RPC scope and retained capabilities are specified in the owning topic documents.
 
 ## Remote executor
 
-The [owning Session package inventory](../../../internal/agents/session/README.md#executor-and-remote-turn-contract)
+The [owning Session package inventory](../../../internal/dexai/agents/session/README.md#executor-and-remote-turn-contract)
 defines Executor/executorLock, RemoteInbox Report/Control union, SetExecutor,
 ReportRemote, ReadRemote, the three Stop fences, remote retention and bounded
 executor handoff. One sole active AwaitUser or AwaitRemoteAgent consumes this

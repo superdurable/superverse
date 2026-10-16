@@ -18,7 +18,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/superdurable/superversev2/internal/bootstrap"
+	"github.com/superdurable/superversev2/internal/dexai/bootstrap"
 )
 
 func main() {

@@ -84,14 +84,14 @@ WHERE p.project_id = $1
 ListTeamSpaceMembers names no Project, so it needs TeamSpace membership, which every Project
 role requires: operators read the TeamSpace's members too.
 
-Checks happen in the API handlers, in the Flow API (`internal/studio/runs`, which also
+Checks happen in the API handlers, in the Flow API (`internal/dexai/studio/runs`, which also
 applies "operator only on Live" by scope), in the configuration routes, in the Session
 service, and where a Step re-checks its actor (the release phases and the publishing
 service). All of them read SQL. Studio's `caller_role` only chooses what to show.
 
 ## TeamSpaceFlow
 
-Package `internal/tenancy/teamspaces`, file `team_space_flow.go`.
+Package `internal/dexai/tenancy/teamspaces`, file `team_space_flow.go`.
 
 ### Identity and lifecycle
 
@@ -113,8 +113,8 @@ Package `internal/tenancy/teamspaces`, file `team_space_flow.go`.
   are found in the database by `team_space_id`. Deleting the TeamSpace deletes both
   through the `ProjectCleanup` and `ConnectionCleanup` ports, which the bootstrap
   injects. `ConnectionCleanup` is `DeleteTeamSpaceConnections(ctx, teamSpaceID) (done bool,
-  err error)`, declared in `internal/tenancy/teamspaces` and
-  `internal/tenancy/connections`; each call is bounded and idempotent, and is never
+  err error)`, declared in `internal/dexai/tenancy/teamspaces` and
+  `internal/dexai/tenancy/connections`; each call is bounded and idempotent, and is never
   refused because of usages.
 
 ### Attributes and AttributeMaps

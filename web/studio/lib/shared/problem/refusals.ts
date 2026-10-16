@@ -19,7 +19,7 @@ const DEPLOYMENT_ID = /^[a-z0-9](?:[a-z0-9-]{0,34}[a-z0-9])?$/;
 
 /**
  * The refusals of a Teamspace connection request that Studio branches on, as Go names them in the
- * ErrorInfo reason (internal/tenancy/connections RefusalReason, and DEPLOYMENT_IN_PROGRESS of a
+ * ErrorInfo reason (internal/dexai/tenancy/connections RefusalReason, and DEPLOYMENT_IN_PROGRESS of a
  * release of unused connections), each with what Studio tells the person.
  */
 const CONNECTION_REFUSALS = {
@@ -94,7 +94,7 @@ export function deploymentRefusalInfo(value: unknown): ErrorInfo__Output | undef
 
 /**
  * The refusals of the Preview and of a Project configuration that any method may answer with
- * (internal/api/boundary error_reasons.go), each with the remedy the server declares.
+ * (internal/dexai/api/boundary error_reasons.go), each with the remedy the server declares.
  */
 const OPERATION_REFUSALS: ReadonlySet<unknown> = new Set([
   "PREVIEW_UNAVAILABLE",

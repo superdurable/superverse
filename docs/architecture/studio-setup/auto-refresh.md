@@ -11,9 +11,9 @@ building must not block the Agent. Direct external/shell pushes are outside this
 ### Identity and execution lifecycle
 
 The complete unchanged inventories and execution lifecycles are the
-[Preview contract](../../../internal/agents/sandbox/preview/README.md) and
-[Session contract](../../../internal/agents/session/README.md), with
-[Session creation](../../../internal/agents/README.md#session-start) and the
+[Preview contract](../../../internal/dexai/agents/sandbox/preview/README.md) and
+[Session contract](../../../internal/dexai/agents/session/README.md), with
+[Session creation](../../../internal/dexai/agents/README.md#session-start) and the
 [Setup Flow deltas](flow-changes.md). This document changes only the following paths.
 
 `SessionAgentFlow`, `session-<projectID>` (example `session-a7k2`), is still started once by

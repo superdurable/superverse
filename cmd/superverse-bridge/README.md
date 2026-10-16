@@ -4,7 +4,7 @@ Purpose: The program a Builder runs next to Orca to connect a Codex conversation
 
 Callers: the Builder, the Orca plugin, and Codex (which starts `mcp`).
 
-Dependencies: `cmd/superverse-bridge/mcpserver`, `orca`, `platform`, `relay` and `state`, and `internal/agents/remoteagent/bridgeapi`; it calls the remote agent endpoint and the Orca runtime.
+Dependencies: `cmd/superverse-bridge/mcpserver`, `orca`, `platform`, `relay` and `state`, and `internal/dexai/agents/remoteagent/bridgeapi`; it calls the remote agent endpoint and the Orca runtime.
 
 The [remote agent protocol](../../docs/api/remote-agent.md) defines the Bridge connection. `make build-bridge-local`
 builds it for this machine into `bin/superverse-bridge`, with `BRIDGE_VERSION` (default

@@ -5,11 +5,11 @@
 # scripts/check-package-layers.py. One glob per line: ** matches any number of path segments, * one segment's text.
 
 # The Kubernetes packages, the only ones that import the Kubernetes API client, with their Kind tests.
-internal/platform/kubeapi/**
-internal/projects/infra/kube/**
-internal/agents/sandbox/kube/**
-internal/delivery/deployments/kube/**
-internal/bootstrap/kubernetes.go
+internal/comm/platform/kubeapi/**
+internal/dexai/projects/infra/kube/**
+internal/dexai/agents/sandbox/kube/**
+internal/dexai/delivery/deployments/kube/**
+internal/dexai/bootstrap/kubernetes.go
 
 # The Sandbox's runtime: the coding image with sandboxd and its helpers. Native runs the same image, but only Kind
 # applies the Pod's restrictions.

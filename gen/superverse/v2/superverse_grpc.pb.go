@@ -831,7 +831,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // The named connector configurations and credentials of one TeamSpace, one per connector major version.
-// The database owns them (internal/tenancy/connections); Projects select them per connection name and scope.
+// The database owns them (internal/dexai/tenancy/connections); Projects select them per connection name and scope.
 type TeamSpaceConnectionServiceClient interface {
 	ListConnectorCatalog(ctx context.Context, in *ListConnectorCatalogRequest, opts ...grpc.CallOption) (*ListConnectorCatalogResponse, error)
 	ListTeamSpaceConnections(ctx context.Context, in *ListTeamSpaceConnectionsRequest, opts ...grpc.CallOption) (*ListTeamSpaceConnectionsResponse, error)
@@ -958,7 +958,7 @@ func (c *teamSpaceConnectionServiceClient) InvokeTeamSpaceConnectionCommand(ctx 
 // for forward compatibility.
 //
 // The named connector configurations and credentials of one TeamSpace, one per connector major version.
-// The database owns them (internal/tenancy/connections); Projects select them per connection name and scope.
+// The database owns them (internal/dexai/tenancy/connections); Projects select them per connection name and scope.
 type TeamSpaceConnectionServiceServer interface {
 	ListConnectorCatalog(context.Context, *ListConnectorCatalogRequest) (*ListConnectorCatalogResponse, error)
 	ListTeamSpaceConnections(context.Context, *ListTeamSpaceConnectionsRequest) (*ListTeamSpaceConnectionsResponse, error)

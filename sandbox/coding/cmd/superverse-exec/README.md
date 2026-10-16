@@ -149,7 +149,7 @@ supervisor runs in its own session, outside sandboxd's process group.
 ## Verification
 
 `TestCommandLedgerActualSandbox` in
-`internal/agents/sandbox/workspace/sandboxd` drives this command through the real
+`internal/dexai/agents/sandbox/workspace/sandboxd` drives this command through the real
 sandboxd of a coding image container: one start for concurrent begins, offset
 windows, the lifetime and output limits, stop, garbage collection, `lost` after
 a container restart and `instance_replaced` on a new container. The behavior of

@@ -3,7 +3,7 @@
   "valid": true,
   "source": {
     "language": "go",
-    "path": "internal/agents/sandbox/preview/preview_flow.go"
+    "path": "internal/dexai/agents/sandbox/preview/preview_flow.go"
   },
   "flow": {
     "name": "PreviewFlow",

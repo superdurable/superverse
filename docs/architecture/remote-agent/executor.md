@@ -487,7 +487,7 @@ endpoint, edits through remote file and bash tools, reaches the real local Git
 host and waits for the contribution Flow's RC and the Bridge notification in
 `sync`. It also checks duplicate reports and repeated submit, the worktree
 scope, admission refusals and Snapshot discovery. Existing GitHub integration
-tests in `internal/agents/sandbox/workspace/git/connector_contribution_github_integration_test.go`
+tests in `internal/dexai/agents/sandbox/workspace/git/connector_contribution_github_integration_test.go`
 exercise the GitHub App commit and push; the local lane uses its real Git host.
 No database schema or UI component changes are required: Studio already reads
 the contribution Flow snapshots by Snapshot connector slugs. The connector
@@ -528,7 +528,7 @@ None in the Session. The connection credential table is in [connection](connecti
 
 ## Tests
 
-Dex integration tests in `internal/agents` against the real lane (Dex, Sandbox, local Git host,
+Dex integration tests in `internal/dexai/agents` against the real lane (Dex, Sandbox, local Git host,
 PostgreSQL), driving the real remote agent endpoint over HTTP as a Bridge would; the remote
 HTTP admission case checks `pending` at the first context read, reports a real Sandbox read
 while provisioning is in flight, then checks its tool result, `SettledThrough`, `ready`, and
@@ -610,7 +610,7 @@ E2E happy paths are unchanged.
 
 - [agent harness: session](../agent-harness-design/session.md): the step graph gains
   `AwaitRemoteAgent` and the `Executor` row; link here.
-- `internal/agents/session/README.md` and `agentloop/README.md`: the Flow contract rows.
+- `internal/dexai/agents/session/README.md` and `agentloop/README.md`: the Flow contract rows.
 - AGENTS.md, CLAUDE.md and `.cursor/rules/planning.mdc`: the list of the Session's Flow RPCs
   already says "the Preview deployment request each pushed commit makes," which covers
   remote mode unchanged.

@@ -23,7 +23,7 @@ CREATE INDEX login_sessions_expiry ON login_sessions (expires_at);
 
 - `password_record` is the Argon2id record; a login token is stored only as its
   SHA-256. Token and cookie formats do not change.
-- The tables are written only by the account code, through `internal/tenancy/accountdao`.
+- The tables are written only by the account code, through `internal/dexai/tenancy/accountdao`.
 
 ## Behavior
 

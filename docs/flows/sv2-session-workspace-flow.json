@@ -3,7 +3,7 @@
   "valid": true,
   "source": {
     "language": "go",
-    "path": "internal/agents/sandbox/sessionworkspace/session_workspace_flow.go"
+    "path": "internal/dexai/agents/sandbox/sessionworkspace/session_workspace_flow.go"
   },
   "flow": {
     "name": "SessionWorkspaceFlow",

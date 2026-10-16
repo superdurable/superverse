@@ -18,6 +18,6 @@ flowchart LR
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
-The server's catalog is `internal/agents/session/modelprovider/mockmodel`; this fixture only
+The server's catalog is `internal/dexai/agents/session/modelprovider/mockmodel`; this fixture only
 lets mock mode show the mock composer and run its inputs against the mock Agent's
 [script phrases](../../README.md#script-phrases).

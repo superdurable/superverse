@@ -21,4 +21,4 @@ flowchart LR
 scripts of `mock/store`, keeps the task records of the Session's Agent description, writes a
 running subagent's live line as an activity event with its task ID, and is the Stop button
 (`interruptAgent`). No command or subagent runs; the server's subagents are
-`internal/agents/session/subagent`.
+`internal/dexai/agents/session/subagent`.

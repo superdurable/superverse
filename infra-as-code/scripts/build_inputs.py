@@ -77,7 +77,7 @@ def component_inputs(component):
         # Skills are Markdown read by the Agent; the template manifests prewarm its modules;
         # the BuildProfile selects the Go and Node base images.
         return (files_under("sandbox/coding") | files_under("dex-skills", documents=True)
-                | {"scripts/install-pinned-binary.sh", "internal/delivery/releases/build/build-profiles/go-react-v1/profile.json",
+                | {"scripts/install-pinned-binary.sh", "internal/dexai/delivery/releases/build/build-profiles/go-react-v1/profile.json",
                    "app-template/go.mod", "app-template/go.sum", "app-template/tools/openapi/go.mod", "app-template/tools/openapi/go.sum"})
     raise ValueError("Unknown image component: " + component)
 
@@ -122,7 +122,7 @@ def common_behavior_inputs():
     """Inputs exercised by both local lanes. Native renders its coding profile from the same chart and Local Kind values."""
     names = component_inputs("studio") | component_inputs("coding")
     names |= files_under("infra-as-code/kubernetes") | files_under("infra-as-code/environments/local-kind")
-    names |= files_under("web/studio/tests/e2e", tests=True) | files_under("internal/delivery/releases/build/localbuilder")
+    names |= files_under("web/studio/tests/e2e", tests=True) | files_under("internal/dexai/delivery/releases/build/localbuilder")
     names |= app_manifest_tool_inputs() | script_modules("acceptance")
     names |= {"web/studio/playwright.e2e.config.ts", "infra-as-code/sv2", "infra-as-code/build-inputs.json",
               "infra-as-code/source-lock.json", "infra-as-code/validation-requirements.txt"}

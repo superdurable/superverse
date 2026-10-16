@@ -26,4 +26,4 @@ flowchart LR
 deployment that fails in a phase the application owns is a `failure` notice that opens an
 automatic turn, which reads the delivery status, pushes a fix and asks the user to publish it; an
 unfinished build is a platform `notice` that only notifies. No Release, build or deployment runs;
-the server's hooks are in `internal/delivery/releases` and `internal/delivery/deployments`.
+the server's hooks are in `internal/dexai/delivery/releases` and `internal/dexai/delivery/deployments`.

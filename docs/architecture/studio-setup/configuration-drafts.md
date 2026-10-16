@@ -10,7 +10,7 @@
   Preview start validates the head and freezes it: each write is a new object version, and the
   application stays pinned to the version it accepted (`configuration_validation.go:146-168`).
   PreviewFlow keeps that pin as `PreviewConfigurationRef`
-  (`internal/agents/sandbox/preview/preview_snapshot.go:122-140`).
+  (`internal/dexai/agents/sandbox/preview/preview_snapshot.go:122-140`).
 - **Live** edits one next-publish layer per Project. Publishing resolves it against Preview's applied configuration and freezes an immutable copy for the build. See [Live next-publish layer](#live-next-publish-layer).
 - Requirement gaps are computed for an exact prepared source against the configuration the
   request edits (`configuration_validation.go:177-294`). The checklist is therefore always the
@@ -64,20 +64,20 @@ This needs no new table or copy.
 ### Reading Preview's applied object from a Live request
 
 A Live host cannot read Preview objects: `ConfigurationObjects` confines a host to its scope
-prefix (`internal/projects/infra/docker/storage.go:300-318`), and sdkgo `ReadSnapshot` requires
+prefix (`internal/dexai/projects/infra/docker/storage.go:300-318`), and sdkgo `ReadSnapshot` requires
 the store's own key. So `projects/config` reads Preview's applied object server-side, through
 `Storage.ReadConfiguration` at the exact version and digest. It strips secret references and
 passes the decoded non-secret document into the Live host request. The `CHANNEL_SHARED` lookup
 reads other Projects' pinned objects the same way. The applied ref comes from the existing
-`config.PreviewReader` port (`internal/projects/config/configuration.go:50-55`), which gains a
+`config.PreviewReader` port (`internal/dexai/projects/config/configuration.go:50-55`), which gains a
 method for it; there is no separate `AppliedConfigurationReader`. Under the current contract the same
 read feeds the [resolution](#resolution) of every Live read and every frozen copy.
 
-`internal/studio/confighost/configuration_items.go`, owned by LIVEDRAFT, declared the item key and
+`internal/dexai/studio/confighost/configuration_items.go`, owned by LIVEDRAFT, declared the item key and
 the kind, state and warning sets once, and APPLY added the Preview diff to it. The package was at
 its file limit and the file at 916 lines, so  moved the pure item model (the item key,
 document items, the comparisons, anchors and the Preview's item diff) to
-[`internal/studio/confighost/configitems/`](../../../internal/studio/confighost/configitems/README.md),
+[`internal/dexai/studio/confighost/configitems/`](../../../internal/dexai/studio/confighost/configitems/README.md),
 and the layer's routes, storage and admission to `confighost/next_publish.go`.
 
 ### Autosave and the revision fence
@@ -105,7 +105,7 @@ Each edit is a CAS write, so Studio serializes the writes of one configuration o
 
 ## Live next-publish layer
 
-The [configuration host](../../../internal/studio/confighost/README.md#live-next-publish-layer) owns one sparse layer per Project. The [project configuration](../../../internal/projects/config/README.md#lives-next-publish) resolves absent items from Preview's applied configuration, subject to the exclusions below. Studio edits the layer without selecting a release version.
+The [configuration host](../../../internal/dexai/studio/confighost/README.md#live-next-publish-layer) owns one sparse layer per Project. The [project configuration](../../../internal/dexai/projects/config/README.md#lives-next-publish) resolves absent items from Preview's applied configuration, subject to the exclusions below. Studio edits the layer without selecting a release version.
 
 ### Storage
 
@@ -155,7 +155,7 @@ names Preview's applied value, not the edit on screen.
   cannot serve both environments, because Preview and Live have different addresses. Its
   connection selection is a gap until Live selects its own. The platform keeps the list of these
   connectors, Stripe, Typeform, Help Scout and Calendly, each with its reason, in
-  `internal/studio/confighost/connectormanifest/endpoint_bound.go` until the connectors library
+  `internal/dexai/studio/confighost/connectormanifest/endpoint_bound.go` until the connectors library
   declares it in the manifest. Letting such a connection be chosen by only one environment
   ("tied to Project · Live") is deferred.
 

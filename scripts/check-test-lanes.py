@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 GUARD = ROOT / "internal/comm/dexflow/dexflowtest"
 CLUSTER = ROOT / "infra-as-code/scripts/kind/cluster.py"
 CHART_CONFIG = ROOT / "infra-as-code/kubernetes/charts/superverse-platform/templates/_server-config.tpl"
-HOST_FROM_CONTAINERS = ROOT / "internal/projects/infra/addresses.go"
+HOST_FROM_CONTAINERS = ROOT / "internal/dexai/projects/infra/addresses.go"
 # A Dex client or Worker that a test builds itself skips the guard.
 DIRECT = re.compile(r"\bdex\.(NewClient|NewWorker)\(")
 

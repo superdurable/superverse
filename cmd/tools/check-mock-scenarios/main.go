@@ -28,10 +28,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/superdurable/superversev2/internal/agents/session/agentloop"
-	"github.com/superdurable/superversev2/internal/agents/session/agenttasks"
-	"github.com/superdurable/superversev2/internal/agents/session/conversation"
-	"github.com/superdurable/superversev2/internal/agents/session/modelprovider/mockmodel"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/mockmodel"
 )
 
 // producedNotifications are the notification kinds a producer sends today:
@@ -108,7 +108,7 @@ func remoteOnlyCoverageProblems(tests []string) []string {
 }
 
 func readRemoteHTTPTests() ([]string, error) {
-	entries, err := os.ReadDir("internal/agents")
+	entries, err := os.ReadDir("internal/dexai/agents")
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func readRemoteHTTPTests() ([]string, error) {
 		if entry.IsDir() || !strings.HasPrefix(name, "session_remote_") || !strings.HasSuffix(name, "_integration_test.go") {
 			continue
 		}
-		contents, err := os.ReadFile("internal/agents/" + name)
+		contents, err := os.ReadFile("internal/dexai/agents/" + name)
 		if err != nil {
 			return nil, err
 		}

@@ -112,7 +112,7 @@ CREATE TABLE scope_credential_tokens (
   PRIMARY KEY (project_id, scope));
 ```
 
-- These tables are written by the server, through `internal/tenancy/connectiondao`, so
+- These tables are written by the server, through `internal/dexai/tenancy/connectiondao`, so
   they can carry constraints. They have no foreign key to the synced `team_spaces` and
   `projects`, whose rows may appear later.
 - Creation is idempotent: the IDs derive from the account and request ID, a replay
@@ -519,7 +519,7 @@ A connection's OAuth client comes from one of two sources, in `oauth_client`:
     may do it ([roles](teamspaces-and-roles.md#hierarchy-and-roles)).
 - **Application grants**: a workload grant today lists the configuration object, the
   listed secret objects and read-write access to the scope's `connections/*`
-  (`internal/projects/infra/workload.go`). Only the first two remain, with the broker
+  (`internal/dexai/projects/infra/workload.go`). Only the first two remain, with the broker
   token among the secret objects and a read of the configuration head
   ([above](#the-read-endpoint-and-scope-tokens)); `connections/*` leaves the grant, the
   MinIO policy and the IAM policy.
@@ -527,7 +527,7 @@ A connection's OAuth client comes from one of two sources, in `oauth_client`:
 ### Live's next publish
 
 [the current contract](../studio-setup/flow-changes.md) defines the next publish layer. The
-[configuration host](../../../internal/studio/confighost/README.md#live-next-publish-layer)
+[configuration host](../../../internal/dexai/studio/confighost/README.md#live-next-publish-layer)
 owns the storage and resolution; this section states what it means for connections.
 
 - **One layer.** Live's settings for the next publish are one sparse configuration document per
@@ -694,7 +694,7 @@ flowchart LR
   (the Project scope) and never blocks; one call consumes items, in order per key, with
   bounded concurrency across keys. Its package holds the interface, the item type and the
   typed errors (full, too large); each implementation is a sub-package, and only
-  `internal/bootstrap` imports one, selected by `connections.slackRelay.queue.implementation`
+  `internal/dexai/bootstrap` imports one, selected by `connections.slackRelay.queue.implementation`
   ([configuration](infrastructure.md#slack-event-relay)). Beta has only `memory`. SQS or Kafka
   implementations come at production launch; nothing is built for them before.
 - Limits against memory exhaustion (initial values in
@@ -719,18 +719,18 @@ flowchart LR
   the route being public is safe because the receiver accepts only a valid signature.
 - **Delivery path per environment**: every delivery travels the public path, server to
   load balancer or gateway to application, the way the platform already probes a Live
-  generation or a Preview (`internal/projects/infra/addresses.go:52-67` derives the hosts):
+  generation or a Preview (`internal/dexai/projects/infra/addresses.go:52-67` derives the hosts):
   - AWS: `https://<scope>-<project>.<environment>.dexai.dev`, resolved by public DNS and
     reached through the internet-facing load balancer of the Project routes.
   - Local Kind: the host `<scope>-<project>.localhost` resolves nowhere inside the cluster,
     so the server dials the project Gateway's `projects-gateway` Service at `routes.gatewayURL`
     (`http://projects-gateway.superverse-v2-gateway.svc.cluster.local:80`) with that Host
     header, and Envoy routes it to the Live generation's or the Sandbox's Service
-    (`internal/projects/infra/kube/local/backend.go`).
+    (`internal/dexai/projects/infra/kube/local/backend.go`).
   - Local Native: the server dials the lane's gateway at `routes.gatewayURL`
     (`http://127.0.0.1:21080` plus the lane's port offset) with the Host header
     `<scope>-<project>.localhost`, and the gateway routes it to the Live container's or the
-    coding container's published port (`internal/projects/infra/docker/routes.go:316-330`).
+    coding container's published port (`internal/dexai/projects/infra/docker/routes.go:316-330`).
   The delivery never dials a Pod or a container directly. The scope token is the
   signing key because the application already holds it (`credentialBroker.tokenSecretRef`),
   the platform already stores its secret object, and its rotation is already designed; a
@@ -924,14 +924,14 @@ Code that reads or writes a Project's `connections/*` today moves to the TeamSpa
 tables, to the read function, or stops touching credentials: the configuration host's
 `connector_connections.go`, `connector_oauth.go`, `connector_ui_sessions.go`,
 `project_configuration.go`, `prepared_source.go` and `configuration_host.go`;
-`internal/projects/config/configured_values.go`; and `internal/projects/infra/workload.go`
+`internal/dexai/projects/config/configured_values.go`; and `internal/dexai/projects/infra/workload.go`
 and `scope.go`. The refresh reuses `exchangeToken`'s request construction,
 `handleProviderCommand` calls the read function, and one provider HTTP client with the
 dial-time address check (sdkgo `providerhttp`) replaces `safeProviderURL`. The manifest
 decoder (`connectormanifest/release_manifest.go`) accepts value sources for `tokenEndpoint`,
 `tokenEndpointAuthMethod`, `scopes`, `userScopes` and the OIDC endpoints, and resolves them
 from the connection's settings with the same rules as Dex Web. The domain logic and the read
-endpoint's handler live in `internal/tenancy/connections`; its types are named for their
+endpoint's handler live in `internal/dexai/tenancy/connections`; its types are named for their
 responsibility, such as `CredentialReader`.
 
 The Flows reach connections only through ports that the bootstrap injects, each called

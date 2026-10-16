@@ -11,7 +11,7 @@
 The image is the shared build of the checkout's coding source under the Native tag; the engine runs it by the digest its
 containerd image store records, so no registry or Kind load is involved. The profile is the chart's own rendering of the
 coding profile, the immutable ConfigMap that Kind installs, written where the server reads it; the Docker runtime runs
-its Pod template's container (internal/agents/sandbox/docker).
+its Pod template's container (internal/dexai/agents/sandbox/docker).
 """
 import hashlib
 import json

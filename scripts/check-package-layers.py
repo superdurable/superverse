@@ -22,127 +22,127 @@ import sys
 MODULE = "github.com/superdurable/superversev2/"
 # Shared packages hold no business ownership; business packages build on them. A root covers the
 # package at that path and every package below it, test helpers included (dexflowtest, kubeapitest).
-SHARED_ROOTS = ("internal/comm", "internal/app", "internal/platform", "internal/studio/flowapi",
-                "internal/agents/session/toolinput/generated", "internal/agents/remoteagent/bridgeapi")
+SHARED_ROOTS = ("internal/comm", "internal/dexai/app", "internal/comm/platform", "internal/dexai/studio/flowapi",
+                "internal/dexai/agents/session/toolinput/generated", "internal/dexai/agents/remoteagent/bridgeapi")
 # The server configuration schema is read only where the process starts, validates and composes from it.
 CONFIG = "cmd/superverse-server/config"
-CONFIG_IMPORTERS = ("cmd/superverse-server", "cmd/tools/check-config", "internal/bootstrap")
+CONFIG_IMPORTERS = ("cmd/superverse-server", "cmd/tools/check-config", "internal/dexai/bootstrap")
 # A capability with several implementations has its interface in the parent package and each
-# implementation in a sub-package of its own. Callers import the parent; only internal/bootstrap
+# implementation in a sub-package of its own. Callers import the parent; only internal/dexai/bootstrap
 # imports an implementation, and an implementation never imports another. The Kubernetes
 # implementations of the Sandbox instances and the Live serving build on the Kubernetes machinery of
 # the project infrastructure, and its test fixture composes the local backend.
 IMPLEMENTATIONS = {
-    "internal/platform/repohost": ("github", "localgit"),
-    "internal/platform/eventqueue": ("memory",),
-    "internal/delivery/releases/build": ("local", "hosted"),
-    "internal/projects/infra": ("kube", "docker"),
-    "internal/projects/infra/kube": ("local", "hosted", "connect"),
-    "internal/projects/infra/kube/hosted": ("identity", "storage"),
-    "internal/agents/sandbox": ("kube", "docker"),
-    "internal/delivery/deployments": ("kube", "docker"),
+    "internal/comm/platform/repohost": ("github", "localgit"),
+    "internal/comm/platform/eventqueue": ("memory",),
+    "internal/dexai/delivery/releases/build": ("local", "hosted"),
+    "internal/dexai/projects/infra": ("kube", "docker"),
+    "internal/dexai/projects/infra/kube": ("local", "hosted", "connect"),
+    "internal/dexai/projects/infra/kube/hosted": ("identity", "storage"),
+    "internal/dexai/agents/sandbox": ("kube", "docker"),
+    "internal/dexai/delivery/deployments": ("kube", "docker"),
 }
 IMPLEMENTATION_IMPORTS = {
-    ("internal/agents/sandbox/kube", "internal/projects/infra/kube"),
-    ("internal/agents/sandbox/docker", "internal/projects/infra/docker"),
-    ("internal/delivery/deployments/kube", "internal/projects/infra/kube"),
-    ("internal/delivery/deployments/docker", "internal/projects/infra/docker"),
-    ("internal/projects/infra/kube/kubetest", "internal/projects/infra/kube/local"),
-    ("internal/projects/infra/kube/hosted", "internal/projects/infra/kube/hosted/identity"),
-    ("internal/projects/infra/kube/hosted", "internal/projects/infra/kube/hosted/storage"),
-    ("internal/projects/infra/kube/hosted/storage", "internal/projects/infra/kube/hosted/identity"),
+    ("internal/dexai/agents/sandbox/kube", "internal/dexai/projects/infra/kube"),
+    ("internal/dexai/agents/sandbox/docker", "internal/dexai/projects/infra/docker"),
+    ("internal/dexai/delivery/deployments/kube", "internal/dexai/projects/infra/kube"),
+    ("internal/dexai/delivery/deployments/docker", "internal/dexai/projects/infra/docker"),
+    ("internal/dexai/projects/infra/kube/kubetest", "internal/dexai/projects/infra/kube/local"),
+    ("internal/dexai/projects/infra/kube/hosted", "internal/dexai/projects/infra/kube/hosted/identity"),
+    ("internal/dexai/projects/infra/kube/hosted", "internal/dexai/projects/infra/kube/hosted/storage"),
+    ("internal/dexai/projects/infra/kube/hosted/storage", "internal/dexai/projects/infra/kube/hosted/identity"),
 }
 # Kubernetes code lives only in the Kubernetes packages, so that a change to it, and nothing else,
 # needs the Local Kind lane. Only these packages import the Kubernetes API client and its test
 # client (the root covers kubeapitest), in production and in test files; the composition root does
 # it in one file.
-KUBERNETES_API = "internal/platform/kubeapi"
-KUBERNETES_PACKAGES = ("internal/platform/kubeapi", "internal/projects/infra/kube", "internal/agents/sandbox/kube",
-                       "internal/delivery/deployments/kube")
-KUBERNETES_FILES = {("internal/bootstrap", "kubernetes.go")}
+KUBERNETES_API = "internal/comm/platform/kubeapi"
+KUBERNETES_PACKAGES = ("internal/comm/platform/kubeapi", "internal/dexai/projects/infra/kube", "internal/dexai/agents/sandbox/kube",
+                       "internal/dexai/delivery/deployments/kube")
+KUBERNETES_FILES = {("internal/dexai/bootstrap", "kubernetes.go")}
 # Likewise only the Docker packages import the Docker Engine API client, in test files as well.
-DOCKER_API = "internal/platform/dockerapi"
-DOCKER_PACKAGES = ("internal/platform/dockerapi", "internal/projects/infra/docker", "internal/agents/sandbox/docker",
-                   "internal/delivery/deployments/docker")
+DOCKER_API = "internal/comm/platform/dockerapi"
+DOCKER_PACKAGES = ("internal/comm/platform/dockerapi", "internal/dexai/projects/infra/docker", "internal/dexai/agents/sandbox/docker",
+                   "internal/dexai/delivery/deployments/docker")
 # Each runtime API client with the packages, and the single files, that may import it.
 BOUNDARIES = {KUBERNETES_API: ("Kubernetes", KUBERNETES_PACKAGES, KUBERNETES_FILES), DOCKER_API: ("Docker", DOCKER_PACKAGES, set())}
 # Every business package has a level and imports only business packages of a strictly lower level.
 # The levels are the longest import chain below each package, so a new edge that needs a higher
 # level shows up in review. A business test helper (sandboxdtest) is levelled like its parent's code.
 LEVELS = {
-    "internal/agents/platformissue": 1,
-    "internal/agents/remoteagentdao": 1,
-    "internal/agents/toolfailure": 1,
-    "internal/agents/session/flowdesign": 1,
-    "internal/api/watch": 1,
-    "internal/delivery/deliverydao": 1,
-    "internal/delivery/releases/build": 1,
-    "internal/projects/infra": 1,
-    "internal/projects/projectdao": 1,
-    "internal/projects/repobinding": 1,
-    "internal/studio/confighost/configitems": 1,
-    "internal/studio/confighost/connectormanifest": 1,
-    "internal/tenancy/accountdao": 1,
-    "internal/tenancy/memberdao": 1,
-    "internal/tenancy/teamspacedao": 1,
-    "internal/tenancy/teamspaces": 1,
-    "internal/tenancy/connectiondao": 1,
-    "internal/agents/sandbox/workspace/sandboxd": 2,
-    "internal/agents/session/conversation": 2,
-    "internal/projects": 2,
-    "internal/projects/infra/docker": 2,
-    "internal/projects/infra/kube": 2,
-    "internal/delivery/releases/build/hosted": 2,
-    "internal/delivery/releases/build/local": 2,
-    "internal/studio/confighost": 3,
-    "internal/tenancy/accounts": 2,
-    "internal/tenancy/connections": 2,
-    "internal/agents/sandbox/workspace/git": 3,
-    "internal/projects/infra/kube/connect": 3,
-    "internal/projects/infra/kube/hosted/identity": 3,
-    "internal/projects/infra/kube/hosted/storage": 4,
-    "internal/projects/infra/kube/hosted": 5,
-    "internal/projects/infra/kube/local": 3,
-    "internal/agents/sandbox/workspace/sandboxd/sandboxdtest": 3,
-    "internal/agents/session/modelprovider": 3,
-    "internal/agents/session/toolinput": 3,
-    "internal/delivery/releases": 3,
-    "internal/projects/setup": 3,
-    "internal/tenancy/slackrelay": 3,
-    "internal/projects/projecttest": 3,
-    "internal/projects/infra/docker/dockertest": 3,
-    "internal/projects/infra/docker/dockertest/configprobe": 1,
-    "internal/delivery/deployments/generationapp": 1,
-    "internal/projects/infra/kube/kubetest": 4,
-    "internal/agents/sandbox/workspace": 4,
-    "internal/projects/config": 4,
-    "internal/agents/session/sandboxtools": 5,
-    "internal/agents/session/agenttasks": 5,
-    "internal/agents/remoteexec": 5,
-    "internal/agents/sandbox": 5,
-    "internal/delivery/deployments": 5,
-    "internal/agents/sandbox/docker": 6,
-    "internal/agents/sandbox/kube": 6,
-    "internal/delivery/deployments/docker": 6,
-    "internal/agents/sandbox/preview": 6,
-    "internal/agents/sandbox/provision": 6,
-    "internal/delivery/deployments/kube": 6,
-    "internal/agents/session/agentloop": 6,
-    "internal/agents/sandbox/sessionworkspace": 7,
-    "internal/agents/session/backgroundcommand": 6,
-    "internal/agents/session": 7,
-    "internal/agents/session/subagent": 7,
-    "internal/agents/session/contribution": 7,
-    "internal/agents/session/modelprovider/mockmodel": 7,
-    "internal/agents": 8,
-    "internal/api/boundary": 9,
-    "internal/agents/remoteagent": 9,
-    "internal/studio/runs": 9,
-    "internal/agents/diagnostics": 10,
-    "internal/api/tenancy": 10,
-    "internal/api/remoteagent": 10,
-    "internal/api": 11,
-    "internal/bootstrap": 12,
+    "internal/dexai/agents/platformissue": 1,
+    "internal/dexai/agents/remoteagentdao": 1,
+    "internal/dexai/agents/toolfailure": 1,
+    "internal/dexai/agents/session/flowdesign": 1,
+    "internal/dexai/api/watch": 1,
+    "internal/dexai/delivery/deliverydao": 1,
+    "internal/dexai/delivery/releases/build": 1,
+    "internal/dexai/projects/infra": 1,
+    "internal/dexai/projects/projectdao": 1,
+    "internal/dexai/projects/repobinding": 1,
+    "internal/dexai/studio/confighost/configitems": 1,
+    "internal/dexai/studio/confighost/connectormanifest": 1,
+    "internal/dexai/tenancy/accountdao": 1,
+    "internal/dexai/tenancy/memberdao": 1,
+    "internal/dexai/tenancy/teamspacedao": 1,
+    "internal/dexai/tenancy/teamspaces": 1,
+    "internal/dexai/tenancy/connectiondao": 1,
+    "internal/dexai/agents/sandbox/workspace/sandboxd": 2,
+    "internal/dexai/agents/session/conversation": 2,
+    "internal/dexai/projects": 2,
+    "internal/dexai/projects/infra/docker": 2,
+    "internal/dexai/projects/infra/kube": 2,
+    "internal/dexai/delivery/releases/build/hosted": 2,
+    "internal/dexai/delivery/releases/build/local": 2,
+    "internal/dexai/studio/confighost": 3,
+    "internal/dexai/tenancy/accounts": 2,
+    "internal/dexai/tenancy/connections": 2,
+    "internal/dexai/agents/sandbox/workspace/git": 3,
+    "internal/dexai/projects/infra/kube/connect": 3,
+    "internal/dexai/projects/infra/kube/hosted/identity": 3,
+    "internal/dexai/projects/infra/kube/hosted/storage": 4,
+    "internal/dexai/projects/infra/kube/hosted": 5,
+    "internal/dexai/projects/infra/kube/local": 3,
+    "internal/dexai/agents/sandbox/workspace/sandboxd/sandboxdtest": 3,
+    "internal/dexai/agents/session/modelprovider": 3,
+    "internal/dexai/agents/session/toolinput": 3,
+    "internal/dexai/delivery/releases": 3,
+    "internal/dexai/projects/setup": 3,
+    "internal/dexai/tenancy/slackrelay": 3,
+    "internal/dexai/projects/projecttest": 3,
+    "internal/dexai/projects/infra/docker/dockertest": 3,
+    "internal/dexai/projects/infra/docker/dockertest/configprobe": 1,
+    "internal/dexai/delivery/deployments/generationapp": 1,
+    "internal/dexai/projects/infra/kube/kubetest": 4,
+    "internal/dexai/agents/sandbox/workspace": 4,
+    "internal/dexai/projects/config": 4,
+    "internal/dexai/agents/session/sandboxtools": 5,
+    "internal/dexai/agents/session/agenttasks": 5,
+    "internal/dexai/agents/remoteexec": 5,
+    "internal/dexai/agents/sandbox": 5,
+    "internal/dexai/delivery/deployments": 5,
+    "internal/dexai/agents/sandbox/docker": 6,
+    "internal/dexai/agents/sandbox/kube": 6,
+    "internal/dexai/delivery/deployments/docker": 6,
+    "internal/dexai/agents/sandbox/preview": 6,
+    "internal/dexai/agents/sandbox/provision": 6,
+    "internal/dexai/delivery/deployments/kube": 6,
+    "internal/dexai/agents/session/agentloop": 6,
+    "internal/dexai/agents/sandbox/sessionworkspace": 7,
+    "internal/dexai/agents/session/backgroundcommand": 6,
+    "internal/dexai/agents/session": 7,
+    "internal/dexai/agents/session/subagent": 7,
+    "internal/dexai/agents/session/contribution": 7,
+    "internal/dexai/agents/session/modelprovider/mockmodel": 7,
+    "internal/dexai/agents": 8,
+    "internal/dexai/api/boundary": 9,
+    "internal/dexai/agents/remoteagent": 9,
+    "internal/dexai/studio/runs": 9,
+    "internal/dexai/agents/diagnostics": 10,
+    "internal/dexai/api/tenancy": 10,
+    "internal/dexai/api/remoteagent": 10,
+    "internal/dexai/api": 11,
+    "internal/dexai/bootstrap": 12,
 }
 
 
@@ -155,18 +155,19 @@ def violations(package, imported):
         yield f"{package} imports the server configuration; only {', '.join(CONFIG_IMPORTERS)} may"
     if imported.startswith("cmd/"):
         return
-    if under(imported, "internal/bootstrap") and not package.startswith("cmd/"):
+    if under(imported, "internal/dexai/bootstrap") and not package.startswith("cmd/"):
         yield f"{package} imports the composition root; only cmd/* may"
-    if under(imported, "internal/api") and not (package.startswith("cmd/") or under(package, "internal/api", "internal/bootstrap")):
-        yield f"{package} imports the business gRPC API; only internal/api/**, internal/bootstrap and cmd/* may"
+    if under(imported, "internal/dexai/api") and not (package.startswith("cmd/") or under(package, "internal/dexai/api", "internal/dexai/bootstrap")):
+        yield f"{package} imports the business gRPC API; only internal/dexai/api/**, internal/dexai/bootstrap and cmd/* may"
     if not package.startswith("internal/"):
         return
     for parent, names in IMPLEMENTATIONS.items():
         for name in names:
             implementation = f"{parent}/{name}"
-            if (under(imported, implementation) and not under(package, implementation, "internal/bootstrap")
+            if (under(imported, implementation) and not under(package, implementation, "internal/dexai/bootstrap")
                     and (package, imported) not in IMPLEMENTATION_IMPORTS):
-                yield f"{package} imports the implementation {implementation}; only internal/bootstrap composes an implementation of {parent}"
+                yield f"{package} imports the implementation {implementation}; only internal/dexai/bootstrap composes an implementation of {parent}"
+    # Test files may import dexai to exercise real product data; production comm imports never do.
     if under(package, "internal/comm") and not under(imported, "internal/comm"):
         yield f"{package} imports {imported}; internal/comm/** imports only internal/comm/**"
     if under(package, *SHARED_ROOTS):

@@ -3,7 +3,7 @@
   "valid": true,
   "source": {
     "language": "go",
-    "path": "internal/projects/repobinding/repository_binding_flow.go"
+    "path": "internal/dexai/projects/repobinding/repository_binding_flow.go"
   },
   "flow": {
     "name": "RepositoryBindingFlow",

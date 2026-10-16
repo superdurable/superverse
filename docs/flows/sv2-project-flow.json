@@ -3,7 +3,7 @@
   "valid": true,
   "source": {
     "language": "go",
-    "path": "internal/projects/project_flow.go"
+    "path": "internal/dexai/projects/project_flow.go"
   },
   "flow": {
     "name": "ProjectFlow",

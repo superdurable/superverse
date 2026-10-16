@@ -16,7 +16,7 @@ import type { CurrentSource } from "./ProcessDefinitionsProvider";
 /**
  * The Design of a managed project's initial commit, before its source is
  * prepared. app-template.json is generated from app-template/ by
- * `go generate ./internal/app/apptemplate`, not an illustrative fixture. Only the
+ * `go generate ./internal/dexai/app/apptemplate`, not an illustrative fixture. Only the
  * setup commit of a project created from this exact template revision shows it;
  * any later commit needs its own prepared source.
  */

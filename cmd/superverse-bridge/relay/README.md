@@ -4,7 +4,7 @@ Purpose: Runs each binding's delivery, tool call and event loops between the rem
 
 Callers: `cmd/superverse-bridge` and `cmd/superverse-bridge/orca` (which implements `Orca`).
 
-Dependencies: `cmd/superverse-bridge/mcpserver`, `cmd/superverse-bridge/platform`, `cmd/superverse-bridge/state`, `internal/agents/remoteagent/bridgeapi` and `internal/comm`; it calls the remote agent endpoint through `platform` and Orca through `Orca`.
+Dependencies: `cmd/superverse-bridge/mcpserver`, `cmd/superverse-bridge/platform`, `cmd/superverse-bridge/state`, `internal/dexai/agents/remoteagent/bridgeapi` and `internal/comm`; it calls the remote agent endpoint through `platform` and Orca through `Orca`.
 
 The [remote agent protocol](../../../docs/api/remote-agent.md) defines the platform boundary; this README describes the relay.
 

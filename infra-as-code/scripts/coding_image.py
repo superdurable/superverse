@@ -51,7 +51,7 @@ class CodingImage:
         # A pin-specific directory keeps an earlier accepted cache valid across an upgrade.
         agent_sandbox = self.directory / ("agent-sandbox-" + commit)
         agent_sandbox_source = fetch_external_context(AGENT_SANDBOX_REPOSITORY, commit, agent_sandbox)
-        base_images = json.loads((ROOT / "internal/delivery/releases/build/build-profiles/go-react-v1/profile.json").read_text())["buildArgs"]
+        base_images = json.loads((ROOT / "internal/dexai/delivery/releases/build/build-profiles/go-react-v1/profile.json").read_text())["buildArgs"]
         context = self.directory / "context"
         receipt = build_inputs.freeze("coding", context)
         receipt["externalContexts"] = {"agent-sandbox": agent_sandbox_source}

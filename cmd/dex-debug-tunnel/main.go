@@ -28,7 +28,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/superdurable/superversev2/internal/platform/deploymentnames"
+	"github.com/superdurable/superversev2/internal/comm/platform/deploymentnames"
 )
 
 func main() {

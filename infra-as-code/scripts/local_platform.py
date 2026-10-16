@@ -29,7 +29,7 @@ from private_files import retained_secret, write_private
 BUCKETS = ("superverse-v2-blobs", "superverse-v2-artifacts")
 # The server's database, which the PostgreSQL image creates on its first start (cmd/superverse-server/config: postgres.database).
 POSTGRES_DATABASE = "superverse"
-# The superuser of the image and the roles of internal/platform/postgres: the schema owner, which migrations connect as, the
+# The superuser of the image and the roles of internal/comm/platform/postgres: the schema owner, which migrations connect as, the
 # server, and platform Dex's Attribute Store, the only writer of the read model.
 POSTGRES_SUPERUSER, POSTGRES_OWNER, POSTGRES_SERVER, POSTGRES_DEX = "postgres", "superverse_owner", "superverse_server", "superverse_dex"
 POSTGRES_ROLES = (POSTGRES_SUPERUSER, POSTGRES_OWNER, POSTGRES_SERVER, POSTGRES_DEX)
