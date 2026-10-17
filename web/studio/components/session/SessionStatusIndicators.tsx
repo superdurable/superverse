@@ -66,7 +66,7 @@ export function SessionDetails() {
   if (state === "complete" && !workspace) return null;
   return (
     <MoreDetails surface="chat.header" className="relative flex items-center">
-      <div className="absolute top-full right-0 z-20 mt-1.5 flex w-72 max-w-[85vw] flex-col gap-2 rounded-lg border border-line-soft bg-panel p-3 text-caption text-ink-dim shadow-(--shadow-lift)">
+      <div className="absolute top-full left-0 z-20 mt-1.5 flex w-72 max-w-[85vw] flex-col gap-2 rounded-lg border border-line-soft bg-panel p-3 text-caption text-ink-dim shadow-(--shadow-lift)">
         {state !== "complete" && <p data-session-connection-detail={state}>{connectionLabel(state)}</p>}
         <WorkspaceKept />
         <WorkspaceStartup />

@@ -9,7 +9,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/Button";
 import { Glyph } from "@/components/ui/Glyph";
 import { PopoverCard, POPOVER_ITEM, usePopover } from "@/components/ui/Popover";
 import { RemoteAgentDialog } from "@/components/session/remoteagent/RemoteAgentDialog";
@@ -58,6 +57,14 @@ export function SessionAgentPicker(props: PickerProps) {
   );
 }
 
+/** The remote executor's name. The Bridge reports only Codex today; its binding names no other agent. */
+const LOCAL_AGENT = "Local Codex";
+
+/** Green while the local agent was seen in the last 90 seconds, red otherwise. */
+function LivenessDot({ online }: { online: boolean }) {
+  return <span aria-hidden className={`size-2 shrink-0 rounded-full ${online ? "bg-pass" : "bg-fail"}`} />;
+}
+
 function AgentPickerMenu({
   session,
   executor,
@@ -76,7 +83,6 @@ function AgentPickerMenu({
   const trigger = useRef<HTMLButtonElement>(null);
   const card = useRef<HTMLDivElement>(null);
   const popover = usePopover(anchor);
-  const [level, setLevel] = useState<"agents" | "models" | "remote">("agents");
   const [connect, setConnect] = useState(false);
   const action = useSingleFlight<"platform">();
   const wasOpen = useRef(false);
@@ -88,7 +94,7 @@ function AgentPickerMenu({
   }, [connect, popover.open]);
   useEffect(() => {
     if (popover.open) card.current?.querySelector<HTMLButtonElement>("button")?.focus();
-  }, [level, popover.open]);
+  }, [popover.open]);
   useEffect(() => {
     // Native <dialog> restores focus when its cleanup closes it. Focus after that cleanup.
     if (wasConnecting.current && !connect) trigger.current?.focus();
@@ -96,10 +102,6 @@ function AgentPickerMenu({
   }, [connect]);
   if (!session?.resource?.agent?.description) return null;
   const owner = remote?.owner?.email ?? "another Builder";
-  const label = remote
-    ? `My Codex · ${online ? "online" : "offline"} · connected by ${owner}`
-    : `Superverse agent · ${model === null ? "Not selected yet" : agentModelLabel(model)}`;
-  const active = session.status === "SESSION_STATUS_ACTIVE";
   const waiting = session.resource.agent.description.pendingUserInput
     ? "Waiting for your answer"
     : session.resource.agent.description.pendingApproval
@@ -110,10 +112,14 @@ function AgentPickerMenu({
     : seen
       ? `Offline · last seen ${new Date(seen).toLocaleString()}`
       : "Offline · last seen unavailable";
+  const label = remote
+    ? `${LOCAL_AGENT} · ${liveness.toLowerCase()} · connected by ${owner}`
+    : `Superverse agent · ${model === null ? "Not selected yet" : agentModelLabel(model)}`;
+  const active = session.status === "SESSION_STATUS_ACTIVE";
+  const switchable = canManage && active;
   const switchPending = !remote && contextModel !== null && contextModel !== model;
   const close = () => {
     popover.close();
-    setLevel("agents");
     trigger.current?.focus();
   };
   const switchToPlatform = () =>
@@ -142,16 +148,14 @@ function AgentPickerMenu({
         aria-haspopup="dialog"
         aria-expanded={popover.open}
         title={label}
-        onClick={() => {
-          setLevel("agents");
-          popover.toggle();
-        }}
-        className="flex max-w-[min(22rem,70vw)] items-center gap-1 rounded-md border border-line-soft bg-panel px-2 py-1 text-[12px] text-ink-dim hover:bg-hover focus-visible:shadow-(--focus-ring) focus-visible:outline-none"
+        onClick={popover.toggle}
+        className="flex max-w-[min(22rem,70vw)] items-center gap-1.5 rounded-md border border-line-soft bg-panel px-2 py-1 text-[12px] text-ink-dim hover:bg-hover focus-visible:shadow-(--focus-ring) focus-visible:outline-none"
       >
         {switchPending && (
           <span className="size-1.5 shrink-0 rounded-full bg-accent" aria-label="Model changes next turn" />
         )}
-        <span className="truncate">{label}</span>
+        {remote && <LivenessDot online={online} />}
+        <span className="truncate">{remote ? LOCAL_AGENT : label}</span>
         <Glyph name="chevronDown" className="size-3.5 shrink-0" />
       </button>
       {popover.open && (
@@ -164,28 +168,40 @@ function AgentPickerMenu({
           tabIndex={-1}
           className="w-80 max-w-[90vw] p-2"
         >
-          {level === "agents" ? (
-            <div className="grid gap-1">
-              <p className="px-2 py-1 text-xs font-medium text-ink-faint">Agent</p>
-              <button type="button" className={POPOVER_ITEM} onClick={() => setLevel("models")}>
-                Superverse agent · {model === null ? "Not selected yet" : agentModelLabel(model)}
-              </button>
-              <button type="button" className={POPOVER_ITEM} onClick={() => setLevel("remote")}>
-                My local agent · {remote ? liveness.toLowerCase() : "not connected"}
-              </button>
-            </div>
-          ) : level === "models" ? (
-            <div className="grid gap-1">
-              <Button size="sm" variant="quiet" onClick={() => setLevel("agents")}>
-                ← Agent
-              </Button>
-              {remote && canManage && active && (
-                <Button size="sm" disabled={action.busy !== null} onClick={() => void switchToPlatform()}>
+          <div className="grid gap-1 text-[12px]">
+            {remote && (
+              <div
+                className="rounded-md bg-accent-wash px-2.25 py-1.75"
+                data-remote-liveness={online ? "online" : "offline"}
+              >
+                <p className="flex items-center gap-2 text-ink">
+                  <LivenessDot online={online} />
+                  <span className="font-medium">{LOCAL_AGENT}</span>
+                  <span className="ml-auto text-xs text-ink-faint">Current</span>
+                </p>
+                <p role="status" className="mt-0.5 pl-4 text-xs text-ink-faint">
+                  {liveness} · connected by {owner}
+                </p>
+              </div>
+            )}
+            {remote ? (
+              switchable && (
+                <button
+                  type="button"
+                  className={POPOVER_ITEM}
+                  disabled={action.busy !== null}
+                  onClick={() => void switchToPlatform()}
+                >
                   {action.busy ? "Switching…" : "Use the Superverse agent"}
-                </Button>
-              )}
-              {!remote &&
-                AGENT_MODEL_OPTIONS.filter(({ value }) => value !== "mock" || mockSelectable || model === "mock").map(
+                </button>
+              )
+            ) : (
+              <>
+                <p className="flex items-center px-2.25 pt-1 text-ink">
+                  <span className="font-medium">Superverse agent</span>
+                  <span className="ml-auto text-xs text-ink-faint">Current</span>
+                </p>
+                {AGENT_MODEL_OPTIONS.filter(({ value }) => value !== "mock" || mockSelectable || model === "mock").map(
                   (option) => (
                     <button
                       key={option.value}
@@ -205,60 +221,42 @@ function AgentPickerMenu({
                     </button>
                   ),
                 )}
-              {!remote && contextModel !== null && (
-                <p className="px-2 text-xs text-ink-faint">
-                  Current context: {agentModelLabel(contextModel)}
-                  {effort ? `, ${effort} effort` : ""}
-                  {switchPending ? " · change takes effect next turn" : ""}
-                </p>
-              )}
-              {action.error && (
-                <p role="alert" className="px-2 text-xs text-fail">
-                  {action.error}
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="grid gap-2 text-[12px] text-ink-dim">
-              <Button size="sm" variant="quiet" onClick={() => setLevel("agents")}>
-                ← Agent
-              </Button>
-              <p role="status" data-remote-liveness={remote ? (online ? "online" : "offline") : "none"}>
-                {remote ? `${liveness} · connected by ${owner}` : "No local agent is running this Session."}
-              </p>
-              {canManage && active && (
-                <>
-                  <p className="text-ink-faint">
-                    Changing agents stops the current work. Background commands keep running.
+                {contextModel !== null && (
+                  <p className="px-2.25 text-xs text-ink-faint">
+                    Current context: {agentModelLabel(contextModel)}
+                    {effort ? `, ${effort} effort` : ""}
+                    {switchPending ? " · change takes effect next turn" : ""}
                   </p>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      popover.close();
-                      setConnect(true);
-                    }}
-                  >
-                    Connect
-                  </Button>
-                  {remote && (
-                    <Button size="sm" disabled={action.busy !== null} onClick={() => void switchToPlatform()}>
-                      {action.busy ? "Switching…" : "Use the Superverse agent"}
-                    </Button>
-                  )}
-                </>
-              )}
-              {action.error && (
-                <p role="alert" className="text-fail">
-                  {action.error}
+                )}
+              </>
+            )}
+            {switchable && (
+              <>
+                <hr className="my-1 border-line-faint" />
+                <button
+                  type="button"
+                  className={POPOVER_ITEM}
+                  onClick={() => {
+                    popover.close();
+                    setConnect(true);
+                  }}
+                >
+                  {remote ? "Connect another local agent…" : "Connect a local agent…"}
+                </button>
+                <p className="px-2.25 text-xs text-ink-faint">
+                  Changing agents stops the current work. Background commands keep running.
                 </p>
-              )}
-            </div>
-          )}
+              </>
+            )}
+            {action.error && (
+              <p role="alert" className="px-2.25 text-xs text-fail">
+                {action.error}
+              </p>
+            )}
+          </div>
         </PopoverCard>
       )}
-      {connect && canManage && active && (
-        <RemoteAgentDialog projectId={session.projectId} onClose={() => setConnect(false)} />
-      )}
+      {connect && switchable && <RemoteAgentDialog projectId={session.projectId} onClose={() => setConnect(false)} />}
     </span>
   );
 }

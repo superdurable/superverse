@@ -27,7 +27,7 @@ test("Connect dialog pairs without activating and removes its exact connection",
       page.off("request", countList);
     });
     const menu = await openExecutorMenu(page);
-    await menu.getByRole("button", { name: "Connect", exact: true }).click();
+    await menu.getByRole("button", { name: /^Connect (a|another) local agent/ }).click();
     const dialog = page.getByRole("dialog", { name: "Connect my agent" });
     await expect(dialog).toBeVisible();
     const create = dialog.getByRole("button", { name: "Create pairing code", exact: true });
@@ -72,7 +72,7 @@ test("Connect dialog pairs without activating and removes its exact connection",
     await expect(dialog).toHaveCount(0);
     await expect(page.locator("[data-session-executor]").getByRole("button", { name: /^Agent:/ })).toBeFocused();
     const reopened = await openExecutorMenu(page);
-    await reopened.getByRole("button", { name: "Connect", exact: true }).click();
+    await reopened.getByRole("button", { name: /^Connect (a|another) local agent/ }).click();
     await expect(dialog.getByRole("checkbox")).not.toBeChecked();
     await expect(dialog.getByRole("button", { name: "Copy code", exact: true })).toHaveCount(0);
     await page.keyboard.press("Escape");

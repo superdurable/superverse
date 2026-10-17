@@ -26,7 +26,9 @@ test("Studio pairs a remote executor, renders its reply and takes over with the 
     const current = await client.activate("Studio integration host");
     const reply = `A remote reply from the actual HTTP listener (${randomUUID()}).`;
     await expect(executor).toHaveAttribute("data-session-executor", "remote");
-    await expect(executor.getByRole("button", { name: /^Agent:/ })).toContainText("My Codex · online");
+    await expect(executor.getByRole("button", { name: /^Agent:/ })).toHaveAccessibleName(
+      /^Agent: Local Codex · online · connected by /,
+    );
     await client.post("report", {
       ...current,
       sequence: 1,
@@ -47,10 +49,6 @@ test("Studio pairs a remote executor, renders its reply and takes over with the 
     expect(typeof command.basisEpoch).toBe("string");
     await expect(executor).toHaveAttribute("data-session-executor", "platform");
     await executor.getByRole("button", { name: /^Agent:/ }).click();
-    await page
-      .getByRole("dialog", { name: "Choose agent" })
-      .getByRole("button", { name: /^Superverse agent/ })
-      .click();
     await expect(page.getByRole("button", { name: "Claude Sonnet 5.5" })).toBeVisible();
     await page.keyboard.press("Escape");
     // UsePlatform revokes exactly its replaced credential after committing.

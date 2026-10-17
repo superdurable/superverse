@@ -40,7 +40,9 @@ test("A distinct Builder takes over remotely; replaced-valid is 409 and platform
     const authority = (await readSession(page, projectId)).agent?.description?.executor;
     expect(authority?.remote?.owner?.accountId).toBe(builder.accountId);
     expect(authority?.remote?.owner?.email).toBe(builder.email);
-    await expect(page.locator("[data-session-executor]")).toContainText(`connected by ${builder.email}`);
+    await expect
+      .poll(() => page.locator("[data-session-executor] > button").getAttribute("title"))
+      .toContain(`connected by ${builder.email}`);
     const saved = await rpcResult(page.request, "ListRemoteAgentConnections", { projectId });
     expect(saved.connections.find((row) => row.connectionId === first.connectionId)?.status).toBe(
       "REMOTE_AGENT_CONNECTION_STATUS_PAIRED",

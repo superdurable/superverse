@@ -23,9 +23,7 @@ export async function openExecutorMenu(page: Page) {
   const picker = page.locator("[data-session-executor]");
   await expect(picker).toBeVisible();
   await picker.getByRole("button", { name: /^Agent:/ }).click();
-  const menu = page.getByRole("dialog", { name: "Choose agent" });
-  await menu.getByRole("button", { name: /^My local agent/ }).click();
-  return menu;
+  return page.getByRole("dialog", { name: "Choose agent" });
 }
 
 /** Owns only an exclusive disposable Project's test connections, exact added membership and secondary logins. */
@@ -99,7 +97,7 @@ class RemoteFixture {
   async connect(page = this.page) {
     await page.goto(studioRoutes.projectSurface(this.fixture.projectId, "flow"));
     const menu = await openExecutorMenu(page);
-    await menu.getByRole("button", { name: "Connect", exact: true }).click();
+    await menu.getByRole("button", { name: /^Connect (a|another) local agent/ }).click();
     const dialog = page.getByRole("dialog", { name: "Connect my agent" });
     await dialog.getByRole("checkbox", { name: "I understand these local-machine permissions." }).check();
     this.attemptPairing(page);
