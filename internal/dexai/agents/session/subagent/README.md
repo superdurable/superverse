@@ -63,9 +63,15 @@ the contribution helper (`git.GitOperations.FinishContribution`); only a COMPLET
 the helper verifies that the change touches exactly the connector's module (and for `new` its
 `catalog.yaml` entry), commits it once as the library's committer (the GitHub App's bot) with the
 subject `connector(<slug>): <description>` and no trailer, moves the branch and pushes it without
-force where the server's library takes pushes. The finish of this kind has 5 attempts of 5 minutes
+force where the server's library takes pushes. The finish of this kind has 4 attempts within 3 hours
 (`contributionFinishOptions`, on every movement into it). `Outcome.Contribution` holds what it
 contributed and `Outcome.Refused` why it contributed nothing (a change outside the module, no change);
+before any branch movement or push, the helper runs the library's selected connector checks. A
+failed check leaves the worktree and no finish receipt, and
+`ResumeConnectorAfterCheckFailure` adds its bounded output to the model's message log for repair.
+`ConnectorCheckFailures` counts these failed finishes; after the third, the Flow ends FAILED and
+saves the work without a contribution. The develop finish allows 70 minutes per attempt so the
+current-Dex check has its 30-minute deadline; it heartbeats while the Sandbox command runs.
 the `task` notification carries the contribution, and the Session Service submits it to its
 [`ConnectorContributionFlow`](../contribution/README.md). A develop subagent leaves nothing to
 `merge_agent_changes`.
@@ -194,13 +200,14 @@ any other business record.
 | `RefreshSubagentWorkspace` | After the transport proved the lease unreachable, asks the Session every 10 seconds for the lease of its instance (`RequestSessionWorkspace{ForAgentID, Lost}`), which starts a new instance when it has none | `PollingStepOptions(30m)`; the wait limit, or a Session that no longer lends the workspace, fails the subagent |
 | `BeginSubagentFinish` | Ends the loop of a RUNNING subagent once; a Stop or the deadline that ended it first keeps its end | Status lock; cancels the deadline timer |
 | `FinishSubagent` | Stops a command the loop left running (idempotent ledger stop), saves the worktree into its result ref with its numstat and removes the checkout. A lease copy the transport proved unreachable, such as one of an instance that was replaced or removed while the subagent was outside a tool call, goes to `RefreshFinishingWorkspace`, at most twice | SYNC, 2 minutes per attempt, retried for 10 minutes; exhausted retries record the outcome with its changes unsaved |
+| `ResumeConnectorAfterCheckFailure` | Counts a rejected library check and appends its output as a user input to the existing message log; if fewer than three failures and still within the original deadline, resumes the model with the same worktree | Status and message locks; no external effect |
 | `RefreshFinishingWorkspace` | Asks the Session every 10 seconds for the lease of its current instance (`RequestSessionWorkspace{ForAgentID, Lost}`, which the record lends until the report, revoking a lost current instance and provisioning the next on the same volume), then saves the worktree again on it | `PollingStepOptions(30m)`; the wait limit, or a Session that no longer lends the workspace, records the outcome with its changes unsaved |
 | `RecordSubagentOutcome` | Records the terminal `Outcome` and status, and drains a cancelled wave's results | Status lock |
 | `ReportSubagentOutcome` | Delivers the `task` notification `task/agent-<id>/<status>` to the Session, asking again every 10 seconds while the Session's queue is full | `PollingStepOptions(2h)`; a Session that ended answers closed; past the wait limit `RecordUndeliveredReport` completes with an undelivered report |
 
 | RPC | Locks | Behavior |
 | --- | --- | --- |
-| `StopSubagent` | `SubagentStatus` | RUNNING: FINISHING, cancels the loop and the timer, and goes to `FinishSubagent{stopped}`. INITIALIZING: records `StopRequest`. Any other status answers whether the subagent has ended; a repeat changes nothing |
+| `StopSubagent` | `SubagentStatus` | RUNNING: FINISHING, cancels the loop and the timer, and goes to `FinishSubagent{stopped}`. INITIALIZING or FINISHING: records `StopRequest`; a check failure cannot restart the model after Stop. Any ended status answers that it ended |
 | `GetSubagentSnapshot` | None | The retained read: identity, kind, description, base commit, status, last message sequence, configuration and outcome, never the prompt. Serves a completed execution |
 | `GetDexSummary`, `GetDexDisplay` | None | The Dex Web row and header |
 

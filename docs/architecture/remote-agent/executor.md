@@ -452,13 +452,17 @@ the source handoff and delivery rules, and the repository context. Platform suba
 delegation and effort instructions remain in the platform model's segment. Codex starts
 a new connector, operation or fix with `start_connector_contribution`, edits the returned
 worktree using the file tools or `bash`, then calls `submit_connector_contribution`.
-The latter accepts the committed head; `connector/<slug>/release_candidate_published`
+The latter runs the library's selected connector checks in the Sandbox before commit, push and
+submission. A failed check returns its bounded output as `connector_check_failed`, keeps the
+worktree and OPEN attempt for a repair and another submit, and creates no branch head or release
+candidate. Because the gate's 70-minute bound exceeds the 1,800-second MCP timeout, the Bridge
+answers once the call is admitted that its checks started; the result arrives later as a message
+naming the call. A passed gate accepts the committed head; `connector/<slug>/release_candidate_published`
 and failure notifications, including `connector/<slug>/checks_failed/<full-head>`, arrive through
 `ReadRemote` and Bridge `sync`. Codex can read its own Project's current contributed head with
 `read_connector_checks` after a push when no notification has arrived yet; on failure it fetches
 the bounded, redacted job log tail on demand. The tool uses the server-side Project diagnostics
-reader and no workspace.
-After a published
+reader and no workspace. After a published
 candidate, Codex installs its module at the RC version, updates `dex-app.yaml` and runs
 `commit_and_push` for the application.
 
@@ -499,7 +503,7 @@ also refuses a slug with an OPEN remote attempt under the same lock. `ExecuteToo
 base on retry, and then `FinishContribution`, whose receipt queries the branch
 before any retry of commit/push. The Session Service queries the contribution
 Flow snapshot before `Submit` and treats the same head as accepted. The start
-attempt is bounded by two minutes; submit by 15 minutes, both using existing
+attempt is bounded by two minutes; submit by 70 minutes, both using existing
 tool retry, heartbeat, cancellation and failure routing. A failed or interrupted
 submission keeps its named attempt for explicit recovery. The only new dependency
 call is `SubmitConnectorContribution`; existing `GetSnapshot` and `ReadRemote`

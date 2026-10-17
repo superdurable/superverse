@@ -259,8 +259,7 @@
       "native-e2e"
     ],
     "/superverse.v2.RemoteAgentService/ListRemoteAgentConnections": [
-      "kind-e2e",
-      "native-e2e"
+      "kind-e2e"
     ],
     "/superverse.v2.RemoteAgentService/RevokeRemoteAgentConnection": [
       "native-e2e"

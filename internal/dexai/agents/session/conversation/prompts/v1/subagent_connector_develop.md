@@ -3,3 +3,4 @@ Your root is your own worktree of the official connectors library, superdurable/
 
 ## Your task: connector_develop
 Build the connector or operation the task describes, or fix the defect it describes, in your connector's module, following the contributor guide below and the library's own rules. Raise your effort with set_effort when the provider's API is hard to model or after the same check failed twice. The connector contribution at the start of your conversation names the connector's slug, the contribution kind, the branch and its base commit.
+Your completion runs the library's selected checks before push. If they fail, the failure output is returned as a new message; repair the same worktree and report again. Race detection runs only in the library CI; CONNCI notifies the agent of a CI failure. A failed gate publishes nothing, and three failed gates end this task with a failure report to the parent.

@@ -1,0 +1,60 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+name: connector-gate-bound
+title: "Connector check repair limit"
+description: "A connector developer reports three times with invalid Go source; the library gate refuses each finish and the task fails without a contribution."
+category: project_feature
+arguments: {task: agent-aaaaaaaa}
+inputs:
+  - label: "Repair Stripe"
+    message: "Please repair the Stripe checkout example in the public connectors library."
+    replies:
+      - text: "I will ask before submitting a public connector fix."
+        tool_uses:
+          - name: request_user_input
+            input:
+              questions:
+                - id: fix
+                  header: "Connector fix"
+                  question: "Should I submit a public Stripe connector fix?"
+                  options:
+                    - {label: "Submit the fix", description: "A connector subagent prepares the public contribution."}
+                    - {label: "Not now", description: "Leave the public connector unchanged."}
+  - label: "Approve public fix"
+    answers: ["Submit the fix"]
+    replies:
+      - text: "Starting the Stripe connector repair."
+        tool_uses:
+          - name: start_agent
+            input:
+              description: "Repair the Stripe checkout example"
+              kind: connector_develop
+              slug: stripe
+              contribution: fix
+              prompt: "Repair the Stripe checkout example. [[subagent:connector-gate-bound/develop]]"
+      - text: "The connector developer is checking the repair."
+      - text: "The library checks rejected the repair three times; the branch was not pushed."
+        notification: task
+subagents:
+  develop:
+    kind: connector_develop
+    replies:
+      - text: "Reading the library rules."
+        tool_uses:
+          - name: read
+            input: {path: AGENTS.md, limit: 20}
+      - text: "Changing the Stripe checkout example."
+        tool_uses:
+          - name: write
+            input:
+              path: connectors/stripe/examples/create-checkout-session/flow/card_flow.go
+              content: "package createcheckoutsession\nvar broken = (\n"
+      - text: "The example is ready for the library checks."
+      - text: "I will try the library checks again."
+      - text: "I will try the library checks once more."

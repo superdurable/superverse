@@ -90,7 +90,9 @@ below, which the platform enforces when you finish.
   `connectorctl generate`.
 - Every connector has its own `go.mod`, a README, provider tests and at least one
   runnable example under `examples/` with a Worker entrypoint and the connector's
-  static `ConnectionName`. A new operation extends an example that uses it.
+  static `ConnectionName`. Each `examples/<name>/flow/` directory contains exactly
+  one Flow source with `GetSteps`; put additional Flows in separate example
+  directories. A new operation extends an example that uses it.
 - `go.mod` requires an exact published Connector SDK tag: never a `replace`, a
   pseudo-version, a branch or a commit.
 - Provider calls run in Step `Execute`; secrets never enter Flow input,
@@ -112,15 +114,24 @@ root unless noted, all with `GOWORK=off`:
 
 ```text
 python3 script/release/component_release.py validate-connector --component-path <module> --sdk-module github.com/superdurable/dex-connectors-library/sdkgo
-cd <module> && GOWORK=off go test -race ./... && GOWORK=off go vet ./...
+cd <module> && GOWORK=off go test ./... && GOWORK=off go vet ./...
 GOWORK=off go run ./cmd/connectorctl validate <module>/connector.yaml
 GOWORK=off go run ./cmd/connectorctl generate --check <module>/connector.yaml
 GOWORK=off go run ./cmd/connectorctl catalog --check --catalog catalog.yaml
 ```
 
+The Sandbox has no C compiler and CGO is disabled, so its pre-push gate runs the
+same unit-test packages without `-race`. Race detection runs only in the library
+CI; CONNCI notifies the agent of a CI failure.
+
 A check that needs real provider credentials, such as a live provider test or
 an OAuth authorization, cannot run here: record it as unverified, never as
 passed. Never ask for, search for or print a credential.
+
+Before the platform pushes a contribution, it runs the library's selected
+connector targets, including `test-dex-compat-current`, in this Sandbox. If a
+check fails, its output returns to you and the worktree stays editable. Fix the
+failure and report again; a failed check publishes no branch or release candidate.
 
 ## Report
 

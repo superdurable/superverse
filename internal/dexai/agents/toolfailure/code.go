@@ -171,6 +171,7 @@ var (
 	// such as a version that is not after the connector's latest release.
 	ReleaseCandidateRefused = callCode("release_candidate_refused", "The connectors library refused a release candidate of this contribution for the reason shown. "+
 		"Start another connector_develop for the same connector that fixes it, such as a metadata.version after the latest release.")
+	ConnectorCheckFailed = callCode("connector_check_failed", "The connectors library checks failed before the contribution was pushed. Fix the worktree, then call submit_connector_contribution again.")
 )
 
 // The application source is wrong; the model repairs it.

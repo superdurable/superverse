@@ -10,8 +10,8 @@
 # connector, and after the card, in the same turn, the main agent starts a
 # connector_develop subagent for the slug mockfeed. The subagent works in its
 # worktree of the connectors library on the branch of its connector: it reads
-# the library's rules, writes the module's go.mod, manifest and README and adds
-# the module's catalog.yaml entry, then reports. Its finish commits the change
+# the library's rules, adapts a complete connector fixture and adds the module's
+# catalog.yaml entry, then reports. Its finish checks and commits the change
 # as the library's committer and pushes the branch where this server's library
 # takes pushes; its task notification carries the contribution and opens an
 # automatic turn. The application workspace stays untouched.
@@ -63,27 +63,25 @@ subagents:
         tool_uses:
           - name: read
             input: {path: AGENTS.md, limit: 40}
-      - text: "Writing the module."
+      - text: "Adapting a complete connector fixture."
         tool_uses:
-          - name: write
+          - name: bash
             input:
-              path: connectors/superverse-mock/mockfeed/go.mod
-              content: "module github.com/superdurable/dex-connectors-library/connectors/superverse-mock/mockfeed\n\ngo 1.25\n"
-          - name: write
-            input:
-              path: connectors/superverse-mock/mockfeed/connector.yaml
-              content: "apiVersion: connectors.dex.dev/v1alpha1\nkind: Connector\nmetadata:\n  name: mockfeed\n  displayName: Mock feed\n  description: Lists the newest items of a feed.\n  company: Superverse Mock\n  version: v0.21.0\n"
-          - name: write
-            input:
-              path: connectors/superverse-mock/mockfeed/README.md
-              content: "# Mock feed\n\nLists the newest items of a feed.\n"
+              command: >-
+                cp -R connectors/hackernews connectors/mockfeed &&
+                rm -rf connectors/mockfeed/examples &&
+                sed -i 's|connectors/hackernews|connectors/mockfeed|' connectors/mockfeed/go.mod &&
+                sed -i -e 's|name: hacker-news-daily|name: mockfeed|' -e 's|displayName: Hacker News Daily|displayName: Mock Feed|' -e 's|company: Hacker News|company: Mock Feed|' connectors/mockfeed/connector.yaml &&
+                GOWORK=off go run ./cmd/connectorctl generate connectors/mockfeed/connector.yaml
+              description: "Copy and generate the connector fixture"
+              timeout_seconds: 600
       - text: "Adding the catalog entry."
         tool_uses:
           - name: bash
             input:
-              command: "sed -i 's|^directories:$|directories:\\n  - connectors/superverse-mock/mockfeed|' catalog.yaml && grep -c 'connectors/superverse-mock/mockfeed' catalog.yaml"
+              command: "python3 -c 'import re; text = open(\"catalog.yaml\").read(); head, _, rest = text.partition(\"directories:\\n\"); entries = sorted(set(re.findall(r\"^  - (\\S+)$\", rest, re.M)) | {\"connectors/mockfeed\"}); open(\"catalog.yaml\", \"w\").write(head + \"directories:\\n\" + \"\".join(\"  - %s\\n\" % entry for entry in entries))' && grep -c 'connectors/mockfeed' catalog.yaml"
               description: "Add the catalog entry of the new connector"
               timeout_seconds: 60
         expect_result_contains:
           - "1"
-      - text: "I built the module connectors/superverse-mock/mockfeed with its go.mod, manifest and README and added its catalog.yaml entry. The library's checks did not run in this mock; the provider behavior is unverified."
+      - text: "I built the module connectors/mockfeed from a library fixture and added its catalog.yaml entry. The library's checks run before push; provider behavior is unverified."

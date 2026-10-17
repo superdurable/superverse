@@ -203,6 +203,7 @@ type subagentFinish struct {
 	// Contribution and Refused are a develop subagent's, once saved.
 	Contribution *conversation.ConnectorContribution `json:"contribution,omitempty"`
 	Refused      string                              `json:"refused,omitempty"`
+	CheckFailure string                              `json:"checkFailure,omitempty"`
 }
 
 // describeEnd is the report of an end: the subagent's own, and for an end

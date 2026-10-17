@@ -21,6 +21,7 @@ import (
 	"github.com/superdurable/superversev2/cmd/superverse-bridge/platform"
 	"github.com/superdurable/superversev2/cmd/superverse-bridge/state"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteagent/bridgeapi"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 )
 
 // mcpToolTimeoutSeconds is Codex's timeout for a Superverse tool call, which
@@ -41,15 +42,19 @@ const (
 
 // pendingCall is an MCP tool call waiting for its result.
 type pendingCall struct {
-	callID string
-	turnID string
-	result chan mcpserver.CallResult
-	timing mcpserver.CallTiming
+	callID       string
+	turnID       string
+	result       chan mcpserver.CallResult
+	accepted     chan struct{}
+	acceptedOnce sync.Once
+	timing       mcpserver.CallTiming
 }
 
 func newPendingCall(turnID string) *pendingCall {
-	return &pendingCall{turnID: turnID, result: make(chan mcpserver.CallResult, 1)}
+	return &pendingCall{turnID: turnID, result: make(chan mcpserver.CallResult, 1), accepted: make(chan struct{})}
 }
+
+func (call *pendingCall) accept() { call.acceptedOnce.Do(func() { close(call.accepted) }) }
 
 // finish delivers the call's result once; a later result is dropped, and
 // its delivery obligation counts as undelivered.
@@ -125,6 +130,8 @@ func (r *relay) call(ctx context.Context, name string, arguments json.RawMessage
 	select {
 	case result := <-call.result:
 		return result, nil
+	case <-accepted(name, call):
+		return r.abandonWith(call, "its connector checks started; its result will arrive as a message naming that call. Do not run it again."), nil
 	case <-timer.C:
 		return r.abandon(call), nil
 	case <-ctx.Done():
@@ -140,6 +147,17 @@ func (r *relay) call(ctx context.Context, name string, arguments json.RawMessage
 // answers, arrive later as an ordinary message. A result that arrived as the
 // wait ended is returned, so its delivery obligation is settled.
 func (r *relay) abandon(call *pendingCall) mcpserver.CallResult {
+	return r.abandonWith(call, "")
+}
+
+func accepted(name string, call *pendingCall) <-chan struct{} {
+	if name == string(conversation.ToolSubmitConnectorContribution) {
+		return call.accepted
+	}
+	return nil
+}
+
+func (r *relay) abandonWith(call *pendingCall, acceptedText string) mcpserver.CallResult {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	select {
@@ -159,6 +177,9 @@ func (r *relay) abandon(call *pendingCall) mcpserver.CallResult {
 		return mcpserver.CallResult{Text: "the question is still open; the answers will arrive as a message"}
 	}
 	if call.callID != "" {
+		if acceptedText != "" {
+			return mcpserver.CallResult{Text: fmt.Sprintf("Superverse call %s was accepted and %s", call.callID, acceptedText)}
+		}
 		return mcpserver.CallResult{Text: fmt.Sprintf("Superverse call %s is still running after %s; its result will arrive "+
 			"as a message naming that call. Do not run it again.", call.callID, r.toolWait)}
 	}
@@ -342,6 +363,11 @@ func (r *relay) sendHead(ctx context.Context, head state.StoredReport) error {
 		r.progress.Acknowledged = max(r.progress.Acknowledged, answer.Reported, report.Sequence)
 		r.admitDrainLocked(head, report)
 		err = r.saveLocked()
+		if err == nil {
+			if call := r.slotCalls[head.Slot]; call != nil {
+				call.accept()
+			}
+		}
 		r.mu.Unlock()
 		if err != nil {
 			return err

@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"strings"
 
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
@@ -97,18 +98,19 @@ type ContributionWorktree struct {
 // refused, Unchanged marks a worktree that held no change, and Missing one that
 // no longer exists.
 type ContributionResult struct {
-	Branch     string
-	base       string
-	Commit     string
-	saved      string
-	Module     string
-	Files      int
-	insertions int
-	deletions  int
-	Location   connectorlibrary.Location
-	Rejected   string
-	Unchanged  bool
-	Missing    bool
+	Branch      string
+	base        string
+	Commit      string
+	saved       string
+	Module      string
+	Files       int
+	insertions  int
+	deletions   int
+	Location    connectorlibrary.Location
+	Rejected    string
+	CheckFailed string
+	Unchanged   bool
+	Missing     bool
 	// ReleaseCandidate is the candidate of the pushed head, or CandidateRefused
 	// says why the library's rules refuse one.
 	ReleaseCandidate *connectorlibrary.ReleaseCandidate
@@ -151,6 +153,7 @@ type contributionAnswer struct {
 	PushRefused string `json:"pushRefused"`
 	Saved       string `json:"saved"`
 	Rejected    string `json:"rejected"`
+	CheckFailed string `json:"checkFailed"`
 	Unchanged   bool   `json:"unchanged"`
 	Missing     bool   `json:"missing"`
 }
@@ -179,15 +182,19 @@ func (operations *GitOperations) FinishContribution(ctx context.Context, client 
 	}
 	branch := operations.Library.Branch(target.ProjectID, target.Slug)
 	request := map[string]any{"branch": branch, slugKey: target.Slug, "contribution": target.Kind.String(), "subject": ContributionSubject(target.Slug, summary),
-		"name": committer.Name, "email": committer.Email, "push": contributes && remote.Location != connectorlibrary.LocationSandbox, urlKey: remote.CloneURL, "contribute": contributes}
+		"name": committer.Name, "email": committer.Email, "push": contributes && remote.Location != connectorlibrary.LocationSandbox, urlKey: remote.CloneURL,
+		"publicURL": connectorlibrary.PublicCloneURL, "contribute": contributes}
 	var answer contributionAnswer
 	if err = runContribution(ctx, client, "finish", target.AgentID, remote, request, &answer); err != nil {
 		return ContributionResult{}, err
 	}
+	for _, secret := range sandboxd.GitTokenForms(remote.Token()) {
+		answer.CheckFailed = strings.ReplaceAll(answer.CheckFailed, secret, "[redacted]")
+	}
 	result := ContributionResult{Branch: branch, base: answer.Base, Commit: answer.Commit, saved: answer.Saved, Files: answer.Files, insertions: answer.Insertions, deletions: answer.Deletions,
-		Location: connectorlibrary.LocationSandbox, Rejected: answer.Rejected, Unchanged: answer.Unchanged, Missing: answer.Missing}
+		Location: connectorlibrary.LocationSandbox, Rejected: answer.Rejected, CheckFailed: answer.CheckFailed, Unchanged: answer.Unchanged, Missing: answer.Missing}
 	switch {
-	case answer.Missing || answer.Unchanged || answer.Rejected != "" || !contributes:
+	case answer.Missing || answer.Unchanged || answer.Rejected != "" || answer.CheckFailed != "" || !contributes:
 		return result, nil
 	case !flowid.IsCommitSHA(answer.Commit) || !flowid.IsCommitSHA(answer.Base) || answer.Module == "":
 		return ContributionResult{}, sandboxd.NewToolFailure(toolfailure.PlatformCommandUnavailable, fmt.Errorf("the contribution helper finished with %q on %q, which is no contribution", answer.Commit, answer.Base))

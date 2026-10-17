@@ -224,7 +224,17 @@ environment carries (`sandboxd.RunRemoteHelperJSON`, which replaces an error tha
   trailer, into `.../result`. For a completed subagent it verifies that the change touches exactly one
   module below `connectors/` whose `connector.yaml` declares `metadata.name` the slug and whose path ends
   with it, a `new` one adding its `catalog.yaml` entry and nothing else, an `operation` or `fix` one
-  changing an existing module and leaving `catalog.yaml` alone; it then moves the branch and pushes it
+  changing an existing module and leaving `catalog.yaml` alone. It selects that module with the
+  library's `connectorctl test-matrix`, fetches official release tags, then runs its catalog, Studio
+  bundle, React and current/latest Dex compatibility Makefile targets before moving the branch. It
+  mirrors `test-connectors` with the dependency validator, unit tests, vet, manifest validation and
+  generation check, except that unit tests omit `-race` because the coding image has no C compiler and
+  CGO is disabled. Race detection runs only in the library CI; CONNCI notifies the agent of a CI
+  failure. Failed checks return
+  a redacted 4 KiB output tail and leave the worktree editable, with no finish receipt or push. Go
+  and npm caches stay on the workspace volume and end with it. Disposable target worktrees use the
+  Sandbox's `/tmp`, outside the repository so Go does not infer the application's Git identity; the
+  coding profile bounds that volume at 2 GiB. A passed check moves the branch and pushes it
   without force where the library takes pushes, reading the remote branch before (a branch that already
   holds the commit is published; one that moved elsewhere is refused) and after. The receipt
   `.../connectors/contributions/<agent ID>.json` makes each step happen once: a retry after a lost answer

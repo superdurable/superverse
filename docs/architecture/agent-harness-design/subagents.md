@@ -424,7 +424,8 @@ are declared in [session](session.md); their semantics are above. In outline:
   `dex.GracefulComplete(Receipt)` once the report was delivered or its two-hour wait passed.
   An independent top-level Flow owned by the Session, neither a SubFlow nor a Project child.
 - **Primitives.** Attributes `Identity`, `Start`, `ProjectID` (indexed `keyword2`),
-  `SubagentStatus` (indexed `keyword3`, the status lock), `Config`, `StopRequest`, `Workspace`,
+  `SubagentStatus` (indexed `keyword3`, the status lock), `Config`, `StopRequest`,
+  `ConnectorCheckFailures` (integer, absent means zero), `Workspace`,
   `Outcome` (with `Contribution` and `Refused` for `connector_develop`), `AgentState`,
   `MessageWindowLock` and `ContextSegment`; AttributeMaps `CurrentMessages`, `ArchivedMessages`
   and `ContextSegmentPrompts`; ChannelMap `ParallelToolResults` (key `tool-batch-<seq>-<first>`);
@@ -441,7 +442,7 @@ are declared in [session](session.md); their semantics are above. In outline:
   `ExecuteSubagentTool`, `SettleSubagentCommand`, `RecordSubagentToolFailure`,
   `ExecuteSubagentParallelTool`, `RecoverSubagentParallelToolExecution`,
   `AwaitSubagentParallelToolResults`, `RefreshSubagentWorkspace`, `BeginSubagentFinish`,
-  `FinishSubagent`, `RefreshFinishingWorkspace`, `RecordSubagentOutcome`,
+  `FinishSubagent`, `ResumeConnectorAfterCheckFailure`, `RefreshFinishingWorkspace`, `RecordSubagentOutcome`,
   `ReportSubagentOutcome` and `RecordUndeliveredReport`; RPCs `StopSubagent`,
   `GetSubagentSnapshot`, `GetDexSummary` and `GetDexDisplay`. The generated graph is
   `docs/flows/sv2-subagent-flow.json`.

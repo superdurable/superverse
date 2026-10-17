@@ -132,6 +132,54 @@ func (driver *remoteConnectorDriver) success(ctx context.Context, name conversat
 	return report
 }
 
+// TestSessionRemoteConnectorCheckHTTPDexIntegration acts as Codex through the
+// real remote endpoint and uses the real library, Sandbox and Git host.
+func TestSessionRemoteConnectorCheckHTTPDexIntegration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), 90*time.Minute)
+	defer cancel()
+	driver, session := newRemoteConnectorDriver(ctx, t)
+	started, _ := driver.call(ctx, conversation.ToolStartConnectorContribution, map[string]any{
+		"slug": "stripe", "contribution": "fix", "reason": "Repair the Stripe Checkout example",
+	})
+	if started.IsError {
+		t.Fatalf("start Stripe contribution: %s", started.Content)
+	}
+	var prepared struct {
+		WorktreePath string `json:"worktree_path"`
+	}
+	if err := json.Unmarshal([]byte(started.Content), &prepared); err != nil {
+		t.Fatal(err)
+	}
+	root := prepared.WorktreePath
+	flow := root + "/connectors/stripe/examples/create-checkout-session/flow/card_flow.go"
+	driver.success(ctx, conversation.ToolWrite, map[string]any{"path": flow,
+		"content": "package createcheckoutsession\nimport \"github.com/superdurable/dex/sdk-go/dex\"\ntype CardFlow struct { dex.FlowDefaults }\nfunc (*CardFlow) GetSteps() []dex.StepDef { return nil }\n"}, "")
+	driver.success(ctx, conversation.ToolBash, map[string]any{"command": "cd '" + root + "' && printf '\\nCheckout example check repair.\\n' >> connectors/stripe/README.md",
+		"description": "Record the Stripe example repair", "timeout_seconds": 30}, "")
+	failed, _ := driver.call(ctx, conversation.ToolSubmitConnectorContribution, map[string]any{"slug": "stripe", "summary": "Repair the Stripe checkout example"})
+	if !failed.IsError || !strings.Contains(failed.Content, "connector_check_failed") ||
+		!strings.Contains(failed.Content, "expected one Flow source with GetSteps") {
+		t.Fatalf("the two-Flow example was not refused with actionable output: %s", failed.Content)
+	}
+	if _, err := session.contributions.Snapshot(ctx, contribution.Identity{ProjectID: session.identity.ProjectID, Slug: "stripe"}); err == nil {
+		t.Fatal("failed connector check started a contribution Flow")
+	}
+	driver.success(ctx, conversation.ToolBash, map[string]any{"command": "cd '" + root + "' && branch=$(git symbolic-ref --quiet --short HEAD) && test -n \"$branch\" && test -z \"$(git ls-remote origin refs/heads/$branch)\"",
+		"description": "Confirm the refused branch was not pushed", "timeout_seconds": 30}, "")
+	driver.success(ctx, conversation.ToolRead, map[string]any{"path": flow}, "CardFlow")
+	driver.success(ctx, conversation.ToolBash, map[string]any{"command": "rm '" + flow + "'", "description": "Remove the second Flow", "timeout_seconds": 30}, "")
+	accepted, _ := driver.call(ctx, conversation.ToolSubmitConnectorContribution, map[string]any{"slug": "stripe", "summary": "Repair the Stripe checkout example"})
+	if accepted.IsError || !strings.Contains(accepted.Content, `"accepted":true`) {
+		t.Fatalf("repaired Stripe contribution was not accepted: %s", accepted.Content)
+	}
+	session.awaitContribution(ctx, contribution.Identity{ProjectID: session.identity.ProjectID, Slug: "stripe"},
+		func(record contribution.Record) bool { return record.HeadCommit != "" })
+	snapshot, err := session.client.GetSnapshot(ctx, session.id)
+	if err != nil || snapshot.Agent == nil {
+		t.Fatalf("read the Session after Stripe submission: %v", err)
+	}
+}
+
 // TestSessionRemoteConnectorContributionHTTPDexIntegration acts as Codex over
 // the real remote HTTP endpoint. Dex, Sandbox, Git host and release store are
 // real; no platform model or scripted dependency executes the contribution.

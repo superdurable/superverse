@@ -164,8 +164,11 @@ none otherwise. It refuses to start a second binding of an Orca session, so that
   that advances the cursor. A new tool set digest refetches the tools by repeating `activate`.
 - **Tool calls** (`reports.go`). An MCP call becomes a report of the running turn (it waits up to
   5 s for the turn's start event) and waits for its `tool_result` entry, call ID
-  `remote-<epoch>-<sequence>`, for at most `toolWaitBudget` (1,770 s, for every tool), so the Bridge answers
-  before Codex's MCP timeout of 1,800 s. Expiry leaves the outcome pending, never failed: the
+  `remote-<epoch>-<sequence>`, for at most `toolWaitBudget` (1,770 s), so the Bridge answers
+  before Codex's MCP timeout of 1,800 s. `submit_connector_contribution`, whose Sandbox gate may run
+  for 70 minutes, answers as soon as its report is durably accepted that the checks started; its
+  result follows through the same late-result message path. For every other tool, expiry leaves the
+  outcome pending, never failed: the
   answer is a non-error result telling Codex that the result will arrive as a message naming the
   call ID (once the call was sent), and not to
   run the call again; a question still open returns "the question is still open; the answers will

@@ -26,6 +26,7 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/platform/connectorlibrary"
 	"github.com/superdurable/superversev2/internal/comm/platform/deploymentnames"
 	"github.com/superdurable/superversev2/internal/comm/platform/githubapp"
+	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/sandboxd"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/sandboxd/sandboxdtest"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 )
@@ -65,7 +66,7 @@ func TestConnectorContributionGitHubIntegration(t *testing.T) {
 	operations := &GitOperations{Library: library}
 	slug := "mockgh" + strings.ToLower(rand.Text()[:6])
 	target := ContributionTarget{AgentID: "k3n8q5r1", ProjectID: "t" + strings.ToLower(rand.Text()[:5]), Slug: slug, Kind: conversation.ContributionNew}
-	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Minute)
+	ctx, cancel := context.WithTimeout(t.Context(), 90*time.Minute)
 	defer cancel()
 
 	worktree, err := operations.CreateContributionWorktree(ctx, client, target)
@@ -76,11 +77,19 @@ func TestConnectorContributionGitHubIntegration(t *testing.T) {
 	if worktree.Branch != library.Branch(target.ProjectID, slug) || worktree.Root != ContributionWorktreeRoot(target.AgentID) {
 		t.Fatalf("the worktree is not on the connector's branch: %+v", worktree)
 	}
-	module := "connectors/superverse-mock/" + slug
-	shell(t, client, fmt.Sprintf(`set -e; cd %s; mkdir -p %[2]s
-printf 'module github.com/superdurable/dex-connectors-library/%[2]s\n\ngo 1.25\n' > %[2]s/go.mod
-printf 'apiVersion: connectors.dex.dev/v1alpha1\nkind: Connector\nmetadata:\n  name: %[3]s\n  version: v0.21.0\n' > %[2]s/connector.yaml
-sed -i 's|^directories:$|directories:\n  - %[2]s|' catalog.yaml`, worktree.Root, module, slug))
+	module := "connectors/" + slug
+	fixture := fmt.Sprintf(`set -e; cd %s
+cp -R connectors/hackernews %[2]s
+rm -rf %[2]s/examples
+sed -i 's|connectors/hackernews|%[2]s|' %[2]s/go.mod
+sed -i -e 's|name: hacker-news-daily|name: %[3]s|' -e 's|displayName: Hacker News Daily|displayName: Mock GH|' -e 's|company: Hacker News|company: %[3]s|' %[2]s/connector.yaml
+GOWORK=off go run ./cmd/connectorctl generate %[2]s/connector.yaml
+python3 -c 'import re; text = open("catalog.yaml").read(); head, _, rest = text.partition("directories:\n"); entries = sorted(set(re.findall(r"^  - (\S+)$", rest, re.M)) | {"%[2]s"}); open("catalog.yaml", "w").write(head + "directories:\n" + "".join("  - %%s\n" %% entry for entry in entries))'`, worktree.Root, module, slug)
+	prepared, err := client.RunToExit(ctx, sandboxd.StartRequest{ExecutionID: sandboxd.PlatformExecutionID("connector-github-fixture"),
+		Arguments: []string{"bash", "-c", fixture}, Environment: sandboxd.GitProcessEnvironment(), Timeout: 5 * time.Minute})
+	if err != nil || prepared.ExitCode != 0 {
+		t.Fatalf("prepare the complete GitHub connector fixture: %v, exit %d: %s", err, prepared.ExitCode, prepared.Stderr)
+	}
 
 	summary := "Build the " + slug + " test connector"
 	finished, err := operations.FinishContribution(ctx, client, target, summary, true)

@@ -33,11 +33,12 @@ var (
 	// dex:indexed-attribute attribute-key:ProjectID index-key:keyword2 index-type:keyword value-type:string description:"Project of the subagent's Session"
 	projectIDAttribute = dex.DefineAttribute[string]("ProjectID", dex.Indexed(dex.AttributeIndex{Type: dex.IndexKeyword, IndexKey: "keyword2"}))
 	// dex:indexed-attribute attribute-key:SubagentStatus index-key:keyword3 index-type:keyword value-type:string description:"Subagent lifecycle status"
-	statusAttribute      = dex.DefineAttribute[string]("SubagentStatus", dex.Indexed(dex.AttributeIndex{Type: dex.IndexKeyword, IndexKey: "keyword3"}))
-	configAttribute      = dex.DefineAttribute[Config]("Config")
-	stopRequestAttribute = dex.DefineAttribute[bool]("StopRequest")
-	workspaceAttribute   = dex.DefineAttribute[Workspace]("Workspace")
-	outcomeAttribute     = dex.DefineAttribute[Outcome]("Outcome")
+	statusAttribute                 = dex.DefineAttribute[string]("SubagentStatus", dex.Indexed(dex.AttributeIndex{Type: dex.IndexKeyword, IndexKey: "keyword3"}))
+	configAttribute                 = dex.DefineAttribute[Config]("Config")
+	stopRequestAttribute            = dex.DefineAttribute[bool]("StopRequest")
+	connectorCheckFailuresAttribute = dex.DefineAttribute[int]("ConnectorCheckFailures")
+	workspaceAttribute              = dex.DefineAttribute[Workspace]("Workspace")
+	outcomeAttribute                = dex.DefineAttribute[Outcome]("Outcome")
 
 	// The subagent's conversation, kept like the Session's: state, append-only entry log,
 	// the context segment with its frozen prompts, and the branches of a parallel tool wave.
@@ -81,7 +82,7 @@ func (flow *SubagentFlow) GetSteps() []dex.StepDef {
 		dex.DefineStep(RouteSubagentTools{flow: flow}), dex.DefineStep(ExecuteSubagentTool{flow: flow}), dex.DefineStep(SettleSubagentCommand{flow: flow}),
 		dex.DefineStep(RecordSubagentToolFailure{flow: flow}), dex.DefineStep(ExecuteSubagentParallelTool{flow: flow}),
 		dex.DefineStep(RecoverSubagentParallelToolExecution{}), dex.DefineStep(AwaitSubagentParallelToolResults{flow: flow}),
-		dex.DefineStep(RefreshSubagentWorkspace{flow: flow}), dex.DefineStep(BeginSubagentFinish{}), dex.DefineStep(FinishSubagent{flow: flow}),
+		dex.DefineStep(RefreshSubagentWorkspace{flow: flow}), dex.DefineStep(BeginSubagentFinish{}), dex.DefineStep(FinishSubagent{flow: flow}), dex.DefineStep(ResumeConnectorAfterCheckFailure{flow: flow}),
 		dex.DefineStep(RefreshFinishingWorkspace{flow: flow}), dex.DefineStep(RecordSubagentOutcome{}), dex.DefineStep(ReportSubagentOutcome{flow: flow}),
 		dex.DefineStep(RecordUndeliveredReport{}),
 	}
@@ -104,7 +105,7 @@ const readRPCTimeout = 5 * time.Second
 func (*SubagentFlow) GetPersistenceSchema() dex.PersistenceSchema {
 	return dex.PersistenceSchema{
 		Attributes: []dex.AttributeDef{
-			identityAttribute, startAttribute, projectIDAttribute, statusAttribute, configAttribute, stopRequestAttribute, workspaceAttribute, outcomeAttribute,
+			identityAttribute, startAttribute, projectIDAttribute, statusAttribute, configAttribute, stopRequestAttribute, connectorCheckFailuresAttribute, workspaceAttribute, outcomeAttribute,
 			agentStateAttribute, messageWindowLockAttribute, contextSegmentAttribute, contextSegmentPromptsAttribute, currentMessagesAttribute, archivedMessagesAttribute,
 		},
 		Channels: []dex.ChannelDef{parallelToolResultsChannel},
@@ -145,6 +146,9 @@ func (*SubagentFlow) StopSubagent(ctx dex.Context, _ dex.None) (*dex.RPCResult[s
 			AwaitSubagentDeadline{}, CallSubagentModel{}, CompactSubagentContext{}, RecordSubagentFailure{}, RouteSubagentTools{}, ExecuteSubagentTool{}, SettleSubagentCommand{},
 			RecordSubagentToolFailure{}, ExecuteSubagentParallelTool{}, RecoverSubagentParallelToolExecution{}, AwaitSubagentParallelToolResults{}, RefreshSubagentWorkspace{},
 			BeginSubagentFinish{}), nil
+	case StatusFinishing:
+		comm.MustDo(stopRequestAttribute.Set(ctx, true))
+		return &dex.RPCResult[stopAnswer]{}, nil
 	default:
 		return &dex.RPCResult[stopAnswer]{Output: stopAnswer{Ended: status.ended()}}, nil
 	}
@@ -714,10 +718,55 @@ func (step FinishSubagent) Execute(ctx dex.Context, finish subagentFinish) (*dex
 	case err != nil:
 		return nil, dex.ErrorWithStack(fmt.Errorf("save the worktree: %w", err))
 	}
+	if finish.CheckFailure != "" {
+		return dex.GoTo(ResumeConnectorAfterCheckFailure{}, finish), nil
+	}
 	if finish.Report == "" {
 		finish.Report = comm.TruncateUTF8(lastReplyText(ctx), maximumReportBytes)
 	}
 	return dex.GoTo(RecordSubagentOutcome{}, finish), nil
+}
+
+// dex:group group-id:lifecycle group-label:"Lifecycle"
+// dex:explanation text:"Return a connector check failure to the developer for repair, or end after the failure limit."
+// ResumeConnectorAfterCheckFailure gives a completed connector developer the
+// library's failure and lets it repair the still-open worktree.
+type ResumeConnectorAfterCheckFailure struct {
+	dex.StepDefaultsNoWaitFor[subagentFinish]
+	flow *SubagentFlow
+}
+
+const maximumConnectorCheckFailures = 3
+
+func (ResumeConnectorAfterCheckFailure) GetStepOptions() *dex.StepOptions {
+	return &dex.StepOptions{ExecuteMethodTimeout: time.Minute, ExecuteDurability: dex.StepDurabilitySync,
+		ExecuteRetry: shortRetry, ExecuteLoadAttributeMaps: messageMaps,
+		ExecuteLockAttributes: append([]dex.AttributeLock{statusLock}, messageLocks...)}
+}
+
+func (step ResumeConnectorAfterCheckFailure) Execute(ctx dex.Context, finish subagentFinish) (*dex.StepDecision, error) {
+	failures := dexflow.ValueOrZero(connectorCheckFailuresAttribute.Get(ctx)) + 1
+	comm.MustDo(connectorCheckFailuresAttribute.Set(ctx, failures))
+	if dexflow.ValueOrZero(stopRequestAttribute.Get(ctx)) || time.Now().After(comm.Must(configAttribute.Get(ctx)).Deadline) {
+		finish.Status = agenttasks.SubagentStopped
+		if !dexflow.ValueOrZero(stopRequestAttribute.Get(ctx)) {
+			finish.Status = agenttasks.SubagentTimedOut
+		}
+		finish.CheckFailure = ""
+		return dex.GoTo(FinishSubagent{}, finish, dex.WithStepOptions(finishOptions(ctx))), nil
+	}
+	if failures >= maximumConnectorCheckFailures {
+		finish.Status, finish.Failure = agenttasks.SubagentFailed, fmt.Sprintf("the connectors library checks failed %d times: %s", failures, finish.CheckFailure)
+		finish.CheckFailure = ""
+		return dex.GoTo(FinishSubagent{}, finish, dex.WithStepOptions(finishOptions(ctx))), nil
+	}
+	comm.MustDo(statusAttribute.Set(ctx, StatusRunning.String()))
+	state := comm.Must(agentStateAttribute.Get(ctx))
+	state.Status, state.PendingToolCalls, state.PendingToolIndex = agentloop.AgentStatusCallingModel, nil, 0
+	comm.MustDo(agentStateAttribute.Set(ctx, state))
+	appendEntry(ctx, conversation.UserMessageEntry("The connectors library check refused the contribution before push. Fix the worktree and report again.\n"+finish.CheckFailure, nil))
+	return dex.GoToMany(dex.MovementOf(CallSubagentModel{}, nil, dex.WithStepOptions(step.flow.planModelCall(ctx).load)),
+		dex.MovementOf(AwaitSubagentDeadline{}, nil)), nil
 }
 
 // dex:group group-id:workspace group-label:"Workspace"

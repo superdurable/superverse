@@ -255,7 +255,7 @@ func TestSessionMockConnectorDevelopNewDexIntegration(t *testing.T) {
 		t.Fatalf("the develop subagent runs at %s", state.Config.Effort)
 	}
 	recorded := session.requireContribution(ctx, record, messages, state, "mockfeed", conversation.ContributionNew)
-	if recorded.Record.Module != connectorlibrary.ModulePath+"/connectors/superverse-mock/mockfeed" {
+	if recorded.Record.Module != connectorlibrary.ModulePath+"/connectors/mockfeed" {
 		t.Fatalf("the new connector is the module %s", recorded.Record.Module)
 	}
 }
@@ -370,6 +370,39 @@ func TestSessionMockConnectorDevelopFixDexIntegration(t *testing.T) {
 	}
 	record, messages, state := session.connectorSubagent(ctx, agenttasks.SubagentConnectorDevelop)
 	session.requireContribution(ctx, record, messages, state, "newsapi", conversation.ContributionFix)
+}
+
+// TestSessionConnectorGateRepairLimitDexIntegration drives three real library
+// check failures through the connector_develop Flow and its mock model inputs.
+func TestSessionConnectorGateRepairLimitDexIntegration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), 3*mockTurnTimeout)
+	defer cancel()
+	session := newMockSession(t, ctx, mockInput(t, "connector-gate-bound", 1).Content)
+	agent := session.pendingInput(ctx, "", 0)
+	pending := agent.Description.PendingUserInput
+	answer := mockInput(t, "connector-gate-bound", 2)
+	if err := session.client.AnswerQuestions(ctx, session.id, agentloop.AnswerQuestionsRequest{CallID: pending.CallID,
+		Answers: []agentloop.UserInputAnswer{{QuestionID: pending.Questions[0].ID, Answer: answer.Answers[0]}}}); err != nil {
+		t.Fatalf("approve Stripe contribution: %v", err)
+	}
+	session.await(ctx, "the failed connector developer", func() bool {
+		snapshot, err := session.client.GetSnapshot(ctx, session.id)
+		return err == nil && snapshot.Agent != nil && len(snapshot.Agent.Description.Subagents) == 1 &&
+			snapshot.Agent.Description.Subagents[0].Status == agenttasks.SubagentFailed
+	})
+	snapshot, err := session.client.GetSnapshot(ctx, session.id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	record := onlySubagent(t, *snapshot.Agent)
+	ended := session.awaitSubagentEnd(ctx, record)
+	if ended.Outcome.Contribution != nil || !strings.Contains(ended.Outcome.Failure, "checks failed 3 times") ||
+		!strings.Contains(ended.Outcome.Failure, "test-connectors without race failed") {
+		t.Fatalf("the check failure did not bound the repair loop: %+v", ended.Outcome)
+	}
+	if _, err := session.contributions.Snapshot(ctx, contribution.Identity{ProjectID: session.identity.ProjectID, Slug: "stripe"}); err == nil {
+		t.Fatal("the failed connector developer started a contribution Flow")
+	}
 }
 
 // The ConnectorContributionFlow itself, on the Session of a throwaway Project:

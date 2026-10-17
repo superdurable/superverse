@@ -39,9 +39,12 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 
 GIT_TIMEOUT = 300
 BUILD_TIMEOUT = 900
+CONNECTOR_CHECK_TIMEOUT = 1800
+CONNECTOR_CHECK_OUTPUT_BYTES = 4096
 STABLE_VERSION = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+$")
 CATALOG = "catalog.yaml"
 MODULE_ROOT = "connectors/"
@@ -309,6 +312,8 @@ def finish(contribution, request):
         if base is None or not os.path.isdir(contribution.worktree):
             return {"missing": True}
         receipt = commit_worktree(contribution, base, request)
+        if "checkFailed" in receipt:
+            return receipt
         write_atomically(contribution.receipt, receipt)
     answer = dict(receipt)
     if "commit" in receipt and request["push"]:
@@ -339,12 +344,91 @@ def commit_worktree(contribution, base, request):
         module = verify(contribution, base, commit, request)
     except Refusal as refusal:
         return {"base": base, "saved": commit, "rejected": refusal.detail}
+    check_failure = check_connector(contribution, base, commit, module, request["publicURL"])
+    if check_failure:
+        return {"base": base, "checkFailed": check_failure}
     branch = "refs/heads/" + request["branch"]
     current = contribution.commit(branch)
     if current != commit:
         contribution.git(["update-ref", branch, commit, base])
     files, insertions, deletions = stats(contribution, base, commit)
     return {"base": base, "commit": commit, "module": module, "files": files, "insertions": insertions, "deletions": deletions}
+
+
+def check_connector(contribution, base, commit, module, public_url):
+    """Run the library's CI targets on the one staged connector before publishing it."""
+    root = contribution.worktree
+    # The local Git host mirrors main without tags. The library's dependency
+    # validator requires official release tags, including the Connector SDK.
+    contribution.git(["fetch", "--quiet", "--no-tags", public_url, "+refs/tags/*:refs/tags/*"], redirected=False)
+    cache = os.path.join(contribution.root, "check-cache")
+    for directory in ("go", "go-build", "npm"):
+        os.makedirs(os.path.join(cache, directory), exist_ok=True)
+    environment = {key: value for key, value in os.environ.items()
+                   if not key.startswith(("GIT_CONFIG_COUNT", "GIT_CONFIG_KEY_", "GIT_CONFIG_VALUE_"))}
+    environment.update({"GOWORK": "off", "GOPATH": os.path.join(cache, "go"),
+                        "GOMODCACHE": os.path.join(cache, "go", "pkg", "mod"),
+                        "GOCACHE": os.path.join(cache, "go-build"),
+                        "npm_config_cache": os.path.join(cache, "npm"),
+                        "TMPDIR": "/tmp",
+                        "CONNECTOR_SCOPE": "changed", "CONNECTOR_BASE": base, "CONNECTOR_HEAD": commit})
+    selected, selection_output, _ = run_check(
+        ["go", "run", "./cmd/connectorctl", "test-matrix", "--catalog", "catalog.yaml", "--scope", "changed",
+         "--base", base, "--head", commit, "--shard-index", "0", "--shard-count", "1"], root, environment, 180)
+    selected_modules = [line.strip() for line in selection_output.splitlines() if line.strip().startswith(MODULE_ROOT)]
+    if selected != 0 or selected_modules != [module]:
+        return "connector selection failed: expected %s, got %s" % (module, selection_output or "no module")
+    code, output, elapsed = run_check(["make", "catalog-check"], root, environment, 120)
+    if code != 0:
+        return "make catalog-check failed after %ds (exit %d):\n%s" % (elapsed, code, output)
+    code, output, elapsed = test_connector_without_race(root, environment, module, 600)
+    if code != 0:
+        return "test-connectors without race failed after %ds (exit %d):\n%s" % (elapsed, code, output)
+    targets = (("test-dex-compat-current", CONNECTOR_CHECK_TIMEOUT),
+               ("studio-bundle-theme", 120), ("react-connectors", 600),
+               ("test-dex-compat-latest-go-sdk", 600))
+    for target, limit in targets:
+        code, output, elapsed = run_check(["make", target], root, environment, limit)
+        if code != 0:
+            lines = [line.strip() for line in output.splitlines() if line.strip()]
+            last_line = next((line for line in reversed(lines) if "gate failed:" in line), lines[-1] if lines else "no output")
+            return "make %s failed after %ds (exit %d): %s\n%s" % (target, elapsed, code, last_line, output)
+    return ""
+
+
+def test_connector_without_race(root, environment, module, limit):
+    """Mirror the library's test-connectors target without -race: the coding image has no C compiler and CGO is disabled."""
+    commands = (
+        (["python3", "script/release/component_release.py", "validate-connector", "--component-path", module,
+          "--sdk-module", "github.com/superdurable/dex-connectors-library/sdkgo"], root),
+        (["go", "test", "./..."], os.path.join(root, module)),
+        (["go", "vet", "./..."], os.path.join(root, module)),
+        (["go", "run", "./cmd/connectorctl", "validate", module + "/connector.yaml"], root),
+        (["go", "run", "./cmd/connectorctl", "generate", "--check", module + "/connector.yaml"], root),
+    )
+    started, combined = time.monotonic(), ""
+    for arguments, cwd in commands:
+        remaining = round(limit - (time.monotonic() - started))
+        if remaining <= 0:
+            return 124, combined.strip(), round(time.monotonic() - started)
+        code, output, _ = run_check(arguments, cwd, environment, remaining)
+        combined = (combined + "\n$ " + " ".join(arguments) + "\n" + output)[-CONNECTOR_CHECK_OUTPUT_BYTES:]
+        if code != 0:
+            return code, combined.strip(), round(time.monotonic() - started)
+    return 0, combined.strip(), round(time.monotonic() - started)
+
+
+def run_check(arguments, root, environment, limit):
+    """Keep only the output tail while the library command runs under a hard limit."""
+    started = time.monotonic()
+    command = ["timeout", "--kill-after=10s", "%ds" % limit, *arguments]
+    with subprocess.Popen(command, cwd=root, env=environment, stdout=subprocess.PIPE,
+                          stderr=subprocess.STDOUT) as process:
+        tail = b""
+        for chunk in iter(lambda: process.stdout.read(4096), b""):
+            tail = (tail + chunk)[-CONNECTOR_CHECK_OUTPUT_BYTES:]
+        code = process.wait()
+    return code, tail.decode(errors="replace").strip(), round(time.monotonic() - started)
 
 
 def push(contribution, receipt, request):

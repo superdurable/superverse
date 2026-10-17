@@ -590,15 +590,79 @@ The Flow is owned by [subagents](subagents.md); this section states the connecto
   so no Flow type or Step type is added.
 - **Attributes.** `Start.Call.Connector` and `Start.Branch` name the contribution; `Config` carries the
   kind's effort, model-call and time limits; `Outcome.Contribution` holds what a completed develop
-  subagent contributed and `Outcome.Refused` why it contributed nothing.
+  subagent contributed and `Outcome.Refused` why it contributed nothing. `ConnectorCheckFailures`
+  is an integer Attribute, initially absent and read as zero, incremented once per failed finish
+  check, and retained until this subagent Flow ends.
 - **Steps.** `FinishSubagent` of `connector_develop` saves the work through the contribution helper
-  ([the contribution branch](#the-contribution-branch-and-pull-request)): SYNC, 5 attempts of 5 minutes.
-  A retry or a Worker restart reuses the same commit and reconciles the push by reading the remote.
+  ([the contribution branch](#the-contribution-branch-and-pull-request)). The helper runs the
+  library's selected connector checks before branch movement or push. On failure it keeps the
+  worktree editable and writes no finish receipt; `ResumeConnectorAfterCheckFailure` appends the
+  bounded output as a user input, returns the model to its loop and rearms the original deadline.
+  The third check failure ends the task FAILED, saves its work without contributing and reports the
+  last failure to the parent. A retry or Worker restart after a passed gate reuses the same commit
+  and reconciles the push by reading the remote.
 - **Cleanup.** The worktree is removed as for every subagent; the library clone stays with the Sandbox
   volume. A deleting Project stops its subagents; a branch pushed earlier stays for its pull request.
 
 No other Flow changes. `ProjectFlow`, `PreviewFlow` and the delivery Flows treat a release candidate as
 any release.
+
+### Pre-push connector check (CONNGATE)
+
+The shared `FinishContribution` Sandbox helper checks the staged connector with the library's
+`catalog-check`, `studio-bundle-theme`, `react-connectors`, `test-dex-compat-latest-go-sdk` and
+`test-dex-compat-current` targets, selecting exactly the changed module from the base and staged
+commit. It fetches official release tags through public HTTPS first, because the local Git host's
+copy contains `main` without tags and the library's dependency-release validator needs them.
+In place of `test-connectors`, the gate runs the same dependency-release validator, module tests,
+vet, manifest validation and generation-drift commands; only `go test -race` becomes `go test`: the coding
+image has no C compiler and CGO is disabled. Race detection runs only in the library CI; CONNCI
+notifies the agent of a CI failure. The current-Dex target also checks each runnable
+example's Flow layout and Dex compatibility. Each target has a deadline; the current-Dex target's
+deadline is 30 minutes. Only a passed gate may move or push the branch and request a release
+candidate. A failure returns the last 4 KiB of output and preserves the worktree for repair. Go
+module, Go build and npm caches live in the Sandbox workspace volume; the library's current-Dex
+script redownloads Dex CLI and Dex Web on every run. Its disposable source copies use the coding
+profile's 2 GiB `/tmp` volume, outside the application repository; the real Sandbox test verifies
+that bound with the current Stripe checks. Provider live tests still require their own
+credentialed acceptance.
+
+**Per-Flow contract delta.** The unchanged complete `SessionAgentFlow` contract is in
+[session](session.md#dex-flow-changes) and the remote contribution fields and key rules are in
+[remote executor](../remote-agent/executor.md#connector-contribution-contract). Its FlowID
+`session-<projectID>` (for example `session-project-42`), Project-readiness trigger, Start
+RequestID, Run reuse, business and engine completion, retention, independent top-level relation,
+Attribute/AttributeMap keys and ownership are unchanged. No new Attribute, AttributeMap, Channel,
+ChannelMap, Stream, index or secret is added there. Remote `submit_connector_contribution` still
+runs in `ExecuteTool` under its admitted workspace lease without a normal-path Flow read or RPC;
+a failed check returns `connector_check_failed` to the current call, keeps its slug's
+`ConnectorContributions` record OPEN and its worktree editable, and starts no contribution Flow.
+The same call can retry after repair; a lost successful answer still reconciles its finish receipt
+and pushed head before the existing `SubmitConnectorContribution` dependency call. The existing
+tool deadline grows to 70 minutes to contain the library checks, and cancellation keeps the
+existing Sandbox process-group behavior. The remote endpoint admits the report within 15 seconds;
+the Bridge answers `submit_connector_contribution` after admission instead of holding its MCP call
+past the 1,770-second relay wait or 1,800-second Codex timeout, and delivers the eventual result as a
+late-result notification. No change is made to the Session's existing Channel
+admission, ordering, stale-generation, pending-message cleanup or best-effort Stream recovery.
+
+The unchanged complete `SubagentFlow` contract is in [subagents](subagents.md#dex-flow-changes)
+and its [package README](../../../internal/dexai/agents/session/subagent/README.md). Its FlowID
+`subagent-<projectID>-<agentID>` (for example `subagent-a7k2-k3n8q5r1`), call-fingerprint Start
+RequestID, nonreuse, independent top-level relation, business and engine completion and retention
+remain as documented. `ConnectorCheckFailures` is the sole new durable primitive; no new map,
+map key, index, Channel, ChannelMap or Stream is introduced. `FinishSubagent` runs the Sandbox gate
+without a status or message lock and sends a failure to the new
+`ResumeConnectorAfterCheckFailure` Step. That Step locks `SubagentStatus` and
+`MessageWindowLock`, increments the counter, writes a new `CurrentMessages` user entry using the
+existing sequence key and archive rules, and resumes `CallSubagentModel` and the original deadline
+unless Stop, expiry or the third failure ends the task. The new input is bounded and contains no
+repository token. The existing `StopSubagent` RPC records a Stop requested during finishing;
+the resume Step honors it. A successful finish retains its query-before-push receipt recovery;
+failed checks write no finish receipt, and a final failed task saves its work off-branch. Existing
+open executions read the absent counter as zero and retain their Flow and prior Step identities.
+Tests cover gate refusal, repair, retry bound, remote tool delivery, local Git branch identity
+and the real library targets; no external effect is inferred from a missing answer.
 
 ## Database Schema Changes
 
@@ -647,8 +711,12 @@ HTTP endpoint's tool and inbox delivery. The local Git host has no Actions and s
   read from the server's copy of the real published catalog, and the card is recorded from them
   with no `connector_select` or `connector_catalog` call while the workspace request is in flight.
 - **Contribution.**
-  - The contribution helper in a real coding container creates the library worktree, and a finish and its
-    replay commit and push a new connector once; an unreachable remote is transient.
+  - The contribution helper in a real coding container creates the library worktree. A Stripe example
+    with two Flow sources fails the library check before push; after repair, finish and replay push
+    the accepted head once. An unreachable remote is transient.
+  - The remote HTTP Dex integration test reports the failed check to Codex, preserves its editable
+    worktree and OPEN contribution, and submits the repaired head. The platform mock scenario drives
+    three failed finish checks and verifies a FAILED task with no contribution or pushed branch.
   - `ConnectorContributionFlow` on the default lane (no upstream library) records a submission
     `unpublished`, joins a repeated submission, applies a later head and closes with the Project's
     deletion, after which every submission is refused.
@@ -703,4 +771,14 @@ provider behavior of a new connector is recorded as unverified.
 
 ## Resource Scalability
 
-CONNCI adds no cloud, Kubernetes, Temporal namespace, Dex Flow, or database resource. Each current head adds one bounded timer/check Step within the existing contribution Flow; a newer head or Project close cancels it. The result and Step history follow that Flow's existing retention. Each head incurs at most two scheduled aggregate GitHub reads, about 15 minutes and 45 minutes after it was recorded, with no recurring per-round cost or tenant-wide scan. A rate limit consumes a check point as unknown without a retry loop. GitHub's installation REST rate limit has a 5,000 requests/hour floor and 12,500/hour cap ([GitHub documentation](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api), checked 2026-10-16). A simultaneous burst above roughly 2,500 heads at one timer point would consume that floor; admission shaping or installation sharding is required before that scale. Normal 10,000-Project and 100,000-deployment growth creates no per-Project recurring CI read. The failure path reads at most four check-run pages, one job and 512 KiB of one log per failed head; agent-initiated on-demand reads consume additional calls only when invoked. There is no control-plane call per request or event.
+CONNCI adds no cloud, Kubernetes, Temporal namespace, Dex Flow, or database resource. Each current head adds one bounded timer/check Step within the existing contribution Flow; a newer head or Project close cancels it. The result and Step history follow that Flow's existing retention. Each head incurs at most two scheduled aggregate GitHub reads, about 15 minutes and 45 minutes after it was recorded, with no recurring per-round cost or tenant-wide scan. A rate limit consumes a check point as unknown without a retry loop. GitHub's installation REST rate limit has a 5,000 requests/hour floor and 12,500/hour cap ([GitHub documentation](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api), checked 2026-10-16). A simultaneous burst above roughly 2,500 heads at one timer point would consume that floor; admission shaping or installation sharding is required before that scale. Normal 10,000-Project and 100,000-deployment growth creates no per-Project recurring CI read. The failure path reads at most four check-run pages, one job and 512 KiB of one log per failed head; agent-initiated on-demand reads consume additional calls only when invoked. The CONNGATE pre-push gate runs inside the existing
+Sandbox and its existing Session or subagent Flow. One connector worktree and one cache tree grow on
+the workspace volume per active Session; the cache is shared by its connector contributions and is
+deleted with that Sandbox volume at Project deletion. The worktree is removed after an accepted
+finish or failed subagent outcome. Go module, build and npm caches accumulate downloads and build
+artifacts meanwhile, bounded by the workspace disk quota and the existing low-disk admission check;
+the gate creates no per-request cloud resource. Concurrent gates are bounded by the Session's
+existing tool concurrency and subagent limit. No cloud control-plane call or tenant scan is made
+per gate. Existing Sandbox, Flow, Git and storage quotas and the 10,000-Project / 100,000-deployment
+capacity target are unchanged; their limits and dated sources remain in the owning architecture
+documents.

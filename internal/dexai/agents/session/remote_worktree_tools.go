@@ -214,6 +214,9 @@ func (flow *SessionAgentFlow) executeConnectorTool(ctx dex.Context, execution co
 			return agentloop.SandboxToolResult(result), nil
 		}
 		contributed := result.Contributed
+		if contributed.CheckFailed != "" {
+			return agentloop.SessionFailureResult(toolfailure.ConnectorCheckFailed, contributed.CheckFailed), nil
+		}
 		// FinishContribution reads its per-worktree receipt on a retry after
 		// Submit failed. The receipt returns the pushed head again, so an
 		// Unchanged result here describes an actually unchanged first finish.

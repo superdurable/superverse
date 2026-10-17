@@ -81,6 +81,8 @@ func (flow *SubagentFlow) saveWork(ctx dex.Context, finish *subagentFinish) erro
 	case !completed:
 	case contributed.Unchanged:
 		finish.Refused = "it changed nothing in its worktree"
+	case contributed.CheckFailed != "":
+		finish.CheckFailure = contributed.CheckFailed
 	case contributed.Rejected != "":
 		finish.Refused = contributed.Rejected
 	default:
@@ -94,9 +96,9 @@ func (flow *SubagentFlow) saveWork(ctx dex.Context, finish *subagentFinish) erro
 
 // contributionFinishOptions are a develop subagent's finish options: it also
 // commits and pushes its branch and, for the local Git host, builds its
-// release candidate with the library's tooling, so each of its 4 attempts has
-// 15 minutes.
-var contributionFinishOptions = &dex.StepOptions{ExecuteMethodTimeout: 15 * time.Minute, ExecuteRetry: dexflow.CappedStepRetry(4, time.Hour)}
+// release candidate with the library's tooling. Each attempt has 70 minutes
+// for the connector gate and a heartbeat while the Sandbox command runs.
+var contributionFinishOptions = &dex.StepOptions{ExecuteMethodTimeout: 70 * time.Minute, HeartbeatTimeout: time.Minute, ExecuteRetry: dexflow.CappedStepRetry(4, 4*time.Hour)}
 
 // finishOptions are the options of the subagent's FinishSubagent movement:
 // the registered ones, or contributionFinishOptions for a develop subagent.
