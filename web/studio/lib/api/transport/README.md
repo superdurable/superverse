@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: The browser network layer owns RPC posts, bounded read retries, snapshot Watches, command recovery, the Flow API client and application URL probes.
 
-Importers: `components/build`, `components/flow/**` (13), `components/project/**` (2), `components/publishing/**` (3), `components/shell`, `components/teamspace/**` (2), `lib/api/**` (4), `lib/browser`, `lib/flow`, `lib/project/**` (2), `lib/session/**` (2) and `lib/teamspace` import this directory.
+Importers: `components/build`, `components/flow/**` (13), `components/project/**` (3), `components/publishing/**` (3), `components/shell`, `components/teamspace/**` (2), `lib/api/**` (4), `lib/browser`, `lib/flow`, `lib/project/**` (2), `lib/session/**` (2) and `lib/teamspace` import this directory.
 
 Imports: it imports `lib/generated/protobuf` and `lib/shared` and calls the Flow, Preview application and Studio BFF APIs.
 
@@ -12,7 +12,7 @@ flowchart LR
   self["lib/api/transport"]
   c0["components/build"] --> self
   c1["components/flow/** (13)"] --> self
-  c2["components/project/** (2)"] --> self
+  c2["components/project/** (3)"] --> self
   c3["components/publishing/** (3)"] --> self
   c4["components/shell"] --> self
   c5["components/teamspace/** (2)"] --> self

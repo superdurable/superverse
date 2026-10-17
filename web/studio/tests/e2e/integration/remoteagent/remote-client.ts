@@ -70,6 +70,10 @@ export class RemoteClient {
   }
 
   async activate(label: string) {
+    return (await this.activateWithCursor(label)).fence;
+  }
+
+  async activateWithCursor(label: string) {
     const response = await this.post("activate", {
       binding: {
         orcaVersion: "integration",
@@ -79,7 +83,13 @@ export class RemoteClient {
         hostLabel: label,
       },
     });
-    return { epoch: wireInteger(response.epoch, "Epoch"), generation: wireInteger(response.generation, "Generation") };
+    return {
+      fence: {
+        epoch: wireInteger(response.epoch, "Epoch"),
+        generation: wireInteger(response.generation, "Generation"),
+      },
+      lastSequence: wireInteger(response.lastSequence, "Activation cursor"),
+    };
   }
 
   forget() {

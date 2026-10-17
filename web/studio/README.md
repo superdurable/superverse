@@ -122,6 +122,7 @@ the current contract.
 | [`components/frame/status`](components/frame/status/README.md) | The bar's environment tabs: one status dot each, and a word only when something is off, which links to its fix or, for a stopped Preview, opens Start. |
 | [`components/project`](components/project/README.md) | The Project pages: the start form, Project creation, Project details, the Project's one Session provider, the surfaces and tools inside the Builder frame, and Setup on either tab. |
 | [`components/project/activity`](components/project/activity/README.md) | The per-environment timeline and the recent trigger events: Preview's starts, Live's publishes and deployments, each with version, outcome and problem. |
+| [`components/project/creation`](components/project/creation/README.md) | Watches a newly created Project and Session, then shows inline pairing until the chosen local agent activates. |
 | [`components/project/setup`](components/project/setup/README.md) | Setup's pieces above the table: the bar with Preview's line and the Next publish line, and the Live tab's banner. |
 | [`components/project/templates`](components/project/templates/README.md) | The start page's process templates: their typed catalog, the gallery that fills the composer with one, and the Project name a description gives. |
 | [`components/publishing`](components/publishing/README.md) | Tools, Publishing: the publish in progress, what is Live with Stop Live, every version with its builds, rollback after its consequences, and Live's history. |
@@ -130,7 +131,7 @@ the current contract.
 | [`components/publishing/timings`](components/publishing/timings/README.md) | Where the time of a Release build, a source preparation or a deployment went: one row per measured phase, with the labels of the phase codes. |
 | [`components/session`](components/session/README.md) | Binds the page's Session to the Agent UI: the chat and its rail, composer or mock composer, model picker, pending action dock, status, workspace renewal and startup phases. |
 | [`components/session/composer`](components/session/composer/README.md) | The one message input, large on the start page and compact in the chat, with its About chip and the element picker that fills it. |
-| [`components/session/executor`](components/session/executor/README.md) | Shows the Session executor, SQL-derived remote liveness, offline notice, and epoch-fenced return to Superverse while keeping connection dialog ownership with its caller. |
+| [`components/session/executor`](components/session/executor/README.md) | Shows the composer's Agent picker, SQL-derived remote liveness, offline notice, pairing entry and epoch-fenced return to Superverse. |
 | [`components/session/mock`](components/session/mock/README.md) | The mock model's composer, in a Session and on the creation page: it picks a category, a scenario and its arguments, and sends the next input as its kind arrives. |
 | [`components/session/remoteagent`](components/session/remoteagent/README.md) | Shows Builder connection risk acknowledgement, one-time pairing and safe connection metadata through Studio's typed business API. |
 | [`components/session/start`](components/session/start/README.md) | The composer around a Session's turns: the starting model the creation page preselects, the composer's text per Project and its send. |

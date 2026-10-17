@@ -6,6 +6,7 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
+import { randomUUID } from "node:crypto";
 import { test, expect } from "@/tests/e2e/support/coverage/spec-coverage";
 import { object } from "@/tests/e2e/support/json-assert";
 import { readSession } from "@/tests/e2e/support/project";
@@ -23,17 +24,17 @@ test("Studio pairs a remote executor, renders its reply and takes over with the 
     await expect(executor).toHaveAttribute("data-session-executor", "platform");
     const client = await scope.connect();
     const current = await client.activate("Studio integration host");
+    const reply = `A remote reply from the actual HTTP listener (${randomUUID()}).`;
     await expect(executor).toHaveAttribute("data-session-executor", "remote");
-    await expect(executor.locator("summary")).toContainText("Codex via Orca");
-    // The model is the Superverse agent's: a remote executor shows no chat options with its picker.
-    await expect(page.getByRole("button", { name: "Chat options", exact: true })).toHaveCount(0);
+    await expect(executor.getByRole("button", { name: /^Agent:/ })).toContainText("My Codex · online");
     await client.post("report", {
       ...current,
       sequence: 1,
-      events: [{ kind: "assistant_message", text: "A remote reply from the actual HTTP listener." }],
+      events: [{ kind: "assistant_message", text: reply }],
     });
-    await expect(page.getByText("A remote reply from the actual HTTP listener.", { exact: true })).toBeVisible();
-    await expect(page.getByText("Codex · Remote reply", { exact: true })).toBeVisible();
+    const replyArticle = page.locator("article").filter({ hasText: reply });
+    await expect(replyArticle.getByText(reply, { exact: true })).toBeVisible();
+    await expect(replyArticle.getByText("Codex · Remote reply", { exact: true })).toBeVisible();
     const authority = (await readSession(page, projectId)).agent?.description?.executor;
     if (authority?.remote?.connectionId !== client.connectionId) throw new Error("Reported remote lost authority");
     const menu = await openExecutorMenu(page);
@@ -45,8 +46,12 @@ test("Studio pairs a remote executor, renders its reply and takes over with the 
     expect(command.basisEpoch).toBe(authority.epoch);
     expect(typeof command.basisEpoch).toBe("string");
     await expect(executor).toHaveAttribute("data-session-executor", "platform");
-    await page.getByRole("button", { name: "Chat options", exact: true }).click();
-    await expect(page.getByLabel("Model", { exact: true })).toBeVisible();
+    await executor.getByRole("button", { name: /^Agent:/ }).click();
+    await page
+      .getByRole("dialog", { name: "Choose agent" })
+      .getByRole("button", { name: /^Superverse agent/ })
+      .click();
+    await expect(page.getByRole("button", { name: "Claude Sonnet 5.5" })).toBeVisible();
     await page.keyboard.press("Escape");
     // UsePlatform revokes exactly its replaced credential after committing.
     const refused = await client.post("report", { ...current, sequence: 2, turnCompleted: true }, 401);

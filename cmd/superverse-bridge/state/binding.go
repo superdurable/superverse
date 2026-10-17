@@ -68,8 +68,10 @@ type Progress struct {
 	// EventCursor is where the event loop resumes reading Orca's events.
 	EventCursor Position `json:"eventCursor"`
 	// Cursor is the last conversation entry the delivery loop handled.
-	Cursor  uint64   `json:"cursor"`
-	Sending *Sending `json:"sending,omitempty"`
+	Cursor uint64 `json:"cursor"`
+	// BriefActivationCursor caps recent messages in the brief, even after delivery advances Cursor.
+	BriefActivationCursor uint64   `json:"briefActivationCursor,omitempty"`
+	Sending               *Sending `json:"sending,omitempty"`
 	// Acknowledged is the highest report sequence the platform admitted; the
 	// next report is Acknowledged+1.
 	Acknowledged             uint64    `json:"acknowledged"`

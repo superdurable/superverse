@@ -297,8 +297,13 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON remote_agent_connections TO superverse_s
 - **Connect dialog**: who is connected now (if anyone) and that their agent will stop; the
   accepted-risk warning; the code with a countdown and copy button; "Waiting for your Bridge…",
   then "Connected: Codex 0.162.1 in Orca 1.4.225 on '<machine>'".
-- **Executor menu**: "Connect my agent", "Use the Superverse agent", and for the connected Builder
-  "Disconnect".
+- **Agent picker**: beside the composer, its local-agent level shows connection
+  status, Connect and, while remote owns the Session, Use the Superverse agent.
+  The Connect dialog retains one-time code handling and saved connections.
+- **Project creation**: after READY and an ACTIVE Session, the local-agent
+  creation page shows inline risk acknowledgement, a code and the
+  `superverse-bridge connect --endpoint <origin>` command. It renews an
+  expired code while keeping the first message in the browser intent.
 - Errors in plain words: an expired code, a Bridge whose version Studio does not accept, the
   connection replaced by another Builder.
 

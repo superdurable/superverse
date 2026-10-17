@@ -211,7 +211,7 @@ func (r *relay) finishDelivery(sending state.Sending, result SendResult) error {
 // the requirements, HEAD, the todo list and the recent public messages.
 func (r *relay) sendBrief(ctx context.Context) error {
 	r.mu.Lock()
-	sent, epoch, cursor, sending, savedText := r.progress.BriefSent, r.progress.Epoch, r.progress.Cursor, r.progress.Sending, r.progress.BriefText
+	sent, epoch, cursor, sending, savedText := r.progress.BriefSent, r.progress.Epoch, r.progress.BriefActivationCursor, r.progress.Sending, r.progress.BriefText
 	r.mu.Unlock()
 	if sent {
 		return nil
@@ -239,7 +239,7 @@ func (r *relay) sendBrief(ctx context.Context) error {
 		}
 		if answer.AgentContextState != bridgeapi.AgentContextPending || time.Since(started) >= briefContextWait {
 			r.noteAgentContext(answer)
-			brief := composeBrief(r.projectName, answer)
+			brief := composeBrief(r.projectName, answer, cursor)
 			r.mu.Lock()
 			r.progress.BriefWithoutContext = answer.AgentContextState == bridgeapi.AgentContextPending
 			r.progress.BriefText = brief
@@ -346,7 +346,7 @@ func (r *relay) abandonContextFollowup(ctx context.Context, reason string) error
 // composeBrief frames the platform's data: its agent context, then the
 // Project's name, requirements, HEAD, todo list and recent messages. The
 // Bridge adds no instructions of its own.
-func composeBrief(projectName string, answer bridgeapi.SyncResponse) string {
+func composeBrief(projectName string, answer bridgeapi.SyncResponse, activationCursor uint64) string {
 	var brief strings.Builder
 	if answer.AgentContext != "" {
 		fmt.Fprintf(&brief, "%s\n\n", answer.AgentContext)
@@ -366,7 +366,7 @@ func composeBrief(projectName string, answer bridgeapi.SyncResponse) string {
 	}
 	var recent []string
 	for _, entry := range answer.Entries {
-		if entry.Text != "" && entry.Kind == bridgeapi.EntryKindUserMessage {
+		if entry.Sequence <= activationCursor && entry.Text != "" && entry.Kind == bridgeapi.EntryKindUserMessage {
 			recent = append(recent, fmt.Sprintf("%s: %s", entry.Role, comm.TruncateUTF8(entry.Text, maxBriefMessageBytes)))
 		}
 	}

@@ -22,7 +22,8 @@ outcome.
   bindings/.staging-*/         a binding being assembled; never listed
     token                      the connection token
     binding.json               BindingRecord: endpoint, Project, Orca session and versions
-    progress.json              Progress: epoch, generation and boundary, delivery cursor and the
+    progress.json              Progress: epoch, generation and boundary, delivery cursor,
+                               immutable brief activation cursor and the
                                sending record, acknowledged report sequence, last imported Orca
                                message, recent turn generations and delivered Orca message IDs,
                                and the last committed report slot

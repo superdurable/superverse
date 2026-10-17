@@ -40,7 +40,7 @@ test("A distinct Builder takes over remotely; replaced-valid is 409 and platform
     const authority = (await readSession(page, projectId)).agent?.description?.executor;
     expect(authority?.remote?.owner?.accountId).toBe(builder.accountId);
     expect(authority?.remote?.owner?.email).toBe(builder.email);
-    await expect(page.locator("[data-session-executor] summary")).toContainText(`connected by ${builder.email}`);
+    await expect(page.locator("[data-session-executor]")).toContainText(`connected by ${builder.email}`);
     const saved = await rpcResult(page.request, "ListRemoteAgentConnections", { projectId });
     expect(saved.connections.find((row) => row.connectionId === first.connectionId)?.status).toBe(
       "REMOTE_AGENT_CONNECTION_STATUS_PAIRED",
@@ -53,7 +53,7 @@ test("A distinct Builder takes over remotely; replaced-valid is 409 and platform
     const response = await switched;
     if (!response.ok()) throw new Error(`Owner platform switch returned HTTP ${response.status()}`);
     expect(object(response.request().postDataJSON(), "Owner switch").basisEpoch).toBe(authority?.epoch);
-    await expect(menu).toHaveAttribute("data-session-executor", "platform");
+    await expect(page.locator("[data-session-executor]")).toHaveAttribute("data-session-executor", "platform");
     const revoked = await second.post("report", { ...nextFence, sequence: 1, turnCompleted: true }, 401);
     expect(revoked.code).toBe("unauthorized");
     // The older connection was replaced, not revoked by somebody else's switch.

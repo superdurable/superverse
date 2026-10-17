@@ -20,9 +20,11 @@ import { RemoteClient } from "./remote-client";
 import { cleanupRemoteFixture } from "./remote-cleanup";
 
 export async function openExecutorMenu(page: Page) {
-  const menu = page.locator("[data-session-executor]");
-  await expect(menu).toBeVisible();
-  if (!(await menu.evaluate((element) => element.hasAttribute("open")))) await menu.locator("summary").click();
+  const picker = page.locator("[data-session-executor]");
+  await expect(picker).toBeVisible();
+  await picker.getByRole("button", { name: /^Agent:/ }).click();
+  const menu = page.getByRole("dialog", { name: "Choose agent" });
+  await menu.getByRole("button", { name: /^My local agent/ }).click();
   return menu;
 }
 
@@ -97,7 +99,7 @@ class RemoteFixture {
   async connect(page = this.page) {
     await page.goto(studioRoutes.projectSurface(this.fixture.projectId, "flow"));
     const menu = await openExecutorMenu(page);
-    await menu.getByRole("button", { name: "Connect my agent", exact: true }).click();
+    await menu.getByRole("button", { name: "Connect", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "Connect my agent" });
     await dialog.getByRole("checkbox", { name: "I understand these local-machine permissions." }).check();
     this.attemptPairing(page);

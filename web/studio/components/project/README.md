@@ -5,7 +5,7 @@ Purpose: The Project pages: the start form, Project creation, Project details, t
 
 Importers: `app` and `mock/surface` import this directory.
 
-Imports: it imports `components/build`, `components/flow/scope`, `components/frame`, `components/project/**` (3), `components/publishing/**` (2), `components/session/**` (4), `components/shell/palette`, `components/teamspace`, `components/ui/**` (4), `lib/api/**` (3), `lib/browser`, `lib/flow`, `lib/generated/protobuf`, `lib/project/**` (3), `lib/session/**` (2), `lib/shared/**` (3) and `lib/teamspace`.
+Imports: it imports `components/build`, `components/flow/scope`, `components/frame`, `components/project/**` (4), `components/publishing/**` (2), `components/session/**` (4), `components/shell/palette`, `components/teamspace`, `components/ui/**` (4), `lib/api/**` (3), `lib/browser`, `lib/flow`, `lib/generated/protobuf`, `lib/project/**` (3), `lib/session/**` (2), `lib/shared/**` (3) and `lib/teamspace`.
 
 ```mermaid
 flowchart LR
@@ -15,7 +15,7 @@ flowchart LR
   self --> d0["components/build"]
   self --> d1["components/flow/scope"]
   self --> d2["components/frame"]
-  self --> d3["components/project/** (3)"]
+  self --> d3["components/project/** (4)"]
   self --> d4["components/publishing/** (2)"]
   self --> d5["components/session/** (4)"]
   self --> d6["components/shell/palette"]
@@ -32,16 +32,18 @@ flowchart LR
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
-ProjectStartForm asks what process Dex should run: the description becomes the first message of the
-Project's Session, and the examples of `templates/` fill it in without sending. The Project's name follows
-from a picked example's title or from the description; Advanced holds the name to change it and the
-Session's model picker, preselected on Sonnet or for the administrator on the mock model where the server
-offers it; the mock composer takes the first input of a scenario in place of free text when the mock model
-is chosen.
-ProjectCreationPage admits the managed source with a stable request ID and the Session's
-first message with its message ID and model, which ProjectFlow starts the Session with, so the
-start needs no open tab; it marks the Project's first conversation in this browser and opens
-the Builder. ProjectBuilder follows the Project's stage (`lib/project/stage`): the chat
+ProjectStartForm asks what process Dex should run: the description becomes the
+first message, and `templates/` fill it in without sending. The Project name
+comes from the example title or description; Advanced lets the user edit it.
+Agent is chosen first; only the Superverse agent offers a model, preselected on
+Sonnet or the mock model where the server permits it. The mock composer takes
+the first input of a scenario in place of free text when that model is chosen.
+ProjectCreationPage admits the managed source with a stable request ID and
+marks the Project's first conversation in this browser before opening the Builder.
+The Superverse path includes its first message and model in CreateProject.
+The local path retains its message in ProjectIntent, watches Project READY and
+Session ACTIVE, shows inline pairing, and sends after the Snapshot reports
+remote authority. ProjectBuilder follows the Project's stage (`lib/project/stage`): the chat
 alone until the first draft of the agent's first requirements card or the agent's own processes, then the
 standard frame, whose tabs, Publish and Preview's status appear as they have something
 to show. ProjectPage is the Project's

@@ -20,7 +20,6 @@
     "/superverse.v2.ReleaseService/CancelReleaseBuild",
     "/superverse.v2.ReleaseService/GetReleaseBuildLog",
     "/superverse.v2.ReleaseService/RecoverReleaseBuild",
-    "/superverse.v2.RemoteAgentService/RevokeRemoteAgentConnection",
     "/superverse.v2.TeamSpaceConnectionService/CompleteTeamSpaceConnectionOAuth",
     "/superverse.v2.TeamSpaceConnectionService/DeleteTeamSpaceConnection",
     "/superverse.v2.TeamSpaceConnectionService/GetTeamSpaceConnection",

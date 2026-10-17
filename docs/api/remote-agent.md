@@ -162,15 +162,24 @@ cancellation and stale-response guards are retained. Project-keyed state resets
 risk acknowledgement, codes and old owner/list display on a Project change;
 code labels and owner-specific removal labels remain accessible. Codes are
 hidden and their local timer stops at expiry. A countdown is local;
-there is no periodic Flow-backed list polling. The Project's Builder permission controls menu visibility; server authorization
-remains authoritative. The executor menu opens this single dialog and exposes
+there is no periodic Flow-backed list polling. The Project's Builder permission controls actions in the Agent picker; server authorization
+remains authoritative. The Agent picker's local level opens this single dialog and exposes
 Use the Superverse agent only in remote mode. Switching is single-flight,
 preserves the decimal epoch, and refreshes canonical Session state on admission
 or refusal without retrying an uncertain command. Project, permission, Session
 status or executor-fence changes cancel old switching work. Offline is a local
 ninety-second last-seen display; it leaves remote authority and ordinary
-send/steer/answer/Stop controls intact. Remote mode hides platform model controls
-and the mock composer; public remote replies retain the existing typed projection.
+send/steer/answer/Stop controls intact. Remote mode keeps the Agent picker
+visible. Its Superverse level offers an epoch-fenced switch back before model
+selection; the mock composer stays hidden. Public remote replies retain the
+existing typed projection.
+
+At Project creation, a local-agent choice omits the initial message and model
+from CreateProject. Studio retains the first message in its Project intent,
+shows inline pairing after READY and ACTIVE, regenerates a code after its
+ten-minute expiry, and sends once after a Session Snapshot shows remote
+authority. A lost SendMessage response is uncertain because that RPC does not
+deduplicate IDs; Studio does not resend it automatically.
 
 ## Verification scope
 

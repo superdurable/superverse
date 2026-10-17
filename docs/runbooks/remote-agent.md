@@ -20,14 +20,22 @@ Kind Ingress controller to install for this endpoint. Hosted environments serve
 ALB, with the ordinary server health check; no new LB, listener or certificate.
 Use the existing deployment procedure, never an ad hoc cloud change.
 
-After the platform has been rebuilt/deployed from reviewed source, open the executor menu beside the Session heading and choose Connect
-my agent on a READY Project with Builder capability. Read and acknowledge the
+After the platform has been rebuilt/deployed from reviewed source, open the Agent picker beside the composer,
+choose My local agent, then Connect on a READY Project with Builder capability. Read and acknowledge the
 local-machine warning. Copy the one-time ten-minute code into the Bridge's
 interactive connect flow and use the dialog's displayed origin as `--endpoint`. The Bridge appends the exact
 `/remote-agent/v1/...` route paths; do not append that prefix to the endpoint. Neither code
 nor token belongs in command arguments, shell history, screenshots, traces,
 logs, receipts or source. The Bridge keeps its returned token in its owning
 private configuration; Studio receives no token.
+
+For a new Project, select My local agent on the start form. After the Project
+is READY and its Session ACTIVE, acknowledge the inline warning and run the
+displayed `superverse-bridge connect --endpoint <origin>` command, entering
+the code interactively. The page renews an expired code while retaining the
+first message. It sends that message when the Session Watch reports remote
+authority. If the send result is uncertain, inspect the Project conversation
+before sending the original text manually; do not assume a retry is safe.
 
 Refresh connections explicitly to observe a PAIRED credential. Remove an unused
 connection through Studio; disconnect revokes only the Bridge's authenticated

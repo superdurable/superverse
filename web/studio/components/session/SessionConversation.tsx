@@ -32,7 +32,15 @@ function Waiting({ step }: { step: StartupStep }) {
  * once the Project is READY its ProjectFlow starts the Session, which the page reads as soon as
  * it exists.
  */
-export function SessionConversation({ projectId, live }: { projectId: string; live?: LiveViewing }) {
+export function SessionConversation({
+  projectId,
+  canManage,
+  live,
+}: {
+  projectId: string;
+  canManage: boolean;
+  live?: LiveViewing;
+}) {
   const project = useProjectResource()?.snapshot;
   const owner = useSessionResource();
   if (project?.status === "PROJECT_STATUS_SETUP_FAILED") {
@@ -70,5 +78,5 @@ export function SessionConversation({ projectId, live }: { projectId: string; li
       </aside>
     );
   }
-  return <SessionChat live={live} />;
+  return <SessionChat canManage={canManage} live={live} />;
 }

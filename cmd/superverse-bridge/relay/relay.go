@@ -262,6 +262,7 @@ func (r *relay) start(ctx context.Context) error {
 	if !r.progress.Activated {
 		r.progress.Activated = true
 		r.progress.Cursor = activation.LastSequence
+		r.progress.BriefActivationCursor = activation.LastSequence
 	}
 	r.progress.Epoch = activation.Epoch
 	r.progress.Acknowledged = activation.Reported

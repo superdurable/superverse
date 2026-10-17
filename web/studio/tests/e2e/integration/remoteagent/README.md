@@ -17,7 +17,8 @@ flowchart LR
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
-All cases use the executor menu's single connection dialog and the real lane.
+Existing-Project cases use the Agent picker's single connection dialog and the
+real lane. The creation case uses the inline pairing card.
 They require `SUPERVERSE_E2E_REMOTE_AGENT_FIXTURE`, a private regular 0600 JSON
 file accepted by `ownerProjectFixture`: owner `email`, `password` and `projectId`.
 The Project must be READY with an idle ACTIVE mock-model Session, platform
@@ -27,6 +28,7 @@ The remote listener must explicitly allow the development Bridge fixture.
 | Spec                        | Actual behavior exercised                                                                                                                                                   |
 | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `connect-agent.spec.ts`     | Pairing without activation, explicit refresh, clipboard/countdown, exact revocation and keyboard reopen                                                                     |
+| `start-local.spec.ts`       | Start form chooses a local agent, inline pairing, remote activation, exactly one first-message delivery after the activation cursor and no model update                     |
 | `executor.spec.ts`          | HTTP activation and public reply, then menu takeover using the observed string epoch; revoked credential returns 401                                                        |
 | `offline-reconnect.spec.ts` | Real last-seen expiry beyond 90 seconds, remote authority preserved, ordinary composer queue, same-credential reconnect and cursor delivery exactly once                    |
 | `takeover.spec.ts`          | A distinct Builder takes over; replaced but valid credential returns 409 `executor_changed`, while a platform switch revokes the selected credential with 401               |

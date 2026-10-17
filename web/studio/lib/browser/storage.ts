@@ -31,6 +31,8 @@ export const STORAGE_KEYS = {
   diagnosticsTab: "dex.run.selected-tab",
   /** The Project being created, in session storage. */
   projectCreation: "superversev2.project-create.v3",
+  /** A locally executed Project's first message, held through pairing and delivery. */
+  projectIntent: "superversev2.project-intent.v1",
   /** The publish wizard's unsent reason to publish without running on Preview, in session storage. */
   publishSkipReason: (projectId: string) => `superversev2.publish-skip-reason.v1:${projectId}`,
   /** The card version whose Flow design the Flow tab last showed of a Project, so a reload does not move the person. */

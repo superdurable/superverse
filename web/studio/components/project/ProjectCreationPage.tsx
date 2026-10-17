@@ -15,9 +15,14 @@ import { createProject } from "@/lib/api/project";
 import { errorMessage } from "@/lib/api/transport/api-error";
 import {
   clearPendingProjectCreation,
+  PROJECT_EXECUTOR,
+  PROJECT_MESSAGE_DELIVERY,
   encodedPendingProjectCreation,
   readPendingProjectCreation,
+  readProjectIntent,
+  storeProjectIntent,
   type PendingProjectCreation,
+  type ProjectIntent,
 } from "@/lib/project/project-intents";
 import { beginFirstRun } from "@/lib/project/stage/ProjectStageProvider";
 import { isAgentModel } from "@/lib/session/agent-types";
@@ -27,11 +32,12 @@ import { StartupSteps } from "@/components/session/start/StartupSteps";
 import { Banner } from "@/components/ui/Banner";
 import { Button, buttonStyle } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
+import { ProjectCreationLocal } from "./creation/ProjectCreationLocal";
 
 /**
- * Creates the Project the start page stored, with the first message of its Session and the model it runs
- * on, so the Session starts with them on the server and needs no open tab. A retry repeats the same request
- * IDs; a stored name the picker does not offer leaves the model to the server's default.
+ * Creates the stored Project with stable request IDs. The Superverse agent starts with its first
+ * message and model on the server. A local-agent creation keeps its message in ProjectIntent,
+ * waits for the Project and Session, pairs inline and sends after remote authority is visible.
  */
 export function ProjectCreationPage() {
   const router = useRouter();
@@ -43,9 +49,18 @@ export function ProjectCreationPage() {
   const [startHref, setStartHref] = useState(studioRoutes.home);
   const [error, setError] = useState<string | null>(null);
   const [missingIntent, setMissingIntent] = useState(false);
+  const [localIntent, setLocalIntent] = useState<ProjectIntent | null>(null);
+  const [startingLocal, setStartingLocal] = useState(false);
 
   const admitProject = useCallback(async () => {
     if (!mounted.current || inFlight.current) return;
+    const resumed = readProjectIntent();
+    if (resumed) {
+      setLocalIntent(resumed);
+      setProjectName(resumed.name);
+      setMissingIntent(false);
+      return;
+    }
     const encodedIntent = encodedPendingProjectCreation();
     const pending = readPendingProjectCreation();
     request.current = pending;
@@ -55,6 +70,7 @@ export function ProjectCreationPage() {
     }
 
     setProjectName(pending.name);
+    setStartingLocal(pending.executor === PROJECT_EXECUTOR.LOCAL);
     setStartHref(studioRoutes.projectStart(pending.teamSpaceId));
     setMissingIntent(false);
     const controller = new AbortController();
@@ -73,16 +89,23 @@ export function ProjectCreationPage() {
           name: pending.name,
           managedRepository: {},
           teamSpaceId: pending.teamSpaceId,
-          initialMessage: pending.prompt,
-          messageId: pending.messageIdempotencyKey,
+          initialMessage: pending.executor === PROJECT_EXECUTOR.SUPERVERSE ? pending.prompt : undefined,
+          messageId: pending.executor === PROJECT_EXECUTOR.SUPERVERSE ? pending.messageIdempotencyKey : undefined,
           model:
-            pending.model !== null && isAgentModel(pending.model)
+            pending.executor === PROJECT_EXECUTOR.SUPERVERSE && pending.model !== null && isAgentModel(pending.model)
               ? agentModelInput(pending.model)
-              : "AGENT_MODEL_UNSPECIFIED",
+              : undefined,
         },
         controller.signal,
       );
       if (!ownsRequest()) return;
+      if (pending.executor === PROJECT_EXECUTOR.LOCAL) {
+        const intent: ProjectIntent = { ...pending, projectId, delivery: PROJECT_MESSAGE_DELIVERY.UNSENT };
+        storeProjectIntent(intent);
+        clearPendingProjectCreation();
+        setLocalIntent(intent);
+        return;
+      }
       clearPendingProjectCreation();
       // The new Project opens on its first conversation, the chat alone, until the agent's requirements arrive.
       beginFirstRun(projectId);
@@ -117,15 +140,26 @@ export function ProjectCreationPage() {
       <div className="w-full max-w-2xl">
         <h1 className="text-display font-semibold tracking-tight">{projectName}</h1>
 
-        {!missingIntent && !error && (
+        {localIntent && (
+          <ProjectCreationLocal
+            intent={localIntent}
+            onDone={(projectId) => {
+              beginFirstRun(projectId);
+              router.replace(studioRoutes.projectSurface(projectId, "flow"));
+            }}
+          />
+        )}
+        {!localIntent && !missingIntent && !error && (
           <div className="mt-6 grid justify-items-start gap-2">
             <StartupSteps current="project" />
             <p className="text-body text-ink-dim">
-              Your description goes to the agent as soon as the project is ready.
+              {startingLocal
+                ? "Your description stays in this browser until your local agent connects."
+                : "Your description goes to the agent as soon as the project is ready."}
             </p>
           </div>
         )}
-        {!missingIntent && error && (
+        {!localIntent && !missingIntent && error && (
           <section className="mt-6 rounded-lg border border-line-soft bg-well p-5">
             <h2 className="text-title font-medium text-ink">The project was not created</h2>
             <p className="mt-1 text-reading text-ink-dim">
@@ -134,7 +168,7 @@ export function ProjectCreationPage() {
           </section>
         )}
 
-        {error && (
+        {!localIntent && error && (
           <div className="mt-4">
             <Banner>{error}</Banner>
             <div className="mt-3 flex flex-wrap gap-2">

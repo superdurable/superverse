@@ -11,13 +11,19 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { newRequestId } from "@/lib/api/transport/api-error";
-import { hasPendingProjectCreation, storePendingProjectCreation } from "@/lib/project/project-intents";
+import {
+  hasPendingProjectCreation,
+  readProjectIntent,
+  PROJECT_EXECUTOR,
+  storePendingProjectCreation,
+  type ProjectExecutor,
+} from "@/lib/project/project-intents";
 import type { AgentModel } from "@/lib/session/agent-types";
 import { useMockScenarios } from "@/lib/session/mock-scenarios";
 import { studioRoutes } from "@/lib/shared/studio-routes";
 import { Composer } from "@/components/session/composer/Composer";
 import { MockComposer } from "@/components/session/mock/MockComposer";
-import { SessionModelPicker } from "@/components/session/SessionModelPicker";
+import { StartingModelPicker } from "@/components/session/start/StartingModelPicker";
 import { useStartingModel } from "@/components/session/start/use-starting-model";
 import { Banner } from "@/components/ui/Banner";
 import { cx } from "@/components/ui/cx";
@@ -39,11 +45,9 @@ const READING_MODELS = "Reading the model options…";
 /**
  * The start page: the description of the process, which becomes the first message of the Project's
  * Session, with examples that fill it in. The Project's name follows from a picked example's title or
- * from the description; Advanced holds the name to change it and the model of the Session, preselected
- * on the model a new Session starts on: Sonnet, or the mock model for the platform administrator where
- * the server offers it. On the mock model the composer takes the first input of a scenario in place of
- * free text. Nothing is sent here: the choice is stored with the creation, whose request carries the
- * message and the model to the server, which starts the Session with them.
+ * from the description. Agent is chosen before the model; only the Superverse agent has a model
+ * choice. Advanced holds the editable name. Nothing is sent here: the creation intent carries
+ * the first message and agent choice to the next page.
  */
 export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
   const router = useRouter();
@@ -53,6 +57,7 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
   // Null until the person edits the name: until then it follows the description.
   const [editedName, setEditedName] = useState<string | null>(null);
   const [chosen, setChosen] = useState<AgentModel | null>(null);
+  const [executor, setExecutor] = useState<ProjectExecutor>(PROJECT_EXECUTOR.SUPERVERSE);
   const startingModel = useStartingModel(mockScenarios);
   // Null only while the administrator's offer of the mock model is being read.
   const model = chosen ?? startingModel;
@@ -66,7 +71,7 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
   const name = editedName ?? (description.trim() ? derivedName(description) : "");
 
   useEffect(() => {
-    if (hasPendingProjectCreation()) router.replace(studioRoutes.projectCreation);
+    if (hasPendingProjectCreation() || readProjectIntent()) router.replace(studioRoutes.projectCreation);
   }, [router]);
 
   function pick(template: ProcessTemplate) {
@@ -78,7 +83,7 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
   // Rejects when the creation cannot start, so that the composer keeps what the person wrote.
   async function beginCreation(prompt: string) {
     const projectName = editedName === null ? derivedName(prompt) : editedName.trim();
-    if (model === null) throw new Error(READING_MODELS);
+    if (executor === PROJECT_EXECUTOR.SUPERVERSE && model === null) throw new Error(READING_MODELS);
     if (!projectName) {
       setFormError("Give the project a name first, under Advanced");
       throw new Error("The project has no name");
@@ -88,7 +93,8 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
         teamSpaceId,
         name: projectName,
         prompt,
-        model,
+        executor,
+        model: executor === PROJECT_EXECUTOR.SUPERVERSE ? model : null,
         idempotencyKey: newRequestId(),
         messageIdempotencyKey: newRequestId(),
       });
@@ -109,8 +115,49 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
           when something goes wrong.
         </p>
         {formError && <Banner className="mt-4">{formError}</Banner>}
+        <fieldset className="mt-6 rounded-lg border border-line-soft bg-panel p-3">
+          <legend className="px-1 text-body font-medium text-ink">Agent</legend>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-line-soft p-3 text-reading text-ink-dim has-checked:border-accent-rule has-checked:bg-accent-wash">
+              <input
+                type="radio"
+                name="start-agent"
+                value={PROJECT_EXECUTOR.SUPERVERSE}
+                checked={executor === PROJECT_EXECUTOR.SUPERVERSE}
+                disabled={transitioning}
+                onChange={() => setExecutor(PROJECT_EXECUTOR.SUPERVERSE)}
+              />
+              <span>
+                <strong className="block font-medium text-ink">Superverse agent</strong>Runs in your Project workspace.
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-line-soft p-3 text-reading text-ink-dim has-checked:border-accent-rule has-checked:bg-accent-wash">
+              <input
+                type="radio"
+                name="start-agent"
+                value={PROJECT_EXECUTOR.LOCAL}
+                checked={executor === PROJECT_EXECUTOR.LOCAL}
+                disabled={transitioning}
+                onChange={() => setExecutor(PROJECT_EXECUTOR.LOCAL)}
+              />
+              <span>
+                <strong className="block font-medium text-ink">My local agent</strong>Connect an agent on your computer
+                after the Project is ready.
+              </span>
+            </label>
+          </div>
+          {executor === PROJECT_EXECUTOR.SUPERVERSE && (
+            <StartingModelPicker
+              className="mt-3 rounded-lg border border-line-soft"
+              model={model}
+              mockSelectable={mockScenarios?.selectable ?? false}
+              disabled={transitioning || model === null}
+              onSelect={setChosen}
+            />
+          )}
+        </fieldset>
         <div className="mt-6">
-          {model === "mock" ? (
+          {executor === PROJECT_EXECUTOR.SUPERVERSE && model === "mock" ? (
             <MockComposer
               catalog={mockScenarios}
               progress={null}
@@ -133,7 +180,7 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
               onChange={setDescription}
               inputRef={composer}
               busy={transitioning}
-              disabledReason={model === null ? READING_MODELS : null}
+              disabledReason={executor === PROJECT_EXECUTOR.SUPERVERSE && model === null ? READING_MODELS : null}
               placeholder="For example: when a customer asks for a refund by email, a support lead approves it in Slack and Stripe pays it back…"
               onSend={beginCreation}
             />
@@ -154,19 +201,12 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
                 placeholder="Named from your description"
               />
             </label>
-            <SessionModelPicker
-              className="rounded-lg border border-line-soft"
-              model={model}
-              mockSelectable={mockScenarios?.selectable ?? false}
-              disabled={transitioning || model === null}
-              onSelect={setChosen}
-            />
           </div>
         </MoreDetails>
-        {model !== "mock" && (
+        {(executor === PROJECT_EXECUTOR.LOCAL || model !== "mock") && (
           <TemplateGallery
             picked={exampleOf(description)?.id ?? null}
-            disabled={transitioning || model === null}
+            disabled={transitioning || (executor === PROJECT_EXECUTOR.SUPERVERSE && model === null)}
             onPick={pick}
           />
         )}

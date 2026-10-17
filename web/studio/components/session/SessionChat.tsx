@@ -32,26 +32,26 @@ import {
   pendingQueueActions,
   shownChatMessages,
 } from "./session-chat-state";
-import { SessionModelMenu } from "./SessionModelPicker";
+import { SessionAgentPicker } from "./executor/SessionAgentPicker";
 import { LiveNote, SeeOnPreview, useLiveChange, type LiveViewing } from "./LiveNote";
 import { StartupStatus } from "./start/StartupSteps";
 import { useChatSend } from "./start/use-chat-send";
 import { useComposerText } from "./start/use-first-turn-composer";
-import { RemoteAgentOfflineNotice } from "./executor/SessionExecutorStatus";
+import { RemoteAgentOfflineNotice } from "./executor/SessionAgentPicker";
 
 const FIRST_MESSAGE_WAITS = "Your description waits for the agent…";
 
 /**
  * The Project's Session chat: its conversation, todo progress and queued messages, the pending
- * action dock and the composer. The Session starts with the first message and model the person
- * chose on the creation page, which CreateProject carried; until the agent takes that message the
+ * action dock and the composer. CreateProject carries a Superverse agent's first message; a local
+ * agent's first message arrives after remote activation. Until the agent takes the message the
  * composers wait. A message is how the person changes what the agent builds; a requirements card a
  * Session still waits at from before cards stopped waiting takes it as its reply. The model sits in
- * the ⋯ menu on the composer's row. While the person views Live
+ * the Agent picker on the composer's row. While the person views Live
  * the chat stays live, and a note above the composer says that what they ask for is built on
  * Preview; once the agent made a change they asked for there, it offers See it on Preview.
  */
-export function SessionChat({ live }: { live?: LiveViewing }) {
+export function SessionChat({ canManage, live }: { canManage: boolean; live?: LiveViewing }) {
   const state = useProjectSession();
   const mockScenarios = useMockScenarios();
   const [composerText, setComposerText] = useComposerText(state.projectId);
@@ -188,13 +188,15 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
     }) ?? firstMessageWaits;
   // A Session on the mock model takes its scenarios' inputs, answers included, from the mock composer.
   const runsMock = !remotelyExecuted && description?.model === "mock";
-  const modelMenu = description && !remotelyExecuted && (
-    <SessionModelMenu
+  const modelMenu = description && (
+    <SessionAgentPicker
+      key={`${state.projectId}:${state.resource?.agent?.description?.executor?.epoch}:${state.resource?.agent?.description?.executor?.generation}:${state.status}:${canManage}`}
       model={description.model}
       contextModel={description.contextModel}
       effort={description.effort}
       mockSelectable={mockScenarios?.selectable ?? false}
-      disabled={state.mutating || agentInteractionDisabled}
+      canManage={canManage}
+      modelDisabled={state.mutating || agentInteractionDisabled}
       onSelect={(model) => void state.updateModel(model, description.modelRevision).catch(() => undefined)}
     />
   );

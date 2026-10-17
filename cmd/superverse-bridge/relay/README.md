@@ -44,12 +44,12 @@ none otherwise. It refuses to start a second binding of an Orca session, so that
   (which removes the binding without touching the Orca session). The same check guards every
   later mutation (Known gaps). Then `activate` (a repeat is
   idempotent) gives the epoch, generation, conversation end, `reported` and the tool set. The first
-  activation sets the delivery cursor to the conversation's end; every activation sets the
+  activation sets the delivery cursor and immutable brief cap to the conversation's end; every activation sets the
   acknowledged report sequence to `reported`. A new generation is adopted (below). Work the Bridge
   that ran before left is drained (below). Then, once per binding, the history import (the newest public
   messages within 200 messages and 512 KiB, after the last imported one, as `imported_message`
   events), and once the relay is ready, the brief (the platform's `agentContext`, then the Project's
-  name, the current requirements under "Current requirements", HEAD, todo list and the last 20 entries' public messages). The relay's first
+  name, the current requirements under "Current requirements", HEAD, todo list and recent public messages no later than the activation cap). Later messages remain with the delivery loop even while the brief waits. The relay's first
   `sync` after it starts, and the brief's, ask for `agentContext` (`context: true`). The brief
   waits up to three minutes while `agentContextState` is `pending`. After a timeout, a later
   `ready` answer delivers the platform's `<repository_context>` section once. Follow-up checks

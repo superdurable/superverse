@@ -1,21 +1,22 @@
 # Session executor controls
 
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
-Purpose: Shows the Session executor, SQL-derived remote liveness, offline notice, and epoch-fenced return to Superverse while keeping connection dialog ownership with its caller.
+Purpose: Shows the composer's Agent picker, SQL-derived remote liveness, offline notice, pairing entry and epoch-fenced return to Superverse.
 
 Importers: `components/session` imports this directory.
 
-Imports: it imports `components/ui`, `lib/api`, `lib/browser`, `lib/session` and `lib/shared`.
+Imports: it imports `components/session/remoteagent`, `components/ui`, `lib/api`, `lib/browser`, `lib/session` and `lib/shared`.
 
 ```mermaid
 flowchart LR
   self["components/session/executor"]
   c0["components/session"] --> self
-  self --> d0["components/ui"]
-  self --> d1["lib/api"]
-  self --> d2["lib/browser"]
-  self --> d3["lib/session"]
-  self --> d4["lib/shared"]
+  self --> d0["components/session/remoteagent"]
+  self --> d1["components/ui"]
+  self --> d2["lib/api"]
+  self --> d3["lib/browser"]
+  self --> d4["lib/session"]
+  self --> d5["lib/shared"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
@@ -25,8 +26,16 @@ Operators can read the executor label and remote liveness. Only Builders can con
 
 Studio sends the exact protobuf epoch string with `SetSessionExecutor`, then refreshes through the existing Session owner and its stale-response guards. Project, permission, Session status or executor epoch/generation changes unmount the command owner and abort its request. Refusal or response loss also refreshes canonical state without retrying the command. The server authorizes every command and rejects stale epochs.
 
-The header passes the RAPAIR connection dialog opener to `SessionExecutorStatus`; this directory does not create another dialog. The remote composer accepts ordinary Orca input, while the platform model picker and mock composer are hidden in remote mode. Shared Agent conversation UI receives only the existing public message projection and labels remote assistant replies.
+The composer holds one Agent picker for both platform and remote modes. Its
+first level chooses Superverse or a local agent. The Superverse level lists
+models only while platform execution is current; remote mode offers the
+epoch-fenced switch back. The local level shows liveness and opens the
+Project-keyed RAPAIR dialog. Escape and outside press close the picker;
+its nested levels retain keyboard focus. The remote composer accepts ordinary
+Orca input and hides the mock composer. Shared Agent conversation UI receives
+only the existing public message projection and labels remote assistant replies.
 
-The Project Builder passes its Project identity and build permission to `SessionChatStatus`, which hosts this menu and the single Project-keyed connection dialog. Browser pairing, reply, takeover and offline acceptance remains unrun; source changes do not establish runtime evidence.
-
-An absent executor on a present agent description renders the legacy Superverse label and permission-gated Connect action only. It creates no executor state or epoch and never offers switching. The development dialog fixtures do not implement executor switching; their authorized command explicitly returns 503.
+An absent executor on a present agent description renders the legacy
+Superverse selection and permission-gated Connect action only. It creates no
+executor state or epoch and never offers switching. Mock Studio fixtures do
+not implement executor switching; their authorized command returns 503.

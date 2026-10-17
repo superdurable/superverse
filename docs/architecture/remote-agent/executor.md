@@ -635,17 +635,26 @@ RASUBWT adds no SQL table, column, migration, projection or second worktree owne
 - The first message Studio sends immediately after the executor becomes remote is
   delivered as a remote turn. The Bridge's initial delivery cursor stays at the
   admission head even when activation is retried after that message.
-- The chat header shows the executor: "Superverse agent" or "Codex via Orca · connected by
-  sam@example.com", with online, offline (last seen) or "working" state.
+- One Agent picker beside the composer shows "Superverse agent · <model>" or
+  "My Codex · online/offline · connected by <owner>". Its first level chooses
+  Superverse or a local agent; Superverse lists its models while platform
+  execution is active and otherwise offers the epoch-fenced switch back.
+  The local level shows connection state and Connect. The chat header keeps
+  connection and workspace details.
 - While a remote turn runs, the composer works as today: messages queue or steer, Stop stops.
   Remote assistant replies render as assistant messages with a small "Codex" label; tool calls
   render in the work log like the platform agent's.
-- "Connect my agent" and "Use the Superverse agent" are in the executor menu; both say what
+- "Connect" and "Use the Superverse agent" are in the Agent picker; both say what
   happens to a running turn ("the current work stops").
 - Offline: a banner "Codex is offline; messages are kept until it reconnects" with the two
   actions above. Nothing switches automatically.
 - RASUBWT uses the existing tool-call rows for open and merge receipts; it adds no Studio
   component. The path, base and conflict list are in the ordinary tool result.
+- At Project creation the person selects the Agent before any model. A local
+  choice omits the first message and model from CreateProject, keeps the message
+  in the browser's Project intent through READY/ACTIVE and pairing, and sends
+  it once only after a Session Snapshot shows remote authority. An uncertain
+  SendMessage outcome is never retried automatically.
 
 ## Tests
 

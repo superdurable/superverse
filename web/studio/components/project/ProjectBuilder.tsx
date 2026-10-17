@@ -366,6 +366,7 @@ function BuilderFrame({ projectId, role, persistentQuery, children }: BuilderPro
         chat={
           <SessionConversation
             projectId={projectId}
+            canManage={builds}
             live={
               shown === "live"
                 ? {
@@ -377,7 +378,7 @@ function BuilderFrame({ projectId, role, persistentQuery, children }: BuilderPro
             }
           />
         }
-        chatStatus={<SessionChatStatus projectId={projectId} canManage={builds} />}
+        chatStatus={<SessionChatStatus />}
       >
         {children}
       </ProjectFrame>

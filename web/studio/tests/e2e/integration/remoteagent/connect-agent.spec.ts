@@ -27,7 +27,7 @@ test("Connect dialog pairs without activating and removes its exact connection",
       page.off("request", countList);
     });
     const menu = await openExecutorMenu(page);
-    await menu.getByRole("button", { name: "Connect my agent", exact: true }).click();
+    await menu.getByRole("button", { name: "Connect", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "Connect my agent" });
     await expect(dialog).toBeVisible();
     const create = dialog.getByRole("button", { name: "Create pairing code", exact: true });
@@ -58,7 +58,7 @@ test("Connect dialog pairs without activating and removes its exact connection",
     await client.pair({ ...pairing, code: pairing.code.toLowerCase() }, "0.1.0");
     await dialog.getByRole("button", { name: "Refresh connections", exact: true }).click();
     await expect(dialog.getByText("Paired. Pairing alone does not activate the agent.")).toBeVisible();
-    await expect(menu).toHaveAttribute("data-session-executor", "platform");
+    await expect(page.locator("[data-session-executor]")).toHaveAttribute("data-session-executor", "platform");
     await expect(dialog.getByRole("button", { name: "Copy code", exact: true })).toBeDisabled();
     const revoked = page.waitForResponse(rpcAnswered("RevokeRemoteAgentConnection"));
     await dialog
@@ -70,8 +70,9 @@ test("Connect dialog pairs without activating and removes its exact connection",
     expect(refused.code).toBe("unauthorized");
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
-    await expect(menu.getByRole("button", { name: "Connect my agent", exact: true })).toBeFocused();
-    await menu.getByRole("button", { name: "Connect my agent", exact: true }).click();
+    await expect(page.locator("[data-session-executor]").getByRole("button", { name: /^Agent:/ })).toBeFocused();
+    const reopened = await openExecutorMenu(page);
+    await reopened.getByRole("button", { name: "Connect", exact: true }).click();
     await expect(dialog.getByRole("checkbox")).not.toBeChecked();
     await expect(dialog.getByRole("button", { name: "Copy code", exact: true })).toHaveCount(0);
     await page.keyboard.press("Escape");
