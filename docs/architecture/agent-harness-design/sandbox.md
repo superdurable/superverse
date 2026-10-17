@@ -407,7 +407,7 @@ new immutable ConfigMap name.
 | `superverse-files` | `read`, `edit`, `write`, `grep` and `glob` with the path rules above. `grep` and `glob` use `rg --no-config`, which honors `.gitignore` and skips `.git` |
 | `superverse-previewctl` | The Preview supervisor ([Preview](#preview)) |
 | Shims of `dexcli` and `temporal` on PATH | `dexcli` passes only the read subcommands (`flow search`, `summary`, `state`, `history`, `inspect`, `watch`, `health`, `version`, `visualize`) unless `--allow-mutation` is given, which the Dex skills reserve for an explicit user request; `dexcli dev` and `temporal server start-dev` are refused always. The real binaries live in `/usr/local/libexec/superverse` for `superverse-previewctl`. The shims guard against mistakes, not against a hostile Agent of the same UID |
-| Toolchain | Git, Go (with a prewarmed proxy of the `app-template/` module graph at `/opt/superverse/go-module-proxy`), Node.js and npm, Python 3, `ripgrep`, `jq`, `make`, Chromium Headless Shell, Dex CLI v1.6.2 and Temporal CLI 1.8.1 |
+| Toolchain | Git, Go (with a prewarmed proxy of the module graphs of `app-template/` and of each example the server's catalog lists at `/opt/superverse/go-module-proxy`), Node.js and npm, Python 3, `ripgrep`, `jq`, `make`, Chromium Headless Shell, Dex CLI v1.10.1 and Temporal CLI 1.8.1 |
 | Skills | The repository's Dex skills (`dex-app-builder`, `dex-sdk` and `dex-connector-contributor`), copied read-only to `/opt/superverse/dex-skills` |
 
 The three commands are built from the repository's own Go module, so they share
@@ -932,16 +932,25 @@ each start, record both paths. No placeholder Pod, image pre-pull or warm pool i
 What follows a usable Sandbox is the dependency restore and the first build, and two
 measures take them off the agent's path:
 
-- **Seeded caches.** The coding image carries a Go build cache and an npm cache of the
-  application template, built by the image's own toolchain in its runtime environment and
-  paths (`/workspace`, the module cache under `/tmp/superverse-tool-execution`), read-only
-  under `/opt/superverse` ([the coding image](../../../sandbox/coding/README.md#toolchain-and-caches)).
-  The template's `make bootstrap` copies them into the Pod's own caches once, so a new
-  project's first generation, vet, build and test compile reuse the template's compiled
-  dependencies and the ogen tool instead of compiling them. Measured on 2026-10-15 in a
-  container of the image with 2 CPUs: the copy of the 374 MB build cache 1.1 s (4.9 s on
-  the image's first, page-cache-cold read); `make generate` 2.7 s instead of 27 s; the test
-  compile 2.4 s instead of 11.6 s; `go build -v ./...` compiles no dependency.
+- **Seeded caches.** The coding image carries one Go build cache and one npm cache of
+  every example of the application template that the server's catalog lists, built by the
+  image's own toolchain in its runtime environment and paths (`/workspace`, the module
+  cache under `/tmp/superverse-tool-execution`), read-only under `/opt/superverse`, and its
+  module proxy holds each example's module graph
+  ([the coding image](../../../sandbox/coding/README.md#toolchain-and-caches)). The
+  template's `make bootstrap` copies them into the Pod's own caches once, so the first
+  generation, vet, build and test compile of a new project, created from a description or
+  from any example, reuse its example's compiled dependencies and the ogen tool instead of
+  compiling them. Measured on 2026-10-15 in a container of the image with 2 CPUs: the copy
+  of the 374 MB build cache 1.1 s (4.9 s on the image's first, page-cache-cold read);
+  `make generate` 2.7 s instead of 27 s; the test compile 2.4 s instead of 11.6 s;
+  `go build -v ./...` compiles no dependency. Measured on 2026-10-16 in containers of the
+  image before and after every example was seeded, with 2 CPUs: the first build of
+  `github-releases-newsletter` compiled 83 packages outside its module and
+  `slack-thread-approval` 11, and the Go commands of the first gate (build, both vet runs,
+  test compile) took 7.8 s and 3.0 s; with every example seeded each compiles none and
+  takes 1.7 s and 1.6 s, while the copy of the 497 MB seed takes 1.0 s instead of the
+  375 MB seed's 0.6 s on the same machine.
 - **Platform-started bootstrap.** `SandboxProvisionFlow`'s `StartWorkspaceBootstrap` starts
   the bootstrap command HEAD's `.superverse/template.json` declares (`commands.bootstrap`,
   `make bootstrap`) as the foreground command ledger run `platform-bootstrap-<workspaceRequestID>`
@@ -975,10 +984,15 @@ once, and why test engines queue ([subagents](subagents.md#resource-rules),
 [commit gate](commit-gate-and-app-tests.md)). The commit gate starts its test engine beside
 its static stage, so the engine's memory overlaps the static builds for that stage.
 
-The seeded caches add 424 MB to the coding image (116 MB gzip-compressed): one more layer
-to pull on each new node and one more copy in the registry per promoted digest. The first
-bootstrap of a Pod writes the 374 MB build cache into its `/tmp`, the size the build cache
-reaches after the first gate anyway, within the 2 GiB `/tmp` budget.
+The seeded caches add 529 MB to the coding image (148 MB gzip-compressed) for the four
+examples, 122 MB of it (27 MB compressed) for the three besides the default, whose own
+modules add 14 MB (13 MB compressed) to the module proxy: more to pull on each new node and
+to keep in the registry per promoted digest, which is never deleted. The seeds sit below
+the image's commands, skills and shims, so a change to those republishes only their small
+layers; a change to the toolchain or to an example's sources republishes the seeds' 148 MB.
+The first bootstrap of a Pod writes both seeds, 560 MB in 4 KiB blocks, into its `/tmp`,
+whose 2 GiB budget also holds the module cache and every later build, so the image build
+fails when they pass 1 GiB ([seed budget](../../../sandbox/coding/README.md#seed-budget)).
 
 ## Phase timings
 

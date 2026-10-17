@@ -21,6 +21,8 @@ from paths import INFRA, ROOT
 
 COMPONENTS = ("server", "studio", "coding")
 SCRIPTS = "infra-as-code/scripts"
+APPLICATION_TEMPLATE = "internal/dexai/app/apptemplate"
+EXAMPLE_CATALOG = APPLICATION_TEMPLATE + "/examples/catalog.json"
 EXCLUDED_DIRS = {".git", ".local", ".cache", ".next", "node_modules", "dist", "__pycache__", "test-results", "playwright-report", ".terraform"}
 
 
@@ -74,8 +76,8 @@ def component_inputs(component):
     if component == "studio":
         return files_under("web/studio") | {"api/superverse/v2/superverse.proto", ".dockerignore"}
     if component == "coding":
-        # Skills are Markdown read by the Agent; the template manifests prewarm its modules and its
-        # sources seed the image's build caches; the BuildProfile selects the Go and Node base images.
+        # Skills are Markdown read by the Agent; the template manifests and every example's archive prewarm the
+        # modules and seed the image's build caches; the BuildProfile selects the Go and Node base images.
         return (files_under("sandbox/coding") | files_under("dex-skills", documents=True) | template_cache_inputs()
                 | {"scripts/install-pinned-binary.sh", "internal/dexai/delivery/releases/build/build-profiles/go-react-v1/profile.json"})
     raise ValueError("Unknown image component: " + component)
@@ -84,11 +86,22 @@ def component_inputs(component):
 def template_cache_inputs():
     """The application template's files that its module prewarm and its Go build cache and npm cache seeds are built from.
 
-    The seeds compile the default example's composed tree, which make generate-app-template packs into the embedded
-    archive, so the archive stands for every file of it; the base's module manifests prewarm the module graphs.
+    The seeds compile every example's composed tree, which make generate-app-template packs into the embedded
+    archives, so the catalog and its examples' archives stand for every file of them; the base's module manifests
+    prewarm the module graphs.
     """
-    return {"internal/dexai/app/apptemplate/app-template.tar", "app-template/go.mod", "app-template/go.sum",
+    return {EXAMPLE_CATALOG, *example_archives(ROOT).values(), "app-template/go.mod", "app-template/go.sum",
             "app-template/tools/openapi/go.mod", "app-template/tools/openapi/go.sum"}
+
+
+def example_archives(root):
+    """The archive of each example the embedded catalog under `root` lists, by ID in catalog order: the first, the
+    default, is app-template.tar and every other one examples/<id>.tar. The coding image seeds exactly these, so an
+    archive the catalog does not list is no input."""
+    ids = [entry["id"] for entry in json.loads((root / EXAMPLE_CATALOG).read_text())]
+    require(ids and len(set(ids)) == len(ids), "The example catalog must list each example once: " + EXAMPLE_CATALOG)
+    return {example: f"{APPLICATION_TEMPLATE}/app-template.tar" if index == 0 else f"{APPLICATION_TEMPLATE}/examples/{example}.tar"
+            for index, example in enumerate(ids)}
 
 
 def fingerprint(names):

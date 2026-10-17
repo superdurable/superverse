@@ -31,22 +31,27 @@ from private_files import write_private, write_private_json
 
 AGENT_SANDBOX_REPOSITORY = "kubernetes-sigs/agent-sandbox"
 
-# The template's sources from the frozen context, in /workspace as a new project has them: with the image's build
-# cache seed restored, make generate's Go half and a build compile none of its packages outside the template module.
+# Each example's composed tree from the frozen context, in /workspace as a new project created from it has it: with the
+# image's build cache seed restored, its modules come from the image's proxy alone, and make generate's Go half and a
+# build compile none of its packages outside the template module.
 TEMPLATE_BUILD_CHECK = """set -euo pipefail
-cp -R /opt/superverse-template-source/. /workspace/
-cd /workspace
 cp -R -n "$SUPERVERSE_GO_BUILD_CACHE_SEED/." "$(go env GOCACHE)/"
-go mod download
-go -C tools/openapi mod download
-go -C tools/openapi tool ogen --target ../../internal/api/generated --package generated ../../openapi/openapi.yaml > /dev/null 2>&1
-module="$(go list -m)"
-compiled="$(go build -v ./... 2>&1 | grep -v -e "^${module}\\$" -e "^${module}/" || true)"
-if [ -n "${compiled}" ]; then
-  echo "the template build compiled packages that the image's build cache seed should hold:" >&2
-  echo "${compiled}" >&2
-  exit 1
-fi
+export GOPROXY=file:///opt/superverse/go-module-proxy
+while read -r id; do
+  find /workspace -mindepth 1 -delete
+  cp -R "/opt/superverse-template-source/${id}/." /workspace/
+  cd /workspace
+  go mod download
+  go -C tools/openapi mod download
+  go -C tools/openapi tool ogen --target ../../internal/api/generated --package generated ../../openapi/openapi.yaml > /dev/null 2>&1
+  module="$(go list -m)"
+  compiled="$(go build -v ./... 2>&1 | grep -v -e "^${module}\\$" -e "^${module}/" || true)"
+  if [ -n "${compiled}" ]; then
+    echo "the build of example ${id} compiled packages that the image's build cache seed should hold:" >&2
+    echo "${compiled}" >&2
+    exit 1
+  fi
+done < /opt/superverse-template-source/.ids
 """
 
 
@@ -98,11 +103,14 @@ class CodingImage:
         label = "superverse-v2.coding-verification=" + owner
         receipt = self.directory / ("verification-" + owner + ".json")
         write_private(receipt, json.dumps({"owner": owner, "image": self.tag}) + "\n")
-        # The template check builds the default example's composed tree, the same archive the image seeds from.
+        # The template check builds every example's composed tree, the same archives the image seeds from.
         template = self.directory / ("verification-template-" + owner)
         template.mkdir()
-        with tarfile.open(self.directory / "context" / "internal/dexai/app/apptemplate/app-template.tar") as archive:
-            archive.extractall(template, filter="data")
+        examples = build_inputs.example_archives(self.directory / "context")
+        for example, path in examples.items():
+            with tarfile.open(self.directory / "context" / path) as archive:
+                archive.extractall(template / example, filter="data")
+        (template / ".ids").write_text("".join(example + "\n" for example in examples))
 
         def owned_containers():
             ids = run(["docker", "ps", "--all", "--quiet", "--no-trunc", "--filter", "label=" + label], capture=True).splitlines()
@@ -118,7 +126,7 @@ class CodingImage:
                 timeout=180)
             run(["docker", "run", "--rm", "--name", "sv2-coding-verification-" + owner + "-template", "--label", label, "--entrypoint", "/bin/bash",
                  "--volume", str(template) + ":/opt/superverse-template-source:ro", self.tag, "-c", TEMPLATE_BUILD_CHECK],
-                timeout=300)
+                timeout=240 + 60 * len(examples))
         finally:
             for container_id in owned_containers():
                 try:

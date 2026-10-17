@@ -28,6 +28,20 @@ each other example, whose Projects record `app-template/<id>@<tree>`; the catalo
 is exactly what a Project's first commit holds, so its Git tree ID is the one the
 revision names.
 
+The coding image prewarms the module graph of every example the catalog lists and
+compiles each composed tree into its seeded Go build cache, so a Project's first
+`make bootstrap` and first commit gate reuse its example's compiled dependencies
+whichever example it starts from ([the coding image](../../sandbox/coding/README.md#toolchain-and-caches)).
+Every example grows that seed by the packages no earlier example compiled: its own,
+those of the modules the base does not compile (its connectors and their
+dependencies), the packages of shared modules that it imports and the base does not,
+and every shared module again at each release it selects besides the base's. Selecting the
+base's release of each module it shares with the base spares only that last part:
+a connector example still adds its connector's packages, about 7 MB for Slack. An
+example with its own `web/package-lock.json` adds the npm packages no other lockfile
+installs. The image build fails when the seeds pass their 1 GiB budget
+([seed budget](../../sandbox/coding/README.md#seed-budget)).
+
 ## example.json
 
 | Field | Meaning |

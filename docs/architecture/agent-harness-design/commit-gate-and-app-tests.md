@@ -426,7 +426,7 @@ mocks land; a connector created by a connector subagent ships with its mock.
 | A newsletter-size suite (about 25 scenarios) | 60 s | `go test -timeout 5m` |
 | Teardown and summary | 5 s | |
 | **Test stage** | **about 2 min** | **6.5 min** |
-| Whole gate (static measured at 43 to 64 s cold; with the image's seeded build cache the first static stage reuses the template's compiled dependencies) | about 3.5 min | 18 min of stage limits plus Git, inside the 25-minute attempt |
+| Whole gate (static measured at 43 to 64 s cold; with the image's seeded build cache the first static stage reuses its example's compiled dependencies) | about 3.5 min | 18 min of stage limits plus Git, inside the 25-minute attempt |
 
 The engine start overlaps the static stage, so it leaves the test stage; the test compile of a new project
 reuses the seeded build cache ([sandbox](sandbox.md#cold-start)).

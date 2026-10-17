@@ -206,7 +206,7 @@ Both lanes share the engine's images and build cache; `./infra-as-code/sv2 local
 | --- | --- |
 | Server | Linux/host-architecture transitive local Go sources and embedded files from `go list`; root module sums, Dockerfile, dockerignore, release profiles. GOWORK is disabled. |
 | Studio | `web/studio`, its package lock/build configuration, proto and dockerignore. |
-| Coding | `sandbox/coding`, `scripts/install-pinned-binary.sh`, the go-react-v1 `profile.json` that selects its base images, Dex skills, the template module manifests, and the exact agent-sandbox archive commit and per-file hashes. |
+| Coding | `sandbox/coding`, `scripts/install-pinned-binary.sh`, the go-react-v1 `profile.json` that selects its base images, Dex skills, the template module manifests, the embedded example catalog and the archive of every example it lists (`app-template.tar` for the default, `examples/<id>.tar` for each other one), and the exact agent-sandbox archive commit and per-file hashes. |
 | Dependency contract | Per-component `build-inputs.json` entry, target architecture, digest-pinned base images and language dependency locks. |
 | Common acceptance | Studio/coding inputs, real browser E2E sources/config, actual builder/transitive host AppManifest tool sources, every top-level script module plus the `acceptance/` package, dependency pins and their Python requirements, Helm source and local values (Native renders its coding profile from them). |
 | Kind acceptance | Common inputs plus Linux server component inputs, the `kind/` package and the published dependency approvals. |

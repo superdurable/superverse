@@ -18,3 +18,6 @@
 !internal/dexai/app/
 !internal/dexai/app/apptemplate/
 !internal/dexai/app/apptemplate/app-template.tar
+!internal/dexai/app/apptemplate/examples/
+!internal/dexai/app/apptemplate/examples/catalog.json
+!internal/dexai/app/apptemplate/examples/*.tar
