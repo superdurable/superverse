@@ -182,6 +182,61 @@ func conversationStepOptions(maps []dex.AttributeDef, locks ...dex.AttributeLock
 
 // lifecycleStepOptions are the lifecycle options with the failure route of one
 // Step and, when given, its own Execute locks.
+// startStepOptions are InitializeSessionAgent's: the lifecycle locks, the
+// requirements an example's card is recorded under, and the current messages
+// its notice joins.
+func startStepOptions() *dex.StepOptions {
+	options := lifecycleStepOptions(nil, statusLock, workspaceLock, requirementsLock)
+	options.ExecuteLoadAttributeMaps = messageMaps
+	return options
+}
+
+// exampleBriefCallID names the card of an example's brief, which no model call
+// made, where the card's validation reports its fields.
+const exampleBriefCallID conversation.CallID = "example-brief"
+
+// admitStartInput admits the start input in the start Step's commit: the
+// creator's first message into QueuedUserMessages, and for a Project created
+// from an example its card as version 1 of the requirements, with its design
+// built at the setup commit, and the notice that greets the person; a brief
+// without a card the card's schema accepts is the notice alone. It returns
+// the workspace demand that provisions the Sandbox and deploys the setup
+// commit's Preview, the notice's sequence naming that deployment, and false
+// without an example.
+func admitStartInput(ctx dex.Context, input agentloop.SessionStartInput) (workspaceDemand, bool) {
+	if input.FirstMessage != nil {
+		comm.MustDo(queuedUserMessagesChannel.Publish(ctx, *input.FirstMessage))
+	}
+	brief := input.ExampleBrief
+	if brief == nil {
+		return workspaceDemand{}, false
+	}
+	problem := brief.Problem
+	if problem == "" {
+		call := conversation.ToolCall{ID: exampleBriefCallID, Name: conversation.ToolConfirmRequirements, Arguments: conversation.JSONObject(brief.Card)}
+		if card, design, err := agentloop.RequestedRequirements(call, nil); err != nil {
+			problem = err.Error()
+		} else {
+			recorded := agentloop.RecordRequirements(nil, card, ctx.FirstAttemptAt().UTC())
+			recordFlowDesign(ctx, nil, recorded.Spec.Design, design)
+			comm.MustDo(confirmedRequirementsAttribute.Set(ctx, recorded))
+			if recorded.Spec.Design != nil {
+				comm.MustDo(builtFlowDesignAttribute.Set(ctx, recorded.Spec.Design.Digest))
+				comm.MustDo(builtFlowDesignCommitAttribute.Set(ctx, comm.Must(headCommitAttribute.Get(ctx))))
+			}
+		}
+	}
+	notice := agentloop.ExampleStartedNotice(*brief)
+	if problem != "" {
+		notice = agentloop.ExampleBriefRejectedNotice(*brief, problem)
+	}
+	sequence := appendEntry(ctx, notice)
+	state := comm.Must(agentStateAttribute.Get(ctx))
+	state.AwaitsFirstMessage = input.FirstMessage == nil
+	comm.MustDo(agentStateAttribute.Set(ctx, state))
+	return workspaceDemand{DeploysCommit: comm.Must(headCommitAttribute.Get(ctx)), DeploySequence: sequence}, true
+}
+
 func lifecycleStepOptions(failure *dex.ExecuteFailure, locks ...dex.AttributeLock) *dex.StepOptions {
 	options := *sessionLifecycleStepOptions
 	options.ExecuteFailure = failure

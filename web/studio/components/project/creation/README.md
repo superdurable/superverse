@@ -24,7 +24,9 @@ flowchart LR
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
 The Project Watch gates Session reads. The Session Watch supplies canonical
-executor authority; an ACTIVE Session alone does not send the first message.
+executor authority; an ACTIVE Session alone does not send the first message. An
+example opened for a local agent has no first message: the Project opens once the
+agent holds the Session.
 The inline card shows the warning, ten-minute code, endpoint command and
 waiting state. Expiry requests a fresh code without losing ProjectIntent.
 Before SendMessage, Studio persists a sending marker because the RPC does not

@@ -43,6 +43,8 @@ export const STORAGE_KEYS = {
   projectStage: (projectId: string) => `superversev2.project-stage.v1:${projectId}`,
   /** The Builder tabs a Project has shown in this browser and those not visited since they appeared, as JSON. */
   projectTabs: (projectId: string) => `superversev2.project-tabs.v1:${projectId}`,
+  /** The unsent text of a Project's chat composer in this browser, which nothing sends until the person does. */
+  composerDraft: (projectId: string) => `superversev2.composer-draft.v1:${projectId}`,
 } as const;
 
 type StorageArea = "local" | "session";
@@ -88,6 +90,16 @@ export function writeStoredPreference(key: string, value: string): void {
     pagePreferences.delete(key);
   } catch {
     pagePreferences.set(key, value);
+  }
+  preferenceListeners.forEach((listener) => listener());
+}
+
+export function removeStoredPreference(key: string): void {
+  pagePreferences.delete(key);
+  try {
+    removeStored("local", key);
+  } catch {
+    // Blocked storage holds nothing to remove.
   }
   preferenceListeners.forEach((listener) => listener());
 }

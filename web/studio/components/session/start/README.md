@@ -5,7 +5,7 @@ Purpose: The composer around a Session's turns: the starting model the creation 
 
 Importers: `components/project`, `components/project/creation` and `components/session` import this directory.
 
-Imports: it imports `components/ui`, `components/ui/menu`, `lib/account` and `lib/session`.
+Imports: it imports `components/ui`, `components/ui/menu`, `lib/account`, `lib/browser` and `lib/session`.
 
 ```mermaid
 flowchart LR
@@ -16,6 +16,7 @@ flowchart LR
   self --> d0["components/ui"]
   self --> d1["components/ui/menu"]
   self --> d2["lib/account"]
-  self --> d3["lib/session"]
+  self --> d3["lib/browser"]
+  self --> d4["lib/session"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->

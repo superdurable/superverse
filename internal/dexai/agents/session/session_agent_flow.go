@@ -320,7 +320,7 @@ func (flow *SessionAgentFlow) ReportSessionNotification(ctx dex.Context, notific
 		return rpcAccepted(false), nil
 	}
 	if notification.IsPreviewReady() {
-		holdSandbox(ctx, notification.ResourceID, flow.previewHold)
+		holdSandbox(ctx, notification.ResourceID, flow.readyPreviewHold(ctx))
 	}
 	return rpcAccepted(publishNotification(ctx, notification, dexflow.ValueOrZero(notificationReceiptsAttribute.Get(ctx)))), nil
 }
@@ -452,7 +452,7 @@ type InitializeSessionAgent struct {
 }
 
 func (InitializeSessionAgent) GetStepOptions() *dex.StepOptions {
-	return lifecycleStepOptions(nil, statusLock, workspaceLock)
+	return startStepOptions()
 }
 
 // Execute admits the Session with its owner; the execution exists before the admission, so a
@@ -468,8 +468,7 @@ func (step InitializeSessionAgent) Execute(ctx dex.Context, input agentloop.Sess
 		summary := comm.Must(step.flow.GetSessionSummary(ctx, nil)).Output
 		return dex.GracefulComplete(agentloop.SessionCleanupReceipt{ProjectID: identity.ProjectID, Reason: agentloop.CloseReasonAdmissionDenied.String(), Snapshot: &summary}), nil
 	}
-	// MessageWindowLock holds no information, as Steps and RPCs only lock it; this write and the
-	// WaitingInputRound write are their only direct uses, which the pinned Dex CLI requires.
+	// MessageWindowLock holds no information; this and the WaitingInputRound write are the direct uses the pinned Dex CLI requires.
 	comm.MustDo(messageWindowLockAttribute.Set(ctx, false))
 	comm.MustDo(agentStateAttribute.Set(ctx, agentloop.NewAgentState()))
 	comm.MustDo(waitingInputRoundAttribute.Set(ctx, 0))
@@ -477,9 +476,9 @@ func (step InitializeSessionAgent) Execute(ctx dex.Context, input agentloop.Sess
 	comm.MustDo(workspaceAttribute.Set(ctx, agentloop.SessionWorkspace{}))
 	comm.MustDo(workspaceUseAttribute.Set(ctx, agentloop.WorkspaceUse{}))
 	comm.MustDo(previewAutoDeployAttribute.Set(ctx, true))
-	// The Session starts once per Project, so its first message is admitted once.
-	if input.FirstMessage != nil {
-		comm.MustDo(queuedUserMessagesChannel.Publish(ctx, *input.FirstMessage))
+	// The Session starts once per Project, so its first message and an example's card are admitted once.
+	if demand, fromExample := admitStartInput(ctx, input); fromExample {
+		return dex.GoToMany(dex.MovementOf(ActivateSession{}, nil), dex.MovementOf(RequestSessionWorkspace{}, demand)), nil
 	}
 	return dex.GoTo(ActivateSession{}, nil), nil
 }
@@ -1410,8 +1409,7 @@ func (ApplySessionWorkspace) GetStepOptions() *dex.StepOptions { return applyWor
 func (step ApplySessionWorkspace) Execute(ctx dex.Context, demand workspaceDemand) (*dex.StepDecision, error) {
 	ws := dexflow.ValueOrZero(workspaceAttribute.Get(ctx))
 	if ws.RequestID != demand.RequestID {
-		// The request of this branch settled and another replaced it: an RPC
-		// demand ends, and the conversation asks again.
+		// Another request replaced this branch's: an RPC demand ends, and the conversation asks again.
 		if demand.ResumeAt == "" {
 			return dex.DeadEnd(), nil
 		}
@@ -1426,6 +1424,8 @@ func (step ApplySessionWorkspace) Execute(ctx dex.Context, demand workspaceDeman
 	switch {
 	case arms && next != "":
 		return dex.GoToMany(dex.MovementOf(CheckSteered{}, next), dex.MovementOf(AwaitSandboxDeadline{}, workspaceDemand{RequestID: demand.RequestID})), nil
+	case arms && demand.DeploysCommit != "":
+		return dex.GoToMany(dex.MovementOf(AwaitSandboxDeadline{}, workspaceDemand{RequestID: demand.RequestID}), dex.MovementOf(DeployPreviewHandoff{}, exampleHandoff(ctx, demand))), nil
 	case arms:
 		return dex.GoTo(AwaitSandboxDeadline{}, workspaceDemand{RequestID: demand.RequestID}), nil
 	case next != "":

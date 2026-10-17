@@ -36,6 +36,7 @@ RPC_ROUTE, AUTH_ROUTE, FLOW_API_ROUTE = "/api/rpc/<Method>", "/api/auth", "/dex/
 ROUTES = {
     "AccountService": AUTH_ROUTE,
     "ProjectService": RPC_ROUTE,
+    "ExampleService": RPC_ROUTE,
     "SessionService": RPC_ROUTE,
     "AgentService": RPC_ROUTE,
     "RemoteAgentService": RPC_ROUTE,

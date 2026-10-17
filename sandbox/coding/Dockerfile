@@ -77,6 +77,13 @@ RUN --mount=type=cache,id=coding-sandbox-app-go-mod,target=/go/pkg/mod \
     mkdir -p /out/go-module-proxy \
     && cp -a /go/pkg/mod/cache/download/. /out/go-module-proxy/
 
+# The default example's composed tree, which make generate-app-template packs
+# into the server's embedded archive: the files a Project created from a
+# description starts with, and the source of the build cache seeds below.
+FROM --platform=${BUILDPLATFORM} ${GO_IMAGE} AS template-source
+COPY internal/dexai/app/apptemplate/app-template.tar /app-template.tar
+RUN mkdir /template && tar -xf /app-template.tar -C /template
+
 FROM --platform=${TARGETPLATFORM} ${NODE_IMAGE} AS coding-tools
 ARG TARGETARCH
 ARG DEXCLI_VERSION=1.10.1
@@ -160,12 +167,12 @@ ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/sandboxd"]
 # unchanged packages already compiled. Its commands are those of make generate
 # (the Go half), make check-static and make test-app.
 FROM coding-tools AS app-build-cache
-COPY --chown=1000:1000 app-template/go.mod app-template/go.sum /workspace/
-COPY --chown=1000:1000 app-template/tools/openapi/go.mod app-template/tools/openapi/go.sum /workspace/tools/openapi/
-COPY --chown=1000:1000 app-template/openapi/ /workspace/openapi/
-COPY --chown=1000:1000 app-template/cmd/ /workspace/cmd/
-COPY --chown=1000:1000 app-template/internal/ /workspace/internal/
-COPY --chown=1000:1000 app-template/web/package.json app-template/web/package-lock.json /workspace/web/
+COPY --from=template-source --chown=1000:1000 /template/go.mod /template/go.sum /workspace/
+COPY --from=template-source --chown=1000:1000 /template/tools/openapi/go.mod /template/tools/openapi/go.sum /workspace/tools/openapi/
+COPY --from=template-source --chown=1000:1000 /template/openapi/ /workspace/openapi/
+COPY --from=template-source --chown=1000:1000 /template/cmd/ /workspace/cmd/
+COPY --from=template-source --chown=1000:1000 /template/internal/ /workspace/internal/
+COPY --from=template-source --chown=1000:1000 /template/web/package.json /template/web/package-lock.json /workspace/web/
 RUN go mod download \
     && go -C tools/openapi mod download \
     && go -C tools/openapi tool ogen --target ../../internal/api/generated --package generated ../../openapi/openapi.yaml \

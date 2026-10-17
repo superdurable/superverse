@@ -11,9 +11,18 @@ named from its email. The start form asks what process Dex should run: the descr
 first Agent message, a template from the gallery fills it in, and the project name (derived from
 the description) and the Session's model sit under Advanced. A new Project opens on its
 conversation alone and switches once to the Builder when the agent's first requirements card
-arrives. CreateProject always
-sends the required managedRepository field; Setup creates a private repository
-from the embedded template. Pending creation and Agent intent session-storage
+arrives. Under the composer a grid of starting points lists the server's built examples
+(`ListExamples`) on every model: a few of each category before the person types, the six closest
+to the description while they type, re-ranked at word boundaries, and Browse all examples to search
+and filter the whole catalog. Open example creates the Project from that example as it is, in one
+click: CreateProject carries the example and no message, and what the person typed waits in the
+Project's chat composer as an unsent draft (per browser, sent only when the person sends it). Its
+Session starts with the example's card as version 1, built at the setup commit, so the Project
+opens in the Builder at once: the Flow tab shows only the flow, the example's design until the
+Preview's processes are built from the setup commit, with no overview, and the chat opens with the
+agent's greeting and its "Recorded version 1" line. CreateProject always sends the required
+managedRepository field; Setup creates a private repository from the embedded template's default or
+opened example. Pending creation and Agent intent session-storage
 keys are v3, with stable request IDs, cancellation, retry and stale-response
 protection. Publishing remains available after creation.
 
@@ -124,7 +133,7 @@ the current contract.
 | [`components/project/activity`](components/project/activity/README.md) | The per-environment timeline and the recent trigger events: Preview's starts, Live's publishes and deployments, each with version, outcome and problem. |
 | [`components/project/creation`](components/project/creation/README.md) | Watches a newly created Project and Session, then shows inline pairing until the chosen local agent activates. |
 | [`components/project/setup`](components/project/setup/README.md) | Setup's pieces above the table: the bar with Preview's line and the Next publish line, and the Live tab's banner. |
-| [`components/project/templates`](components/project/templates/README.md) | The start page's process templates: their typed catalog, the gallery that fills the composer with one, and the Project name a description gives. |
+| [`components/project/templates`](components/project/templates/README.md) | The start page's starting points: the server's built examples and the placeholder templates, their gallery, the suggestions while typing, and the Project name a description gives. |
 | [`components/publishing`](components/publishing/README.md) | Tools, Publishing: the publish in progress, what is Live with Stop Live, every version with its builds, rollback after its consequences, and Live's history. |
 | [`components/publishing/progress`](components/publishing/progress/README.md) | One publish in Tools ▸ Publishing: its header with Cancel, the five-stage bar, a failure's problem, and the inline build log. |
 | [`components/publishing/publish`](components/publishing/publish/README.md) | The bar's Publish button and its popover: the version, what blocks it, what to check, what happens, the skip reason, and Publish. |
@@ -256,7 +265,7 @@ time (`useSingleFlight`), and unmounting aborts it.
 
 ## Browser boundary
 
-`/api/rpc/<Method>` serves exactly the RPCs of ten business services (the
+`/api/rpc/<Method>` serves exactly the RPCs of twelve business services (the
 `BROWSER_SERVICES` allowlist in `rpc-handler.ts`, which the compiler checks
 against the `BrowserService` type in both directions): a unary RPC is a
 same-origin POST of its generated request as JSON, and a Watch is a GET whose

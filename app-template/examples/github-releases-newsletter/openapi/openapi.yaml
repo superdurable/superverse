@@ -1,0 +1,133 @@
+openapi: 3.0.3
+info:
+  title: Super Durable Newsletter API
+  version: 1.0.0
+paths:
+  /api/health:
+    get:
+      operationId: getHealth
+      responses:
+        '200':
+          description: Application is healthy.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/subscriptions:
+    post:
+      operationId: subscribe
+      description: Accept one visitor email subscription. Repeated submissions of one email retain one subscriber.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscribeRequest'
+      responses:
+        '202':
+          description: Subscription request accepted for durable processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscribeAccepted'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/newsletters/{campaignId}:
+    get:
+      operationId: getNewsletter
+      description: Read the report and aggregate delivery state of one newsletter campaign.
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^newsletter-[a-f0-9]{64}$'
+      responses:
+        '200':
+          description: Current or final campaign state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Newsletter'
+        default:
+          $ref: '#/components/responses/Error'
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+    SubscribeRequest:
+      type: object
+      additionalProperties: false
+      required: [requestId, email]
+      properties:
+        requestId:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+          maxLength: 254
+    SubscribeAccepted:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [accepted]
+    Newsletter:
+      type: object
+      additionalProperties: false
+      required: [status, subject, report, releaseCount, recipientCount, sentCount, failedCount, unknownCount, notice]
+      properties:
+        status:
+          type: string
+          enum: [pending, collecting_releases, release_failed, generation_failed, generation_unknown, sending, completed]
+        subject:
+          type: string
+        report:
+          type: string
+        releaseCount:
+          type: integer
+          format: int64
+        recipientCount:
+          type: integer
+          format: int64
+        sentCount:
+          type: integer
+          format: int64
+        failedCount:
+          type: integer
+          format: int64
+        unknownCount:
+          type: integer
+          format: int64
+        notice:
+          type: string
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error, message]
+      properties:
+        error:
+          type: string
+          pattern: '^[a-z][a-z0-9_]*$'
+        message:
+          type: string
+          maxLength: 3000
+  responses:
+    Error:
+      description: Request failed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

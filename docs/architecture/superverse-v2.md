@@ -305,7 +305,7 @@ records that the later package moves changed no Flow.
 | --- | --- |
 | Dex skills | `dex-skills/`, Superverse-owned source (the current contract) |
 | Platform | Go SDK `v1.10.1`, Server `v1.10.1`, CLI `v1.10.1`; kept at the newest stable release |
-| New-project template | `app-template/`, served as `app-template@<tree ID>` (the current contract) |
+| New-project template | The examples of `app-template/` (a shared base and one folder per example): the default text summary, served as `app-template@<tree ID>`, and each example a person picks, served as `app-template/<id>@<tree ID>` (the current contract) |
 
 Do not upgrade generated application dependencies merely because the
 platform uses a newer Dex Server. Preserve their declared template versions.
@@ -2445,7 +2445,7 @@ configuration rather than asking the user to create a replacement integration.
 
 ### Template automation boundary
 
-New projects receive the committable files of `app-template/` with Git file modes preserved; the template contains no repository automation, so the reused GitHub App permissions are unchanged. `go generate ./internal/dexai/app/apptemplate` packs them into the embedded archive, and `make check-app-template` fails on drift. Every new repository receives this template.
+New projects receive the composed files of one example of `app-template/` with Git file modes preserved: the shared base with the default example `text-summary`, or with the example the person picked on the start page ([the examples](../../app-template/examples/README.md)). The template contains no repository automation, so the reused GitHub App permissions are unchanged. `go generate ./internal/dexai/app/apptemplate` composes every example into the embedded archives and catalog, and `make check-app-template` fails on drift and runs each composed example's static checks. Every new repository receives one of these trees.
 
 Workspace account display is read once by the server layout per new document and shared with all headers via the generated AccountSnapshot context. Menu toggles and client navigation do not fetch /api/auth/session. This display is not authentication authority; see [API ownership](../api/resource-grpc.md#workspace-account-display).
 

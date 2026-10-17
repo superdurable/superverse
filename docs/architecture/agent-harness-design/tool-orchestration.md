@@ -433,7 +433,7 @@ security: the helpers and `bash` both run as UID 1000, and a command can still `
 - **Skills and module sources** are read with the same tools. The model finds a module's source
   directory with `go list -m -f '{{.Dir}}' <module>` (after `go get` or `go mod download` when the
   module is not restored) and reads, searches and lists it under `$GOMODCACHE`. Prompts,
-  `app-template/AGENTS.md` and `dex-skills/` name paths this way; no `source=` selector exists.
+  each example's `AGENTS.md` and `dex-skills/` name paths this way; no `source=` selector exists.
 - **`edit`** needs `old_string` to match exactly once unless `replace_all` is set
   (`edit_no_match`, `edit_ambiguous`), refuses identical strings (`edit_noop`), and works on text
   files only (`binary_file`, `file_too_large`).

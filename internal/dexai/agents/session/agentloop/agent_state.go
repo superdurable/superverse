@@ -40,12 +40,30 @@ type StartRequest struct {
 	// FirstMessage is the creator's first message, which the start Step admits
 	// once into QueuedUserMessages; nil without one.
 	FirstMessage *conversation.PendingUserMessage `json:"first_message,omitempty"`
+	// ExampleBrief is the card of the example the Project was created from,
+	// which the start Step records as version 1; nil without a picked example.
+	ExampleBrief *ExampleBrief `json:"example_brief,omitempty"`
 }
 
 // SessionStartInput is the input of the Session's start Step: the first
-// message it admits, or nil. A Session started before it existed has none.
+// message it admits and the example brief it records, or nil. A Session
+// started before they existed has neither.
 type SessionStartInput struct {
 	FirstMessage *conversation.PendingUserMessage `json:"first_message,omitempty"`
+	ExampleBrief *ExampleBrief                    `json:"example_brief,omitempty"`
+}
+
+// ExampleBrief is the requirements card of the example a Project was created
+// from, as the server build that created it embeds it: Card is the
+// confirm_requirements input as JSON text, which the start Step records as
+// version 1 without a model call. Problem is why there is no card, such as an
+// example this build holds at another tree; the Session then records none.
+type ExampleBrief struct {
+	ExampleID string `json:"example_id"`
+	Tree      string `json:"tree"`
+	Title     string `json:"title"`
+	Card      string `json:"card,omitempty"`
+	Problem   string `json:"problem,omitempty"`
 }
 
 // AgentStatus describes the active durable state-machine boundary.
@@ -131,6 +149,10 @@ type AgentState struct {
 	AutomaticTaskTurns     int  `json:"automatic_task_turns,omitempty"`
 	AutomaticPlatformTurns int  `json:"automatic_platform_turns,omitempty"`
 	AutomaticTurnsPaused   bool `json:"automatic_turns_paused,omitempty"`
+	// AwaitsFirstMessage marks a Session created from an example that has had
+	// no message of the person yet: until the first one starts a turn, a READY
+	// Preview holds the Sandbox only for the idle Sandbox hold.
+	AwaitsFirstMessage bool `json:"awaits_first_message,omitempty"`
 	// SubagentsStartedWithoutUser counts the subagents admitted since the
 	// user last started a turn; start_agent admits at most
 	// agenttasks.MaximumSubagentsWithoutUser.

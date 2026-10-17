@@ -80,9 +80,14 @@ func (f *ProjectSetupFlow) createManagedRepository(ctx context.Context, s Setup)
 	return projects.RepositoryBindingRef{RepositoryID: repository.ID, InstallationID: f.Host.InstallationID(), FullName: repository.FullName, URL: repository.CloneURL, DefaultBranch: "main"}, nil
 }
 
-// initializeTemplate pushes the accepted embedded template and returns its commit.
+// initializeTemplate pushes the accepted template, the default example or the
+// picked one, which this server build must hold, and returns its commit.
 func (f *ProjectSetupFlow) initializeTemplate(ctx context.Context, s Setup) (string, error) {
-	return f.Host.InitializeTemplate(ctx, repohost.Repository{ID: s.Repository.RepositoryID, FullName: s.Repository.FullName, DefaultBranch: s.Repository.DefaultBranch}, s.TemplateRevision, apptemplate.Current())
+	template, err := apptemplate.ForRevision(s.TemplateRevision)
+	if err != nil {
+		return "", err
+	}
+	return f.Host.InitializeTemplate(ctx, repohost.Repository{ID: s.Repository.RepositoryID, FullName: s.Repository.FullName, DefaultBranch: s.Repository.DefaultBranch}, s.TemplateRevision, template)
 }
 
 // reconcileProjectStorage provisions the Project's configuration storage and

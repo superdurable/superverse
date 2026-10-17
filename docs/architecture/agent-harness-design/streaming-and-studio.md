@@ -77,9 +77,13 @@ when the block stops; no other tool's input reaches it. `CallModel` hands it to 
   and every open array and object is closed. The result is read into the draft; a field of another type is
   skipped, and a malformed input, or one over 96 KiB, writes nothing.
 - **Payload.** `RequirementsDraft{call_id, turn, base_revision, title, summary, features{id,text},
-  connections{need,connector}, design_summary, flows{flow_type, step_types}, complete}`, bounded to the
-  card schema's lengths and counts (at most 20 features, 10 connections, 6 Flows of 30 Steps). `turn` is the
-  model call's turn and `base_revision` the confirmed requirements' revision when it started, 0 when none.
+  connections{need,connector}, design_summary, flows{flow_type, step_types, failure_handling_step_types},
+  complete}`, bounded to the card schema's lengths and counts (at most 20 features, 10 connections, 6 Flows of
+  30 Steps). `turn` is the model call's turn and `base_revision` the confirmed requirements' revision when it
+  started, 0 when none. `failure_handling_step_types` are the drafted Steps that only failure routes reach so
+  far, split as the Flow canvas splits a Flow: the main story is what ordinary transitions (`next` without
+  `is_failure_route`) reach from the start Step, or the first drafted Step while the start is not drafted,
+  and from each Step no drafted transition enters yet.
   Every event is the whole draft, so a lost event only means that a later one shows.
 - **Not the card.** RouteTool records or refuses the complete input as before; the draft never becomes the
   card. A draft is over once a Snapshot's `confirmed_requirements` revision passes `base_revision`, a tool
@@ -352,7 +356,7 @@ canvas's corner, the card's summary and one More details under it
 ([design before implementation](../design-first/studio.md#the-process-brief)).
 
 - **While the agent writes the card**, the Flow tab shows its newest draft: "Drafting" on the
-  corner over the title, the designed Steps' names per process as a row of dashed boxes, the
+  corner over the title, the designed main-story Steps' names per process as a row of dashed boxes, the
   summary line as it fills in and the features behind More details. No drawing is made of a
   draft. A Project created in this browser leaves its first conversation for the Flow tab at its
   first draft. A revision's draft takes the place of the current version's Brief until it is

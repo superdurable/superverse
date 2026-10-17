@@ -23,8 +23,11 @@ export interface RequirementsDraft {
   features: readonly { id: string; text: string }[];
   connections: readonly { need: string; connector: string }[];
   designSummary: string;
-  /** The designed Flows with the Go type names of the Steps written so far. */
-  flows: readonly { flowType: string; stepTypes: readonly string[] }[];
+  /**
+   * The designed Flows with the Go type names of the Steps written so far, and of those of them only failure
+   * routes reach so far, which the drawn design leaves out of its main story.
+   */
+  flows: readonly { flowType: string; stepTypes: readonly string[]; failureHandlingStepTypes: readonly string[] }[];
   /** The model finished writing it; the Session records or refuses it next. */
   complete: boolean;
 }
@@ -45,7 +48,11 @@ export function requirementsDraftView(value: AgentRequirementsDraft__Output): Re
     features: value.features.map(({ id, text }) => ({ id, text })),
     connections: value.connections.map(({ need, connector }) => ({ need, connector })),
     designSummary: value.designSummary,
-    flows: value.flows.map(({ flowType, stepTypes }) => ({ flowType, stepTypes })),
+    flows: value.flows.map(({ flowType, stepTypes, failureHandlingStepTypes }) => ({
+      flowType,
+      stepTypes,
+      failureHandlingStepTypes,
+    })),
     complete: value.complete,
   };
 }

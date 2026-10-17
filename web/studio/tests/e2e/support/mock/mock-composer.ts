@@ -6,6 +6,7 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
+import { randomUUID } from "node:crypto";
 import { expect, type Page } from "@playwright/test";
 import type { AgentMessage__Output } from "@/lib/generated/protobuf/superverse/v2/AgentMessage";
 import { delay } from "@/lib/shared/async";
@@ -108,6 +109,26 @@ export async function sendMockInput(
   // A scenario that received every input offers input 1 again as Start again.
   await page.getByRole("button", { name: /^(Send next input|Start again)$/ }).click();
   return before;
+}
+
+/**
+ * Sends message input `number` of a scenario through SendMessage, the request the composer makes, and waits for
+ * its turn: for a scenario the composer does not offer in this Project, such as an example's change in a Project
+ * opened from that example, which the composer cannot tell from a new Project's scenario.
+ */
+export async function sendMockMessage(
+  page: Page,
+  projectId: string,
+  scenario: string,
+  number: number,
+  timeoutMs = 15 * 60_000,
+) {
+  const { scenarios } = await rpcResult(page.request, "ListMockScenarios", {});
+  const input = scenarios.find(({ name }) => name === scenario)?.inputs.find((item) => Number(item.number) === number);
+  if (!input?.content) throw new Error(`The mock catalog lists no message input ${number} of ${scenario}`);
+  const before = Number((await readSession(page, projectId)).agent?.description?.lastSequence ?? 0);
+  await rpcResult(page.request, "SendMessage", { projectId, messageId: randomUUID(), text: input.content });
+  return waitForMockTurn(page, projectId, before, timeoutMs);
 }
 
 /**

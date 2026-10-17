@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "superverse.dev/dex-app/v1",
+  "application": {
+    "port": 8080,
+    "healthPath": "/api/health"
+  },
+  "flowDefinitions": [
+    {
+      "sourcePath": "internal/process/slack_thread_approval_flow.go"
+    }
+  ],
+  "connectors": [
+    {
+      "connectionName": "slack-approvals",
+      "connectorId": "slack",
+      "modulePath": "github.com/superdurable/dex-connectors-library/connectors/slack",
+      "version": "v1.0.0",
+      "authMethodId": "",
+      "operations": ["postThreadReply"],
+      "triggerBindings": [
+        {"triggerName": "channelThreadCreated", "bindingName": "slack-thread-approval-start"},
+        {"triggerName": "threadReplyCreated", "bindingName": "slack-thread-approval-reply"}
+      ]
+    }
+  ]
+}

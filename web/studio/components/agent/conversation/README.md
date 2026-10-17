@@ -30,4 +30,7 @@ explanation after reconnect or reload.
 A turn whose `confirm_requirements` call recorded a version of the requirements shows it once,
 after its work log, as one line, "Recorded version N: <title>", which opens to the card when it
 is the current version (`components/agent/interaction/RecordedRequirements.tsx`). The history
-holds no version numbers, so the line counts back from the Snapshot's current version.
+holds no version numbers, so the line counts back from the Snapshot's current version. A
+Session created from an example recorded version 1 at its start, with no call: its line shows
+beside the greeting (`requirementsStartSequence`), named by the example once a later version is
+current.

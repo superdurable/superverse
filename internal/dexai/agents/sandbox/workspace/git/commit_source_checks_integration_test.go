@@ -11,6 +11,8 @@
 package git_test
 
 import (
+	"archive/tar"
+	"bytes"
 	"context"
 	"errors"
 	"os"
@@ -20,11 +22,13 @@ import (
 	"time"
 
 	"github.com/superdurable/superversev2/internal/comm/flowid"
+	"github.com/superdurable/superversev2/internal/comm/platform/repohost"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/git"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/sandboxd"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/sandboxd/sandboxdtest"
 	"github.com/superdurable/superversev2/internal/dexai/agents/toolfailure"
+	"github.com/superdurable/superversev2/internal/dexai/app/apptemplate"
 )
 
 // This scenario needs an owned, disposable sandboxd with a clean checkout of the
@@ -240,6 +244,106 @@ EOF`)
 	}
 }
 
+// TestExampleSourceGatesActualSandbox runs the source gate on every example of
+// the application template that this build embeds besides the default one,
+// which TestApplicationSourceGateActualSandbox checks, in the same owned,
+// disposable sandboxd and checkout of the default example. For each example
+// it replaces the checkout's files with the example's composed tree, restores
+// its dependencies with make bootstrap, and requires the manifest, static,
+// definitions and tests stages to pass with no failed test, as the first push
+// of a Project created from the example would; then it restores the checkout.
+// The log names each example's stage durations.
+func TestExampleSourceGatesActualSandbox(t *testing.T) {
+	expected := os.Getenv("SUPERVERSE_TEST_SOURCE_CHECK_COMMIT")
+	if !flowid.IsCommitSHA(expected) {
+		t.Fatal("an exact template source commit is required")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Minute)
+	defer cancel()
+	sandbox := liveCheckout{t: t, ctx: ctx, client: sandboxdtest.ClientForTest(t)}
+	head := sandbox.git("rev-parse", "HEAD")
+	if head != expected || sandbox.git("status", "--porcelain") != "" {
+		t.Fatal("the example gates require a clean disposable checkout of the accepted default example")
+	}
+	restore := func() {
+		cleanup, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		checkout := liveCheckout{t: t, ctx: cleanup, client: sandbox.client}
+		for _, arguments := range [][]string{{"git", "reset", "--hard", "--quiet", head}, {"git", "clean", "-fdq"}} {
+			if _, err := checkout.run(sandboxd.GitProcessEnvironment(), arguments...); err != nil {
+				t.Error("restore the owned disposable checkout:", err)
+			}
+		}
+	}
+	t.Cleanup(restore)
+	gate := &git.GitOperations{CheckDefinitions: workspace.CheckWorktreeDefinitionsForTest}
+	unaccepted := git.Repository{ExpectedHeadSHA: strings.Repeat("0", 40)}
+	for _, example := range apptemplate.Examples() {
+		if example.ID == apptemplate.DefaultExampleID {
+			continue
+		}
+		t.Run(example.ID, func(t *testing.T) {
+			defer restore()
+			sandbox := liveCheckout{t: t, ctx: ctx, client: sandbox.client}
+			template, err := apptemplate.ExampleTemplate(example.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err = sandbox.client.WriteFile(ctx, sandboxd.WorkspacePath(".git/example.tar"), exampleArchive(t, template), "0600"); err != nil {
+				t.Fatalf("write the example's tree: %v", err)
+			}
+			sandbox.git("rm", "-r", "-q", ".")
+			sandbox.shell("tar -xf .git/example.tar && rm .git/example.tar")
+			if _, err = sandbox.runFor(15*time.Minute, nil, "make", "bootstrap"); err != nil {
+				t.Fatalf("restore the example's dependencies: %v", err)
+			}
+			result, _, err := sandbox.verify(gate, unaccepted)
+			if err != nil || len(result.Stages) != 4 {
+				t.Fatalf("example %s must pass every stage: %+v error=%v", example.ID, result.Stages, err)
+			}
+			for index, stage := range []string{"manifest", "static", "definitions", "tests"} {
+				if string(result.Stages[index].Stage) != stage || result.Stages[index].Status != git.SourceGatePassedForTest {
+					t.Fatalf("stage %d is %+v, want %s passed", index, result.Stages[index], stage)
+				}
+			}
+			if tests := result.Tests; tests == nil || tests.Failed != 0 || tests.Passed == 0 {
+				t.Fatalf("example %s must pass its API tests: %+v", example.ID, result.Tests)
+			}
+			for _, stage := range result.Stages {
+				t.Logf("example %s stage %s %s duration_ms=%d", example.ID, stage.Stage, stage.Status, stage.DurationMS)
+			}
+			t.Logf("example %s tests: %+v", example.ID, result.Tests)
+		})
+	}
+	if _, err := sandbox.runFor(15*time.Minute, nil, "make", "bootstrap"); err != nil {
+		t.Errorf("restore the default example's dependencies: %v", err)
+	}
+}
+
+// exampleArchive is the composed tree of an example as a tar the sandbox
+// extracts into the checkout, with each file's Git mode.
+func exampleArchive(t *testing.T, template *repohost.Template) []byte {
+	t.Helper()
+	var archive bytes.Buffer
+	writer := tar.NewWriter(&archive)
+	for _, file := range template.Files {
+		mode := int64(0o644)
+		if file.Mode == "100755" {
+			mode = 0o755
+		}
+		if err := writer.WriteHeader(&tar.Header{Typeflag: tar.TypeReg, Name: file.Path, Mode: mode, Size: int64(len(file.Contents))}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := writer.Write(file.Contents); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return archive.Bytes()
+}
+
 // liveCheckout runs commands in the owned disposable checkout.
 type liveCheckout struct {
 	t      *testing.T
@@ -260,8 +364,13 @@ func (c liveCheckout) verifyTraced(gate *git.GitOperations, repository git.Repos
 }
 
 func (c liveCheckout) run(environment []sandboxd.EnvironmentVariable, arguments ...string) (string, error) {
+	return c.runFor(time.Minute, environment, arguments...)
+}
+
+// runFor is run with its own timeout, for a command that restores dependencies.
+func (c liveCheckout) runFor(timeout time.Duration, environment []sandboxd.EnvironmentVariable, arguments ...string) (string, error) {
 	output, err := c.client.RunToExit(c.ctx, sandboxd.StartRequest{
-		ExecutionID: sandboxd.PlatformExecutionID("live-source-gate"), Arguments: arguments, Environment: environment, Timeout: time.Minute,
+		ExecutionID: sandboxd.PlatformExecutionID("live-source-gate"), Arguments: arguments, Environment: environment, Timeout: timeout,
 	})
 	if err == nil && output.ExitCode != 0 {
 		err = errors.New(strings.TrimSpace(output.Stderr))

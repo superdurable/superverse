@@ -98,6 +98,11 @@ class CodingImage:
         label = "superverse-v2.coding-verification=" + owner
         receipt = self.directory / ("verification-" + owner + ".json")
         write_private(receipt, json.dumps({"owner": owner, "image": self.tag}) + "\n")
+        # The template check builds the default example's composed tree, the same archive the image seeds from.
+        template = self.directory / ("verification-template-" + owner)
+        template.mkdir()
+        with tarfile.open(self.directory / "context" / "internal/dexai/app/apptemplate/app-template.tar") as archive:
+            archive.extractall(template, filter="data")
 
         def owned_containers():
             ids = run(["docker", "ps", "--all", "--quiet", "--no-trunc", "--filter", "label=" + label], capture=True).splitlines()
@@ -112,7 +117,7 @@ class CodingImage:
                  " && test -d /var/lib/superverse/preview"],
                 timeout=180)
             run(["docker", "run", "--rm", "--name", "sv2-coding-verification-" + owner + "-template", "--label", label, "--entrypoint", "/bin/bash",
-                 "--volume", str(self.directory / "context" / "app-template") + ":/opt/superverse-template-source:ro", self.tag, "-c", TEMPLATE_BUILD_CHECK],
+                 "--volume", str(template) + ":/opt/superverse-template-source:ro", self.tag, "-c", TEMPLATE_BUILD_CHECK],
                 timeout=300)
         finally:
             for container_id in owned_containers():
@@ -122,6 +127,7 @@ class CodingImage:
                     if owned_containers():  # --rm may have raced this removal; only a fresh read settles it.
                         raise
             require(not owned_containers(), "Coding validation container cleanup is incomplete")
+            shutil.rmtree(template)
             receipt.unlink()
 
 

@@ -5,7 +5,7 @@ Purpose: Holds the trust boundary every business gRPC handler shares: caller aut
 
 Callers: `internal/dexai/api`, `internal/dexai/api/remoteagent`, `internal/dexai/api/tenancy` and `internal/dexai/bootstrap` import this package.
 
-Dependencies: it imports `gen/superverse/v2`, `internal/comm`, `internal/comm/dexflow`, `internal/comm/flowid`, `internal/comm/platform/postgres`, `internal/comm/platform/repohost`, `internal/dexai/agents`, `internal/dexai/agents/sandbox/preview`, `internal/dexai/agents/session`, `internal/dexai/agents/session/conversation`, `internal/dexai/api/watch`, `internal/dexai/app/appmanifest`, `internal/dexai/delivery/deployments`, `internal/dexai/delivery/releases`, `internal/dexai/delivery/releases/build`, `internal/dexai/projects`, `internal/dexai/projects/config`, `internal/dexai/projects/infra`, `internal/dexai/tenancy/accounts`, `internal/dexai/tenancy/connectiondao` and `internal/dexai/tenancy/connections` and calls the Dex Flow API.
+Dependencies: it imports `gen/superverse/v2`, `internal/comm/**` (5) and `internal/dexai/**` (16) and calls the Dex Flow API.
 
 ```mermaid
 flowchart LR
@@ -15,26 +15,8 @@ flowchart LR
   c2["internal/dexai/api/tenancy"] --> self
   c3["internal/dexai/bootstrap"] --> self
   self --> d0["gen/superverse/v2"]
-  self --> d1["internal/comm"]
-  self --> d2["internal/comm/dexflow"]
-  self --> d3["internal/comm/flowid"]
-  self --> d4["internal/comm/platform/postgres"]
-  self --> d5["internal/comm/platform/repohost"]
-  self --> d6["internal/dexai/agents"]
-  self --> d7["internal/dexai/agents/sandbox/preview"]
-  self --> d8["internal/dexai/agents/session"]
-  self --> d9["internal/dexai/agents/session/conversation"]
-  self --> d10["internal/dexai/api/watch"]
-  self --> d11["internal/dexai/app/appmanifest"]
-  self --> d12["internal/dexai/delivery/deployments"]
-  self --> d13["internal/dexai/delivery/releases"]
-  self --> d14["internal/dexai/delivery/releases/build"]
-  self --> d15["internal/dexai/projects"]
-  self --> d16["internal/dexai/projects/config"]
-  self --> d17["internal/dexai/projects/infra"]
-  self --> d18["internal/dexai/tenancy/accounts"]
-  self --> d19["internal/dexai/tenancy/connectiondao"]
-  self --> d20["internal/dexai/tenancy/connections"]
+  self --> d1["internal/comm/** (5)"]
+  self --> d2["internal/dexai/** (16)"]
   self --> e0(["Dex Flow API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->

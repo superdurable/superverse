@@ -117,6 +117,27 @@ type workspaceDemand struct {
 	Observed *agentloop.WorkspaceGrant `json:"observed,omitempty"`
 	Failure  string                    `json:"failure,omitempty"`
 	TimedOut bool                      `json:"timedOut,omitempty"`
+	// DeploysCommit is the setup commit whose Preview a Session created from
+	// an example deploys once its request is READY, as the deployment of
+	// DeploySequence, the greeting notice's sequence.
+	DeploysCommit  string                `json:"deploysCommit,omitempty"`
+	DeploySequence conversation.Sequence `json:"deploySequence,omitempty"`
+}
+
+// exampleHandoff is the Preview deployment of the setup commit that a
+// Session created from an example requests on its READY workspace.
+func exampleHandoff(ctx dex.Context, demand workspaceDemand) agentloop.PreviewHandoff {
+	return capturedPreviewHandoff(ctx, agentloop.PreviewHandoff{Commit: demand.DeploysCommit, Sequence: demand.DeploySequence})
+}
+
+// readyPreviewHold is how long a READY Preview holds its Sandbox: the Preview
+// hold, or only the idle Sandbox hold while a Session created from an example
+// waits for the person's first message.
+func (flow *SessionAgentFlow) readyPreviewHold(ctx dex.Context) time.Duration {
+	if comm.Must(agentStateAttribute.Get(ctx)).AwaitsFirstMessage {
+		return flow.sandboxHold
+	}
+	return flow.previewHold
 }
 
 // newWorkspaceRequestID derives the instance identity from the Step execution

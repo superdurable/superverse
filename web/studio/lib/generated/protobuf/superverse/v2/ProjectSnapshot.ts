@@ -9,6 +9,7 @@ import type { Failure as _superverse_v2_Failure, Failure__Output as _superverse_
 import type { Timestamp as _google_protobuf_Timestamp, Timestamp__Output as _google_protobuf_Timestamp__Output } from '../../google/protobuf/Timestamp';
 import type { ActiveDeploymentReference as _superverse_v2_ActiveDeploymentReference, ActiveDeploymentReference__Output as _superverse_v2_ActiveDeploymentReference__Output } from '../../superverse/v2/ActiveDeploymentReference';
 import type { ProjectRole as _superverse_v2_ProjectRole, ProjectRole__Output as _superverse_v2_ProjectRole__Output } from '../../superverse/v2/ProjectRole';
+import type { ProjectExample as _superverse_v2_ProjectExample, ProjectExample__Output as _superverse_v2_ProjectExample__Output } from '../../superverse/v2/ProjectExample';
 import type { Long } from '@grpc/proto-loader';
 
 export interface ProjectSnapshot {
@@ -29,6 +30,7 @@ export interface ProjectSnapshot {
   'sessionStartFailure'?: (_superverse_v2_Failure | null);
   'teamSpaceId'?: (string);
   'callerRole'?: (_superverse_v2_ProjectRole);
+  'example'?: (_superverse_v2_ProjectExample | null);
 }
 
 export interface ProjectSnapshot__Output {
@@ -49,4 +51,5 @@ export interface ProjectSnapshot__Output {
   'sessionStartFailure': (_superverse_v2_Failure__Output | null);
   'teamSpaceId': (string);
   'callerRole': (_superverse_v2_ProjectRole__Output);
+  'example': (_superverse_v2_ProjectExample__Output | null);
 }

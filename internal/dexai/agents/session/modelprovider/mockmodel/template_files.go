@@ -103,11 +103,20 @@ func workspacePath(name string) (string, bool) {
 	return path.Clean(name), true
 }
 
-// templateFiles are the contents of the application template's files by path.
-func templateFiles() rootFiles {
+// templateFiles are the contents of the files a Project starts with, by path:
+// the default example's, or those of the example a scenario names as its
+// workspace.
+func templateFiles(workspace string) (rootFiles, error) {
+	template := apptemplate.Current()
+	if workspace != "" {
+		var err error
+		if template, err = apptemplate.ExampleTemplate(workspace); err != nil {
+			return rootFiles{}, fmt.Errorf("workspace: %w", err)
+		}
+	}
 	files := make(map[string]string)
-	for _, file := range apptemplate.Current().Files {
+	for _, file := range template.Files {
 		files[file.Path] = string(file.Contents)
 	}
-	return rootFiles{files: files, complete: true}
+	return rootFiles{files: files, complete: true}, nil
 }

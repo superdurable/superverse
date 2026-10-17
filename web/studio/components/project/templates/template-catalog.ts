@@ -6,15 +6,13 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-/** The groups the start page's templates are filed under. */
-type TemplateCategory = "Approvals" | "Finance" | "Support" | "People";
+import type { ExampleCategory, ExampleView } from "@/lib/api/example";
 
-/**
- * A starting point on the start page. A placeholder is only a description: picking it fills the
- * composer, and the agent builds the process from that text like any other. A built template, which
- * starts from finished source, comes later.
- */
-export interface ProcessTemplate {
+/** The groups the start page's templates are filed under. */
+type TemplateCategory = ExampleCategory;
+
+/** What every starting point on the start page shows. */
+interface TemplateFields {
   id: string;
   title: string;
   category: TemplateCategory;
@@ -24,11 +22,36 @@ export interface ProcessTemplate {
   decider: string;
   /** A full description: what starts it, the people, the rules and the exceptions. */
   description: string;
+}
+
+/**
+ * A placeholder is only a description: picking it fills the composer, and the agent builds the
+ * process from that text like any other.
+ */
+export interface PlaceholderTemplate extends TemplateFields {
   kind: "placeholder";
 }
 
+/**
+ * A built example of the server's application template: Open example creates the Project from its
+ * finished, tested source as it is, with its requirements recorded as the first version, and what the
+ * person typed waits in the Project's composer as an unsent draft.
+ */
+export interface BuiltExample extends TemplateFields {
+  kind: "example";
+}
+
+/** A starting point on the start page. */
+export type ProcessTemplate = PlaceholderTemplate | BuiltExample;
+
+/** The start page's starting point of a built example. */
+export function builtExample(example: ExampleView): BuiltExample {
+  const { exampleId, title, category, apps, decider, description } = example;
+  return { id: exampleId, title, category, apps, decider, description, kind: "example" };
+}
+
 /** The templates in the order the start page shows them. */
-export const PROCESS_TEMPLATES: readonly ProcessTemplate[] = [
+export const PROCESS_TEMPLATES: readonly PlaceholderTemplate[] = [
   {
     id: "refund-approvals",
     title: "Refund approvals",

@@ -3,23 +3,24 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Computes the Session Agent's pure loop decisions for SessionAgentFlow: state machine, turns, questions, context segments, tool catalog, batches and results, without touching Flow primitives.
 
-Callers: `cmd/tools/check-mock-scenarios`, `internal/dexai/agents`, `internal/dexai/agents/diagnostics`, `internal/dexai/agents/remoteagent`, `internal/dexai/agents/session`, `internal/dexai/agents/session/modelprovider/mockmodel`, `internal/dexai/agents/session/subagent`, `internal/dexai/api`, `internal/dexai/bootstrap` and `internal/dexai/studio/runs` import this package.
+Callers: `cmd/tools/app-template-archive`, `cmd/tools/check-mock-scenarios`, `internal/dexai/agents`, `internal/dexai/agents/diagnostics`, `internal/dexai/agents/remoteagent`, `internal/dexai/agents/session`, `internal/dexai/agents/session/modelprovider/mockmodel`, `internal/dexai/agents/session/subagent`, `internal/dexai/api`, `internal/dexai/bootstrap` and `internal/dexai/studio/runs` import this package.
 
 Dependencies: it imports `internal/comm`, `internal/comm/flowid`, `internal/dexai/agents/remoteexec`, `internal/dexai/agents/sandbox/workspace`, `internal/dexai/agents/sandbox/workspace/git`, `internal/dexai/agents/session/agenttasks`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/session/flowdesign`, `internal/dexai/agents/session/modelprovider`, `internal/dexai/agents/session/sandboxtools`, `internal/dexai/agents/session/toolinput` and `internal/dexai/agents/toolfailure`.
 
 ```mermaid
 flowchart LR
   self["internal/dexai/agents/session/agentloop"]
-  c0["cmd/tools/check-mock-scenarios"] --> self
-  c1["internal/dexai/agents"] --> self
-  c2["internal/dexai/agents/diagnostics"] --> self
-  c3["internal/dexai/agents/remoteagent"] --> self
-  c4["internal/dexai/agents/session"] --> self
-  c5["internal/dexai/agents/session/modelprovider/mockmodel"] --> self
-  c6["internal/dexai/agents/session/subagent"] --> self
-  c7["internal/dexai/api"] --> self
-  c8["internal/dexai/bootstrap"] --> self
-  c9["internal/dexai/studio/runs"] --> self
+  c0["cmd/tools/app-template-archive"] --> self
+  c1["cmd/tools/check-mock-scenarios"] --> self
+  c2["internal/dexai/agents"] --> self
+  c3["internal/dexai/agents/diagnostics"] --> self
+  c4["internal/dexai/agents/remoteagent"] --> self
+  c5["internal/dexai/agents/session"] --> self
+  c6["internal/dexai/agents/session/modelprovider/mockmodel"] --> self
+  c7["internal/dexai/agents/session/subagent"] --> self
+  c8["internal/dexai/api"] --> self
+  c9["internal/dexai/bootstrap"] --> self
+  c10["internal/dexai/studio/runs"] --> self
   self --> d0["internal/comm"]
   self --> d1["internal/comm/flowid"]
   self --> d2["internal/dexai/agents/remoteexec"]

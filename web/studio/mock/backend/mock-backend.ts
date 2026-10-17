@@ -17,7 +17,7 @@ import { accountService } from "./account-service";
 import { agentService, remoteAgentService } from "./agent-service";
 import { deploymentService } from "./deployment-service";
 import { previewService } from "./preview-service";
-import { projectService } from "./project-service";
+import { exampleService, projectService } from "./project-service";
 import { releaseService } from "./release-service";
 import { sessionService } from "./session-service";
 import {
@@ -49,6 +49,7 @@ type Handler = (request: unknown, context: MockContext, signal: AbortSignal) => 
 const SERVICES: Partial<Record<Method, Handler>> = {
   ...accountService,
   ...projectService,
+  ...exampleService,
   ...sessionService,
   ...agentService,
   ...remoteAgentService,

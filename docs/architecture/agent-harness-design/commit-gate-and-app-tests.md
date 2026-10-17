@@ -270,7 +270,7 @@ A diagnostic sets `valid: false`, and `--json` writes the partial JSON and exits
 fails without code changes.
 
 Deferred: the lints `connector_page_cursor_unread` and `rpc_error_sentinel`, and passing `--lint app` in the
-template's check, which the skills and `app-template/AGENTS.md` then name.
+template's check, which the skills and each example's `AGENTS.md` then name.
 
 ### The pinned Dex release
 
@@ -435,7 +435,8 @@ reuses the seeded build cache ([sandbox](sandbox.md#cold-start)).
 
 The system prompt, the template's `AGENTS.md` and the skills carry the rules; this document states the constraints.
 
-- `app-template/AGENTS.md` stays within 6 KiB (`scripts/check-app-template.sh`); it holds the load rule, the branch
+- Each example's composed `AGENTS.md` (`app-template/examples/<id>/AGENTS.md`) stays within 6 KiB, which
+  `make generate-app-template` refuses otherwise; it holds the load rule, the branch
   rule, the map from feature to skill section, the tests section (use the harness and the connector's mock package;
   `env.Dex` only for Studio operations; cover every requirement and every wired branch; never sleep) and the
   commands: `make check-fdg-v2` (Flow definitions including state loads), `make test-app RUN=<regexp>` and

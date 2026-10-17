@@ -173,9 +173,13 @@ digest:
 - a new recorded design has a new digest, so it is unbuilt until the next such push;
 - a card that carries the design forward keeps its digest, so a built design stays
   built;
-- a blocked push, a failed one and one while no design is recorded write nothing.
+- a blocked push, a failed one and one while no design is recorded write nothing;
+- a Project created from an example starts built: its Session's start Step records the
+  example's card with its design and writes both Attributes, the design's digest and the
+  setup commit, whose tree is the example's built source.
 
-No lock is added. Only `RouteTool` writes `ConfirmedRequirements`, and the conversation routes
+No lock is added. `RouteTool` writes `ConfirmedRequirements` during the conversation (the start
+Step writes an example's version 1 before any turn), and the conversation routes
 one call at a time: a card is recorded before or after a `commit_and_push`, never while it runs,
 so the result's commit reads a version nothing else writes meanwhile. A push that started
 before a revised card builds the earlier version; the next push builds the revision.

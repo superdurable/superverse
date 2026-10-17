@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "id": "summary-approval",
+  "title": "Summary approval",
+  "category": "Approvals",
+  "apps": [
+    "An AI model"
+  ],
+  "decider": "A person in Studio",
+  "description": "When someone pastes a text into the page, the configured AI model writes a short summary of it, and the summary waits for a person to approve it in Studio before it is saved. A truncated summary is saved without waiting, and a blocked, refused or failed answer is recorded with what went wrong instead of a summary.",
+  "extends": "text-summary",
+  "requirements": {
+    "title": "Summary approval",
+    "summary": "A person approves each generated summary in Studio before it is saved.",
+    "features": [
+      {
+        "id": "R1",
+        "text": "A Step AwaitSummaryApproval holds the generated summary and shows awaiting-approval until a person decides.",
+        "evidence": [
+          "internal/process/text_summary_flow.go"
+        ],
+        "untested_reason": "A person approves in Studio, which the API tests do not drive; TestTextSummaryGeneratedWaitsForApproval proves the generated summary reaches the waiting Step."
+      },
+      {
+        "id": "R2",
+        "text": "An Approve summary Action releases that Step, which then saves the summary.",
+        "evidence": [
+          "internal/process/text_summary_flow.go"
+        ],
+        "untested_reason": "The Approve summary Action is a Studio action, which the API tests do not drive."
+      }
+    ],
+    "connections": [],
+    "user_setup": [],
+    "acceptance": [
+      "The summary is saved only after Approve summary is chosen in a Studio run."
+    ]
+  },
+  "design": {
+    "summary": "The summary run waits after generation until a person approves it in Studio; then it is saved.",
+    "flows": [
+      {
+        "flow_type": "TextSummaryFlow",
+        "purpose": "Summarizes a text with a model and saves it once a person approves.",
+        "start_step": "PrepareSummary",
+        "steps": [
+          {
+            "step_type": "PrepareSummary",
+            "group": "Text intake",
+            "explanation": "Validate and keep the text before any paid model request.",
+            "next": [
+              {
+                "to": "GenerateSummary",
+                "when": "the text is valid"
+              },
+              {
+                "to": "complete",
+                "when": "the text is empty, too long or not UTF-8"
+              }
+            ]
+          },
+          {
+            "step_type": "GenerateSummary",
+            "group": "Summary",
+            "explanation": "Ask the configured model for a short factual summary.",
+            "next": [
+              {
+                "to": "AwaitSummaryApproval",
+                "when": "generated"
+              },
+              {
+                "to": "SaveSummaryResult",
+                "when": "truncated"
+              },
+              {
+                "to": "RecordSummaryFailure",
+                "when": "blocked, rejected, invalid or a defect"
+              },
+              {
+                "to": "RecordSummaryUncertainty",
+                "when": "the model response was lost",
+                "is_failure_route": true
+              }
+            ]
+          },
+          {
+            "step_type": "AwaitSummaryApproval",
+            "group": "Result",
+            "explanation": "Wait for a person to approve the generated summary before it is saved.",
+            "waits_for": {
+              "kind": "action",
+              "name": "ApproveSummary"
+            },
+            "next": [
+              {
+                "to": "SaveSummaryResult"
+              }
+            ],
+            "features": [
+              "R1",
+              "R2"
+            ]
+          },
+          {
+            "step_type": "SaveSummaryResult",
+            "group": "Result",
+            "explanation": "Save the summary, the model and the token usage.",
+            "next": [
+              {
+                "to": "complete"
+              }
+            ]
+          },
+          {
+            "step_type": "RecordSummaryFailure",
+            "group": "Result",
+            "explanation": "Record why the model returned no usable summary.",
+            "next": [
+              {
+                "to": "complete"
+              }
+            ]
+          },
+          {
+            "step_type": "RecordSummaryUncertainty",
+            "group": "Result",
+            "explanation": "Record a lost model response without sending the paid request again.",
+            "next": [
+              {
+                "to": "complete"
+              }
+            ]
+          }
+        ],
+        "channels": [
+          {
+            "name": "SummaryApprovals",
+            "payload": "the approval"
+          }
+        ],
+        "actions": [
+          {
+            "label": "Approve summary",
+            "rpc": "ApproveSummary",
+            "publishes": "SummaryApprovals",
+            "permission": "summary.approve"
+          }
+        ],
+        "attributes": [
+          {
+            "name": "SummaryStatus",
+            "value": "pending, awaiting-approval, approved, completed or failed"
+          },
+          {
+            "name": "SummaryText",
+            "value": "the saved summary"
+          }
+        ]
+      }
+    ]
+  }
+}

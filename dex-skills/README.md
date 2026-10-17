@@ -42,7 +42,8 @@ Mentioning a path in the prompt does not guarantee it is read.
 
 ## Why this is outside the application template
 
-[app-template/](../app-template/) becomes each user's application repository;
+An example of [app-template/](../app-template/examples/README.md), the default text summary or the one
+the person picks, becomes each user's application repository;
 these guides belong to the platform's Coding image. Keeping them here avoids
 copying a separate documentation snapshot into every application. The template's
 `AGENTS.md` points to the installed references by their `/opt/superverse/dex-skills` paths.

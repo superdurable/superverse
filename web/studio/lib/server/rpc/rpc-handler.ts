@@ -44,6 +44,7 @@ import {
  */
 const BROWSER_SERVICES = {
   ProjectService: true,
+  ExampleService: true,
   SessionService: true,
   AgentService: true,
   RemoteAgentService: true,

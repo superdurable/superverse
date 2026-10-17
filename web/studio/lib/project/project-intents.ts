@@ -21,10 +21,13 @@ export type ProjectExecutor = (typeof PROJECT_EXECUTOR)[keyof typeof PROJECT_EXE
 export const PROJECT_MESSAGE_DELIVERY = { UNSENT: "unsent", SENDING: "sending" } as const;
 
 /**
- * A template-created Project in its Teamspace with the first message (`prompt`), selected agent
- * and optional Superverse model, with stable retry identities.
- * The creation page always stores a model; null is a creation stored before the model was chosen there,
- * which the server starts on its default model.
+ * A Project in its Teamspace with the first message (`prompt`), selected agent and optional Superverse
+ * model, with stable retry identities, created from the template or from a built example of the server
+ * (`example`). A creation from an example has no first message: its Session starts with the example's
+ * brief and waits for the person's change, and what the person had typed (`draft`) waits in the opened
+ * Project's composer, never sent by the creation. The creation page always stores a model for the
+ * Superverse agent; null is a creation stored before the model was chosen there, which the server starts
+ * on its default model.
  */
 export type PendingProjectCreation = {
   teamSpaceId: string;
@@ -34,9 +37,17 @@ export type PendingProjectCreation = {
   model: string | null;
   idempotencyKey: string;
   messageIdempotencyKey: string;
+  example?: PendingExample;
+  draft?: string;
 };
 
-/** The local-agent first message remains browser-owned after CreateProject accepts the Project. */
+/** The example a creation starts from, as ListExamples names it. */
+type PendingExample = { exampleId: string };
+
+/**
+ * The local-agent first message remains browser-owned after CreateProject accepts the Project; an example
+ * opened for a local agent has none and only waits for the agent to connect.
+ */
 export type ProjectIntent = PendingProjectCreation & {
   projectId: string;
   delivery: (typeof PROJECT_MESSAGE_DELIVERY)[keyof typeof PROJECT_MESSAGE_DELIVERY];
@@ -59,6 +70,24 @@ function nonEmpty(value: unknown): value is string {
   return typeof value === "string" && value.trim() !== "";
 }
 
+function exampleOf(value: unknown): PendingExample | null | undefined {
+  if (value === undefined) return undefined;
+  if (isRecord(value) && nonEmpty(value.exampleId)) return { exampleId: value.exampleId };
+  return null;
+}
+
+/**
+ * The example and the draft of a stored creation, or null when they are corrupt: the prompt is a first
+ * message, or empty with an example, and only an example carries a draft.
+ */
+function startOf(value: UnknownRecord): Pick<PendingProjectCreation, "example" | "draft"> | null {
+  const example = exampleOf(value.example);
+  const draft = value.draft;
+  if (example === null || (draft !== undefined && (example === undefined || !nonEmpty(draft)))) return null;
+  if (!(nonEmpty(value.prompt) || (example !== undefined && value.prompt === ""))) return null;
+  return { ...(example ? { example } : {}), ...(typeof draft === "string" ? { draft } : {}) };
+}
+
 export function hasPendingProjectCreation(): boolean {
   return readStored("session", STORAGE_KEYS.projectCreation) !== null;
 }
@@ -73,12 +102,14 @@ export function readPendingProjectCreation(): PendingProjectCreation | null {
   if (!value) return null;
   const model = value.model ?? null;
   const executor = value.executor ?? PROJECT_EXECUTOR.SUPERVERSE;
+  const start = startOf(value);
   if (
     (executor === PROJECT_EXECUTOR.SUPERVERSE || executor === PROJECT_EXECUTOR.LOCAL) &&
     (model === null || nonEmpty(model)) &&
+    start !== null &&
     nonEmpty(value.teamSpaceId) &&
     nonEmpty(value.name) &&
-    nonEmpty(value.prompt) &&
+    typeof value.prompt === "string" &&
     nonEmpty(value.messageIdempotencyKey) &&
     nonEmpty(value.idempotencyKey)
   )
@@ -90,6 +121,7 @@ export function readPendingProjectCreation(): PendingProjectCreation | null {
       model,
       idempotencyKey: value.idempotencyKey,
       messageIdempotencyKey: value.messageIdempotencyKey,
+      ...start,
     };
   removeStored("session", STORAGE_KEYS.projectCreation);
   return null;
@@ -107,11 +139,13 @@ export function readProjectIntent(): ProjectIntent | null {
   const value = read(STORAGE_KEYS.projectIntent);
   if (!value) return null;
   const model = value.model ?? null;
+  const start = startOf(value);
   if (
     nonEmpty(value.projectId) &&
     nonEmpty(value.teamSpaceId) &&
     nonEmpty(value.name) &&
-    nonEmpty(value.prompt) &&
+    start !== null &&
+    typeof value.prompt === "string" &&
     nonEmpty(value.idempotencyKey) &&
     nonEmpty(value.messageIdempotencyKey) &&
     value.executor === PROJECT_EXECUTOR.LOCAL &&
@@ -128,6 +162,7 @@ export function readProjectIntent(): ProjectIntent | null {
       idempotencyKey: value.idempotencyKey,
       messageIdempotencyKey: value.messageIdempotencyKey,
       delivery: value.delivery,
+      ...start,
     };
   removeStored("session", STORAGE_KEYS.projectIntent);
   return null;

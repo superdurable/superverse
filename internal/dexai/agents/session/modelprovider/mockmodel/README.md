@@ -195,11 +195,14 @@ startup. The check refuses unknown fields, an input without a label, kind or rep
 input that is not a message, answers that do not follow the reply that asks for them (the
 `request_user_input` call with as many questions as answers), tools outside the Session tool catalog, tool input fields outside
 the tool's schema or missing a required one, an input that the tool's own strict decoder
-rejects, and a file tool that does not work on `app-template/`. The checker plays each `read`,
-`edit` and `write` of a script, in order, on a copy of the template's files: a `read` needs its
+rejects, and a file tool that does not work on the files the Project starts with. The checker
+plays each `read`, `edit` and `write` of a script, in order, on a copy of the composed files of the
+default example, or of the example the script names as its `workspace`: a `read` needs its
 file, an `edit` needs its `old_string` exactly once (or at least once with `replace_all`) and a
 different `new_string`, and a `write` adds or replaces a file that a later reply may use. A
-reply that expects a failure may fail on the copy.
+reply that expects a failure may fail on the copy. `example-change`, which
+`TestProjectFromExampleDexIntegration` runs on a Project created from the slack-thread-approval
+example, has that example as its workspace.
 
 ```yaml
 name: requirements-draft-changes  # equals the file name
@@ -207,6 +210,7 @@ title: "..."                    # what Studio lists
 description: "..."
 category: project_feature        # the group Studio lists it under; see Categories
 test_action: "..."               # what only its Dex test does between inputs; Studio does not offer it
+workspace: slack-thread-approval # the example the Project was created from; absent for the default
 arguments: {heading: Mock}      # {{heading}} placeholders and their defaults
 compaction_summary: "..."       # the summary a compaction request gets
 inputs:

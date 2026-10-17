@@ -107,6 +107,14 @@ export function ProjectCreationLocal({
     session?.agent?.steered.some((message) => message.messageId === intent.messageIdempotencyKey);
   useEffect(() => {
     if (!active || !remote) return;
+    // An example opens with no first message: once the local agent holds the Session, the Project opens.
+    if (!intent.prompt) {
+      if (sending.current) return;
+      sending.current = true;
+      clearProjectIntent(intent.projectId);
+      onDone(intent.projectId);
+      return;
+    }
     if (delivery === PROJECT_MESSAGE_DELIVERY.SENDING) {
       if (alreadyQueued && !sending.current) {
         sending.current = true;
@@ -175,7 +183,9 @@ export function ProjectCreationLocal({
           <p className="text-body text-ink-dim" role="status">
             {delivery === PROJECT_MESSAGE_DELIVERY.SENDING && !alreadyQueued
               ? "The first message may already be with your local agent. It will not be sent again automatically."
-              : "Your local agent is connected. Sending your first message…"}
+              : intent.prompt
+                ? "Your local agent is connected. Sending your first message…"
+                : "Your local agent is connected. Opening the example…"}
           </p>
           {sendError && <Banner>{sendError}</Banner>}
           {sendError && delivery === PROJECT_MESSAGE_DELIVERY.UNSENT && (

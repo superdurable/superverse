@@ -155,7 +155,8 @@ export function mockRequirementsDraft(store: MockStore, projectId: string): Agen
   const flows = draftedFlows(spec).flatMap(({ flowType, steps }) => {
     const written = steps.slice(0, Math.max(0, left)).map((step) => step.stepType);
     left -= steps.length;
-    return written.length > 0 ? [{ flowType, stepTypes: written }] : [];
+    // The mock's design has no failure routes, so every drafted Step is in its main story.
+    return written.length > 0 ? [{ flowType, stepTypes: written, failureHandlingStepTypes: [] }] : [];
   });
   return {
     callId: draft.callId,
@@ -237,6 +238,32 @@ function finishDesignBuild(agent: MockAgent, headCommit: string) {
   } else appendMessage(agent, mockMessage("ROLE_ASSISTANT", "No recorded design is waiting to be built."));
   agent.description.status = "STATUS_WAITING_FOR_MESSAGE";
   bumpWaitingRound(agent);
+}
+
+/**
+ * The start of a Session created from an example, as the server's start Step records it: a system notice
+ * that Studio shows as the agent's greeting, the example's card as version 1, recorded with no call, and the
+ * one Preview deployment of the setup commit, whose processes the Flow tab then draws.
+ */
+export function startFromMockExample(
+  store: MockStore,
+  projectId: string,
+  title: string,
+  spec: AgentRequirements__Output,
+) {
+  const agent = store.agents.get(projectId);
+  if (!agent) return;
+  appendMessage(
+    agent,
+    mockMessage(
+      "ROLE_SYSTEM",
+      `This project starts from the ${title} example. Its processes are built and drawn on the Flow tab, and Try it gets ready in a few minutes. Tell me what you want to change.`,
+    ),
+  );
+  agent.description.confirmedRequirements = { revision: 1, spec, confirmedAt: nowIso(), confirmedBy: null };
+  const session = store.sessions.get(projectId);
+  if (session) deployPushedCommit(store, session, agent);
+  syncDescriptionCounts(agent);
 }
 
 export function sendMessage(store: MockStore, projectId: string, content: string): boolean {

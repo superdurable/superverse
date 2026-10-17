@@ -6,62 +6,186 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-// Command app-template-archive packs app-template/ into the archive embedded by
-// internal/dexai/app/apptemplate and renders the matching Studio initial design. It runs
-// through `go generate ./internal/dexai/app/apptemplate`; the output is deterministic so
-// scripts/check-app-template.sh can detect drift.
+// Command app-template-archive composes app-template/ into the examples a
+// Project starts from: the shared base plus each folder of
+// app-template/examples/, and packs every composed tree into the archives that
+// internal/dexai/app/apptemplate embeds, with the catalog of the examples and
+// the Studio initial design of the default one. It runs through
+// `go generate ./internal/dexai/app/apptemplate`; the output is deterministic
+// so scripts/check-app-template.sh can detect drift.
+//
+// With -compose <id> -into <directory> it writes the composed tree of one
+// example into directory instead, for the template's own checks; files of the
+// directory that the tree does not hold are removed, except the ignored
+// dependencies and generated code, so a repeated check reuses them. With
+// -list -changed <file> it lists only the default example and the examples the
+// repository paths of file (one per line) reach, for the validation workflow.
 package main
 
 import (
-	"archive/tar"
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
-	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strings"
-	"time"
 
 	"github.com/superdurable/superversev2/internal/dexai/app/apptemplate"
 )
 
 func main() {
-	if err := run(context.Background()); err != nil {
+	compose := flag.String("compose", "", "write the composed tree of this example")
+	into := flag.String("into", "", "the directory -compose writes into")
+	list := flag.Bool("list", false, "print the example IDs, the default first")
+	changed := flag.String("changed", "", "with -list, a file of changed repository paths: print only the examples they reach")
+	flag.Parse()
+	var err error
+	switch {
+	case *list:
+		err = listExamples(context.Background(), *changed)
+	case *compose != "":
+		err = composeInto(context.Background(), *compose, *into)
+	default:
+		err = run(context.Background())
+	}
+	if err != nil {
 		fmt.Fprintln(os.Stderr, "app-template-archive:", err)
 		os.Exit(1)
 	}
 }
 
-func run(ctx context.Context) error {
+// repositoryRoot is the checkout this command runs in.
+func repositoryRoot(ctx context.Context) (string, error) {
 	top, err := exec.CommandContext(ctx, "git", "rev-parse", "--show-toplevel").Output()
 	if err != nil {
-		return fmt.Errorf("find repository root: %w", err)
+		return "", fmt.Errorf("find repository root: %w", err)
 	}
-	root := strings.TrimSpace(string(top))
-	templateDirectory := filepath.Join(root, "app-template")
-	archive, err := packTemplate(ctx, templateDirectory)
+	return strings.TrimSpace(string(top)), nil
+}
+
+func listExamples(ctx context.Context, changedFile string) error {
+	root, err := repositoryRoot(ctx)
 	if err != nil {
 		return err
 	}
-	// The revision comes from decoding the archive exactly as the server does.
-	template, err := apptemplate.Decode(archive)
+	examples, err := readTemplate(ctx, filepath.Join(root, "app-template"))
 	if err != nil {
 		return err
 	}
-	if err = os.WriteFile(filepath.Join(root, "internal", "dexai", "app", "apptemplate", "app-template.tar"), archive, 0o600); err != nil {
+	ids := make([]string, 0, len(examples))
+	for _, example := range examples {
+		ids = append(ids, example.manifest.ID)
+	}
+	if changedFile != "" {
+		changed, readErr := readChangedPaths(changedFile)
+		if readErr != nil {
+			return fmt.Errorf("read the changed paths: %w", readErr)
+		}
+		ids = changedExamples(examples, changed)
+	}
+	for _, id := range ids {
+		fmt.Println(id)
+	}
+	return nil
+}
+
+func composeInto(ctx context.Context, id, directory string) error {
+	if directory == "" {
+		return errors.New("-compose needs -into <directory>")
+	}
+	root, err := repositoryRoot(ctx)
+	if err != nil {
 		return err
 	}
-	// The template's own FDG script owns strict rendering and digests.
+	examples, err := readTemplate(ctx, filepath.Join(root, "app-template"))
+	if err != nil {
+		return err
+	}
+	for _, example := range examples {
+		if example.manifest.ID == id {
+			return materialize(example.files, directory)
+		}
+	}
+	return fmt.Errorf("app-template has no example %q", id)
+}
+
+// run composes every example, validates it and writes the embedded outputs.
+func run(ctx context.Context) error {
+	root, err := repositoryRoot(ctx)
+	if err != nil {
+		return err
+	}
+	examples, err := readTemplate(ctx, filepath.Join(root, "app-template"))
+	if err != nil {
+		return err
+	}
+	outputs := filepath.Join(root, "internal", "dexai", "app", "apptemplate")
+	entries := make([]apptemplate.CatalogEntry, 0, len(examples))
+	written := map[string]bool{}
+	var defaultTree []templateFile
+	for _, example := range examples {
+		archive, archiveErr := pack(example.files)
+		if archiveErr != nil {
+			return archiveErr
+		}
+		// The tree identity comes from decoding the archive exactly as the server does.
+		if _, archiveErr = apptemplate.Decode(archive); archiveErr != nil {
+			return fmt.Errorf("example %s: %w", example.manifest.ID, archiveErr)
+		}
+		entry, entryErr := catalogEntry(example)
+		if entryErr != nil {
+			return fmt.Errorf("example %s: %w", example.manifest.ID, entryErr)
+		}
+		entries = append(entries, entry)
+		target := filepath.Join(outputs, filepath.FromSlash(apptemplate.ArchiveFile(example.manifest.ID)))
+		if example.manifest.ID == apptemplate.DefaultExampleID {
+			target, defaultTree = filepath.Join(outputs, "app-template.tar"), example.files
+		}
+		if err = os.MkdirAll(filepath.Dir(target), 0o750); err != nil {
+			return err
+		}
+		if err = os.WriteFile(target, archive, 0o600); err != nil {
+			return err
+		}
+		written[target] = true
+	}
+	if defaultTree == nil {
+		return fmt.Errorf("app-template has no default example %s", apptemplate.DefaultExampleID)
+	}
+	if err = writeCatalog(filepath.Join(outputs, filepath.FromSlash(apptemplate.CatalogFile)), entries); err != nil {
+		return err
+	}
+	written[filepath.Join(outputs, filepath.FromSlash(apptemplate.CatalogFile))] = true
+	if err = removeStale(filepath.Join(outputs, "examples"), written); err != nil {
+		return err
+	}
+	return renderDesign(ctx, root, defaultTree)
+}
+
+// renderDesign renders the Flow definitions of the default example with its
+// own FDG script, in a composed copy, as Studio's initial design.
+func renderDesign(ctx context.Context, root string, files []templateFile) error {
+	directory, err := os.MkdirTemp("", "app-template-default-")
+	if err != nil {
+		return err
+	}
+	defer func() { _ = os.RemoveAll(directory) }()
+	if err = materialize(files, directory); err != nil {
+		return err
+	}
+	template, err := apptemplate.Decode(mustPack(files))
+	if err != nil {
+		return err
+	}
 	render := exec.CommandContext(ctx, "python3", "scripts/render-flow-definitions.py", "--output", "/dev/stdout")
-	render.Dir, render.Stderr = templateDirectory, os.Stderr
+	render.Dir, render.Stderr = directory, os.Stderr
 	definitions, err := render.Output()
 	if err != nil {
-		return fmt.Errorf("render template Flow definitions: %w", err)
+		return fmt.Errorf("render the default example's Flow definitions: %w", err)
 	}
 	var design bytes.Buffer
 	encoder := json.NewEncoder(&design)
@@ -76,66 +200,31 @@ func run(ctx context.Context) error {
 	return os.WriteFile(filepath.Join(root, "web", "studio", "lib", "generated", "template-design", "app-template.json"), design.Bytes(), 0o600)
 }
 
-// packTemplate archives the committable template files in path order.
-func packTemplate(ctx context.Context, templateDirectory string) ([]byte, error) {
-	// Committable membership: tracked files plus new files that .gitignore keeps.
-	list := exec.CommandContext(ctx, "git", "ls-files", "-z", "--cached", "--others", "--exclude-standard")
-	list.Dir = templateDirectory
-	listed, err := list.Output()
-	if err != nil {
-		return nil, fmt.Errorf("list template files: %w", err)
+// writeCatalog writes the catalog with stable formatting.
+func writeCatalog(target string, entries []apptemplate.CatalogEntry) error {
+	var encoded bytes.Buffer
+	encoder := json.NewEncoder(&encoded)
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(entries); err != nil {
+		return err
 	}
-	paths := []string{}
-	for _, name := range strings.Split(string(listed), "\x00") {
-		if name != "" {
-			paths = append(paths, name)
-		}
-	}
-	sort.Strings(paths)
-	files, err := os.OpenRoot(templateDirectory)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = files.Close() }()
-	var archive bytes.Buffer
-	writer := tar.NewWriter(&archive)
-	for _, name := range paths {
-		if err = packFile(writer, files, name); err != nil {
-			return nil, err
-		}
-	}
-	if err = writer.Close(); err != nil {
-		return nil, err
-	}
-	return archive.Bytes(), nil
+	return os.WriteFile(target, encoded.Bytes(), 0o600)
 }
 
-// packFile adds one template file to the archive. A listed file deleted from
-// the working tree and not yet committed is skipped.
-func packFile(writer *tar.Writer, files *os.Root, name string) error {
-	info, err := files.Lstat(name)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil
-	}
+// removeStale removes generated files of examples that no longer exist.
+func removeStale(directory string, written map[string]bool) error {
+	found, err := os.ReadDir(directory)
 	if err != nil {
 		return err
 	}
-	if !info.Mode().IsRegular() {
-		return fmt.Errorf("template file %s is not a regular file", name)
+	for _, entry := range found {
+		path := filepath.Join(directory, entry.Name())
+		if !written[path] {
+			if err = os.Remove(path); err != nil {
+				return err
+			}
+		}
 	}
-	contents, err := files.ReadFile(name)
-	if err != nil {
-		return err
-	}
-	// The archive keeps only the executable bit, which Decode turns into the Git mode.
-	mode := int64(0o644)
-	if info.Mode().Perm()&0o111 != 0 {
-		mode = 0o755
-	}
-	header := &tar.Header{Typeflag: tar.TypeReg, Name: name, Mode: mode, Size: int64(len(contents)), ModTime: time.Unix(0, 0), Format: tar.FormatPAX}
-	if err = writer.WriteHeader(header); err != nil {
-		return err
-	}
-	_, err = writer.Write(contents)
-	return err
+	return nil
 }

@@ -82,15 +82,13 @@ def component_inputs(component):
 
 
 def template_cache_inputs():
-    """The application template's files that its Go build cache and npm cache seeds are built from.
+    """The application template's files that its module prewarm and its Go build cache and npm cache seeds are built from.
 
-    The generated API packages are ignored by Git and generated again in the build, so a checkout that ran
-    the template's checks has the same inputs as a clean one.
+    The seeds compile the default example's composed tree, which make generate-app-template packs into the embedded
+    archive, so the archive stands for every file of it; the base's module manifests prewarm the module graphs.
     """
-    sources = files_under("app-template/cmd") | files_under("app-template/internal", tests=True)
-    return ({name for name in sources if not name.startswith("app-template/internal/api/generated/")}
-            | {"app-template/go.mod", "app-template/go.sum", "app-template/tools/openapi/go.mod", "app-template/tools/openapi/go.sum",
-               "app-template/openapi/openapi.yaml", "app-template/web/package.json", "app-template/web/package-lock.json"})
+    return {"internal/dexai/app/apptemplate/app-template.tar", "app-template/go.mod", "app-template/go.sum",
+            "app-template/tools/openapi/go.mod", "app-template/tools/openapi/go.sum"}
 
 
 def fingerprint(names):

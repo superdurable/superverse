@@ -62,8 +62,8 @@ See [studio.md](studio.md). In short:
   how it is accepted and, nested, the Go names and what it changes. Nothing waits for a
   confirmation, and a person changes the card only with a chat message. The chat shows each
   recorded version once, as one line where the agent recorded it, which opens to the card.
-- While the agent writes the card, the Flow tab shows "Drafting" with the draft's Step names as
-  a row of dashed boxes and the summary as it arrives, with no drawing.
+- While the agent writes the card, the Flow tab shows "Drafting" with the draft's main-story
+  Step names as a row of dashed boxes and the summary as it arrives, with no drawing.
 - From the card until the build is complete, the Flow tab draws the designed Flows in place
   of the ones they change. Steps of a process the project already has are marked new or
   changed (a first design carries no marks), a Step whose code is not written yet is dashed,
@@ -109,7 +109,7 @@ real-model run checks it.
 - `docs/flows/sv2-session-agent-flow.json`, regenerated.
 - The Session prompt (`internal/dexai/agents/session/conversation/prompts/v1/session.md`), the
   in-repo `dex-skills/dex-app-builder` (`SKILL.md`, `references/product-discovery.md`
-  "Confirmation artifact"). `app-template/AGENTS.md` stays as it is: it is at the size the
+  "Confirmation artifact"). The examples' `AGENTS.md` (`app-template/examples/<id>/`) stay as they are: each is at the size the
   agent's repository context inlines, and the skill carries the rules. The design guidance quotes the rules of
   `dex-skills/dex-app-builder/references/fdg-authoring.md` rather than restating them: a
   group of two or more main-story Steps is one run or one choice, and `is_failure_route`

@@ -16,6 +16,7 @@ import { AgentStatus, hasRunningTasks, hasRunningWork } from "@/lib/session/agen
 import { connectorContributionView } from "@/lib/session/agent-view";
 import { useMockScenarios } from "@/lib/session/mock-scenarios";
 import { useComposerProposal } from "@/lib/session/ComposerDraftProvider";
+import { useProjectResource } from "@/lib/project/ProjectResourceProvider";
 import { useTemplateCommit } from "@/lib/project/stage/ProjectStageProvider";
 import { useProjectSession } from "@/lib/session/SessionProvider";
 import { isWorkspacePaused, isWorkspacePreparing, isWorkspaceRetainedDirty } from "@/lib/session/session-status";
@@ -23,6 +24,7 @@ import { Composer } from "@/components/session/composer/Composer";
 import { MockComposer } from "./mock/MockComposer";
 import { PendingActionDock } from "./PendingActionDock";
 import {
+  EXAMPLE_GREETING_SEQUENCE,
   composerDisabledReason,
   composerPlaceholder,
   lifecycleMessage,
@@ -66,7 +68,11 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
   const sendMessage = state.send;
   const send = useChatSend({ send: sendMessage, about, clearAbout, markSent });
   const template = useTemplateCommit();
-  const shownMessages = useMemo(() => shownChatMessages(state.messages, template), [state.messages, template]);
+  const startedFromExample = Boolean(useProjectResource()?.snapshot?.example);
+  const shownMessages = useMemo(
+    () => shownChatMessages(state.messages, template, startedFromExample),
+    [state.messages, template, startedFromExample],
+  );
   const scroller = useRef<HTMLDivElement | null>(null);
   const followsTail = useRef(true);
 
@@ -263,6 +269,7 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
               notificationLinks={linksOfNotification}
               confirmedRequirements={description?.confirmedRequirements ?? null}
               waitingRequirementsCallId={pendingInput?.kind === "requirements" ? pendingInput.callId : null}
+              requirementsStartSequence={startedFromExample ? EXAMPLE_GREETING_SEQUENCE : null}
             />
             {live && liveChange.offered && <SeeOnPreview live={live} onFollow={liveChange.dismiss} />}
             {description?.todoList && <TodoProgress items={description.todoList.items} />}

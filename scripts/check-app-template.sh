@@ -14,23 +14,23 @@ set -eu
 
 repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 
-# The Agent's repository context inlines only the first 6 KiB of AGENTS.md
-# (maximumAgentInstructions in repository_context.go of the workspace Git package).
-if [ "$(wc -c < "$repository_root/app-template/AGENTS.md")" -gt 6144 ]; then
-  echo "app-template/AGENTS.md exceeds the 6 KiB the Agent's repository context inlines" >&2
-  exit 1
-fi
+# The generator composes every example of app-template/ and refuses one whose
+# AGENTS.md exceeds the 6 KiB the Agent's repository context inlines, whose
+# card the Session's card code refuses or whose trace names a missing test.
 scratch_directory=$(mktemp -d "${TMPDIR:-/tmp}/superverse-app-template.XXXXXX")
 trap 'rm -r "$scratch_directory"' EXIT HUP INT TERM
 
-archive="$repository_root/internal/dexai/app/apptemplate/app-template.tar"
+outputs="$repository_root/internal/dexai/app/apptemplate"
 design="$repository_root/web/studio/lib/generated/template-design/app-template.json"
-cp "$archive" "$scratch_directory/app-template.tar"
-cp "$design" "$scratch_directory/app-template.json"
+mkdir "$scratch_directory/before"
+cp "$outputs/app-template.tar" "$design" "$scratch_directory/before/"
+cp -R "$outputs/examples" "$scratch_directory/before/examples"
 
 GOWORK=off go generate "$repository_root/internal/dexai/app/apptemplate"
 
-if ! cmp -s "$scratch_directory/app-template.tar" "$archive" || ! cmp -s "$scratch_directory/app-template.json" "$design"; then
-  echo "app-template/ changed: run make generate-app-template and commit the archive and design" >&2
+if ! cmp -s "$scratch_directory/before/app-template.tar" "$outputs/app-template.tar" ||
+  ! cmp -s "$scratch_directory/before/app-template.json" "$design" ||
+  ! diff -r "$scratch_directory/before/examples" "$outputs/examples" >/dev/null; then
+  echo "app-template/ changed: run make generate-app-template and commit the archives, the catalog and the design" >&2
   exit 1
 fi

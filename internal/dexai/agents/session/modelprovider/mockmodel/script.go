@@ -53,6 +53,9 @@ type script struct {
 	Inputs    []input           `json:"inputs"`
 	// CompactionSummary is the summary a compaction request is answered with.
 	CompactionSummary string `json:"compaction_summary"`
+	// Workspace is the example the scenario's Project was created from, whose
+	// composed files its file tools play on; empty for the default example.
+	Workspace string `json:"workspace"`
 	// Subagents are the scripts of the subagents the scenario's start_agent
 	// calls start, by name; a call's prompt names one with
 	// [[subagent:<scenario>/<name>]], and the subagent's model calls get its
@@ -382,7 +385,10 @@ func (s *script) validate() error {
 	// an edit may build on an earlier edit or write of the same script; a
 	// connector_develop subagent's play on the files it writes into its
 	// library worktree.
-	files := templateFiles()
+	files, err := templateFiles(s.Workspace)
+	if err != nil {
+		return err
+	}
 	remoteIDs := map[conversation.CallID]bool{}
 	if s.isSubagent() && s.subagentKind.ContributesConnector() {
 		files = rootFiles{files: map[string]string{}}

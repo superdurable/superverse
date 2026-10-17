@@ -28,9 +28,10 @@ import { useStartingModel } from "@/components/session/start/use-starting-model"
 import { Banner } from "@/components/ui/Banner";
 import { cx } from "@/components/ui/cx";
 import { MoreDetails } from "@/components/ui/reveal/MoreDetails";
+import { ExampleGrid } from "./templates/ExampleGrid";
 import { projectNameFrom } from "./templates/project-name";
-import type { ProcessTemplate } from "./templates/template-catalog";
-import { TemplateGallery } from "./templates/TemplateGallery";
+import type { BuiltExample, ProcessTemplate } from "./templates/template-catalog";
+import { useExamples } from "./templates/use-examples";
 
 /** The name of a Project whose description gives none, such as one of punctuation only. */
 const FALLBACK_NAME = "New process";
@@ -43,11 +44,15 @@ function noPendingInput(): Promise<never> {
 const READING_MODELS = "Reading the model options…";
 
 /**
- * The start page: the description of the process, which becomes the first message of the Project's
- * Session, with examples that fill it in. The Project's name follows from a picked example's title or
- * from the description. Agent is chosen before the model; only the Superverse agent has a model
- * choice. Advanced holds the editable name. Nothing is sent here: the creation intent carries
- * the first message and agent choice to the next page.
+ * The start page: the description of the process, which Build sends as the first message of the Project's
+ * Session, and under it the grid of starting points, which ranks the server's built examples by the
+ * description while the person types. Open example creates the Project from a built example as it is, in
+ * one click, for either agent: the request carries the example and no message, and the description waits
+ * in the opened Project's composer as an unsent draft. A placeholder fills the composer. The Project's name
+ * follows from the description, a picked placeholder's title or the opened example's title. Agent is chosen
+ * before the model; only the Superverse agent has a model choice. Advanced holds the editable name. Nothing
+ * is sent here: the creation intent carries the first message or the example, and the agent choice, to the
+ * next page.
  */
 export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
   const router = useRouter();
@@ -64,10 +69,11 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
   const [formError, setFormError] = useState<string | null>(null);
   const [transitioning, setTransitioning] = useState(false);
   const composer = useRef<HTMLTextAreaElement | null>(null);
-  // A picked example names the Project while the description still opens as the example does.
-  const exampleOf = (text: string) =>
+  const examples = useExamples();
+  // A picked placeholder names the Project while the description still opens as the placeholder does.
+  const placeholderOf = (text: string) =>
     picked && projectNameFrom(text) === projectNameFrom(picked.description) ? picked : null;
-  const derivedName = (text: string) => exampleOf(text)?.title ?? (projectNameFrom(text) || FALLBACK_NAME);
+  const derivedName = (text: string) => placeholderOf(text)?.title ?? (projectNameFrom(text) || FALLBACK_NAME);
   const name = editedName ?? (description.trim() ? derivedName(description) : "");
 
   useEffect(() => {
@@ -80,9 +86,12 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
     composer.current?.focus();
   }
 
-  // Rejects when the creation cannot start, so that the composer keeps what the person wrote.
-  async function beginCreation(prompt: string) {
-    const projectName = editedName === null ? derivedName(prompt) : editedName.trim();
+  /**
+   * Stores the creation and moves to the creation page; throws when it cannot start, so that the composer
+   * keeps what the person wrote. A creation from an example carries no message: `draft` waits in the
+   * opened Project's composer.
+   */
+  function storeCreation(projectName: string, prompt: string, from?: { example: BuiltExample; draft: string }) {
     if (executor === PROJECT_EXECUTOR.SUPERVERSE && model === null) throw new Error(READING_MODELS);
     if (!projectName) {
       setFormError("Give the project a name first, under Advanced");
@@ -97,6 +106,8 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
         model: executor === PROJECT_EXECUTOR.SUPERVERSE ? model : null,
         idempotencyKey: newRequestId(),
         messageIdempotencyKey: newRequestId(),
+        ...(from ? { example: { exampleId: from.example.id } } : {}),
+        ...(from?.draft ? { draft: from.draft } : {}),
       });
     } catch (reason) {
       setFormError(reason instanceof Error ? reason.message : "Could not keep the project request in this browser");
@@ -104,6 +115,18 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
     }
     setTransitioning(true);
     router.push(studioRoutes.projectCreation);
+  }
+
+  async function beginCreation(prompt: string) {
+    storeCreation(editedName === null ? derivedName(prompt) : editedName.trim(), prompt);
+  }
+
+  function openExample(example: BuiltExample) {
+    try {
+      storeCreation(editedName?.trim() || example.title, "", { example, draft: description.trim() });
+    } catch {
+      // The form shows why; the description stays.
+    }
   }
 
   return (
@@ -203,13 +226,15 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
             </label>
           </div>
         </MoreDetails>
-        {(executor === PROJECT_EXECUTOR.LOCAL || model !== "mock") && (
-          <TemplateGallery
-            picked={exampleOf(description)?.id ?? null}
-            disabled={transitioning || (executor === PROJECT_EXECUTOR.SUPERVERSE && model === null)}
-            onPick={pick}
-          />
-        )}
+        <ExampleGrid
+          description={description}
+          examples={examples}
+          showPlaceholders={executor === PROJECT_EXECUTOR.LOCAL || model !== "mock"}
+          picked={placeholderOf(description)?.id ?? null}
+          disabled={transitioning || (executor === PROJECT_EXECUTOR.SUPERVERSE && model === null)}
+          onOpen={openExample}
+          onPick={pick}
+        />
       </div>
     </main>
   );

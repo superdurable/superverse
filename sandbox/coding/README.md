@@ -27,12 +27,18 @@ download through the public proxy fallback. The read-only proxy is
 
 The `app-build-cache` stage seeds the template's build caches. It starts from
 the image itself (`coding-tools`), so it has the final toolchain, environment
-and user, copies the template's Go sources, OpenAPI document and npm manifests
-to `/workspace`, as a new project has them, and runs the commands of the
+and user, copies the default example's Go sources, OpenAPI document and npm
+manifests to `/workspace`, as a project created from a description has them,
+and runs the commands of the
 template's gate: the Go half of `make generate` (ogen), both `go vet` runs,
 `go build ./...`, the API test compile and `npm --prefix web ci`. Go keys a
 build cache entry by the compiler, the package directory and its sources, and
 the module cache path is the runtime one, so the entries match a new project's.
+The `template-source` stage unpacks that composed tree from the server's
+embedded `internal/dexai/app/apptemplate/app-template.tar`, so the seed compiles
+exactly what setup commits; the other examples of `app-template/examples/` are
+not seeded, so a project created from one compiles its own packages and
+downloads the modules the proxy lacks at its first `make bootstrap`.
 The final `coding-base` stage copies the Go build cache to
 `/opt/superverse/go-build-cache-seed` (374 MB) and the npm cache to
 `/opt/superverse/npm-cache-seed` (31 MB), root-owned and read-only, and names

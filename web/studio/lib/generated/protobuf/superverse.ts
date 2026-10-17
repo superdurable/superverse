@@ -104,6 +104,9 @@ import type { DeploymentSnapshot as _superverse_v2_DeploymentSnapshot, Deploymen
 import type { DeriveLiveConfigurationRequest as _superverse_v2_DeriveLiveConfigurationRequest, DeriveLiveConfigurationRequest__Output as _superverse_v2_DeriveLiveConfigurationRequest__Output } from './superverse/v2/DeriveLiveConfigurationRequest';
 import type { DeriveLiveConfigurationResponse as _superverse_v2_DeriveLiveConfigurationResponse, DeriveLiveConfigurationResponse__Output as _superverse_v2_DeriveLiveConfigurationResponse__Output } from './superverse/v2/DeriveLiveConfigurationResponse';
 import type { EnvironmentEvent as _superverse_v2_EnvironmentEvent, EnvironmentEvent__Output as _superverse_v2_EnvironmentEvent__Output } from './superverse/v2/EnvironmentEvent';
+import type { Example as _superverse_v2_Example, Example__Output as _superverse_v2_Example__Output } from './superverse/v2/Example';
+import type { ExampleReference as _superverse_v2_ExampleReference, ExampleReference__Output as _superverse_v2_ExampleReference__Output } from './superverse/v2/ExampleReference';
+import type { ExampleServiceClient as _superverse_v2_ExampleServiceClient, ExampleServiceDefinition as _superverse_v2_ExampleServiceDefinition } from './superverse/v2/ExampleService';
 import type { Failure as _superverse_v2_Failure, Failure__Output as _superverse_v2_Failure__Output } from './superverse/v2/Failure';
 import type { FlowApiContext as _superverse_v2_FlowApiContext, FlowApiContext__Output as _superverse_v2_FlowApiContext__Output } from './superverse/v2/FlowApiContext';
 import type { FlowApiDocument as _superverse_v2_FlowApiDocument, FlowApiDocument__Output as _superverse_v2_FlowApiDocument__Output } from './superverse/v2/FlowApiDocument';
@@ -171,6 +174,8 @@ import type { ListDeploymentsRequest as _superverse_v2_ListDeploymentsRequest, L
 import type { ListDeploymentsResponse as _superverse_v2_ListDeploymentsResponse, ListDeploymentsResponse__Output as _superverse_v2_ListDeploymentsResponse__Output } from './superverse/v2/ListDeploymentsResponse';
 import type { ListEnvironmentEventsRequest as _superverse_v2_ListEnvironmentEventsRequest, ListEnvironmentEventsRequest__Output as _superverse_v2_ListEnvironmentEventsRequest__Output } from './superverse/v2/ListEnvironmentEventsRequest';
 import type { ListEnvironmentEventsResponse as _superverse_v2_ListEnvironmentEventsResponse, ListEnvironmentEventsResponse__Output as _superverse_v2_ListEnvironmentEventsResponse__Output } from './superverse/v2/ListEnvironmentEventsResponse';
+import type { ListExamplesRequest as _superverse_v2_ListExamplesRequest, ListExamplesRequest__Output as _superverse_v2_ListExamplesRequest__Output } from './superverse/v2/ListExamplesRequest';
+import type { ListExamplesResponse as _superverse_v2_ListExamplesResponse, ListExamplesResponse__Output as _superverse_v2_ListExamplesResponse__Output } from './superverse/v2/ListExamplesResponse';
 import type { ListMockScenariosRequest as _superverse_v2_ListMockScenariosRequest, ListMockScenariosRequest__Output as _superverse_v2_ListMockScenariosRequest__Output } from './superverse/v2/ListMockScenariosRequest';
 import type { ListMockScenariosResponse as _superverse_v2_ListMockScenariosResponse, ListMockScenariosResponse__Output as _superverse_v2_ListMockScenariosResponse__Output } from './superverse/v2/ListMockScenariosResponse';
 import type { ListProjectMembersRequest as _superverse_v2_ListProjectMembersRequest, ListProjectMembersRequest__Output as _superverse_v2_ListProjectMembersRequest__Output } from './superverse/v2/ListProjectMembersRequest';
@@ -215,6 +220,7 @@ import type { PreviewValidation as _superverse_v2_PreviewValidation, PreviewVali
 import type { ProjectConfigurationSnapshot as _superverse_v2_ProjectConfigurationSnapshot, ProjectConfigurationSnapshot__Output as _superverse_v2_ProjectConfigurationSnapshot__Output } from './superverse/v2/ProjectConfigurationSnapshot';
 import type { ProjectConfigurationTarget as _superverse_v2_ProjectConfigurationTarget, ProjectConfigurationTarget__Output as _superverse_v2_ProjectConfigurationTarget__Output } from './superverse/v2/ProjectConfigurationTarget';
 import type { ProjectConfigurationValidation as _superverse_v2_ProjectConfigurationValidation, ProjectConfigurationValidation__Output as _superverse_v2_ProjectConfigurationValidation__Output } from './superverse/v2/ProjectConfigurationValidation';
+import type { ProjectExample as _superverse_v2_ProjectExample, ProjectExample__Output as _superverse_v2_ProjectExample__Output } from './superverse/v2/ProjectExample';
 import type { ProjectLive as _superverse_v2_ProjectLive, ProjectLive__Output as _superverse_v2_ProjectLive__Output } from './superverse/v2/ProjectLive';
 import type { ProjectMemberServiceClient as _superverse_v2_ProjectMemberServiceClient, ProjectMemberServiceDefinition as _superverse_v2_ProjectMemberServiceDefinition } from './superverse/v2/ProjectMemberService';
 import type { ProjectMemberSnapshot as _superverse_v2_ProjectMemberSnapshot, ProjectMemberSnapshot__Output as _superverse_v2_ProjectMemberSnapshot__Output } from './superverse/v2/ProjectMemberSnapshot';
@@ -455,6 +461,10 @@ export interface ProtoGrpcType {
       DeriveLiveConfigurationRequest: MessageTypeDefinition<_superverse_v2_DeriveLiveConfigurationRequest, _superverse_v2_DeriveLiveConfigurationRequest__Output>
       DeriveLiveConfigurationResponse: MessageTypeDefinition<_superverse_v2_DeriveLiveConfigurationResponse, _superverse_v2_DeriveLiveConfigurationResponse__Output>
       EnvironmentEvent: MessageTypeDefinition<_superverse_v2_EnvironmentEvent, _superverse_v2_EnvironmentEvent__Output>
+      Example: MessageTypeDefinition<_superverse_v2_Example, _superverse_v2_Example__Output>
+      ExampleCategory: EnumTypeDefinition
+      ExampleReference: MessageTypeDefinition<_superverse_v2_ExampleReference, _superverse_v2_ExampleReference__Output>
+      ExampleService: SubtypeConstructor<typeof grpc.Client, _superverse_v2_ExampleServiceClient> & { service: _superverse_v2_ExampleServiceDefinition }
       Failure: MessageTypeDefinition<_superverse_v2_Failure, _superverse_v2_Failure__Output>
       FailureOwner: EnumTypeDefinition
       FailureRemedy: EnumTypeDefinition
@@ -524,6 +534,8 @@ export interface ProtoGrpcType {
       ListDeploymentsResponse: MessageTypeDefinition<_superverse_v2_ListDeploymentsResponse, _superverse_v2_ListDeploymentsResponse__Output>
       ListEnvironmentEventsRequest: MessageTypeDefinition<_superverse_v2_ListEnvironmentEventsRequest, _superverse_v2_ListEnvironmentEventsRequest__Output>
       ListEnvironmentEventsResponse: MessageTypeDefinition<_superverse_v2_ListEnvironmentEventsResponse, _superverse_v2_ListEnvironmentEventsResponse__Output>
+      ListExamplesRequest: MessageTypeDefinition<_superverse_v2_ListExamplesRequest, _superverse_v2_ListExamplesRequest__Output>
+      ListExamplesResponse: MessageTypeDefinition<_superverse_v2_ListExamplesResponse, _superverse_v2_ListExamplesResponse__Output>
       ListMockScenariosRequest: MessageTypeDefinition<_superverse_v2_ListMockScenariosRequest, _superverse_v2_ListMockScenariosRequest__Output>
       ListMockScenariosResponse: MessageTypeDefinition<_superverse_v2_ListMockScenariosResponse, _superverse_v2_ListMockScenariosResponse__Output>
       ListProjectMembersRequest: MessageTypeDefinition<_superverse_v2_ListProjectMembersRequest, _superverse_v2_ListProjectMembersRequest__Output>
@@ -571,6 +583,7 @@ export interface ProtoGrpcType {
       ProjectConfigurationSnapshot: MessageTypeDefinition<_superverse_v2_ProjectConfigurationSnapshot, _superverse_v2_ProjectConfigurationSnapshot__Output>
       ProjectConfigurationTarget: MessageTypeDefinition<_superverse_v2_ProjectConfigurationTarget, _superverse_v2_ProjectConfigurationTarget__Output>
       ProjectConfigurationValidation: MessageTypeDefinition<_superverse_v2_ProjectConfigurationValidation, _superverse_v2_ProjectConfigurationValidation__Output>
+      ProjectExample: MessageTypeDefinition<_superverse_v2_ProjectExample, _superverse_v2_ProjectExample__Output>
       ProjectLive: MessageTypeDefinition<_superverse_v2_ProjectLive, _superverse_v2_ProjectLive__Output>
       ProjectMemberService: SubtypeConstructor<typeof grpc.Client, _superverse_v2_ProjectMemberServiceClient> & { service: _superverse_v2_ProjectMemberServiceDefinition }
       ProjectMemberSnapshot: MessageTypeDefinition<_superverse_v2_ProjectMemberSnapshot, _superverse_v2_ProjectMemberSnapshot__Output>

@@ -27,7 +27,7 @@ is logged the same way and ends that Watch with the same Internal status.
 
 <!-- BEGIN GENERATED SERVICE TABLE (make generate-proto) -->
 
-16 services, 102 RPCs. A field is a string unless a type is given. Every request
+17 services, 103 RPCs. A field is a string unless a type is given. Every request
 except RegisterAccount and Login also carries `CallerContext caller 100`, which the table omits.
 
 | Service | RPCs | Reached through |
@@ -37,6 +37,7 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 | TeamSpaceMemberService | 4 | `/api/rpc/<Method>` |
 | TeamSpaceConnectionService | 10 | `/api/rpc/<Method>` |
 | ProjectService | 10 | `/api/rpc/<Method>` |
+| ExampleService | 1 | `/api/rpc/<Method>` |
 | ProjectMemberService | 4 | `/api/rpc/<Method>` |
 | SessionService | 4 | `/api/rpc/<Method>` |
 | RemoteAgentService | 4 | `/api/rpc/<Method>` |
@@ -107,6 +108,12 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 | RemoveLive | `project_id 1, request_id 2, deployment_id 3, uint64 expected_live_revision 4` | `ProjectSnapshot project 1` |
 | ListEnvironmentEvents | `project_id 1, ProjectScope scope 2, uint32 page_size 3, page_token 4` | `repeated EnvironmentEvent events 1, next_page_token 2` |
 | ListRecentTriggerEvents | `project_id 1, ProjectScope scope 2` | `repeated RecentTriggerEvent events 1, Timestamp buffer_started_at 2, buffer_instance_id 3` |
+
+**ExampleService**
+
+| RPC | Request | Response |
+| --- | --- | --- |
+| ListExamples | `{}` | `repeated Example examples 1` |
 
 **ProjectMemberService**
 
@@ -614,9 +621,10 @@ response, status codes, limits and transport.
 
 Project and Setup IDs and the template revision are server-owned. CreateProject
 requires the request ID, name and `ManagedRepositorySource managed_repository = 6`.
-Setup creates a new private managed repository from the embedded template. A missing
+Setup creates a new private managed repository from the embedded template: its default
+example, or the example that `managed_repository.example` names ([Examples](#examples)). A missing
 managed_repository is InvalidArgument before any Flow start or provider effect. There
-is no repository source choice or repository import API. CreateProject may also carry the
+is no repository import API. CreateProject may also carry the
 Session's first message: `initial_message`, its `message_id` and the `model` the Session starts
 on. The message and its ID are validated as SendMessage validates them, and a `message_id`
 without a message, or a message without one, is InvalidArgument; the model is admitted as
@@ -624,8 +632,9 @@ UpdateSessionModel admits it ([the table below](#session-model-update)), with th
 before any Flow start. An unspecified model starts the Session on the server's default. The CREATE
 request fingerprint keeps its canonical encoding independently of the durable binding shape; it
 includes the message, its ID and the model, so a retry with the same `request_id` and any of them
-changed is ALREADY_EXISTS like a changed name; it excludes provider results, credentials and the
-server-selected template revision.
+changed is ALREADY_EXISTS like a changed name; it also includes a picked example's ID, so a retry
+that changes or drops the example is ALREADY_EXISTS. It excludes provider results, credentials and
+the server-selected template revision.
 CreateProject returns only project_id. GetProject and WatchProject return the current
 state, repository and accepted template revision. There is no GetApplicationInfo or
 browser configuration-discovery round trip.
@@ -669,6 +678,31 @@ omits this optional view; it does not become PENDING. Studio may use the pinned 
 FDG for a read-only initial Design only for a Project on that exact template
 revision whose Session HEAD matches this commit. Prepared source, Preview and Runs keep
 their authorization, instance and definition checks.
+
+### Examples
+
+`ExampleService.ListExamples` lists the examples of the application template that the server
+build embeds, the default first, to any authenticated account: `Example {example_id, title,
+category, apps, decider, description, connector_ids}`, with `ExampleCategory` the closed set of the
+start page's groups (Approvals, Finance, Support, People, Content). The list is generated with the
+build from `app-template/examples/*/example.json`, so it reads no setting, network or read model and
+changes only with a release.
+
+`managed_repository.example = ExampleReference {example_id}` names one listed example; one the
+build does not hold is FAILED_PRECONDITION with the ErrorInfo reason `EXAMPLE_NOT_OFFERED` (remedy
+apply again: pick another one) before any Flow starts. The Project then starts with the template
+revision `app-template/<example_id>@<tree>`, the Git tree of the example's composed files, which
+`ProjectSnapshot.template_revision` returns and `ProjectSnapshot.example = ProjectExample
+{example_id, tree}` restates. A Project created without an example starts from the default example
+under the revision `app-template@<tree>`, as before, and has no `example`.
+
+Setup commits exactly that tree, as it commits the default. A revision whose example or tree this
+server build does not hold, such as one written by another build during a rollout, fails the
+Setup after its retries with `SETUP_FAILED`. The Session of a Project created from an example
+starts with the example's requirements card recorded as version 1 of its requirements, the card's
+design built at the setup commit, and a system notice that opens its conversation; it then waits
+for the person's message, deploys the setup commit's Preview once, and holds that Preview's Sandbox
+only for `sandbox.hold` until the person's first message.
 
 ### Live pointer and RemoveLive
 
@@ -1597,7 +1631,8 @@ Stream, with its `created_at` and `source`; an `activity` with a `task_id` is th
 line of that running subagent. `AgentRequirementsDraft {call_id 1; int64 turn 2; int64
 base_revision 3; title 4; summary 5; repeated AgentRequirementFeature features 6; repeated
 AgentRequirementsDraftConnection connections 7 {need 1; connector 2}; design_summary 8;
-repeated AgentRequirementsDraftFlow flows 9 {flow_type 1; repeated step_types 2}; bool
+repeated AgentRequirementsDraftFlow flows 9 {flow_type 1; repeated step_types 2; repeated
+failure_handling_step_types 3}; bool
 complete 10}` is the whole draft so far of the requirements card that the call `call_id` is
 writing; it is not the card, and it is over once the Snapshot's `confirmed_requirements`
 revision passes `base_revision`, a message answers the call or its turn ends

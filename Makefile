@@ -48,7 +48,8 @@ generate-go:
 generate-web:
 	@npm --prefix web/studio run generate:protobuf
 
-# Pack app-template/ into the embedded archive and render its Studio initial design.
+# Compose app-template/ (the shared base and each folder of app-template/examples/) into the
+# embedded archives and catalog, and render the default example's Studio initial design.
 generate-app-template: install-dexcli
 	@DEXCLI="$(DEXCLI_BINARY)" go generate ./internal/dexai/app/apptemplate
 
@@ -142,8 +143,20 @@ check-app-template:
 	@$(MAKE) check-app-template-source
 	@$(MAKE) check-app-template-embedded
 
+# Every example of app-template/ is composed into its own directory below
+# APP_TEMPLATE_EXAMPLES_DIR, which keeps its restored dependencies and generated
+# code between runs, and checked as a Project's source gate checks it. With
+# APP_TEMPLATE_CHANGED_PATHS, a file of changed repository paths, only the
+# default and the examples those paths reach are checked (the validation workflow).
+APP_TEMPLATE_EXAMPLES_DIR ?= $(TOOL_CACHE)/app-template-examples
+APP_TEMPLATE_CHANGED_PATHS ?=
 check-app-template-source: install-dexcli
-	@DEXCLI="$(DEXCLI_BINARY)" $(MAKE) -C app-template bootstrap check-static
+	@set -eu; for example in $$(GOWORK=off go run ./cmd/tools/app-template-archive -list $(if $(APP_TEMPLATE_CHANGED_PATHS),-changed "$(APP_TEMPLATE_CHANGED_PATHS)")); do \
+		directory="$(APP_TEMPLATE_EXAMPLES_DIR)/$$example"; \
+		GOWORK=off go run ./cmd/tools/app-template-archive -compose "$$example" -into "$$directory"; \
+		echo "app-template example $$example: make bootstrap check-static in $$directory"; \
+		DEXCLI="$(DEXCLI_BINARY)" $(MAKE) -C "$$directory" bootstrap check-static; \
+	done
 
 check-app-template-embedded: install-dexcli
 	@DEXCLI="$(DEXCLI_BINARY)" sh scripts/check-app-template.sh

@@ -45,5 +45,6 @@ something: a person changes the card only in the chat.
 
 While the agent writes a requirements card, its host shows the card's latest draft, which the
 Session Watch streams at most once a second (`DraftBrief`): "Drafting" on the corner, the drafted
-Step names per process as a row of dashed boxes and the summary as it arrives, with the features
-behind More details, until the recorded card's drawing replaces it.
+main-story Step names per process as a row of dashed boxes (a Step only failure routes reach stays
+out, as on the drawing) and the summary as it arrives, with the features behind More details, until
+the recorded card's drawing replaces it.

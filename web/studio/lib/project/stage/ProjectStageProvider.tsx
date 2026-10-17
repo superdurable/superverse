@@ -54,14 +54,17 @@ export interface ProjectStageState {
   hasRequirements: boolean;
   /** The Preview serves, or served before it stopped, a page of the agent's own push. */
   previewServed: boolean;
-  /** The commit the Project started from, the template's; empty while unknown. */
+  /**
+   * The commit the Project started from, the template's; empty while unknown and for a Project created
+   * from a built example, whose setup commit already holds the person's processes.
+   */
   templateCommit: string;
 }
 
 /** The Project's facts that decide its stage, from its snapshot and its Session's. */
 function stageFacts(project: ProjectSnapshot__Output | null, session: SessionSnapshot__Output | null) {
-  const templateCommit = project?.setup?.sourceCommit ?? "";
-  // A commit is the agent's own when it is not the one the Project started from.
+  const templateCommit = project?.example ? "" : (project?.setup?.sourceCommit ?? "");
+  // A commit is the agent's own when it is not the template commit the Project started from.
   const own = (commit: string | undefined) => Boolean(commit) && commit !== templateCommit;
   const preview = session?.preview;
   const prepared = preview?.preparedSource;

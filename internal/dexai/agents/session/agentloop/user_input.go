@@ -547,10 +547,12 @@ type DraftConnection struct {
 }
 
 // DraftFlow is a designed Flow of a draft with the Go type names of the Steps
-// written so far.
+// written so far, and of those of them that only failure routes reach so far,
+// which the drawn design leaves out of its main story.
 type DraftFlow struct {
-	FlowType  string   `json:"flow_type"`
-	StepTypes []string `json:"step_types"`
+	FlowType                 string   `json:"flow_type"`
+	StepTypes                []string `json:"step_types"`
+	FailureHandlingStepTypes []string `json:"failure_handling_step_types,omitempty"`
 }
 
 // requirementsDraftInterval is the shortest time between two drafts of one
@@ -612,9 +614,14 @@ type partialCard struct {
 	Design      struct {
 		Summary string `json:"summary"`
 		Flows   []struct {
-			FlowType string `json:"flow_type"`
-			Steps    []struct {
+			FlowType  string `json:"flow_type"`
+			StartStep string `json:"start_step"`
+			Steps     []struct {
 				StepType string `json:"step_type"`
+				Next     []struct {
+					To             string `json:"to"`
+					IsFailureRoute bool   `json:"is_failure_route"`
+				} `json:"next"`
 			} `json:"steps"`
 		} `json:"flows"`
 	} `json:"design"`
@@ -657,14 +664,71 @@ func boundedDraft(card partialCard) RequirementsDraft {
 			continue
 		}
 		drafted := DraftFlow{FlowType: runePrefix(flow.FlowType, 80), StepTypes: []string{}}
+		var transitions []draftTransition
 		for _, step := range flow.Steps[:min(len(flow.Steps), 30)] {
-			if step.StepType != "" {
-				drafted.StepTypes = append(drafted.StepTypes, runePrefix(step.StepType, 80))
+			if step.StepType == "" {
+				continue
+			}
+			name := runePrefix(step.StepType, 80)
+			drafted.StepTypes = append(drafted.StepTypes, name)
+			for _, next := range step.Next[:min(len(step.Next), 8)] {
+				transitions = append(transitions, draftTransition{from: name, to: next.To, isFailureRoute: next.IsFailureRoute})
 			}
 		}
+		drafted.FailureHandlingStepTypes = draftFailureHandling(drafted.StepTypes, flow.StartStep, transitions)
 		draft.Flows = append(draft.Flows, drafted)
 	}
 	return draft
+}
+
+// draftTransition is a next transition of a drafted Step.
+type draftTransition struct {
+	from, to       string
+	isFailureRoute bool
+}
+
+// draftFailureHandling is the drafted Steps that the drawn design leaves out
+// of its main story, split as the Flow canvas splits a Flow: the main story is
+// what ordinary transitions reach from the start Step (the first drafted Step
+// while the start is not drafted) and from each Step no drafted transition
+// enters yet; the rest only failure routes reach, directly or through other
+// such Steps. A transition to a Step not drafted yet counts once it is.
+func draftFailureHandling(steps []string, start string, transitions []draftTransition) []string {
+	if len(steps) == 0 {
+		return nil
+	}
+	drafted, entered := map[string]bool{}, map[string]bool{}
+	for _, step := range steps {
+		drafted[step] = true
+	}
+	for _, transition := range transitions {
+		if transition.from != transition.to && drafted[transition.to] {
+			entered[transition.to] = true
+		}
+	}
+	if !drafted[start] {
+		start = steps[0]
+	}
+	story, order := map[string]bool{start: true}, []string{start}
+	for _, step := range steps {
+		if !entered[step] && !story[step] {
+			story[step], order = true, append(order, step)
+		}
+	}
+	for index := 0; index < len(order); index++ {
+		for _, transition := range transitions {
+			if transition.from == order[index] && !transition.isFailureRoute && drafted[transition.to] && !story[transition.to] {
+				story[transition.to], order = true, append(order, transition.to)
+			}
+		}
+	}
+	var hidden []string
+	for _, step := range steps {
+		if !story[step] {
+			hidden = append(hidden, step)
+		}
+	}
+	return hidden
 }
 
 // runePrefix is the first maximum characters of text.

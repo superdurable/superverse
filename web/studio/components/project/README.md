@@ -33,8 +33,12 @@ flowchart LR
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
 ProjectStartForm asks what process Dex should run: the description becomes the
-first message, and `templates/` fill it in without sending. The Project name
-comes from the example title or description; Advanced lets the user edit it.
+first message, and under it `templates/` ranks the server's built examples by the
+description. Open example creates the Project from one as it is, for either agent,
+with the example and no message; the description waits in the opened Project's
+composer as an unsent draft. A placeholder fills the composer without sending. The
+Project name comes from the description, a placeholder or the opened example's
+title; Advanced lets the user edit it.
 Agent is chosen first; only the Superverse agent offers a model, preselected on
 Sonnet or the mock model where the server permits it. The mock composer takes
 the first input of a scenario in place of free text when that model is chosen.
@@ -43,7 +47,10 @@ marks the Project's first conversation in this browser before opening the Builde
 The Superverse path includes its first message and model in CreateProject.
 The local path retains its message in ProjectIntent, watches Project READY and
 Session ACTIVE, shows inline pairing, and sends after the Snapshot reports
-remote authority. ProjectBuilder follows the Project's stage (`lib/project/stage`): the chat
+remote authority. A creation from an example sends no message on either path:
+it writes the draft as the new Project's composer draft, and the local path
+opens the Project once the agent holds the Session. An example Project has its
+card at once, so it skips the chat-only first conversation. ProjectBuilder follows the Project's stage (`lib/project/stage`): the chat
 alone until the first draft of the agent's first requirements card or the agent's own processes, or until
 the person picks "Open the Flow tab" in its bar when no card comes, then the standard frame, whose tabs, Publish and Preview's status appear as they have something
 to show. ProjectPage is the Project's

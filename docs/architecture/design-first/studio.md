@@ -167,14 +167,17 @@ fills the Flow tab; everything else is small and goes once the design is built.
 - **Transient.** Once the current design is built, the corner, the line and More details go and
   the Flow tab shows only the flow: the drawn design until the Preview's processes are built from
   the commit that built it, then the implemented Flows. A new version with a design brings them
-  back for that version until it is built.
+  back for that version until it is built. A Project created from an example starts here: its
+  Session's start records the example's card as version 1, built at the setup commit, so its Flow
+  tab never shows the overview, and its chat shows "Recorded version 1" beside the greeting.
 
 There is no Confirm and no Change something: changes are asked for in the chat.
 
 **While the agent writes the card**, before it is recorded, the Flow tab shows its newest draft
 (`DraftBrief`, [requirements drafts](../agent-harness-design/streaming-and-studio.md#requirements-drafts)):
 **Drafting** on the corner over the draft's title, the designed Step names as a plain row of
-dashed boxes per process, as they arrive, at most once a second, the summary line as it fills in,
+dashed boxes per process, as they arrive, at most once a second, leaving out the Steps only failure
+routes reach as the drawing does (`failure_handling_step_types`), the summary line as it fills in,
 and the features behind More details. A draft is never drawn; the drawn design replaces the boxes
 when the card is recorded. A Project's first conversation switches to the Flow tab at its first
 draft, and a revision's draft takes the place of the current version's Brief until the revision

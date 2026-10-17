@@ -475,7 +475,7 @@ func agentRequirementsDraft(value agentloop.RequirementsDraft) *pb.AgentRequirem
 		out.Connections = append(out.Connections, &pb.AgentRequirementsDraftConnection{Need: connection.Need, Connector: connection.Connector})
 	}
 	for _, flow := range value.Flows {
-		out.Flows = append(out.Flows, &pb.AgentRequirementsDraftFlow{FlowType: flow.FlowType, StepTypes: flow.StepTypes})
+		out.Flows = append(out.Flows, &pb.AgentRequirementsDraftFlow{FlowType: flow.FlowType, StepTypes: flow.StepTypes, FailureHandlingStepTypes: flow.FailureHandlingStepTypes})
 	}
 	return out
 }

@@ -48,6 +48,9 @@ var (
 	// reasonConfigurationInvalid is a configuration field or target that is
 	// invalid.
 	reasonConfigurationInvalid = errorReason{"CONFIGURATION_INVALID", dexflow.RemedyOpenSetup}
+	// reasonExampleNotOffered is a creation from an example that this server
+	// build does not hold; the person picks another one.
+	reasonExampleNotOffered = errorReason{"EXAMPLE_NOT_OFFERED", dexflow.RemedyApplyAgain}
 )
 
 // The admission refusals of a Release build (STUDIOSETUP PUBGATE), declared

@@ -24,6 +24,7 @@ import (
 	sessionagent "github.com/superdurable/superversev2/internal/dexai/agents/session"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/api/watch"
+	"github.com/superdurable/superversev2/internal/dexai/app/apptemplate"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/deployments"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/releases"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/releases/build"
@@ -84,6 +85,9 @@ func RPCStatus(err error) error {
 	}
 	if errors.Is(err, projects.ErrForbidden) {
 		return status.Error(codes.PermissionDenied, "project access denied")
+	}
+	if errors.Is(err, apptemplate.ErrExampleNotOffered) {
+		return withErrorInfo(codes.FailedPrecondition, "This example is not offered; pick another one", reasonExampleNotOffered)
 	}
 	var rejected *dexflow.Rejection
 	if errors.As(err, &rejected) {

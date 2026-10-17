@@ -117,6 +117,7 @@ export function mockProjectSnapshot(store: MockStore, projectId: string): Projec
       fullName: `${current.repository.owner}/${current.repository.name}`,
       defaultBranch: current.repository.defaultBranch,
     },
+    example: current.example,
   };
 }
 

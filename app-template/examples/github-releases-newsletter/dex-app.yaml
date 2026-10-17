@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "superverse.dev/dex-app/v1",
+  "application": {
+    "port": 8080,
+    "healthPath": "/api/health"
+  },
+  "flowDefinitions": [
+    {"sourcePath": "internal/process/subscription_registry_flow.go"},
+    {"sourcePath": "internal/process/newsletter_campaign_flow.go"}
+  ],
+  "connectors": [
+    {
+      "connectionName": "newsletter-slack",
+      "connectorId": "slack",
+      "modulePath": "github.com/superdurable/dex-connectors-library/connectors/slack",
+      "version": "v1.0.0",
+      "authMethodId": "",
+      "triggerBindings": [{"triggerName": "channelThreadCreated", "bindingName": "publish-newsletter"}]
+    },
+    {
+      "connectionName": "newsletter-github",
+      "connectorId": "github",
+      "modulePath": "github.com/superdurable/dex-connectors-library/connectors/github",
+      "version": "v0.23.0",
+      "authMethodId": "",
+      "operations": ["listReleases"]
+    },
+    {
+      "connectionName": "newsletter-openai",
+      "connectorId": "llm",
+      "modulePath": "github.com/superdurable/dex-connectors-library/connectors/superdurable/llm",
+      "version": "v0.22.1",
+      "authMethodId": "",
+      "operations": ["generateText"]
+    },
+    {
+      "connectionName": "newsletter-gmail",
+      "connectorId": "gmail",
+      "modulePath": "github.com/superdurable/dex-connectors-library/connectors/google/gmail",
+      "version": "v0.23.0",
+      "authMethodId": "google-oauth",
+      "operations": ["sendMessage"]
+    }
+  ]
+}

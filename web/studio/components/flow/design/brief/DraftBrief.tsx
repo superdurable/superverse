@@ -17,10 +17,18 @@ export interface BriefDraft {
   title: string;
   summary: string;
   features: readonly { id: string; text: string }[];
-  flows: readonly { flowType: string; stepTypes: readonly string[] }[];
+  flows: readonly { flowType: string; stepTypes: readonly string[]; failureHandlingStepTypes: readonly string[] }[];
 }
 
-/** The names of the designed Steps written so far, per process, as a plain row of dashed boxes. */
+function mainStorySteps({ stepTypes, failureHandlingStepTypes }: BriefDraft["flows"][number]): string[] {
+  const failureHandling = new Set(failureHandlingStepTypes);
+  return stepTypes.filter((stepType) => !failureHandling.has(stepType));
+}
+
+/**
+ * The names of the designed main-story Steps written so far, per process, as a plain row of dashed boxes: like
+ * the drawn design, the row leaves out the Steps only failure routes reach.
+ */
 function DraftedSteps({ flows }: { flows: BriefDraft["flows"] }) {
   if (flows.length === 0)
     return <p className="m-auto text-center text-body text-ink-faint">The steps show here as the agent writes them.</p>;
@@ -32,7 +40,7 @@ function DraftedSteps({ flows }: { flows: BriefDraft["flows"] }) {
             <h3 className="text-center text-caption font-semibold text-ink-dim">{processName(flow.flowType)}</h3>
           )}
           <ol aria-label={processName(flow.flowType)} className="flex flex-wrap items-center justify-center gap-2">
-            {flow.stepTypes.map((stepType, index) => (
+            {mainStorySteps(flow).map((stepType, index) => (
               <li className="flex items-center gap-2" key={`${stepType}:${index}`}>
                 {index > 0 && (
                   <span aria-hidden="true" className="text-ink-faint">

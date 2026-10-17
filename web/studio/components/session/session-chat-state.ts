@@ -225,16 +225,32 @@ export function pendingQueueActions(
   };
 }
 
+/** The first entry of a Session, where one created from an example greets the person and records version 1. */
+export const EXAMPLE_GREETING_SEQUENCE = 1;
+
 /**
  * The conversation as the chat shows it: without mock markers, and without notices that the template's own
  * commit lacks settings. The Preview tries the commit the Project started from before the agent pushes
- * anything, and the person never asked for that version.
+ * anything, and the person never asked for that version. In a Project created from a built example, the
+ * system marker that opens the conversation is the agent's greeting, which no model wrote, and shows as
+ * the agent's message.
  */
-export function shownChatMessages(messages: readonly SequencedMessage[], templateCommit: string): SequencedMessage[] {
-  const shown = withoutMockMarkersInMessages(messages);
+export function shownChatMessages(
+  messages: readonly SequencedMessage[],
+  templateCommit: string,
+  startedFromExample = false,
+): SequencedMessage[] {
+  const greeted = startedFromExample ? messages.map(asGreeting) : messages;
+  const shown = withoutMockMarkersInMessages(greeted);
   if (!templateCommit) return shown;
   return shown.filter(({ message }) => {
     const notification = message.notification;
     return !(notification && needsConfiguration(notification) && notification.commit === templateCommit);
   });
+}
+
+function asGreeting(entry: SequencedMessage): SequencedMessage {
+  if (entry.sequence !== EXAMPLE_GREETING_SEQUENCE || entry.message.role !== "system" || !entry.message.content)
+    return entry;
+  return { ...entry, message: { ...entry.message, role: "assistant" } };
 }

@@ -33,11 +33,15 @@ function namesTitle(target: string, title: string): boolean {
  * answers without failure recorded the current version, and each earlier one the version before it, which
  * holds however many earlier pages are loaded. A card a Session still waits at (`waitingCallId`) is not
  * recorded yet. Only the current version's card is in the Snapshot, so an older line has its title alone.
+ * A Session created from an example recorded version 1 at its start, with no call, beside the entry that
+ * greets the person (`startSequence`): that version shows there, keyed by `startRecordedKey`, once every
+ * later version has its call, which holds whenever that first entry is loaded.
  */
 export function recordedRequirementsVersions(
   messages: readonly SequencedMessage[],
   current: ConfirmedRequirements | null,
   waitingCallId: string | null,
+  startSequence: number | null = null,
 ): ReadonlyMap<string, RecordedRequirementsVersion> {
   const recorded = new Map<string, RecordedRequirementsVersion>();
   if (current === null) return recorded;
@@ -66,8 +70,25 @@ export function recordedRequirementsVersions(
       spec: isCurrent ? current.spec : null,
     });
   });
+  const startLoaded = startSequence !== null && messages.some(({ sequence }) => sequence === startSequence);
+  if (startLoaded && current.revision - calls.length === 1) {
+    const isCurrent = current.revision === 1;
+    recorded.set(startRecordedKey(startSequence), {
+      version: 1,
+      title: isCurrent ? current.spec.title : START_VERSION_TITLE,
+      spec: isCurrent ? current.spec : null,
+    });
+  }
   return recorded;
 }
+
+/** The key of the version a Session's start recorded, at the entry of its conversation that announces it. */
+export function startRecordedKey(sequence: number): string {
+  return `start:${String(sequence)}`;
+}
+
+/** What an older line names of the version a Session's start recorded: no call's target carries its title. */
+const START_VERSION_TITLE = "the example's requirements";
 
 /**
  * One recorded version in the conversation, where the agent recorded it: one plain line that opens to the

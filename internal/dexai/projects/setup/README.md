@@ -115,6 +115,15 @@ archives and releases its `sv2-test-<projectID>` repository. Only a Setup whose
 create response was lost before it recorded the repository, within that change, would
 not find that repository by the new name.
 
+**The template a Setup commits.** `TemplateRevision` names the composed tree of one example of
+the application template ([the examples](../../app/apptemplate/README.md)): the default,
+`app-template@<tree>`, or the example a person picked, `app-template/<id>@<tree>`.
+`InitializeTemplate` resolves it with `apptemplate.ForRevision` and commits that tree exactly as it
+committed the one template before; the hosts' reconciliation by tree is unchanged. A revision this
+server build does not hold, as during a rollout to another build, is an error the Step retries
+within its 15 minutes, then `SETUP_FAILED`, as a template revision that differed from the embedded
+one always was. Open Setups of the default keep their revision, whose tree is unchanged.
+
 **Managed source only.** SourceRepository is the ordinary RepositoryBindingRef
 Attribute described in the Project inventory. CreateManagedRepository records
 this Setup's deterministic repository identity, ClaimRepositoryBinding always writes

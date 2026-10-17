@@ -1,0 +1,85 @@
+openapi: 3.0.3
+info:
+  title: Dex Application API
+  version: 2.0.0
+paths:
+  /api/health:
+    get:
+      operationId: getHealth
+      responses:
+        '200':
+          description: Application is healthy.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/thread-approvals/{approvalId}:
+    get:
+      operationId: getThreadApproval
+      description: Reads one Slack thread approval. Its ID is the FlowID that the thread's root message started.
+      parameters:
+        - name: approvalId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 512
+            pattern: '^slack-thread-approval-[A-Za-z0-9.-]+$'
+      responses:
+        '200':
+          description: Current or final state of the thread approval.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreadApproval'
+        default:
+          $ref: '#/components/responses/Error'
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+    ThreadApproval:
+      type: object
+      additionalProperties: false
+      required: [status, teamId, channelId, threadTimestamp, replyUserId, notice]
+      properties:
+        status:
+          type: string
+          enum: [pending, waiting_for_reply, posting_reply, completed, failed, unknown]
+        teamId:
+          type: string
+        channelId:
+          type: string
+        threadTimestamp:
+          type: string
+        replyUserId:
+          type: string
+        notice:
+          type: string
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error, message]
+      properties:
+        error:
+          type: string
+          pattern: '^[a-z][a-z0-9_]*$'
+        message:
+          type: string
+          maxLength: 3000
+  responses:
+    Error:
+      description: Request failed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

@@ -689,7 +689,7 @@ provider behavior of a new connector is recorded as unverified.
 
 - Skills: `dex-connector-contributor` (Superverse-owned, in `dex-skills/`, shipped in the coding image);
   `dex-app-builder` guidance on confirming requirements and contributing a missing connector;
-  `app-template/AGENTS.md` and `dex-skills` read module source through `go list -m -f '{{.Dir}}'`
+  each example's `AGENTS.md` (`app-template/examples/<id>/`) and `dex-skills` read module source through `go list -m -f '{{.Dir}}'`
   (`make generate-app-template` after changing the template).
 - Package READMEs: [contribution](../../../internal/dexai/agents/session/contribution/README.md) (the Flow),
   [connectorlibrary](../../../internal/comm/platform/connectorlibrary/README.md) (the server's library and the

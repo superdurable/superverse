@@ -41,6 +41,7 @@ EXCLUDED_PREFIXES = (
     "infra-as-code/kubernetes/charts/superverse-platform/charts/controller/",
     "gen/", "web/studio/lib/generated/", ".github/", ".claude/", ".cursor/",
     "node_modules/", "internal/dexai/app/apptemplate/app-template.tar",
+    "internal/dexai/app/apptemplate/examples/",
 )
 
 

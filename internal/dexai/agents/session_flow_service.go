@@ -28,6 +28,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/contribution"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/subagent"
+	"github.com/superdurable/superversev2/internal/dexai/app/apptemplate"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/releases"
 	"github.com/superdurable/superversev2/internal/dexai/projects"
 	projectconfig "github.com/superdurable/superversev2/internal/dexai/projects/config"
@@ -105,9 +106,10 @@ func (v Snapshot) Preview() preview.Snapshot { return previewView(v.Session, v.P
 // StartForProject starts the READY Project's one Session, from ProjectFlow's
 // StartProjectSession, its only creation trigger. The Session starts with the
 // default profile on the Project's AppManifest commit, on the model the
-// creator chose or the server's default, and with the creator's first
-// message, which its start Step admits once. A retried or replayed start
-// joins the accepted execution.
+// creator chose or the server's default, with the creator's first message,
+// which its start Step admits once, and, for a Project created from an
+// example, that example's brief. A retried or replayed start joins the
+// accepted execution.
 func (s *SessionFlowService) StartForProject(ctx context.Context, project projects.Project, initial *projects.SessionStartRequest) error {
 	identity := agentloop.SessionIdentity{ProjectID: project.ProjectID, Profile: agentloop.ProfileSessionV1, HeadCommit: project.AppManifest.SourceCommit}
 	request := s.Agent.SessionRequest(identity)
@@ -118,7 +120,29 @@ func (s *SessionFlowService) StartForProject(ctx context.Context, project projec
 		author := conversation.Actor{AccountID: initial.AuthorAccountID, Email: initial.AuthorEmail}
 		request.FirstMessage = &conversation.PendingUserMessage{MessageID: conversation.MessageID(initial.MessageID), Value: conversation.UserMessage{Actor: &author, Content: initial.Text}}
 	}
+	if id, tree, fromExample := apptemplate.ParseExampleRevision(project.TemplateRevision); fromExample {
+		request.ExampleBrief = exampleBrief(id, tree)
+	}
 	return s.Agent.StartAccepted(ctx, request)
+}
+
+// exampleBrief is the brief of the example a Project was created from, as this
+// server build embeds it. A build that holds the example at another tree, or
+// not at all, starts the Session with the problem instead of the card: the
+// card would not describe the committed source.
+func exampleBrief(id, tree string) *agentloop.ExampleBrief {
+	brief := &agentloop.ExampleBrief{ExampleID: id, Tree: tree, Title: id}
+	example, found := apptemplate.FindExample(id)
+	template, err := apptemplate.ExampleTemplate(id)
+	switch {
+	case !found || err != nil:
+		brief.Problem = "this server build holds no example " + id
+	case template.TreeID != tree:
+		brief.Title, brief.Problem = example.Title, "this server build holds the example at the tree "+template.TreeID
+	default:
+		brief.Title, brief.Card = example.Title, string(example.Card)
+	}
+	return brief
 }
 
 // SessionCaller is the authenticated author and authorized role of a Session command.

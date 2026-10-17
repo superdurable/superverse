@@ -12,7 +12,9 @@ import type { ProjectConfigurationTarget__Output } from "@/lib/generated/protobu
 import { rpcFailure } from "@/lib/server/grpc-client";
 import { httpError } from "@/lib/server/request-body";
 import { REVISION_CHANGED } from "@/lib/shared/revision-conflict";
+import { MOCK_EXAMPLE_TREE, MOCK_EXAMPLES } from "@/mock/fixture/examples";
 import { mockAccount } from "@/mock/store/accounts";
+import { startFromMockExample } from "@/mock/store/agent-scripts";
 import {
   mockConfigurationDraft,
   mockConfigurationReady,
@@ -78,6 +80,21 @@ function configuration(store: MockStore, target: ProjectConfigurationTarget__Out
   return mockConfigurationDraft(store, projectId, "preview");
 }
 
+// Like Go, every account lists the same examples, without the cards the Sessions record.
+export const exampleService: MockService<"ExampleService"> = {
+  ListExamples: () => ({
+    examples: MOCK_EXAMPLES.map(({ exampleId, title, category, apps, decider, description, connectorIds }) => ({
+      exampleId,
+      title,
+      category,
+      apps,
+      decider,
+      description,
+      connectorIds,
+    })),
+  }),
+};
+
 export const projectService: MockService<"ProjectService"> = {
   // Like Go, the first message comes with its message ID, and the new Session starts with it and the model.
   CreateProject: (
@@ -87,12 +104,22 @@ export const projectService: MockService<"ProjectService"> = {
     if (!managedRepository) throw httpError(400, "managed_repository is required");
     if (Boolean(initialMessage.trim()) !== Boolean(messageId))
       throw httpError(400, "initial_message and message_id are set together");
+    const example = managedRepository.example;
+    const offered = example && MOCK_EXAMPLES.find((item) => item.exampleId === example.exampleId);
+    if (example && !offered)
+      throw rpcFailure(409, "This example is not offered; pick another one", {
+        reason: "EXAMPLE_NOT_OFFERED",
+        domain: "superverse.v2",
+        metadata: { remedy: "FAILURE_REMEDY_APPLY_AGAIN" },
+      });
     const account = mockAccount(caller);
     const tenancy = mockTenancy(store, account);
     admitMockProject(tenancy, account, teamSpaceId);
-    const { project: created, replayed } = createProject(store, name, requestId || null);
+    const started = example ? { exampleId: example.exampleId, tree: MOCK_EXAMPLE_TREE } : undefined;
+    const { project: created, replayed } = createProject(store, name, requestId || null, started);
     registerMockProject(tenancy, account, teamSpaceId, created.id);
     if (!replayed) startMockSession(store, created.id, model, initialMessage);
+    if (!replayed && offered) startFromMockExample(store, created.id, offered.title, offered.card);
     return { projectId: created.id };
   },
   // Every Project of the Teamspace, with the caller's role in each.

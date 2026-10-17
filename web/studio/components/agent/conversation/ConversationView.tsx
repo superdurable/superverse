@@ -19,6 +19,7 @@ import type {
 import {
   RecordedRequirementsLine,
   recordedRequirementsVersions,
+  startRecordedKey,
 } from "@/components/agent/interaction/RecordedRequirements";
 import { ConversationClockProvider } from "./ConversationClockProvider";
 import { ConversationMessage, type NotificationLinks } from "./ConversationMessage";
@@ -46,6 +47,8 @@ export interface ConversationViewProps {
   confirmedRequirements?: ConfirmedRequirements | null;
   /** The call of a requirements card a Session still waits at, which is not recorded yet. */
   waitingRequirementsCallId?: string | null;
+  /** The entry beside which the Session's start recorded version 1 itself, as one created from an example does. */
+  requirementsStartSequence?: number | null;
 }
 
 /** How a question of the history ended, in words, and its badge tone. */
@@ -99,6 +102,7 @@ export function ConversationView({
   notificationLinks,
   confirmedRequirements = null,
   waitingRequirementsCallId = null,
+  requirementsStartSequence = null,
 }: ConversationViewProps) {
   const unfinishedTools = useMemo(() => hasUnfinishedTools(messages), [messages]);
   const isLive =
@@ -110,8 +114,14 @@ export function ConversationView({
     [activities, isModelRunning, isExecutionLive, messages, pendingWaits, reasoning],
   );
   const recorded = useMemo(
-    () => recordedRequirementsVersions(messages, confirmedRequirements, waitingRequirementsCallId),
-    [confirmedRequirements, messages, waitingRequirementsCallId],
+    () =>
+      recordedRequirementsVersions(
+        messages,
+        confirmedRequirements,
+        waitingRequirementsCallId,
+        requirementsStartSequence,
+      ),
+    [confirmedRequirements, messages, requirementsStartSequence, waitingRequirementsCallId],
   );
 
   return (
@@ -126,10 +136,10 @@ export function ConversationView({
                 <ConversationMessage entry={entry} key={entry.sequence} notificationLinks={notificationLinks} />
               ))}
             <WorkLog turn={turn} markers={turn.messages.filter(isMarker)} />
-            {turn.messages.flatMap(({ message }) =>
-              message.toolCalls.flatMap((call) => {
-                const version = recorded.get(call.id);
-                return version ? [<RecordedRequirementsLine recorded={version} key={call.id} />] : [];
+            {turn.messages.flatMap(({ sequence, message }) =>
+              [startRecordedKey(sequence), ...message.toolCalls.map((call) => call.id)].flatMap((key) => {
+                const version = recorded.get(key);
+                return version ? [<RecordedRequirementsLine recorded={version} key={key} />] : [];
               }),
             )}
             {turn.questions.map((question) => (

@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createProject } from "@/lib/api/project";
+import { STORAGE_KEYS, writeStoredPreference } from "@/lib/browser/storage";
 import { errorMessage } from "@/lib/api/transport/api-error";
 import {
   clearPendingProjectCreation,
@@ -37,7 +38,9 @@ import { ProjectCreationLocal } from "./creation/ProjectCreationLocal";
 /**
  * Creates the stored Project with stable request IDs. The Superverse agent starts with its first
  * message and model on the server. A local-agent creation keeps its message in ProjectIntent,
- * waits for the Project and Session, pairs inline and sends after remote authority is visible.
+ * waits for the Project and Session, pairs inline and sends after remote authority is visible. A
+ * creation from an example carries the example and no message; what the person typed becomes the new
+ * Project's unsent composer draft.
  */
 export function ProjectCreationPage() {
   const router = useRouter();
@@ -45,6 +48,7 @@ export function ProjectCreationPage() {
   const inFlight = useRef<AbortController | null>(null);
   const mounted = useRef(false);
   const [projectName, setProjectName] = useState("Your new project");
+  const [fromExample, setFromExample] = useState(false);
   // Where Start over and Describe a project lead: the start form of the Teamspace the request names.
   const [startHref, setStartHref] = useState(studioRoutes.home);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +74,7 @@ export function ProjectCreationPage() {
     }
 
     setProjectName(pending.name);
+    setFromExample(pending.example !== undefined);
     setStartingLocal(pending.executor === PROJECT_EXECUTOR.LOCAL);
     setStartHref(studioRoutes.projectStart(pending.teamSpaceId));
     setMissingIntent(false);
@@ -82,15 +87,17 @@ export function ProjectCreationPage() {
       request.current === pending &&
       encodedPendingProjectCreation() === encodedIntent;
     setError(null);
+    const sendsMessage = pending.executor === PROJECT_EXECUTOR.SUPERVERSE && pending.prompt !== "";
     try {
       const projectId = await createProject(
         {
           requestId: pending.idempotencyKey,
           name: pending.name,
-          managedRepository: {},
+          managedRepository: pending.example ? { example: pending.example } : {},
           teamSpaceId: pending.teamSpaceId,
-          initialMessage: pending.executor === PROJECT_EXECUTOR.SUPERVERSE ? pending.prompt : undefined,
-          messageId: pending.executor === PROJECT_EXECUTOR.SUPERVERSE ? pending.messageIdempotencyKey : undefined,
+          // A creation from an example carries no message, so no message ID.
+          initialMessage: sendsMessage ? pending.prompt : undefined,
+          messageId: sendsMessage ? pending.messageIdempotencyKey : undefined,
           model:
             pending.executor === PROJECT_EXECUTOR.SUPERVERSE && pending.model !== null && isAgentModel(pending.model)
               ? agentModelInput(pending.model)
@@ -99,6 +106,8 @@ export function ProjectCreationPage() {
         controller.signal,
       );
       if (!ownsRequest()) return;
+      // What the person typed before opening an example waits in its composer; nothing sends it.
+      if (pending.draft) writeStoredPreference(STORAGE_KEYS.composerDraft(projectId), pending.draft);
       if (pending.executor === PROJECT_EXECUTOR.LOCAL) {
         const intent: ProjectIntent = { ...pending, projectId, delivery: PROJECT_MESSAGE_DELIVERY.UNSENT };
         storeProjectIntent(intent);
@@ -107,7 +116,8 @@ export function ProjectCreationPage() {
         return;
       }
       clearPendingProjectCreation();
-      // The new Project opens on its first conversation, the chat alone, until the agent's requirements arrive.
+      // The new Project opens on its first conversation, the chat alone, until the agent's requirements arrive;
+      // one created from an example has its brief at once and opens the standard Builder.
       beginFirstRun(projectId);
       router.replace(studioRoutes.projectSurface(projectId, "flow"));
     } catch (reason) {
@@ -153,9 +163,11 @@ export function ProjectCreationPage() {
           <div className="mt-6 grid justify-items-start gap-2">
             <StartupSteps current="project" />
             <p className="text-body text-ink-dim">
-              {startingLocal
-                ? "Your description stays in this browser until your local agent connects."
-                : "Your description goes to the agent as soon as the project is ready."}
+              {fromExample
+                ? "The project opens on the example as it is built. What you typed waits in its chat, unsent, for you to change it."
+                : startingLocal
+                  ? "Your description stays in this browser until your local agent connects."
+                  : "Your description goes to the agent as soon as the project is ready."}
             </p>
           </div>
         )}

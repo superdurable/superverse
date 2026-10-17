@@ -1,0 +1,140 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# The person's first change of a Project created from the slack-thread-approval
+# example, whose Session recorded the example's card as version 1 with no model
+# call. The change revises the card to version 2: it keeps R1 to R3 and adds R4,
+# a reply finishes the approval only when it contains "approve". The reply
+# Trigger's filter gains that rule and an API test proves it; the push traces
+# R1 to R4 at version 2, R3 untested as in the example. The workspace is the
+# example's composed tree, which this server embeds, so its edits are checked
+# against the example's own files at startup.
+name: example-change
+title: "Change an example"
+description: "The first change of a Project created from the Slack thread approval example: revises the card to version 2 with an approve-only reply rule, builds it and pushes it."
+category: product
+workspace: slack-thread-approval
+inputs:
+  - label: "Describe the change"
+    message: "Only a reply that contains the word approve should finish the approval."
+    replies:
+      - thinking: "This changes a requirement of the example, so I revise the recorded card first, keeping R1 to R3, and keep building."
+        text: "Here is the revised brief. I am changing the reply rule now; tell me if anything else should change."
+        tool_uses:
+          - name: confirm_requirements
+            input:
+              title: "Slack thread approval"
+              summary: "A process that follows threads in one Slack channel: a new message starts it, and a reply in its thread that contains approve finishes it with a confirmation posted in the thread."
+              features:
+                - {id: R1, text: "A new top-level message in the configured Slack channel starts one approval for its thread; a redelivered message starts no second one."}
+                - {id: R2, text: "The first matching reply in that thread is accepted and moves the approval on; a later reply changes nothing."}
+                - {id: R3, text: "After the reply, the application posts Processing complete. into the same thread and completes the approval."}
+                - {id: R4, text: "A reply finishes the approval only when it contains the word approve; any other reply changes nothing."}
+              connections:
+                - need: "Receive new channel messages and thread replies, and reply in the thread"
+                  connector: slack
+                  operations: [postThreadReply]
+                  status: existing
+                  user_setup: "Select the TeamSpace Slack connection as slack-approvals, then choose the channel and the members allowed to reply for both triggers in Studio Configuration."
+              user_setup: ["Invite the platform's Slack app to the approval channel."]
+              acceptance:
+                - "A new message in the channel starts a run in Studio that waits for a reply."
+                - "A reply in its thread that contains approve makes the application post Processing complete. in the thread, and the run completes; another reply changes nothing."
+      - text: "Reading the reply Trigger's filter."
+        tool_uses:
+          - name: read
+            input: {path: internal/process/slack_thread_triggers.go}
+      - thinking: "The reply filter wraps the binding's matcher; the word check belongs there so that a reply without it never reaches ReceiveThreadReply."
+        text: "Requiring approve in a reply and testing the rule."
+        tool_uses:
+          - name: edit
+            input:
+              path: internal/process/slack_thread_triggers.go
+              old_string: |2-
+                // NewStartTriggerFilter admits a top-level message of the configured channel
+              new_string: |2-
+                // ApprovalWord is the word a thread reply must contain to finish the approval.
+                const ApprovalWord = "approve"
+
+                // NewStartTriggerFilter admits a top-level message of the configured channel
+          - name: edit
+            input:
+              path: internal/process/slack_thread_triggers.go
+              old_string: |2-
+                	return messageFilter(configuration.ChannelID, configuration.ThreadReplyMatcher, true), nil
+              new_string: |2-
+                	matches := messageFilter(configuration.ChannelID, configuration.ThreadReplyMatcher, true)
+                	return func(event sdkgo.TriggerEvent[slack.MessageEvent]) bool {
+                		return matches(event) && strings.Contains(strings.ToLower(event.Payload.Text), ApprovalWord)
+                	}, nil
+          - name: write
+            input:
+              path: internal/apptest/approval_word_test.go
+              content: |2
+                //go:build apptest
+
+                package apptest_test
+
+                import (
+                	"testing"
+
+                	"github.com/superdurable/dex-connectors-library/connectors/slack"
+                	"github.com/superdurable/dex-connectors-library/sdkgo"
+                	"github.com/superdurable/dex-template-basic-process/internal/process"
+                )
+
+                func TestReplyWithoutApproveIsIgnored(t *testing.T) {
+                	var configuration slack.ThreadReplyCreatedTriggerConfiguration
+                	configuration.ChannelID = "C0456EFGH"
+                	configuration.ThreadReplyMatcher.PosterUserIDs = []string{"U0789IJKL"}
+                	accepts, err := process.NewReplyTriggerFilter(configuration)
+                	if err != nil {
+                		t.Fatalf("the reply filter of a valid configuration: %v", err)
+                	}
+                	reply := func(text string) sdkgo.TriggerEvent[slack.MessageEvent] {
+                		var event sdkgo.TriggerEvent[slack.MessageEvent]
+                		event.ID = "Ev0123"
+                		event.Payload.TeamID, event.Payload.ChannelID, event.Payload.UserID = "T0123ABCD", "C0456EFGH", "U0789IJKL"
+                		event.Payload.ThreadTimestamp, event.Payload.Timestamp, event.Payload.Text = "1790400000.000100", "1790400001.000200", text
+                		return event
+                	}
+                	if !accepts(reply("Looks good, I approve.")) {
+                		t.Fatal("a reply that contains approve must finish the approval")
+                	}
+                	if accepts(reply("Looks good.")) {
+                		t.Fatal("a reply without approve must change nothing")
+                	}
+                }
+      - text: "Building and vetting the application with its API tests."
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap && make generate && go build ./... && go vet ./... && go vet -tags apptest ./...", description: "Generate the API code, then build and vet the application", timeout_seconds: 600}
+      - text: "Running the source checks and pushing the change."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Finish a Slack thread approval only on a reply that contains approve"
+              verification:
+                - "make generate, go build ./..., go vet ./... and go vet -tags apptest ./... succeeded"
+              remaining_risks:
+                - "Relayed Slack events and the real thread reply run only in a Preview whose slack-approvals connection and both trigger bindings are configured."
+              requirements:
+                - id: R1
+                  evidence: [internal/process/slack_thread_approval_flow.go, internal/process/slack_thread_triggers.go, internal/worker/triggers.go]
+                  tests: [TestThreadApprovalStartsOnRootMessage]
+                - id: R2
+                  evidence: [internal/process/slack_thread_approval_flow.go]
+                  tests: [TestThreadApprovalReplyPostsCompletion]
+                - id: R3
+                  evidence: [internal/process/slack_thread_approval_flow.go]
+                  untested_reason: "The Slack connector has no mocks yet, so no test can make Slack confirm the reply; the tests cover only a connection without credentials."
+                - id: R4
+                  evidence: [internal/process/slack_thread_triggers.go, internal/apptest/approval_word_test.go]
+                  untested_reason: "A reply reaches the Flow only through the Slack trigger, and the Slack connector has no mocks yet, so no API test can deliver one; approval_word_test.go checks the reply filter itself."
+              requirements_revision: 2
+      - text: "A thread reply now finishes the approval only when it contains approve; the change is pushed and the Preview deploys it."

@@ -53,6 +53,40 @@ type projectServer struct {
 	models          SessionModels
 }
 
+// exampleServer serves ExampleService: the examples a Project can start from.
+type exampleServer struct {
+	pb.UnimplementedExampleServiceServer
+	*boundary.Boundary
+}
+
+// ListExamples lists the examples this server build embeds to any
+// authenticated account; the catalog is the same for everyone, holds no
+// tenant data and changes only with a release, so it reads neither the read
+// model nor the network.
+func (s *exampleServer) ListExamples(ctx context.Context, in *pb.ListExamplesRequest) (*pb.ListExamplesResponse, error) {
+	if _, err := s.Authenticate(ctx, in.GetCaller()); err != nil {
+		return nil, err
+	}
+	examples := apptemplate.Examples()
+	out := &pb.ListExamplesResponse{Examples: make([]*pb.Example, 0, len(examples))}
+	for _, example := range examples {
+		out.Examples = append(out.Examples, &pb.Example{ExampleId: example.ID, Title: example.Title,
+			Category: boundary.Enum[pb.ExampleCategory](example.Category.String()), Apps: example.Apps, Decider: example.Decider,
+			Description: example.Description, ConnectorIds: example.ConnectorIDs})
+	}
+	return out, nil
+}
+
+// projectExample is the example a Project was created from, which its
+// template revision names, or nil for one created from a description.
+func projectExample(templateRevision string) *pb.ProjectExample {
+	id, tree, isExample := apptemplate.ParseExampleRevision(templateRevision)
+	if !isExample {
+		return nil
+	}
+	return &pb.ProjectExample{ExampleId: id, Tree: tree}
+}
+
 // CreateProject starts a Project of a TeamSpace on a new private managed
 // repository. ProjectFlow's first Step admits it in the TeamSpace, which
 // requires the caller's membership unless the caller is the platform admin.
@@ -79,6 +113,12 @@ func (s *projectServer) CreateProject(ctx context.Context, in *pb.CreateProjectR
 	if err != nil {
 		return nil, err
 	}
+	template, example := apptemplate.Current(), in.GetManagedRepository().GetExample()
+	if example != nil {
+		if template, err = apptemplate.ExampleTemplate(example.GetExampleId()); err != nil {
+			return nil, boundary.RPCStatus(err)
+		}
+	}
 	if err = s.admitCreator(ctx, account, in.GetTeamSpaceId()); err != nil {
 		return nil, err
 	}
@@ -89,8 +129,8 @@ func (s *projectServer) CreateProject(ctx context.Context, in *pb.CreateProjectR
 	}
 	projectID, setupID := flowid.ProjectCreationIDs(account.AccountID, in.GetRequestId(), s.projectIDLength)
 	start := projects.ProjectStart{ProjectID: projectID, CreatorAccountID: account.AccountID, Name: in.GetName(), SetupFlowID: flowid.SetupFlowID(projectID, setupID),
-		TemplateRevision: apptemplate.Current().Revision, TeamSpaceID: in.GetTeamSpaceId(), CreatorIsPlatformAdmin: accounts.IsAdministrator(account), InitialSession: initial}
-	fingerprint := managedProjectCreationFingerprint(account.AccountID, in.GetRequestId(), in.GetName(), in.GetTeamSpaceId(), initial)
+		TemplateRevision: template.Revision, TeamSpaceID: in.GetTeamSpaceId(), CreatorIsPlatformAdmin: accounts.IsAdministrator(account), InitialSession: initial}
+	fingerprint := managedProjectCreationFingerprint(account.AccountID, in.GetRequestId(), in.GetName(), in.GetTeamSpaceId(), example, initial)
 	start.Identity = dexflow.StartIdentity{RequestID: fingerprint, Fingerprint: fingerprint, ActorAccountID: account.AccountID}
 	if err = s.projects.Create(ctx, start); err != nil {
 		return nil, boundary.RPCStatus(err)
@@ -161,8 +201,10 @@ func refusalStatus(err error) error {
 // provider results and template revisions never enter the logical identity.
 // The Session's first turn enters it by the digest of its message, so a retry
 // that changes the message, its ID or the model conflicts; a request without
-// one keeps the encoding it had before.
-func managedProjectCreationFingerprint(accountID, requestID, name, teamSpaceID string, initial *projects.SessionStartRequest) string {
+// one keeps the encoding it had before. A picked example enters it by its ID,
+// so a retry that changes or drops the example conflicts; a creation from a
+// description keeps its encoding.
+func managedProjectCreationFingerprint(accountID, requestID, name, teamSpaceID string, example *pb.ExampleReference, initial *projects.SessionStartRequest) string {
 	type repositoryCreationIdentity struct {
 		RepositoryID, InstallationID int64
 		FullName, URL, DefaultBranch string
@@ -172,6 +214,13 @@ func managedProjectCreationFingerprint(accountID, requestID, name, teamSpaceID s
 	type sessionCreationIdentity struct {
 		Model, MessageID, MessageDigest string
 	}
+	type exampleCreationIdentity struct {
+		ID string
+	}
+	var source *exampleCreationIdentity
+	if example != nil {
+		source = &exampleCreationIdentity{ID: example.GetExampleId()}
+	}
 	var session *sessionCreationIdentity
 	if initial != nil {
 		session = &sessionCreationIdentity{Model: initial.Model, MessageID: initial.MessageID, MessageDigest: flowid.Fingerprint(initial.Text)}
@@ -179,8 +228,9 @@ func managedProjectCreationFingerprint(accountID, requestID, name, teamSpaceID s
 	return flowid.Fingerprint(struct {
 		Mode, AccountID, RequestID, Name, TeamSpaceID string
 		Repository                                    repositoryCreationIdentity
+		Example                                       *exampleCreationIdentity `json:",omitempty"`
 		Session                                       *sessionCreationIdentity `json:",omitempty"`
-	}{"CREATE", accountID, requestID, name, teamSpaceID, repositoryCreationIdentity{Managed: true}, session})
+	}{"CREATE", accountID, requestID, name, teamSpaceID, repositoryCreationIdentity{Managed: true}, source, session})
 }
 
 // ListProjects lists from the read model, newest first, every Project of a
@@ -426,7 +476,7 @@ func projectSnapshot(p projects.Project, summary projects.SetupSummary, callerRo
 	out := &pb.ProjectSnapshot{ProjectId: p.ProjectID, CreatorAccountId: p.CreatorAccountID, TeamSpaceId: p.TeamSpaceID, CallerRole: boundary.Enum[pb.ProjectRole](callerRole), Name: p.Name, Status: boundary.Enum[pb.ProjectStatus](p.ProjectStatus), Revision: p.Revision, TemplateRevision: p.TemplateRevision,
 		Repository:  &pb.Repository{RepositoryId: binding.RepositoryID, FullName: binding.FullName, Url: binding.URL, DefaultBranch: binding.DefaultBranch},
 		AppManifest: p.AppManifest, CreatedAt: timestamppb.New(p.CreatedAt), UpdatedAt: timestamppb.New(p.UpdatedAt), Failure: boundary.FailureSnapshot(p.LastFailure),
-		SessionStartFailure: boundary.FailureSnapshot(p.SessionStartFailure)}
+		SessionStartFailure: boundary.FailureSnapshot(p.SessionStartFailure), Example: projectExample(p.TemplateRevision)}
 	if p.ActiveDeployment != nil {
 		out.ActiveDeployment = &pb.ActiveDeploymentReference{DeploymentId: p.ActiveDeployment.DeploymentID, Generation: p.ActiveDeployment.Generation}
 	}

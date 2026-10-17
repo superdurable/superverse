@@ -1,0 +1,951 @@
+[
+  {
+    "id": "text-summary",
+    "title": "Text summary",
+    "category": "Content",
+    "apps": [
+      "An AI model"
+    ],
+    "decider": "No one: the summary is written on its own",
+    "description": "When someone pastes a text into the page, the configured AI model writes a short factual summary of it. The page shows the summary with the model that wrote it and the tokens it used, and marks one the model cut short. A blank or too long text is refused before any paid request, and a refused or failed answer is shown with what went wrong instead of a summary.",
+    "connectorIds": [
+      "llm"
+    ],
+    "card": {
+      "title": "Text summary",
+      "summary": "A page where a person submits a text and gets a short factual summary from the configured AI model, with the model and token usage shown.",
+      "features": [
+        {
+          "id": "R1",
+          "text": "A blank, too long or invalid text is refused before any model request, and the refused submission starts no summary."
+        },
+        {
+          "id": "R2",
+          "text": "A repeated submission with the same request ID starts one summary."
+        },
+        {
+          "id": "R3",
+          "text": "The configured model writes a short factual summary, which the page shows with the model and token usage; a summary cut at the output limit is shown as truncated."
+        },
+        {
+          "id": "R4",
+          "text": "A blocked, rejected, invalid or failed model answer shows its status and a notice and no summary."
+        },
+        {
+          "id": "R5",
+          "text": "A lost model response is recorded as unknown without sending the paid request again."
+        }
+      ],
+      "connections": [
+        {
+          "need": "Summarize the text",
+          "connector": "llm",
+          "operations": [
+            "generateText"
+          ],
+          "status": "existing",
+          "user_setup": "Configure the summary-model connection with a provider key and a model in Studio Configuration."
+        }
+      ],
+      "user_setup": [],
+      "acceptance": [
+        "A submitted text shows its summary, the model and the token usage on the page, and its run completes in Studio."
+      ],
+      "design": {
+        "summary": "One text is validated, summarized by the configured model and saved with the model and its token usage; every other answer is recorded with a notice.",
+        "flows": [
+          {
+            "flow_type": "TextSummaryFlow",
+            "purpose": "Summarizes one text with one paid model request and keeps the result.",
+            "start_step": "PrepareSummary",
+            "steps": [
+              {
+                "step_type": "PrepareSummary",
+                "group": "Text intake",
+                "explanation": "Validate and keep the text before any paid model request.",
+                "next": [
+                  {
+                    "to": "GenerateSummary",
+                    "when": "the text is valid"
+                  },
+                  {
+                    "to": "complete",
+                    "when": "the text is empty, too long or not UTF-8"
+                  }
+                ],
+                "features": [
+                  "R1",
+                  "R2"
+                ]
+              },
+              {
+                "step_type": "GenerateSummary",
+                "group": "Summary",
+                "explanation": "Ask the configured model for a short factual summary.",
+                "next": [
+                  {
+                    "to": "SaveSummaryResult",
+                    "when": "generated"
+                  },
+                  {
+                    "to": "SaveSummaryResult",
+                    "when": "truncated"
+                  },
+                  {
+                    "to": "RecordSummaryFailure",
+                    "when": "blocked, rejected, invalid or a defect"
+                  },
+                  {
+                    "to": "RecordSummaryUncertainty",
+                    "when": "the model response was lost",
+                    "is_failure_route": true
+                  }
+                ],
+                "features": [
+                  "R3",
+                  "R4"
+                ]
+              },
+              {
+                "step_type": "SaveSummaryResult",
+                "group": "Result",
+                "explanation": "Save the summary, the model and the token usage.",
+                "next": [
+                  {
+                    "to": "complete"
+                  }
+                ],
+                "features": [
+                  "R3"
+                ]
+              },
+              {
+                "step_type": "RecordSummaryFailure",
+                "group": "Result",
+                "explanation": "Record why the model returned no usable summary.",
+                "next": [
+                  {
+                    "to": "complete"
+                  }
+                ],
+                "features": [
+                  "R4"
+                ]
+              },
+              {
+                "step_type": "RecordSummaryUncertainty",
+                "group": "Result",
+                "explanation": "Record a lost model response without sending the paid request again.",
+                "next": [
+                  {
+                    "to": "complete"
+                  }
+                ],
+                "features": [
+                  "R5"
+                ]
+              }
+            ],
+            "channels": [],
+            "actions": [],
+            "attributes": [
+              {
+                "name": "SummaryStatus",
+                "value": "pending, generating, completed, truncated, blocked, provider_rejected, invalid_response, defect, invalid_input or unknown"
+              },
+              {
+                "name": "SummaryText",
+                "value": "the saved summary"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "github-releases-newsletter",
+    "title": "GitHub releases newsletter",
+    "category": "Content",
+    "apps": [
+      "Slack",
+      "GitHub",
+      "OpenAI",
+      "Gmail"
+    ],
+    "decider": "An administrator posting in Slack",
+    "description": "Visitors subscribe once with their email address on the page. When an administrator posts publish newsletter in the Slack channel, the process reads the last seven days of releases of two GitHub repositories, has OpenAI write one factual report, and sends it to every subscriber as their own Gmail message. A failed read or model answer sends nothing, and an uncertain send is never repeated.",
+    "connectorIds": [
+      "slack",
+      "github",
+      "llm",
+      "gmail"
+    ],
+    "card": {
+      "title": "GitHub Releases Newsletter",
+      "summary": "Visitors subscribe once; an authorized Slack message starts a release newsletter and each subscriber receives an individual Gmail delivery.",
+      "features": [
+        {
+          "id": "R1",
+          "text": "The public page accepts valid email subscriptions, retains each normalized address once and gives clear feedback."
+        },
+        {
+          "id": "R2",
+          "text": "Only a selected administrator posting the exact top-level Slack message publish newsletter in the selected channel starts a campaign; duplicate delivery of that message starts none."
+        },
+        {
+          "id": "R3",
+          "text": "The campaign reads every release page from superdurable/dex and dex-connectors-library, excludes drafts, filters by the previous seven days and keeps original links."
+        },
+        {
+          "id": "R4",
+          "text": "OpenAI writes a factual newsletter from release notes, or the report clearly says there are no releases; source or model failure never sends an incomplete report."
+        },
+        {
+          "id": "R5",
+          "text": "The campaign freezes subscribers at trigger time; Gmail sends the same report to each individually and records sent, failed or uncertain delivery without automatically retrying an uncertain send."
+        }
+      ],
+      "connections": [
+        {
+          "need": "Receive the administrator publish command",
+          "connector": "slack",
+          "operations": [
+            "channelThreadCreated"
+          ],
+          "status": "existing",
+          "user_setup": "Authorize Slack, select the channel and administrator members in Studio."
+        },
+        {
+          "need": "Read release pages",
+          "connector": "GitHub v0.23.0",
+          "operations": [
+            "listReleases"
+          ],
+          "status": "existing",
+          "user_setup": "Authorize GitHub access to the two repositories."
+        },
+        {
+          "need": "Summarize releases",
+          "connector": "LLM v0.22.1 (OpenAI provider)",
+          "operations": [
+            "generateText"
+          ],
+          "status": "existing",
+          "user_setup": "Configure the OpenAI key and model."
+        },
+        {
+          "need": "Send each newsletter email",
+          "connector": "Gmail v0.23.0",
+          "operations": [
+            "sendMessage"
+          ],
+          "status": "existing",
+          "user_setup": "Authorize the Gmail sender account."
+        }
+      ],
+      "user_setup": [
+        "Invite the Slack app to the publishing channel and configure four TeamSpace connections."
+      ],
+      "acceptance": [
+        "A subscribed test address receives a Gmail message after the authorized Slack command, and the campaign reports a successful delivery."
+      ],
+      "design": {
+        "summary": "Visitors subscribe once; an administrator's Slack message starts a campaign that reads two repositories' releases, writes one report with OpenAI and sends it to each frozen subscriber by Gmail.",
+        "flows": [
+          {
+            "flow_type": "SubscriptionRegistryFlow",
+            "purpose": "Keeps every subscriber's normalized email address once.",
+            "start_step": "AwaitSubscription",
+            "steps": [
+              {
+                "step_type": "AwaitSubscription",
+                "group": "Subscriptions",
+                "explanation": "Wait for a visitor to submit an email address.",
+                "next": [
+                  {
+                    "to": "RecordSubscription",
+                    "when": "a visitor submitted an address"
+                  }
+                ],
+                "waits_for": {
+                  "kind": "channel",
+                  "name": "SubscriptionRequests"
+                }
+              },
+              {
+                "step_type": "RecordSubscription",
+                "group": "Subscriptions",
+                "explanation": "Save a new subscriber once and preserve an existing subscription.",
+                "next": [
+                  {
+                    "to": "AwaitSubscription"
+                  }
+                ]
+              }
+            ],
+            "channels": [
+              {
+                "name": "SubscriptionRequests",
+                "payload": "a visitor's email address"
+              }
+            ],
+            "actions": [],
+            "attributes": [
+              {
+                "name": "RegistryStatus",
+                "value": "registry status"
+              },
+              {
+                "name": "SubscriberCount",
+                "value": "subscriber count"
+              },
+              {
+                "name": "Subscribers",
+                "value": "subscribers"
+              }
+            ],
+            "starts": []
+          },
+          {
+            "flow_type": "NewsletterCampaignFlow",
+            "purpose": "Collects the last seven days of releases of two repositories, writes one report and sends it to each frozen subscriber by Gmail.",
+            "start_step": "PrepareNewsletterRun",
+            "steps": [
+              {
+                "step_type": "PrepareNewsletterRun",
+                "group": "Start",
+                "explanation": "Freeze the trigger identity and the seven-day publication window.",
+                "next": [
+                  {
+                    "to": "LoadSubscribers"
+                  }
+                ]
+              },
+              {
+                "step_type": "LoadSubscribers",
+                "group": "Delivery",
+                "explanation": "Freeze the subscribers for this campaign before sending any email.",
+                "next": [
+                  {
+                    "to": "ListDexReleases"
+                  }
+                ]
+              },
+              {
+                "step_type": "ListDexReleases",
+                "group": "Releases",
+                "explanation": "Read one page of dex releases.",
+                "next": [
+                  {
+                    "to": "RecordDexReleasePage",
+                    "when": "listed"
+                  },
+                  {
+                    "to": "RecordReleaseFailure",
+                    "when": "any other branch"
+                  }
+                ]
+              },
+              {
+                "step_type": "RecordDexReleasePage",
+                "group": "Releases",
+                "explanation": "Keep the dex release page and choose the next page or repository.",
+                "next": [
+                  {
+                    "to": "RecordReleaseFailure",
+                    "when": "the page was not listed or its next page is invalid"
+                  },
+                  {
+                    "to": "ListDexReleases",
+                    "when": "dex has another page"
+                  },
+                  {
+                    "to": "ListConnectorReleases",
+                    "when": "dex is read completely"
+                  }
+                ]
+              },
+              {
+                "step_type": "RecordReleaseFailure",
+                "group": "Releases",
+                "explanation": "Stop when a repository could not be read completely.",
+                "next": [
+                  {
+                    "to": "complete"
+                  }
+                ]
+              },
+              {
+                "step_type": "ListConnectorReleases",
+                "group": "Releases",
+                "explanation": "Read one page of dex-connectors-library releases.",
+                "next": [
+                  {
+                    "to": "RecordConnectorReleasePage",
+                    "when": "listed"
+                  },
+                  {
+                    "to": "RecordReleaseFailure",
+                    "when": "any other branch"
+                  }
+                ]
+              },
+              {
+                "step_type": "RecordConnectorReleasePage",
+                "group": "Releases",
+                "explanation": "Keep the connector-library release page and choose the next page or report.",
+                "next": [
+                  {
+                    "to": "RecordReleaseFailure",
+                    "when": "the page was not listed or its next page is invalid"
+                  },
+                  {
+                    "to": "ListConnectorReleases",
+                    "when": "the connectors library has another page"
+                  },
+                  {
+                    "to": "PrepareNewsletterReport",
+                    "when": "both repositories are read completely"
+                  }
+                ]
+              },
+              {
+                "step_type": "PrepareNewsletterReport",
+                "group": "Report input",
+                "explanation": "Build a bounded report input from every collected release.",
+                "next": [
+                  {
+                    "to": "SaveNoReleaseReport",
+                    "when": "no release in the window"
+                  },
+                  {
+                    "to": "RecordReleaseFailure",
+                    "when": "the report input is too large"
+                  },
+                  {
+                    "to": "GenerateNewsletterReport",
+                    "when": "releases to summarize"
+                  }
+                ]
+              },
+              {
+                "step_type": "SaveNoReleaseReport",
+                "group": "No releases",
+                "explanation": "State clearly that neither repository published a release.",
+                "next": [
+                  {
+                    "to": "SelectNextRecipient"
+                  }
+                ]
+              },
+              {
+                "step_type": "GenerateNewsletterReport",
+                "group": "Report",
+                "explanation": "Summarize release facts with OpenAI.",
+                "next": [
+                  {
+                    "to": "RecordGenerationFailure",
+                    "when": "blocked, defect, invalidResponse, providerRejected or truncated"
+                  },
+                  {
+                    "to": "RecordGenerationUncertainty",
+                    "when": "the model response was lost",
+                    "is_failure_route": true
+                  },
+                  {
+                    "to": "SaveNewsletterReport",
+                    "when": "generated"
+                  }
+                ]
+              },
+              {
+                "step_type": "SelectNextRecipient",
+                "group": "Delivery",
+                "explanation": "Choose the next subscriber without a recorded delivery.",
+                "next": [
+                  {
+                    "to": "SendNewsletterEmail",
+                    "when": "a subscriber has no recorded delivery"
+                  },
+                  {
+                    "to": "FinishNewsletter",
+                    "when": "every subscriber has a recorded delivery"
+                  }
+                ]
+              },
+              {
+                "step_type": "RecordGenerationFailure",
+                "group": "Report failure",
+                "explanation": "Stop when the model did not return a complete report.",
+                "next": [
+                  {
+                    "to": "complete"
+                  }
+                ]
+              },
+              {
+                "step_type": "RecordGenerationUncertainty",
+                "group": "Report",
+                "explanation": "Keep a lost paid model response unknown rather than sending another request.",
+                "next": [
+                  {
+                    "to": "complete"
+                  }
+                ]
+              },
+              {
+                "step_type": "SaveNewsletterReport",
+                "group": "Report",
+                "explanation": "Keep only a complete, usable model report.",
+                "next": [
+                  {
+                    "to": "RecordGenerationFailure",
+                    "when": "the model's text is not a usable report"
+                  },
+                  {
+                    "to": "SelectNextRecipient",
+                    "when": "the report is saved"
+                  }
+                ]
+              },
+              {
+                "step_type": "SendNewsletterEmail",
+                "group": "Delivery",
+                "explanation": "Send one subscriber their own email.",
+                "next": [
+                  {
+                    "to": "RecordDelivery",
+                    "when": "defect, providerRejected, sent or uncertain"
+                  },
+                  {
+                    "to": "RecordDeliveryUncertainty",
+                    "when": "the Gmail response was lost",
+                    "is_failure_route": true
+                  }
+                ]
+              },
+              {
+                "step_type": "FinishNewsletter",
+                "group": "Finish",
+                "explanation": "Complete the campaign with durable delivery counts.",
+                "next": [
+                  {
+                    "to": "complete"
+                  }
+                ]
+              },
+              {
+                "step_type": "RecordDelivery",
+                "group": "Delivery",
+                "explanation": "Record Gmail's conclusive or uncertain result for one subscriber.",
+                "next": [
+                  {
+                    "to": "SelectNextRecipient"
+                  }
+                ]
+              },
+              {
+                "step_type": "RecordDeliveryUncertainty",
+                "group": "Delivery",
+                "explanation": "Record a lost Gmail response without resending the email.",
+                "next": [
+                  {
+                    "to": "SelectNextRecipient"
+                  }
+                ]
+              }
+            ],
+            "channels": [],
+            "actions": [],
+            "attributes": [
+              {
+                "name": "CampaignNotice",
+                "value": "campaign notice"
+              },
+              {
+                "name": "CampaignStatus",
+                "value": "campaign status"
+              },
+              {
+                "name": "CurrentRecipient",
+                "value": "current recipient"
+              },
+              {
+                "name": "CurrentReleasePage",
+                "value": "current release page"
+              },
+              {
+                "name": "DeliveryResults",
+                "value": "delivery results"
+              },
+              {
+                "name": "FailedCount",
+                "value": "failed count"
+              },
+              {
+                "name": "NewsletterReportValue",
+                "value": "newsletter report"
+              },
+              {
+                "name": "NewsletterWindowValue",
+                "value": "newsletter window"
+              },
+              {
+                "name": "RecipientCount",
+                "value": "recipient count"
+              },
+              {
+                "name": "Recipients",
+                "value": "recipients"
+              },
+              {
+                "name": "ReleaseCount",
+                "value": "release count"
+              },
+              {
+                "name": "ReleaseItems",
+                "value": "release items"
+              },
+              {
+                "name": "ReleasePages",
+                "value": "release pages"
+              },
+              {
+                "name": "ReportInput",
+                "value": "report input"
+              },
+              {
+                "name": "SentCount",
+                "value": "sent count"
+              },
+              {
+                "name": "TriggerIdentity",
+                "value": "trigger identity"
+              },
+              {
+                "name": "UnknownCount",
+                "value": "unknown count"
+              }
+            ],
+            "starts": []
+          }
+        ],
+        "removed_flows": []
+      }
+    }
+  },
+  {
+    "id": "slack-thread-approval",
+    "title": "Slack thread approval",
+    "category": "Approvals",
+    "apps": [
+      "Slack"
+    ],
+    "decider": "The members allowed to reply in the thread",
+    "description": "When someone posts a new message in the approval channel in Slack, a process starts for that thread and waits. The first reply in the thread from one of the members allowed to approve finishes it: the process posts “Processing complete.” in the thread. Later replies change nothing, and a message Slack delivers twice starts only one process.",
+    "connectorIds": [
+      "slack"
+    ],
+    "card": {
+      "title": "Slack thread approval",
+      "summary": "A process that follows threads in one Slack channel: a new message starts it, and a reply in its thread finishes it with a confirmation posted in the thread.",
+      "features": [
+        {
+          "id": "R1",
+          "text": "A new top-level message in the configured Slack channel starts one approval for its thread; a redelivered message starts no second one."
+        },
+        {
+          "id": "R2",
+          "text": "The first matching reply in that thread is accepted and moves the approval on; a later reply changes nothing."
+        },
+        {
+          "id": "R3",
+          "text": "After the reply, the application posts Processing complete. into the same thread and completes the approval."
+        }
+      ],
+      "connections": [
+        {
+          "need": "Receive new channel messages and thread replies, and reply in the thread",
+          "connector": "slack",
+          "operations": [
+            "postThreadReply"
+          ],
+          "status": "existing",
+          "user_setup": "Select the TeamSpace Slack connection as slack-approvals, then choose the channel and the members allowed to reply for both triggers in Studio Configuration."
+        }
+      ],
+      "user_setup": [
+        "Invite the platform's Slack app to the approval channel."
+      ],
+      "acceptance": [
+        "A new message in the channel starts a run in Studio that waits for a reply.",
+        "A reply in its thread makes the application post Processing complete. in the thread, and the run completes."
+      ],
+      "design": {
+        "summary": "A process that follows threads in one Slack channel: a new message starts it, and a reply in its thread finishes it with a confirmation posted in the thread.",
+        "flows": [
+          {
+            "flow_type": "SlackThreadApprovalFlow",
+            "purpose": "Follows one Slack thread: its root message starts the Flow, the first matching reply posts the completion reply and ends it.",
+            "start_step": "RecordThread",
+            "steps": [
+              {
+                "step_type": "RecordThread",
+                "group": "Thread",
+                "explanation": "Keep the Slack thread that the new channel message started and wait for a reply in it.",
+                "waits_for": {
+                  "kind": "none"
+                },
+                "next": [
+                  {
+                    "to": "PostCompletionReply",
+                    "when": "the first matching reply arrives in the thread (ReceiveThreadReply)"
+                  }
+                ],
+                "features": [
+                  "R1"
+                ]
+              },
+              {
+                "step_type": "PostCompletionReply",
+                "group": "Reply",
+                "explanation": "Post Processing complete. into the thread once a matching reply arrived.",
+                "waits_for": {
+                  "kind": "none"
+                },
+                "next": [
+                  {
+                    "to": "CompleteThread",
+                    "when": "Slack confirms the reply (sent)"
+                  },
+                  {
+                    "to": "RecordReplyFailure",
+                    "when": "Slack rejects the reply, a defect, or the outcome is unknown"
+                  }
+                ],
+                "features": [
+                  "R2",
+                  "R3"
+                ]
+              },
+              {
+                "step_type": "CompleteThread",
+                "group": "Reply",
+                "explanation": "Complete once Slack confirms the completion reply.",
+                "waits_for": {
+                  "kind": "none"
+                },
+                "next": [
+                  {
+                    "to": "complete"
+                  }
+                ],
+                "features": [
+                  "R3"
+                ]
+              },
+              {
+                "step_type": "RecordReplyFailure",
+                "group": "Reply",
+                "explanation": "Record why the completion reply was not confirmed, without posting it again.",
+                "waits_for": {
+                  "kind": "none"
+                },
+                "next": [
+                  {
+                    "to": "complete"
+                  }
+                ],
+                "features": [
+                  "R3"
+                ]
+              }
+            ],
+            "channels": [],
+            "actions": [],
+            "attributes": [
+              {
+                "name": "ThreadApprovalStatus",
+                "value": "waiting_for_reply, posting_reply, completed, failed or unknown"
+              },
+              {
+                "name": "ThreadApprovalThread",
+                "value": "the Slack team, channel and root message timestamp"
+              },
+              {
+                "name": "ThreadApprovalReplyEventID",
+                "value": "the Slack event of the accepted reply"
+              },
+              {
+                "name": "ThreadApprovalReplyUserID",
+                "value": "the member whose reply was accepted"
+              },
+              {
+                "name": "ThreadApprovalNotice",
+                "value": "why the completion reply was not confirmed"
+              }
+            ],
+            "starts": []
+          }
+        ],
+        "removed_flows": []
+      }
+    }
+  },
+  {
+    "id": "summary-approval",
+    "title": "Summary approval",
+    "category": "Approvals",
+    "apps": [
+      "An AI model"
+    ],
+    "decider": "A person in Studio",
+    "description": "When someone pastes a text into the page, the configured AI model writes a short summary of it, and the summary waits for a person to approve it in Studio before it is saved. A truncated summary is saved without waiting, and a blocked, refused or failed answer is recorded with what went wrong instead of a summary.",
+    "connectorIds": [
+      "llm"
+    ],
+    "card": {
+      "title": "Summary approval",
+      "summary": "A person approves each generated summary in Studio before it is saved.",
+      "features": [
+        {
+          "id": "R1",
+          "text": "A Step AwaitSummaryApproval holds the generated summary and shows awaiting-approval until a person decides."
+        },
+        {
+          "id": "R2",
+          "text": "An Approve summary Action releases that Step, which then saves the summary."
+        }
+      ],
+      "connections": [],
+      "user_setup": [],
+      "acceptance": [
+        "The summary is saved only after Approve summary is chosen in a Studio run."
+      ],
+      "design": {
+        "summary": "The summary run waits after generation until a person approves it in Studio; then it is saved.",
+        "flows": [
+          {
+            "flow_type": "TextSummaryFlow",
+            "purpose": "Summarizes a text with a model and saves it once a person approves.",
+            "start_step": "PrepareSummary",
+            "steps": [
+              {
+                "step_type": "PrepareSummary",
+                "group": "Text intake",
+                "explanation": "Validate and keep the text before any paid model request.",
+                "next": [
+                  {
+                    "to": "GenerateSummary",
+                    "when": "the text is valid"
+                  },
+                  {
+                    "to": "complete",
+                    "when": "the text is empty, too long or not UTF-8"
+                  }
+                ]
+              },
+              {
+                "step_type": "GenerateSummary",
+                "group": "Summary",
+                "explanation": "Ask the configured model for a short factual summary.",
+                "next": [
+                  {
+                    "to": "AwaitSummaryApproval",
+                    "when": "generated"
+                  },
+                  {
+                    "to": "SaveSummaryResult",
+                    "when": "truncated"
+                  },
+                  {
+                    "to": "RecordSummaryFailure",
+                    "when": "blocked, rejected, invalid or a defect"
+                  },
+                  {
+                    "to": "RecordSummaryUncertainty",
+                    "when": "the model response was lost",
+                    "is_failure_route": true
+                  }
+                ]
+              },
+              {
+                "step_type": "AwaitSummaryApproval",
+                "group": "Result",
+                "explanation": "Wait for a person to approve the generated summary before it is saved.",
+                "waits_for": {
+                  "kind": "action",
+                  "name": "ApproveSummary"
+                },
+                "next": [
+                  {
+                    "to": "SaveSummaryResult"
+                  }
+                ],
+                "features": [
+                  "R1",
+                  "R2"
+                ]
+              },
+              {
+                "step_type": "SaveSummaryResult",
+                "group": "Result",
+                "explanation": "Save the summary, the model and the token usage.",
+                "next": [
+                  {
+                    "to": "complete"
+                  }
+                ]
+              },
+              {
+                "step_type": "RecordSummaryFailure",
+                "group": "Result",
+                "explanation": "Record why the model returned no usable summary.",
+                "next": [
+                  {
+                    "to": "complete"
+                  }
+                ]
+              },
+              {
+                "step_type": "RecordSummaryUncertainty",
+                "group": "Result",
+                "explanation": "Record a lost model response without sending the paid request again.",
+                "next": [
+                  {
+                    "to": "complete"
+                  }
+                ]
+              }
+            ],
+            "channels": [
+              {
+                "name": "SummaryApprovals",
+                "payload": "the approval"
+              }
+            ],
+            "actions": [
+              {
+                "label": "Approve summary",
+                "rpc": "ApproveSummary",
+                "publishes": "SummaryApprovals",
+                "permission": "summary.approve"
+              }
+            ],
+            "attributes": [
+              {
+                "name": "SummaryStatus",
+                "value": "pending, awaiting-approval, approved, completed or failed"
+              },
+              {
+                "name": "SummaryText",
+                "value": "the saved summary"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+]

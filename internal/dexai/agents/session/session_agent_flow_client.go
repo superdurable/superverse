@@ -103,7 +103,7 @@ func (client *SessionAgentFlowClient) StartAccepted(ctx context.Context, request
 	}
 	durability := dex.StepDurabilityAsync
 	_, err := client.sdk.StartFlow(ctx, client.flow, string(agentloop.SessionFlowID(request.Session.ProjectID)),
-		agentloop.SessionStartInput{FirstMessage: request.FirstMessage},
+		agentloop.SessionStartInput{FirstMessage: request.FirstMessage, ExampleBrief: request.ExampleBrief},
 		dex.StartFlowOptions{
 			RequestID:      &request.SessionStartIdentity,
 			AlreadyStarted: &dex.AlreadyStartedOptions{IgnoreError: true},

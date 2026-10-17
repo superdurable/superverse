@@ -184,7 +184,9 @@ func draftSteps(draft agentloop.RequirementsDraft) int {
 // one card call streamed its input at 100 ms per delta: several drafts, each
 // received before the card was recorded, growing to the whole card (the mock
 // writes its keys in sorted order, the design first), the last one complete
-// and naming the call that recorded it with its title and design.
+// and naming the call that recorded it with its title and design. Each draft
+// marks only RecordSummaryUncertainty, which only a failure route reaches,
+// as failure handling, once that Step is drafted.
 func requireCardDrafts(ctx context.Context, s *mockSession, agent agentloop.AgentSnapshot) {
 	s.t.Helper()
 	confirmed := agent.Description.ConfirmedRequirements
@@ -231,6 +233,15 @@ func requireCardDrafts(ctx context.Context, s *mockSession, agent agentloop.Agen
 		}
 		if newer := drafts[max(index-1, 0)].Value; index > 0 && (draft.Value.Complete || len(draft.Value.Features) > len(newer.Features) || draftSteps(draft.Value) > draftSteps(newer)) {
 			s.t.Fatalf("draft %d, older than draft %d, is complete or holds more features or Steps: %+v", index, index-1, draft.Value)
+		}
+		for _, flow := range draft.Value.Flows {
+			want := []string{}
+			if slices.Contains(flow.StepTypes, "RecordSummaryUncertainty") {
+				want = []string{"RecordSummaryUncertainty"}
+			}
+			if !slices.Equal(flow.FailureHandlingStepTypes, want) {
+				s.t.Fatalf("draft %d marks %v of %v as failure handling, want %v", index, flow.FailureHandlingStepTypes, flow.StepTypes, want)
+			}
 		}
 	}
 	last := drafts[0].Value

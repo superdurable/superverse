@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteexec"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/toolfailure"
@@ -37,7 +38,7 @@ func StartUserTurn(state AgentState, messages []conversation.UserMessage) (Agent
 	// The user is back: notifications may open turns again, and subagents start
 	// within a fresh budget.
 	state.AutomaticTaskTurns, state.AutomaticPlatformTurns, state.AutomaticTurnsPaused = 0, 0, false
-	state.SubagentsStartedWithoutUser = 0
+	state.SubagentsStartedWithoutUser, state.AwaitsFirstMessage = 0, false
 	entries := make([]conversation.Entry, 0, len(messages)+1)
 	for _, message := range messages {
 		sequence := state.LastSequence + conversation.Sequence(len(entries)) + 1
@@ -227,6 +228,29 @@ func StopTurn(state AgentState) (AgentState, []conversation.ToolCall, bool) {
 	state.Status = AgentStatusWaitingForMessage
 	state, isNewPause := pauseAutomaticTurns(state)
 	return state, calls, isNewPause
+}
+
+// ExampleStartedNotice opens the conversation of a Session created from an
+// example: the model reads its text, and Studio shows its marker, the first
+// divider of an example Project's conversation, as the agent's greeting.
+func ExampleStartedNotice(brief ExampleBrief) conversation.Entry {
+	text := fmt.Sprintf("This Project starts from the example %s (%s, Git tree %s): its first commit is the example's finished source, "+
+		"its processes are built and its requirements are recorded as version 1. Wait for the person's message, then build only the change "+
+		"they ask for, and keep the processes and requirements they still want.", brief.Title, brief.ExampleID, brief.Tree)
+	marker := fmt.Sprintf("This project starts from the %s example. Its processes are built and drawn on the Flow tab, and Try it gets ready "+
+		"in a few minutes. Tell me what you want to change.", brief.Title)
+	return conversation.NoticeEntry(conversation.EntryRoleSystem, text, marker)
+}
+
+// ExampleBriefRejectedNotice opens the conversation of a Session whose
+// example has no card it can record: the processes are built, and no
+// requirements are recorded.
+func ExampleBriefRejectedNotice(brief ExampleBrief, problem string) conversation.Entry {
+	text := fmt.Sprintf("This Project starts from the example %s (%s, Git tree %s): its first commit is the example's finished source, "+
+		"but its requirements card could not be recorded (%s). Wait for the person's message; confirm requirements before a large change.",
+		brief.Title, brief.ExampleID, brief.Tree, comm.TruncateUTF8(problem, 2<<10))
+	marker := fmt.Sprintf("This project starts from the %s example. Its processes are built; its brief could not be recorded. Tell me what you want to change.", brief.Title)
+	return conversation.NoticeEntry(conversation.EntryRoleSystem, text, marker)
 }
 
 // stoppedMarker is the divider a Stop leaves in the conversation.

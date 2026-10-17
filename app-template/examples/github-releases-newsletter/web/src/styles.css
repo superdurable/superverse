@@ -1,0 +1,38 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #17243d;
+  background: #f5f7f4;
+  font-synthesis: none;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+.page { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(18rem, .65fr); }
+.hero { padding: clamp(2rem, 7vw, 8rem); display: flex; flex-direction: column; justify-content: center; }
+.eyebrow, .about-kicker { font-size: .72rem; font-weight: 800; letter-spacing: .22em; color: #0a7666; }
+h1 { max-width: 15ch; margin: 1.5rem 0; font-size: clamp(3.2rem, 6.8vw, 6.5rem); line-height: .98; letter-spacing: -.07em; }
+.intro { max-width: 36rem; color: #546175; font-size: clamp(1.1rem, 1.6vw, 1.35rem); line-height: 1.65; }
+form { max-width: 38rem; margin-top: 3rem; }
+label { display: block; margin-bottom: .7rem; font-weight: 700; }
+.form-row { display: flex; gap: .6rem; }
+input { min-width: 0; flex: 1; padding: 1rem 1.1rem; font: inherit; color: inherit; background: #fff; border: 1px solid #cbd5d6; border-radius: .65rem; }
+input:focus { outline: 3px solid #8dd9c9; outline-offset: 2px; }
+button { padding: 1rem 1.45rem; color: #fff; background: #0a7666; font: inherit; font-weight: 700; border: 0; border-radius: .65rem; cursor: pointer; }
+button:hover { background: #085c50; }
+button:disabled { opacity: .6; cursor: wait; }
+.form-hint { margin-top: .8rem; color: #75808e; font-size: .87rem; }
+.feedback { min-height: 3rem; }
+.success { color: #0a7666; font-weight: 700; }
+[role="alert"] { color: #b42318; font-weight: 700; }
+.about { padding: clamp(2rem, 5vw, 5rem); display: flex; flex-direction: column; justify-content: center; color: #e7f5ef; background: #102f31; }
+.about-kicker { color: #8ed9c8; }
+.about h2 { max-width: 12ch; margin: 1.2rem 0; font-size: clamp(2.4rem, 3.5vw, 4rem); line-height: 1.05; letter-spacing: -.05em; }
+.about p { max-width: 27rem; color: #b8d1c9; font-size: 1.05rem; line-height: 1.7; }
+.sources { display: grid; gap: .85rem; margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid #43615c; }
+.sources span { display: flex; gap: 1rem; color: #8ed9c8; font-size: .85rem; }
+.sources strong { color: #e7f5ef; font-weight: 600; overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  .page { grid-template-columns: 1fr; }
+  .hero { min-height: 70vh; }
+  .about { min-height: 22rem; }
+  .form-row { flex-direction: column; }
+}

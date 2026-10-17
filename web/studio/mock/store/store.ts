@@ -54,6 +54,8 @@ export interface MockProject {
   updatedAt: string;
   /** An explicitly requested, finite development-only configuration read outage. */
   configurationReadFailures?: number;
+  /** The built example the Project started from, as its snapshot names it. */
+  example?: { exampleId: string; tree: string };
 }
 
 export interface MockPreparedPreviewSource extends Pick<
@@ -195,6 +197,7 @@ export function createProject(
   store: MockStore,
   name: string,
   idempotencyKey: string | null,
+  example?: MockProject["example"],
 ): { project: MockProject; replayed: boolean } {
   const admittedProjectId = idempotencyKey ? store.projectAdmissions.get(idempotencyKey) : null;
   if (admittedProjectId) {
@@ -207,6 +210,7 @@ export function createProject(
     ...createSeedProject(),
     id,
     displayName: name.trim() || "Untitled app",
+    ...(example ? { example } : {}),
     createdAt: timestamp,
     updatedAt: timestamp,
     repository: {

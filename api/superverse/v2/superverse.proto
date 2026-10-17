@@ -46,7 +46,7 @@
 // - Acronyms are written as words (FlowApi, ConnectorUi); OAuth is the one exception.
 //
 // The browser reaches AccountService only through /api/auth, the four Flow API services only
-// through /dex/... and the other ten services only through /api/rpc/<Method>.
+// through /dex/... and the other twelve services only through /api/rpc/<Method>.
 syntax = "proto3";
 
 package superverse.v2;
@@ -928,8 +928,18 @@ message RemoveLiveResponse {
   ProjectSnapshot project = 1;
 }
 
-// Setup creates the managed repository, so the caller names none.
-message ManagedRepositorySource {}
+// Setup creates the managed repository, so the caller names none. Its first commit is the default
+// example of the server's application template, or the example that example names.
+message ManagedRepositorySource {
+  // An example that ListExamples lists. One this server does not offer is FAILED_PRECONDITION with
+  // reason EXAMPLE_NOT_OFFERED.
+  ExampleReference example = 1;
+}
+
+// One example of the server's application template, as ListExamples names it.
+message ExampleReference {
+  string example_id = 1;
+}
 
 message Repository {
   int64 repository_id = 1;
@@ -966,6 +976,15 @@ message ProjectSnapshot {
   // ListProjects entry with UNSPECIFIED carries only project_id, name, status, setup.status, live
   // and team_space_id.
   ProjectRole caller_role = 20;
+  // The example the Project was created from, which template_revision names; absent for a Project
+  // created from a description, which starts from the default example.
+  ProjectExample example = 21;
+}
+
+// The example whose composed Git tree the Project's first commit holds.
+message ProjectExample {
+  string example_id = 1;
+  string tree = 2;
 }
 
 // The Project's Live pointer. It names the serving deployment, not a copy of its state;
@@ -1174,6 +1193,51 @@ enum ConfigurationStatus {
   CONFIGURATION_STATUS_DRAFT = 1;
   CONFIGURATION_STATUS_NEEDS_REVIEW = 2;
   CONFIGURATION_STATUS_READY = 3;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Example
+// ---------------------------------------------------------------------------------------------
+
+// The tested examples a Project can start from: the examples of the application template this
+// server build embeds, which every ACTIVE account reads alike.
+service ExampleService {
+  rpc ListExamples(ListExamplesRequest) returns (ListExamplesResponse);
+}
+
+message ListExamplesRequest {
+  CallerContext caller = 100;
+}
+
+// The examples in the order the start page lists them, the default first.
+message ListExamplesResponse {
+  repeated Example examples = 1;
+}
+
+// One example: what Studio's start page shows and suggests, and what ManagedRepositorySource.example
+// names.
+message Example {
+  string example_id = 1;
+  string title = 2;
+  ExampleCategory category = 3;
+  // The apps the process works with, as their makers name them.
+  repeated string apps = 4;
+  // Who makes the call the process waits for.
+  string decider = 5;
+  // What starts the process, the people, the rules and the exceptions, in business language.
+  string description = 6;
+  // The connectors of the example's dex-app.yaml.
+  repeated string connector_ids = 7;
+}
+
+// The start page's group of an example.
+enum ExampleCategory {
+  EXAMPLE_CATEGORY_UNSPECIFIED = 0;
+  EXAMPLE_CATEGORY_APPROVALS = 1;
+  EXAMPLE_CATEGORY_FINANCE = 2;
+  EXAMPLE_CATEGORY_SUPPORT = 3;
+  EXAMPLE_CATEGORY_PEOPLE = 4;
+  EXAMPLE_CATEGORY_CONTENT = 5;
 }
 
 // The members of a Project and their roles. Only its owners and the platform admin change them;
@@ -2151,6 +2215,9 @@ message AgentRequirementsDraftConnection {
 message AgentRequirementsDraftFlow {
   string flow_type = 1;
   repeated string step_types = 2;
+  // The step_types that only failure routes reach so far, which the drawn design leaves out of its
+  // main story.
+  repeated string failure_handling_step_types = 3;
 }
 
 // What a card carries of its Flow design: the digest of its body, its summary and its outline,
