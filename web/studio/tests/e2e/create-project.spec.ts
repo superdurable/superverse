@@ -38,7 +38,7 @@ import {
 import { headingChangePrompt, previewTemplateEdit } from "@/tests/e2e/support/preview/preview";
 import { publishTemplateEditLive, removeLive } from "@/tests/e2e/support/publishing";
 import { observeSessionTransport, withDeadline } from "@/tests/e2e/support/session-transport";
-import { rpc, rpcResult, studioOrigin } from "@/tests/e2e/support/studio-api";
+import { rpc, rpcAnswered, rpcResult, studioOrigin } from "@/tests/e2e/support/studio-api";
 
 // The creation page takes the first message of the Project's one Session, which then takes every
 // later turn, and CreateProject carries it, so the Session starts with it. SUPERVERSE_E2E_MODEL_TARGET decides the model
@@ -67,6 +67,26 @@ async function answerQuestionsAndBuildByHand(page: Page, projectId: string) {
   expect(pushed.preview?.preparedSource?.sourceCommit, "automatic builds are off").not.toBe(pushed.headCommit);
   // With automatic builds off, Setup's Build processes builds the push.
   await openPreviewConfiguration(page, projectId);
+}
+
+// The agent picker's "Connect a local agent…" opens Connect my agent, which lists the Session's remote agent
+// connections: a new Project has none.
+async function expectNoAgentConnections(page: Page, projectId: string) {
+  await page.goto(`/p/${projectId}/flow`);
+  await page
+    .locator("[data-session-executor]")
+    .getByRole("button", { name: /^Agent:/ })
+    .click();
+  const listed = page.waitForResponse(rpcAnswered("ListRemoteAgentConnections"));
+  await page
+    .getByRole("dialog", { name: "Choose agent" })
+    .getByRole("button", { name: "Connect a local agent…", exact: true })
+    .click();
+  expect((await listed).ok()).toBe(true);
+  const dialog = page.getByRole("dialog", { name: "Connect my agent" });
+  await expect(dialog.getByText("No remote agent is currently running this Session.")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
 }
 
 // Another freshly registered account, outside the Teamspace, neither lists nor reads the Teamspace, the Project
@@ -257,6 +277,7 @@ test("template project edits, pushes, previews, deploys Live twice, denies old g
     expect(oldGate.status(), "The superseded deployment must lose current Live authorization").toBe(409);
     await removeLive(page, projectId, replacement.release.releaseId);
     if (mock) await answerQuestionsAndBuildByHand(page, projectId);
+    await expectNoAgentConnections(page, projectId);
     await deleteProject(page, projectId);
     await testInfo.attach("accepted-source", {
       body: JSON.stringify({

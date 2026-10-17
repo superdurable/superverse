@@ -480,6 +480,8 @@ reply of the mock model itself, such as an input out of order, fails the spec wi
   (`UpdatePreviewAutoDeploy`), sends `preview-autodeploy` through SendMessage for a note push (the
   composer offers a source-changing scenario only in a new Project) and builds that push with
   Setup's Build processes (`PreparePreviewSource`). No other acceptance case calls these three RPCs.
+  With either model it then opens Connect my agent from the agent picker, which lists the Session's
+  remote agent connections (`ListRemoteAgentConnections`), none for a new Project.
 - `template-approval.spec.ts` runs `summary-approval`, one input sent from the creation page: it
   records the requirements card, the case configures the Preview while the turn runs, and the
   same turn's mock edit adds the

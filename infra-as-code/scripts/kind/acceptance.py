@@ -27,7 +27,11 @@ RECEIPT = STATE / "e2e-acceptance.json"
 
 
 def observed_rpc_coverage():
-    """Read the server's mounted /tmp from its owned Kind node; the distroless server has no cat binary."""
+    """The business methods the server Pod has served since it started, from its mounted /tmp on its owned Kind node.
+
+    The distroless server has no cat binary. The file holds the Pod's whole lifetime, so only a Pod that has served
+    nothing before the cases credits them alone; the final identity proof requires the same Pod throughout.
+    """
     pods = json.loads(kubectl("get", "pods", "-n", NAMESPACE, "-o", "json", capture=True))["items"]
     servers = [pod for pod in pods if pod["metadata"]["name"].startswith("superverse-v2-server-") and
                pod["status"].get("phase") == "Running"]
@@ -62,6 +66,10 @@ def e2e(_args):
         require(current.get("deployedImages") == deployed_images and current.get("runtimeIdentity") == runtime_identity,
                 "The Kind deployment changed during browser acceptance")
     with acceptance_signals(), acceptance_admission(KIND_ACCEPTANCE_DIRECTORY) as fence:
+        # Refused before the fence: anything the server served earlier would count as the cases' RPC coverage.
+        served = json.loads(observed_rpc_coverage())["methods"]
+        require(not served, f"The Kind server has served {len(served)} business RPCs since its Pod started, which the cases' RPC "
+                "coverage would include; delete the server Pod, run sv2 kind deploy again and restart sv2 kind ports")
         results = run_browser_cases(KIND_ACCEPTANCE_DIRECTORY, fence, browser_node, check_environment_identity, lane="Kind",
                                     studio=f"http://localhost:{FORWARDS['studio'].local_port}", git=GIT, local_git_url=git_host.HOST_URL,
                                     repository_host=git_host.repository_host(value["deploymentInputs"]["config"]["input"]))
