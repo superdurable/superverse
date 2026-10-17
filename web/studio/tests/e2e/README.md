@@ -474,6 +474,11 @@ reply of the mock model itself, such as an input out of order, fails the spec wi
   same Session it then sends input 1 of `explain` for the explanation (a long text streamed
   slowly, so the Watch reconnection check can interrupt it) and runs `inspect-basic` (read-only
   tools in the real coding container). A real model runs the inspection first and the edit last.
+  Last, after Live's removal, it runs `question-answers`, whose two questions the composer answers
+  on the card (`AnswerQuestions`), switches "Build each push automatically" off
+  (`UpdatePreviewAutoDeploy`), sends `preview-autodeploy` through SendMessage for a note push (the
+  composer offers a source-changing scenario only in a new Project) and builds that push with
+  Setup's Build processes (`PreparePreviewSource`). No other acceptance case calls these three RPCs.
 - `template-approval.spec.ts` runs `summary-approval`, one input sent from the creation page: it
   records the requirements card, the case configures the Preview while the turn runs, and the
   same turn's mock edit adds the

@@ -13,13 +13,14 @@ import { revisionFenceHeaders, type ConnectionsResponse } from "@/lib/api/flow/c
 import { register } from "@/tests/e2e/support/account";
 import { createTeamSpace } from "@/tests/e2e/support/teamspace/teamspace";
 import { expectNativeConfigurationRecovery } from "@/tests/e2e/support/configuration/recovery";
-import { openPreviewConfiguration } from "@/tests/e2e/support/configuration";
+import { openPreviewConfiguration, setAutomaticBuilds } from "@/tests/e2e/support/configuration";
 import { fillEnvironmentValue } from "@/tests/e2e/support/configuration/live-versions";
 import {
   chooseMockFirstInput,
   choosesMockModel,
   runMockScenario,
   sendMockInput,
+  sendMockMessage,
   waitForFirstMockInput,
 } from "@/tests/e2e/support/mock/mock-composer";
 import {
@@ -42,8 +43,8 @@ import { rpc, rpcResult, studioOrigin } from "@/tests/e2e/support/studio-api";
 // later turn, and CreateProject carries it, so the Session starts with it. SUPERVERSE_E2E_MODEL_TARGET decides the model
 // when the platform developer sets it; without it a lane that offers the mock model, as the local lanes do,
 // chooses it. On the mock model every turn is a scenario through the mock composer, the creation page's
-// included: a read-only inspection, a long streamed explanation and the heading edit. A real model
-// works from the prompts alone.
+// included: a read-only inspection, a long streamed explanation, the heading edit, two answered questions
+// and a note built by hand. A real model works from the prompts alone.
 const INSPECTION_PROMPT =
   "Inspect the existing application template. Run its source checks and report readiness. Preserve TextSummaryFlow, its summary form and its API; use Studio Runs for process management.";
 const EXPLANATION_PROMPT = [
@@ -52,6 +53,20 @@ const EXPLANATION_PROMPT = [
   "State only what you actually verified and distinguish anything unverified.",
   "This is an explanation request: do not change files, invoke tools or ask for a product decision.",
 ].join(" ");
+
+// Last on the mock model, so no later check waits for an automatic deployment: the person answers the Agent's
+// two questions on its card; then, with automatic builds off, builds the Agent's note push with Build processes.
+async function answerQuestionsAndBuildByHand(page: Page, projectId: string) {
+  await page.goto(`/p/${projectId}/flow`);
+  await runMockScenario(page, projectId, "question-answers");
+  await setAutomaticBuilds(page, projectId, false);
+  // The composer offers a scenario that changes the source only in a new Project.
+  await sendMockMessage(page, projectId, "preview-autodeploy", 1);
+  const pushed = await readSession(page, projectId);
+  expect(pushed.preview?.preparedSource?.sourceCommit, "automatic builds are off").not.toBe(pushed.headCommit);
+  // With automatic builds off, Setup's Build processes builds the push.
+  await openPreviewConfiguration(page, projectId);
+}
 
 // Another freshly registered account, outside the Teamspace, neither lists nor reads the Teamspace, the Project
 // or its Session.
@@ -113,6 +128,7 @@ test("template project edits, pushes, previews, deploys Live twice, denies old g
   browser,
   context,
 }, testInfo) => {
+  test.setTimeout(30 * 60_000);
   const transport = await observeSessionTransport(page);
   const failures: unknown[] = [];
   let pendingReconnect: Promise<{ ok: true } | { ok: false; error: unknown }> | undefined;
@@ -235,6 +251,7 @@ test("template project edits, pushes, previews, deploys Live twice, denies old g
     );
     expect(oldGate.status(), "The superseded deployment must lose current Live authorization").toBe(409);
     await removeLive(page, projectId, replacement.release.releaseId);
+    if (mock) await answerQuestionsAndBuildByHand(page, projectId);
     await deleteProject(page, projectId);
     await testInfo.attach("accepted-source", {
       body: JSON.stringify({
