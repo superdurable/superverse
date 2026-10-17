@@ -6,10 +6,8 @@ graph a person can read, and a short summary. It is part of the requirements car
 
 ## When the agent writes one
 
-The Session prompt and the `confirm_requirements` tool text and schema state the rule. The
-in-repo `dex-app-builder` skill (`SKILL.md` and `references/product-discovery.md`) still says
-that every card that changes Flows carries their design; its update, which changes the coding
-image, is a follow-up. Studio shows the real flow whenever one exists, so a design is drawn,
+The Session prompt, the `confirm_requirements` tool text and schema, and the in-repo
+`dex-app-builder` skill (`SKILL.md` and `references/product-discovery.md`) state the rule. Studio shows the real flow whenever one exists, so a design is drawn,
 and written, only before the first build of a Project that started from the default template,
 whose processes are the template's text summary until then
 ([the Flow tab](studio.md#the-flow-tab)). There a card for a new application, or a large change

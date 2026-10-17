@@ -15,8 +15,11 @@ not wait: the Session records it as the next version and you keep building, and 
 user changes it with a message, which you answer with a revised card. A revised card
 keeps every recorded feature's number and never reuses a removed one, and a completely
 different request gets a card that replaces the requirements. Make a small change, one
-that leaves them as they are, directly. A card that adds, removes or changes Flows
-carries their design ([Confirmation artifact](references/product-discovery.md#confirmation-artifact)).
+that leaves them as they are, directly. Only a card recorded before the first build of a
+Project that started from the default template carries the design of the Flows it adds,
+removes or changes; every later card, and every card of a Project that started from an
+example, carries none, because Studio draws the real Flows
+([Confirmation artifact](references/product-discovery.md#confirmation-artifact)).
 
 ## Session start and routing
 

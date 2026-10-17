@@ -242,12 +242,17 @@ that leaves the current requirements as they are (copy, styling, layout, a bug f
 restores recorded behavior, refactoring), directly. The design record below stays in the
 application's owning documentation; it is not a second confirmation for the user.
 
-A card that adds, removes or changes a Flow's Steps, waits, transitions, Channels,
-Actions or the Flows it starts also carries the Flow design (`design`): each Flow it adds
-or changes, listed in full after reading the current source of a changed one, with the
-Go type names to implement. Studio draws it for the user until the build is complete,
-with the split and the groups the Flow canvas applies to built Flows, so the design
-follows the rules of [FDG authoring](fdg-authoring.md):
+Studio shows the user the real Flows whenever they exist, so a card carries the Flow
+design (`design`) only before the first build of a Project that started from the default
+template, whose processes are the template's text summary until then. The Session says
+which case applies: once its context holds a `card_design` section, or once a
+`commit_and_push` of yours that was not blocked has pushed, cards carry no design; follow
+that section rather than your memory of earlier turns. Such a first card that adds,
+removes or changes a Flow's Steps, waits, transitions, Channels, Actions or the Flows it
+starts lists each Flow it adds or changes in full, after reading the current source of a
+changed one, with the Go type names to implement. Studio draws it for the user until the
+build is complete, with the split and the groups the Flow canvas applies to built Flows,
+so the design follows the rules of [FDG authoring](fdg-authoring.md):
 
 - A group of two or more main-story Steps is one run, where ordinary transitions inside
   it join all of its Steps, or one choice, where one Step outside it leads into every
@@ -256,8 +261,13 @@ follows the rules of [FDG authoring](fdg-authoring.md):
   outcome. Business rejections and connector outcome branches stay ordinary transitions
   and stay in the main story.
 
-After the push that completes the build, compare the built Flows with the confirmed
-design and name every difference in the report to the user, or say that the design was
+Every other card, recorded once the Project has built processes or for a Project that
+started from an example, carries its features, connections, setup and acceptance, which
+the push's requirement trace follows, and no design: Studio keeps drawing the real Flows
+and marks the Steps the build added or changed.
+
+After the push that completes a build of a card with a design, compare the built Flows
+with the confirmed design and name every difference in the report to the user, or say that the design was
 built as confirmed.
 
 Before code, record:
