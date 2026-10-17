@@ -91,7 +91,11 @@ export function ProjectBuilder(props: BuilderProps) {
   const waiting = useReadWaitingRuns(waitingRunsTarget(props.projectId, shown, live, preview), surface);
   if (role === null)
     return (
-      <NotReady kind={owner?.error ? "error" : "placeholder"} heading="Opening the project">
+      <NotReady
+        kind={owner?.error ? "error" : "placeholder"}
+        heading="Opening the project"
+        retry={Boolean(owner?.error)}
+      >
         {owner?.error || "Reading the project and your role in it…"}
       </NotReady>
     );

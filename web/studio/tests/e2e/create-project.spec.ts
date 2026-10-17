@@ -11,6 +11,7 @@ import { type Browser, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { revisionFenceHeaders, type ConnectionsResponse } from "@/lib/api/flow/connector";
 import { register } from "@/tests/e2e/support/account";
+import { studioRoutes } from "@/lib/shared/studio-routes";
 import { createTeamSpace } from "@/tests/e2e/support/teamspace/teamspace";
 import { expectNativeConfigurationRecovery } from "@/tests/e2e/support/configuration/recovery";
 import { openPreviewConfiguration, setAutomaticBuilds } from "@/tests/e2e/support/configuration";
@@ -69,7 +70,7 @@ async function answerQuestionsAndBuildByHand(page: Page, projectId: string) {
 }
 
 // Another freshly registered account, outside the Teamspace, neither lists nor reads the Teamspace, the Project
-// or its Session.
+// or its Session; its Builder page says why instead of waiting for a Watch that was refused.
 async function expectHiddenFromOtherAccount(browser: Browser, teamSpaceId: string, projectId: string) {
   const other = await browser.newContext({ baseURL: process.env.SUPERVERSE_E2E_BASE_URL });
   const otherPage = await other.newPage();
@@ -81,6 +82,10 @@ async function expectHiddenFromOtherAccount(browser: Browser, teamSpaceId: strin
     await rpc(otherPage.request, "GetSession", { projectId }),
   ];
   for (const response of reads) expect([403, 404]).toContain(response.status());
+  await otherPage.goto(studioRoutes.projectSurface(projectId, "flow"));
+  await expect(otherPage.locator('[data-not-ready="error"]')).toContainText(
+    /You are not a member of this project|This project does not exist/,
+  );
   await other.close();
 }
 

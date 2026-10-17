@@ -40,6 +40,11 @@ export async function createProject(input: RpcInput<"CreateProject">, signal: Ab
   }
 }
 
+/** The Project with the caller's role; a caller who is not its member gets a 403 ApiError. */
+export function getProject(input: RpcInput<"GetProject">, signal: AbortSignal): Promise<RpcOutput<"GetProject">> {
+  return readUnary("GetProject", input, { signal });
+}
+
 export function listProjects(input: RpcInput<"ListProjects">, signal: AbortSignal): Promise<RpcOutput<"ListProjects">> {
   return readUnary("ListProjects", input, { signal });
 }

@@ -5,18 +5,19 @@ Purpose: The three required acceptance specs of the local lanes: registration, a
 
 Importers: no production directory imports this directory.
 
-Imports: it imports `lib/api/flow`, `tests/e2e/support`, `tests/e2e/support/configuration`, `tests/e2e/support/coverage`, `tests/e2e/support/mock`, `tests/e2e/support/preview` and `tests/e2e/support/teamspace`.
+Imports: it imports `lib/api/flow`, `lib/shared`, `tests/e2e/support`, `tests/e2e/support/configuration`, `tests/e2e/support/coverage`, `tests/e2e/support/mock`, `tests/e2e/support/preview` and `tests/e2e/support/teamspace`.
 
 ```mermaid
 flowchart LR
   self["tests/e2e"]
   self --> d0["lib/api/flow"]
-  self --> d1["tests/e2e/support"]
-  self --> d2["tests/e2e/support/configuration"]
-  self --> d3["tests/e2e/support/coverage"]
-  self --> d4["tests/e2e/support/mock"]
-  self --> d5["tests/e2e/support/preview"]
-  self --> d6["tests/e2e/support/teamspace"]
+  self --> d1["lib/shared"]
+  self --> d2["tests/e2e/support"]
+  self --> d3["tests/e2e/support/configuration"]
+  self --> d4["tests/e2e/support/coverage"]
+  self --> d5["tests/e2e/support/mock"]
+  self --> d6["tests/e2e/support/preview"]
+  self --> d7["tests/e2e/support/teamspace"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
