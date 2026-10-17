@@ -364,6 +364,53 @@ func startingExampleSection(ctx dex.Context, describesPicked bool) string {
 	return comm.TruncateUTF8(startingExampleText(*started, recorded), agentloop.MaximumStartingExampleBytes)
 }
 
+// recordStartingExampleBuild completes a matched Session's StartingExample,
+// in the commit of the tool result that is the Session's first build, the
+// first pushed, unblocked commit_and_push, before which neither the Preview
+// handoff nor a built design exists (the moment the starting_example section
+// ends), with what that build kept of the example: the Steps of the example's
+// design as this server build describes it at the recorded tree, those of the
+// confirmed design, which WrittenDesignSteps follows, the example's Steps it
+// keeps and the commit. It is written once; a later build, and a Session whose
+// first build came before this record existed, write nothing.
+func recordStartingExampleBuild(ctx dex.Context, call conversation.ToolCall, result agentloop.ToolExecutionResult) {
+	state := comm.Must(agentStateAttribute.Get(ctx))
+	started := state.StartingExample
+	if started == nil || started.Choice != agentloop.ExampleChoiceMatched || started.FirstBuild != nil || !agentloop.BuildsDesign(call, result) ||
+		dexflow.ValueOrZero(previewHandoffAttribute.Get(ctx)).Commit != "" || dexflow.OptionalValue(builtFlowDesignAttribute.Get(ctx)) != nil {
+		return
+	}
+	build := agentloop.StartingExampleBuild{Commit: result.HeadCommit}
+	built := dexflow.OptionalValue(writtenDesignStepsAttribute.Get(ctx))
+	if confirmed := dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx)); built == nil || confirmed == nil || confirmed.Spec.Design == nil || built.Digest != confirmed.Spec.Design.Digest {
+		built = nil
+	}
+	if built != nil {
+		build.BuiltSteps = built.Count()
+	}
+	if example, described := describedExample(*started); described {
+		card := conversation.ToolCall{ID: exampleBriefCallID, Name: conversation.ToolConfirmRequirements, Arguments: conversation.JSONObject(example.Card)}
+		if _, design, err := agentloop.RequestedRequirements(card, nil); err == nil && design != nil {
+			build.ExampleSteps = design.StepCount()
+			if built != nil {
+				build.KeptSteps = built.Kept(*design)
+			}
+		}
+	}
+	started.FirstBuild = &build
+	comm.MustDo(agentStateAttribute.Set(ctx, state))
+}
+
+// describedExample is the example a Project started from as this server
+// build embeds it, and whether the build holds it at the recorded tree; a
+// build that holds it at another tree, as during a rollout, does not
+// describe it.
+func describedExample(started agentloop.StartingExample) (apptemplate.Example, bool) {
+	example, found := apptemplate.FindExample(started.ExampleID)
+	template, err := apptemplate.ExampleTemplate(started.ExampleID)
+	return example, found && err == nil && template.TreeID == started.Tree
+}
+
 // startingExampleText describes the example a Project started from from what
 // this server build embeds of it: how it was chosen and what to do with it,
 // given whether version 1 of the requirements is recorded, its card with each
@@ -373,9 +420,7 @@ func startingExampleSection(ctx dex.Context, describesPicked bool) string {
 func startingExampleText(started agentloop.StartingExample, recorded bool) string {
 	var text strings.Builder
 	fmt.Fprintf(&text, "This Project's first commit is the finished source of the example %s (%s, Git tree %s).\n", started.Title, started.ExampleID, started.Tree)
-	example, found := apptemplate.FindExample(started.ExampleID)
-	template, err := apptemplate.ExampleTemplate(started.ExampleID)
-	described := found && err == nil && template.TreeID == started.Tree
+	example, described := describedExample(started)
 	const adapt = "keep what the request needs, reusing the example's type names, feature wording, evidence and test names; change what differs; remove the rest with its connection, endpoints, page and tests.\n"
 	switch {
 	case started.Choice == agentloop.ExampleChoiceMatched:

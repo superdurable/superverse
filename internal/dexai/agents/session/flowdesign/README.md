@@ -28,10 +28,10 @@ Attribute `WrittenDesignSteps` (`WrittenSteps`). This package holds no state.
 
 | Path | Responsibility |
 | --- | --- |
-| `flow_design.go` | the design types, the closed sets of wait kinds, transition ends and slots, and the conversion from the decoded tool input |
+| `flow_design.go` | the design types and their Step count, the closed sets of wait kinds, transition ends and slots, and the conversion from the decoded tool input |
 | `validation.go` | the cross-reference, reachability and size checks; group shape is left to Dex's analyzer |
 | `outline.go` | the canonical JSON, the digest, the outline and the main story |
-| `written_steps.go` | `WrittenSteps`: every designed Step and whether a write or edit declared it (`type <StepType> struct` or `StepType: "<StepType>"` in a non-test Go file), a Step type of several Flows marked in the Flow its file names ([written Steps](../../../../../docs/architecture/design-first/flow-design.md#written-steps)) |
+| `written_steps.go` | `WrittenSteps`: every designed Step and whether a write or edit declared it (`type <StepType> struct` or `StepType: "<StepType>"` in a non-test Go file), a Step type of several Flows marked in the Flow its file names, and how many Steps of another design, such as an example's, it keeps ([written Steps](../../../../../docs/architecture/design-first/flow-design.md#written-steps)) |
 
 The main story is what the start Step reaches through ordinary transitions; every other
 Step is failure handling, which only failure routes reach. This is the split Dex's

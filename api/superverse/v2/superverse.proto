@@ -2031,6 +2031,22 @@ message AgentStartingExample {
   }
   string example_id = 1;
   Choice choice = 2;
+  // What a matched example's Session kept of it at its first build, the first pushed commit;
+  // unset before that build, for a picked example and for a Session whose first build came
+  // before the server recorded it.
+  AgentStartingExampleBuild first_build = 3;
+}
+
+// What a matched Session's first build kept of its example. example_steps are the Steps of the
+// example's Flow design as the server build that recorded it describes the example's tree (0 when
+// it holds the example at another tree), built_steps those of the confirmed design the build
+// built (0 without a design), kept_steps how many of the example's Steps that design keeps in the
+// same Flow, and commit the pushed commit.
+message AgentStartingExampleBuild {
+  int32 example_steps = 1;
+  int32 built_steps = 2;
+  int32 kept_steps = 3;
+  string commit = 4;
 }
 
 // The progress a mock model reply reports with itself: its scenario, the number of the input it

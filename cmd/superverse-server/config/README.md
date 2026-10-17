@@ -36,9 +36,11 @@ The checked-in profiles are layers. `local-kind.yaml` is the base of the Kind pr
 | `local-kind-acceptance.yaml` | The final acceptance before an AWS wave: the same, with `agent.mockModel: true` still offering the mock model and `agent.model: anthropic/claude-opus-5-5` starting new Sessions on a Claude model, and `repohost: github` with the GitHub App IDs and `github.connectors` naming the connectors test repository. It layers over `local-kind.yaml`, so `localKind: true` applies and any account may select the mock model, as in every Local Kind profile. Whether the acceptance runs the mock model or a real Claude model, and which, is the platform developer's decision (`SUPERVERSE_E2E_MODEL_TARGET` of `kind e2e`, which the receipt records as `modelTarget`). `release attest` accepts only a receipt that was deployed from this unchanged file and copies its `modelTarget`. |
 | `native.yaml` | Local Native ([the current contract](../../../docs/runbooks/local-native.md)), `runtime: docker`: the mock model offered and new Sessions on it, the local Git host, and the default instance's loopback addresses. `sv2 native start` adds a last file with the selected `native.instance`, its shifted addresses and network prefix, and what only the run knows: `native.runId`, `native.stateDir`, `native.dockerSocket` of the Docker context, `localgit.dir`, `server.blobCacheDir`, `sandbox.profile` of the coding profile it rendered and the `live` images. |
 
-The hosted environments set `agent.model` and `agent.mockModel` through the Terraform variables
-`agent_model` and `agent_mock_model`, which every environment's `kubernetes.tfvars` names
-explicitly: test and staging offer the mock model to the administrator, prod never does.
+The hosted environments set `agent.model`, `agent.mockModel` and `agent.closestExamplePick` through the
+Terraform variables `agent_model`, `agent_mock_model` and `agent_closest_example_pick`, which every
+environment's `kubernetes.tfvars` names explicitly: test and staging offer the mock model to the
+administrator, prod never does, and all three start a Project created from a first message from the
+closest example.
 
 `sv2 kind deploy --config cmd/superverse-server/config/<profile>.yaml` (the default is
 `local-kind.yaml`) chooses the profile. A deployed profile must configure Local Kind: the deploy refuses
@@ -113,7 +115,7 @@ define the slug.
 | `taskTurns` | Consecutive turns that task notifications open before automatic continuation pauses | `5` | `0` to `100` |
 | `platformTurns` | Consecutive turns that application-owned delivery failures of the Session's HEAD, such as a Preview whose application failed, open before automatic continuation pauses; `0` opens none | `3` | `0` to `100` |
 | `mockModel` | Start the [mock model](../../../internal/dexai/agents/session/modelprovider/mockmodel/README.md) in this process and offer it to every Session as the model `mock`, besides the Claude models: any account selects it in Local Kind and Native, only the administrator elsewhere | `false` | refused in `prod` |
-| `closestExamplePick` | Start a Project created from a first message, with no example picked, from the [example the server finds closest](../../../app-template/examples/README.md#closest-example) to that message instead of the default; the Session's agent adapts it to the message without announcing it | `false` | on in `native.yaml` and `local-kind.yaml` (and so `local-kind-acceptance.yaml`); off in test, staging and prod |
+| `closestExamplePick` | Start a Project created from a first message, with no example picked, from the [example the server finds closest](../../../app-template/examples/README.md#closest-example) to that message instead of the default; the Session's agent adapts it to the message without announcing it | `false` | on in `native.yaml` and `local-kind.yaml` (and so `local-kind-acceptance.yaml`), and in test, staging and prod through Terraform's `agent_closest_example_pick` |
 
 ### `sandbox`
 

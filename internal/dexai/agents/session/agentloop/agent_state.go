@@ -91,14 +91,30 @@ const maximumMatchedFacets = 12
 
 // StartingExample is the example a Session's Project started from, as the
 // start Step recorded it: its ID, tree and title, how it was chosen and what
-// a matched one matched on, at most maximumMatchedFacets facets, within 512
-// bytes. The starting_example section of a segment is built from it.
+// a matched one matched on, at most maximumMatchedFacets facets, and, once a
+// matched Session's first build is recorded, what that build kept of it, all
+// within 512 bytes. The starting_example section of a segment is built from it.
 type StartingExample struct {
-	ExampleID string        `json:"example_id"`
-	Tree      string        `json:"tree"`
-	Title     string        `json:"title"`
-	Choice    ExampleChoice `json:"choice"`
-	MatchedOn []string      `json:"matched_on,omitempty"`
+	ExampleID  string                `json:"example_id"`
+	Tree       string                `json:"tree"`
+	Title      string                `json:"title"`
+	Choice     ExampleChoice         `json:"choice"`
+	MatchedOn  []string              `json:"matched_on,omitempty"`
+	FirstBuild *StartingExampleBuild `json:"first_build,omitempty"`
+}
+
+// StartingExampleBuild is what a matched Session's first build, its first
+// pushed, unblocked commit_and_push, kept of the example: ExampleSteps are
+// the Steps of the example's design as this server build describes the
+// example at the recorded tree (0 when it does not describe that tree),
+// BuiltSteps those of the confirmed design the build built (0 without one),
+// KeptSteps how many of the example's Steps, by Flow and Step type, that
+// design keeps, and Commit the pushed commit. It is recorded once.
+type StartingExampleBuild struct {
+	ExampleSteps int    `json:"example_steps"`
+	BuiltSteps   int    `json:"built_steps"`
+	KeptSteps    int    `json:"kept_steps"`
+	Commit       string `json:"commit"`
 }
 
 // StartingExample is what the start Step records of the brief.
@@ -201,7 +217,8 @@ type AgentState struct {
 	// Preview holds the Sandbox only for the idle Sandbox hold.
 	AwaitsFirstMessage bool `json:"awaits_first_message,omitempty"`
 	// StartingExample is the example the Project started from, which the
-	// start Step records once; nil for the default.
+	// start Step records once and a matched Session's first build completes
+	// once with its FirstBuild; nil for the default.
 	StartingExample *StartingExample `json:"starting_example,omitempty"`
 	// SubagentsStartedWithoutUser counts the subagents admitted since the
 	// user last started a turn; start_agent admits at most

@@ -413,10 +413,11 @@ Profiles, checked in next to `config.go`:
   with `docker`, and the route port and the gateway address are settings (`routes.*`), not constants. With
   `runtime: docker` every listener is on 127.0.0.1, containers reach the host's Worker and Git host as
   `host.docker.internal`, and the server starts without a Kubernetes API.
-- **Hosted environments** set `agent.model` and `agent.mockModel` through the Terraform variables
-  `agent_model` and `agent_mock_model`, which every environment's `kubernetes.tfvars` names, and the
-  issue repository through optional Terraform inputs; test and staging offer the mock model to the
-  administrator, prod never does.
+- **Hosted environments** set `agent.model`, `agent.mockModel` and `agent.closestExamplePick` through the
+  Terraform variables `agent_model`, `agent_mock_model` and `agent_closest_example_pick`, which every
+  environment's `kubernetes.tfvars` names, and the issue repository through optional Terraform inputs;
+  test and staging offer the mock model to the administrator, prod never does, and all three start a
+  Project created from a first message from the closest example.
 - **Receipts.** A Local Kind receipt records the profile and the model target of its E2E cases.
   `release attest` accepts only receipts deployed from the unchanged `local-kind-acceptance.yaml`, so no
   release rests on the local Git host, and copies the receipt's `modelTarget`, the platform developer's

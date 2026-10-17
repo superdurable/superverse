@@ -89,6 +89,17 @@ separately from its original author. It is response-only; legacy absence stays a
 request may supply either actor. The actor integration scenario checks the retained entry,
 typed public projection and canonical gRPC response after consumption.
 
+`TestLiveExampleComparison` (build tag `live`, `make test-example-comparison-live` only) is the
+real-model comparison of the closest-example start: four Projects on Claude Sonnet 5.5 from the
+labelled set's Slack thread approval request, created through API servers with
+`agent.closestExamplePick` on and off, each observed for at most 30 minutes from its creation until
+its first build or the end of its first turn with no background command or subagent left running,
+with the matched start's `starting_example.first_build` through this package's mapping and a
+comparison table, headed by the lane's coding image (`SUPERVERSE_TEST_CODING_IMAGE`, by digest), that
+the test logs when it ends, also after a failure. That image must seed every example's module graph
+and build cache, or the matched runs start cold. It fails at once without the switch its target sets,
+and `make test-integration` skips it, as every name of the Makefile's `DEVELOPER_ONLY_TESTS`.
+
 `remoteagent` owns the three connection-management RPC mappers and their typed
 refusals. CallerContext is set by the BFF; Bridge HTTP requests never pass this
 business boundary. Current executor metadata comes from Session's typed read,

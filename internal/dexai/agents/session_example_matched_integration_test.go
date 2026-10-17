@@ -90,6 +90,22 @@ func requireMatchedStart(t *testing.T, agent agentloop.AgentSnapshot, messages [
 	}
 }
 
+// exampleSteps are the Steps of the slack-thread-approval example's design:
+// RecordThread, PostCompletionReply, CompleteThread and RecordReplyFailure.
+const exampleSteps = 4
+
+// requireFirstBuild fails unless the matched Session recorded its first
+// build, the push that built version 1's design, with what it kept of the
+// example: the example's Steps, version 1's, how many of the first the second
+// keeps, and the pushed commit.
+func requireFirstBuild(t *testing.T, agent agentloop.AgentSnapshot, builtSteps, keptSteps int) {
+	t.Helper()
+	want := agentloop.StartingExampleBuild{ExampleSteps: exampleSteps, BuiltSteps: builtSteps, KeptSteps: keptSteps, Commit: agent.Description.ConfirmedDesignBuiltCommit}
+	if build := agent.Description.StartingExample.FirstBuild; build == nil || *build != want || !flowid.IsCommitSHA(want.Commit) {
+		t.Fatalf("the matched Session recorded its first build as %+v, not %+v", build, want)
+	}
+}
+
 // TestSessionMatchedExampleDexIntegration creates a Project through the lane's
 // merged business API from the first input of the example-matched scenario,
 // which the lane's server starts from the slack-thread-approval example, with
@@ -103,8 +119,11 @@ func requireMatchedStart(t *testing.T, agent agentloop.AgentSnapshot, messages [
 //   - the agent records its own version 1, R1 to R3 with R3 posting Approved.,
 //     changes the reply text and pushes, which builds the design; no reply
 //     names the example;
+//   - that push, the first build, records what it kept of the example: all
+//     four of its Steps, in a design of four, and the pushed commit;
 //   - input 2 compacts again, and the new segment no longer carries the
-//     section, which its last reply requires.
+//     section, which its last reply requires; the first build stays as
+//     recorded.
 func TestSessionMatchedExampleDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), previewSetupTimeout+2*mockTurnTimeout)
 	defer cancel()
@@ -128,6 +147,7 @@ func TestSessionMatchedExampleDexIntegration(t *testing.T) {
 	if !agent.Description.ConfirmedDesignBuilt {
 		t.Fatalf("the push did not build version 1's design: %+v", agent.Description)
 	}
+	requireFirstBuild(t, agent, 4, 4)
 
 	// After the build, a new segment no longer carries the section.
 	last := agent.Description.LastSequence
@@ -141,6 +161,9 @@ func TestSessionMatchedExampleDexIntegration(t *testing.T) {
 	if after.Description.StartingExample == nil || after.Description.StartingExample.Choice != agentloop.ExampleChoiceMatched {
 		t.Fatalf("the Session forgot how it started: %+v", after.Description.StartingExample)
 	}
+	if build := after.Description.StartingExample.FirstBuild; build == nil || *build != *agent.Description.StartingExample.FirstBuild {
+		t.Fatalf("the first build changed after it was recorded: %+v", build)
+	}
 }
 
 // TestSessionMatchedExampleRemovesDexIntegration creates a Project from the
@@ -149,7 +172,8 @@ func TestSessionMatchedExampleDexIntegration(t *testing.T) {
 // wants nothing posted back: the Session starts quietly as matched, the agent
 // writes version 1 with R1 and R2 and no posting feature, removes the reply
 // Step, its operation and its test, adds a test of the recorded reply, and
-// the push passes every stage of the commit gate.
+// the push passes every stage of the commit gate. That first build records
+// that version 1's design of two Steps keeps two of the example's four.
 func TestSessionMatchedExampleRemovesDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), previewSetupTimeout+mockTurnTimeout)
 	defer cancel()
@@ -164,4 +188,5 @@ func TestSessionMatchedExampleRemovesDexIntegration(t *testing.T) {
 	if got := toolResult(t, messages, conversation.ToolCommitAndPush, 0); got.ResultCode != agentloop.CommitPushedForTest {
 		t.Fatalf("the change's commit_and_push ended as %q (%s): %s", got.ResultCode, got.Outcome, session.toolResultContent(ctx, messages, conversation.ToolCommitAndPush, 0))
 	}
+	requireFirstBuild(t, agent, 2, 2)
 }

@@ -2976,7 +2976,7 @@ func (x AgentBackgroundCommand_Status) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use AgentBackgroundCommand_Status.Descriptor instead.
 func (AgentBackgroundCommand_Status) EnumDescriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{172, 0}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{173, 0}
 }
 
 type AgentBackgroundCommand_EndReason int32
@@ -3034,7 +3034,7 @@ func (x AgentBackgroundCommand_EndReason) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use AgentBackgroundCommand_EndReason.Descriptor instead.
 func (AgentBackgroundCommand_EndReason) EnumDescriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{172, 1}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{173, 1}
 }
 
 type AgentSubagent_Kind int32
@@ -3089,7 +3089,7 @@ func (x AgentSubagent_Kind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use AgentSubagent_Kind.Descriptor instead.
 func (AgentSubagent_Kind) EnumDescriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{173, 0}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{174, 0}
 }
 
 // agenttasks.SubagentStatus: starting until its first Step was admitted, running, ended with the
@@ -3158,7 +3158,7 @@ func (x AgentSubagent_Status) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use AgentSubagent_Status.Descriptor instead.
 func (AgentSubagent_Status) EnumDescriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{173, 1}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{174, 1}
 }
 
 type AgentPendingUserInput_Kind int32
@@ -3207,7 +3207,7 @@ func (x AgentPendingUserInput_Kind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use AgentPendingUserInput_Kind.Descriptor instead.
 func (AgentPendingUserInput_Kind) EnumDescriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{176, 0}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{177, 0}
 }
 
 type AgentFlowDesignWait_Kind int32
@@ -3262,7 +3262,7 @@ func (x AgentFlowDesignWait_Kind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use AgentFlowDesignWait_Kind.Descriptor instead.
 func (AgentFlowDesignWait_Kind) EnumDescriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{185, 0}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{186, 0}
 }
 
 type AgentFlowDesignTransition_End int32
@@ -3311,7 +3311,7 @@ func (x AgentFlowDesignTransition_End) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use AgentFlowDesignTransition_End.Descriptor instead.
 func (AgentFlowDesignTransition_End) EnumDescriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{186, 0}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{187, 0}
 }
 
 type AgentRequirementConnection_Status int32
@@ -3360,7 +3360,7 @@ func (x AgentRequirementConnection_Status) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use AgentRequirementConnection_Status.Descriptor instead.
 func (AgentRequirementConnection_Status) EnumDescriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{191, 0}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{192, 0}
 }
 
 type AgentTodoItem_Status int32
@@ -3412,7 +3412,7 @@ func (x AgentTodoItem_Status) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use AgentTodoItem_Status.Descriptor instead.
 func (AgentTodoItem_Status) EnumDescriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{197, 0}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{198, 0}
 }
 
 type AgentEvent_Kind int32
@@ -3518,7 +3518,7 @@ func (x AgentEvent_Kind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use AgentEvent_Kind.Descriptor instead.
 func (AgentEvent_Kind) EnumDescriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{198, 0}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{199, 0}
 }
 
 type PreviewValidation_Kind int32
@@ -3570,7 +3570,7 @@ func (x PreviewValidation_Kind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PreviewValidation_Kind.Descriptor instead.
 func (PreviewValidation_Kind) EnumDescriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{241, 0}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{242, 0}
 }
 
 // The caller of an authenticated RPC. The BFF takes it from the signed login cookie; Go checks it
@@ -15590,9 +15590,13 @@ func (x *AgentDescription) GetStartingExample() *AgentStartingExample {
 // The example a Session's Project started from. A picked example's card is the Session's version 1;
 // for an example the server matched to the first message, the agent writes version 1 itself.
 type AgentStartingExample struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	ExampleId     string                      `protobuf:"bytes,1,opt,name=example_id,json=exampleId,proto3" json:"example_id,omitempty"`
-	Choice        AgentStartingExample_Choice `protobuf:"varint,2,opt,name=choice,proto3,enum=superverse.v2.AgentStartingExample_Choice" json:"choice,omitempty"`
+	state     protoimpl.MessageState      `protogen:"open.v1"`
+	ExampleId string                      `protobuf:"bytes,1,opt,name=example_id,json=exampleId,proto3" json:"example_id,omitempty"`
+	Choice    AgentStartingExample_Choice `protobuf:"varint,2,opt,name=choice,proto3,enum=superverse.v2.AgentStartingExample_Choice" json:"choice,omitempty"`
+	// What a matched example's Session kept of it at its first build, the first pushed commit;
+	// unset before that build, for a picked example and for a Session whose first build came
+	// before the server recorded it.
+	FirstBuild    *AgentStartingExampleBuild `protobuf:"bytes,3,opt,name=first_build,json=firstBuild,proto3" json:"first_build,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -15641,6 +15645,86 @@ func (x *AgentStartingExample) GetChoice() AgentStartingExample_Choice {
 	return AgentStartingExample_CHOICE_UNSPECIFIED
 }
 
+func (x *AgentStartingExample) GetFirstBuild() *AgentStartingExampleBuild {
+	if x != nil {
+		return x.FirstBuild
+	}
+	return nil
+}
+
+// What a matched Session's first build kept of its example. example_steps are the Steps of the
+// example's Flow design as the server build that recorded it describes the example's tree (0 when
+// it holds the example at another tree), built_steps those of the confirmed design the build
+// built (0 without a design), kept_steps how many of the example's Steps that design keeps in the
+// same Flow, and commit the pushed commit.
+type AgentStartingExampleBuild struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ExampleSteps  int32                  `protobuf:"varint,1,opt,name=example_steps,json=exampleSteps,proto3" json:"example_steps,omitempty"`
+	BuiltSteps    int32                  `protobuf:"varint,2,opt,name=built_steps,json=builtSteps,proto3" json:"built_steps,omitempty"`
+	KeptSteps     int32                  `protobuf:"varint,3,opt,name=kept_steps,json=keptSteps,proto3" json:"kept_steps,omitempty"`
+	Commit        string                 `protobuf:"bytes,4,opt,name=commit,proto3" json:"commit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AgentStartingExampleBuild) Reset() {
+	*x = AgentStartingExampleBuild{}
+	mi := &file_superverse_v2_superverse_proto_msgTypes[171]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AgentStartingExampleBuild) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AgentStartingExampleBuild) ProtoMessage() {}
+
+func (x *AgentStartingExampleBuild) ProtoReflect() protoreflect.Message {
+	mi := &file_superverse_v2_superverse_proto_msgTypes[171]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AgentStartingExampleBuild.ProtoReflect.Descriptor instead.
+func (*AgentStartingExampleBuild) Descriptor() ([]byte, []int) {
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{171}
+}
+
+func (x *AgentStartingExampleBuild) GetExampleSteps() int32 {
+	if x != nil {
+		return x.ExampleSteps
+	}
+	return 0
+}
+
+func (x *AgentStartingExampleBuild) GetBuiltSteps() int32 {
+	if x != nil {
+		return x.BuiltSteps
+	}
+	return 0
+}
+
+func (x *AgentStartingExampleBuild) GetKeptSteps() int32 {
+	if x != nil {
+		return x.KeptSteps
+	}
+	return 0
+}
+
+func (x *AgentStartingExampleBuild) GetCommit() string {
+	if x != nil {
+		return x.Commit
+	}
+	return ""
+}
+
 // The progress a mock model reply reports with itself: its scenario, the number of the input it
 // answers and the number of the input the scenario takes next, 0 once it received all of them.
 // The mock composer offers exactly next_input, or input 1 of another scenario.
@@ -15655,7 +15739,7 @@ type AgentMockProgress struct {
 
 func (x *AgentMockProgress) Reset() {
 	*x = AgentMockProgress{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[171]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[172]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15667,7 +15751,7 @@ func (x *AgentMockProgress) String() string {
 func (*AgentMockProgress) ProtoMessage() {}
 
 func (x *AgentMockProgress) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[171]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[172]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15680,7 +15764,7 @@ func (x *AgentMockProgress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentMockProgress.ProtoReflect.Descriptor instead.
 func (*AgentMockProgress) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{171}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{172}
 }
 
 func (x *AgentMockProgress) GetScenario() string {
@@ -15723,7 +15807,7 @@ type AgentBackgroundCommand struct {
 
 func (x *AgentBackgroundCommand) Reset() {
 	*x = AgentBackgroundCommand{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[172]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[173]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15735,7 +15819,7 @@ func (x *AgentBackgroundCommand) String() string {
 func (*AgentBackgroundCommand) ProtoMessage() {}
 
 func (x *AgentBackgroundCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[172]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[173]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15748,7 +15832,7 @@ func (x *AgentBackgroundCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentBackgroundCommand.ProtoReflect.Descriptor instead.
 func (*AgentBackgroundCommand) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{172}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{173}
 }
 
 func (x *AgentBackgroundCommand) GetTaskId() string {
@@ -15835,7 +15919,7 @@ type AgentSubagent struct {
 
 func (x *AgentSubagent) Reset() {
 	*x = AgentSubagent{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[173]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[174]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15847,7 +15931,7 @@ func (x *AgentSubagent) String() string {
 func (*AgentSubagent) ProtoMessage() {}
 
 func (x *AgentSubagent) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[173]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[174]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15860,7 +15944,7 @@ func (x *AgentSubagent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentSubagent.ProtoReflect.Descriptor instead.
 func (*AgentSubagent) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{173}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{174}
 }
 
 func (x *AgentSubagent) GetTaskId() string {
@@ -15952,7 +16036,7 @@ type AgentPendingApproval struct {
 
 func (x *AgentPendingApproval) Reset() {
 	*x = AgentPendingApproval{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[174]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[175]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15964,7 +16048,7 @@ func (x *AgentPendingApproval) String() string {
 func (*AgentPendingApproval) ProtoMessage() {}
 
 func (x *AgentPendingApproval) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[174]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[175]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15977,7 +16061,7 @@ func (x *AgentPendingApproval) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentPendingApproval.ProtoReflect.Descriptor instead.
 func (*AgentPendingApproval) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{174}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{175}
 }
 
 func (x *AgentPendingApproval) GetCallId() string {
@@ -16020,7 +16104,7 @@ type AgentPendingTimer struct {
 
 func (x *AgentPendingTimer) Reset() {
 	*x = AgentPendingTimer{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[175]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[176]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16032,7 +16116,7 @@ func (x *AgentPendingTimer) String() string {
 func (*AgentPendingTimer) ProtoMessage() {}
 
 func (x *AgentPendingTimer) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[175]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[176]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16045,7 +16129,7 @@ func (x *AgentPendingTimer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentPendingTimer.ProtoReflect.Descriptor instead.
 func (*AgentPendingTimer) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{175}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{176}
 }
 
 func (x *AgentPendingTimer) GetCallId() string {
@@ -16094,7 +16178,7 @@ type AgentPendingUserInput struct {
 
 func (x *AgentPendingUserInput) Reset() {
 	*x = AgentPendingUserInput{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[176]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[177]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16106,7 +16190,7 @@ func (x *AgentPendingUserInput) String() string {
 func (*AgentPendingUserInput) ProtoMessage() {}
 
 func (x *AgentPendingUserInput) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[176]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[177]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16119,7 +16203,7 @@ func (x *AgentPendingUserInput) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentPendingUserInput.ProtoReflect.Descriptor instead.
 func (*AgentPendingUserInput) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{176}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{177}
 }
 
 func (x *AgentPendingUserInput) GetCallId() string {
@@ -16184,7 +16268,7 @@ type AgentRequirements struct {
 
 func (x *AgentRequirements) Reset() {
 	*x = AgentRequirements{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[177]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[178]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16196,7 +16280,7 @@ func (x *AgentRequirements) String() string {
 func (*AgentRequirements) ProtoMessage() {}
 
 func (x *AgentRequirements) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[177]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[178]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16209,7 +16293,7 @@ func (x *AgentRequirements) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentRequirements.ProtoReflect.Descriptor instead.
 func (*AgentRequirements) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{177}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{178}
 }
 
 func (x *AgentRequirements) GetTitle() string {
@@ -16308,7 +16392,7 @@ type AgentRequirementsDraft struct {
 
 func (x *AgentRequirementsDraft) Reset() {
 	*x = AgentRequirementsDraft{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[178]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[179]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16320,7 +16404,7 @@ func (x *AgentRequirementsDraft) String() string {
 func (*AgentRequirementsDraft) ProtoMessage() {}
 
 func (x *AgentRequirementsDraft) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[178]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[179]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16333,7 +16417,7 @@ func (x *AgentRequirementsDraft) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentRequirementsDraft.ProtoReflect.Descriptor instead.
 func (*AgentRequirementsDraft) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{178}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{179}
 }
 
 func (x *AgentRequirementsDraft) GetCallId() string {
@@ -16416,7 +16500,7 @@ type AgentRequirementsDraftConnection struct {
 
 func (x *AgentRequirementsDraftConnection) Reset() {
 	*x = AgentRequirementsDraftConnection{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[179]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[180]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16428,7 +16512,7 @@ func (x *AgentRequirementsDraftConnection) String() string {
 func (*AgentRequirementsDraftConnection) ProtoMessage() {}
 
 func (x *AgentRequirementsDraftConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[179]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[180]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16441,7 +16525,7 @@ func (x *AgentRequirementsDraftConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentRequirementsDraftConnection.ProtoReflect.Descriptor instead.
 func (*AgentRequirementsDraftConnection) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{179}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{180}
 }
 
 func (x *AgentRequirementsDraftConnection) GetNeed() string {
@@ -16472,7 +16556,7 @@ type AgentRequirementsDraftFlow struct {
 
 func (x *AgentRequirementsDraftFlow) Reset() {
 	*x = AgentRequirementsDraftFlow{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[180]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[181]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16484,7 +16568,7 @@ func (x *AgentRequirementsDraftFlow) String() string {
 func (*AgentRequirementsDraftFlow) ProtoMessage() {}
 
 func (x *AgentRequirementsDraftFlow) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[180]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[181]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16497,7 +16581,7 @@ func (x *AgentRequirementsDraftFlow) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentRequirementsDraftFlow.ProtoReflect.Descriptor instead.
 func (*AgentRequirementsDraftFlow) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{180}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{181}
 }
 
 func (x *AgentRequirementsDraftFlow) GetFlowType() string {
@@ -16534,7 +16618,7 @@ type AgentFlowDesignReference struct {
 
 func (x *AgentFlowDesignReference) Reset() {
 	*x = AgentFlowDesignReference{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[181]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[182]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16546,7 +16630,7 @@ func (x *AgentFlowDesignReference) String() string {
 func (*AgentFlowDesignReference) ProtoMessage() {}
 
 func (x *AgentFlowDesignReference) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[181]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[182]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16559,7 +16643,7 @@ func (x *AgentFlowDesignReference) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentFlowDesignReference.ProtoReflect.Descriptor instead.
 func (*AgentFlowDesignReference) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{181}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{182}
 }
 
 func (x *AgentFlowDesignReference) GetDigest() string {
@@ -16596,7 +16680,7 @@ type AgentFlowDesign struct {
 
 func (x *AgentFlowDesign) Reset() {
 	*x = AgentFlowDesign{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[182]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[183]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16608,7 +16692,7 @@ func (x *AgentFlowDesign) String() string {
 func (*AgentFlowDesign) ProtoMessage() {}
 
 func (x *AgentFlowDesign) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[182]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[183]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16621,7 +16705,7 @@ func (x *AgentFlowDesign) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentFlowDesign.ProtoReflect.Descriptor instead.
 func (*AgentFlowDesign) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{182}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{183}
 }
 
 func (x *AgentFlowDesign) GetDigest() string {
@@ -16668,7 +16752,7 @@ type AgentFlowDesignFlow struct {
 
 func (x *AgentFlowDesignFlow) Reset() {
 	*x = AgentFlowDesignFlow{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[183]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[184]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16680,7 +16764,7 @@ func (x *AgentFlowDesignFlow) String() string {
 func (*AgentFlowDesignFlow) ProtoMessage() {}
 
 func (x *AgentFlowDesignFlow) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[183]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[184]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16693,7 +16777,7 @@ func (x *AgentFlowDesignFlow) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentFlowDesignFlow.ProtoReflect.Descriptor instead.
 func (*AgentFlowDesignFlow) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{183}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{184}
 }
 
 func (x *AgentFlowDesignFlow) GetFlowType() string {
@@ -16766,7 +16850,7 @@ type AgentFlowDesignStep struct {
 
 func (x *AgentFlowDesignStep) Reset() {
 	*x = AgentFlowDesignStep{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[184]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[185]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16778,7 +16862,7 @@ func (x *AgentFlowDesignStep) String() string {
 func (*AgentFlowDesignStep) ProtoMessage() {}
 
 func (x *AgentFlowDesignStep) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[184]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[185]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16791,7 +16875,7 @@ func (x *AgentFlowDesignStep) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentFlowDesignStep.ProtoReflect.Descriptor instead.
 func (*AgentFlowDesignStep) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{184}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{185}
 }
 
 func (x *AgentFlowDesignStep) GetStepType() string {
@@ -16848,7 +16932,7 @@ type AgentFlowDesignWait struct {
 
 func (x *AgentFlowDesignWait) Reset() {
 	*x = AgentFlowDesignWait{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[185]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[186]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16860,7 +16944,7 @@ func (x *AgentFlowDesignWait) String() string {
 func (*AgentFlowDesignWait) ProtoMessage() {}
 
 func (x *AgentFlowDesignWait) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[185]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[186]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16873,7 +16957,7 @@ func (x *AgentFlowDesignWait) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentFlowDesignWait.ProtoReflect.Descriptor instead.
 func (*AgentFlowDesignWait) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{185}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{186}
 }
 
 func (x *AgentFlowDesignWait) GetKind() AgentFlowDesignWait_Kind {
@@ -16905,7 +16989,7 @@ type AgentFlowDesignTransition struct {
 
 func (x *AgentFlowDesignTransition) Reset() {
 	*x = AgentFlowDesignTransition{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[186]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[187]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16917,7 +17001,7 @@ func (x *AgentFlowDesignTransition) String() string {
 func (*AgentFlowDesignTransition) ProtoMessage() {}
 
 func (x *AgentFlowDesignTransition) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[186]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[187]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16930,7 +17014,7 @@ func (x *AgentFlowDesignTransition) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentFlowDesignTransition.ProtoReflect.Descriptor instead.
 func (*AgentFlowDesignTransition) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{186}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{187}
 }
 
 func (x *AgentFlowDesignTransition) GetToStep() string {
@@ -16971,7 +17055,7 @@ type AgentFlowDesignChannel struct {
 
 func (x *AgentFlowDesignChannel) Reset() {
 	*x = AgentFlowDesignChannel{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[187]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[188]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16983,7 +17067,7 @@ func (x *AgentFlowDesignChannel) String() string {
 func (*AgentFlowDesignChannel) ProtoMessage() {}
 
 func (x *AgentFlowDesignChannel) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[187]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[188]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16996,7 +17080,7 @@ func (x *AgentFlowDesignChannel) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentFlowDesignChannel.ProtoReflect.Descriptor instead.
 func (*AgentFlowDesignChannel) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{187}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{188}
 }
 
 func (x *AgentFlowDesignChannel) GetName() string {
@@ -17025,7 +17109,7 @@ type AgentFlowDesignAction struct {
 
 func (x *AgentFlowDesignAction) Reset() {
 	*x = AgentFlowDesignAction{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[188]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[189]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17037,7 +17121,7 @@ func (x *AgentFlowDesignAction) String() string {
 func (*AgentFlowDesignAction) ProtoMessage() {}
 
 func (x *AgentFlowDesignAction) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[188]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[189]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17050,7 +17134,7 @@ func (x *AgentFlowDesignAction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentFlowDesignAction.ProtoReflect.Descriptor instead.
 func (*AgentFlowDesignAction) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{188}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{189}
 }
 
 func (x *AgentFlowDesignAction) GetLabel() string {
@@ -17093,7 +17177,7 @@ type AgentFlowDesignAttribute struct {
 
 func (x *AgentFlowDesignAttribute) Reset() {
 	*x = AgentFlowDesignAttribute{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[189]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[190]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17105,7 +17189,7 @@ func (x *AgentFlowDesignAttribute) String() string {
 func (*AgentFlowDesignAttribute) ProtoMessage() {}
 
 func (x *AgentFlowDesignAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[189]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[190]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17118,7 +17202,7 @@ func (x *AgentFlowDesignAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentFlowDesignAttribute.ProtoReflect.Descriptor instead.
 func (*AgentFlowDesignAttribute) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{189}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{190}
 }
 
 func (x *AgentFlowDesignAttribute) GetName() string {
@@ -17159,7 +17243,7 @@ type AgentRequirementFeature struct {
 
 func (x *AgentRequirementFeature) Reset() {
 	*x = AgentRequirementFeature{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[190]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[191]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17171,7 +17255,7 @@ func (x *AgentRequirementFeature) String() string {
 func (*AgentRequirementFeature) ProtoMessage() {}
 
 func (x *AgentRequirementFeature) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[190]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[191]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17184,7 +17268,7 @@ func (x *AgentRequirementFeature) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentRequirementFeature.ProtoReflect.Descriptor instead.
 func (*AgentRequirementFeature) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{190}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{191}
 }
 
 func (x *AgentRequirementFeature) GetId() string {
@@ -17215,7 +17299,7 @@ type AgentRequirementConnection struct {
 
 func (x *AgentRequirementConnection) Reset() {
 	*x = AgentRequirementConnection{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[191]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[192]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17227,7 +17311,7 @@ func (x *AgentRequirementConnection) String() string {
 func (*AgentRequirementConnection) ProtoMessage() {}
 
 func (x *AgentRequirementConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[191]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[192]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17240,7 +17324,7 @@ func (x *AgentRequirementConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentRequirementConnection.ProtoReflect.Descriptor instead.
 func (*AgentRequirementConnection) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{191}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{192}
 }
 
 func (x *AgentRequirementConnection) GetNeed() string {
@@ -17294,7 +17378,7 @@ type AgentConfirmedRequirements struct {
 
 func (x *AgentConfirmedRequirements) Reset() {
 	*x = AgentConfirmedRequirements{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[192]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[193]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17306,7 +17390,7 @@ func (x *AgentConfirmedRequirements) String() string {
 func (*AgentConfirmedRequirements) ProtoMessage() {}
 
 func (x *AgentConfirmedRequirements) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[192]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[193]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17319,7 +17403,7 @@ func (x *AgentConfirmedRequirements) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentConfirmedRequirements.ProtoReflect.Descriptor instead.
 func (*AgentConfirmedRequirements) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{192}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{193}
 }
 
 func (x *AgentConfirmedRequirements) GetRevision() int64 {
@@ -17362,7 +17446,7 @@ type AgentUserInputQuestion struct {
 
 func (x *AgentUserInputQuestion) Reset() {
 	*x = AgentUserInputQuestion{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[193]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[194]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17374,7 +17458,7 @@ func (x *AgentUserInputQuestion) String() string {
 func (*AgentUserInputQuestion) ProtoMessage() {}
 
 func (x *AgentUserInputQuestion) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[193]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[194]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17387,7 +17471,7 @@ func (x *AgentUserInputQuestion) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentUserInputQuestion.ProtoReflect.Descriptor instead.
 func (*AgentUserInputQuestion) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{193}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{194}
 }
 
 func (x *AgentUserInputQuestion) GetId() string {
@@ -17428,7 +17512,7 @@ type AgentUserInputOption struct {
 
 func (x *AgentUserInputOption) Reset() {
 	*x = AgentUserInputOption{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[194]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[195]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17440,7 +17524,7 @@ func (x *AgentUserInputOption) String() string {
 func (*AgentUserInputOption) ProtoMessage() {}
 
 func (x *AgentUserInputOption) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[194]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[195]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17453,7 +17537,7 @@ func (x *AgentUserInputOption) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentUserInputOption.ProtoReflect.Descriptor instead.
 func (*AgentUserInputOption) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{194}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{195}
 }
 
 func (x *AgentUserInputOption) GetLabel() string {
@@ -17480,7 +17564,7 @@ type AgentUserInputAnswer struct {
 
 func (x *AgentUserInputAnswer) Reset() {
 	*x = AgentUserInputAnswer{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[195]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[196]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17492,7 +17576,7 @@ func (x *AgentUserInputAnswer) String() string {
 func (*AgentUserInputAnswer) ProtoMessage() {}
 
 func (x *AgentUserInputAnswer) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[195]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[196]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17505,7 +17589,7 @@ func (x *AgentUserInputAnswer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentUserInputAnswer.ProtoReflect.Descriptor instead.
 func (*AgentUserInputAnswer) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{195}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{196}
 }
 
 func (x *AgentUserInputAnswer) GetQuestionId() string {
@@ -17534,7 +17618,7 @@ type AgentTodoList struct {
 
 func (x *AgentTodoList) Reset() {
 	*x = AgentTodoList{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[196]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[197]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17546,7 +17630,7 @@ func (x *AgentTodoList) String() string {
 func (*AgentTodoList) ProtoMessage() {}
 
 func (x *AgentTodoList) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[196]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[197]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17559,7 +17643,7 @@ func (x *AgentTodoList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentTodoList.ProtoReflect.Descriptor instead.
 func (*AgentTodoList) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{196}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{197}
 }
 
 func (x *AgentTodoList) GetRevision() int64 {
@@ -17586,7 +17670,7 @@ type AgentTodoItem struct {
 
 func (x *AgentTodoItem) Reset() {
 	*x = AgentTodoItem{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[197]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[198]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17598,7 +17682,7 @@ func (x *AgentTodoItem) String() string {
 func (*AgentTodoItem) ProtoMessage() {}
 
 func (x *AgentTodoItem) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[197]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[198]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17611,7 +17695,7 @@ func (x *AgentTodoItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentTodoItem.ProtoReflect.Descriptor instead.
 func (*AgentTodoItem) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{197}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{198}
 }
 
 func (x *AgentTodoItem) GetContent() string {
@@ -17646,7 +17730,7 @@ type AgentEvent struct {
 
 func (x *AgentEvent) Reset() {
 	*x = AgentEvent{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[198]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[199]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17658,7 +17742,7 @@ func (x *AgentEvent) String() string {
 func (*AgentEvent) ProtoMessage() {}
 
 func (x *AgentEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[198]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[199]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17671,7 +17755,7 @@ func (x *AgentEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentEvent.ProtoReflect.Descriptor instead.
 func (*AgentEvent) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{198}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{199}
 }
 
 func (x *AgentEvent) GetKind() AgentEvent_Kind {
@@ -17740,7 +17824,7 @@ type AgentInputConsumption struct {
 
 func (x *AgentInputConsumption) Reset() {
 	*x = AgentInputConsumption{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[199]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[200]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17752,7 +17836,7 @@ func (x *AgentInputConsumption) String() string {
 func (*AgentInputConsumption) ProtoMessage() {}
 
 func (x *AgentInputConsumption) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[199]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[200]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17765,7 +17849,7 @@ func (x *AgentInputConsumption) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentInputConsumption.ProtoReflect.Descriptor instead.
 func (*AgentInputConsumption) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{199}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{200}
 }
 
 func (x *AgentInputConsumption) GetQueuedMessageIds() []string {
@@ -17793,7 +17877,7 @@ type AgentAnswerQuestionsInput struct {
 
 func (x *AgentAnswerQuestionsInput) Reset() {
 	*x = AgentAnswerQuestionsInput{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[200]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[201]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17805,7 +17889,7 @@ func (x *AgentAnswerQuestionsInput) String() string {
 func (*AgentAnswerQuestionsInput) ProtoMessage() {}
 
 func (x *AgentAnswerQuestionsInput) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[200]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[201]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17818,7 +17902,7 @@ func (x *AgentAnswerQuestionsInput) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentAnswerQuestionsInput.ProtoReflect.Descriptor instead.
 func (*AgentAnswerQuestionsInput) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{200}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{201}
 }
 
 func (x *AgentAnswerQuestionsInput) GetCallId() string {
@@ -17845,7 +17929,7 @@ type GetPreviewRequest struct {
 
 func (x *GetPreviewRequest) Reset() {
 	*x = GetPreviewRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[201]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[202]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17857,7 +17941,7 @@ func (x *GetPreviewRequest) String() string {
 func (*GetPreviewRequest) ProtoMessage() {}
 
 func (x *GetPreviewRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[201]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[202]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17870,7 +17954,7 @@ func (x *GetPreviewRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPreviewRequest.ProtoReflect.Descriptor instead.
 func (*GetPreviewRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{201}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{202}
 }
 
 func (x *GetPreviewRequest) GetProjectId() string {
@@ -17896,7 +17980,7 @@ type GetPreviewResponse struct {
 
 func (x *GetPreviewResponse) Reset() {
 	*x = GetPreviewResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[202]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[203]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17908,7 +17992,7 @@ func (x *GetPreviewResponse) String() string {
 func (*GetPreviewResponse) ProtoMessage() {}
 
 func (x *GetPreviewResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[202]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[203]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17921,7 +18005,7 @@ func (x *GetPreviewResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPreviewResponse.ProtoReflect.Descriptor instead.
 func (*GetPreviewResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{202}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{203}
 }
 
 func (x *GetPreviewResponse) GetPreview() *PreviewSnapshot {
@@ -17953,7 +18037,7 @@ type StartPreviewRequest struct {
 
 func (x *StartPreviewRequest) Reset() {
 	*x = StartPreviewRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[203]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[204]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17965,7 +18049,7 @@ func (x *StartPreviewRequest) String() string {
 func (*StartPreviewRequest) ProtoMessage() {}
 
 func (x *StartPreviewRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[203]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[204]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17978,7 +18062,7 @@ func (x *StartPreviewRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartPreviewRequest.ProtoReflect.Descriptor instead.
 func (*StartPreviewRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{203}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{204}
 }
 
 func (x *StartPreviewRequest) GetProjectId() string {
@@ -18046,7 +18130,7 @@ type StartPreviewResponse struct {
 
 func (x *StartPreviewResponse) Reset() {
 	*x = StartPreviewResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[204]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[205]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18058,7 +18142,7 @@ func (x *StartPreviewResponse) String() string {
 func (*StartPreviewResponse) ProtoMessage() {}
 
 func (x *StartPreviewResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[204]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[205]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18071,7 +18155,7 @@ func (x *StartPreviewResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartPreviewResponse.ProtoReflect.Descriptor instead.
 func (*StartPreviewResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{204}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{205}
 }
 
 func (x *StartPreviewResponse) GetPreview() *PreviewSnapshot {
@@ -18095,7 +18179,7 @@ type StopPreviewRequest struct {
 
 func (x *StopPreviewRequest) Reset() {
 	*x = StopPreviewRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[205]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[206]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18107,7 +18191,7 @@ func (x *StopPreviewRequest) String() string {
 func (*StopPreviewRequest) ProtoMessage() {}
 
 func (x *StopPreviewRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[205]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[206]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18120,7 +18204,7 @@ func (x *StopPreviewRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StopPreviewRequest.ProtoReflect.Descriptor instead.
 func (*StopPreviewRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{205}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{206}
 }
 
 func (x *StopPreviewRequest) GetProjectId() string {
@@ -18174,7 +18258,7 @@ type StopPreviewResponse struct {
 
 func (x *StopPreviewResponse) Reset() {
 	*x = StopPreviewResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[206]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[207]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18186,7 +18270,7 @@ func (x *StopPreviewResponse) String() string {
 func (*StopPreviewResponse) ProtoMessage() {}
 
 func (x *StopPreviewResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[206]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[207]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18199,7 +18283,7 @@ func (x *StopPreviewResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StopPreviewResponse.ProtoReflect.Descriptor instead.
 func (*StopPreviewResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{206}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{207}
 }
 
 func (x *StopPreviewResponse) GetPreview() *PreviewSnapshot {
@@ -18223,7 +18307,7 @@ type PreparePreviewSourceRequest struct {
 
 func (x *PreparePreviewSourceRequest) Reset() {
 	*x = PreparePreviewSourceRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[207]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[208]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18235,7 +18319,7 @@ func (x *PreparePreviewSourceRequest) String() string {
 func (*PreparePreviewSourceRequest) ProtoMessage() {}
 
 func (x *PreparePreviewSourceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[207]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[208]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18248,7 +18332,7 @@ func (x *PreparePreviewSourceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PreparePreviewSourceRequest.ProtoReflect.Descriptor instead.
 func (*PreparePreviewSourceRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{207}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{208}
 }
 
 func (x *PreparePreviewSourceRequest) GetProjectId() string {
@@ -18302,7 +18386,7 @@ type PreparePreviewSourceResponse struct {
 
 func (x *PreparePreviewSourceResponse) Reset() {
 	*x = PreparePreviewSourceResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[208]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[209]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18314,7 +18398,7 @@ func (x *PreparePreviewSourceResponse) String() string {
 func (*PreparePreviewSourceResponse) ProtoMessage() {}
 
 func (x *PreparePreviewSourceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[208]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[209]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18327,7 +18411,7 @@ func (x *PreparePreviewSourceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PreparePreviewSourceResponse.ProtoReflect.Descriptor instead.
 func (*PreparePreviewSourceResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{208}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{209}
 }
 
 type GetPreviewDefinitionsRequest struct {
@@ -18340,7 +18424,7 @@ type GetPreviewDefinitionsRequest struct {
 
 func (x *GetPreviewDefinitionsRequest) Reset() {
 	*x = GetPreviewDefinitionsRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[209]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[210]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18352,7 +18436,7 @@ func (x *GetPreviewDefinitionsRequest) String() string {
 func (*GetPreviewDefinitionsRequest) ProtoMessage() {}
 
 func (x *GetPreviewDefinitionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[209]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[210]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18365,7 +18449,7 @@ func (x *GetPreviewDefinitionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPreviewDefinitionsRequest.ProtoReflect.Descriptor instead.
 func (*GetPreviewDefinitionsRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{209}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{210}
 }
 
 func (x *GetPreviewDefinitionsRequest) GetProjectId() string {
@@ -18392,7 +18476,7 @@ type GetPreviewDefinitionsResponse struct {
 
 func (x *GetPreviewDefinitionsResponse) Reset() {
 	*x = GetPreviewDefinitionsResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[210]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[211]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18404,7 +18488,7 @@ func (x *GetPreviewDefinitionsResponse) String() string {
 func (*GetPreviewDefinitionsResponse) ProtoMessage() {}
 
 func (x *GetPreviewDefinitionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[210]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[211]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18417,7 +18501,7 @@ func (x *GetPreviewDefinitionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPreviewDefinitionsResponse.ProtoReflect.Descriptor instead.
 func (*GetPreviewDefinitionsResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{210}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{211}
 }
 
 func (x *GetPreviewDefinitionsResponse) GetPreview() *PreviewSnapshot {
@@ -18450,7 +18534,7 @@ type UpdatePreviewAutoDeployRequest struct {
 
 func (x *UpdatePreviewAutoDeployRequest) Reset() {
 	*x = UpdatePreviewAutoDeployRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[211]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[212]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18462,7 +18546,7 @@ func (x *UpdatePreviewAutoDeployRequest) String() string {
 func (*UpdatePreviewAutoDeployRequest) ProtoMessage() {}
 
 func (x *UpdatePreviewAutoDeployRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[211]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[212]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18475,7 +18559,7 @@ func (x *UpdatePreviewAutoDeployRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdatePreviewAutoDeployRequest.ProtoReflect.Descriptor instead.
 func (*UpdatePreviewAutoDeployRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{211}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{212}
 }
 
 func (x *UpdatePreviewAutoDeployRequest) GetProjectId() string {
@@ -18507,7 +18591,7 @@ type UpdatePreviewAutoDeployResponse struct {
 
 func (x *UpdatePreviewAutoDeployResponse) Reset() {
 	*x = UpdatePreviewAutoDeployResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[212]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[213]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18519,7 +18603,7 @@ func (x *UpdatePreviewAutoDeployResponse) String() string {
 func (*UpdatePreviewAutoDeployResponse) ProtoMessage() {}
 
 func (x *UpdatePreviewAutoDeployResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[212]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[213]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18532,7 +18616,7 @@ func (x *UpdatePreviewAutoDeployResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdatePreviewAutoDeployResponse.ProtoReflect.Descriptor instead.
 func (*UpdatePreviewAutoDeployResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{212}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{213}
 }
 
 type PreviewSnapshot struct {
@@ -18570,7 +18654,7 @@ type PreviewSnapshot struct {
 
 func (x *PreviewSnapshot) Reset() {
 	*x = PreviewSnapshot{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[213]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[214]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18582,7 +18666,7 @@ func (x *PreviewSnapshot) String() string {
 func (*PreviewSnapshot) ProtoMessage() {}
 
 func (x *PreviewSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[213]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[214]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18595,7 +18679,7 @@ func (x *PreviewSnapshot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PreviewSnapshot.ProtoReflect.Descriptor instead.
 func (*PreviewSnapshot) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{213}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{214}
 }
 
 func (x *PreviewSnapshot) GetProjectId() string {
@@ -18730,7 +18814,7 @@ type AppliedPreviewConfiguration struct {
 
 func (x *AppliedPreviewConfiguration) Reset() {
 	*x = AppliedPreviewConfiguration{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[214]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[215]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18742,7 +18826,7 @@ func (x *AppliedPreviewConfiguration) String() string {
 func (*AppliedPreviewConfiguration) ProtoMessage() {}
 
 func (x *AppliedPreviewConfiguration) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[214]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[215]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18755,7 +18839,7 @@ func (x *AppliedPreviewConfiguration) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppliedPreviewConfiguration.ProtoReflect.Descriptor instead.
 func (*AppliedPreviewConfiguration) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{214}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{215}
 }
 
 func (x *AppliedPreviewConfiguration) GetConfigurationRevision() uint64 {
@@ -18807,7 +18891,7 @@ type PreviewStartRecord struct {
 
 func (x *PreviewStartRecord) Reset() {
 	*x = PreviewStartRecord{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[215]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[216]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18819,7 +18903,7 @@ func (x *PreviewStartRecord) String() string {
 func (*PreviewStartRecord) ProtoMessage() {}
 
 func (x *PreviewStartRecord) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[215]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[216]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18832,7 +18916,7 @@ func (x *PreviewStartRecord) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PreviewStartRecord.ProtoReflect.Descriptor instead.
 func (*PreviewStartRecord) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{215}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{216}
 }
 
 func (x *PreviewStartRecord) GetCommandId() string {
@@ -18927,7 +19011,7 @@ type PreviewDeploymentSnapshot struct {
 
 func (x *PreviewDeploymentSnapshot) Reset() {
 	*x = PreviewDeploymentSnapshot{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[216]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[217]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18939,7 +19023,7 @@ func (x *PreviewDeploymentSnapshot) String() string {
 func (*PreviewDeploymentSnapshot) ProtoMessage() {}
 
 func (x *PreviewDeploymentSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[216]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[217]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18952,7 +19036,7 @@ func (x *PreviewDeploymentSnapshot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PreviewDeploymentSnapshot.ProtoReflect.Descriptor instead.
 func (*PreviewDeploymentSnapshot) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{216}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{217}
 }
 
 func (x *PreviewDeploymentSnapshot) GetCommit() string {
@@ -19007,7 +19091,7 @@ type PreparedPreviewSourceSnapshot struct {
 
 func (x *PreparedPreviewSourceSnapshot) Reset() {
 	*x = PreparedPreviewSourceSnapshot{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[217]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[218]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19019,7 +19103,7 @@ func (x *PreparedPreviewSourceSnapshot) String() string {
 func (*PreparedPreviewSourceSnapshot) ProtoMessage() {}
 
 func (x *PreparedPreviewSourceSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[217]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[218]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19032,7 +19116,7 @@ func (x *PreparedPreviewSourceSnapshot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PreparedPreviewSourceSnapshot.ProtoReflect.Descriptor instead.
 func (*PreparedPreviewSourceSnapshot) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{217}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{218}
 }
 
 func (x *PreparedPreviewSourceSnapshot) GetStatus() PreviewSourceStatus {
@@ -19109,7 +19193,7 @@ type ListReleaseCandidatesRequest struct {
 
 func (x *ListReleaseCandidatesRequest) Reset() {
 	*x = ListReleaseCandidatesRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[218]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[219]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19121,7 +19205,7 @@ func (x *ListReleaseCandidatesRequest) String() string {
 func (*ListReleaseCandidatesRequest) ProtoMessage() {}
 
 func (x *ListReleaseCandidatesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[218]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[219]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19134,7 +19218,7 @@ func (x *ListReleaseCandidatesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListReleaseCandidatesRequest.ProtoReflect.Descriptor instead.
 func (*ListReleaseCandidatesRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{218}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{219}
 }
 
 func (x *ListReleaseCandidatesRequest) GetProjectId() string {
@@ -19160,7 +19244,7 @@ type ListReleaseCandidatesResponse struct {
 
 func (x *ListReleaseCandidatesResponse) Reset() {
 	*x = ListReleaseCandidatesResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[219]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[220]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19172,7 +19256,7 @@ func (x *ListReleaseCandidatesResponse) String() string {
 func (*ListReleaseCandidatesResponse) ProtoMessage() {}
 
 func (x *ListReleaseCandidatesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[219]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[220]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19185,7 +19269,7 @@ func (x *ListReleaseCandidatesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListReleaseCandidatesResponse.ProtoReflect.Descriptor instead.
 func (*ListReleaseCandidatesResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{219}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{220}
 }
 
 func (x *ListReleaseCandidatesResponse) GetCandidates() []*ReleaseCandidate {
@@ -19207,7 +19291,7 @@ type PrepareReleaseRequest struct {
 
 func (x *PrepareReleaseRequest) Reset() {
 	*x = PrepareReleaseRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[220]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[221]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19219,7 +19303,7 @@ func (x *PrepareReleaseRequest) String() string {
 func (*PrepareReleaseRequest) ProtoMessage() {}
 
 func (x *PrepareReleaseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[220]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[221]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19232,7 +19316,7 @@ func (x *PrepareReleaseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PrepareReleaseRequest.ProtoReflect.Descriptor instead.
 func (*PrepareReleaseRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{220}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{221}
 }
 
 func (x *PrepareReleaseRequest) GetProjectId() string {
@@ -19272,7 +19356,7 @@ type PrepareReleaseResponse struct {
 
 func (x *PrepareReleaseResponse) Reset() {
 	*x = PrepareReleaseResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[221]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[222]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19284,7 +19368,7 @@ func (x *PrepareReleaseResponse) String() string {
 func (*PrepareReleaseResponse) ProtoMessage() {}
 
 func (x *PrepareReleaseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[221]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[222]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19297,7 +19381,7 @@ func (x *PrepareReleaseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PrepareReleaseResponse.ProtoReflect.Descriptor instead.
 func (*PrepareReleaseResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{221}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{222}
 }
 
 func (x *PrepareReleaseResponse) GetReleaseId() string {
@@ -19329,7 +19413,7 @@ type StartReleaseBuildRequest struct {
 
 func (x *StartReleaseBuildRequest) Reset() {
 	*x = StartReleaseBuildRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[222]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[223]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19341,7 +19425,7 @@ func (x *StartReleaseBuildRequest) String() string {
 func (*StartReleaseBuildRequest) ProtoMessage() {}
 
 func (x *StartReleaseBuildRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[222]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[223]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19354,7 +19438,7 @@ func (x *StartReleaseBuildRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartReleaseBuildRequest.ProtoReflect.Descriptor instead.
 func (*StartReleaseBuildRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{222}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{223}
 }
 
 func (x *StartReleaseBuildRequest) GetProjectId() string {
@@ -19436,7 +19520,7 @@ type StartReleaseBuildResponse struct {
 
 func (x *StartReleaseBuildResponse) Reset() {
 	*x = StartReleaseBuildResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[223]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[224]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19448,7 +19532,7 @@ func (x *StartReleaseBuildResponse) String() string {
 func (*StartReleaseBuildResponse) ProtoMessage() {}
 
 func (x *StartReleaseBuildResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[223]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[224]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19461,7 +19545,7 @@ func (x *StartReleaseBuildResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartReleaseBuildResponse.ProtoReflect.Descriptor instead.
 func (*StartReleaseBuildResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{223}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{224}
 }
 
 func (x *StartReleaseBuildResponse) GetBuildRevisionId() string {
@@ -19486,7 +19570,7 @@ type RecoverReleaseBuildRequest struct {
 
 func (x *RecoverReleaseBuildRequest) Reset() {
 	*x = RecoverReleaseBuildRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[224]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[225]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19498,7 +19582,7 @@ func (x *RecoverReleaseBuildRequest) String() string {
 func (*RecoverReleaseBuildRequest) ProtoMessage() {}
 
 func (x *RecoverReleaseBuildRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[224]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[225]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19511,7 +19595,7 @@ func (x *RecoverReleaseBuildRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecoverReleaseBuildRequest.ProtoReflect.Descriptor instead.
 func (*RecoverReleaseBuildRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{224}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{225}
 }
 
 func (x *RecoverReleaseBuildRequest) GetProjectId() string {
@@ -19564,7 +19648,7 @@ type RecoverReleaseBuildResponse struct {
 
 func (x *RecoverReleaseBuildResponse) Reset() {
 	*x = RecoverReleaseBuildResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[225]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[226]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19576,7 +19660,7 @@ func (x *RecoverReleaseBuildResponse) String() string {
 func (*RecoverReleaseBuildResponse) ProtoMessage() {}
 
 func (x *RecoverReleaseBuildResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[225]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[226]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19589,7 +19673,7 @@ func (x *RecoverReleaseBuildResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecoverReleaseBuildResponse.ProtoReflect.Descriptor instead.
 func (*RecoverReleaseBuildResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{225}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{226}
 }
 
 // Cancels the Release's active build until its artifacts commit. A build whose automatic deployment
@@ -19609,7 +19693,7 @@ type CancelReleaseBuildRequest struct {
 
 func (x *CancelReleaseBuildRequest) Reset() {
 	*x = CancelReleaseBuildRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[226]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[227]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19621,7 +19705,7 @@ func (x *CancelReleaseBuildRequest) String() string {
 func (*CancelReleaseBuildRequest) ProtoMessage() {}
 
 func (x *CancelReleaseBuildRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[226]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[227]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19634,7 +19718,7 @@ func (x *CancelReleaseBuildRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelReleaseBuildRequest.ProtoReflect.Descriptor instead.
 func (*CancelReleaseBuildRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{226}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{227}
 }
 
 func (x *CancelReleaseBuildRequest) GetProjectId() string {
@@ -19680,7 +19764,7 @@ type CancelReleaseBuildResponse struct {
 
 func (x *CancelReleaseBuildResponse) Reset() {
 	*x = CancelReleaseBuildResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[227]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[228]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19692,7 +19776,7 @@ func (x *CancelReleaseBuildResponse) String() string {
 func (*CancelReleaseBuildResponse) ProtoMessage() {}
 
 func (x *CancelReleaseBuildResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[227]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[228]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19705,7 +19789,7 @@ func (x *CancelReleaseBuildResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelReleaseBuildResponse.ProtoReflect.Descriptor instead.
 func (*CancelReleaseBuildResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{227}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{228}
 }
 
 // Reads the build's provider log from cursor, redacted and never stored; an empty cursor reads from
@@ -19723,7 +19807,7 @@ type GetReleaseBuildLogRequest struct {
 
 func (x *GetReleaseBuildLogRequest) Reset() {
 	*x = GetReleaseBuildLogRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[228]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[229]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19735,7 +19819,7 @@ func (x *GetReleaseBuildLogRequest) String() string {
 func (*GetReleaseBuildLogRequest) ProtoMessage() {}
 
 func (x *GetReleaseBuildLogRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[228]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[229]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19748,7 +19832,7 @@ func (x *GetReleaseBuildLogRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetReleaseBuildLogRequest.ProtoReflect.Descriptor instead.
 func (*GetReleaseBuildLogRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{228}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{229}
 }
 
 func (x *GetReleaseBuildLogRequest) GetProjectId() string {
@@ -19802,7 +19886,7 @@ type GetReleaseBuildLogResponse struct {
 
 func (x *GetReleaseBuildLogResponse) Reset() {
 	*x = GetReleaseBuildLogResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[229]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[230]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19814,7 +19898,7 @@ func (x *GetReleaseBuildLogResponse) String() string {
 func (*GetReleaseBuildLogResponse) ProtoMessage() {}
 
 func (x *GetReleaseBuildLogResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[229]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[230]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19827,7 +19911,7 @@ func (x *GetReleaseBuildLogResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetReleaseBuildLogResponse.ProtoReflect.Descriptor instead.
 func (*GetReleaseBuildLogResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{229}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{230}
 }
 
 func (x *GetReleaseBuildLogResponse) GetLines() []string {
@@ -19871,7 +19955,7 @@ type ListReleasesRequest struct {
 
 func (x *ListReleasesRequest) Reset() {
 	*x = ListReleasesRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[230]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[231]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19883,7 +19967,7 @@ func (x *ListReleasesRequest) String() string {
 func (*ListReleasesRequest) ProtoMessage() {}
 
 func (x *ListReleasesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[230]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[231]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19896,7 +19980,7 @@ func (x *ListReleasesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListReleasesRequest.ProtoReflect.Descriptor instead.
 func (*ListReleasesRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{230}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{231}
 }
 
 func (x *ListReleasesRequest) GetProjectId() string {
@@ -19944,7 +20028,7 @@ type ListReleasesResponse struct {
 
 func (x *ListReleasesResponse) Reset() {
 	*x = ListReleasesResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[231]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[232]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19956,7 +20040,7 @@ func (x *ListReleasesResponse) String() string {
 func (*ListReleasesResponse) ProtoMessage() {}
 
 func (x *ListReleasesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[231]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[232]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19969,7 +20053,7 @@ func (x *ListReleasesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListReleasesResponse.ProtoReflect.Descriptor instead.
 func (*ListReleasesResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{231}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{232}
 }
 
 func (x *ListReleasesResponse) GetReleases() []*ReleaseSnapshot {
@@ -19997,7 +20081,7 @@ type GetReleaseRequest struct {
 
 func (x *GetReleaseRequest) Reset() {
 	*x = GetReleaseRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[232]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[233]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20009,7 +20093,7 @@ func (x *GetReleaseRequest) String() string {
 func (*GetReleaseRequest) ProtoMessage() {}
 
 func (x *GetReleaseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[232]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[233]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20022,7 +20106,7 @@ func (x *GetReleaseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetReleaseRequest.ProtoReflect.Descriptor instead.
 func (*GetReleaseRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{232}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{233}
 }
 
 func (x *GetReleaseRequest) GetProjectId() string {
@@ -20058,7 +20142,7 @@ type GetReleaseResponse struct {
 
 func (x *GetReleaseResponse) Reset() {
 	*x = GetReleaseResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[233]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[234]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20070,7 +20154,7 @@ func (x *GetReleaseResponse) String() string {
 func (*GetReleaseResponse) ProtoMessage() {}
 
 func (x *GetReleaseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[233]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[234]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20083,7 +20167,7 @@ func (x *GetReleaseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetReleaseResponse.ProtoReflect.Descriptor instead.
 func (*GetReleaseResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{233}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{234}
 }
 
 func (x *GetReleaseResponse) GetRelease() *ReleaseSnapshot {
@@ -20112,7 +20196,7 @@ type WatchReleaseRequest struct {
 
 func (x *WatchReleaseRequest) Reset() {
 	*x = WatchReleaseRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[234]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[235]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20124,7 +20208,7 @@ func (x *WatchReleaseRequest) String() string {
 func (*WatchReleaseRequest) ProtoMessage() {}
 
 func (x *WatchReleaseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[234]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[235]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20137,7 +20221,7 @@ func (x *WatchReleaseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchReleaseRequest.ProtoReflect.Descriptor instead.
 func (*WatchReleaseRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{234}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{235}
 }
 
 func (x *WatchReleaseRequest) GetProjectId() string {
@@ -20182,7 +20266,7 @@ type WatchReleaseResponse struct {
 
 func (x *WatchReleaseResponse) Reset() {
 	*x = WatchReleaseResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[235]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[236]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20194,7 +20278,7 @@ func (x *WatchReleaseResponse) String() string {
 func (*WatchReleaseResponse) ProtoMessage() {}
 
 func (x *WatchReleaseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[235]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[236]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20207,7 +20291,7 @@ func (x *WatchReleaseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchReleaseResponse.ProtoReflect.Descriptor instead.
 func (*WatchReleaseResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{235}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{236}
 }
 
 func (x *WatchReleaseResponse) GetEvent() isWatchReleaseResponse_Event {
@@ -20270,7 +20354,7 @@ type ReleaseCandidate struct {
 
 func (x *ReleaseCandidate) Reset() {
 	*x = ReleaseCandidate{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[236]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[237]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20282,7 +20366,7 @@ func (x *ReleaseCandidate) String() string {
 func (*ReleaseCandidate) ProtoMessage() {}
 
 func (x *ReleaseCandidate) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[236]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[237]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20295,7 +20379,7 @@ func (x *ReleaseCandidate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReleaseCandidate.ProtoReflect.Descriptor instead.
 func (*ReleaseCandidate) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{236}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{237}
 }
 
 func (x *ReleaseCandidate) GetSourceCommit() string {
@@ -20347,7 +20431,7 @@ type ReleaseSnapshot struct {
 
 func (x *ReleaseSnapshot) Reset() {
 	*x = ReleaseSnapshot{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[237]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[238]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20359,7 +20443,7 @@ func (x *ReleaseSnapshot) String() string {
 func (*ReleaseSnapshot) ProtoMessage() {}
 
 func (x *ReleaseSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[237]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[238]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20372,7 +20456,7 @@ func (x *ReleaseSnapshot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReleaseSnapshot.ProtoReflect.Descriptor instead.
 func (*ReleaseSnapshot) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{237}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{238}
 }
 
 func (x *ReleaseSnapshot) GetProjectId() string {
@@ -20475,7 +20559,7 @@ type PreparedReleaseSourceSnapshot struct {
 
 func (x *PreparedReleaseSourceSnapshot) Reset() {
 	*x = PreparedReleaseSourceSnapshot{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[238]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[239]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20487,7 +20571,7 @@ func (x *PreparedReleaseSourceSnapshot) String() string {
 func (*PreparedReleaseSourceSnapshot) ProtoMessage() {}
 
 func (x *PreparedReleaseSourceSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[238]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[239]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20500,7 +20584,7 @@ func (x *PreparedReleaseSourceSnapshot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PreparedReleaseSourceSnapshot.ProtoReflect.Descriptor instead.
 func (*PreparedReleaseSourceSnapshot) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{238}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{239}
 }
 
 func (x *PreparedReleaseSourceSnapshot) GetStatus() ReleaseStatus {
@@ -20581,7 +20665,7 @@ type ReleaseBuildRevisionSnapshot struct {
 
 func (x *ReleaseBuildRevisionSnapshot) Reset() {
 	*x = ReleaseBuildRevisionSnapshot{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[239]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[240]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20593,7 +20677,7 @@ func (x *ReleaseBuildRevisionSnapshot) String() string {
 func (*ReleaseBuildRevisionSnapshot) ProtoMessage() {}
 
 func (x *ReleaseBuildRevisionSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[239]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[240]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20606,7 +20690,7 @@ func (x *ReleaseBuildRevisionSnapshot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReleaseBuildRevisionSnapshot.ProtoReflect.Descriptor instead.
 func (*ReleaseBuildRevisionSnapshot) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{239}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{240}
 }
 
 func (x *ReleaseBuildRevisionSnapshot) GetBuildRevisionId() string {
@@ -20739,7 +20823,7 @@ type Cancellation struct {
 
 func (x *Cancellation) Reset() {
 	*x = Cancellation{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[240]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[241]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20751,7 +20835,7 @@ func (x *Cancellation) String() string {
 func (*Cancellation) ProtoMessage() {}
 
 func (x *Cancellation) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[240]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[241]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20764,7 +20848,7 @@ func (x *Cancellation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Cancellation.ProtoReflect.Descriptor instead.
 func (*Cancellation) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{240}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{241}
 }
 
 func (x *Cancellation) GetActorAccountId() string {
@@ -20796,7 +20880,7 @@ type PreviewValidation struct {
 
 func (x *PreviewValidation) Reset() {
 	*x = PreviewValidation{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[241]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[242]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20808,7 +20892,7 @@ func (x *PreviewValidation) String() string {
 func (*PreviewValidation) ProtoMessage() {}
 
 func (x *PreviewValidation) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[241]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[242]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20821,7 +20905,7 @@ func (x *PreviewValidation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PreviewValidation.ProtoReflect.Descriptor instead.
 func (*PreviewValidation) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{241}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{242}
 }
 
 func (x *PreviewValidation) GetKind() PreviewValidation_Kind {
@@ -20877,7 +20961,7 @@ type DeriveLiveConfigurationRequest struct {
 
 func (x *DeriveLiveConfigurationRequest) Reset() {
 	*x = DeriveLiveConfigurationRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[242]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[243]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20889,7 +20973,7 @@ func (x *DeriveLiveConfigurationRequest) String() string {
 func (*DeriveLiveConfigurationRequest) ProtoMessage() {}
 
 func (x *DeriveLiveConfigurationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[242]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[243]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20902,7 +20986,7 @@ func (x *DeriveLiveConfigurationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeriveLiveConfigurationRequest.ProtoReflect.Descriptor instead.
 func (*DeriveLiveConfigurationRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{242}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{243}
 }
 
 func (x *DeriveLiveConfigurationRequest) GetProjectId() string {
@@ -20949,7 +21033,7 @@ type DeriveLiveConfigurationResponse struct {
 
 func (x *DeriveLiveConfigurationResponse) Reset() {
 	*x = DeriveLiveConfigurationResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[243]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[244]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20961,7 +21045,7 @@ func (x *DeriveLiveConfigurationResponse) String() string {
 func (*DeriveLiveConfigurationResponse) ProtoMessage() {}
 
 func (x *DeriveLiveConfigurationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[243]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[244]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20974,7 +21058,7 @@ func (x *DeriveLiveConfigurationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeriveLiveConfigurationResponse.ProtoReflect.Descriptor instead.
 func (*DeriveLiveConfigurationResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{243}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{244}
 }
 
 func (x *DeriveLiveConfigurationResponse) GetConfiguration() *ProjectConfigurationSnapshot {
@@ -21001,7 +21085,7 @@ type StartDeploymentRequest struct {
 
 func (x *StartDeploymentRequest) Reset() {
 	*x = StartDeploymentRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[244]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[245]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21013,7 +21097,7 @@ func (x *StartDeploymentRequest) String() string {
 func (*StartDeploymentRequest) ProtoMessage() {}
 
 func (x *StartDeploymentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[244]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[245]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21026,7 +21110,7 @@ func (x *StartDeploymentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartDeploymentRequest.ProtoReflect.Descriptor instead.
 func (*StartDeploymentRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{244}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{245}
 }
 
 func (x *StartDeploymentRequest) GetProjectId() string {
@@ -21094,7 +21178,7 @@ type StartDeploymentResponse struct {
 
 func (x *StartDeploymentResponse) Reset() {
 	*x = StartDeploymentResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[245]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[246]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21106,7 +21190,7 @@ func (x *StartDeploymentResponse) String() string {
 func (*StartDeploymentResponse) ProtoMessage() {}
 
 func (x *StartDeploymentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[245]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[246]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21119,7 +21203,7 @@ func (x *StartDeploymentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartDeploymentResponse.ProtoReflect.Descriptor instead.
 func (*StartDeploymentResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{245}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{246}
 }
 
 func (x *StartDeploymentResponse) GetDeploymentId() string {
@@ -21145,7 +21229,7 @@ type CancelDeploymentRequest struct {
 
 func (x *CancelDeploymentRequest) Reset() {
 	*x = CancelDeploymentRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[246]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[247]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21157,7 +21241,7 @@ func (x *CancelDeploymentRequest) String() string {
 func (*CancelDeploymentRequest) ProtoMessage() {}
 
 func (x *CancelDeploymentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[246]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[247]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21170,7 +21254,7 @@ func (x *CancelDeploymentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelDeploymentRequest.ProtoReflect.Descriptor instead.
 func (*CancelDeploymentRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{246}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{247}
 }
 
 func (x *CancelDeploymentRequest) GetProjectId() string {
@@ -21209,7 +21293,7 @@ type CancelDeploymentResponse struct {
 
 func (x *CancelDeploymentResponse) Reset() {
 	*x = CancelDeploymentResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[247]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[248]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21221,7 +21305,7 @@ func (x *CancelDeploymentResponse) String() string {
 func (*CancelDeploymentResponse) ProtoMessage() {}
 
 func (x *CancelDeploymentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[247]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[248]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21234,7 +21318,7 @@ func (x *CancelDeploymentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelDeploymentResponse.ProtoReflect.Descriptor instead.
 func (*CancelDeploymentResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{247}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{248}
 }
 
 type GetDeploymentRequest struct {
@@ -21248,7 +21332,7 @@ type GetDeploymentRequest struct {
 
 func (x *GetDeploymentRequest) Reset() {
 	*x = GetDeploymentRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[248]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[249]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21260,7 +21344,7 @@ func (x *GetDeploymentRequest) String() string {
 func (*GetDeploymentRequest) ProtoMessage() {}
 
 func (x *GetDeploymentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[248]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[249]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21273,7 +21357,7 @@ func (x *GetDeploymentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDeploymentRequest.ProtoReflect.Descriptor instead.
 func (*GetDeploymentRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{248}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{249}
 }
 
 func (x *GetDeploymentRequest) GetProjectId() string {
@@ -21306,7 +21390,7 @@ type GetDeploymentResponse struct {
 
 func (x *GetDeploymentResponse) Reset() {
 	*x = GetDeploymentResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[249]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[250]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21318,7 +21402,7 @@ func (x *GetDeploymentResponse) String() string {
 func (*GetDeploymentResponse) ProtoMessage() {}
 
 func (x *GetDeploymentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[249]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[250]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21331,7 +21415,7 @@ func (x *GetDeploymentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDeploymentResponse.ProtoReflect.Descriptor instead.
 func (*GetDeploymentResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{249}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{250}
 }
 
 func (x *GetDeploymentResponse) GetDeployment() *DeploymentSnapshot {
@@ -21354,7 +21438,7 @@ type ListDeploymentsRequest struct {
 
 func (x *ListDeploymentsRequest) Reset() {
 	*x = ListDeploymentsRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[250]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[251]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21366,7 +21450,7 @@ func (x *ListDeploymentsRequest) String() string {
 func (*ListDeploymentsRequest) ProtoMessage() {}
 
 func (x *ListDeploymentsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[250]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[251]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21379,7 +21463,7 @@ func (x *ListDeploymentsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDeploymentsRequest.ProtoReflect.Descriptor instead.
 func (*ListDeploymentsRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{250}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{251}
 }
 
 func (x *ListDeploymentsRequest) GetProjectId() string {
@@ -21427,7 +21511,7 @@ type ListDeploymentsResponse struct {
 
 func (x *ListDeploymentsResponse) Reset() {
 	*x = ListDeploymentsResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[251]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[252]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21439,7 +21523,7 @@ func (x *ListDeploymentsResponse) String() string {
 func (*ListDeploymentsResponse) ProtoMessage() {}
 
 func (x *ListDeploymentsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[251]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[252]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21452,7 +21536,7 @@ func (x *ListDeploymentsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDeploymentsResponse.ProtoReflect.Descriptor instead.
 func (*ListDeploymentsResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{251}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{252}
 }
 
 func (x *ListDeploymentsResponse) GetDeployments() []*DeploymentSnapshot {
@@ -21481,7 +21565,7 @@ type WatchDeploymentRequest struct {
 
 func (x *WatchDeploymentRequest) Reset() {
 	*x = WatchDeploymentRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[252]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[253]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21493,7 +21577,7 @@ func (x *WatchDeploymentRequest) String() string {
 func (*WatchDeploymentRequest) ProtoMessage() {}
 
 func (x *WatchDeploymentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[252]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[253]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21506,7 +21590,7 @@ func (x *WatchDeploymentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchDeploymentRequest.ProtoReflect.Descriptor instead.
 func (*WatchDeploymentRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{252}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{253}
 }
 
 func (x *WatchDeploymentRequest) GetProjectId() string {
@@ -21551,7 +21635,7 @@ type WatchDeploymentResponse struct {
 
 func (x *WatchDeploymentResponse) Reset() {
 	*x = WatchDeploymentResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[253]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[254]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21563,7 +21647,7 @@ func (x *WatchDeploymentResponse) String() string {
 func (*WatchDeploymentResponse) ProtoMessage() {}
 
 func (x *WatchDeploymentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[253]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[254]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21576,7 +21660,7 @@ func (x *WatchDeploymentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchDeploymentResponse.ProtoReflect.Descriptor instead.
 func (*WatchDeploymentResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{253}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{254}
 }
 
 func (x *WatchDeploymentResponse) GetEvent() isWatchDeploymentResponse_Event {
@@ -21651,7 +21735,7 @@ type DeploymentSnapshot struct {
 
 func (x *DeploymentSnapshot) Reset() {
 	*x = DeploymentSnapshot{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[254]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[255]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21663,7 +21747,7 @@ func (x *DeploymentSnapshot) String() string {
 func (*DeploymentSnapshot) ProtoMessage() {}
 
 func (x *DeploymentSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[254]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[255]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21676,7 +21760,7 @@ func (x *DeploymentSnapshot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeploymentSnapshot.ProtoReflect.Descriptor instead.
 func (*DeploymentSnapshot) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{254}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{255}
 }
 
 func (x *DeploymentSnapshot) GetProjectId() string {
@@ -21787,7 +21871,7 @@ type GetFlowDefinitionsRequest struct {
 
 func (x *GetFlowDefinitionsRequest) Reset() {
 	*x = GetFlowDefinitionsRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[255]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[256]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21799,7 +21883,7 @@ func (x *GetFlowDefinitionsRequest) String() string {
 func (*GetFlowDefinitionsRequest) ProtoMessage() {}
 
 func (x *GetFlowDefinitionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[255]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[256]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21812,7 +21896,7 @@ func (x *GetFlowDefinitionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFlowDefinitionsRequest.ProtoReflect.Descriptor instead.
 func (*GetFlowDefinitionsRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{255}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{256}
 }
 
 func (x *GetFlowDefinitionsRequest) GetContext() *FlowApiContext {
@@ -21838,7 +21922,7 @@ type GetFlowDefinitionsResponse struct {
 
 func (x *GetFlowDefinitionsResponse) Reset() {
 	*x = GetFlowDefinitionsResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[256]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[257]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21850,7 +21934,7 @@ func (x *GetFlowDefinitionsResponse) String() string {
 func (*GetFlowDefinitionsResponse) ProtoMessage() {}
 
 func (x *GetFlowDefinitionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[256]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[257]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21863,7 +21947,7 @@ func (x *GetFlowDefinitionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFlowDefinitionsResponse.ProtoReflect.Descriptor instead.
 func (*GetFlowDefinitionsResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{256}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{257}
 }
 
 func (x *GetFlowDefinitionsResponse) GetDocument() *FlowApiDocument {
@@ -21883,7 +21967,7 @@ type GetFlowCatalogRequest struct {
 
 func (x *GetFlowCatalogRequest) Reset() {
 	*x = GetFlowCatalogRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[257]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[258]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21895,7 +21979,7 @@ func (x *GetFlowCatalogRequest) String() string {
 func (*GetFlowCatalogRequest) ProtoMessage() {}
 
 func (x *GetFlowCatalogRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[257]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[258]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21908,7 +21992,7 @@ func (x *GetFlowCatalogRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFlowCatalogRequest.ProtoReflect.Descriptor instead.
 func (*GetFlowCatalogRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{257}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{258}
 }
 
 func (x *GetFlowCatalogRequest) GetContext() *FlowApiContext {
@@ -21934,7 +22018,7 @@ type GetFlowCatalogResponse struct {
 
 func (x *GetFlowCatalogResponse) Reset() {
 	*x = GetFlowCatalogResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[258]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[259]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21946,7 +22030,7 @@ func (x *GetFlowCatalogResponse) String() string {
 func (*GetFlowCatalogResponse) ProtoMessage() {}
 
 func (x *GetFlowCatalogResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[258]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[259]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21959,7 +22043,7 @@ func (x *GetFlowCatalogResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFlowCatalogResponse.ProtoReflect.Descriptor instead.
 func (*GetFlowCatalogResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{258}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{259}
 }
 
 func (x *GetFlowCatalogResponse) GetDocument() *FlowApiDocument {
@@ -21984,7 +22068,7 @@ type SearchFlowsRequest struct {
 
 func (x *SearchFlowsRequest) Reset() {
 	*x = SearchFlowsRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[259]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[260]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21996,7 +22080,7 @@ func (x *SearchFlowsRequest) String() string {
 func (*SearchFlowsRequest) ProtoMessage() {}
 
 func (x *SearchFlowsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[259]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[260]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22009,7 +22093,7 @@ func (x *SearchFlowsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchFlowsRequest.ProtoReflect.Descriptor instead.
 func (*SearchFlowsRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{259}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{260}
 }
 
 func (x *SearchFlowsRequest) GetContext() *FlowApiContext {
@@ -22070,7 +22154,7 @@ type SearchFlowsResponse struct {
 
 func (x *SearchFlowsResponse) Reset() {
 	*x = SearchFlowsResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[260]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[261]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22082,7 +22166,7 @@ func (x *SearchFlowsResponse) String() string {
 func (*SearchFlowsResponse) ProtoMessage() {}
 
 func (x *SearchFlowsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[260]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[261]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22095,7 +22179,7 @@ func (x *SearchFlowsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchFlowsResponse.ProtoReflect.Descriptor instead.
 func (*SearchFlowsResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{260}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{261}
 }
 
 func (x *SearchFlowsResponse) GetDocument() *FlowApiDocument {
@@ -22117,7 +22201,7 @@ type GetFlowDisplayRequest struct {
 
 func (x *GetFlowDisplayRequest) Reset() {
 	*x = GetFlowDisplayRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[261]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[262]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22129,7 +22213,7 @@ func (x *GetFlowDisplayRequest) String() string {
 func (*GetFlowDisplayRequest) ProtoMessage() {}
 
 func (x *GetFlowDisplayRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[261]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[262]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22142,7 +22226,7 @@ func (x *GetFlowDisplayRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFlowDisplayRequest.ProtoReflect.Descriptor instead.
 func (*GetFlowDisplayRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{261}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{262}
 }
 
 func (x *GetFlowDisplayRequest) GetContext() *FlowApiContext {
@@ -22182,7 +22266,7 @@ type GetFlowDisplayResponse struct {
 
 func (x *GetFlowDisplayResponse) Reset() {
 	*x = GetFlowDisplayResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[262]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[263]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22194,7 +22278,7 @@ func (x *GetFlowDisplayResponse) String() string {
 func (*GetFlowDisplayResponse) ProtoMessage() {}
 
 func (x *GetFlowDisplayResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[262]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[263]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22207,7 +22291,7 @@ func (x *GetFlowDisplayResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFlowDisplayResponse.ProtoReflect.Descriptor instead.
 func (*GetFlowDisplayResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{262}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{263}
 }
 
 func (x *GetFlowDisplayResponse) GetDocument() *FlowApiDocument {
@@ -22231,7 +22315,7 @@ type UpdateFlowDisplayFieldRequest struct {
 
 func (x *UpdateFlowDisplayFieldRequest) Reset() {
 	*x = UpdateFlowDisplayFieldRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[263]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[264]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22243,7 +22327,7 @@ func (x *UpdateFlowDisplayFieldRequest) String() string {
 func (*UpdateFlowDisplayFieldRequest) ProtoMessage() {}
 
 func (x *UpdateFlowDisplayFieldRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[263]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[264]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22256,7 +22340,7 @@ func (x *UpdateFlowDisplayFieldRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateFlowDisplayFieldRequest.ProtoReflect.Descriptor instead.
 func (*UpdateFlowDisplayFieldRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{263}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{264}
 }
 
 func (x *UpdateFlowDisplayFieldRequest) GetContext() *FlowApiContext {
@@ -22310,7 +22394,7 @@ type UpdateFlowDisplayFieldResponse struct {
 
 func (x *UpdateFlowDisplayFieldResponse) Reset() {
 	*x = UpdateFlowDisplayFieldResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[264]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[265]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22322,7 +22406,7 @@ func (x *UpdateFlowDisplayFieldResponse) String() string {
 func (*UpdateFlowDisplayFieldResponse) ProtoMessage() {}
 
 func (x *UpdateFlowDisplayFieldResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[264]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[265]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22335,7 +22419,7 @@ func (x *UpdateFlowDisplayFieldResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateFlowDisplayFieldResponse.ProtoReflect.Descriptor instead.
 func (*UpdateFlowDisplayFieldResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{264}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{265}
 }
 
 func (x *UpdateFlowDisplayFieldResponse) GetDocument() *FlowApiDocument {
@@ -22360,7 +22444,7 @@ type InvokeFlowActionRequest struct {
 
 func (x *InvokeFlowActionRequest) Reset() {
 	*x = InvokeFlowActionRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[265]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[266]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22372,7 +22456,7 @@ func (x *InvokeFlowActionRequest) String() string {
 func (*InvokeFlowActionRequest) ProtoMessage() {}
 
 func (x *InvokeFlowActionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[265]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[266]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22385,7 +22469,7 @@ func (x *InvokeFlowActionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InvokeFlowActionRequest.ProtoReflect.Descriptor instead.
 func (*InvokeFlowActionRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{265}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{266}
 }
 
 func (x *InvokeFlowActionRequest) GetContext() *FlowApiContext {
@@ -22446,7 +22530,7 @@ type InvokeFlowActionResponse struct {
 
 func (x *InvokeFlowActionResponse) Reset() {
 	*x = InvokeFlowActionResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[266]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[267]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22458,7 +22542,7 @@ func (x *InvokeFlowActionResponse) String() string {
 func (*InvokeFlowActionResponse) ProtoMessage() {}
 
 func (x *InvokeFlowActionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[266]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[267]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22471,7 +22555,7 @@ func (x *InvokeFlowActionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InvokeFlowActionResponse.ProtoReflect.Descriptor instead.
 func (*InvokeFlowActionResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{266}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{267}
 }
 
 func (x *InvokeFlowActionResponse) GetDocument() *FlowApiDocument {
@@ -22496,7 +22580,7 @@ type StartFlowRequest struct {
 
 func (x *StartFlowRequest) Reset() {
 	*x = StartFlowRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[267]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[268]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22508,7 +22592,7 @@ func (x *StartFlowRequest) String() string {
 func (*StartFlowRequest) ProtoMessage() {}
 
 func (x *StartFlowRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[267]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[268]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22521,7 +22605,7 @@ func (x *StartFlowRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartFlowRequest.ProtoReflect.Descriptor instead.
 func (*StartFlowRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{267}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{268}
 }
 
 func (x *StartFlowRequest) GetContext() *FlowApiContext {
@@ -22582,7 +22666,7 @@ type StartFlowResponse struct {
 
 func (x *StartFlowResponse) Reset() {
 	*x = StartFlowResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[268]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[269]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22594,7 +22678,7 @@ func (x *StartFlowResponse) String() string {
 func (*StartFlowResponse) ProtoMessage() {}
 
 func (x *StartFlowResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[268]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[269]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22607,7 +22691,7 @@ func (x *StartFlowResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartFlowResponse.ProtoReflect.Descriptor instead.
 func (*StartFlowResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{268}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{269}
 }
 
 func (x *StartFlowResponse) GetDocument() *FlowApiDocument {
@@ -22632,7 +22716,7 @@ type RecoverFlowStartRequest struct {
 
 func (x *RecoverFlowStartRequest) Reset() {
 	*x = RecoverFlowStartRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[269]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[270]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22644,7 +22728,7 @@ func (x *RecoverFlowStartRequest) String() string {
 func (*RecoverFlowStartRequest) ProtoMessage() {}
 
 func (x *RecoverFlowStartRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[269]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[270]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22657,7 +22741,7 @@ func (x *RecoverFlowStartRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecoverFlowStartRequest.ProtoReflect.Descriptor instead.
 func (*RecoverFlowStartRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{269}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{270}
 }
 
 func (x *RecoverFlowStartRequest) GetContext() *FlowApiContext {
@@ -22718,7 +22802,7 @@ type RecoverFlowStartResponse struct {
 
 func (x *RecoverFlowStartResponse) Reset() {
 	*x = RecoverFlowStartResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[270]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[271]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22730,7 +22814,7 @@ func (x *RecoverFlowStartResponse) String() string {
 func (*RecoverFlowStartResponse) ProtoMessage() {}
 
 func (x *RecoverFlowStartResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[270]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[271]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22743,7 +22827,7 @@ func (x *RecoverFlowStartResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecoverFlowStartResponse.ProtoReflect.Descriptor instead.
 func (*RecoverFlowStartResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{270}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{271}
 }
 
 func (x *RecoverFlowStartResponse) GetDocument() *FlowApiDocument {
@@ -22765,7 +22849,7 @@ type GetFlowSummaryRequest struct {
 
 func (x *GetFlowSummaryRequest) Reset() {
 	*x = GetFlowSummaryRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[271]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[272]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22777,7 +22861,7 @@ func (x *GetFlowSummaryRequest) String() string {
 func (*GetFlowSummaryRequest) ProtoMessage() {}
 
 func (x *GetFlowSummaryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[271]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[272]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22790,7 +22874,7 @@ func (x *GetFlowSummaryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFlowSummaryRequest.ProtoReflect.Descriptor instead.
 func (*GetFlowSummaryRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{271}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{272}
 }
 
 func (x *GetFlowSummaryRequest) GetContext() *FlowApiContext {
@@ -22830,7 +22914,7 @@ type GetFlowSummaryResponse struct {
 
 func (x *GetFlowSummaryResponse) Reset() {
 	*x = GetFlowSummaryResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[272]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[273]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22842,7 +22926,7 @@ func (x *GetFlowSummaryResponse) String() string {
 func (*GetFlowSummaryResponse) ProtoMessage() {}
 
 func (x *GetFlowSummaryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[272]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[273]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22855,7 +22939,7 @@ func (x *GetFlowSummaryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFlowSummaryResponse.ProtoReflect.Descriptor instead.
 func (*GetFlowSummaryResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{272}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{273}
 }
 
 func (x *GetFlowSummaryResponse) GetDocument() *FlowApiDocument {
@@ -22877,7 +22961,7 @@ type GetFlowStateRequest struct {
 
 func (x *GetFlowStateRequest) Reset() {
 	*x = GetFlowStateRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[273]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[274]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22889,7 +22973,7 @@ func (x *GetFlowStateRequest) String() string {
 func (*GetFlowStateRequest) ProtoMessage() {}
 
 func (x *GetFlowStateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[273]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[274]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22902,7 +22986,7 @@ func (x *GetFlowStateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFlowStateRequest.ProtoReflect.Descriptor instead.
 func (*GetFlowStateRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{273}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{274}
 }
 
 func (x *GetFlowStateRequest) GetContext() *FlowApiContext {
@@ -22942,7 +23026,7 @@ type GetFlowStateResponse struct {
 
 func (x *GetFlowStateResponse) Reset() {
 	*x = GetFlowStateResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[274]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[275]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22954,7 +23038,7 @@ func (x *GetFlowStateResponse) String() string {
 func (*GetFlowStateResponse) ProtoMessage() {}
 
 func (x *GetFlowStateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[274]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[275]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22967,7 +23051,7 @@ func (x *GetFlowStateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFlowStateResponse.ProtoReflect.Descriptor instead.
 func (*GetFlowStateResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{274}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{275}
 }
 
 func (x *GetFlowStateResponse) GetDocument() *FlowApiDocument {
@@ -22992,7 +23076,7 @@ type GetFlowHistoryRequest struct {
 
 func (x *GetFlowHistoryRequest) Reset() {
 	*x = GetFlowHistoryRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[275]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[276]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23004,7 +23088,7 @@ func (x *GetFlowHistoryRequest) String() string {
 func (*GetFlowHistoryRequest) ProtoMessage() {}
 
 func (x *GetFlowHistoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[275]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[276]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23017,7 +23101,7 @@ func (x *GetFlowHistoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFlowHistoryRequest.ProtoReflect.Descriptor instead.
 func (*GetFlowHistoryRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{275}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{276}
 }
 
 func (x *GetFlowHistoryRequest) GetContext() *FlowApiContext {
@@ -23078,7 +23162,7 @@ type GetFlowHistoryResponse struct {
 
 func (x *GetFlowHistoryResponse) Reset() {
 	*x = GetFlowHistoryResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[276]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[277]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23090,7 +23174,7 @@ func (x *GetFlowHistoryResponse) String() string {
 func (*GetFlowHistoryResponse) ProtoMessage() {}
 
 func (x *GetFlowHistoryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[276]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[277]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23103,7 +23187,7 @@ func (x *GetFlowHistoryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFlowHistoryResponse.ProtoReflect.Descriptor instead.
 func (*GetFlowHistoryResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{276}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{277}
 }
 
 func (x *GetFlowHistoryResponse) GetDocument() *FlowApiDocument {
@@ -23126,7 +23210,7 @@ type WaitFlowHistoryRequest struct {
 
 func (x *WaitFlowHistoryRequest) Reset() {
 	*x = WaitFlowHistoryRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[277]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[278]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23138,7 +23222,7 @@ func (x *WaitFlowHistoryRequest) String() string {
 func (*WaitFlowHistoryRequest) ProtoMessage() {}
 
 func (x *WaitFlowHistoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[277]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[278]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23151,7 +23235,7 @@ func (x *WaitFlowHistoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WaitFlowHistoryRequest.ProtoReflect.Descriptor instead.
 func (*WaitFlowHistoryRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{277}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{278}
 }
 
 func (x *WaitFlowHistoryRequest) GetContext() *FlowApiContext {
@@ -23198,7 +23282,7 @@ type WaitFlowHistoryResponse struct {
 
 func (x *WaitFlowHistoryResponse) Reset() {
 	*x = WaitFlowHistoryResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[278]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[279]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23210,7 +23294,7 @@ func (x *WaitFlowHistoryResponse) String() string {
 func (*WaitFlowHistoryResponse) ProtoMessage() {}
 
 func (x *WaitFlowHistoryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[278]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[279]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23223,7 +23307,7 @@ func (x *WaitFlowHistoryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WaitFlowHistoryResponse.ProtoReflect.Descriptor instead.
 func (*WaitFlowHistoryResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{278}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{279}
 }
 
 func (x *WaitFlowHistoryResponse) GetDocument() *FlowApiDocument {
@@ -23247,7 +23331,7 @@ type ReadFlowStreamRequest struct {
 
 func (x *ReadFlowStreamRequest) Reset() {
 	*x = ReadFlowStreamRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[279]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[280]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23259,7 +23343,7 @@ func (x *ReadFlowStreamRequest) String() string {
 func (*ReadFlowStreamRequest) ProtoMessage() {}
 
 func (x *ReadFlowStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[279]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[280]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23272,7 +23356,7 @@ func (x *ReadFlowStreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadFlowStreamRequest.ProtoReflect.Descriptor instead.
 func (*ReadFlowStreamRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{279}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{280}
 }
 
 func (x *ReadFlowStreamRequest) GetContext() *FlowApiContext {
@@ -23326,7 +23410,7 @@ type ReadFlowStreamResponse struct {
 
 func (x *ReadFlowStreamResponse) Reset() {
 	*x = ReadFlowStreamResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[280]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[281]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23338,7 +23422,7 @@ func (x *ReadFlowStreamResponse) String() string {
 func (*ReadFlowStreamResponse) ProtoMessage() {}
 
 func (x *ReadFlowStreamResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[280]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[281]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23351,7 +23435,7 @@ func (x *ReadFlowStreamResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadFlowStreamResponse.ProtoReflect.Descriptor instead.
 func (*ReadFlowStreamResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{280}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{281}
 }
 
 func (x *ReadFlowStreamResponse) GetDocument() *FlowApiDocument {
@@ -23373,7 +23457,7 @@ type LoadFlowBlobsRequest struct {
 
 func (x *LoadFlowBlobsRequest) Reset() {
 	*x = LoadFlowBlobsRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[281]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[282]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23385,7 +23469,7 @@ func (x *LoadFlowBlobsRequest) String() string {
 func (*LoadFlowBlobsRequest) ProtoMessage() {}
 
 func (x *LoadFlowBlobsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[281]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[282]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23398,7 +23482,7 @@ func (x *LoadFlowBlobsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoadFlowBlobsRequest.ProtoReflect.Descriptor instead.
 func (*LoadFlowBlobsRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{281}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{282}
 }
 
 func (x *LoadFlowBlobsRequest) GetContext() *FlowApiContext {
@@ -23438,7 +23522,7 @@ type LoadFlowBlobsResponse struct {
 
 func (x *LoadFlowBlobsResponse) Reset() {
 	*x = LoadFlowBlobsResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[282]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[283]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23450,7 +23534,7 @@ func (x *LoadFlowBlobsResponse) String() string {
 func (*LoadFlowBlobsResponse) ProtoMessage() {}
 
 func (x *LoadFlowBlobsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[282]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[283]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23463,7 +23547,7 @@ func (x *LoadFlowBlobsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoadFlowBlobsResponse.ProtoReflect.Descriptor instead.
 func (*LoadFlowBlobsResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{282}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{283}
 }
 
 func (x *LoadFlowBlobsResponse) GetDocument() *FlowApiDocument {
@@ -23487,7 +23571,7 @@ type StopFlowRequest struct {
 
 func (x *StopFlowRequest) Reset() {
 	*x = StopFlowRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[283]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[284]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23499,7 +23583,7 @@ func (x *StopFlowRequest) String() string {
 func (*StopFlowRequest) ProtoMessage() {}
 
 func (x *StopFlowRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[283]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[284]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23512,7 +23596,7 @@ func (x *StopFlowRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StopFlowRequest.ProtoReflect.Descriptor instead.
 func (*StopFlowRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{283}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{284}
 }
 
 func (x *StopFlowRequest) GetContext() *FlowApiContext {
@@ -23566,7 +23650,7 @@ type StopFlowResponse struct {
 
 func (x *StopFlowResponse) Reset() {
 	*x = StopFlowResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[284]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[285]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23578,7 +23662,7 @@ func (x *StopFlowResponse) String() string {
 func (*StopFlowResponse) ProtoMessage() {}
 
 func (x *StopFlowResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[284]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[285]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23591,7 +23675,7 @@ func (x *StopFlowResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StopFlowResponse.ProtoReflect.Descriptor instead.
 func (*StopFlowResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{284}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{285}
 }
 
 func (x *StopFlowResponse) GetDocument() *FlowApiDocument {
@@ -23615,7 +23699,7 @@ type DeleteFlowChannelMessageRequest struct {
 
 func (x *DeleteFlowChannelMessageRequest) Reset() {
 	*x = DeleteFlowChannelMessageRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[285]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[286]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23627,7 +23711,7 @@ func (x *DeleteFlowChannelMessageRequest) String() string {
 func (*DeleteFlowChannelMessageRequest) ProtoMessage() {}
 
 func (x *DeleteFlowChannelMessageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[285]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[286]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23640,7 +23724,7 @@ func (x *DeleteFlowChannelMessageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteFlowChannelMessageRequest.ProtoReflect.Descriptor instead.
 func (*DeleteFlowChannelMessageRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{285}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{286}
 }
 
 func (x *DeleteFlowChannelMessageRequest) GetContext() *FlowApiContext {
@@ -23694,7 +23778,7 @@ type DeleteFlowChannelMessageResponse struct {
 
 func (x *DeleteFlowChannelMessageResponse) Reset() {
 	*x = DeleteFlowChannelMessageResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[286]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[287]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23706,7 +23790,7 @@ func (x *DeleteFlowChannelMessageResponse) String() string {
 func (*DeleteFlowChannelMessageResponse) ProtoMessage() {}
 
 func (x *DeleteFlowChannelMessageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[286]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[287]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23719,7 +23803,7 @@ func (x *DeleteFlowChannelMessageResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteFlowChannelMessageResponse.ProtoReflect.Descriptor instead.
 func (*DeleteFlowChannelMessageResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{286}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{287}
 }
 
 func (x *DeleteFlowChannelMessageResponse) GetDocument() *FlowApiDocument {
@@ -23747,7 +23831,7 @@ type TimeTravelFlowRequest struct {
 
 func (x *TimeTravelFlowRequest) Reset() {
 	*x = TimeTravelFlowRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[287]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[288]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23759,7 +23843,7 @@ func (x *TimeTravelFlowRequest) String() string {
 func (*TimeTravelFlowRequest) ProtoMessage() {}
 
 func (x *TimeTravelFlowRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[287]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[288]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23772,7 +23856,7 @@ func (x *TimeTravelFlowRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TimeTravelFlowRequest.ProtoReflect.Descriptor instead.
 func (*TimeTravelFlowRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{287}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{288}
 }
 
 func (x *TimeTravelFlowRequest) GetContext() *FlowApiContext {
@@ -23854,7 +23938,7 @@ type TimeTravelFlowResponse struct {
 
 func (x *TimeTravelFlowResponse) Reset() {
 	*x = TimeTravelFlowResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[288]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[289]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23866,7 +23950,7 @@ func (x *TimeTravelFlowResponse) String() string {
 func (*TimeTravelFlowResponse) ProtoMessage() {}
 
 func (x *TimeTravelFlowResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[288]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[289]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23879,7 +23963,7 @@ func (x *TimeTravelFlowResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TimeTravelFlowResponse.ProtoReflect.Descriptor instead.
 func (*TimeTravelFlowResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{288}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{289}
 }
 
 func (x *TimeTravelFlowResponse) GetDocument() *FlowApiDocument {
@@ -23899,7 +23983,7 @@ type ListConnectionsRequest struct {
 
 func (x *ListConnectionsRequest) Reset() {
 	*x = ListConnectionsRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[289]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[290]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23911,7 +23995,7 @@ func (x *ListConnectionsRequest) String() string {
 func (*ListConnectionsRequest) ProtoMessage() {}
 
 func (x *ListConnectionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[289]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[290]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23924,7 +24008,7 @@ func (x *ListConnectionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListConnectionsRequest.ProtoReflect.Descriptor instead.
 func (*ListConnectionsRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{289}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{290}
 }
 
 func (x *ListConnectionsRequest) GetContext() *FlowApiContext {
@@ -23950,7 +24034,7 @@ type ListConnectionsResponse struct {
 
 func (x *ListConnectionsResponse) Reset() {
 	*x = ListConnectionsResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[290]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[291]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23962,7 +24046,7 @@ func (x *ListConnectionsResponse) String() string {
 func (*ListConnectionsResponse) ProtoMessage() {}
 
 func (x *ListConnectionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[290]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[291]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23975,7 +24059,7 @@ func (x *ListConnectionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListConnectionsResponse.ProtoReflect.Descriptor instead.
 func (*ListConnectionsResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{290}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{291}
 }
 
 func (x *ListConnectionsResponse) GetDocument() *FlowApiDocument {
@@ -24003,7 +24087,7 @@ type SelectTeamSpaceConnectionRequest struct {
 
 func (x *SelectTeamSpaceConnectionRequest) Reset() {
 	*x = SelectTeamSpaceConnectionRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[291]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[292]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24015,7 +24099,7 @@ func (x *SelectTeamSpaceConnectionRequest) String() string {
 func (*SelectTeamSpaceConnectionRequest) ProtoMessage() {}
 
 func (x *SelectTeamSpaceConnectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[291]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[292]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24028,7 +24112,7 @@ func (x *SelectTeamSpaceConnectionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SelectTeamSpaceConnectionRequest.ProtoReflect.Descriptor instead.
 func (*SelectTeamSpaceConnectionRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{291}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{292}
 }
 
 func (x *SelectTeamSpaceConnectionRequest) GetContext() *FlowApiContext {
@@ -24082,7 +24166,7 @@ type SelectTeamSpaceConnectionResponse struct {
 
 func (x *SelectTeamSpaceConnectionResponse) Reset() {
 	*x = SelectTeamSpaceConnectionResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[292]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[293]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24094,7 +24178,7 @@ func (x *SelectTeamSpaceConnectionResponse) String() string {
 func (*SelectTeamSpaceConnectionResponse) ProtoMessage() {}
 
 func (x *SelectTeamSpaceConnectionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[292]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[293]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24107,7 +24191,7 @@ func (x *SelectTeamSpaceConnectionResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use SelectTeamSpaceConnectionResponse.ProtoReflect.Descriptor instead.
 func (*SelectTeamSpaceConnectionResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{292}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{293}
 }
 
 func (x *SelectTeamSpaceConnectionResponse) GetDocument() *FlowApiDocument {
@@ -24129,7 +24213,7 @@ type ReleaseUnusedConnectionsRequest struct {
 
 func (x *ReleaseUnusedConnectionsRequest) Reset() {
 	*x = ReleaseUnusedConnectionsRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[293]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[294]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24141,7 +24225,7 @@ func (x *ReleaseUnusedConnectionsRequest) String() string {
 func (*ReleaseUnusedConnectionsRequest) ProtoMessage() {}
 
 func (x *ReleaseUnusedConnectionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[293]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[294]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24154,7 +24238,7 @@ func (x *ReleaseUnusedConnectionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReleaseUnusedConnectionsRequest.ProtoReflect.Descriptor instead.
 func (*ReleaseUnusedConnectionsRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{293}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{294}
 }
 
 func (x *ReleaseUnusedConnectionsRequest) GetContext() *FlowApiContext {
@@ -24180,7 +24264,7 @@ type ReleaseUnusedConnectionsResponse struct {
 
 func (x *ReleaseUnusedConnectionsResponse) Reset() {
 	*x = ReleaseUnusedConnectionsResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[294]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[295]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24192,7 +24276,7 @@ func (x *ReleaseUnusedConnectionsResponse) String() string {
 func (*ReleaseUnusedConnectionsResponse) ProtoMessage() {}
 
 func (x *ReleaseUnusedConnectionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[294]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[295]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24205,7 +24289,7 @@ func (x *ReleaseUnusedConnectionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReleaseUnusedConnectionsResponse.ProtoReflect.Descriptor instead.
 func (*ReleaseUnusedConnectionsResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{294}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{295}
 }
 
 func (x *ReleaseUnusedConnectionsResponse) GetDocument() *FlowApiDocument {
@@ -24227,7 +24311,7 @@ type StartConnectorUiSessionRequest struct {
 
 func (x *StartConnectorUiSessionRequest) Reset() {
 	*x = StartConnectorUiSessionRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[295]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[296]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24239,7 +24323,7 @@ func (x *StartConnectorUiSessionRequest) String() string {
 func (*StartConnectorUiSessionRequest) ProtoMessage() {}
 
 func (x *StartConnectorUiSessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[295]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[296]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24252,7 +24336,7 @@ func (x *StartConnectorUiSessionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartConnectorUiSessionRequest.ProtoReflect.Descriptor instead.
 func (*StartConnectorUiSessionRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{295}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{296}
 }
 
 func (x *StartConnectorUiSessionRequest) GetContext() *FlowApiContext {
@@ -24292,7 +24376,7 @@ type StartConnectorUiSessionResponse struct {
 
 func (x *StartConnectorUiSessionResponse) Reset() {
 	*x = StartConnectorUiSessionResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[296]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[297]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24304,7 +24388,7 @@ func (x *StartConnectorUiSessionResponse) String() string {
 func (*StartConnectorUiSessionResponse) ProtoMessage() {}
 
 func (x *StartConnectorUiSessionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[296]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[297]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24317,7 +24401,7 @@ func (x *StartConnectorUiSessionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartConnectorUiSessionResponse.ProtoReflect.Descriptor instead.
 func (*StartConnectorUiSessionResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{296}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{297}
 }
 
 func (x *StartConnectorUiSessionResponse) GetDocument() *FlowApiDocument {
@@ -24340,7 +24424,7 @@ type InvokeProviderCommandRequest struct {
 
 func (x *InvokeProviderCommandRequest) Reset() {
 	*x = InvokeProviderCommandRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[297]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[298]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24352,7 +24436,7 @@ func (x *InvokeProviderCommandRequest) String() string {
 func (*InvokeProviderCommandRequest) ProtoMessage() {}
 
 func (x *InvokeProviderCommandRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[297]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[298]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24365,7 +24449,7 @@ func (x *InvokeProviderCommandRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InvokeProviderCommandRequest.ProtoReflect.Descriptor instead.
 func (*InvokeProviderCommandRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{297}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{298}
 }
 
 func (x *InvokeProviderCommandRequest) GetContext() *FlowApiContext {
@@ -24412,7 +24496,7 @@ type InvokeProviderCommandResponse struct {
 
 func (x *InvokeProviderCommandResponse) Reset() {
 	*x = InvokeProviderCommandResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[298]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[299]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24424,7 +24508,7 @@ func (x *InvokeProviderCommandResponse) String() string {
 func (*InvokeProviderCommandResponse) ProtoMessage() {}
 
 func (x *InvokeProviderCommandResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[298]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[299]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24437,7 +24521,7 @@ func (x *InvokeProviderCommandResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InvokeProviderCommandResponse.ProtoReflect.Descriptor instead.
 func (*InvokeProviderCommandResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{298}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{299}
 }
 
 func (x *InvokeProviderCommandResponse) GetDocument() *FlowApiDocument {
@@ -24464,7 +24548,7 @@ type SaveTriggerBindingRequest struct {
 
 func (x *SaveTriggerBindingRequest) Reset() {
 	*x = SaveTriggerBindingRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[299]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[300]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24476,7 +24560,7 @@ func (x *SaveTriggerBindingRequest) String() string {
 func (*SaveTriggerBindingRequest) ProtoMessage() {}
 
 func (x *SaveTriggerBindingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[299]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[300]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24489,7 +24573,7 @@ func (x *SaveTriggerBindingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SaveTriggerBindingRequest.ProtoReflect.Descriptor instead.
 func (*SaveTriggerBindingRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{299}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{300}
 }
 
 func (x *SaveTriggerBindingRequest) GetContext() *FlowApiContext {
@@ -24557,7 +24641,7 @@ type SaveTriggerBindingResponse struct {
 
 func (x *SaveTriggerBindingResponse) Reset() {
 	*x = SaveTriggerBindingResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[300]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[301]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24569,7 +24653,7 @@ func (x *SaveTriggerBindingResponse) String() string {
 func (*SaveTriggerBindingResponse) ProtoMessage() {}
 
 func (x *SaveTriggerBindingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[300]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[301]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24582,7 +24666,7 @@ func (x *SaveTriggerBindingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SaveTriggerBindingResponse.ProtoReflect.Descriptor instead.
 func (*SaveTriggerBindingResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{300}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{301}
 }
 
 func (x *SaveTriggerBindingResponse) GetDocument() *FlowApiDocument {
@@ -24611,7 +24695,7 @@ type SaveOperationConfigurationRequest struct {
 
 func (x *SaveOperationConfigurationRequest) Reset() {
 	*x = SaveOperationConfigurationRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[301]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[302]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24623,7 +24707,7 @@ func (x *SaveOperationConfigurationRequest) String() string {
 func (*SaveOperationConfigurationRequest) ProtoMessage() {}
 
 func (x *SaveOperationConfigurationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[301]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[302]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24636,7 +24720,7 @@ func (x *SaveOperationConfigurationRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use SaveOperationConfigurationRequest.ProtoReflect.Descriptor instead.
 func (*SaveOperationConfigurationRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{301}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{302}
 }
 
 func (x *SaveOperationConfigurationRequest) GetContext() *FlowApiContext {
@@ -24711,7 +24795,7 @@ type SaveOperationConfigurationResponse struct {
 
 func (x *SaveOperationConfigurationResponse) Reset() {
 	*x = SaveOperationConfigurationResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[302]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[303]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24723,7 +24807,7 @@ func (x *SaveOperationConfigurationResponse) String() string {
 func (*SaveOperationConfigurationResponse) ProtoMessage() {}
 
 func (x *SaveOperationConfigurationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[302]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[303]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24736,7 +24820,7 @@ func (x *SaveOperationConfigurationResponse) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use SaveOperationConfigurationResponse.ProtoReflect.Descriptor instead.
 func (*SaveOperationConfigurationResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{302}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{303}
 }
 
 func (x *SaveOperationConfigurationResponse) GetDocument() *FlowApiDocument {
@@ -24756,7 +24840,7 @@ type GetApplicationEnvironmentRequest struct {
 
 func (x *GetApplicationEnvironmentRequest) Reset() {
 	*x = GetApplicationEnvironmentRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[303]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[304]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24768,7 +24852,7 @@ func (x *GetApplicationEnvironmentRequest) String() string {
 func (*GetApplicationEnvironmentRequest) ProtoMessage() {}
 
 func (x *GetApplicationEnvironmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[303]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[304]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24781,7 +24865,7 @@ func (x *GetApplicationEnvironmentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetApplicationEnvironmentRequest.ProtoReflect.Descriptor instead.
 func (*GetApplicationEnvironmentRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{303}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{304}
 }
 
 func (x *GetApplicationEnvironmentRequest) GetContext() *FlowApiContext {
@@ -24807,7 +24891,7 @@ type GetApplicationEnvironmentResponse struct {
 
 func (x *GetApplicationEnvironmentResponse) Reset() {
 	*x = GetApplicationEnvironmentResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[304]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[305]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24819,7 +24903,7 @@ func (x *GetApplicationEnvironmentResponse) String() string {
 func (*GetApplicationEnvironmentResponse) ProtoMessage() {}
 
 func (x *GetApplicationEnvironmentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[304]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[305]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24832,7 +24916,7 @@ func (x *GetApplicationEnvironmentResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use GetApplicationEnvironmentResponse.ProtoReflect.Descriptor instead.
 func (*GetApplicationEnvironmentResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{304}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{305}
 }
 
 func (x *GetApplicationEnvironmentResponse) GetDocument() *FlowApiDocument {
@@ -24858,7 +24942,7 @@ type SaveApplicationEnvironmentRequest struct {
 
 func (x *SaveApplicationEnvironmentRequest) Reset() {
 	*x = SaveApplicationEnvironmentRequest{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[305]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[306]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24870,7 +24954,7 @@ func (x *SaveApplicationEnvironmentRequest) String() string {
 func (*SaveApplicationEnvironmentRequest) ProtoMessage() {}
 
 func (x *SaveApplicationEnvironmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[305]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[306]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24883,7 +24967,7 @@ func (x *SaveApplicationEnvironmentRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use SaveApplicationEnvironmentRequest.ProtoReflect.Descriptor instead.
 func (*SaveApplicationEnvironmentRequest) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{305}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{306}
 }
 
 func (x *SaveApplicationEnvironmentRequest) GetContext() *FlowApiContext {
@@ -24937,7 +25021,7 @@ type SaveApplicationEnvironmentResponse struct {
 
 func (x *SaveApplicationEnvironmentResponse) Reset() {
 	*x = SaveApplicationEnvironmentResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[306]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[307]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24949,7 +25033,7 @@ func (x *SaveApplicationEnvironmentResponse) String() string {
 func (*SaveApplicationEnvironmentResponse) ProtoMessage() {}
 
 func (x *SaveApplicationEnvironmentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[306]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[307]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24962,7 +25046,7 @@ func (x *SaveApplicationEnvironmentResponse) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use SaveApplicationEnvironmentResponse.ProtoReflect.Descriptor instead.
 func (*SaveApplicationEnvironmentResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{306}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{307}
 }
 
 func (x *SaveApplicationEnvironmentResponse) GetDocument() *FlowApiDocument {
@@ -24991,7 +25075,7 @@ type FlowApiTarget struct {
 
 func (x *FlowApiTarget) Reset() {
 	*x = FlowApiTarget{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[307]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[308]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25003,7 +25087,7 @@ func (x *FlowApiTarget) String() string {
 func (*FlowApiTarget) ProtoMessage() {}
 
 func (x *FlowApiTarget) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[307]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[308]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25016,7 +25100,7 @@ func (x *FlowApiTarget) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlowApiTarget.ProtoReflect.Descriptor instead.
 func (*FlowApiTarget) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{307}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{308}
 }
 
 func (x *FlowApiTarget) GetProjectId() string {
@@ -25083,7 +25167,7 @@ type FlowApiContext struct {
 
 func (x *FlowApiContext) Reset() {
 	*x = FlowApiContext{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[308]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[309]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25095,7 +25179,7 @@ func (x *FlowApiContext) String() string {
 func (*FlowApiContext) ProtoMessage() {}
 
 func (x *FlowApiContext) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[308]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[309]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25108,7 +25192,7 @@ func (x *FlowApiContext) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlowApiContext.ProtoReflect.Descriptor instead.
 func (*FlowApiContext) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{308}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{309}
 }
 
 func (x *FlowApiContext) GetTarget() *FlowApiTarget {
@@ -25158,7 +25242,7 @@ type FlowApiDocument struct {
 
 func (x *FlowApiDocument) Reset() {
 	*x = FlowApiDocument{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[309]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[310]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25170,7 +25254,7 @@ func (x *FlowApiDocument) String() string {
 func (*FlowApiDocument) ProtoMessage() {}
 
 func (x *FlowApiDocument) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[309]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[310]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25183,7 +25267,7 @@ func (x *FlowApiDocument) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlowApiDocument.ProtoReflect.Descriptor instead.
 func (*FlowApiDocument) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{309}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{310}
 }
 
 func (x *FlowApiDocument) GetJson() []byte {
@@ -25211,7 +25295,7 @@ type FlowSearchFilter struct {
 
 func (x *FlowSearchFilter) Reset() {
 	*x = FlowSearchFilter{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[310]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[311]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25223,7 +25307,7 @@ func (x *FlowSearchFilter) String() string {
 func (*FlowSearchFilter) ProtoMessage() {}
 
 func (x *FlowSearchFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[310]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[311]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25236,7 +25320,7 @@ func (x *FlowSearchFilter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlowSearchFilter.ProtoReflect.Descriptor instead.
 func (*FlowSearchFilter) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{310}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{311}
 }
 
 func (x *FlowSearchFilter) GetField() string {
@@ -25270,7 +25354,7 @@ type FlowBlobReference struct {
 
 func (x *FlowBlobReference) Reset() {
 	*x = FlowBlobReference{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[311]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[312]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25282,7 +25366,7 @@ func (x *FlowBlobReference) String() string {
 func (*FlowBlobReference) ProtoMessage() {}
 
 func (x *FlowBlobReference) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[311]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[312]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25295,7 +25379,7 @@ func (x *FlowBlobReference) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlowBlobReference.ProtoReflect.Descriptor instead.
 func (*FlowBlobReference) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{311}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{312}
 }
 
 func (x *FlowBlobReference) GetId() string {
@@ -26519,15 +26603,24 @@ const file_superverse_v2_superverse_proto_rawDesc = "" +
 	"\x13STATUS_ROUTING_TOOL\x10\x05\x12$\n" +
 	" STATUS_WAITING_FOR_TOOL_APPROVAL\x10\x06\x12\x19\n" +
 	"\x15STATUS_EXECUTING_TOOL\x10\b\x12\x1c\n" +
-	"\x18STATUS_WAITING_FOR_TIMER\x10\t\"\xc2\x01\n" +
+	"\x18STATUS_WAITING_FOR_TIMER\x10\t\"\x8d\x02\n" +
 	"\x14AgentStartingExample\x12\x1d\n" +
 	"\n" +
 	"example_id\x18\x01 \x01(\tR\texampleId\x12B\n" +
-	"\x06choice\x18\x02 \x01(\x0e2*.superverse.v2.AgentStartingExample.ChoiceR\x06choice\"G\n" +
+	"\x06choice\x18\x02 \x01(\x0e2*.superverse.v2.AgentStartingExample.ChoiceR\x06choice\x12I\n" +
+	"\vfirst_build\x18\x03 \x01(\v2(.superverse.v2.AgentStartingExampleBuildR\n" +
+	"firstBuild\"G\n" +
 	"\x06Choice\x12\x16\n" +
 	"\x12CHOICE_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rCHOICE_PICKED\x10\x01\x12\x12\n" +
-	"\x0eCHOICE_MATCHED\x10\x02\"d\n" +
+	"\x0eCHOICE_MATCHED\x10\x02\"\x98\x01\n" +
+	"\x19AgentStartingExampleBuild\x12#\n" +
+	"\rexample_steps\x18\x01 \x01(\x05R\fexampleSteps\x12\x1f\n" +
+	"\vbuilt_steps\x18\x02 \x01(\x05R\n" +
+	"builtSteps\x12\x1d\n" +
+	"\n" +
+	"kept_steps\x18\x03 \x01(\x05R\tkeptSteps\x12\x16\n" +
+	"\x06commit\x18\x04 \x01(\tR\x06commit\"d\n" +
 	"\x11AgentMockProgress\x12\x1a\n" +
 	"\bscenario\x18\x01 \x01(\tR\bscenario\x12\x14\n" +
 	"\x05input\x18\x02 \x01(\x05R\x05input\x12\x1d\n" +
@@ -27765,7 +27858,7 @@ func file_superverse_v2_superverse_proto_rawDescGZIP() []byte {
 }
 
 var file_superverse_v2_superverse_proto_enumTypes = make([]protoimpl.EnumInfo, 61)
-var file_superverse_v2_superverse_proto_msgTypes = make([]protoimpl.MessageInfo, 315)
+var file_superverse_v2_superverse_proto_msgTypes = make([]protoimpl.MessageInfo, 316)
 var file_superverse_v2_superverse_proto_goTypes = []any{
 	(FailureRemedy)(0),                                       // 0: superverse.v2.FailureRemedy
 	(FailureOwner)(0),                                        // 1: superverse.v2.FailureOwner
@@ -27999,161 +28092,162 @@ var file_superverse_v2_superverse_proto_goTypes = []any{
 	(*AgentUserMessage)(nil),                                 // 229: superverse.v2.AgentUserMessage
 	(*AgentDescription)(nil),                                 // 230: superverse.v2.AgentDescription
 	(*AgentStartingExample)(nil),                             // 231: superverse.v2.AgentStartingExample
-	(*AgentMockProgress)(nil),                                // 232: superverse.v2.AgentMockProgress
-	(*AgentBackgroundCommand)(nil),                           // 233: superverse.v2.AgentBackgroundCommand
-	(*AgentSubagent)(nil),                                    // 234: superverse.v2.AgentSubagent
-	(*AgentPendingApproval)(nil),                             // 235: superverse.v2.AgentPendingApproval
-	(*AgentPendingTimer)(nil),                                // 236: superverse.v2.AgentPendingTimer
-	(*AgentPendingUserInput)(nil),                            // 237: superverse.v2.AgentPendingUserInput
-	(*AgentRequirements)(nil),                                // 238: superverse.v2.AgentRequirements
-	(*AgentRequirementsDraft)(nil),                           // 239: superverse.v2.AgentRequirementsDraft
-	(*AgentRequirementsDraftConnection)(nil),                 // 240: superverse.v2.AgentRequirementsDraftConnection
-	(*AgentRequirementsDraftFlow)(nil),                       // 241: superverse.v2.AgentRequirementsDraftFlow
-	(*AgentFlowDesignReference)(nil),                         // 242: superverse.v2.AgentFlowDesignReference
-	(*AgentFlowDesign)(nil),                                  // 243: superverse.v2.AgentFlowDesign
-	(*AgentFlowDesignFlow)(nil),                              // 244: superverse.v2.AgentFlowDesignFlow
-	(*AgentFlowDesignStep)(nil),                              // 245: superverse.v2.AgentFlowDesignStep
-	(*AgentFlowDesignWait)(nil),                              // 246: superverse.v2.AgentFlowDesignWait
-	(*AgentFlowDesignTransition)(nil),                        // 247: superverse.v2.AgentFlowDesignTransition
-	(*AgentFlowDesignChannel)(nil),                           // 248: superverse.v2.AgentFlowDesignChannel
-	(*AgentFlowDesignAction)(nil),                            // 249: superverse.v2.AgentFlowDesignAction
-	(*AgentFlowDesignAttribute)(nil),                         // 250: superverse.v2.AgentFlowDesignAttribute
-	(*AgentRequirementFeature)(nil),                          // 251: superverse.v2.AgentRequirementFeature
-	(*AgentRequirementConnection)(nil),                       // 252: superverse.v2.AgentRequirementConnection
-	(*AgentConfirmedRequirements)(nil),                       // 253: superverse.v2.AgentConfirmedRequirements
-	(*AgentUserInputQuestion)(nil),                           // 254: superverse.v2.AgentUserInputQuestion
-	(*AgentUserInputOption)(nil),                             // 255: superverse.v2.AgentUserInputOption
-	(*AgentUserInputAnswer)(nil),                             // 256: superverse.v2.AgentUserInputAnswer
-	(*AgentTodoList)(nil),                                    // 257: superverse.v2.AgentTodoList
-	(*AgentTodoItem)(nil),                                    // 258: superverse.v2.AgentTodoItem
-	(*AgentEvent)(nil),                                       // 259: superverse.v2.AgentEvent
-	(*AgentInputConsumption)(nil),                            // 260: superverse.v2.AgentInputConsumption
-	(*AgentAnswerQuestionsInput)(nil),                        // 261: superverse.v2.AgentAnswerQuestionsInput
-	(*GetPreviewRequest)(nil),                                // 262: superverse.v2.GetPreviewRequest
-	(*GetPreviewResponse)(nil),                               // 263: superverse.v2.GetPreviewResponse
-	(*StartPreviewRequest)(nil),                              // 264: superverse.v2.StartPreviewRequest
-	(*StartPreviewResponse)(nil),                             // 265: superverse.v2.StartPreviewResponse
-	(*StopPreviewRequest)(nil),                               // 266: superverse.v2.StopPreviewRequest
-	(*StopPreviewResponse)(nil),                              // 267: superverse.v2.StopPreviewResponse
-	(*PreparePreviewSourceRequest)(nil),                      // 268: superverse.v2.PreparePreviewSourceRequest
-	(*PreparePreviewSourceResponse)(nil),                     // 269: superverse.v2.PreparePreviewSourceResponse
-	(*GetPreviewDefinitionsRequest)(nil),                     // 270: superverse.v2.GetPreviewDefinitionsRequest
-	(*GetPreviewDefinitionsResponse)(nil),                    // 271: superverse.v2.GetPreviewDefinitionsResponse
-	(*UpdatePreviewAutoDeployRequest)(nil),                   // 272: superverse.v2.UpdatePreviewAutoDeployRequest
-	(*UpdatePreviewAutoDeployResponse)(nil),                  // 273: superverse.v2.UpdatePreviewAutoDeployResponse
-	(*PreviewSnapshot)(nil),                                  // 274: superverse.v2.PreviewSnapshot
-	(*AppliedPreviewConfiguration)(nil),                      // 275: superverse.v2.AppliedPreviewConfiguration
-	(*PreviewStartRecord)(nil),                               // 276: superverse.v2.PreviewStartRecord
-	(*PreviewDeploymentSnapshot)(nil),                        // 277: superverse.v2.PreviewDeploymentSnapshot
-	(*PreparedPreviewSourceSnapshot)(nil),                    // 278: superverse.v2.PreparedPreviewSourceSnapshot
-	(*ListReleaseCandidatesRequest)(nil),                     // 279: superverse.v2.ListReleaseCandidatesRequest
-	(*ListReleaseCandidatesResponse)(nil),                    // 280: superverse.v2.ListReleaseCandidatesResponse
-	(*PrepareReleaseRequest)(nil),                            // 281: superverse.v2.PrepareReleaseRequest
-	(*PrepareReleaseResponse)(nil),                           // 282: superverse.v2.PrepareReleaseResponse
-	(*StartReleaseBuildRequest)(nil),                         // 283: superverse.v2.StartReleaseBuildRequest
-	(*StartReleaseBuildResponse)(nil),                        // 284: superverse.v2.StartReleaseBuildResponse
-	(*RecoverReleaseBuildRequest)(nil),                       // 285: superverse.v2.RecoverReleaseBuildRequest
-	(*RecoverReleaseBuildResponse)(nil),                      // 286: superverse.v2.RecoverReleaseBuildResponse
-	(*CancelReleaseBuildRequest)(nil),                        // 287: superverse.v2.CancelReleaseBuildRequest
-	(*CancelReleaseBuildResponse)(nil),                       // 288: superverse.v2.CancelReleaseBuildResponse
-	(*GetReleaseBuildLogRequest)(nil),                        // 289: superverse.v2.GetReleaseBuildLogRequest
-	(*GetReleaseBuildLogResponse)(nil),                       // 290: superverse.v2.GetReleaseBuildLogResponse
-	(*ListReleasesRequest)(nil),                              // 291: superverse.v2.ListReleasesRequest
-	(*ListReleasesResponse)(nil),                             // 292: superverse.v2.ListReleasesResponse
-	(*GetReleaseRequest)(nil),                                // 293: superverse.v2.GetReleaseRequest
-	(*GetReleaseResponse)(nil),                               // 294: superverse.v2.GetReleaseResponse
-	(*WatchReleaseRequest)(nil),                              // 295: superverse.v2.WatchReleaseRequest
-	(*WatchReleaseResponse)(nil),                             // 296: superverse.v2.WatchReleaseResponse
-	(*ReleaseCandidate)(nil),                                 // 297: superverse.v2.ReleaseCandidate
-	(*ReleaseSnapshot)(nil),                                  // 298: superverse.v2.ReleaseSnapshot
-	(*PreparedReleaseSourceSnapshot)(nil),                    // 299: superverse.v2.PreparedReleaseSourceSnapshot
-	(*ReleaseBuildRevisionSnapshot)(nil),                     // 300: superverse.v2.ReleaseBuildRevisionSnapshot
-	(*Cancellation)(nil),                                     // 301: superverse.v2.Cancellation
-	(*PreviewValidation)(nil),                                // 302: superverse.v2.PreviewValidation
-	(*DeriveLiveConfigurationRequest)(nil),                   // 303: superverse.v2.DeriveLiveConfigurationRequest
-	(*DeriveLiveConfigurationResponse)(nil),                  // 304: superverse.v2.DeriveLiveConfigurationResponse
-	(*StartDeploymentRequest)(nil),                           // 305: superverse.v2.StartDeploymentRequest
-	(*StartDeploymentResponse)(nil),                          // 306: superverse.v2.StartDeploymentResponse
-	(*CancelDeploymentRequest)(nil),                          // 307: superverse.v2.CancelDeploymentRequest
-	(*CancelDeploymentResponse)(nil),                         // 308: superverse.v2.CancelDeploymentResponse
-	(*GetDeploymentRequest)(nil),                             // 309: superverse.v2.GetDeploymentRequest
-	(*GetDeploymentResponse)(nil),                            // 310: superverse.v2.GetDeploymentResponse
-	(*ListDeploymentsRequest)(nil),                           // 311: superverse.v2.ListDeploymentsRequest
-	(*ListDeploymentsResponse)(nil),                          // 312: superverse.v2.ListDeploymentsResponse
-	(*WatchDeploymentRequest)(nil),                           // 313: superverse.v2.WatchDeploymentRequest
-	(*WatchDeploymentResponse)(nil),                          // 314: superverse.v2.WatchDeploymentResponse
-	(*DeploymentSnapshot)(nil),                               // 315: superverse.v2.DeploymentSnapshot
-	(*GetFlowDefinitionsRequest)(nil),                        // 316: superverse.v2.GetFlowDefinitionsRequest
-	(*GetFlowDefinitionsResponse)(nil),                       // 317: superverse.v2.GetFlowDefinitionsResponse
-	(*GetFlowCatalogRequest)(nil),                            // 318: superverse.v2.GetFlowCatalogRequest
-	(*GetFlowCatalogResponse)(nil),                           // 319: superverse.v2.GetFlowCatalogResponse
-	(*SearchFlowsRequest)(nil),                               // 320: superverse.v2.SearchFlowsRequest
-	(*SearchFlowsResponse)(nil),                              // 321: superverse.v2.SearchFlowsResponse
-	(*GetFlowDisplayRequest)(nil),                            // 322: superverse.v2.GetFlowDisplayRequest
-	(*GetFlowDisplayResponse)(nil),                           // 323: superverse.v2.GetFlowDisplayResponse
-	(*UpdateFlowDisplayFieldRequest)(nil),                    // 324: superverse.v2.UpdateFlowDisplayFieldRequest
-	(*UpdateFlowDisplayFieldResponse)(nil),                   // 325: superverse.v2.UpdateFlowDisplayFieldResponse
-	(*InvokeFlowActionRequest)(nil),                          // 326: superverse.v2.InvokeFlowActionRequest
-	(*InvokeFlowActionResponse)(nil),                         // 327: superverse.v2.InvokeFlowActionResponse
-	(*StartFlowRequest)(nil),                                 // 328: superverse.v2.StartFlowRequest
-	(*StartFlowResponse)(nil),                                // 329: superverse.v2.StartFlowResponse
-	(*RecoverFlowStartRequest)(nil),                          // 330: superverse.v2.RecoverFlowStartRequest
-	(*RecoverFlowStartResponse)(nil),                         // 331: superverse.v2.RecoverFlowStartResponse
-	(*GetFlowSummaryRequest)(nil),                            // 332: superverse.v2.GetFlowSummaryRequest
-	(*GetFlowSummaryResponse)(nil),                           // 333: superverse.v2.GetFlowSummaryResponse
-	(*GetFlowStateRequest)(nil),                              // 334: superverse.v2.GetFlowStateRequest
-	(*GetFlowStateResponse)(nil),                             // 335: superverse.v2.GetFlowStateResponse
-	(*GetFlowHistoryRequest)(nil),                            // 336: superverse.v2.GetFlowHistoryRequest
-	(*GetFlowHistoryResponse)(nil),                           // 337: superverse.v2.GetFlowHistoryResponse
-	(*WaitFlowHistoryRequest)(nil),                           // 338: superverse.v2.WaitFlowHistoryRequest
-	(*WaitFlowHistoryResponse)(nil),                          // 339: superverse.v2.WaitFlowHistoryResponse
-	(*ReadFlowStreamRequest)(nil),                            // 340: superverse.v2.ReadFlowStreamRequest
-	(*ReadFlowStreamResponse)(nil),                           // 341: superverse.v2.ReadFlowStreamResponse
-	(*LoadFlowBlobsRequest)(nil),                             // 342: superverse.v2.LoadFlowBlobsRequest
-	(*LoadFlowBlobsResponse)(nil),                            // 343: superverse.v2.LoadFlowBlobsResponse
-	(*StopFlowRequest)(nil),                                  // 344: superverse.v2.StopFlowRequest
-	(*StopFlowResponse)(nil),                                 // 345: superverse.v2.StopFlowResponse
-	(*DeleteFlowChannelMessageRequest)(nil),                  // 346: superverse.v2.DeleteFlowChannelMessageRequest
-	(*DeleteFlowChannelMessageResponse)(nil),                 // 347: superverse.v2.DeleteFlowChannelMessageResponse
-	(*TimeTravelFlowRequest)(nil),                            // 348: superverse.v2.TimeTravelFlowRequest
-	(*TimeTravelFlowResponse)(nil),                           // 349: superverse.v2.TimeTravelFlowResponse
-	(*ListConnectionsRequest)(nil),                           // 350: superverse.v2.ListConnectionsRequest
-	(*ListConnectionsResponse)(nil),                          // 351: superverse.v2.ListConnectionsResponse
-	(*SelectTeamSpaceConnectionRequest)(nil),                 // 352: superverse.v2.SelectTeamSpaceConnectionRequest
-	(*SelectTeamSpaceConnectionResponse)(nil),                // 353: superverse.v2.SelectTeamSpaceConnectionResponse
-	(*ReleaseUnusedConnectionsRequest)(nil),                  // 354: superverse.v2.ReleaseUnusedConnectionsRequest
-	(*ReleaseUnusedConnectionsResponse)(nil),                 // 355: superverse.v2.ReleaseUnusedConnectionsResponse
-	(*StartConnectorUiSessionRequest)(nil),                   // 356: superverse.v2.StartConnectorUiSessionRequest
-	(*StartConnectorUiSessionResponse)(nil),                  // 357: superverse.v2.StartConnectorUiSessionResponse
-	(*InvokeProviderCommandRequest)(nil),                     // 358: superverse.v2.InvokeProviderCommandRequest
-	(*InvokeProviderCommandResponse)(nil),                    // 359: superverse.v2.InvokeProviderCommandResponse
-	(*SaveTriggerBindingRequest)(nil),                        // 360: superverse.v2.SaveTriggerBindingRequest
-	(*SaveTriggerBindingResponse)(nil),                       // 361: superverse.v2.SaveTriggerBindingResponse
-	(*SaveOperationConfigurationRequest)(nil),                // 362: superverse.v2.SaveOperationConfigurationRequest
-	(*SaveOperationConfigurationResponse)(nil),               // 363: superverse.v2.SaveOperationConfigurationResponse
-	(*GetApplicationEnvironmentRequest)(nil),                 // 364: superverse.v2.GetApplicationEnvironmentRequest
-	(*GetApplicationEnvironmentResponse)(nil),                // 365: superverse.v2.GetApplicationEnvironmentResponse
-	(*SaveApplicationEnvironmentRequest)(nil),                // 366: superverse.v2.SaveApplicationEnvironmentRequest
-	(*SaveApplicationEnvironmentResponse)(nil),               // 367: superverse.v2.SaveApplicationEnvironmentResponse
-	(*FlowApiTarget)(nil),                                    // 368: superverse.v2.FlowApiTarget
-	(*FlowApiContext)(nil),                                   // 369: superverse.v2.FlowApiContext
-	(*FlowApiDocument)(nil),                                  // 370: superverse.v2.FlowApiDocument
-	(*FlowSearchFilter)(nil),                                 // 371: superverse.v2.FlowSearchFilter
-	(*FlowBlobReference)(nil),                                // 372: superverse.v2.FlowBlobReference
-	nil,                                                      // 373: superverse.v2.InvokeProviderCommandRequest.ParametersEntry
-	nil,                                                      // 374: superverse.v2.SaveApplicationEnvironmentRequest.ValuesEntry
-	nil,                                                      // 375: superverse.v2.SaveApplicationEnvironmentRequest.SecretsEntry
-	(*timestamppb.Timestamp)(nil),                            // 376: google.protobuf.Timestamp
-	(*structpb.Struct)(nil),                                  // 377: google.protobuf.Struct
+	(*AgentStartingExampleBuild)(nil),                        // 232: superverse.v2.AgentStartingExampleBuild
+	(*AgentMockProgress)(nil),                                // 233: superverse.v2.AgentMockProgress
+	(*AgentBackgroundCommand)(nil),                           // 234: superverse.v2.AgentBackgroundCommand
+	(*AgentSubagent)(nil),                                    // 235: superverse.v2.AgentSubagent
+	(*AgentPendingApproval)(nil),                             // 236: superverse.v2.AgentPendingApproval
+	(*AgentPendingTimer)(nil),                                // 237: superverse.v2.AgentPendingTimer
+	(*AgentPendingUserInput)(nil),                            // 238: superverse.v2.AgentPendingUserInput
+	(*AgentRequirements)(nil),                                // 239: superverse.v2.AgentRequirements
+	(*AgentRequirementsDraft)(nil),                           // 240: superverse.v2.AgentRequirementsDraft
+	(*AgentRequirementsDraftConnection)(nil),                 // 241: superverse.v2.AgentRequirementsDraftConnection
+	(*AgentRequirementsDraftFlow)(nil),                       // 242: superverse.v2.AgentRequirementsDraftFlow
+	(*AgentFlowDesignReference)(nil),                         // 243: superverse.v2.AgentFlowDesignReference
+	(*AgentFlowDesign)(nil),                                  // 244: superverse.v2.AgentFlowDesign
+	(*AgentFlowDesignFlow)(nil),                              // 245: superverse.v2.AgentFlowDesignFlow
+	(*AgentFlowDesignStep)(nil),                              // 246: superverse.v2.AgentFlowDesignStep
+	(*AgentFlowDesignWait)(nil),                              // 247: superverse.v2.AgentFlowDesignWait
+	(*AgentFlowDesignTransition)(nil),                        // 248: superverse.v2.AgentFlowDesignTransition
+	(*AgentFlowDesignChannel)(nil),                           // 249: superverse.v2.AgentFlowDesignChannel
+	(*AgentFlowDesignAction)(nil),                            // 250: superverse.v2.AgentFlowDesignAction
+	(*AgentFlowDesignAttribute)(nil),                         // 251: superverse.v2.AgentFlowDesignAttribute
+	(*AgentRequirementFeature)(nil),                          // 252: superverse.v2.AgentRequirementFeature
+	(*AgentRequirementConnection)(nil),                       // 253: superverse.v2.AgentRequirementConnection
+	(*AgentConfirmedRequirements)(nil),                       // 254: superverse.v2.AgentConfirmedRequirements
+	(*AgentUserInputQuestion)(nil),                           // 255: superverse.v2.AgentUserInputQuestion
+	(*AgentUserInputOption)(nil),                             // 256: superverse.v2.AgentUserInputOption
+	(*AgentUserInputAnswer)(nil),                             // 257: superverse.v2.AgentUserInputAnswer
+	(*AgentTodoList)(nil),                                    // 258: superverse.v2.AgentTodoList
+	(*AgentTodoItem)(nil),                                    // 259: superverse.v2.AgentTodoItem
+	(*AgentEvent)(nil),                                       // 260: superverse.v2.AgentEvent
+	(*AgentInputConsumption)(nil),                            // 261: superverse.v2.AgentInputConsumption
+	(*AgentAnswerQuestionsInput)(nil),                        // 262: superverse.v2.AgentAnswerQuestionsInput
+	(*GetPreviewRequest)(nil),                                // 263: superverse.v2.GetPreviewRequest
+	(*GetPreviewResponse)(nil),                               // 264: superverse.v2.GetPreviewResponse
+	(*StartPreviewRequest)(nil),                              // 265: superverse.v2.StartPreviewRequest
+	(*StartPreviewResponse)(nil),                             // 266: superverse.v2.StartPreviewResponse
+	(*StopPreviewRequest)(nil),                               // 267: superverse.v2.StopPreviewRequest
+	(*StopPreviewResponse)(nil),                              // 268: superverse.v2.StopPreviewResponse
+	(*PreparePreviewSourceRequest)(nil),                      // 269: superverse.v2.PreparePreviewSourceRequest
+	(*PreparePreviewSourceResponse)(nil),                     // 270: superverse.v2.PreparePreviewSourceResponse
+	(*GetPreviewDefinitionsRequest)(nil),                     // 271: superverse.v2.GetPreviewDefinitionsRequest
+	(*GetPreviewDefinitionsResponse)(nil),                    // 272: superverse.v2.GetPreviewDefinitionsResponse
+	(*UpdatePreviewAutoDeployRequest)(nil),                   // 273: superverse.v2.UpdatePreviewAutoDeployRequest
+	(*UpdatePreviewAutoDeployResponse)(nil),                  // 274: superverse.v2.UpdatePreviewAutoDeployResponse
+	(*PreviewSnapshot)(nil),                                  // 275: superverse.v2.PreviewSnapshot
+	(*AppliedPreviewConfiguration)(nil),                      // 276: superverse.v2.AppliedPreviewConfiguration
+	(*PreviewStartRecord)(nil),                               // 277: superverse.v2.PreviewStartRecord
+	(*PreviewDeploymentSnapshot)(nil),                        // 278: superverse.v2.PreviewDeploymentSnapshot
+	(*PreparedPreviewSourceSnapshot)(nil),                    // 279: superverse.v2.PreparedPreviewSourceSnapshot
+	(*ListReleaseCandidatesRequest)(nil),                     // 280: superverse.v2.ListReleaseCandidatesRequest
+	(*ListReleaseCandidatesResponse)(nil),                    // 281: superverse.v2.ListReleaseCandidatesResponse
+	(*PrepareReleaseRequest)(nil),                            // 282: superverse.v2.PrepareReleaseRequest
+	(*PrepareReleaseResponse)(nil),                           // 283: superverse.v2.PrepareReleaseResponse
+	(*StartReleaseBuildRequest)(nil),                         // 284: superverse.v2.StartReleaseBuildRequest
+	(*StartReleaseBuildResponse)(nil),                        // 285: superverse.v2.StartReleaseBuildResponse
+	(*RecoverReleaseBuildRequest)(nil),                       // 286: superverse.v2.RecoverReleaseBuildRequest
+	(*RecoverReleaseBuildResponse)(nil),                      // 287: superverse.v2.RecoverReleaseBuildResponse
+	(*CancelReleaseBuildRequest)(nil),                        // 288: superverse.v2.CancelReleaseBuildRequest
+	(*CancelReleaseBuildResponse)(nil),                       // 289: superverse.v2.CancelReleaseBuildResponse
+	(*GetReleaseBuildLogRequest)(nil),                        // 290: superverse.v2.GetReleaseBuildLogRequest
+	(*GetReleaseBuildLogResponse)(nil),                       // 291: superverse.v2.GetReleaseBuildLogResponse
+	(*ListReleasesRequest)(nil),                              // 292: superverse.v2.ListReleasesRequest
+	(*ListReleasesResponse)(nil),                             // 293: superverse.v2.ListReleasesResponse
+	(*GetReleaseRequest)(nil),                                // 294: superverse.v2.GetReleaseRequest
+	(*GetReleaseResponse)(nil),                               // 295: superverse.v2.GetReleaseResponse
+	(*WatchReleaseRequest)(nil),                              // 296: superverse.v2.WatchReleaseRequest
+	(*WatchReleaseResponse)(nil),                             // 297: superverse.v2.WatchReleaseResponse
+	(*ReleaseCandidate)(nil),                                 // 298: superverse.v2.ReleaseCandidate
+	(*ReleaseSnapshot)(nil),                                  // 299: superverse.v2.ReleaseSnapshot
+	(*PreparedReleaseSourceSnapshot)(nil),                    // 300: superverse.v2.PreparedReleaseSourceSnapshot
+	(*ReleaseBuildRevisionSnapshot)(nil),                     // 301: superverse.v2.ReleaseBuildRevisionSnapshot
+	(*Cancellation)(nil),                                     // 302: superverse.v2.Cancellation
+	(*PreviewValidation)(nil),                                // 303: superverse.v2.PreviewValidation
+	(*DeriveLiveConfigurationRequest)(nil),                   // 304: superverse.v2.DeriveLiveConfigurationRequest
+	(*DeriveLiveConfigurationResponse)(nil),                  // 305: superverse.v2.DeriveLiveConfigurationResponse
+	(*StartDeploymentRequest)(nil),                           // 306: superverse.v2.StartDeploymentRequest
+	(*StartDeploymentResponse)(nil),                          // 307: superverse.v2.StartDeploymentResponse
+	(*CancelDeploymentRequest)(nil),                          // 308: superverse.v2.CancelDeploymentRequest
+	(*CancelDeploymentResponse)(nil),                         // 309: superverse.v2.CancelDeploymentResponse
+	(*GetDeploymentRequest)(nil),                             // 310: superverse.v2.GetDeploymentRequest
+	(*GetDeploymentResponse)(nil),                            // 311: superverse.v2.GetDeploymentResponse
+	(*ListDeploymentsRequest)(nil),                           // 312: superverse.v2.ListDeploymentsRequest
+	(*ListDeploymentsResponse)(nil),                          // 313: superverse.v2.ListDeploymentsResponse
+	(*WatchDeploymentRequest)(nil),                           // 314: superverse.v2.WatchDeploymentRequest
+	(*WatchDeploymentResponse)(nil),                          // 315: superverse.v2.WatchDeploymentResponse
+	(*DeploymentSnapshot)(nil),                               // 316: superverse.v2.DeploymentSnapshot
+	(*GetFlowDefinitionsRequest)(nil),                        // 317: superverse.v2.GetFlowDefinitionsRequest
+	(*GetFlowDefinitionsResponse)(nil),                       // 318: superverse.v2.GetFlowDefinitionsResponse
+	(*GetFlowCatalogRequest)(nil),                            // 319: superverse.v2.GetFlowCatalogRequest
+	(*GetFlowCatalogResponse)(nil),                           // 320: superverse.v2.GetFlowCatalogResponse
+	(*SearchFlowsRequest)(nil),                               // 321: superverse.v2.SearchFlowsRequest
+	(*SearchFlowsResponse)(nil),                              // 322: superverse.v2.SearchFlowsResponse
+	(*GetFlowDisplayRequest)(nil),                            // 323: superverse.v2.GetFlowDisplayRequest
+	(*GetFlowDisplayResponse)(nil),                           // 324: superverse.v2.GetFlowDisplayResponse
+	(*UpdateFlowDisplayFieldRequest)(nil),                    // 325: superverse.v2.UpdateFlowDisplayFieldRequest
+	(*UpdateFlowDisplayFieldResponse)(nil),                   // 326: superverse.v2.UpdateFlowDisplayFieldResponse
+	(*InvokeFlowActionRequest)(nil),                          // 327: superverse.v2.InvokeFlowActionRequest
+	(*InvokeFlowActionResponse)(nil),                         // 328: superverse.v2.InvokeFlowActionResponse
+	(*StartFlowRequest)(nil),                                 // 329: superverse.v2.StartFlowRequest
+	(*StartFlowResponse)(nil),                                // 330: superverse.v2.StartFlowResponse
+	(*RecoverFlowStartRequest)(nil),                          // 331: superverse.v2.RecoverFlowStartRequest
+	(*RecoverFlowStartResponse)(nil),                         // 332: superverse.v2.RecoverFlowStartResponse
+	(*GetFlowSummaryRequest)(nil),                            // 333: superverse.v2.GetFlowSummaryRequest
+	(*GetFlowSummaryResponse)(nil),                           // 334: superverse.v2.GetFlowSummaryResponse
+	(*GetFlowStateRequest)(nil),                              // 335: superverse.v2.GetFlowStateRequest
+	(*GetFlowStateResponse)(nil),                             // 336: superverse.v2.GetFlowStateResponse
+	(*GetFlowHistoryRequest)(nil),                            // 337: superverse.v2.GetFlowHistoryRequest
+	(*GetFlowHistoryResponse)(nil),                           // 338: superverse.v2.GetFlowHistoryResponse
+	(*WaitFlowHistoryRequest)(nil),                           // 339: superverse.v2.WaitFlowHistoryRequest
+	(*WaitFlowHistoryResponse)(nil),                          // 340: superverse.v2.WaitFlowHistoryResponse
+	(*ReadFlowStreamRequest)(nil),                            // 341: superverse.v2.ReadFlowStreamRequest
+	(*ReadFlowStreamResponse)(nil),                           // 342: superverse.v2.ReadFlowStreamResponse
+	(*LoadFlowBlobsRequest)(nil),                             // 343: superverse.v2.LoadFlowBlobsRequest
+	(*LoadFlowBlobsResponse)(nil),                            // 344: superverse.v2.LoadFlowBlobsResponse
+	(*StopFlowRequest)(nil),                                  // 345: superverse.v2.StopFlowRequest
+	(*StopFlowResponse)(nil),                                 // 346: superverse.v2.StopFlowResponse
+	(*DeleteFlowChannelMessageRequest)(nil),                  // 347: superverse.v2.DeleteFlowChannelMessageRequest
+	(*DeleteFlowChannelMessageResponse)(nil),                 // 348: superverse.v2.DeleteFlowChannelMessageResponse
+	(*TimeTravelFlowRequest)(nil),                            // 349: superverse.v2.TimeTravelFlowRequest
+	(*TimeTravelFlowResponse)(nil),                           // 350: superverse.v2.TimeTravelFlowResponse
+	(*ListConnectionsRequest)(nil),                           // 351: superverse.v2.ListConnectionsRequest
+	(*ListConnectionsResponse)(nil),                          // 352: superverse.v2.ListConnectionsResponse
+	(*SelectTeamSpaceConnectionRequest)(nil),                 // 353: superverse.v2.SelectTeamSpaceConnectionRequest
+	(*SelectTeamSpaceConnectionResponse)(nil),                // 354: superverse.v2.SelectTeamSpaceConnectionResponse
+	(*ReleaseUnusedConnectionsRequest)(nil),                  // 355: superverse.v2.ReleaseUnusedConnectionsRequest
+	(*ReleaseUnusedConnectionsResponse)(nil),                 // 356: superverse.v2.ReleaseUnusedConnectionsResponse
+	(*StartConnectorUiSessionRequest)(nil),                   // 357: superverse.v2.StartConnectorUiSessionRequest
+	(*StartConnectorUiSessionResponse)(nil),                  // 358: superverse.v2.StartConnectorUiSessionResponse
+	(*InvokeProviderCommandRequest)(nil),                     // 359: superverse.v2.InvokeProviderCommandRequest
+	(*InvokeProviderCommandResponse)(nil),                    // 360: superverse.v2.InvokeProviderCommandResponse
+	(*SaveTriggerBindingRequest)(nil),                        // 361: superverse.v2.SaveTriggerBindingRequest
+	(*SaveTriggerBindingResponse)(nil),                       // 362: superverse.v2.SaveTriggerBindingResponse
+	(*SaveOperationConfigurationRequest)(nil),                // 363: superverse.v2.SaveOperationConfigurationRequest
+	(*SaveOperationConfigurationResponse)(nil),               // 364: superverse.v2.SaveOperationConfigurationResponse
+	(*GetApplicationEnvironmentRequest)(nil),                 // 365: superverse.v2.GetApplicationEnvironmentRequest
+	(*GetApplicationEnvironmentResponse)(nil),                // 366: superverse.v2.GetApplicationEnvironmentResponse
+	(*SaveApplicationEnvironmentRequest)(nil),                // 367: superverse.v2.SaveApplicationEnvironmentRequest
+	(*SaveApplicationEnvironmentResponse)(nil),               // 368: superverse.v2.SaveApplicationEnvironmentResponse
+	(*FlowApiTarget)(nil),                                    // 369: superverse.v2.FlowApiTarget
+	(*FlowApiContext)(nil),                                   // 370: superverse.v2.FlowApiContext
+	(*FlowApiDocument)(nil),                                  // 371: superverse.v2.FlowApiDocument
+	(*FlowSearchFilter)(nil),                                 // 372: superverse.v2.FlowSearchFilter
+	(*FlowBlobReference)(nil),                                // 373: superverse.v2.FlowBlobReference
+	nil,                                                      // 374: superverse.v2.InvokeProviderCommandRequest.ParametersEntry
+	nil,                                                      // 375: superverse.v2.SaveApplicationEnvironmentRequest.ValuesEntry
+	nil,                                                      // 376: superverse.v2.SaveApplicationEnvironmentRequest.SecretsEntry
+	(*timestamppb.Timestamp)(nil),                            // 377: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),                                  // 378: google.protobuf.Struct
 }
 var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	0,   // 0: superverse.v2.Failure.remedy:type_name -> superverse.v2.FailureRemedy
 	1,   // 1: superverse.v2.Failure.owner:type_name -> superverse.v2.FailureOwner
-	376, // 2: superverse.v2.ResourceProgress.created_at:type_name -> google.protobuf.Timestamp
-	376, // 3: superverse.v2.PhaseTiming.started_at:type_name -> google.protobuf.Timestamp
-	377, // 4: superverse.v2.FlowDefinition.definition:type_name -> google.protobuf.Struct
+	377, // 2: superverse.v2.ResourceProgress.created_at:type_name -> google.protobuf.Timestamp
+	377, // 3: superverse.v2.PhaseTiming.started_at:type_name -> google.protobuf.Timestamp
+	378, // 4: superverse.v2.FlowDefinition.definition:type_name -> google.protobuf.Struct
 	69,  // 5: superverse.v2.AppManifestSnapshot.connectors:type_name -> superverse.v2.ConnectorRequirement
-	377, // 6: superverse.v2.AppManifestSnapshot.environment:type_name -> google.protobuf.Struct
+	378, // 6: superverse.v2.AppManifestSnapshot.environment:type_name -> google.protobuf.Struct
 	68,  // 7: superverse.v2.AppManifestSnapshot.manifest_object:type_name -> superverse.v2.ObjectReference
 	68,  // 8: superverse.v2.AppManifestSnapshot.connector_contract_object:type_name -> superverse.v2.ObjectReference
 	68,  // 9: superverse.v2.AppManifestSnapshot.environment_contract_object:type_name -> superverse.v2.ObjectReference
@@ -28164,7 +28258,7 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	61,  // 14: superverse.v2.GetCurrentAccountRequest.caller:type_name -> superverse.v2.CallerContext
 	79,  // 15: superverse.v2.GetCurrentAccountResponse.account:type_name -> superverse.v2.AccountSnapshot
 	79,  // 16: superverse.v2.AccountLogin.account:type_name -> superverse.v2.AccountSnapshot
-	376, // 17: superverse.v2.AccountLogin.expires_at:type_name -> google.protobuf.Timestamp
+	377, // 17: superverse.v2.AccountLogin.expires_at:type_name -> google.protobuf.Timestamp
 	61,  // 18: superverse.v2.CreateTeamSpaceRequest.caller:type_name -> superverse.v2.CallerContext
 	4,   // 19: superverse.v2.ListTeamSpacesRequest.statuses:type_name -> superverse.v2.TeamSpaceStatus
 	61,  // 20: superverse.v2.ListTeamSpacesRequest.caller:type_name -> superverse.v2.CallerContext
@@ -28180,8 +28274,8 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	4,   // 30: superverse.v2.TeamSpaceSnapshot.status:type_name -> superverse.v2.TeamSpaceStatus
 	5,   // 31: superverse.v2.TeamSpaceSnapshot.caller_role:type_name -> superverse.v2.TeamSpaceRole
 	63,  // 32: superverse.v2.TeamSpaceSnapshot.failure:type_name -> superverse.v2.Failure
-	376, // 33: superverse.v2.TeamSpaceSnapshot.created_at:type_name -> google.protobuf.Timestamp
-	376, // 34: superverse.v2.TeamSpaceSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	377, // 33: superverse.v2.TeamSpaceSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	377, // 34: superverse.v2.TeamSpaceSnapshot.updated_at:type_name -> google.protobuf.Timestamp
 	93,  // 35: superverse.v2.TeamSpaceOverview.team_space:type_name -> superverse.v2.TeamSpaceSnapshot
 	61,  // 36: superverse.v2.ListTeamSpaceMembersRequest.caller:type_name -> superverse.v2.CallerContext
 	103, // 37: superverse.v2.ListTeamSpaceMembersResponse.members:type_name -> superverse.v2.TeamSpaceMemberSnapshot
@@ -28194,21 +28288,21 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	61,  // 44: superverse.v2.RemoveTeamSpaceMemberRequest.caller:type_name -> superverse.v2.CallerContext
 	103, // 45: superverse.v2.RemoveTeamSpaceMemberResponse.members:type_name -> superverse.v2.TeamSpaceMemberSnapshot
 	5,   // 46: superverse.v2.TeamSpaceMemberSnapshot.role:type_name -> superverse.v2.TeamSpaceRole
-	376, // 47: superverse.v2.TeamSpaceMemberSnapshot.added_at:type_name -> google.protobuf.Timestamp
+	377, // 47: superverse.v2.TeamSpaceMemberSnapshot.added_at:type_name -> google.protobuf.Timestamp
 	61,  // 48: superverse.v2.ListConnectorCatalogRequest.caller:type_name -> superverse.v2.CallerContext
 	104, // 49: superverse.v2.ListConnectorCatalogResponse.connectors:type_name -> superverse.v2.ConnectorCatalogEntry
 	3,   // 50: superverse.v2.TeamSpaceConnectionUsage.scope:type_name -> superverse.v2.ProjectScope
 	8,   // 51: superverse.v2.TeamSpaceConnectionSnapshot.client_source:type_name -> superverse.v2.ConnectionClientSource
 	7,   // 52: superverse.v2.TeamSpaceConnectionSnapshot.credential_status:type_name -> superverse.v2.CredentialStatus
-	376, // 53: superverse.v2.TeamSpaceConnectionSnapshot.credential_issued_at:type_name -> google.protobuf.Timestamp
-	376, // 54: superverse.v2.TeamSpaceConnectionSnapshot.credential_expires_at:type_name -> google.protobuf.Timestamp
+	377, // 53: superverse.v2.TeamSpaceConnectionSnapshot.credential_issued_at:type_name -> google.protobuf.Timestamp
+	377, // 54: superverse.v2.TeamSpaceConnectionSnapshot.credential_expires_at:type_name -> google.protobuf.Timestamp
 	6,   // 55: superverse.v2.TeamSpaceConnectionSnapshot.status:type_name -> superverse.v2.TeamSpaceConnectionStatus
 	63,  // 56: superverse.v2.TeamSpaceConnectionSnapshot.last_failure:type_name -> superverse.v2.Failure
-	376, // 57: superverse.v2.TeamSpaceConnectionSnapshot.created_at:type_name -> google.protobuf.Timestamp
-	376, // 58: superverse.v2.TeamSpaceConnectionSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	377, // 57: superverse.v2.TeamSpaceConnectionSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	377, // 58: superverse.v2.TeamSpaceConnectionSnapshot.updated_at:type_name -> google.protobuf.Timestamp
 	107, // 59: superverse.v2.TeamSpaceConnectionSnapshot.usages:type_name -> superverse.v2.TeamSpaceConnectionUsage
 	109, // 60: superverse.v2.TeamSpaceConnectionSnapshot.unrouted_events:type_name -> superverse.v2.UnroutedEvents
-	376, // 61: superverse.v2.UnroutedEvents.last_at:type_name -> google.protobuf.Timestamp
+	377, // 61: superverse.v2.UnroutedEvents.last_at:type_name -> google.protobuf.Timestamp
 	6,   // 62: superverse.v2.ListTeamSpaceConnectionsRequest.statuses:type_name -> superverse.v2.TeamSpaceConnectionStatus
 	61,  // 63: superverse.v2.ListTeamSpaceConnectionsRequest.caller:type_name -> superverse.v2.CallerContext
 	108, // 64: superverse.v2.ListTeamSpaceConnectionsResponse.connections:type_name -> superverse.v2.TeamSpaceConnectionSnapshot
@@ -28222,7 +28316,7 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	121, // 72: superverse.v2.StartTeamSpaceConnectionOAuthRequest.new_connection:type_name -> superverse.v2.NewTeamSpaceConnection
 	61,  // 73: superverse.v2.StartTeamSpaceConnectionOAuthRequest.caller:type_name -> superverse.v2.CallerContext
 	8,   // 74: superverse.v2.NewTeamSpaceConnection.client_source:type_name -> superverse.v2.ConnectionClientSource
-	376, // 75: superverse.v2.StartTeamSpaceConnectionOAuthResponse.expires_at:type_name -> google.protobuf.Timestamp
+	377, // 75: superverse.v2.StartTeamSpaceConnectionOAuthResponse.expires_at:type_name -> google.protobuf.Timestamp
 	61,  // 76: superverse.v2.CompleteTeamSpaceConnectionOAuthRequest.caller:type_name -> superverse.v2.CallerContext
 	108, // 77: superverse.v2.CompleteTeamSpaceConnectionOAuthResponse.connection:type_name -> superverse.v2.TeamSpaceConnectionSnapshot
 	61,  // 78: superverse.v2.StartTeamSpaceConnectionUiSessionRequest.caller:type_name -> superverse.v2.CallerContext
@@ -28244,7 +28338,7 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	61,  // 94: superverse.v2.ListEnvironmentEventsRequest.caller:type_name -> superverse.v2.CallerContext
 	141, // 95: superverse.v2.ListEnvironmentEventsResponse.events:type_name -> superverse.v2.EnvironmentEvent
 	28,  // 96: superverse.v2.EnvironmentEvent.kind:type_name -> superverse.v2.EnvironmentEvent.Kind
-	376, // 97: superverse.v2.EnvironmentEvent.occurred_at:type_name -> google.protobuf.Timestamp
+	377, // 97: superverse.v2.EnvironmentEvent.occurred_at:type_name -> google.protobuf.Timestamp
 	2,   // 98: superverse.v2.EnvironmentEvent.outcome:type_name -> superverse.v2.StartOutcome
 	63,  // 99: superverse.v2.EnvironmentEvent.failure:type_name -> superverse.v2.Failure
 	65,  // 100: superverse.v2.EnvironmentEvent.phase_timings:type_name -> superverse.v2.PhaseTiming
@@ -28252,8 +28346,8 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	3,   // 102: superverse.v2.ListRecentTriggerEventsRequest.scope:type_name -> superverse.v2.ProjectScope
 	61,  // 103: superverse.v2.ListRecentTriggerEventsRequest.caller:type_name -> superverse.v2.CallerContext
 	144, // 104: superverse.v2.ListRecentTriggerEventsResponse.events:type_name -> superverse.v2.RecentTriggerEvent
-	376, // 105: superverse.v2.ListRecentTriggerEventsResponse.buffer_started_at:type_name -> google.protobuf.Timestamp
-	376, // 106: superverse.v2.RecentTriggerEvent.received_at:type_name -> google.protobuf.Timestamp
+	377, // 105: superverse.v2.ListRecentTriggerEventsResponse.buffer_started_at:type_name -> google.protobuf.Timestamp
+	377, // 106: superverse.v2.RecentTriggerEvent.received_at:type_name -> google.protobuf.Timestamp
 	29,  // 107: superverse.v2.RecentTriggerEvent.fate:type_name -> superverse.v2.RecentTriggerEvent.Fate
 	159, // 108: superverse.v2.GetProjectConfigurationRequest.target:type_name -> superverse.v2.ProjectConfigurationTarget
 	61,  // 109: superverse.v2.GetProjectConfigurationRequest.caller:type_name -> superverse.v2.CallerContext
@@ -28270,8 +28364,8 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	67,  // 120: superverse.v2.ProjectSnapshot.app_manifest:type_name -> superverse.v2.AppManifestSnapshot
 	156, // 121: superverse.v2.ProjectSnapshot.live:type_name -> superverse.v2.ProjectLive
 	63,  // 122: superverse.v2.ProjectSnapshot.failure:type_name -> superverse.v2.Failure
-	376, // 123: superverse.v2.ProjectSnapshot.created_at:type_name -> google.protobuf.Timestamp
-	376, // 124: superverse.v2.ProjectSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	377, // 123: superverse.v2.ProjectSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	377, // 124: superverse.v2.ProjectSnapshot.updated_at:type_name -> google.protobuf.Timestamp
 	157, // 125: superverse.v2.ProjectSnapshot.active_deployment:type_name -> superverse.v2.ActiveDeploymentReference
 	63,  // 126: superverse.v2.ProjectSnapshot.session_start_failure:type_name -> superverse.v2.Failure
 	14,  // 127: superverse.v2.ProjectSnapshot.caller_role:type_name -> superverse.v2.ProjectRole
@@ -28304,7 +28398,7 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	61,  // 154: superverse.v2.RemoveProjectMemberRequest.caller:type_name -> superverse.v2.CallerContext
 	173, // 155: superverse.v2.RemoveProjectMemberResponse.members:type_name -> superverse.v2.ProjectMemberSnapshot
 	14,  // 156: superverse.v2.ProjectMemberSnapshot.role:type_name -> superverse.v2.ProjectRole
-	376, // 157: superverse.v2.ProjectMemberSnapshot.added_at:type_name -> google.protobuf.Timestamp
+	377, // 157: superverse.v2.ProjectMemberSnapshot.added_at:type_name -> google.protobuf.Timestamp
 	61,  // 158: superverse.v2.GetSessionRequest.caller:type_name -> superverse.v2.CallerContext
 	182, // 159: superverse.v2.GetSessionResponse.session:type_name -> superverse.v2.SessionSnapshot
 	61,  // 160: superverse.v2.WatchSessionRequest.caller:type_name -> superverse.v2.CallerContext
@@ -28315,11 +28409,11 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	220, // 165: superverse.v2.ListArchivedMessagesResponse.history:type_name -> superverse.v2.AgentHistoryPage
 	15,  // 166: superverse.v2.SessionSnapshot.status:type_name -> superverse.v2.SessionStatus
 	219, // 167: superverse.v2.SessionSnapshot.agent:type_name -> superverse.v2.AgentSnapshot
-	376, // 168: superverse.v2.SessionSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	377, // 168: superverse.v2.SessionSnapshot.created_at:type_name -> google.protobuf.Timestamp
 	63,  // 169: superverse.v2.SessionSnapshot.failure:type_name -> superverse.v2.Failure
-	376, // 170: superverse.v2.SessionSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	377, // 170: superverse.v2.SessionSnapshot.updated_at:type_name -> google.protobuf.Timestamp
 	184, // 171: superverse.v2.SessionSnapshot.workspace:type_name -> superverse.v2.SessionWorkspaceSnapshot
-	274, // 172: superverse.v2.SessionSnapshot.preview:type_name -> superverse.v2.PreviewSnapshot
+	275, // 172: superverse.v2.SessionSnapshot.preview:type_name -> superverse.v2.PreviewSnapshot
 	183, // 173: superverse.v2.SessionSnapshot.connector_contributions:type_name -> superverse.v2.ConnectorContribution
 	33,  // 174: superverse.v2.ConnectorContribution.kind:type_name -> superverse.v2.ConnectorContribution.Kind
 	34,  // 175: superverse.v2.ConnectorContribution.status:type_name -> superverse.v2.ConnectorContribution.Status
@@ -28328,15 +28422,15 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	37,  // 178: superverse.v2.ConnectorContribution.release_candidate_failure_kind:type_name -> superverse.v2.ConnectorContribution.ReleaseCandidateFailureReason
 	16,  // 179: superverse.v2.SessionWorkspaceSnapshot.status:type_name -> superverse.v2.WorkspaceStatus
 	17,  // 180: superverse.v2.SessionWorkspaceSnapshot.workspace_state:type_name -> superverse.v2.WorkspaceState
-	376, // 181: superverse.v2.SessionWorkspaceSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	377, // 181: superverse.v2.SessionWorkspaceSnapshot.updated_at:type_name -> google.protobuf.Timestamp
 	63,  // 182: superverse.v2.SessionWorkspaceSnapshot.failure:type_name -> superverse.v2.Failure
-	376, // 183: superverse.v2.SessionWorkspaceSnapshot.expires_at:type_name -> google.protobuf.Timestamp
+	377, // 183: superverse.v2.SessionWorkspaceSnapshot.expires_at:type_name -> google.protobuf.Timestamp
 	65,  // 184: superverse.v2.SessionWorkspaceSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
-	259, // 185: superverse.v2.SessionProgress.activity:type_name -> superverse.v2.AgentEvent
-	239, // 186: superverse.v2.SessionProgress.requirements_draft:type_name -> superverse.v2.AgentRequirementsDraft
-	376, // 187: superverse.v2.SessionProgress.created_at:type_name -> google.protobuf.Timestamp
+	260, // 185: superverse.v2.SessionProgress.activity:type_name -> superverse.v2.AgentEvent
+	240, // 186: superverse.v2.SessionProgress.requirements_draft:type_name -> superverse.v2.AgentRequirementsDraft
+	377, // 187: superverse.v2.SessionProgress.created_at:type_name -> google.protobuf.Timestamp
 	61,  // 188: superverse.v2.CreateRemoteAgentPairingRequest.caller:type_name -> superverse.v2.CallerContext
-	376, // 189: superverse.v2.CreateRemoteAgentPairingResponse.expires_at:type_name -> google.protobuf.Timestamp
+	377, // 189: superverse.v2.CreateRemoteAgentPairingResponse.expires_at:type_name -> google.protobuf.Timestamp
 	222, // 190: superverse.v2.CreateRemoteAgentPairingResponse.current_owner:type_name -> superverse.v2.Actor
 	61,  // 191: superverse.v2.ListRemoteAgentConnectionsRequest.caller:type_name -> superverse.v2.CallerContext
 	197, // 192: superverse.v2.ListRemoteAgentConnectionsResponse.connections:type_name -> superverse.v2.RemoteAgentConnection
@@ -28347,15 +28441,15 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	195, // 197: superverse.v2.SessionExecutor.remote:type_name -> superverse.v2.RemoteSessionExecutor
 	222, // 198: superverse.v2.RemoteSessionExecutor.owner:type_name -> superverse.v2.Actor
 	196, // 199: superverse.v2.RemoteSessionExecutor.binding:type_name -> superverse.v2.RemoteAgentBinding
-	376, // 200: superverse.v2.RemoteSessionExecutor.activated_at:type_name -> google.protobuf.Timestamp
-	376, // 201: superverse.v2.RemoteSessionExecutor.last_seen_at:type_name -> google.protobuf.Timestamp
+	377, // 200: superverse.v2.RemoteSessionExecutor.activated_at:type_name -> google.protobuf.Timestamp
+	377, // 201: superverse.v2.RemoteSessionExecutor.last_seen_at:type_name -> google.protobuf.Timestamp
 	222, // 202: superverse.v2.RemoteAgentConnection.owner:type_name -> superverse.v2.Actor
 	19,  // 203: superverse.v2.RemoteAgentConnection.status:type_name -> superverse.v2.RemoteAgentConnectionStatus
 	196, // 204: superverse.v2.RemoteAgentConnection.binding:type_name -> superverse.v2.RemoteAgentBinding
-	376, // 205: superverse.v2.RemoteAgentConnection.created_at:type_name -> google.protobuf.Timestamp
-	376, // 206: superverse.v2.RemoteAgentConnection.last_seen_at:type_name -> google.protobuf.Timestamp
+	377, // 205: superverse.v2.RemoteAgentConnection.created_at:type_name -> google.protobuf.Timestamp
+	377, // 206: superverse.v2.RemoteAgentConnection.last_seen_at:type_name -> google.protobuf.Timestamp
 	61,  // 207: superverse.v2.SendMessageRequest.caller:type_name -> superverse.v2.CallerContext
-	261, // 208: superverse.v2.AnswerQuestionsRequest.input:type_name -> superverse.v2.AgentAnswerQuestionsInput
+	262, // 208: superverse.v2.AnswerQuestionsRequest.input:type_name -> superverse.v2.AgentAnswerQuestionsInput
 	61,  // 209: superverse.v2.AnswerQuestionsRequest.caller:type_name -> superverse.v2.CallerContext
 	21,  // 210: superverse.v2.UpdateSessionModelRequest.model:type_name -> superverse.v2.AgentModel
 	61,  // 211: superverse.v2.UpdateSessionModelRequest.caller:type_name -> superverse.v2.CallerContext
@@ -28365,7 +28459,7 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	61,  // 215: superverse.v2.InterruptAgentRequest.caller:type_name -> superverse.v2.CallerContext
 	20,  // 216: superverse.v2.GetFlowDesignRequest.slot:type_name -> superverse.v2.AgentFlowDesignSlot
 	61,  // 217: superverse.v2.GetFlowDesignRequest.caller:type_name -> superverse.v2.CallerContext
-	243, // 218: superverse.v2.GetFlowDesignResponse.design:type_name -> superverse.v2.AgentFlowDesign
+	244, // 218: superverse.v2.GetFlowDesignResponse.design:type_name -> superverse.v2.AgentFlowDesign
 	61,  // 219: superverse.v2.ListMockScenariosRequest.caller:type_name -> superverse.v2.CallerContext
 	216, // 220: superverse.v2.ListMockScenariosResponse.scenarios:type_name -> superverse.v2.AgentMockScenario
 	217, // 221: superverse.v2.AgentMockScenario.arguments:type_name -> superverse.v2.AgentMockScenarioArgument
@@ -28399,435 +28493,436 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	222, // 249: superverse.v2.AgentUserMessage.actor:type_name -> superverse.v2.Actor
 	48,  // 250: superverse.v2.AgentDescription.status:type_name -> superverse.v2.AgentDescription.Status
 	21,  // 251: superverse.v2.AgentDescription.model:type_name -> superverse.v2.AgentModel
-	235, // 252: superverse.v2.AgentDescription.pending_approval:type_name -> superverse.v2.AgentPendingApproval
-	236, // 253: superverse.v2.AgentDescription.pending_timer:type_name -> superverse.v2.AgentPendingTimer
-	237, // 254: superverse.v2.AgentDescription.pending_user_input:type_name -> superverse.v2.AgentPendingUserInput
-	257, // 255: superverse.v2.AgentDescription.todo_list:type_name -> superverse.v2.AgentTodoList
+	236, // 252: superverse.v2.AgentDescription.pending_approval:type_name -> superverse.v2.AgentPendingApproval
+	237, // 253: superverse.v2.AgentDescription.pending_timer:type_name -> superverse.v2.AgentPendingTimer
+	238, // 254: superverse.v2.AgentDescription.pending_user_input:type_name -> superverse.v2.AgentPendingUserInput
+	258, // 255: superverse.v2.AgentDescription.todo_list:type_name -> superverse.v2.AgentTodoList
 	21,  // 256: superverse.v2.AgentDescription.context_model:type_name -> superverse.v2.AgentModel
-	253, // 257: superverse.v2.AgentDescription.confirmed_requirements:type_name -> superverse.v2.AgentConfirmedRequirements
-	233, // 258: superverse.v2.AgentDescription.background_commands:type_name -> superverse.v2.AgentBackgroundCommand
-	232, // 259: superverse.v2.AgentDescription.mock_progress:type_name -> superverse.v2.AgentMockProgress
-	234, // 260: superverse.v2.AgentDescription.subagents:type_name -> superverse.v2.AgentSubagent
+	254, // 257: superverse.v2.AgentDescription.confirmed_requirements:type_name -> superverse.v2.AgentConfirmedRequirements
+	234, // 258: superverse.v2.AgentDescription.background_commands:type_name -> superverse.v2.AgentBackgroundCommand
+	233, // 259: superverse.v2.AgentDescription.mock_progress:type_name -> superverse.v2.AgentMockProgress
+	235, // 260: superverse.v2.AgentDescription.subagents:type_name -> superverse.v2.AgentSubagent
 	222, // 261: superverse.v2.AgentDescription.model_changed_by:type_name -> superverse.v2.Actor
 	222, // 262: superverse.v2.AgentDescription.preview_auto_deploy_changed_by:type_name -> superverse.v2.Actor
 	194, // 263: superverse.v2.AgentDescription.executor:type_name -> superverse.v2.SessionExecutor
 	231, // 264: superverse.v2.AgentDescription.starting_example:type_name -> superverse.v2.AgentStartingExample
 	49,  // 265: superverse.v2.AgentStartingExample.choice:type_name -> superverse.v2.AgentStartingExample.Choice
-	50,  // 266: superverse.v2.AgentBackgroundCommand.status:type_name -> superverse.v2.AgentBackgroundCommand.Status
-	51,  // 267: superverse.v2.AgentBackgroundCommand.end_reason:type_name -> superverse.v2.AgentBackgroundCommand.EndReason
-	52,  // 268: superverse.v2.AgentSubagent.kind:type_name -> superverse.v2.AgentSubagent.Kind
-	53,  // 269: superverse.v2.AgentSubagent.status:type_name -> superverse.v2.AgentSubagent.Status
-	254, // 270: superverse.v2.AgentPendingUserInput.questions:type_name -> superverse.v2.AgentUserInputQuestion
-	54,  // 271: superverse.v2.AgentPendingUserInput.kind:type_name -> superverse.v2.AgentPendingUserInput.Kind
-	238, // 272: superverse.v2.AgentPendingUserInput.requirements:type_name -> superverse.v2.AgentRequirements
-	251, // 273: superverse.v2.AgentRequirements.features:type_name -> superverse.v2.AgentRequirementFeature
-	252, // 274: superverse.v2.AgentRequirements.connections:type_name -> superverse.v2.AgentRequirementConnection
-	242, // 275: superverse.v2.AgentRequirements.design:type_name -> superverse.v2.AgentFlowDesignReference
-	251, // 276: superverse.v2.AgentRequirementsDraft.features:type_name -> superverse.v2.AgentRequirementFeature
-	240, // 277: superverse.v2.AgentRequirementsDraft.connections:type_name -> superverse.v2.AgentRequirementsDraftConnection
-	241, // 278: superverse.v2.AgentRequirementsDraft.flows:type_name -> superverse.v2.AgentRequirementsDraftFlow
-	244, // 279: superverse.v2.AgentFlowDesign.flows:type_name -> superverse.v2.AgentFlowDesignFlow
-	245, // 280: superverse.v2.AgentFlowDesignFlow.steps:type_name -> superverse.v2.AgentFlowDesignStep
-	248, // 281: superverse.v2.AgentFlowDesignFlow.channels:type_name -> superverse.v2.AgentFlowDesignChannel
-	249, // 282: superverse.v2.AgentFlowDesignFlow.actions:type_name -> superverse.v2.AgentFlowDesignAction
-	250, // 283: superverse.v2.AgentFlowDesignFlow.attributes:type_name -> superverse.v2.AgentFlowDesignAttribute
-	246, // 284: superverse.v2.AgentFlowDesignStep.waits_for:type_name -> superverse.v2.AgentFlowDesignWait
-	247, // 285: superverse.v2.AgentFlowDesignStep.next:type_name -> superverse.v2.AgentFlowDesignTransition
-	55,  // 286: superverse.v2.AgentFlowDesignWait.kind:type_name -> superverse.v2.AgentFlowDesignWait.Kind
-	56,  // 287: superverse.v2.AgentFlowDesignTransition.end:type_name -> superverse.v2.AgentFlowDesignTransition.End
-	57,  // 288: superverse.v2.AgentRequirementConnection.status:type_name -> superverse.v2.AgentRequirementConnection.Status
-	238, // 289: superverse.v2.AgentConfirmedRequirements.spec:type_name -> superverse.v2.AgentRequirements
-	222, // 290: superverse.v2.AgentConfirmedRequirements.confirmed_by:type_name -> superverse.v2.Actor
-	255, // 291: superverse.v2.AgentUserInputQuestion.options:type_name -> superverse.v2.AgentUserInputOption
-	258, // 292: superverse.v2.AgentTodoList.items:type_name -> superverse.v2.AgentTodoItem
-	58,  // 293: superverse.v2.AgentTodoItem.status:type_name -> superverse.v2.AgentTodoItem.Status
-	59,  // 294: superverse.v2.AgentEvent.kind:type_name -> superverse.v2.AgentEvent.Kind
-	260, // 295: superverse.v2.AgentEvent.input_consumption:type_name -> superverse.v2.AgentInputConsumption
-	256, // 296: superverse.v2.AgentAnswerQuestionsInput.answers:type_name -> superverse.v2.AgentUserInputAnswer
-	61,  // 297: superverse.v2.GetPreviewRequest.caller:type_name -> superverse.v2.CallerContext
-	274, // 298: superverse.v2.GetPreviewResponse.preview:type_name -> superverse.v2.PreviewSnapshot
-	61,  // 299: superverse.v2.StartPreviewRequest.caller:type_name -> superverse.v2.CallerContext
-	274, // 300: superverse.v2.StartPreviewResponse.preview:type_name -> superverse.v2.PreviewSnapshot
-	61,  // 301: superverse.v2.StopPreviewRequest.caller:type_name -> superverse.v2.CallerContext
-	274, // 302: superverse.v2.StopPreviewResponse.preview:type_name -> superverse.v2.PreviewSnapshot
-	61,  // 303: superverse.v2.PreparePreviewSourceRequest.caller:type_name -> superverse.v2.CallerContext
-	61,  // 304: superverse.v2.GetPreviewDefinitionsRequest.caller:type_name -> superverse.v2.CallerContext
-	274, // 305: superverse.v2.GetPreviewDefinitionsResponse.preview:type_name -> superverse.v2.PreviewSnapshot
-	66,  // 306: superverse.v2.GetPreviewDefinitionsResponse.flow_definitions:type_name -> superverse.v2.FlowDefinition
-	61,  // 307: superverse.v2.UpdatePreviewAutoDeployRequest.caller:type_name -> superverse.v2.CallerContext
-	23,  // 308: superverse.v2.PreviewSnapshot.status:type_name -> superverse.v2.PreviewStatus
-	63,  // 309: superverse.v2.PreviewSnapshot.failure:type_name -> superverse.v2.Failure
-	278, // 310: superverse.v2.PreviewSnapshot.prepared_source:type_name -> superverse.v2.PreparedPreviewSourceSnapshot
-	277, // 311: superverse.v2.PreviewSnapshot.automatic_deployment:type_name -> superverse.v2.PreviewDeploymentSnapshot
-	163, // 312: superverse.v2.PreviewSnapshot.configuration_gaps:type_name -> superverse.v2.ConfigurationRequirementGap
-	65,  // 313: superverse.v2.PreviewSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
-	275, // 314: superverse.v2.PreviewSnapshot.applied_configuration:type_name -> superverse.v2.AppliedPreviewConfiguration
-	276, // 315: superverse.v2.PreviewSnapshot.recent_starts:type_name -> superverse.v2.PreviewStartRecord
-	62,  // 316: superverse.v2.PreviewSnapshot.serving_version:type_name -> superverse.v2.CommitVersion
-	376, // 317: superverse.v2.AppliedPreviewConfiguration.applied_at:type_name -> google.protobuf.Timestamp
-	376, // 318: superverse.v2.PreviewStartRecord.admitted_at:type_name -> google.protobuf.Timestamp
-	376, // 319: superverse.v2.PreviewStartRecord.ended_at:type_name -> google.protobuf.Timestamp
-	2,   // 320: superverse.v2.PreviewStartRecord.outcome:type_name -> superverse.v2.StartOutcome
-	65,  // 321: superverse.v2.PreviewStartRecord.phase_timings:type_name -> superverse.v2.PhaseTiming
-	62,  // 322: superverse.v2.PreviewStartRecord.version:type_name -> superverse.v2.CommitVersion
-	22,  // 323: superverse.v2.PreviewDeploymentSnapshot.status:type_name -> superverse.v2.PreviewDeploymentStatus
-	63,  // 324: superverse.v2.PreviewDeploymentSnapshot.failure:type_name -> superverse.v2.Failure
-	376, // 325: superverse.v2.PreviewDeploymentSnapshot.updated_at:type_name -> google.protobuf.Timestamp
-	24,  // 326: superverse.v2.PreparedPreviewSourceSnapshot.status:type_name -> superverse.v2.PreviewSourceStatus
-	68,  // 327: superverse.v2.PreparedPreviewSourceSnapshot.definitions:type_name -> superverse.v2.ObjectReference
-	63,  // 328: superverse.v2.PreparedPreviewSourceSnapshot.failure:type_name -> superverse.v2.Failure
-	62,  // 329: superverse.v2.PreparedPreviewSourceSnapshot.version:type_name -> superverse.v2.CommitVersion
-	61,  // 330: superverse.v2.ListReleaseCandidatesRequest.caller:type_name -> superverse.v2.CallerContext
-	297, // 331: superverse.v2.ListReleaseCandidatesResponse.candidates:type_name -> superverse.v2.ReleaseCandidate
-	61,  // 332: superverse.v2.PrepareReleaseRequest.caller:type_name -> superverse.v2.CallerContext
-	61,  // 333: superverse.v2.StartReleaseBuildRequest.caller:type_name -> superverse.v2.CallerContext
-	61,  // 334: superverse.v2.RecoverReleaseBuildRequest.caller:type_name -> superverse.v2.CallerContext
-	61,  // 335: superverse.v2.CancelReleaseBuildRequest.caller:type_name -> superverse.v2.CallerContext
-	61,  // 336: superverse.v2.GetReleaseBuildLogRequest.caller:type_name -> superverse.v2.CallerContext
-	25,  // 337: superverse.v2.ListReleasesRequest.statuses:type_name -> superverse.v2.ReleaseStatus
-	61,  // 338: superverse.v2.ListReleasesRequest.caller:type_name -> superverse.v2.CallerContext
-	298, // 339: superverse.v2.ListReleasesResponse.releases:type_name -> superverse.v2.ReleaseSnapshot
-	61,  // 340: superverse.v2.GetReleaseRequest.caller:type_name -> superverse.v2.CallerContext
-	298, // 341: superverse.v2.GetReleaseResponse.release:type_name -> superverse.v2.ReleaseSnapshot
-	66,  // 342: superverse.v2.GetReleaseResponse.flow_definitions:type_name -> superverse.v2.FlowDefinition
-	61,  // 343: superverse.v2.WatchReleaseRequest.caller:type_name -> superverse.v2.CallerContext
-	298, // 344: superverse.v2.WatchReleaseResponse.snapshot:type_name -> superverse.v2.ReleaseSnapshot
-	64,  // 345: superverse.v2.WatchReleaseResponse.progress:type_name -> superverse.v2.ResourceProgress
-	376, // 346: superverse.v2.ReleaseCandidate.committed_at:type_name -> google.protobuf.Timestamp
-	62,  // 347: superverse.v2.ReleaseCandidate.version:type_name -> superverse.v2.CommitVersion
-	25,  // 348: superverse.v2.ReleaseSnapshot.status:type_name -> superverse.v2.ReleaseStatus
-	63,  // 349: superverse.v2.ReleaseSnapshot.failure:type_name -> superverse.v2.Failure
-	376, // 350: superverse.v2.ReleaseSnapshot.created_at:type_name -> google.protobuf.Timestamp
-	299, // 351: superverse.v2.ReleaseSnapshot.prepared_source:type_name -> superverse.v2.PreparedReleaseSourceSnapshot
-	300, // 352: superverse.v2.ReleaseSnapshot.build_revisions:type_name -> superverse.v2.ReleaseBuildRevisionSnapshot
-	25,  // 353: superverse.v2.PreparedReleaseSourceSnapshot.status:type_name -> superverse.v2.ReleaseStatus
-	67,  // 354: superverse.v2.PreparedReleaseSourceSnapshot.app_manifest:type_name -> superverse.v2.AppManifestSnapshot
-	63,  // 355: superverse.v2.PreparedReleaseSourceSnapshot.failure:type_name -> superverse.v2.Failure
-	65,  // 356: superverse.v2.PreparedReleaseSourceSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
-	62,  // 357: superverse.v2.PreparedReleaseSourceSnapshot.version:type_name -> superverse.v2.CommitVersion
-	25,  // 358: superverse.v2.ReleaseBuildRevisionSnapshot.status:type_name -> superverse.v2.ReleaseStatus
-	63,  // 359: superverse.v2.ReleaseBuildRevisionSnapshot.failure:type_name -> superverse.v2.Failure
-	26,  // 360: superverse.v2.ReleaseBuildRevisionSnapshot.auto_deploy_status:type_name -> superverse.v2.AutoDeployStatus
-	63,  // 361: superverse.v2.ReleaseBuildRevisionSnapshot.auto_deploy_failure:type_name -> superverse.v2.Failure
-	376, // 362: superverse.v2.ReleaseBuildRevisionSnapshot.created_at:type_name -> google.protobuf.Timestamp
-	65,  // 363: superverse.v2.ReleaseBuildRevisionSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
-	302, // 364: superverse.v2.ReleaseBuildRevisionSnapshot.preview_validation:type_name -> superverse.v2.PreviewValidation
-	301, // 365: superverse.v2.ReleaseBuildRevisionSnapshot.cancellation:type_name -> superverse.v2.Cancellation
-	376, // 366: superverse.v2.Cancellation.requested_at:type_name -> google.protobuf.Timestamp
-	60,  // 367: superverse.v2.PreviewValidation.kind:type_name -> superverse.v2.PreviewValidation.Kind
-	376, // 368: superverse.v2.PreviewValidation.started_at:type_name -> google.protobuf.Timestamp
-	61,  // 369: superverse.v2.DeriveLiveConfigurationRequest.caller:type_name -> superverse.v2.CallerContext
-	160, // 370: superverse.v2.DeriveLiveConfigurationResponse.configuration:type_name -> superverse.v2.ProjectConfigurationSnapshot
-	61,  // 371: superverse.v2.StartDeploymentRequest.caller:type_name -> superverse.v2.CallerContext
-	61,  // 372: superverse.v2.CancelDeploymentRequest.caller:type_name -> superverse.v2.CallerContext
-	61,  // 373: superverse.v2.GetDeploymentRequest.caller:type_name -> superverse.v2.CallerContext
-	315, // 374: superverse.v2.GetDeploymentResponse.deployment:type_name -> superverse.v2.DeploymentSnapshot
-	27,  // 375: superverse.v2.ListDeploymentsRequest.statuses:type_name -> superverse.v2.DeploymentStatus
-	61,  // 376: superverse.v2.ListDeploymentsRequest.caller:type_name -> superverse.v2.CallerContext
-	315, // 377: superverse.v2.ListDeploymentsResponse.deployments:type_name -> superverse.v2.DeploymentSnapshot
-	61,  // 378: superverse.v2.WatchDeploymentRequest.caller:type_name -> superverse.v2.CallerContext
-	315, // 379: superverse.v2.WatchDeploymentResponse.snapshot:type_name -> superverse.v2.DeploymentSnapshot
-	64,  // 380: superverse.v2.WatchDeploymentResponse.progress:type_name -> superverse.v2.ResourceProgress
-	27,  // 381: superverse.v2.DeploymentSnapshot.status:type_name -> superverse.v2.DeploymentStatus
-	63,  // 382: superverse.v2.DeploymentSnapshot.failure:type_name -> superverse.v2.Failure
-	376, // 383: superverse.v2.DeploymentSnapshot.created_at:type_name -> google.protobuf.Timestamp
-	65,  // 384: superverse.v2.DeploymentSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
-	62,  // 385: superverse.v2.DeploymentSnapshot.version:type_name -> superverse.v2.CommitVersion
-	301, // 386: superverse.v2.DeploymentSnapshot.cancellation:type_name -> superverse.v2.Cancellation
-	369, // 387: superverse.v2.GetFlowDefinitionsRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 388: superverse.v2.GetFlowDefinitionsRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 389: superverse.v2.GetFlowDefinitionsResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 390: superverse.v2.GetFlowCatalogRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 391: superverse.v2.GetFlowCatalogRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 392: superverse.v2.GetFlowCatalogResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 393: superverse.v2.SearchFlowsRequest.context:type_name -> superverse.v2.FlowApiContext
-	371, // 394: superverse.v2.SearchFlowsRequest.filters:type_name -> superverse.v2.FlowSearchFilter
-	61,  // 395: superverse.v2.SearchFlowsRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 396: superverse.v2.SearchFlowsResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 397: superverse.v2.GetFlowDisplayRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 398: superverse.v2.GetFlowDisplayRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 399: superverse.v2.GetFlowDisplayResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 400: superverse.v2.UpdateFlowDisplayFieldRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 401: superverse.v2.UpdateFlowDisplayFieldRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 402: superverse.v2.UpdateFlowDisplayFieldResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 403: superverse.v2.InvokeFlowActionRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 404: superverse.v2.InvokeFlowActionRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 405: superverse.v2.InvokeFlowActionResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 406: superverse.v2.StartFlowRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 407: superverse.v2.StartFlowRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 408: superverse.v2.StartFlowResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 409: superverse.v2.RecoverFlowStartRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 410: superverse.v2.RecoverFlowStartRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 411: superverse.v2.RecoverFlowStartResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 412: superverse.v2.GetFlowSummaryRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 413: superverse.v2.GetFlowSummaryRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 414: superverse.v2.GetFlowSummaryResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 415: superverse.v2.GetFlowStateRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 416: superverse.v2.GetFlowStateRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 417: superverse.v2.GetFlowStateResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 418: superverse.v2.GetFlowHistoryRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 419: superverse.v2.GetFlowHistoryRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 420: superverse.v2.GetFlowHistoryResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 421: superverse.v2.WaitFlowHistoryRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 422: superverse.v2.WaitFlowHistoryRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 423: superverse.v2.WaitFlowHistoryResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 424: superverse.v2.ReadFlowStreamRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 425: superverse.v2.ReadFlowStreamRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 426: superverse.v2.ReadFlowStreamResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 427: superverse.v2.LoadFlowBlobsRequest.context:type_name -> superverse.v2.FlowApiContext
-	372, // 428: superverse.v2.LoadFlowBlobsRequest.values:type_name -> superverse.v2.FlowBlobReference
-	61,  // 429: superverse.v2.LoadFlowBlobsRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 430: superverse.v2.LoadFlowBlobsResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 431: superverse.v2.StopFlowRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 432: superverse.v2.StopFlowRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 433: superverse.v2.StopFlowResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 434: superverse.v2.DeleteFlowChannelMessageRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 435: superverse.v2.DeleteFlowChannelMessageRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 436: superverse.v2.DeleteFlowChannelMessageResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 437: superverse.v2.TimeTravelFlowRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 438: superverse.v2.TimeTravelFlowRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 439: superverse.v2.TimeTravelFlowResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 440: superverse.v2.ListConnectionsRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 441: superverse.v2.ListConnectionsRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 442: superverse.v2.ListConnectionsResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 443: superverse.v2.SelectTeamSpaceConnectionRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 444: superverse.v2.SelectTeamSpaceConnectionRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 445: superverse.v2.SelectTeamSpaceConnectionResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 446: superverse.v2.ReleaseUnusedConnectionsRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 447: superverse.v2.ReleaseUnusedConnectionsRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 448: superverse.v2.ReleaseUnusedConnectionsResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 449: superverse.v2.StartConnectorUiSessionRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 450: superverse.v2.StartConnectorUiSessionRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 451: superverse.v2.StartConnectorUiSessionResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 452: superverse.v2.InvokeProviderCommandRequest.context:type_name -> superverse.v2.FlowApiContext
-	373, // 453: superverse.v2.InvokeProviderCommandRequest.parameters:type_name -> superverse.v2.InvokeProviderCommandRequest.ParametersEntry
-	61,  // 454: superverse.v2.InvokeProviderCommandRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 455: superverse.v2.InvokeProviderCommandResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 456: superverse.v2.SaveTriggerBindingRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 457: superverse.v2.SaveTriggerBindingRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 458: superverse.v2.SaveTriggerBindingResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 459: superverse.v2.SaveOperationConfigurationRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 460: superverse.v2.SaveOperationConfigurationRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 461: superverse.v2.SaveOperationConfigurationResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 462: superverse.v2.GetApplicationEnvironmentRequest.context:type_name -> superverse.v2.FlowApiContext
-	61,  // 463: superverse.v2.GetApplicationEnvironmentRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 464: superverse.v2.GetApplicationEnvironmentResponse.document:type_name -> superverse.v2.FlowApiDocument
-	369, // 465: superverse.v2.SaveApplicationEnvironmentRequest.context:type_name -> superverse.v2.FlowApiContext
-	374, // 466: superverse.v2.SaveApplicationEnvironmentRequest.values:type_name -> superverse.v2.SaveApplicationEnvironmentRequest.ValuesEntry
-	375, // 467: superverse.v2.SaveApplicationEnvironmentRequest.secrets:type_name -> superverse.v2.SaveApplicationEnvironmentRequest.SecretsEntry
-	61,  // 468: superverse.v2.SaveApplicationEnvironmentRequest.caller:type_name -> superverse.v2.CallerContext
-	370, // 469: superverse.v2.SaveApplicationEnvironmentResponse.document:type_name -> superverse.v2.FlowApiDocument
-	3,   // 470: superverse.v2.FlowApiTarget.scope:type_name -> superverse.v2.ProjectScope
-	368, // 471: superverse.v2.FlowApiContext.target:type_name -> superverse.v2.FlowApiTarget
-	71,  // 472: superverse.v2.AccountService.RegisterAccount:input_type -> superverse.v2.RegisterAccountRequest
-	73,  // 473: superverse.v2.AccountService.Login:input_type -> superverse.v2.LoginRequest
-	75,  // 474: superverse.v2.AccountService.Logout:input_type -> superverse.v2.LogoutRequest
-	77,  // 475: superverse.v2.AccountService.GetCurrentAccount:input_type -> superverse.v2.GetCurrentAccountRequest
-	81,  // 476: superverse.v2.TeamSpaceService.CreateTeamSpace:input_type -> superverse.v2.CreateTeamSpaceRequest
-	83,  // 477: superverse.v2.TeamSpaceService.ListTeamSpaces:input_type -> superverse.v2.ListTeamSpacesRequest
-	85,  // 478: superverse.v2.TeamSpaceService.GetTeamSpace:input_type -> superverse.v2.GetTeamSpaceRequest
-	87,  // 479: superverse.v2.TeamSpaceService.RenameTeamSpace:input_type -> superverse.v2.RenameTeamSpaceRequest
-	89,  // 480: superverse.v2.TeamSpaceService.DeleteTeamSpace:input_type -> superverse.v2.DeleteTeamSpaceRequest
-	91,  // 481: superverse.v2.TeamSpaceService.GetTeamSpaceOverview:input_type -> superverse.v2.GetTeamSpaceOverviewRequest
-	95,  // 482: superverse.v2.TeamSpaceMemberService.ListTeamSpaceMembers:input_type -> superverse.v2.ListTeamSpaceMembersRequest
-	97,  // 483: superverse.v2.TeamSpaceMemberService.AddTeamSpaceMember:input_type -> superverse.v2.AddTeamSpaceMemberRequest
-	99,  // 484: superverse.v2.TeamSpaceMemberService.SetTeamSpaceMemberRole:input_type -> superverse.v2.SetTeamSpaceMemberRoleRequest
-	101, // 485: superverse.v2.TeamSpaceMemberService.RemoveTeamSpaceMember:input_type -> superverse.v2.RemoveTeamSpaceMemberRequest
-	105, // 486: superverse.v2.TeamSpaceConnectionService.ListConnectorCatalog:input_type -> superverse.v2.ListConnectorCatalogRequest
-	110, // 487: superverse.v2.TeamSpaceConnectionService.ListTeamSpaceConnections:input_type -> superverse.v2.ListTeamSpaceConnectionsRequest
-	112, // 488: superverse.v2.TeamSpaceConnectionService.GetTeamSpaceConnection:input_type -> superverse.v2.GetTeamSpaceConnectionRequest
-	114, // 489: superverse.v2.TeamSpaceConnectionService.CreateTeamSpaceConnection:input_type -> superverse.v2.CreateTeamSpaceConnectionRequest
-	116, // 490: superverse.v2.TeamSpaceConnectionService.UpdateTeamSpaceConnection:input_type -> superverse.v2.UpdateTeamSpaceConnectionRequest
-	118, // 491: superverse.v2.TeamSpaceConnectionService.DeleteTeamSpaceConnection:input_type -> superverse.v2.DeleteTeamSpaceConnectionRequest
-	120, // 492: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionOAuth:input_type -> superverse.v2.StartTeamSpaceConnectionOAuthRequest
-	123, // 493: superverse.v2.TeamSpaceConnectionService.CompleteTeamSpaceConnectionOAuth:input_type -> superverse.v2.CompleteTeamSpaceConnectionOAuthRequest
-	125, // 494: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionUiSession:input_type -> superverse.v2.StartTeamSpaceConnectionUiSessionRequest
-	127, // 495: superverse.v2.TeamSpaceConnectionService.InvokeTeamSpaceConnectionCommand:input_type -> superverse.v2.InvokeTeamSpaceConnectionCommandRequest
-	129, // 496: superverse.v2.ProjectService.CreateProject:input_type -> superverse.v2.CreateProjectRequest
-	131, // 497: superverse.v2.ProjectService.ListProjects:input_type -> superverse.v2.ListProjectsRequest
-	133, // 498: superverse.v2.ProjectService.GetProject:input_type -> superverse.v2.GetProjectRequest
-	135, // 499: superverse.v2.ProjectService.DeleteProject:input_type -> superverse.v2.DeleteProjectRequest
-	137, // 500: superverse.v2.ProjectService.WatchProject:input_type -> superverse.v2.WatchProjectRequest
-	145, // 501: superverse.v2.ProjectService.GetProjectConfiguration:input_type -> superverse.v2.GetProjectConfigurationRequest
-	147, // 502: superverse.v2.ProjectService.ValidateProjectConfiguration:input_type -> superverse.v2.ValidateProjectConfigurationRequest
-	149, // 503: superverse.v2.ProjectService.RemoveLive:input_type -> superverse.v2.RemoveLiveRequest
-	139, // 504: superverse.v2.ProjectService.ListEnvironmentEvents:input_type -> superverse.v2.ListEnvironmentEventsRequest
-	142, // 505: superverse.v2.ProjectService.ListRecentTriggerEvents:input_type -> superverse.v2.ListRecentTriggerEventsRequest
-	165, // 506: superverse.v2.ProjectMemberService.ListProjectMembers:input_type -> superverse.v2.ListProjectMembersRequest
-	167, // 507: superverse.v2.ProjectMemberService.AddProjectMember:input_type -> superverse.v2.AddProjectMemberRequest
-	169, // 508: superverse.v2.ProjectMemberService.SetProjectMemberRole:input_type -> superverse.v2.SetProjectMemberRoleRequest
-	171, // 509: superverse.v2.ProjectMemberService.RemoveProjectMember:input_type -> superverse.v2.RemoveProjectMemberRequest
-	174, // 510: superverse.v2.SessionService.GetSession:input_type -> superverse.v2.GetSessionRequest
-	176, // 511: superverse.v2.SessionService.WatchSession:input_type -> superverse.v2.WatchSessionRequest
-	178, // 512: superverse.v2.SessionService.ListArchivedMessages:input_type -> superverse.v2.ListArchivedMessagesRequest
-	179, // 513: superverse.v2.SessionService.RenewWorkspace:input_type -> superverse.v2.RenewWorkspaceRequest
-	186, // 514: superverse.v2.RemoteAgentService.CreateRemoteAgentPairing:input_type -> superverse.v2.CreateRemoteAgentPairingRequest
-	188, // 515: superverse.v2.RemoteAgentService.ListRemoteAgentConnections:input_type -> superverse.v2.ListRemoteAgentConnectionsRequest
-	190, // 516: superverse.v2.RemoteAgentService.RevokeRemoteAgentConnection:input_type -> superverse.v2.RevokeRemoteAgentConnectionRequest
-	192, // 517: superverse.v2.RemoteAgentService.SetSessionExecutor:input_type -> superverse.v2.SetSessionExecutorRequest
-	198, // 518: superverse.v2.AgentService.SendMessage:input_type -> superverse.v2.SendMessageRequest
-	200, // 519: superverse.v2.AgentService.AnswerQuestions:input_type -> superverse.v2.AnswerQuestionsRequest
-	202, // 520: superverse.v2.AgentService.UpdateSessionModel:input_type -> superverse.v2.UpdateSessionModelRequest
-	204, // 521: superverse.v2.AgentService.DeleteQueuedMessage:input_type -> superverse.v2.DeleteQueuedMessageRequest
-	206, // 522: superverse.v2.AgentService.SteerQueuedMessage:input_type -> superverse.v2.SteerQueuedMessageRequest
-	208, // 523: superverse.v2.AgentService.ResolveToolApproval:input_type -> superverse.v2.ResolveToolApprovalRequest
-	210, // 524: superverse.v2.AgentService.InterruptAgent:input_type -> superverse.v2.InterruptAgentRequest
-	214, // 525: superverse.v2.AgentService.ListMockScenarios:input_type -> superverse.v2.ListMockScenariosRequest
-	212, // 526: superverse.v2.AgentService.GetFlowDesign:input_type -> superverse.v2.GetFlowDesignRequest
-	262, // 527: superverse.v2.PreviewService.GetPreview:input_type -> superverse.v2.GetPreviewRequest
-	264, // 528: superverse.v2.PreviewService.StartPreview:input_type -> superverse.v2.StartPreviewRequest
-	266, // 529: superverse.v2.PreviewService.StopPreview:input_type -> superverse.v2.StopPreviewRequest
-	268, // 530: superverse.v2.PreviewService.PreparePreviewSource:input_type -> superverse.v2.PreparePreviewSourceRequest
-	270, // 531: superverse.v2.PreviewService.GetPreviewDefinitions:input_type -> superverse.v2.GetPreviewDefinitionsRequest
-	272, // 532: superverse.v2.PreviewService.UpdatePreviewAutoDeploy:input_type -> superverse.v2.UpdatePreviewAutoDeployRequest
-	279, // 533: superverse.v2.ReleaseService.ListReleaseCandidates:input_type -> superverse.v2.ListReleaseCandidatesRequest
-	281, // 534: superverse.v2.ReleaseService.PrepareRelease:input_type -> superverse.v2.PrepareReleaseRequest
-	283, // 535: superverse.v2.ReleaseService.StartReleaseBuild:input_type -> superverse.v2.StartReleaseBuildRequest
-	285, // 536: superverse.v2.ReleaseService.RecoverReleaseBuild:input_type -> superverse.v2.RecoverReleaseBuildRequest
-	291, // 537: superverse.v2.ReleaseService.ListReleases:input_type -> superverse.v2.ListReleasesRequest
-	303, // 538: superverse.v2.ReleaseService.DeriveLiveConfiguration:input_type -> superverse.v2.DeriveLiveConfigurationRequest
-	293, // 539: superverse.v2.ReleaseService.GetRelease:input_type -> superverse.v2.GetReleaseRequest
-	295, // 540: superverse.v2.ReleaseService.WatchRelease:input_type -> superverse.v2.WatchReleaseRequest
-	287, // 541: superverse.v2.ReleaseService.CancelReleaseBuild:input_type -> superverse.v2.CancelReleaseBuildRequest
-	289, // 542: superverse.v2.ReleaseService.GetReleaseBuildLog:input_type -> superverse.v2.GetReleaseBuildLogRequest
-	305, // 543: superverse.v2.DeploymentService.StartDeployment:input_type -> superverse.v2.StartDeploymentRequest
-	309, // 544: superverse.v2.DeploymentService.GetDeployment:input_type -> superverse.v2.GetDeploymentRequest
-	311, // 545: superverse.v2.DeploymentService.ListDeployments:input_type -> superverse.v2.ListDeploymentsRequest
-	313, // 546: superverse.v2.DeploymentService.WatchDeployment:input_type -> superverse.v2.WatchDeploymentRequest
-	307, // 547: superverse.v2.DeploymentService.CancelDeployment:input_type -> superverse.v2.CancelDeploymentRequest
-	316, // 548: superverse.v2.FlowRunService.GetFlowDefinitions:input_type -> superverse.v2.GetFlowDefinitionsRequest
-	318, // 549: superverse.v2.FlowRunService.GetFlowCatalog:input_type -> superverse.v2.GetFlowCatalogRequest
-	320, // 550: superverse.v2.FlowRunService.SearchFlows:input_type -> superverse.v2.SearchFlowsRequest
-	322, // 551: superverse.v2.FlowRunService.GetFlowDisplay:input_type -> superverse.v2.GetFlowDisplayRequest
-	324, // 552: superverse.v2.FlowRunService.UpdateFlowDisplayField:input_type -> superverse.v2.UpdateFlowDisplayFieldRequest
-	326, // 553: superverse.v2.FlowRunService.InvokeFlowAction:input_type -> superverse.v2.InvokeFlowActionRequest
-	328, // 554: superverse.v2.FlowRunService.StartFlow:input_type -> superverse.v2.StartFlowRequest
-	330, // 555: superverse.v2.FlowRunService.RecoverFlowStart:input_type -> superverse.v2.RecoverFlowStartRequest
-	332, // 556: superverse.v2.FlowDiagnosticsService.GetFlowSummary:input_type -> superverse.v2.GetFlowSummaryRequest
-	334, // 557: superverse.v2.FlowDiagnosticsService.GetFlowState:input_type -> superverse.v2.GetFlowStateRequest
-	336, // 558: superverse.v2.FlowDiagnosticsService.GetFlowHistory:input_type -> superverse.v2.GetFlowHistoryRequest
-	338, // 559: superverse.v2.FlowDiagnosticsService.WaitFlowHistory:input_type -> superverse.v2.WaitFlowHistoryRequest
-	340, // 560: superverse.v2.FlowDiagnosticsService.ReadFlowStream:input_type -> superverse.v2.ReadFlowStreamRequest
-	342, // 561: superverse.v2.FlowDiagnosticsService.LoadFlowBlobs:input_type -> superverse.v2.LoadFlowBlobsRequest
-	344, // 562: superverse.v2.FlowDiagnosticsService.StopFlow:input_type -> superverse.v2.StopFlowRequest
-	346, // 563: superverse.v2.FlowDiagnosticsService.DeleteFlowChannelMessage:input_type -> superverse.v2.DeleteFlowChannelMessageRequest
-	348, // 564: superverse.v2.FlowDiagnosticsService.TimeTravelFlow:input_type -> superverse.v2.TimeTravelFlowRequest
-	350, // 565: superverse.v2.ConnectorService.ListConnections:input_type -> superverse.v2.ListConnectionsRequest
-	352, // 566: superverse.v2.ConnectorService.SelectTeamSpaceConnection:input_type -> superverse.v2.SelectTeamSpaceConnectionRequest
-	354, // 567: superverse.v2.ConnectorService.ReleaseUnusedConnections:input_type -> superverse.v2.ReleaseUnusedConnectionsRequest
-	356, // 568: superverse.v2.ConnectorService.StartConnectorUiSession:input_type -> superverse.v2.StartConnectorUiSessionRequest
-	358, // 569: superverse.v2.ConnectorService.InvokeProviderCommand:input_type -> superverse.v2.InvokeProviderCommandRequest
-	360, // 570: superverse.v2.ConnectorService.SaveTriggerBinding:input_type -> superverse.v2.SaveTriggerBindingRequest
-	362, // 571: superverse.v2.ConnectorService.SaveOperationConfiguration:input_type -> superverse.v2.SaveOperationConfigurationRequest
-	364, // 572: superverse.v2.ApplicationEnvironmentService.GetApplicationEnvironment:input_type -> superverse.v2.GetApplicationEnvironmentRequest
-	366, // 573: superverse.v2.ApplicationEnvironmentService.SaveApplicationEnvironment:input_type -> superverse.v2.SaveApplicationEnvironmentRequest
-	72,  // 574: superverse.v2.AccountService.RegisterAccount:output_type -> superverse.v2.RegisterAccountResponse
-	74,  // 575: superverse.v2.AccountService.Login:output_type -> superverse.v2.LoginResponse
-	76,  // 576: superverse.v2.AccountService.Logout:output_type -> superverse.v2.LogoutResponse
-	78,  // 577: superverse.v2.AccountService.GetCurrentAccount:output_type -> superverse.v2.GetCurrentAccountResponse
-	82,  // 578: superverse.v2.TeamSpaceService.CreateTeamSpace:output_type -> superverse.v2.CreateTeamSpaceResponse
-	84,  // 579: superverse.v2.TeamSpaceService.ListTeamSpaces:output_type -> superverse.v2.ListTeamSpacesResponse
-	86,  // 580: superverse.v2.TeamSpaceService.GetTeamSpace:output_type -> superverse.v2.GetTeamSpaceResponse
-	88,  // 581: superverse.v2.TeamSpaceService.RenameTeamSpace:output_type -> superverse.v2.RenameTeamSpaceResponse
-	90,  // 582: superverse.v2.TeamSpaceService.DeleteTeamSpace:output_type -> superverse.v2.DeleteTeamSpaceResponse
-	92,  // 583: superverse.v2.TeamSpaceService.GetTeamSpaceOverview:output_type -> superverse.v2.GetTeamSpaceOverviewResponse
-	96,  // 584: superverse.v2.TeamSpaceMemberService.ListTeamSpaceMembers:output_type -> superverse.v2.ListTeamSpaceMembersResponse
-	98,  // 585: superverse.v2.TeamSpaceMemberService.AddTeamSpaceMember:output_type -> superverse.v2.AddTeamSpaceMemberResponse
-	100, // 586: superverse.v2.TeamSpaceMemberService.SetTeamSpaceMemberRole:output_type -> superverse.v2.SetTeamSpaceMemberRoleResponse
-	102, // 587: superverse.v2.TeamSpaceMemberService.RemoveTeamSpaceMember:output_type -> superverse.v2.RemoveTeamSpaceMemberResponse
-	106, // 588: superverse.v2.TeamSpaceConnectionService.ListConnectorCatalog:output_type -> superverse.v2.ListConnectorCatalogResponse
-	111, // 589: superverse.v2.TeamSpaceConnectionService.ListTeamSpaceConnections:output_type -> superverse.v2.ListTeamSpaceConnectionsResponse
-	113, // 590: superverse.v2.TeamSpaceConnectionService.GetTeamSpaceConnection:output_type -> superverse.v2.GetTeamSpaceConnectionResponse
-	115, // 591: superverse.v2.TeamSpaceConnectionService.CreateTeamSpaceConnection:output_type -> superverse.v2.CreateTeamSpaceConnectionResponse
-	117, // 592: superverse.v2.TeamSpaceConnectionService.UpdateTeamSpaceConnection:output_type -> superverse.v2.UpdateTeamSpaceConnectionResponse
-	119, // 593: superverse.v2.TeamSpaceConnectionService.DeleteTeamSpaceConnection:output_type -> superverse.v2.DeleteTeamSpaceConnectionResponse
-	122, // 594: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionOAuth:output_type -> superverse.v2.StartTeamSpaceConnectionOAuthResponse
-	124, // 595: superverse.v2.TeamSpaceConnectionService.CompleteTeamSpaceConnectionOAuth:output_type -> superverse.v2.CompleteTeamSpaceConnectionOAuthResponse
-	126, // 596: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionUiSession:output_type -> superverse.v2.StartTeamSpaceConnectionUiSessionResponse
-	128, // 597: superverse.v2.TeamSpaceConnectionService.InvokeTeamSpaceConnectionCommand:output_type -> superverse.v2.InvokeTeamSpaceConnectionCommandResponse
-	130, // 598: superverse.v2.ProjectService.CreateProject:output_type -> superverse.v2.CreateProjectResponse
-	132, // 599: superverse.v2.ProjectService.ListProjects:output_type -> superverse.v2.ListProjectsResponse
-	134, // 600: superverse.v2.ProjectService.GetProject:output_type -> superverse.v2.GetProjectResponse
-	136, // 601: superverse.v2.ProjectService.DeleteProject:output_type -> superverse.v2.DeleteProjectResponse
-	138, // 602: superverse.v2.ProjectService.WatchProject:output_type -> superverse.v2.WatchProjectResponse
-	146, // 603: superverse.v2.ProjectService.GetProjectConfiguration:output_type -> superverse.v2.GetProjectConfigurationResponse
-	148, // 604: superverse.v2.ProjectService.ValidateProjectConfiguration:output_type -> superverse.v2.ValidateProjectConfigurationResponse
-	150, // 605: superverse.v2.ProjectService.RemoveLive:output_type -> superverse.v2.RemoveLiveResponse
-	140, // 606: superverse.v2.ProjectService.ListEnvironmentEvents:output_type -> superverse.v2.ListEnvironmentEventsResponse
-	143, // 607: superverse.v2.ProjectService.ListRecentTriggerEvents:output_type -> superverse.v2.ListRecentTriggerEventsResponse
-	166, // 608: superverse.v2.ProjectMemberService.ListProjectMembers:output_type -> superverse.v2.ListProjectMembersResponse
-	168, // 609: superverse.v2.ProjectMemberService.AddProjectMember:output_type -> superverse.v2.AddProjectMemberResponse
-	170, // 610: superverse.v2.ProjectMemberService.SetProjectMemberRole:output_type -> superverse.v2.SetProjectMemberRoleResponse
-	172, // 611: superverse.v2.ProjectMemberService.RemoveProjectMember:output_type -> superverse.v2.RemoveProjectMemberResponse
-	175, // 612: superverse.v2.SessionService.GetSession:output_type -> superverse.v2.GetSessionResponse
-	177, // 613: superverse.v2.SessionService.WatchSession:output_type -> superverse.v2.WatchSessionResponse
-	181, // 614: superverse.v2.SessionService.ListArchivedMessages:output_type -> superverse.v2.ListArchivedMessagesResponse
-	180, // 615: superverse.v2.SessionService.RenewWorkspace:output_type -> superverse.v2.RenewWorkspaceResponse
-	187, // 616: superverse.v2.RemoteAgentService.CreateRemoteAgentPairing:output_type -> superverse.v2.CreateRemoteAgentPairingResponse
-	189, // 617: superverse.v2.RemoteAgentService.ListRemoteAgentConnections:output_type -> superverse.v2.ListRemoteAgentConnectionsResponse
-	191, // 618: superverse.v2.RemoteAgentService.RevokeRemoteAgentConnection:output_type -> superverse.v2.RevokeRemoteAgentConnectionResponse
-	193, // 619: superverse.v2.RemoteAgentService.SetSessionExecutor:output_type -> superverse.v2.SetSessionExecutorResponse
-	199, // 620: superverse.v2.AgentService.SendMessage:output_type -> superverse.v2.SendMessageResponse
-	201, // 621: superverse.v2.AgentService.AnswerQuestions:output_type -> superverse.v2.AnswerQuestionsResponse
-	203, // 622: superverse.v2.AgentService.UpdateSessionModel:output_type -> superverse.v2.UpdateSessionModelResponse
-	205, // 623: superverse.v2.AgentService.DeleteQueuedMessage:output_type -> superverse.v2.DeleteQueuedMessageResponse
-	207, // 624: superverse.v2.AgentService.SteerQueuedMessage:output_type -> superverse.v2.SteerQueuedMessageResponse
-	209, // 625: superverse.v2.AgentService.ResolveToolApproval:output_type -> superverse.v2.ResolveToolApprovalResponse
-	211, // 626: superverse.v2.AgentService.InterruptAgent:output_type -> superverse.v2.InterruptAgentResponse
-	215, // 627: superverse.v2.AgentService.ListMockScenarios:output_type -> superverse.v2.ListMockScenariosResponse
-	213, // 628: superverse.v2.AgentService.GetFlowDesign:output_type -> superverse.v2.GetFlowDesignResponse
-	263, // 629: superverse.v2.PreviewService.GetPreview:output_type -> superverse.v2.GetPreviewResponse
-	265, // 630: superverse.v2.PreviewService.StartPreview:output_type -> superverse.v2.StartPreviewResponse
-	267, // 631: superverse.v2.PreviewService.StopPreview:output_type -> superverse.v2.StopPreviewResponse
-	269, // 632: superverse.v2.PreviewService.PreparePreviewSource:output_type -> superverse.v2.PreparePreviewSourceResponse
-	271, // 633: superverse.v2.PreviewService.GetPreviewDefinitions:output_type -> superverse.v2.GetPreviewDefinitionsResponse
-	273, // 634: superverse.v2.PreviewService.UpdatePreviewAutoDeploy:output_type -> superverse.v2.UpdatePreviewAutoDeployResponse
-	280, // 635: superverse.v2.ReleaseService.ListReleaseCandidates:output_type -> superverse.v2.ListReleaseCandidatesResponse
-	282, // 636: superverse.v2.ReleaseService.PrepareRelease:output_type -> superverse.v2.PrepareReleaseResponse
-	284, // 637: superverse.v2.ReleaseService.StartReleaseBuild:output_type -> superverse.v2.StartReleaseBuildResponse
-	286, // 638: superverse.v2.ReleaseService.RecoverReleaseBuild:output_type -> superverse.v2.RecoverReleaseBuildResponse
-	292, // 639: superverse.v2.ReleaseService.ListReleases:output_type -> superverse.v2.ListReleasesResponse
-	304, // 640: superverse.v2.ReleaseService.DeriveLiveConfiguration:output_type -> superverse.v2.DeriveLiveConfigurationResponse
-	294, // 641: superverse.v2.ReleaseService.GetRelease:output_type -> superverse.v2.GetReleaseResponse
-	296, // 642: superverse.v2.ReleaseService.WatchRelease:output_type -> superverse.v2.WatchReleaseResponse
-	288, // 643: superverse.v2.ReleaseService.CancelReleaseBuild:output_type -> superverse.v2.CancelReleaseBuildResponse
-	290, // 644: superverse.v2.ReleaseService.GetReleaseBuildLog:output_type -> superverse.v2.GetReleaseBuildLogResponse
-	306, // 645: superverse.v2.DeploymentService.StartDeployment:output_type -> superverse.v2.StartDeploymentResponse
-	310, // 646: superverse.v2.DeploymentService.GetDeployment:output_type -> superverse.v2.GetDeploymentResponse
-	312, // 647: superverse.v2.DeploymentService.ListDeployments:output_type -> superverse.v2.ListDeploymentsResponse
-	314, // 648: superverse.v2.DeploymentService.WatchDeployment:output_type -> superverse.v2.WatchDeploymentResponse
-	308, // 649: superverse.v2.DeploymentService.CancelDeployment:output_type -> superverse.v2.CancelDeploymentResponse
-	317, // 650: superverse.v2.FlowRunService.GetFlowDefinitions:output_type -> superverse.v2.GetFlowDefinitionsResponse
-	319, // 651: superverse.v2.FlowRunService.GetFlowCatalog:output_type -> superverse.v2.GetFlowCatalogResponse
-	321, // 652: superverse.v2.FlowRunService.SearchFlows:output_type -> superverse.v2.SearchFlowsResponse
-	323, // 653: superverse.v2.FlowRunService.GetFlowDisplay:output_type -> superverse.v2.GetFlowDisplayResponse
-	325, // 654: superverse.v2.FlowRunService.UpdateFlowDisplayField:output_type -> superverse.v2.UpdateFlowDisplayFieldResponse
-	327, // 655: superverse.v2.FlowRunService.InvokeFlowAction:output_type -> superverse.v2.InvokeFlowActionResponse
-	329, // 656: superverse.v2.FlowRunService.StartFlow:output_type -> superverse.v2.StartFlowResponse
-	331, // 657: superverse.v2.FlowRunService.RecoverFlowStart:output_type -> superverse.v2.RecoverFlowStartResponse
-	333, // 658: superverse.v2.FlowDiagnosticsService.GetFlowSummary:output_type -> superverse.v2.GetFlowSummaryResponse
-	335, // 659: superverse.v2.FlowDiagnosticsService.GetFlowState:output_type -> superverse.v2.GetFlowStateResponse
-	337, // 660: superverse.v2.FlowDiagnosticsService.GetFlowHistory:output_type -> superverse.v2.GetFlowHistoryResponse
-	339, // 661: superverse.v2.FlowDiagnosticsService.WaitFlowHistory:output_type -> superverse.v2.WaitFlowHistoryResponse
-	341, // 662: superverse.v2.FlowDiagnosticsService.ReadFlowStream:output_type -> superverse.v2.ReadFlowStreamResponse
-	343, // 663: superverse.v2.FlowDiagnosticsService.LoadFlowBlobs:output_type -> superverse.v2.LoadFlowBlobsResponse
-	345, // 664: superverse.v2.FlowDiagnosticsService.StopFlow:output_type -> superverse.v2.StopFlowResponse
-	347, // 665: superverse.v2.FlowDiagnosticsService.DeleteFlowChannelMessage:output_type -> superverse.v2.DeleteFlowChannelMessageResponse
-	349, // 666: superverse.v2.FlowDiagnosticsService.TimeTravelFlow:output_type -> superverse.v2.TimeTravelFlowResponse
-	351, // 667: superverse.v2.ConnectorService.ListConnections:output_type -> superverse.v2.ListConnectionsResponse
-	353, // 668: superverse.v2.ConnectorService.SelectTeamSpaceConnection:output_type -> superverse.v2.SelectTeamSpaceConnectionResponse
-	355, // 669: superverse.v2.ConnectorService.ReleaseUnusedConnections:output_type -> superverse.v2.ReleaseUnusedConnectionsResponse
-	357, // 670: superverse.v2.ConnectorService.StartConnectorUiSession:output_type -> superverse.v2.StartConnectorUiSessionResponse
-	359, // 671: superverse.v2.ConnectorService.InvokeProviderCommand:output_type -> superverse.v2.InvokeProviderCommandResponse
-	361, // 672: superverse.v2.ConnectorService.SaveTriggerBinding:output_type -> superverse.v2.SaveTriggerBindingResponse
-	363, // 673: superverse.v2.ConnectorService.SaveOperationConfiguration:output_type -> superverse.v2.SaveOperationConfigurationResponse
-	365, // 674: superverse.v2.ApplicationEnvironmentService.GetApplicationEnvironment:output_type -> superverse.v2.GetApplicationEnvironmentResponse
-	367, // 675: superverse.v2.ApplicationEnvironmentService.SaveApplicationEnvironment:output_type -> superverse.v2.SaveApplicationEnvironmentResponse
-	574, // [574:676] is the sub-list for method output_type
-	472, // [472:574] is the sub-list for method input_type
-	472, // [472:472] is the sub-list for extension type_name
-	472, // [472:472] is the sub-list for extension extendee
-	0,   // [0:472] is the sub-list for field type_name
+	232, // 266: superverse.v2.AgentStartingExample.first_build:type_name -> superverse.v2.AgentStartingExampleBuild
+	50,  // 267: superverse.v2.AgentBackgroundCommand.status:type_name -> superverse.v2.AgentBackgroundCommand.Status
+	51,  // 268: superverse.v2.AgentBackgroundCommand.end_reason:type_name -> superverse.v2.AgentBackgroundCommand.EndReason
+	52,  // 269: superverse.v2.AgentSubagent.kind:type_name -> superverse.v2.AgentSubagent.Kind
+	53,  // 270: superverse.v2.AgentSubagent.status:type_name -> superverse.v2.AgentSubagent.Status
+	255, // 271: superverse.v2.AgentPendingUserInput.questions:type_name -> superverse.v2.AgentUserInputQuestion
+	54,  // 272: superverse.v2.AgentPendingUserInput.kind:type_name -> superverse.v2.AgentPendingUserInput.Kind
+	239, // 273: superverse.v2.AgentPendingUserInput.requirements:type_name -> superverse.v2.AgentRequirements
+	252, // 274: superverse.v2.AgentRequirements.features:type_name -> superverse.v2.AgentRequirementFeature
+	253, // 275: superverse.v2.AgentRequirements.connections:type_name -> superverse.v2.AgentRequirementConnection
+	243, // 276: superverse.v2.AgentRequirements.design:type_name -> superverse.v2.AgentFlowDesignReference
+	252, // 277: superverse.v2.AgentRequirementsDraft.features:type_name -> superverse.v2.AgentRequirementFeature
+	241, // 278: superverse.v2.AgentRequirementsDraft.connections:type_name -> superverse.v2.AgentRequirementsDraftConnection
+	242, // 279: superverse.v2.AgentRequirementsDraft.flows:type_name -> superverse.v2.AgentRequirementsDraftFlow
+	245, // 280: superverse.v2.AgentFlowDesign.flows:type_name -> superverse.v2.AgentFlowDesignFlow
+	246, // 281: superverse.v2.AgentFlowDesignFlow.steps:type_name -> superverse.v2.AgentFlowDesignStep
+	249, // 282: superverse.v2.AgentFlowDesignFlow.channels:type_name -> superverse.v2.AgentFlowDesignChannel
+	250, // 283: superverse.v2.AgentFlowDesignFlow.actions:type_name -> superverse.v2.AgentFlowDesignAction
+	251, // 284: superverse.v2.AgentFlowDesignFlow.attributes:type_name -> superverse.v2.AgentFlowDesignAttribute
+	247, // 285: superverse.v2.AgentFlowDesignStep.waits_for:type_name -> superverse.v2.AgentFlowDesignWait
+	248, // 286: superverse.v2.AgentFlowDesignStep.next:type_name -> superverse.v2.AgentFlowDesignTransition
+	55,  // 287: superverse.v2.AgentFlowDesignWait.kind:type_name -> superverse.v2.AgentFlowDesignWait.Kind
+	56,  // 288: superverse.v2.AgentFlowDesignTransition.end:type_name -> superverse.v2.AgentFlowDesignTransition.End
+	57,  // 289: superverse.v2.AgentRequirementConnection.status:type_name -> superverse.v2.AgentRequirementConnection.Status
+	239, // 290: superverse.v2.AgentConfirmedRequirements.spec:type_name -> superverse.v2.AgentRequirements
+	222, // 291: superverse.v2.AgentConfirmedRequirements.confirmed_by:type_name -> superverse.v2.Actor
+	256, // 292: superverse.v2.AgentUserInputQuestion.options:type_name -> superverse.v2.AgentUserInputOption
+	259, // 293: superverse.v2.AgentTodoList.items:type_name -> superverse.v2.AgentTodoItem
+	58,  // 294: superverse.v2.AgentTodoItem.status:type_name -> superverse.v2.AgentTodoItem.Status
+	59,  // 295: superverse.v2.AgentEvent.kind:type_name -> superverse.v2.AgentEvent.Kind
+	261, // 296: superverse.v2.AgentEvent.input_consumption:type_name -> superverse.v2.AgentInputConsumption
+	257, // 297: superverse.v2.AgentAnswerQuestionsInput.answers:type_name -> superverse.v2.AgentUserInputAnswer
+	61,  // 298: superverse.v2.GetPreviewRequest.caller:type_name -> superverse.v2.CallerContext
+	275, // 299: superverse.v2.GetPreviewResponse.preview:type_name -> superverse.v2.PreviewSnapshot
+	61,  // 300: superverse.v2.StartPreviewRequest.caller:type_name -> superverse.v2.CallerContext
+	275, // 301: superverse.v2.StartPreviewResponse.preview:type_name -> superverse.v2.PreviewSnapshot
+	61,  // 302: superverse.v2.StopPreviewRequest.caller:type_name -> superverse.v2.CallerContext
+	275, // 303: superverse.v2.StopPreviewResponse.preview:type_name -> superverse.v2.PreviewSnapshot
+	61,  // 304: superverse.v2.PreparePreviewSourceRequest.caller:type_name -> superverse.v2.CallerContext
+	61,  // 305: superverse.v2.GetPreviewDefinitionsRequest.caller:type_name -> superverse.v2.CallerContext
+	275, // 306: superverse.v2.GetPreviewDefinitionsResponse.preview:type_name -> superverse.v2.PreviewSnapshot
+	66,  // 307: superverse.v2.GetPreviewDefinitionsResponse.flow_definitions:type_name -> superverse.v2.FlowDefinition
+	61,  // 308: superverse.v2.UpdatePreviewAutoDeployRequest.caller:type_name -> superverse.v2.CallerContext
+	23,  // 309: superverse.v2.PreviewSnapshot.status:type_name -> superverse.v2.PreviewStatus
+	63,  // 310: superverse.v2.PreviewSnapshot.failure:type_name -> superverse.v2.Failure
+	279, // 311: superverse.v2.PreviewSnapshot.prepared_source:type_name -> superverse.v2.PreparedPreviewSourceSnapshot
+	278, // 312: superverse.v2.PreviewSnapshot.automatic_deployment:type_name -> superverse.v2.PreviewDeploymentSnapshot
+	163, // 313: superverse.v2.PreviewSnapshot.configuration_gaps:type_name -> superverse.v2.ConfigurationRequirementGap
+	65,  // 314: superverse.v2.PreviewSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
+	276, // 315: superverse.v2.PreviewSnapshot.applied_configuration:type_name -> superverse.v2.AppliedPreviewConfiguration
+	277, // 316: superverse.v2.PreviewSnapshot.recent_starts:type_name -> superverse.v2.PreviewStartRecord
+	62,  // 317: superverse.v2.PreviewSnapshot.serving_version:type_name -> superverse.v2.CommitVersion
+	377, // 318: superverse.v2.AppliedPreviewConfiguration.applied_at:type_name -> google.protobuf.Timestamp
+	377, // 319: superverse.v2.PreviewStartRecord.admitted_at:type_name -> google.protobuf.Timestamp
+	377, // 320: superverse.v2.PreviewStartRecord.ended_at:type_name -> google.protobuf.Timestamp
+	2,   // 321: superverse.v2.PreviewStartRecord.outcome:type_name -> superverse.v2.StartOutcome
+	65,  // 322: superverse.v2.PreviewStartRecord.phase_timings:type_name -> superverse.v2.PhaseTiming
+	62,  // 323: superverse.v2.PreviewStartRecord.version:type_name -> superverse.v2.CommitVersion
+	22,  // 324: superverse.v2.PreviewDeploymentSnapshot.status:type_name -> superverse.v2.PreviewDeploymentStatus
+	63,  // 325: superverse.v2.PreviewDeploymentSnapshot.failure:type_name -> superverse.v2.Failure
+	377, // 326: superverse.v2.PreviewDeploymentSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	24,  // 327: superverse.v2.PreparedPreviewSourceSnapshot.status:type_name -> superverse.v2.PreviewSourceStatus
+	68,  // 328: superverse.v2.PreparedPreviewSourceSnapshot.definitions:type_name -> superverse.v2.ObjectReference
+	63,  // 329: superverse.v2.PreparedPreviewSourceSnapshot.failure:type_name -> superverse.v2.Failure
+	62,  // 330: superverse.v2.PreparedPreviewSourceSnapshot.version:type_name -> superverse.v2.CommitVersion
+	61,  // 331: superverse.v2.ListReleaseCandidatesRequest.caller:type_name -> superverse.v2.CallerContext
+	298, // 332: superverse.v2.ListReleaseCandidatesResponse.candidates:type_name -> superverse.v2.ReleaseCandidate
+	61,  // 333: superverse.v2.PrepareReleaseRequest.caller:type_name -> superverse.v2.CallerContext
+	61,  // 334: superverse.v2.StartReleaseBuildRequest.caller:type_name -> superverse.v2.CallerContext
+	61,  // 335: superverse.v2.RecoverReleaseBuildRequest.caller:type_name -> superverse.v2.CallerContext
+	61,  // 336: superverse.v2.CancelReleaseBuildRequest.caller:type_name -> superverse.v2.CallerContext
+	61,  // 337: superverse.v2.GetReleaseBuildLogRequest.caller:type_name -> superverse.v2.CallerContext
+	25,  // 338: superverse.v2.ListReleasesRequest.statuses:type_name -> superverse.v2.ReleaseStatus
+	61,  // 339: superverse.v2.ListReleasesRequest.caller:type_name -> superverse.v2.CallerContext
+	299, // 340: superverse.v2.ListReleasesResponse.releases:type_name -> superverse.v2.ReleaseSnapshot
+	61,  // 341: superverse.v2.GetReleaseRequest.caller:type_name -> superverse.v2.CallerContext
+	299, // 342: superverse.v2.GetReleaseResponse.release:type_name -> superverse.v2.ReleaseSnapshot
+	66,  // 343: superverse.v2.GetReleaseResponse.flow_definitions:type_name -> superverse.v2.FlowDefinition
+	61,  // 344: superverse.v2.WatchReleaseRequest.caller:type_name -> superverse.v2.CallerContext
+	299, // 345: superverse.v2.WatchReleaseResponse.snapshot:type_name -> superverse.v2.ReleaseSnapshot
+	64,  // 346: superverse.v2.WatchReleaseResponse.progress:type_name -> superverse.v2.ResourceProgress
+	377, // 347: superverse.v2.ReleaseCandidate.committed_at:type_name -> google.protobuf.Timestamp
+	62,  // 348: superverse.v2.ReleaseCandidate.version:type_name -> superverse.v2.CommitVersion
+	25,  // 349: superverse.v2.ReleaseSnapshot.status:type_name -> superverse.v2.ReleaseStatus
+	63,  // 350: superverse.v2.ReleaseSnapshot.failure:type_name -> superverse.v2.Failure
+	377, // 351: superverse.v2.ReleaseSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	300, // 352: superverse.v2.ReleaseSnapshot.prepared_source:type_name -> superverse.v2.PreparedReleaseSourceSnapshot
+	301, // 353: superverse.v2.ReleaseSnapshot.build_revisions:type_name -> superverse.v2.ReleaseBuildRevisionSnapshot
+	25,  // 354: superverse.v2.PreparedReleaseSourceSnapshot.status:type_name -> superverse.v2.ReleaseStatus
+	67,  // 355: superverse.v2.PreparedReleaseSourceSnapshot.app_manifest:type_name -> superverse.v2.AppManifestSnapshot
+	63,  // 356: superverse.v2.PreparedReleaseSourceSnapshot.failure:type_name -> superverse.v2.Failure
+	65,  // 357: superverse.v2.PreparedReleaseSourceSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
+	62,  // 358: superverse.v2.PreparedReleaseSourceSnapshot.version:type_name -> superverse.v2.CommitVersion
+	25,  // 359: superverse.v2.ReleaseBuildRevisionSnapshot.status:type_name -> superverse.v2.ReleaseStatus
+	63,  // 360: superverse.v2.ReleaseBuildRevisionSnapshot.failure:type_name -> superverse.v2.Failure
+	26,  // 361: superverse.v2.ReleaseBuildRevisionSnapshot.auto_deploy_status:type_name -> superverse.v2.AutoDeployStatus
+	63,  // 362: superverse.v2.ReleaseBuildRevisionSnapshot.auto_deploy_failure:type_name -> superverse.v2.Failure
+	377, // 363: superverse.v2.ReleaseBuildRevisionSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	65,  // 364: superverse.v2.ReleaseBuildRevisionSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
+	303, // 365: superverse.v2.ReleaseBuildRevisionSnapshot.preview_validation:type_name -> superverse.v2.PreviewValidation
+	302, // 366: superverse.v2.ReleaseBuildRevisionSnapshot.cancellation:type_name -> superverse.v2.Cancellation
+	377, // 367: superverse.v2.Cancellation.requested_at:type_name -> google.protobuf.Timestamp
+	60,  // 368: superverse.v2.PreviewValidation.kind:type_name -> superverse.v2.PreviewValidation.Kind
+	377, // 369: superverse.v2.PreviewValidation.started_at:type_name -> google.protobuf.Timestamp
+	61,  // 370: superverse.v2.DeriveLiveConfigurationRequest.caller:type_name -> superverse.v2.CallerContext
+	160, // 371: superverse.v2.DeriveLiveConfigurationResponse.configuration:type_name -> superverse.v2.ProjectConfigurationSnapshot
+	61,  // 372: superverse.v2.StartDeploymentRequest.caller:type_name -> superverse.v2.CallerContext
+	61,  // 373: superverse.v2.CancelDeploymentRequest.caller:type_name -> superverse.v2.CallerContext
+	61,  // 374: superverse.v2.GetDeploymentRequest.caller:type_name -> superverse.v2.CallerContext
+	316, // 375: superverse.v2.GetDeploymentResponse.deployment:type_name -> superverse.v2.DeploymentSnapshot
+	27,  // 376: superverse.v2.ListDeploymentsRequest.statuses:type_name -> superverse.v2.DeploymentStatus
+	61,  // 377: superverse.v2.ListDeploymentsRequest.caller:type_name -> superverse.v2.CallerContext
+	316, // 378: superverse.v2.ListDeploymentsResponse.deployments:type_name -> superverse.v2.DeploymentSnapshot
+	61,  // 379: superverse.v2.WatchDeploymentRequest.caller:type_name -> superverse.v2.CallerContext
+	316, // 380: superverse.v2.WatchDeploymentResponse.snapshot:type_name -> superverse.v2.DeploymentSnapshot
+	64,  // 381: superverse.v2.WatchDeploymentResponse.progress:type_name -> superverse.v2.ResourceProgress
+	27,  // 382: superverse.v2.DeploymentSnapshot.status:type_name -> superverse.v2.DeploymentStatus
+	63,  // 383: superverse.v2.DeploymentSnapshot.failure:type_name -> superverse.v2.Failure
+	377, // 384: superverse.v2.DeploymentSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	65,  // 385: superverse.v2.DeploymentSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
+	62,  // 386: superverse.v2.DeploymentSnapshot.version:type_name -> superverse.v2.CommitVersion
+	302, // 387: superverse.v2.DeploymentSnapshot.cancellation:type_name -> superverse.v2.Cancellation
+	370, // 388: superverse.v2.GetFlowDefinitionsRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 389: superverse.v2.GetFlowDefinitionsRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 390: superverse.v2.GetFlowDefinitionsResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 391: superverse.v2.GetFlowCatalogRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 392: superverse.v2.GetFlowCatalogRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 393: superverse.v2.GetFlowCatalogResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 394: superverse.v2.SearchFlowsRequest.context:type_name -> superverse.v2.FlowApiContext
+	372, // 395: superverse.v2.SearchFlowsRequest.filters:type_name -> superverse.v2.FlowSearchFilter
+	61,  // 396: superverse.v2.SearchFlowsRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 397: superverse.v2.SearchFlowsResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 398: superverse.v2.GetFlowDisplayRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 399: superverse.v2.GetFlowDisplayRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 400: superverse.v2.GetFlowDisplayResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 401: superverse.v2.UpdateFlowDisplayFieldRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 402: superverse.v2.UpdateFlowDisplayFieldRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 403: superverse.v2.UpdateFlowDisplayFieldResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 404: superverse.v2.InvokeFlowActionRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 405: superverse.v2.InvokeFlowActionRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 406: superverse.v2.InvokeFlowActionResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 407: superverse.v2.StartFlowRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 408: superverse.v2.StartFlowRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 409: superverse.v2.StartFlowResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 410: superverse.v2.RecoverFlowStartRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 411: superverse.v2.RecoverFlowStartRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 412: superverse.v2.RecoverFlowStartResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 413: superverse.v2.GetFlowSummaryRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 414: superverse.v2.GetFlowSummaryRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 415: superverse.v2.GetFlowSummaryResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 416: superverse.v2.GetFlowStateRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 417: superverse.v2.GetFlowStateRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 418: superverse.v2.GetFlowStateResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 419: superverse.v2.GetFlowHistoryRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 420: superverse.v2.GetFlowHistoryRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 421: superverse.v2.GetFlowHistoryResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 422: superverse.v2.WaitFlowHistoryRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 423: superverse.v2.WaitFlowHistoryRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 424: superverse.v2.WaitFlowHistoryResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 425: superverse.v2.ReadFlowStreamRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 426: superverse.v2.ReadFlowStreamRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 427: superverse.v2.ReadFlowStreamResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 428: superverse.v2.LoadFlowBlobsRequest.context:type_name -> superverse.v2.FlowApiContext
+	373, // 429: superverse.v2.LoadFlowBlobsRequest.values:type_name -> superverse.v2.FlowBlobReference
+	61,  // 430: superverse.v2.LoadFlowBlobsRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 431: superverse.v2.LoadFlowBlobsResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 432: superverse.v2.StopFlowRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 433: superverse.v2.StopFlowRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 434: superverse.v2.StopFlowResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 435: superverse.v2.DeleteFlowChannelMessageRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 436: superverse.v2.DeleteFlowChannelMessageRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 437: superverse.v2.DeleteFlowChannelMessageResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 438: superverse.v2.TimeTravelFlowRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 439: superverse.v2.TimeTravelFlowRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 440: superverse.v2.TimeTravelFlowResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 441: superverse.v2.ListConnectionsRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 442: superverse.v2.ListConnectionsRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 443: superverse.v2.ListConnectionsResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 444: superverse.v2.SelectTeamSpaceConnectionRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 445: superverse.v2.SelectTeamSpaceConnectionRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 446: superverse.v2.SelectTeamSpaceConnectionResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 447: superverse.v2.ReleaseUnusedConnectionsRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 448: superverse.v2.ReleaseUnusedConnectionsRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 449: superverse.v2.ReleaseUnusedConnectionsResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 450: superverse.v2.StartConnectorUiSessionRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 451: superverse.v2.StartConnectorUiSessionRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 452: superverse.v2.StartConnectorUiSessionResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 453: superverse.v2.InvokeProviderCommandRequest.context:type_name -> superverse.v2.FlowApiContext
+	374, // 454: superverse.v2.InvokeProviderCommandRequest.parameters:type_name -> superverse.v2.InvokeProviderCommandRequest.ParametersEntry
+	61,  // 455: superverse.v2.InvokeProviderCommandRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 456: superverse.v2.InvokeProviderCommandResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 457: superverse.v2.SaveTriggerBindingRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 458: superverse.v2.SaveTriggerBindingRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 459: superverse.v2.SaveTriggerBindingResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 460: superverse.v2.SaveOperationConfigurationRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 461: superverse.v2.SaveOperationConfigurationRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 462: superverse.v2.SaveOperationConfigurationResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 463: superverse.v2.GetApplicationEnvironmentRequest.context:type_name -> superverse.v2.FlowApiContext
+	61,  // 464: superverse.v2.GetApplicationEnvironmentRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 465: superverse.v2.GetApplicationEnvironmentResponse.document:type_name -> superverse.v2.FlowApiDocument
+	370, // 466: superverse.v2.SaveApplicationEnvironmentRequest.context:type_name -> superverse.v2.FlowApiContext
+	375, // 467: superverse.v2.SaveApplicationEnvironmentRequest.values:type_name -> superverse.v2.SaveApplicationEnvironmentRequest.ValuesEntry
+	376, // 468: superverse.v2.SaveApplicationEnvironmentRequest.secrets:type_name -> superverse.v2.SaveApplicationEnvironmentRequest.SecretsEntry
+	61,  // 469: superverse.v2.SaveApplicationEnvironmentRequest.caller:type_name -> superverse.v2.CallerContext
+	371, // 470: superverse.v2.SaveApplicationEnvironmentResponse.document:type_name -> superverse.v2.FlowApiDocument
+	3,   // 471: superverse.v2.FlowApiTarget.scope:type_name -> superverse.v2.ProjectScope
+	369, // 472: superverse.v2.FlowApiContext.target:type_name -> superverse.v2.FlowApiTarget
+	71,  // 473: superverse.v2.AccountService.RegisterAccount:input_type -> superverse.v2.RegisterAccountRequest
+	73,  // 474: superverse.v2.AccountService.Login:input_type -> superverse.v2.LoginRequest
+	75,  // 475: superverse.v2.AccountService.Logout:input_type -> superverse.v2.LogoutRequest
+	77,  // 476: superverse.v2.AccountService.GetCurrentAccount:input_type -> superverse.v2.GetCurrentAccountRequest
+	81,  // 477: superverse.v2.TeamSpaceService.CreateTeamSpace:input_type -> superverse.v2.CreateTeamSpaceRequest
+	83,  // 478: superverse.v2.TeamSpaceService.ListTeamSpaces:input_type -> superverse.v2.ListTeamSpacesRequest
+	85,  // 479: superverse.v2.TeamSpaceService.GetTeamSpace:input_type -> superverse.v2.GetTeamSpaceRequest
+	87,  // 480: superverse.v2.TeamSpaceService.RenameTeamSpace:input_type -> superverse.v2.RenameTeamSpaceRequest
+	89,  // 481: superverse.v2.TeamSpaceService.DeleteTeamSpace:input_type -> superverse.v2.DeleteTeamSpaceRequest
+	91,  // 482: superverse.v2.TeamSpaceService.GetTeamSpaceOverview:input_type -> superverse.v2.GetTeamSpaceOverviewRequest
+	95,  // 483: superverse.v2.TeamSpaceMemberService.ListTeamSpaceMembers:input_type -> superverse.v2.ListTeamSpaceMembersRequest
+	97,  // 484: superverse.v2.TeamSpaceMemberService.AddTeamSpaceMember:input_type -> superverse.v2.AddTeamSpaceMemberRequest
+	99,  // 485: superverse.v2.TeamSpaceMemberService.SetTeamSpaceMemberRole:input_type -> superverse.v2.SetTeamSpaceMemberRoleRequest
+	101, // 486: superverse.v2.TeamSpaceMemberService.RemoveTeamSpaceMember:input_type -> superverse.v2.RemoveTeamSpaceMemberRequest
+	105, // 487: superverse.v2.TeamSpaceConnectionService.ListConnectorCatalog:input_type -> superverse.v2.ListConnectorCatalogRequest
+	110, // 488: superverse.v2.TeamSpaceConnectionService.ListTeamSpaceConnections:input_type -> superverse.v2.ListTeamSpaceConnectionsRequest
+	112, // 489: superverse.v2.TeamSpaceConnectionService.GetTeamSpaceConnection:input_type -> superverse.v2.GetTeamSpaceConnectionRequest
+	114, // 490: superverse.v2.TeamSpaceConnectionService.CreateTeamSpaceConnection:input_type -> superverse.v2.CreateTeamSpaceConnectionRequest
+	116, // 491: superverse.v2.TeamSpaceConnectionService.UpdateTeamSpaceConnection:input_type -> superverse.v2.UpdateTeamSpaceConnectionRequest
+	118, // 492: superverse.v2.TeamSpaceConnectionService.DeleteTeamSpaceConnection:input_type -> superverse.v2.DeleteTeamSpaceConnectionRequest
+	120, // 493: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionOAuth:input_type -> superverse.v2.StartTeamSpaceConnectionOAuthRequest
+	123, // 494: superverse.v2.TeamSpaceConnectionService.CompleteTeamSpaceConnectionOAuth:input_type -> superverse.v2.CompleteTeamSpaceConnectionOAuthRequest
+	125, // 495: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionUiSession:input_type -> superverse.v2.StartTeamSpaceConnectionUiSessionRequest
+	127, // 496: superverse.v2.TeamSpaceConnectionService.InvokeTeamSpaceConnectionCommand:input_type -> superverse.v2.InvokeTeamSpaceConnectionCommandRequest
+	129, // 497: superverse.v2.ProjectService.CreateProject:input_type -> superverse.v2.CreateProjectRequest
+	131, // 498: superverse.v2.ProjectService.ListProjects:input_type -> superverse.v2.ListProjectsRequest
+	133, // 499: superverse.v2.ProjectService.GetProject:input_type -> superverse.v2.GetProjectRequest
+	135, // 500: superverse.v2.ProjectService.DeleteProject:input_type -> superverse.v2.DeleteProjectRequest
+	137, // 501: superverse.v2.ProjectService.WatchProject:input_type -> superverse.v2.WatchProjectRequest
+	145, // 502: superverse.v2.ProjectService.GetProjectConfiguration:input_type -> superverse.v2.GetProjectConfigurationRequest
+	147, // 503: superverse.v2.ProjectService.ValidateProjectConfiguration:input_type -> superverse.v2.ValidateProjectConfigurationRequest
+	149, // 504: superverse.v2.ProjectService.RemoveLive:input_type -> superverse.v2.RemoveLiveRequest
+	139, // 505: superverse.v2.ProjectService.ListEnvironmentEvents:input_type -> superverse.v2.ListEnvironmentEventsRequest
+	142, // 506: superverse.v2.ProjectService.ListRecentTriggerEvents:input_type -> superverse.v2.ListRecentTriggerEventsRequest
+	165, // 507: superverse.v2.ProjectMemberService.ListProjectMembers:input_type -> superverse.v2.ListProjectMembersRequest
+	167, // 508: superverse.v2.ProjectMemberService.AddProjectMember:input_type -> superverse.v2.AddProjectMemberRequest
+	169, // 509: superverse.v2.ProjectMemberService.SetProjectMemberRole:input_type -> superverse.v2.SetProjectMemberRoleRequest
+	171, // 510: superverse.v2.ProjectMemberService.RemoveProjectMember:input_type -> superverse.v2.RemoveProjectMemberRequest
+	174, // 511: superverse.v2.SessionService.GetSession:input_type -> superverse.v2.GetSessionRequest
+	176, // 512: superverse.v2.SessionService.WatchSession:input_type -> superverse.v2.WatchSessionRequest
+	178, // 513: superverse.v2.SessionService.ListArchivedMessages:input_type -> superverse.v2.ListArchivedMessagesRequest
+	179, // 514: superverse.v2.SessionService.RenewWorkspace:input_type -> superverse.v2.RenewWorkspaceRequest
+	186, // 515: superverse.v2.RemoteAgentService.CreateRemoteAgentPairing:input_type -> superverse.v2.CreateRemoteAgentPairingRequest
+	188, // 516: superverse.v2.RemoteAgentService.ListRemoteAgentConnections:input_type -> superverse.v2.ListRemoteAgentConnectionsRequest
+	190, // 517: superverse.v2.RemoteAgentService.RevokeRemoteAgentConnection:input_type -> superverse.v2.RevokeRemoteAgentConnectionRequest
+	192, // 518: superverse.v2.RemoteAgentService.SetSessionExecutor:input_type -> superverse.v2.SetSessionExecutorRequest
+	198, // 519: superverse.v2.AgentService.SendMessage:input_type -> superverse.v2.SendMessageRequest
+	200, // 520: superverse.v2.AgentService.AnswerQuestions:input_type -> superverse.v2.AnswerQuestionsRequest
+	202, // 521: superverse.v2.AgentService.UpdateSessionModel:input_type -> superverse.v2.UpdateSessionModelRequest
+	204, // 522: superverse.v2.AgentService.DeleteQueuedMessage:input_type -> superverse.v2.DeleteQueuedMessageRequest
+	206, // 523: superverse.v2.AgentService.SteerQueuedMessage:input_type -> superverse.v2.SteerQueuedMessageRequest
+	208, // 524: superverse.v2.AgentService.ResolveToolApproval:input_type -> superverse.v2.ResolveToolApprovalRequest
+	210, // 525: superverse.v2.AgentService.InterruptAgent:input_type -> superverse.v2.InterruptAgentRequest
+	214, // 526: superverse.v2.AgentService.ListMockScenarios:input_type -> superverse.v2.ListMockScenariosRequest
+	212, // 527: superverse.v2.AgentService.GetFlowDesign:input_type -> superverse.v2.GetFlowDesignRequest
+	263, // 528: superverse.v2.PreviewService.GetPreview:input_type -> superverse.v2.GetPreviewRequest
+	265, // 529: superverse.v2.PreviewService.StartPreview:input_type -> superverse.v2.StartPreviewRequest
+	267, // 530: superverse.v2.PreviewService.StopPreview:input_type -> superverse.v2.StopPreviewRequest
+	269, // 531: superverse.v2.PreviewService.PreparePreviewSource:input_type -> superverse.v2.PreparePreviewSourceRequest
+	271, // 532: superverse.v2.PreviewService.GetPreviewDefinitions:input_type -> superverse.v2.GetPreviewDefinitionsRequest
+	273, // 533: superverse.v2.PreviewService.UpdatePreviewAutoDeploy:input_type -> superverse.v2.UpdatePreviewAutoDeployRequest
+	280, // 534: superverse.v2.ReleaseService.ListReleaseCandidates:input_type -> superverse.v2.ListReleaseCandidatesRequest
+	282, // 535: superverse.v2.ReleaseService.PrepareRelease:input_type -> superverse.v2.PrepareReleaseRequest
+	284, // 536: superverse.v2.ReleaseService.StartReleaseBuild:input_type -> superverse.v2.StartReleaseBuildRequest
+	286, // 537: superverse.v2.ReleaseService.RecoverReleaseBuild:input_type -> superverse.v2.RecoverReleaseBuildRequest
+	292, // 538: superverse.v2.ReleaseService.ListReleases:input_type -> superverse.v2.ListReleasesRequest
+	304, // 539: superverse.v2.ReleaseService.DeriveLiveConfiguration:input_type -> superverse.v2.DeriveLiveConfigurationRequest
+	294, // 540: superverse.v2.ReleaseService.GetRelease:input_type -> superverse.v2.GetReleaseRequest
+	296, // 541: superverse.v2.ReleaseService.WatchRelease:input_type -> superverse.v2.WatchReleaseRequest
+	288, // 542: superverse.v2.ReleaseService.CancelReleaseBuild:input_type -> superverse.v2.CancelReleaseBuildRequest
+	290, // 543: superverse.v2.ReleaseService.GetReleaseBuildLog:input_type -> superverse.v2.GetReleaseBuildLogRequest
+	306, // 544: superverse.v2.DeploymentService.StartDeployment:input_type -> superverse.v2.StartDeploymentRequest
+	310, // 545: superverse.v2.DeploymentService.GetDeployment:input_type -> superverse.v2.GetDeploymentRequest
+	312, // 546: superverse.v2.DeploymentService.ListDeployments:input_type -> superverse.v2.ListDeploymentsRequest
+	314, // 547: superverse.v2.DeploymentService.WatchDeployment:input_type -> superverse.v2.WatchDeploymentRequest
+	308, // 548: superverse.v2.DeploymentService.CancelDeployment:input_type -> superverse.v2.CancelDeploymentRequest
+	317, // 549: superverse.v2.FlowRunService.GetFlowDefinitions:input_type -> superverse.v2.GetFlowDefinitionsRequest
+	319, // 550: superverse.v2.FlowRunService.GetFlowCatalog:input_type -> superverse.v2.GetFlowCatalogRequest
+	321, // 551: superverse.v2.FlowRunService.SearchFlows:input_type -> superverse.v2.SearchFlowsRequest
+	323, // 552: superverse.v2.FlowRunService.GetFlowDisplay:input_type -> superverse.v2.GetFlowDisplayRequest
+	325, // 553: superverse.v2.FlowRunService.UpdateFlowDisplayField:input_type -> superverse.v2.UpdateFlowDisplayFieldRequest
+	327, // 554: superverse.v2.FlowRunService.InvokeFlowAction:input_type -> superverse.v2.InvokeFlowActionRequest
+	329, // 555: superverse.v2.FlowRunService.StartFlow:input_type -> superverse.v2.StartFlowRequest
+	331, // 556: superverse.v2.FlowRunService.RecoverFlowStart:input_type -> superverse.v2.RecoverFlowStartRequest
+	333, // 557: superverse.v2.FlowDiagnosticsService.GetFlowSummary:input_type -> superverse.v2.GetFlowSummaryRequest
+	335, // 558: superverse.v2.FlowDiagnosticsService.GetFlowState:input_type -> superverse.v2.GetFlowStateRequest
+	337, // 559: superverse.v2.FlowDiagnosticsService.GetFlowHistory:input_type -> superverse.v2.GetFlowHistoryRequest
+	339, // 560: superverse.v2.FlowDiagnosticsService.WaitFlowHistory:input_type -> superverse.v2.WaitFlowHistoryRequest
+	341, // 561: superverse.v2.FlowDiagnosticsService.ReadFlowStream:input_type -> superverse.v2.ReadFlowStreamRequest
+	343, // 562: superverse.v2.FlowDiagnosticsService.LoadFlowBlobs:input_type -> superverse.v2.LoadFlowBlobsRequest
+	345, // 563: superverse.v2.FlowDiagnosticsService.StopFlow:input_type -> superverse.v2.StopFlowRequest
+	347, // 564: superverse.v2.FlowDiagnosticsService.DeleteFlowChannelMessage:input_type -> superverse.v2.DeleteFlowChannelMessageRequest
+	349, // 565: superverse.v2.FlowDiagnosticsService.TimeTravelFlow:input_type -> superverse.v2.TimeTravelFlowRequest
+	351, // 566: superverse.v2.ConnectorService.ListConnections:input_type -> superverse.v2.ListConnectionsRequest
+	353, // 567: superverse.v2.ConnectorService.SelectTeamSpaceConnection:input_type -> superverse.v2.SelectTeamSpaceConnectionRequest
+	355, // 568: superverse.v2.ConnectorService.ReleaseUnusedConnections:input_type -> superverse.v2.ReleaseUnusedConnectionsRequest
+	357, // 569: superverse.v2.ConnectorService.StartConnectorUiSession:input_type -> superverse.v2.StartConnectorUiSessionRequest
+	359, // 570: superverse.v2.ConnectorService.InvokeProviderCommand:input_type -> superverse.v2.InvokeProviderCommandRequest
+	361, // 571: superverse.v2.ConnectorService.SaveTriggerBinding:input_type -> superverse.v2.SaveTriggerBindingRequest
+	363, // 572: superverse.v2.ConnectorService.SaveOperationConfiguration:input_type -> superverse.v2.SaveOperationConfigurationRequest
+	365, // 573: superverse.v2.ApplicationEnvironmentService.GetApplicationEnvironment:input_type -> superverse.v2.GetApplicationEnvironmentRequest
+	367, // 574: superverse.v2.ApplicationEnvironmentService.SaveApplicationEnvironment:input_type -> superverse.v2.SaveApplicationEnvironmentRequest
+	72,  // 575: superverse.v2.AccountService.RegisterAccount:output_type -> superverse.v2.RegisterAccountResponse
+	74,  // 576: superverse.v2.AccountService.Login:output_type -> superverse.v2.LoginResponse
+	76,  // 577: superverse.v2.AccountService.Logout:output_type -> superverse.v2.LogoutResponse
+	78,  // 578: superverse.v2.AccountService.GetCurrentAccount:output_type -> superverse.v2.GetCurrentAccountResponse
+	82,  // 579: superverse.v2.TeamSpaceService.CreateTeamSpace:output_type -> superverse.v2.CreateTeamSpaceResponse
+	84,  // 580: superverse.v2.TeamSpaceService.ListTeamSpaces:output_type -> superverse.v2.ListTeamSpacesResponse
+	86,  // 581: superverse.v2.TeamSpaceService.GetTeamSpace:output_type -> superverse.v2.GetTeamSpaceResponse
+	88,  // 582: superverse.v2.TeamSpaceService.RenameTeamSpace:output_type -> superverse.v2.RenameTeamSpaceResponse
+	90,  // 583: superverse.v2.TeamSpaceService.DeleteTeamSpace:output_type -> superverse.v2.DeleteTeamSpaceResponse
+	92,  // 584: superverse.v2.TeamSpaceService.GetTeamSpaceOverview:output_type -> superverse.v2.GetTeamSpaceOverviewResponse
+	96,  // 585: superverse.v2.TeamSpaceMemberService.ListTeamSpaceMembers:output_type -> superverse.v2.ListTeamSpaceMembersResponse
+	98,  // 586: superverse.v2.TeamSpaceMemberService.AddTeamSpaceMember:output_type -> superverse.v2.AddTeamSpaceMemberResponse
+	100, // 587: superverse.v2.TeamSpaceMemberService.SetTeamSpaceMemberRole:output_type -> superverse.v2.SetTeamSpaceMemberRoleResponse
+	102, // 588: superverse.v2.TeamSpaceMemberService.RemoveTeamSpaceMember:output_type -> superverse.v2.RemoveTeamSpaceMemberResponse
+	106, // 589: superverse.v2.TeamSpaceConnectionService.ListConnectorCatalog:output_type -> superverse.v2.ListConnectorCatalogResponse
+	111, // 590: superverse.v2.TeamSpaceConnectionService.ListTeamSpaceConnections:output_type -> superverse.v2.ListTeamSpaceConnectionsResponse
+	113, // 591: superverse.v2.TeamSpaceConnectionService.GetTeamSpaceConnection:output_type -> superverse.v2.GetTeamSpaceConnectionResponse
+	115, // 592: superverse.v2.TeamSpaceConnectionService.CreateTeamSpaceConnection:output_type -> superverse.v2.CreateTeamSpaceConnectionResponse
+	117, // 593: superverse.v2.TeamSpaceConnectionService.UpdateTeamSpaceConnection:output_type -> superverse.v2.UpdateTeamSpaceConnectionResponse
+	119, // 594: superverse.v2.TeamSpaceConnectionService.DeleteTeamSpaceConnection:output_type -> superverse.v2.DeleteTeamSpaceConnectionResponse
+	122, // 595: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionOAuth:output_type -> superverse.v2.StartTeamSpaceConnectionOAuthResponse
+	124, // 596: superverse.v2.TeamSpaceConnectionService.CompleteTeamSpaceConnectionOAuth:output_type -> superverse.v2.CompleteTeamSpaceConnectionOAuthResponse
+	126, // 597: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionUiSession:output_type -> superverse.v2.StartTeamSpaceConnectionUiSessionResponse
+	128, // 598: superverse.v2.TeamSpaceConnectionService.InvokeTeamSpaceConnectionCommand:output_type -> superverse.v2.InvokeTeamSpaceConnectionCommandResponse
+	130, // 599: superverse.v2.ProjectService.CreateProject:output_type -> superverse.v2.CreateProjectResponse
+	132, // 600: superverse.v2.ProjectService.ListProjects:output_type -> superverse.v2.ListProjectsResponse
+	134, // 601: superverse.v2.ProjectService.GetProject:output_type -> superverse.v2.GetProjectResponse
+	136, // 602: superverse.v2.ProjectService.DeleteProject:output_type -> superverse.v2.DeleteProjectResponse
+	138, // 603: superverse.v2.ProjectService.WatchProject:output_type -> superverse.v2.WatchProjectResponse
+	146, // 604: superverse.v2.ProjectService.GetProjectConfiguration:output_type -> superverse.v2.GetProjectConfigurationResponse
+	148, // 605: superverse.v2.ProjectService.ValidateProjectConfiguration:output_type -> superverse.v2.ValidateProjectConfigurationResponse
+	150, // 606: superverse.v2.ProjectService.RemoveLive:output_type -> superverse.v2.RemoveLiveResponse
+	140, // 607: superverse.v2.ProjectService.ListEnvironmentEvents:output_type -> superverse.v2.ListEnvironmentEventsResponse
+	143, // 608: superverse.v2.ProjectService.ListRecentTriggerEvents:output_type -> superverse.v2.ListRecentTriggerEventsResponse
+	166, // 609: superverse.v2.ProjectMemberService.ListProjectMembers:output_type -> superverse.v2.ListProjectMembersResponse
+	168, // 610: superverse.v2.ProjectMemberService.AddProjectMember:output_type -> superverse.v2.AddProjectMemberResponse
+	170, // 611: superverse.v2.ProjectMemberService.SetProjectMemberRole:output_type -> superverse.v2.SetProjectMemberRoleResponse
+	172, // 612: superverse.v2.ProjectMemberService.RemoveProjectMember:output_type -> superverse.v2.RemoveProjectMemberResponse
+	175, // 613: superverse.v2.SessionService.GetSession:output_type -> superverse.v2.GetSessionResponse
+	177, // 614: superverse.v2.SessionService.WatchSession:output_type -> superverse.v2.WatchSessionResponse
+	181, // 615: superverse.v2.SessionService.ListArchivedMessages:output_type -> superverse.v2.ListArchivedMessagesResponse
+	180, // 616: superverse.v2.SessionService.RenewWorkspace:output_type -> superverse.v2.RenewWorkspaceResponse
+	187, // 617: superverse.v2.RemoteAgentService.CreateRemoteAgentPairing:output_type -> superverse.v2.CreateRemoteAgentPairingResponse
+	189, // 618: superverse.v2.RemoteAgentService.ListRemoteAgentConnections:output_type -> superverse.v2.ListRemoteAgentConnectionsResponse
+	191, // 619: superverse.v2.RemoteAgentService.RevokeRemoteAgentConnection:output_type -> superverse.v2.RevokeRemoteAgentConnectionResponse
+	193, // 620: superverse.v2.RemoteAgentService.SetSessionExecutor:output_type -> superverse.v2.SetSessionExecutorResponse
+	199, // 621: superverse.v2.AgentService.SendMessage:output_type -> superverse.v2.SendMessageResponse
+	201, // 622: superverse.v2.AgentService.AnswerQuestions:output_type -> superverse.v2.AnswerQuestionsResponse
+	203, // 623: superverse.v2.AgentService.UpdateSessionModel:output_type -> superverse.v2.UpdateSessionModelResponse
+	205, // 624: superverse.v2.AgentService.DeleteQueuedMessage:output_type -> superverse.v2.DeleteQueuedMessageResponse
+	207, // 625: superverse.v2.AgentService.SteerQueuedMessage:output_type -> superverse.v2.SteerQueuedMessageResponse
+	209, // 626: superverse.v2.AgentService.ResolveToolApproval:output_type -> superverse.v2.ResolveToolApprovalResponse
+	211, // 627: superverse.v2.AgentService.InterruptAgent:output_type -> superverse.v2.InterruptAgentResponse
+	215, // 628: superverse.v2.AgentService.ListMockScenarios:output_type -> superverse.v2.ListMockScenariosResponse
+	213, // 629: superverse.v2.AgentService.GetFlowDesign:output_type -> superverse.v2.GetFlowDesignResponse
+	264, // 630: superverse.v2.PreviewService.GetPreview:output_type -> superverse.v2.GetPreviewResponse
+	266, // 631: superverse.v2.PreviewService.StartPreview:output_type -> superverse.v2.StartPreviewResponse
+	268, // 632: superverse.v2.PreviewService.StopPreview:output_type -> superverse.v2.StopPreviewResponse
+	270, // 633: superverse.v2.PreviewService.PreparePreviewSource:output_type -> superverse.v2.PreparePreviewSourceResponse
+	272, // 634: superverse.v2.PreviewService.GetPreviewDefinitions:output_type -> superverse.v2.GetPreviewDefinitionsResponse
+	274, // 635: superverse.v2.PreviewService.UpdatePreviewAutoDeploy:output_type -> superverse.v2.UpdatePreviewAutoDeployResponse
+	281, // 636: superverse.v2.ReleaseService.ListReleaseCandidates:output_type -> superverse.v2.ListReleaseCandidatesResponse
+	283, // 637: superverse.v2.ReleaseService.PrepareRelease:output_type -> superverse.v2.PrepareReleaseResponse
+	285, // 638: superverse.v2.ReleaseService.StartReleaseBuild:output_type -> superverse.v2.StartReleaseBuildResponse
+	287, // 639: superverse.v2.ReleaseService.RecoverReleaseBuild:output_type -> superverse.v2.RecoverReleaseBuildResponse
+	293, // 640: superverse.v2.ReleaseService.ListReleases:output_type -> superverse.v2.ListReleasesResponse
+	305, // 641: superverse.v2.ReleaseService.DeriveLiveConfiguration:output_type -> superverse.v2.DeriveLiveConfigurationResponse
+	295, // 642: superverse.v2.ReleaseService.GetRelease:output_type -> superverse.v2.GetReleaseResponse
+	297, // 643: superverse.v2.ReleaseService.WatchRelease:output_type -> superverse.v2.WatchReleaseResponse
+	289, // 644: superverse.v2.ReleaseService.CancelReleaseBuild:output_type -> superverse.v2.CancelReleaseBuildResponse
+	291, // 645: superverse.v2.ReleaseService.GetReleaseBuildLog:output_type -> superverse.v2.GetReleaseBuildLogResponse
+	307, // 646: superverse.v2.DeploymentService.StartDeployment:output_type -> superverse.v2.StartDeploymentResponse
+	311, // 647: superverse.v2.DeploymentService.GetDeployment:output_type -> superverse.v2.GetDeploymentResponse
+	313, // 648: superverse.v2.DeploymentService.ListDeployments:output_type -> superverse.v2.ListDeploymentsResponse
+	315, // 649: superverse.v2.DeploymentService.WatchDeployment:output_type -> superverse.v2.WatchDeploymentResponse
+	309, // 650: superverse.v2.DeploymentService.CancelDeployment:output_type -> superverse.v2.CancelDeploymentResponse
+	318, // 651: superverse.v2.FlowRunService.GetFlowDefinitions:output_type -> superverse.v2.GetFlowDefinitionsResponse
+	320, // 652: superverse.v2.FlowRunService.GetFlowCatalog:output_type -> superverse.v2.GetFlowCatalogResponse
+	322, // 653: superverse.v2.FlowRunService.SearchFlows:output_type -> superverse.v2.SearchFlowsResponse
+	324, // 654: superverse.v2.FlowRunService.GetFlowDisplay:output_type -> superverse.v2.GetFlowDisplayResponse
+	326, // 655: superverse.v2.FlowRunService.UpdateFlowDisplayField:output_type -> superverse.v2.UpdateFlowDisplayFieldResponse
+	328, // 656: superverse.v2.FlowRunService.InvokeFlowAction:output_type -> superverse.v2.InvokeFlowActionResponse
+	330, // 657: superverse.v2.FlowRunService.StartFlow:output_type -> superverse.v2.StartFlowResponse
+	332, // 658: superverse.v2.FlowRunService.RecoverFlowStart:output_type -> superverse.v2.RecoverFlowStartResponse
+	334, // 659: superverse.v2.FlowDiagnosticsService.GetFlowSummary:output_type -> superverse.v2.GetFlowSummaryResponse
+	336, // 660: superverse.v2.FlowDiagnosticsService.GetFlowState:output_type -> superverse.v2.GetFlowStateResponse
+	338, // 661: superverse.v2.FlowDiagnosticsService.GetFlowHistory:output_type -> superverse.v2.GetFlowHistoryResponse
+	340, // 662: superverse.v2.FlowDiagnosticsService.WaitFlowHistory:output_type -> superverse.v2.WaitFlowHistoryResponse
+	342, // 663: superverse.v2.FlowDiagnosticsService.ReadFlowStream:output_type -> superverse.v2.ReadFlowStreamResponse
+	344, // 664: superverse.v2.FlowDiagnosticsService.LoadFlowBlobs:output_type -> superverse.v2.LoadFlowBlobsResponse
+	346, // 665: superverse.v2.FlowDiagnosticsService.StopFlow:output_type -> superverse.v2.StopFlowResponse
+	348, // 666: superverse.v2.FlowDiagnosticsService.DeleteFlowChannelMessage:output_type -> superverse.v2.DeleteFlowChannelMessageResponse
+	350, // 667: superverse.v2.FlowDiagnosticsService.TimeTravelFlow:output_type -> superverse.v2.TimeTravelFlowResponse
+	352, // 668: superverse.v2.ConnectorService.ListConnections:output_type -> superverse.v2.ListConnectionsResponse
+	354, // 669: superverse.v2.ConnectorService.SelectTeamSpaceConnection:output_type -> superverse.v2.SelectTeamSpaceConnectionResponse
+	356, // 670: superverse.v2.ConnectorService.ReleaseUnusedConnections:output_type -> superverse.v2.ReleaseUnusedConnectionsResponse
+	358, // 671: superverse.v2.ConnectorService.StartConnectorUiSession:output_type -> superverse.v2.StartConnectorUiSessionResponse
+	360, // 672: superverse.v2.ConnectorService.InvokeProviderCommand:output_type -> superverse.v2.InvokeProviderCommandResponse
+	362, // 673: superverse.v2.ConnectorService.SaveTriggerBinding:output_type -> superverse.v2.SaveTriggerBindingResponse
+	364, // 674: superverse.v2.ConnectorService.SaveOperationConfiguration:output_type -> superverse.v2.SaveOperationConfigurationResponse
+	366, // 675: superverse.v2.ApplicationEnvironmentService.GetApplicationEnvironment:output_type -> superverse.v2.GetApplicationEnvironmentResponse
+	368, // 676: superverse.v2.ApplicationEnvironmentService.SaveApplicationEnvironment:output_type -> superverse.v2.SaveApplicationEnvironmentResponse
+	575, // [575:677] is the sub-list for method output_type
+	473, // [473:575] is the sub-list for method input_type
+	473, // [473:473] is the sub-list for extension type_name
+	473, // [473:473] is the sub-list for extension extendee
+	0,   // [0:473] is the sub-list for field type_name
 }
 
 func init() { file_superverse_v2_superverse_proto_init() }
@@ -28855,18 +28950,18 @@ func file_superverse_v2_superverse_proto_init() {
 	file_superverse_v2_superverse_proto_msgTypes[162].OneofWrappers = []any{}
 	file_superverse_v2_superverse_proto_msgTypes[164].OneofWrappers = []any{}
 	file_superverse_v2_superverse_proto_msgTypes[165].OneofWrappers = []any{}
-	file_superverse_v2_superverse_proto_msgTypes[172].OneofWrappers = []any{}
 	file_superverse_v2_superverse_proto_msgTypes[173].OneofWrappers = []any{}
 	file_superverse_v2_superverse_proto_msgTypes[174].OneofWrappers = []any{}
 	file_superverse_v2_superverse_proto_msgTypes[175].OneofWrappers = []any{}
 	file_superverse_v2_superverse_proto_msgTypes[176].OneofWrappers = []any{}
-	file_superverse_v2_superverse_proto_msgTypes[198].OneofWrappers = []any{}
-	file_superverse_v2_superverse_proto_msgTypes[211].OneofWrappers = []any{}
-	file_superverse_v2_superverse_proto_msgTypes[235].OneofWrappers = []any{
+	file_superverse_v2_superverse_proto_msgTypes[177].OneofWrappers = []any{}
+	file_superverse_v2_superverse_proto_msgTypes[199].OneofWrappers = []any{}
+	file_superverse_v2_superverse_proto_msgTypes[212].OneofWrappers = []any{}
+	file_superverse_v2_superverse_proto_msgTypes[236].OneofWrappers = []any{
 		(*WatchReleaseResponse_Snapshot)(nil),
 		(*WatchReleaseResponse_Progress)(nil),
 	}
-	file_superverse_v2_superverse_proto_msgTypes[253].OneofWrappers = []any{
+	file_superverse_v2_superverse_proto_msgTypes[254].OneofWrappers = []any{
 		(*WatchDeploymentResponse_Snapshot)(nil),
 		(*WatchDeploymentResponse_Progress)(nil),
 	}
@@ -28876,7 +28971,7 @@ func file_superverse_v2_superverse_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_superverse_v2_superverse_proto_rawDesc), len(file_superverse_v2_superverse_proto_rawDesc)),
 			NumEnums:      61,
-			NumMessages:   315,
+			NumMessages:   316,
 			NumExtensions: 0,
 			NumServices:   16,
 		},

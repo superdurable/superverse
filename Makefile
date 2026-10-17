@@ -5,7 +5,7 @@
 	check-deployment-names check-package-layers check-package-limits check-package-readmes check-go-file-length license-headers check-license-headers \
 	check-studio-server-boundary check-mock-scenarios check-rpc-coverage check-flow-registry check-config check-exports check-proto-enums check-test-lanes check-terraform-inputs check-dex-versions check-proto-format check-proto check-generated-proto \
 	check-flow-definition format-check check-agent-rules check-prelaunch-identities governance-check \
-	test test-integration test-e2e test-claude-live required-lanes affected-tests affected-specs studio-coverage-map check-local-full-evidence ci \
+	test test-integration test-e2e test-claude-live test-example-comparison-live required-lanes affected-tests affected-specs studio-coverage-map check-local-full-evidence ci \
 	lint lint-go lint-web lint-workflows vulnerability-check audit-web \
 	install-dexcli install-osv-scanner install-buf
 
@@ -13,6 +13,11 @@
 
 GO_PACKAGES = ./cmd/... ./gen/... ./internal/... ./sandbox/coding/cmd/... ./sandbox/coding/internal/...
 INTEGRATION_TEST_TIMEOUT ?= 30m
+# The tests that only the developer runs, each through its own target, because they cost real-model calls: test-integration
+# skips them, and scripts/affected-tests.py reads this line and never suggests them. Names separated by spaces.
+DEVELOPER_ONLY_TESTS := TestLiveExampleComparison
+EMPTY :=
+SPACE := $(EMPTY) $(EMPTY)
 export GOCACHE ?= /tmp/superverse-v2-go-cache
 export PYTHONDONTWRITEBYTECODE := 1
 # Go commands and the scripts make runs use go.mod alone, whether or not a go.work exists.
@@ -247,9 +252,11 @@ studio-coverage-map:
 	@test -n "$(COVERAGE)" || { echo "usage: make studio-coverage-map COVERAGE=<SUPERVERSE_E2E_COVERAGE_DIR of a spec run>" >&2; exit 2; }
 	@python3 scripts/studio-coverage-map.py merge '$(COVERAGE)'
 
+# The DEVELOPER_ONLY_TESTS run only through their own targets.
 test-integration:
 	@coverage_dir="$$(mktemp -d)"; trap 'rm -rf "$$coverage_dir"' EXIT; \
-		SUPERVERSE_TEST_RPC_COVERAGE_FILE="$$coverage_dir/rpc-coverage.json" $(WITH_CLAUDE_KEY) go test -tags=live -count=1 -p 1 -timeout '$(INTEGRATION_TEST_TIMEOUT)' $(GO_PACKAGES) && \
+		SUPERVERSE_TEST_RPC_COVERAGE_FILE="$$coverage_dir/rpc-coverage.json" $(WITH_CLAUDE_KEY) go test -tags=live -count=1 -p 1 -timeout '$(INTEGRATION_TEST_TIMEOUT)' \
+			-skip '^($(subst $(SPACE),|,$(strip $(DEVELOPER_ONLY_TESTS))))$$' $(GO_PACKAGES) && \
 		python3 scripts/rpc-coverage-map.py merge api-integration "$$coverage_dir/rpc-coverage.json"
 
 test-e2e:
@@ -257,6 +264,13 @@ test-e2e:
 
 test-claude-live:
 	@$(WITH_CLAUDE_KEY) go test -tags=live -count=1 -run '^TestLiveClaude' ./internal/dexai/agents/session/modelprovider
+
+# The real-model comparison of the closest-example start: four Projects on Claude Sonnet 5.5 against the
+# running local lane that the SUPERVERSE_TEST_* inputs name, SUPERVERSE_TEST_CODING_IMAGE its coding image. It
+# costs model calls, so only the developer runs it, and only through this target (DEVELOPER_ONLY_TESTS).
+test-example-comparison-live:
+	@$(WITH_CLAUDE_KEY) SUPERVERSE_TEST_EXAMPLE_COMPARISON=real-model go test -tags=live -count=1 -timeout 190m -v \
+		-run '^TestLiveExampleComparison$$' ./internal/dexai/api
 
 lint: lint-go lint-web lint-workflows
 

@@ -16,7 +16,8 @@ other modules (app-template) are outside it.
 
 A change touches the package of every changed Go file of the root module, test files included. Each touched package
 that some test covers needs one of those tests in the pull request's `Tests:` field
-(scripts/check-local-full-evidence.py); a touched package no test covers needs none.
+(scripts/check-local-full-evidence.py); a touched package no test covers needs none. The suggested commands never
+name the Makefile's DEVELOPER_ONLY_TESTS, which only the developer runs, each through its own target.
 """
 import argparse
 import importlib.util
@@ -32,6 +33,7 @@ IMPORT_BLOCK = re.compile(r"^import\s*\((.*?)^\)", re.M | re.S)
 IMPORT_LINE = re.compile(r'^import\s+(?:[\w.]+\s+)?"([^"]+)"', re.M)
 QUOTED = re.compile(r'"([^"]+)"')
 TEST_FUNCTION = re.compile(r"^func (Test\w+)\(\w+ \*testing\.T\)", re.M)
+DEVELOPER_ONLY_TESTS = re.compile(r"^DEVELOPER_ONLY_TESTS := (.*)$", re.M)
 SUGGESTED_TESTS = 5
 
 _spec = importlib.util.spec_from_file_location("required_lanes", ROOT / "scripts/required-lanes.py")
@@ -101,6 +103,11 @@ class PackageGraph:
         return {directory for directory, names in self.tests.items() if name in names}
 
 
+def developer_only_tests():
+    """The Makefile's DEVELOPER_ONLY_TESTS: tests that cost real-model calls, which test-integration skips."""
+    return set(DEVELOPER_ONLY_TESTS.search((ROOT / "Makefile").read_text()).group(1).split())
+
+
 def touched_packages(paths):
     """The package directories of the changed Go files of the root module."""
     return {str(Path(path).parent) for path in paths if in_root_module(path)}
@@ -118,14 +125,15 @@ def main():
     if not coverage:
         print("The change touches no Go package of the root module; `Tests:` may stay empty.")
         return
+    developer_only = developer_only_tests()
     for package, directories in sorted(coverage.items()):
         if not directories:
             print(f"{package}: no test covers it")
             continue
         print(f"{package}: covered by tests in {len(directories)} packages; the nearest")
-        for directory in directories[:3]:
-            names = graph.tests[directory][:SUGGESTED_TESTS]
-            print(f"  go test -tags=live -count=1 ./{directory} -run '^({'|'.join(names)})$'")
+        suggestions = [(directory, [name for name in graph.tests[directory] if name not in developer_only]) for directory in directories]
+        for directory, names in [suggestion for suggestion in suggestions if suggestion[1]][:3]:
+            print(f"  go test -tags=live -count=1 ./{directory} -run '^({'|'.join(names[:SUGGESTED_TESTS])})$'")
     print("Run at least one test that covers each package and list its name in the `Tests:` field.")
 
 

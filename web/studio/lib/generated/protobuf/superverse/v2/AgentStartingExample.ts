@@ -1,5 +1,6 @@
 // Original file: api/superverse/v2/superverse.proto
 
+import type { AgentStartingExampleBuild as _superverse_v2_AgentStartingExampleBuild, AgentStartingExampleBuild__Output as _superverse_v2_AgentStartingExampleBuild__Output } from '../../superverse/v2/AgentStartingExampleBuild';
 
 // Original file: api/superverse/v2/superverse.proto
 
@@ -22,9 +23,11 @@ export type _superverse_v2_AgentStartingExample_Choice__Output = typeof _superve
 export interface AgentStartingExample {
   'exampleId'?: (string);
   'choice'?: (_superverse_v2_AgentStartingExample_Choice);
+  'firstBuild'?: (_superverse_v2_AgentStartingExampleBuild | null);
 }
 
 export interface AgentStartingExample__Output {
   'exampleId': (string);
   'choice': (_superverse_v2_AgentStartingExample_Choice__Output);
+  'firstBuild': (_superverse_v2_AgentStartingExampleBuild__Output | null);
 }

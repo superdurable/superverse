@@ -637,7 +637,7 @@ automatically for every Step and RPC.
 | `CreatedAt`, `UpdatedAt` | time.Time | |
 | `SessionModel` | `{Model, Revision, ChangedBy *conversation.Actor}` | The user's model choice ([above](#model-selection)) |
 | `ContextSegment` | struct (about 0.5 KB) | Current segment, last usage, pending bytes, force-compaction flag ([context management](context-management.md#segments)) |
-| `AgentState` | struct | Sequence range (`FirstRetainedSequence`, `CurrentFirstSequence`, `LastSequence`), `Status`, `PendingToolCalls`, `PendingToolIndex`, `HandoffContinuations`, `TurnRequestSequences`, `SourceChangedSinceHandoff`, `Turn`, `Running`, `AutomaticTaskTurns`, `AutomaticPlatformTurns`, `AutomaticTurnsPaused`, `SubagentsStartedWithoutUser`, `AwaitsFirstMessage` (a Session started from an example that has had no message of the person; `StartUserTurn` clears it), `StartingExample` (`{ExampleID, Tree, Title, Choice, MatchedOn}`, under 512 bytes: the example the Project started from, `picked` or `matched` (`agentloop.ExampleChoice`), with at most 12 matched facets; `InitializeSessionAgent` writes it once, and the `starting_example` section is built from it), `ConnectorSlugs` (every connector slug an admitted `connector_develop` call named, at most 16) |
+| `AgentState` | struct | Sequence range (`FirstRetainedSequence`, `CurrentFirstSequence`, `LastSequence`), `Status`, `PendingToolCalls`, `PendingToolIndex`, `HandoffContinuations`, `TurnRequestSequences`, `SourceChangedSinceHandoff`, `Turn`, `Running`, `AutomaticTaskTurns`, `AutomaticPlatformTurns`, `AutomaticTurnsPaused`, `SubagentsStartedWithoutUser`, `AwaitsFirstMessage` (a Session started from an example that has had no message of the person; `StartUserTurn` clears it), `StartingExample` (`{ExampleID, Tree, Title, Choice, MatchedOn, FirstBuild}`, under 512 bytes: the example the Project started from, `picked` or `matched` (`agentloop.ExampleChoice`), with at most 12 matched facets; `InitializeSessionAgent` writes it once, and the `starting_example` section is built from it; a matched Session's first build completes it once with `FirstBuild` (`agentloop.StartingExampleBuild{ExampleSteps, BuiltSteps, KeptSteps, Commit}`, [below](#the-first-build-of-a-matched-example))), `ConnectorSlugs` (every connector slug an admitted `connector_develop` call named, at most 16) |
 | `MessageWindowLock` | bool | Coordination only: serializes every writer of the message maps |
 | `WaitingInputRound` | int64 | Monotonic reconciliation watermark |
 | `PendingUserInput` | struct | `{CallID, Kind, Questions, Requirements, StartedAt}`; Kind is `""`; `requirements` with `Requirements` only on a card a Session waited at before cards stopped waiting, which `SendMessage` answers |
@@ -1053,6 +1053,32 @@ call without an unadmitted record. FlowID, Run, Start RequestID, Step identities
 Channels, ChannelMaps and Streams are unchanged. Existing open Sessions read the new optional
 Attribute as empty. Remote mode starts no platform subagents, so a switch to remote postpones
 the bounded pending cleanup until a later platform `start_agent` or Project deletion.
+
+### The first build of a matched example
+
+A matched start is meant to shrink the build to the difference from the example, so the Session
+records what its first build kept of it, which the platform administrator reads to review the
+Projects the server started from an example. The tool-result Step whose recorded result is the first build, the first pushed, unblocked
+`commit_and_push` before which neither `PreviewHandoff.Commit` nor `BuiltFlowDesign` exists (the moment the
+`starting_example` section ends), completes `AgentState.StartingExample` in the commit of that result,
+before `recordDesignProgress` and the Preview handoff (`recordStartingExampleBuild` in
+`session_workspace.go`, called from `appendToolBatchResults`, under the result Step's existing options;
+`session_agent_flow.go` is unchanged) with `FirstBuild`:
+
+- `ExampleSteps`: the Steps of the example's design, its catalog card's design as this server build
+  describes it at the recorded tree; 0 when the build holds the example at another tree, as during a
+  rollout;
+- `BuiltSteps`: the Steps of the confirmed design the push built, read from `WrittenDesignSteps` while its
+  digest is that of `ConfirmedRequirements`; 0 for a version 1 without a design or before any version;
+- `KeptSteps`: how many of the example's Steps that design keeps, by Flow type and Step type;
+- `Commit`: the pushed commit.
+
+It is written once, with no new Attribute, lock or read: a later push, a picked example's Session and a
+matched Session whose first build came before this record existed write nothing. It adds about 120
+bytes to `AgentState` (117 with single-digit counts, its commit always 40 hex; `StartingExample` stays
+under 512 bytes). `AgentDescription.starting_example.first_build`
+(`AgentStartingExampleBuild`) serves it. No log line carries it: SessionAgentFlow has no logger, so the
+Session's state and that field are where it is read.
 
 ## Database Schema Changes
 

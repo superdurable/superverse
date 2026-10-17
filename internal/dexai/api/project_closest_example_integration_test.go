@@ -38,6 +38,51 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/tenancy/memberdao"
 )
 
+// closestExampleLane reaches the lane's Dex, PostgreSQL, existing Worker and
+// Git host from this process: the Project and Session Flow clients, and API
+// servers of this build with agent.closestExamplePick on or off that a
+// registered creator calls in a TeamSpace of their own.
+type closestExampleLane struct {
+	projects    *projects.ProjectFlowClient
+	sessions    *sessionagent.SessionAgentFlowClient
+	server      func(pick bool) pb.ProjectServiceClient
+	creator     *pb.CallerContext
+	teamSpaceID string
+}
+
+// newClosestExampleLane connects to the lane that the test inputs name, which
+// CreateProject's Setup creates repositories on: it requires
+// SUPERVERSE_TEST_GITHUB_EFFECTS=true.
+func newClosestExampleLane(ctx context.Context, t *testing.T) closestExampleLane {
+	t.Helper()
+	if os.Getenv("SUPERVERSE_TEST_GITHUB_EFFECTS") != "true" {
+		t.Fatal("CreateProject runs a Project's Setup, which creates its repository: requires SUPERVERSE_TEST_GITHUB_EFFECTS=true")
+	}
+	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
+	target := dexflowtest.Setting(t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET")
+	projectFlow, setupFlow, sessionFlow := &projects.ProjectFlow{}, &setup.ProjectSetupFlow{}, &sessionagent.SessionAgentFlow{}
+	// This client registry supplies definitions only; the existing Worker
+	// runs the Flows with every dependency of its server.
+	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Address: target}, projectFlow, setupFlow, sessionFlow)
+	reader := dexflowtest.ExecutionReaderForTest(t, address)
+	db := postgrestest.OpenForTest(t)
+	idLength := projecttest.IDLengthForTest(t)
+	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), ProjectIDLength: idLength, PlatformAdminEmail: "admin@superverse.test"}
+	accountService := &accounts.Accounts{DAO: accountdao.New(db, "admin@superverse.test"), Signer: comm.Must(accounts.NewTokenSigner([]byte(strings.Repeat("f", 32))))}
+	creator := registerCaller(ctx, t, accountService)
+	return closestExampleLane{
+		projects: projectClient,
+		sessions: sessionagent.NewSessionAgentFlowClientForTest(sdk, sessionFlow, reader, ""),
+		server: func(pick bool) pb.ProjectServiceClient {
+			return pb.NewProjectServiceClient(serveLoopback(ctx, t, &Server{Boundary: &boundary.Boundary{Logger: slog.Default(), Accounts: accountService},
+				ProjectIDLength: idLength, Projects: projectClient, Members: memberdao.New(db), SessionModels: SessionModels{Claude: true, Mock: true, Local: true},
+				ClosestExamplePick: pick}))
+		},
+		creator:     creator,
+		teamSpaceID: projecttest.TeamSpaceForTest(ctx, t, creator.GetAccountId()),
+	}
+}
+
 // TestCreateProjectClosestExampleDexIntegration drives the closest-example
 // pick of CreateProject through the actual gRPC boundary against the lane's
 // Dex, PostgreSQL, existing Worker and Git host, with two API servers of this
@@ -55,31 +100,12 @@ import (
 //     marker with the pick on, start from the default revision
 //     app-template@<tree>, whose Sessions name no starting example.
 func TestCreateProjectClosestExampleDexIntegration(t *testing.T) {
-	if os.Getenv("SUPERVERSE_TEST_GITHUB_EFFECTS") != "true" {
-		t.Fatal("CreateProject runs a Project's Setup, which creates its repository: requires SUPERVERSE_TEST_GITHUB_EFFECTS=true")
-	}
-	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
-	target := dexflowtest.Setting(t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET")
-	projectFlow, setupFlow, sessionFlow := &projects.ProjectFlow{}, &setup.ProjectSetupFlow{}, &sessionagent.SessionAgentFlow{}
-	// This client registry supplies definitions only; the existing Worker
-	// runs the Flows with every dependency of its server.
-	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Address: target}, projectFlow, setupFlow, sessionFlow)
-	reader := dexflowtest.ExecutionReaderForTest(t, address)
-	db := postgrestest.OpenForTest(t)
-	idLength := projecttest.IDLengthForTest(t)
-	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), ProjectIDLength: idLength, PlatformAdminEmail: "admin@superverse.test"}
-	sessions := sessionagent.NewSessionAgentFlowClientForTest(sdk, sessionFlow, reader, "")
-	accountService := &accounts.Accounts{DAO: accountdao.New(db, "admin@superverse.test"), Signer: comm.Must(accounts.NewTokenSigner([]byte(strings.Repeat("f", 32))))}
 	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Minute)
 	defer cancel()
-	server := func(pick bool) pb.ProjectServiceClient {
-		return pb.NewProjectServiceClient(serveLoopback(ctx, t, &Server{Boundary: &boundary.Boundary{Logger: slog.Default(), Accounts: accountService},
-			ProjectIDLength: idLength, Projects: projectClient, Members: memberdao.New(db), SessionModels: SessionModels{Claude: true, Mock: true, Local: true},
-			ClosestExamplePick: pick}))
-	}
-	picking, plain := server(true), server(false)
-	creator := registerCaller(ctx, t, accountService)
-	teamSpaceID := projecttest.TeamSpaceForTest(ctx, t, creator.GetAccountId())
+	lane := newClosestExampleLane(ctx, t)
+	projectClient, sessions := lane.projects, lane.sessions
+	picking, plain := lane.server(true), lane.server(false)
+	creator, teamSpaceID := lane.creator, lane.teamSpaceID
 	content := mockInput(t, "example-matched", 1).Content
 	request := func(initial string) *pb.CreateProjectRequest {
 		return &pb.CreateProjectRequest{Caller: creator, RequestId: flowid.RandomID(24), Name: t.Name(), ManagedRepository: &pb.ManagedRepositorySource{},

@@ -706,7 +706,14 @@ of the request changes, so its fingerprint is the same and a retry joins the acc
 its revision, whatever another server build would decide. That Session starts quietly: it records
 no card, appends no notice, demands no Preview, admits the first message as the request, and its
 agent writes version 1 itself; `starting_example.choice` is `CHOICE_MATCHED`, and Studio shows the
-Project as one created from a description.
+Project as one created from a description. Once that Session's first build, its first pushed,
+unblocked commit, is recorded, `starting_example.first_build` is `AgentStartingExampleBuild
+{example_steps, built_steps, kept_steps, commit}`: the Steps of the example's Flow design as the
+recording server build describes the example's tree (0 when it holds the example at another tree),
+those of the confirmed design the push built (0 without a design), how many of the example's Steps
+that design keeps in the same Flow, and the pushed commit. It is recorded once and never changes; a
+picked example, a matched Session before its first build and one whose first build came before the
+server recorded it have none.
 
 Setup commits exactly the revision's tree, as it commits the default. A server build also holds the
 previous tree of each example that changed (one per example, the default's included), so a Setup a

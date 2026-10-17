@@ -96,12 +96,13 @@ func (s *projectServer) CreateProject(ctx context.Context, in *pb.CreateProjectR
 	if err != nil {
 		return nil, err
 	}
+	projectID, setupID := flowid.ProjectCreationIDs(account.AccountID, in.GetRequestId(), s.projectIDLength)
 	template, example := apptemplate.Current(), in.GetManagedRepository().GetExample()
 	if example != nil {
 		if template, err = apptemplate.ExampleTemplate(example.GetExampleId()); err != nil {
 			return nil, boundary.RPCStatus(err)
 		}
-	} else if matched := s.closestExample(ctx, initial); matched != nil {
+	} else if matched := s.closestExample(ctx, projectID, initial); matched != nil {
 		template = comm.Must(apptemplate.ExampleTemplate(matched.ExampleID))
 		initial.MatchedExample = &projects.MatchedExample{Facets: matched.Facets, Score: matched.Score}
 	}
@@ -113,7 +114,6 @@ func (s *projectServer) CreateProject(ctx context.Context, in *pb.CreateProjectR
 			return nil, refusalStatus(err)
 		}
 	}
-	projectID, setupID := flowid.ProjectCreationIDs(account.AccountID, in.GetRequestId(), s.projectIDLength)
 	start := projects.ProjectStart{ProjectID: projectID, CreatorAccountID: account.AccountID, Name: in.GetName(), SetupFlowID: flowid.SetupFlowID(projectID, setupID),
 		TemplateRevision: template.Revision, TeamSpaceID: in.GetTeamSpaceId(), CreatorIsPlatformAdmin: accounts.IsAdministrator(account), InitialSession: initial}
 	fingerprint := managedProjectCreationFingerprint(account.AccountID, in.GetRequestId(), in.GetName(), in.GetTeamSpaceId(), example, initial)
@@ -128,18 +128,18 @@ func (s *projectServer) CreateProject(ctx context.Context, in *pb.CreateProjectR
 // when the setting is on and the server's decision finds one, or nil for the
 // default. It reads the message without the mock model's markers and calls no
 // network or model, so a retry decides alike on a server of the same build and
-// joins the accepted Project's revision on any other. It logs the decision,
-// never the message.
-func (s *projectServer) closestExample(ctx context.Context, initial *projects.SessionStartRequest) *apptemplate.ExampleMatch {
+// joins the accepted Project's revision on any other. It logs the decision
+// with the Project it is for, never the message.
+func (s *projectServer) closestExample(ctx context.Context, projectID string, initial *projects.SessionStartRequest) *apptemplate.ExampleMatch {
 	if !s.closestExamplePick || initial == nil || initial.Text == "" {
 		return nil
 	}
 	matched, isMatch := apptemplate.ClosestExample(mockmodel.WithoutMarkers(initial.Text))
 	if !isMatch {
-		s.Logger.InfoContext(ctx, "Closest example decision", "choice", "default")
+		s.Logger.InfoContext(ctx, "Closest example decision", "project", projectID, "choice", "default")
 		return nil
 	}
-	s.Logger.InfoContext(ctx, "Closest example decision", "choice", "matched", "example", matched.ExampleID, "facets", matched.Facets, "score", matched.Score)
+	s.Logger.InfoContext(ctx, "Closest example decision", "project", projectID, "choice", "matched", "example", matched.ExampleID, "facets", matched.Facets, "score", matched.Score)
 	return &matched
 }
 

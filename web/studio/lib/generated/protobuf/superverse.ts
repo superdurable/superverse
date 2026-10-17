@@ -51,6 +51,7 @@ import type { AgentSequencedMessage as _superverse_v2_AgentSequencedMessage, Age
 import type { AgentServiceClient as _superverse_v2_AgentServiceClient, AgentServiceDefinition as _superverse_v2_AgentServiceDefinition } from './superverse/v2/AgentService';
 import type { AgentSnapshot as _superverse_v2_AgentSnapshot, AgentSnapshot__Output as _superverse_v2_AgentSnapshot__Output } from './superverse/v2/AgentSnapshot';
 import type { AgentStartingExample as _superverse_v2_AgentStartingExample, AgentStartingExample__Output as _superverse_v2_AgentStartingExample__Output } from './superverse/v2/AgentStartingExample';
+import type { AgentStartingExampleBuild as _superverse_v2_AgentStartingExampleBuild, AgentStartingExampleBuild__Output as _superverse_v2_AgentStartingExampleBuild__Output } from './superverse/v2/AgentStartingExampleBuild';
 import type { AgentSubagent as _superverse_v2_AgentSubagent, AgentSubagent__Output as _superverse_v2_AgentSubagent__Output } from './superverse/v2/AgentSubagent';
 import type { AgentTodoItem as _superverse_v2_AgentTodoItem, AgentTodoItem__Output as _superverse_v2_AgentTodoItem__Output } from './superverse/v2/AgentTodoItem';
 import type { AgentTodoList as _superverse_v2_AgentTodoList, AgentTodoList__Output as _superverse_v2_AgentTodoList__Output } from './superverse/v2/AgentTodoList';
@@ -398,6 +399,7 @@ export interface ProtoGrpcType {
       AgentService: SubtypeConstructor<typeof grpc.Client, _superverse_v2_AgentServiceClient> & { service: _superverse_v2_AgentServiceDefinition }
       AgentSnapshot: MessageTypeDefinition<_superverse_v2_AgentSnapshot, _superverse_v2_AgentSnapshot__Output>
       AgentStartingExample: MessageTypeDefinition<_superverse_v2_AgentStartingExample, _superverse_v2_AgentStartingExample__Output>
+      AgentStartingExampleBuild: MessageTypeDefinition<_superverse_v2_AgentStartingExampleBuild, _superverse_v2_AgentStartingExampleBuild__Output>
       AgentSubagent: MessageTypeDefinition<_superverse_v2_AgentSubagent, _superverse_v2_AgentSubagent__Output>
       AgentTodoItem: MessageTypeDefinition<_superverse_v2_AgentTodoItem, _superverse_v2_AgentTodoItem__Output>
       AgentTodoList: MessageTypeDefinition<_superverse_v2_AgentTodoList, _superverse_v2_AgentTodoList__Output>

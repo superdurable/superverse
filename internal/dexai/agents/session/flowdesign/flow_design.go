@@ -24,6 +24,15 @@ type Design struct {
 	RemovedFlows []string `json:"removed_flows"`
 }
 
+// StepCount is the number of Steps of all the design's Flows.
+func (design Design) StepCount() int {
+	count := 0
+	for _, flow := range design.Flows {
+		count += len(flow.Steps)
+	}
+	return count
+}
+
 // Flow is one designed Flow, listed in full.
 type Flow struct {
 	FlowType   string      `json:"flow_type"`

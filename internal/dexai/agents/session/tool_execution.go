@@ -467,12 +467,15 @@ func finishToolBatch(ctx dex.Context, batch agentloop.ToolBatchState) agentloop.
 // that reports it, and the commit a pushed, unblocked commit_and_push hands
 // off becomes the Preview handoff at the result's sequence, which the result's
 // decision publishes asynchronously; recordDesignProgress marks the designed
-// Steps a write or edit declares and the design that result built.
+// Steps a write or edit declares and the design that result built, after
+// recordStartingExampleBuild recorded what a matched Session's first build
+// kept of its example.
 func appendToolBatchResults(ctx dex.Context, batch agentloop.ToolBatchState) {
 	records := slices.SortedFunc(slices.Values(batch.Records), func(left, right agentloop.ToolBatchRecord) int { return left.Index - right.Index })
 	for _, record := range records {
 		sequence := appendToolResult(ctx, record.Call, *record.Result, record.Timing)
 		confirmSessionHead(ctx, record.Result.HeadCommit, time.Now().UTC())
+		recordStartingExampleBuild(ctx, record.Call, *record.Result)
 		recordDesignProgress(ctx, record.Call, *record.Result)
 		if handoff := dexflow.ValueOrZero(previewHandoffAttribute.Get(ctx)); handoff.HandOff(record.Call, *record.Result, sequence) {
 			comm.MustDo(previewHandoffAttribute.Set(ctx, handoff))
