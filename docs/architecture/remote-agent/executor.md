@@ -462,7 +462,9 @@ and failure notifications, including `connector/<slug>/checks_failed/<full-head>
 `ReadRemote` and Bridge `sync`. Codex can read its own Project's current contributed head with
 `read_connector_checks` after a push when no notification has arrived yet; on failure it fetches
 the bounded, redacted job log tail on demand. The tool uses the server-side Project diagnostics
-reader and no workspace. After a published
+the bounded, redacted job log tail on demand. When the current head has a release candidate, the same
+tool also returns its latest correlated release-candidate workflow run and bounded failure evidence.
+The tool uses the server-side Project diagnostics reader and no workspace. After a published
 candidate, Codex installs its module at the RC version, updates `dex-app.yaml` and runs
 `commit_and_push` for the application.
 

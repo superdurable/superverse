@@ -386,7 +386,7 @@ through the Service. The per-Flow contract is in the
 | `PullRequest` | `{Number, URL, NodeID, State}`; `State` mirrors GitHub: open as draft, open and ready, merged, closed |
 | `Status` | `pull_request_pending`, `unpublished` (a server without an upstream library, an explicit state, never a skip), `pull_request_failed`, `draft` or `closed` |
 | `ReleasedVersion` | Reserved for the `vX.Y.Z` that contains the work; nothing sets it yet |
-| `ReleaseCandidate` | The candidate of the latest head, `{Directory, Version, Tag, Commit, Status published\|failed, Failure, UpdatedAt}` ([below](#using-a-connector-before-its-release)) |
+| `ReleaseCandidate` | The candidate of the latest head, `{Directory, Version, Tag, Commit, Status published\|failed, FailureKind, Failure, Jobs, Step, LogTail, LogUnavailable, PullRequestConflict, UpdatedAt}` ([below](#using-a-connector-before-its-release)) |
 | `Checks` | The current head's `{Head, State pending\|passed\|failed, SuiteCount, Jobs, Step, LogTail, UpdatedAt}`; failure evidence is redacted before retention and cleared by a later head |
 
 `Status` moves only forward: a contribution with a pull request never returns to a status without
@@ -427,8 +427,11 @@ how it is checked:
   connector also its `catalog.yaml` entry) relative to its merge base with `main` and that the version
   is after the connector's latest release, runs the checks of a release, creates the tag and the
   pre-release with its assets, and downloads the module at the candidate. It refuses a tag that names
-  another commit and repeats a publication at the same commit. The Step reads the candidate before it
-  requests it in every round, and polls until the release holds the metadata and the complete marker.
+  another commit and repeats a publication at the same commit. Its exact run name is
+  `RC <directory> <version> <commit>`; the platform matches it among one page of this workflow's
+  repository-dispatch runs created after dispatch, reads run status at most once a minute, and stops
+  the existing wait as soon as the run fails. The Step still reads the candidate in every round and
+  polls until the release holds the metadata and the complete marker.
 - **Local lanes.** Without GitHub, the develop subagent's finish builds the candidate in the Sandbox:
   the contribution helper runs the library's `connectorctl` of `main` in a worktree of `main`
   (`release-candidate`, `ui-artifact` for a Studio UI, `release-artifact`), pushes the tag to the
@@ -436,7 +439,10 @@ how it is checked:
   them at GitHub's download path
   ([local Git host](../../../internal/comm/platform/repohost/localgit/README.md#release-assets)). The
   Flow's Step then only confirms them.
-- **Refusal.** A candidate that the library's rules refuse, such as a version that is not after the
+- **Refusal.** Before dispatch, the platform refuses a version whose stable
+  `<directory>/vX.Y.Z` tag already exists and reports whether the contribution pull request conflicts
+  with `main`; the remedy is to merge `main`, resolve conflicts, bump the connector version and push a
+  new head. A candidate that the library's rules refuse, such as a version that is not after the
   latest release, is `release_candidate_refused` in the finish, or a failed candidate in the Flow; the
   contribution still records the head, and the agent is told to fix it.
 
@@ -446,7 +452,8 @@ how it is checked:
   candidate. Otherwise the Flow's `RecordReleaseCandidate` sends a `connector` notification:
   `connector/<slug>/release_candidate_published/<version>`, or
   `connector/<slug>/release_candidate_failed/<head12>` with the reason when the library refused it or
-  did not publish it within 25 minutes.
+  did not publish it within 25 minutes. A failed workflow includes its failed job and step names and
+  the same bounded, Project-redacted 3 KiB log tail as connector CI, without engine retry details.
 - **Switching.** The agent runs `go get <module>@<version>`, writes the version into the connection of
   `dex-app.yaml`, and commits and pushes; the Preview deployment, the Release and the Live deployment
   then run as for a release.
@@ -683,8 +690,9 @@ The new CI result belongs to that same Attribute; there is no table or migration
 - The Session Snapshot lists the contributions (`ConnectorContribution`: slug, module, kind, status,
   branch, head commit, location, pull request number and link, failure, and the release candidate's
   version, status and failure).
-- `read_connector_checks` lets the agent refresh the result for its own contributed head; the
-  failure notice labels the excerpt as untrusted CI output and names the failed jobs.
+- `read_connector_checks` lets the agent refresh the result for its own contributed head and the
+  latest correlated release-candidate workflow run; failure notices label excerpts as untrusted,
+  redacted output and name the failed jobs.
 - Connection forms for a release candidate work as for a release, and show its version.
 - Accessibility, keyboard behavior, cancellation and stale-response protection are unchanged. The Studio
   mock lists no contribution, so it shows none of these fields.

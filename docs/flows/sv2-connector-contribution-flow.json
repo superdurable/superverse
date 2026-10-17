@@ -9,9 +9,9 @@
     "name": "ConnectorContributionFlow",
     "startStepId": "step:AdmitConnectorContribution",
     "span": {
-      "startLine": 53,
+      "startLine": 54,
       "startColumn": 1,
-      "endLine": 61,
+      "endLine": 62,
       "endColumn": 2
     }
   },
@@ -23,9 +23,9 @@
       "parentId": "rpc:CloseConnectorContribution",
       "phase": "rpc",
       "span": {
-        "startLine": 134,
+        "startLine": 136,
         "startColumn": 1,
-        "endLine": 144,
+        "endLine": 147,
         "endColumn": 2
       }
     },
@@ -36,9 +36,9 @@
       "parentId": "rpc:UpdateConnectorContribution",
       "phase": "rpc",
       "span": {
-        "startLine": 103,
+        "startLine": 104,
         "startColumn": 1,
-        "endLine": 130,
+        "endLine": 132,
         "endColumn": 2
       }
     },
@@ -49,9 +49,9 @@
       "parentId": "step:AdmitConnectorContribution",
       "phase": "execute",
       "span": {
-        "startLine": 190,
+        "startLine": 193,
         "startColumn": 1,
-        "endLine": 221,
+        "endLine": 224,
         "endColumn": 2
       }
     },
@@ -62,9 +62,9 @@
       "parentId": "step:RecordConnectorChecks",
       "phase": "execute",
       "span": {
-        "startLine": 496,
+        "startLine": 556,
         "startColumn": 1,
-        "endLine": 511,
+        "endLine": 571,
         "endColumn": 2
       }
     },
@@ -75,9 +75,9 @@
       "parentId": "step:RecordConnectorPullRequest",
       "phase": "execute",
       "span": {
-        "startLine": 289,
+        "startLine": 292,
         "startColumn": 1,
-        "endLine": 311,
+        "endLine": 314,
         "endColumn": 2
       }
     },
@@ -88,9 +88,9 @@
       "parentId": "step:RecordReleaseCandidate",
       "phase": "execute",
       "span": {
-        "startLine": 417,
+        "startLine": 465,
         "startColumn": 1,
-        "endLine": 436,
+        "endLine": 488,
         "endColumn": 2
       }
     },
@@ -101,9 +101,9 @@
       "parentId": "step:ReportConnectorEvent",
       "phase": "execute",
       "span": {
-        "startLine": 330,
+        "startLine": 333,
         "startColumn": 1,
-        "endLine": 344,
+        "endLine": 347,
         "endColumn": 2
       }
     },
@@ -114,23 +114,23 @@
       "parentId": "step:WaitConnectorChecks",
       "phase": "execute",
       "span": {
-        "startLine": 456,
+        "startLine": 516,
         "startColumn": 1,
-        "endLine": 486,
+        "endLine": 546,
         "endColumn": 2
       }
     },
     {
-      "id": "decision:rpc:CloseConnectorContribution:136:10",
+      "id": "decision:rpc:CloseConnectorContribution:138:10",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:CloseConnectorContribution",
       "condition": "statusOf(comm.Must(statusAttribute.Get(ctx))).Closed()",
       "phase": "rpc",
       "span": {
-        "startLine": 136,
+        "startLine": 138,
         "startColumn": 10,
-        "endLine": 136,
+        "endLine": 138,
         "endColumn": 44
       },
       "decision": {
@@ -138,16 +138,16 @@
       }
     },
     {
-      "id": "decision:rpc:CloseConnectorContribution:139:10",
+      "id": "decision:rpc:CloseConnectorContribution:141:10",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:CloseConnectorContribution",
       "condition": "!(statusOf(comm.Must(statusAttribute.Get(ctx))).Closed()) and dexflow.ValueOrZero(closingAttribute.Get(ctx))",
       "phase": "rpc",
       "span": {
-        "startLine": 139,
+        "startLine": 141,
         "startColumn": 10,
-        "endLine": 139,
+        "endLine": 141,
         "endColumn": 45
       },
       "decision": {
@@ -155,21 +155,29 @@
       }
     },
     {
-      "id": "decision:rpc:CloseConnectorContribution:143:9",
+      "id": "decision:rpc:CloseConnectorContribution:145:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:CloseConnectorContribution",
       "condition": "!(statusOf(comm.Must(statusAttribute.Get(ctx))).Closed()) and !(dexflow.ValueOrZero(closingAttribute.Get(ctx)))",
       "phase": "rpc",
       "span": {
-        "startLine": 143,
+        "startLine": 145,
         "startColumn": 9,
-        "endLine": 143,
-        "endColumn": 130
+        "endLine": 146,
+        "endColumn": 74
       },
       "decision": {
         "type": "rpcResult",
         "cancellations": [
+          {
+            "stepId": "step:PublishReleaseCandidate",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:RecordReleaseCandidate",
+            "scope": "all"
+          },
           {
             "stepId": "step:WaitConnectorChecks",
             "scope": "all"
@@ -186,15 +194,15 @@
       }
     },
     {
-      "id": "decision:rpc:GetConnectorContributionSnapshot:154:9",
+      "id": "decision:rpc:GetConnectorContributionSnapshot:157:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetConnectorContributionSnapshot",
       "phase": "rpc",
       "span": {
-        "startLine": 154,
+        "startLine": 157,
         "startColumn": 9,
-        "endLine": 154,
+        "endLine": 157,
         "endColumn": 51
       },
       "decision": {
@@ -202,15 +210,15 @@
       }
     },
     {
-      "id": "decision:rpc:GetDexDisplay:168:9",
+      "id": "decision:rpc:GetDexDisplay:171:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetDexDisplay",
       "phase": "rpc",
       "span": {
-        "startLine": 168,
+        "startLine": 171,
         "startColumn": 9,
-        "endLine": 170,
+        "endLine": 173,
         "endColumn": 4
       },
       "decision": {
@@ -218,15 +226,15 @@
       }
     },
     {
-      "id": "decision:rpc:GetDexSummary:160:9",
+      "id": "decision:rpc:GetDexSummary:163:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetDexSummary",
       "phase": "rpc",
       "span": {
-        "startLine": 160,
+        "startLine": 163,
         "startColumn": 9,
-        "endLine": 160,
+        "endLine": 163,
         "endColumn": 65
       },
       "decision": {
@@ -234,16 +242,16 @@
       }
     },
     {
-      "id": "decision:rpc:UpdateConnectorContribution:106:10",
+      "id": "decision:rpc:UpdateConnectorContribution:107:10",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:UpdateConnectorContribution",
       "condition": "status.Closed() || dexflow.ValueOrZero(closingAttribute.Get(ctx)) || submission.Identity != comm.Must(identityAttribute.Get(ctx))",
       "phase": "rpc",
       "span": {
-        "startLine": 106,
+        "startLine": 107,
         "startColumn": 10,
-        "endLine": 106,
+        "endLine": 107,
         "endColumn": 45
       },
       "decision": {
@@ -251,16 +259,16 @@
       }
     },
     {
-      "id": "decision:rpc:UpdateConnectorContribution:112:10",
+      "id": "decision:rpc:UpdateConnectorContribution:113:10",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:UpdateConnectorContribution",
       "condition": "!(status.Closed() || dexflow.ValueOrZero(closingAttribute.Get(ctx)) || submission.Identity != comm.Must(identityAttribute.Get(ctx))) and record == nil || record.HeadCommit == submission.Contribution.HeadCommit",
       "phase": "rpc",
       "span": {
-        "startLine": 112,
+        "startLine": 113,
         "startColumn": 10,
-        "endLine": 112,
+        "endLine": 113,
         "endColumn": 44
       },
       "decision": {
@@ -268,17 +276,17 @@
       }
     },
     {
-      "id": "decision:rpc:UpdateConnectorContribution:128:9",
+      "id": "decision:rpc:UpdateConnectorContribution:129:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:UpdateConnectorContribution",
       "condition": "!(status.Closed() || dexflow.ValueOrZero(closingAttribute.Get(ctx)) || submission.Identity != comm.Must(identityAttribute.Get(ctx))) and !(record == nil || record.HeadCommit == submission.Contribution.HeadCommit)",
       "phase": "rpc",
       "span": {
-        "startLine": 128,
+        "startLine": 129,
         "startColumn": 9,
-        "endLine": 129,
-        "endColumn": 108
+        "endLine": 131,
+        "endColumn": 50
       },
       "decision": {
         "type": "rpcResult",
@@ -289,6 +297,14 @@
           },
           {
             "stepId": "step:RecordConnectorPullRequest",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:PublishReleaseCandidate",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:RecordReleaseCandidate",
             "scope": "all"
           },
           {
@@ -303,16 +319,16 @@
       }
     },
     {
-      "id": "decision:step:AdmitConnectorContribution:200:10",
+      "id": "decision:step:AdmitConnectorContribution:203:10",
       "kind": "decision",
       "name": "gracefulComplete",
       "parentId": "step:AdmitConnectorContribution",
       "condition": "!admitted",
       "phase": "execute",
       "span": {
-        "startLine": 200,
+        "startLine": 203,
         "startColumn": 10,
-        "endLine": 200,
+        "endLine": 203,
         "endColumn": 81
       },
       "decision": {
@@ -320,16 +336,16 @@
       }
     },
     {
-      "id": "decision:step:AdmitConnectorContribution:220:9",
+      "id": "decision:step:AdmitConnectorContribution:223:9",
       "kind": "decision",
       "name": "goToMany",
       "parentId": "step:AdmitConnectorContribution",
       "condition": "!(!admitted)",
       "phase": "execute",
       "span": {
-        "startLine": 220,
+        "startLine": 223,
         "startColumn": 9,
-        "endLine": 220,
+        "endLine": 223,
         "endColumn": 30
       },
       "decision": {
@@ -337,15 +353,15 @@
       }
     },
     {
-      "id": "decision:step:AwaitConnectorContributionEnd:241:9",
+      "id": "decision:step:AwaitConnectorContributionEnd:244:9",
       "kind": "decision",
       "name": "gracefulComplete",
       "parentId": "step:AwaitConnectorContributionEnd",
       "phase": "execute",
       "span": {
-        "startLine": 241,
+        "startLine": 244,
         "startColumn": 9,
-        "endLine": 242,
+        "endLine": 245,
         "endColumn": 149
       },
       "decision": {
@@ -387,15 +403,15 @@
       }
     },
     {
-      "id": "decision:step:DropConnectorEvent:353:9",
+      "id": "decision:step:DropConnectorEvent:356:9",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:DropConnectorEvent",
       "phase": "execute",
       "span": {
-        "startLine": 353,
+        "startLine": 356,
         "startColumn": 9,
-        "endLine": 353,
+        "endLine": 356,
         "endColumn": 22
       },
       "decision": {
@@ -403,15 +419,15 @@
       }
     },
     {
-      "id": "decision:step:OpenConnectorPullRequest:276:9",
+      "id": "decision:step:OpenConnectorPullRequest:279:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:OpenConnectorPullRequest",
       "phase": "execute",
       "span": {
-        "startLine": 276,
+        "startLine": 279,
         "startColumn": 9,
-        "endLine": 276,
+        "endLine": 279,
         "endColumn": 56
       },
       "decision": {
@@ -419,15 +435,15 @@
       }
     },
     {
-      "id": "decision:step:PublishReleaseCandidate:398:9",
+      "id": "decision:step:PublishReleaseCandidate:446:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:PublishReleaseCandidate",
       "phase": "execute",
       "span": {
-        "startLine": 398,
+        "startLine": 446,
         "startColumn": 9,
-        "endLine": 398,
+        "endLine": 446,
         "endColumn": 52
       },
       "decision": {
@@ -435,16 +451,16 @@
       }
     },
     {
-      "id": "decision:step:RecordConnectorChecks:499:10",
+      "id": "decision:step:RecordConnectorChecks:559:10",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:RecordConnectorChecks",
       "condition": "record.Status.Closed() || dexflow.ValueOrZero(closingAttribute.Get(ctx)) || record.HeadCommit != attempt.Head",
       "phase": "execute",
       "span": {
-        "startLine": 499,
+        "startLine": 559,
         "startColumn": 10,
-        "endLine": 499,
+        "endLine": 559,
         "endColumn": 23
       },
       "decision": {
@@ -452,16 +468,16 @@
       }
     },
     {
-      "id": "decision:step:RecordConnectorChecks:508:10",
+      "id": "decision:step:RecordConnectorChecks:568:10",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:RecordConnectorChecks",
       "condition": "!(record.Status.Closed() || dexflow.ValueOrZero(closingAttribute.Get(ctx)) || record.HeadCommit != attempt.Head) and checks.State != connectorlibrary.HeadChecksFailed",
       "phase": "execute",
       "span": {
-        "startLine": 508,
+        "startLine": 568,
         "startColumn": 10,
-        "endLine": 508,
+        "endLine": 568,
         "endColumn": 23
       },
       "decision": {
@@ -469,16 +485,16 @@
       }
     },
     {
-      "id": "decision:step:RecordConnectorChecks:510:9",
+      "id": "decision:step:RecordConnectorChecks:570:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RecordConnectorChecks",
       "condition": "!(record.Status.Closed() || dexflow.ValueOrZero(closingAttribute.Get(ctx)) || record.HeadCommit != attempt.Head) and !(checks.State != connectorlibrary.HeadChecksFailed)",
       "phase": "execute",
       "span": {
-        "startLine": 510,
+        "startLine": 570,
         "startColumn": 9,
-        "endLine": 510,
+        "endLine": 570,
         "endColumn": 114
       },
       "decision": {
@@ -486,16 +502,16 @@
       }
     },
     {
-      "id": "decision:step:RecordConnectorPullRequest:292:10",
+      "id": "decision:step:RecordConnectorPullRequest:295:10",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:RecordConnectorPullRequest",
       "condition": "record.Status.Closed() || dexflow.ValueOrZero(closingAttribute.Get(ctx)) || record.HeadCommit != attempt.HeadCommit",
       "phase": "execute",
       "span": {
-        "startLine": 292,
+        "startLine": 295,
         "startColumn": 10,
-        "endLine": 292,
+        "endLine": 295,
         "endColumn": 23
       },
       "decision": {
@@ -503,16 +519,16 @@
       }
     },
     {
-      "id": "decision:step:RecordConnectorPullRequest:299:10",
+      "id": "decision:step:RecordConnectorPullRequest:302:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RecordConnectorPullRequest",
       "condition": "!(record.Status.Closed() || dexflow.ValueOrZero(closingAttribute.Get(ctx)) || record.HeadCommit != attempt.HeadCommit) and attempt.PullRequest != nil",
       "phase": "execute",
       "span": {
-        "startLine": 299,
+        "startLine": 302,
         "startColumn": 10,
-        "endLine": 299,
+        "endLine": 302,
         "endColumn": 154
       },
       "decision": {
@@ -520,16 +536,16 @@
       }
     },
     {
-      "id": "decision:step:RecordConnectorPullRequest:302:10",
+      "id": "decision:step:RecordConnectorPullRequest:305:10",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:RecordConnectorPullRequest",
       "condition": "!(record.Status.Closed() || dexflow.ValueOrZero(closingAttribute.Get(ctx)) || record.HeadCommit != attempt.HeadCommit) and !(attempt.PullRequest != nil) and record.Status.HasPullRequest()",
       "phase": "execute",
       "span": {
-        "startLine": 302,
+        "startLine": 305,
         "startColumn": 10,
-        "endLine": 302,
+        "endLine": 305,
         "endColumn": 23
       },
       "decision": {
@@ -537,16 +553,16 @@
       }
     },
     {
-      "id": "decision:step:RecordConnectorPullRequest:310:9",
+      "id": "decision:step:RecordConnectorPullRequest:313:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RecordConnectorPullRequest",
       "condition": "!(record.Status.Closed() || dexflow.ValueOrZero(closingAttribute.Get(ctx)) || record.HeadCommit != attempt.HeadCommit) and !(attempt.PullRequest != nil) and !(record.Status.HasPullRequest())",
       "phase": "execute",
       "span": {
-        "startLine": 310,
+        "startLine": 313,
         "startColumn": 9,
-        "endLine": 310,
+        "endLine": 313,
         "endColumn": 98
       },
       "decision": {
@@ -554,16 +570,16 @@
       }
     },
     {
-      "id": "decision:step:RecordReleaseCandidate:420:10",
+      "id": "decision:step:RecordReleaseCandidate:468:10",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:RecordReleaseCandidate",
-      "condition": "record.Status.Closed() || record.HeadCommit != attempt.Candidate.Commit",
+      "condition": "record.Status.Closed() || dexflow.ValueOrZero(closingAttribute.Get(ctx)) || record.HeadCommit != attempt.Candidate.Commit",
       "phase": "execute",
       "span": {
-        "startLine": 420,
+        "startLine": 468,
         "startColumn": 10,
-        "endLine": 420,
+        "endLine": 468,
         "endColumn": 23
       },
       "decision": {
@@ -571,16 +587,16 @@
       }
     },
     {
-      "id": "decision:step:RecordReleaseCandidate:433:10",
+      "id": "decision:step:RecordReleaseCandidate:485:10",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:RecordReleaseCandidate",
-      "condition": "!(record.Status.Closed() || record.HeadCommit != attempt.Candidate.Commit) and attempt.Reported == candidate.Status",
+      "condition": "!(record.Status.Closed() || dexflow.ValueOrZero(closingAttribute.Get(ctx)) || record.HeadCommit != attempt.Candidate.Commit) and attempt.Reported == candidate.Status",
       "phase": "execute",
       "span": {
-        "startLine": 433,
+        "startLine": 485,
         "startColumn": 10,
-        "endLine": 433,
+        "endLine": 485,
         "endColumn": 23
       },
       "decision": {
@@ -588,16 +604,16 @@
       }
     },
     {
-      "id": "decision:step:RecordReleaseCandidate:435:9",
+      "id": "decision:step:RecordReleaseCandidate:487:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RecordReleaseCandidate",
-      "condition": "!(record.Status.Closed() || record.HeadCommit != attempt.Candidate.Commit) and !(attempt.Reported == candidate.Status)",
+      "condition": "!(record.Status.Closed() || dexflow.ValueOrZero(closingAttribute.Get(ctx)) || record.HeadCommit != attempt.Candidate.Commit) and !(attempt.Reported == candidate.Status)",
       "phase": "execute",
       "span": {
-        "startLine": 435,
+        "startLine": 487,
         "startColumn": 9,
-        "endLine": 435,
+        "endLine": 487,
         "endColumn": 93
       },
       "decision": {
@@ -605,16 +621,16 @@
       }
     },
     {
-      "id": "decision:step:ReportConnectorEvent:332:10",
+      "id": "decision:step:ReportConnectorEvent:335:10",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:ReportConnectorEvent",
       "condition": "dexflow.ValueOrZero(closingAttribute.Get(ctx))",
       "phase": "execute",
       "span": {
-        "startLine": 332,
+        "startLine": 335,
         "startColumn": 10,
-        "endLine": 332,
+        "endLine": 335,
         "endColumn": 23
       },
       "decision": {
@@ -622,16 +638,16 @@
       }
     },
     {
-      "id": "decision:step:ReportConnectorEvent:337:11",
+      "id": "decision:step:ReportConnectorEvent:340:11",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:ReportConnectorEvent",
-      "condition": "!(dexflow.ValueOrZero(closingAttribute.Get(ctx))) and notification.Event == conversation.ConnectorChecksFailed and record.Status.Closed() || record.HeadCommit != notification.Commit",
+      "condition": "!(dexflow.ValueOrZero(closingAttribute.Get(ctx))) and notification.Commit != \"\" and record.Status.Closed() || record.HeadCommit != notification.Commit",
       "phase": "execute",
       "span": {
-        "startLine": 337,
+        "startLine": 340,
         "startColumn": 11,
-        "endLine": 337,
+        "endLine": 340,
         "endColumn": 24
       },
       "decision": {
@@ -639,16 +655,16 @@
       }
     },
     {
-      "id": "decision:step:ReportConnectorEvent:343:9",
+      "id": "decision:step:ReportConnectorEvent:346:9",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:ReportConnectorEvent",
       "condition": "!(dexflow.ValueOrZero(closingAttribute.Get(ctx)))",
       "phase": "execute",
       "span": {
-        "startLine": 343,
+        "startLine": 346,
         "startColumn": 9,
-        "endLine": 343,
+        "endLine": 346,
         "endColumn": 22
       },
       "decision": {
@@ -656,16 +672,16 @@
       }
     },
     {
-      "id": "decision:step:WaitConnectorChecks:467:11",
+      "id": "decision:step:WaitConnectorChecks:527:11",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:WaitConnectorChecks",
       "condition": "err != nil || attempt.Checks.State == connectorlibrary.HeadChecksPending and attempt.Number \u003c connectorCheckMaxReads",
       "phase": "execute",
       "span": {
-        "startLine": 467,
+        "startLine": 527,
         "startColumn": 11,
-        "endLine": 467,
+        "endLine": 527,
         "endColumn": 51
       },
       "decision": {
@@ -673,16 +689,16 @@
       }
     },
     {
-      "id": "decision:step:WaitConnectorChecks:469:10",
+      "id": "decision:step:WaitConnectorChecks:529:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:WaitConnectorChecks",
       "condition": "err != nil || attempt.Checks.State == connectorlibrary.HeadChecksPending and !(attempt.Number \u003c connectorCheckMaxReads)",
       "phase": "execute",
       "span": {
-        "startLine": 469,
+        "startLine": 529,
         "startColumn": 10,
-        "endLine": 469,
+        "endLine": 529,
         "endColumn": 52
       },
       "decision": {
@@ -690,16 +706,16 @@
       }
     },
     {
-      "id": "decision:step:WaitConnectorChecks:475:11",
+      "id": "decision:step:WaitConnectorChecks:535:11",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:WaitConnectorChecks",
       "condition": "!(err != nil || attempt.Checks.State == connectorlibrary.HeadChecksPending) and attempt.Checks.State == connectorlibrary.HeadChecksFailed and err != nil",
       "phase": "execute",
       "span": {
-        "startLine": 475,
+        "startLine": 535,
         "startColumn": 11,
-        "endLine": 475,
+        "endLine": 535,
         "endColumn": 53
       },
       "decision": {
@@ -707,16 +723,16 @@
       }
     },
     {
-      "id": "decision:step:WaitConnectorChecks:485:9",
+      "id": "decision:step:WaitConnectorChecks:545:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:WaitConnectorChecks",
       "condition": "!(err != nil || attempt.Checks.State == connectorlibrary.HeadChecksPending)",
       "phase": "execute",
       "span": {
-        "startLine": 485,
+        "startLine": 545,
         "startColumn": 9,
-        "endLine": 485,
+        "endLine": 545,
         "endColumn": 51
       },
       "decision": {
@@ -728,9 +744,9 @@
       "kind": "attribute",
       "name": "Closing",
       "span": {
-        "startLine": 35,
+        "startLine": 36,
         "startColumn": 2,
-        "endLine": 35,
+        "endLine": 36,
         "endColumn": 60
       },
       "resource": {
@@ -742,9 +758,9 @@
       "kind": "attribute",
       "name": "Identity",
       "span": {
-        "startLine": 28,
+        "startLine": 29,
         "startColumn": 2,
-        "endLine": 28,
+        "endLine": 29,
         "endColumn": 63
       },
       "resource": {
@@ -756,9 +772,9 @@
       "kind": "attribute",
       "name": "ProjectID",
       "span": {
-        "startLine": 30,
+        "startLine": 31,
         "startColumn": 2,
-        "endLine": 30,
+        "endLine": 31,
         "endColumn": 142
       },
       "resource": {
@@ -770,9 +786,9 @@
       "kind": "attribute",
       "name": "Contribution",
       "span": {
-        "startLine": 34,
+        "startLine": 35,
         "startColumn": 2,
-        "endLine": 34,
+        "endLine": 35,
         "endColumn": 67
       },
       "resource": {
@@ -784,9 +800,9 @@
       "kind": "attribute",
       "name": "ContributionStatus",
       "span": {
-        "startLine": 32,
+        "startLine": 33,
         "startColumn": 2,
-        "endLine": 32,
+        "endLine": 33,
         "endColumn": 152
       },
       "resource": {
@@ -798,9 +814,9 @@
       "kind": "attribute",
       "name": "Submission",
       "span": {
-        "startLine": 33,
+        "startLine": 34,
         "startColumn": 2,
-        "endLine": 33,
+        "endLine": 34,
         "endColumn": 69
       },
       "resource": {
@@ -812,9 +828,9 @@
       "kind": "channel",
       "name": "ContributionEnd",
       "span": {
-        "startLine": 37,
+        "startLine": 38,
         "startColumn": 2,
-        "endLine": 37,
+        "endLine": 38,
         "endColumn": 68
       },
       "resource": {
@@ -826,9 +842,9 @@
       "kind": "rpc",
       "name": "CloseConnectorContribution",
       "span": {
-        "startLine": 134,
+        "startLine": 136,
         "startColumn": 1,
-        "endLine": 144,
+        "endLine": 147,
         "endColumn": 2
       }
     },
@@ -837,9 +853,9 @@
       "kind": "rpc",
       "name": "GetConnectorContributionSnapshot",
       "span": {
-        "startLine": 148,
+        "startLine": 151,
         "startColumn": 1,
-        "endLine": 155,
+        "endLine": 158,
         "endColumn": 2
       }
     },
@@ -848,9 +864,9 @@
       "kind": "rpc",
       "name": "GetDexDisplay",
       "span": {
-        "startLine": 167,
+        "startLine": 170,
         "startColumn": 1,
-        "endLine": 171,
+        "endLine": 174,
         "endColumn": 2
       }
     },
@@ -859,9 +875,9 @@
       "kind": "rpc",
       "name": "GetDexSummary",
       "span": {
-        "startLine": 159,
+        "startLine": 162,
         "startColumn": 1,
-        "endLine": 161,
+        "endLine": 164,
         "endColumn": 2
       }
     },
@@ -870,9 +886,9 @@
       "kind": "rpc",
       "name": "UpdateConnectorContribution",
       "span": {
-        "startLine": 103,
+        "startLine": 104,
         "startColumn": 1,
-        "endLine": 130,
+        "endLine": 132,
         "endColumn": 2
       }
     },
@@ -883,9 +899,9 @@
       "phase": "execute",
       "start": true,
       "span": {
-        "startLine": 55,
+        "startLine": 56,
         "startColumn": 3,
-        "endLine": 55,
+        "endLine": 56,
         "endColumn": 62
       },
       "metadata": {
@@ -898,9 +914,9 @@
       "name": "AwaitConnectorContributionEnd",
       "phase": "wait_for+execute",
       "span": {
-        "startLine": 55,
+        "startLine": 56,
         "startColumn": 64,
-        "endLine": 55,
+        "endLine": 56,
         "endColumn": 111
       },
       "metadata": {
@@ -913,9 +929,9 @@
       "name": "DropConnectorEvent",
       "phase": "execute",
       "span": {
-        "startLine": 57,
+        "startLine": 58,
         "startColumn": 53,
-        "endLine": 57,
+        "endLine": 58,
         "endColumn": 89
       },
       "metadata": {
@@ -928,9 +944,9 @@
       "name": "OpenConnectorPullRequest",
       "phase": "execute",
       "span": {
-        "startLine": 56,
+        "startLine": 57,
         "startColumn": 3,
-        "endLine": 56,
+        "endLine": 57,
         "endColumn": 55
       },
       "metadata": {
@@ -943,9 +959,9 @@
       "name": "PublishReleaseCandidate",
       "phase": "execute",
       "span": {
-        "startLine": 58,
+        "startLine": 59,
         "startColumn": 3,
-        "endLine": 58,
+        "endLine": 59,
         "endColumn": 54
       },
       "metadata": {
@@ -958,9 +974,9 @@
       "name": "RecordConnectorChecks",
       "phase": "execute",
       "span": {
-        "startLine": 59,
+        "startLine": 60,
         "startColumn": 52,
-        "endLine": 59,
+        "endLine": 60,
         "endColumn": 91
       },
       "metadata": {
@@ -973,9 +989,9 @@
       "name": "RecordConnectorPullRequest",
       "phase": "execute",
       "span": {
-        "startLine": 56,
+        "startLine": 57,
         "startColumn": 57,
-        "endLine": 56,
+        "endLine": 57,
         "endColumn": 101
       },
       "metadata": {
@@ -988,9 +1004,9 @@
       "name": "RecordReleaseCandidate",
       "phase": "execute",
       "span": {
-        "startLine": 58,
+        "startLine": 59,
         "startColumn": 56,
-        "endLine": 58,
+        "endLine": 59,
         "endColumn": 96
       },
       "metadata": {
@@ -1003,9 +1019,9 @@
       "name": "ReportConnectorEvent",
       "phase": "execute",
       "span": {
-        "startLine": 57,
+        "startLine": 58,
         "startColumn": 3,
-        "endLine": 57,
+        "endLine": 58,
         "endColumn": 51
       },
       "metadata": {
@@ -1018,9 +1034,9 @@
       "name": "WaitConnectorChecks",
       "phase": "wait_for+execute",
       "span": {
-        "startLine": 59,
+        "startLine": 60,
         "startColumn": 3,
-        "endLine": 59,
+        "endLine": 60,
         "endColumn": 50
       },
       "metadata": {
@@ -1028,15 +1044,15 @@
       }
     },
     {
-      "id": "wait:AwaitConnectorContributionEnd:232:9",
+      "id": "wait:AwaitConnectorContributionEnd:235:9",
       "kind": "wait",
       "name": "until",
       "parentId": "step:AwaitConnectorContributionEnd",
       "phase": "wait_for",
       "span": {
-        "startLine": 232,
+        "startLine": 235,
         "startColumn": 9,
-        "endLine": 232,
+        "endLine": 235,
         "endColumn": 39
       },
       "wait": {
@@ -1048,9 +1064,9 @@
             "label": "ContributionEnd.for 1",
             "resourceId": "resource:channel:endChannel",
             "span": {
-              "startLine": 232,
+              "startLine": 235,
               "startColumn": 19,
-              "endLine": 232,
+              "endLine": 235,
               "endColumn": 38
             }
           }
@@ -1058,15 +1074,15 @@
       }
     },
     {
-      "id": "wait:WaitConnectorChecks:451:9",
+      "id": "wait:WaitConnectorChecks:511:9",
       "kind": "wait",
       "name": "until",
       "parentId": "step:WaitConnectorChecks",
       "phase": "wait_for",
       "span": {
-        "startLine": 451,
+        "startLine": 511,
         "startColumn": 9,
-        "endLine": 451,
+        "endLine": 511,
         "endColumn": 76
       },
       "wait": {
@@ -1078,9 +1094,9 @@
             "label": "max(time.Until(attempt.CheckAt), time.Second) timer",
             "expression": "max(time.Until(attempt.CheckAt), time.Second)",
             "span": {
-              "startLine": 451,
+              "startLine": 511,
               "startColumn": 19,
-              "endLine": 451,
+              "endLine": 511,
               "endColumn": 75
             }
           }
@@ -1092,474 +1108,462 @@
     {
       "id": "edge:0001",
       "kind": "cancel",
-      "from": "decision:rpc:CloseConnectorContribution:143:9",
-      "to": "step:RecordConnectorChecks",
+      "from": "decision:rpc:CloseConnectorContribution:145:9",
+      "to": "step:PublishReleaseCandidate",
       "label": "CancelSteps",
       "span": {
-        "startLine": 143,
-        "startColumn": 82,
-        "endLine": 143,
-        "endColumn": 105
+        "startLine": 145,
+        "startColumn": 59,
+        "endLine": 145,
+        "endColumn": 84
       }
     },
     {
       "id": "edge:0002",
       "kind": "cancel",
-      "from": "decision:rpc:CloseConnectorContribution:143:9",
-      "to": "step:ReportConnectorEvent",
+      "from": "decision:rpc:CloseConnectorContribution:145:9",
+      "to": "step:RecordConnectorChecks",
       "label": "CancelSteps",
       "span": {
-        "startLine": 143,
-        "startColumn": 107,
-        "endLine": 143,
-        "endColumn": 129
+        "startLine": 146,
+        "startColumn": 26,
+        "endLine": 146,
+        "endColumn": 49
       }
     },
     {
       "id": "edge:0003",
       "kind": "cancel",
-      "from": "decision:rpc:CloseConnectorContribution:143:9",
-      "to": "step:WaitConnectorChecks",
+      "from": "decision:rpc:CloseConnectorContribution:145:9",
+      "to": "step:RecordReleaseCandidate",
       "label": "CancelSteps",
       "span": {
-        "startLine": 143,
-        "startColumn": 59,
-        "endLine": 143,
-        "endColumn": 80
+        "startLine": 145,
+        "startColumn": 86,
+        "endLine": 145,
+        "endColumn": 110
       }
     },
     {
       "id": "edge:0004",
       "kind": "cancel",
-      "from": "decision:rpc:UpdateConnectorContribution:128:9",
-      "to": "step:OpenConnectorPullRequest",
+      "from": "decision:rpc:CloseConnectorContribution:145:9",
+      "to": "step:ReportConnectorEvent",
       "label": "CancelSteps",
       "span": {
-        "startLine": 129,
-        "startColumn": 3,
-        "endLine": 129,
-        "endColumn": 29
+        "startLine": 146,
+        "startColumn": 51,
+        "endLine": 146,
+        "endColumn": 73
       }
     },
     {
       "id": "edge:0005",
       "kind": "cancel",
-      "from": "decision:rpc:UpdateConnectorContribution:128:9",
-      "to": "step:RecordConnectorChecks",
+      "from": "decision:rpc:CloseConnectorContribution:145:9",
+      "to": "step:WaitConnectorChecks",
       "label": "CancelSteps",
       "span": {
-        "startLine": 129,
-        "startColumn": 84,
-        "endLine": 129,
-        "endColumn": 107
+        "startLine": 146,
+        "startColumn": 3,
+        "endLine": 146,
+        "endColumn": 24
       }
     },
     {
       "id": "edge:0006",
       "kind": "cancel",
-      "from": "decision:rpc:UpdateConnectorContribution:128:9",
-      "to": "step:RecordConnectorPullRequest",
+      "from": "decision:rpc:UpdateConnectorContribution:129:9",
+      "to": "step:OpenConnectorPullRequest",
       "label": "CancelSteps",
       "span": {
-        "startLine": 129,
-        "startColumn": 31,
-        "endLine": 129,
-        "endColumn": 59
+        "startLine": 130,
+        "startColumn": 3,
+        "endLine": 130,
+        "endColumn": 29
       }
     },
     {
       "id": "edge:0007",
       "kind": "cancel",
-      "from": "decision:rpc:UpdateConnectorContribution:128:9",
-      "to": "step:WaitConnectorChecks",
+      "from": "decision:rpc:UpdateConnectorContribution:129:9",
+      "to": "step:PublishReleaseCandidate",
       "label": "CancelSteps",
       "span": {
-        "startLine": 129,
+        "startLine": 130,
         "startColumn": 61,
-        "endLine": 129,
-        "endColumn": 82
+        "endLine": 130,
+        "endColumn": 86
       }
     },
     {
       "id": "edge:0008",
-      "kind": "transition",
-      "from": "decision:step:AdmitConnectorContribution:220:9",
-      "to": "step:AwaitConnectorContributionEnd",
-      "label": "fan-out",
-      "multiplicity": "×N",
+      "kind": "cancel",
+      "from": "decision:rpc:UpdateConnectorContribution:129:9",
+      "to": "step:RecordConnectorChecks",
+      "label": "CancelSteps",
       "span": {
-        "startLine": 209,
-        "startColumn": 29,
-        "endLine": 209,
-        "endColumn": 81
+        "startLine": 131,
+        "startColumn": 26,
+        "endLine": 131,
+        "endColumn": 49
       }
     },
     {
       "id": "edge:0009",
-      "kind": "transition",
-      "from": "decision:step:AdmitConnectorContribution:220:9",
-      "to": "step:OpenConnectorPullRequest",
-      "label": "fan-out",
-      "multiplicity": "×N",
+      "kind": "cancel",
+      "from": "decision:rpc:UpdateConnectorContribution:129:9",
+      "to": "step:RecordConnectorPullRequest",
+      "label": "CancelSteps",
       "span": {
-        "startLine": 211,
-        "startColumn": 23,
-        "endLine": 211,
-        "endColumn": 116
+        "startLine": 130,
+        "startColumn": 31,
+        "endLine": 130,
+        "endColumn": 59
       }
     },
     {
       "id": "edge:0010",
-      "kind": "transition",
-      "from": "decision:step:AdmitConnectorContribution:220:9",
-      "to": "step:PublishReleaseCandidate",
-      "label": "fan-out",
-      "multiplicity": "×N",
+      "kind": "cancel",
+      "from": "decision:rpc:UpdateConnectorContribution:129:9",
+      "to": "step:RecordReleaseCandidate",
+      "label": "CancelSteps",
       "span": {
-        "startLine": 218,
-        "startColumn": 23,
-        "endLine": 218,
-        "endColumn": 74
+        "startLine": 130,
+        "startColumn": 88,
+        "endLine": 130,
+        "endColumn": 112
       }
     },
     {
       "id": "edge:0011",
-      "kind": "transition",
-      "from": "decision:step:AdmitConnectorContribution:220:9",
-      "to": "step:RecordReleaseCandidate",
-      "label": "fan-out",
-      "multiplicity": "×N",
+      "kind": "cancel",
+      "from": "decision:rpc:UpdateConnectorContribution:129:9",
+      "to": "step:WaitConnectorChecks",
+      "label": "CancelSteps",
       "span": {
-        "startLine": 216,
-        "startColumn": 23,
-        "endLine": 216,
-        "endColumn": 73
+        "startLine": 131,
+        "startColumn": 3,
+        "endLine": 131,
+        "endColumn": 24
       }
     },
     {
       "id": "edge:0012",
-      "kind": "cancel",
-      "from": "decision:step:AwaitConnectorContributionEnd:241:9",
-      "to": "step:DropConnectorEvent",
-      "label": "CancelSteps",
+      "kind": "transition",
+      "from": "decision:step:AdmitConnectorContribution:223:9",
+      "to": "step:AwaitConnectorContributionEnd",
+      "label": "fan-out",
+      "multiplicity": "×N",
       "span": {
-        "startLine": 242,
-        "startColumn": 27,
-        "endLine": 242,
-        "endColumn": 47
+        "startLine": 212,
+        "startColumn": 29,
+        "endLine": 212,
+        "endColumn": 81
       }
     },
     {
       "id": "edge:0013",
-      "kind": "cancel",
-      "from": "decision:step:AwaitConnectorContributionEnd:241:9",
+      "kind": "transition",
+      "from": "decision:step:AdmitConnectorContribution:223:9",
       "to": "step:OpenConnectorPullRequest",
-      "label": "CancelSteps",
+      "label": "fan-out",
+      "multiplicity": "×N",
       "span": {
-        "startLine": 241,
-        "startColumn": 93,
-        "endLine": 241,
-        "endColumn": 119
+        "startLine": 214,
+        "startColumn": 23,
+        "endLine": 214,
+        "endColumn": 116
       }
     },
     {
       "id": "edge:0014",
-      "kind": "cancel",
-      "from": "decision:step:AwaitConnectorContributionEnd:241:9",
+      "kind": "transition",
+      "from": "decision:step:AdmitConnectorContribution:223:9",
       "to": "step:PublishReleaseCandidate",
-      "label": "CancelSteps",
+      "label": "fan-out",
+      "multiplicity": "×N",
       "span": {
-        "startLine": 242,
-        "startColumn": 49,
-        "endLine": 242,
+        "startLine": 221,
+        "startColumn": 23,
+        "endLine": 221,
         "endColumn": 74
       }
     },
     {
       "id": "edge:0015",
-      "kind": "cancel",
-      "from": "decision:step:AwaitConnectorContributionEnd:241:9",
-      "to": "step:RecordConnectorChecks",
-      "label": "CancelSteps",
+      "kind": "transition",
+      "from": "decision:step:AdmitConnectorContribution:223:9",
+      "to": "step:RecordReleaseCandidate",
+      "label": "fan-out",
+      "multiplicity": "×N",
       "span": {
-        "startLine": 242,
-        "startColumn": 125,
-        "endLine": 242,
-        "endColumn": 148
+        "startLine": 219,
+        "startColumn": 23,
+        "endLine": 219,
+        "endColumn": 73
       }
     },
     {
       "id": "edge:0016",
       "kind": "cancel",
-      "from": "decision:step:AwaitConnectorContributionEnd:241:9",
-      "to": "step:RecordConnectorPullRequest",
+      "from": "decision:step:AwaitConnectorContributionEnd:244:9",
+      "to": "step:DropConnectorEvent",
       "label": "CancelSteps",
       "span": {
-        "startLine": 241,
-        "startColumn": 121,
-        "endLine": 241,
-        "endColumn": 149
+        "startLine": 245,
+        "startColumn": 27,
+        "endLine": 245,
+        "endColumn": 47
       }
     },
     {
       "id": "edge:0017",
       "kind": "cancel",
-      "from": "decision:step:AwaitConnectorContributionEnd:241:9",
-      "to": "step:RecordReleaseCandidate",
+      "from": "decision:step:AwaitConnectorContributionEnd:244:9",
+      "to": "step:OpenConnectorPullRequest",
       "label": "CancelSteps",
       "span": {
-        "startLine": 242,
-        "startColumn": 76,
-        "endLine": 242,
-        "endColumn": 100
+        "startLine": 244,
+        "startColumn": 93,
+        "endLine": 244,
+        "endColumn": 119
       }
     },
     {
       "id": "edge:0018",
       "kind": "cancel",
-      "from": "decision:step:AwaitConnectorContributionEnd:241:9",
-      "to": "step:ReportConnectorEvent",
+      "from": "decision:step:AwaitConnectorContributionEnd:244:9",
+      "to": "step:PublishReleaseCandidate",
       "label": "CancelSteps",
       "span": {
-        "startLine": 242,
-        "startColumn": 3,
-        "endLine": 242,
-        "endColumn": 25
+        "startLine": 245,
+        "startColumn": 49,
+        "endLine": 245,
+        "endColumn": 74
       }
     },
     {
       "id": "edge:0019",
       "kind": "cancel",
-      "from": "decision:step:AwaitConnectorContributionEnd:241:9",
-      "to": "step:WaitConnectorChecks",
+      "from": "decision:step:AwaitConnectorContributionEnd:244:9",
+      "to": "step:RecordConnectorChecks",
       "label": "CancelSteps",
       "span": {
-        "startLine": 242,
-        "startColumn": 102,
-        "endLine": 242,
-        "endColumn": 123
+        "startLine": 245,
+        "startColumn": 125,
+        "endLine": 245,
+        "endColumn": 148
       }
     },
     {
       "id": "edge:0020",
-      "kind": "transition",
-      "from": "decision:step:OpenConnectorPullRequest:276:9",
+      "kind": "cancel",
+      "from": "decision:step:AwaitConnectorContributionEnd:244:9",
       "to": "step:RecordConnectorPullRequest",
-      "label": "GoTo",
+      "label": "CancelSteps",
       "span": {
-        "startLine": 276,
-        "startColumn": 9,
-        "endLine": 276,
-        "endColumn": 56
+        "startLine": 244,
+        "startColumn": 121,
+        "endLine": 244,
+        "endColumn": 149
       }
     },
     {
       "id": "edge:0021",
-      "kind": "transition",
-      "from": "decision:step:PublishReleaseCandidate:398:9",
+      "kind": "cancel",
+      "from": "decision:step:AwaitConnectorContributionEnd:244:9",
       "to": "step:RecordReleaseCandidate",
-      "label": "GoTo",
+      "label": "CancelSteps",
       "span": {
-        "startLine": 398,
-        "startColumn": 9,
-        "endLine": 398,
-        "endColumn": 52
+        "startLine": 245,
+        "startColumn": 76,
+        "endLine": 245,
+        "endColumn": 100
       }
     },
     {
       "id": "edge:0022",
-      "kind": "transition",
-      "from": "decision:step:RecordConnectorChecks:510:9",
+      "kind": "cancel",
+      "from": "decision:step:AwaitConnectorContributionEnd:244:9",
       "to": "step:ReportConnectorEvent",
-      "label": "GoTo",
+      "label": "CancelSteps",
       "span": {
-        "startLine": 510,
-        "startColumn": 9,
-        "endLine": 510,
-        "endColumn": 114
+        "startLine": 245,
+        "startColumn": 3,
+        "endLine": 245,
+        "endColumn": 25
       }
     },
     {
       "id": "edge:0023",
-      "kind": "transition",
-      "from": "decision:step:RecordConnectorPullRequest:299:10",
+      "kind": "cancel",
+      "from": "decision:step:AwaitConnectorContributionEnd:244:9",
       "to": "step:WaitConnectorChecks",
-      "label": "GoTo",
+      "label": "CancelSteps",
       "span": {
-        "startLine": 299,
-        "startColumn": 10,
-        "endLine": 299,
-        "endColumn": 154
+        "startLine": 245,
+        "startColumn": 102,
+        "endLine": 245,
+        "endColumn": 123
       }
     },
     {
       "id": "edge:0024",
       "kind": "transition",
-      "from": "decision:step:RecordConnectorPullRequest:310:9",
-      "to": "step:ReportConnectorEvent",
+      "from": "decision:step:OpenConnectorPullRequest:279:9",
+      "to": "step:RecordConnectorPullRequest",
       "label": "GoTo",
       "span": {
-        "startLine": 310,
+        "startLine": 279,
         "startColumn": 9,
-        "endLine": 310,
-        "endColumn": 98
+        "endLine": 279,
+        "endColumn": 56
       }
     },
     {
       "id": "edge:0025",
       "kind": "transition",
-      "from": "decision:step:RecordReleaseCandidate:435:9",
-      "to": "step:ReportConnectorEvent",
+      "from": "decision:step:PublishReleaseCandidate:446:9",
+      "to": "step:RecordReleaseCandidate",
       "label": "GoTo",
       "span": {
-        "startLine": 435,
+        "startLine": 446,
         "startColumn": 9,
-        "endLine": 435,
-        "endColumn": 93
+        "endLine": 446,
+        "endColumn": 52
       }
     },
     {
       "id": "edge:0026",
       "kind": "transition",
-      "from": "decision:step:WaitConnectorChecks:467:11",
-      "to": "step:WaitConnectorChecks",
+      "from": "decision:step:RecordConnectorChecks:570:9",
+      "to": "step:ReportConnectorEvent",
       "label": "GoTo",
       "span": {
-        "startLine": 467,
-        "startColumn": 11,
-        "endLine": 467,
-        "endColumn": 51
+        "startLine": 570,
+        "startColumn": 9,
+        "endLine": 570,
+        "endColumn": 114
       }
     },
     {
       "id": "edge:0027",
       "kind": "transition",
-      "from": "decision:step:WaitConnectorChecks:469:10",
-      "to": "step:RecordConnectorChecks",
+      "from": "decision:step:RecordConnectorPullRequest:302:10",
+      "to": "step:WaitConnectorChecks",
       "label": "GoTo",
       "span": {
-        "startLine": 469,
+        "startLine": 302,
         "startColumn": 10,
-        "endLine": 469,
-        "endColumn": 52
+        "endLine": 302,
+        "endColumn": 154
       }
     },
     {
       "id": "edge:0028",
       "kind": "transition",
-      "from": "decision:step:WaitConnectorChecks:475:11",
-      "to": "step:RecordConnectorChecks",
+      "from": "decision:step:RecordConnectorPullRequest:313:9",
+      "to": "step:ReportConnectorEvent",
       "label": "GoTo",
       "span": {
-        "startLine": 475,
-        "startColumn": 11,
-        "endLine": 475,
-        "endColumn": 53
+        "startLine": 313,
+        "startColumn": 9,
+        "endLine": 313,
+        "endColumn": 98
       }
     },
     {
       "id": "edge:0029",
       "kind": "transition",
-      "from": "decision:step:WaitConnectorChecks:485:9",
-      "to": "step:RecordConnectorChecks",
+      "from": "decision:step:RecordReleaseCandidate:487:9",
+      "to": "step:ReportConnectorEvent",
       "label": "GoTo",
       "span": {
-        "startLine": 485,
+        "startLine": 487,
         "startColumn": 9,
-        "endLine": 485,
-        "endColumn": 51
+        "endLine": 487,
+        "endColumn": 93
       }
     },
     {
       "id": "edge:0030",
-      "kind": "resource_read",
-      "from": "resource:attribute:closingAttribute",
-      "to": "rpc:CloseConnectorContribution",
-      "label": "Get",
+      "kind": "transition",
+      "from": "decision:step:WaitConnectorChecks:527:11",
+      "to": "step:WaitConnectorChecks",
+      "label": "GoTo",
       "span": {
-        "startLine": 138,
-        "startColumn": 25,
-        "endLine": 138,
-        "endColumn": 50
-      },
-      "metadata": {
-        "phase": "rpc"
+        "startLine": 527,
+        "startColumn": 11,
+        "endLine": 527,
+        "endColumn": 51
       }
     },
     {
       "id": "edge:0031",
-      "kind": "resource_read",
-      "from": "resource:attribute:closingAttribute",
-      "to": "rpc:UpdateConnectorContribution",
-      "label": "Get",
+      "kind": "transition",
+      "from": "decision:step:WaitConnectorChecks:529:10",
+      "to": "step:RecordConnectorChecks",
+      "label": "GoTo",
       "span": {
-        "startLine": 105,
-        "startColumn": 44,
-        "endLine": 105,
-        "endColumn": 69
-      },
-      "metadata": {
-        "phase": "rpc"
+        "startLine": 529,
+        "startColumn": 10,
+        "endLine": 529,
+        "endColumn": 52
       }
     },
     {
       "id": "edge:0032",
-      "kind": "resource_read",
-      "from": "resource:attribute:closingAttribute",
+      "kind": "transition",
+      "from": "decision:step:WaitConnectorChecks:535:11",
       "to": "step:RecordConnectorChecks",
-      "label": "Get",
+      "label": "GoTo",
       "span": {
-        "startLine": 498,
-        "startColumn": 51,
-        "endLine": 498,
-        "endColumn": 76
-      },
-      "metadata": {
-        "phase": "execute"
+        "startLine": 535,
+        "startColumn": 11,
+        "endLine": 535,
+        "endColumn": 53
       }
     },
     {
       "id": "edge:0033",
-      "kind": "resource_read",
-      "from": "resource:attribute:closingAttribute",
-      "to": "step:RecordConnectorPullRequest",
-      "label": "Get",
+      "kind": "transition",
+      "from": "decision:step:WaitConnectorChecks:545:9",
+      "to": "step:RecordConnectorChecks",
+      "label": "GoTo",
       "span": {
-        "startLine": 291,
-        "startColumn": 51,
-        "endLine": 291,
-        "endColumn": 76
-      },
-      "metadata": {
-        "phase": "execute"
+        "startLine": 545,
+        "startColumn": 9,
+        "endLine": 545,
+        "endColumn": 51
       }
     },
     {
       "id": "edge:0034",
       "kind": "resource_read",
       "from": "resource:attribute:closingAttribute",
-      "to": "step:ReportConnectorEvent",
+      "to": "rpc:CloseConnectorContribution",
       "label": "Get",
       "span": {
-        "startLine": 331,
+        "startLine": 140,
         "startColumn": 25,
-        "endLine": 331,
+        "endLine": 140,
         "endColumn": 50
       },
       "metadata": {
-        "phase": "execute"
+        "phase": "rpc"
       }
     },
     {
       "id": "edge:0035",
       "kind": "resource_read",
-      "from": "resource:attribute:identityAttribute",
-      "to": "rpc:GetConnectorContributionSnapshot",
+      "from": "resource:attribute:closingAttribute",
+      "to": "rpc:UpdateConnectorContribution",
       "label": "Get",
       "span": {
-        "startLine": 149,
-        "startColumn": 43,
-        "endLine": 149,
+        "startLine": 106,
+        "startColumn": 44,
+        "endLine": 106,
         "endColumn": 69
       },
       "metadata": {
@@ -1569,30 +1573,30 @@
     {
       "id": "edge:0036",
       "kind": "resource_read",
-      "from": "resource:attribute:identityAttribute",
-      "to": "rpc:UpdateConnectorContribution",
+      "from": "resource:attribute:closingAttribute",
+      "to": "step:RecordConnectorChecks",
       "label": "Get",
       "span": {
-        "startLine": 105,
-        "startColumn": 107,
-        "endLine": 105,
-        "endColumn": 133
+        "startLine": 558,
+        "startColumn": 51,
+        "endLine": 558,
+        "endColumn": 76
       },
       "metadata": {
-        "phase": "rpc"
+        "phase": "execute"
       }
     },
     {
       "id": "edge:0037",
       "kind": "resource_read",
-      "from": "resource:attribute:identityAttribute",
-      "to": "step:AdmitConnectorContribution",
+      "from": "resource:attribute:closingAttribute",
+      "to": "step:RecordConnectorPullRequest",
       "label": "Get",
       "span": {
-        "startLine": 191,
-        "startColumn": 36,
-        "endLine": 191,
-        "endColumn": 62
+        "startLine": 294,
+        "startColumn": 51,
+        "endLine": 294,
+        "endColumn": 76
       },
       "metadata": {
         "phase": "execute"
@@ -1601,14 +1605,14 @@
     {
       "id": "edge:0038",
       "kind": "resource_read",
-      "from": "resource:attribute:identityAttribute",
-      "to": "step:AwaitConnectorContributionEnd",
+      "from": "resource:attribute:closingAttribute",
+      "to": "step:RecordReleaseCandidate",
       "label": "Get",
       "span": {
-        "startLine": 237,
-        "startColumn": 32,
-        "endLine": 237,
-        "endColumn": 58
+        "startLine": 467,
+        "startColumn": 51,
+        "endLine": 467,
+        "endColumn": 76
       },
       "metadata": {
         "phase": "execute"
@@ -1617,14 +1621,14 @@
     {
       "id": "edge:0039",
       "kind": "resource_read",
-      "from": "resource:attribute:identityAttribute",
-      "to": "step:OpenConnectorPullRequest",
+      "from": "resource:attribute:closingAttribute",
+      "to": "step:ReportConnectorEvent",
       "label": "Get",
       "span": {
-        "startLine": 260,
-        "startColumn": 32,
-        "endLine": 260,
-        "endColumn": 58
+        "startLine": 334,
+        "startColumn": 25,
+        "endLine": 334,
+        "endColumn": 50
       },
       "metadata": {
         "phase": "execute"
@@ -1634,45 +1638,45 @@
       "id": "edge:0040",
       "kind": "resource_read",
       "from": "resource:attribute:identityAttribute",
-      "to": "step:RecordConnectorChecks",
+      "to": "rpc:GetConnectorContributionSnapshot",
       "label": "Get",
       "span": {
-        "startLine": 510,
-        "startColumn": 77,
-        "endLine": 510,
-        "endColumn": 103
+        "startLine": 152,
+        "startColumn": 43,
+        "endLine": 152,
+        "endColumn": 69
       },
       "metadata": {
-        "phase": "execute"
+        "phase": "rpc"
       }
     },
     {
       "id": "edge:0041",
       "kind": "resource_read",
       "from": "resource:attribute:identityAttribute",
-      "to": "step:RecordConnectorPullRequest",
+      "to": "rpc:UpdateConnectorContribution",
       "label": "Get",
       "span": {
-        "startLine": 290,
-        "startColumn": 32,
-        "endLine": 290,
-        "endColumn": 58
+        "startLine": 106,
+        "startColumn": 107,
+        "endLine": 106,
+        "endColumn": 133
       },
       "metadata": {
-        "phase": "execute"
+        "phase": "rpc"
       }
     },
     {
       "id": "edge:0042",
       "kind": "resource_read",
       "from": "resource:attribute:identityAttribute",
-      "to": "step:RecordReleaseCandidate",
+      "to": "step:AdmitConnectorContribution",
       "label": "Get",
       "span": {
-        "startLine": 418,
-        "startColumn": 32,
-        "endLine": 418,
-        "endColumn": 58
+        "startLine": 194,
+        "startColumn": 36,
+        "endLine": 194,
+        "endColumn": 62
       },
       "metadata": {
         "phase": "execute"
@@ -1682,13 +1686,13 @@
       "id": "edge:0043",
       "kind": "resource_read",
       "from": "resource:attribute:identityAttribute",
-      "to": "step:ReportConnectorEvent",
+      "to": "step:AwaitConnectorContributionEnd",
       "label": "Get",
       "span": {
-        "startLine": 340,
-        "startColumn": 72,
-        "endLine": 340,
-        "endColumn": 98
+        "startLine": 240,
+        "startColumn": 32,
+        "endLine": 240,
+        "endColumn": 58
       },
       "metadata": {
         "phase": "execute"
@@ -1698,13 +1702,13 @@
       "id": "edge:0044",
       "kind": "resource_read",
       "from": "resource:attribute:identityAttribute",
-      "to": "step:WaitConnectorChecks",
+      "to": "step:OpenConnectorPullRequest",
       "label": "Get",
       "span": {
-        "startLine": 477,
-        "startColumn": 26,
-        "endLine": 477,
-        "endColumn": 52
+        "startLine": 263,
+        "startColumn": 32,
+        "endLine": 263,
+        "endColumn": 58
       },
       "metadata": {
         "phase": "execute"
@@ -1713,78 +1717,78 @@
     {
       "id": "edge:0045",
       "kind": "resource_read",
-      "from": "resource:attribute:projectIDAttribute",
-      "to": "rpc:GetConnectorContributionSnapshot",
+      "from": "resource:attribute:identityAttribute",
+      "to": "step:PublishReleaseCandidate",
       "label": "Get",
       "span": {
-        "startLine": 150,
-        "startColumn": 15,
-        "endLine": 150,
-        "endColumn": 42
+        "startLine": 423,
+        "startColumn": 39,
+        "endLine": 423,
+        "endColumn": 65
       },
       "metadata": {
-        "phase": "rpc"
+        "phase": "execute"
       }
     },
     {
       "id": "edge:0046",
       "kind": "resource_read",
-      "from": "resource:attribute:recordAttribute",
-      "to": "rpc:GetConnectorContributionSnapshot",
+      "from": "resource:attribute:identityAttribute",
+      "to": "step:RecordConnectorChecks",
       "label": "Get",
       "span": {
-        "startLine": 149,
-        "startColumn": 100,
-        "endLine": 149,
-        "endColumn": 124
+        "startLine": 570,
+        "startColumn": 77,
+        "endLine": 570,
+        "endColumn": 103
       },
       "metadata": {
-        "phase": "rpc"
+        "phase": "execute"
       }
     },
     {
       "id": "edge:0047",
       "kind": "resource_read",
-      "from": "resource:attribute:recordAttribute",
-      "to": "rpc:GetDexDisplay",
+      "from": "resource:attribute:identityAttribute",
+      "to": "step:RecordConnectorPullRequest",
       "label": "Get",
       "span": {
-        "startLine": 169,
-        "startColumn": 100,
-        "endLine": 169,
-        "endColumn": 124
+        "startLine": 293,
+        "startColumn": 32,
+        "endLine": 293,
+        "endColumn": 58
       },
       "metadata": {
-        "phase": "rpc"
+        "phase": "execute"
       }
     },
     {
       "id": "edge:0048",
       "kind": "resource_read",
-      "from": "resource:attribute:recordAttribute",
-      "to": "rpc:UpdateConnectorContribution",
+      "from": "resource:attribute:identityAttribute",
+      "to": "step:RecordReleaseCandidate",
       "label": "Get",
       "span": {
-        "startLine": 109,
-        "startColumn": 34,
-        "endLine": 109,
+        "startLine": 466,
+        "startColumn": 32,
+        "endLine": 466,
         "endColumn": 58
       },
       "metadata": {
-        "phase": "rpc"
+        "phase": "execute"
       }
     },
     {
       "id": "edge:0049",
       "kind": "resource_read",
-      "from": "resource:attribute:recordAttribute",
-      "to": "step:AwaitConnectorContributionEnd",
+      "from": "resource:attribute:identityAttribute",
+      "to": "step:ReportConnectorEvent",
       "label": "Get",
       "span": {
-        "startLine": 237,
-        "startColumn": 71,
-        "endLine": 237,
-        "endColumn": 95
+        "startLine": 343,
+        "startColumn": 72,
+        "endLine": 343,
+        "endColumn": 98
       },
       "metadata": {
         "phase": "execute"
@@ -1793,14 +1797,14 @@
     {
       "id": "edge:0050",
       "kind": "resource_read",
-      "from": "resource:attribute:recordAttribute",
-      "to": "step:OpenConnectorPullRequest",
+      "from": "resource:attribute:identityAttribute",
+      "to": "step:WaitConnectorChecks",
       "label": "Get",
       "span": {
-        "startLine": 260,
-        "startColumn": 71,
-        "endLine": 260,
-        "endColumn": 95
+        "startLine": 537,
+        "startColumn": 26,
+        "endLine": 537,
+        "endColumn": 52
       },
       "metadata": {
         "phase": "execute"
@@ -1809,13 +1813,109 @@
     {
       "id": "edge:0051",
       "kind": "resource_read",
-      "from": "resource:attribute:recordAttribute",
-      "to": "step:RecordConnectorChecks",
+      "from": "resource:attribute:projectIDAttribute",
+      "to": "rpc:GetConnectorContributionSnapshot",
       "label": "Get",
       "span": {
-        "startLine": 497,
+        "startLine": 153,
+        "startColumn": 15,
+        "endLine": 153,
+        "endColumn": 42
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0052",
+      "kind": "resource_read",
+      "from": "resource:attribute:recordAttribute",
+      "to": "rpc:GetConnectorContributionSnapshot",
+      "label": "Get",
+      "span": {
+        "startLine": 152,
+        "startColumn": 100,
+        "endLine": 152,
+        "endColumn": 124
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0053",
+      "kind": "resource_read",
+      "from": "resource:attribute:recordAttribute",
+      "to": "rpc:GetDexDisplay",
+      "label": "Get",
+      "span": {
+        "startLine": 172,
+        "startColumn": 100,
+        "endLine": 172,
+        "endColumn": 124
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0054",
+      "kind": "resource_read",
+      "from": "resource:attribute:recordAttribute",
+      "to": "rpc:UpdateConnectorContribution",
+      "label": "Get",
+      "span": {
+        "startLine": 110,
+        "startColumn": 34,
+        "endLine": 110,
+        "endColumn": 58
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0055",
+      "kind": "resource_read",
+      "from": "resource:attribute:recordAttribute",
+      "to": "step:AwaitConnectorContributionEnd",
+      "label": "Get",
+      "span": {
+        "startLine": 240,
+        "startColumn": 71,
+        "endLine": 240,
+        "endColumn": 95
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0056",
+      "kind": "resource_read",
+      "from": "resource:attribute:recordAttribute",
+      "to": "step:OpenConnectorPullRequest",
+      "label": "Get",
+      "span": {
+        "startLine": 263,
+        "startColumn": 71,
+        "endLine": 263,
+        "endColumn": 95
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0057",
+      "kind": "resource_read",
+      "from": "resource:attribute:recordAttribute",
+      "to": "step:PublishReleaseCandidate",
+      "label": "Get",
+      "span": {
+        "startLine": 374,
         "startColumn": 22,
-        "endLine": 497,
+        "endLine": 374,
         "endColumn": 46
       },
       "metadata": {
@@ -1823,128 +1923,32 @@
       }
     },
     {
-      "id": "edge:0052",
-      "kind": "resource_read",
-      "from": "resource:attribute:recordAttribute",
-      "to": "step:RecordConnectorPullRequest",
-      "label": "Get",
-      "span": {
-        "startLine": 290,
-        "startColumn": 71,
-        "endLine": 290,
-        "endColumn": 95
-      },
-      "metadata": {
-        "phase": "execute"
-      }
-    },
-    {
-      "id": "edge:0053",
-      "kind": "resource_read",
-      "from": "resource:attribute:recordAttribute",
-      "to": "step:RecordReleaseCandidate",
-      "label": "Get",
-      "span": {
-        "startLine": 418,
-        "startColumn": 71,
-        "endLine": 418,
-        "endColumn": 95
-      },
-      "metadata": {
-        "phase": "execute"
-      }
-    },
-    {
-      "id": "edge:0054",
-      "kind": "resource_read",
-      "from": "resource:attribute:recordAttribute",
-      "to": "step:ReportConnectorEvent",
-      "label": "Get",
-      "span": {
-        "startLine": 335,
-        "startColumn": 23,
-        "endLine": 335,
-        "endColumn": 47
-      },
-      "metadata": {
-        "phase": "execute"
-      }
-    },
-    {
-      "id": "edge:0055",
-      "kind": "resource_read",
-      "from": "resource:attribute:statusAttribute",
-      "to": "rpc:CloseConnectorContribution",
-      "label": "Get",
-      "span": {
-        "startLine": 135,
-        "startColumn": 24,
-        "endLine": 135,
-        "endColumn": 48
-      },
-      "metadata": {
-        "phase": "rpc"
-      }
-    },
-    {
-      "id": "edge:0056",
-      "kind": "resource_read",
-      "from": "resource:attribute:statusAttribute",
-      "to": "rpc:GetConnectorContributionSnapshot",
-      "label": "Get",
-      "span": {
-        "startLine": 153,
-        "startColumn": 46,
-        "endLine": 153,
-        "endColumn": 70
-      },
-      "metadata": {
-        "phase": "rpc"
-      }
-    },
-    {
-      "id": "edge:0057",
-      "kind": "resource_read",
-      "from": "resource:attribute:statusAttribute",
-      "to": "rpc:GetDexDisplay",
-      "label": "Get",
-      "span": {
-        "startLine": 169,
-        "startColumn": 35,
-        "endLine": 169,
-        "endColumn": 59
-      },
-      "metadata": {
-        "phase": "rpc"
-      }
-    },
-    {
       "id": "edge:0058",
       "kind": "resource_read",
-      "from": "resource:attribute:statusAttribute",
-      "to": "rpc:UpdateConnectorContribution",
+      "from": "resource:attribute:recordAttribute",
+      "to": "step:RecordConnectorChecks",
       "label": "Get",
       "span": {
-        "startLine": 104,
-        "startColumn": 31,
-        "endLine": 104,
-        "endColumn": 55
+        "startLine": 557,
+        "startColumn": 22,
+        "endLine": 557,
+        "endColumn": 46
       },
       "metadata": {
-        "phase": "rpc"
+        "phase": "execute"
       }
     },
     {
       "id": "edge:0059",
       "kind": "resource_read",
-      "from": "resource:attribute:submissionAttribute",
-      "to": "step:AdmitConnectorContribution",
+      "from": "resource:attribute:recordAttribute",
+      "to": "step:RecordConnectorPullRequest",
       "label": "Get",
       "span": {
-        "startLine": 191,
-        "startColumn": 75,
-        "endLine": 191,
-        "endColumn": 103
+        "startLine": 293,
+        "startColumn": 71,
+        "endLine": 293,
+        "endColumn": 95
       },
       "metadata": {
         "phase": "execute"
@@ -1952,47 +1956,47 @@
     },
     {
       "id": "edge:0060",
-      "kind": "wait_condition",
-      "from": "resource:channel:endChannel",
-      "to": "wait:AwaitConnectorContributionEnd:232:9",
-      "label": "ContributionEnd.for 1",
+      "kind": "resource_read",
+      "from": "resource:attribute:recordAttribute",
+      "to": "step:RecordReleaseCandidate",
+      "label": "Get",
       "span": {
-        "startLine": 232,
-        "startColumn": 19,
-        "endLine": 232,
-        "endColumn": 38
+        "startLine": 466,
+        "startColumn": 71,
+        "endLine": 466,
+        "endColumn": 95
       },
       "metadata": {
-        "conditionIndex": 0
+        "phase": "execute"
       }
     },
     {
       "id": "edge:0061",
-      "kind": "resource_write",
-      "from": "rpc:CloseConnectorContribution",
-      "to": "resource:attribute:closingAttribute",
-      "label": "Set",
+      "kind": "resource_read",
+      "from": "resource:attribute:recordAttribute",
+      "to": "step:ReportConnectorEvent",
+      "label": "Get",
       "span": {
-        "startLine": 141,
-        "startColumn": 14,
-        "endLine": 141,
-        "endColumn": 45
+        "startLine": 338,
+        "startColumn": 23,
+        "endLine": 338,
+        "endColumn": 47
       },
       "metadata": {
-        "phase": "rpc"
+        "phase": "execute"
       }
     },
     {
       "id": "edge:0062",
-      "kind": "resource_publish",
-      "from": "rpc:CloseConnectorContribution",
-      "to": "resource:channel:endChannel",
-      "label": "Publish",
+      "kind": "resource_read",
+      "from": "resource:attribute:statusAttribute",
+      "to": "rpc:CloseConnectorContribution",
+      "label": "Get",
       "span": {
-        "startLine": 142,
-        "startColumn": 14,
-        "endLine": 142,
-        "endColumn": 56
+        "startLine": 137,
+        "startColumn": 24,
+        "endLine": 137,
+        "endColumn": 48
       },
       "metadata": {
         "phase": "rpc"
@@ -2000,15 +2004,15 @@
     },
     {
       "id": "edge:0063",
-      "kind": "resource_write",
-      "from": "rpc:UpdateConnectorContribution",
-      "to": "resource:attribute:recordAttribute",
-      "label": "Set",
+      "kind": "resource_read",
+      "from": "resource:attribute:statusAttribute",
+      "to": "rpc:GetConnectorContributionSnapshot",
+      "label": "Get",
       "span": {
-        "startLine": 115,
-        "startColumn": 14,
-        "endLine": 115,
-        "endColumn": 47
+        "startLine": 156,
+        "startColumn": 46,
+        "endLine": 156,
+        "endColumn": 70
       },
       "metadata": {
         "phase": "rpc"
@@ -2016,15 +2020,15 @@
     },
     {
       "id": "edge:0064",
-      "kind": "resource_write",
-      "from": "rpc:UpdateConnectorContribution",
-      "to": "resource:attribute:statusAttribute",
-      "label": "Set",
+      "kind": "resource_read",
+      "from": "resource:attribute:statusAttribute",
+      "to": "rpc:GetDexDisplay",
+      "label": "Get",
       "span": {
-        "startLine": 116,
-        "startColumn": 14,
-        "endLine": 116,
-        "endColumn": 63
+        "startLine": 172,
+        "startColumn": 35,
+        "endLine": 172,
+        "endColumn": 59
       },
       "metadata": {
         "phase": "rpc"
@@ -2032,15 +2036,15 @@
     },
     {
       "id": "edge:0065",
-      "kind": "resource_write",
-      "from": "rpc:UpdateConnectorContribution",
-      "to": "resource:attribute:submissionAttribute",
-      "label": "Set",
+      "kind": "resource_read",
+      "from": "resource:attribute:statusAttribute",
+      "to": "rpc:UpdateConnectorContribution",
+      "label": "Get",
       "span": {
-        "startLine": 108,
-        "startColumn": 14,
-        "endLine": 108,
-        "endColumn": 54
+        "startLine": 105,
+        "startColumn": 31,
+        "endLine": 105,
+        "endColumn": 55
       },
       "metadata": {
         "phase": "rpc"
@@ -2048,15 +2052,15 @@
     },
     {
       "id": "edge:0066",
-      "kind": "resource_write",
-      "from": "step:AdmitConnectorContribution",
-      "to": "resource:attribute:recordAttribute",
-      "label": "Set",
+      "kind": "resource_read",
+      "from": "resource:attribute:submissionAttribute",
+      "to": "step:AdmitConnectorContribution",
+      "label": "Get",
       "span": {
-        "startLine": 198,
-        "startColumn": 15,
-        "endLine": 198,
-        "endColumn": 77
+        "startLine": 194,
+        "startColumn": 75,
+        "endLine": 194,
+        "endColumn": 103
       },
       "metadata": {
         "phase": "execute"
@@ -2064,111 +2068,111 @@
     },
     {
       "id": "edge:0067",
-      "kind": "resource_write",
-      "from": "step:AdmitConnectorContribution",
-      "to": "resource:attribute:statusAttribute",
-      "label": "Set",
+      "kind": "wait_condition",
+      "from": "resource:channel:endChannel",
+      "to": "wait:AwaitConnectorContributionEnd:235:9",
+      "label": "ContributionEnd.for 1",
       "span": {
-        "startLine": 199,
-        "startColumn": 15,
-        "endLine": 199,
-        "endColumn": 62
+        "startLine": 235,
+        "startColumn": 19,
+        "endLine": 235,
+        "endColumn": 38
       },
       "metadata": {
-        "phase": "execute"
+        "conditionIndex": 0
       }
     },
     {
       "id": "edge:0068",
       "kind": "resource_write",
-      "from": "step:AwaitConnectorContributionEnd",
-      "to": "resource:attribute:recordAttribute",
+      "from": "rpc:CloseConnectorContribution",
+      "to": "resource:attribute:closingAttribute",
       "label": "Set",
       "span": {
-        "startLine": 239,
+        "startLine": 143,
         "startColumn": 14,
-        "endLine": 239,
-        "endColumn": 46
+        "endLine": 143,
+        "endColumn": 45
       },
       "metadata": {
-        "phase": "execute"
+        "phase": "rpc"
       }
     },
     {
       "id": "edge:0069",
-      "kind": "resource_write",
-      "from": "step:AwaitConnectorContributionEnd",
-      "to": "resource:attribute:statusAttribute",
-      "label": "Set",
+      "kind": "resource_publish",
+      "from": "rpc:CloseConnectorContribution",
+      "to": "resource:channel:endChannel",
+      "label": "Publish",
       "span": {
-        "startLine": 240,
+        "startLine": 144,
         "startColumn": 14,
-        "endLine": 240,
-        "endColumn": 61
+        "endLine": 144,
+        "endColumn": 56
       },
       "metadata": {
-        "phase": "execute"
+        "phase": "rpc"
       }
     },
     {
       "id": "edge:0070",
-      "kind": "failure_transition",
-      "from": "step:OpenConnectorPullRequest",
-      "to": "step:RecordConnectorPullRequest",
-      "label": "Execute failure",
+      "kind": "resource_write",
+      "from": "rpc:UpdateConnectorContribution",
+      "to": "resource:attribute:recordAttribute",
+      "label": "Set",
       "span": {
-        "startLine": 254,
-        "startColumn": 58,
-        "endLine": 254,
-        "endColumn": 122
+        "startLine": 116,
+        "startColumn": 14,
+        "endLine": 116,
+        "endColumn": 47
       },
       "metadata": {
-        "skipWaitFor": true
+        "phase": "rpc"
       }
     },
     {
       "id": "edge:0071",
-      "kind": "failure_transition",
-      "from": "step:PublishReleaseCandidate",
-      "to": "step:RecordReleaseCandidate",
-      "label": "Execute failure",
+      "kind": "resource_write",
+      "from": "rpc:UpdateConnectorContribution",
+      "to": "resource:attribute:statusAttribute",
+      "label": "Set",
       "span": {
-        "startLine": 365,
-        "startColumn": 63,
-        "endLine": 365,
-        "endColumn": 123
+        "startLine": 117,
+        "startColumn": 14,
+        "endLine": 117,
+        "endColumn": 63
       },
       "metadata": {
-        "skipWaitFor": true
+        "phase": "rpc"
       }
     },
     {
       "id": "edge:0072",
       "kind": "resource_write",
-      "from": "step:RecordConnectorChecks",
-      "to": "resource:attribute:recordAttribute",
+      "from": "rpc:UpdateConnectorContribution",
+      "to": "resource:attribute:submissionAttribute",
       "label": "Set",
       "span": {
-        "startLine": 506,
+        "startLine": 109,
         "startColumn": 14,
-        "endLine": 506,
-        "endColumn": 46
+        "endLine": 109,
+        "endColumn": 54
       },
       "metadata": {
-        "phase": "execute"
+        "phase": "rpc"
       }
     },
     {
       "id": "edge:0073",
       "kind": "resource_write",
-      "from": "step:RecordConnectorPullRequest",
+      "from": "step:AdmitConnectorContribution",
       "to": "resource:attribute:recordAttribute",
       "label": "Set",
       "span": {
-        "startLine": 297,
+        "startLine": 201,
         "startColumn": 15,
-        "endLine": 297,
-        "endColumn": 47
+        "endLine": 201,
+        "endColumn": 77
       },
       "metadata": {
         "phase": "execute"
@@ -2177,14 +2181,14 @@
     {
       "id": "edge:0074",
       "kind": "resource_write",
-      "from": "step:RecordConnectorPullRequest",
+      "from": "step:AdmitConnectorContribution",
       "to": "resource:attribute:statusAttribute",
       "label": "Set",
       "span": {
-        "startLine": 298,
+        "startLine": 202,
         "startColumn": 15,
-        "endLine": 298,
-        "endColumn": 63
+        "endLine": 202,
+        "endColumn": 62
       },
       "metadata": {
         "phase": "execute"
@@ -2193,13 +2197,13 @@
     {
       "id": "edge:0075",
       "kind": "resource_write",
-      "from": "step:RecordReleaseCandidate",
+      "from": "step:AwaitConnectorContributionEnd",
       "to": "resource:attribute:recordAttribute",
       "label": "Set",
       "span": {
-        "startLine": 430,
+        "startLine": 242,
         "startColumn": 14,
-        "endLine": 430,
+        "endLine": 242,
         "endColumn": 46
       },
       "metadata": {
@@ -2208,14 +2212,126 @@
     },
     {
       "id": "edge:0076",
+      "kind": "resource_write",
+      "from": "step:AwaitConnectorContributionEnd",
+      "to": "resource:attribute:statusAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 243,
+        "startColumn": 14,
+        "endLine": 243,
+        "endColumn": 61
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0077",
+      "kind": "failure_transition",
+      "from": "step:OpenConnectorPullRequest",
+      "to": "step:RecordConnectorPullRequest",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 257,
+        "startColumn": 58,
+        "endLine": 257,
+        "endColumn": 122
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0078",
+      "kind": "failure_transition",
+      "from": "step:PublishReleaseCandidate",
+      "to": "step:RecordReleaseCandidate",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 368,
+        "startColumn": 63,
+        "endLine": 368,
+        "endColumn": 123
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0079",
+      "kind": "resource_write",
+      "from": "step:RecordConnectorChecks",
+      "to": "resource:attribute:recordAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 566,
+        "startColumn": 14,
+        "endLine": 566,
+        "endColumn": 46
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0080",
+      "kind": "resource_write",
+      "from": "step:RecordConnectorPullRequest",
+      "to": "resource:attribute:recordAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 300,
+        "startColumn": 15,
+        "endLine": 300,
+        "endColumn": 47
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0081",
+      "kind": "resource_write",
+      "from": "step:RecordConnectorPullRequest",
+      "to": "resource:attribute:statusAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 301,
+        "startColumn": 15,
+        "endLine": 301,
+        "endColumn": 63
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0082",
+      "kind": "resource_write",
+      "from": "step:RecordReleaseCandidate",
+      "to": "resource:attribute:recordAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 482,
+        "startColumn": 14,
+        "endLine": 482,
+        "endColumn": 46
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0083",
       "kind": "failure_transition",
       "from": "step:ReportConnectorEvent",
       "to": "step:DropConnectorEvent",
       "label": "Execute failure",
       "span": {
-        "startLine": 323,
+        "startLine": 326,
         "startColumn": 41,
-        "endLine": 323,
+        "endLine": 326,
         "endColumn": 97
       },
       "metadata": {
@@ -2223,15 +2339,15 @@
       }
     },
     {
-      "id": "edge:0077",
+      "id": "edge:0084",
       "kind": "failure_transition",
       "from": "step:WaitConnectorChecks",
       "to": "step:RecordConnectorChecks",
       "label": "Execute failure",
       "span": {
-        "startLine": 447,
+        "startLine": 507,
         "startColumn": 71,
-        "endLine": 447,
+        "endLine": 507,
         "endColumn": 130
       },
       "metadata": {

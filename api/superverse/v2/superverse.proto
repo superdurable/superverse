@@ -1431,6 +1431,14 @@ message ConnectorContribution {
     RELEASE_CANDIDATE_STATUS_PUBLISHED = 1;
     RELEASE_CANDIDATE_STATUS_FAILED = 2;
   }
+  // contribution.ReleaseCandidateFailureKind: the business reason a candidate failed.
+  enum ReleaseCandidateFailureReason {
+    RELEASE_CANDIDATE_FAILURE_REASON_UNSPECIFIED = 0;
+    RELEASE_CANDIDATE_FAILURE_REASON_WORKFLOW_FAILED = 1;
+    RELEASE_CANDIDATE_FAILURE_REASON_ALREADY_RELEASED = 2;
+    RELEASE_CANDIDATE_FAILURE_REASON_TIMED_OUT = 3;
+    RELEASE_CANDIDATE_FAILURE_REASON_REFUSED = 4;
+  }
   string slug = 1;
   string module = 2;
   Kind kind = 3;
@@ -1450,6 +1458,7 @@ message ConnectorContribution {
   ReleaseCandidateStatus release_candidate_status = 13;
   // Why the release candidate failed; empty otherwise.
   string release_candidate_failure = 14;
+  ReleaseCandidateFailureReason release_candidate_failure_kind = 15;
 }
 
 message SessionWorkspaceSnapshot {

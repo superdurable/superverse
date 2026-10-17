@@ -46,6 +46,30 @@ export type _superverse_v2_ConnectorContribution_Location__Output = typeof _supe
 
 // Original file: api/superverse/v2/superverse.proto
 
+export const _superverse_v2_ConnectorContribution_ReleaseCandidateFailureReason = {
+  RELEASE_CANDIDATE_FAILURE_REASON_UNSPECIFIED: 'RELEASE_CANDIDATE_FAILURE_REASON_UNSPECIFIED',
+  RELEASE_CANDIDATE_FAILURE_REASON_WORKFLOW_FAILED: 'RELEASE_CANDIDATE_FAILURE_REASON_WORKFLOW_FAILED',
+  RELEASE_CANDIDATE_FAILURE_REASON_ALREADY_RELEASED: 'RELEASE_CANDIDATE_FAILURE_REASON_ALREADY_RELEASED',
+  RELEASE_CANDIDATE_FAILURE_REASON_TIMED_OUT: 'RELEASE_CANDIDATE_FAILURE_REASON_TIMED_OUT',
+  RELEASE_CANDIDATE_FAILURE_REASON_REFUSED: 'RELEASE_CANDIDATE_FAILURE_REASON_REFUSED',
+} as const;
+
+export type _superverse_v2_ConnectorContribution_ReleaseCandidateFailureReason =
+  | 'RELEASE_CANDIDATE_FAILURE_REASON_UNSPECIFIED'
+  | 0
+  | 'RELEASE_CANDIDATE_FAILURE_REASON_WORKFLOW_FAILED'
+  | 1
+  | 'RELEASE_CANDIDATE_FAILURE_REASON_ALREADY_RELEASED'
+  | 2
+  | 'RELEASE_CANDIDATE_FAILURE_REASON_TIMED_OUT'
+  | 3
+  | 'RELEASE_CANDIDATE_FAILURE_REASON_REFUSED'
+  | 4
+
+export type _superverse_v2_ConnectorContribution_ReleaseCandidateFailureReason__Output = typeof _superverse_v2_ConnectorContribution_ReleaseCandidateFailureReason[keyof typeof _superverse_v2_ConnectorContribution_ReleaseCandidateFailureReason]
+
+// Original file: api/superverse/v2/superverse.proto
+
 export const _superverse_v2_ConnectorContribution_ReleaseCandidateStatus = {
   RELEASE_CANDIDATE_STATUS_UNSPECIFIED: 'RELEASE_CANDIDATE_STATUS_UNSPECIFIED',
   RELEASE_CANDIDATE_STATUS_PUBLISHED: 'RELEASE_CANDIDATE_STATUS_PUBLISHED',
@@ -104,6 +128,7 @@ export interface ConnectorContribution {
   'releaseCandidateVersion'?: (string);
   'releaseCandidateStatus'?: (_superverse_v2_ConnectorContribution_ReleaseCandidateStatus);
   'releaseCandidateFailure'?: (string);
+  'releaseCandidateFailureKind'?: (_superverse_v2_ConnectorContribution_ReleaseCandidateFailureReason);
 }
 
 export interface ConnectorContribution__Output {
@@ -121,4 +146,5 @@ export interface ConnectorContribution__Output {
   'releaseCandidateVersion': (string);
   'releaseCandidateStatus': (_superverse_v2_ConnectorContribution_ReleaseCandidateStatus__Output);
   'releaseCandidateFailure': (string);
+  'releaseCandidateFailureKind': (_superverse_v2_ConnectorContribution_ReleaseCandidateFailureReason__Output);
 }

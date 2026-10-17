@@ -48,5 +48,13 @@ func (d *ProjectDiagnostics) readConnectorChecks(ctx context.Context, identity a
 			return nil, fmt.Errorf("read the connector's failed CI jobs: %w", err)
 		}
 	}
-	return redaction.encode(map[string]any{"slug": input.Slug, "available": true, "checks": checks}), nil
+	output := map[string]any{"slug": input.Slug, "available": true, "checks": checks}
+	if candidate := snapshot.Record.ReleaseCandidate; candidate != nil && snapshot.Record.Location == connectorlibrary.LocationUpstream {
+		run, runErr := d.ConnectorChecks.ReadReleaseCandidateRun(ctx, candidate.ReleaseCandidate, snapshot.Record.Location, snapshot.Record.HeadRecordedAt)
+		if runErr != nil {
+			return nil, fmt.Errorf("read the connector's release-candidate run: %w", runErr)
+		}
+		output["release_candidate_run"] = run
+	}
+	return redaction.encode(output), nil
 }

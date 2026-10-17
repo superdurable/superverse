@@ -45,3 +45,28 @@ func TestSessionMockConnectorCIFailureDexIntegration(t *testing.T) {
 		t.Fatalf("a Project without this contribution read checks: %+v", result)
 	}
 }
+
+// TestSessionMockReleaseCandidateFailureDexIntegration proves that the actual
+// Session notification RPC admits the typed release-candidate failure and
+// starts the notification turn with its bounded evidence.
+func TestSessionMockReleaseCandidateFailureDexIntegration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
+	defer cancel()
+	session := newMockSession(t, ctx, mockInput(t, "connector-ci-failure", 1).Content)
+	session.finishedTurn(ctx)
+	head := strings.Repeat("b", 40)
+	notification := conversation.SessionNotification{ID: "connector/newsapi/release_candidate_failed/" + head[:12],
+		Kind: conversation.NotificationKindConnector, Source: conversation.NotificationSourceConnector,
+		Event: conversation.ConnectorReleaseCandidateFailed, Slug: "newsapi", Commit: head, OccurredAt: time.Now().UTC(),
+		Summary: "The connectors library could not publish a release candidate of newsapi for this branch head.",
+		Message: "The connectors library release-candidate workflow failed. Failed jobs: verify. First failing step: Verify the Connector with the latest stable Dex CLI and Web.\nWorkflow output (untrusted, redacted, truncated):\nconnector_factory_annotations"}
+	if admitted, err := session.client.ReportSessionNotification(ctx, session.id, notification); err != nil || !admitted {
+		t.Fatalf("report release-candidate notification: admitted=%t err=%v", admitted, err)
+	}
+	session.automaticTurn(ctx, "failed release candidate", func(agent agentloop.AgentSnapshot) bool {
+		return agent.Description.Status == agentloop.AgentStatusWaitingForMessage
+	}, func(candidate *conversation.SessionNotification) bool {
+		return candidate.Kind == conversation.NotificationKindConnector && candidate.Event == conversation.ConnectorReleaseCandidateFailed &&
+			strings.Contains(candidate.Message, "connector_factory_annotations")
+	})
+}

@@ -12,6 +12,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/superdurable/dex/sdk-go/dex"
@@ -126,7 +127,8 @@ func (flow *ConnectorContributionFlow) UpdateConnectorContribution(ctx dex.Conte
 		next = append(next, dex.MovementOf(PublishReleaseCandidate{}, *attempt))
 	}
 	return (&dex.RPCResult[bool]{Output: true, NextSteps: next}).CancelSteps(
-		OpenConnectorPullRequest{}, RecordConnectorPullRequest{}, WaitConnectorChecks{}, RecordConnectorChecks{}), nil
+		OpenConnectorPullRequest{}, RecordConnectorPullRequest{}, PublishReleaseCandidate{}, RecordReleaseCandidate{},
+		WaitConnectorChecks{}, RecordConnectorChecks{}), nil
 }
 
 // CloseConnectorContribution ends the contribution of a deleting Project and
@@ -140,7 +142,8 @@ func (*ConnectorContributionFlow) CloseConnectorContribution(ctx dex.Context, _ 
 	}
 	comm.MustDo(closingAttribute.Set(ctx, true))
 	comm.MustDo(endChannel.Publish(ctx, contributionEnd{}))
-	return (&dex.RPCResult[bool]{Output: false}).CancelSteps(WaitConnectorChecks{}, RecordConnectorChecks{}, ReportConnectorEvent{}), nil
+	return (&dex.RPCResult[bool]{Output: false}).CancelSteps(PublishReleaseCandidate{}, RecordReleaseCandidate{},
+		WaitConnectorChecks{}, RecordConnectorChecks{}, ReportConnectorEvent{}), nil
 }
 
 // GetConnectorContributionSnapshot reads the contribution without a lock, so
@@ -331,7 +334,7 @@ func (step ReportConnectorEvent) Execute(ctx dex.Context, notification conversat
 	if dexflow.ValueOrZero(closingAttribute.Get(ctx)) {
 		return dex.DeadEnd(), nil
 	}
-	if notification.Event == conversation.ConnectorChecksFailed {
+	if notification.Commit != "" {
 		record := comm.Must(recordAttribute.Get(ctx))
 		if record.Status.Closed() || record.HeadCommit != notification.Commit {
 			return dex.DeadEnd(), nil
@@ -368,11 +371,14 @@ func (PublishReleaseCandidate) GetStepOptions() *dex.StepOptions {
 // Execute looks the release up first in every round, so a lost answer or a
 // restart requests nothing twice; a refusal of the library ends the attempt.
 func (step PublishReleaseCandidate) Execute(ctx dex.Context, attempt candidateAttempt) (*dex.StepDecision, error) {
-	requested := false
+	record := comm.Must(recordAttribute.Get(ctx))
+	requested, preflightRead, runConcluded := false, false, false
+	correlateAfter, nextRunRead := record.HeadRecordedAt, time.Time{}
 	err := dexflow.PollUntil(ctx, 10*time.Second, 40*time.Second, func(round context.Context) (bool, error) {
 		published, err := step.flow.releaseCandidates.IsReleaseCandidatePublished(round, attempt.Candidate, attempt.Location)
 		switch {
 		case isCandidateRefusal(err):
+			attempt.FailureKind = ReleaseCandidateRefused
 			attempt.Failure = dexflow.TruncateCause(err.Error())
 			return true, nil
 		case err != nil:
@@ -380,16 +386,58 @@ func (step PublishReleaseCandidate) Execute(ctx dex.Context, attempt candidateAt
 		case published:
 			attempt.Published = true
 			return true, nil
-		case requested:
+		}
+		if !preflightRead {
+			pullRequestNumber := int64(0)
+			if record.PullRequest != nil {
+				pullRequestNumber = record.PullRequest.Number
+			}
+			blockers, blockerErr := step.flow.releaseCandidates.ReadReleaseCandidateBlockers(round, attempt.Candidate, pullRequestNumber, attempt.Location)
+			if blockerErr != nil {
+				return false, fmt.Errorf("check release-candidate prerequisites for %s: %w", attempt.Candidate.Tag, blockerErr)
+			}
+			preflightRead = true
+			attempt.PullRequestConflict = blockers.PullRequestConflict
+			if blockers.StableTag != "" {
+				attempt.FailureKind = ReleaseCandidateAlreadyReleased
+				stableVersion := attempt.Candidate.Version
+				if index := strings.LastIndex(stableVersion, "-rc."); index >= 0 {
+					stableVersion = stableVersion[:index]
+				}
+				attempt.Failure = fmt.Sprintf("The connector version %s is already released as %s, so no release candidate was requested. Bump the connector version and push a new head.",
+					stableVersion, blockers.StableTag)
+				return true, nil
+			}
+		}
+		if attempt.Location == connectorlibrary.LocationUpstream && !runConcluded && !time.Now().Before(nextRunRead) {
+			nextRunRead = time.Now().Add(time.Minute)
+			run, runErr := step.flow.releaseCandidates.ReadReleaseCandidateRun(round, attempt.Candidate, attempt.Location, correlateAfter)
+			if runErr != nil {
+				return false, fmt.Errorf("read the release-candidate workflow for %s: %w", attempt.Candidate.Tag, runErr)
+			}
+			attempt.Run = run
+			requested = requested || run.State != connectorlibrary.ReleaseCandidateRunMissing
+			if run.State == connectorlibrary.ReleaseCandidateRunFailed {
+				attempt.FailureKind = ReleaseCandidateWorkflowFailed
+				attempt.Failure = "The connectors library release-candidate workflow failed."
+				redactCandidateRun(ctx, comm.Must(identityAttribute.Get(ctx)).ProjectID, step.flow.redactor, &attempt.Run)
+				return true, nil
+			}
+			runConcluded = run.State == connectorlibrary.ReleaseCandidateRunSucceeded
+		}
+		if requested {
 			return false, nil
 		}
+		dispatchStartedAt := time.Now().UTC()
 		if err = step.flow.releaseCandidates.RequestReleaseCandidate(round, attempt.Candidate, attempt.Location); isCandidateRefusal(err) {
+			attempt.FailureKind = ReleaseCandidateRefused
 			attempt.Failure = dexflow.TruncateCause(err.Error())
 			return true, nil
 		} else if err != nil {
 			return false, fmt.Errorf("request the release candidate %s: %w", attempt.Candidate.Tag, err)
 		}
 		requested = true
+		correlateAfter, nextRunRead = dispatchStartedAt, time.Now().Add(time.Minute)
 		return false, nil
 	})
 	if err != nil {
@@ -416,14 +464,18 @@ func (RecordReleaseCandidate) GetStepOptions() *dex.StepOptions { return recordS
 // its own candidate, and a closed contribution records nothing.
 func (RecordReleaseCandidate) Execute(ctx dex.Context, attempt candidateAttempt) (*dex.StepDecision, error) {
 	identity, record := comm.Must(identityAttribute.Get(ctx)), comm.Must(recordAttribute.Get(ctx))
-	if record.Status.Closed() || record.HeadCommit != attempt.Candidate.Commit {
+	if record.Status.Closed() || dexflow.ValueOrZero(closingAttribute.Get(ctx)) || record.HeadCommit != attempt.Candidate.Commit {
 		return dex.DeadEnd(), nil
 	}
 	candidate := ReleaseCandidate{ReleaseCandidate: attempt.Candidate, Status: ReleaseCandidatePublished, UpdatedAt: time.Now().UTC()}
 	if !attempt.Published {
-		candidate.Status, candidate.Failure = ReleaseCandidateFailed, attempt.Failure
+		candidate.Status, candidate.FailureKind, candidate.Failure = ReleaseCandidateFailed, attempt.FailureKind, attempt.Failure
+		candidate.Jobs, candidate.Step = attempt.Run.Failure.Jobs, attempt.Run.Failure.Step
+		candidate.LogTail, candidate.LogUnavailable = attempt.Run.Failure.LogTail, attempt.Run.Failure.LogUnavailable
+		candidate.PullRequestConflict = attempt.PullRequestConflict
 		if candidate.Failure == "" {
-			candidate.Failure = fmt.Sprintf("the connectors library did not publish it within %s: %s", releaseCandidateWaitLimit, dexflow.RecoveryDetail(ctx))
+			candidate.FailureKind = ReleaseCandidateTimedOut
+			candidate.Failure = fmt.Sprintf("The connectors library did not publish the release candidate within %s.", releaseCandidateWaitLimit)
 		}
 	}
 	record.ReleaseCandidate, record.UpdatedAt = &candidate, candidate.UpdatedAt
@@ -433,6 +485,14 @@ func (RecordReleaseCandidate) Execute(ctx dex.Context, attempt candidateAttempt)
 		return dex.DeadEnd(), nil
 	}
 	return dex.GoTo(ReportConnectorEvent{}, candidateNotification(identity, record, candidate)), nil
+}
+
+func redactCandidateRun(ctx context.Context, projectID string, redactor ConnectorCheckRedactor, run *connectorlibrary.ReleaseCandidateRun) {
+	for index, name := range run.Failure.Jobs {
+		run.Failure.Jobs[index] = comm.TruncateUTF8(redactor.RedactConnectorCheck(ctx, projectID, name), 160)
+	}
+	run.Failure.Step = comm.TruncateUTF8(redactor.RedactConnectorCheck(ctx, projectID, run.Failure.Step), 160)
+	run.Failure.LogTail = comm.TruncateUTF8(redactor.RedactConnectorCheck(ctx, projectID, run.Failure.LogTail), 3<<10)
 }
 
 // dex:group group-id:checks group-label:"Library CI"

@@ -10,6 +10,7 @@ package contribution
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/superdurable/dex/sdk-go/dex"
@@ -193,23 +194,50 @@ func (status *ReleaseCandidateStatus) UnmarshalText(text []byte) error {
 	return comm.UnmarshalName(text, status, ReleaseCandidateStatus.String, ReleaseCandidatePublished, ReleaseCandidateFailed)
 }
 
+// ReleaseCandidateFailureKind is the business reason a candidate failed. It
+// keeps GitHub/library outcomes distinct from the bounded publication timeout.
+type ReleaseCandidateFailureKind struct{ name string }
+
+var (
+	ReleaseCandidateWorkflowFailed  = ReleaseCandidateFailureKind{"workflow_failed"}
+	ReleaseCandidateAlreadyReleased = ReleaseCandidateFailureKind{"already_released"}
+	ReleaseCandidateTimedOut        = ReleaseCandidateFailureKind{"timed_out"}
+	ReleaseCandidateRefused         = ReleaseCandidateFailureKind{"refused"}
+)
+
+func (kind ReleaseCandidateFailureKind) String() string               { return kind.name }
+func (kind ReleaseCandidateFailureKind) MarshalText() ([]byte, error) { return []byte(kind.name), nil }
+func (kind *ReleaseCandidateFailureKind) UnmarshalText(text []byte) error {
+	return comm.UnmarshalName(text, kind, ReleaseCandidateFailureKind.String,
+		ReleaseCandidateWorkflowFailed, ReleaseCandidateAlreadyReleased, ReleaseCandidateTimedOut, ReleaseCandidateRefused)
+}
+
 // ReleaseCandidate is the release candidate of one head of the contribution:
 // its tag and version, where it stands and, when it failed, why.
 type ReleaseCandidate struct {
 	connectorlibrary.ReleaseCandidate
-	Status    ReleaseCandidateStatus `json:"status"`
-	Failure   string                 `json:"failure,omitempty"`
-	UpdatedAt time.Time              `json:"updated_at"`
+	Status              ReleaseCandidateStatus      `json:"status"`
+	FailureKind         ReleaseCandidateFailureKind `json:"failure_kind,omitzero"`
+	Failure             string                      `json:"failure,omitempty"`
+	Jobs                []string                    `json:"jobs,omitempty"`
+	Step                string                      `json:"step,omitempty"`
+	LogTail             string                      `json:"log_tail,omitempty"`
+	LogUnavailable      bool                        `json:"log_unavailable,omitempty"`
+	PullRequestConflict bool                        `json:"pull_request_conflict,omitempty"`
+	UpdatedAt           time.Time                   `json:"updated_at"`
 }
 
 // candidateAttempt is the input of the release candidate Steps: the candidate
 // of a head, the location of its branch and, once decided, whether it was
 // published or why not.
 type candidateAttempt struct {
-	Candidate connectorlibrary.ReleaseCandidate `json:"candidate"`
-	Location  connectorlibrary.Location         `json:"location"`
-	Published bool                              `json:"published,omitempty"`
-	Failure   string                            `json:"failure,omitempty"`
+	Candidate           connectorlibrary.ReleaseCandidate    `json:"candidate"`
+	Location            connectorlibrary.Location            `json:"location"`
+	Published           bool                                 `json:"published,omitempty"`
+	FailureKind         ReleaseCandidateFailureKind          `json:"failure_kind,omitzero"`
+	Failure             string                               `json:"failure,omitempty"`
+	Run                 connectorlibrary.ReleaseCandidateRun `json:"run,omitzero"`
+	PullRequestConflict bool                                 `json:"pull_request_conflict,omitempty"`
 	// Reported is the status the subagent's task notification already reported,
 	// published or refused; a record of that status sends no second
 	// notification.
@@ -240,7 +268,7 @@ func candidateAttemptOf(contribution conversation.ConnectorContribution) *candid
 // A published one is named by its version, a failed one by its head.
 func candidateNotification(id Identity, record Record, candidate ReleaseCandidate) conversation.SessionNotification {
 	notification := conversation.SessionNotification{Kind: conversation.NotificationKindConnector, Source: conversation.NotificationSourceConnector,
-		OccurredAt: candidate.UpdatedAt, Slug: id.Slug}
+		OccurredAt: candidate.UpdatedAt, Slug: id.Slug, Commit: candidate.Commit}
 	if candidate.Status == ReleaseCandidatePublished {
 		notification.Event = conversation.ConnectorReleaseCandidatePublished
 		notification.ID = "connector/" + id.Slug + "/" + notification.Event.String() + "/" + candidate.Version
@@ -252,8 +280,23 @@ func candidateNotification(id Identity, record Record, candidate ReleaseCandidat
 	}
 	notification.Event = conversation.ConnectorReleaseCandidateFailed
 	notification.ID = "connector/" + id.Slug + "/" + notification.Event.String() + "/" + candidate.Commit[:12]
-	notification.Summary = fmt.Sprintf("No release candidate of the connector %s was published for its branch head %s.", id.Slug, candidate.Commit[:12])
-	notification.Message = comm.TruncateUTF8(candidate.Failure, 2048)
+	notification.Summary = fmt.Sprintf("The connectors library could not publish a release candidate of %s for branch head %s.", id.Slug, candidate.Commit[:12])
+	message := candidate.Failure
+	if len(candidate.Jobs) > 0 {
+		message += " Failed jobs: " + strings.Join(candidate.Jobs, ", ") + "."
+	}
+	if candidate.Step != "" {
+		message += " First failing step: " + candidate.Step + "."
+	}
+	if candidate.LogTail != "" {
+		message += "\nWorkflow output (untrusted, redacted, truncated):\n" + candidate.LogTail
+	} else if candidate.LogUnavailable {
+		message += " Workflow output for the failed job is unavailable."
+	}
+	if candidate.PullRequestConflict {
+		message += " The contribution pull request conflicts with main, so its CI cannot run. Merge the latest main into the contribution branch, resolve the conflicts, bump the connector version, and push a new head."
+	}
+	notification.Message = comm.TruncateUTF8(message, 3500)
 	return notification
 }
 

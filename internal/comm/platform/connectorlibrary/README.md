@@ -67,13 +67,21 @@ and in Live before maintainers review and release the connector. `ReleaseCandida
 
 | Lane | Who publishes | `RequestReleaseCandidate` | `IsReleaseCandidatePublished` |
 | --- | --- | --- | --- |
-| upstream library (`LocationUpstream`) | the library's Release Connector Candidate workflow, which validates and builds the commit with its tooling at `main` | sends the repository dispatch `connector-release-candidate` with `{directory, commit, version}` | the tag names the commit, and its release holds the metadata and the complete marker; a tag of another commit is `ErrReleaseCandidateConflict` |
+| upstream library (`LocationUpstream`) | the library's Release Connector Candidate workflow, which validates and builds the commit with its tooling at `main` | sends the repository dispatch `connector-release-candidate` with `{directory, commit, version}` after confirming that the stable tag does not exist | the tag names the commit, and its release holds the metadata and the complete marker; a tag of another commit is `ErrReleaseCandidateConflict` |
 | local Git host's copy (`LocationLocalGitHost`) | the Sandbox, which builds the assets with the library's `connectorctl` at `main` and pushes the tag to the copy; `PublishLocalReleaseCandidate` stores them in the copy's release store | nothing: the copy already holds it | the copy's release holds the metadata and its digest |
 
 The workflow refuses a tag that names another commit and repeats a publication at the same commit,
 and the copy's assets never change, so a repeated request is harmless. `PublicCloneURL` is where the
 Sandbox reads the official library's released tags without a credential, so a candidate's version
 is checked against its connector's latest release.
+
+The upstream workflow's exact run name is `RC <directory> <version> <commit>`. The platform lists one
+page of only `release-candidate.yml` repository-dispatch runs created after its dispatch boundary and
+matches that name exactly. It reads status at most once a minute while retaining the existing tag and
+release poll. A concluded failed run is returned with at most 12 failed jobs, the first failed step and
+a 3 KiB tail read through the same bounded GitHub Actions reader as connector CI. Before dispatch the
+platform also reads the stable tag and the contribution pull request's mergeability; an already
+released stable version is terminal, and a known conflict is included in the failure guidance.
 
 `ReleaseCandidateDownloadURL` is where this server's configuration host downloads candidates: the
 copy's release store in the local lanes, the upstream library's GitHub releases on a server with

@@ -246,6 +246,9 @@ func connectorContribution(v contribution.Snapshot) *pb.ConnectorContribution {
 	if candidate := record.ReleaseCandidate; candidate != nil {
 		out.ReleaseCandidateVersion, out.ReleaseCandidateFailure = candidate.Version, candidate.Failure
 		out.ReleaseCandidateStatus = boundary.Enum[pb.ConnectorContribution_ReleaseCandidateStatus](candidate.Status.String())
+		if candidate.FailureKind.String() != "" {
+			out.ReleaseCandidateFailureKind = boundary.Enum[pb.ConnectorContribution_ReleaseCandidateFailureReason](candidate.FailureKind.String())
+		}
 	}
 	return out
 }

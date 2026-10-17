@@ -10,6 +10,7 @@ package contribution
 
 import (
 	"context"
+	"time"
 
 	"github.com/superdurable/superversev2/internal/comm/platform/connectorlibrary"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
@@ -36,6 +37,11 @@ type ReleaseCandidates interface {
 	RequestReleaseCandidate(ctx context.Context, candidate connectorlibrary.ReleaseCandidate, location connectorlibrary.Location) error
 	// IsReleaseCandidatePublished reports whether candidate's release holds its assets.
 	IsReleaseCandidatePublished(ctx context.Context, candidate connectorlibrary.ReleaseCandidate, location connectorlibrary.Location) (bool, error)
+	// ReadReleaseCandidateRun observes the exact correlated workflow run.
+	ReadReleaseCandidateRun(ctx context.Context, candidate connectorlibrary.ReleaseCandidate, location connectorlibrary.Location, createdAfter time.Time) (connectorlibrary.ReleaseCandidateRun, error)
+	// ReadReleaseCandidateBlockers checks stable release and pull request facts
+	// before the workflow is dispatched.
+	ReadReleaseCandidateBlockers(ctx context.Context, candidate connectorlibrary.ReleaseCandidate, pullRequestNumber int64, location connectorlibrary.Location) (connectorlibrary.ReleaseCandidateBlockers, error)
 }
 
 // ConnectorPullRequests opens the draft pull request of a contribution branch
@@ -54,6 +60,7 @@ type ConnectorPullRequests interface {
 type ConnectorChecks interface {
 	ReadHeadChecks(context.Context, string) (connectorlibrary.HeadChecks, error)
 	ReadFailedHeadJobs(context.Context, connectorlibrary.HeadChecks) (connectorlibrary.HeadChecks, error)
+	ReadReleaseCandidateRun(context.Context, connectorlibrary.ReleaseCandidate, connectorlibrary.Location, time.Time) (connectorlibrary.ReleaseCandidateRun, error)
 }
 
 // ConnectorCheckRedactor applies the same Project-scoped output redaction as

@@ -72,8 +72,9 @@ own Project's contribution and current GitHub status on demand. Neither path sta
   each connector once. Because a closed FlowID is never reused, a contribution that ended (a
   deleting Project's) is final for that slug in that Project:
   the client answers `ErrContributionClosed`, which the Service only logs. A later head cancels its
-  old `OpenConnectorPullRequest`, `RecordConnectorPullRequest`, `WaitConnectorChecks` timer or check and
-  `RecordConnectorChecks` executions before scheduling the new head's pull request update and
+  old `OpenConnectorPullRequest`, `RecordConnectorPullRequest`, `PublishReleaseCandidate`,
+  `RecordReleaseCandidate`, `WaitConnectorChecks` timer or check and `RecordConnectorChecks`
+  executions before scheduling the new head's pull request update and
   CI observation; the PR's branch is reused, and no new FlowID or Run is created.
 - **Admission.** The first Step asks the Session through the Service before any effect
   (`AdmitConnectorContribution`: ACTIVE with a running execution). A deleting Project's Session
@@ -97,7 +98,7 @@ own Project's contribution and current GitHub status on demand. Neither path sta
 | `ProjectID` | Indexed `keyword2`: the cleanup search and the Snapshot read |
 | `ContributionStatus` | Indexed `keyword3`, the status lock Attribute: `pull_request_pending`, `unpublished`, `pull_request_failed`, `draft`, `closed` |
 | `Submission` | The latest `Submission{Identity, Contribution, Report}` of a develop subagent; installed with the start, replaced by `UpdateConnectorContribution` |
-| `Contribution` | The record `Record{Module, Kind, Branch, HeadCommit, HeadRecordedAt, Location, PullRequest{Number, URL, NodeID, State}, Status, ReleasedVersion, ReleaseCandidate, Checks, Failure, Description, Report, UpdatedAt}`, the authority of the contribution, bounded by the 16 KiB report and the CI evidence below. `HeadRecordedAt` is set once for each accepted head and anchors the first CI timer across Worker restarts. `ReleaseCandidate{Directory, Version, Tag, Commit, Status published\|failed, Failure, UpdatedAt}` is the candidate of the latest head the Flow published or tried to; an older head's candidate is never recorded over it |
+| `Contribution` | The record `Record{Module, Kind, Branch, HeadCommit, HeadRecordedAt, Location, PullRequest{Number, URL, NodeID, State}, Status, ReleasedVersion, ReleaseCandidate, Checks, Failure, Description, Report, UpdatedAt}`, the authority of the contribution, bounded by the 16 KiB report and failure evidence below. `HeadRecordedAt` is set once for each accepted head and anchors the first CI timer and workflow-run recovery boundary across Worker restarts. `ReleaseCandidate{Directory, Version, Tag, Commit, Status published\|failed, FailureKind workflow_failed\|already_released\|timed_out\|refused, Failure, Jobs, Step, LogTail, LogUnavailable, PullRequestConflict, UpdatedAt}` is the candidate of the latest head the Flow published or tried to; an older head's candidate is never recorded over it |
 | `Closing` | A Boolean fence set by `CloseConnectorContribution` before `ContributionEnd` is consumed. A second close remains pending until the execution ends; later submissions and notifications are refused. |
 
 `Contribution.Checks` is `HeadChecks{Head, State pending|passed|failed, SuiteCount, Jobs, Step,
@@ -106,6 +107,9 @@ names of at most 160 bytes each, `Step` at most 160 bytes, and the log tail at m
 GitHub has expired the log, `LogUnavailable` records that without suppressing the failed-job
 notification. The
 diagnostics redactor runs before this evidence enters the Attribute; a newer head clears it.
+Release-candidate workflow evidence uses the same 12-job, 160-byte name and step, 512 KiB read and
+3 KiB retained-tail limits and the same Project redactor. The workflow run itself is GitHub's
+authority; the Flow retains only its bounded business result, never a credential.
 `ContributionStatus` remains the indexed field for Project cleanup. CI status is not indexed:
 the Session reads its contribution by deterministic FlowID, and the tool asks GitHub for current
 status. `Contribution` writers use the status lock, and the head comparison is the revision fence.
@@ -139,14 +143,14 @@ becomes the CI authority. A remote reconnect reads its durable Session conversat
 | `RecordConnectorPullRequest` | Records `draft` with the pull request, or `pull_request_failed` with the reason, only for the current head; after a successful PR read it starts `WaitConnectorChecks` for that head | State Step with the status lock; a later head's PR remains the one on the same branch |
 | `WaitConnectorChecks` | A durable `WaitFor` timer waits until about 15 minutes after the head was recorded; its short Execute reads the exact head's aggregate GitHub Actions check suites once. A pending or unknown result schedules one more timer about 30 minutes later, then records `pending` if still unresolved. A passed result records immediately. A failed result reads bounded failed-job details and one log tail, then records and notifies. | `checksAttempt{Head, CheckAt, Number, Checks}` carries the fixed timer point and count; `connectorCheckFirstDelay`, `connectorCheckNextDelay`, and `connectorCheckMaxReads` (2) are the only schedule constants. Execute is limited to one attempt and one minute, with no status lock. A rate limit consumes that check point as unknown, with no retry loop. The App reads the public library with its cached repository-scoped token. A newer head or Project close cancels the pending timer or check. No workflow dispatch, rerun or mutation. |
 | `RecordConnectorChecks` | Records only the current head's result and sends `checks_failed` for a failure. A newer head or `Closing` drops the old result. | Synchronous state Step with the status lock; the notification ID contains the full head SHA. |
-| `PublishReleaseCandidate` | Every round reads the head's candidate first (`IsReleaseCandidatePublished`), and only in a round that found none, once per attempt, requests it (`RequestReleaseCandidate`): the repository dispatch on the upstream library, nothing on the local Git host's copy, which the finish already published | `dexflow.PollUntil` every 10 seconds within 40-second rounds and `PollingStepOptions(25 minutes)`, no lock; a refusal (`ErrRejected`, `ErrNotConfigured`, `ErrReleaseCandidateConflict`) decides at once; the passed limit goes to `RecordReleaseCandidate` |
-| `RecordReleaseCandidate` | Records the candidate `published` or `failed` with its reason, only while it is the current head's and the contribution is open, and reports it unless the subagent's task notification already did | State Step with the status lock |
-| `ReportConnectorEvent`, `DropConnectorEvent` | Delivers the existing PR and candidate notifications and `connector/<slug>/checks_failed/<full-head>` through the Service's `ReportSessionNotification`, once per ID. The status lock and head check suppress a CI notification after a newer submission or Project close. | Provider options; exhausted retries drop the message, while the Flow record keeps the result. |
+| `PublishReleaseCandidate` | Every round reads the head's candidate first (`IsReleaseCandidatePublished`). Before the first dispatch it reads the stable tag and pull request mergeability and refuses an already released version. After dispatch it lists one page of this workflow's repository-dispatch runs created after the dispatch boundary and matches exact run name `RC <directory> <version> <commit>` at most once a minute; a concluded failed run reads bounded failed-job evidence and decides at once. A missing run or failed GitHub read remains within the existing bounded wait. | The existing `dexflow.PollUntil` every 10 seconds within 40-second rounds and `PollingStepOptions(25 minutes)`, no lock and no new poll; a refusal (`ErrRejected`, `ErrNotConfigured`, `ErrReleaseCandidateConflict`) decides at once; the passed limit goes to `RecordReleaseCandidate` with a plain business timeout. |
+| `RecordReleaseCandidate` | Records the candidate `published` or its typed failure and bounded redacted evidence, only while it is the current head's and the contribution is not `Closing`, and reports it unless the subagent's task notification already did | State Step with the status lock |
+| `ReportConnectorEvent`, `DropConnectorEvent` | Delivers the existing PR and candidate notifications and `connector/<slug>/checks_failed/<full-head>` through the Service's `ReportSessionNotification`, once per ID. The status lock, `Closing` and head check suppress head-specific notifications after a newer submission or Project close. | Provider options; exhausted retries drop the message, while the Flow record keeps the result. |
 
 | RPC | Locks | Behavior |
 | --- | --- | --- |
-| `UpdateConnectorContribution` | Status | A later submission of the connector; idempotent by head commit; cancels the old PR and CI Steps, updates the existing PR branch, and starts the new head's release candidate and CI observation |
-| `CloseConnectorContribution` | Status | Sets `Closing`, cancels CI and notification Steps, publishes the end and answers whether the contribution ended |
+| `UpdateConnectorContribution` | Status | A later submission of the connector; idempotent by head commit; cancels the old PR, release-candidate and CI Steps, updates the existing PR branch, and starts the new head's release candidate and CI observation |
+| `CloseConnectorContribution` | Status | Sets `Closing`, cancels release-candidate, CI and notification Steps, publishes the end and answers whether the contribution ended |
 | `GetConnectorContributionSnapshot` | None; retained read | Identity and record |
 | `GetDexSummary`, `GetDexDisplay` | None | Dex Web |
 
@@ -154,16 +158,28 @@ External effects: the push of a local branch to GitHub (no force; a branch that 
 commit is published); the pull request, found by its head branch before it is created, so a lost
 answer, a Worker restart or a retry opens no second one; and the release candidate, read before it
 is requested, whose tag names one commit only: the workflow refuses a tag of another commit and
-repeats a publication at the same commit, so a repeated dispatch publishes no second candidate.
+repeats a publication at the same commit, so a repeated dispatch publishes no second candidate. The
+query-before-mutate recovery first matches the exact workflow run name after `HeadRecordedAt`; after
+the dispatch returns it narrows that boundary to the dispatch start time.
 Each head has at most one candidate, `N` counting the candidates of its version. A failed candidate
 stays failed until a later head brings its own; the agent fixes the connector with another
 connector_develop subagent. Moving a candidate to an official release is the maintainers', and
 upgrading an application from a candidate is not this Flow's. Compatibility: before launch the Flow
-changed in place. Existing open executions keep their FlowID and Run; the new `Closing` Attribute
-reads as false when absent, and the next submitted head starts CI observation. The
+changed in place. Existing open executions keep their FlowID and Run; `ReleaseCandidate`'s new failure
+fields read at their zero values for historical records, and the next candidate uses the correlated
+workflow reader. The existing `Closing` Attribute keeps its meaning. The
 graph is `docs/flows/sv2-connector-contribution-flow.json`.
 
 CI observation makes at most two scheduled aggregate reads per head, at roughly 15 and 45 minutes after the head was recorded (the second timer starts after the first read). There is no recurring per-round cost. A failure can additionally read at most 400 check runs in four bounded pages, 12 names, one job record and 512 KiB from one redirected log; its retained tail is 3 KiB. The agent's on-demand `read_connector_checks` tool reads the current aggregate state and, on failure, these bounded details even before a Flow notification arrives. The repository is public, but the installation's per-repository metadata token avoids the anonymous API rate limit and is cached per server replica. Checks create no Actions usage. At the existing 16 contributions per Session limit, each current head holds at most one timer/check Step, removed after a terminal result, two checks, a newer head or Project close. A burst of 10,000 contributed heads costs at most 20,000 scheduled aggregate reads spread across two timer points, rather than a recurring hourly load. GitHub's installation limit has a 5,000 requests/hour floor and 12,500 requests/hour cap ([GitHub REST rate limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api), checked 2026-10-16); at the floor, a simultaneous burst exceeding roughly 2,500 heads per timer point requires admission shaping or installation sharding. The feature creates no new cloud, Kubernetes, Temporal, Dex or database resource; the existing Dex Flow retains the result until Project close and engine retention then applies. It performs no IAM, EKS, DNS or load-balancer call per request or event and no tenant-proportional scan.
+
+Release-candidate observation creates no resource. One upstream head adds one stable-tag read and one
+pull-request read before dispatch, then at most one one-page workflow-run read per minute inside the
+existing 25-minute wait (no read after a terminal run), plus bounded failed-job detail reads once.
+At the 5,000 requests/hour installation floor, roughly 83 continuously pending candidates consume the
+entire floor from minute reads alone; 10,000 simultaneous candidate waits therefore require a shared
+rate limiter that stretches checks within the existing deadline and installation/account sharding
+before that scale. No IAM, EKS, Temporal Cloud, load-balancer, DNS or
+tenant-proportional scan enters a request, poll or event hot path.
 
 ## Tests
 
@@ -177,6 +193,13 @@ it published without a second notification, and follows the application that use
 and Live. The pull request Step with GitHub, a Worker restart during it and the failure path
 run only in the manual `TestConnectorContributionGitHubIntegration` of the
 [workspace Git package](../../sandbox/workspace/git/README.md), against `superdurable/dex-connectors-library-test`.
+`TestReleaseCandidateWorkflowGitHubIntegration` is read-only against the official library: it reads
+failed run `38979345261`, successful run `38985509210`, the released Stripe `v0.22.0` tag and the
+conflicting contribution pull request, and fails rather than skipping when GitHub no longer serves
+the evidence. `TestReleaseCandidateHeadAndCloseFenceDexIntegration` runs the real Worker and
+production record Step with observations installed by test RPCs to prove newer-head and `Closing`
+fences. `TestSessionMockReleaseCandidateFailureDexIntegration` delivers the failure through the real
+Session notification RPC.
 
 | File | Responsibility |
 | --- | --- |

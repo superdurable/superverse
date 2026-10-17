@@ -369,6 +369,7 @@ Every value comes from a write in the owning code; the Go names are the domain c
 | ConnectorContribution.Status (`STATUS_`) | PULL_REQUEST_PENDING, UNPUBLISHED, PULL_REQUEST_FAILED, DRAFT, CLOSED | `contribution.Status` | ConnectorContribution.status |
 | ConnectorContribution.Location (`LOCATION_`) | UPSTREAM, LOCAL_GIT_HOST, SANDBOX | `connectorlibrary.Location` | ConnectorContribution.location |
 | ConnectorContribution.ReleaseCandidateStatus (`RELEASE_CANDIDATE_STATUS_`) | PUBLISHED, FAILED; UNSPECIFIED before the first candidate | `contribution.ReleaseCandidateStatus` | ConnectorContribution.release_candidate_status |
+| ConnectorContribution.ReleaseCandidateFailureReason (`RELEASE_CANDIDATE_FAILURE_REASON_`) | WORKFLOW_FAILED, ALREADY_RELEASED, TIMED_OUT, REFUSED; UNSPECIFIED for a published candidate or a historical failure recorded before this field | `contribution.ReleaseCandidateFailureKind` | ConnectorContribution.release_candidate_failure_kind |
 | AgentSubagent.Status (`STATUS_`) | STARTING, RUNNING, COMPLETED, FAILED, STOPPED, TIMED_OUT, MERGED, DISCARDED | agenttasks | AgentSubagent.status |
 | AgentBackgroundCommand.Status (`STATUS_`) | RUNNING, EXITED, STOPPED, LOST | agenttasks | AgentBackgroundCommand.status |
 | AgentBackgroundCommand.EndReason (`END_REASON_`) | EXIT, LIFETIME_LIMIT, OUTPUT_LIMIT, STOPPED, LOST; UNSPECIFIED while it runs | agenttasks | AgentBackgroundCommand.end_reason |

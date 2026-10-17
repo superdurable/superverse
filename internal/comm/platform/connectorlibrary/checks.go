@@ -52,6 +52,15 @@ type HeadChecks struct {
 	UpdatedAt      time.Time      `json:"updated_at"`
 }
 
+// ActionFailure is bounded evidence from one failed GitHub Actions run. The
+// caller applies its Project-scoped redactor before retaining or returning it.
+type ActionFailure struct {
+	Jobs           []string `json:"jobs,omitempty"`
+	Step           string   `json:"step,omitempty"`
+	LogTail        string   `json:"log_tail,omitempty"`
+	LogUnavailable bool     `json:"log_unavailable,omitempty"`
+}
+
 const (
 	maximumCheckSuites = 100
 	maximumCheckRuns   = 400
@@ -205,6 +214,76 @@ func (library *Library) ReadFailedHeadJobs(ctx context.Context, checks HeadCheck
 		checks.LogUnavailable = true
 	}
 	return checks, nil
+}
+
+// readFailedWorkflowJobs reads the failed jobs of one exact workflow run and
+// the bounded log tail of its first failed job. It shares the CI reader's
+// limits and log parsing instead of creating a second output boundary.
+func (library *Library) readFailedWorkflowJobs(ctx context.Context, token githubapp.Token, runID int64) (ActionFailure, error) {
+	var failure ActionFailure
+	type workflowJob struct {
+		ID         int64     `json:"id"`
+		Name       string    `json:"name"`
+		Conclusion string    `json:"conclusion"`
+		StartedAt  time.Time `json:"started_at"`
+		Steps      []struct {
+			Name        string    `json:"name"`
+			Conclusion  string    `json:"conclusion"`
+			StartedAt   time.Time `json:"started_at"`
+			CompletedAt time.Time `json:"completed_at"`
+		} `json:"steps"`
+	}
+	var failed []workflowJob
+	for page := 1; page <= maximumCheckRuns/100; page++ {
+		var answer struct {
+			TotalCount int           `json:"total_count"`
+			Jobs       []workflowJob `json:"jobs"`
+		}
+		path := "/repos/" + library.upstream.FullName + "/actions/runs/" + strconv.FormatInt(runID, 10) + "/jobs?per_page=100&page=" + strconv.Itoa(page)
+		if err := library.upstream.App.CallWithToken(ctx, token, http.MethodGet, path, nil, &answer); err != nil {
+			return failure, fmt.Errorf("read failed release-candidate jobs: %w", classify(err))
+		}
+		if answer.TotalCount > maximumCheckRuns {
+			return failure, fmt.Errorf("release-candidate run has more than %d jobs", maximumCheckRuns)
+		}
+		for _, job := range answer.Jobs {
+			if isFailedConclusion(job.Conclusion) {
+				failed = append(failed, job)
+			}
+		}
+		if page*100 >= answer.TotalCount {
+			break
+		}
+	}
+	sort.Slice(failed, func(i, j int) bool { return failed[i].StartedAt.Before(failed[j].StartedAt) })
+	for _, job := range failed {
+		if len(failure.Jobs) >= maximumFailedJobs {
+			break
+		}
+		failure.Jobs = append(failure.Jobs, comm.TruncateUTF8(job.Name, 160))
+	}
+	if len(failed) == 0 {
+		return failure, nil
+	}
+	var firstStarted, firstCompleted time.Time
+	for _, step := range failed[0].Steps {
+		if isFailedConclusion(step.Conclusion) {
+			failure.Step = comm.TruncateUTF8(step.Name, 160)
+			firstStarted, firstCompleted = step.StartedAt, step.CompletedAt
+			break
+		}
+	}
+	path := "/repos/" + library.upstream.FullName + "/actions/jobs/" + strconv.FormatInt(failed[0].ID, 10) + "/logs"
+	data, err := library.upstream.App.ReadRedirectedTextWithToken(ctx, token, path, maximumJobLogRead)
+	if err != nil {
+		failure.LogUnavailable = true
+		return failure, nil
+	}
+	failure.LogTail = firstFailedStepTail(data, firstStarted, firstCompleted)
+	if failure.LogTail == "" {
+		failure.LogUnavailable = true
+	}
+	return failure, nil
 }
 
 // firstFailedStepTail keeps only timestamped lines within the first failed
