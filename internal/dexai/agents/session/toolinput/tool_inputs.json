@@ -47,6 +47,9 @@
     "ReadLiveAppRunsInput": {
       "$ref": "#/$defs/ReadLiveAppRunsInput"
     },
+    "ReadConnectorChecksInput": {
+      "$ref": "#/$defs/ReadConnectorChecksInput"
+    },
     "RequestUserInputInput": {
       "$ref": "#/$defs/RequestUserInputInput"
     },
@@ -119,6 +122,9 @@
     },
     "ReadLiveAppRunsInput": {
       "$ref": "schema/read_live_app_runs.json"
+    },
+    "ReadConnectorChecksInput": {
+      "$ref": "schema/read_connector_checks.json"
     },
     "RequestUserInputInput": {
       "$ref": "schema/request_user_input.json"

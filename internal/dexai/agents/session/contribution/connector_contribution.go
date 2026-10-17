@@ -103,6 +103,7 @@ type Record struct {
 	Kind            conversation.ContributionKind `json:"kind"`
 	Branch          string                        `json:"branch"`
 	HeadCommit      string                        `json:"head_commit"`
+	HeadRecordedAt  time.Time                     `json:"head_recorded_at"`
 	Location        connectorlibrary.Location     `json:"location"`
 	PullRequest     *PullRequest                  `json:"pull_request,omitempty"`
 	Status          Status                        `json:"status"`
@@ -110,10 +111,13 @@ type Record struct {
 	// ReleaseCandidate is the candidate of the latest head the Flow published
 	// or tried to.
 	ReleaseCandidate *ReleaseCandidate `json:"release_candidate,omitempty"`
-	Failure          string            `json:"failure,omitempty"`
-	Description      string            `json:"description"`
-	Report           string            `json:"report,omitempty"`
-	UpdatedAt        time.Time         `json:"updated_at"`
+	// Checks is the last terminal CI observation of this exact head. CI output
+	// is bounded and redacted before this durable copy is written.
+	Checks      *connectorlibrary.HeadChecks `json:"checks,omitempty"`
+	Failure     string                       `json:"failure,omitempty"`
+	Description string                       `json:"description"`
+	Report      string                       `json:"report,omitempty"`
+	UpdatedAt   time.Time                    `json:"updated_at"`
 }
 
 // maximumReportBytes bounds the subagent report a record keeps for the pull
@@ -141,7 +145,8 @@ func (submission Submission) requestID() string {
 func (submission Submission) record(status Status, now time.Time) Record {
 	contribution := submission.Contribution
 	return Record{Module: contribution.Module, Kind: contribution.Kind, Branch: contribution.Branch, HeadCommit: contribution.HeadCommit, Location: contribution.Location,
-		Status: status, Description: contribution.Summary, Report: comm.TruncateUTF8(submission.Report, maximumReportBytes), UpdatedAt: now}
+		Status: status, Description: contribution.Summary, Report: comm.TruncateUTF8(submission.Report, maximumReportBytes),
+		HeadRecordedAt: now, UpdatedAt: now}
 }
 
 // update applies a later submission of the same connector: its head, kind,

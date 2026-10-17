@@ -1124,11 +1124,11 @@ type SettleForegroundCommand struct {
 	flow *SessionAgentFlow
 }
 
-// GetStepOptions holds no lock. ConnectorContributions is loaded because recovered
-// file calls may resolve a path against its open worktrees.
+// GetStepOptions holds no lock. Command settlement uses only bash calls and
+// does not resolve file roots or load their worktree AttributeMaps.
 func (SettleForegroundCommand) GetStepOptions() *dex.StepOptions {
 	return &dex.StepOptions{ExecuteMethodTimeout: time.Minute, HeartbeatTimeout: time.Minute, ExecuteDurability: dex.StepDurabilitySync,
-		ExecuteRetry: shortStepRetry, ExecuteLoadAttributeMaps: []dex.AttributeDef{currentMessagesAttribute, backgroundCommandsAttribute, connectorContributionsAttribute},
+		ExecuteRetry: shortStepRetry, ExecuteLoadAttributeMaps: []dex.AttributeDef{currentMessagesAttribute, backgroundCommandsAttribute},
 		ExecuteFailure: dex.ProceedToOnExecuteFailure(RecordToolFailure{}, recordToolFailureStepOptions)}
 }
 

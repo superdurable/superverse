@@ -78,7 +78,7 @@ the gap list carries the first names only, and build and application logs are re
 |---|---|---|
 | `task` | `TaskID` (`agent-<id>` or `cmd-<id>`), `TaskStatus`, `Summary`, `Report`. A subagent's report is its final text (a subagent that ended without one passes on why it ended and its last reply), and its notification also carries `Changes`, the result commit and diffstat of the saved worktree, or `ChangesUnsaved` when its end could not save the worktree: the report leads with why, and the summary says that the changes stay in the worktree, where `merge_agent_changes` saves them. A command's report gives the exit code, the end reason (`exit`, `lifetime_limit`, `output_limit` or `lost`) and the output size; the agent reads the output with `read_task_output`. A completed `connector_develop` task also carries its `Contribution` ([connectors](connectors.md#connector-subagents)) | `ReportSubagentOutcome` of the SubagentFlow (through the Service); `AwaitBackgroundCommand` of the Session, when the command's `BackgroundCommandFlow` watch ends |
 | `delivery` | `Outcome` (`ready`, `failure` or `notice`), `Owner` (`application`, `configuration` or `platform`), `Code`, `Phase` (the Preview command kind), `Commit`, `ResourceID` (the instance a Preview ran on, or the Release's build revision or deployment), `Gaps` (at most the first 8 requirement names), `GapCount`, `Summary`, `Message` | `NotifyPreviewOutcome` of the PreviewFlow; `NotifyReleaseFailure` and `NotifyDeploymentFailure` of the delivery Flows |
-| `connector` | `Slug`, `Event` (`pull_request_failed`, `release_candidate_published` or `release_candidate_failed`), `Summary`, `Message` | `ReportConnectorEvent` of the connector's `ConnectorContributionFlow`, through the Service ([connectors](connectors.md#the-contribution-branch-and-pull-request)) |
+| `connector` | `Slug`, `Event` (`pull_request_failed`, `release_candidate_published`, `release_candidate_failed` or `checks_failed`), `Summary`, `Message` | `ReportConnectorEvent` of the connector's `ConnectorContributionFlow`, through the Service ([connectors](connectors.md#the-contribution-branch-and-pull-request)) |
 
 ### Identity and deduplication
 
@@ -93,7 +93,7 @@ same ID.
 | Release source (hook H1) | `release/<releaseID>/source/r<releaseRevision>` | `release/083ed9fd.../source/r4` |
 | Release build (hooks H2, H3) | `release/<releaseID>/<buildRevisionID>/r<releaseRevision>` | `release/083ed9fd.../b7c1/r5` |
 | Deployment | `deployment/<deploymentID>/g<generation>/r<revision>` | `deployment/d41e.../g2/r9` |
-| Connector | `connector/<slug>/<event>/<head12>`, the first 12 characters of the contribution's head commit | `connector/newsapi/pull_request_failed/abc123def456` |
+| Connector | `connector/<slug>/<event>/<head12 or version>` for PR and candidate events; `connector/<slug>/checks_failed/<full-head>` for a CI failure | `connector/newsapi/pull_request_failed/abc123def456` |
 
 The Release and Deployment IDs carry the revision at which the failure was recorded, never a
 revision read later: a recovery admitted while a notify Step runs bumps the revision.

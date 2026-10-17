@@ -47,3 +47,17 @@ type ConnectorPullRequests interface {
 	// pushing a branch of the local Git host to the upstream library first.
 	OpenDraftPullRequest(ctx context.Context, draft connectorlibrary.PullRequestDraft, location connectorlibrary.Location) (connectorlibrary.PullRequest, error)
 }
+
+// ConnectorChecks reads GitHub Actions for one exact connector branch head.
+// Each scheduled check observes aggregate suites once; failed-job details
+// are read only after a terminal failure or on an agent's read request.
+type ConnectorChecks interface {
+	ReadHeadChecks(context.Context, string) (connectorlibrary.HeadChecks, error)
+	ReadFailedHeadJobs(context.Context, connectorlibrary.HeadChecks) (connectorlibrary.HeadChecks, error)
+}
+
+// ConnectorCheckRedactor applies the same Project-scoped output redaction as
+// the read-only diagnostics tools before CI text enters durable Flow state.
+type ConnectorCheckRedactor interface {
+	RedactConnectorCheck(context.Context, string, string) string
+}

@@ -146,12 +146,13 @@ var (
 	ConnectorPullRequestFailed         = ConnectorEvent{"pull_request_failed"}
 	ConnectorReleaseCandidatePublished = ConnectorEvent{"release_candidate_published"}
 	ConnectorReleaseCandidateFailed    = ConnectorEvent{"release_candidate_failed"}
+	ConnectorChecksFailed              = ConnectorEvent{"checks_failed"}
 )
 
 func (event ConnectorEvent) String() string               { return event.name }
 func (event ConnectorEvent) MarshalText() ([]byte, error) { return []byte(event.name), nil }
 func (event *ConnectorEvent) UnmarshalText(text []byte) error {
-	return comm.UnmarshalName(text, event, ConnectorEvent.String, ConnectorPullRequestFailed, ConnectorReleaseCandidatePublished, ConnectorReleaseCandidateFailed)
+	return comm.UnmarshalName(text, event, ConnectorEvent.String, ConnectorPullRequestFailed, ConnectorReleaseCandidatePublished, ConnectorReleaseCandidateFailed, ConnectorChecksFailed)
 }
 
 // ContributionKind is what a connector_develop subagent contributes to the

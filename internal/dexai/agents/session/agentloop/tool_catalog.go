@@ -247,6 +247,7 @@ var toolCatalog = []ToolDefinition{
 	platformTool(conversation.ToolReadDeliveryStatus, "Read this Project's delivery status on the server, also while the Sandbox is stopped: Project and Setup status and failures, the Session HEAD, the Preview (status, commit, failure, engine) and the Live pointer, the newest three Releases with their source and build status and failures, including the log tail of a failed build, and the newest three Live deployments with their phase and failure. Every resource names its FlowID for read_platform_flow. Output is redacted.", toolinput.ReadDeliveryStatus.JSONSchema()),
 	platformTool(conversation.ToolReadPlatformFlow, "Read one platform Flow of this Project on the server: its summary, its business status Attributes or a page of its history. Only this Project's project-, setup-, release- and deploy- FlowIDs and this Session's own preview-, session-workspace- and sandbox-provision- FlowIDs are readable; any other is refused with flow_not_in_project. Output is redacted and never names a run.", toolinput.ReadPlatformFlow.JSONSchema()),
 	platformTool(conversation.ToolReadLiveAppRuns, "Read the runs of the application deployed to Live on the server: search one Flow type, or one run's summary, state or history page, or the end of the Live application container's log. Payloads stored as blobs are omitted, and output is redacted. For the Preview, run dexcli flow search, summary, state or history with --no-hydrate in the Sandbox instead, and read /var/lib/superverse/preview/logs.", toolinput.ReadLiveAppRuns.JSONSchema()),
+	platformTool(conversation.ToolReadConnectorChecks, "Read the current GitHub Actions CI status of one connector contributed by this Session's Project. Call this after pushing a connector change if no CI notification has arrived yet. On failure, read failed jobs and a bounded, redacted CI log tail on demand. The Project is fixed by the Session, and the read uses no Sandbox.", toolinput.ReadConnectorChecks.JSONSchema()),
 }
 
 // platformTool is a read-only server-side tool: it joins parallel waves and
@@ -520,7 +521,7 @@ func SubagentTools(kind agenttasks.SubagentKind, model conversation.Model) []Too
 		names = append(names, conversation.ToolEdit, conversation.ToolWrite)
 	}
 	if kind.ReadsPlatform() {
-		names = append(names, conversation.ToolReadDeliveryStatus, conversation.ToolReadPlatformFlow, conversation.ToolReadLiveAppRuns)
+		names = append(names, conversation.ToolReadDeliveryStatus, conversation.ToolReadPlatformFlow, conversation.ToolReadLiveAppRuns, conversation.ToolReadConnectorChecks)
 	}
 	if kind.RaisesEffort() && modelprovider.ProfileOf(model).Effort {
 		names = append(names, conversation.ToolSetEffort)

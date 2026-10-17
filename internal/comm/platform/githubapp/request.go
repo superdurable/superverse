@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/superdurable/superversev2/internal/comm"
@@ -42,6 +43,47 @@ func (e *HTTPError) HTTPStatusCode() int { return e.Status }
 // apiClient bounds every call, including its body read, and never follows a
 // redirect, which would carry the bearer token to another host.
 var apiClient = &http.Client{Timeout: 30 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+
+// ReadRedirectedTextWithToken reads a bounded GitHub job log. GitHub returns a
+// signed redirect; the installation token is sent only to api.github.com and
+// the signed URL receives no Authorization header. Range asks for the tail,
+// while LimitReader bounds downloads if the storage service ignores it.
+func (a *App) ReadRedirectedTextWithToken(ctx context.Context, token Token, path string, maximum int64) ([]byte, error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.github.com"+path, nil) //nolint:gosec // fixed API host
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Authorization", "Bearer "+token.Value)
+	request.Header.Set("Accept", "application/vnd.github+json")
+	request.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+	request.Header.Set("User-Agent", "superverse-v2")
+	response, err := apiClient.Do(request) //nolint:gosec // fixed API host
+	if err != nil {
+		return nil, err
+	}
+	_ = response.Body.Close()
+	if response.StatusCode != http.StatusFound {
+		return nil, &HTTPError{Status: response.StatusCode, Method: http.MethodGet, path: path}
+	}
+	location, err := url.Parse(response.Header.Get("Location"))
+	if err != nil || location.Scheme != "https" || location.Host == "" || location.User != nil {
+		return nil, errors.New("GitHub returned an invalid job log redirect")
+	}
+	logRequest, err := http.NewRequestWithContext(ctx, http.MethodGet, location.String(), nil) //nolint:gosec // signed GitHub redirect
+	if err != nil {
+		return nil, err
+	}
+	logRequest.Header.Set("Range", fmt.Sprintf("bytes=-%d", maximum))
+	logResponse, err := apiClient.Do(logRequest) //nolint:gosec // signed GitHub redirect, no credential
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = logResponse.Body.Close() }()
+	if logResponse.StatusCode != http.StatusOK && logResponse.StatusCode != http.StatusPartialContent {
+		return nil, fmt.Errorf("GitHub job log storage returned HTTP %d", logResponse.StatusCode)
+	}
+	return io.ReadAll(io.LimitReader(logResponse.Body, maximum))
+}
 
 // request sends one JSON call to the GitHub API authenticated by token. It also
 // runs in goroutines that nothing recovers, so it reports every failure as an
@@ -74,7 +116,8 @@ func request(ctx context.Context, method, path, token string, input, output any)
 			Message string `json:"message"`
 		}
 		_ = json.NewDecoder(io.LimitReader(response.Body, 4096)).Decode(&failure)
-		return &HTTPError{Status: response.StatusCode, Method: method, path: path, reason: comm.TruncateUTF8(failure.Message, 512), requiredPermissions: response.Header.Get("X-Accepted-GitHub-Permissions")}
+		return &HTTPError{Status: response.StatusCode, Method: method, path: path, reason: comm.TruncateUTF8(failure.Message, 512),
+			requiredPermissions: response.Header.Get("X-Accepted-GitHub-Permissions")}
 	}
 	if output == nil {
 		_, err = io.Copy(io.Discard, io.LimitReader(response.Body, 1<<20))

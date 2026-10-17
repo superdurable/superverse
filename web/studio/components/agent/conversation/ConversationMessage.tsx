@@ -73,6 +73,8 @@ function notificationTitle(notification: AgentNotification): string {
           return `Release candidate of connector ${notification.slug} published`;
         case "release_candidate_failed":
           return `Release candidate of connector ${notification.slug} failed`;
+        case "checks_failed":
+          return `Library CI of connector ${notification.slug} failed`;
         case null:
           return "Connector update";
       }

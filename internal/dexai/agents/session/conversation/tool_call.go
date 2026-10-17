@@ -39,9 +39,10 @@ const (
 // Platform tools read the Session's own Project on the server, without the
 // workspace.
 const (
-	ToolReadDeliveryStatus ToolName = "read_delivery_status"
-	ToolReadPlatformFlow   ToolName = "read_platform_flow"
-	ToolReadLiveAppRuns    ToolName = "read_live_app_runs"
+	ToolReadDeliveryStatus  ToolName = "read_delivery_status"
+	ToolReadPlatformFlow    ToolName = "read_platform_flow"
+	ToolReadLiveAppRuns     ToolName = "read_live_app_runs"
+	ToolReadConnectorChecks ToolName = "read_connector_checks"
 )
 
 // Built-in tools are handled by Steps of SessionAgentFlow.

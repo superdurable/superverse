@@ -2652,6 +2652,7 @@ const (
 	AgentNotification_CONNECTOR_EVENT_PULL_REQUEST_FAILED         AgentNotification_ConnectorEvent = 1
 	AgentNotification_CONNECTOR_EVENT_RELEASE_CANDIDATE_PUBLISHED AgentNotification_ConnectorEvent = 2
 	AgentNotification_CONNECTOR_EVENT_RELEASE_CANDIDATE_FAILED    AgentNotification_ConnectorEvent = 3
+	AgentNotification_CONNECTOR_EVENT_CHECKS_FAILED               AgentNotification_ConnectorEvent = 4
 )
 
 // Enum value maps for AgentNotification_ConnectorEvent.
@@ -2661,12 +2662,14 @@ var (
 		1: "CONNECTOR_EVENT_PULL_REQUEST_FAILED",
 		2: "CONNECTOR_EVENT_RELEASE_CANDIDATE_PUBLISHED",
 		3: "CONNECTOR_EVENT_RELEASE_CANDIDATE_FAILED",
+		4: "CONNECTOR_EVENT_CHECKS_FAILED",
 	}
 	AgentNotification_ConnectorEvent_value = map[string]int32{
 		"CONNECTOR_EVENT_UNSPECIFIED":                 0,
 		"CONNECTOR_EVENT_PULL_REQUEST_FAILED":         1,
 		"CONNECTOR_EVENT_RELEASE_CANDIDATE_PUBLISHED": 2,
 		"CONNECTOR_EVENT_RELEASE_CANDIDATE_FAILED":    3,
+		"CONNECTOR_EVENT_CHECKS_FAILED":               4,
 	}
 )
 
@@ -26039,7 +26042,7 @@ const file_superverse_v2_superverse_proto_rawDesc = "" +
 	"_tool_nameB\x19\n" +
 	"\x17_answered_input_call_idB\r\n" +
 	"\v_started_atB\x06\n" +
-	"\x04_via\"\x83\r\n" +
+	"\x04_via\"\xa6\r\n" +
 	"\x11AgentNotification\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x129\n" +
 	"\x04kind\x18\x02 \x01(\x0e2%.superverse.v2.AgentNotification.KindR\x04kind\x12?\n" +
@@ -26096,12 +26099,13 @@ const file_superverse_v2_superverse_proto_rawDesc = "" +
 	"\x11OWNER_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11OWNER_APPLICATION\x10\x01\x12\x17\n" +
 	"\x13OWNER_CONFIGURATION\x10\x02\x12\x12\n" +
-	"\x0eOWNER_PLATFORM\x10\x03\"\xb9\x01\n" +
+	"\x0eOWNER_PLATFORM\x10\x03\"\xdc\x01\n" +
 	"\x0eConnectorEvent\x12\x1f\n" +
 	"\x1bCONNECTOR_EVENT_UNSPECIFIED\x10\x00\x12'\n" +
 	"#CONNECTOR_EVENT_PULL_REQUEST_FAILED\x10\x01\x12/\n" +
 	"+CONNECTOR_EVENT_RELEASE_CANDIDATE_PUBLISHED\x10\x02\x12,\n" +
-	"(CONNECTOR_EVENT_RELEASE_CANDIDATE_FAILED\x10\x03\"\xf2\x04\n" +
+	"(CONNECTOR_EVENT_RELEASE_CANDIDATE_FAILED\x10\x03\x12!\n" +
+	"\x1dCONNECTOR_EVENT_CHECKS_FAILED\x10\x04\"\xf2\x04\n" +
 	"\x15AgentModelCallMetrics\x12\x14\n" +
 	"\x05model\x18\x01 \x01(\tR\x05model\x12\x16\n" +
 	"\x06effort\x18\x02 \x01(\tR\x06effort\x12\x1f\n" +

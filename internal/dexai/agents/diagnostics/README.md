@@ -5,14 +5,14 @@ Purpose: Runs the Session Agent's read-only platform tools on the server for the
 
 Callers: `internal/dexai/bootstrap` imports this package.
 
-Dependencies: it imports `internal/comm/**` (4) and `internal/dexai/**` (18) and calls the Dex Flow API.
+Dependencies: it imports `internal/comm/**` (5) and `internal/dexai/**` (19) and calls the Dex Flow API.
 
 ```mermaid
 flowchart LR
   self["internal/dexai/agents/diagnostics"]
   c0["internal/dexai/bootstrap"] --> self
-  self --> d0["internal/comm/** (4)"]
-  self --> d1["internal/dexai/** (18)"]
+  self --> d0["internal/comm/** (5)"]
+  self --> d1["internal/dexai/** (19)"]
   self --> e0(["Dex Flow API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->

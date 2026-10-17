@@ -3,20 +3,21 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Reaches the connectors library: contribution remotes, the committing bot and draft pull requests, and the published catalog's document, per-replica warm copy and the connectors a request names.
 
-Callers: `internal/dexai/agents/sandbox/workspace/git`, `internal/dexai/agents/session/contribution`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/session/sandboxtools`, `internal/dexai/agents/session/subagent`, `internal/dexai/bootstrap` and `internal/dexai/studio/confighost/connectormanifest` import this package.
+Callers: `internal/dexai/agents/diagnostics`, `internal/dexai/agents/sandbox/workspace/git`, `internal/dexai/agents/session/contribution`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/session/sandboxtools`, `internal/dexai/agents/session/subagent`, `internal/dexai/bootstrap` and `internal/dexai/studio/confighost/connectormanifest` import this package.
 
 Dependencies: it imports `internal/comm`, `internal/comm/platform/deploymentnames`, `internal/comm/platform/githubapp` and `internal/comm/platform/repohost` and calls the Connector catalog API.
 
 ```mermaid
 flowchart LR
   self["internal/comm/platform/connectorlibrary"]
-  c0["internal/dexai/agents/sandbox/workspace/git"] --> self
-  c1["internal/dexai/agents/session/contribution"] --> self
-  c2["internal/dexai/agents/session/conversation"] --> self
-  c3["internal/dexai/agents/session/sandboxtools"] --> self
-  c4["internal/dexai/agents/session/subagent"] --> self
-  c5["internal/dexai/bootstrap"] --> self
-  c6["internal/dexai/studio/confighost/connectormanifest"] --> self
+  c0["internal/dexai/agents/diagnostics"] --> self
+  c1["internal/dexai/agents/sandbox/workspace/git"] --> self
+  c2["internal/dexai/agents/session/contribution"] --> self
+  c3["internal/dexai/agents/session/conversation"] --> self
+  c4["internal/dexai/agents/session/sandboxtools"] --> self
+  c5["internal/dexai/agents/session/subagent"] --> self
+  c6["internal/dexai/bootstrap"] --> self
+  c7["internal/dexai/studio/confighost/connectormanifest"] --> self
   self --> d0["internal/comm"]
   self --> d1["internal/comm/platform/deploymentnames"]
   self --> d2["internal/comm/platform/githubapp"]

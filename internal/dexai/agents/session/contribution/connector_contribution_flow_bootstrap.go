@@ -20,8 +20,8 @@ type ConnectorContributionFlowBootstrap struct {
 
 // NewConnectorContributionFlowBootstrap assembles the Flow.
 func NewConnectorContributionFlowBootstrap(dependency ConnectorContributionFlowDependency, pullRequests ConnectorPullRequests,
-	releaseCandidates ReleaseCandidates) *ConnectorContributionFlowBootstrap {
-	return &ConnectorContributionFlowBootstrap{flow: &ConnectorContributionFlow{dependency: dependency, pullRequests: pullRequests, releaseCandidates: releaseCandidates}}
+	releaseCandidates ReleaseCandidates, checks ConnectorChecks, redactor ConnectorCheckRedactor) *ConnectorContributionFlowBootstrap {
+	return &ConnectorContributionFlowBootstrap{flow: &ConnectorContributionFlow{dependency: dependency, pullRequests: pullRequests, releaseCandidates: releaseCandidates, checks: checks, redactor: redactor}}
 }
 
 // Flow returns the shared definition registered by the server bootstrap.

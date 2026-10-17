@@ -109,6 +109,13 @@ func (s *SessionFlowService) readContributions(ctx context.Context, projectID st
 		case err != nil:
 			return nil, fmt.Errorf("read the contribution %s of Project %s: %w", slug, projectID, err)
 		}
+		// The full CI excerpt is offered through the Project-scoped diagnostics
+		// tool and notification, never copied into the broad Session Snapshot.
+		if snapshot.Record.Checks != nil {
+			checks := *snapshot.Record.Checks
+			checks.LogTail = ""
+			snapshot.Record.Checks = &checks
+		}
 		snapshots = append(snapshots, snapshot)
 	}
 	return snapshots, nil

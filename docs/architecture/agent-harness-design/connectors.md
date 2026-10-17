@@ -347,6 +347,17 @@ later head of the same connector retries the pull request.
 The pull request stays a draft for the maintainers, who review and release the connector; the
 platform neither marks it ready nor deletes the branch.
 
+After recording a head in the upstream library, the Flow uses a durable timer to read the
+head's aggregate GitHub Actions check suites about 15 minutes after the head was recorded.
+If pending or unknown, it waits about 30 more minutes and checks once more, then records the
+result as still running if unresolved. A failed result records at most 12 failed job names and
+a redacted 3 KiB tail from the first failed step, and sends
+`connector/<slug>/checks_failed/<full-head>` to the Session. A newer head cancels the old timer
+and starts its own; no workflow is started or rerun. `read_connector_checks` is a read-only
+platform tool scoped by the Session's Project and slug; it reads the current GitHub result and
+failed-job log tail on demand, including before a notification arrives. The remote inbox carries
+the same connector notification to Codex.
+
 ### Contributions
 
 Each contributed connector of a Project is one `ConnectorContributionFlow` execution,
@@ -376,6 +387,7 @@ through the Service. The per-Flow contract is in the
 | `Status` | `pull_request_pending`, `unpublished` (a server without an upstream library, an explicit state, never a skip), `pull_request_failed`, `draft` or `closed` |
 | `ReleasedVersion` | Reserved for the `vX.Y.Z` that contains the work; nothing sets it yet |
 | `ReleaseCandidate` | The candidate of the latest head, `{Directory, Version, Tag, Commit, Status published\|failed, Failure, UpdatedAt}` ([below](#using-a-connector-before-its-release)) |
+| `Checks` | The current head's `{Head, State pending\|passed\|failed, SuiteCount, Jobs, Step, LogTail, UpdatedAt}`; failure evidence is redacted before retention and cleared by a later head |
 
 `Status` moves only forward: a contribution with a pull request never returns to a status without
 one, and a later head moves `pull_request_failed` back to `pull_request_pending`, which retries the
@@ -533,7 +545,9 @@ StartFlow, FlowID, Step, AttributeMap, Channel or Stream to the Session:
   record: the Snapshot reads the contributions of the Project through the Service, from their Flows.
 - **Steps.** `RouteTool` admits `start_agent` of kind `connector_develop` (the slug and limit checks
   above); `ExecuteTool` creates the library worktree on the connector's branch instead of an
-  application worktree.
+  application worktree. `SettleForegroundCommand` settles only bash calls and builds their
+  Sandbox context without resolving a file root, so recovery loads neither worktree AttributeMap;
+  this changes no Session primitive.
 - **Channels.** `connector` notifications (`connector/<slug>/<event>/<head12 or version>`) reach the Session on
   `SessionNotifications` through `ReportSessionNotification`, like every notification
   ([notifications](notifications-and-feedback.md)), and open automatic turns within `agent.taskTurns`.
@@ -551,11 +565,13 @@ its role is described under [Contributions](#contributions).
   not a Project child; the deleting Project's cleanup finds the open ones by FlowType, `ProjectID` and
   status and closes them.
 - **Attributes.** `Identity`, `ProjectID` (indexed `keyword2`), `ContributionStatus` (indexed
-  `keyword3`, the status lock Attribute), `Submission` and `Contribution`, the authority of the
+  `keyword3`, the status lock Attribute), `Submission`, `Contribution` and Boolean `Closing`, the authority of the
   contribution. No AttributeMap. Channel `ContributionEnd`, which only `CloseConnectorContribution`
   publishes. No Stream.
 - **Steps and RPCs.** `AdmitConnectorContribution`, `AwaitConnectorContributionEnd`,
-  `OpenConnectorPullRequest`, `RecordConnectorPullRequest`, `PublishReleaseCandidate` (a polling Step
+  `OpenConnectorPullRequest`, `RecordConnectorPullRequest`, `WaitConnectorChecks` (durable
+  `WaitFor` timers at about 15 and 45 minutes, at most two short reads),
+  `RecordConnectorChecks`, `PublishReleaseCandidate` (a polling Step
   within `PollingStepOptions(25 minutes)`, no lock), `RecordReleaseCandidate`, `ReportConnectorEvent`
   and `DropConnectorEvent`. RPCs `UpdateConnectorContribution`, `CloseConnectorContribution`,
   `GetConnectorContributionSnapshot`, `GetDexSummary` and `GetDexDisplay`. The graph is
@@ -563,7 +579,7 @@ its role is described under [Contributions](#contributions).
 - **External effects.** The push of a local branch to GitHub (no force; a branch that already holds the
   commit is published); the pull request, found by its head branch before it is created, so a lost
   answer, a Worker restart or a retry opens no second one; and the release candidate, read before it is
-  requested, whose tag names one commit only.
+  requested, whose tag names one commit only. GitHub check reads add no Actions usage.
 
 ### SubagentFlow (connector kinds)
 
@@ -590,18 +606,21 @@ None. A contribution record is an Attribute of its `ConnectorContributionFlow`; 
 assets are a GitHub pre-release of the library, or files of the local Git host's release store; the
 catalog and pull requests are read from their public owners and cached for minutes only, the catalog
 as one in-memory copy per server replica and one per Sandbox Runner.
+The new CI result belongs to that same Attribute; there is no table or migration.
 
 ## UI/UX
 
 - The requirements card lists each connection as existing or new. A new one reads "needs a new connector,
   built and reviewed upstream" with what the user must prepare.
 - The tasks panel shows connector subagents like any other, with their one-line status.
-- Connector notifications (`pull_request_failed`, `release_candidate_published` and
-  `release_candidate_failed`) appear as notices in the conversation
+- Connector notifications (`pull_request_failed`, `release_candidate_published`,
+  `release_candidate_failed` and `checks_failed`) appear as notices in the conversation
   ([notifications](notifications-and-feedback.md#uiux)).
 - The Session Snapshot lists the contributions (`ConnectorContribution`: slug, module, kind, status,
   branch, head commit, location, pull request number and link, failure, and the release candidate's
   version, status and failure).
+- `read_connector_checks` lets the agent refresh the result for its own contributed head; the
+  failure notice labels the excerpt as untrusted CI output and names the failed jobs.
 - Connection forms for a release candidate work as for a release, and show its version.
 - Accessibility, keyboard behavior, cancellation and stale-response protection are unchanged. The Studio
   mock lists no contribution, so it shows none of these fields.
@@ -613,6 +632,11 @@ Agent paths are Dex integration tests with the mock model
 are real. End-to-end coverage stays at the three happy paths. The GitHub path of a contribution runs in
 the manual `TestConnectorContributionGitHubIntegration` against `superdurable/dex-connectors-library-test`;
 missing credentials or the test repository make the result incomplete, never a pass.
+The read-only `TestConnectorHeadChecksGitHubIntegration` checks an existing passing and failing
+head in the official public library without triggering a workflow. Dex integration tests exercise
+the production CI Steps and cancellation on a newer head and Project close with test RPCs that
+install observed results; Session tests drive the mock notification and read tool and the remote
+HTTP endpoint's tool and inbox delivery. The local Git host has no Actions and supplies no CI result.
 
 - **Catalog.** A query returns bounded compact matches; an exact operation filters; an oversized single
   match fails with `catalog_result_too_large`; an unreachable catalog is `catalog_unavailable`.
@@ -651,7 +675,8 @@ missing credentials or the test repository make the result incomplete, never a p
   `connector-develop-new`, `connector-develop-operation` (describe; the card, then the branch and
   contribution), `connector-develop-fix` (describe the defect, agree to submit a
   fix, branch and contribution) and `connector-pr-retry` (pull request creation fails until
-  `pull_request_failed`) and `connector-release-candidate` (describe; the card, then a complete new
+  `pull_request_failed`), `connector-ci-failure` (CI notice, then read-only status read), and
+  `connector-release-candidate` (describe; the card, then a complete new
   connector whose candidate the application uses).
 - **Release resolver.** A real released connector resolves, caches and survives eviction; a missing asset,
   a wrong digest and a mismatching identity are `CONNECTOR_RELEASE_UNAVAILABLE`.
@@ -675,3 +700,7 @@ provider behavior of a new connector is recorded as unverified.
   candidates. the current contract records the release
   candidates; the [local build service](../../../internal/dexai/delivery/releases/build/localbuilder/README.md#release-candidates)
   owns the `bp3` redirect.
+
+## Resource Scalability
+
+CONNCI adds no cloud, Kubernetes, Temporal namespace, Dex Flow, or database resource. Each current head adds one bounded timer/check Step within the existing contribution Flow; a newer head or Project close cancels it. The result and Step history follow that Flow's existing retention. Each head incurs at most two scheduled aggregate GitHub reads, about 15 minutes and 45 minutes after it was recorded, with no recurring per-round cost or tenant-wide scan. A rate limit consumes a check point as unknown without a retry loop. GitHub's installation REST rate limit has a 5,000 requests/hour floor and 12,500/hour cap ([GitHub documentation](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api), checked 2026-10-16). A simultaneous burst above roughly 2,500 heads at one timer point would consume that floor; admission shaping or installation sharding is required before that scale. Normal 10,000-Project and 100,000-deployment growth creates no per-Project recurring CI read. The failure path reads at most four check-run pages, one job and 512 KiB of one log per failed head; agent-initiated on-demand reads consume additional calls only when invoked. There is no control-plane call per request or event.

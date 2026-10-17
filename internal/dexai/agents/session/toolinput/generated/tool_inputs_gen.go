@@ -2076,6 +2076,52 @@ func (o OptRead) Or(d Read) Read {
 	return d
 }
 
+// NewOptReadConnectorChecks returns new OptReadConnectorChecks with value set to v.
+func NewOptReadConnectorChecks(v ReadConnectorChecks) OptReadConnectorChecks {
+	return OptReadConnectorChecks{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptReadConnectorChecks is optional ReadConnectorChecks.
+type OptReadConnectorChecks struct {
+	Value ReadConnectorChecks
+	Set   bool
+}
+
+// IsSet returns true if OptReadConnectorChecks was set.
+func (o OptReadConnectorChecks) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptReadConnectorChecks) Reset() {
+	var v ReadConnectorChecks
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptReadConnectorChecks) SetTo(v ReadConnectorChecks) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptReadConnectorChecks) Get() (v ReadConnectorChecks, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptReadConnectorChecks) Or(d ReadConnectorChecks) ReadConnectorChecks {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptReadDeliveryStatus returns new OptReadDeliveryStatus with value set to v.
 func NewOptReadDeliveryStatus(v ReadDeliveryStatus) OptReadDeliveryStatus {
 	return OptReadDeliveryStatus{
@@ -2852,6 +2898,22 @@ func (s *Read) SetOffset(val OptInt) {
 // SetLimit sets the value of Limit.
 func (s *Read) SetLimit(val OptInt) {
 	s.Limit = val
+}
+
+// Ref: #
+type ReadConnectorChecks struct {
+	// The connector slug contributed by this Session's Project.
+	Slug string `json:"slug"`
+}
+
+// GetSlug returns the value of Slug.
+func (s *ReadConnectorChecks) GetSlug() string {
+	return s.Slug
+}
+
+// SetSlug sets the value of Slug.
+func (s *ReadConnectorChecks) SetSlug(val string) {
+	s.Slug = val
 }
 
 // Ref: #
@@ -3797,6 +3859,7 @@ type ToolInputs struct {
 	ReadDeliveryStatusInput          OptReadDeliveryStatus          `json:"ReadDeliveryStatusInput"`
 	ReadPlatformFlowInput            OptReadPlatformFlow            `json:"ReadPlatformFlowInput"`
 	ReadLiveAppRunsInput             OptReadLiveAppRuns             `json:"ReadLiveAppRunsInput"`
+	ReadConnectorChecksInput         OptReadConnectorChecks         `json:"ReadConnectorChecksInput"`
 	RequestUserInputInput            OptRequestUserInput            `json:"RequestUserInputInput"`
 	WriteTodosInput                  OptWriteTodos                  `json:"WriteTodosInput"`
 	StartAgentInput                  OptStartAgent                  `json:"StartAgentInput"`
@@ -3885,6 +3948,11 @@ func (s *ToolInputs) GetReadPlatformFlowInput() OptReadPlatformFlow {
 // GetReadLiveAppRunsInput returns the value of ReadLiveAppRunsInput.
 func (s *ToolInputs) GetReadLiveAppRunsInput() OptReadLiveAppRuns {
 	return s.ReadLiveAppRunsInput
+}
+
+// GetReadConnectorChecksInput returns the value of ReadConnectorChecksInput.
+func (s *ToolInputs) GetReadConnectorChecksInput() OptReadConnectorChecks {
+	return s.ReadConnectorChecksInput
 }
 
 // GetRequestUserInputInput returns the value of RequestUserInputInput.
@@ -4005,6 +4073,11 @@ func (s *ToolInputs) SetReadPlatformFlowInput(val OptReadPlatformFlow) {
 // SetReadLiveAppRunsInput sets the value of ReadLiveAppRunsInput.
 func (s *ToolInputs) SetReadLiveAppRunsInput(val OptReadLiveAppRuns) {
 	s.ReadLiveAppRunsInput = val
+}
+
+// SetReadConnectorChecksInput sets the value of ReadConnectorChecksInput.
+func (s *ToolInputs) SetReadConnectorChecksInput(val OptReadConnectorChecks) {
+	s.ReadConnectorChecksInput = val
 }
 
 // SetRequestUserInputInput sets the value of RequestUserInputInput.
@@ -8375,6 +8448,39 @@ func (s *OptRead) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes ReadConnectorChecks as json.
+func (o OptReadConnectorChecks) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes ReadConnectorChecks from json.
+func (o *OptReadConnectorChecks) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptReadConnectorChecks to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptReadConnectorChecks) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptReadConnectorChecks) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes ReadDeliveryStatus as json.
 func (o OptReadDeliveryStatus) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -9032,6 +9138,102 @@ func (s *Read) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *Read) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ReadConnectorChecks) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ReadConnectorChecks) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("slug")
+		e.Str(s.Slug)
+	}
+}
+
+var jsonFieldsNameOfReadConnectorChecks = [1]string{
+	0: "slug",
+}
+
+// Decode decodes ReadConnectorChecks from json.
+func (s *ReadConnectorChecks) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ReadConnectorChecks to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "slug":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Slug = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"slug\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ReadConnectorChecks")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfReadConnectorChecks) {
+					name = jsonFieldsNameOfReadConnectorChecks[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ReadConnectorChecks) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ReadConnectorChecks) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -11238,6 +11440,12 @@ func (s *ToolInputs) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.ReadConnectorChecksInput.Set {
+			e.FieldStart("ReadConnectorChecksInput")
+			s.ReadConnectorChecksInput.Encode(e)
+		}
+	}
+	{
 		if s.RequestUserInputInput.Set {
 			e.FieldStart("RequestUserInputInput")
 			s.RequestUserInputInput.Encode(e)
@@ -11287,7 +11495,7 @@ func (s *ToolInputs) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfToolInputs = [24]string{
+var jsonFieldsNameOfToolInputs = [25]string{
 	0:  "ConnectorCatalogInput",
 	1:  "CommitAndPushInput",
 	2:  "ConfirmRequirementsInput",
@@ -11304,14 +11512,15 @@ var jsonFieldsNameOfToolInputs = [24]string{
 	13: "ReadDeliveryStatusInput",
 	14: "ReadPlatformFlowInput",
 	15: "ReadLiveAppRunsInput",
-	16: "RequestUserInputInput",
-	17: "WriteTodosInput",
-	18: "StartAgentInput",
-	19: "StartConnectorContributionInput",
-	20: "SubmitConnectorContributionInput",
-	21: "OpenTaskWorktreeInput",
-	22: "MergeTaskWorktreeInput",
-	23: "MergeAgentChangesInput",
+	16: "ReadConnectorChecksInput",
+	17: "RequestUserInputInput",
+	18: "WriteTodosInput",
+	19: "StartAgentInput",
+	20: "StartConnectorContributionInput",
+	21: "SubmitConnectorContributionInput",
+	22: "OpenTaskWorktreeInput",
+	23: "MergeTaskWorktreeInput",
+	24: "MergeAgentChangesInput",
 }
 
 // Decode decodes ToolInputs from json.
@@ -11481,6 +11690,16 @@ func (s *ToolInputs) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"ReadLiveAppRunsInput\"")
+			}
+		case "ReadConnectorChecksInput":
+			if err := func() error {
+				s.ReadConnectorChecksInput.Reset()
+				if err := s.ReadConnectorChecksInput.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"ReadConnectorChecksInput\"")
 			}
 		case "RequestUserInputInput":
 			if err := func() error {
@@ -14604,6 +14823,41 @@ func (s *Read) Validate() error {
 	return nil
 }
 
+func (s *ReadConnectorChecks) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:     0,
+			MinLengthSet:  false,
+			MaxLength:     0,
+			MaxLengthSet:  false,
+			Email:         false,
+			Hostname:      false,
+			Regex:         regexMap["^[a-z][a-z0-9-]{1,62}$"],
+			MinNumeric:    0,
+			MinNumericSet: false,
+			MaxNumeric:    0,
+			MaxNumericSet: false,
+		}).Validate(string(s.Slug)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "slug",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *ReadDeliveryStatus) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -16120,6 +16374,24 @@ func (s *ToolInputs) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "ReadLiveAppRunsInput",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.ReadConnectorChecksInput.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "ReadConnectorChecksInput",
 			Error: err,
 		})
 	}

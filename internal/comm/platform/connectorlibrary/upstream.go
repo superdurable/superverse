@@ -32,8 +32,10 @@ type Upstream struct {
 	// FullName is owner/name.
 	FullName string
 
-	mu       sync.Mutex
-	identity *Identity
+	mu              sync.Mutex
+	identity        *Identity
+	checksMu        sync.Mutex
+	checksReadToken githubapp.Token
 }
 
 // cloneURL is where Git fetches and pushes the library.

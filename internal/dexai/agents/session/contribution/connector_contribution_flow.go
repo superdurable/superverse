@@ -32,6 +32,7 @@ var (
 	statusAttribute     = dex.DefineAttribute[string]("ContributionStatus", dex.Indexed(dex.AttributeIndex{Type: dex.IndexKeyword, IndexKey: "keyword3"}))
 	submissionAttribute = dex.DefineAttribute[Submission]("Submission")
 	recordAttribute     = dex.DefineAttribute[Record]("Contribution")
+	closingAttribute    = dex.DefineAttribute[bool]("Closing")
 	// The close of a deleting Project's contribution.
 	endChannel = dex.DefineChannel[contributionEnd]("ContributionEnd")
 )
@@ -43,6 +44,8 @@ type ConnectorContributionFlow struct {
 	dependency        ConnectorContributionFlowDependency
 	pullRequests      ConnectorPullRequests
 	releaseCandidates ReleaseCandidates
+	checks            ConnectorChecks
+	redactor          ConnectorCheckRedactor
 }
 
 // GetSteps registers the admission, the pull request, its record and the
@@ -53,6 +56,7 @@ func (flow *ConnectorContributionFlow) GetSteps() []dex.StepDef {
 		dex.DefineStep(OpenConnectorPullRequest{flow: flow}), dex.DefineStep(RecordConnectorPullRequest{}),
 		dex.DefineStep(ReportConnectorEvent{flow: flow}), dex.DefineStep(DropConnectorEvent{}),
 		dex.DefineStep(PublishReleaseCandidate{flow: flow}), dex.DefineStep(RecordReleaseCandidate{}),
+		dex.DefineStep(WaitConnectorChecks{flow: flow}), dex.DefineStep(RecordConnectorChecks{}),
 	}
 }
 
@@ -70,7 +74,7 @@ func (flow *ConnectorContributionFlow) GetRPCs() []dex.RPCDef {
 // GetPersistenceSchema registers every durable value.
 func (*ConnectorContributionFlow) GetPersistenceSchema() dex.PersistenceSchema {
 	return dex.PersistenceSchema{
-		Attributes: []dex.AttributeDef{identityAttribute, projectIDAttribute, statusAttribute, submissionAttribute, recordAttribute},
+		Attributes: []dex.AttributeDef{identityAttribute, projectIDAttribute, statusAttribute, submissionAttribute, recordAttribute, closingAttribute},
 		Channels:   []dex.ChannelDef{endChannel},
 	}
 }
@@ -89,13 +93,16 @@ var (
 const (
 	pullRequestWaitLimit      = 5 * time.Minute
 	releaseCandidateWaitLimit = 25 * time.Minute
+	connectorCheckFirstDelay  = 15 * time.Minute
+	connectorCheckNextDelay   = 30 * time.Minute
+	connectorCheckMaxReads    = 2
 )
 
 // UpdateConnectorContribution applies a later head of the connector's branch; a repeated one
 // changes nothing, and one whose pull request failed opens it again.
 func (flow *ConnectorContributionFlow) UpdateConnectorContribution(ctx dex.Context, submission Submission) (*dex.RPCResult[bool], error) {
 	status := statusOf(comm.Must(statusAttribute.Get(ctx)))
-	if status.Closed() || submission.Identity != comm.Must(identityAttribute.Get(ctx)) {
+	if status.Closed() || dexflow.ValueOrZero(closingAttribute.Get(ctx)) || submission.Identity != comm.Must(identityAttribute.Get(ctx)) {
 		return &dex.RPCResult[bool]{Output: false}, nil
 	}
 	comm.MustDo(submissionAttribute.Set(ctx, submission))
@@ -108,7 +115,7 @@ func (flow *ConnectorContributionFlow) UpdateConnectorContribution(ctx dex.Conte
 	comm.MustDo(recordAttribute.Set(ctx, updated))
 	comm.MustDo(statusAttribute.Set(ctx, updated.Status.String()))
 	var next []dex.StepMovement
-	if reopens {
+	if reopens || record.PullRequest != nil && flow.pullRequests.OpensPullRequests() {
 		next = append(next, dex.MovementOf(OpenConnectorPullRequest{}, pullRequestAttempt{HeadCommit: updated.HeadCommit}))
 	}
 	// A candidate the library refused at once is recorded; another is published.
@@ -118,7 +125,8 @@ func (flow *ConnectorContributionFlow) UpdateConnectorContribution(ctx dex.Conte
 	case attempt != nil:
 		next = append(next, dex.MovementOf(PublishReleaseCandidate{}, *attempt))
 	}
-	return &dex.RPCResult[bool]{Output: true, NextSteps: next}, nil
+	return (&dex.RPCResult[bool]{Output: true, NextSteps: next}).CancelSteps(
+		OpenConnectorPullRequest{}, RecordConnectorPullRequest{}, WaitConnectorChecks{}, RecordConnectorChecks{}), nil
 }
 
 // CloseConnectorContribution ends the contribution of a deleting Project and
@@ -127,8 +135,12 @@ func (*ConnectorContributionFlow) CloseConnectorContribution(ctx dex.Context, _ 
 	if statusOf(comm.Must(statusAttribute.Get(ctx))).Closed() {
 		return &dex.RPCResult[bool]{Output: true}, nil
 	}
+	if dexflow.ValueOrZero(closingAttribute.Get(ctx)) {
+		return &dex.RPCResult[bool]{Output: false}, nil
+	}
+	comm.MustDo(closingAttribute.Set(ctx, true))
 	comm.MustDo(endChannel.Publish(ctx, contributionEnd{}))
-	return &dex.RPCResult[bool]{Output: false}, nil
+	return (&dex.RPCResult[bool]{Output: false}).CancelSteps(WaitConnectorChecks{}, RecordConnectorChecks{}, ReportConnectorEvent{}), nil
 }
 
 // GetConnectorContributionSnapshot reads the contribution without a lock, so
@@ -227,7 +239,7 @@ func (AwaitConnectorContributionEnd) Execute(ctx dex.Context, _ dex.None) (*dex.
 	comm.MustDo(recordAttribute.Set(ctx, record))
 	comm.MustDo(statusAttribute.Set(ctx, StatusClosed.String()))
 	return dex.GracefulComplete(receipt{Identity: identity, Status: StatusClosed}).CancelSteps(OpenConnectorPullRequest{}, RecordConnectorPullRequest{},
-		ReportConnectorEvent{}, DropConnectorEvent{}, PublishReleaseCandidate{}, RecordReleaseCandidate{}), nil
+		ReportConnectorEvent{}, DropConnectorEvent{}, PublishReleaseCandidate{}, RecordReleaseCandidate{}, WaitConnectorChecks{}, RecordConnectorChecks{}), nil
 }
 
 // dex:group group-id:pull-request group-label:"Pull request"
@@ -276,7 +288,7 @@ func (RecordConnectorPullRequest) GetStepOptions() *dex.StepOptions { return rec
 // and a closed contribution records nothing.
 func (RecordConnectorPullRequest) Execute(ctx dex.Context, attempt pullRequestAttempt) (*dex.StepDecision, error) {
 	identity, record := comm.Must(identityAttribute.Get(ctx)), comm.Must(recordAttribute.Get(ctx))
-	if record.Status.Closed() || record.Status.HasPullRequest() {
+	if record.Status.Closed() || dexflow.ValueOrZero(closingAttribute.Get(ctx)) || record.HeadCommit != attempt.HeadCommit {
 		return dex.DeadEnd(), nil
 	}
 	record.UpdatedAt = time.Now().UTC()
@@ -284,6 +296,9 @@ func (RecordConnectorPullRequest) Execute(ctx dex.Context, attempt pullRequestAt
 		record.PullRequest, record.Status, record.Failure = attempt.PullRequest, StatusDraft, ""
 		comm.MustDo(recordAttribute.Set(ctx, record))
 		comm.MustDo(statusAttribute.Set(ctx, record.Status.String()))
+		return dex.GoTo(WaitConnectorChecks{}, checksAttempt{Head: record.HeadCommit, CheckAt: record.HeadRecordedAt.Add(connectorCheckFirstDelay), Number: 1}), nil
+	}
+	if record.Status.HasPullRequest() {
 		return dex.DeadEnd(), nil
 	}
 	record.Status, record.Failure = StatusPullRequestFailed, attempt.Failure
@@ -305,12 +320,23 @@ type ReportConnectorEvent struct {
 // GetStepOptions: one Service call; after exhausted retries the event is
 // dropped, and the record keeps the failure.
 func (ReportConnectorEvent) GetStepOptions() *dex.StepOptions {
-	return dexflow.ProviderStepOptions(dex.ProceedToOnExecuteFailure(DropConnectorEvent{}, nil))
+	options := dexflow.ProviderStepOptions(dex.ProceedToOnExecuteFailure(DropConnectorEvent{}, nil))
+	options.ExecuteLockAttributes = []dex.AttributeLock{statusLock}
+	return options
 }
 
 // Execute delivers the notification, whose ID makes a repeat harmless; a
 // Session that is busy or closed does not take it, and the record keeps it.
 func (step ReportConnectorEvent) Execute(ctx dex.Context, notification conversation.SessionNotification) (*dex.StepDecision, error) {
+	if dexflow.ValueOrZero(closingAttribute.Get(ctx)) {
+		return dex.DeadEnd(), nil
+	}
+	if notification.Event == conversation.ConnectorChecksFailed {
+		record := comm.Must(recordAttribute.Get(ctx))
+		if record.Status.Closed() || record.HeadCommit != notification.Commit {
+			return dex.DeadEnd(), nil
+		}
+	}
 	if _, err := step.flow.dependency.ReportConnectorEvent(ctx, comm.Must(identityAttribute.Get(ctx)), notification); err != nil {
 		return nil, dex.ErrorWithStack(fmt.Errorf("report %s to the Session: %w", notification.ID, err))
 	}
@@ -407,4 +433,79 @@ func (RecordReleaseCandidate) Execute(ctx dex.Context, attempt candidateAttempt)
 		return dex.DeadEnd(), nil
 	}
 	return dex.GoTo(ReportConnectorEvent{}, candidateNotification(identity, record, candidate)), nil
+}
+
+// dex:group group-id:checks group-label:"Library CI"
+// dex:explanation text:"Wait for a fixed business timer, then read the exact head's aggregate GitHub Actions result once."
+type WaitConnectorChecks struct {
+	dex.StepDefaults
+	flow *ConnectorContributionFlow
+}
+
+func (WaitConnectorChecks) GetStepOptions() *dex.StepOptions {
+	return &dex.StepOptions{WaitForMethodTimeout: 30 * time.Second, ExecuteMethodTimeout: time.Minute,
+		ExecuteRetry: &dex.RetryPolicy{MaximumAttempts: 1}, ExecuteFailure: dex.ProceedToOnExecuteFailure(RecordConnectorChecks{}, nil)}
+}
+
+func (WaitConnectorChecks) WaitFor(_ dex.Context, attempt checksAttempt) (*dex.Wait, error) {
+	return dex.Until(dex.Timer(max(time.Until(attempt.CheckAt), time.Second))), nil
+}
+
+// Execute makes one aggregate check-suites read at this timer point. Failed
+// jobs and one bounded log are read only after a terminal failure.
+func (step WaitConnectorChecks) Execute(ctx dex.Context, attempt checksAttempt) (*dex.StepDecision, error) {
+	checks, err := step.flow.checks.ReadHeadChecks(ctx, attempt.Head)
+	if err == nil {
+		attempt.Checks = checks
+	}
+	// A rate limit or other uncertain read consumes this fixed check point.
+	// The read-only tool lets the agent inspect the head at any time.
+	if err != nil || attempt.Checks.State == connectorlibrary.HeadChecksPending {
+		if attempt.Number < connectorCheckMaxReads {
+			attempt.Number++
+			attempt.CheckAt = time.Now().UTC().Add(connectorCheckNextDelay)
+			return dex.GoTo(WaitConnectorChecks{}, attempt), nil
+		}
+		return dex.GoTo(RecordConnectorChecks{}, attempt), nil
+	}
+	if attempt.Checks.State == connectorlibrary.HeadChecksFailed {
+		checks, err = step.flow.checks.ReadFailedHeadJobs(ctx, attempt.Checks)
+		if err != nil {
+			attempt.Checks.LogUnavailable = true
+			return dex.GoTo(RecordConnectorChecks{}, attempt), nil
+		}
+		projectID := comm.Must(identityAttribute.Get(ctx)).ProjectID
+		for index, name := range checks.Jobs {
+			checks.Jobs[index] = comm.TruncateUTF8(step.flow.redactor.RedactConnectorCheck(ctx, projectID, name), 160)
+		}
+		checks.Step = comm.TruncateUTF8(step.flow.redactor.RedactConnectorCheck(ctx, projectID, checks.Step), 160)
+		checks.LogTail = comm.TruncateUTF8(step.flow.redactor.RedactConnectorCheck(ctx, projectID, checks.LogTail), 3<<10)
+		attempt.Checks = checks
+	}
+	return dex.GoTo(RecordConnectorChecks{}, attempt), nil
+}
+
+// dex:group group-id:checks group-label:"Library CI"
+// dex:explanation text:"Record only the current head's bounded CI result, and notify the Session of a failed head."
+type RecordConnectorChecks struct {
+	dex.StepDefaultsNoWaitFor[checksAttempt]
+}
+
+func (RecordConnectorChecks) GetStepOptions() *dex.StepOptions { return recordStepOptions }
+
+func (RecordConnectorChecks) Execute(ctx dex.Context, attempt checksAttempt) (*dex.StepDecision, error) {
+	record := comm.Must(recordAttribute.Get(ctx))
+	if record.Status.Closed() || dexflow.ValueOrZero(closingAttribute.Get(ctx)) || record.HeadCommit != attempt.Head {
+		return dex.DeadEnd(), nil
+	}
+	checks := attempt.Checks
+	if checks.Head == "" {
+		checks = connectorlibrary.HeadChecks{Head: attempt.Head, State: connectorlibrary.HeadChecksPending, UpdatedAt: time.Now().UTC()}
+	}
+	record.Checks, record.UpdatedAt = &checks, time.Now().UTC()
+	comm.MustDo(recordAttribute.Set(ctx, record))
+	if checks.State != connectorlibrary.HeadChecksFailed {
+		return dex.DeadEnd(), nil
+	}
+	return dex.GoTo(ReportConnectorEvent{}, failedChecksNotification(comm.Must(identityAttribute.Get(ctx)), checks)), nil
 }

@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A connector CI failure is external input. The agent reads the current
+# Project-scoped check status before deciding how to fix a later head.
+name: connector-ci-failure
+title: "Connector CI failure"
+description: "A failed library CI notification reaches the Session, which asks for its current checks."
+category: project_feature
+inputs:
+  - label: "Await the connector result"
+    message: "I contributed a connector. Tell me when its library CI fails."
+    replies:
+      - text: "I will check its library CI when it reports a result."
+      - text: "The connector CI failed. Reading the current status before changing the branch."
+        notification: connector
+        tool_uses:
+          - name: read_connector_checks
+            input: {slug: newsapi}
+        expect_failure: true
+      - text: "The current contribution is unavailable in this local test; I will use its CI evidence when the branch is published."

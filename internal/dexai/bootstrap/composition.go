@@ -170,7 +170,7 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	owned.add(subagents.Close)
 	// A contribution reports to its Session through the Service and opens its
 	// pull request in the connectors library.
-	contributions := contribution.NewConnectorContributionFlowBootstrap(sessionService, config.connectors, config.connectors)
+	contributions := contribution.NewConnectorContributionFlowBootstrap(sessionService, config.connectors, config.connectors, config.connectors, projectDiagnostics)
 	// A Session's background command is watched by a SubFlow on the same pooled Sandbox resolver.
 	backgroundCommands := backgroundcommand.NewBackgroundCommandFlowBootstrap(sessionAgent.Workspace())
 	previewConfiguration := preview.NewPreviewConfiguration(projectClient, config.host, config.objects, configuration, providers.storage, providers.grants, providers.cleanup)
@@ -249,7 +249,8 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	*projectDiagnostics = diagnostics.ProjectDiagnostics{
 		Projects: projectClient, Previews: previewClient, Releases: releaseClient, Deployments: deploymentClient,
 		Configuration: configuration, Runs: flowRuns, Platform: dexpb.NewFlowServiceClient(executions), Serving: providers.serving, Redactor: providers.redactor,
-		Publishing: publishingService,
+		Publishing:    publishingService,
+		Contributions: sessionService.Contributions, ConnectorChecks: config.connectors,
 	}
 	slack := newSlackRelay(config, connectionDAO, configuration, logger)
 	remoteDAO := remoteagentdao.New(db)

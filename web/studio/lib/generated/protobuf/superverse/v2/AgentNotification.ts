@@ -10,6 +10,7 @@ export const _superverse_v2_AgentNotification_ConnectorEvent = {
   CONNECTOR_EVENT_PULL_REQUEST_FAILED: 'CONNECTOR_EVENT_PULL_REQUEST_FAILED',
   CONNECTOR_EVENT_RELEASE_CANDIDATE_PUBLISHED: 'CONNECTOR_EVENT_RELEASE_CANDIDATE_PUBLISHED',
   CONNECTOR_EVENT_RELEASE_CANDIDATE_FAILED: 'CONNECTOR_EVENT_RELEASE_CANDIDATE_FAILED',
+  CONNECTOR_EVENT_CHECKS_FAILED: 'CONNECTOR_EVENT_CHECKS_FAILED',
 } as const;
 
 export type _superverse_v2_AgentNotification_ConnectorEvent =
@@ -21,6 +22,8 @@ export type _superverse_v2_AgentNotification_ConnectorEvent =
   | 2
   | 'CONNECTOR_EVENT_RELEASE_CANDIDATE_FAILED'
   | 3
+  | 'CONNECTOR_EVENT_CHECKS_FAILED'
+  | 4
 
 export type _superverse_v2_AgentNotification_ConnectorEvent__Output = typeof _superverse_v2_AgentNotification_ConnectorEvent[keyof typeof _superverse_v2_AgentNotification_ConnectorEvent]
 

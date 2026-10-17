@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Owns ConnectorContributionFlow, one connector a Project's Session contributes to the connectors library: its record, its draft pull request and its client and bootstrap.
 
-Callers: `internal/dexai/agents`, `internal/dexai/api` and `internal/dexai/bootstrap` import this package.
+Callers: `internal/dexai/agents`, `internal/dexai/agents/diagnostics`, `internal/dexai/api` and `internal/dexai/bootstrap` import this package.
 
 Dependencies: it imports `internal/comm`, `internal/comm/dexflow`, `internal/comm/flowid`, `internal/comm/platform/connectorlibrary`, `internal/dexai/agents/sandbox/workspace/git` and `internal/dexai/agents/session/conversation` and calls the Dex Flow API.
 
@@ -11,8 +11,9 @@ Dependencies: it imports `internal/comm`, `internal/comm/dexflow`, `internal/com
 flowchart LR
   self["internal/dexai/agents/session/contribution"]
   c0["internal/dexai/agents"] --> self
-  c1["internal/dexai/api"] --> self
-  c2["internal/dexai/bootstrap"] --> self
+  c1["internal/dexai/agents/diagnostics"] --> self
+  c2["internal/dexai/api"] --> self
+  c3["internal/dexai/bootstrap"] --> self
   self --> d0["internal/comm"]
   self --> d1["internal/comm/dexflow"]
   self --> d2["internal/comm/flowid"]
@@ -37,6 +38,12 @@ an application uses in the Preview and in Live before maintainers release the co
 Git host the subagent's finish already published it, and the task notification names it; on the
 upstream library this Flow requests it from the library's workflow and tells the Session its version
 with a connector notification.
+
+When the branch reaches the upstream GitHub library, the Flow also observes that exact head's
+GitHub Actions check suites. A failure records the failed job names and a bounded, redacted tail of
+the first failed step's CI output, then sends a connector notification. A later head starts a new
+observation and fences the old one. The Session's `read_connector_checks` platform tool reads its
+own Project's contribution and current GitHub status on demand. Neither path starts or reruns CI.
 
 ## Per-Flow review contract
 
@@ -64,7 +71,10 @@ with a connector notification.
   `UpdateConnectorContribution` instead, which is idempotent by head commit. A Project contributes
   each connector once. Because a closed FlowID is never reused, a contribution that ended (a
   deleting Project's) is final for that slug in that Project:
-  the client answers `ErrContributionClosed`, which the Service only logs.
+  the client answers `ErrContributionClosed`, which the Service only logs. A later head cancels its
+  old `OpenConnectorPullRequest`, `RecordConnectorPullRequest`, `WaitConnectorChecks` timer or check and
+  `RecordConnectorChecks` executions before scheduling the new head's pull request update and
+  CI observation; the PR's branch is reused, and no new FlowID or Run is created.
 - **Admission.** The first Step asks the Session through the Service before any effect
   (`AdmitConnectorContribution`: ACTIVE with a running execution). A deleting Project's Session
   denies it, and the Flow closes without an effect.
@@ -72,7 +82,9 @@ with a connector notification.
   ends it; it stays open after its pull request opened and its release candidates were published.
   Engine completion is
   `dex.GracefulComplete(Receipt)` at the end; the closed execution stays readable through
-  `GetConnectorContributionSnapshot` for the engine's retention.
+  `GetConnectorContributionSnapshot` for the engine's retention. The `Closing` Attribute fences
+  reports and submissions as soon as `CloseConnectorContribution` is admitted; the end Step
+  completes the execution. A passed or failed CI result does not archive or complete the Flow.
 - **Relationships.** An independent top-level Flow, not a Project child; the deleting Project's
   cleanup finds the open ones by FlowType, `ProjectID` and status and closes them
   (`closeSessionContributions`, beside the subagents' stop).
@@ -85,7 +97,18 @@ with a connector notification.
 | `ProjectID` | Indexed `keyword2`: the cleanup search and the Snapshot read |
 | `ContributionStatus` | Indexed `keyword3`, the status lock Attribute: `pull_request_pending`, `unpublished`, `pull_request_failed`, `draft`, `closed` |
 | `Submission` | The latest `Submission{Identity, Contribution, Report}` of a develop subagent; installed with the start, replaced by `UpdateConnectorContribution` |
-| `Contribution` | The record `Record{Module, Kind, Branch, HeadCommit, Location, PullRequest{Number, URL, NodeID, State}, Status, ReleasedVersion, ReleaseCandidate, Failure, Description, Report, UpdatedAt}`, the authority of the contribution, at most about 20 KiB (the report is cut at 16 KiB). `ReleaseCandidate{Directory, Version, Tag, Commit, Status published\|failed, Failure, UpdatedAt}` is the candidate of the latest head the Flow published or tried to; an older head's candidate is never recorded over it |
+| `Contribution` | The record `Record{Module, Kind, Branch, HeadCommit, HeadRecordedAt, Location, PullRequest{Number, URL, NodeID, State}, Status, ReleasedVersion, ReleaseCandidate, Checks, Failure, Description, Report, UpdatedAt}`, the authority of the contribution, bounded by the 16 KiB report and the CI evidence below. `HeadRecordedAt` is set once for each accepted head and anchors the first CI timer across Worker restarts. `ReleaseCandidate{Directory, Version, Tag, Commit, Status published\|failed, Failure, UpdatedAt}` is the candidate of the latest head the Flow published or tried to; an older head's candidate is never recorded over it |
+| `Closing` | A Boolean fence set by `CloseConnectorContribution` before `ContributionEnd` is consumed. A second close remains pending until the execution ends; later submissions and notifications are refused. |
+
+`Contribution.Checks` is `HeadChecks{Head, State pending|passed|failed, SuiteCount, Jobs, Step,
+LogTail, LogUnavailable, UpdatedAt}`. It belongs to this Flow, not a second database. `Jobs` has at most 12
+names of at most 160 bytes each, `Step` at most 160 bytes, and the log tail at most 3 KiB. If
+GitHub has expired the log, `LogUnavailable` records that without suppressing the failed-job
+notification. The
+diagnostics redactor runs before this evidence enters the Attribute; a newer head clears it.
+`ContributionStatus` remains the indexed field for Project cleanup. CI status is not indexed:
+the Session reads its contribution by deterministic FlowID, and the tool asks GitHub for current
+status. `Contribution` writers use the status lock, and the head comparison is the revision fence.
 
 AttributeMaps: none. Every writer holds the status lock: the admission, the record Steps, the end and
 the two RPCs. Status moves only forward: a contribution with a pull request never returns to a
@@ -97,11 +120,14 @@ execution per contributed connector, at most 16 per Session (`agenttasks.maximum
 
 - **Channel `ContributionEnd<contributionEnd>`.** Producer: `CloseConnectorContribution`, at most once
   while the contribution is open (a closed one answers ended). Consumer:
-  `AwaitConnectorContributionEnd`, `ForOne`. No other Channel.
+  `AwaitConnectorContributionEnd`, `ForOne`. `Closing` rejects duplicates while the end is pending.
+  At completion, the end Step cancels every outstanding PR, release candidate, CI and notification
+  Step; no pending message remains. No ChannelMap or other Channel.
 
 ### Streams
 
-None.
+None. The Session's existing conversation and remote inbox deliver the notification; no Stream
+becomes the CI authority. A remote reconnect reads its durable Session conversation.
 
 ### Steps, RPCs and recovery
 
@@ -110,15 +136,17 @@ None.
 | `AdmitConnectorContribution` | Asks the Session, then records the contribution `pull_request_pending`, or `unpublished` on a server without an upstream library (an explicit state, never a skip), or closes a denied one | Provider options with the status lock; goes to `AwaitConnectorContributionEnd` beside `OpenConnectorPullRequest` and the release candidate: `PublishReleaseCandidate`, or `RecordReleaseCandidate` for a candidate the library refused in the finish |
 | `AwaitConnectorContributionEnd` | Waits for the close; records `closed`, cancels the pull request and release candidate Steps and completes | WaitFor the Channel; status lock |
 | `OpenConnectorPullRequest` | Every round looks the pull request up by head branch first (`connectorlibrary.Upstream.findPullRequest`), pushes a branch of the local Git host to the upstream library without force, and opens a draft against `main` | `dexflow.PollUntil` within `PollingStepOptions(5 minutes)`, no lock; a refusal (`ErrRejected`, `ErrNotConfigured`) decides at once; a lost answer or a server error retries; the passed limit goes to `RecordConnectorPullRequest` |
-| `RecordConnectorPullRequest` | Records `draft` with the pull request, or `pull_request_failed` with the reason, and then reports the failure | State Step with the status lock; never replaces a recorded pull request |
+| `RecordConnectorPullRequest` | Records `draft` with the pull request, or `pull_request_failed` with the reason, only for the current head; after a successful PR read it starts `WaitConnectorChecks` for that head | State Step with the status lock; a later head's PR remains the one on the same branch |
+| `WaitConnectorChecks` | A durable `WaitFor` timer waits until about 15 minutes after the head was recorded; its short Execute reads the exact head's aggregate GitHub Actions check suites once. A pending or unknown result schedules one more timer about 30 minutes later, then records `pending` if still unresolved. A passed result records immediately. A failed result reads bounded failed-job details and one log tail, then records and notifies. | `checksAttempt{Head, CheckAt, Number, Checks}` carries the fixed timer point and count; `connectorCheckFirstDelay`, `connectorCheckNextDelay`, and `connectorCheckMaxReads` (2) are the only schedule constants. Execute is limited to one attempt and one minute, with no status lock. A rate limit consumes that check point as unknown, with no retry loop. The App reads the public library with its cached repository-scoped token. A newer head or Project close cancels the pending timer or check. No workflow dispatch, rerun or mutation. |
+| `RecordConnectorChecks` | Records only the current head's result and sends `checks_failed` for a failure. A newer head or `Closing` drops the old result. | Synchronous state Step with the status lock; the notification ID contains the full head SHA. |
 | `PublishReleaseCandidate` | Every round reads the head's candidate first (`IsReleaseCandidatePublished`), and only in a round that found none, once per attempt, requests it (`RequestReleaseCandidate`): the repository dispatch on the upstream library, nothing on the local Git host's copy, which the finish already published | `dexflow.PollUntil` every 10 seconds within 40-second rounds and `PollingStepOptions(25 minutes)`, no lock; a refusal (`ErrRejected`, `ErrNotConfigured`, `ErrReleaseCandidateConflict`) decides at once; the passed limit goes to `RecordReleaseCandidate` |
 | `RecordReleaseCandidate` | Records the candidate `published` or `failed` with its reason, only while it is the current head's and the contribution is open, and reports it unless the subagent's task notification already did | State Step with the status lock |
-| `ReportConnectorEvent`, `DropConnectorEvent` | Delivers `connector/<slug>/pull_request_failed/<head12>`, `connector/<slug>/release_candidate_published/<version>` or `connector/<slug>/release_candidate_failed/<head12>` through the Service's `ReportSessionNotification`, once per ID; drops it after exhausted retries | Provider options |
+| `ReportConnectorEvent`, `DropConnectorEvent` | Delivers the existing PR and candidate notifications and `connector/<slug>/checks_failed/<full-head>` through the Service's `ReportSessionNotification`, once per ID. The status lock and head check suppress a CI notification after a newer submission or Project close. | Provider options; exhausted retries drop the message, while the Flow record keeps the result. |
 
 | RPC | Locks | Behavior |
 | --- | --- | --- |
-| `UpdateConnectorContribution` | Status | A later submission of the connector; idempotent by head commit; reopens a failed pull request and starts the new head's release candidate |
-| `CloseConnectorContribution` | Status | Publishes the end and answers whether the contribution ended |
+| `UpdateConnectorContribution` | Status | A later submission of the connector; idempotent by head commit; cancels the old PR and CI Steps, updates the existing PR branch, and starts the new head's release candidate and CI observation |
+| `CloseConnectorContribution` | Status | Sets `Closing`, cancels CI and notification Steps, publishes the end and answers whether the contribution ended |
 | `GetConnectorContributionSnapshot` | None; retained read | Identity and record |
 | `GetDexSummary`, `GetDexDisplay` | None | Dex Web |
 
@@ -131,8 +159,11 @@ Each head has at most one candidate, `N` counting the candidates of its version.
 stays failed until a later head brings its own; the agent fixes the connector with another
 connector_develop subagent. Moving a candidate to an official release is the maintainers', and
 upgrading an application from a candidate is not this Flow's. Compatibility: before launch the Flow
-changed in place, and the local executions of an open contribution ended with their Projects; the
+changed in place. Existing open executions keep their FlowID and Run; the new `Closing` Attribute
+reads as false when absent, and the next submitted head starts CI observation. The
 graph is `docs/flows/sv2-connector-contribution-flow.json`.
+
+CI observation makes at most two scheduled aggregate reads per head, at roughly 15 and 45 minutes after the head was recorded (the second timer starts after the first read). There is no recurring per-round cost. A failure can additionally read at most 400 check runs in four bounded pages, 12 names, one job record and 512 KiB from one redirected log; its retained tail is 3 KiB. The agent's on-demand `read_connector_checks` tool reads the current aggregate state and, on failure, these bounded details even before a Flow notification arrives. The repository is public, but the installation's per-repository metadata token avoids the anonymous API rate limit and is cached per server replica. Checks create no Actions usage. At the existing 16 contributions per Session limit, each current head holds at most one timer/check Step, removed after a terminal result, two checks, a newer head or Project close. A burst of 10,000 contributed heads costs at most 20,000 scheduled aggregate reads spread across two timer points, rather than a recurring hourly load. GitHub's installation limit has a 5,000 requests/hour floor and 12,500 requests/hour cap ([GitHub REST rate limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api), checked 2026-10-16); at the floor, a simultaneous burst exceeding roughly 2,500 heads per timer point requires admission shaping or installation sharding. The feature creates no new cloud, Kubernetes, Temporal, Dex or database resource; the existing Dex Flow retains the result until Project close and engine retention then applies. It performs no IAM, EKS, DNS or load-balancer call per request or event and no tenant-proportional scan.
 
 ## Tests
 

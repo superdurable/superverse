@@ -439,7 +439,7 @@ only make sense to the platform model:
 
 - **Offered**: `read`, `edit`, `write`, `grep`, `glob`, `bash`, `read_task_output`, `stop_task`
   (commands only), `commit_and_push`, `connector_catalog`, `read_delivery_status`,
-  `read_platform_flow`, `read_live_app_runs`, `start_connector_contribution`,
+  `read_platform_flow`, `read_live_app_runs`, `read_connector_checks`, `start_connector_contribution`,
   `submit_connector_contribution`, `open_task_worktree`, `merge_task_worktree`,
   `request_user_input`, `confirm_requirements`,
   `write_todos` (shown as the progress list in Studio), and `watch_preview_run` once RUNFEEDBACK
@@ -453,7 +453,12 @@ delegation and effort instructions remain in the platform model's segment. Codex
 a new connector, operation or fix with `start_connector_contribution`, edits the returned
 worktree using the file tools or `bash`, then calls `submit_connector_contribution`.
 The latter accepts the committed head; `connector/<slug>/release_candidate_published`
-and failure notifications arrive through `ReadRemote` and Bridge `sync`. After a published
+and failure notifications, including `connector/<slug>/checks_failed/<full-head>`, arrive through
+`ReadRemote` and Bridge `sync`. Codex can read its own Project's current contributed head with
+`read_connector_checks` after a push when no notification has arrived yet; on failure it fetches
+the bounded, redacted job log tail on demand. The tool uses the server-side Project diagnostics
+reader and no workspace.
+After a published
 candidate, Codex installs its module at the RC version, updates `dex-app.yaml` and runs
 `commit_and_push` for the application.
 

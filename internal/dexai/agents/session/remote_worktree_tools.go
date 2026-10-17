@@ -310,6 +310,28 @@ func taskWorktreePathRoot(ctx dex.Context, path string) string {
 	return ""
 }
 
+// newSandboxCall is the trusted context of a Sandbox call: the admitted lease,
+// the confirmed HEAD, the current requirements, the agent root and the call's
+// stable identity.
+func newSandboxCall(ctx dex.Context, call conversation.ToolCall) sandboxtools.Call {
+	result := newSandboxCallBase(ctx, call)
+	result.Root = sandboxCallRoot(ctx, call)
+	return result
+}
+
+// Command settlement only handles bash calls, which have no file root. Keep
+// its trusted call context separate from file-root resolution, which reads
+// the open worktree AttributeMaps.
+func newSandboxCallBase(ctx dex.Context, call conversation.ToolCall) sandboxtools.Call {
+	return sandboxtools.Call{
+		Tool: string(call.Name), Arguments: call.Arguments.String(), HeadCommit: comm.Must(headCommitAttribute.Get(ctx)), Progress: func(string) {},
+		Mutating:     agentloop.CatalogTool(call.Name).WorkspaceAccess == agentloop.WorkspaceAccessMutating,
+		Lease:        agentloop.AdmittedLease(dexflow.ValueOrZero(workspaceUseAttribute.Get(ctx)), dexflow.ValueOrZero(workspaceAttribute.Get(ctx))),
+		Requirements: dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx)).TraceScope(),
+		Identity:     sandboxd.InvocationIdentity{FlowID: ctx.FlowID(), CallID: string(call.ID)},
+	}
+}
+
 func remoteWorktreeFileMapLoads(name conversation.ToolName) []dex.AttributeDef {
 	switch name {
 	case conversation.ToolRead, conversation.ToolEdit, conversation.ToolWrite, conversation.ToolGrep, conversation.ToolGlob:

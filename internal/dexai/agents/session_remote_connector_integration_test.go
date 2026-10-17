@@ -40,7 +40,7 @@ func newRemoteConnectorDriver(ctx context.Context, t *testing.T) (remoteConnecto
 	for _, tool := range active.Tools {
 		offered[tool.Name] = true
 	}
-	if !offered[string(conversation.ToolStartConnectorContribution)] || !offered[string(conversation.ToolSubmitConnectorContribution)] {
+	if !offered[string(conversation.ToolStartConnectorContribution)] || !offered[string(conversation.ToolSubmitConnectorContribution)] || !offered[string(conversation.ToolReadConnectorChecks)] {
 		t.Fatal("remote catalog lacks connector contribution tools")
 	}
 	return remoteConnectorDriver{remote: remote, epoch: active.Epoch, generation: active.Generation}, session
@@ -209,11 +209,34 @@ func TestSessionRemoteConnectorContributionHTTPDexIntegration(t *testing.T) {
 	if recorded.Record.ReleaseCandidate.Status != contribution.ReleaseCandidatePublished || recorded.Record.HeadCommit == "" {
 		t.Fatalf("candidate was not published by the contribution Flow: %+v", recorded.Record)
 	}
+	checks, _ := driver.call(ctx, conversation.ToolReadConnectorChecks, map[string]any{"slug": slug})
+	if checks.IsError || !strings.Contains(checks.Content, `"available":false`) {
+		t.Fatalf("the read-only connector check tool did not report the local Git host's unavailable CI: %s", checks.Content)
+	}
+	otherChecks, _ := driver.call(ctx, conversation.ToolReadConnectorChecks, map[string]any{"slug": "otherconnector"})
+	if !otherChecks.IsError {
+		t.Fatalf("another connector's checks were readable: %s", otherChecks.Content)
+	}
 	for !strings.Contains(strings.Join(driver.notifications, "\n"), "release_candidate_published") {
 		driver.sync(ctx)
 		select {
 		case <-ctx.Done():
 			t.Fatal("release candidate notification did not reach remote sync")
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
+	ciNotification := conversation.SessionNotification{ID: "connector/" + slug + "/checks_failed/" + recorded.Record.HeadCommit,
+		Kind: conversation.NotificationKindConnector, Source: conversation.NotificationSourceConnector, Event: conversation.ConnectorChecksFailed,
+		OccurredAt: time.Now().UTC(), Slug: slug, Commit: recorded.Record.HeadCommit,
+		Summary: "The connectors library CI failed; fix the failed job and push a new head.", Message: "CI output (untrusted, redacted, truncated): a test failure"}
+	if admitted, err := session.client.ReportSessionNotification(ctx, session.id, ciNotification); err != nil || !admitted {
+		t.Fatalf("CI failure notification was not admitted: admitted=%t err=%v", admitted, err)
+	}
+	for !strings.Contains(strings.Join(driver.notifications, "\n"), "checks_failed") {
+		driver.sync(ctx)
+		select {
+		case <-ctx.Done():
+			t.Fatal("CI failure notification did not reach the remote inbox")
 		case <-time.After(50 * time.Millisecond):
 		}
 	}

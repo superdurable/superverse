@@ -23,6 +23,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/preview"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/sandboxd"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/contribution"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/toolfailure"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/deployments"
@@ -59,7 +60,15 @@ type ProjectDiagnostics struct {
 	Redactor infra.Redactor
 	// Publishing reads a failed build's redacted log, sharing the replica's
 	// log reads with Studio.
-	Publishing *deployments.PublishingFlowService
+	Publishing      *deployments.PublishingFlowService
+	Contributions   *contribution.ConnectorContributionFlowClient
+	ConnectorChecks contribution.ConnectorChecks
+}
+
+// RedactConnectorCheck applies the diagnostics output redactor before an
+// untrusted GitHub Actions log enters a connector Flow or notification.
+func (d *ProjectDiagnostics) RedactConnectorCheck(_ context.Context, projectID, value string) string {
+	return newRedactor(projectID, d.Redactor).text(value)
 }
 
 // callFailureError is a read the tool refuses or cannot make because of the call:
@@ -83,6 +92,8 @@ func (d *ProjectDiagnostics) ReadDiagnostics(ctx context.Context, identity agent
 		output, err = d.readPlatformFlow(ctx, identity, call.Arguments.String())
 	case conversation.ToolReadLiveAppRuns:
 		output, err = d.readLiveAppRuns(ctx, identity, call.Arguments.String())
+	case conversation.ToolReadConnectorChecks:
+		output, err = d.readConnectorChecks(ctx, identity, call.Arguments.String())
 	default:
 		panic(fmt.Sprintf("%q is not a platform tool", call.Name))
 	}

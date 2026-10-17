@@ -305,19 +305,6 @@ func (flow *SessionAgentFlow) executeBranch(ctx dex.Context, input parallelToolE
 	return branch, nil
 }
 
-// newSandboxCall is the trusted context of a Sandbox call: the admitted lease,
-// the confirmed HEAD, the current requirements, the agent root and the call's
-// stable identity.
-func newSandboxCall(ctx dex.Context, call conversation.ToolCall) sandboxtools.Call {
-	return sandboxtools.Call{
-		Tool: string(call.Name), Arguments: call.Arguments.String(), HeadCommit: comm.Must(headCommitAttribute.Get(ctx)), Root: sandboxCallRoot(ctx, call), Progress: func(string) {},
-		Mutating:     agentloop.CatalogTool(call.Name).WorkspaceAccess == agentloop.WorkspaceAccessMutating,
-		Lease:        agentloop.AdmittedLease(dexflow.ValueOrZero(workspaceUseAttribute.Get(ctx)), dexflow.ValueOrZero(workspaceAttribute.Get(ctx))),
-		Requirements: dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx)).TraceScope(),
-		Identity:     sandboxd.InvocationIdentity{FlowID: ctx.FlowID(), CallID: string(call.ID)},
-	}
-}
-
 // Polling of a running command: a status request waits up to
 // sandboxtools.CommandStatusWait, and a round adds the transport's margin.
 const (
@@ -367,7 +354,7 @@ func (flow *SessionAgentFlow) settleCommand(ctx dex.Context, call conversation.T
 		settle = sandboxtools.MoveTimedOutCommand
 	}
 	defer dexflow.KeepAlive(ctx, agentloop.ToolHeartbeat{Phase: agentloop.HeartbeatPhaseToolCall, ToolName: call.Name})()
-	result, err := flow.sandbox.Run(ctx, settle, newSandboxCall(ctx, call))
+	result, err := flow.sandbox.Run(ctx, settle, newSandboxCallBase(ctx, call))
 	if errors.Is(err, sandboxtools.ErrWorkspaceUnavailable) {
 		return agentloop.UnfinishedToolResult(call, "The Sandbox that ran the command is unreachable, so its outcome is unknown.", dexflow.RecoveryDetail(ctx)),
 			agentloop.ToolMessageTiming{CompletedAt: time.Now().UTC()}, nil

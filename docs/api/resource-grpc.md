@@ -357,7 +357,7 @@ Every value comes from a write in the owning code; the Go names are the domain c
 | AgentNotification.Outcome (`OUTCOME_`) | READY, FAILURE, NOTICE | conversation (`conversation.Delivery*`); UNSPECIFIED except for a delivery | AgentNotification.outcome |
 | AgentNotification.Owner (`OWNER_`) | APPLICATION, CONFIGURATION, PLATFORM | conversation (`conversation.DeliveryOwner*`), which the Preview's deciding Step or the Release or Deployment that records the failure sets; UNSPECIFIED except for a delivery failure or notice | AgentNotification.owner |
 | AgentSubagent.Kind (`KIND_`) | INVESTIGATE, CHANGE, CONNECTOR_SELECT, CONNECTOR_DEVELOP | agenttasks | AgentSubagent.kind |
-| AgentNotification.ConnectorEvent (`CONNECTOR_EVENT_`) | PULL_REQUEST_FAILED, RELEASE_CANDIDATE_PUBLISHED, RELEASE_CANDIDATE_FAILED; UNSPECIFIED on every other notification | `conversation.ConnectorEvent` | AgentNotification.connector_event |
+| AgentNotification.ConnectorEvent (`CONNECTOR_EVENT_`) | PULL_REQUEST_FAILED, RELEASE_CANDIDATE_PUBLISHED, RELEASE_CANDIDATE_FAILED, CHECKS_FAILED; UNSPECIFIED on every other notification | `conversation.ConnectorEvent` | AgentNotification.connector_event |
 | ConnectorContribution.Kind (`KIND_`) | NEW, OPERATION, FIX | `conversation.ContributionKind` | ConnectorContribution.kind |
 | ConnectorContribution.Status (`STATUS_`) | PULL_REQUEST_PENDING, UNPUBLISHED, PULL_REQUEST_FAILED, DRAFT, CLOSED | `contribution.Status` | ConnectorContribution.status |
 | ConnectorContribution.Location (`LOCATION_`) | UPSTREAM, LOCAL_GIT_HOST, SANDBOX | `connectorlibrary.Location` | ConnectorContribution.location |
@@ -963,7 +963,8 @@ read from its own `ConnectorContributionFlow` (`connector-contribution-<projectI
 from a copy in the Session: the slug, module, kind, status, branch and head commit, where the
 branch was pushed, the draft pull request's number and link once it opened, why it could not be
 opened, and the release candidate of the latest head: its version, such as `v0.1.0-rc.2`, whether
-it was published, and why it failed. All of it is public. A server without an upstream library
+it was published, and why it failed. The Session Snapshot excludes CI log tails. A server without
+an upstream library
 (`github.connectors`) records `STATUS_UNPUBLISHED`. A completed develop subagent's `task`
 notification carries its contribution for the model, with the candidate its finish published on the
 local Git host. A `connector` notification, which opens a bounded automatic turn like a task
@@ -971,7 +972,10 @@ notification, reports a pull request that could not be opened (`CONNECTOR_EVENT_
 ID `connector/<slug>/pull_request_failed/<12-hex head>`) and a candidate the upstream library
 published (`CONNECTOR_EVENT_RELEASE_CANDIDATE_PUBLISHED`,
 `connector/<slug>/release_candidate_published/<version>`) or did not
-(`CONNECTOR_EVENT_RELEASE_CANDIDATE_FAILED`, `connector/<slug>/release_candidate_failed/<12-hex head>`)
+(`CONNECTOR_EVENT_RELEASE_CANDIDATE_FAILED`, `connector/<slug>/release_candidate_failed/<12-hex head>`).
+A failed GitHub Actions result for the recorded head reports `CONNECTOR_EVENT_CHECKS_FAILED` with
+ID `connector/<slug>/checks_failed/<full-head>`, failed job names and a bounded, redacted excerpt
+of untrusted CI output when available.
 ([the current contract](../architecture/agent-harness-design/connectors.md)).
 
 ### Session model update

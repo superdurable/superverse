@@ -102,6 +102,7 @@ func ToolTarget(call conversation.ToolCall) string {
 		TaskID      string `json:"task_id"`
 		AgentID     string `json:"agent_id"`
 		Name        string `json:"name"`
+		Slug        string `json:"slug"`
 		FlowType    string `json:"flow_type"`
 		Operation   string `json:"operation"`
 		Release     string `json:"release_id"`
@@ -140,6 +141,8 @@ func ToolTarget(call conversation.ToolCall) string {
 		target = strings.TrimSpace(arguments.Operation + " " + arguments.FlowType + " " + arguments.FlowID)
 	case conversation.ToolReadDeliveryStatus:
 		target = strings.TrimSpace(arguments.Release + " " + arguments.Deploy)
+	case conversation.ToolReadConnectorChecks:
+		target = arguments.Slug
 	case conversation.ToolStartTimer:
 		target = arguments.Reason
 	case conversation.ToolSetEffort:
