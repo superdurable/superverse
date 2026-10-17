@@ -11,6 +11,7 @@ node_modules/
 **/*.tfstate.*
 **/terraform.tfvars
 **/.next/
+web/homepage/out/
 **/playwright-report/
 **/test-results/
 

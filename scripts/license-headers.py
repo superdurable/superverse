@@ -32,6 +32,7 @@ SUFFIXES = {".css", ".go", ".html", ".proto", ".py", ".ts", ".tsx", ".yaml", ".y
 # Google RPC protos retain Google's Apache-2.0 license.
 # The vendored controller chart retains its upstream license.
 # Generated Go and Studio contracts are covered by the root license without editing output.
+# Next.js regenerates this ambient declaration without preserving a license header.
 # Generated Flow graphs are documentation, and must remain byte-exact.
 # GitHub and agent configuration are outside the owned source inventory.
 # Verification receipts are evidence, not licensed source.
@@ -40,6 +41,7 @@ EXCLUDED_PREFIXES = (
     "docs/", "app-template/", "dex-skills/", "web/studio/proto/google/rpc/",
     "infra-as-code/kubernetes/charts/superverse-platform/charts/controller/",
     "gen/", "web/studio/lib/generated/", ".github/", ".claude/", ".cursor/",
+    "web/homepage/next-env.d.ts",
     "node_modules/", "internal/dexai/app/apptemplate/app-template.tar",
     "internal/dexai/app/apptemplate/examples/",
 )

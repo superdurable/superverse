@@ -1,6 +1,6 @@
 .PHONY: generate generate-proto generate-go generate-web generate-app-template generate-package-readmes \
 	generate-studio-readmes build build-bridge-local build-web vet compile-tests check check-go check-go-rules check-go-proto \
-	check-web check-web-source check-web-build check-generated check-generated-web \
+	check-web check-web-source check-web-build check-homepage check-generated check-generated-web \
 	check-app-template check-app-template-source check-app-template-embedded \
 	check-deployment-names check-package-layers check-package-limits check-package-readmes check-go-file-length license-headers check-license-headers \
 	check-studio-server-boundary check-mock-scenarios check-rpc-coverage check-flow-registry check-config check-exports check-proto-enums check-test-lanes check-terraform-inputs check-dex-versions check-proto-format check-proto check-generated-proto \
@@ -103,7 +103,7 @@ compile-tests:
 check: check-license-headers check-go check-web
 
 # Every check of the application validation workflow, run locally before a pull request is marked Ready.
-ci: check-license-headers governance-check check-dex-versions lint-workflows check-go check-app-template check-web
+ci: check-license-headers governance-check check-dex-versions lint-workflows check-go check-app-template check-web check-homepage
 
 check-go: build vet compile-tests check-go-rules check-go-proto
 
@@ -122,6 +122,11 @@ check-web-source:
 
 check-web-build:
 	@npm --prefix web/studio run check:build
+
+check-homepage:
+	@npm --prefix web/homepage ci
+	@npm --prefix web/homepage run lint
+	@npm --prefix web/homepage test
 
 check-generated:
 	@sh scripts/check-generated.sh
