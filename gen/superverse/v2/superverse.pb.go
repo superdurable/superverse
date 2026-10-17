@@ -15653,10 +15653,10 @@ func (x *AgentStartingExample) GetFirstBuild() *AgentStartingExampleBuild {
 }
 
 // What a matched Session's first build kept of its example. example_steps are the Steps of the
-// example's Flow design as the server build that recorded it describes the example's tree (0 when
-// it holds the example at another tree), built_steps those of the confirmed design the build
-// built (0 without a design), kept_steps how many of the example's Steps that design keeps in the
-// same Flow, and commit the pushed commit.
+// example's Flow definitions as the server build that recorded it embeds the example's tree (0 when
+// it holds the example at another tree), built_steps those of the Flow definitions the commit gate
+// rendered of the pushed commit (0 when the build rendered no definitions), kept_steps how many of
+// the example's Steps those definitions keep in the same Flow, and commit the pushed commit.
 type AgentStartingExampleBuild struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ExampleSteps  int32                  `protobuf:"varint,1,opt,name=example_steps,json=exampleSteps,proto3" json:"example_steps,omitempty"`

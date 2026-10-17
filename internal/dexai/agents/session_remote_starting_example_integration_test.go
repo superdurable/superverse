@@ -33,8 +33,9 @@ import (
 // endpoint, syncs until the repository context is ready, as the Bridge does
 // for its brief, and that agent context carries the repository context and,
 // once after it, the starting_example section with the example, why the
-// platform chose it and its trace. The lane owns HTTP, SQL, Dex, the Sandbox,
-// Git and storage.
+// platform chose it and its trace, then the card_design section, which says
+// that the agent's cards carry no Flow design. The lane owns HTTP, SQL, Dex,
+// the Sandbox, Git and storage.
 func TestSessionRemoteStartingExampleDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
 	defer cancel()
@@ -92,6 +93,7 @@ func TestSessionRemoteStartingExampleDexIntegration(t *testing.T) {
 		"The platform chose it as the closest example to the person's first message, which mentions Slack, a reply in a thread, an approval.",
 		"tests: TestThreadApprovalStartsOnRootMessage",
 		"</starting_example>",
+		"<card_design>\nThe cards you record for this Project carry no Flow design",
 	} {
 		if !strings.Contains(synced.AgentContext, passage) {
 			t.Fatalf("the remote agent context lacks %q", passage)

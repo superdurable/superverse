@@ -71,8 +71,8 @@ gate releases it:
    `workspace.checkWorktreeDefinitions`, renders every declared Flow of the tree
    the next commit would hold with the platform's dexcli, as Preview and Release
    render a pushed commit, and returns that tree with them (`RenderedSource`:
-   the tree ID and each `renderedFlow`, the Flow type and each connector Step's
-   connection, module and wired branches). A rejection is
+   the tree ID and each `renderedFlow`, the Flow type, the type of each of its
+   Steps and each connector Step's connection, module and wired branches). A rejection is
    `flow_definition_invalid` with the last 7 KiB of its diagnostics. After a
    passed static stage, because it reads the generated packages, the mock
    guard: `go list -deps ./...` with default tags must not reach
@@ -104,9 +104,12 @@ A clean tree at the HEAD the Session already confirmed runs only the manifest
 stage; the other stages are `skipped`. A failure is an application failure whose message, at most 8 KiB, names
 the stage, its duration and the cause; an unobserved exit or transport error stays
 uncertain. A passed gate returns every stage with its duration, the tree it
-verified (the rendered tree, or HEAD's tree for a clean accepted HEAD) and, when
-the tests stage ran, its `ApplicationTestReport` (passed, failed, Flows that ran
-and the uncovered connectors). The gate keeps no result cache.
+verified (the rendered tree, or HEAD's tree for a clean accepted HEAD), when the
+definitions stage ran, the Steps of the Flows it rendered (`DefinedSteps`, at most
+256 `DefinedStep{FlowType, StepType}` pairs, which the commit_and_push result hands
+the Session for a matched start's first build), and, when the tests stage ran, its
+`ApplicationTestReport` (passed, failed, Flows that ran and the uncovered
+connectors). The gate keeps no result cache.
 
 `CommitAndPush` then stages every change and requires the staged tree to be the
 verified one (`requireVerifiedTree`): a file that changed after the gate rendered
@@ -302,9 +305,10 @@ These tests call an owned, disposable real sandboxd (`SUPERVERSE_TEST_SANDBOX_GR
   Sandbox. It compiles the real application, renders its Flows with the real
   generator and runs its API tests on the image's real test engine: every stage
   passes with durations (logged as `duration_ms`), the definitions stage
-  starting beside the static stage, three tests, one Flow that ran and the llm
-  connector listed as untested, and the unchanged tree stages as the verified
-  one; a failure of both the static and the definitions stage reports static;
+  starting beside the static stage and reporting, as `DefinedSteps`, the Steps
+  the embedded catalog lists for the default example, three tests, one Flow that
+  ran and the llm connector listed as untested, and the unchanged tree stages as
+  the verified one; a failure of both the static and the definitions stage reports static;
   a test that writes a tracked file passes the stages and fails the tree check
   without staging a file; a deployment-schema error, a previously accepted invalid
   HEAD, a changed or removed `checkStatic`, a removed `testApplication`, a
@@ -317,6 +321,8 @@ These tests call an owned, disposable real sandboxd (`SUPERVERSE_TEST_SANDBOX_GR
   (`requirements_untested`) each fail their stage without moving HEAD or staging
   a file; a complete trace passes; a taken engine port is the platform's
   `test_environment_unavailable`; a clean accepted HEAD repeats no build and no
-  test.
+  test and reports no Step. `TestExampleSourceGatesActualSandbox` requires the
+  same of every other example's composed tree: every stage passes and
+  `DefinedSteps`, compared as a set, is the catalog's Steps of that example.
   It is an external test package because it injects the workspace package's
   check; `export_test.go` exposes the gate to it.

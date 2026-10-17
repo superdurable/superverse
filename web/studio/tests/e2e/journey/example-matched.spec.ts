@@ -30,10 +30,14 @@ const EXAMPLE_ID = "slack-thread-approval";
 // server. Build sends example-matched's first input as the first message and no example; the server, whose
 // closest-example pick the local lanes turn on, starts the Project from the slack-thread-approval example. Nothing
 // says so: the Session names the example only as matched, the chat opens with the person's message and no greeting,
-// and the agent's first turn records its own version 1, changes the reply text and pushes it, which builds the
-// design, without naming the example. Input 2 then runs on a segment that no longer describes the example.
+// and the agent's first turn records its own version 1 without a Flow design, changes the reply text and pushes it,
+// without naming the example. While that turn runs, the Builder keeps its Building stage and the Flow tab shows the
+// real flow at once, the example's own Flow Definitions, with no design, design phase or overview and nothing that
+// names the example; the push, the first build, records that its Flow keeps all 4 of the example's real Steps. The
+// stage stays Building, never Shaping, until the Preview has built the push, whose processes then draw the same
+// flow and end the stage. Input 2 then runs on a segment that no longer describes the example.
 test("a description close to a built example starts from it without a word about it", async ({ page }, info) => {
-  test.setTimeout(40 * 60_000);
+  test.setTimeout(60 * 60_000);
   const target = modelTargetDecision();
   test.skip(
     target !== undefined && target !== MOCK_TARGET,
@@ -52,6 +56,30 @@ test("a description close to a built example starts from it without a word about
     exampleId: EXAMPLE_ID,
     choice: "CHOICE_MATCHED",
   });
+  // The agent's first reply records its own version 1 and the turn goes on to build it: the Builder names the stage
+  // Building, and the Flow tab draws the real flow at once, the matched example's own Flow Definitions, which no
+  // design replaces and nothing names.
+  await expect
+    .poll(
+      async () => Number((await readSession(page, projectId)).agent?.description?.confirmedRequirements?.revision ?? 0),
+      { timeout: 10 * 60_000, intervals: [1000] },
+    )
+    .toBe(1);
+  await page.goto(`/p/${projectId}/flow?flowType=SlackThreadApprovalFlow`);
+  const flow = page.getByRole("region", { name: "Flow definition", exact: true });
+  await expect(flow.getByRole("button", { name: /^Reply, 3 steps\b/ })).toBeVisible({ timeout: 60_000 });
+  const stage = page.getByTestId("project-stage");
+  await expect(stage).toHaveText("Building");
+  const noDesign = async () => {
+    await expect(page.locator("[data-design-phase]")).toHaveCount(0);
+    await expect(page.getByLabel("Flow design", { exact: true })).toHaveCount(0);
+    await expect(page.locator("[data-brief-state]")).toHaveCount(0);
+    await expect(page.getByTestId("design-status")).toHaveCount(0);
+    await expect(page.getByTestId("design-marker")).toHaveCount(0);
+    await expect(flow).not.toContainText(/\bexamples?\b/i);
+  };
+  await noDesign();
+
   // The matched start records no card of the example: version 1 is the agent's own, from its first turn.
   await waitForFirstMockInput(page, projectId, "example-matched", 25 * 60_000);
   const built = await readSession(page, projectId);
@@ -59,7 +87,14 @@ test("a description close to a built example starts from it without a word about
   expect(Number(requirements?.revision ?? 0)).toBe(1);
   expect(requirements?.spec?.features.map(({ id }) => id)).toEqual(["R1", "R2", "R3"]);
   expect(requirements?.spec?.features[2]?.text).toContain("Approved.");
-  expect(requirements?.spec?.designBuilt, "the push built version 1's design").toBe(true);
+  expect(requirements?.spec?.design ?? null, "version 1 carries no Flow design").toBeNull();
+  // The push, the first build, kept all 4 of the example's Steps, counted in real Flow definitions on both sides.
+  expect(built.agent?.description?.startingExample?.firstBuild).toEqual({
+    exampleSteps: 4,
+    builtSteps: 4,
+    keptSteps: 4,
+    commit: built.headCommit,
+  });
   const messages = built.agent?.history?.messages.map(({ message }) => message) ?? [];
   expect(messages[0]?.role, "the chat opens with the person's message").toBe("ROLE_USER");
   expect(
@@ -71,8 +106,22 @@ test("a description close to a built example starts from it without a word about
     replies.some((message) => /example/i.test(message?.content ?? "")),
     "no reply names the example",
   ).toBe(false);
+  // The turn ended with the push unbuilt: the Flow tab no longer draws the setup commit's definitions, and the bar
+  // names the stage Building, never Shaping (or none, once the Preview has built the push).
+  expect(await stage.allTextContents(), "the stage while the Preview builds the push").not.toContain("Shaping");
+  await expect
+    .poll(
+      async () => {
+        const session = await readSession(page, projectId);
+        const prepared = session.preview?.preparedSource;
+        return prepared?.status === "PREVIEW_SOURCE_STATUS_READY" && prepared.sourceCommit === built.headCommit;
+      },
+      { timeout: 15 * 60_000, intervals: [5000] },
+    )
+    .toBe(true);
 
-  // Studio shows it as a Project created from a description: no greeting, and version 1 where the agent recorded it.
+  // Studio names no example: no greeting, version 1 where the agent recorded it, and the same real flow, now the
+  // processes the Preview built from the push, still with no design; the stage is built, so the bar names none.
   await page.goto(`/p/${projectId}/flow?flowType=SlackThreadApprovalFlow`);
   const conversation = page.getByRole("region", { name: "Conversation", exact: true });
   await expect(conversation.locator('[data-recorded-version="1"] summary')).toHaveText(
@@ -80,6 +129,10 @@ test("a description close to a built example starts from it without a word about
     { timeout: 60_000 },
   );
   await expect(conversation).not.toContainText("This project starts from the");
+  await expect(conversation).not.toContainText("the example's requirements");
+  await expect(flow.getByRole("button", { name: /^Reply, 3 steps\b/ })).toBeVisible({ timeout: 60_000 });
+  await expect(stage).toHaveCount(0);
+  await noDesign();
 
   // After the build a compacted segment no longer describes the example; the scenario's last reply requires it.
   await runMockScenario(page, projectId, "example-matched", { inputs: [2] });

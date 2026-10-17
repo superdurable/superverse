@@ -10,6 +10,8 @@ package main
 
 import (
 	"os"
+	"path"
+	"path/filepath"
 	"slices"
 	"strings"
 )
@@ -77,6 +79,23 @@ func changedExamples(examples []composedExample, changed []string) []string {
 	ids := make([]string, 0, len(reached))
 	for _, example := range examples {
 		if reached[example.manifest.ID] {
+			ids = append(ids, example.manifest.ID)
+		}
+	}
+	return ids
+}
+
+// renderedExamples are the examples whose Flow definitions a check scoped to
+// the changed paths renders: those changedExamples reaches, and every example
+// whose own generated design file changed, so that a design changed alone is
+// compared with a fresh rendering instead of being kept as it is. The default
+// example, whose design is app-template.json, is always rendered, and the
+// module that imports the designs is always written again.
+func renderedExamples(examples []composedExample, changed []string) []string {
+	ids := changedExamples(examples, changed)
+	designs := path.Join(filepath.ToSlash(studioDesignDirectory), "examples") + "/"
+	for _, example := range examples {
+		if !slices.Contains(ids, example.manifest.ID) && slices.Contains(changed, designs+example.manifest.ID+".json") {
 			ids = append(ids, example.manifest.ID)
 		}
 	}

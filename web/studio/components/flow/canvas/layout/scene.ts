@@ -129,8 +129,10 @@ export interface Box {
   detourOf?: string;
   /** Where a pointer leads: a main-story Step, or the collapsed stage that holds it. */
   target?: string;
-  /** A design's mark against the current source, drawn as text above the card. */
+  /** A mark against another version, drawn as text above the card: a design's against the current source, or a new build's against the one before it. */
   mark?: "new" | "changed";
+  /** The mark pulses where motion is welcome, as a new build's does for a moment. */
+  markPulses?: boolean;
   /** A designed Step whose code the agent has not written yet, drawn dashed with the planned emphasis. */
   unwritten?: boolean;
 }

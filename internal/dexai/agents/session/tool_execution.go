@@ -161,7 +161,8 @@ func requestUserInput(ctx dex.Context, call conversation.ToolCall) agentloop.Con
 
 // confirmRequirements records the card of the call as the next version of the
 // requirements, with its Flow design in FlowDesigns, and lets the turn go on:
-// the user reads the card and changes it with a message.
+// the user reads the card and changes it with a message. A card without a
+// design drops a design a push built (RecordRequirements).
 func confirmRequirements(ctx dex.Context, call conversation.ToolCall) {
 	stored := dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx))
 	card, design, err := agentloop.RequestedRequirements(call, stored)
@@ -169,7 +170,7 @@ func confirmRequirements(ctx dex.Context, call conversation.ToolCall) {
 		appendSessionFailure(ctx, call, toolfailure.InvalidUserInput, err.Error())
 		return
 	}
-	recorded := agentloop.RecordRequirements(stored, card, ctx.FirstAttemptAt().UTC())
+	recorded := agentloop.RecordRequirements(stored, card, dexflow.ValueOrZero(builtFlowDesignAttribute.Get(ctx)), ctx.FirstAttemptAt().UTC())
 	recordFlowDesign(ctx, stored, recorded.Spec.Design, design)
 	comm.MustDo(confirmedRequirementsAttribute.Set(ctx, recorded))
 	appendSessionToolResult(ctx, call, agentloop.RecordedRequirementsResult(recorded.Revision))

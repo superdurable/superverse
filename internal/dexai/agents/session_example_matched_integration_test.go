@@ -66,7 +66,8 @@ func finalReply(messages []conversation.SequencedMessage) string {
 // requireMatchedStart fails unless the Session started quietly from the
 // matched example: it names the example as matched, its conversation opens
 // with the creator's first message and no greeting, and the version 1 it
-// holds is the agent's own card, recorded in its first turn.
+// holds is the agent's own card, recorded in its first turn without a Flow
+// design, since the first commit already holds the example's Flows.
 func requireMatchedStart(t *testing.T, agent agentloop.AgentSnapshot, messages []conversation.SequencedMessage) {
 	t.Helper()
 	started := agent.Description.StartingExample
@@ -85,22 +86,28 @@ func requireMatchedStart(t *testing.T, agent agentloop.AgentSnapshot, messages [
 		}
 	}
 	confirmed := agent.Description.ConfirmedRequirements
-	if confirmed == nil || confirmed.Revision != 1 || confirmed.Spec.Design == nil {
-		t.Fatalf("the agent recorded no version 1 with a design of its own: %+v", confirmed)
+	if confirmed == nil || confirmed.Revision != 1 || confirmed.Spec.Design != nil {
+		t.Fatalf("the agent recorded no version 1 of its own without a Flow design: %+v", confirmed)
 	}
 }
 
-// exampleSteps are the Steps of the slack-thread-approval example's design:
-// RecordThread, PostCompletionReply, CompleteThread and RecordReplyFailure.
+// exampleSteps are the Steps of the slack-thread-approval example's Flow
+// definitions as this build embeds them: CompleteThread, PostCompletionReply,
+// RecordReplyFailure and RecordThread of SlackThreadApprovalFlow.
 const exampleSteps = 4
 
 // requireFirstBuild fails unless the matched Session recorded its first
-// build, the push that built version 1's design, with what it kept of the
-// example: the example's Steps, version 1's, how many of the first the second
-// keeps, and the pushed commit.
-func requireFirstBuild(t *testing.T, agent agentloop.AgentSnapshot, builtSteps, keptSteps int) {
+// build, the push of version 1, with what it kept of the example: the Steps
+// of the example's Flow definitions (which the build's embedded catalog must
+// count as exampleSteps), those of the Flow definitions the commit gate
+// rendered of the pushed tree, how many of the first the second keeps, and
+// the pushed commit, the Session's head.
+func requireFirstBuild(t *testing.T, agent agentloop.AgentSnapshot, head string, builtSteps, keptSteps int) {
 	t.Helper()
-	want := agentloop.StartingExampleBuild{ExampleSteps: exampleSteps, BuiltSteps: builtSteps, KeptSteps: keptSteps, Commit: agent.Description.ConfirmedDesignBuiltCommit}
+	if example, found := apptemplate.FindExample(exampleID); !found || len(example.Steps) != exampleSteps {
+		t.Fatalf("this build embeds %s with the Steps %+v, not %d", exampleID, example.Steps, exampleSteps)
+	}
+	want := agentloop.StartingExampleBuild{ExampleSteps: exampleSteps, BuiltSteps: builtSteps, KeptSteps: keptSteps, Commit: head}
 	if build := agent.Description.StartingExample.FirstBuild; build == nil || *build != want || !flowid.IsCommitSHA(want.Commit) {
 		t.Fatalf("the matched Session recorded its first build as %+v, not %+v", build, want)
 	}
@@ -116,11 +123,12 @@ func requireFirstBuild(t *testing.T, agent agentloop.AgentSnapshot, builtSteps, 
 //     example's card and trace, which the scenario's first reply requires, and
 //     so does the segment the forced compaction opens next, which its second
 //     reply requires;
-//   - the agent records its own version 1, R1 to R3 with R3 posting Approved.,
-//     changes the reply text and pushes, which builds the design; no reply
-//     names the example;
-//   - that push, the first build, records what it kept of the example: all
-//     four of its Steps, in a design of four, and the pushed commit;
+//   - the agent records its own version 1, R1 to R3 with R3 posting Approved.
+//     and no Flow design, changes the reply text and pushes; no reply names
+//     the example;
+//   - that push, the first build, records what it kept of the example from
+//     the real Flow definitions: all four of the example's Steps, in the four
+//     Steps the commit gate rendered of the pushed tree, and the pushed commit;
 //   - input 2 compacts again, and the new segment no longer carries the
 //     section, which its last reply requires; the first build stays as
 //     recorded.
@@ -144,10 +152,7 @@ func TestSessionMatchedExampleDexIntegration(t *testing.T) {
 	if got := toolResult(t, messages, conversation.ToolCommitAndPush, 0); got.ResultCode != agentloop.CommitPushedForTest {
 		t.Fatalf("the change's commit_and_push ended as %q (%s): %s", got.ResultCode, got.Outcome, session.toolResultContent(ctx, messages, conversation.ToolCommitAndPush, 0))
 	}
-	if !agent.Description.ConfirmedDesignBuilt {
-		t.Fatalf("the push did not build version 1's design: %+v", agent.Description)
-	}
-	requireFirstBuild(t, agent, 4, 4)
+	requireFirstBuild(t, agent, session.summary(ctx).Identity.HeadCommit, 4, 4)
 
 	// After the build, a new segment no longer carries the section.
 	last := agent.Description.LastSequence
@@ -170,10 +175,11 @@ func TestSessionMatchedExampleDexIntegration(t *testing.T) {
 // first input of the example-matched-wrong scenario, which the lane's server
 // also starts from the slack-thread-approval example although the request
 // wants nothing posted back: the Session starts quietly as matched, the agent
-// writes version 1 with R1 and R2 and no posting feature, removes the reply
-// Step, its operation and its test, adds a test of the recorded reply, and
-// the push passes every stage of the commit gate. That first build records
-// that version 1's design of two Steps keeps two of the example's four.
+// writes version 1 with R1 and R2, no posting feature and no Flow design,
+// removes the reply Step, its operation and its test, adds a test of the
+// recorded reply, and the push passes every stage of the commit gate. That
+// first build records that the two Steps the gate rendered of the pushed
+// Flow keep two of the example's four.
 func TestSessionMatchedExampleRemovesDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), previewSetupTimeout+mockTurnTimeout)
 	defer cancel()
@@ -188,5 +194,5 @@ func TestSessionMatchedExampleRemovesDexIntegration(t *testing.T) {
 	if got := toolResult(t, messages, conversation.ToolCommitAndPush, 0); got.ResultCode != agentloop.CommitPushedForTest {
 		t.Fatalf("the change's commit_and_push ended as %q (%s): %s", got.ResultCode, got.Outcome, session.toolResultContent(ctx, messages, conversation.ToolCommitAndPush, 0))
 	}
-	requireFirstBuild(t, agent, 2, 2)
+	requireFirstBuild(t, agent, session.summary(ctx).Identity.HeadCommit, 2, 2)
 }

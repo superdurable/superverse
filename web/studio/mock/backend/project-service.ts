@@ -12,7 +12,7 @@ import type { ProjectConfigurationTarget__Output } from "@/lib/generated/protobu
 import { rpcFailure } from "@/lib/server/grpc-client";
 import { httpError } from "@/lib/server/request-body";
 import { REVISION_CHANGED } from "@/lib/shared/revision-conflict";
-import { MOCK_EXAMPLE_TREE, MOCK_EXAMPLES } from "@/mock/fixture/examples";
+import { MOCK_EXAMPLES } from "@/mock/fixture/examples";
 import { mockAccount } from "@/mock/store/accounts";
 import { startFromMockExample } from "@/mock/store/agent-scripts";
 import {
@@ -100,7 +100,7 @@ export const projectService: MockService<"ProjectService"> = {
     const account = mockAccount(caller);
     const tenancy = mockTenancy(store, account);
     admitMockProject(tenancy, account, teamSpaceId);
-    const started = example ? { exampleId: example.exampleId, tree: MOCK_EXAMPLE_TREE } : undefined;
+    const started = offered ? { exampleId: offered.exampleId, tree: offered.tree } : undefined;
     const { project: created, replayed } = createProject(store, name, requestId || null, started);
     registerMockProject(tenancy, account, teamSpaceId, created.id);
     if (!replayed) startMockSession(store, created.id, model, initialMessage);

@@ -54,7 +54,7 @@ generate-web:
 	@npm --prefix web/studio run generate:protobuf
 
 # Compose app-template/ (the shared base and each folder of app-template/examples/) into the
-# embedded archives and catalog, and render the default example's Studio initial design.
+# embedded archives and catalog, and render every example's Flow definitions for Studio.
 generate-app-template: install-dexcli
 	@DEXCLI="$(DEXCLI_BINARY)" go generate ./internal/dexai/app/apptemplate
 
@@ -152,7 +152,8 @@ check-app-template:
 # APP_TEMPLATE_EXAMPLES_DIR, which keeps its restored dependencies and generated
 # code between runs, and checked as a Project's source gate checks it. With
 # APP_TEMPLATE_CHANGED_PATHS, a file of changed repository paths, only the
-# default and the examples those paths reach are checked (the validation workflow).
+# default and the examples those paths reach are checked (the validation workflow),
+# and check-app-template-embedded renders the Flow definitions of only those.
 APP_TEMPLATE_EXAMPLES_DIR ?= $(TOOL_CACHE)/app-template-examples
 APP_TEMPLATE_CHANGED_PATHS ?=
 check-app-template-source: install-dexcli
@@ -164,7 +165,7 @@ check-app-template-source: install-dexcli
 	done
 
 check-app-template-embedded: install-dexcli
-	@DEXCLI="$(DEXCLI_BINARY)" sh scripts/check-app-template.sh
+	@APP_TEMPLATE_CHANGED_PATHS="$(APP_TEMPLATE_CHANGED_PATHS)" DEXCLI="$(DEXCLI_BINARY)" sh scripts/check-app-template.sh
 
 check-package-layers:
 	@python3 scripts/check-package-layers.py

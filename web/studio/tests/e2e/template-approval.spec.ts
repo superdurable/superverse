@@ -9,9 +9,14 @@
 import type { Page } from "@playwright/test";
 import { test, expect } from "@/tests/e2e/support/coverage/spec-coverage";
 import { register } from "@/tests/e2e/support/account";
-import { fillTemplateSummaryConnection } from "@/tests/e2e/support/configuration";
+import { fillTemplateSummaryConnection, setAutomaticBuilds } from "@/tests/e2e/support/configuration";
 import { exerciseApprovalInStudio } from "@/tests/e2e/support/flow-run";
-import { chooseMockFirstInput, choosesMockModel, waitForFirstMockInput } from "@/tests/e2e/support/mock/mock-composer";
+import {
+  chooseMockFirstInput,
+  choosesMockModel,
+  sendMockMessage,
+  waitForFirstMockInput,
+} from "@/tests/e2e/support/mock/mock-composer";
 import {
   createProject,
   deleteProject,
@@ -85,12 +90,62 @@ async function overviewShown(page: Page): Promise<unknown> {
   }
 }
 
+/**
+ * A change after the first build, on the mock model: input 2 of summary-approval revises the card to version 2,
+ * which carries no Flow design, and the push of version 1 built its design, so version 2 does not carry that one
+ * forward either; the change rewords AwaitSummaryApproval's explanation and pushes. With automatic builds off the
+ * push stays unbuilt, so the Flow tab keeps the last built TextSummaryFlow, read-only under the Build processes
+ * strip, with no design, design phase, Brief or Design marker. Build processes on that strip builds the push, and
+ * the Step whose definition changed, or its closed Result stage, is marked changed for a moment while the flow
+ * stays. This page read the earlier build, which the mark compares with.
+ */
+async function changeKeepsRealFlow(page: Page, projectId: string) {
+  const noDesign = async () => {
+    await expect(page.locator("[data-design-phase]")).toHaveCount(0);
+    await expect(page.getByLabel("Flow design", { exact: true })).toHaveCount(0);
+    await expect(page.locator("[data-brief-state]")).toHaveCount(0);
+    await expect(page.getByTestId("design-status")).toHaveCount(0);
+    await expect(page.getByTestId("design-marker")).toHaveCount(0);
+  };
+  await setAutomaticBuilds(page, projectId, false);
+  await page.goto(`/p/${projectId}/flow?flowType=TextSummaryFlow`);
+  const flow = page.getByRole("region", { name: "Flow definition" });
+  const result = flow.getByRole("button", { name: /^Result, 3 steps\. Open the stage\.$/ });
+  await expect(result).toBeVisible({ timeout: 5 * 60_000 });
+  await sendMockMessage(page, projectId, "summary-approval", 2, 25 * 60_000);
+  const changed = await readSession(page, projectId);
+  const current = changed.agent?.description?.confirmedRequirements;
+  expect(Number(current?.revision ?? 0)).toBe(2);
+  expect(current?.spec?.features.map(({ id }) => id)).toEqual(["R1", "R2", "R3"]);
+  expect(current?.spec?.design ?? null, "version 2 carries no design, and version 1's built one is dropped").toBeNull();
+  await expectPushedHead(await readProject(page, projectId), changed);
+  expect(changed.preview?.preparedSource?.sourceCommit, "automatic builds are off").not.toBe(changed.headCommit);
+  await expect(result).toBeVisible();
+  await noDesign();
+  const changedStep = flow.getByRole("button", {
+    name: /^Await summary approval\b.*, changed$|^Result, 3 steps, changed\. Open the stage\.$/,
+  });
+  // The mark shows for a few seconds from the first drawing of the new build, so the wait starts first.
+  const marked = expect(changedStep).toBeVisible({ timeout: 15 * 60_000 });
+  await page
+    .getByRole("region", { name: "Build processes", exact: true })
+    .getByRole("button", { name: "Build processes", exact: true })
+    .click();
+  await marked;
+  await noDesign();
+  await expect(changedStep).toHaveCount(0, { timeout: 30_000 });
+  await expect(result).toBeVisible();
+  const built = await readSession(page, projectId);
+  expect(built.preview?.preparedSource?.sourceCommit).toBe(changed.headCommit);
+}
+
 test("template project Agent adds a summary approval that Preview and an operator on Live start, approve and complete", async ({
   page,
   browser,
 }, testInfo) => {
-  // One implementation turn, a Preview and a Live build and deployment fit the
-  // runner's 60-minute bound for this case.
+  // One implementation turn, a Preview and a Live build and deployment, and on the
+  // mock model a change turn with its build, fit the runner's 60-minute bound for
+  // this case.
   test.setTimeout(55 * 60_000);
   await register(page);
   const teamSpaceId = await createTeamSpace(page);
@@ -193,6 +248,7 @@ test("template project Agent adds a summary approval that Preview and an operato
   await expectSurfacesFollowVersion(page, created.projectId, live.url);
 
   await removeLive(page, created.projectId, live.release.releaseId);
+  if (mock) await changeKeepsRealFlow(page, created.projectId);
   await deleteProject(page, created.projectId);
   await testInfo.attach("accepted-source", {
     body: JSON.stringify({

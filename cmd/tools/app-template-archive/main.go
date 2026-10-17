@@ -10,8 +10,9 @@
 // Project starts from: the shared base plus each folder of
 // app-template/examples/, and packs every composed tree into the archives that
 // internal/dexai/app/apptemplate embeds, with the catalog of the examples, the
-// search index and the match rules of the closest-example decision, and the
-// Studio initial design of the default one. It keeps main's archive of each
+// search index and the match rules of the closest-example decision, and each
+// example's Flow definitions, rendered by its own FDG script, as Studio draws
+// them and as the catalog counts their Steps. It keeps main's archive of each
 // example whose tree changed, or that it removes, as its previous archive,
 // and decides every labelled request,
 // failing when a pick differs from its expected answer. It runs through
@@ -23,7 +24,11 @@
 // directory that the tree does not hold are removed, except the ignored
 // dependencies and generated code, so a repeated check reuses them. With
 // -list -changed <file> it lists only the default example and the examples the
-// repository paths of file (one per line) reach, for the validation workflow.
+// repository paths of file (one per line) reach, for the validation workflow;
+// with -changed <file> alone it generates as without, but renders the Flow
+// definitions of only those examples and of those whose generated design file
+// changed, and keeps every other example's committed design, which names its
+// unchanged tree, as it is.
 // With -propose-match <id> it prints a match block for one example, which its
 // author reviews before committing it in example.json.
 package main
@@ -51,7 +56,7 @@ func main() {
 	compose := flag.String("compose", "", "write the composed tree of this example")
 	into := flag.String("into", "", "the directory -compose writes into")
 	list := flag.Bool("list", false, "print the example IDs, the default first")
-	changed := flag.String("changed", "", "with -list, a file of changed repository paths: print only the examples they reach")
+	changed := flag.String("changed", "", "a file of changed repository paths: with -list print only the examples they reach, else render only their designs")
 	propose := flag.String("propose-match", "", "print a match block of this example for its author to review")
 	flag.Parse()
 	var err error
@@ -63,7 +68,7 @@ func main() {
 	case *compose != "":
 		err = composeInto(context.Background(), *compose, *into)
 	default:
-		err = run(context.Background())
+		err = run(context.Background(), *changed)
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "app-template-archive:", err)
@@ -188,8 +193,10 @@ func proposeMatchOf(ctx context.Context, id string) error {
 }
 
 // run composes every example, validates it, decides the labelled requests and
-// writes the embedded outputs and Studio's copies.
-func run(ctx context.Context) error {
+// writes the embedded outputs and Studio's copies. With changedFile it renders
+// the designs of only the examples its paths reach and of those whose
+// generated design file it names (renderedExamples).
+func run(ctx context.Context, changedFile string) error {
 	root, err := repositoryRoot(ctx)
 	if err != nil {
 		return err
@@ -213,14 +220,28 @@ func run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	render := map[string]bool{}
+	for _, example := range examples {
+		render[example.manifest.ID] = changedFile == ""
+	}
+	if changedFile != "" {
+		changed, readErr := readChangedPaths(changedFile)
+		if readErr != nil {
+			return fmt.Errorf("read the changed paths: %w", readErr)
+		}
+		for _, id := range renderedExamples(examples, changed) {
+			render[id] = true
+		}
+	}
 	outputs := filepath.Join(root, "internal", "dexai", "app", "apptemplate")
 	base, err := previousBase(ctx, root)
 	if err != nil {
 		return err
 	}
 	entries := make([]apptemplate.CatalogEntry, 0, len(examples))
+	designs := make([]exampleDesign, 0, len(examples))
 	written := map[string]bool{}
-	var defaultTree []templateFile
+	hasDefault := false
 	for _, example := range examples {
 		archive, archiveErr := pack(example.files)
 		if archiveErr != nil {
@@ -234,10 +255,20 @@ func run(ctx context.Context) error {
 		if entryErr != nil {
 			return fmt.Errorf("example %s: %w", example.manifest.ID, entryErr)
 		}
-		entries = append(entries, entry)
+		design, designErr := designOf(ctx, root, example, render)
+		if designErr != nil {
+			return designErr
+		}
+		if entry.Steps, designErr = design.steps(); designErr != nil {
+			return designErr
+		}
+		if designErr = checkCardDesign(example, entry.Steps); designErr != nil {
+			return designErr
+		}
+		entries, designs = append(entries, entry), append(designs, design)
 		target := filepath.Join(outputs, filepath.FromSlash(apptemplate.ArchiveFile(example.manifest.ID)))
 		if example.manifest.ID == apptemplate.DefaultExampleID {
-			target, defaultTree = filepath.Join(outputs, "app-template.tar"), example.files
+			target, hasDefault = filepath.Join(outputs, "app-template.tar"), true
 		}
 		previous := filepath.Join(outputs, filepath.FromSlash(apptemplate.PreviousArchiveFile(example.manifest.ID)))
 		kept, keepErr := keepPrevious(ctx, root, base, target, previous, archive)
@@ -250,7 +281,7 @@ func run(ctx context.Context) error {
 		}
 		written[target] = true
 	}
-	if defaultTree == nil {
+	if !hasDefault {
 		return fmt.Errorf("app-template has no default example %s", apptemplate.DefaultExampleID)
 	}
 	if err = keepRemoved(ctx, root, base, outputs, examples, written); err != nil {
@@ -286,7 +317,7 @@ func run(ctx context.Context) error {
 	if err = removeStale(studio, written); err != nil {
 		return err
 	}
-	return renderDesign(ctx, root, defaultTree)
+	return writeStudioDesigns(root, designs)
 }
 
 // studioCategories is the TypeScript module of the categories that Studio's
@@ -435,40 +466,6 @@ func writeOutput(target string, contents []byte) error {
 		return err
 	}
 	return os.WriteFile(target, contents, 0o600)
-}
-
-// renderDesign renders the Flow definitions of the default example with its
-// own FDG script, in a composed copy, as Studio's initial design.
-func renderDesign(ctx context.Context, root string, files []templateFile) error {
-	directory, err := os.MkdirTemp("", "app-template-default-")
-	if err != nil {
-		return err
-	}
-	defer func() { _ = os.RemoveAll(directory) }()
-	if err = materialize(files, directory); err != nil {
-		return err
-	}
-	template, err := apptemplate.Decode(mustPack(files))
-	if err != nil {
-		return err
-	}
-	render := exec.CommandContext(ctx, "python3", "scripts/render-flow-definitions.py", "--output", "/dev/stdout")
-	render.Dir, render.Stderr = directory, os.Stderr
-	definitions, err := render.Output()
-	if err != nil {
-		return fmt.Errorf("render the default example's Flow definitions: %w", err)
-	}
-	var design bytes.Buffer
-	encoder := json.NewEncoder(&design)
-	encoder.SetEscapeHTML(false)
-	encoder.SetIndent("", "  ")
-	if err = encoder.Encode(struct {
-		TemplateRevision string          `json:"templateRevision"`
-		Definitions      json.RawMessage `json:"definitions"`
-	}{template.Revision, definitions}); err != nil {
-		return err
-	}
-	return os.WriteFile(filepath.Join(root, "web", "studio", "lib", "generated", "template-design", "app-template.json"), design.Bytes(), 0o600)
 }
 
 // stableJSON encodes a generated document with stable formatting.

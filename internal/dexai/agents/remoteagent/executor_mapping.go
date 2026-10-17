@@ -121,7 +121,7 @@ func syncResponse(read session.RemoteRead, request bridgeapi.SyncRequest) (bridg
 		response.PendingQuestion, response.Requirements, response.Todos = nil, "", nil
 	}
 	if request.Context {
-		response.AgentContext = agentloop.RemoteAgentContext(read.RepositoryContext, read.StartingExample)
+		response.AgentContext = agentloop.RemoteAgentContext(read.RepositoryContext, read.StartingExample, read.NoCardDesign)
 	}
 	for _, item := range read.Delivery.Entries {
 		entry, err := syncEntry(item)

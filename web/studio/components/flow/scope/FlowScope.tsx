@@ -15,7 +15,8 @@
  */
 
 import { useEffect, type ReactNode } from "react";
-import { initialTemplateDesign } from "@/lib/project/initial-template-design";
+import { initialTemplateDesign, useExampleDefinitions } from "@/lib/project/initial-template-design";
+import { useProcessDefinitions } from "@/lib/project/ProcessDefinitionsProvider";
 import { useProjectResource } from "@/lib/project/ProjectResourceProvider";
 import { preparedSourceOf, readyPreparedSource } from "@/lib/session/session-status";
 import { useSessionResource } from "@/lib/session/SessionProvider";
@@ -116,7 +117,10 @@ export function LiveFlowScope({
  * The Flow Definitions of the Project's Session: of its prepared current
  * source (Build's Design), or of the Project's running Preview (Preview Runs
  * and Inbox). Before the first source is prepared, a managed project's setup
- * commit shows the template's generated Design.
+ * commit shows the template's generated Design. While a newer push builds, or
+ * failed to build, the prepared source keeps the last built one this browser
+ * read, read-only, or else the one the running Preview serves, so the real flow
+ * stays in view.
  */
 export function SessionFlowScope({
   projectId,
@@ -132,6 +136,7 @@ export function SessionFlowScope({
 }) {
   const project = useProjectResource()?.snapshot;
   const session = useSessionResource()?.resource;
+  const { lastBuilt } = useProcessDefinitions();
   if (!session || session.projectId !== projectId)
     return (
       <NotReady kind="placeholder" heading="Loading the project's Session">
@@ -139,58 +144,104 @@ export function SessionFlowScope({
       </NotReady>
     );
   const preview = session.preview;
-  if (source === "prepared") {
-    const basePath = flowApiRoutes.preparedSource(projectId);
-    const prepared = readyPreparedSource(preparedSourceOf(session), session.headCommit);
-    if (prepared) {
-      return (
-        <FlowScope
-          key={JSON.stringify([basePath, prepared.workspaceRequestId, prepared.definitionRevision])}
-          basePath={basePath}
-          workspaceRequestId={prepared.workspaceRequestId}
-          generation={prepared.generation}
-        >
-          {children}
-        </FlowScope>
-      );
-    }
-    const design = initialTemplateDesign(project, session);
-    if (!design)
-      return (
-        <NotReady kind="unavailable" heading="Processes of this version are not built yet">
-          Its processes appear after the next push builds them automatically. Turn off automatic builds to use Build
-          processes above.
+  const runtimePath = flowApiRoutes.previewRuntime(projectId);
+  const running =
+    preview?.status === "PREVIEW_STATUS_READY" && preview.sourceCommit && preview.definitionRevision ? (
+      <FlowScope
+        key={JSON.stringify([runtimePath, preview.workspaceRequestId, preview.servingRevision])}
+        basePath={runtimePath}
+        workspaceRequestId={preview.workspaceRequestId}
+        generation={preview.generation}
+      >
+        {children}
+      </FlowScope>
+    ) : null;
+  if (source === "running")
+    return (
+      running ?? (
+        <NotReady kind="unavailable" heading="Preview is not running">
+          Runs and Inbox items on Preview appear while it runs. The agent&apos;s next push starts it, or start it now.
+          {start && <span className="block">{start}</span>}
         </NotReady>
-      );
-    // The generated template design is analyzer output with the catalog's own shape.
+      )
+    );
+  const basePath = flowApiRoutes.preparedSource(projectId);
+  const prepared = readyPreparedSource(preparedSourceOf(session), session.headCommit);
+  if (prepared) {
     return (
       <FlowScope
-        key={`initial:${session.headCommit}`}
+        key={JSON.stringify([basePath, prepared.workspaceRequestId, prepared.definitionRevision])}
         basePath={basePath}
-        design={{
-          catalog: design.catalog as FlowRuntimeCatalog,
-          definitions: design.definitions as FlowDefinitionCatalog,
-        }}
+        workspaceRequestId={prepared.workspaceRequestId}
+        generation={prepared.generation}
       >
         {children}
       </FlowScope>
     );
   }
-  if (preview?.status !== "PREVIEW_STATUS_READY" || !preview.sourceCommit || !preview.definitionRevision) {
+  const design = initialTemplateDesign(project, session) ?? lastBuilt?.catalog;
+  // The head's processes are not built yet: the last build read here, else the one the Preview serves, stays.
+  if (!design)
     return (
-      <NotReady kind="unavailable" heading="Preview is not running">
-        Runs and Inbox items on Preview appear while it runs. The agent&apos;s next push starts it, or start it now.
-        {start && <span className="block">{start}</span>}
-      </NotReady>
+      running ?? (
+        <NotReady kind="unavailable" heading="Processes of this version are not built yet">
+          Its processes appear after the next push builds them automatically. Turn off automatic builds to use Build
+          processes above.
+        </NotReady>
+      )
     );
-  }
-  const basePath = flowApiRoutes.previewRuntime(projectId);
+  // The generated template design and a kept build are analyzer output with the catalog's own shape.
   return (
     <FlowScope
-      key={JSON.stringify([basePath, preview.workspaceRequestId, preview.servingRevision])}
+      key={`initial:${design.definitions.definitionRevision}`}
       basePath={basePath}
-      workspaceRequestId={preview.workspaceRequestId}
-      generation={preview.generation}
+      design={{
+        catalog: design.catalog as FlowRuntimeCatalog,
+        definitions: design.definitions as FlowDefinitionCatalog,
+      }}
+    >
+      {children}
+    </FlowScope>
+  );
+}
+
+/**
+ * The Flow Definitions of the example the Project started from, at the tree it started from, which the Flow
+ * tab draws while the Session's head is the setup commit, which holds that tree, and the Preview has built no
+ * processes (`drawsExample`): rendered from the example's own source with this Studio build and imported on
+ * first use. Nothing here names the example. A build that holds the example at another tree draws nothing of
+ * it and waits as an unbuilt version does.
+ */
+export function ExampleFlowScope({ basePath, children }: { basePath?: string; children: ReactNode }) {
+  const example = useProjectResource()?.snapshot?.example;
+  const definitions = useExampleDefinitions(example);
+  if (!definitions || definitions.status === "unavailable")
+    return (
+      <NotReady kind="unavailable" heading="Processes of this version are not built yet">
+        Its processes appear here once the Preview has built them.
+      </NotReady>
+    );
+  if (definitions.status === "loading")
+    return (
+      <NotReady kind="placeholder" heading="Loading the Flow">
+        Reading the Flow Definitions of this version.
+      </NotReady>
+    );
+  if (definitions.status === "failed")
+    return (
+      <NotReady kind="error" heading="The flow did not load" retry>
+        {definitions.error}
+      </NotReady>
+    );
+  // The generated definitions are analyzer output with the catalog's own shape.
+  return (
+    <FlowScope
+      key={`example:${definitions.design.definitions.definitionRevision}`}
+      basePath={basePath}
+      design={{
+        catalog: definitions.design.catalog as FlowRuntimeCatalog,
+        definitions: definitions.design.definitions as FlowDefinitionCatalog,
+      }}
     >
       {children}
     </FlowScope>

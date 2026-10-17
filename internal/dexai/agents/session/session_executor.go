@@ -487,7 +487,9 @@ func (flow *SessionAgentFlow) openSessionStartSegment(ctx dex.Context) agentloop
 
 // openSegment opens the next segment for reason on model with summary: one
 // segment_start entry with the summary, the repository context, the confirmed
-// requirements, the todo list, the starting example while it is described,
+// requirements, the card design rule once the agent's cards carry no Flow
+// design (recordsNoCardDesign), the todo list, the starting example while it
+// is described,
 // for the Session's first segment the catalog matches of its request, and the
 // turn's pending request as read finds it, then the notice of a reporting
 // turn. A segment without the repository context awaits it. The segment and
@@ -498,7 +500,7 @@ func (flow *SessionAgentFlow) openSegment(ctx dex.Context, reason agentloop.Segm
 	start := agentloop.SegmentStart{Summary: summary, RepositoryContext: dexflow.ValueOrZero(workspaceAttribute.Get(ctx)).RepositoryContext,
 		ConfirmedRequirements: dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx)),
 		TodoList:              dexflow.OptionalValue(todoListAttribute.Get(ctx)), PendingRequest: conversation.PendingRequestText(request),
-		StartingExample: startingExampleSection(ctx, reason == agentloop.SegmentReasonSessionStart)}
+		StartingExample: startingExampleSection(ctx, reason == agentloop.SegmentReasonSessionStart), NoCardDesign: recordsNoCardDesign(ctx)}
 	if reason == agentloop.SegmentReasonSessionStart {
 		start.CatalogMatches = flow.requestCatalogMatches(request)
 	}
@@ -871,6 +873,9 @@ func (flow *SessionAgentFlow) openExecutorSegment(ctx dex.Context, executor remo
 	section("Older platform summary", summary, 8<<10)
 	if requirements := dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx)); requirements != nil {
 		section("Current requirements", (agentloop.SegmentStart{ConfirmedRequirements: requirements}).Text(), 2<<10)
+	}
+	if recordsNoCardDesign(ctx) {
+		section("Card design", (agentloop.SegmentStart{NoCardDesign: true}).Text(), 1<<10)
 	}
 	if todos := dexflow.OptionalValue(todoListAttribute.Get(ctx)); todos != nil {
 		section("Todos", (agentloop.SegmentStart{TodoList: todos}).Text(), 2<<10)

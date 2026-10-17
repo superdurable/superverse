@@ -1,7 +1,11 @@
 # Studio: the design on the card and the Flow tab
 
-Studio draws the design on the Flow tab, with the canvas that draws implemented Flows, until
-the build of the recorded design is complete. Then the implemented Flows replace it. The canvas
+Studio shows the real flow whenever one exists. It draws a card's design on the Flow tab, with the
+canvas that draws implemented Flows, only before the first build of a Project that started from the
+default template, whose processes are the template's text summary until then, and only until the
+build of the recorded design is complete. Then the implemented Flows replace it, and no design is
+drawn again: a change to a built Project, and any Project that started from an example, keeps the
+real flow ([after the first build](#after-the-first-build)). The canvas
 leads: while the design is drafted or built, the card's **Process Brief** is only the process
 title and a status chip on the canvas's corner and, under the canvas, the card's one-line summary
 with one **More details**; once the design is built they go. The card does not wait for an answer
@@ -48,6 +52,26 @@ as one line where the agent recorded it ([README](README.md#the-pieces)).
   setup commit without a prepared source, the template's initial design
   (`initialTemplateSource`). The dock gets the same comparison without mounting a Flow scope.
   A design is compared only when that commit is the Session HEAD.
+- Which Projects draw a design at all is `ProjectStageProvider`'s `designFirst`
+  (`web/studio/lib/project/stage/ProjectStageProvider.tsx`): a Project without
+  `ProjectSnapshot.example` that has no processes built from the agent's own push, now, once
+  before in this browser, or in one of the Preview's newest starts. `FlowSurface` and
+  `ProjectBuilder` read `useFlowDesign` only while it holds, so neither the design, its bar,
+  its phase nor its marker shows otherwise.
+- After the first build ([below](#after-the-first-build)), `ProcessDefinitionsProvider` keeps the
+  newest prepared source it read and the last built one before it (`lastBuilt`), which
+  `SessionFlowScope` draws read-only while the head's push builds or failed to build, else the
+  running Preview's definitions, and compares a new build with the one before it by Step
+  (`buildChanges`); `FlowSurface` passes a Process's added and changed Steps to the canvas
+  (`FlowCanvas`'s `changes`) for a moment, which draws them as pulsing **new** and **changed**
+  marks.
+- An example start draws no design ([below](#the-flow-tab)): `ProjectStageProvider`'s
+  `drawsExample` holds while a Project with `ProjectSnapshot.example` has no processes built and
+  its Session's head is still the setup commit (`ProjectSnapshot.setup.source_commit`),
+  `useExampleDefinitions` (`lib/project/initial-template-design.ts`) imports that example's
+  generated definitions when the tree matches, and `ExampleFlowScope`
+  (`components/flow/scope/FlowScope.tsx`) puts them under the canvas as a read-only catalog; the
+  design is not read meanwhile, so neither its marker nor its bar shows.
 
 ## Expansion into an FDG-shaped graph
 
@@ -166,10 +190,33 @@ fills the Flow tab; everything else is small and goes once the design is built.
   empty canvas that says the agent is building it, or that its last turn ended short of a build.
 - **Transient.** Once the current design is built, the corner, the line and More details go and
   the Flow tab shows only the flow: the drawn design until the Preview's processes are built from
-  the commit that built it, then the implemented Flows. A new version with a design brings them
-  back for that version until it is built. A Project created from an example starts here: its
-  Session's start records the example's card as version 1, built at the setup commit, so its Flow
-  tab never shows the overview, and its chat shows "Recorded version 1" beside the greeting.
+  the commit that built it, then the implemented Flows. A revised card with a design before that
+  first build brings them back for that version until it is built; after it, no card brings them
+  back.
+- **An example start shows no design.** A Project that starts from an example, the one the person
+  opened or the one the server matched to the first message (`ProjectSnapshot.example`), holds the
+  example's finished source in its first commit, so while its Session's head is that commit and the
+  Preview has built no processes the Flow tab draws the example's real Flow definitions for the tree
+  the Project started from, with no card design, drafting overview or design phase, and the
+  Builder's process list names its Flows. Those definitions are of that commit only: once the head
+  moves past it before processes are built, the Flow tab waits for the push's own build as for any
+  Project, and the Builder keeps the Building stage while the Preview is to build the head
+  (`buildsOwnHead`: an opened example's setup commit, or the agent's push after a matched or
+  default-template start); the overview of a card without a design then says it is being built.
+  `make generate-app-template` renders every example's definitions with the example's own FDG
+  script into `web/studio/lib/generated/template-design/` (the default's `app-template.json`, each
+  other's `examples/<id>.json`, and `example-designs.ts` with each example's tree and the import of
+  its file); the Builder of such a Project imports only that example's file, on first use, and
+  draws nothing of it when this Studio build holds the example at another tree. Once the Preview
+  has built processes, they take over as for any Project. An opened example's Session records its
+  card as version 1, built at the setup commit, and its chat shows "Recorded version 1" beside the
+  greeting; a matched one shows no label, title or greeting of the example, and its Builder keeps
+  the Building stage while the agent's first turn writes and pushes version 1, which carries no
+  design, and until the Preview has built that push. A Project created from a description that
+  starts from the default example keeps the design-first flow above for its first build only. Every
+  card of a Project that started from an example carries no design, and Studio would draw none if
+  one did. The mock opens an example on the same path and builds nothing of its setup commit, so it
+  draws the example's Flows from the same files until a turn pushes.
 
 There is no Confirm and no Change something: changes are asked for in the chat.
 
@@ -185,14 +232,26 @@ is recorded.
 
 ## The Flow tab
 
-The Flow tab draws a design in place of the implemented Flows it changes, from the card until
-the build of the recorded design is complete. There is no switch between the design and the
-implementation: while a design is drawn, it is what the Flow tab shows. Only those who build
-see it, and only on Preview; Live always shows what Live runs.
+The Flow tab shows the real flow whenever one exists, the conventional practice of coding agents,
+which change source without drawing a plan first. It draws a design only where no real flow of
+the request exists yet: before the first build of a Project that started from the default
+template, whose processes are the template's text summary for the minutes that build takes. There
+it draws the design in place of the implemented Flows it changes, from the card until the build of
+the recorded design is complete. There is no switch between the design and the implementation:
+while a design is drawn, it is what the Flow tab shows. Only those who build see it, and only on
+Preview; Live always shows what Live runs.
 
-- **When.** From the card with a design until the design is
+| Project | Flow tab on Preview |
+|---|---|
+| Default template, no processes built from the agent's own push yet (`designFirst`) | Design-first as below: the drafting overview, the recorded card's design with its Brief, phase, bar and marker, until the design is built and the Preview's processes are built from that push |
+| Example start, head at the setup commit, nothing built (`drawsExample`) | The example's own Flow definitions ([example start](#the-process-brief)) |
+| Example start, head past the setup commit, nothing built | The overview of a card without a design ("The agent is building it") until the push is built |
+| Processes built, the head's push not built yet, or failed to build, while a change runs | The last built flow, read-only, with the Build processes strip saying the push builds; never a design |
+| Processes built, the head's push built | The head's processes, with the Steps the build added or changed marked for a moment |
+
+- **When.** For a `designFirst` Project, from the card with a design until the design is
   built ([build completion](flow-design.md#build-completion)) and the Preview's processes are
-  built from the commit that built it.
+  built from the commit that built it. Once processes are built, never again.
 - **What.** Each Flow the design lists is drawn from the design, with the Brief's corner and
   line while it is built (above). The Steps and Actions the design removes, which have no place
   on the designed graph, are in the change lines behind the nested More details. New Flows of
@@ -221,12 +280,45 @@ see it, and only on Preview; Live always shows what Live runs.
   carries a **Design** marker until the Flow tab shows that version, which it then does by
   itself.
 - **Replacement.** Once the design is built and the Preview's processes are built from the
-  commit that built it, the implemented Flows replace the design. The
+  commit that built it, the implemented Flows replace the design for good. The
   Preview builds them for each pushed commit while its automatic process build is on;
   otherwise the person's Build processes does. A later push moves the Session HEAD past that
-  commit, and the design is no longer drawn: it was built.
-- **Revision.** A revised card's design replaces the drawn one. A stale read
-  (`REVISION_CHANGED`) re-reads the Snapshot first.
+  commit; the design is not drawn again. A card recorded without a design after the push that
+  built it drops it, so a change sent between that push and its build shows the overview of a
+  card without a design, never the earlier design as the new version's; a later push without a
+  card records itself as the commit that built the current design.
+- **Revision.** Before that first build, a revised card's design replaces the drawn one. A stale
+  read (`REVISION_CHANGED`) re-reads the Snapshot first.
+- **Example start.** None of the above applies to a Project that starts from an example: while its
+  Session's head is the setup commit and the Preview has built no processes, the tab draws the
+  example's real Flow definitions instead, as it draws implemented Flows, and once processes are
+  built it follows [after the first build](#after-the-first-build).
+
+## After the first build
+
+Once a Project has processes built from the agent's own push, and for every Project that started
+from an example, a change keeps the real flow:
+
+- **While the change runs.** The Session works on a newer version, or its head has moved past the
+  build the Preview holds. The Flow tab keeps drawing the processes of the head's prepared source
+  while they are the head's, and, once the push moved past them, the last built source this
+  browser read (read-only, as the prepared-source Flow API would serve it) or, after a reload, the
+  definitions the running Preview serves. The Build processes strip above says what happens
+  ("Building V3 processes…", or the failure with Build processes again); no design, design bar,
+  phase, marker or Brief shows, whatever the card carries. Only when no built flow is known, as
+  after a reload while the Preview is stopped, the tab says the processes of this version are not
+  built yet. The Builder's process list keeps the last built processes meanwhile.
+- **When the push is built.** The Preview's processes of the push replace the drawing, and the
+  Steps the build added, or whose definition changed, carry a **new** or **changed** mark for 8
+  seconds from the first time the canvas draws that build's Process in this page, pulsing softly
+  unless the reader prefers reduced motion, when the marks stay still. A closed stage carries its
+  Steps' marks as a design's do. Studio computes them in the browser from the two prepared
+  sources' definitions it already read (`ProcessDefinitionsProvider`'s `buildChanges`): a Step's
+  definition is its node and every node under it, the edges that leave them, the resources it reads
+  or waits on and its group, without source positions, so moved lines mark nothing. Nothing is
+  stored: a reload, a build whose predecessor this page did not read, and a first build compared
+  with the template commit the Project started from (whose processes are not the person's) mark
+  nothing, and the flow itself is unchanged.
 
 ## Differences between the build and the design
 

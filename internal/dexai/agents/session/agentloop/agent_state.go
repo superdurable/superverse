@@ -105,11 +105,12 @@ type StartingExample struct {
 
 // StartingExampleBuild is what a matched Session's first build, its first
 // pushed, unblocked commit_and_push, kept of the example: ExampleSteps are
-// the Steps of the example's design as this server build describes the
-// example at the recorded tree (0 when it does not describe that tree),
-// BuiltSteps those of the confirmed design the build built (0 without one),
-// KeptSteps how many of the example's Steps, by Flow and Step type, that
-// design keeps, and Commit the pushed commit. It is recorded once.
+// the Steps of the example's Flow definitions as this server build embeds
+// them at the recorded tree (0 when it holds the example at another tree),
+// BuiltSteps those of the Flow definitions the commit gate rendered of the
+// pushed tree (0 when the gate rendered none, at most 256), KeptSteps how many
+// of the example's Steps, by Flow and Step type, those definitions keep, and
+// Commit the pushed commit. It is recorded once.
 type StartingExampleBuild struct {
 	ExampleSteps int    `json:"example_steps"`
 	BuiltSteps   int    `json:"built_steps"`

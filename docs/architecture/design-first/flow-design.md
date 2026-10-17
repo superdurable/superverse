@@ -6,11 +6,26 @@ graph a person can read, and a short summary. It is part of the requirements car
 
 ## When the agent writes one
 
-The prompt and the dex-app-builder skill state the rule. A card for a new application, or a
-large change that adds, removes or changes a Flow, carries a design. A change counts when it
-alters a Flow's Steps, what a Step waits for, its transitions, Channels, Actions, or which
-other Flows it starts. A card whose change is only UI, an endpoint or a connection carries
-no design. A small change has no card, as today.
+The Session prompt and the `confirm_requirements` tool text and schema state the rule. The
+in-repo `dex-app-builder` skill (`SKILL.md` and `references/product-discovery.md`) still says
+that every card that changes Flows carries their design; its update, which changes the coding
+image, is a follow-up. Studio shows the real flow whenever one exists, so a design is drawn,
+and written, only before the first build of a Project that started from the default template,
+whose processes are the template's text summary until then
+([the Flow tab](studio.md#the-flow-tab)). There a card for a new application, or a large change
+that adds, removes or changes a Flow, carries a design. A change counts when it alters a Flow's
+Steps, what a Step waits for, its transitions, Channels, Actions, or which other Flows it starts.
+A card whose change is only UI, an endpoint or a connection carries no design. A card recorded
+once the Project has built processes, and every card of a Project that started from an example
+(opened, matched, or opened at a tree whose card could not be recorded), carries its features,
+connections, setup and acceptance, which the push's requirement trace follows, and no design:
+the conventional practice of coding agents, which change source without drawing a plan first. A
+small change has no card, as today. The agent tells a first build from a later one by what the
+Session states: every segment of a Project that started from an example or holds a pushed,
+unblocked `commit_and_push` of the agent's (`AgentState.StartingExample` or
+`PreviewHandoff.Commit`) opens with a `card_design` section saying that its cards carry no
+design, as does the context of an executor switch and of a remote agent; without that section,
+the agent writes a design only until its own first unblocked push in the segment.
 
 Before the card, the agent reads the current Flow source, so that the design of a changed
 Flow is complete. This is the same discovery it already does. No Sandbox call is needed to
@@ -153,10 +168,14 @@ The reference is `flowdesign.Reference{Digest, Summary, Outline}`, so the card s
 A card is recorded as the next version in the `RouteTool` commit that answers it
 ([session](../agent-harness-design/session.md#requirements-cards)), so its design goes
 straight to `confirmed`. Older designs are not kept. A card with a design replaces
-`confirmed`. A card without a design (a change that touches no Flow) carries the design
-forward: `Spec.Design` keeps the previous reference and `confirmed` stays, so the last design
-stays current, and built if it was. Only a card that sets `replaces_requirements` without a
-design clears it: the reference is dropped and `confirmed` is deleted in the same commit. The
+`confirmed`. A card without a design carries an unbuilt design forward: before the first build
+such a card changes no Flow, so `Spec.Design` keeps the previous reference and `confirmed`
+stays. A design a push built (`BuiltFlowDesign` holds its digest, as it does for an opened
+example's design from the start) is not carried: after that push no card carries a design, so
+carrying it would present it as the design of a version it does not describe, in
+`segment_start`, the chat's card and the Flow tab. Such a card, and one that sets
+`replaces_requirements` without a design, clears it: the reference is dropped and `confirmed`
+and `WrittenDesignSteps` are deleted in the same commit. The
 instance `pending` held the design of a card that waited for a confirmation; it is no longer
 written, and the commit that records a card deletes what an open Session left there.
 
@@ -171,12 +190,14 @@ verified (the result's `HeadCommit`). The design is built while `BuiltFlowDesign
 digest:
 
 - a new recorded design has a new digest, so it is unbuilt until the next such push;
-- a card that carries the design forward keeps its digest, so a built design stays
-  built;
+- a card that carries the design forward keeps its digest; it carries only an unbuilt
+  design, since a card without a design drops a built one;
 - a blocked push, a failed one and one while no design is recorded write nothing;
-- a Project created from an example starts built: its Session's start Step records the
+- a Project opened from an example starts built: its Session's start Step records the
   example's card with its design and writes both Attributes, the design's digest and the
-  setup commit, whose tree is the example's built source.
+  setup commit, whose tree is the example's built source. Studio draws the example's real Flow
+  definitions instead of that design ([the Flow tab](studio.md#the-flow-tab)), and the cards the
+  agent records for any example start, opened or matched, carry no design.
 
 No lock is added. `RouteTool` writes `ConfirmedRequirements` during the conversation (the start
 Step writes an example's version 1 before any turn), and the conversation routes
@@ -185,10 +206,13 @@ so the result's commit reads a version nothing else writes meanwhile. A push tha
 before a revised card builds the earlier version; the next push builds the revision.
 Studio stops drawing the design once it is built and either the Preview's processes are built
 from the commit that built it or the Session HEAD has moved past that commit
-([the Flow tab](studio.md#the-flow-tab)). The commit is what makes the second case exact: a later
-push, such as a small change without a card, leaves the design built, and without the commit
-Studio could not tell the push that built the design from the later one and would draw the old
-design again until the later push's processes were built.
+([the Flow tab](studio.md#the-flow-tab)). It draws a design only before a default-template
+Project's first build, so once processes are built from that push it draws none again. A later
+push, such as a small change without a card, leaves a carried design built and records itself
+as `BuiltFlowDesignCommit`; Studio no longer reads the design then, and draws the last built
+flow until that push's processes are built. A card recorded after the push that built the
+design carries none and drops the built one, so between that push and its build, when Studio
+still reads designs, it draws none for the new version.
 
 ## Written Steps
 

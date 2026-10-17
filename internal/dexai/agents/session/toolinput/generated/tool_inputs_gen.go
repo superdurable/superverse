@@ -224,10 +224,12 @@ type ConfirmRequirements struct {
 	// True only for a completely different request after a recorded version: the card replaces the
 	// recorded requirements instead of revising them, and its features are numbered from R1 again.
 	ReplacesRequirements OptBool `json:"replaces_requirements"`
-	// The Flows the card adds or changes, before any code: required on a card for a new application or a
-	// large change that adds, removes or changes a Flow's Steps, waits, transitions, Channels, Actions or
-	// the Flows it starts; absent otherwise. Studio draws it for the user until the build is complete.
-	// Names are the Go type names you will implement.
+	// The Flows the card adds or changes, before any code: required, before the first build of a Project
+	// that started from the default template (no card_design section, no unblocked push of yours yet), on
+	// a card that adds, removes or changes a Flow's Steps, waits, transitions, Channels, Actions or the
+	// Flows it starts; absent otherwise, and absent on every card recorded once the Project has built
+	// processes or for a Project that started from an example, whose real Flows Studio draws. Studio draws
+	// it for the user until the build is complete. Names are the Go type names you will implement.
 	Design OptConfirmRequirementsDesign `json:"design"`
 }
 
@@ -415,10 +417,12 @@ func (s *ConfirmRequirementsConnectionsItemStatus) UnmarshalText(data []byte) er
 	}
 }
 
-// The Flows the card adds or changes, before any code: required on a card for a new application or a
-// large change that adds, removes or changes a Flow's Steps, waits, transitions, Channels, Actions or
-// the Flows it starts; absent otherwise. Studio draws it for the user until the build is complete.
-// Names are the Go type names you will implement.
+// The Flows the card adds or changes, before any code: required, before the first build of a Project
+// that started from the default template (no card_design section, no unblocked push of yours yet), on
+// a card that adds, removes or changes a Flow's Steps, waits, transitions, Channels, Actions or the
+// Flows it starts; absent otherwise, and absent on every card recorded once the Project has built
+// processes or for a Project that started from an example, whose real Flows Studio draws. Studio draws
+// it for the user until the build is complete. Names are the Go type names you will implement.
 type ConfirmRequirementsDesign struct {
 	// The design in business language: which processes run, who acts where, what waits for whom.
 	Summary string `json:"summary"`

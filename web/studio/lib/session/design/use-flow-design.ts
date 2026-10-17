@@ -94,8 +94,10 @@ function readBody(projectId: string, slot: Slot, digest: string): Promise<FlowDe
 
 /**
  * The Flow design the Flow tab draws, with its body read once per digest; null when it draws none or the
- * reader is not `enabled`. A stale read re-reads the Snapshot, whose new reference reads again; a slot
- * without a design draws none.
+ * reader is not `enabled`. The Builder enables it only before the first build of a Project that started from
+ * the default template (`ProjectStageState.designFirst`): once processes are built, and for a Project that
+ * started from an example, the real flow shows and a card's design is never drawn. A stale read re-reads the
+ * Snapshot, whose new reference reads again; a slot without a design draws none.
  */
 export function useFlowDesign(enabled: boolean): ShownDesign | null {
   const session = useSessionResource();

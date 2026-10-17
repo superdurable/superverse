@@ -118,6 +118,9 @@ export function mockProjectSnapshot(store: MockStore, projectId: string): Projec
       defaultBranch: current.repository.defaultBranch,
     },
     example: current.example,
+    // Only an example start's Flow tab compares the setup commit with the Session's head; the mock's other
+    // Projects count their first commit as their own.
+    setup: current.setupCommit ? { status: "SETUP_STATUS_COMPLETE", sourceCommit: current.setupCommit } : undefined,
   };
 }
 

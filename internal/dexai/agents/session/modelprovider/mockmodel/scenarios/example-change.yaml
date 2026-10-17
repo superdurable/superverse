@@ -10,10 +10,16 @@
 # example, whose Session recorded the example's card as version 1 with no model
 # call. The change revises the card to version 2: it keeps R1 to R3 and adds R4,
 # a reply finishes the approval only when it contains "approve". The reply
-# Trigger's filter gains that rule and an API test proves it; the push traces
-# R1 to R4 at version 2, R3 untested as in the example. Its first reply requires
+# Trigger's filter gains that rule and an API test proves it, and the
+# RecordThread Step's explanation says it waits for such a reply, so the push's
+# build changes that Step's definition, which Studio marks for a moment against
+# the setup commit's build; the card carries no Flow design, as every card of a
+# Project started from an example, and version 2 does not carry the example's
+# design forward, since the setup commit built it. The push traces R1 to R4 at
+# version 2, R3 untested as in the example. Its first reply requires
 # the session-start segment to carry the starting_example section of the picked
-# example, which an appended notice never brought to the model. The workspace is the
+# example, which an appended notice never brought to the model, and the
+# card_design section. The workspace is the
 # example's composed tree, which this server embeds, so its edits are checked
 # against the example's own files at startup.
 name: example-change
@@ -30,7 +36,9 @@ inputs:
         expect_segment_start:
           - "<starting_example>"
           - "The person opened it in Studio: its card is recorded as version 1"
+          - "the card you record for that change carries no Flow design"
           - "<confirmed_requirements>"
+          - "<card_design>"
         tool_uses:
           - name: confirm_requirements
             input:
@@ -78,6 +86,11 @@ inputs:
                 	return func(event sdkgo.TriggerEvent[slack.MessageEvent]) bool {
                 		return matches(event) && strings.Contains(strings.ToLower(event.Payload.Text), ApprovalWord)
                 	}, nil
+          - name: edit
+            input:
+              path: internal/process/slack_thread_approval_flow.go
+              old_string: '// dex:explanation text:"Keep the Slack thread that the new channel message started and wait for a reply in it."'
+              new_string: '// dex:explanation text:"Keep the Slack thread that the new channel message started and wait for a reply in it that contains approve."'
           - name: write
             input:
               path: internal/apptest/approval_word_test.go
@@ -140,7 +153,7 @@ inputs:
                   evidence: [internal/process/slack_thread_approval_flow.go]
                   untested_reason: "The Slack connector has no mocks yet, so no test can make Slack confirm the reply; the tests cover only a connection without credentials."
                 - id: R4
-                  evidence: [internal/process/slack_thread_triggers.go, internal/apptest/approval_word_test.go]
+                  evidence: [internal/process/slack_thread_triggers.go, internal/process/slack_thread_approval_flow.go, internal/apptest/approval_word_test.go]
                   untested_reason: "A reply reaches the Flow only through the Slack trigger, and the Slack connector has no mocks yet, so no API test can deliver one; approval_word_test.go checks the reply filter itself."
               requirements_revision: 2
       - text: "A thread reply now finishes the approval only when it contains approve; the change is pushed and the Preview deploys it."

@@ -274,11 +274,15 @@ func SegmentChange(segment ContextSegment, selected conversation.Model, settings
 // released connectors the first request names, only opens the Session's
 // first segment. StartingExample describes the example the Project started
 // from: a picked one in the Session's first segment, a matched one in every
-// segment until the Session's first build.
+// segment until the Session's first build. NoCardDesign says that the cards
+// the agent records carry no Flow design, which every segment of a Project
+// that started from an example or holds a pushed commit_and_push of the
+// agent's says, so that the agent never tells it from a compacted memory.
 type SegmentStart struct {
 	Summary               string
 	RepositoryContext     string
 	ConfirmedRequirements *ConfirmedRequirements
+	NoCardDesign          bool
 	TodoList              *TodoList
 	StartingExample       string
 	CatalogMatches        string
@@ -286,13 +290,14 @@ type SegmentStart struct {
 }
 
 // Text renders the segment_start text: the summary, the repository context,
-// the current requirements, the todo list, the starting example, the catalog
-// matches and the pending request, each in its own tag; the pending request
-// stays last.
+// the current requirements, the card design rule, the todo list, the starting
+// example, the catalog matches and the pending request, each in its own tag;
+// the pending request stays last.
 func (start SegmentStart) Text() string {
 	text := taggedSection("context_summary", start.Summary) +
 		taggedSection(repositoryContextTag, start.RepositoryContext) +
 		taggedSection("confirmed_requirements", confirmedRequirementsText(start.ConfirmedRequirements)) +
+		taggedSection(cardDesignTag, cardDesignText(start.NoCardDesign)) +
 		taggedSection("current_plan", todoListText(start.TodoList)) +
 		taggedSection(startingExampleTag, start.StartingExample) +
 		taggedSection("catalog_matches", start.CatalogMatches) +
@@ -304,6 +309,19 @@ func (start SegmentStart) Text() string {
 }
 
 const repositoryContextTag = "repository_context"
+
+// cardDesignTag is the tag of the card design section.
+const cardDesignTag = "card_design"
+
+// cardDesignText is the card design section of a Project whose cards carry no
+// Flow design, or "" before a default-template Project's first build, where
+// the prompt asks for one.
+func cardDesignText(noCardDesign bool) string {
+	if !noCardDesign {
+		return ""
+	}
+	return "The cards you record for this Project carry no Flow design, since it started from an example or a commit_and_push of yours has pushed: Studio draws its real Flows and marks what the next build adds or changes."
+}
 
 // startingExampleTag is the tag of the starting example section.
 const startingExampleTag = "starting_example"
@@ -332,10 +350,12 @@ const maximumRemoteAgentContextBytes = 80 << 10
 // RemoteAgentContext is what a connected remote agent is told instead of the
 // Session's system prompt and segment_start: the remote agent prompt, the
 // shared Session rules, the repository context and, while a segment would
-// carry it, the starting example, each in its own tag.
-func RemoteAgentContext(repositoryContext, startingExample string) string {
+// carry them, the starting example and the card design rule, each in its own
+// tag.
+func RemoteAgentContext(repositoryContext, startingExample string, noCardDesign bool) string {
 	text := conversation.RemoteAgentPrompt + "\n\n" + conversation.RemoteSessionSystemPrompt +
-		"\n\n" + taggedSection(repositoryContextTag, repositoryContext) + taggedSection(startingExampleTag, startingExample)
+		"\n\n" + taggedSection(repositoryContextTag, repositoryContext) + taggedSection(startingExampleTag, startingExample) +
+		taggedSection(cardDesignTag, cardDesignText(noCardDesign))
 	return comm.TruncateUTF8(strings.TrimSpace(text), maximumRemoteAgentContextBytes)
 }
 

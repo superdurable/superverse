@@ -30,7 +30,9 @@ composed tree, which keeps its revision `app-template@<tree>`; `examples/<id>.ta
 each other example, whose Projects record `app-template/<id>@<tree>`; the catalog
 `examples/catalog.json`; the search index `examples/example-search.json`, which Studio
 bundles byte for byte (`web/studio/lib/generated/example-catalog/`); the decision's
-rules `examples/example-match.json`; and Studio's initial design of the default. A
+rules `examples/example-match.json`; and every example's Flow definitions, rendered with
+its own FDG script from its composed tree, whose Steps the catalog lists and which Studio
+draws for a Project that starts from it (`web/studio/lib/generated/template-design/`). A
 composed tree is exactly what a Project's first commit holds, so its Git tree ID is the
 one the revision names. When an example's tree differs from the one `main` holds, the
 generator keeps `main`'s archive as `examples/previous/<id>.tar`, one per example, the
@@ -64,12 +66,15 @@ installs. The image build fails when the seeds pass their 1 GiB budget
 | `title`, `category`, `apps`, `decider`, `description` | what the start page shows; `category` is one of Approvals, Finance, Support, People and Content |
 | `extends`, `removes` | the example the folder starts from (the base when absent) and the files of it that the example drops |
 | `requirements` | the requirements card the Project's Session records as version 1 when the example is picked: title, summary, features `R1`, `R2`, ... each with its `evidence` and either the API `tests` that prove it or an `untested_reason`, connections, user setup and acceptance |
-| `design` | the card's Flow design |
+| `design` | the card's Flow design, which the Session records with the card; Studio draws the example's real Flow definitions instead, and the design must name exactly their (Flow type, Step type) pairs |
 | `match` | what a request must mention for the server to start from the example: `core`, the facets it needs every one of; `signals`, facets that count for it; `conflicts`, facets that rule it out (see [Closest example](#closest-example)) |
 
 `requirements` and `design` use the field names of the `confirm_requirements` card;
-the generator checks the card with the Session's own card code, and that every test
-and evidence file it names is in the composed tree.
+the generator checks the card with the Session's own card code, that every test
+and evidence file it names is in the composed tree, and that the design's Steps are
+those of the example's rendered Flow definitions, so a Flow edited without its card
+fails generation (the match rules count the design's Steps, the catalog the rendered
+ones).
 
 ## Closest example
 

@@ -8,8 +8,8 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 /*
- * Studio's consumed-source checks (`npm run check:pins`): the generated initial
- * Design, the boundary that keeps external management UI transports out of
+ * Studio's consumed-source checks (`npm run check:pins`): the generated designs
+ * of the examples, the boundary that keeps external management UI transports out of
  * Studio, and the integrity of every package pinned outside the npm registry.
  */
 import { createHash } from "node:crypto";
@@ -68,15 +68,26 @@ const isRemoteURL = (name) => /^(?:https?:)?\/\//.test(name);
 const importsRemovedTransport = (name) =>
   FORBIDDEN_DEX_WEB_TRANSPORT_FILES.some((file) => name.endsWith(file.replace(/\.(?:mjs|ts)$/, "")));
 
-// app-template.json is regenerated with the embedded archive; scripts/check-app-template.sh
-// owns exact drift. Here, verify the consumed Design is internally consistent.
-function checkInitialDesign() {
-  const designs = readdirSync(join(studio, "lib/generated/template-design"));
-  if (designs.length !== 1 || designs[0] !== "app-template.json")
-    failures.push("Initial Design must be the single generated app-template.json");
-  const design = readJSON(join(studio, "lib/generated/template-design/app-template.json"));
-  if (!/^app-template@[a-f0-9]{40}$/.test(design.templateRevision) || !design.definitions?.length)
-    failures.push("Initial Design has no exact template revision");
+// The designs are regenerated with the embedded archives; scripts/check-app-template.sh owns exact drift. Here,
+// verify that the directory holds only the generated designs and that each one is internally consistent.
+const DESIGNS = "lib/generated/template-design";
+
+/** Dex's advisory diagnostics, which the template's FDG script lets through, as Preview's renderer does. */
+const ADVISORY_DIAGNOSTICS = new Set(["v2_step_group_shape"]);
+const isBlocking = (diagnostic) => !(diagnostic.severity === "warning" && ADVISORY_DIAGNOSTICS.has(diagnostic.code));
+
+/** The revision of the default example's design, app-template@<tree>, or of another example's, by its file. */
+const DESIGN_REVISION = /^app-template(?:\/[a-z0-9][a-z0-9-]{1,62}[a-z0-9])?@[a-f0-9]{40}$/;
+
+function checkDesign(file, exampleId) {
+  const design = readJSON(join(studio, DESIGNS, file));
+  const revision = exampleId === null ? /^app-template@[a-f0-9]{40}$/ : DESIGN_REVISION;
+  if (
+    !revision.test(design.templateRevision) ||
+    (exampleId !== null && !design.templateRevision.startsWith(`app-template/${exampleId}@`)) ||
+    !design.definitions?.length
+  )
+    failures.push(`Design ${file} has no exact template revision`);
   for (const definition of design.definitions ?? []) {
     const { graph } = definition;
     const consistent =
@@ -84,11 +95,41 @@ function checkInitialDesign() {
       definition.valid === true &&
       graph.valid === true &&
       graph.schemaVersion === "2.0" &&
-      !graph.diagnostics?.length &&
+      !(graph.diagnostics ?? []).some(isBlocking) &&
       graph.flow.name === definition.flowType &&
       definition.digest === `sha256:${sha256(JSON.stringify(graph))}`;
-    if (!consistent) failures.push("Initial template FDG digest drift");
+    if (!consistent) failures.push(`Design ${file} FDG digest drift`);
   }
+}
+
+// The generator writes the default's design and example-designs.ts, and examples/ only while another example
+// exists: it removes the directory once empty. The module imports exactly the design files.
+function checkInitialDesign() {
+  const directory = join(studio, DESIGNS);
+  const listing = readdirSync(directory, { withFileTypes: true });
+  const holds = (name, folder = false) =>
+    listing.some((entry) => entry.name === name && (folder ? entry.isDirectory() : entry.isFile()));
+  for (const { name } of listing) {
+    const generated =
+      name === "examples"
+        ? holds(name, true)
+        : ["app-template.json", "example-designs.ts"].includes(name) && holds(name);
+    if (!generated) failures.push(`${DESIGNS} holds ${name}, which is no design`);
+  }
+  if (!holds("app-template.json") || !holds("example-designs.ts"))
+    return failures.push(`${DESIGNS} must hold app-template.json and example-designs.ts`);
+  const examples = holds("examples", true) ? readdirSync(join(directory, "examples")).sort() : [];
+  const designs = ["app-template.json", ...examples.map((file) => `examples/${file}`)];
+  const designModule = readFileSync(join(directory, "example-designs.ts"), "utf8");
+  const imported = [...designModule.matchAll(/import\("\.\/([^"]+)"\)/g)].map(([, file]) => file).sort();
+  if (JSON.stringify(imported) !== JSON.stringify(designs.slice().sort()))
+    failures.push(
+      `${DESIGNS}/example-designs.ts imports ${imported.join(", ")}, not the designs ${designs.join(", ")}`,
+    );
+  checkDesign("app-template.json", null);
+  for (const file of examples)
+    if (file.endsWith(".json")) checkDesign(`examples/${file}`, file.slice(0, -".json".length));
+    else failures.push(`${DESIGNS}/examples holds ${file}, which is no design`);
 }
 
 function checkForbiddenPackages(pkg, lock) {

@@ -698,9 +698,11 @@ type RemoteRead struct {
 	// SettledThrough is the highest report whose outcome the Session recorded.
 	SettledThrough uint64 `json:"settled_through"`
 	// RepositoryContext is the Workspace's, when the request asked for it,
-	// with the starting example section a segment would carry now.
+	// with the starting example section and the card design rule a segment
+	// would carry now.
 	RepositoryContext          string                   `json:"repository_context,omitempty"`
 	StartingExample            string                   `json:"starting_example,omitempty"`
+	NoCardDesign               bool                     `json:"no_card_design,omitempty"`
 	WorkspaceState             agentloop.WorkspaceState `json:"workspace_state"`
 	RepositoryContextAvailable bool                     `json:"repository_context_available"`
 }

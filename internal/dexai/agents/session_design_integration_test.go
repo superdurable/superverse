@@ -258,9 +258,15 @@ func requireCardDrafts(ctx context.Context, s *mockSession, agent agentloop.Agen
 // blocked: that push completes the build, so the current design reads as
 // built, and the final reply says it was built as recorded. The card streamed
 // its drafts before it was recorded, and the edit that declares
-// AwaitSummaryApproval marked that designed Step, and only it, written.
+// AwaitSummaryApproval marked that designed Step, and only it, written. The
+// change after that first build (input 2) records version 2 without a design,
+// and the built design is not carried onto it: the reference is gone, the
+// design's slot is empty, and the segment that a compaction opens carries the
+// card_design section and no Flow design, which the scenario's next reply
+// requires; its push traces version 2.
 func TestSessionMockSummaryApprovalDesignBuiltDexIntegration(t *testing.T) {
-	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
+	// Two turns that each push through the commit gate.
+	ctx, cancel := context.WithTimeout(t.Context(), 2*mockTurnTimeout)
 	defer cancel()
 	session, agent := startRecorded(t, ctx, mockInput(t, "summary-approval", 1))
 	confirmed := agent.Description.ConfirmedRequirements
@@ -284,5 +290,23 @@ func TestSessionMockSummaryApprovalDesignBuiltDexIntegration(t *testing.T) {
 	if final := agent.History.Messages[len(agent.History.Messages)-1].Message.Content; !strings.Contains(final, "built the design as recorded") {
 		t.Fatalf("the final reply does not report the build against the design: %q", final)
 	}
-	requireProgress(t, agent, conversation.MockProgress{Scenario: "summary-approval", Input: 1})
+	requireProgress(t, agent, conversation.MockProgress{Scenario: "summary-approval", Input: 1, NextInput: 2})
+
+	before := agent.Description.LastSequence
+	session.send(ctx, mockInput(t, "summary-approval", 2).Content)
+	agent = session.recordedRequirements(ctx, before, 2)
+	revised := agent.Description.ConfirmedRequirements.Spec
+	if revised.Design != nil || agent.Description.ConfirmedDesignBuilt || len(revised.Features) != 3 {
+		t.Fatalf("version 2 carries the built design or lacks R3: %+v", revised)
+	}
+	session.requireDesignReadError(ctx, flowdesign.SlotConfirmed, confirmed.Spec.Design.Digest, sessionagent.ErrFlowDesignNotFound)
+	_, messages := session.history(ctx)
+	after := slices.DeleteFunc(slices.Clone(messages), func(message conversation.SequencedMessage) bool { return message.Sequence <= before })
+	if pushed := toolResult(t, after, conversation.ToolCommitAndPush, 0); pushed.ResultCode != agentloop.CommitPushedForTest {
+		t.Fatalf("the change after the first build was not pushed through the commit gate: %+v", pushed)
+	}
+	if final := finalReply(after); !strings.HasPrefix(final, "The approval Step now says") {
+		t.Fatalf("the change did not reach the scenario's last reply, which follows the segment check: %q", final)
+	}
+	requireProgress(t, agent, conversation.MockProgress{Scenario: "summary-approval", Input: 2})
 }

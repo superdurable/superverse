@@ -119,7 +119,12 @@ After the gate, `GitOperations.CommitAndPush` runs the platform Git protocol in 
   commits it as the Session HEAD in the same commit as the tool result; no Flow RPC confirms it, and the
   field is not part of the content the model sees. When the turn created no commit and the workspace
   fast-forwards to the remote, the verified HEAD is returned only if the local HEAD equals the remote after
-  the merge.
+  the merge. Beside it, the result carries `DefinedSteps`: each `{FlowType, StepType}` of the Flows the
+  passed definitions stage rendered (`SourceGate.DefinedSteps`, at most 256, empty when the stage was
+  skipped for a clean accepted HEAD), which `commit_and_push` hands to the Session as
+  `ToolExecutionResult.DefinedSteps`, also outside the model's content. The Session reads them only for a
+  matched example's [first build](session.md#the-first-build-of-a-matched-example), since the push
+  commits exactly the rendered tree.
 - **Turn refs.** `refs/superverse/turns/*` record each turn's base. At its start `commit_and_push` removes,
   best effort, every such ref but the current turn's, so a turn's ref disappears only after a later call and
   after the Session durably committed that turn's result. A deletion failure is ignored and never repeats a
@@ -143,7 +148,7 @@ flowchart LR
 |---|---|---|---|---|
 | 1 | manifest | `dex-app.yaml` meets the host's deployment schema (a bounded 1 MiB read, parsed by the `appmanifest` parser Preview and Release use). The working tree keeps every gate command that HEAD's `.superverse/template.json` declares: `checkStatic`, and `testApplication` once declared | 30 s | `source_check_failed`, `source_gate_weakened` |
 | 2 | static | The declared `checkStatic` make target in the tool environment: generate, `make check-fdg-v2` (every Flow rendered by the pinned dexcli), gofmt, `go mod tidy -diff`, `go vet` (also with `-tags apptest`), `go build`, the web build | 10 min | `source_check_failed` |
-| 3 | definitions | Beside the static stage: the platform's dexcli renders every Flow the next commit would hold, with no diagnostic, through the `--worktree` mode of `internal/dexai/agents/sandbox/workspace/preview_definitions.py`, which names the tree it rendered; it stages nothing. After a passed static stage, the mock guard: `go list -deps ./...` with default tags must not include `.../sdkgo/connectormock` (it reads the generated packages) | 2 min | `flow_definition_invalid`, `connector_mock_in_production` |
+| 3 | definitions | Beside the static stage: the platform's dexcli renders every Flow the next commit would hold, with no diagnostic, through the `--worktree` mode of `internal/dexai/agents/sandbox/workspace/preview_definitions.py`, which names the tree it rendered and each rendered Flow's Step types (the result's `DefinedSteps`, at most 256 pairs); it stages nothing. After a passed static stage, the mock guard: `go list -deps ./...` with default tags must not include `.../sdkgo/connectormock` (it reads the generated packages) | 2 min | `flow_definition_invalid`, `connector_mock_in_production` |
 | 4 | tests | When HEAD declares `testApplication`: `superverse-previewctl apptest run --run-id gate-<sha256(callID)[:16]>-<nonce> --timeout 6m --hold-until /tmp/superverse-apptest-release-<run-id> --hold-timeout 12m -- make test-app`, started with the static stage, which takes the engine lock and starts the engine meanwhile; the gate releases it once static and definitions passed and kills it otherwise, then the [stage 4 checks](#stage-4-checks) | 6.5 min from the release | `application_tests_failed`, `application_tests_incomplete`, `requirements_untested`, `test_environment_unavailable` |
 | 5 | commit and push | [Commit and push](#commit-and-push), with the tree identity check | | `source_check_failed` and the Git codes |
 
@@ -457,7 +462,8 @@ code, not platform Flows.
   fresh per run (`PlatformExecutionID`), and a run directory is named from the call ID plus a nonce. A duplicate
   call after a lost response reruns the gate (no external effect) and reconciles the push through Git ancestry.
 - **Attributes and AttributeMaps.** None added. The tool reads `HeadCommit`, `Workspace` and
-  `ConfirmedRequirements`, and the Session records the verified HEAD in the commit of the tool result. The call's
+  `ConfirmedRequirements`, and the Session records the verified HEAD in the commit of the tool result, and,
+  for a matched example's first build, `AgentState.StartingExample.FirstBuild` from its `DefinedSteps`. The call's
   arguments and result live in `CurrentMessages` within its retention. No secret reaches an Attribute.
 - **Channels and ChannelMaps.** None.
 - **Streams.** `AgentActivity` carries best-effort stage lines (10 MiB, shared by every execution with the same Flow

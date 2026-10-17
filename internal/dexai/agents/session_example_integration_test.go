@@ -18,6 +18,7 @@ import (
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/preview"
+	sessionagent "github.com/superdurable/superversev2/internal/dexai/agents/session"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/flowdesign"
@@ -50,7 +51,8 @@ const exampleID = "slack-thread-approval"
 //     deployment, and while it awaits the person's first message a READY
 //     Preview holds the Sandbox for the idle hold only;
 //   - the example-change scenario's first input revises the card to version 2
-//     (R1 to R4) and pushes the change through the commit gate.
+//     (R1 to R4), which carries no Flow design and drops the example's built
+//     one, and pushes the change through the commit gate.
 func TestProjectFromExampleDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), previewSetupTimeout+mockTurnTimeout)
 	defer cancel()
@@ -136,6 +138,11 @@ func TestProjectFromExampleDexIntegration(t *testing.T) {
 	if features := changed.Description.ConfirmedRequirements.Spec.Features; len(features) != 4 || features[3].ID != "R4" {
 		t.Fatalf("the change did not add R4 to R1 to R3: %+v", features)
 	}
+	// The setup commit built the example's design, so version 2, which carries none, does not carry it forward.
+	if design := changed.Description.ConfirmedRequirements.Spec.Design; design != nil || changed.Description.ConfirmedDesignBuilt {
+		t.Fatalf("version 2 carries the example's built design: %+v", design)
+	}
+	session.requireDesignReadError(ctx, flowdesign.SlotConfirmed, confirmed.Spec.Design.Digest, sessionagent.ErrFlowDesignNotFound)
 	// Version 2 is recorded before the turn builds it; the push lands when the turn ends.
 	built := session.finishedTurnAfter(ctx, last)
 	requireNoFailure(t, built.History)

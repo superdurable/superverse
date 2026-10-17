@@ -28,9 +28,13 @@ Serves the go-react-v1 examples that new managed repositories start from. Their 
 lives in `app-template/`: a shared base and one folder per example below
 `app-template/examples/` ([the examples](../../../../app-template/examples/README.md)).
 `make generate-app-template` (`go generate ./internal/dexai/app/apptemplate`) composes
-every example, checks its card and trace, decides every labelled request, and writes the
-embedded archives, catalog, search index and match rules and the matching Studio initial
-design of the default example.
+every example, checks its card and trace, decides every labelled request, renders every
+example's Flow definitions with its own FDG script, and writes the embedded archives,
+catalog, search index and match rules and Studio's copy of each example's definitions.
+The validation workflow's `check-app-template-embedded` passes its changed paths
+(`app-template-archive -changed`), which render the definitions of only the default, the
+examples those paths reach and those whose own design file they name, and keep every other
+example's committed definitions, which name its unchanged tree.
 
 `Current` returns the default example, `text-summary`, with its revision `app-template@`
 followed by the Git tree ID, which `repohost.TreeID` computes locally so that Setup can
@@ -39,8 +43,10 @@ description records it. `ExampleTemplate` returns the composed tree of an exampl
 the revision `app-template/<id>@<tree>`, which `ForRevision` resolves for Setup, at the
 example's current tree or at the previous tree the build keeps for it after a change
 or its removal; a revision another server build wrote with any other tree is an error. `FindExample` gives
-the Session what it reads of an example: its card, the trace of each feature and its
-files against the shared base.
+the Session what it reads of an example: its card, the trace of each feature, its
+files against the shared base and the Steps of its rendered Flow definitions (`Steps`, each a
+`FlowStep` of Flow and Step type), which a matched Session's first build compares with
+the Steps of its own pushed definitions.
 
 `ClosestExample` decides which example a Project created from a first message starts
 from: the search (`SearchIndex.Closest`, BM25 postings summed per distinct term, which

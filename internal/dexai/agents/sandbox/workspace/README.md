@@ -128,7 +128,8 @@ a source path outside the archive. It has one mode per owner:
   `git.WorktreeDefinitionCheck`, injected by `NewCapabilities`): the tree that
   committing every change would create, written through a copy of the index,
   so neither the index nor the working tree changes. It returns that tree's ID
-  with its rendered Flows (`git.RenderedSource`), which the commit must hold, or
+  with its rendered Flows (`git.RenderedSource`: each Flow's type, its Steps'
+  types and its connector Steps), which the commit must hold, or
   the rejection, which wraps `git.ErrFlowDefinitionsRejected`, and runs for at
   most two minutes under a fresh platform execution ID. It renders an isolated
   archive, so the gate runs it beside its static stage.

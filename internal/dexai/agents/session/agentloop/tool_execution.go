@@ -19,6 +19,7 @@ import (
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteexec"
+	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/git"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/sandboxtools"
 	"github.com/superdurable/superversev2/internal/dexai/agents/toolfailure"
@@ -147,6 +148,10 @@ type ToolExecutionResult struct {
 	// HeadCommit is the remote HEAD the tool verified. The Session commits it with
 	// the tool result; it is never part of the content sent to the model.
 	HeadCommit string `json:"head_commit,omitempty"`
+	// DefinedSteps are the Steps of the Flows the commit gate rendered of the
+	// tree a pushed commit_and_push committed, which the Session reads of its
+	// first build; never part of the content sent to the model.
+	DefinedSteps []git.DefinedStep `json:"defined_steps,omitempty"`
 	// ExitCode and OmittedBytes measure a command result for its metrics.
 	ExitCode     *int   `json:"exit_code,omitempty"`
 	OmittedBytes *int64 `json:"omitted_bytes,omitempty"`
@@ -260,8 +265,8 @@ func SandboxToolResult(result sandboxtools.Result) ToolExecutionResult {
 	case result.KnownFailure:
 		outcome = conversation.ToolOutcomeKnownFailure
 	}
-	return ToolExecutionResult{Content: result.Content, Outcome: outcome, FailureCode: code, FailureEffect: effect, HeadCommit: result.HeadCommit, ExitCode: result.ExitCode,
-		OmittedBytes: result.OmittedBytes, Background: result.Background}
+	return ToolExecutionResult{Content: result.Content, Outcome: outcome, FailureCode: code, FailureEffect: effect, HeadCommit: result.HeadCommit,
+		DefinedSteps: result.DefinedSteps, ExitCode: result.ExitCode, OmittedBytes: result.OmittedBytes, Background: result.Background}
 }
 
 // ToolMessageTiming is when a tool call ran; the zero value means unknown. Its

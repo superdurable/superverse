@@ -17,7 +17,7 @@ flowchart LR
 | Script | Does |
 | --- | --- |
 | `generate-protobuf-types.mjs` | Generates `lib/generated/protobuf` from the business proto; `--check` verifies it. |
-| `check-consumed-pins.mjs` | Checks the initial Design, the UI boundary and packages pinned outside the registry. |
+| `check-consumed-pins.mjs` | Checks every example's generated design, the UI boundary and packages pinned outside the registry. |
 | `module-graph.mjs` | Resolves every import of the hand-written source; the checks below read it. |
 | `check-modules.mjs` | Directory and file limits, names, no JavaScript, an acyclic directory graph and client reachability. |
 | `check-readmes.mjs` | Every directory README's generated summary, the module table and relative links; `--write` regenerates them. |

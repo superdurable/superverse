@@ -12,7 +12,7 @@ import { useEffect, useMemo, type ReactNode } from "react";
 import { FlowHostProvider } from "@/lib/flow/FlowHostProvider";
 import { useProjectResource } from "@/lib/project/ProjectResourceProvider";
 import { ProcessDefinitionsProvider, useProcessDefinitions } from "@/lib/project/ProcessDefinitionsProvider";
-import { initialTemplateSource } from "@/lib/project/initial-template-design";
+import { initialTemplateSource, useExampleDefinitions } from "@/lib/project/initial-template-design";
 import { useReleaseVersions } from "@/lib/project/use-release-versions";
 import { canBuild, PROJECT_ROLES, projectRoleOf, type ProjectRole } from "@/lib/teamspace/project-roles";
 import { useTeamSpace } from "@/lib/teamspace/TeamSpaceProvider";
@@ -172,12 +172,12 @@ function BuilderFrame({ projectId, role, persistentQuery, children }: BuilderPro
     if (conversation) preloadSwitchViews();
   }, [conversation]);
   // Until processes are built the bar names the stage in place of Preview | Live: Building from a recorded card
-  // while the agent works on it or its built design's processes are being built, else Shaping.
+  // while the agent works on it or the Preview builds its built design or the agent's own head, else Shaping.
   const shaping = builds && !liveOnly && (stage.stage === "conversation" || stage.stage === "shaping");
   const agent = session?.resource?.agent?.description;
+  const due = Boolean(agent?.confirmedRequirements?.spec?.designBuilt) || stage.buildsOwnHead;
   const building =
-    Number(agent?.confirmedRequirements?.revision ?? 0) > 0 &&
-    (agent?.status !== "STATUS_WAITING_FOR_MESSAGE" || Boolean(agent.confirmedRequirements?.spec?.designBuilt));
+    Number(agent?.confirmedRequirements?.revision ?? 0) > 0 && (agent?.status !== "STATUS_WAITING_FOR_MESSAGE" || due);
   // Preview's status counts once processes are built from the agent's own push: before, it is the template's.
   const previewStatus =
     session && own
@@ -193,13 +193,16 @@ function BuilderFrame({ projectId, role, persistentQuery, children }: BuilderPro
   );
   // Those who build see the tabs with something to show; an operator sees every tab the role opens.
   const visible = builds && !liveOnly ? tabs.shown : undefined;
-  // A Flow design shows on Preview to those who build; its Flows join the picker, and the Flow tab's entry
-  // carries a marker until the Flow tab shows it.
-  const design = useFlowDesign(builds && shown === "preview");
+  // A Flow design shows on Preview to those who build, only before the first build of a Project that started from
+  // the default template; its Flows join the picker, and the Flow tab's entry carries a marker until the Flow tab
+  // shows it.
+  const design = useFlowDesign(builds && shown === "preview" && stage.designFirst);
   const designShown = useDesignShown(projectId, design?.key ?? null).shown;
   const designedFlows = new Set(design?.body?.flows.map((flow) => flow.flowType) ?? []);
-  // The template's own processes are not the person's: none show before the agent's own are built.
-  const processes = own || liveOnly ? definitions.processes : [];
+  // The template's own processes are not the person's: none show before the agent's own are built, except the
+  // Flows of an example the Project started from, which the Flow tab draws while the head is the setup commit.
+  const example = useExampleDefinitions(stage.drawsExample && shown === "preview" ? project?.example : null);
+  const processes = own || liveOnly ? definitions.processes : example?.status === "ready" ? example.flows : [];
   const projectName = project?.name ?? "Project";
   const teamSpaceId = project?.teamSpaceId || null;
   // The sidebar shows the open Project's Teamspace, which the Project's URL does not name.

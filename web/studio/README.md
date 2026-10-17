@@ -17,13 +17,21 @@ embeds): a few of each category before the person types, the six closest to the 
 they type, ranked by the search the server shortlists with and re-ranked at word boundaries, and
 Browse all examples to search and filter the whole catalog. Build with no example opened sends the
 description, and a server whose closest-example pick is on may start that Project from the example
-it finds clearly closest; Studio then shows it as any Project created from a description. Open example creates the Project from that example as it is, in one
+it finds clearly closest; Studio then names no example, and its Flow tab draws that example's real
+Flow definitions from the start until the agent pushes, then waits for that push's processes, with
+the stage still Building. Studio shows the real flow whenever one exists: it draws a card's Flow
+design only before the first build of a Project that started from the default template, and once a
+Project has built processes a change keeps the last built flow while its push builds, then marks
+the Steps the new build added or changed for a moment. Open example creates the Project from that example as it is, in one
 click: CreateProject carries the example and no message, and what the person typed waits in the
 Project's chat composer as an unsent draft (per browser, sent only when the person sends it). Its
 Session starts with the example's card as version 1, built at the setup commit, so the Project
-opens in the Builder at once: the Flow tab shows only the flow, the example's design until the
-Preview's processes are built from the setup commit, with no overview, and the chat opens with the
-agent's greeting and its "Recorded version 1" line. CreateProject always sends the required
+opens in the Builder at once: the Flow tab shows the real flow, the example's own Flow definitions
+while the Preview builds the setup commit's processes (a change pushed before they are built waits
+for its own), with no design or overview, and the
+chat opens with the agent's greeting and its "Recorded version 1" line. Studio bundles every
+example's definitions, generated with the template (`lib/generated/template-design/`), and the
+Builder of an example's Project imports only that example's, on first use. CreateProject always sends the required
 managedRepository field; Setup creates a private repository from the embedded template's default or
 opened example. Pending creation and Agent intent session-storage
 keys are v3, with stable request IDs, cancellation, retry and stale-response
@@ -48,7 +56,7 @@ npm run generate:check   # generated protobuf types match api/superverse/v2/supe
 npm run format           # the pinned Prettier; npm run format:check verifies
 npm run typecheck        # next typegen, then tsc for the application, the tests and scripts/
 npm run lint             # ESLint: layering zones, typed rules, imports and test selectors
-npm run check:pins       # initial Design, UI boundary and consumed pins
+npm run check:pins       # every example's generated design, UI boundary and consumed pins
 npm run check:unused     # knip: unused files, dependencies and exports
 npm run check:modules    # directory and file limits, names, import cycles, client reachability
 npm run check:readmes    # directory README summaries; npm run generate:readmes (make generate-studio-readmes) refreshes them
@@ -167,7 +175,7 @@ the current contract.
 | [`lib/browser`](lib/browser/README.md) | Browser-only utilities: storage with every stored key, the theme preference, single-flight user actions, URL query updates and paged lists. |
 | [`lib/examples`](lib/examples/README.md) | The examples of the application template this Studio was built with and the example search, which ranks them in the browser exactly as the server shortlists them. |
 | [`lib/flow`](lib/flow/README.md) | The providers the Flow UI reads: the scoped Flow API client, Flow view navigation and the Flow catalog, with the definition revision binding and enum labels. |
-| [`lib/project`](lib/project/README.md) | Project resources: the Project Watch provider and list, resource Watches, release versions, Process definitions, waiting runs, configuration reads, requirement gap names, the pending creation and the template's Design. |
+| [`lib/project`](lib/project/README.md) | Project resources: the Project Watch provider and list, resource Watches, release versions, Process definitions, waiting runs, configuration reads, requirement gap names, the pending creation and the generated designs. |
 | [`lib/project/publishing`](lib/project/publishing/README.md) | A publish's five stages from its phase timings, the publish in progress with its Watches, the build log read, and the Publish popover's version check. |
 | [`lib/project/setup`](lib/project/setup/README.md) | Setup's shared state: each environment's status, the Preview draft, Live's next-publish layer with its items, and the gap links. |
 | [`lib/project/stage`](lib/project/stage/README.md) | How far a Project has come, from its first conversation to built and Live, and the Builder tabs it has shown in this browser. |

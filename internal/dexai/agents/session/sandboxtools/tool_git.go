@@ -66,8 +66,8 @@ func (execution *Execution) commitAndPush(ctx context.Context, call Call) (Resul
 		report.Gate = &sourceGateReport{Stages: commit.SourceGate.Stages}
 	}
 	result := jsonResult(report, false)
-	// The Session Step commits the verified remote HEAD with this result.
-	result.HeadCommit = commit.CommitSHA
+	// The Session Step commits the verified remote HEAD with this result, and the Steps the gate rendered of it.
+	result.HeadCommit, result.DefinedSteps = commit.CommitSHA, commit.SourceGate.DefinedSteps
 	return result, nil
 }
 

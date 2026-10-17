@@ -25,11 +25,21 @@
 # delta, about 16 seconds for the card's input, so that its RequirementsDraft Stream carries
 # drafts at most once a second before the card is recorded: the E2E sees the Brief drafting
 # and the Dex integration test reads the drafts. Its edit of internal/process/text_summary_flow.go
-# declares type AwaitSummaryApproval struct, which marks that designed Step written.
+# declares type AwaitSummaryApproval struct, which marks that designed Step written. The
+# session-start segment of this default-template Project, before any push, has no card_design
+# section, so the card carries a design. Input 2 is a change after that first build: the
+# card revises version 1 to version 2 with R3, a Step explanation that names the approver, and
+# carries no Flow design, as every card after an unblocked push; the push built version 1's
+# design, so version 2 does not carry it forward. Its usage compacts the context, and the next
+# reply requires the new segment to carry the card_design section and version 2 without any
+# Flow design. The edit rewords AwaitSummaryApproval's dex:explanation, so the push's build
+# changes that Step's definition, which Studio marks for a moment against the build before it,
+# and the push traces R1 to R3 at version 2.
 name: summary-approval
 title: "Summary approval"
-description: "Adds a human approval Step and an Approve summary Action to the template's TextSummaryFlow after a requirements card, in the same turn, and pushes it."
+description: "Adds a human approval Step and an Approve summary Action to the template's TextSummaryFlow after a requirements card, in the same turn, and pushes it; input 2 then revises the card without a design and rewords the approval Step."
 category: product
+compaction_summary: "The person asked for a summary approval, which version 1 records and the first push built; version 2 adds R3, the approval Step's explanation naming the approver, and the work goes on."
 inputs:
   - label: "Describe the change"
     message: "Add a human approval before SaveSummaryResult saves the summary."
@@ -37,6 +47,8 @@ inputs:
       - thinking: "A human approval changes how the process runs, so I show the requirements before I write any code, then keep building."
         text: "Here is what I will build. I am starting now; tell me in the chat if anything should change."
         chunk_delay_ms: 100
+        expect_segment_start_lacks:
+          - "<card_design>"
         tool_uses:
           - name: confirm_requirements
             input:
@@ -259,3 +271,66 @@ inputs:
                 - {content: "Add the Approve summary Action", status: completed}
                 - {content: "Run the source checks and push", status: completed}
       - text: "The summary now waits for approval: the Approve summary Action releases it, and the change is pushed to the default branch. I built the design as recorded."
+  - label: "Name the approver"
+    message: "Say in the waiting Step that a person with the summary.approve permission approves the summary."
+    replies:
+      - thinking: "This adds a requirement, so I revise the recorded card to version 2. The first push built the processes, so the card carries no Flow design; Studio draws the real Flows."
+        text: "Here is the revised brief. I am changing the approval Step's explanation now."
+        usage: {input_tokens: 850000, output_tokens: 300}
+        tool_uses:
+          - name: confirm_requirements
+            input:
+              title: "Summary approval"
+              summary: "A person approves each generated summary in Studio before it is saved."
+              features:
+                - {id: R1, text: "A Step AwaitSummaryApproval holds the generated summary and shows awaiting-approval until a person decides."}
+                - {id: R2, text: "An Approve summary Action releases that Step, which then saves the summary."}
+                - {id: R3, text: "While a summary waits, its waiting Step says that a person with the summary.approve permission approves it."}
+              connections: []
+              user_setup: []
+              acceptance:
+                - "The summary is saved only after Approve summary is chosen in a Studio run."
+                - "A waiting run's approval Step says that a person with the summary.approve permission approves the summary."
+      - text: "Reading the approval Step."
+        expect_segment_start:
+          - "<confirmed_requirements>"
+          - "Version 2: Summary approval"
+          - "R3: While a summary waits"
+          - "<card_design>"
+          - "The cards you record for this Project carry no Flow design"
+        expect_segment_start_lacks:
+          - "\nFlow design: "
+        tool_uses:
+          - name: read
+            input: {path: internal/process/text_summary_flow.go}
+      - text: "Naming the approver in the approval Step's explanation."
+        tool_uses:
+          - name: edit
+            input:
+              path: internal/process/text_summary_flow.go
+              old_string: '// dex:explanation text:"Wait for a person to approve the generated summary before it is saved."'
+              new_string: '// dex:explanation text:"Wait for a person with the summary.approve permission to approve the generated summary before it is saved."'
+      - text: "Building the application and validating the Flow definitions."
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap && make generate && go build ./... && make check-fdg-v2", description: "Generate the API code, build the application and validate the Flow definitions", timeout_seconds: 600}
+      - text: "Running the source checks and pushing the change."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Name the approver in the summary approval Step"
+              verification:
+                - "go build ./... succeeded"
+                - "make check-fdg-v2 validated the strict FDG 2.0 definition"
+              requirements:
+                - id: R1
+                  evidence: [internal/process/text_summary_flow.go]
+                  untested_reason: "A person approves in Studio, which the API tests do not drive; TestTextSummaryGeneratedWaitsForApproval proves the generated summary reaches the waiting Step."
+                - id: R2
+                  evidence: [internal/process/text_summary_flow.go]
+                  untested_reason: "The Approve summary Action is a Studio action, which the API tests do not drive."
+                - id: R3
+                  evidence: [internal/process/text_summary_flow.go]
+                  untested_reason: "Studio shows the Step's explanation, which the API tests do not read."
+              requirements_revision: 2
+      - text: "The approval Step now says that a person with the summary.approve permission approves the summary; the change is pushed."

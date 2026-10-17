@@ -221,7 +221,29 @@
       ],
       "replaces": [],
       "removes": []
-    }
+    },
+    "steps": [
+      {
+        "flow_type": "TextSummaryFlow",
+        "step_type": "GenerateSummary"
+      },
+      {
+        "flow_type": "TextSummaryFlow",
+        "step_type": "PrepareSummary"
+      },
+      {
+        "flow_type": "TextSummaryFlow",
+        "step_type": "RecordSummaryFailure"
+      },
+      {
+        "flow_type": "TextSummaryFlow",
+        "step_type": "RecordSummaryUncertainty"
+      },
+      {
+        "flow_type": "TextSummaryFlow",
+        "step_type": "SaveSummaryResult"
+      }
+    ]
   },
   {
     "id": "github-releases-newsletter",
@@ -764,7 +786,89 @@
         "internal/worker/worker.go"
       ],
       "removes": []
-    }
+    },
+    "steps": [
+      {
+        "flow_type": "NewsletterCampaignFlow",
+        "step_type": "FinishNewsletter"
+      },
+      {
+        "flow_type": "NewsletterCampaignFlow",
+        "step_type": "GenerateNewsletterReport"
+      },
+      {
+        "flow_type": "NewsletterCampaignFlow",
+        "step_type": "ListConnectorReleases"
+      },
+      {
+        "flow_type": "NewsletterCampaignFlow",
+        "step_type": "ListDexReleases"
+      },
+      {
+        "flow_type": "NewsletterCampaignFlow",
+        "step_type": "LoadSubscribers"
+      },
+      {
+        "flow_type": "NewsletterCampaignFlow",
+        "step_type": "PrepareNewsletterReport"
+      },
+      {
+        "flow_type": "NewsletterCampaignFlow",
+        "step_type": "PrepareNewsletterRun"
+      },
+      {
+        "flow_type": "NewsletterCampaignFlow",
+        "step_type": "RecordConnectorReleasePage"
+      },
+      {
+        "flow_type": "NewsletterCampaignFlow",
+        "step_type": "RecordDelivery"
+      },
+      {
+        "flow_type": "NewsletterCampaignFlow",
+        "step_type": "RecordDeliveryUncertainty"
+      },
+      {
+        "flow_type": "NewsletterCampaignFlow",
+        "step_type": "RecordDexReleasePage"
+      },
+      {
+        "flow_type": "NewsletterCampaignFlow",
+        "step_type": "RecordGenerationFailure"
+      },
+      {
+        "flow_type": "NewsletterCampaignFlow",
+        "step_type": "RecordGenerationUncertainty"
+      },
+      {
+        "flow_type": "NewsletterCampaignFlow",
+        "step_type": "RecordReleaseFailure"
+      },
+      {
+        "flow_type": "NewsletterCampaignFlow",
+        "step_type": "SaveNewsletterReport"
+      },
+      {
+        "flow_type": "NewsletterCampaignFlow",
+        "step_type": "SaveNoReleaseReport"
+      },
+      {
+        "flow_type": "NewsletterCampaignFlow",
+        "step_type": "SelectNextRecipient"
+      },
+      {
+        "flow_type": "NewsletterCampaignFlow",
+        "step_type": "SendNewsletterEmail"
+      },
+      {
+        "flow_type": "SubscriptionRegistryFlow",
+        "step_type": "AwaitSubscription"
+      },
+      {
+        "flow_type": "SubscriptionRegistryFlow",
+        "step_type": "RecordSubscription"
+      }
+    ]
   },
   {
     "id": "slack-thread-approval",
@@ -968,7 +1072,25 @@
         "internal/worker/worker.go"
       ],
       "removes": []
-    }
+    },
+    "steps": [
+      {
+        "flow_type": "SlackThreadApprovalFlow",
+        "step_type": "CompleteThread"
+      },
+      {
+        "flow_type": "SlackThreadApprovalFlow",
+        "step_type": "PostCompletionReply"
+      },
+      {
+        "flow_type": "SlackThreadApprovalFlow",
+        "step_type": "RecordReplyFailure"
+      },
+      {
+        "flow_type": "SlackThreadApprovalFlow",
+        "step_type": "RecordThread"
+      }
+    ]
   },
   {
     "id": "summary-approval",
@@ -1149,6 +1271,32 @@
       "replaces": [],
       "removes": []
     },
-    "extends": "text-summary"
+    "extends": "text-summary",
+    "steps": [
+      {
+        "flow_type": "TextSummaryFlow",
+        "step_type": "AwaitSummaryApproval"
+      },
+      {
+        "flow_type": "TextSummaryFlow",
+        "step_type": "GenerateSummary"
+      },
+      {
+        "flow_type": "TextSummaryFlow",
+        "step_type": "PrepareSummary"
+      },
+      {
+        "flow_type": "TextSummaryFlow",
+        "step_type": "RecordSummaryFailure"
+      },
+      {
+        "flow_type": "TextSummaryFlow",
+        "step_type": "RecordSummaryUncertainty"
+      },
+      {
+        "flow_type": "TextSummaryFlow",
+        "step_type": "SaveSummaryResult"
+      }
+    ]
   }
 ]

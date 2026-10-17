@@ -317,7 +317,8 @@ There is no mode switch, no "execute plan" command, no confirmation and no force
   16 KiB bound; `flowdesign` validates a design) and, in the same commit, records it as the next
   version: `ConfirmedRequirements{Revision: stored + 1, Spec, ConfirmedAt, LastFeatureNumber}`
   with no `ConfirmedBy`. The Attribute keeps its persisted name and means the current version.
-  A revising card without a design carries the stored design reference forward. The call is
+  A revising card without a design carries the stored design reference forward while no push built
+  it, and drops a built one. The call is
   answered `{"status": "recorded", "version": N, "reason": ...}`, whose reason tells the model
   that the person was shown version N, that it continues building and that a message changes
   it; the turn goes on to the next call or model reply. An invalid card is refused as
@@ -335,8 +336,11 @@ There is no mode switch, no "execute plan" command, no confirmation and no force
   version N; a later push traces N + 1. A message after the turn starts the next turn.
 - **Flow design.** A card with a design writes its body to the `FlowDesigns` instance `confirmed`
   in the commit that records the version, and `Requirements.Design` carries its reference
-  `{Digest, Summary, Outline}`. A card without a design keeps the stored design, and one that
-  replaces the requirements without a design deletes it. The same commit deletes the `pending`
+  `{Digest, Summary, Outline}`. A card without a design keeps the stored design while
+  `BuiltFlowDesign` differs from its digest, and one that replaces the requirements, or follows the
+  push that built the design (an opened example's design is built from the start), without a design
+  deletes it with `WrittenDesignSteps`, so no version, `segment_start` or chat card names a design it
+  does not have. The same commit deletes the `pending`
   instance a card left while cards waited for a confirmation. The commit of a
   pushed, unblocked `commit_and_push` result writes `BuiltFlowDesign`, the digest of the current
   design it built, and `BuiltFlowDesignCommit`, the commit it verified; the Snapshot's
@@ -346,7 +350,12 @@ There is no mode switch, no "execute plan" command, no confirmation and no force
   below): version 1, its design in `FlowDesigns`, and `BuiltFlowDesign` and `BuiltFlowDesignCommit` set
   to that design and the setup commit, whose processes are already built. A Session whose Project the
   server started from the example it matched to the first message records none of them: its agent
-  writes version 1 from that message. The outline is in the
+  writes version 1 from that message, without a design, since the first commit already holds the
+  example's Flows, which Studio draws from the definitions it bundles for that tree. The agent writes
+  a design only before the first build of a Project that started from the default template; every
+  card of a Project that started from an example, and every card recorded once the Project has built
+  processes, carries none, and Studio draws no card design for either
+  ([the Flow tab](../design-first/studio.md#the-flow-tab)). The outline is in the
   current requirements, so every `segment_start` carries it without a map load
   ([build completion](../design-first/flow-design.md#build-completion)). The same commit that records a
   design starts `WrittenDesignSteps` for it, and the commit of each succeeded `write` or `edit` result
@@ -357,7 +366,10 @@ There is no mode switch, no "execute plan" command, no confirmation and no force
   draft is never the card.
 - Rules in the prompt: show the card once before writing code for a new application or a large
   change, then keep building it; revise it when a message changes the requirements; make small
-  changes directly; never show a card again for an unchanged version; write the card from the
+  changes directly; never show a card again for an unchanged version; give a card that changes
+  Flows a design only before the first build of a Project that started from the default template
+  (no `card_design` section, no unblocked push yet), and record every other card with its
+  features, connections, setup and acceptance and no design, since Studio shows the real Flows; write the card from the
   request without waiting for the repository context; the connections part comes from the catalog
   matches the first segment lists, from `connector_catalog` for a need they do not cover, and from
   the connector subagent's selection report only when several connectors could meet a need or
@@ -1025,9 +1037,13 @@ The `segment_start` of a Session whose Project started from an example carries a
 example was chosen, its card with each feature's evidence and tests (and the features of the example
 it extends), and its files against the template's shared base. The section says what the start Step
 and the agent recorded, read from `ConfirmedRequirements` when it opens: a picked example whose card
-is version 1, or one whose card could not be recorded (this build holds the example at another tree,
-or the card failed its check), which then says so and that no requirements exist; a matched example
-before version 1 (write version 1 from the request) or after it (build version 1 from this source).
+is version 1, where the card the agent records for the change carries no Flow design, or one whose
+card could not be recorded (this build holds the example at another tree, or the card failed its
+check), which then says so, that no requirements exist and that the card of a large change, the
+person's, carries no Flow design either, as every card the agent records for the Project; a matched
+example before version 1 (write version 1 from the request, without a Flow design, as every card the
+agent records for the Project, since the source already holds the example's Flows) or after it
+(build version 1 from this source).
 A picked example's section opens the Session's first segment only, which an appended notice never
 did: `segmentRequest` replays from the segment's first sequence, after the greeting. A matched
 example's section opens every segment, compactions and rollovers included, until the Session's first
@@ -1044,6 +1060,19 @@ Attribute, Channel or Stream; a Session started before it has no `StartingExampl
 request beside the conversation now also hands a joined continuation back when the request fails.
 No RPC, Channel, Stream or AttributeMap changes, and no new Attribute is declared.
 
+Every `segment_start` of a Project whose cards carry no Flow design carries a `<card_design>`
+section after `<confirmed_requirements>`: one fixed line saying that the cards the agent records
+carry no Flow design, since the Project started from an example or a `commit_and_push` of the
+agent's has pushed, and that Studio draws the real Flows. `recordsNoCardDesign`
+(`session_workspace.go`) decides it from `AgentState.StartingExample` (any choice) and
+`PreviewHandoff.Commit`, the commit of the first pushed, unblocked `commit_and_push`, so a
+compaction, a rollover or a picked example's section that ended never leaves the agent to recall
+it. The executor handoff notice of a switch back to the platform carries the same section after the
+current requirements, and the remote read returns it with the repository context
+(`RemoteRead.NoCardDesign`), which the remote agent context appends after the starting example.
+It adds no Attribute, Channel, Stream or Step; a default-template Session before its first such push
+carries none, and the prompt then asks for a design until the agent's own unblocked push.
+
 For subagent record expiry, `RouteTool` atomically replaces the oldest finished record with
 one pending cleanup ID. The first `ExecuteTool` of the next `start_agent` removes that ID's
 checkout, refs and helper receipts through the existing Sandbox Git operation, then commits
@@ -1058,25 +1087,33 @@ the bounded pending cleanup until a later platform `start_agent` or Project dele
 
 A matched start is meant to shrink the build to the difference from the example, so the Session
 records what its first build kept of it, which the platform administrator reads to review the
-Projects the server started from an example. The tool-result Step whose recorded result is the first build, the first pushed, unblocked
+Projects the server started from an example. Both sides are real Flow definitions, never designs, so
+a version 1 without a design is measured. The tool-result Step whose recorded result is the first build, the first pushed, unblocked
 `commit_and_push` before which neither `PreviewHandoff.Commit` nor `BuiltFlowDesign` exists (the moment the
 `starting_example` section ends), completes `AgentState.StartingExample` in the commit of that result,
 before `recordDesignProgress` and the Preview handoff (`recordStartingExampleBuild` in
 `session_workspace.go`, called from `appendToolBatchResults`, under the result Step's existing options;
 `session_agent_flow.go` is unchanged) with `FirstBuild`:
 
-- `ExampleSteps`: the Steps of the example's design, its catalog card's design as this server build
-  describes it at the recorded tree; 0 when the build holds the example at another tree, as during a
-  rollout;
-- `BuiltSteps`: the Steps of the confirmed design the push built, read from `WrittenDesignSteps` while its
-  digest is that of `ConfirmedRequirements`; 0 for a version 1 without a design or before any version;
-- `KeptSteps`: how many of the example's Steps that design keeps, by Flow type and Step type;
+- `ExampleSteps`: the Steps of the example's Flow definitions, which `make generate-app-template`
+  renders with the example's own FDG script and the server build embeds in its catalog
+  (`apptemplate.Example.Steps`), at the recorded tree; 0 when the build holds the example at another
+  tree, as during a rollout;
+- `BuiltSteps`: the Steps of the Flow definitions the commit gate's definitions stage rendered of the
+  tree the push committed. The gate renders them in the Sandbox (`preview_definitions.py --worktree`)
+  and the push commits exactly that tree; `SourceGate.DefinedSteps`, at most 256 `{FlowType,
+  StepType}` pairs, reaches the result Step in the call's `ToolExecutionResult.DefinedSteps`, which is
+  never sent to the model, with no Flow RPC or read. 0 when the build rendered no definitions: the gate
+  skips the definitions stage for a clean tree at the HEAD the Session already accepted;
+- `KeptSteps`: how many of the example's Steps the pushed definitions keep, by Flow type and Step type;
 - `Commit`: the pushed commit.
 
 It is written once, with no new Attribute, lock or read: a later push, a picked example's Session and a
 matched Session whose first build came before this record existed write nothing. It adds about 120
-bytes to `AgentState` (117 with single-digit counts, its commit always 40 hex; `StartingExample` stays
-under 512 bytes). `AgentDescription.starting_example.first_build`
+bytes to `AgentState` (117 with single-digit counts and at most 123 with three-digit ones, its commit
+always 40 hex; `StartingExample` stays under 512 bytes). An open execution's record, written from
+designs before this change, decodes unchanged, and a recorded result without `DefinedSteps` reads as
+none. `AgentDescription.starting_example.first_build`
 (`AgentStartingExampleBuild`) serves it. No log line carries it: SessionAgentFlow has no logger, so the
 Session's state and that field are where it is read.
 
@@ -1131,7 +1168,7 @@ three E2E cases with real Opus 5.5.
 | Sandbox deadline | A shortened hold makes the deadline reclamation exactly the `reclaim` command and the `reclaimed` report, keeping the volume; a running task postpones reclamation; a READY Preview's `ready` notification extends it to `sandbox.previewHold`, also while a question waits; `RenewSessionWorkspace` moves the deadline; a wave dispatched seconds before the deadline makes the timer re-arm; the lend of the READY instance to a Preview command moves it one hold ahead; a Worker restart while it waits reclaims once; a running Preview is stopped first; an uncommitted file survives reclaim and resume |
 | First reply | A request that names Stripe and Slack records its card from the first segment's catalog matches while the workspace request the first model call started is in flight (the Session's history completes that request's first Step, then the card's routing, then the READY instance's settlement); the repository context arrives as exactly one notice before the first edit, and the change is pushed (`TestSessionMockCatalogPrefetchDexIntegration`, scenario `catalog-prefetch`) |
 | Requirements | A new application shows the card and a small change does not; the card records `ConfirmedRequirements` version 1 and the turn goes on to build it; a message steered after the card makes the agent record version 2, and the next push traces revision 2; a message to an old waiting card records it and answers it (local reconciliation, as no current path creates such a card) |
-| Flow design | A card's design is the current one, which a revised card replaces and a stale digest cannot read; recorded unbuilt; a compaction keeps its outline; a blocked checkpoint leaves it unbuilt and a pushed, unblocked commit builds it, and a revised design moves `BuiltFlowDesign` at the next push; each rule a design breaks refuses the card as `invalid_user_input`; the edit that declares a designed Step's struct marks it, and only it, written; the card's drafts arrive on `RequirementsDraft` before it is recorded, the last one complete with its title, and each marks as failure handling only the drafted Step that only a failure route reaches |
+| Flow design | A card's design is the current one, which a revised card replaces and a stale digest cannot read; recorded unbuilt; a compaction keeps its outline; a blocked checkpoint leaves it unbuilt and a pushed, unblocked commit builds it, and a revised design moves `BuiltFlowDesign` at the next push; a card without a design after the push that built the design drops it (`summary-approval` input 2, and `example-change` for an opened example's built design), and the segment a compaction opens then carries `<card_design>` and no `Flow design:` line; each rule a design breaks refuses the card as `invalid_user_input`; the edit that declares a designed Step's struct marks it, and only it, written; the card's drafts arrive on `RequirementsDraft` before it is recorded, the last one complete with its title, and each marks as failure handling only the drafted Step that only a failure route reaches |
 | Stop | One press stops the model call, a background command and a subagent; a stale `Turn` answers false; a non-interruptible tool ends the turn at the next boundary; a subagent that is still starting is marked STOPPED and answered `Stopped` at its admission, and reports STOPPED when its start was racing the Stop; with no turn running the press stops a running subagent, and its report opens no turn; "continue" resumes with published results and the STOPPED report; notification-first, input-first and Finish-first commits write one first-actor marker; a late same-Turn settlement cannot alter a newer Stop; persisted MarkerWritten survives a replacement Worker |
 | Background commands | A command's watch runs as a SubFlow, so the Session routes tools while it runs; its end publishes one notification; a stopped command publishes none; Project deletion stops each running watch before the Session completes |
 | Notifications and automatic turns | A duplicate ID publishes once; admission refuses a 33rd pending notification; caps and `AutomaticTurnsPaused` hold; a notification after Stop opens no turn |

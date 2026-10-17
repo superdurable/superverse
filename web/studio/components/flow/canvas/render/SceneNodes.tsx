@@ -57,7 +57,10 @@ function BoxNode({ data }: NodeProps): JSX.Element {
       )}
       {d.box.mark && (
         <span
-          className="pointer-events-none absolute -top-2.5 right-3 z-10 rounded-full border border-accent bg-panel px-1.75 text-[10.5px] font-semibold text-accent"
+          className={cx(
+            "pointer-events-none absolute -top-2.5 right-3 z-10 rounded-full border border-accent bg-panel px-1.75 text-[10.5px] font-semibold text-accent",
+            d.box.markPulses && "motion-safe:animate-pulse-soft",
+          )}
           data-mark={d.box.mark}
         >
           {d.box.mark}

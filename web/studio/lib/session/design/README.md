@@ -23,7 +23,7 @@ flowchart LR
 
 | File                  | Responsibility                                                                                                                                                                                                                  |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `use-flow-design.ts`  | The design the Flow tab draws: the current version's, from its recorded card until it is built and the Preview's processes are built from the push that built it; its body through `GetFlowDesign`, cached and shared by digest; the designed Steps the agent wrote |
+| `use-flow-design.ts`  | The design the Flow tab draws, which the Builder reads only before the first build of a Project that started from the default template (`designFirst`): the current version's, from its recorded card until it is built and the Preview's processes are built from the push that built it; its body through `GetFlowDesign`, cached and shared by digest; the designed Steps the agent wrote |
 | `use-design-shown.ts` | The card version whose design the Flow tab last showed by itself, in browser storage, so it shows once and the tab's marker goes                                                                                                |
 
 A stale read (`REVISION_CHANGED`) re-reads the Snapshot; a slot without a design (NOT_FOUND) draws none.

@@ -30,3 +30,9 @@ flowchart LR
   self --> d11["lib/shared"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
+
+`FlowGraphCanvas` draws optional text marks above Step cards, **new** or **changed**,
+which a closed stage carries for its Steps: a design's against the current source, and,
+through `FlowCanvas`'s `changes`, the Steps a new build added or changed against the one
+before it, which its host passes for a moment. A new build's marks pulse softly
+(`motion-safe`), so they stay still for a reader who prefers reduced motion.

@@ -226,7 +226,7 @@ func admitStartInput(ctx dex.Context, input agentloop.SessionStartInput) (worksp
 		if card, design, err := agentloop.RequestedRequirements(call, nil); err != nil {
 			problem = err.Error()
 		} else {
-			recorded := agentloop.RecordRequirements(nil, card, ctx.FirstAttemptAt().UTC())
+			recorded := agentloop.RecordRequirements(nil, card, "", ctx.FirstAttemptAt().UTC())
 			recordFlowDesign(ctx, nil, recorded.Spec.Design, design)
 			comm.MustDo(confirmedRequirementsAttribute.Set(ctx, recorded))
 			if recorded.Spec.Design != nil {
@@ -278,9 +278,9 @@ type flowDesignRPCOutput struct {
 
 // recordFlowDesign moves FlowDesigns to a card recorded over stored, whose
 // version carries recorded: the card's own design becomes the current one, a
-// card without one keeps the stored design, and a card that replaces the
-// requirements without one deletes it. A design an old waiting card left is
-// deleted. WrittenDesignSteps follows the current design: a new design starts
+// card without one keeps the stored design while no push built it, and a card
+// that replaces the requirements, or revises a built design, without one
+// deletes it. A design an old waiting card left is deleted. WrittenDesignSteps follows the current design: a new design starts
 // it afresh, keeping the written Steps it keeps, and a deleted one deletes it.
 func recordFlowDesign(ctx dex.Context, stored *agentloop.ConfirmedRequirements, recorded *flowdesign.Reference, design *flowdesign.Design) {
 	switch {
@@ -423,6 +423,7 @@ func readRemote(ctx dex.Context, input remoteexec.ReadRequest) (*dex.RPCResult[R
 			result.Output.RepositoryContext = workspace.RepositoryContext
 			// A picked example is described to the remote agent until the person's first message.
 			result.Output.StartingExample = startingExampleSection(ctx, state.AwaitsFirstMessage)
+			result.Output.NoCardDesign = recordsNoCardDesign(ctx)
 		}
 		result.Output.WorkspaceState = workspace.State
 	}

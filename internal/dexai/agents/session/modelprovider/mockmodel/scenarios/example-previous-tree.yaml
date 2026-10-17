@@ -12,9 +12,10 @@
 # build's card describes another, so the Session records no card. The first
 # reply requires the session-start segment's starting_example section to say
 # that the card could not be recorded and why, with no confirmed requirements,
-# and prints the first commit's tree, which the test compares with the
-# previous tree. The workspace is the example's current tree, which the git
-# command does not edit.
+# and that a large change's card carries no Flow design, as every card of a
+# Project started from an example, which the card_design section says too, and prints the first commit's tree, which the test compares with the previous
+# tree. The workspace is the example's current tree, which the git command does
+# not edit.
 name: example-previous-tree
 title: "Open an example of the previous build"
 description: "The first message of a Project opened from the Slack thread approval example at the previous build's tree: the agent reads that no card is recorded and prints the first commit's tree."
@@ -28,7 +29,9 @@ inputs:
         expect_segment_start:
           - "<starting_example>"
           - "The person opened it in Studio, but its card could not be recorded as version 1 (this server build does not hold the example at that tree), so no requirements are recorded."
+          - "that card is the person's change and, as every card you record for this Project, carries no Flow design: Studio draws this source's real Flows."
           - "This server build does not describe that tree; read the source."
+          - "<card_design>"
         expect_segment_start_lacks:
           - "<confirmed_requirements>"
           - "its card is recorded as version 1"

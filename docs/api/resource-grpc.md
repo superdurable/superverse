@@ -692,7 +692,15 @@ example's requirements card recorded as version 1 of its requirements, the card'
 the setup commit, and a system notice that opens its conversation; it then waits for the person's
 message, deploys the setup commit's Preview once, and holds that Preview's Sandbox only for
 `sandbox.hold` until the person's first message. Its `AgentDescription.starting_example` is
-`AgentStartingExample {example_id, choice: CHOICE_PICKED}`.
+`AgentStartingExample {example_id, choice: CHOICE_PICKED}`. Studio shows no design of it: while the
+Session's `head_commit` is `ProjectSnapshot.setup.source_commit` and the Preview has not built its
+processes, its Flow tab draws the example's own Flow definitions, which Studio bundles for the tree
+that `ProjectSnapshot.example` names; a later push waits for its own build. The agent's cards for
+it carry no design, and Studio draws none of a card for any Project once it has built processes:
+`ConfirmedRequirements.spec.design` is read only before the first build of a Project created from
+the default example. A version recorded without a design after a push built the current design
+(`design_built`, true for an opened example's version 1 from the start) drops that design, so
+`spec.design` never names a built design for a later version.
 
 A Project created without an example starts from the default example under the revision
 `app-template@<tree>`, as before, and has no `example`, with one exception: when the server's
@@ -705,15 +713,17 @@ the Project's, and ProjectFlow's `InitialSessionRequest` records what the messag
 of the request changes, so its fingerprint is the same and a retry joins the accepted Project and
 its revision, whatever another server build would decide. That Session starts quietly: it records
 no card, appends no notice, demands no Preview, admits the first message as the request, and its
-agent writes version 1 itself; `starting_example.choice` is `CHOICE_MATCHED`, and Studio shows the
-Project as one created from a description. Once that Session's first build, its first pushed,
-unblocked commit, is recorded, `starting_example.first_build` is `AgentStartingExampleBuild
-{example_steps, built_steps, kept_steps, commit}`: the Steps of the example's Flow design as the
-recording server build describes the example's tree (0 when it holds the example at another tree),
-those of the confirmed design the push built (0 without a design), how many of the example's Steps
-that design keeps in the same Flow, and the pushed commit. It is recorded once and never changes; a
-picked example, a matched Session before its first build and one whose first build came before the
-server recorded it have none.
+agent writes version 1 itself, without a Flow design; `starting_example.choice` is `CHOICE_MATCHED`,
+and Studio names no example: its Flow tab draws the example's Flow definitions, which Studio bundles
+for the tree in `ProjectSnapshot.example`, while the Session's head is still the setup commit, then
+waits for the Preview to build the agent's push. Once that Session's first build, its first pushed, unblocked commit, is recorded,
+`starting_example.first_build` is `AgentStartingExampleBuild {example_steps, built_steps,
+kept_steps, commit}`: the Steps of the example's Flow definitions as the recording server build
+embeds the example's tree (0 when it holds the example at another tree), those of the Flow
+definitions the commit gate rendered of the pushed commit (0 when the build rendered no
+definitions, at most 256), how many of the example's Steps those definitions keep in the same Flow,
+and the pushed commit. It is recorded once and never changes; a picked example, a matched Session
+before its first build and one whose first build came before the server recorded it have none.
 
 Setup commits exactly the revision's tree, as it commits the default. A server build also holds the
 previous tree of each example that changed (one per example, the default's included), so a Setup a

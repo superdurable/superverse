@@ -23,10 +23,13 @@ const DRAFT = "Approve Slack thread replies, and also tell the approver's manage
 // and marks Slack thread approval first. One click on Open example creates the Project from the example as
 // it is: the creation carries the example and no message, and the Session starts with the example's card
 // recorded as version 1 and built at the setup commit, its greeting and its processes, with no model call,
-// then deploys the setup commit's Preview. The Flow tab shows only the flow, with no overview; the chat opens
-// with the greeting and the "Recorded version 1" line, and what the person typed waits in its composer,
-// unsent. On a lane that offers the mock model the example opens on it, and the example-change scenario
-// records version 2 and pushes it.
+// then deploys the setup commit's Preview. The Flow tab opens on the real flow at once, the example's own Flow
+// Definitions while the Preview builds its processes, with the stage Building and no design, design phase or
+// overview, and those processes take over once built, when the stage badge goes; the chat opens with the
+// greeting and the "Recorded version 1" line, and what the person typed waits in its composer, unsent. On a lane that offers the mock model the example opens on it, and the example-change scenario
+// records version 2, which carries no Flow design, and pushes it: the Flow tab keeps the real flow while the push
+// builds, never a design, and once the Preview has built it marks the Step whose definition the change edited as
+// changed, for a moment.
 test("a built example opens as it is in one click, ranked by the description, which waits as a draft", async ({
   page,
 }) => {
@@ -105,14 +108,22 @@ test("a built example opens as it is in one click, ranked by the description, wh
   } else {
     await expect(page.getByRole("textbox", { name: "Message the agent", exact: true })).toHaveValue(DRAFT);
   }
-  // The card is built, so the Flow tab shows only the flow, with no overview: the example's design until the
-  // Preview's processes are built from the setup commit, then those processes, both with the Reply stage.
-  await expect(
-    page.locator('[data-design-phase="built"]').or(page.getByRole("region", { name: "Flow definition" })),
-  ).toBeVisible({ timeout: 5 * 60_000 });
-  await expect(page.locator("[data-brief-state]")).toHaveCount(0);
-  await expect(page.getByTestId("design-status")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: /^Reply, 3 steps\b/ })).toBeVisible({ timeout: 5 * 60_000 });
+  // The Flow tab shows the real flow at once, with the Reply stage: the example's own Flow Definitions while the
+  // Preview builds the setup commit's processes, which take over once built. Meanwhile the bar names the stage
+  // Building, never Shaping (or none, once they are built). No design, design phase or overview shows at any point.
+  const flow = page.getByRole("region", { name: "Flow definition", exact: true });
+  await expect(flow).toBeVisible({ timeout: 60_000 });
+  await expect(flow.getByRole("button", { name: /^Reply, 3 steps\b/ })).toBeVisible({ timeout: 60_000 });
+  const stage = page.getByTestId("project-stage");
+  expect(await stage.allTextContents(), "the stage while the setup commit builds").not.toContain("Shaping");
+  const noDesign = async () => {
+    await expect(page.locator("[data-design-phase]")).toHaveCount(0);
+    await expect(page.getByLabel("Flow design", { exact: true })).toHaveCount(0);
+    await expect(page.locator("[data-brief-state]")).toHaveCount(0);
+    await expect(page.getByTestId("design-status")).toHaveCount(0);
+    await expect(page.getByTestId("design-marker")).toHaveCount(0);
+  };
+  await noDesign();
 
   // The Session deploys the setup commit's Preview once; the Slack connection is a configuration gap.
   await expect
@@ -126,6 +137,13 @@ test("a built example opens as it is in one click, ranked by the description, wh
     )
     .toBe(true);
 
+  // The processes built from the setup commit took over the same flow, still with no design: the stage is built,
+  // so the bar names none and offers Preview | Live.
+  await page.reload();
+  await expect(flow.getByRole("button", { name: /^Reply, 3 steps\b/ })).toBeVisible({ timeout: 60_000 });
+  await expect(stage).toHaveCount(0);
+  await noDesign();
+
   // The draft was never sent.
   const waiting = await readSession(page, projectId);
   expect(waiting.agent?.history?.messages.some(({ message }) => message?.role === "ROLE_USER")).toBe(false);
@@ -137,7 +155,11 @@ test("a built example opens as it is in one click, ranked by the description, wh
   // The Session opened on the mock model and has called no model; it takes the change there.
   await expect.poll(() => runsMockModel(page, projectId), { timeout: 60_000 }).toBe(true);
   // The composer offers a new Project's scenarios only on the start page; the example's change goes through
-  // SendMessage, the request the composer makes.
+  // SendMessage, the request the composer makes. This page read the setup commit's processes, so once the Preview
+  // has built the change's push it marks the Step whose explanation the change edited as changed, for a moment; the
+  // wait starts before the change, since the mark goes after a few seconds.
+  const changedStep = flow.getByRole("button", { name: /^Record thread\b.*, changed$|^Thread, \d+ steps?, changed\./ });
+  const marked = expect(changedStep).toBeVisible({ timeout: 25 * 60_000 });
   await sendMockMessage(page, projectId, "example-change", 1);
   const changed = await readSession(page, projectId);
   expect(Number(changed.agent?.description?.confirmedRequirements?.revision ?? 0)).toBe(2);
@@ -155,5 +177,20 @@ test("a built example opens as it is in one click, ranked by the description, wh
   await expect(conversation.locator('[data-recorded-version="1"]')).toHaveText(
     "Recorded version 1: the example's requirements",
   );
+  // Version 2 carries no design, and the example's design, which the setup commit built, is not carried onto it. No
+  // design shows: while the push builds, the Flow tab keeps the setup commit's processes under the Build processes
+  // strip.
+  expect(changed.agent?.description?.confirmedRequirements?.spec?.design ?? null).toBeNull();
+  const pushed = changed.preview?.preparedSource;
+  if (!(pushed?.status === "PREVIEW_SOURCE_STATUS_READY" && pushed.sourceCommit === changed.headCommit))
+    await expect(flow.getByRole("button", { name: /^Reply, 3 steps\b/ })).toBeVisible();
+  await noDesign();
+  // The Preview built the push: the edited Step is marked changed, and the mark goes while the flow stays.
+  await marked;
+  await noDesign();
+  await expect(changedStep).toHaveCount(0, { timeout: 30_000 });
+  await expect(flow.getByRole("button", { name: /^Reply, 3 steps\b/ })).toBeVisible();
+  const built = await readSession(page, projectId);
+  expect(built.preview?.preparedSource?.sourceCommit).toBe(changed.headCommit);
   await deleteProject(page, projectId);
 });

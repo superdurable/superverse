@@ -7,17 +7,17 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 // The mock's examples: the examples Studio bundles (lib/examples), each with the card the mock Session
-// records as version 1 when a Project opens it.
+// records as version 1 when a Project opens it and the Git tree its generated design names.
 import { EXAMPLE_CATALOG } from "@/lib/examples/example-catalog";
 import type { AgentRequirements__Output } from "@/lib/generated/protobuf/superverse/v2/AgentRequirements";
-
-/** The Git tree the mock records for every example, illustrative only. */
-export const MOCK_EXAMPLE_TREE = "59acb34868ff760cba38688a7455f8888000fe49";
+import { EXAMPLE_DESIGNS } from "@/lib/generated/template-design/example-designs";
 
 interface MockExample {
   exampleId: string;
   title: string;
-  /** The example's requirements card, without a design: the mock draws its fixture processes instead. */
+  /** The tree of the example's generated design, so that a Project opened from it draws the example's Flows. */
+  tree: string;
+  /** The example's requirements card, without a design: the mock draws the example's own Flows instead. */
   card: AgentRequirements__Output;
 }
 
@@ -79,11 +79,12 @@ const MOCK_CARDS: Readonly<Record<string, AgentRequirements__Output>> = {
   ),
 };
 
-/** The examples the mock offers: every example Studio bundles, in catalog order, each with its card. */
+/** The examples the mock offers: every example Studio bundles, in catalog order, each with its card and tree. */
 export const MOCK_EXAMPLES: readonly MockExample[] = EXAMPLE_CATALOG.map(({ exampleId, title }) => {
   const mockCard = MOCK_CARDS[exampleId];
-  if (!mockCard) throw new Error(`The mock has no card of the bundled example ${exampleId}`);
-  return { exampleId, title, card: mockCard };
+  const design = EXAMPLE_DESIGNS[exampleId];
+  if (!mockCard || !design) throw new Error(`The mock has no card or design of the bundled example ${exampleId}`);
+  return { exampleId, title, tree: design.tree, card: mockCard };
 });
 for (const exampleId of Object.keys(MOCK_CARDS))
   if (!EXAMPLE_CATALOG.some((example) => example.exampleId === exampleId))

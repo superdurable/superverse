@@ -20,7 +20,7 @@ import { isOpenFlowStatusCode } from "@/lib/api/flow/flow-status";
 import { errorMessage } from "@/lib/api/transport/api-error";
 import { cx } from "@/components/ui/cx";
 import { EMPTY, ERROR, LINK } from "@/components/flow/frame/workspace-styles";
-import { FlowGraphCanvas } from "./FlowGraphCanvas";
+import { FlowGraphCanvas, type StepMarkText } from "./FlowGraphCanvas";
 
 export type { SelectedStepStatus } from "./FlowGraphCanvas";
 
@@ -44,6 +44,7 @@ function FlowCanvasContent({
   onSummary,
   onTick,
   reloadKey = 0,
+  changes = null,
   ...canvas
 }: Pick<
   GraphCanvasProps,
@@ -64,6 +65,11 @@ function FlowCanvasContent({
   onTick?: () => void;
   /** Bumped when the host changed the run, such as a retried Step, so it is read again at once. */
   reloadKey?: number;
+  /**
+   * The Steps a new build added or changed against the one before it, by Step id, which their cards carry as a
+   * pulsing new or changed mark while the host passes them.
+   */
+  changes?: { added: ReadonlySet<string>; changed: ReadonlySet<string> } | null;
 }) {
   const client = useFlowRequestScope(`${flowType}:${flowId}`);
   const { definitions } = useFlowCatalog();
@@ -128,6 +134,16 @@ function FlowCanvasContent({
     if (!selected || !flow) return [];
     return groupsFromDefinition(selected.graph, flow);
   }, [flow, selected]);
+  const marks = useMemo(
+    () =>
+      changes
+        ? new Map<string, StepMarkText>([
+            ...[...changes.added].map((id): [string, StepMarkText] => [id, "new"]),
+            ...[...changes.changed].map((id): [string, StepMarkText] => [id, "changed"]),
+          ])
+        : undefined,
+    [changes],
+  );
 
   if (!definitions) return <div className={EMPTY}>Loading Flow definition…</div>;
   if (flowId && !bound)
@@ -150,6 +166,8 @@ function FlowCanvasContent({
       flow={flow}
       groups={groups}
       overlay={overlay}
+      marks={marks}
+      marksPulse={marks !== undefined}
       isRunLoaded={!flowId || loadedFlowId === flowId}
       notice={runError ? <p className={cx(ERROR, "mx-3")}>{runError}</p> : null}
       // Opening or closing a stage, or the Step panel, keeps the reader's place, so neither refits the view.

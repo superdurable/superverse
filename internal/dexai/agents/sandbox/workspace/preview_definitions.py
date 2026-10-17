@@ -76,22 +76,26 @@ def render(tree):
 
 
 def rendered_flow(definition):
-    """The commit gate's view of one rendered Flow: its type and its connector
-    Steps with the branches the Flow wires, which the test stage covers."""
+    """The commit gate's view of one rendered Flow: its type, the type of each
+    of its Steps in node order, and its connector Steps with the branches the
+    Flow wires, which the test stage covers."""
     graph = definition["graph"]
     branches = {}
     for edge in graph.get("edges") or []:
         if (edge.get("metadata") or {}).get("connectorBranch"):
             branches.setdefault(edge["from"], []).append(edge["label"])
-    steps = []
+    names, steps = [], []
     for node in graph.get("nodes") or []:
+        if node.get("kind") != "step":
+            continue
+        names.append(node["name"])
         connector = (node.get("metadata") or {}).get("connector")
-        if node.get("kind") == "step" and connector:
+        if connector:
             steps.append({"step": node["name"], "connection": connector.get("connectionName", ""),
                           "connectorId": connector.get("connectorId", ""), "modulePath": connector.get("modulePath", ""),
                           "moduleVersion": connector.get("moduleVersion", ""), "operation": connector.get("operationId", ""),
                           "branches": sorted(set(branches.get(node["id"], [])))})
-    return {"sourcePath": definition["sourcePath"], "flowType": graph["flow"]["name"], "connectorSteps": steps}
+    return {"sourcePath": definition["sourcePath"], "flowType": graph["flow"]["name"], "steps": names, "connectorSteps": steps}
 
 
 def require_clean_head(commit):

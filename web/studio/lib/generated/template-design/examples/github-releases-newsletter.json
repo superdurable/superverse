@@ -1,0 +1,3787 @@
+{
+  "templateRevision": "app-template/github-releases-newsletter@8e0e253d88e24a92ea9440607764aabd5c47b7ef",
+  "definitions": [
+    {
+      "flowType": "NewsletterCampaignFlow",
+      "sourcePath": "internal/process/newsletter_campaign_flow.go",
+      "schemaVersion": "2.0",
+      "digest": "sha256:046a896fecbee36a91d1d7e432cc0b591f233572bbcd8b9ea641ac7fdeb632bc",
+      "valid": true,
+      "graph": {
+        "schemaVersion": "2.0",
+        "valid": true,
+        "source": {
+          "language": "go",
+          "path": "internal/process/newsletter_campaign_flow.go"
+        },
+        "flow": {
+          "name": "NewsletterCampaignFlow",
+          "startStepId": "step:PrepareNewsletterRun",
+          "span": {
+            "startLine": 168,
+            "startColumn": 1,
+            "endLine": 237,
+            "endColumn": 2
+          }
+        },
+        "nodes": [
+          {
+            "id": "decision-dispatch:step:PrepareNewsletterReport",
+            "kind": "decision_dispatch",
+            "name": "Decision",
+            "parentId": "step:PrepareNewsletterReport",
+            "phase": "execute",
+            "span": {
+              "startLine": 398,
+              "startColumn": 1,
+              "endLine": 425,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "decision-dispatch:step:RecordConnectorReleasePage",
+            "kind": "decision_dispatch",
+            "name": "Decision",
+            "parentId": "step:RecordConnectorReleasePage",
+            "phase": "execute",
+            "span": {
+              "startLine": 315,
+              "startColumn": 1,
+              "endLine": 335,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "decision-dispatch:step:RecordDexReleasePage",
+            "kind": "decision_dispatch",
+            "name": "Decision",
+            "parentId": "step:RecordDexReleasePage",
+            "phase": "execute",
+            "span": {
+              "startLine": 283,
+              "startColumn": 1,
+              "endLine": 307,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "decision-dispatch:step:SaveNewsletterReport",
+            "kind": "decision_dispatch",
+            "name": "Decision",
+            "parentId": "step:SaveNewsletterReport",
+            "phase": "execute",
+            "span": {
+              "startLine": 433,
+              "startColumn": 1,
+              "endLine": 447,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "decision-dispatch:step:SelectNextRecipient",
+            "kind": "decision_dispatch",
+            "name": "Decision",
+            "parentId": "step:SelectNextRecipient",
+            "phase": "execute",
+            "span": {
+              "startLine": 543,
+              "startColumn": 1,
+              "endLine": 574,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "decision:rpc:GetDexDisplay:689:9",
+            "kind": "decision",
+            "name": "rpcResult",
+            "parentId": "rpc:GetDexDisplay",
+            "phase": "rpc",
+            "span": {
+              "startLine": 689,
+              "startColumn": 9,
+              "endLine": 694,
+              "endColumn": 4
+            },
+            "decision": {
+              "type": "rpcResult"
+            }
+          },
+          {
+            "id": "decision:rpc:GetDexSummary:672:9",
+            "kind": "decision",
+            "name": "rpcResult",
+            "parentId": "rpc:GetDexSummary",
+            "phase": "rpc",
+            "span": {
+              "startLine": 672,
+              "startColumn": 9,
+              "endLine": 672,
+              "endColumn": 173
+            },
+            "decision": {
+              "type": "rpcResult"
+            }
+          },
+          {
+            "id": "decision:rpc:GetNewsletterSnapshot:703:9",
+            "kind": "decision",
+            "name": "rpcResult",
+            "parentId": "rpc:GetNewsletterSnapshot",
+            "phase": "rpc",
+            "span": {
+              "startLine": 703,
+              "startColumn": 9,
+              "endLine": 703,
+              "endColumn": 61
+            },
+            "decision": {
+              "type": "rpcResult"
+            }
+          },
+          {
+            "id": "decision:step:FinishNewsletter:641:9",
+            "kind": "decision",
+            "name": "gracefulComplete",
+            "parentId": "step:FinishNewsletter",
+            "phase": "execute",
+            "span": {
+              "startLine": 641,
+              "startColumn": 9,
+              "endLine": 641,
+              "endColumn": 34
+            },
+            "decision": {
+              "type": "gracefulComplete"
+            }
+          },
+          {
+            "id": "decision:step:LoadSubscribers:530:9",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:LoadSubscribers",
+            "phase": "execute",
+            "span": {
+              "startLine": 530,
+              "startColumn": 9,
+              "endLine": 530,
+              "endColumn": 119
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:PrepareNewsletterReport:406:10",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:PrepareNewsletterReport",
+            "condition": "len(keys) == 0",
+            "phase": "execute",
+            "span": {
+              "startLine": 406,
+              "startColumn": 10,
+              "endLine": 406,
+              "endColumn": 46
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:PrepareNewsletterReport:417:11",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:PrepareNewsletterReport",
+            "condition": "!(len(keys) == 0) and builder.Len() > maximumReportInputBytes",
+            "phase": "execute",
+            "span": {
+              "startLine": 417,
+              "startColumn": 11,
+              "endLine": 417,
+              "endColumn": 72
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:PrepareNewsletterReport:424:9",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:PrepareNewsletterReport",
+            "condition": "!(len(keys) == 0)",
+            "phase": "execute",
+            "span": {
+              "startLine": 424,
+              "startColumn": 9,
+              "endLine": 424,
+              "endColumn": 75
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:PrepareNewsletterRun:274:9",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:PrepareNewsletterRun",
+            "phase": "execute",
+            "span": {
+              "startLine": 274,
+              "startColumn": 9,
+              "endLine": 274,
+              "endColumn": 41
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:RecordConnectorReleasePage:318:10",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:RecordConnectorReleasePage",
+            "condition": "result.Branch != github.ListReleasesBranchListed",
+            "phase": "execute",
+            "span": {
+              "startLine": 318,
+              "startColumn": 10,
+              "endLine": 318,
+              "endColumn": 50
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:RecordConnectorReleasePage:325:10",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:RecordConnectorReleasePage",
+            "condition": "!(result.Branch != github.ListReleasesBranchListed) and nextPage < 0",
+            "phase": "execute",
+            "span": {
+              "startLine": 325,
+              "startColumn": 10,
+              "endLine": 325,
+              "endColumn": 50
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:RecordConnectorReleasePage:332:10",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:RecordConnectorReleasePage",
+            "condition": "!(result.Branch != github.ListReleasesBranchListed) and !(nextPage < 0) and nextPage > 0",
+            "phase": "execute",
+            "span": {
+              "startLine": 332,
+              "startColumn": 10,
+              "endLine": 332,
+              "endColumn": 87
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:RecordConnectorReleasePage:334:9",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:RecordConnectorReleasePage",
+            "condition": "!(result.Branch != github.ListReleasesBranchListed) and !(nextPage < 0) and !(nextPage > 0)",
+            "phase": "execute",
+            "span": {
+              "startLine": 334,
+              "startColumn": 9,
+              "endLine": 334,
+              "endColumn": 49
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:RecordDelivery:608:9",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:RecordDelivery",
+            "phase": "execute",
+            "span": {
+              "startLine": 608,
+              "startColumn": 9,
+              "endLine": 608,
+              "endColumn": 45
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:RecordDeliveryUncertainty:627:9",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:RecordDeliveryUncertainty",
+            "phase": "execute",
+            "span": {
+              "startLine": 627,
+              "startColumn": 9,
+              "endLine": 627,
+              "endColumn": 45
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:RecordDexReleasePage:286:10",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:RecordDexReleasePage",
+            "condition": "result.Branch != github.ListReleasesBranchListed",
+            "phase": "execute",
+            "span": {
+              "startLine": 286,
+              "startColumn": 10,
+              "endLine": 286,
+              "endColumn": 50
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:RecordDexReleasePage:293:10",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:RecordDexReleasePage",
+            "condition": "!(result.Branch != github.ListReleasesBranchListed) and nextPage < 0",
+            "phase": "execute",
+            "span": {
+              "startLine": 293,
+              "startColumn": 10,
+              "endLine": 293,
+              "endColumn": 50
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:RecordDexReleasePage:300:10",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:RecordDexReleasePage",
+            "condition": "!(result.Branch != github.ListReleasesBranchListed) and !(nextPage < 0) and nextPage > 0",
+            "phase": "execute",
+            "span": {
+              "startLine": 300,
+              "startColumn": 10,
+              "endLine": 300,
+              "endColumn": 81
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:RecordDexReleasePage:306:9",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:RecordDexReleasePage",
+            "condition": "!(result.Branch != github.ListReleasesBranchListed) and !(nextPage < 0) and !(nextPage > 0)",
+            "phase": "execute",
+            "span": {
+              "startLine": 306,
+              "startColumn": 9,
+              "endLine": 306,
+              "endColumn": 86
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:RecordGenerationFailure:483:9",
+            "kind": "decision",
+            "name": "gracefulComplete",
+            "parentId": "step:RecordGenerationFailure",
+            "phase": "execute",
+            "span": {
+              "startLine": 483,
+              "startColumn": 9,
+              "endLine": 483,
+              "endColumn": 34
+            },
+            "decision": {
+              "type": "gracefulComplete"
+            }
+          },
+          {
+            "id": "decision:step:RecordGenerationUncertainty:498:9",
+            "kind": "decision",
+            "name": "gracefulComplete",
+            "parentId": "step:RecordGenerationUncertainty",
+            "phase": "execute",
+            "span": {
+              "startLine": 498,
+              "startColumn": 9,
+              "endLine": 498,
+              "endColumn": 34
+            },
+            "decision": {
+              "type": "gracefulComplete"
+            }
+          },
+          {
+            "id": "decision:step:RecordReleaseFailure:385:9",
+            "kind": "decision",
+            "name": "gracefulComplete",
+            "parentId": "step:RecordReleaseFailure",
+            "phase": "execute",
+            "span": {
+              "startLine": 385,
+              "startColumn": 9,
+              "endLine": 385,
+              "endColumn": 34
+            },
+            "decision": {
+              "type": "gracefulComplete"
+            }
+          },
+          {
+            "id": "decision:step:SaveNewsletterReport:436:10",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:SaveNewsletterReport",
+            "condition": "result.Branch != llm.GenerateTextBranchGenerated || strings.TrimSpace(result.Value.Text) == \"\"",
+            "phase": "execute",
+            "span": {
+              "startLine": 436,
+              "startColumn": 10,
+              "endLine": 436,
+              "endColumn": 53
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:SaveNewsletterReport:446:9",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:SaveNewsletterReport",
+            "condition": "!(result.Branch != llm.GenerateTextBranchGenerated || strings.TrimSpace(result.Value.Text) == \"\")",
+            "phase": "execute",
+            "span": {
+              "startLine": 446,
+              "startColumn": 9,
+              "endLine": 446,
+              "endColumn": 45
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:SaveNoReleaseReport:468:9",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:SaveNoReleaseReport",
+            "phase": "execute",
+            "span": {
+              "startLine": 468,
+              "startColumn": 9,
+              "endLine": 468,
+              "endColumn": 45
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:SelectNextRecipient:571:10",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:SelectNextRecipient",
+            "phase": "execute",
+            "span": {
+              "startLine": 571,
+              "startColumn": 10,
+              "endLine": 571,
+              "endColumn": 88
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:SelectNextRecipient:573:9",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:SelectNextRecipient",
+            "phase": "execute",
+            "span": {
+              "startLine": 573,
+              "startColumn": 9,
+              "endLine": 573,
+              "endColumn": 42
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "resource:attribute:CampaignNotice",
+            "kind": "attribute",
+            "name": "campaign-notice",
+            "span": {
+              "startLine": 109,
+              "startColumn": 2,
+              "endLine": 109,
+              "endColumn": 72
+            },
+            "resource": {
+              "valueType": "string"
+            }
+          },
+          {
+            "id": "resource:attribute:CampaignStatus",
+            "kind": "attribute",
+            "name": "campaign-status",
+            "span": {
+              "startLine": 93,
+              "startColumn": 2,
+              "endLine": 93,
+              "endColumn": 72
+            },
+            "resource": {
+              "valueType": "string"
+            }
+          },
+          {
+            "id": "resource:attribute:CurrentRecipient",
+            "kind": "attribute",
+            "name": "current-recipient",
+            "span": {
+              "startLine": 103,
+              "startColumn": 2,
+              "endLine": 103,
+              "endColumn": 87
+            },
+            "resource": {
+              "valueType": "NewsletterRecipient"
+            }
+          },
+          {
+            "id": "resource:attribute:CurrentReleasePage",
+            "kind": "attribute",
+            "name": "current-release-page",
+            "span": {
+              "startLine": 96,
+              "startColumn": 2,
+              "endLine": 96,
+              "endColumn": 89
+            },
+            "resource": {
+              "valueType": "ReleasePageRequest"
+            }
+          },
+          {
+            "id": "resource:attribute:DeliveryResults",
+            "kind": "attribute",
+            "name": "delivery-results",
+            "span": {
+              "startLine": 102,
+              "startColumn": 2,
+              "endLine": 102,
+              "endColumn": 84
+            },
+            "resource": {
+              "valueType": "DeliveryRecord",
+              "map": true
+            }
+          },
+          {
+            "id": "resource:attribute:FailedCount",
+            "kind": "attribute",
+            "name": "failed-count",
+            "span": {
+              "startLine": 107,
+              "startColumn": 2,
+              "endLine": 107,
+              "endColumn": 68
+            },
+            "resource": {
+              "valueType": "int64"
+            }
+          },
+          {
+            "id": "resource:attribute:NewsletterReportValue",
+            "kind": "attribute",
+            "name": "newsletter-report",
+            "span": {
+              "startLine": 100,
+              "startColumn": 2,
+              "endLine": 100,
+              "endColumn": 84
+            },
+            "resource": {
+              "valueType": "NewsletterReport"
+            }
+          },
+          {
+            "id": "resource:attribute:NewsletterWindowValue",
+            "kind": "attribute",
+            "name": "newsletter-window",
+            "span": {
+              "startLine": 95,
+              "startColumn": 2,
+              "endLine": 95,
+              "endColumn": 84
+            },
+            "resource": {
+              "valueType": "NewsletterWindow"
+            }
+          },
+          {
+            "id": "resource:attribute:RecipientCount",
+            "kind": "attribute",
+            "name": "recipient-count",
+            "span": {
+              "startLine": 105,
+              "startColumn": 2,
+              "endLine": 105,
+              "endColumn": 71
+            },
+            "resource": {
+              "valueType": "int64"
+            }
+          },
+          {
+            "id": "resource:attribute:Recipients",
+            "kind": "attribute",
+            "name": "recipients",
+            "span": {
+              "startLine": 101,
+              "startColumn": 2,
+              "endLine": 101,
+              "endColumn": 74
+            },
+            "resource": {
+              "valueType": "Subscriber",
+              "map": true
+            }
+          },
+          {
+            "id": "resource:attribute:ReleaseCount",
+            "kind": "attribute",
+            "name": "release-count",
+            "span": {
+              "startLine": 104,
+              "startColumn": 2,
+              "endLine": 104,
+              "endColumn": 69
+            },
+            "resource": {
+              "valueType": "int64"
+            }
+          },
+          {
+            "id": "resource:attribute:ReleaseItems",
+            "kind": "attribute",
+            "name": "release-items",
+            "span": {
+              "startLine": 98,
+              "startColumn": 2,
+              "endLine": 98,
+              "endColumn": 84
+            },
+            "resource": {
+              "valueType": "NewsletterRelease",
+              "map": true
+            }
+          },
+          {
+            "id": "resource:attribute:ReleasePages",
+            "kind": "attribute",
+            "name": "release-pages",
+            "span": {
+              "startLine": 97,
+              "startColumn": 2,
+              "endLine": 97,
+              "endColumn": 70
+            },
+            "resource": {
+              "valueType": "int",
+              "map": true
+            }
+          },
+          {
+            "id": "resource:attribute:ReportInput",
+            "kind": "attribute",
+            "name": "report-input",
+            "span": {
+              "startLine": 99,
+              "startColumn": 2,
+              "endLine": 99,
+              "endColumn": 69
+            },
+            "resource": {
+              "valueType": "string"
+            }
+          },
+          {
+            "id": "resource:attribute:SentCount",
+            "kind": "attribute",
+            "name": "sent-count",
+            "span": {
+              "startLine": 106,
+              "startColumn": 2,
+              "endLine": 106,
+              "endColumn": 66
+            },
+            "resource": {
+              "valueType": "int64"
+            }
+          },
+          {
+            "id": "resource:attribute:TriggerIdentity",
+            "kind": "attribute",
+            "name": "trigger-identity",
+            "span": {
+              "startLine": 94,
+              "startColumn": 2,
+              "endLine": 94,
+              "endColumn": 90
+            },
+            "resource": {
+              "valueType": "NewsletterCampaignInput"
+            }
+          },
+          {
+            "id": "resource:attribute:UnknownCount",
+            "kind": "attribute",
+            "name": "unknown-count",
+            "span": {
+              "startLine": 108,
+              "startColumn": 2,
+              "endLine": 108,
+              "endColumn": 69
+            },
+            "resource": {
+              "valueType": "int64"
+            }
+          },
+          {
+            "id": "rpc:GetDexDisplay",
+            "kind": "rpc",
+            "name": "GetDexDisplay",
+            "span": {
+              "startLine": 683,
+              "startColumn": 1,
+              "endLine": 695,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "rpc:GetDexSummary",
+            "kind": "rpc",
+            "name": "GetDexSummary",
+            "span": {
+              "startLine": 666,
+              "startColumn": 1,
+              "endLine": 673,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "rpc:GetNewsletterSnapshot",
+            "kind": "rpc",
+            "name": "GetNewsletterSnapshot",
+            "span": {
+              "startLine": 697,
+              "startColumn": 1,
+              "endLine": 704,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "step:FinishNewsletter",
+            "kind": "step",
+            "name": "FinishNewsletter",
+            "phase": "execute",
+            "span": {
+              "startLine": 235,
+              "startColumn": 3,
+              "endLine": 235,
+              "endColumn": 37
+            },
+            "metadata": {
+              "explanation": "Complete the campaign with durable delivery counts."
+            }
+          },
+          {
+            "id": "step:GenerateNewsletterReport",
+            "kind": "step",
+            "name": "GenerateNewsletterReport",
+            "phase": "execute",
+            "span": {
+              "startLine": 193,
+              "startColumn": 3,
+              "endLine": 212,
+              "endColumn": 6
+            },
+            "metadata": {
+              "connector": {
+                "configurationEnabled": true,
+                "configurationUI": {
+                  "units": []
+                },
+                "connectionName": "newsletter-openai",
+                "connectorId": "llm",
+                "modulePath": "github.com/superdurable/dex-connectors-library/connectors/superdurable/llm",
+                "moduleVersion": "v0.22.1",
+                "operationId": "generateText",
+                "operationKind": "query"
+              },
+              "connectorFactory": true,
+              "connectorOperationKind": "query",
+              "explanation": "Summarize release facts with OpenAI."
+            }
+          },
+          {
+            "id": "step:ListConnectorReleases",
+            "kind": "step",
+            "name": "ListConnectorReleases",
+            "phase": "execute",
+            "span": {
+              "startLine": 181,
+              "startColumn": 3,
+              "endLine": 189,
+              "endColumn": 6
+            },
+            "metadata": {
+              "connector": {
+                "configurationEnabled": true,
+                "configurationUI": {
+                  "units": []
+                },
+                "connectionName": "newsletter-github",
+                "connectorId": "github",
+                "modulePath": "github.com/superdurable/dex-connectors-library/connectors/github",
+                "moduleVersion": "v0.23.0",
+                "operationId": "listReleases",
+                "operationKind": "query"
+              },
+              "connectorFactory": true,
+              "connectorOperationKind": "query",
+              "explanation": "Read one page of dex-connectors-library releases."
+            }
+          },
+          {
+            "id": "step:ListDexReleases",
+            "kind": "step",
+            "name": "ListDexReleases",
+            "phase": "execute",
+            "span": {
+              "startLine": 171,
+              "startColumn": 3,
+              "endLine": 179,
+              "endColumn": 6
+            },
+            "metadata": {
+              "connector": {
+                "configurationEnabled": true,
+                "configurationUI": {
+                  "units": []
+                },
+                "connectionName": "newsletter-github",
+                "connectorId": "github",
+                "modulePath": "github.com/superdurable/dex-connectors-library/connectors/github",
+                "moduleVersion": "v0.23.0",
+                "operationId": "listReleases",
+                "operationKind": "query"
+              },
+              "connectorFactory": true,
+              "connectorOperationKind": "query",
+              "explanation": "Read one page of dex releases."
+            }
+          },
+          {
+            "id": "step:LoadSubscribers",
+            "kind": "step",
+            "name": "LoadSubscribers",
+            "phase": "execute",
+            "span": {
+              "startLine": 217,
+              "startColumn": 3,
+              "endLine": 217,
+              "endColumn": 57
+            },
+            "metadata": {
+              "explanation": "Freeze the subscribers for this campaign before sending any email."
+            }
+          },
+          {
+            "id": "step:PrepareNewsletterReport",
+            "kind": "step",
+            "name": "PrepareNewsletterReport",
+            "phase": "execute",
+            "span": {
+              "startLine": 192,
+              "startColumn": 3,
+              "endLine": 192,
+              "endColumn": 44
+            },
+            "metadata": {
+              "explanation": "Build a bounded report input from every collected release."
+            }
+          },
+          {
+            "id": "step:PrepareNewsletterRun",
+            "kind": "step",
+            "name": "PrepareNewsletterRun",
+            "phase": "execute",
+            "start": true,
+            "span": {
+              "startLine": 170,
+              "startColumn": 3,
+              "endLine": 170,
+              "endColumn": 46
+            },
+            "metadata": {
+              "explanation": "Freeze the trigger identity and the seven-day publication window."
+            }
+          },
+          {
+            "id": "step:RecordConnectorReleasePage",
+            "kind": "step",
+            "name": "RecordConnectorReleasePage",
+            "phase": "execute",
+            "span": {
+              "startLine": 190,
+              "startColumn": 3,
+              "endLine": 190,
+              "endColumn": 47
+            },
+            "metadata": {
+              "explanation": "Keep the connector-library release page and choose the next page or report."
+            }
+          },
+          {
+            "id": "step:RecordDelivery",
+            "kind": "step",
+            "name": "RecordDelivery",
+            "phase": "execute",
+            "span": {
+              "startLine": 233,
+              "startColumn": 3,
+              "endLine": 233,
+              "endColumn": 35
+            },
+            "metadata": {
+              "explanation": "Record Gmail's conclusive or uncertain result for one subscriber."
+            }
+          },
+          {
+            "id": "step:RecordDeliveryUncertainty",
+            "kind": "step",
+            "name": "RecordDeliveryUncertainty",
+            "phase": "execute",
+            "span": {
+              "startLine": 234,
+              "startColumn": 3,
+              "endLine": 234,
+              "endColumn": 46
+            },
+            "metadata": {
+              "explanation": "Record a lost Gmail response without resending the email."
+            }
+          },
+          {
+            "id": "step:RecordDexReleasePage",
+            "kind": "step",
+            "name": "RecordDexReleasePage",
+            "phase": "execute",
+            "span": {
+              "startLine": 180,
+              "startColumn": 3,
+              "endLine": 180,
+              "endColumn": 41
+            },
+            "metadata": {
+              "explanation": "Keep the dex release page and choose the next page or repository."
+            }
+          },
+          {
+            "id": "step:RecordGenerationFailure",
+            "kind": "step",
+            "name": "RecordGenerationFailure",
+            "phase": "execute",
+            "span": {
+              "startLine": 215,
+              "startColumn": 3,
+              "endLine": 215,
+              "endColumn": 44
+            },
+            "metadata": {
+              "explanation": "Stop when the model did not return a complete report."
+            }
+          },
+          {
+            "id": "step:RecordGenerationUncertainty",
+            "kind": "step",
+            "name": "RecordGenerationUncertainty",
+            "phase": "execute",
+            "span": {
+              "startLine": 216,
+              "startColumn": 3,
+              "endLine": 216,
+              "endColumn": 48
+            },
+            "metadata": {
+              "explanation": "Keep a lost paid model response unknown rather than sending another request."
+            }
+          },
+          {
+            "id": "step:RecordReleaseFailure",
+            "kind": "step",
+            "name": "RecordReleaseFailure",
+            "phase": "execute",
+            "span": {
+              "startLine": 191,
+              "startColumn": 3,
+              "endLine": 191,
+              "endColumn": 41
+            },
+            "metadata": {
+              "explanation": "Stop when a repository could not be read completely."
+            }
+          },
+          {
+            "id": "step:SaveNewsletterReport",
+            "kind": "step",
+            "name": "SaveNewsletterReport",
+            "phase": "execute",
+            "span": {
+              "startLine": 213,
+              "startColumn": 3,
+              "endLine": 213,
+              "endColumn": 41
+            },
+            "metadata": {
+              "explanation": "Keep only a complete, usable model report."
+            }
+          },
+          {
+            "id": "step:SaveNoReleaseReport",
+            "kind": "step",
+            "name": "SaveNoReleaseReport",
+            "phase": "execute",
+            "span": {
+              "startLine": 214,
+              "startColumn": 3,
+              "endLine": 214,
+              "endColumn": 40
+            },
+            "metadata": {
+              "explanation": "State clearly that neither repository published a release."
+            }
+          },
+          {
+            "id": "step:SelectNextRecipient",
+            "kind": "step",
+            "name": "SelectNextRecipient",
+            "phase": "execute",
+            "span": {
+              "startLine": 218,
+              "startColumn": 3,
+              "endLine": 218,
+              "endColumn": 40
+            },
+            "metadata": {
+              "explanation": "Choose the next subscriber without a recorded delivery."
+            }
+          },
+          {
+            "id": "step:SendNewsletterEmail",
+            "kind": "step",
+            "name": "SendNewsletterEmail",
+            "phase": "execute",
+            "span": {
+              "startLine": 219,
+              "startColumn": 3,
+              "endLine": 232,
+              "endColumn": 6
+            },
+            "metadata": {
+              "connector": {
+                "configurationEnabled": true,
+                "configurationUI": {
+                  "units": []
+                },
+                "connectionName": "newsletter-gmail",
+                "connectorId": "gmail",
+                "modulePath": "github.com/superdurable/dex-connectors-library/connectors/google/gmail",
+                "moduleVersion": "v0.23.0",
+                "operationId": "sendMessage",
+                "operationKind": "mutation"
+              },
+              "connectorFactory": true,
+              "connectorOperationKind": "mutation",
+              "explanation": "Send one subscriber their own email."
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge:0001",
+            "kind": "transition",
+            "from": "decision:step:LoadSubscribers:530:9",
+            "to": "step:ListDexReleases",
+            "label": "GoTo",
+            "span": {
+              "startLine": 530,
+              "startColumn": 9,
+              "endLine": 530,
+              "endColumn": 119
+            }
+          },
+          {
+            "id": "edge:0002",
+            "kind": "transition",
+            "from": "decision:step:PrepareNewsletterReport:406:10",
+            "to": "step:SaveNoReleaseReport",
+            "label": "GoTo",
+            "span": {
+              "startLine": 406,
+              "startColumn": 10,
+              "endLine": 406,
+              "endColumn": 46
+            }
+          },
+          {
+            "id": "edge:0003",
+            "kind": "transition",
+            "from": "decision:step:PrepareNewsletterReport:417:11",
+            "to": "step:RecordReleaseFailure",
+            "label": "GoTo",
+            "span": {
+              "startLine": 417,
+              "startColumn": 11,
+              "endLine": 417,
+              "endColumn": 72
+            }
+          },
+          {
+            "id": "edge:0004",
+            "kind": "transition",
+            "from": "decision:step:PrepareNewsletterReport:424:9",
+            "to": "step:GenerateNewsletterReport",
+            "label": "GoTo",
+            "span": {
+              "startLine": 424,
+              "startColumn": 9,
+              "endLine": 424,
+              "endColumn": 75
+            }
+          },
+          {
+            "id": "edge:0005",
+            "kind": "transition",
+            "from": "decision:step:PrepareNewsletterRun:274:9",
+            "to": "step:LoadSubscribers",
+            "label": "GoTo",
+            "span": {
+              "startLine": 274,
+              "startColumn": 9,
+              "endLine": 274,
+              "endColumn": 41
+            }
+          },
+          {
+            "id": "edge:0006",
+            "kind": "transition",
+            "from": "decision:step:RecordConnectorReleasePage:318:10",
+            "to": "step:RecordReleaseFailure",
+            "label": "GoTo",
+            "span": {
+              "startLine": 318,
+              "startColumn": 10,
+              "endLine": 318,
+              "endColumn": 50
+            }
+          },
+          {
+            "id": "edge:0007",
+            "kind": "transition",
+            "from": "decision:step:RecordConnectorReleasePage:325:10",
+            "to": "step:RecordReleaseFailure",
+            "label": "GoTo",
+            "span": {
+              "startLine": 325,
+              "startColumn": 10,
+              "endLine": 325,
+              "endColumn": 50
+            }
+          },
+          {
+            "id": "edge:0008",
+            "kind": "transition",
+            "from": "decision:step:RecordConnectorReleasePage:332:10",
+            "to": "step:ListConnectorReleases",
+            "label": "GoTo",
+            "span": {
+              "startLine": 332,
+              "startColumn": 10,
+              "endLine": 332,
+              "endColumn": 87
+            }
+          },
+          {
+            "id": "edge:0009",
+            "kind": "transition",
+            "from": "decision:step:RecordConnectorReleasePage:334:9",
+            "to": "step:PrepareNewsletterReport",
+            "label": "GoTo",
+            "span": {
+              "startLine": 334,
+              "startColumn": 9,
+              "endLine": 334,
+              "endColumn": 49
+            }
+          },
+          {
+            "id": "edge:0010",
+            "kind": "transition",
+            "from": "decision:step:RecordDelivery:608:9",
+            "to": "step:SelectNextRecipient",
+            "label": "GoTo",
+            "span": {
+              "startLine": 608,
+              "startColumn": 9,
+              "endLine": 608,
+              "endColumn": 45
+            }
+          },
+          {
+            "id": "edge:0011",
+            "kind": "transition",
+            "from": "decision:step:RecordDeliveryUncertainty:627:9",
+            "to": "step:SelectNextRecipient",
+            "label": "GoTo",
+            "span": {
+              "startLine": 627,
+              "startColumn": 9,
+              "endLine": 627,
+              "endColumn": 45
+            }
+          },
+          {
+            "id": "edge:0012",
+            "kind": "transition",
+            "from": "decision:step:RecordDexReleasePage:286:10",
+            "to": "step:RecordReleaseFailure",
+            "label": "GoTo",
+            "span": {
+              "startLine": 286,
+              "startColumn": 10,
+              "endLine": 286,
+              "endColumn": 50
+            }
+          },
+          {
+            "id": "edge:0013",
+            "kind": "transition",
+            "from": "decision:step:RecordDexReleasePage:293:10",
+            "to": "step:RecordReleaseFailure",
+            "label": "GoTo",
+            "span": {
+              "startLine": 293,
+              "startColumn": 10,
+              "endLine": 293,
+              "endColumn": 50
+            }
+          },
+          {
+            "id": "edge:0014",
+            "kind": "transition",
+            "from": "decision:step:RecordDexReleasePage:300:10",
+            "to": "step:ListDexReleases",
+            "label": "GoTo",
+            "span": {
+              "startLine": 300,
+              "startColumn": 10,
+              "endLine": 300,
+              "endColumn": 81
+            }
+          },
+          {
+            "id": "edge:0015",
+            "kind": "transition",
+            "from": "decision:step:RecordDexReleasePage:306:9",
+            "to": "step:ListConnectorReleases",
+            "label": "GoTo",
+            "span": {
+              "startLine": 306,
+              "startColumn": 9,
+              "endLine": 306,
+              "endColumn": 86
+            }
+          },
+          {
+            "id": "edge:0016",
+            "kind": "transition",
+            "from": "decision:step:SaveNewsletterReport:436:10",
+            "to": "step:RecordGenerationFailure",
+            "label": "GoTo",
+            "span": {
+              "startLine": 436,
+              "startColumn": 10,
+              "endLine": 436,
+              "endColumn": 53
+            }
+          },
+          {
+            "id": "edge:0017",
+            "kind": "transition",
+            "from": "decision:step:SaveNewsletterReport:446:9",
+            "to": "step:SelectNextRecipient",
+            "label": "GoTo",
+            "span": {
+              "startLine": 446,
+              "startColumn": 9,
+              "endLine": 446,
+              "endColumn": 45
+            }
+          },
+          {
+            "id": "edge:0018",
+            "kind": "transition",
+            "from": "decision:step:SaveNoReleaseReport:468:9",
+            "to": "step:SelectNextRecipient",
+            "label": "GoTo",
+            "span": {
+              "startLine": 468,
+              "startColumn": 9,
+              "endLine": 468,
+              "endColumn": 45
+            }
+          },
+          {
+            "id": "edge:0019",
+            "kind": "transition",
+            "from": "decision:step:SelectNextRecipient:571:10",
+            "to": "step:SendNewsletterEmail",
+            "label": "GoTo",
+            "span": {
+              "startLine": 571,
+              "startColumn": 10,
+              "endLine": 571,
+              "endColumn": 88
+            }
+          },
+          {
+            "id": "edge:0020",
+            "kind": "transition",
+            "from": "decision:step:SelectNextRecipient:573:9",
+            "to": "step:FinishNewsletter",
+            "label": "GoTo",
+            "span": {
+              "startLine": 573,
+              "startColumn": 9,
+              "endLine": 573,
+              "endColumn": 42
+            }
+          },
+          {
+            "id": "edge:0021",
+            "kind": "resource_read",
+            "from": "resource:attribute:CampaignNotice",
+            "to": "rpc:GetDexDisplay",
+            "label": "Get",
+            "span": {
+              "startLine": 685,
+              "startColumn": 19,
+              "endLine": 685,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0022",
+            "kind": "resource_read",
+            "from": "resource:attribute:CampaignNotice",
+            "to": "rpc:GetDexSummary",
+            "label": "Get",
+            "span": {
+              "startLine": 668,
+              "startColumn": 19,
+              "endLine": 668,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0023",
+            "kind": "resource_read",
+            "from": "resource:attribute:CampaignNotice",
+            "to": "rpc:GetNewsletterSnapshot",
+            "label": "Get",
+            "span": {
+              "startLine": 699,
+              "startColumn": 19,
+              "endLine": 699,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0024",
+            "kind": "resource_read",
+            "from": "resource:attribute:CampaignStatus",
+            "to": "rpc:GetDexDisplay",
+            "label": "Get",
+            "span": {
+              "startLine": 685,
+              "startColumn": 19,
+              "endLine": 685,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0025",
+            "kind": "resource_read",
+            "from": "resource:attribute:CampaignStatus",
+            "to": "rpc:GetDexSummary",
+            "label": "Get",
+            "span": {
+              "startLine": 668,
+              "startColumn": 19,
+              "endLine": 668,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0026",
+            "kind": "resource_read",
+            "from": "resource:attribute:CampaignStatus",
+            "to": "rpc:GetNewsletterSnapshot",
+            "label": "Get",
+            "span": {
+              "startLine": 699,
+              "startColumn": 19,
+              "endLine": 699,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0027",
+            "kind": "resource_read",
+            "from": "resource:attribute:CurrentRecipient",
+            "to": "step:RecordDelivery",
+            "label": "Get",
+            "span": {
+              "startLine": 584,
+              "startColumn": 20,
+              "endLine": 584,
+              "endColumn": 45
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0028",
+            "kind": "resource_read",
+            "from": "resource:attribute:CurrentReleasePage",
+            "to": "step:RecordConnectorReleasePage",
+            "label": "Get",
+            "span": {
+              "startLine": 342,
+              "startColumn": 18,
+              "endLine": 342,
+              "endColumn": 45
+            },
+            "metadata": {
+              "function": "storeReleasePage",
+              "phase": "execute",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0029",
+            "kind": "resource_read",
+            "from": "resource:attribute:CurrentReleasePage",
+            "to": "step:RecordDexReleasePage",
+            "label": "Get",
+            "span": {
+              "startLine": 342,
+              "startColumn": 18,
+              "endLine": 342,
+              "endColumn": 45
+            },
+            "metadata": {
+              "function": "storeReleasePage",
+              "phase": "execute",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0030",
+            "kind": "resource_read",
+            "from": "resource:attribute:DeliveryResults",
+            "to": "step:SelectNextRecipient",
+            "label": "Get",
+            "span": {
+              "startLine": 555,
+              "startColumn": 16,
+              "endLine": 555,
+              "endColumn": 45
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0031",
+            "kind": "resource_read",
+            "from": "resource:attribute:FailedCount",
+            "to": "rpc:GetDexDisplay",
+            "label": "Get",
+            "span": {
+              "startLine": 685,
+              "startColumn": 19,
+              "endLine": 685,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0032",
+            "kind": "resource_read",
+            "from": "resource:attribute:FailedCount",
+            "to": "rpc:GetDexSummary",
+            "label": "Get",
+            "span": {
+              "startLine": 668,
+              "startColumn": 19,
+              "endLine": 668,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0033",
+            "kind": "resource_read",
+            "from": "resource:attribute:FailedCount",
+            "to": "rpc:GetNewsletterSnapshot",
+            "label": "Get",
+            "span": {
+              "startLine": 699,
+              "startColumn": 19,
+              "endLine": 699,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0034",
+            "kind": "resource_read",
+            "from": "resource:attribute:NewsletterReportValue",
+            "to": "rpc:GetDexDisplay",
+            "label": "Get",
+            "span": {
+              "startLine": 685,
+              "startColumn": 19,
+              "endLine": 685,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0035",
+            "kind": "resource_read",
+            "from": "resource:attribute:NewsletterReportValue",
+            "to": "rpc:GetDexSummary",
+            "label": "Get",
+            "span": {
+              "startLine": 668,
+              "startColumn": 19,
+              "endLine": 668,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0036",
+            "kind": "resource_read",
+            "from": "resource:attribute:NewsletterReportValue",
+            "to": "rpc:GetNewsletterSnapshot",
+            "label": "Get",
+            "span": {
+              "startLine": 699,
+              "startColumn": 19,
+              "endLine": 699,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0037",
+            "kind": "resource_read",
+            "from": "resource:attribute:NewsletterReportValue",
+            "to": "step:SelectNextRecipient",
+            "label": "Get",
+            "span": {
+              "startLine": 550,
+              "startColumn": 17,
+              "endLine": 550,
+              "endColumn": 47
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0038",
+            "kind": "resource_read",
+            "from": "resource:attribute:NewsletterWindowValue",
+            "to": "step:RecordConnectorReleasePage",
+            "label": "Get",
+            "span": {
+              "startLine": 338,
+              "startColumn": 17,
+              "endLine": 338,
+              "endColumn": 47
+            },
+            "metadata": {
+              "function": "storeReleasePage",
+              "phase": "execute",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0039",
+            "kind": "resource_read",
+            "from": "resource:attribute:NewsletterWindowValue",
+            "to": "step:RecordDexReleasePage",
+            "label": "Get",
+            "span": {
+              "startLine": 338,
+              "startColumn": 17,
+              "endLine": 338,
+              "endColumn": 47
+            },
+            "metadata": {
+              "function": "storeReleasePage",
+              "phase": "execute",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0040",
+            "kind": "resource_read",
+            "from": "resource:attribute:NewsletterWindowValue",
+            "to": "step:SaveNewsletterReport",
+            "label": "Get",
+            "span": {
+              "startLine": 438,
+              "startColumn": 17,
+              "endLine": 438,
+              "endColumn": 47
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0041",
+            "kind": "resource_read",
+            "from": "resource:attribute:NewsletterWindowValue",
+            "to": "step:SaveNoReleaseReport",
+            "label": "Get",
+            "span": {
+              "startLine": 457,
+              "startColumn": 17,
+              "endLine": 457,
+              "endColumn": 47
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0042",
+            "kind": "resource_read",
+            "from": "resource:attribute:RecipientCount",
+            "to": "rpc:GetDexDisplay",
+            "label": "Get",
+            "span": {
+              "startLine": 685,
+              "startColumn": 19,
+              "endLine": 685,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0043",
+            "kind": "resource_read",
+            "from": "resource:attribute:RecipientCount",
+            "to": "rpc:GetDexSummary",
+            "label": "Get",
+            "span": {
+              "startLine": 668,
+              "startColumn": 19,
+              "endLine": 668,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0044",
+            "kind": "resource_read",
+            "from": "resource:attribute:RecipientCount",
+            "to": "rpc:GetNewsletterSnapshot",
+            "label": "Get",
+            "span": {
+              "startLine": 699,
+              "startColumn": 19,
+              "endLine": 699,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0045",
+            "kind": "resource_read",
+            "from": "resource:attribute:Recipients",
+            "to": "step:SelectNextRecipient",
+            "label": "AllInstanceKeys",
+            "span": {
+              "startLine": 548,
+              "startColumn": 10,
+              "endLine": 548,
+              "endColumn": 41
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0046",
+            "kind": "resource_read",
+            "from": "resource:attribute:Recipients",
+            "to": "step:SelectNextRecipient",
+            "label": "Get",
+            "span": {
+              "startLine": 563,
+              "startColumn": 25,
+              "endLine": 563,
+              "endColumn": 49
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0047",
+            "kind": "resource_read",
+            "from": "resource:attribute:ReleaseCount",
+            "to": "rpc:GetDexDisplay",
+            "label": "Get",
+            "span": {
+              "startLine": 685,
+              "startColumn": 19,
+              "endLine": 685,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0048",
+            "kind": "resource_read",
+            "from": "resource:attribute:ReleaseCount",
+            "to": "rpc:GetDexSummary",
+            "label": "Get",
+            "span": {
+              "startLine": 668,
+              "startColumn": 19,
+              "endLine": 668,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0049",
+            "kind": "resource_read",
+            "from": "resource:attribute:ReleaseCount",
+            "to": "rpc:GetNewsletterSnapshot",
+            "label": "Get",
+            "span": {
+              "startLine": 699,
+              "startColumn": 19,
+              "endLine": 699,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0050",
+            "kind": "resource_read",
+            "from": "resource:attribute:ReleaseItems",
+            "to": "step:PrepareNewsletterReport",
+            "label": "AllInstanceKeys",
+            "span": {
+              "startLine": 400,
+              "startColumn": 10,
+              "endLine": 400,
+              "endColumn": 43
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0051",
+            "kind": "resource_read",
+            "from": "resource:attribute:ReleaseItems",
+            "to": "step:PrepareNewsletterReport",
+            "label": "Get",
+            "span": {
+              "startLine": 410,
+              "startColumn": 22,
+              "endLine": 410,
+              "endColumn": 48
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0052",
+            "kind": "resource_read",
+            "from": "resource:attribute:SentCount",
+            "to": "rpc:GetDexDisplay",
+            "label": "Get",
+            "span": {
+              "startLine": 685,
+              "startColumn": 19,
+              "endLine": 685,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0053",
+            "kind": "resource_read",
+            "from": "resource:attribute:SentCount",
+            "to": "rpc:GetDexSummary",
+            "label": "Get",
+            "span": {
+              "startLine": 668,
+              "startColumn": 19,
+              "endLine": 668,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0054",
+            "kind": "resource_read",
+            "from": "resource:attribute:SentCount",
+            "to": "rpc:GetNewsletterSnapshot",
+            "label": "Get",
+            "span": {
+              "startLine": 699,
+              "startColumn": 19,
+              "endLine": 699,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0055",
+            "kind": "resource_read",
+            "from": "resource:attribute:UnknownCount",
+            "to": "rpc:GetDexDisplay",
+            "label": "Get",
+            "span": {
+              "startLine": 685,
+              "startColumn": 19,
+              "endLine": 685,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0056",
+            "kind": "resource_read",
+            "from": "resource:attribute:UnknownCount",
+            "to": "rpc:GetDexSummary",
+            "label": "Get",
+            "span": {
+              "startLine": 668,
+              "startColumn": 19,
+              "endLine": 668,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0057",
+            "kind": "resource_read",
+            "from": "resource:attribute:UnknownCount",
+            "to": "rpc:GetNewsletterSnapshot",
+            "label": "Get",
+            "span": {
+              "startLine": 699,
+              "startColumn": 19,
+              "endLine": 699,
+              "endColumn": 42
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0058",
+            "kind": "resource_read",
+            "from": "resource:attribute:UnknownCount",
+            "to": "step:RecordDelivery",
+            "label": "Get",
+            "span": {
+              "startLine": 600,
+              "startColumn": 18,
+              "endLine": 600,
+              "endColumn": 38
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "execute",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0059",
+            "kind": "resource_read",
+            "from": "resource:attribute:UnknownCount",
+            "to": "step:RecordDeliveryUncertainty",
+            "label": "Get",
+            "span": {
+              "startLine": 619,
+              "startColumn": 16,
+              "endLine": 619,
+              "endColumn": 43
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "execute",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0060",
+            "kind": "resource_write",
+            "from": "step:FinishNewsletter",
+            "to": "resource:attribute:CampaignStatus",
+            "label": "Set",
+            "span": {
+              "startLine": 638,
+              "startColumn": 12,
+              "endLine": 638,
+              "endColumn": 48
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0061",
+            "kind": "transition",
+            "from": "step:GenerateNewsletterReport",
+            "to": "step:RecordGenerationFailure",
+            "label": "blocked",
+            "span": {
+              "startLine": 204,
+              "startColumn": 13,
+              "endLine": 204,
+              "endColumn": 50
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0062",
+            "kind": "transition",
+            "from": "step:GenerateNewsletterReport",
+            "to": "step:RecordGenerationFailure",
+            "label": "defect",
+            "span": {
+              "startLine": 205,
+              "startColumn": 68,
+              "endLine": 205,
+              "endColumn": 105
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0063",
+            "kind": "transition",
+            "from": "step:GenerateNewsletterReport",
+            "to": "step:RecordGenerationFailure",
+            "label": "invalidResponse",
+            "span": {
+              "startLine": 205,
+              "startColumn": 21,
+              "endLine": 205,
+              "endColumn": 58
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0064",
+            "kind": "transition",
+            "from": "step:GenerateNewsletterReport",
+            "to": "step:RecordGenerationFailure",
+            "label": "providerRejected",
+            "span": {
+              "startLine": 204,
+              "startColumn": 70,
+              "endLine": 204,
+              "endColumn": 107
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0065",
+            "kind": "transition",
+            "from": "step:GenerateNewsletterReport",
+            "to": "step:RecordGenerationFailure",
+            "label": "truncated",
+            "span": {
+              "startLine": 203,
+              "startColumn": 62,
+              "endLine": 203,
+              "endColumn": 99
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0066",
+            "kind": "failure_transition",
+            "from": "step:GenerateNewsletterReport",
+            "to": "step:RecordGenerationUncertainty",
+            "label": "Execute failure",
+            "metadata": {
+              "skipWaitFor": true
+            }
+          },
+          {
+            "id": "edge:0067",
+            "kind": "transition",
+            "from": "step:GenerateNewsletterReport",
+            "to": "step:SaveNewsletterReport",
+            "label": "generated",
+            "span": {
+              "startLine": 203,
+              "startColumn": 15,
+              "endLine": 203,
+              "endColumn": 49
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0068",
+            "kind": "transition",
+            "from": "step:ListConnectorReleases",
+            "to": "step:RecordConnectorReleasePage",
+            "label": "listed",
+            "span": {
+              "startLine": 187,
+              "startColumn": 12,
+              "endLine": 187,
+              "endColumn": 52
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0069",
+            "kind": "transition",
+            "from": "step:ListConnectorReleases",
+            "to": "step:RecordReleaseFailure",
+            "label": "authorizationRevoked",
+            "span": {
+              "startLine": 187,
+              "startColumn": 131,
+              "endLine": 187,
+              "endColumn": 165
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0070",
+            "kind": "transition",
+            "from": "step:ListConnectorReleases",
+            "to": "step:RecordReleaseFailure",
+            "label": "defect",
+            "span": {
+              "startLine": 188,
+              "startColumn": 165,
+              "endLine": 188,
+              "endColumn": 199
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0071",
+            "kind": "transition",
+            "from": "step:ListConnectorReleases",
+            "to": "step:RecordReleaseFailure",
+            "label": "insufficientScope",
+            "span": {
+              "startLine": 187,
+              "startColumn": 73,
+              "endLine": 187,
+              "endColumn": 107
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0072",
+            "kind": "transition",
+            "from": "step:ListConnectorReleases",
+            "to": "step:RecordReleaseFailure",
+            "label": "invalidResponse",
+            "span": {
+              "startLine": 188,
+              "startColumn": 121,
+              "endLine": 188,
+              "endColumn": 155
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0073",
+            "kind": "transition",
+            "from": "step:ListConnectorReleases",
+            "to": "step:RecordReleaseFailure",
+            "label": "notFound",
+            "span": {
+              "startLine": 188,
+              "startColumn": 14,
+              "endLine": 188,
+              "endColumn": 48
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0074",
+            "kind": "transition",
+            "from": "step:ListConnectorReleases",
+            "to": "step:RecordReleaseFailure",
+            "label": "providerRejected",
+            "span": {
+              "startLine": 188,
+              "startColumn": 68,
+              "endLine": 188,
+              "endColumn": 102
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0075",
+            "kind": "transition",
+            "from": "step:ListDexReleases",
+            "to": "step:RecordDexReleasePage",
+            "label": "listed",
+            "span": {
+              "startLine": 177,
+              "startColumn": 12,
+              "endLine": 177,
+              "endColumn": 46
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0076",
+            "kind": "transition",
+            "from": "step:ListDexReleases",
+            "to": "step:RecordReleaseFailure",
+            "label": "authorizationRevoked",
+            "span": {
+              "startLine": 177,
+              "startColumn": 125,
+              "endLine": 177,
+              "endColumn": 159
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0077",
+            "kind": "transition",
+            "from": "step:ListDexReleases",
+            "to": "step:RecordReleaseFailure",
+            "label": "defect",
+            "span": {
+              "startLine": 178,
+              "startColumn": 165,
+              "endLine": 178,
+              "endColumn": 199
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0078",
+            "kind": "transition",
+            "from": "step:ListDexReleases",
+            "to": "step:RecordReleaseFailure",
+            "label": "insufficientScope",
+            "span": {
+              "startLine": 177,
+              "startColumn": 67,
+              "endLine": 177,
+              "endColumn": 101
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0079",
+            "kind": "transition",
+            "from": "step:ListDexReleases",
+            "to": "step:RecordReleaseFailure",
+            "label": "invalidResponse",
+            "span": {
+              "startLine": 178,
+              "startColumn": 121,
+              "endLine": 178,
+              "endColumn": 155
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0080",
+            "kind": "transition",
+            "from": "step:ListDexReleases",
+            "to": "step:RecordReleaseFailure",
+            "label": "notFound",
+            "span": {
+              "startLine": 178,
+              "startColumn": 14,
+              "endLine": 178,
+              "endColumn": 48
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0081",
+            "kind": "transition",
+            "from": "step:ListDexReleases",
+            "to": "step:RecordReleaseFailure",
+            "label": "providerRejected",
+            "span": {
+              "startLine": 178,
+              "startColumn": 68,
+              "endLine": 178,
+              "endColumn": 102
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0082",
+            "kind": "resource_write",
+            "from": "step:LoadSubscribers",
+            "to": "resource:attribute:RecipientCount",
+            "label": "Set",
+            "span": {
+              "startLine": 527,
+              "startColumn": 11,
+              "endLine": 527,
+              "endColumn": 59
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0083",
+            "kind": "resource_write",
+            "from": "step:LoadSubscribers",
+            "to": "resource:attribute:Recipients",
+            "label": "Set",
+            "span": {
+              "startLine": 523,
+              "startColumn": 13,
+              "endLine": 523,
+              "endColumn": 77
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0084",
+            "kind": "resource_write",
+            "from": "step:PrepareNewsletterReport",
+            "to": "resource:attribute:ReleaseCount",
+            "label": "Set",
+            "span": {
+              "startLine": 402,
+              "startColumn": 12,
+              "endLine": 402,
+              "endColumn": 51
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0085",
+            "kind": "resource_write",
+            "from": "step:PrepareNewsletterReport",
+            "to": "resource:attribute:ReportInput",
+            "label": "Set",
+            "span": {
+              "startLine": 421,
+              "startColumn": 12,
+              "endLine": 421,
+              "endColumn": 39
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0086",
+            "kind": "resource_write",
+            "from": "step:PrepareNewsletterRun",
+            "to": "resource:attribute:CampaignStatus",
+            "label": "Set",
+            "span": {
+              "startLine": 268,
+              "startColumn": 3,
+              "endLine": 268,
+              "endColumn": 49
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0087",
+            "kind": "resource_write",
+            "from": "step:PrepareNewsletterRun",
+            "to": "resource:attribute:CurrentReleasePage",
+            "label": "Set",
+            "span": {
+              "startLine": 269,
+              "startColumn": 3,
+              "endLine": 269,
+              "endColumn": 78
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0088",
+            "kind": "resource_write",
+            "from": "step:PrepareNewsletterRun",
+            "to": "resource:attribute:NewsletterWindowValue",
+            "label": "Set",
+            "span": {
+              "startLine": 267,
+              "startColumn": 3,
+              "endLine": 267,
+              "endColumn": 98
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0089",
+            "kind": "resource_write",
+            "from": "step:PrepareNewsletterRun",
+            "to": "resource:attribute:TriggerIdentity",
+            "label": "Set",
+            "span": {
+              "startLine": 266,
+              "startColumn": 3,
+              "endLine": 266,
+              "endColumn": 34
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0090",
+            "kind": "resource_write",
+            "from": "step:RecordConnectorReleasePage",
+            "to": "resource:attribute:CurrentReleasePage",
+            "label": "Set",
+            "span": {
+              "startLine": 329,
+              "startColumn": 13,
+              "endLine": 329,
+              "endColumn": 49
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0091",
+            "kind": "resource_write",
+            "from": "step:RecordConnectorReleasePage",
+            "to": "resource:attribute:ReleaseItems",
+            "label": "Set",
+            "span": {
+              "startLine": 360,
+              "startColumn": 13,
+              "endLine": 360,
+              "endColumn": 90
+            },
+            "metadata": {
+              "function": "storeReleasePage",
+              "phase": "execute",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0092",
+            "kind": "resource_write",
+            "from": "step:RecordConnectorReleasePage",
+            "to": "resource:attribute:ReleasePages",
+            "label": "Set",
+            "span": {
+              "startLine": 364,
+              "startColumn": 12,
+              "endLine": 364,
+              "endColumn": 59
+            },
+            "metadata": {
+              "function": "storeReleasePage",
+              "phase": "execute",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0093",
+            "kind": "resource_write",
+            "from": "step:RecordDelivery",
+            "to": "resource:attribute:DeliveryResults",
+            "label": "Set",
+            "span": {
+              "startLine": 604,
+              "startColumn": 20,
+              "endLine": 604,
+              "endColumn": 67
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0094",
+            "kind": "resource_write",
+            "from": "step:RecordDelivery",
+            "to": "resource:attribute:UnknownCount",
+            "label": "Set",
+            "span": {
+              "startLine": 604,
+              "startColumn": 69,
+              "endLine": 604,
+              "endColumn": 94
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0095",
+            "kind": "resource_write",
+            "from": "step:RecordDeliveryUncertainty",
+            "to": "resource:attribute:DeliveryResults",
+            "label": "Set",
+            "span": {
+              "startLine": 623,
+              "startColumn": 20,
+              "endLine": 623,
+              "endColumn": 94
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0096",
+            "kind": "resource_write",
+            "from": "step:RecordDeliveryUncertainty",
+            "to": "resource:attribute:UnknownCount",
+            "label": "Set",
+            "span": {
+              "startLine": 623,
+              "startColumn": 96,
+              "endLine": 623,
+              "endColumn": 126
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0097",
+            "kind": "resource_write",
+            "from": "step:RecordDexReleasePage",
+            "to": "resource:attribute:CurrentReleasePage",
+            "label": "Set",
+            "span": {
+              "startLine": 297,
+              "startColumn": 13,
+              "endLine": 297,
+              "endColumn": 49
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0098",
+            "kind": "resource_write",
+            "from": "step:RecordDexReleasePage",
+            "to": "resource:attribute:ReleaseItems",
+            "label": "Set",
+            "span": {
+              "startLine": 360,
+              "startColumn": 13,
+              "endLine": 360,
+              "endColumn": 90
+            },
+            "metadata": {
+              "function": "storeReleasePage",
+              "phase": "execute",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0099",
+            "kind": "resource_write",
+            "from": "step:RecordDexReleasePage",
+            "to": "resource:attribute:ReleasePages",
+            "label": "Set",
+            "span": {
+              "startLine": 364,
+              "startColumn": 12,
+              "endLine": 364,
+              "endColumn": 59
+            },
+            "metadata": {
+              "function": "storeReleasePage",
+              "phase": "execute",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0100",
+            "kind": "resource_write",
+            "from": "step:RecordGenerationFailure",
+            "to": "resource:attribute:CampaignNotice",
+            "label": "Set",
+            "span": {
+              "startLine": 479,
+              "startColumn": 66,
+              "endLine": 479,
+              "endColumn": 152
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0101",
+            "kind": "resource_write",
+            "from": "step:RecordGenerationFailure",
+            "to": "resource:attribute:CampaignStatus",
+            "label": "Set",
+            "span": {
+              "startLine": 479,
+              "startColumn": 20,
+              "endLine": 479,
+              "endColumn": 64
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0102",
+            "kind": "resource_write",
+            "from": "step:RecordGenerationUncertainty",
+            "to": "resource:attribute:CampaignNotice",
+            "label": "Set",
+            "span": {
+              "startLine": 494,
+              "startColumn": 67,
+              "endLine": 494,
+              "endColumn": 168
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0103",
+            "kind": "resource_write",
+            "from": "step:RecordGenerationUncertainty",
+            "to": "resource:attribute:CampaignStatus",
+            "label": "Set",
+            "span": {
+              "startLine": 494,
+              "startColumn": 20,
+              "endLine": 494,
+              "endColumn": 65
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0104",
+            "kind": "resource_write",
+            "from": "step:RecordReleaseFailure",
+            "to": "resource:attribute:CampaignNotice",
+            "label": "Set",
+            "span": {
+              "startLine": 381,
+              "startColumn": 63,
+              "endLine": 381,
+              "endColumn": 154
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0105",
+            "kind": "resource_write",
+            "from": "step:RecordReleaseFailure",
+            "to": "resource:attribute:CampaignStatus",
+            "label": "Set",
+            "span": {
+              "startLine": 381,
+              "startColumn": 20,
+              "endLine": 381,
+              "endColumn": 61
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0106",
+            "kind": "resource_write",
+            "from": "step:SaveNewsletterReport",
+            "to": "resource:attribute:NewsletterReportValue",
+            "label": "Set",
+            "span": {
+              "startLine": 443,
+              "startColumn": 11,
+              "endLine": 443,
+              "endColumn": 49
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0107",
+            "kind": "resource_write",
+            "from": "step:SaveNoReleaseReport",
+            "to": "resource:attribute:NewsletterReportValue",
+            "label": "Set",
+            "span": {
+              "startLine": 465,
+              "startColumn": 12,
+              "endLine": 465,
+              "endColumn": 50
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0108",
+            "kind": "resource_write",
+            "from": "step:SelectNextRecipient",
+            "to": "resource:attribute:CampaignStatus",
+            "label": "Set",
+            "span": {
+              "startLine": 545,
+              "startColumn": 11,
+              "endLine": 545,
+              "endColumn": 45
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0109",
+            "kind": "resource_write",
+            "from": "step:SelectNextRecipient",
+            "to": "resource:attribute:CurrentRecipient",
+            "label": "Set",
+            "span": {
+              "startLine": 568,
+              "startColumn": 13,
+              "endLine": 568,
+              "endColumn": 49
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0110",
+            "kind": "transition",
+            "from": "step:SendNewsletterEmail",
+            "to": "step:RecordDelivery",
+            "label": "defect",
+            "span": {
+              "startLine": 226,
+              "startColumn": 53,
+              "endLine": 226,
+              "endColumn": 81
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0111",
+            "kind": "transition",
+            "from": "step:SendNewsletterEmail",
+            "to": "step:RecordDelivery",
+            "label": "providerRejected",
+            "span": {
+              "startLine": 225,
+              "startColumn": 58,
+              "endLine": 225,
+              "endColumn": 86
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0112",
+            "kind": "transition",
+            "from": "step:SendNewsletterEmail",
+            "to": "step:RecordDelivery",
+            "label": "sent",
+            "span": {
+              "startLine": 225,
+              "startColumn": 10,
+              "endLine": 225,
+              "endColumn": 38
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0113",
+            "kind": "transition",
+            "from": "step:SendNewsletterEmail",
+            "to": "step:RecordDelivery",
+            "label": "uncertain",
+            "span": {
+              "startLine": 226,
+              "startColumn": 15,
+              "endLine": 226,
+              "endColumn": 43
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0114",
+            "kind": "failure_transition",
+            "from": "step:SendNewsletterEmail",
+            "to": "step:RecordDeliveryUncertainty",
+            "label": "Execute failure",
+            "metadata": {
+              "skipWaitFor": true
+            }
+          }
+        ],
+        "diagnostics": [
+          {
+            "severity": "warning",
+            "code": "v2_step_group_shape",
+            "message": "group \"delivery\" is neither one run of Steps that lead to each other nor one choice that a single Step makes; it falls into 2 parts: LoadSubscribers; SelectNextRecipient, SendNewsletterEmail, RecordDelivery. Split it so that each group does one thing"
+          }
+        ],
+        "groups": [
+          {
+            "id": "intake",
+            "label": "Start",
+            "stepIds": [
+              "step:PrepareNewsletterRun"
+            ]
+          },
+          {
+            "id": "releases",
+            "label": "Releases",
+            "stepIds": [
+              "step:ListDexReleases",
+              "step:RecordDexReleasePage",
+              "step:ListConnectorReleases",
+              "step:RecordConnectorReleasePage",
+              "step:RecordReleaseFailure"
+            ]
+          },
+          {
+            "id": "report-intake",
+            "label": "Report input",
+            "stepIds": [
+              "step:PrepareNewsletterReport"
+            ]
+          },
+          {
+            "id": "report-generation",
+            "label": "Report",
+            "stepIds": [
+              "step:GenerateNewsletterReport",
+              "step:SaveNewsletterReport",
+              "step:RecordGenerationUncertainty"
+            ]
+          },
+          {
+            "id": "no-releases",
+            "label": "No releases",
+            "stepIds": [
+              "step:SaveNoReleaseReport"
+            ]
+          },
+          {
+            "id": "report-failure",
+            "label": "Report failure",
+            "stepIds": [
+              "step:RecordGenerationFailure"
+            ]
+          },
+          {
+            "id": "delivery",
+            "label": "Delivery",
+            "stepIds": [
+              "step:LoadSubscribers",
+              "step:SelectNextRecipient",
+              "step:SendNewsletterEmail",
+              "step:RecordDelivery",
+              "step:RecordDeliveryUncertainty"
+            ]
+          },
+          {
+            "id": "finish",
+            "label": "Finish",
+            "stepIds": [
+              "step:FinishNewsletter"
+            ]
+          }
+        ],
+        "v2": {
+          "indexedAttributes": [],
+          "summary": {
+            "rpcName": "GetDexSummary",
+            "fields": [
+              {
+                "attributeKey": "campaign-status",
+                "valueType": "string",
+                "editable": false,
+                "description": "Status",
+                "uiSlot": "status"
+              },
+              {
+                "attributeKey": "release-count",
+                "valueType": "int64",
+                "editable": false,
+                "description": "Releases"
+              },
+              {
+                "attributeKey": "sent-count",
+                "valueType": "int64",
+                "editable": false,
+                "description": "Sent"
+              }
+            ]
+          },
+          "display": {
+            "rpcName": "GetDexDisplay",
+            "fields": [
+              {
+                "attributeKey": "campaign-status",
+                "valueType": "string",
+                "editable": false,
+                "description": "Status",
+                "uiSlot": "status"
+              },
+              {
+                "attributeKey": "newsletter-report",
+                "valueType": "json",
+                "editable": false,
+                "description": "Report"
+              },
+              {
+                "attributeKey": "release-count",
+                "valueType": "int64",
+                "editable": false,
+                "description": "Releases"
+              },
+              {
+                "attributeKey": "recipient-count",
+                "valueType": "int64",
+                "editable": false,
+                "description": "Recipients"
+              },
+              {
+                "attributeKey": "sent-count",
+                "valueType": "int64",
+                "editable": false,
+                "description": "Sent"
+              },
+              {
+                "attributeKey": "failed-count",
+                "valueType": "int64",
+                "editable": false,
+                "description": "Failed"
+              },
+              {
+                "attributeKey": "unknown-count",
+                "valueType": "int64",
+                "editable": false,
+                "description": "Unknown"
+              },
+              {
+                "attributeKey": "campaign-notice",
+                "valueType": "string",
+                "editable": false,
+                "description": "Notice",
+                "uiSlot": "reason"
+              }
+            ]
+          },
+          "actions": [],
+          "start": {
+            "stepType": "PrepareNewsletterRun",
+            "input": {
+              "kind": "object",
+              "fields": [
+                {
+                  "name": "eventId",
+                  "required": true,
+                  "schema": {
+                    "kind": "string"
+                  }
+                },
+                {
+                  "name": "teamId",
+                  "required": true,
+                  "schema": {
+                    "kind": "string"
+                  }
+                },
+                {
+                  "name": "channelId",
+                  "required": true,
+                  "schema": {
+                    "kind": "string"
+                  }
+                },
+                {
+                  "name": "timestamp",
+                  "required": true,
+                  "schema": {
+                    "kind": "string"
+                  }
+                },
+                {
+                  "name": "userId",
+                  "required": true,
+                  "schema": {
+                    "kind": "string"
+                  }
+                }
+              ]
+            }
+          },
+          "connectorTriggerBindings": [
+            {
+              "connectorId": "slack",
+              "triggerName": "channelThreadCreated",
+              "connectionName": "newsletter-slack",
+              "bindingName": "publish-newsletter",
+              "modulePath": "github.com/superdurable/dex-connectors-library/connectors/slack",
+              "moduleVersion": "v1.0.0",
+              "configurationEnabled": true,
+              "configurationUI": {
+                "units": [
+                  {
+                    "id": "channel",
+                    "unitId": "channelPicker",
+                    "label": "Newsletter channel",
+                    "description": "Select the joined channel where administrators publish the newsletter.",
+                    "required": true,
+                    "bindings": [
+                      {
+                        "port": "channelId",
+                        "jsonPointer": "/channelId"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "administrators",
+                    "unitId": "memberPicker",
+                    "label": "Administrators allowed to publish",
+                    "description": "Select the Slack members allowed to send the exact message publish newsletter.",
+                    "required": true,
+                    "bindings": [
+                      {
+                        "port": "memberIds",
+                        "jsonPointer": "/threadTriggerMatcher/posterUserIds"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "flowType": "SubscriptionRegistryFlow",
+      "sourcePath": "internal/process/subscription_registry_flow.go",
+      "schemaVersion": "2.0",
+      "digest": "sha256:e496bf1217051d26b6e1a9265ec5d477c820d2b14952820d664132806579ee47",
+      "valid": true,
+      "graph": {
+        "schemaVersion": "2.0",
+        "valid": true,
+        "source": {
+          "language": "go",
+          "path": "internal/process/subscription_registry_flow.go"
+        },
+        "flow": {
+          "name": "SubscriptionRegistryFlow",
+          "startStepId": "step:AwaitSubscription",
+          "span": {
+            "startLine": 59,
+            "startColumn": 1,
+            "endLine": 61,
+            "endColumn": 2
+          }
+        },
+        "nodes": [
+          {
+            "id": "decision:rpc:GetDexDisplay:186:9",
+            "kind": "decision",
+            "name": "rpcResult",
+            "parentId": "rpc:GetDexDisplay",
+            "phase": "rpc",
+            "span": {
+              "startLine": 186,
+              "startColumn": 9,
+              "endLine": 186,
+              "endColumn": 117
+            },
+            "decision": {
+              "type": "rpcResult"
+            }
+          },
+          {
+            "id": "decision:rpc:GetDexSummary:171:9",
+            "kind": "decision",
+            "name": "rpcResult",
+            "parentId": "rpc:GetDexSummary",
+            "phase": "rpc",
+            "span": {
+              "startLine": 171,
+              "startColumn": 9,
+              "endLine": 171,
+              "endColumn": 90
+            },
+            "decision": {
+              "type": "rpcResult"
+            }
+          },
+          {
+            "id": "decision:rpc:ListSubscribers:161:9",
+            "kind": "decision",
+            "name": "rpcResult",
+            "parentId": "rpc:ListSubscribers",
+            "phase": "rpc",
+            "span": {
+              "startLine": 161,
+              "startColumn": 9,
+              "endLine": 161,
+              "endColumn": 50
+            },
+            "decision": {
+              "type": "rpcResult"
+            }
+          },
+          {
+            "id": "decision:rpc:SubmitSubscription:146:9",
+            "kind": "decision",
+            "name": "rpcResult",
+            "parentId": "rpc:SubmitSubscription",
+            "phase": "rpc",
+            "span": {
+              "startLine": 146,
+              "startColumn": 9,
+              "endLine": 146,
+              "endColumn": 95
+            },
+            "decision": {
+              "type": "rpcResult"
+            }
+          },
+          {
+            "id": "decision:step:AwaitSubscription:100:9",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:AwaitSubscription",
+            "phase": "execute",
+            "span": {
+              "startLine": 100,
+              "startColumn": 9,
+              "endLine": 102,
+              "endColumn": 5
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:RecordSubscription:131:9",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:RecordSubscription",
+            "phase": "execute",
+            "span": {
+              "startLine": 131,
+              "startColumn": 9,
+              "endLine": 131,
+              "endColumn": 43
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "resource:attribute:RegistryStatus",
+            "kind": "attribute",
+            "name": "registry-status",
+            "span": {
+              "startLine": 34,
+              "startColumn": 2,
+              "endLine": 34,
+              "endColumn": 71
+            },
+            "resource": {
+              "valueType": "string"
+            }
+          },
+          {
+            "id": "resource:attribute:SubscriberCount",
+            "kind": "attribute",
+            "name": "subscriber-count",
+            "span": {
+              "startLine": 35,
+              "startColumn": 2,
+              "endLine": 35,
+              "endColumn": 71
+            },
+            "resource": {
+              "valueType": "int64"
+            }
+          },
+          {
+            "id": "resource:attribute:Subscribers",
+            "kind": "attribute",
+            "name": "subscribers",
+            "span": {
+              "startLine": 36,
+              "startColumn": 2,
+              "endLine": 36,
+              "endColumn": 74
+            },
+            "resource": {
+              "valueType": "Subscriber",
+              "map": true
+            }
+          },
+          {
+            "id": "resource:channel:SubscriptionRequests",
+            "kind": "channel",
+            "name": "subscription-requests",
+            "span": {
+              "startLine": 37,
+              "startColumn": 2,
+              "endLine": 37,
+              "endColumn": 88
+            },
+            "resource": {
+              "valueType": "SubscriptionRequest"
+            }
+          },
+          {
+            "id": "rpc:GetDexDisplay",
+            "kind": "rpc",
+            "name": "GetDexDisplay",
+            "span": {
+              "startLine": 176,
+              "startColumn": 1,
+              "endLine": 187,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "rpc:GetDexSummary",
+            "kind": "rpc",
+            "name": "GetDexSummary",
+            "span": {
+              "startLine": 165,
+              "startColumn": 1,
+              "endLine": 172,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "rpc:ListSubscribers",
+            "kind": "rpc",
+            "name": "ListSubscribers",
+            "span": {
+              "startLine": 149,
+              "startColumn": 1,
+              "endLine": 162,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "rpc:SubmitSubscription",
+            "kind": "rpc",
+            "name": "SubmitSubscription",
+            "span": {
+              "startLine": 134,
+              "startColumn": 1,
+              "endLine": 147,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "step:AwaitSubscription",
+            "kind": "step",
+            "name": "AwaitSubscription",
+            "phase": "wait_for+execute",
+            "start": true,
+            "span": {
+              "startLine": 60,
+              "startColumn": 23,
+              "endLine": 60,
+              "endColumn": 63
+            },
+            "metadata": {
+              "explanation": "Wait for a visitor to submit an email address."
+            }
+          },
+          {
+            "id": "step:RecordSubscription",
+            "kind": "step",
+            "name": "RecordSubscription",
+            "phase": "execute",
+            "span": {
+              "startLine": 60,
+              "startColumn": 65,
+              "endLine": 60,
+              "endColumn": 101
+            },
+            "metadata": {
+              "explanation": "Save a new subscriber once and preserve an existing subscription."
+            }
+          },
+          {
+            "id": "wait:AwaitSubscription:87:9",
+            "kind": "wait",
+            "name": "until",
+            "parentId": "step:AwaitSubscription",
+            "phase": "wait_for",
+            "span": {
+              "startLine": 87,
+              "startColumn": 9,
+              "endLine": 87,
+              "endColumn": 49
+            },
+            "wait": {
+              "type": "until",
+              "conditions": [
+                {
+                  "index": 0,
+                  "kind": "channel",
+                  "label": "subscription-requests.for 1",
+                  "resourceId": "resource:channel:SubscriptionRequests",
+                  "span": {
+                    "startLine": 87,
+                    "startColumn": 19,
+                    "endLine": 87,
+                    "endColumn": 48
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge:0001",
+            "kind": "transition",
+            "from": "decision:step:AwaitSubscription:100:9",
+            "to": "step:RecordSubscription",
+            "label": "GoTo",
+            "span": {
+              "startLine": 100,
+              "startColumn": 9,
+              "endLine": 102,
+              "endColumn": 5
+            }
+          },
+          {
+            "id": "edge:0002",
+            "kind": "transition",
+            "from": "decision:step:RecordSubscription:131:9",
+            "to": "step:AwaitSubscription",
+            "label": "GoTo",
+            "span": {
+              "startLine": 131,
+              "startColumn": 9,
+              "endLine": 131,
+              "endColumn": 43
+            }
+          },
+          {
+            "id": "edge:0003",
+            "kind": "resource_read",
+            "from": "resource:attribute:RegistryStatus",
+            "to": "rpc:GetDexDisplay",
+            "label": "Get",
+            "span": {
+              "startLine": 205,
+              "startColumn": 16,
+              "endLine": 205,
+              "endColumn": 34
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0004",
+            "kind": "resource_read",
+            "from": "resource:attribute:SubscriberCount",
+            "to": "rpc:GetDexDisplay",
+            "label": "Get",
+            "span": {
+              "startLine": 205,
+              "startColumn": 16,
+              "endLine": 205,
+              "endColumn": 34
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0005",
+            "kind": "resource_read",
+            "from": "resource:attribute:SubscriberCount",
+            "to": "rpc:GetDexSummary",
+            "label": "Get",
+            "span": {
+              "startLine": 205,
+              "startColumn": 16,
+              "endLine": 205,
+              "endColumn": 34
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0006",
+            "kind": "resource_read",
+            "from": "resource:attribute:SubscriberCount",
+            "to": "step:RecordSubscription",
+            "label": "Get",
+            "span": {
+              "startLine": 205,
+              "startColumn": 16,
+              "endLine": 205,
+              "endColumn": 34
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "execute",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0007",
+            "kind": "resource_read",
+            "from": "resource:attribute:Subscribers",
+            "to": "rpc:ListSubscribers",
+            "label": "AllInstanceKeys",
+            "span": {
+              "startLine": 151,
+              "startColumn": 10,
+              "endLine": 151,
+              "endColumn": 42
+            },
+            "metadata": {
+              "phase": "rpc"
+            }
+          },
+          {
+            "id": "edge:0008",
+            "kind": "resource_read",
+            "from": "resource:attribute:Subscribers",
+            "to": "rpc:ListSubscribers",
+            "label": "Get",
+            "span": {
+              "startLine": 155,
+              "startColumn": 25,
+              "endLine": 155,
+              "endColumn": 50
+            },
+            "metadata": {
+              "phase": "rpc"
+            }
+          },
+          {
+            "id": "edge:0009",
+            "kind": "resource_read",
+            "from": "resource:attribute:Subscribers",
+            "to": "step:RecordSubscription",
+            "label": "Get",
+            "span": {
+              "startLine": 114,
+              "startColumn": 11,
+              "endLine": 114,
+              "endColumn": 36
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0010",
+            "kind": "resource_read",
+            "from": "resource:channel:SubscriptionRequests",
+            "to": "step:AwaitSubscription",
+            "label": "GetConditionResults",
+            "span": {
+              "startLine": 92,
+              "startColumn": 19,
+              "endLine": 92,
+              "endColumn": 64
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0011",
+            "kind": "wait_condition",
+            "from": "resource:channel:SubscriptionRequests",
+            "to": "wait:AwaitSubscription:87:9",
+            "label": "subscription-requests.for 1",
+            "span": {
+              "startLine": 87,
+              "startColumn": 19,
+              "endLine": 87,
+              "endColumn": 48
+            },
+            "metadata": {
+              "conditionIndex": 0
+            }
+          },
+          {
+            "id": "edge:0012",
+            "kind": "resource_publish",
+            "from": "rpc:SubmitSubscription",
+            "to": "resource:channel:SubscriptionRequests",
+            "label": "Publish",
+            "span": {
+              "startLine": 143,
+              "startColumn": 11,
+              "endLine": 143,
+              "endColumn": 53
+            },
+            "metadata": {
+              "phase": "rpc"
+            }
+          },
+          {
+            "id": "edge:0013",
+            "kind": "resource_write",
+            "from": "step:AwaitSubscription",
+            "to": "resource:attribute:RegistryStatus",
+            "label": "Set",
+            "span": {
+              "startLine": 84,
+              "startColumn": 12,
+              "endLine": 84,
+              "endColumn": 43
+            },
+            "metadata": {
+              "phase": "wait_for"
+            }
+          },
+          {
+            "id": "edge:0014",
+            "kind": "resource_write",
+            "from": "step:RecordSubscription",
+            "to": "resource:attribute:SubscriberCount",
+            "label": "Set",
+            "span": {
+              "startLine": 127,
+              "startColumn": 12,
+              "endLine": 127,
+              "endColumn": 45
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0015",
+            "kind": "resource_write",
+            "from": "step:RecordSubscription",
+            "to": "resource:attribute:Subscribers",
+            "label": "Set",
+            "span": {
+              "startLine": 120,
+              "startColumn": 12,
+              "endLine": 120,
+              "endColumn": 107
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          }
+        ],
+        "diagnostics": [],
+        "groups": [
+          {
+            "id": "subscriptions",
+            "label": "Subscriptions",
+            "stepIds": [
+              "step:AwaitSubscription",
+              "step:RecordSubscription"
+            ]
+          }
+        ],
+        "v2": {
+          "indexedAttributes": [],
+          "summary": {
+            "rpcName": "GetDexSummary",
+            "fields": [
+              {
+                "attributeKey": "subscriber-count",
+                "valueType": "int64",
+                "editable": false,
+                "description": "Subscribers"
+              }
+            ]
+          },
+          "display": {
+            "rpcName": "GetDexDisplay",
+            "fields": [
+              {
+                "attributeKey": "registry-status",
+                "valueType": "string",
+                "editable": false,
+                "description": "Status",
+                "uiSlot": "status"
+              },
+              {
+                "attributeKey": "subscriber-count",
+                "valueType": "int64",
+                "editable": false,
+                "description": "Subscribers"
+              }
+            ]
+          },
+          "actions": [],
+          "start": {
+            "stepType": "AwaitSubscription",
+            "input": {
+              "kind": "null"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

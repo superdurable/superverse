@@ -112,7 +112,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["summary", "flows"],
-      "description": "The Flows the card adds or changes, before any code: required on a card for a new application or a large change that adds, removes or changes a Flow's Steps, waits, transitions, Channels, Actions or the Flows it starts; absent otherwise. Studio draws it for the user until the build is complete. Names are the Go type names you will implement.",
+      "description": "The Flows the card adds or changes, before any code: required, before the first build of a Project that started from the default template (no card_design section, no unblocked push of yours yet), on a card that adds, removes or changes a Flow's Steps, waits, transitions, Channels, Actions or the Flows it starts; absent otherwise, and absent on every card recorded once the Project has built processes or for a Project that started from an example, whose real Flows Studio draws. Studio draws it for the user until the build is complete. Names are the Go type names you will implement.",
       "properties": {
         "summary": {
           "type": "string",

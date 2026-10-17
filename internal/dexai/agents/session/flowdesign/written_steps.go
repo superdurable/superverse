@@ -128,28 +128,6 @@ func snakeCase(name string) string {
 	return snake.String()
 }
 
-// Count is the number of Steps of the design written follows.
-func (written WrittenSteps) Count() int { return len(written.Steps) }
-
-// Kept counts the Steps of design that the design written follows also has,
-// in the same Flow, such as the Steps of an example that a Session's own
-// design keeps.
-func (written WrittenSteps) Kept(design Design) int {
-	designed := map[writtenStep]bool{}
-	for _, step := range written.Steps {
-		designed[writtenStep{FlowType: step.FlowType, StepType: step.StepType}] = true
-	}
-	kept := 0
-	for _, flow := range design.Flows {
-		for _, step := range flow.Steps {
-			if designed[writtenStep{FlowType: flow.FlowType, StepType: step.StepType}] {
-				kept++
-			}
-		}
-	}
-	return kept
-}
-
 // Names are the written Steps, each <flow_type>.<step_type>, in design order.
 func (written WrittenSteps) Names() []string {
 	names := []string{}

@@ -379,7 +379,7 @@ func agentDescription(value agentloop.AgentDescription) *pb.AgentDescription {
 	if p := value.StartingExample; p != nil {
 		out.StartingExample = &pb.AgentStartingExample{ExampleId: p.ExampleID, Choice: boundary.Enum[pb.AgentStartingExample_Choice](p.Choice)}
 		if build := p.FirstBuild; build != nil {
-			out.StartingExample.FirstBuild = &pb.AgentStartingExampleBuild{ExampleSteps: int32(build.ExampleSteps), BuiltSteps: int32(build.BuiltSteps), KeptSteps: int32(build.KeptSteps), Commit: build.Commit} //nolint:gosec // the Steps of one Flow design are few
+			out.StartingExample.FirstBuild = &pb.AgentStartingExampleBuild{ExampleSteps: int32(build.ExampleSteps), BuiltSteps: int32(build.BuiltSteps), KeptSteps: int32(build.KeptSteps), Commit: build.Commit} //nolint:gosec // counts bounded by the catalog and the gate's 256-Step limit
 		}
 	}
 	if p := value.MockProgress; p != nil {

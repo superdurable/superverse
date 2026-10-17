@@ -56,6 +56,8 @@ export interface MockProject {
   configurationReadFailures?: number;
   /** The built example the Project started from, as its snapshot names it. */
   example?: { exampleId: string; tree: string };
+  /** The commit Setup made, which the snapshot of a Project started from an example names. */
+  setupCommit?: string;
 }
 
 export interface MockPreparedPreviewSource extends Pick<
@@ -206,11 +208,12 @@ export function createProject(
   const id = randomHex(4);
   if (store.projects.has(id)) throw httpError(409, "Project ID already exists");
   const timestamp = nowIso();
+  const setupCommit = randomHex(40);
   const project: MockProject = {
     ...createSeedProject(),
     id,
     displayName: name.trim() || "Untitled app",
-    ...(example ? { example } : {}),
+    ...(example ? { example, setupCommit } : {}),
     createdAt: timestamp,
     updatedAt: timestamp,
     repository: {
@@ -223,7 +226,7 @@ export function createProject(
   if (idempotencyKey) store.projectAdmissions.set(idempotencyKey, id);
   store.mainCommits.unshift({
     projectId: id,
-    sourceCommitSha: randomHex(40),
+    sourceCommitSha: setupCommit,
     title: "Initialize project",
     committedAt: timestamp,
   });

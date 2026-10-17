@@ -185,7 +185,7 @@ between `GenerateSummary` and `SaveSummaryResult` waits on a new Channel
 it. The prompt points at the template's `AGENTS.md` and the in-repository skill
 section "Answer a waiting Step", and asks for the requirements card before any change.
 The card does not wait: the agent records it as version 1 and builds it in the same turn.
-On the mock model the `summary-approval` scenario's one input, chosen on the creation page,
+On the mock model the `summary-approval` scenario's first input, chosen on the creation page,
 shows it (R1 the approval Step, R2 the Action), streamed at 100 ms per delta: from the moment the
 Project is created the case watches the Flow tab, to which the first conversation switches at the
 card's first draft, show "Drafting" on the canvas's corner with the designed Steps' names as dashed
@@ -482,12 +482,14 @@ reply of the mock model itself, such as an input out of order, fails the spec wi
   Setup's Build processes (`PreparePreviewSource`). No other acceptance case calls these three RPCs.
   With either model it then opens Connect my agent from the agent picker, which lists the Session's
   remote agent connections (`ListRemoteAgentConnections`), none for a new Project.
-- `template-approval.spec.ts` runs `summary-approval`, one input sent from the creation page: it
+- `template-approval.spec.ts` runs `summary-approval`, input 1 sent from the creation page: it
   records the requirements card, the case configures the Preview while the turn runs, and the
   same turn's mock edit adds the
   `AwaitSummaryApproval` Step, the `SummaryApprovals` Channel and the `ApproveSummary` Action
   the prompt asks for, runs `go build ./...` and `make check-fdg-v2`, and pushes through the
-  real gate.
+  real gate. Last, with automatic builds off, it sends input 2 through SendMessage, a change after
+  that first build whose version 2 carries no design, and builds its push with the Flow tab's
+  Build processes.
 - `journey/new-project.spec.ts` sends `build-basic` from the creation page the same way.
 - The cases that need the real model choose the model `SUPERVERSE_E2E_MODEL_TARGET` names on the
   creation page and type their prompt. There is no default real model: they fail before they touch

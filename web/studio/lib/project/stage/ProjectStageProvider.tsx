@@ -46,7 +46,10 @@ export interface ProjectStageState {
   stage: ProjectStage;
   /** The Project and, once it is ready, its Session were read, so the facts below are not guesses. */
   known: boolean;
-  /** Processes built from the agent's own push exist, now or once before in this browser. */
+  /**
+   * Processes built from the agent's own push exist, now, once before in this browser, or once served by the
+   * Preview, which keeps its newest starts.
+   */
   hasOwnProcesses: boolean;
   /** A published version runs on Live. */
   hasPublished: boolean;
@@ -54,6 +57,25 @@ export interface ProjectStageState {
   hasRequirements: boolean;
   /** The Preview serves, or served before it stopped, a page of the agent's own push. */
   previewServed: boolean;
+  /**
+   * The Flow tab may draw a card's Flow design: a Project that started from the default template and has no
+   * processes built from the agent's own push yet, whose processes are the template's text summary until its
+   * first build. Once processes are built, and for any Project that started from an example, it draws the real
+   * flow only.
+   */
+  designFirst: boolean;
+  /**
+   * The Project started from an example, opened or matched, its Session's head is still the setup commit and no
+   * processes are built yet: the Flow tab draws the example's own Flow definitions at the tree it started from,
+   * never a Flow design. A later push needs its own build.
+   */
+  drawsExample: boolean;
+  /**
+   * No processes are built yet and the Preview is to build the Session's head, the agent's own: the setup commit
+   * of an opened example, or the agent's push after a matched or default-template start. A card without a design
+   * then reads as being built, as a built design did before a later card dropped it.
+   */
+  buildsOwnHead: boolean;
   /**
    * The commit the Project started from, the template's; empty while unknown and for a Project opened
    * from a built example, whose setup commit already holds the person's processes.
@@ -72,13 +94,18 @@ function stageFacts(project: ProjectSnapshot__Output | null, session: SessionSna
   const prepared = preview?.preparedSource;
   const description = session?.agent?.description;
   const hasPublished = Boolean(project?.live && !project.live.isRemoving);
+  const head = session?.headCommit ?? "";
   return {
     templateCommit,
     hasPublished,
+    headIsOwn: own(head),
+    // The definitions an example start draws are of the setup commit's tree, so a Session past it draws none.
+    headAtSetup: !head || head === project?.setup?.sourceCommit,
     builtNow:
       hasPublished ||
       (prepared?.status === "PREVIEW_SOURCE_STATUS_READY" && own(prepared.sourceCommit)) ||
-      own(preview?.sourceCommit),
+      own(preview?.sourceCommit) ||
+      (preview?.recentStarts ?? []).some((start) => start.outcome === "START_OUTCOME_READY" && own(start.sourceCommit)),
     previewServed: own(preview?.sourceCommit),
     hasRequirements: Number(description?.confirmedRequirements?.revision ?? 0) > 0,
   };
@@ -150,6 +177,9 @@ export function ProjectStageProvider({
     hasPublished: facts.hasPublished,
     hasRequirements: facts.hasRequirements,
     previewServed: facts.previewServed,
+    designFirst: project !== null && !project.example && !hasOwnProcesses,
+    drawsExample: Boolean(project?.example) && !hasOwnProcesses && facts.headAtSetup,
+    buildsOwnHead: project !== null && !hasOwnProcesses && facts.headIsOwn,
     templateCommit: facts.templateCommit,
   };
   return <ProjectStageContext.Provider value={value}>{children}</ProjectStageContext.Provider>;

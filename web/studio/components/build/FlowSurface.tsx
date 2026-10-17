@@ -10,8 +10,8 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef } from "react";
-import { useProcessDefinitions } from "@/lib/project/ProcessDefinitionsProvider";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useProcessDefinitions, type StepChanges } from "@/lib/project/ProcessDefinitionsProvider";
 import { useProjectResource } from "@/lib/project/ProjectResourceProvider";
 import { useProjectStage } from "@/lib/project/stage/ProjectStageProvider";
 import { useWaitingRuns, waitingCount } from "@/lib/project/WaitingRunsProvider";
@@ -19,11 +19,11 @@ import { preparedSourceOf } from "@/lib/session/session-status";
 import { useSessionResource } from "@/lib/session/SessionProvider";
 import { useDesignShown } from "@/lib/session/design/use-design-shown";
 import { useFlowDesign } from "@/lib/session/design/use-flow-design";
-import type { ProjectEnvironment } from "@/lib/shared/studio-routes";
+import { flowApiRoutes, type ProjectEnvironment } from "@/lib/shared/studio-routes";
 import { useQueryUpdate } from "@/lib/browser/use-query-update";
 import { useFlowCatalog } from "@/lib/flow/FlowCatalogProvider";
 import { useFlowHost } from "@/lib/flow/FlowHostProvider";
-import { LiveFlowScope, SessionFlowScope } from "@/components/flow/scope/FlowScope";
+import { ExampleFlowScope, LiveFlowScope, SessionFlowScope } from "@/components/flow/scope/FlowScope";
 import { DraftBrief } from "@/components/flow/scope/flow-design";
 import { FlowFrame } from "@/components/flow/scope/FlowSurfaces";
 import { LazyFlowCanvas, LazyProjectMap } from "@/components/flow/scope/LazyFlowViews";
@@ -34,8 +34,40 @@ import { versionNumber } from "@/lib/shared/version/version";
 import { CardBrief, DesignBar, DesignSurface } from "./DesignSurface";
 import { PreviewSourceControl } from "./PreviewSourceControl";
 
+/** How long the Steps a new build added or changed stay marked on its Process. */
+const BUILD_CHANGES_MS = 8000;
+/** When each build's marks on each Process end, from the first time this page drew them; never stored. */
+const buildChangesUntil = new Map<string, number>();
+
+/**
+ * The Steps the newest build added or changed in a Process, for a moment from the first time the canvas draws
+ * that build's Process in this page; a reload or a later visit marks nothing, and neither does a first build
+ * compared with the template commit the Project started from, whose processes are not the person's.
+ */
+function useBuildChanges(flowType: string | null, templateCommit: string): StepChanges | null {
+  const { buildChanges } = useProcessDefinitions();
+  const compared = buildChanges && buildChanges.since !== templateCommit ? buildChanges : null;
+  const changes = flowType ? (compared?.flows.get(flowType) ?? null) : null;
+  const id = changes && compared ? `${compared.key}:${flowType}` : null;
+  const [shown, setShown] = useState<string | null>(null);
+  useEffect(() => {
+    if (id === null) return undefined;
+    const until = buildChangesUntil.get(id) ?? Date.now() + BUILD_CHANGES_MS;
+    buildChangesUntil.set(id, until);
+    const left = until - Date.now();
+    if (left <= 0) return undefined;
+    const show = window.setTimeout(() => setShown(id), 0);
+    const end = window.setTimeout(() => setShown((current) => (current === id ? null : current)), left);
+    return () => {
+      window.clearTimeout(show);
+      window.clearTimeout(end);
+    };
+  }, [id]);
+  return id !== null && shown === id ? changes : null;
+}
+
 /** The Flow of the picked Process, or the project map when none is picked. */
-function FlowView({ environment }: { environment: ProjectEnvironment }) {
+function FlowView({ environment, changes }: { environment: ProjectEnvironment; changes: StepChanges | null }) {
   const { catalog, definitions, error, ready } = useFlowCatalog();
   const requested = useSearchParams().get("flowType");
   const { queryHref } = useQueryUpdate();
@@ -131,7 +163,7 @@ function FlowView({ environment }: { environment: ProjectEnvironment }) {
           {liveBanner && <span className="pointer-events-auto">{liveBanner}</span>}
         </div>
       )}
-      <LazyFlowCanvas flowType={requested} opensWhole />
+      <LazyFlowCanvas flowType={requested} opensWhole changes={changes} />
     </section>
   );
 }
@@ -156,11 +188,16 @@ export function PreviewSource({ projectId }: { projectId: string }) {
  * The Flow: the Flow Definitions of the version the bar selects. On Preview they are the prepared
  * current source of the Project's Session; on Live, the Live Release's, read-only. Before the Session
  * exists there is no source to draw; only mock mode, which wraps this surface in its fixture catalog,
- * still draws one. From a recorded requirements card with a Flow design until its build is complete, Preview
- * draws the designed Flows from the design instead, and shows them by itself once per card version.
- * Until processes are built from the agent's own push, Preview draws nothing of the template the
- * Project started from: it waits calmly, with Build processes only where a person must press it. While
- * the agent writes a card, its draft shows as the drafting overview: the drafted Step names and the summary.
+ * still draws one. The real flow shows whenever one exists; a card's Flow design is drawn only before the
+ * first build of a Project that started from the default template (`designFirst`), whose processes are the
+ * template's until then. There, from a recorded card with a design until its build is complete, Preview draws
+ * the designed Flows instead and shows them by itself once per card version; until processes are built from
+ * the agent's own push, Preview draws nothing of the template: it waits calmly, with Build processes only where
+ * a person must press it, and while the agent writes a card its draft shows as the drafting overview. A Project
+ * started from an example, opened or matched, draws that example's own Flow Definitions while its Session's head
+ * is the setup commit and the Preview has built no processes; a push past it waits for its own build. Once
+ * processes are built, a change keeps the last built flow while its push builds, under the Build processes strip,
+ * and the new build's processes then mark the Steps it added or changed for a moment.
  */
 export function FlowSurface({
   projectId,
@@ -175,7 +212,9 @@ export function FlowSurface({
   const requested = useSearchParams().get("flowType");
   const session = useSessionResource();
   const { canIntervene } = useFlowHost();
-  const design = useFlowDesign(environment === "preview" && canIntervene);
+  const stage = useProjectStage();
+  const drawsExample = environment === "preview" && stage.drawsExample;
+  const design = useFlowDesign(environment === "preview" && canIntervene && stage.designFirst);
   const designed = design?.body?.flows.map((flow) => flow.flowType) ?? [];
   const firstDesigned = designed[0] ?? null;
   const drawsDesign = requested !== null && designed.includes(requested);
@@ -204,20 +243,29 @@ export function FlowSurface({
     if (changed) replaceQuery((query) => ["flowId", "runId"].forEach((name) => query.delete(name)));
   }, [headCommit, replaceQuery, source]);
 
-  const stage = useProjectStage();
   const own = stage.hasOwnProcesses || environment === "live";
   const agent = session?.resource?.agent?.description;
-  // Recorded and still unbuilt: building while the agent works, otherwise its turn ended short of a build.
-  const cardState = agent?.status === "STATUS_WAITING_FOR_MESSAGE" ? "stalled" : "building";
   const prepared = preparedSourceOf(session?.resource);
   // Automatic builds off, or a failed build of the latest push, wait for a person's Build processes.
   const buildNeedsYou =
     !(session?.resource?.agent?.description?.isPreviewAutoDeployEnabled ?? true) ||
     (prepared?.status === "PREVIEW_SOURCE_STATUS_FAILED" && prepared.sourceCommit === headCommit);
+  // Recorded and still unbuilt: building while the agent works or the Preview builds the agent's own head,
+  // otherwise its turn ended short of a build.
+  const cardState =
+    agent?.status !== "STATUS_WAITING_FOR_MESSAGE" || (stage.buildsOwnHead && !buildNeedsYou) ? "building" : "stalled";
   const strip = session && (own || buildNeedsYou) ? <PreviewSource projectId={projectId} /> : null;
-  const canvas = <FlowView environment={environment} />;
+  const changes = useBuildChanges(environment === "preview" && own ? requested : null, stage.templateCommit);
+  const canvas = <FlowView environment={environment} changes={changes} />;
   let body;
-  if (design && drawsDesign && requested)
+  if (drawsExample)
+    body = (
+      <>
+        {strip}
+        <ExampleFlowScope basePath={flowApiRoutes.preparedSource(projectId)}>{canvas}</ExampleFlowScope>
+      </>
+    );
+  else if (design && drawsDesign && requested)
     body = (
       <>
         {strip}

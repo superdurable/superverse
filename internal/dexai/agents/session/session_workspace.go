@@ -364,14 +364,24 @@ func startingExampleSection(ctx dex.Context, describesPicked bool) string {
 	return comm.TruncateUTF8(startingExampleText(*started, recorded), agentloop.MaximumStartingExampleBytes)
 }
 
+// recordsNoCardDesign reports whether the cards the agent records carry no
+// Flow design, which every segment then says: the Project started from an
+// example, or a pushed, unblocked commit_and_push of the agent's handed a
+// commit to the Preview. Only a default-template Project before its first
+// build gets a design.
+func recordsNoCardDesign(ctx dex.Context) bool {
+	return comm.Must(agentStateAttribute.Get(ctx)).StartingExample != nil || dexflow.ValueOrZero(previewHandoffAttribute.Get(ctx)).Commit != ""
+}
+
 // recordStartingExampleBuild completes a matched Session's StartingExample,
 // in the commit of the tool result that is the Session's first build, the
 // first pushed, unblocked commit_and_push, before which neither the Preview
 // handoff nor a built design exists (the moment the starting_example section
 // ends), with what that build kept of the example: the Steps of the example's
-// design as this server build describes it at the recorded tree, those of the
-// confirmed design, which WrittenDesignSteps follows, the example's Steps it
-// keeps and the commit. It is written once; a later build, and a Session whose
+// Flow definitions as this server build embeds them at the recorded tree,
+// those of the Flow definitions the commit gate rendered of the pushed tree,
+// which the result carries, the example's Steps among them by Flow and Step
+// type, and the commit. It is written once; a later build, and a Session whose
 // first build came before this record existed, write nothing.
 func recordStartingExampleBuild(ctx dex.Context, call conversation.ToolCall, result agentloop.ToolExecutionResult) {
 	state := comm.Must(agentStateAttribute.Get(ctx))
@@ -380,20 +390,16 @@ func recordStartingExampleBuild(ctx dex.Context, call conversation.ToolCall, res
 		dexflow.ValueOrZero(previewHandoffAttribute.Get(ctx)).Commit != "" || dexflow.OptionalValue(builtFlowDesignAttribute.Get(ctx)) != nil {
 		return
 	}
-	build := agentloop.StartingExampleBuild{Commit: result.HeadCommit}
-	built := dexflow.OptionalValue(writtenDesignStepsAttribute.Get(ctx))
-	if confirmed := dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx)); built == nil || confirmed == nil || confirmed.Spec.Design == nil || built.Digest != confirmed.Spec.Design.Digest {
-		built = nil
-	}
-	if built != nil {
-		build.BuiltSteps = built.Count()
-	}
+	build := agentloop.StartingExampleBuild{BuiltSteps: len(result.DefinedSteps), Commit: result.HeadCommit}
 	if example, described := describedExample(*started); described {
-		card := conversation.ToolCall{ID: exampleBriefCallID, Name: conversation.ToolConfirmRequirements, Arguments: conversation.JSONObject(example.Card)}
-		if _, design, err := agentloop.RequestedRequirements(card, nil); err == nil && design != nil {
-			build.ExampleSteps = design.StepCount()
-			if built != nil {
-				build.KeptSteps = built.Kept(*design)
+		pushed := map[apptemplate.FlowStep]bool{}
+		for _, step := range result.DefinedSteps {
+			pushed[apptemplate.FlowStep{FlowType: step.FlowType, StepType: step.StepType}] = true
+		}
+		build.ExampleSteps = len(example.Steps)
+		for _, step := range example.Steps {
+			if pushed[step] {
+				build.KeptSteps++
 			}
 		}
 	}
@@ -429,17 +435,17 @@ func startingExampleText(started agentloop.StartingExample, recorded bool) strin
 		if recorded {
 			text.WriteString("Version 1 of the requirements is recorded: build it from this source; " + adapt)
 		} else {
-			text.WriteString("Write version 1 from the person's request; " + adapt)
+			text.WriteString("Write version 1 from the person's request, without a Flow design, as every card you record for this Project: this source already holds the example's Flows, which Studio draws from it; " + adapt)
 		}
 	case recorded:
-		text.WriteString("The person opened it in Studio: its card is recorded as version 1 and its design is built. Treat the person's next message as a change to version 1.\n")
+		text.WriteString("The person opened it in Studio: its card is recorded as version 1 and built by this source, whose Flows Studio draws. Treat the person's next message as a change to version 1; the card you record for that change carries no Flow design.\n")
 	default:
 		reason := "its card did not pass the requirements check"
 		if !described {
 			reason = "this server build does not hold the example at that tree"
 		}
 		fmt.Fprintf(&text, "The person opened it in Studio, but its card could not be recorded as version 1 (%s), so no requirements are recorded. "+
-			"Confirm requirements before a large change.\n", reason)
+			"Confirm requirements before a large change; that card is the person's change and, as every card you record for this Project, carries no Flow design: Studio draws this source's real Flows.\n", reason)
 	}
 	if !described {
 		text.WriteString("This server build does not describe that tree; read the source.\n")

@@ -1,0 +1,1064 @@
+{
+  "templateRevision": "app-template/slack-thread-approval@362fcb2a4edb59a1ac2782be0f29da2a3e9411f4",
+  "definitions": [
+    {
+      "flowType": "SlackThreadApprovalFlow",
+      "sourcePath": "internal/process/slack_thread_approval_flow.go",
+      "schemaVersion": "2.0",
+      "digest": "sha256:2d8c17348dcfdacc511707ae6d15e167501c077c79ed2a7f785a0cf248a9d0d8",
+      "valid": true,
+      "graph": {
+        "schemaVersion": "2.0",
+        "valid": true,
+        "source": {
+          "language": "go",
+          "path": "internal/process/slack_thread_approval_flow.go"
+        },
+        "flow": {
+          "name": "SlackThreadApprovalFlow",
+          "startStepId": "step:RecordThread",
+          "span": {
+            "startLine": 108,
+            "startColumn": 1,
+            "endLine": 127,
+            "endColumn": 2
+          }
+        },
+        "nodes": [
+          {
+            "id": "decision-dispatch:rpc:ReceiveThreadReply",
+            "kind": "decision_dispatch",
+            "name": "Decision",
+            "parentId": "rpc:ReceiveThreadReply",
+            "phase": "rpc",
+            "span": {
+              "startLine": 249,
+              "startColumn": 1,
+              "endLine": 283,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "decision:rpc:GetDexDisplay:308:9",
+            "kind": "decision",
+            "name": "rpcResult",
+            "parentId": "rpc:GetDexDisplay",
+            "phase": "rpc",
+            "span": {
+              "startLine": 308,
+              "startColumn": 9,
+              "endLine": 311,
+              "endColumn": 4
+            },
+            "decision": {
+              "type": "rpcResult"
+            }
+          },
+          {
+            "id": "decision:rpc:GetDexSummary:293:9",
+            "kind": "decision",
+            "name": "rpcResult",
+            "parentId": "rpc:GetDexSummary",
+            "phase": "rpc",
+            "span": {
+              "startLine": 293,
+              "startColumn": 9,
+              "endLine": 295,
+              "endColumn": 4
+            },
+            "decision": {
+              "type": "rpcResult"
+            }
+          },
+          {
+            "id": "decision:rpc:GetThreadApproval:321:9",
+            "kind": "decision",
+            "name": "rpcResult",
+            "parentId": "rpc:GetThreadApproval",
+            "phase": "rpc",
+            "span": {
+              "startLine": 321,
+              "startColumn": 9,
+              "endLine": 321,
+              "endColumn": 65
+            },
+            "decision": {
+              "type": "rpcResult"
+            }
+          },
+          {
+            "id": "decision:rpc:ReceiveThreadReply:261:10",
+            "kind": "decision",
+            "name": "rpcResult",
+            "parentId": "rpc:ReceiveThreadReply",
+            "condition": " == acceptedEventID != \"\" && acceptedEventID == reply.EventID",
+            "phase": "rpc",
+            "span": {
+              "startLine": 261,
+              "startColumn": 10,
+              "endLine": 261,
+              "endColumn": 103
+            },
+            "decision": {
+              "type": "rpcResult"
+            }
+          },
+          {
+            "id": "decision:rpc:ReceiveThreadReply:265:10",
+            "kind": "decision",
+            "name": "rpcResult",
+            "parentId": "rpc:ReceiveThreadReply",
+            "condition": " == status != ThreadStatusWaitingForReply",
+            "phase": "rpc",
+            "span": {
+              "startLine": 265,
+              "startColumn": 10,
+              "endLine": 265,
+              "endColumn": 86
+            },
+            "decision": {
+              "type": "rpcResult"
+            }
+          },
+          {
+            "id": "decision:rpc:ReceiveThreadReply:279:9",
+            "kind": "decision",
+            "name": "rpcResult",
+            "parentId": "rpc:ReceiveThreadReply",
+            "condition": "otherwise",
+            "phase": "rpc",
+            "span": {
+              "startLine": 279,
+              "startColumn": 9,
+              "endLine": 282,
+              "endColumn": 3
+            },
+            "decision": {
+              "type": "rpcResult"
+            }
+          },
+          {
+            "id": "decision:step:CompleteThread:221:9",
+            "kind": "decision",
+            "name": "gracefulComplete",
+            "parentId": "step:CompleteThread",
+            "phase": "execute",
+            "span": {
+              "startLine": 221,
+              "startColumn": 9,
+              "endLine": 221,
+              "endColumn": 34
+            },
+            "decision": {
+              "type": "gracefulComplete"
+            }
+          },
+          {
+            "id": "decision:step:RecordReplyFailure:244:9",
+            "kind": "decision",
+            "name": "gracefulComplete",
+            "parentId": "step:RecordReplyFailure",
+            "phase": "execute",
+            "span": {
+              "startLine": 244,
+              "startColumn": 9,
+              "endLine": 244,
+              "endColumn": 34
+            },
+            "decision": {
+              "type": "gracefulComplete"
+            }
+          },
+          {
+            "id": "decision:step:RecordThread:203:9",
+            "kind": "decision",
+            "name": "deadEnd",
+            "parentId": "step:RecordThread",
+            "phase": "execute",
+            "span": {
+              "startLine": 203,
+              "startColumn": 9,
+              "endLine": 203,
+              "endColumn": 22
+            },
+            "decision": {
+              "type": "deadEnd"
+            }
+          },
+          {
+            "id": "resource:attribute:ThreadApprovalNotice",
+            "kind": "attribute",
+            "name": "thread-notice",
+            "span": {
+              "startLine": 79,
+              "startColumn": 2,
+              "endLine": 79,
+              "endColumn": 75
+            },
+            "resource": {
+              "valueType": "string"
+            }
+          },
+          {
+            "id": "resource:attribute:ThreadApprovalReplyEventID",
+            "kind": "attribute",
+            "name": "reply-event-id",
+            "span": {
+              "startLine": 77,
+              "startColumn": 2,
+              "endLine": 77,
+              "endColumn": 76
+            },
+            "resource": {
+              "valueType": "string"
+            }
+          },
+          {
+            "id": "resource:attribute:ThreadApprovalReplyUserID",
+            "kind": "attribute",
+            "name": "reply-user-id",
+            "span": {
+              "startLine": 78,
+              "startColumn": 2,
+              "endLine": 78,
+              "endColumn": 75
+            },
+            "resource": {
+              "valueType": "string"
+            }
+          },
+          {
+            "id": "resource:attribute:ThreadApprovalStatus",
+            "kind": "attribute",
+            "name": "thread-status",
+            "span": {
+              "startLine": 75,
+              "startColumn": 2,
+              "endLine": 75,
+              "endColumn": 154
+            },
+            "resource": {
+              "valueType": "string"
+            }
+          },
+          {
+            "id": "resource:attribute:ThreadApprovalThread",
+            "kind": "attribute",
+            "name": "thread",
+            "span": {
+              "startLine": 76,
+              "startColumn": 2,
+              "endLine": 76,
+              "endColumn": 73
+            },
+            "resource": {
+              "valueType": "ThreadInput"
+            }
+          },
+          {
+            "id": "rpc:GetDexDisplay",
+            "kind": "rpc",
+            "name": "GetDexDisplay",
+            "span": {
+              "startLine": 302,
+              "startColumn": 1,
+              "endLine": 312,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "rpc:GetDexSummary",
+            "kind": "rpc",
+            "name": "GetDexSummary",
+            "span": {
+              "startLine": 287,
+              "startColumn": 1,
+              "endLine": 296,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "rpc:GetThreadApproval",
+            "kind": "rpc",
+            "name": "GetThreadApproval",
+            "span": {
+              "startLine": 315,
+              "startColumn": 1,
+              "endLine": 322,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "rpc:ReceiveThreadReply",
+            "kind": "rpc",
+            "name": "ReceiveThreadReply",
+            "span": {
+              "startLine": 249,
+              "startColumn": 1,
+              "endLine": 283,
+              "endColumn": 2
+            }
+          },
+          {
+            "id": "step:CompleteThread",
+            "kind": "step",
+            "name": "CompleteThread",
+            "phase": "execute",
+            "span": {
+              "startLine": 124,
+              "startColumn": 3,
+              "endLine": 124,
+              "endColumn": 35
+            },
+            "metadata": {
+              "explanation": "Complete once Slack confirms the completion reply."
+            }
+          },
+          {
+            "id": "step:PostCompletionReply",
+            "kind": "step",
+            "name": "PostCompletionReply",
+            "phase": "execute",
+            "span": {
+              "startLine": 111,
+              "startColumn": 3,
+              "endLine": 123,
+              "endColumn": 6
+            },
+            "metadata": {
+              "connector": {
+                "configurationEnabled": true,
+                "configurationUI": {
+                  "units": []
+                },
+                "connectionName": "slack-approvals",
+                "connectorId": "slack",
+                "modulePath": "github.com/superdurable/dex-connectors-library/connectors/slack",
+                "moduleVersion": "v1.0.0",
+                "operationId": "postThreadReply",
+                "operationKind": "mutation"
+              },
+              "connectorFactory": true,
+              "connectorOperationKind": "mutation",
+              "explanation": "Post Processing complete. into the thread once a matching reply arrived."
+            }
+          },
+          {
+            "id": "step:RecordReplyFailure",
+            "kind": "step",
+            "name": "RecordReplyFailure",
+            "phase": "execute",
+            "span": {
+              "startLine": 125,
+              "startColumn": 3,
+              "endLine": 125,
+              "endColumn": 39
+            },
+            "metadata": {
+              "explanation": "Record why the completion reply was not confirmed, without posting it again."
+            }
+          },
+          {
+            "id": "step:RecordThread",
+            "kind": "step",
+            "name": "RecordThread",
+            "phase": "execute",
+            "start": true,
+            "span": {
+              "startLine": 110,
+              "startColumn": 3,
+              "endLine": 110,
+              "endColumn": 38
+            },
+            "metadata": {
+              "explanation": "Keep the Slack thread that the new channel message started and wait for a reply in it."
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge:0001",
+            "kind": "transition",
+            "from": "decision:rpc:ReceiveThreadReply:279:9",
+            "to": "step:PostCompletionReply",
+            "label": "fan-out",
+            "span": {
+              "startLine": 281,
+              "startColumn": 33,
+              "endLine": 281,
+              "endColumn": 108
+            }
+          },
+          {
+            "id": "edge:0002",
+            "kind": "resource_read",
+            "from": "resource:attribute:ThreadApprovalNotice",
+            "to": "rpc:GetDexDisplay",
+            "label": "Get",
+            "span": {
+              "startLine": 339,
+              "startColumn": 16,
+              "endLine": 339,
+              "endColumn": 34
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0003",
+            "kind": "resource_read",
+            "from": "resource:attribute:ThreadApprovalNotice",
+            "to": "rpc:GetDexSummary",
+            "label": "Get",
+            "span": {
+              "startLine": 339,
+              "startColumn": 16,
+              "endLine": 339,
+              "endColumn": 34
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0004",
+            "kind": "resource_read",
+            "from": "resource:attribute:ThreadApprovalNotice",
+            "to": "rpc:GetThreadApproval",
+            "label": "Get",
+            "span": {
+              "startLine": 339,
+              "startColumn": 16,
+              "endLine": 339,
+              "endColumn": 34
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0005",
+            "kind": "resource_read",
+            "from": "resource:attribute:ThreadApprovalReplyEventID",
+            "to": "rpc:ReceiveThreadReply",
+            "label": "Get",
+            "span": {
+              "startLine": 339,
+              "startColumn": 16,
+              "endLine": 339,
+              "endColumn": 34
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0006",
+            "kind": "resource_read",
+            "from": "resource:attribute:ThreadApprovalReplyUserID",
+            "to": "rpc:GetDexDisplay",
+            "label": "Get",
+            "span": {
+              "startLine": 339,
+              "startColumn": 16,
+              "endLine": 339,
+              "endColumn": 34
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0007",
+            "kind": "resource_read",
+            "from": "resource:attribute:ThreadApprovalReplyUserID",
+            "to": "rpc:GetDexSummary",
+            "label": "Get",
+            "span": {
+              "startLine": 339,
+              "startColumn": 16,
+              "endLine": 339,
+              "endColumn": 34
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0008",
+            "kind": "resource_read",
+            "from": "resource:attribute:ThreadApprovalReplyUserID",
+            "to": "rpc:GetThreadApproval",
+            "label": "Get",
+            "span": {
+              "startLine": 339,
+              "startColumn": 16,
+              "endLine": 339,
+              "endColumn": 34
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0009",
+            "kind": "resource_read",
+            "from": "resource:attribute:ThreadApprovalStatus",
+            "to": "rpc:GetDexDisplay",
+            "label": "Get",
+            "span": {
+              "startLine": 339,
+              "startColumn": 16,
+              "endLine": 339,
+              "endColumn": 34
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0010",
+            "kind": "resource_read",
+            "from": "resource:attribute:ThreadApprovalStatus",
+            "to": "rpc:GetDexSummary",
+            "label": "Get",
+            "span": {
+              "startLine": 339,
+              "startColumn": 16,
+              "endLine": 339,
+              "endColumn": 34
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0011",
+            "kind": "resource_read",
+            "from": "resource:attribute:ThreadApprovalStatus",
+            "to": "rpc:GetThreadApproval",
+            "label": "Get",
+            "span": {
+              "startLine": 339,
+              "startColumn": 16,
+              "endLine": 339,
+              "endColumn": 34
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0012",
+            "kind": "resource_read",
+            "from": "resource:attribute:ThreadApprovalStatus",
+            "to": "rpc:ReceiveThreadReply",
+            "label": "Get",
+            "span": {
+              "startLine": 339,
+              "startColumn": 16,
+              "endLine": 339,
+              "endColumn": 34
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0013",
+            "kind": "resource_read",
+            "from": "resource:attribute:ThreadApprovalThread",
+            "to": "rpc:GetDexDisplay",
+            "label": "Get",
+            "span": {
+              "startLine": 339,
+              "startColumn": 16,
+              "endLine": 339,
+              "endColumn": 34
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0014",
+            "kind": "resource_read",
+            "from": "resource:attribute:ThreadApprovalThread",
+            "to": "rpc:GetDexSummary",
+            "label": "Get",
+            "span": {
+              "startLine": 339,
+              "startColumn": 16,
+              "endLine": 339,
+              "endColumn": 34
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0015",
+            "kind": "resource_read",
+            "from": "resource:attribute:ThreadApprovalThread",
+            "to": "rpc:GetThreadApproval",
+            "label": "Get",
+            "span": {
+              "startLine": 339,
+              "startColumn": 16,
+              "endLine": 339,
+              "endColumn": 34
+            },
+            "metadata": {
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
+            }
+          },
+          {
+            "id": "edge:0016",
+            "kind": "resource_read",
+            "from": "resource:attribute:ThreadApprovalThread",
+            "to": "rpc:ReceiveThreadReply",
+            "label": "Get",
+            "span": {
+              "startLine": 267,
+              "startColumn": 17,
+              "endLine": 267,
+              "endColumn": 46
+            },
+            "metadata": {
+              "phase": "rpc"
+            }
+          },
+          {
+            "id": "edge:0017",
+            "kind": "resource_write",
+            "from": "rpc:ReceiveThreadReply",
+            "to": "resource:attribute:ThreadApprovalReplyEventID",
+            "label": "Set",
+            "span": {
+              "startLine": 273,
+              "startColumn": 3,
+              "endLine": 273,
+              "endColumn": 53
+            },
+            "metadata": {
+              "phase": "rpc"
+            }
+          },
+          {
+            "id": "edge:0018",
+            "kind": "resource_write",
+            "from": "rpc:ReceiveThreadReply",
+            "to": "resource:attribute:ThreadApprovalReplyUserID",
+            "label": "Set",
+            "span": {
+              "startLine": 274,
+              "startColumn": 3,
+              "endLine": 274,
+              "endColumn": 51
+            },
+            "metadata": {
+              "phase": "rpc"
+            }
+          },
+          {
+            "id": "edge:0019",
+            "kind": "resource_write",
+            "from": "rpc:ReceiveThreadReply",
+            "to": "resource:attribute:ThreadApprovalStatus",
+            "label": "Set",
+            "span": {
+              "startLine": 272,
+              "startColumn": 3,
+              "endLine": 272,
+              "endColumn": 58
+            },
+            "metadata": {
+              "phase": "rpc"
+            }
+          },
+          {
+            "id": "edge:0020",
+            "kind": "resource_write",
+            "from": "step:CompleteThread",
+            "to": "resource:attribute:ThreadApprovalStatus",
+            "label": "Set",
+            "span": {
+              "startLine": 218,
+              "startColumn": 11,
+              "endLine": 218,
+              "endColumn": 63
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0021",
+            "kind": "transition",
+            "from": "step:PostCompletionReply",
+            "to": "step:CompleteThread",
+            "label": "sent",
+            "span": {
+              "startLine": 120,
+              "startColumn": 22,
+              "endLine": 120,
+              "endColumn": 50
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0022",
+            "kind": "transition",
+            "from": "step:PostCompletionReply",
+            "to": "step:RecordReplyFailure",
+            "label": "defect",
+            "span": {
+              "startLine": 121,
+              "startColumn": 64,
+              "endLine": 121,
+              "endColumn": 96
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0023",
+            "kind": "transition",
+            "from": "step:PostCompletionReply",
+            "to": "step:RecordReplyFailure",
+            "label": "providerRejected",
+            "span": {
+              "startLine": 121,
+              "startColumn": 22,
+              "endLine": 121,
+              "endColumn": 54
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0024",
+            "kind": "transition",
+            "from": "step:PostCompletionReply",
+            "to": "step:RecordReplyFailure",
+            "label": "uncertain",
+            "span": {
+              "startLine": 122,
+              "startColumn": 15,
+              "endLine": 122,
+              "endColumn": 47
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0025",
+            "kind": "resource_write",
+            "from": "step:RecordReplyFailure",
+            "to": "resource:attribute:ThreadApprovalNotice",
+            "label": "Set",
+            "span": {
+              "startLine": 241,
+              "startColumn": 62,
+              "endLine": 241,
+              "endColumn": 99
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0026",
+            "kind": "resource_write",
+            "from": "step:RecordReplyFailure",
+            "to": "resource:attribute:ThreadApprovalStatus",
+            "label": "Set",
+            "span": {
+              "startLine": 241,
+              "startColumn": 23,
+              "endLine": 241,
+              "endColumn": 60
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0027",
+            "kind": "resource_write",
+            "from": "step:RecordThread",
+            "to": "resource:attribute:ThreadApprovalStatus",
+            "label": "Set",
+            "span": {
+              "startLine": 200,
+              "startColumn": 62,
+              "endLine": 200,
+              "endColumn": 120
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0028",
+            "kind": "resource_write",
+            "from": "step:RecordThread",
+            "to": "resource:attribute:ThreadApprovalThread",
+            "label": "Set",
+            "span": {
+              "startLine": 200,
+              "startColumn": 23,
+              "endLine": 200,
+              "endColumn": 60
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          }
+        ],
+        "diagnostics": [],
+        "groups": [
+          {
+            "id": "thread",
+            "label": "Thread",
+            "stepIds": [
+              "step:RecordThread"
+            ]
+          },
+          {
+            "id": "reply",
+            "label": "Reply",
+            "stepIds": [
+              "step:PostCompletionReply",
+              "step:CompleteThread",
+              "step:RecordReplyFailure"
+            ]
+          }
+        ],
+        "v2": {
+          "indexedAttributes": [
+            {
+              "attributeKey": "thread-status",
+              "indexKey": "keyword1",
+              "indexType": "keyword",
+              "valueType": "string",
+              "description": "Thread approval status"
+            }
+          ],
+          "summary": {
+            "rpcName": "GetDexSummary",
+            "fields": [
+              {
+                "attributeKey": "reply-user-id",
+                "valueType": "string",
+                "editable": false,
+                "description": "Replied by"
+              },
+              {
+                "attributeKey": "thread-notice",
+                "valueType": "string",
+                "editable": false,
+                "description": "Notice"
+              }
+            ]
+          },
+          "display": {
+            "rpcName": "GetDexDisplay",
+            "fields": [
+              {
+                "attributeKey": "thread-status",
+                "valueType": "string",
+                "editable": false,
+                "description": "Status",
+                "uiSlot": "status"
+              },
+              {
+                "attributeKey": "thread",
+                "valueType": "json",
+                "editable": false,
+                "description": "Slack thread"
+              },
+              {
+                "attributeKey": "reply-user-id",
+                "valueType": "string",
+                "editable": false,
+                "description": "Replied by"
+              },
+              {
+                "attributeKey": "thread-notice",
+                "valueType": "string",
+                "editable": false,
+                "description": "Notice",
+                "uiSlot": "reason"
+              }
+            ]
+          },
+          "actions": [],
+          "start": {
+            "stepType": "RecordThread",
+            "input": {
+              "kind": "object",
+              "fields": [
+                {
+                  "name": "eventId",
+                  "required": true,
+                  "schema": {
+                    "kind": "string"
+                  }
+                },
+                {
+                  "name": "teamId",
+                  "required": true,
+                  "schema": {
+                    "kind": "string"
+                  }
+                },
+                {
+                  "name": "channelId",
+                  "required": true,
+                  "schema": {
+                    "kind": "string"
+                  }
+                },
+                {
+                  "name": "threadTimestamp",
+                  "required": true,
+                  "schema": {
+                    "kind": "string"
+                  }
+                }
+              ]
+            }
+          },
+          "connectorTriggerBindings": [
+            {
+              "connectorId": "slack",
+              "triggerName": "threadReplyCreated",
+              "connectionName": "slack-approvals",
+              "bindingName": "slack-thread-approval-reply",
+              "modulePath": "github.com/superdurable/dex-connectors-library/connectors/slack",
+              "moduleVersion": "v1.0.0",
+              "configurationEnabled": true,
+              "configurationUI": {
+                "units": [
+                  {
+                    "id": "channel",
+                    "unitId": "channelPicker",
+                    "label": "Approval channel",
+                    "description": "Select the same channel as the start Trigger.",
+                    "required": true,
+                    "bindings": [
+                      {
+                        "port": "channelId",
+                        "jsonPointer": "/channelId"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "message",
+                    "unitId": "textInput",
+                    "label": "Reply contains",
+                    "description": "Enter text a reply must contain, such as approve; leave blank to match any reply.",
+                    "required": false,
+                    "bindings": [
+                      {
+                        "port": "text",
+                        "jsonPointer": "/threadReplyMatcher/messageContains"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "approvers",
+                    "unitId": "memberPicker",
+                    "label": "Members allowed to reply",
+                    "description": "Select the members whose thread replies finish the approval.",
+                    "required": true,
+                    "bindings": [
+                      {
+                        "port": "memberIds",
+                        "jsonPointer": "/threadReplyMatcher/posterUserIds"
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "connectorId": "slack",
+              "triggerName": "channelThreadCreated",
+              "connectionName": "slack-approvals",
+              "bindingName": "slack-thread-approval-start",
+              "modulePath": "github.com/superdurable/dex-connectors-library/connectors/slack",
+              "moduleVersion": "v1.0.0",
+              "configurationEnabled": true,
+              "configurationUI": {
+                "units": [
+                  {
+                    "id": "channel",
+                    "unitId": "channelPicker",
+                    "label": "Approval channel",
+                    "description": "Select the joined Slack channel whose new messages start a thread approval.",
+                    "required": true,
+                    "bindings": [
+                      {
+                        "port": "channelId",
+                        "jsonPointer": "/channelId"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "message",
+                    "unitId": "textInput",
+                    "label": "Start message contains",
+                    "description": "Enter text the new message must contain; leave blank to match any message.",
+                    "required": false,
+                    "bindings": [
+                      {
+                        "port": "text",
+                        "jsonPointer": "/threadTriggerMatcher/messageContains"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

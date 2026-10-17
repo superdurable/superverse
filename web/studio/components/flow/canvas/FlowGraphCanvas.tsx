@@ -44,13 +44,15 @@ export type StepMarkText = "new" | "changed";
 
 /**
  * A stage carries its Steps' marks: "new" when every marked member is new and none is unmarked, else
- * "changed" when any member is marked. An unwritten Step is drawn dashed, as a planned one is.
+ * "changed" when any member is marked. An unwritten Step is drawn dashed, as a planned one is. Pulsing marks
+ * are a new build's, shown for a moment.
  */
 function markedScene(
   scene: Scene,
   marks: ReadonlyMap<string, StepMarkText>,
   groups: StepGroup[],
   unwritten: ReadonlySet<string>,
+  pulse: boolean,
 ): Scene {
   const markOf = (box: Box): StepMarkText | undefined => {
     if (box.kind === "step") return marks.get(box.id);
@@ -62,7 +64,15 @@ function markedScene(
   };
   const writtenState = (box: Box): Partial<Box> =>
     box.kind === "step" && unwritten.has(box.id) ? { emphasis: "planned", unwritten: true } : {};
-  return { ...scene, boxes: scene.boxes.map((box) => ({ ...box, mark: markOf(box), ...writtenState(box) })) };
+  return {
+    ...scene,
+    boxes: scene.boxes.map((box) => ({
+      ...box,
+      mark: markOf(box),
+      markPulses: pulse || undefined,
+      ...writtenState(box),
+    })),
+  };
 }
 
 /**
@@ -76,6 +86,7 @@ export function FlowGraphCanvas({
   fitKey,
   overlay = null,
   marks,
+  marksPulse = false,
   unwritten,
   notice,
   renderPanel,
@@ -105,6 +116,8 @@ export function FlowGraphCanvas({
   overlay?: RunOverlay | null;
   /** Text marks by Step id. */
   marks?: ReadonlyMap<string, StepMarkText>;
+  /** The marks pulse where motion is welcome: a new build's, which the host shows for a moment. */
+  marksPulse?: boolean;
   /** The ids of Steps whose code is not written yet, such as a design's while the agent builds it. */
   unwritten?: ReadonlySet<string>;
   /** A line above the drawing, such as a failed run read. */
@@ -146,8 +159,10 @@ export function FlowGraphCanvas({
       { direction, run: overlay, groups, openStages: stages.openStages },
       sources,
     );
-    return marks || unwritten ? markedScene(drawn, marks ?? new Map(), groups, unwritten ?? new Set()) : drawn;
-  }, [detourFor, direction, flow, groups, marks, overlay, stages.openStages, stages.scene, unwritten]);
+    return marks || unwritten
+      ? markedScene(drawn, marks ?? new Map(), groups, unwritten ?? new Set(), marksPulse)
+      : drawn;
+  }, [detourFor, direction, flow, groups, marks, marksPulse, overlay, stages.openStages, stages.scene, unwritten]);
   // Nothing selected, so no detour: however the selection was cleared.
   if (selectedId === null && detourFor !== null) setDetourFor(null);
 

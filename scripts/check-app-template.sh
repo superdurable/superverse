@@ -9,9 +9,16 @@
 
 
 # The embedded template archives with the previous ones, the catalog, the search
-# index and match rules, the Studio initial design and Studio's copies of the
-# search index and the example categories are generated from app-template/.
-# Regenerate them and fail when the committed copies differ.
+# index and match rules, Studio's designs (every example's rendered Flow
+# definitions, each named by its tree, and the module that imports them) and
+# Studio's copies of the search index and the example categories are generated
+# from app-template/. Regenerate them and fail when the committed copies differ.
+# With APP_TEMPLATE_CHANGED_PATHS, a file of changed repository paths (the
+# validation workflow), the generator renders the Flow definitions of only the
+# default, the examples those paths reach, as check-app-template-source checks
+# only them, and the examples whose own design file is among them, and keeps
+# every other example's committed design, which no changed path touches and
+# whose tree none reaches, byte for byte; without it every example is rendered.
 set -eu
 
 repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
@@ -24,20 +31,25 @@ scratch_directory=$(mktemp -d "${TMPDIR:-/tmp}/superverse-app-template.XXXXXX")
 trap 'rm -r "$scratch_directory"' EXIT HUP INT TERM
 
 outputs="$repository_root/internal/dexai/app/apptemplate"
-design="$repository_root/web/studio/lib/generated/template-design/app-template.json"
+designs="$repository_root/web/studio/lib/generated/template-design"
 studio_catalog="$repository_root/web/studio/lib/generated/example-catalog"
 mkdir "$scratch_directory/before"
-cp "$outputs/app-template.tar" "$design" "$scratch_directory/before/"
+cp "$outputs/app-template.tar" "$scratch_directory/before/"
 cp -R "$outputs/examples" "$scratch_directory/before/examples"
+cp -R "$designs" "$scratch_directory/before/template-design"
 cp -R "$studio_catalog" "$scratch_directory/before/example-catalog"
 
-GOWORK=off go generate "$repository_root/internal/dexai/app/apptemplate"
+if [ -n "${APP_TEMPLATE_CHANGED_PATHS:-}" ]; then
+  (cd "$repository_root" && GOWORK=off go run ./cmd/tools/app-template-archive -changed "$APP_TEMPLATE_CHANGED_PATHS")
+else
+  GOWORK=off go generate "$repository_root/internal/dexai/app/apptemplate"
+fi
 
 if ! cmp -s "$scratch_directory/before/app-template.tar" "$outputs/app-template.tar" ||
-  ! cmp -s "$scratch_directory/before/app-template.json" "$design" ||
   ! diff -r "$scratch_directory/before/examples" "$outputs/examples" >/dev/null ||
+  ! diff -r "$scratch_directory/before/template-design" "$designs" >/dev/null ||
   ! diff -r "$scratch_directory/before/example-catalog" "$studio_catalog" >/dev/null; then
-  echo "app-template/ changed: run make generate-app-template and commit the archives, the catalog, the search index, the match rules and the design" >&2
+  echo "app-template/ changed: run make generate-app-template and commit the archives, the catalog, the search index, the match rules and the designs" >&2
   exit 1
 fi
 

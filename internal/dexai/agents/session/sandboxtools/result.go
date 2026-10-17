@@ -30,6 +30,10 @@ type Result struct {
 	// Pending marks a command that still runs; the caller asks again.
 	Pending    bool
 	HeadCommit string
+	// DefinedSteps are the Steps of the Flows the commit gate's definitions
+	// stage rendered of the tree a pushed commit_and_push committed; empty
+	// for a blocked call and when the gate skipped that stage.
+	DefinedSteps []git.DefinedStep
 	// ExitCode and OmittedBytes measure a command result: its exit code, -1 for
 	// a command a signal ended, and the output bytes its projection omitted.
 	ExitCode     *int

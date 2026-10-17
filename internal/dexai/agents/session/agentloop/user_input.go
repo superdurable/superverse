@@ -412,15 +412,19 @@ func nonBlankTexts(name string, texts []string) ([]string, error) {
 }
 
 // RecordRequirements is the version a card records over stored, the current
-// version or nil: the stored revision plus one, which carries the stored design
-// forward when a revising card has none, and the highest feature number used.
-func RecordRequirements(stored *ConfirmedRequirements, card Requirements, at time.Time) ConfirmedRequirements {
+// version or nil: the stored revision plus one and the highest feature number
+// used. A revising card without a design carries the stored design forward
+// while no push built it (built, the digest BuiltFlowDesign holds, differs):
+// before a first build such a card changes no Flow, and once a push built the
+// design no later card carries one, so a built design is dropped instead of
+// standing for a version it does not describe.
+func RecordRequirements(stored *ConfirmedRequirements, card Requirements, built string, at time.Time) ConfirmedRequirements {
 	recorded := ConfirmedRequirements{Revision: 1, Spec: card, ConfirmedAt: at}
 	if stored != nil {
 		recorded.Revision = stored.Revision + 1
 		if !card.ReplacesRequirements {
 			recorded.LastFeatureNumber = stored.lastFeatureNumber()
-			if card.Design == nil {
+			if card.Design == nil && stored.Spec.Design != nil && stored.Spec.Design.Digest != built {
 				recorded.Spec.Design = stored.Spec.Design
 			}
 		}

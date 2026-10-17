@@ -15,6 +15,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"maps"
 	"os"
 	"slices"
 	"strings"
@@ -78,6 +79,7 @@ func TestApplicationSourceGateActualSandbox(t *testing.T) {
 	if tests := result.Tests; tests == nil || tests.Passed != 9 || tests.Failed != 0 || tests.Flows != 1 || len(tests.Uncovered) != 0 {
 		t.Fatalf("the test stage must report the template's reference tests with nothing uncovered: %+v", result.Tests)
 	}
+	requireCatalogSteps(t, apptemplate.DefaultExampleID, result.DefinedSteps)
 	if result.Stages[1].DurationMS <= 0 || result.Stages[2].DurationMS <= 0 || result.Stages[3].DurationMS <= 0 || len(progress) != 8 {
 		t.Fatalf("stages must report durations and at most two progress lines each: %+v %q", result.Stages, progress)
 	}
@@ -242,6 +244,10 @@ EOF`)
 		slices.ContainsFunc(result.Stages[1:], func(stage git.SourceGateStage) bool { return stage.Status != git.SourceGateSkippedForTest }) {
 		t.Fatalf("a clean confirmed source should need no repeat gate: %+v %v", result, err)
 	}
+	// A skipped definitions stage rendered nothing, so it reports no Step.
+	if len(result.DefinedSteps) != 0 {
+		t.Fatalf("a skipped definitions stage must report no Step: %+v", result.DefinedSteps)
+	}
 }
 
 // TestExampleSourceGatesActualSandbox runs the source gate on every example of
@@ -309,6 +315,7 @@ func TestExampleSourceGatesActualSandbox(t *testing.T) {
 			if tests := result.Tests; tests == nil || tests.Failed != 0 || tests.Passed == 0 {
 				t.Fatalf("example %s must pass its API tests: %+v", id, result.Tests)
 			}
+			requireCatalogSteps(t, id, result.DefinedSteps)
 			for _, stage := range result.Stages {
 				t.Logf("example %s stage %s %s duration_ms=%d", id, stage.Stage, stage.Status, stage.DurationMS)
 			}
@@ -318,6 +325,31 @@ func TestExampleSourceGatesActualSandbox(t *testing.T) {
 	if _, err := sandbox.runFor(15*time.Minute, nil, "make", "bootstrap"); err != nil {
 		t.Errorf("restore the default example's dependencies: %v", err)
 	}
+}
+
+// requireCatalogSteps requires the Steps the definitions stage rendered of an
+// example's tree, in the Sandbox with the coding image's dexcli, to be the Steps
+// the embedded catalog lists for it, which its own FDG script rendered when the
+// template was generated: a matched first build counts kept Steps across the
+// two. The renderers order Flows differently, so they compare as sets.
+func requireCatalogSteps(t *testing.T, id string, defined []git.DefinedStep) {
+	t.Helper()
+	example, found := apptemplate.FindExample(id)
+	if !found {
+		t.Fatalf("the embedded catalog lists no example %s", id)
+	}
+	listed := map[apptemplate.FlowStep]bool{}
+	for _, step := range example.Steps {
+		listed[step] = true
+	}
+	rendered := map[apptemplate.FlowStep]bool{}
+	for _, step := range defined {
+		rendered[apptemplate.FlowStep{FlowType: step.FlowType, StepType: step.StepType}] = true
+	}
+	if len(listed) == 0 || len(listed) != len(example.Steps) || len(rendered) != len(defined) || !maps.Equal(rendered, listed) {
+		t.Fatalf("example %s: the gate rendered the Steps %+v, the catalog lists %+v", id, defined, example.Steps)
+	}
+	t.Logf("example %s: the gate rendered the catalog's %d Steps", id, len(defined))
 }
 
 // exampleArchive is the composed tree of an example as a tar the sandbox

@@ -858,7 +858,7 @@ func sendMessage(ctx dex.Context, input conversation.PendingUserMessage) (*dex.R
 // version it recorded.
 func recordWaitingCard(ctx dex.Context, card agentloop.Requirements) int64 {
 	stored := dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx))
-	recorded := agentloop.RecordRequirements(stored, card, time.Now().UTC())
+	recorded := agentloop.RecordRequirements(stored, card, dexflow.ValueOrZero(builtFlowDesignAttribute.Get(ctx)), time.Now().UTC())
 	var design *flowdesign.Design
 	if card.Design != nil {
 		shown := comm.Must(flowDesignsAttribute.Get(ctx, string(flowdesign.SlotPending)))

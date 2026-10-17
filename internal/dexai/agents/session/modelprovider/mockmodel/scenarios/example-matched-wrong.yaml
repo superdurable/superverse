@@ -10,11 +10,12 @@
 # (start: matched): the first message asks to follow Slack threads and keep who
 # replied, with nothing posted back, which still matches the
 # slack-thread-approval example, so CreateProject starts the Project from it.
-# The agent writes version 1 with R1 and a new R2 and no posting feature,
-# removes the reply Step, its failure Step, the reply text, the connector
-# operation and the test that proved the posting, adds a test that the first
-# reply completes the approval, and updates the page's text. The push traces R1
-# and R2 at version 1. No reply mentions the example.
+# The agent writes version 1 with R1 and a new R2, no posting feature and no
+# Flow design, removes the reply Step, its failure Step, the reply text, the
+# connector operation and the test that proved the posting, adds a test that
+# the first reply completes the approval, and updates the page's text. The
+# push, the first build, traces R1 and R2 at version 1, and its Flow keeps two
+# of the example's four Steps. No reply mentions the example.
 name: example-matched-wrong
 title: "Start from an example that does too much"
 description: "A first message that matches the Slack thread approval example but wants nothing posted back: the agent removes the reply Step with its operation and test, and pushes it."
@@ -33,7 +34,7 @@ inputs:
           - "- removes:"
         tool_uses:
           - name: confirm_requirements
-            input: {"title": "Slack thread replies", "summary": "A process that follows threads in one Slack channel: a new message starts it, and the first matching reply in its thread is recorded with who replied, with nothing posted back.", "features": [{"id": "R1", "text": "A new top-level message in the configured Slack channel starts one approval for its thread; a redelivered message starts no second one."}, {"id": "R2", "text": "The first matching reply in that thread is recorded with who replied and completes the approval, and nothing is posted back."}], "connections": [{"need": "Receive new channel messages and thread replies", "connector": "slack", "operations": ["channelThreadCreated", "threadReplyCreated"], "status": "existing", "user_setup": "Select the TeamSpace Slack connection as slack-approvals, then choose the channel and the members allowed to reply for both triggers in Studio Configuration."}], "user_setup": ["Invite the platform's Slack app to the channel."], "acceptance": ["A new message in the channel starts a run in Studio that waits for a reply.", "A reply in its thread completes the run with who replied, and nothing is posted in the thread."], "design": {"summary": "A process that follows threads in one Slack channel: a new message starts it, and the first matching reply in its thread is recorded with who replied, with nothing posted back.", "flows": [{"flow_type": "SlackThreadApprovalFlow", "purpose": "Follows one Slack thread: its root message starts the Flow, and the first matching reply is recorded and ends it.", "start_step": "RecordThread", "steps": [{"step_type": "RecordThread", "group": "Thread", "explanation": "Keep the Slack thread that the new channel message started and wait for a reply in it.", "waits_for": {"kind": "none"}, "next": [{"to": "CompleteThread", "when": "the first matching reply arrives in the thread (ReceiveThreadReply)"}], "features": ["R1"]}, {"step_type": "CompleteThread", "group": "Reply", "explanation": "Complete once the first matching reply is recorded.", "waits_for": {"kind": "none"}, "next": [{"to": "complete"}], "features": ["R2"]}], "channels": [], "actions": [], "attributes": [{"name": "ThreadApprovalStatus", "value": "waiting_for_reply or completed"}, {"name": "ThreadApprovalThread", "value": "the Slack team, channel and root message timestamp"}, {"name": "ThreadApprovalReplyEventID", "value": "the Slack event of the accepted reply"}, {"name": "ThreadApprovalReplyUserID", "value": "the member whose reply was accepted"}, {"name": "ThreadApprovalNotice", "value": "always empty: nothing is posted"}], "starts": []}], "removed_flows": []}}
+            input: {"title": "Slack thread replies", "summary": "A process that follows threads in one Slack channel: a new message starts it, and the first matching reply in its thread is recorded with who replied, with nothing posted back.", "features": [{"id": "R1", "text": "A new top-level message in the configured Slack channel starts one approval for its thread; a redelivered message starts no second one."}, {"id": "R2", "text": "The first matching reply in that thread is recorded with who replied and completes the approval, and nothing is posted back."}], "connections": [{"need": "Receive new channel messages and thread replies", "connector": "slack", "operations": ["channelThreadCreated", "threadReplyCreated"], "status": "existing", "user_setup": "Select the TeamSpace Slack connection as slack-approvals, then choose the channel and the members allowed to reply for both triggers in Studio Configuration."}], "user_setup": ["Invite the platform's Slack app to the channel."], "acceptance": ["A new message in the channel starts a run in Studio that waits for a reply.", "A reply in its thread completes the run with who replied, and nothing is posted in the thread."]}
       - text: "Reading the Flow."
         tool_uses:
           - name: read

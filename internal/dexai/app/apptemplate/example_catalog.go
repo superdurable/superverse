@@ -32,6 +32,10 @@ const DefaultExampleID = "text-summary"
 // from a chosen example: app-template/<id>@<tree>.
 const exampleRevisionPrefix = "app-template/"
 
+// ExampleRevision is the template revision of example id at Git tree tree:
+// app-template/<id>@<tree>, the revision a Project created from it records.
+func ExampleRevision(id, tree string) string { return exampleRevisionPrefix + id + "@" + tree }
+
 // CatalogFile is the generated catalog in the embedded examples directory,
 // and ArchiveFile names an example's composed tree there; the default
 // example's tree is app-template.tar.
@@ -108,6 +112,17 @@ type CatalogEntry struct {
 	Files ExampleFiles `json:"files"`
 	// Extends is the example whose composed tree this one starts from.
 	Extends string `json:"extends,omitempty"`
+	// Steps are the Steps of the example's Flow definitions as its own FDG
+	// script renders them from its composed tree, the definitions Studio
+	// draws of a Project that starts from it.
+	Steps []FlowStep `json:"steps"`
+}
+
+// FlowStep is one Step of a rendered Flow definition: its Flow type and its
+// Step type, both Go type names.
+type FlowStep struct {
+	FlowType string `json:"flow_type"`
+	StepType string `json:"step_type"`
 }
 
 // TracedFeature is one requirement of an example's card with its evidence and
@@ -136,6 +151,7 @@ type Example struct {
 	Trace     []TracedFeature
 	Files     ExampleFiles
 	Extends   string
+	Steps     []FlowStep
 }
 
 var catalog = sync.OnceValue(func() []Example {
@@ -143,7 +159,8 @@ var catalog = sync.OnceValue(func() []Example {
 	comm.MustDo(json.Unmarshal(comm.Must(exampleFiles.ReadFile(CatalogFile)), &entries))
 	examples := make([]Example, 0, len(entries))
 	for _, entry := range entries {
-		examples = append(examples, Example{ID: entry.ID, Title: entry.Title, Card: entry.Card, Trace: entry.Trace, Files: entry.Files, Extends: entry.Extends})
+		examples = append(examples, Example{ID: entry.ID, Title: entry.Title, Card: entry.Card, Trace: entry.Trace, Files: entry.Files, Extends: entry.Extends,
+			Steps: entry.Steps})
 	}
 	return examples
 })
@@ -200,7 +217,7 @@ func ExampleTemplate(id string) (*repohost.Template, error) {
 		tree = trees()[id]()
 	}
 	named := *tree
-	named.Revision = exampleRevisionPrefix + id + "@" + tree.TreeID
+	named.Revision = ExampleRevision(id, tree.TreeID)
 	return &named, nil
 }
 
@@ -255,7 +272,7 @@ func PreviousTemplateForTest(id string) (*repohost.Template, bool) {
 	if !found {
 		return nil, false
 	}
-	revision := exampleRevisionPrefix + id + "@" + decode().TreeID
+	revision := ExampleRevision(id, decode().TreeID)
 	if id == DefaultExampleID {
 		revision = revisionPrefix + decode().TreeID
 	}

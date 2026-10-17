@@ -242,8 +242,9 @@ function finishDesignBuild(agent: MockAgent, headCommit: string) {
 
 /**
  * The start of a Session created from an example, as the server's start Step records it: a system notice
- * that Studio shows as the agent's greeting, the example's card as version 1, recorded with no call, and the
- * one Preview deployment of the setup commit, whose processes the Flow tab then draws.
+ * that Studio shows as the agent's greeting and the example's card as version 1, recorded with no call. The
+ * mock builds nothing of the setup commit, so its Flow tab keeps drawing the example's own Flow definitions,
+ * as a Project does while its setup commit builds, until a turn pushes a commit, whose processes are the fixture's.
  */
 export function startFromMockExample(
   store: MockStore,
@@ -260,9 +261,10 @@ export function startFromMockExample(
       `This project starts from the ${title} example. Its processes are built and drawn on the Flow tab, and Try it gets ready in a few minutes. Tell me what you want to change.`,
     ),
   );
-  agent.description.confirmedRequirements = { revision: 1, spec, confirmedAt: nowIso(), confirmedBy: null };
-  const session = store.sessions.get(projectId);
-  if (session) deployPushedCommit(store, session, agent);
+  // Built at the setup commit, as the server records it, so the next message is a change that pushes rather than a
+  // revision of a card still being built; the mock's card carries no design.
+  const built = { ...spec, designBuilt: true, designBuiltCommit: store.sessions.get(projectId)?.headCommitSha ?? "" };
+  agent.description.confirmedRequirements = { revision: 1, spec: built, confirmedAt: nowIso(), confirmedBy: null };
   syncDescriptionCounts(agent);
 }
 

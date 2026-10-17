@@ -51,11 +51,39 @@ type RenderedSource struct {
 var ErrFlowDefinitionsRejected = errors.New("the platform rejected the Flow definitions")
 
 // renderedFlow is one Flow of the next commit as the definitions stage
-// rendered it: its type and its connector Steps with their wired branches.
+// rendered it: its type, the type of each of its Steps and its connector
+// Steps with their wired branches.
 type renderedFlow struct {
 	SourcePath     string                  `json:"sourcePath"`
 	FlowType       string                  `json:"flowType"`
+	Steps          []string                `json:"steps"`
 	ConnectorSteps []renderedConnectorStep `json:"connectorSteps"`
+}
+
+// maximumDefinedSteps bounds SourceGate.DefinedSteps, which the tool result
+// carries to the Session: a source with more Steps reports its first ones.
+const maximumDefinedSteps = 256
+
+// DefinedStep is one Step of a Flow the definitions stage rendered: its Flow
+// type and Step type, both Go type names.
+type DefinedStep struct {
+	FlowType string `json:"flow_type"`
+	StepType string `json:"step_type"`
+}
+
+// definedSteps are the Steps of the rendered Flows in rendered order, at most
+// maximumDefinedSteps.
+func (rendered RenderedSource) definedSteps() []DefinedStep {
+	steps := []DefinedStep{}
+	for _, flow := range rendered.Flows {
+		for _, step := range flow.Steps {
+			if len(steps) == maximumDefinedSteps {
+				return steps
+			}
+			steps = append(steps, DefinedStep{FlowType: flow.FlowType, StepType: step})
+		}
+	}
+	return steps
 }
 
 // renderedConnectorStep is one connector Step of a rendered Flow.
@@ -85,13 +113,15 @@ type SourceGateStage struct {
 	DurationMS int64            `json:"duration_ms"`
 }
 
-// SourceGate is a passed commit gate: every stage and, when the test stage
-// ran, its report. tree is the Git tree the gate verified, which the commit
-// must hold.
+// SourceGate is a passed commit gate: every stage, the test stage's report
+// when it ran, and the Steps of the Flows the definitions stage rendered when
+// it ran (DefinedSteps, empty when it was skipped). tree is the Git tree the
+// gate verified, which the commit must hold.
 type SourceGate struct {
-	Stages []SourceGateStage
-	Tests  *ApplicationTestReport
-	tree   string
+	Stages       []SourceGateStage
+	Tests        *ApplicationTestReport
+	DefinedSteps []DefinedStep
+	tree         string
 }
 
 // gateStage names a stage of the gate, as its result and failures spell it.
@@ -184,7 +214,7 @@ func (operations *GitOperations) verifyApplicationSource(ctx context.Context, cl
 	if err != nil {
 		return SourceGate{}, err
 	}
-	gate.result.tree = rendered.Tree
+	gate.result.tree, gate.result.DefinedSteps = rendered.Tree, rendered.definedSteps()
 	if held == nil {
 		return gate.result, nil
 	}
