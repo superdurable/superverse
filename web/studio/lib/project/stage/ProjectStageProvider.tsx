@@ -92,8 +92,8 @@ export function beginFirstRun(projectId: string): void {
 }
 
 /**
- * Leaves the first conversation for good, as an explicit link to another surface does. Nothing changes
- * for a Project past it or without a first run in this browser.
+ * Leaves the first conversation for good, as an explicit link to another surface or the first conversation's
+ * "Open the Flow tab" does. Nothing changes for a Project past it or without a first run in this browser.
  */
 export function leaveFirstRun(projectId: string): void {
   const key = STORAGE_KEYS.projectStage(projectId);

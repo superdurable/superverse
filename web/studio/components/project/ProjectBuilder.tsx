@@ -335,6 +335,12 @@ function BuilderFrame({ projectId, role, persistentQuery, children }: BuilderPro
         }}
         actions={
           <>
+            {conversation && (
+              // The way out when no card comes, such as after a chat-only first message or a failed turn.
+              <Button size="sm" variant="quiet" onClick={() => leaveFirstRun(projectId)} data-testid="leave-first-run">
+                Open the Flow tab
+              </Button>
+            )}
             {builds && teamSpaceId && (
               <ProjectShare
                 projectId={projectId}

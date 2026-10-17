@@ -26,7 +26,8 @@ built from the agent's own push (`hasOwnProcesses`), whether a published version
 whether the agent recorded a version of the requirements card, and whether the Preview has served a page of the agent's
 push. Only a Project created in this browser has a first conversation: the creation page calls
 `beginFirstRun`, and the Builder switches once to the standard view when the requirements card arrives or
-processes are built, or when a link names another surface (`leaveFirstRun`). The switch and "built" are
+processes are built, or when a link names another surface or the person picks the first conversation's
+"Open the Flow tab" (`leaveFirstRun`). The switch and "built" are
 kept per Project in browser storage and never go back.
 
 `useRevealedSurfaces` keeps the tabs a Project has shown, so a tab never disappears once it appeared, and

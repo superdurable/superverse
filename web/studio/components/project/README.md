@@ -44,8 +44,8 @@ The Superverse path includes its first message and model in CreateProject.
 The local path retains its message in ProjectIntent, watches Project READY and
 Session ACTIVE, shows inline pairing, and sends after the Snapshot reports
 remote authority. ProjectBuilder follows the Project's stage (`lib/project/stage`): the chat
-alone until the first draft of the agent's first requirements card or the agent's own processes, then the
-standard frame, whose tabs, Publish and Preview's status appear as they have something
+alone until the first draft of the agent's first requirements card or the agent's own processes, or until
+the person picks "Open the Flow tab" in its bar when no card comes, then the standard frame, whose tabs, Publish and Preview's status appear as they have something
 to show. ProjectPage is the Project's
 details: its status, repository, links into the Builder, the Preview's automatic
 builds (read from the Project's Session, for those who build) and deletion. Storage errors
