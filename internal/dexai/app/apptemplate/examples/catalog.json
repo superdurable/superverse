@@ -2,15 +2,6 @@
   {
     "id": "text-summary",
     "title": "Text summary",
-    "category": "Content",
-    "apps": [
-      "An AI model"
-    ],
-    "decider": "No one: the summary is written on its own",
-    "description": "When someone pastes a text into the page, the configured AI model writes a short factual summary of it. The page shows the summary with the model that wrote it and the tokens it used, and marks one the model cut short. A blank or too long text is refused before any paid request, and a refused or failed answer is shown with what went wrong instead of a summary.",
-    "connectorIds": [
-      "llm"
-    ],
     "card": {
       "title": "Text summary",
       "summary": "A page where a person submits a text and gets a short factual summary from the configured AI model, with the model and token usage shown.",
@@ -161,26 +152,80 @@
           }
         ]
       }
+    },
+    "trace": [
+      {
+        "id": "R1",
+        "text": "A blank, too long or invalid text is refused before any model request, and the refused submission starts no summary.",
+        "evidence": [
+          "internal/api/handler.go",
+          "internal/process/text_summary_flow.go"
+        ],
+        "tests": [
+          "TestTextSummaryRejectsBlankText"
+        ]
+      },
+      {
+        "id": "R2",
+        "text": "A repeated submission with the same request ID starts one summary.",
+        "evidence": [
+          "internal/process/text_summary_flow.go"
+        ],
+        "tests": [
+          "TestTextSummaryRepeatedRequestStartsOneSummary"
+        ]
+      },
+      {
+        "id": "R3",
+        "text": "The configured model writes a short factual summary, which the page shows with the model and token usage; a summary cut at the output limit is shown as truncated.",
+        "evidence": [
+          "internal/process/text_summary_flow.go",
+          "web/src/App.tsx"
+        ],
+        "tests": [
+          "TestTextSummaryBranches"
+        ]
+      },
+      {
+        "id": "R4",
+        "text": "A blocked, rejected, invalid or failed model answer shows its status and a notice and no summary.",
+        "evidence": [
+          "internal/process/text_summary_flow.go"
+        ],
+        "tests": [
+          "TestTextSummaryBranches",
+          "TestTextSummaryWithoutCredentialsReportsDefect"
+        ]
+      },
+      {
+        "id": "R5",
+        "text": "A lost model response is recorded as unknown without sending the paid request again.",
+        "evidence": [
+          "internal/process/text_summary_flow.go"
+        ],
+        "untested_reason": "The llm connector's mock package scripts no lost response, so no API test can make the request's outcome unknown."
+      }
+    ],
+    "files": {
+      "adds": [
+        "AGENTS.md",
+        "dex-app.yaml",
+        "internal/api/handler.go",
+        "internal/apptest/text_summary_test.go",
+        "internal/process/text_summary_flow.go",
+        "internal/worker/application.go",
+        "internal/worker/connections.go",
+        "openapi/openapi.yaml",
+        "web/src/App.tsx",
+        "web/src/styles.css"
+      ],
+      "replaces": [],
+      "removes": []
     }
   },
   {
     "id": "github-releases-newsletter",
     "title": "GitHub releases newsletter",
-    "category": "Content",
-    "apps": [
-      "Slack",
-      "GitHub",
-      "OpenAI",
-      "Gmail"
-    ],
-    "decider": "An administrator posting in Slack",
-    "description": "Visitors subscribe once with their email address on the page. When an administrator posts publish newsletter in the Slack channel, the process reads the last seven days of releases of two GitHub repositories, has OpenAI write one factual report, and sends it to every subscriber as their own Gmail message. A failed read or model answer sends nothing, and an uncertain send is never repeated.",
-    "connectorIds": [
-      "slack",
-      "github",
-      "llm",
-      "gmail"
-    ],
     "card": {
       "title": "GitHub Releases Newsletter",
       "summary": "Visitors subscribe once; an authorized Slack message starts a release newsletter and each subscriber receives an individual Gmail delivery.",
@@ -633,20 +678,97 @@
         ],
         "removed_flows": []
       }
+    },
+    "trace": [
+      {
+        "id": "R1",
+        "text": "The public page accepts valid email subscriptions, retains each normalized address once and gives clear feedback.",
+        "evidence": [
+          "internal/process/subscription_registry_flow.go",
+          "web/src/App.tsx",
+          "internal/apptest/newsletter_test.go"
+        ],
+        "tests": [
+          "TestSubscriptionValidationAndDeduplication"
+        ]
+      },
+      {
+        "id": "R2",
+        "text": "Only a selected administrator posting the exact top-level Slack message publish newsletter in the selected channel starts a campaign; duplicate delivery of that message starts none.",
+        "evidence": [
+          "internal/process/newsletter_campaign_flow.go",
+          "internal/worker/worker.go",
+          "internal/apptest/newsletter_test.go"
+        ],
+        "tests": [
+          "TestNewsletterReleasePagesAndTriggerIdentity"
+        ]
+      },
+      {
+        "id": "R3",
+        "text": "The campaign reads every release page from superdurable/dex and dex-connectors-library, excludes drafts, filters by the previous seven days and keeps original links.",
+        "evidence": [
+          "internal/process/newsletter_campaign_flow.go",
+          "internal/apptest/newsletter_test.go"
+        ],
+        "tests": [
+          "TestNewsletterReleasePagesAndTriggerIdentity",
+          "TestNewsletterGitHubFailureBranches"
+        ]
+      },
+      {
+        "id": "R4",
+        "text": "OpenAI writes a factual newsletter from release notes, or the report clearly says there are no releases; source or model failure never sends an incomplete report.",
+        "evidence": [
+          "internal/process/newsletter_campaign_flow.go",
+          "internal/apptest/newsletter_test.go"
+        ],
+        "tests": [
+          "TestNewsletterModelFailureBranches",
+          "TestNewsletterGitHubFailureBranches"
+        ]
+      },
+      {
+        "id": "R5",
+        "text": "The campaign freezes subscribers at trigger time; Gmail sends the same report to each individually and records sent, failed or uncertain delivery without automatically retrying an uncertain send.",
+        "evidence": [
+          "internal/process/newsletter_campaign_flow.go",
+          "internal/apptest/newsletter_test.go"
+        ],
+        "tests": [
+          "TestNewsletterGmailBranches",
+          "TestNewsletterReleasePagesAndTriggerIdentity"
+        ]
+      }
+    ],
+    "files": {
+      "adds": [
+        "AGENTS.md",
+        "README.md",
+        "dex-app.yaml",
+        "internal/api/handler.go",
+        "internal/apptest/newsletter_test.go",
+        "internal/process/newsletter_campaign_flow.go",
+        "internal/process/subscription_registry_flow.go",
+        "internal/worker/application.go",
+        "internal/worker/connections.go",
+        "openapi/openapi.yaml",
+        "web/src/App.tsx",
+        "web/src/styles.css"
+      ],
+      "replaces": [
+        "cmd/server/main.go",
+        "go.mod",
+        "go.sum",
+        "internal/apptest/apptest.go",
+        "internal/worker/worker.go"
+      ],
+      "removes": []
     }
   },
   {
     "id": "slack-thread-approval",
     "title": "Slack thread approval",
-    "category": "Approvals",
-    "apps": [
-      "Slack"
-    ],
-    "decider": "The members allowed to reply in the thread",
-    "description": "When someone posts a new message in the approval channel in Slack, a process starts for that thread and waits. The first reply in the thread from one of the members allowed to approve finishes it: the process posts “Processing complete.” in the thread. Later replies change nothing, and a message Slack delivers twice starts only one process.",
-    "connectorIds": [
-      "slack"
-    ],
     "card": {
       "title": "Slack thread approval",
       "summary": "A process that follows threads in one Slack channel: a new message starts it, and a reply in its thread finishes it with a confirmation posted in the thread.",
@@ -791,20 +913,66 @@
         ],
         "removed_flows": []
       }
+    },
+    "trace": [
+      {
+        "id": "R1",
+        "text": "A new top-level message in the configured Slack channel starts one approval for its thread; a redelivered message starts no second one.",
+        "evidence": [
+          "internal/process/slack_thread_approval_flow.go",
+          "internal/process/slack_thread_triggers.go",
+          "internal/worker/triggers.go"
+        ],
+        "tests": [
+          "TestThreadApprovalStartsOnRootMessage"
+        ]
+      },
+      {
+        "id": "R2",
+        "text": "The first matching reply in that thread is accepted and moves the approval on; a later reply changes nothing.",
+        "evidence": [
+          "internal/process/slack_thread_approval_flow.go"
+        ],
+        "tests": [
+          "TestThreadApprovalReplyPostsCompletion"
+        ]
+      },
+      {
+        "id": "R3",
+        "text": "After the reply, the application posts Processing complete. into the same thread and completes the approval.",
+        "evidence": [
+          "internal/process/slack_thread_approval_flow.go"
+        ],
+        "untested_reason": "The Slack connector has no mocks yet, so no test can make Slack confirm the reply; the tests cover only a connection without credentials."
+      }
+    ],
+    "files": {
+      "adds": [
+        "AGENTS.md",
+        "dex-app.yaml",
+        "internal/api/handler.go",
+        "internal/apptest/slack_thread_approval_test.go",
+        "internal/process/slack_thread_approval_flow.go",
+        "internal/process/slack_thread_triggers.go",
+        "internal/worker/application.go",
+        "internal/worker/connections.go",
+        "internal/worker/triggers.go",
+        "openapi/openapi.yaml",
+        "web/src/App.tsx",
+        "web/src/styles.css"
+      ],
+      "replaces": [
+        "cmd/server/main.go",
+        "go.mod",
+        "go.sum",
+        "internal/worker/worker.go"
+      ],
+      "removes": []
     }
   },
   {
     "id": "summary-approval",
     "title": "Summary approval",
-    "category": "Approvals",
-    "apps": [
-      "An AI model"
-    ],
-    "decider": "A person in Studio",
-    "description": "When someone pastes a text into the page, the configured AI model writes a short summary of it, and the summary waits for a person to approve it in Studio before it is saved. A truncated summary is saved without waiting, and a blocked, refused or failed answer is recorded with what went wrong instead of a summary.",
-    "connectorIds": [
-      "llm"
-    ],
     "card": {
       "title": "Summary approval",
       "summary": "A person approves each generated summary in Studio before it is saved.",
@@ -946,6 +1114,41 @@
           }
         ]
       }
-    }
+    },
+    "trace": [
+      {
+        "id": "R1",
+        "text": "A Step AwaitSummaryApproval holds the generated summary and shows awaiting-approval until a person decides.",
+        "evidence": [
+          "internal/process/text_summary_flow.go"
+        ],
+        "untested_reason": "A person approves in Studio, which the API tests do not drive; TestTextSummaryGeneratedWaitsForApproval proves the generated summary reaches the waiting Step."
+      },
+      {
+        "id": "R2",
+        "text": "An Approve summary Action releases that Step, which then saves the summary.",
+        "evidence": [
+          "internal/process/text_summary_flow.go"
+        ],
+        "untested_reason": "The Approve summary Action is a Studio action, which the API tests do not drive."
+      }
+    ],
+    "files": {
+      "adds": [
+        "AGENTS.md",
+        "dex-app.yaml",
+        "internal/api/handler.go",
+        "internal/apptest/text_summary_test.go",
+        "internal/process/text_summary_flow.go",
+        "internal/worker/application.go",
+        "internal/worker/connections.go",
+        "openapi/openapi.yaml",
+        "web/src/App.tsx",
+        "web/src/styles.css"
+      ],
+      "replaces": [],
+      "removes": []
+    },
+    "extends": "text-summary"
   }
 ]

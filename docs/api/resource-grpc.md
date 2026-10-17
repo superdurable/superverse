@@ -27,7 +27,7 @@ is logged the same way and ends that Watch with the same Internal status.
 
 <!-- BEGIN GENERATED SERVICE TABLE (make generate-proto) -->
 
-17 services, 103 RPCs. A field is a string unless a type is given. Every request
+16 services, 102 RPCs. A field is a string unless a type is given. Every request
 except RegisterAccount and Login also carries `CallerContext caller 100`, which the table omits.
 
 | Service | RPCs | Reached through |
@@ -37,7 +37,6 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 | TeamSpaceMemberService | 4 | `/api/rpc/<Method>` |
 | TeamSpaceConnectionService | 10 | `/api/rpc/<Method>` |
 | ProjectService | 10 | `/api/rpc/<Method>` |
-| ExampleService | 1 | `/api/rpc/<Method>` |
 | ProjectMemberService | 4 | `/api/rpc/<Method>` |
 | SessionService | 4 | `/api/rpc/<Method>` |
 | RemoteAgentService | 4 | `/api/rpc/<Method>` |
@@ -108,12 +107,6 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 | RemoveLive | `project_id 1, request_id 2, deployment_id 3, uint64 expected_live_revision 4` | `ProjectSnapshot project 1` |
 | ListEnvironmentEvents | `project_id 1, ProjectScope scope 2, uint32 page_size 3, page_token 4` | `repeated EnvironmentEvent events 1, next_page_token 2` |
 | ListRecentTriggerEvents | `project_id 1, ProjectScope scope 2` | `repeated RecentTriggerEvent events 1, Timestamp buffer_started_at 2, buffer_instance_id 3` |
-
-**ExampleService**
-
-| RPC | Request | Response |
-| --- | --- | --- |
-| ListExamples | `{}` | `repeated Example examples 1` |
 
 **ProjectMemberService**
 
@@ -375,6 +368,7 @@ Every value comes from a write in the owning code; the Go names are the domain c
 | AgentBackgroundCommand.EndReason (`END_REASON_`) | EXIT, LIFETIME_LIMIT, OUTPUT_LIMIT, STOPPED, LOST; UNSPECIFIED while it runs | agenttasks | AgentBackgroundCommand.end_reason |
 | AgentToolExecutionMetrics.Outcome (`OUTCOME_`) | SUCCEEDED, KNOWN_FAILURE, UNKNOWN | conversation | AgentToolExecutionMetrics.outcome |
 | AgentDescription.Status (`STATUS_`) | INITIALIZING, WAITING_FOR_MESSAGE, COMPACTING_CONTEXT, CALLING_MODEL, ROUTING_TOOL, WAITING_FOR_TOOL_APPROVAL, EXECUTING_TOOL, WAITING_FOR_TIMER | agentloop | AgentDescription.status |
+| AgentStartingExample.Choice (`CHOICE_`) | PICKED, MATCHED | `agentloop.ExampleChoice` | AgentDescription.starting_example.choice |
 | AgentPendingUserInput.Kind (`KIND_`) | QUESTION, REQUIREMENTS | agentloop; an empty domain value (a request_user_input batch) is QUESTION | AgentPendingUserInput.kind |
 | AgentRequirementConnection.Status (`STATUS_`) | EXISTING, NEW | agentloop | AgentRequirementConnection.status |
 | AgentTodoItem.Status (`STATUS_`) | PENDING, IN_PROGRESS, COMPLETED | conversation | AgentTodoItem.status |
@@ -682,28 +676,43 @@ their authorization, instance and definition checks.
 
 ### Examples
 
-`ExampleService.ListExamples` lists the examples of the application template that the server
-build embeds, the default first, to any authenticated account: `Example {example_id, title,
-category, apps, decider, description, connector_ids}`, with `ExampleCategory` the closed set of the
-start page's groups (Approvals, Finance, Support, People, Content). The list is generated with the
-build from `app-template/examples/*/example.json`, so it reads no setting, network or read model and
-changes only with a release.
+The examples a Project can start from are those of the application template the server build embeds,
+generated from `app-template/examples/*/example.json` with the build. No RPC lists them: Studio
+bundles the same generated catalog and search index
+([examples](../../app-template/examples/README.md)), so the start page reads no setting, network or
+read model, and the catalog changes only with a release.
 
-`managed_repository.example = ExampleReference {example_id}` names one listed example; one the
-build does not hold is FAILED_PRECONDITION with the ErrorInfo reason `EXAMPLE_NOT_OFFERED` (remedy
-apply again: pick another one) before any Flow starts. The Project then starts with the template
-revision `app-template/<example_id>@<tree>`, the Git tree of the example's composed files, which
+`managed_repository.example = ExampleReference {example_id}` names one example; one the build does
+not hold is FAILED_PRECONDITION with the ErrorInfo reason `EXAMPLE_NOT_OFFERED` (remedy apply again:
+pick another one) before any Flow starts. The Project then starts with the template revision
+`app-template/<example_id>@<tree>`, the Git tree of the example's composed files, which
 `ProjectSnapshot.template_revision` returns and `ProjectSnapshot.example = ProjectExample
-{example_id, tree}` restates. A Project created without an example starts from the default example
-under the revision `app-template@<tree>`, as before, and has no `example`.
+{example_id, tree}` restates. The Session of a Project opened from an example starts with the
+example's requirements card recorded as version 1 of its requirements, the card's design built at
+the setup commit, and a system notice that opens its conversation; it then waits for the person's
+message, deploys the setup commit's Preview once, and holds that Preview's Sandbox only for
+`sandbox.hold` until the person's first message. Its `AgentDescription.starting_example` is
+`AgentStartingExample {example_id, choice: CHOICE_PICKED}`.
 
-Setup commits exactly that tree, as it commits the default. A revision whose example or tree this
-server build does not hold, such as one written by another build during a rollout, fails the
-Setup after its retries with `SETUP_FAILED`. The Session of a Project created from an example
-starts with the example's requirements card recorded as version 1 of its requirements, the card's
-design built at the setup commit, and a system notice that opens its conversation; it then waits
-for the person's message, deploys the setup commit's Preview once, and holds that Preview's Sandbox
-only for `sandbox.hold` until the person's first message.
+A Project created without an example starts from the default example under the revision
+`app-template@<tree>`, as before, and has no `example`, with one exception: when the server's
+`agent.closestExamplePick` is on and the creation carries an `initial_message`, CreateProject
+decides, without a network call or a model, whether that message is clearly closest to one example
+(the search shortlists the examples, and rules on the message's ideas, its negations and a winning
+margin pick one or none; a message that names the default example's source, or that is only
+mock-model markers, keeps the default). A picked example's revision `app-template/<id>@<tree>` is
+the Project's, and ProjectFlow's `InitialSessionRequest` records what the message matched on. Nothing
+of the request changes, so its fingerprint is the same and a retry joins the accepted Project and
+its revision, whatever another server build would decide. That Session starts quietly: it records
+no card, appends no notice, demands no Preview, admits the first message as the request, and its
+agent writes version 1 itself; `starting_example.choice` is `CHOICE_MATCHED`, and Studio shows the
+Project as one created from a description.
+
+Setup commits exactly the revision's tree, as it commits the default. A server build also holds the
+previous tree of each example that changed (one per example, the default's included), so a Setup a
+newer build runs for a revision an older build accepted during a rollout still finds its tree; any
+other revision whose example or tree the build does not hold fails the Setup after its retries with
+`SETUP_FAILED`.
 
 ### Live pointer and RemoveLive
 

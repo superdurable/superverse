@@ -11,7 +11,9 @@
 # call. The change revises the card to version 2: it keeps R1 to R3 and adds R4,
 # a reply finishes the approval only when it contains "approve". The reply
 # Trigger's filter gains that rule and an API test proves it; the push traces
-# R1 to R4 at version 2, R3 untested as in the example. The workspace is the
+# R1 to R4 at version 2, R3 untested as in the example. Its first reply requires
+# the session-start segment to carry the starting_example section of the picked
+# example, which an appended notice never brought to the model. The workspace is the
 # example's composed tree, which this server embeds, so its edits are checked
 # against the example's own files at startup.
 name: example-change
@@ -25,6 +27,10 @@ inputs:
     replies:
       - thinking: "This changes a requirement of the example, so I revise the recorded card first, keeping R1 to R3, and keep building."
         text: "Here is the revised brief. I am changing the reply rule now; tell me if anything else should change."
+        expect_segment_start:
+          - "<starting_example>"
+          - "The person opened it in Studio: its card is recorded as version 1"
+          - "<confirmed_requirements>"
         tool_uses:
           - name: confirm_requirements
             input:

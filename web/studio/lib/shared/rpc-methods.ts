@@ -36,7 +36,6 @@ type ServiceOf<M extends Method> = { [S in Service]: M extends MethodsOf[S] ? S 
 /** The services the browser reaches through /api/rpc/<Method>; the BFF allowlist names exactly these. */
 export type BrowserService =
   | "ProjectService"
-  | "ExampleService"
   | "SessionService"
   | "AgentService"
   | "RemoteAgentService"

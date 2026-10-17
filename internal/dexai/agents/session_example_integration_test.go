@@ -36,10 +36,10 @@ const exampleID = "slack-thread-approval"
 // TestProjectFromExampleDexIntegration creates a Project from the embedded
 // slack-thread-approval example through the lane's merged business API, with
 // the lane's Dex, Worker, Git host, PostgreSQL and MinIO all real:
-//   - ListExamples lists every embedded example, the default first; CreateProject
-//     with an unknown example is FAILED_PRECONDITION EXAMPLE_NOT_OFFERED and
-//     starts nothing; a repeat of the creation returns the same Project, and
-//     the same request_id without the example is ALREADY_EXISTS;
+//   - CreateProject with an unknown example is FAILED_PRECONDITION
+//     EXAMPLE_NOT_OFFERED and starts nothing; a repeat of the creation returns
+//     the same Project, and the same request_id without the example is
+//     ALREADY_EXISTS;
 //   - the READY Project names the example and the Git tree it was created
 //     from, app-template/<id>@<tree> with this build's composed tree, and its
 //     AppManifest declares the Slack connection;
@@ -57,25 +57,12 @@ func TestProjectFromExampleDexIntegration(t *testing.T) {
 	owner := projecttest.RegisterAccountForTest(ctx, t)
 	teamSpaceID := projecttest.TeamSpaceForTest(ctx, t, owner)
 	connection, caller := projecttest.LoginForTest(ctx, t, owner)
-	examples, api := pb.NewExampleServiceClient(connection), pb.NewProjectServiceClient(connection)
-	listed, err := examples.ListExamples(ctx, &pb.ListExamplesRequest{Caller: caller})
-	if err != nil {
-		t.Fatalf("ListExamples: %v", err)
-	}
-	var example *pb.Example
-	for _, candidate := range listed.GetExamples() {
-		if candidate.GetExampleId() == exampleID {
-			example = candidate
-		}
-	}
-	if example == nil || listed.GetExamples()[0].GetExampleId() != apptemplate.DefaultExampleID || len(listed.GetExamples()) != len(apptemplate.Examples()) {
-		t.Fatalf("ListExamples does not list the embedded examples, the default first: %+v", listed.GetExamples())
-	}
+	api := pb.NewProjectServiceClient(connection)
 	request := &pb.CreateProjectRequest{Caller: caller, RequestId: flowid.RandomID(24), Name: t.Name(), TeamSpaceId: teamSpaceID,
 		ManagedRepository: &pb.ManagedRepositorySource{Example: &pb.ExampleReference{ExampleId: exampleID}}}
 	unknown := withExample(request, &pb.ExampleReference{ExampleId: "no-such-example"})
 	unknown.RequestId = flowid.RandomID(24)
-	if _, err = api.CreateProject(ctx, unknown); status.Code(err) != codes.FailedPrecondition || errorReason(err) != "EXAMPLE_NOT_OFFERED" {
+	if _, err := api.CreateProject(ctx, unknown); status.Code(err) != codes.FailedPrecondition || errorReason(err) != "EXAMPLE_NOT_OFFERED" {
 		t.Fatalf("an unknown example answered %v, not FAILED_PRECONDITION EXAMPLE_NOT_OFFERED", err)
 	}
 	var revision string
@@ -154,6 +141,53 @@ func TestProjectFromExampleDexIntegration(t *testing.T) {
 	requireNoFailure(t, built.History)
 	if got := toolResult(t, built.History.Messages, conversation.ToolCommitAndPush, 0); got.ResultCode != agentloop.CommitPushedForTest {
 		t.Fatalf("the change's commit_and_push ended as %q (%s): %s", got.ResultCode, got.Outcome, session.toolResultContent(ctx, built.History.Messages, conversation.ToolCommitAndPush, 0))
+	}
+}
+
+// TestProjectFromPreviousExampleTreeDexIntegration creates, through
+// ProjectFlow, a Project of the slack-thread-approval example at the previous
+// tree this build keeps for it, as a server of the previous build accepts one
+// during a rollout, with the lane's Dex, Worker, Git host, PostgreSQL and
+// MinIO all real:
+//   - Setup resolves the previous revision and the Project is READY with it,
+//     and its first commit holds that tree, which the example-previous-tree
+//     scenario's git command prints;
+//   - the Session records no card, since this build's card describes another
+//     tree, and its session-start segment says so instead of claiming version
+//     1, which the scenario's first reply requires.
+func TestProjectFromPreviousExampleTreeDexIntegration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), previewSetupTimeout+mockTurnTimeout)
+	defer cancel()
+	previous, isKept := apptemplate.PreviousTemplateForTest(exampleID)
+	if !isKept {
+		t.Fatalf("this build keeps no previous tree of %s", exampleID)
+	}
+	owner := projecttest.RegisterAccountForTest(ctx, t)
+	teamSpaceID := projecttest.TeamSpaceForTest(ctx, t, owner)
+	session := newSessionOf(t, ctx, conversation.ModelMock, "", func(client *projects.ProjectFlowClient) projects.Project {
+		project := projecttest.CreateAtRevisionForTest(ctx, t, client, t.Name(), owner, teamSpaceID, previous.Revision)
+		if project.TemplateRevision != previous.Revision {
+			t.Fatalf("the Project records the revision %q, not %s", project.TemplateRevision, previous.Revision)
+		}
+		return project
+	})
+	started := session.waitForSnapshot(ctx, "the Session's start", func(agent agentloop.AgentSnapshot) bool {
+		return agent.Description.StartingExample != nil
+	})
+	if example := started.Description.StartingExample; example.Tree != previous.TreeID || example.Choice != agentloop.ExampleChoicePicked || started.Description.ConfirmedRequirements != nil {
+		t.Fatalf("the Session did not start from the previous tree %s without a card: %+v", previous.TreeID, started.Description)
+	}
+	_, messages := session.history(ctx)
+	last := messages[len(messages)-1].Sequence
+	session.send(ctx, mockInput(t, "example-previous-tree", 1).Content)
+	agent := session.finishedTurnAfter(ctx, last)
+	requireNoFailure(t, agent.History)
+	_, messages = session.history(ctx)
+	if final := finalReply(messages); !strings.HasPrefix(final, "This Project holds the Slack thread approval example as an earlier build composed it") {
+		t.Fatalf("the turn did not reach the scenario's last reply, which follows the section check: %q", final)
+	}
+	if tree := session.toolResultContent(ctx, messages, conversation.ToolBash, 0); !strings.Contains(tree, previous.TreeID) {
+		t.Fatalf("the first commit's tree is not the previous tree %s: %s", previous.TreeID, tree)
 	}
 }
 

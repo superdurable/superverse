@@ -487,16 +487,18 @@ func (flow *SessionAgentFlow) openSessionStartSegment(ctx dex.Context) agentloop
 
 // openSegment opens the next segment for reason on model with summary: one
 // segment_start entry with the summary, the repository context, the confirmed
-// requirements, the todo list, for the Session's first segment the catalog
-// matches of its request, and the turn's pending request as read finds it,
-// then the notice of a reporting turn. A segment without the repository
-// context awaits it. The segment and its prompts replace the previous ones,
-// and archive chunks before it become eligible for retention.
+// requirements, the todo list, the starting example while it is described,
+// for the Session's first segment the catalog matches of its request, and the
+// turn's pending request as read finds it, then the notice of a reporting
+// turn. A segment without the repository context awaits it. The segment and
+// its prompts replace the previous ones, and archive chunks before it become
+// eligible for retention.
 func (flow *SessionAgentFlow) openSegment(ctx dex.Context, reason agentloop.SegmentReason, model conversation.Model, summary string, read entryReader) agentloop.ContextSegment {
 	previous, request := dexflow.OptionalValue(contextSegmentAttribute.Get(ctx)), pendingRequestEntries(ctx, read)
 	start := agentloop.SegmentStart{Summary: summary, RepositoryContext: dexflow.ValueOrZero(workspaceAttribute.Get(ctx)).RepositoryContext,
 		ConfirmedRequirements: dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx)),
-		TodoList:              dexflow.OptionalValue(todoListAttribute.Get(ctx)), PendingRequest: conversation.PendingRequestText(request)}
+		TodoList:              dexflow.OptionalValue(todoListAttribute.Get(ctx)), PendingRequest: conversation.PendingRequestText(request),
+		StartingExample: startingExampleSection(ctx, reason == agentloop.SegmentReasonSessionStart)}
 	if reason == agentloop.SegmentReasonSessionStart {
 		start.CatalogMatches = flow.requestCatalogMatches(request)
 	}
@@ -880,6 +882,10 @@ func (flow *SessionAgentFlow) openExecutorSegment(ctx dex.Context, executor remo
 		}
 	}
 	section("Running background commands", strings.Join(commands, ", "), 1<<10)
+	// The starting example takes what the notice leaves, so it never pushes out the sections before it.
+	if room := remoteexec.MaximumHandoffBytes - len(text) - len("\n\nStarting example:\n"); room >= minimumHandoffExampleBytes {
+		section("Starting example", startingExampleSection(ctx, false), room)
+	}
 	entry := conversation.NoticeEntry(conversation.EntryRoleUser, boundedHandoffText(text, remoteexec.MaximumHandoffBytes), "Switched to the Superverse agent")
 	last := appendEntry(ctx, entry)
 	if first == 0 {
@@ -904,6 +910,10 @@ func (flow *SessionAgentFlow) openExecutorSegment(ctx dex.Context, executor remo
 	trimRetainedEntries(ctx)
 	return comm.Must(contextSegmentAttribute.Get(ctx))
 }
+
+// minimumHandoffExampleBytes is the least room for the starting example in
+// the executor handoff notice; with less, the notice leaves it out.
+const minimumHandoffExampleBytes = 512
 
 func boundedHandoffText(text string, budget int) string {
 	if len(text) <= budget {

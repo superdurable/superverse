@@ -1,11 +1,11 @@
 # Start templates
 
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
-Purpose: The start page's starting points: the server's built examples and the placeholder templates, their gallery, the suggestions while typing, and the Project name a description gives.
+Purpose: The start page's starting points: the bundled built examples and the placeholder templates, their gallery, the suggestions while typing, and the Project name a description gives.
 
 Importers: `components/project` imports this directory.
 
-Imports: it imports `components/ui`, `components/ui/badge` and `lib/api`.
+Imports: it imports `components/ui`, `components/ui/badge` and `lib/examples`.
 
 ```mermaid
 flowchart LR
@@ -13,17 +13,19 @@ flowchart LR
   c0["components/project"] --> self
   self --> d0["components/ui"]
   self --> d1["components/ui/badge"]
-  self --> d2["lib/api"]
+  self --> d2["lib/examples"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
 `template-catalog.ts` declares every placeholder once: its title, category, apps, who decides and a full
 description that names the trigger, the people, the rules and the exceptions. Picking a placeholder only
-fills the composer with its description, which the person reads and changes before sending.
+fills the composer with its description, which the person reads and changes before sending. Each
+placeholder is also a labelled request of `app-template/examples/labelled-requests.json` that starts from the
+default, which `scripts/check-example-search.mjs` checks.
 
-Built examples are the examples of the server's application template (`ExampleService.ListExamples`, read
-once per start page by `use-examples.ts`), listed on every model, including the mock model, whose scenario
-composer hides the placeholders. `ExampleGrid.tsx` shows them under the composer:
+Built examples are the examples of the application template Studio bundles (`BUILT_EXAMPLES`, from
+[`lib/examples`](../../../lib/examples/README.md)), listed on every model, including the mock model, whose
+scenario composer hides the placeholders. `ExampleGrid.tsx` shows them under the composer:
 
 - **Before the person types**, a starter set: at most two of each category, built examples first, then the
   placeholders, which are quieter (dashed, "Fill in this description").
@@ -39,9 +41,7 @@ composer hides the placeholders. `ExampleGrid.tsx` shows them under the composer
 example as it is and opens it in one click. The creation carries the example and no message; what the
 person typed waits in the opened Project's chat composer as an unsent draft.
 
-`example-match.ts` matches in the browser, with no request. It indexes the catalog once, term to examples,
-so a ranking reads only the typed terms' postings, well under a millisecond for hundreds of examples. A
-term is a word of three letters or more, not a stop word, with one ending cut ("approval" and "approve"
-meet); it counts once per field it appears in, three times in the title or the apps and once in the
-category, the decider or the description. Ties keep the catalog's order. `project-name.ts` derives the
-Project's name from a description when no template names it.
+`example-match.ts` ranks with the example search of `lib/examples`, the one the server shortlists with, in the
+browser and with no request: rare words count more (BM25), the title and the apps count most, synonyms such as
+sign off for approve meet, and ties keep the catalog's order. `project-name.ts` derives the Project's name from
+a description when no template names it.

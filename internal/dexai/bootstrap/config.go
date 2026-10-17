@@ -86,6 +86,9 @@ type serverConfig struct {
 	// mockModel starts the mock model in this process, which composition
 	// offers to every Session besides the Claude models.
 	mockModel bool
+	// closestExamplePick starts a Project created from a first message from
+	// the closest example.
+	closestExamplePick bool
 
 	sandboxProfileName string
 	// docker is the Docker runtime of Local Native, with the rendered coding
@@ -177,7 +180,7 @@ func loadConfig(ctx context.Context, logger *slog.Logger, settings serverconfig.
 	if c.oauthCallbackOrigin == "" {
 		c.oauthCallbackOrigin = c.studioOrigin
 	}
-	c.mockModel = settings.Agent.MockModel
+	c.mockModel, c.closestExamplePick = settings.Agent.MockModel, settings.Agent.ClosestExamplePick
 	c.subagentEfforts = map[agenttasks.SubagentKind]conversation.Effort{
 		agenttasks.SubagentInvestigate: settings.Agent.SubagentInvestigateEffort, agenttasks.SubagentChange: settings.Agent.SubagentChangeEffort,
 		agenttasks.SubagentConnectorSelect:  agenttasks.SubagentConnectorSelect.DefaultEffort(),

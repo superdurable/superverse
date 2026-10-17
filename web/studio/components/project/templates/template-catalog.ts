@@ -6,7 +6,7 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-import type { ExampleCategory, ExampleView } from "@/lib/api/example";
+import { EXAMPLE_CATALOG, type ExampleCategory, type ExampleView } from "@/lib/examples/example-catalog";
 
 /** The groups the start page's templates are filed under. */
 type TemplateCategory = ExampleCategory;
@@ -33,9 +33,9 @@ export interface PlaceholderTemplate extends TemplateFields {
 }
 
 /**
- * A built example of the server's application template: Open example creates the Project from its
- * finished, tested source as it is, with its requirements recorded as the first version, and what the
- * person typed waits in the Project's composer as an unsent draft.
+ * A built example of the application template this Studio was built with, which the server embeds alike:
+ * Open example creates the Project from its finished, tested source as it is, with its requirements recorded
+ * as the first version, and what the person typed waits in the Project's composer as an unsent draft.
  */
 export interface BuiltExample extends TemplateFields {
   kind: "example";
@@ -45,10 +45,13 @@ export interface BuiltExample extends TemplateFields {
 export type ProcessTemplate = PlaceholderTemplate | BuiltExample;
 
 /** The start page's starting point of a built example. */
-export function builtExample(example: ExampleView): BuiltExample {
+function builtExample(example: ExampleView): BuiltExample {
   const { exampleId, title, category, apps, decider, description } = example;
   return { id: exampleId, title, category, apps, decider, description, kind: "example" };
 }
+
+/** The built examples in catalog order, the default first, at the positions the example search returns. */
+export const BUILT_EXAMPLES: readonly BuiltExample[] = EXAMPLE_CATALOG.map(builtExample);
 
 /** The templates in the order the start page shows them. */
 export const PROCESS_TEMPLATES: readonly PlaceholderTemplate[] = [

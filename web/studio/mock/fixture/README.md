@@ -5,7 +5,7 @@ Purpose: The Flow Definition fixtures of mock mode and their classification, the
 
 Importers: `mock`, `mock/backend`, `mock/store`, `mock/store/setup`, `mock/store/tenancy` and `mock/surface` import this directory.
 
-Imports: it imports `lib/api/flow`, `lib/generated/protobuf` and `lib/shared`.
+Imports: it imports `lib/api/flow`, `lib/examples`, `lib/generated/protobuf` and `lib/shared`.
 
 ```mermaid
 flowchart LR
@@ -17,7 +17,8 @@ flowchart LR
   c4["mock/store/tenancy"] --> self
   c5["mock/surface"] --> self
   self --> d0["lib/api/flow"]
-  self --> d1["lib/generated/protobuf"]
-  self --> d2["lib/shared"]
+  self --> d1["lib/examples"]
+  self --> d2["lib/generated/protobuf"]
+  self --> d3["lib/shared"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->

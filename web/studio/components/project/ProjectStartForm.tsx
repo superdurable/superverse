@@ -31,7 +31,6 @@ import { MoreDetails } from "@/components/ui/reveal/MoreDetails";
 import { ExampleGrid } from "./templates/ExampleGrid";
 import { projectNameFrom } from "./templates/project-name";
 import type { BuiltExample, ProcessTemplate } from "./templates/template-catalog";
-import { useExamples } from "./templates/use-examples";
 
 /** The name of a Project whose description gives none, such as one of punctuation only. */
 const FALLBACK_NAME = "New process";
@@ -69,7 +68,6 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
   const [formError, setFormError] = useState<string | null>(null);
   const [transitioning, setTransitioning] = useState(false);
   const composer = useRef<HTMLTextAreaElement | null>(null);
-  const examples = useExamples();
   // A picked placeholder names the Project while the description still opens as the placeholder does.
   const placeholderOf = (text: string) =>
     picked && projectNameFrom(text) === projectNameFrom(picked.description) ? picked : null;
@@ -228,7 +226,6 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
         </MoreDetails>
         <ExampleGrid
           description={description}
-          examples={examples}
           showPlaceholders={executor === PROJECT_EXECUTOR.LOCAL || model !== "mock"}
           picked={placeholderOf(description)?.id ?? null}
           disabled={transitioning || (executor === PROJECT_EXECUTOR.SUPERVERSE && model === null)}

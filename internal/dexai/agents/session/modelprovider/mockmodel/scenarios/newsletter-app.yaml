@@ -14,7 +14,7 @@ description: "Builds the subscriber page and Slack-triggered release newsletter 
 category: product
 inputs:
   - label: "Describe the newsletter"
-    message: "Build a GitHub Releases Newsletter: visitors subscribe once by email; an administrator publishes by posting publish newsletter in Slack; collect the last seven days of releases from superdurable/dex and dex-connectors-library, summarize with OpenAI and deliver individual Gmail messages with visible outcomes. Show the requirements before changing code."
+    message: "Replace the template's TextSummaryFlow with a GitHub Releases Newsletter: visitors subscribe once by email; an administrator publishes by posting publish newsletter in Slack; collect the last seven days of releases from superdurable/dex and dex-connectors-library, summarize with OpenAI and deliver individual Gmail messages with visible outcomes. Show the requirements before changing code."
     replies:
       - text: "Here are the newsletter requirements. I am building the application now; tell me in the chat if anything should change."
         tool_uses:

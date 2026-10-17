@@ -10,6 +10,7 @@ package session
 
 import (
 	"cmp"
+	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
@@ -28,6 +29,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/sandboxtools"
+	"github.com/superdurable/superversev2/internal/dexai/app/apptemplate"
 )
 
 type workspaceRequestBranch uint8
@@ -338,6 +340,116 @@ func (flow *SessionAgentFlow) requestCatalogMatches(request []conversation.Entry
 		}
 	}
 	return flow.catalog.RequestMatches(strings.Join(words, "\n\n"))
+}
+
+// startingExampleSection is the starting_example section of a segment, or
+// "" once it is gone: a picked example's while describesPicked, which its
+// callers set for the Session's first segment and, for the remote agent,
+// while the Session awaits the person's first message; a matched one's until
+// the Session's first build, the first pushed commit_and_push or the build of
+// a Flow design. It describes what the start Step and the agent recorded:
+// whether version 1 exists.
+func startingExampleSection(ctx dex.Context, describesPicked bool) string {
+	started := comm.Must(agentStateAttribute.Get(ctx)).StartingExample
+	switch {
+	case started == nil:
+		return ""
+	case started.Choice == agentloop.ExampleChoiceMatched &&
+		(dexflow.ValueOrZero(previewHandoffAttribute.Get(ctx)).Commit != "" || dexflow.OptionalValue(builtFlowDesignAttribute.Get(ctx)) != nil):
+		return ""
+	case started.Choice == agentloop.ExampleChoicePicked && !describesPicked:
+		return ""
+	}
+	recorded := dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx)) != nil
+	return comm.TruncateUTF8(startingExampleText(*started, recorded), agentloop.MaximumStartingExampleBytes)
+}
+
+// startingExampleText describes the example a Project started from from what
+// this server build embeds of it: how it was chosen and what to do with it,
+// given whether version 1 of the requirements is recorded, its card with each
+// feature's evidence and tests, and its files against the template's shared
+// base. A build that holds the example at another tree describes only its
+// identity.
+func startingExampleText(started agentloop.StartingExample, recorded bool) string {
+	var text strings.Builder
+	fmt.Fprintf(&text, "This Project's first commit is the finished source of the example %s (%s, Git tree %s).\n", started.Title, started.ExampleID, started.Tree)
+	example, found := apptemplate.FindExample(started.ExampleID)
+	template, err := apptemplate.ExampleTemplate(started.ExampleID)
+	described := found && err == nil && template.TreeID == started.Tree
+	const adapt = "keep what the request needs, reusing the example's type names, feature wording, evidence and test names; change what differs; remove the rest with its connection, endpoints, page and tests.\n"
+	switch {
+	case started.Choice == agentloop.ExampleChoiceMatched:
+		fmt.Fprintf(&text, "The platform chose it as the closest example to the person's first message, which mentions %s. The person did not choose it and is not told: do not mention the example. ",
+			strings.Join(apptemplate.FacetLabels(started.MatchedOn), ", "))
+		if recorded {
+			text.WriteString("Version 1 of the requirements is recorded: build it from this source; " + adapt)
+		} else {
+			text.WriteString("Write version 1 from the person's request; " + adapt)
+		}
+	case recorded:
+		text.WriteString("The person opened it in Studio: its card is recorded as version 1 and its design is built. Treat the person's next message as a change to version 1.\n")
+	default:
+		reason := "its card did not pass the requirements check"
+		if !described {
+			reason = "this server build does not hold the example at that tree"
+		}
+		fmt.Fprintf(&text, "The person opened it in Studio, but its card could not be recorded as version 1 (%s), so no requirements are recorded. "+
+			"Confirm requirements before a large change.\n", reason)
+	}
+	if !described {
+		text.WriteString("This server build does not describe that tree; read the source.\n")
+		return text.String()
+	}
+	writeExampleCard(&text, example)
+	if parent, isExtended := apptemplate.FindExample(example.Extends); isExtended {
+		fmt.Fprintf(&text, "\nIt extends the example %s (%s), whose features it keeps:\n", parent.Title, parent.ID)
+		writeTracedFeatures(&text, parent.Trace)
+	}
+	text.WriteString("\nIts files against the template's shared base:\n")
+	for _, list := range []struct {
+		label string
+		paths []string
+	}{{"adds", example.Files.Adds}, {"replaces", example.Files.Replaces}, {"removes", example.Files.Removes}} {
+		paths := "none"
+		if len(list.paths) > 0 {
+			paths = strings.Join(list.paths, ", ")
+		}
+		fmt.Fprintf(&text, "- %s: %s\n", list.label, paths)
+	}
+	return text.String()
+}
+
+// writeExampleCard writes an example's card: its title and summary, each
+// feature with its trace and its connections.
+func writeExampleCard(text *strings.Builder, example apptemplate.Example) {
+	var card struct {
+		Title       string `json:"title"`
+		Summary     string `json:"summary"`
+		Connections []struct {
+			Need       string   `json:"need"`
+			Connector  string   `json:"connector"`
+			Operations []string `json:"operations"`
+		} `json:"connections"`
+	}
+	comm.MustDo(json.Unmarshal(example.Card, &card))
+	fmt.Fprintf(text, "\nIts requirements card, %s: %s\n", card.Title, card.Summary)
+	writeTracedFeatures(text, example.Trace)
+	for _, connection := range card.Connections {
+		fmt.Fprintf(text, "- connection %s (%s): %s\n", connection.Connector, strings.Join(connection.Operations, ", "), connection.Need)
+	}
+}
+
+// writeTracedFeatures writes each feature with its evidence and its tests or
+// why none proves it.
+func writeTracedFeatures(text *strings.Builder, features []apptemplate.TracedFeature) {
+	for _, feature := range features {
+		fmt.Fprintf(text, "- %s %s\n  evidence: %s\n", feature.ID, feature.Text, strings.Join(feature.Evidence, ", "))
+		if len(feature.Tests) > 0 {
+			fmt.Fprintf(text, "  tests: %s\n", strings.Join(feature.Tests, ", "))
+		} else {
+			fmt.Fprintf(text, "  untested: %s\n", feature.UntestedReason)
+		}
+	}
 }
 
 // readRepositoryContext reads the trusted context of the leased checkout,

@@ -19,6 +19,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -27,13 +28,24 @@ import (
 )
 
 // The layout of app-template/: the shared base at its root, and one folder
-// per example below examplesDirectory with its manifest.
+// per example below examplesDirectory with its manifest, beside the files
+// every example shares that no tree holds.
 const (
 	examplesDirectory = "examples"
 	manifestFile      = "example.json"
-	// examplesReadme documents the folders for their authors; no tree holds it.
+	// examplesReadme documents the folders for their authors.
 	examplesReadme = "README.md"
+	// searchWordsFile holds the search's stop words and synonyms,
+	// facetsFile the decision's facets and negators, and
+	// labelledRequestsFile the requests with the example each starts from.
+	searchWordsFile      = "search-words.json"
+	facetsFile           = "facets.json"
+	labelledRequestsFile = "labelled-requests.json"
 )
+
+// sharedExampleFiles are the files of examplesDirectory outside every
+// example folder.
+var sharedExampleFiles = []string{examplesReadme, searchWordsFile, facetsFile, labelledRequestsFile}
 
 // templateFile is one committable file of a composed tree.
 type templateFile struct {
@@ -42,11 +54,12 @@ type templateFile struct {
 	contents   []byte
 }
 
-// composedExample is one example's manifest and its composed tree in path
-// order.
+// composedExample is one example's manifest, its composed tree in path order
+// and that tree's paths against the shared base.
 type composedExample struct {
 	manifest exampleManifest
 	files    []templateFile
+	own      apptemplate.ExampleFiles
 }
 
 // readTemplate reads the base and every example folder of templateDirectory
@@ -67,7 +80,7 @@ func readTemplate(ctx context.Context, templateDirectory string) ([]composedExam
 			base[file.name] = file
 			continue
 		}
-		if rest == examplesReadme {
+		if slices.Contains(sharedExampleFiles, rest) {
 			continue
 		}
 		id, name, found := strings.Cut(rest, "/")
@@ -159,13 +172,37 @@ func readTemplate(ctx context.Context, templateDirectory string) ([]composedExam
 			files = append(files, file)
 		}
 		sort.Slice(files, func(i, j int) bool { return files[i].name < files[j].name })
-		example := composedExample{manifest: manifests[id], files: files}
+		example := composedExample{manifest: manifests[id], files: files, own: againstBase(base, tree)}
 		if err = validateExample(example); err != nil {
 			return nil, fmt.Errorf("example %s: %w", id, err)
 		}
 		examples = append(examples, example)
 	}
 	return examples, nil
+}
+
+// againstBase lists the paths of tree that differ from base, each in path
+// order.
+func againstBase(base, tree map[string]templateFile) apptemplate.ExampleFiles {
+	own := apptemplate.ExampleFiles{Adds: []string{}, Replaces: []string{}, Removes: []string{}}
+	for name, file := range tree {
+		previous, held := base[name]
+		switch {
+		case !held:
+			own.Adds = append(own.Adds, name)
+		case previous.executable != file.executable || !bytes.Equal(previous.contents, file.contents):
+			own.Replaces = append(own.Replaces, name)
+		}
+	}
+	for name := range base {
+		if _, held := tree[name]; !held {
+			own.Removes = append(own.Removes, name)
+		}
+	}
+	for _, names := range [][]string{own.Adds, own.Replaces, own.Removes} {
+		sort.Strings(names)
+	}
+	return own
 }
 
 // committableFiles reads the template's tracked files plus the new files

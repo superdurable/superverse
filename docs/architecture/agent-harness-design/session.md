@@ -342,9 +342,11 @@ There is no mode switch, no "execute plan" command, no confirmation and no force
   design it built, and `BuiltFlowDesignCommit`, the commit it verified; the Snapshot's
   `ConfirmedDesignBuilt` compares the digests, and `ConfirmedDesignBuiltCommit` carries the commit
   while the design is built, so Studio knows which push's processes replace the design. A Session of a
-  Project created from an example records the example's card at start (see `InitializeSessionAgent`
+  Project opened from an example records the example's card at start (see `InitializeSessionAgent`
   below): version 1, its design in `FlowDesigns`, and `BuiltFlowDesign` and `BuiltFlowDesignCommit` set
-  to that design and the setup commit, whose processes are already built. The outline is in the
+  to that design and the setup commit, whose processes are already built. A Session whose Project the
+  server started from the example it matched to the first message records none of them: its agent
+  writes version 1 from that message. The outline is in the
   current requirements, so every `segment_start` carries it without a map load
   ([build completion](../design-first/flow-design.md#build-completion)). The same commit that records a
   design starts `WrittenDesignSteps` for it, and the commit of each succeeded `write` or `edit` result
@@ -635,7 +637,7 @@ automatically for every Step and RPC.
 | `CreatedAt`, `UpdatedAt` | time.Time | |
 | `SessionModel` | `{Model, Revision, ChangedBy *conversation.Actor}` | The user's model choice ([above](#model-selection)) |
 | `ContextSegment` | struct (about 0.5 KB) | Current segment, last usage, pending bytes, force-compaction flag ([context management](context-management.md#segments)) |
-| `AgentState` | struct | Sequence range (`FirstRetainedSequence`, `CurrentFirstSequence`, `LastSequence`), `Status`, `PendingToolCalls`, `PendingToolIndex`, `HandoffContinuations`, `TurnRequestSequences`, `SourceChangedSinceHandoff`, `Turn`, `Running`, `AutomaticTaskTurns`, `AutomaticPlatformTurns`, `AutomaticTurnsPaused`, `SubagentsStartedWithoutUser`, `AwaitsFirstMessage` (a Session started from an example that has had no message of the person; `StartUserTurn` clears it), `ConnectorSlugs` (every connector slug an admitted `connector_develop` call named, at most 16) |
+| `AgentState` | struct | Sequence range (`FirstRetainedSequence`, `CurrentFirstSequence`, `LastSequence`), `Status`, `PendingToolCalls`, `PendingToolIndex`, `HandoffContinuations`, `TurnRequestSequences`, `SourceChangedSinceHandoff`, `Turn`, `Running`, `AutomaticTaskTurns`, `AutomaticPlatformTurns`, `AutomaticTurnsPaused`, `SubagentsStartedWithoutUser`, `AwaitsFirstMessage` (a Session started from an example that has had no message of the person; `StartUserTurn` clears it), `StartingExample` (`{ExampleID, Tree, Title, Choice, MatchedOn}`, under 512 bytes: the example the Project started from, `picked` or `matched` (`agentloop.ExampleChoice`), with at most 12 matched facets; `InitializeSessionAgent` writes it once, and the `starting_example` section is built from it), `ConnectorSlugs` (every connector slug an admitted `connector_develop` call named, at most 16) |
 | `MessageWindowLock` | bool | Coordination only: serializes every writer of the message maps |
 | `WaitingInputRound` | int64 | Monotonic reconciliation watermark |
 | `PendingUserInput` | struct | `{CallID, Kind, Questions, Requirements, StartedAt}`; Kind is `""`; `requirements` with `Requirements` only on a card a Session waited at before cards stopped waiting, which `SendMessage` answers |
@@ -788,7 +790,7 @@ minute method timeout, `CurrentMessages` loaded, `MessageWindowLock` held). Only
 
 | Step | Purpose | Options and routing |
 |---|---|---|
-| `InitializeSessionAgent` | Admit with ProjectFlow, initialize primitives, admit the first message, record an example's brief | Start Step; SYNC; 30 seconds, retried for 2 minutes; locks SessionStatus, Workspace and ConfirmedRequirements and loads `CurrentMessages`. Denial archives and completes with `admission_denied` and admits no message. Otherwise it publishes the first message the Session started with, if any, to `QueuedUserMessages` in the same commit. For a Project created from an example, the Start input's `ExampleBrief` (the card the Session Service takes from the server build's embedded catalog when it holds the example at the Project's tree, else only the problem) is recorded in the same commit with no model call: its card as version 1 of `ConfirmedRequirements` through the card's own schema and validation, its design as built at the setup commit, a system notice whose marker Studio shows as the agent's greeting (only the notice when the card is invalid), and `AgentState.AwaitsFirstMessage` when no first message came with it; then `ActivateSession` and, beside it, `RequestSessionWorkspace` with a demand that, once its instance is READY, `ApplySessionWorkspace` sends to `DeployPreviewHandoff` for the setup commit, with the notice's sequence as the deployment's. Otherwise `ActivateSession` |
+| `InitializeSessionAgent` | Admit with ProjectFlow, initialize primitives, admit the first message, record an example's brief | Start Step; SYNC; 30 seconds, retried for 2 minutes; locks SessionStatus, Workspace and ConfirmedRequirements and loads `CurrentMessages`. Denial archives and completes with `admission_denied` and admits no message. Otherwise it publishes the first message the Session started with, if any, to `QueuedUserMessages` in the same commit. For a Project created from an example, the Start input's `ExampleBrief` records `AgentState.StartingExample` in the same commit. A matched brief (`Choice` `matched`, with what the server matched the first message on) records nothing else: no card, design, notice, `AwaitsFirstMessage` or workspace demand; `ActivateSession` follows and the first message's turn starts as for a description. A picked brief (the card the Session Service takes from the server build's embedded catalog when it holds the example at the Project's tree, else only the problem) is recorded in the same commit with no model call: its card as version 1 of `ConfirmedRequirements` through the card's own schema and validation, its design as built at the setup commit, a system notice whose marker Studio shows as the agent's greeting (only the notice when the card is invalid), and `AgentState.AwaitsFirstMessage` when no first message came with it; then `ActivateSession` and, beside it, `RequestSessionWorkspace` with a demand that, once its instance is READY, `ApplySessionWorkspace` sends to `DeployPreviewHandoff` for the setup commit, with the notice's sequence as the deployment's. Otherwise `ActivateSession` |
 | `ActivateSession` | Set status `waiting_for_message` | To `AwaitUser` |
 | `AwaitUser` | Wait for answers, steering, a queued message or a notification; start the turn | Locks `MessageWindowLock`, `PendingUserInput`, `PendingApproval`, `Workspace` |
 | `AnsweredInput` | Start the answer turn without checking queues | To `CompactContext` or `CallModel` |
@@ -1015,7 +1017,30 @@ resumes it. The `Workspace` value type is unchanged; `ContextSegment` gains the 
 `AwaitsRepositoryContext` (JSON `awaits_repository_context`, omitted when false), which the first
 model-call boundary after the request read the context clears in the commit that appends the
 one repository-context notice. The first segment's `segment_start` carries `<catalog_matches>`
-from the server replica's catalog copy; the Step reads it without a network call. The owner of a
+from the server replica's catalog copy; the Step reads it without a network call.
+
+The `segment_start` of a Session whose Project started from an example carries a
+`<starting_example>` section before `<catalog_matches>`, which `session_workspace.go` builds from
+`AgentState.StartingExample` and the example data the server build embeds, at most 16 KiB: how the
+example was chosen, its card with each feature's evidence and tests (and the features of the example
+it extends), and its files against the template's shared base. The section says what the start Step
+and the agent recorded, read from `ConfirmedRequirements` when it opens: a picked example whose card
+is version 1, or one whose card could not be recorded (this build holds the example at another tree,
+or the card failed its check), which then says so and that no requirements exist; a matched example
+before version 1 (write version 1 from the request) or after it (build version 1 from this source).
+A picked example's section opens the Session's first segment only, which an appended notice never
+did: `segmentRequest` replays from the segment's first sequence, after the greeting. A matched
+example's section opens every segment, compactions and rollovers included, until the Session's first
+build: the first pushed, unblocked `commit_and_push` (`PreviewHandoff.Commit`) or `BuiltFlowDesign`,
+so a version 1 that keeps the example's Steps and records no design also ends it; it never mentions
+the example to the person. The executor handoff notice of a switch back to the platform carries a
+matched example's section after the running background commands, in the room the 16 KiB notice
+leaves (at least 512 bytes, else none), so it never pushes the earlier sections out. The remote read
+returns the section with the repository context (`RemoteRead.StartingExample`), and the remote agent
+context appends it after the repository context: a matched example's for the same lifetime, a picked
+example's only while the Session awaits the person's first message (`AgentState.AwaitsFirstMessage`),
+since every activation's brief reads the context again. The section adds no
+Attribute, Channel or Stream; a Session started before it has no `StartingExample` and carries none. The owner of a
 request beside the conversation now also hands a joined continuation back when the request fails.
 No RPC, Channel, Stream or AttributeMap changes, and no new Attribute is declared.
 

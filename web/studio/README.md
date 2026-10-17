@@ -11,10 +11,13 @@ named from its email. The start form asks what process Dex should run: the descr
 first Agent message, a template from the gallery fills it in, and the project name (derived from
 the description) and the Session's model sit under Advanced. A new Project opens on its
 conversation alone and switches once to the Builder when the agent's first requirements card
-arrives. Under the composer a grid of starting points lists the server's built examples
-(`ListExamples`) on every model: a few of each category before the person types, the six closest
-to the description while they type, re-ranked at word boundaries, and Browse all examples to search
-and filter the whole catalog. Open example creates the Project from that example as it is, in one
+arrives. Under the composer a grid of starting points lists the built examples on every model, from
+the catalog Studio bundles ([`lib/examples`](lib/examples/README.md), the same index the server
+embeds): a few of each category before the person types, the six closest to the description while
+they type, ranked by the search the server shortlists with and re-ranked at word boundaries, and
+Browse all examples to search and filter the whole catalog. Build with no example opened sends the
+description, and a server whose closest-example pick is on may start that Project from the example
+it finds clearly closest; Studio then shows it as any Project created from a description. Open example creates the Project from that example as it is, in one
 click: CreateProject carries the example and no message, and what the person typed waits in the
 Project's chat composer as an unsent draft (per browser, sent only when the person sends it). Its
 Session starts with the example's card as version 1, built at the setup commit, so the Project
@@ -133,7 +136,7 @@ the current contract.
 | [`components/project/activity`](components/project/activity/README.md) | The per-environment timeline and the recent trigger events: Preview's starts, Live's publishes and deployments, each with version, outcome and problem. |
 | [`components/project/creation`](components/project/creation/README.md) | Watches a newly created Project and Session, then shows inline pairing until the chosen local agent activates. |
 | [`components/project/setup`](components/project/setup/README.md) | Setup's pieces above the table: the bar with Preview's line and the Next publish line, and the Live tab's banner. |
-| [`components/project/templates`](components/project/templates/README.md) | The start page's starting points: the server's built examples and the placeholder templates, their gallery, the suggestions while typing, and the Project name a description gives. |
+| [`components/project/templates`](components/project/templates/README.md) | The start page's starting points: the bundled built examples and the placeholder templates, their gallery, the suggestions while typing, and the Project name a description gives. |
 | [`components/publishing`](components/publishing/README.md) | Tools, Publishing: the publish in progress, what is Live with Stop Live, every version with its builds, rollback after its consequences, and Live's history. |
 | [`components/publishing/progress`](components/publishing/progress/README.md) | One publish in Tools ▸ Publishing: its header with Cancel, the five-stage bar, a failure's problem, and the inline build log. |
 | [`components/publishing/publish`](components/publishing/publish/README.md) | The bar's Publish button and its popover: the version, what blocks it, what to check, what happens, the skip reason, and Publish. |
@@ -162,6 +165,7 @@ the current contract.
 | [`lib/api/tenancy`](lib/api/tenancy/README.md) | Browser clients of TeamSpaceService, TeamSpaceMemberService and ProjectMemberService over the business RPC route. |
 | [`lib/api/transport`](lib/api/transport/README.md) | The browser network layer owns RPC posts, bounded read retries, snapshot Watches, command recovery, the Flow API client and application URL probes. |
 | [`lib/browser`](lib/browser/README.md) | Browser-only utilities: storage with every stored key, the theme preference, single-flight user actions, URL query updates and paged lists. |
+| [`lib/examples`](lib/examples/README.md) | The examples of the application template this Studio was built with and the example search, which ranks them in the browser exactly as the server shortlists them. |
 | [`lib/flow`](lib/flow/README.md) | The providers the Flow UI reads: the scoped Flow API client, Flow view navigation and the Flow catalog, with the definition revision binding and enum labels. |
 | [`lib/project`](lib/project/README.md) | Project resources: the Project Watch provider and list, resource Watches, release versions, Process definitions, waiting runs, configuration reads, requirement gap names, the pending creation and the template's Design. |
 | [`lib/project/publishing`](lib/project/publishing/README.md) | A publish's five stages from its phase timings, the publish in progress with its Watches, the build log read, and the Publish popover's version check. |
@@ -189,7 +193,7 @@ the current contract.
 | [`mock/store/tenancy`](mock/store/tenancy/README.md) | The Teamspaces, their members and the Projects' members of Studio mock mode, with the rules TeamSpaceFlow and ProjectFlow keep and the caller's role in each. |
 | [`mock/store/validation`](mock/store/validation/README.md) | Checks Preview evidence when the mock store admits a release build. |
 | [`mock/surface`](mock/surface/README.md) | The fixture Project surface inside the Builder frame with its role lens and the named Setup fixtures, which mock routes render in place of the production surface. |
-| [`scripts`](scripts/README.md) | Generators and checks of the Studio source: protobuf types, consumed pins, the module graph, the module and styling rules, and these directory READMEs. |
+| [`scripts`](scripts/README.md) | Generators and checks of the Studio source: protobuf types, consumed pins, the module graph, the module and styling rules, the example search's data and these directory READMEs. |
 | [`tests/e2e`](tests/e2e/README.md) | The three required acceptance specs of the local lanes: registration, a Project edited and released through Studio, and an Agent-added Flow approval. |
 | [`tests/e2e/integration`](tests/e2e/integration/README.md) | Focused Studio scenarios that run against an existing environment and private fixtures; they are run one at a time and are not acceptance. |
 | [`tests/e2e/integration/publishing`](tests/e2e/integration/publishing/README.md) | The Publish popover and cancellation on a local lane: the Preview validation or a skip reason, the stated consequences, Live's waiting settings, and a cancelled build. |

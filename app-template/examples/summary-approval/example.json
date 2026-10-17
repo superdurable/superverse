@@ -158,5 +158,10 @@
         ]
       }
     ]
+  },
+  "match": {
+    "core": ["summarize", "approval"],
+    "signals": ["page-form", "llm"],
+    "conflicts": ["schedule"]
   }
 }

@@ -929,14 +929,16 @@ message RemoveLiveResponse {
 }
 
 // Setup creates the managed repository, so the caller names none. Its first commit is the default
-// example of the server's application template, or the example that example names.
+// example of the server's application template, the example that example names, or, for a creation
+// with an initial_message and no example, the example the server finds closest to that message when
+// its closest-example pick is on.
 message ManagedRepositorySource {
-  // An example that ListExamples lists. One this server does not offer is FAILED_PRECONDITION with
-  // reason EXAMPLE_NOT_OFFERED.
+  // An example of the application template, as Studio's bundled catalog lists them. One this server
+  // does not offer is FAILED_PRECONDITION with reason EXAMPLE_NOT_OFFERED.
   ExampleReference example = 1;
 }
 
-// One example of the server's application template, as ListExamples names it.
+// One example of the server's application template.
 message ExampleReference {
   string example_id = 1;
 }
@@ -976,8 +978,10 @@ message ProjectSnapshot {
   // ListProjects entry with UNSPECIFIED carries only project_id, name, status, setup.status, live
   // and team_space_id.
   ProjectRole caller_role = 20;
-  // The example the Project was created from, which template_revision names; absent for a Project
-  // created from a description, which starts from the default example.
+  // The example whose tree the Project started from, which template_revision names: the example the
+  // person opened, or the one the server matched to the first message of a Project created from a
+  // description (AgentDescription.starting_example.choice tells them apart); absent for a Project
+  // that started from the default example.
   ProjectExample example = 21;
 }
 
@@ -1193,51 +1197,6 @@ enum ConfigurationStatus {
   CONFIGURATION_STATUS_DRAFT = 1;
   CONFIGURATION_STATUS_NEEDS_REVIEW = 2;
   CONFIGURATION_STATUS_READY = 3;
-}
-
-// ---------------------------------------------------------------------------------------------
-// Example
-// ---------------------------------------------------------------------------------------------
-
-// The tested examples a Project can start from: the examples of the application template this
-// server build embeds, which every ACTIVE account reads alike.
-service ExampleService {
-  rpc ListExamples(ListExamplesRequest) returns (ListExamplesResponse);
-}
-
-message ListExamplesRequest {
-  CallerContext caller = 100;
-}
-
-// The examples in the order the start page lists them, the default first.
-message ListExamplesResponse {
-  repeated Example examples = 1;
-}
-
-// One example: what Studio's start page shows and suggests, and what ManagedRepositorySource.example
-// names.
-message Example {
-  string example_id = 1;
-  string title = 2;
-  ExampleCategory category = 3;
-  // The apps the process works with, as their makers name them.
-  repeated string apps = 4;
-  // Who makes the call the process waits for.
-  string decider = 5;
-  // What starts the process, the people, the rules and the exceptions, in business language.
-  string description = 6;
-  // The connectors of the example's dex-app.yaml.
-  repeated string connector_ids = 7;
-}
-
-// The start page's group of an example.
-enum ExampleCategory {
-  EXAMPLE_CATEGORY_UNSPECIFIED = 0;
-  EXAMPLE_CATEGORY_APPROVALS = 1;
-  EXAMPLE_CATEGORY_FINANCE = 2;
-  EXAMPLE_CATEGORY_SUPPORT = 3;
-  EXAMPLE_CATEGORY_PEOPLE = 4;
-  EXAMPLE_CATEGORY_CONTENT = 5;
 }
 
 // The members of a Project and their roles. Only its owners and the platform admin change them;
@@ -2057,6 +2016,21 @@ message AgentDescription {
   Actor model_changed_by = 29;
   Actor preview_auto_deploy_changed_by = 30;
   SessionExecutor executor = 31;
+  // The example the Session's Project started from and how it was chosen; unset for a Project
+  // created from a description that started from the default example.
+  AgentStartingExample starting_example = 32;
+}
+
+// The example a Session's Project started from. A picked example's card is the Session's version 1;
+// for an example the server matched to the first message, the agent writes version 1 itself.
+message AgentStartingExample {
+  enum Choice {
+    CHOICE_UNSPECIFIED = 0;
+    CHOICE_PICKED = 1;
+    CHOICE_MATCHED = 2;
+  }
+  string example_id = 1;
+  Choice choice = 2;
 }
 
 // The progress a mock model reply reports with itself: its scenario, the number of the input it

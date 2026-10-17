@@ -9,7 +9,7 @@
 import { test, expect } from "@/tests/e2e/support/coverage/spec-coverage";
 import { register } from "@/tests/e2e/support/account";
 import { choosesMockModel, runsMockModel, sendMockMessage } from "@/tests/e2e/support/mock/mock-composer";
-import { MOCK_MODEL_OPTION, readProject, readSession } from "@/tests/e2e/support/project";
+import { deleteProject, MOCK_MODEL_OPTION, readProject, readSession } from "@/tests/e2e/support/project";
 import { chooseOption, rpcAnswered } from "@/tests/e2e/support/studio-api";
 import { createTeamSpace } from "@/tests/e2e/support/teamspace/teamspace";
 import type { RpcInput, RpcOutput } from "@/lib/shared/rpc-methods";
@@ -130,7 +130,10 @@ test("a built example opens as it is in one click, ranked by the description, wh
   const waiting = await readSession(page, projectId);
   expect(waiting.agent?.history?.messages.some(({ message }) => message?.role === "ROLE_USER")).toBe(false);
 
-  if (!mock) return;
+  if (!mock) {
+    await deleteProject(page, projectId);
+    return;
+  }
   // The Session opened on the mock model and has called no model; it takes the change there.
   await expect.poll(() => runsMockModel(page, projectId), { timeout: 60_000 }).toBe(true);
   // The composer offers a new Project's scenarios only on the start page; the example's change goes through
@@ -152,4 +155,5 @@ test("a built example opens as it is in one click, ranked by the description, wh
   await expect(conversation.locator('[data-recorded-version="1"]')).toHaveText(
     "Recorded version 1: the example's requirements",
   );
+  await deleteProject(page, projectId);
 });

@@ -46,26 +46,28 @@ type exampleManifest struct {
 	Removes      []string        `json:"removes,omitempty"`
 	Requirements requirements    `json:"requirements"`
 	Design       json.RawMessage `json:"design"`
+	// Match is what a request must mention for the server to start a Project
+	// from the example, which -propose-match proposes and its author reviews.
+	Match matchBlock `json:"match"`
+}
+
+// matchBlock is an example's match block: the facets a request must mention,
+// those that count for the example and those that rule it out, each a facet
+// of facets.json.
+type matchBlock struct {
+	Core      []string `json:"core"`
+	Signals   []string `json:"signals"`
+	Conflicts []string `json:"conflicts"`
 }
 
 // requirements is the example's card with the trace of each feature.
 type requirements struct {
-	Title       string          `json:"title"`
-	Summary     string          `json:"summary"`
-	Features    []feature       `json:"features"`
-	Connections json.RawMessage `json:"connections"`
-	UserSetup   json.RawMessage `json:"user_setup"`
-	Acceptance  json.RawMessage `json:"acceptance"`
-}
-
-// feature is one requirement with the source that implements it and either
-// the tests that prove it or why none does.
-type feature struct {
-	ID             string   `json:"id"`
-	Text           string   `json:"text"`
-	Evidence       []string `json:"evidence"`
-	Tests          []string `json:"tests,omitempty"`
-	UntestedReason string   `json:"untested_reason,omitempty"`
+	Title       string                      `json:"title"`
+	Summary     string                      `json:"summary"`
+	Features    []apptemplate.TracedFeature `json:"features"`
+	Connections json.RawMessage             `json:"connections"`
+	UserSetup   json.RawMessage             `json:"user_setup"`
+	Acceptance  json.RawMessage             `json:"acceptance"`
 }
 
 // card is the confirm_requirements input of a manifest, in the schema's
@@ -168,13 +170,9 @@ func catalogEntry(example composedExample) (apptemplate.CatalogEntry, error) {
 	if err != nil {
 		return apptemplate.CatalogEntry{}, err
 	}
-	connectors, err := connectorIDs(example.files)
-	if err != nil {
-		return apptemplate.CatalogEntry{}, err
-	}
 	manifest := example.manifest
-	return apptemplate.CatalogEntry{ID: manifest.ID, Title: manifest.Title, Category: manifest.Category, Apps: manifest.Apps, Decider: manifest.Decider,
-		Description: manifest.Description, ConnectorIDs: connectors, Card: encoded}, nil
+	return apptemplate.CatalogEntry{ID: manifest.ID, Title: manifest.Title, Card: encoded, Trace: manifest.Requirements.Features, Files: example.own,
+		Extends: manifest.Extends}, nil
 }
 
 func text(value string, maximum int) bool {

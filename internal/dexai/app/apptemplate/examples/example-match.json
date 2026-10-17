@@ -1,0 +1,736 @@
+{
+  "schemaVersion": 1,
+  "negators": [
+    {
+      "text": "no"
+    },
+    {
+      "text": "not"
+    },
+    {
+      "text": "nor"
+    },
+    {
+      "text": "without"
+    },
+    {
+      "text": "never"
+    },
+    {
+      "text": "don t"
+    },
+    {
+      "text": "do not"
+    },
+    {
+      "text": "doesn t"
+    },
+    {
+      "text": "does not"
+    },
+    {
+      "text": "didn t"
+    },
+    {
+      "text": "cannot"
+    },
+    {
+      "text": "can t"
+    },
+    {
+      "text": "won t"
+    },
+    {
+      "text": "isn t"
+    },
+    {
+      "text": "aren t"
+    },
+    {
+      "text": "wasn t"
+    },
+    {
+      "text": "shouldn t"
+    },
+    {
+      "text": "mustn t"
+    },
+    {
+      "text": "instead of"
+    },
+    {
+      "text": "rather than"
+    },
+    {
+      "text": "replace",
+      "prefix": true
+    },
+    {
+      "text": "remove",
+      "prefix": true
+    },
+    {
+      "text": "except"
+    },
+    {
+      "text": "exclude"
+    },
+    {
+      "text": "excluded"
+    },
+    {
+      "text": "excluding"
+    },
+    {
+      "text": "skip"
+    },
+    {
+      "text": "avoid",
+      "prefix": true
+    },
+    {
+      "text": "forbid",
+      "prefix": true
+    },
+    {
+      "text": "prohibit",
+      "prefix": true
+    },
+    {
+      "text": "disallow",
+      "prefix": true
+    }
+  ],
+  "facets": [
+    {
+      "id": "slack",
+      "label": "Slack",
+      "terms": [
+        {
+          "text": "slack"
+        }
+      ]
+    },
+    {
+      "id": "github",
+      "label": "GitHub",
+      "terms": [
+        {
+          "text": "github"
+        },
+        {
+          "text": "git hub"
+        }
+      ]
+    },
+    {
+      "id": "gmail",
+      "label": "Gmail",
+      "terms": [
+        {
+          "text": "gmail"
+        },
+        {
+          "text": "google mail"
+        }
+      ]
+    },
+    {
+      "id": "llm",
+      "label": "an AI model",
+      "terms": [
+        {
+          "text": "ai"
+        },
+        {
+          "text": "llm"
+        },
+        {
+          "text": "llms"
+        },
+        {
+          "text": "gpt"
+        },
+        {
+          "text": "gpts"
+        },
+        {
+          "text": "chatgpt"
+        },
+        {
+          "text": "openai"
+        },
+        {
+          "text": "claude"
+        },
+        {
+          "text": "anthropic"
+        },
+        {
+          "text": "gemini"
+        },
+        {
+          "text": "language model",
+          "prefix": true
+        }
+      ]
+    },
+    {
+      "id": "summarize",
+      "label": "a summary",
+      "terms": [
+        {
+          "text": "summar",
+          "prefix": true
+        },
+        {
+          "text": "condens",
+          "prefix": true
+        },
+        {
+          "text": "tl dr"
+        },
+        {
+          "text": "tldr"
+        }
+      ],
+      "implies": [
+        "llm"
+      ]
+    },
+    {
+      "id": "approval",
+      "label": "an approval",
+      "terms": [
+        {
+          "text": "approv",
+          "prefix": true
+        },
+        {
+          "text": "sign off"
+        },
+        {
+          "text": "signs off"
+        },
+        {
+          "text": "signed off"
+        },
+        {
+          "text": "signoff"
+        },
+        {
+          "text": "human review"
+        },
+        {
+          "text": "authoriz",
+          "prefix": true
+        },
+        {
+          "text": "authoris",
+          "prefix": true
+        }
+      ],
+      "implies": [
+        "decision"
+      ]
+    },
+    {
+      "id": "decision",
+      "label": "a wait for someone's answer",
+      "terms": [
+        {
+          "text": "wait",
+          "prefix": true
+        },
+        {
+          "text": "await",
+          "prefix": true
+        },
+        {
+          "text": "until"
+        },
+        {
+          "text": "decid",
+          "prefix": true
+        },
+        {
+          "text": "decision",
+          "prefix": true
+        }
+      ]
+    },
+    {
+      "id": "thread-reply",
+      "label": "a reply in a thread",
+      "terms": [
+        {
+          "text": "thread repl",
+          "prefix": true
+        },
+        {
+          "text": "thread approv",
+          "prefix": true
+        }
+      ],
+      "paired": [
+        {
+          "text": "thread",
+          "prefix": true
+        }
+      ],
+      "companions": [
+        {
+          "text": "repl",
+          "prefix": true
+        },
+        {
+          "text": "respond",
+          "prefix": true
+        },
+        {
+          "text": "answer",
+          "prefix": true
+        }
+      ]
+    },
+    {
+      "id": "reply",
+      "label": "a reply",
+      "terms": [
+        {
+          "text": "reply"
+        },
+        {
+          "text": "replies"
+        },
+        {
+          "text": "replied"
+        },
+        {
+          "text": "replying"
+        }
+      ]
+    },
+    {
+      "id": "newsletter",
+      "label": "a newsletter",
+      "terms": [
+        {
+          "text": "newsletter",
+          "prefix": true
+        },
+        {
+          "text": "news letter",
+          "prefix": true
+        },
+        {
+          "text": "digest",
+          "prefix": true
+        }
+      ]
+    },
+    {
+      "id": "releases",
+      "label": "releases",
+      "terms": [
+        {
+          "text": "release",
+          "prefix": true
+        },
+        {
+          "text": "changelog",
+          "prefix": true
+        }
+      ]
+    },
+    {
+      "id": "subscribe",
+      "label": "subscriptions",
+      "terms": [
+        {
+          "text": "subscri",
+          "prefix": true
+        },
+        {
+          "text": "sign up"
+        },
+        {
+          "text": "signup"
+        },
+        {
+          "text": "mailing list",
+          "prefix": true
+        }
+      ]
+    },
+    {
+      "id": "email",
+      "label": "email",
+      "terms": [
+        {
+          "text": "email",
+          "prefix": true
+        },
+        {
+          "text": "e mail",
+          "prefix": true
+        }
+      ]
+    },
+    {
+      "id": "slack-message",
+      "label": "a new message in a channel",
+      "terms": [
+        {
+          "text": "new message in the channel"
+        },
+        {
+          "text": "new message in our"
+        },
+        {
+          "text": "message in the channel"
+        },
+        {
+          "text": "new top level message"
+        },
+        {
+          "text": "channel message",
+          "prefix": true
+        },
+        {
+          "text": "posts in"
+        },
+        {
+          "text": "posted in"
+        }
+      ]
+    },
+    {
+      "id": "schedule",
+      "label": "a schedule",
+      "terms": [
+        {
+          "text": "every day"
+        },
+        {
+          "text": "every morning"
+        },
+        {
+          "text": "every afternoon"
+        },
+        {
+          "text": "every evening"
+        },
+        {
+          "text": "every night"
+        },
+        {
+          "text": "every week"
+        },
+        {
+          "text": "every weekday"
+        },
+        {
+          "text": "every weekend"
+        },
+        {
+          "text": "every monday"
+        },
+        {
+          "text": "every tuesday"
+        },
+        {
+          "text": "every wednesday"
+        },
+        {
+          "text": "every thursday"
+        },
+        {
+          "text": "every friday"
+        },
+        {
+          "text": "every saturday"
+        },
+        {
+          "text": "every sunday"
+        },
+        {
+          "text": "every hour"
+        },
+        {
+          "text": "every month"
+        },
+        {
+          "text": "every quarter"
+        },
+        {
+          "text": "every year"
+        },
+        {
+          "text": "every other day"
+        },
+        {
+          "text": "every other week"
+        },
+        {
+          "text": "every two days"
+        },
+        {
+          "text": "every two weeks"
+        },
+        {
+          "text": "every few hours"
+        },
+        {
+          "text": "every few days"
+        },
+        {
+          "text": "each day"
+        },
+        {
+          "text": "each morning"
+        },
+        {
+          "text": "each afternoon"
+        },
+        {
+          "text": "each evening"
+        },
+        {
+          "text": "each night"
+        },
+        {
+          "text": "each week"
+        },
+        {
+          "text": "each weekday"
+        },
+        {
+          "text": "each monday"
+        },
+        {
+          "text": "each tuesday"
+        },
+        {
+          "text": "each wednesday"
+        },
+        {
+          "text": "each thursday"
+        },
+        {
+          "text": "each friday"
+        },
+        {
+          "text": "each saturday"
+        },
+        {
+          "text": "each sunday"
+        },
+        {
+          "text": "each hour"
+        },
+        {
+          "text": "each month"
+        },
+        {
+          "text": "once a day"
+        },
+        {
+          "text": "once a week"
+        },
+        {
+          "text": "once a month"
+        },
+        {
+          "text": "twice a day"
+        },
+        {
+          "text": "twice a week"
+        },
+        {
+          "text": "daily"
+        },
+        {
+          "text": "nightly"
+        },
+        {
+          "text": "weekly"
+        },
+        {
+          "text": "biweekly"
+        },
+        {
+          "text": "fortnightly"
+        },
+        {
+          "text": "hourly"
+        },
+        {
+          "text": "monthly"
+        },
+        {
+          "text": "quarterly"
+        },
+        {
+          "text": "yearly"
+        },
+        {
+          "text": "annually"
+        },
+        {
+          "text": "weekdays"
+        },
+        {
+          "text": "at midnight"
+        },
+        {
+          "text": "on a schedule"
+        },
+        {
+          "text": "cron"
+        }
+      ]
+    },
+    {
+      "id": "page-form",
+      "label": "a page or form",
+      "terms": [
+        {
+          "text": "paste",
+          "prefix": true
+        },
+        {
+          "text": "form"
+        },
+        {
+          "text": "forms"
+        },
+        {
+          "text": "web page"
+        }
+      ]
+    },
+    {
+      "id": "direct-message",
+      "label": "a direct message",
+      "terms": [
+        {
+          "text": "direct message",
+          "prefix": true
+        },
+        {
+          "text": "dm"
+        },
+        {
+          "text": "dms"
+        }
+      ]
+    }
+  ],
+  "defaultSource": [
+    {
+      "text": "textsummaryflow"
+    },
+    {
+      "text": "preparesummary"
+    },
+    {
+      "text": "generatesummary"
+    },
+    {
+      "text": "savesummaryresult"
+    },
+    {
+      "text": "recordsummaryfailure"
+    },
+    {
+      "text": "recordsummaryuncertainty"
+    },
+    {
+      "text": "text summary flow go"
+    }
+  ],
+  "examples": [
+    {
+      "id": "text-summary",
+      "core": [
+        "summarize"
+      ],
+      "signals": [
+        "page-form",
+        "llm"
+      ],
+      "conflicts": [
+        "schedule"
+      ],
+      "connectors": [
+        "llm"
+      ],
+      "steps": 5
+    },
+    {
+      "id": "github-releases-newsletter",
+      "core": [
+        "github",
+        "newsletter"
+      ],
+      "signals": [
+        "releases",
+        "subscribe",
+        "email",
+        "gmail",
+        "llm",
+        "slack",
+        "summarize"
+      ],
+      "conflicts": [],
+      "connectors": [
+        "slack",
+        "github",
+        "llm",
+        "gmail"
+      ],
+      "steps": 20
+    },
+    {
+      "id": "slack-thread-approval",
+      "core": [
+        "slack",
+        "thread-reply",
+        "decision"
+      ],
+      "signals": [
+        "approval",
+        "slack-message",
+        "reply"
+      ],
+      "conflicts": [
+        "schedule",
+        "direct-message"
+      ],
+      "connectors": [
+        "slack"
+      ],
+      "steps": 4
+    },
+    {
+      "id": "summary-approval",
+      "core": [
+        "summarize",
+        "approval"
+      ],
+      "signals": [
+        "page-form",
+        "llm"
+      ],
+      "conflicts": [
+        "schedule"
+      ],
+      "connectors": [
+        "llm"
+      ],
+      "steps": 6,
+      "extends": "text-summary"
+    }
+  ]
+}

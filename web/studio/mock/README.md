@@ -119,10 +119,11 @@ Session admission follows the same rule; the mock remembers both admission
 identities, so a retry returns the original Project or Session.
 
 The start page creates a new private managed repository from the template, then
-starts an Agent Session. Its grid lists the four embedded examples
-(`mock/fixture/examples.ts`); a Project opened from one starts its Session as the
-server does, with the greeting and the example's card as version 1 (without a
-design, so the Flow tab draws the fixture processes). Project deletion archives
+starts an Agent Session. Its grid lists the examples Studio bundles
+(`lib/examples`), which the mock offers; `mock/fixture/examples.ts` holds a card
+for each, and fails at load when the two differ. A Project opened from one starts
+its Session as the server does, with the greeting and the example's card as
+version 1 (without a design, so the Flow tab draws the fixture processes). Project deletion archives
 its managed repository.
 
 The Project page lists Sessions by lifecycle (active, terminal, all) with Stop.

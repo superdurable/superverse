@@ -2,6 +2,9 @@
   "name": "studio",
   "version": "0.1.0",
   "private": true,
+  "imports": {
+    "#examples/*": "./lib/examples/*"
+  },
   "scripts": {
     "dev": "next dev",
     "mock": "SUPERVERSE_STUDIO_MOCK=true next dev",
@@ -18,7 +21,8 @@
     "check:readmes": "node scripts/check-readmes.mjs",
     "generate:readmes": "node scripts/check-readmes.mjs --write",
     "check:styles": "node scripts/check-styles.mjs",
-    "check:source": "npm run generate:check && npm run check:pins && npm run format:check && npm run typecheck && npm run check:unused && npm run check:modules && npm run check:readmes",
+    "check:examples": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-example-search.mjs",
+    "check:source": "npm run generate:check && npm run check:pins && npm run format:check && npm run typecheck && npm run check:unused && npm run check:modules && npm run check:readmes && npm run check:examples",
     "check:build": "npm run build && npm run check:styles",
     "check": "npm run check:source && npm run lint && npm run check:build",
     "typecheck": "next typegen && tsc --noEmit && tsc -p scripts",

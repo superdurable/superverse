@@ -170,5 +170,10 @@
       }
     ],
     "removed_flows": []
+  },
+  "match": {
+    "core": ["slack", "thread-reply", "decision"],
+    "signals": ["approval", "slack-message", "reply"],
+    "conflicts": ["schedule", "direct-message"]
   }
 }

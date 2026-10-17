@@ -68,7 +68,10 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
   const sendMessage = state.send;
   const send = useChatSend({ send: sendMessage, about, clearAbout, markSent });
   const template = useTemplateCommit();
-  const startedFromExample = Boolean(useProjectResource()?.snapshot?.example);
+  // An example the server matched to the first message greets with nothing and records no version 1 of its own.
+  const startedFromExample =
+    Boolean(useProjectResource()?.snapshot?.example) &&
+    state.snapshot?.description?.startingExample?.choice !== "matched";
   const shownMessages = useMemo(
     () => shownChatMessages(state.messages, template, startedFromExample),
     [state.messages, template, startedFromExample],

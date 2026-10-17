@@ -503,5 +503,10 @@
       }
     ],
     "removed_flows": []
+  },
+  "match": {
+    "core": ["github", "newsletter"],
+    "signals": ["releases", "subscribe", "email", "gmail", "llm", "slack", "summarize"],
+    "conflicts": []
   }
 }

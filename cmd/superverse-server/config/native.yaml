@@ -36,6 +36,9 @@ agent:
   # ANTHROPIC_API_KEY.
   mockModel: true
   model: mock
+  # A Project created from a first message starts from the closest example
+  # when the server's match is clear; only the local lanes turn it on.
+  closestExamplePick: true
   thinkingPrefixMismatch: error
 
 server:

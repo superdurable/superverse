@@ -47,5 +47,5 @@ package imports nothing from `internal/`.
   when it is unchanged, absent means keep. State values stay typed JSON whose text may end with
   "[truncated: open Studio for the full <field>]".
 - `context: true` asks for `agentContext`, everything the platform tells the remote agent (at most
-  64 KiB, outside the state digest); such a request is answered at once, never held as a long
+  80 KiB, outside the state digest); such a request is answered at once, never held as a long
   poll. The Bridge relays it into its brief and its MCP `instructions` and adds none of its own.

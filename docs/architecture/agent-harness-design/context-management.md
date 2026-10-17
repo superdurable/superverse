@@ -359,8 +359,9 @@ keeps serving an older segment unchanged until the next rollover.
 The `segment_start` entry is one user-role message. It contains, in order:
 `<context_summary>`, `<repository_context>`, `<confirmed_requirements>` (the current version,
 when a requirements card was recorded; [session](session.md#requirements-cards)),
-`<current_plan>` (the todo list), `<catalog_matches>` and `<pending_request>` (the current
-turn's bounded user request quote), which stays last. The current mode's notice is appended
+`<current_plan>` (the todo list), `<starting_example>` (the example the Project started from,
+while it is described; [session](session.md)), `<catalog_matches>` and `<pending_request>` (the
+current turn's bounded user request quote), which stays last. The current mode's notice is appended
 after it.
 
 `<catalog_matches>` opens only the Session's first segment (`session_start`): the released

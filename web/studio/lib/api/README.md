@@ -3,9 +3,9 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: Browser clients of the BFF, one module per browser service with functions named after its RPCs, and the account client that reaches AccountService through `/api/auth`.
 
-Importers: `components/build`, `components/project`, `components/project/activity`, `components/project/creation`, `components/project/templates`, `components/publishing`, `components/publishing/progress`, `components/publishing/publish`, `components/session`, `components/session/executor`, `components/session/remoteagent`, `components/shell`, `lib/project`, `lib/project/publishing`, `lib/project/setup`, `lib/session` and `lib/session/design` import this directory.
+Importers: `components/build`, `components/project`, `components/project/activity`, `components/project/creation`, `components/publishing`, `components/publishing/progress`, `components/publishing/publish`, `components/session`, `components/session/executor`, `components/session/remoteagent`, `components/shell`, `lib/project`, `lib/project/publishing`, `lib/project/setup`, `lib/session` and `lib/session/design` import this directory.
 
-Imports: it imports `lib/api/transport`, `lib/generated/protobuf` and `lib/shared` and calls the `AgentService`, `DeploymentService`, `ExampleService`, `PreviewService`, `ProjectService`, `ReleaseService`, `RemoteAgentService` and `SessionService` APIs.
+Imports: it imports `lib/api/transport`, `lib/generated/protobuf` and `lib/shared` and calls the `AgentService`, `DeploymentService`, `PreviewService`, `ProjectService`, `ReleaseService`, `RemoteAgentService` and `SessionService` APIs.
 
 ```mermaid
 flowchart LR
@@ -14,30 +14,28 @@ flowchart LR
   c1["components/project"] --> self
   c2["components/project/activity"] --> self
   c3["components/project/creation"] --> self
-  c4["components/project/templates"] --> self
-  c5["components/publishing"] --> self
-  c6["components/publishing/progress"] --> self
-  c7["components/publishing/publish"] --> self
-  c8["components/session"] --> self
-  c9["components/session/executor"] --> self
-  c10["components/session/remoteagent"] --> self
-  c11["components/shell"] --> self
-  c12["lib/project"] --> self
-  c13["lib/project/publishing"] --> self
-  c14["lib/project/setup"] --> self
-  c15["lib/session"] --> self
-  c16["lib/session/design"] --> self
+  c4["components/publishing"] --> self
+  c5["components/publishing/progress"] --> self
+  c6["components/publishing/publish"] --> self
+  c7["components/session"] --> self
+  c8["components/session/executor"] --> self
+  c9["components/session/remoteagent"] --> self
+  c10["components/shell"] --> self
+  c11["lib/project"] --> self
+  c12["lib/project/publishing"] --> self
+  c13["lib/project/setup"] --> self
+  c14["lib/session"] --> self
+  c15["lib/session/design"] --> self
   self --> d0["lib/api/transport"]
   self --> d1["lib/generated/protobuf"]
   self --> d2["lib/shared"]
   self --> e0(["AgentService API"])
   self --> e1(["DeploymentService API"])
-  self --> e2(["ExampleService API"])
-  self --> e3(["PreviewService API"])
-  self --> e4(["ProjectService API"])
-  self --> e5(["ReleaseService API"])
-  self --> e6(["RemoteAgentService API"])
-  self --> e7(["SessionService API"])
+  self --> e2(["PreviewService API"])
+  self --> e3(["ProjectService API"])
+  self --> e4(["ReleaseService API"])
+  self --> e5(["RemoteAgentService API"])
+  self --> e6(["SessionService API"])
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 

@@ -376,6 +376,9 @@ func agentDescription(value agentloop.AgentDescription) *pb.AgentDescription {
 	for _, record := range value.Subagents {
 		out.Subagents = append(out.Subagents, agentSubagent(record))
 	}
+	if p := value.StartingExample; p != nil {
+		out.StartingExample = &pb.AgentStartingExample{ExampleId: p.ExampleID, Choice: boundary.Enum[pb.AgentStartingExample_Choice](p.Choice)}
+	}
 	if p := value.MockProgress; p != nil {
 		out.MockProgress = &pb.AgentMockProgress{Scenario: p.Scenario, Input: int32(p.Input), NextInput: int32(p.NextInput)} //nolint:gosec // a scenario has a few inputs
 	}

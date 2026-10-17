@@ -134,8 +134,13 @@ func newSessionOf(t *testing.T, ctx context.Context, model conversation.Model, c
 	// which starts the Session with its own start model.
 	projectsClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(postgrestest.OpenForTest(t)), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmail: "admin@superverse.test"}
 	project := create(projectsClient)
+	// The Session starts at Setup's commit.
+	row, err := projectsClient.Projections.Project(ctx, project.ProjectID)
+	if err != nil || row.SetupSourceCommit.V == "" {
+		t.Fatalf("reading the setup commit of %s (%s)", project.ProjectID, dexflowtest.ErrorCategory(err))
+	}
 	s := &mockSession{t: t, client: sessionagent.NewSessionAgentFlowClientForTest(sdk, flow, reader, ""), projects: projectsClient, reader: reader, account: project.CreatorAccountID, teamSpaceID: project.TeamSpaceID,
-		id: agentloop.SessionFlowID(project.ProjectID), identity: agentloop.SessionIdentity{ProjectID: project.ProjectID, Profile: agentloop.ProfileSessionV1, HeadCommit: project.AppManifest.SourceCommit},
+		id: agentloop.SessionFlowID(project.ProjectID), identity: agentloop.SessionIdentity{ProjectID: project.ProjectID, Profile: agentloop.ProfileSessionV1, HeadCommit: row.SetupSourceCommit.V},
 		provisions: provision.NewSandboxProvisionFlowClientForTest(sdk, provisionFlow, reader, deploymentnames.MustFor(deploymentnames.EnvironmentTest)),
 		workspaces: sessionworkspace.NewSessionWorkspaceFlowClientForTest(sdk, workspaceFlow, reader),
 		previews:   &preview.PreviewFlowClient{Dex: sdk, Flow: previewFlow, Execution: reader}, subagents: subagent.NewSubagentFlowClientForTest(sdk, subagentFlow),
@@ -161,7 +166,9 @@ func (s *mockSession) awaitStarted(ctx context.Context) agentloop.AgentDescripti
 	s.t.Helper()
 	for {
 		snapshot, err := s.client.GetSnapshot(ctx, s.id)
-		if err == nil && snapshot.Session.Identity != s.identity {
+		// The identity's head is the current one: a first message sent with the creation may already have pushed.
+		identity, turned := snapshot.Session.Identity, snapshot.Agent != nil && snapshot.Agent.Description.LastSequence > 0
+		if err == nil && (identity.ProjectID != s.identity.ProjectID || identity.Profile != s.identity.Profile || (identity.HeadCommit != s.identity.HeadCommit && !turned)) {
 			s.t.Fatalf("Session %s runs for %+v, not for %+v", s.id, snapshot.Session.Identity, s.identity)
 		}
 		if err == nil && snapshot.Agent != nil && snapshot.Agent.Description.Status == agentloop.AgentStatusWaitingForMessage {

@@ -42,6 +42,15 @@ var (
 	argumentValue  = regexp.MustCompile(`^[A-Za-z0-9 ._:/-]{1,128}$`)
 )
 
+// WithoutMarkers is text without the markers the mock model reads, which are
+// not the person's words.
+func WithoutMarkers(text string) string {
+	for _, marker := range []*regexp.Regexp{scenarioMarker, subagentMarker, stepMarker, argumentMarker} {
+		text = marker.ReplaceAllString(text, " ")
+	}
+	return text
+}
+
 // defaultReply answers a conversation that names no scenario, so a person can
 // still use Studio while the Session runs the mock model.
 const defaultReply = "The mock model answers only scenario inputs: choose a scenario and send its next input."
@@ -515,8 +524,8 @@ func (sel selection) nextReply() (reply, error) {
 	case sel.script == nil:
 		return textReply(defaultReply), nil
 	}
-	if missing := sel.script.missingFromSegmentStart(sel.at, sel.arguments, sel.segmentStart); missing != "" {
-		return textReply(fmt.Sprintf("Mock scenario %s stopped at %s: the first message of the context segment lacks %q", sel.script.Name, sel.at, missing)), nil
+	if stop := sel.script.segmentStartMismatch(sel.at, sel.arguments, sel.segmentStart); stop != "" {
+		return textReply(stop), nil
 	}
 	if stop := sel.repositoryContextStop(); stop != "" {
 		return textReply(stop), nil

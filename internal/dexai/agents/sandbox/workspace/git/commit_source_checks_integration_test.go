@@ -278,14 +278,14 @@ func TestExampleSourceGatesActualSandbox(t *testing.T) {
 	t.Cleanup(restore)
 	gate := &git.GitOperations{CheckDefinitions: workspace.CheckWorktreeDefinitionsForTest}
 	unaccepted := git.Repository{ExpectedHeadSHA: strings.Repeat("0", 40)}
-	for _, example := range apptemplate.Examples() {
-		if example.ID == apptemplate.DefaultExampleID {
+	for _, id := range apptemplate.ExampleIDsForTest() {
+		if id == apptemplate.DefaultExampleID {
 			continue
 		}
-		t.Run(example.ID, func(t *testing.T) {
+		t.Run(id, func(t *testing.T) {
 			defer restore()
 			sandbox := liveCheckout{t: t, ctx: ctx, client: sandbox.client}
-			template, err := apptemplate.ExampleTemplate(example.ID)
+			template, err := apptemplate.ExampleTemplate(id)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -299,7 +299,7 @@ func TestExampleSourceGatesActualSandbox(t *testing.T) {
 			}
 			result, _, err := sandbox.verify(gate, unaccepted)
 			if err != nil || len(result.Stages) != 4 {
-				t.Fatalf("example %s must pass every stage: %+v error=%v", example.ID, result.Stages, err)
+				t.Fatalf("example %s must pass every stage: %+v error=%v", id, result.Stages, err)
 			}
 			for index, stage := range []string{"manifest", "static", "definitions", "tests"} {
 				if string(result.Stages[index].Stage) != stage || result.Stages[index].Status != git.SourceGatePassedForTest {
@@ -307,12 +307,12 @@ func TestExampleSourceGatesActualSandbox(t *testing.T) {
 				}
 			}
 			if tests := result.Tests; tests == nil || tests.Failed != 0 || tests.Passed == 0 {
-				t.Fatalf("example %s must pass its API tests: %+v", example.ID, result.Tests)
+				t.Fatalf("example %s must pass its API tests: %+v", id, result.Tests)
 			}
 			for _, stage := range result.Stages {
-				t.Logf("example %s stage %s %s duration_ms=%d", example.ID, stage.Stage, stage.Status, stage.DurationMS)
+				t.Logf("example %s stage %s %s duration_ms=%d", id, stage.Stage, stage.Status, stage.DurationMS)
 			}
-			t.Logf("example %s tests: %+v", example.ID, result.Tests)
+			t.Logf("example %s tests: %+v", id, result.Tests)
 		})
 	}
 	if _, err := sandbox.runFor(15*time.Minute, nil, "make", "bootstrap"); err != nil {

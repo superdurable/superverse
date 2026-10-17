@@ -204,6 +204,14 @@ reply that expects a failure may fail on the copy. `example-change`, which
 `TestProjectFromExampleDexIntegration` runs on a Project created from the slack-thread-approval
 example, has that example as its workspace.
 
+A scenario whose first message, sent at a Project's creation, starts that Project from the example
+the server finds closest (with `agent.closestExamplePick` on, as the local lanes have it) declares
+`start: matched` with that example as its workspace: the loader runs the server's decision on the
+first message and requires it to pick the workspace. Every other scenario without a workspace must
+start from the default, so the loader refuses a first message the decision matches to an example:
+reword it, for example by naming the template's own Flow (`TextSummaryFlow`) or Step, which keeps
+the default.
+
 ```yaml
 name: requirements-draft-changes  # equals the file name
 title: "..."                    # what Studio lists
@@ -211,6 +219,7 @@ description: "..."
 category: project_feature        # the group Studio lists it under; see Categories
 test_action: "..."               # what only its Dex test does between inputs; Studio does not offer it
 workspace: slack-thread-approval # the example the Project was created from; absent for the default
+start: matched                   # the server matches the first message to the workspace; absent otherwise
 arguments: {heading: Mock}      # {{heading}} placeholders and their defaults
 compaction_summary: "..."       # the summary a compaction request gets
 inputs:
@@ -232,6 +241,7 @@ inputs:
         expect_failure_contains: ["owner: call"]
         expect_result_contains: ["exited with code 0"]
         expect_segment_start: ["<confirmed_requirements>"]  # texts the request's first message must hold
+        expect_segment_start_lacks: ["<starting_example>"]  # texts it must not hold
         expect_repository_context_notice: true  # the repository context in exactly one notice after a segment_start without it
         compaction_error: {status: 529, type: overloaded_error, message: "..."}  # the compaction that follows this reply fails
       - error: {status: 400, type: invalid_request_error, message: "..."}
@@ -254,7 +264,8 @@ with that tool: a tool rename updates the scripts.
 request's segment_start, the first text block of its first message, must hold no
 `<repository_context>` section, and exactly one later user text block must hold one, the notice the
 Session appends at the first model-call boundary after its workspace read the context. Otherwise
-the reply is a stop text, like a missing `expect_segment_start` text.
+the reply is a stop text, like a missing `expect_segment_start` text or a present
+`expect_segment_start_lacks` text.
 
 ## Categories
 
@@ -304,6 +315,10 @@ or subagent kind ships with its scenario and the test that runs it.
 | `summary-approval` | `product` | message | The template-approval E2E and `TestSessionMockSummaryApprovalDesignBuiltDexIntegration`: the requirements card (R1 the approval Step, R2 the Action) with the Flow design it then builds, streamed at 100 ms per delta so that its drafts reach the RequirementsDraft Stream before it is recorded as version 1, then in the same turn the `read`s, seven `edit`s, `make bootstrap`, `make generate`, `go build ./...`, `make check-fdg-v2`, `commit_and_push` tracing R1 and R2 at version 1, each with an `untested_reason` (the llm connector has no mocks yet), and a completed `write_todos` |
 | `newsletter-app` | `product` | message | The opt-in `manual/newsletter-product.spec.ts`: the R1–R5 card, recorded and built in the same turn, source at `superdurable-apps/test-newslett-99by@faebe70`, template replacement, generate/build/FDG checks and one `commit_and_push`; the spec then configures real providers and verifies one campaign on Native Preview |
 | `slack-thread-approval` | `product` | message | A Slack thread approval built from the template, as the connectors library's thread-approval example: a card (R1 a channel message starts a run, R2 a thread reply is accepted once, R3 the app posts `Processing complete.` in the thread) with an existing Slack connection, recorded, then in the same turn `make bootstrap`, `go get` of Slack v1.0.0 and sdkgo v0.28.1, a read of the release's auth method and `RelayedTriggerPath`, `write`s of `SlackThreadApprovalFlow` (`channelThreadCreated` starts it, `threadReplyCreated` invokes `ReceiveThreadReply`), its trigger runner, API, page, API tests and `dex-app.yaml` (connection `slack-approvals`, `authMethodId` ""), `edit`s that mount the runner at `/triggers/slack/c2xhY2stYXBwcm92YWxz` and run it beside the Worker, the text summary removed, `make generate`, `go mod tidy`, `go build ./...`, `make check-fdg-v2` and `commit_and_push` tracing R1 and R2 to tests and R3 as untested (Slack has no mocks): `TestSessionMockSlackThreadApprovalDexIntegration` |
+| `example-change` | `product` | message | The first change of a Project opened from the slack-thread-approval example (`workspace`): the session-start segment must carry the picked example's `<starting_example>` section; a revised card (R1 to R3 kept, R4 a reply that contains approve) as version 2, the reply filter's edit, an API test and `commit_and_push` at version 2: `TestProjectFromExampleDexIntegration` and the example-project journey |
+| `example-previous-tree` | `product` | message | The first message of a Project opened from slack-thread-approval at the previous tree the build keeps (`workspace`), whose card this build cannot record: the session-start segment's `<starting_example>` must say the card could not be recorded and why, with no `<confirmed_requirements>`, and a `bash` prints the first commit's tree, which the test compares with the previous tree: `TestProjectFromPreviousExampleTreeDexIntegration` |
+| `example-matched` | `product` | message, message | `start: matched` from slack-thread-approval: the first reply needs `<starting_example>` in the session-start segment and records the agent's own version 1 (R3 posts `Approved.`) with usage that forces a compaction, after which the next reply needs the section again, now saying version 1 is recorded instead of asking for it; two `edit`s of the reply text, the build and `commit_and_push` at version 1, which builds the design; input 2 compacts again and needs the new segment to lack the section: `TestSessionMatchedExampleDexIntegration`, `TestCreateProjectClosestExampleDexIntegration` and the example-matched journey |
+| `example-matched-wrong` | `product` | message | `start: matched` from slack-thread-approval for a request that wants nothing posted back: version 1 with R1 and R2, `write`s of the Flow without its reply Step and failure Step and of its API tests, the connector operation and the page's text removed, the build and `commit_and_push` at version 1: `TestSessionMatchedExampleRemovesDexIntegration` |
 | `app-tests` | `user_error` | message | The commit gate's test stage: a card (R1 an unknown summary answers not found, R2 blank text is rejected), recorded, then `make bootstrap`, an API test written with a wrong expectation that fails in `make test-app` and fails the first `commit_and_push` as `application_tests_failed`, its fix, a trace without R2 that fails as `requirements_untested`, a server detached on the test engine's Dex port that fails the next push as `test_environment_unavailable` with its own retry hint, a `bash` that stops it, and the complete trace, which pushes with the tests stage passed: `TestSessionMockAppTestsDexIntegration` |
 | `requirements-card` | `project_feature` | message | `TestSessionMockRequirementsCardDexIntegration`: a card recorded as version 1, then in the same turn a progress list and a final reply |
 | `catalog-prefetch` | `project_feature` | message | The first reply without the workspace: "Post new Stripe payments to Slack." answers only when the first segment's `<catalog_matches>` lists `stripe` and `slack`; the card built from them is recorded while the workspace request runs beside the first model call; a `read` of `AGENTS.md` joins that request and waits, and the next reply (an `edit` of the page heading) and the last one need the repository context in exactly one notice after a segment_start without it; then `make bootstrap` and `commit_and_push` tracing R1 as untested (Stripe and Slack have no mocks): `TestSessionMockCatalogPrefetchDexIntegration` |

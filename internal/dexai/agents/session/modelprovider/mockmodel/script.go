@@ -29,6 +29,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/toolinput"
+	"github.com/superdurable/superversev2/internal/dexai/app/apptemplate"
 )
 
 //go:embed scenarios/*.yaml
@@ -56,6 +57,8 @@ type script struct {
 	// Workspace is the example the scenario's Project was created from, whose
 	// composed files its file tools play on; empty for the default example.
 	Workspace string `json:"workspace"`
+	// Start is how the scenario's Project starts from its first message.
+	Start scenarioStart `json:"start"`
 	// Subagents are the scripts of the subagents the scenario's start_agent
 	// calls start, by name; a call's prompt names one with
 	// [[subagent:<scenario>/<name>]], and the subagent's model calls get its
@@ -65,6 +68,14 @@ type script struct {
 	// kind's tools; the zero kind for a scenario.
 	subagentKind agenttasks.SubagentKind
 }
+
+// scenarioStart is how a scenario's Project starts, a closed set: empty, from
+// the default example, or from its workspace example when a person opens it,
+// or startMatched, from the example the server matches to the scenario's first
+// message, which must be its workspace.
+type scenarioStart string
+
+const startMatched scenarioStart = "matched"
 
 // subagentScript is the script of one subagent: its kind and the replies of
 // its model calls, the last of which is its report.
@@ -153,6 +164,10 @@ type step struct {
 	// compaction uses it to prove what the new segment carries; a request
 	// without one of them is answered with a stop text.
 	ExpectSegmentStart []string `json:"expect_segment_start"`
+	// ExpectSegmentStartLacks lists texts that segment_start must not hold,
+	// such as a section a segment no longer carries; a request that holds one
+	// is answered with a stop text.
+	ExpectSegmentStartLacks []string `json:"expect_segment_start_lacks"`
 	// ExpectRepositoryContextNotice requires the repository context in exactly
 	// one notice after the segment_start, which lacks it: the Session opened
 	// the segment before its workspace was ready and appended the context once.
@@ -376,6 +391,9 @@ func (s *script) validate() error {
 	if err := s.validateSubagents(); err != nil {
 		return err
 	}
+	if err := s.validateStart(); err != nil {
+		return err
+	}
 	for name, value := range s.Arguments {
 		if !argumentValue.MatchString(value) {
 			return fmt.Errorf("argument %q default %q is not a plain value", name, value)
@@ -410,6 +428,33 @@ func (s *script) validate() error {
 				return fmt.Errorf("input %d, reply %d: %w", index+1, reply+1, err)
 			}
 		}
+	}
+	return nil
+}
+
+// validateStart checks the scenario's start against the server's
+// closest-example decision on its first message, which CreateProject makes
+// when agent.closestExamplePick is on: a matched scenario's first message
+// picks its workspace, and that of a scenario with neither a start nor a
+// workspace starts from the default, so that the Project its first message
+// creates starts from the tree its file tools play on. A subagent's script is
+// sent at no creation.
+func (s *script) validateStart() error {
+	if s.isSubagent() {
+		return nil
+	}
+	match, isMatch := apptemplate.ClosestExample(s.Inputs[0].Message)
+	switch s.Start {
+	case startMatched:
+		if s.Workspace == "" || !isMatch || match.ExampleID != s.Workspace {
+			return fmt.Errorf("start %s needs a workspace that the server matches to the first message, which matches %q", startMatched, match.ExampleID)
+		}
+	case "":
+		if s.Workspace == "" && isMatch {
+			return fmt.Errorf("the first message starts a Project from the example %s, not the default its file tools play on; reword it, or declare start: %s with that workspace", match.ExampleID, startMatched)
+		}
+	default:
+		return fmt.Errorf("start %q is not %s", s.Start, startMatched)
 	}
 	return nil
 }
@@ -454,7 +499,7 @@ func (s *script) validateInput(index int, in input) error {
 }
 
 func (s *script) validateStep(step step, files rootFiles) error {
-	if step.Remote && (s.isSubagent() || step.Thinking != "" || step.Error != nil || step.Usage != nil || step.ChunkDelayMS != 0 || step.CompactionError != nil || step.ExpectHandoff || step.Repeat > 1 || step.StopReason != "" || len(step.ToolUses) > 4 || len(step.Text) > 64<<10 || len(step.ExpectSegmentStart) > 0 || step.ExpectRepositoryContextNotice || step.ExpectSenderEnvelope || step.ExpectPendingRequestBudget) {
+	if step.Remote && (s.isSubagent() || step.Thinking != "" || step.Error != nil || step.Usage != nil || step.ChunkDelayMS != 0 || step.CompactionError != nil || step.ExpectHandoff || step.Repeat > 1 || step.StopReason != "" || len(step.ToolUses) > 4 || len(step.Text) > 64<<10 || len(step.ExpectSegmentStart) > 0 || len(step.ExpectSegmentStartLacks) > 0 || step.ExpectRepositoryContextNotice || step.ExpectSenderEnvelope || step.ExpectPendingRequestBudget) {
 		return errors.New("a remote step has only exact public text/tool uses and never provider thinking, timing, failure, compaction or handoff expectations")
 	}
 	for _, use := range step.ToolUses {

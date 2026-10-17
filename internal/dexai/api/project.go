@@ -14,12 +14,14 @@ import (
 	"strings"
 
 	pb "github.com/superdurable/superversev2/gen/superverse/v2"
+	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
 	"github.com/superdurable/superversev2/internal/comm/platform/postgres"
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost"
 	"github.com/superdurable/superversev2/internal/dexai/agents"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/mockmodel"
 	"github.com/superdurable/superversev2/internal/dexai/api/boundary"
 	"github.com/superdurable/superversev2/internal/dexai/api/watch"
 	"github.com/superdurable/superversev2/internal/dexai/app/apptemplate"
@@ -51,34 +53,15 @@ type projectServer struct {
 	sessions        *agents.SessionFlowService
 	recentEvents    RecentTriggerEvents
 	models          SessionModels
+	// closestExamplePick starts a creation from a first message, with no
+	// example picked, from the example closest to that message.
+	closestExamplePick bool
 }
 
-// exampleServer serves ExampleService: the examples a Project can start from.
-type exampleServer struct {
-	pb.UnimplementedExampleServiceServer
-	*boundary.Boundary
-}
-
-// ListExamples lists the examples this server build embeds to any
-// authenticated account; the catalog is the same for everyone, holds no
-// tenant data and changes only with a release, so it reads neither the read
-// model nor the network.
-func (s *exampleServer) ListExamples(ctx context.Context, in *pb.ListExamplesRequest) (*pb.ListExamplesResponse, error) {
-	if _, err := s.Authenticate(ctx, in.GetCaller()); err != nil {
-		return nil, err
-	}
-	examples := apptemplate.Examples()
-	out := &pb.ListExamplesResponse{Examples: make([]*pb.Example, 0, len(examples))}
-	for _, example := range examples {
-		out.Examples = append(out.Examples, &pb.Example{ExampleId: example.ID, Title: example.Title,
-			Category: boundary.Enum[pb.ExampleCategory](example.Category.String()), Apps: example.Apps, Decider: example.Decider,
-			Description: example.Description, ConnectorIds: example.ConnectorIDs})
-	}
-	return out, nil
-}
-
-// projectExample is the example a Project was created from, which its
-// template revision names, or nil for one created from a description.
+// projectExample is the example whose tree a Project started from, which its
+// template revision names: opened by the person or matched by the server to
+// the first message, which AgentDescription.starting_example tells apart; nil
+// for the default example.
 func projectExample(templateRevision string) *pb.ProjectExample {
 	id, tree, isExample := apptemplate.ParseExampleRevision(templateRevision)
 	if !isExample {
@@ -118,6 +101,9 @@ func (s *projectServer) CreateProject(ctx context.Context, in *pb.CreateProjectR
 		if template, err = apptemplate.ExampleTemplate(example.GetExampleId()); err != nil {
 			return nil, boundary.RPCStatus(err)
 		}
+	} else if matched := s.closestExample(ctx, initial); matched != nil {
+		template = comm.Must(apptemplate.ExampleTemplate(matched.ExampleID))
+		initial.MatchedExample = &projects.MatchedExample{Facets: matched.Facets, Score: matched.Score}
 	}
 	if err = s.admitCreator(ctx, account, in.GetTeamSpaceId()); err != nil {
 		return nil, err
@@ -136,6 +122,25 @@ func (s *projectServer) CreateProject(ctx context.Context, in *pb.CreateProjectR
 		return nil, boundary.RPCStatus(err)
 	}
 	return &pb.CreateProjectResponse{ProjectId: projectID}, nil
+}
+
+// closestExample is the example a creation from a first message starts from
+// when the setting is on and the server's decision finds one, or nil for the
+// default. It reads the message without the mock model's markers and calls no
+// network or model, so a retry decides alike on a server of the same build and
+// joins the accepted Project's revision on any other. It logs the decision,
+// never the message.
+func (s *projectServer) closestExample(ctx context.Context, initial *projects.SessionStartRequest) *apptemplate.ExampleMatch {
+	if !s.closestExamplePick || initial == nil || initial.Text == "" {
+		return nil
+	}
+	matched, isMatch := apptemplate.ClosestExample(mockmodel.WithoutMarkers(initial.Text))
+	if !isMatch {
+		s.Logger.InfoContext(ctx, "Closest example decision", "choice", "default")
+		return nil
+	}
+	s.Logger.InfoContext(ctx, "Closest example decision", "choice", "matched", "example", matched.ExampleID, "facets", matched.Facets, "score", matched.Score)
+	return &matched
 }
 
 // admitCreator refuses, before any Flow starts, a creator whom the read model

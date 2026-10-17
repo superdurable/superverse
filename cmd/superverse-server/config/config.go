@@ -46,6 +46,7 @@ const (
 	DefaultThinkingPrefixMismatch          = conversation.PrefixMismatchDropBlock
 	DefaultTaskTurns                       = 5
 	DefaultPlatformTurns                   = 3
+	DefaultClosestExamplePick              = false
 	DefaultSandboxHold                     = time.Hour
 	DefaultSandboxPreviewHold              = 7 * 24 * time.Hour
 	DefaultSandboxProfile                  = "coding-sandbox-profile-" + infra.CodingSandboxProfile
@@ -226,6 +227,10 @@ type AgentConfig struct {
 	// Session as the model mock, besides the Claude models; model may then be
 	// mock. Refused in prod.
 	MockModel bool `yaml:"mockModel"`
+	// ClosestExamplePick lets CreateProject start a Project created from a
+	// first message, with no example picked, from the example the server finds
+	// closest to that message; off, it starts from the default example.
+	ClosestExamplePick bool `yaml:"closestExamplePick"`
 }
 
 // SandboxConfig is the lifetime of a Session's Sandbox, which the Session owns
@@ -501,7 +506,7 @@ func Default() Config {
 			Effort: DefaultEffort, SubagentInvestigateEffort: DefaultSubagentInvestigate, SubagentChangeEffort: DefaultSubagentChange,
 			SubagentConnectorDevelopEffort: DefaultSubagentConnectorDevelop,
 			CompactionTokens:               DefaultCompactionTokens, ThinkingPrefixMismatch: DefaultThinkingPrefixMismatch,
-			TaskTurns: DefaultTaskTurns, PlatformTurns: DefaultPlatformTurns,
+			TaskTurns: DefaultTaskTurns, PlatformTurns: DefaultPlatformTurns, ClosestExamplePick: DefaultClosestExamplePick,
 		},
 		Sandbox:      SandboxConfig{Hold: DefaultSandboxHold, PreviewHold: DefaultSandboxPreviewHold, Profile: DefaultSandboxProfile},
 		Live:         LiveConfig{RetirementDrain: DefaultLiveRetirementDrain},

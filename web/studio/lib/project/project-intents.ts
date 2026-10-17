@@ -41,7 +41,7 @@ export type PendingProjectCreation = {
   draft?: string;
 };
 
-/** The example a creation starts from, as ListExamples names it. */
+/** The example a creation starts from, as the bundled catalog (lib/examples) names it. */
 type PendingExample = { exampleId: string };
 
 /**

@@ -20,7 +20,7 @@ description: "Five cards whose Flow design names an undeclared Step, Channel or 
 category: agent_error
 inputs:
   - label: "Describe the change"
-    message: "Plan a human approval before the summary is saved."
+    message: "Plan a human approval before SaveSummaryResult saves the summary."
     replies:
       - text: "Here is the plan."
         tool_uses:

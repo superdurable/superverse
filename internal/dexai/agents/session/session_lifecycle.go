@@ -153,6 +153,7 @@ func agentDescription(ctx dex.Context, state agentloop.AgentState, queuedCount, 
 		AvailableTools:             agentloop.SessionPromptFor(selected.Model).ToolNames,
 		Turn:                       state.Turn,
 		IsPreviewAutoDeployEnabled: dexflow.ValueOrZero(previewAutoDeployAttribute.Get(ctx)),
+		StartingExample:            state.StartingExample,
 	}
 	if segment := dexflow.OptionalValue(contextSegmentAttribute.Get(ctx)); segment != nil {
 		description.ContextModel, description.Effort, description.AvailableTools = segment.Model, segment.EffectiveEffort(), segment.ToolNames
@@ -196,19 +197,27 @@ func startStepOptions() *dex.StepOptions {
 const exampleBriefCallID conversation.CallID = "example-brief"
 
 // admitStartInput admits the start input in the start Step's commit: the
-// creator's first message into QueuedUserMessages, and for a Project created
-// from an example its card as version 1 of the requirements, with its design
-// built at the setup commit, and the notice that greets the person; a brief
-// without a card the card's schema accepts is the notice alone. It returns
-// the workspace demand that provisions the Sandbox and deploys the setup
-// commit's Preview, the notice's sequence naming that deployment, and false
-// without an example.
+// creator's first message into QueuedUserMessages and, for a Project created
+// from an example, the example in AgentState. A picked example's card becomes
+// version 1 of the requirements, with its design built at the setup commit,
+// and the notice that greets the person; a brief without a card the card's
+// schema accepts is the notice alone. It returns the workspace demand that
+// provisions the Sandbox and deploys the setup commit's Preview, the notice's
+// sequence naming that deployment, and false without a picked example. A
+// matched example records nothing else: the first message is the request, the
+// agent writes version 1 and the first turn demands the workspace.
 func admitStartInput(ctx dex.Context, input agentloop.SessionStartInput) (workspaceDemand, bool) {
 	if input.FirstMessage != nil {
 		comm.MustDo(queuedUserMessagesChannel.Publish(ctx, *input.FirstMessage))
 	}
 	brief := input.ExampleBrief
 	if brief == nil {
+		return workspaceDemand{}, false
+	}
+	state := comm.Must(agentStateAttribute.Get(ctx))
+	state.StartingExample = brief.StartingExample()
+	comm.MustDo(agentStateAttribute.Set(ctx, state))
+	if state.StartingExample.Choice == agentloop.ExampleChoiceMatched {
 		return workspaceDemand{}, false
 	}
 	problem := brief.Problem
@@ -231,7 +240,7 @@ func admitStartInput(ctx dex.Context, input agentloop.SessionStartInput) (worksp
 		notice = agentloop.ExampleBriefRejectedNotice(*brief, problem)
 	}
 	sequence := appendEntry(ctx, notice)
-	state := comm.Must(agentStateAttribute.Get(ctx))
+	state = comm.Must(agentStateAttribute.Get(ctx))
 	state.AwaitsFirstMessage = input.FirstMessage == nil
 	comm.MustDo(agentStateAttribute.Set(ctx, state))
 	return workspaceDemand{DeploysCommit: comm.Must(headCommitAttribute.Get(ctx)), DeploySequence: sequence}, true
@@ -412,6 +421,8 @@ func readRemote(ctx dex.Context, input remoteexec.ReadRequest) (*dex.RPCResult[R
 		result.Output.RepositoryContextAvailable = workspace.RepositoryContext != ""
 		if input.RepositoryContext {
 			result.Output.RepositoryContext = workspace.RepositoryContext
+			// A picked example is described to the remote agent until the person's first message.
+			result.Output.StartingExample = startingExampleSection(ctx, state.AwaitsFirstMessage)
 		}
 		result.Output.WorkspaceState = workspace.State
 	}

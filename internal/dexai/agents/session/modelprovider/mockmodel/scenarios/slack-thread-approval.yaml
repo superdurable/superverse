@@ -25,7 +25,7 @@ description: "Builds a Slack thread approval from the template: a channel messag
 category: product
 inputs:
   - label: "Describe the application"
-    message: "Build a Slack thread approval: a new message in the channel starts a process, a reply in its thread finishes it with a confirmation."
+    message: "Replace the template's TextSummaryFlow with a Slack thread approval: a new message in the channel starts a process, a reply in its thread finishes it with a confirmation."
     replies:
       - thinking: "A new application with a Slack trigger and a reply in the thread; I show the requirements before I write any code, then keep building."
         text: "Here is what I will build. I am starting now; tell me in the chat if anything should change."

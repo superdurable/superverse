@@ -189,5 +189,10 @@
         ]
       }
     ]
+  },
+  "match": {
+    "core": ["summarize"],
+    "signals": ["page-form", "llm"],
+    "conflicts": ["schedule"]
   }
 }

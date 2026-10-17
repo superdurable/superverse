@@ -272,24 +272,29 @@ func SegmentChange(segment ContextSegment, selected conversation.Model, settings
 
 // SegmentStart is the opening message of a segment. CatalogMatches, the
 // released connectors the first request names, only opens the Session's
-// first segment.
+// first segment. StartingExample describes the example the Project started
+// from: a picked one in the Session's first segment, a matched one in every
+// segment until the Session's first build.
 type SegmentStart struct {
 	Summary               string
 	RepositoryContext     string
 	ConfirmedRequirements *ConfirmedRequirements
 	TodoList              *TodoList
+	StartingExample       string
 	CatalogMatches        string
 	PendingRequest        string
 }
 
 // Text renders the segment_start text: the summary, the repository context,
-// the current requirements, the todo list, the catalog matches and the
-// pending request, each in its own tag; the pending request stays last.
+// the current requirements, the todo list, the starting example, the catalog
+// matches and the pending request, each in its own tag; the pending request
+// stays last.
 func (start SegmentStart) Text() string {
 	text := taggedSection("context_summary", start.Summary) +
 		taggedSection(repositoryContextTag, start.RepositoryContext) +
 		taggedSection("confirmed_requirements", confirmedRequirementsText(start.ConfirmedRequirements)) +
 		taggedSection("current_plan", todoListText(start.TodoList)) +
+		taggedSection(startingExampleTag, start.StartingExample) +
 		taggedSection("catalog_matches", start.CatalogMatches) +
 		taggedSection("pending_request", start.PendingRequest)
 	if text == "" {
@@ -299,6 +304,12 @@ func (start SegmentStart) Text() string {
 }
 
 const repositoryContextTag = "repository_context"
+
+// startingExampleTag is the tag of the starting example section.
+const startingExampleTag = "starting_example"
+
+// MaximumStartingExampleBytes bounds the starting example section.
+const MaximumStartingExampleBytes = 16 << 10
 
 // RepositoryContextNotice is the user notice that brings the repository
 // context to a segment that opened without it, in the tag segment_start uses.
@@ -314,15 +325,17 @@ func HoldsRepositoryContext(text string) bool {
 }
 
 // maximumRemoteAgentContextBytes bounds RemoteAgentContext: the prompts are
-// about 30 KiB and the repository context at most 8 KiB.
-const maximumRemoteAgentContextBytes = 64 << 10
+// about 30 KiB, the repository context at most 8 KiB and the starting example
+// at most MaximumStartingExampleBytes.
+const maximumRemoteAgentContextBytes = 80 << 10
 
 // RemoteAgentContext is what a connected remote agent is told instead of the
 // Session's system prompt and segment_start: the remote agent prompt, the
-// shared Session rules and the repository context in its own tag.
-func RemoteAgentContext(repositoryContext string) string {
+// shared Session rules, the repository context and, while a segment would
+// carry it, the starting example, each in its own tag.
+func RemoteAgentContext(repositoryContext, startingExample string) string {
 	text := conversation.RemoteAgentPrompt + "\n\n" + conversation.RemoteSessionSystemPrompt +
-		"\n\n" + taggedSection(repositoryContextTag, repositoryContext)
+		"\n\n" + taggedSection(repositoryContextTag, repositoryContext) + taggedSection(startingExampleTag, startingExample)
 	return comm.TruncateUTF8(strings.TrimSpace(text), maximumRemoteAgentContextBytes)
 }
 

@@ -32,7 +32,7 @@ description: "Adds a human approval Step and an Approve summary Action to the te
 category: product
 inputs:
   - label: "Describe the change"
-    message: "Add a human approval before the summary is saved."
+    message: "Add a human approval before SaveSummaryResult saves the summary."
     replies:
       - thinking: "A human approval changes how the process runs, so I show the requirements before I write any code, then keep building."
         text: "Here is what I will build. I am starting now; tell me in the chat if anything should change."

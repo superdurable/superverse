@@ -1,0 +1,38 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# The first message of a Project opened from the slack-thread-approval example
+# at the previous tree this build keeps for it, as a server of the previous
+# build accepts one during a rollout: Setup commits that tree, and this
+# build's card describes another, so the Session records no card. The first
+# reply requires the session-start segment's starting_example section to say
+# that the card could not be recorded and why, with no confirmed requirements,
+# and prints the first commit's tree, which the test compares with the
+# previous tree. The workspace is the example's current tree, which the git
+# command does not edit.
+name: example-previous-tree
+title: "Open an example of the previous build"
+description: "The first message of a Project opened from the Slack thread approval example at the previous build's tree: the agent reads that no card is recorded and prints the first commit's tree."
+category: product
+workspace: slack-thread-approval
+inputs:
+  - label: "Ask what the Project holds"
+    message: "What does this Project hold?"
+    replies:
+      - text: "Checking which tree the first commit holds."
+        expect_segment_start:
+          - "<starting_example>"
+          - "The person opened it in Studio, but its card could not be recorded as version 1 (this server build does not hold the example at that tree), so no requirements are recorded."
+          - "This server build does not describe that tree; read the source."
+        expect_segment_start_lacks:
+          - "<confirmed_requirements>"
+          - "its card is recorded as version 1"
+        tool_uses:
+          - name: bash
+            input: {command: "git rev-parse 'HEAD^{tree}'", description: "Print the tree of the first commit"}
+      - text: "This Project holds the Slack thread approval example as an earlier build composed it; no requirements are recorded yet, so tell me what it should do."

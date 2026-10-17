@@ -8,6 +8,7 @@
 
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { ProjectSnapshot__Output } from "@/lib/generated/protobuf/superverse/v2/ProjectSnapshot";
 import { useProjectList } from "@/lib/project/use-project-list";
@@ -16,7 +17,10 @@ import { studioRoutes } from "@/lib/shared/studio-routes";
 import { projectRoleOf } from "@/lib/teamspace/project-roles";
 import { ProjectRoleChip } from "@/components/teamspace/ProjectRoleChip";
 import { Glyph } from "@/components/ui/Glyph";
-import { ProjectStartForm } from "./ProjectStartForm";
+
+// The start form, with the bundled example catalog and its search index, loads only for a Teamspace without
+// Projects, so the Projects list does not ship them.
+const ProjectStartForm = dynamic(() => import("./ProjectStartForm").then((m) => m.ProjectStartForm));
 
 const CARD = "flex min-h-36 flex-col gap-2 rounded-xl border border-line-soft bg-panel p-3.5 text-left";
 

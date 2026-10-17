@@ -50,6 +50,7 @@ import type { AgentRequirementsDraftFlow as _superverse_v2_AgentRequirementsDraf
 import type { AgentSequencedMessage as _superverse_v2_AgentSequencedMessage, AgentSequencedMessage__Output as _superverse_v2_AgentSequencedMessage__Output } from './superverse/v2/AgentSequencedMessage';
 import type { AgentServiceClient as _superverse_v2_AgentServiceClient, AgentServiceDefinition as _superverse_v2_AgentServiceDefinition } from './superverse/v2/AgentService';
 import type { AgentSnapshot as _superverse_v2_AgentSnapshot, AgentSnapshot__Output as _superverse_v2_AgentSnapshot__Output } from './superverse/v2/AgentSnapshot';
+import type { AgentStartingExample as _superverse_v2_AgentStartingExample, AgentStartingExample__Output as _superverse_v2_AgentStartingExample__Output } from './superverse/v2/AgentStartingExample';
 import type { AgentSubagent as _superverse_v2_AgentSubagent, AgentSubagent__Output as _superverse_v2_AgentSubagent__Output } from './superverse/v2/AgentSubagent';
 import type { AgentTodoItem as _superverse_v2_AgentTodoItem, AgentTodoItem__Output as _superverse_v2_AgentTodoItem__Output } from './superverse/v2/AgentTodoItem';
 import type { AgentTodoList as _superverse_v2_AgentTodoList, AgentTodoList__Output as _superverse_v2_AgentTodoList__Output } from './superverse/v2/AgentTodoList';
@@ -104,9 +105,7 @@ import type { DeploymentSnapshot as _superverse_v2_DeploymentSnapshot, Deploymen
 import type { DeriveLiveConfigurationRequest as _superverse_v2_DeriveLiveConfigurationRequest, DeriveLiveConfigurationRequest__Output as _superverse_v2_DeriveLiveConfigurationRequest__Output } from './superverse/v2/DeriveLiveConfigurationRequest';
 import type { DeriveLiveConfigurationResponse as _superverse_v2_DeriveLiveConfigurationResponse, DeriveLiveConfigurationResponse__Output as _superverse_v2_DeriveLiveConfigurationResponse__Output } from './superverse/v2/DeriveLiveConfigurationResponse';
 import type { EnvironmentEvent as _superverse_v2_EnvironmentEvent, EnvironmentEvent__Output as _superverse_v2_EnvironmentEvent__Output } from './superverse/v2/EnvironmentEvent';
-import type { Example as _superverse_v2_Example, Example__Output as _superverse_v2_Example__Output } from './superverse/v2/Example';
 import type { ExampleReference as _superverse_v2_ExampleReference, ExampleReference__Output as _superverse_v2_ExampleReference__Output } from './superverse/v2/ExampleReference';
-import type { ExampleServiceClient as _superverse_v2_ExampleServiceClient, ExampleServiceDefinition as _superverse_v2_ExampleServiceDefinition } from './superverse/v2/ExampleService';
 import type { Failure as _superverse_v2_Failure, Failure__Output as _superverse_v2_Failure__Output } from './superverse/v2/Failure';
 import type { FlowApiContext as _superverse_v2_FlowApiContext, FlowApiContext__Output as _superverse_v2_FlowApiContext__Output } from './superverse/v2/FlowApiContext';
 import type { FlowApiDocument as _superverse_v2_FlowApiDocument, FlowApiDocument__Output as _superverse_v2_FlowApiDocument__Output } from './superverse/v2/FlowApiDocument';
@@ -174,8 +173,6 @@ import type { ListDeploymentsRequest as _superverse_v2_ListDeploymentsRequest, L
 import type { ListDeploymentsResponse as _superverse_v2_ListDeploymentsResponse, ListDeploymentsResponse__Output as _superverse_v2_ListDeploymentsResponse__Output } from './superverse/v2/ListDeploymentsResponse';
 import type { ListEnvironmentEventsRequest as _superverse_v2_ListEnvironmentEventsRequest, ListEnvironmentEventsRequest__Output as _superverse_v2_ListEnvironmentEventsRequest__Output } from './superverse/v2/ListEnvironmentEventsRequest';
 import type { ListEnvironmentEventsResponse as _superverse_v2_ListEnvironmentEventsResponse, ListEnvironmentEventsResponse__Output as _superverse_v2_ListEnvironmentEventsResponse__Output } from './superverse/v2/ListEnvironmentEventsResponse';
-import type { ListExamplesRequest as _superverse_v2_ListExamplesRequest, ListExamplesRequest__Output as _superverse_v2_ListExamplesRequest__Output } from './superverse/v2/ListExamplesRequest';
-import type { ListExamplesResponse as _superverse_v2_ListExamplesResponse, ListExamplesResponse__Output as _superverse_v2_ListExamplesResponse__Output } from './superverse/v2/ListExamplesResponse';
 import type { ListMockScenariosRequest as _superverse_v2_ListMockScenariosRequest, ListMockScenariosRequest__Output as _superverse_v2_ListMockScenariosRequest__Output } from './superverse/v2/ListMockScenariosRequest';
 import type { ListMockScenariosResponse as _superverse_v2_ListMockScenariosResponse, ListMockScenariosResponse__Output as _superverse_v2_ListMockScenariosResponse__Output } from './superverse/v2/ListMockScenariosResponse';
 import type { ListProjectMembersRequest as _superverse_v2_ListProjectMembersRequest, ListProjectMembersRequest__Output as _superverse_v2_ListProjectMembersRequest__Output } from './superverse/v2/ListProjectMembersRequest';
@@ -400,6 +397,7 @@ export interface ProtoGrpcType {
       AgentSequencedMessage: MessageTypeDefinition<_superverse_v2_AgentSequencedMessage, _superverse_v2_AgentSequencedMessage__Output>
       AgentService: SubtypeConstructor<typeof grpc.Client, _superverse_v2_AgentServiceClient> & { service: _superverse_v2_AgentServiceDefinition }
       AgentSnapshot: MessageTypeDefinition<_superverse_v2_AgentSnapshot, _superverse_v2_AgentSnapshot__Output>
+      AgentStartingExample: MessageTypeDefinition<_superverse_v2_AgentStartingExample, _superverse_v2_AgentStartingExample__Output>
       AgentSubagent: MessageTypeDefinition<_superverse_v2_AgentSubagent, _superverse_v2_AgentSubagent__Output>
       AgentTodoItem: MessageTypeDefinition<_superverse_v2_AgentTodoItem, _superverse_v2_AgentTodoItem__Output>
       AgentTodoList: MessageTypeDefinition<_superverse_v2_AgentTodoList, _superverse_v2_AgentTodoList__Output>
@@ -461,10 +459,7 @@ export interface ProtoGrpcType {
       DeriveLiveConfigurationRequest: MessageTypeDefinition<_superverse_v2_DeriveLiveConfigurationRequest, _superverse_v2_DeriveLiveConfigurationRequest__Output>
       DeriveLiveConfigurationResponse: MessageTypeDefinition<_superverse_v2_DeriveLiveConfigurationResponse, _superverse_v2_DeriveLiveConfigurationResponse__Output>
       EnvironmentEvent: MessageTypeDefinition<_superverse_v2_EnvironmentEvent, _superverse_v2_EnvironmentEvent__Output>
-      Example: MessageTypeDefinition<_superverse_v2_Example, _superverse_v2_Example__Output>
-      ExampleCategory: EnumTypeDefinition
       ExampleReference: MessageTypeDefinition<_superverse_v2_ExampleReference, _superverse_v2_ExampleReference__Output>
-      ExampleService: SubtypeConstructor<typeof grpc.Client, _superverse_v2_ExampleServiceClient> & { service: _superverse_v2_ExampleServiceDefinition }
       Failure: MessageTypeDefinition<_superverse_v2_Failure, _superverse_v2_Failure__Output>
       FailureOwner: EnumTypeDefinition
       FailureRemedy: EnumTypeDefinition
@@ -534,8 +529,6 @@ export interface ProtoGrpcType {
       ListDeploymentsResponse: MessageTypeDefinition<_superverse_v2_ListDeploymentsResponse, _superverse_v2_ListDeploymentsResponse__Output>
       ListEnvironmentEventsRequest: MessageTypeDefinition<_superverse_v2_ListEnvironmentEventsRequest, _superverse_v2_ListEnvironmentEventsRequest__Output>
       ListEnvironmentEventsResponse: MessageTypeDefinition<_superverse_v2_ListEnvironmentEventsResponse, _superverse_v2_ListEnvironmentEventsResponse__Output>
-      ListExamplesRequest: MessageTypeDefinition<_superverse_v2_ListExamplesRequest, _superverse_v2_ListExamplesRequest__Output>
-      ListExamplesResponse: MessageTypeDefinition<_superverse_v2_ListExamplesResponse, _superverse_v2_ListExamplesResponse__Output>
       ListMockScenariosRequest: MessageTypeDefinition<_superverse_v2_ListMockScenariosRequest, _superverse_v2_ListMockScenariosRequest__Output>
       ListMockScenariosResponse: MessageTypeDefinition<_superverse_v2_ListMockScenariosResponse, _superverse_v2_ListMockScenariosResponse__Output>
       ListProjectMembersRequest: MessageTypeDefinition<_superverse_v2_ListProjectMembersRequest, _superverse_v2_ListProjectMembersRequest__Output>

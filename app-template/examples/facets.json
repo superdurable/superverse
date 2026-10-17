@@ -1,0 +1,62 @@
+{
+  "negators": [
+    "no", "not", "nor", "without", "never", "don't", "do not", "doesn't", "does not", "didn't", "cannot", "can't", "won't",
+    "isn't", "aren't", "wasn't", "shouldn't", "mustn't", "instead of", "rather than", "replace*", "remove*", "except",
+    "exclude", "excluded", "excluding", "skip", "avoid*", "forbid*", "prohibit*", "disallow*"
+  ],
+  "facets": [
+    {"id": "slack", "label": "Slack", "terms": ["slack"]},
+    {"id": "github", "label": "GitHub", "terms": ["github", "git hub"]},
+    {"id": "gmail", "label": "Gmail", "terms": ["gmail", "google mail"]},
+    {
+      "id": "llm",
+      "label": "an AI model",
+      "terms": ["ai", "llm", "llms", "gpt", "gpts", "chatgpt", "openai", "claude", "anthropic", "gemini", "language model*"]
+    },
+    {"id": "summarize", "label": "a summary", "terms": ["summar*", "condens*", "tl dr", "tldr"], "implies": ["llm"]},
+    {
+      "id": "approval",
+      "label": "an approval",
+      "terms": ["approv*", "sign off", "signs off", "signed off", "signoff", "human review", "authoriz*", "authoris*"],
+      "implies": ["decision"]
+    },
+    {"id": "decision", "label": "a wait for someone's answer", "terms": ["wait*", "await*", "until", "decid*", "decision*"]},
+    {
+      "id": "thread-reply",
+      "label": "a reply in a thread",
+      "terms": ["thread repl*", "thread approv*"],
+      "paired": ["thread*"],
+      "companions": ["repl*", "respond*", "answer*"]
+    },
+    {"id": "reply", "label": "a reply", "terms": ["reply", "replies", "replied", "replying"]},
+    {"id": "newsletter", "label": "a newsletter", "terms": ["newsletter*", "news letter*", "digest*"]},
+    {"id": "releases", "label": "releases", "terms": ["release*", "changelog*"]},
+    {"id": "subscribe", "label": "subscriptions", "terms": ["subscri*", "sign up", "signup", "mailing list*"]},
+    {"id": "email", "label": "email", "terms": ["email*", "e mail*"]},
+    {
+      "id": "slack-message",
+      "label": "a new message in a channel",
+      "terms": [
+        "new message in the channel", "new message in our", "message in the channel", "new top level message",
+        "channel message*", "posts in", "posted in"
+      ]
+    },
+    {
+      "id": "schedule",
+      "label": "a schedule",
+      "terms": [
+        "every day", "every morning", "every afternoon", "every evening", "every night", "every week", "every weekday",
+        "every weekend", "every monday", "every tuesday", "every wednesday", "every thursday", "every friday",
+        "every saturday", "every sunday", "every hour", "every month", "every quarter", "every year", "every other day",
+        "every other week", "every two days", "every two weeks", "every few hours", "every few days", "each day", "each morning", "each afternoon", "each evening", "each night",
+        "each week", "each weekday", "each monday", "each tuesday", "each wednesday", "each thursday", "each friday",
+        "each saturday", "each sunday", "each hour", "each month", "once a day", "once a week", "once a month",
+        "twice a day", "twice a week", "daily", "nightly", "weekly",
+        "biweekly", "fortnightly", "hourly", "monthly", "quarterly", "yearly", "annually", "weekdays", "at midnight",
+        "on a schedule", "cron"
+      ]
+    },
+    {"id": "page-form", "label": "a page or form", "terms": ["paste*", "form", "forms", "web page"]},
+    {"id": "direct-message", "label": "a direct message", "terms": ["direct message*", "dm", "dms"]}
+  ]
+}

@@ -34,6 +34,9 @@ agent:
   # ANTHROPIC_API_KEY. local-kind-acceptance.yaml starts them on a Claude model.
   mockModel: true
   model: mock
+  # A Project created from a first message starts from the closest example
+  # when the server's match is clear; only the local lanes turn it on.
+  closestExamplePick: true
   # A thinking block that no longer matches its conversation fails the request
   # instead of being dropped, so a broken append-only rule is visible.
   thinkingPrefixMismatch: error

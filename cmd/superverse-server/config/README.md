@@ -113,6 +113,7 @@ define the slug.
 | `taskTurns` | Consecutive turns that task notifications open before automatic continuation pauses | `5` | `0` to `100` |
 | `platformTurns` | Consecutive turns that application-owned delivery failures of the Session's HEAD, such as a Preview whose application failed, open before automatic continuation pauses; `0` opens none | `3` | `0` to `100` |
 | `mockModel` | Start the [mock model](../../../internal/dexai/agents/session/modelprovider/mockmodel/README.md) in this process and offer it to every Session as the model `mock`, besides the Claude models: any account selects it in Local Kind and Native, only the administrator elsewhere | `false` | refused in `prod` |
+| `closestExamplePick` | Start a Project created from a first message, with no example picked, from the [example the server finds closest](../../../app-template/examples/README.md#closest-example) to that message instead of the default; the Session's agent adapts it to the message without announcing it | `false` | on in `native.yaml` and `local-kind.yaml` (and so `local-kind-acceptance.yaml`); off in test, staging and prod |
 
 ### `sandbox`
 

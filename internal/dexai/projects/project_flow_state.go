@@ -166,6 +166,17 @@ type SessionStartRequest struct {
 	// AuthorAccountID and AuthorEmail name the creator, the message's author.
 	AuthorAccountID string `json:"author_account_id,omitempty"`
 	AuthorEmail     string `json:"author_email,omitempty"`
+	// MatchedExample is what the server matched the first message on when it
+	// started the Project from the closest example, which TemplateRevision
+	// names; nil otherwise.
+	MatchedExample *MatchedExample `json:"matched_example,omitempty"`
+}
+
+// MatchedExample is what the closest-example decision found in the first
+// message: the facets of the example's match block it mentions and its score.
+type MatchedExample struct {
+	Facets []string `json:"facets"`
+	Score  int      `json:"score"`
 }
 
 // teamSpaceAdmission is the input of the Project's registration in its

@@ -133,16 +133,22 @@ func (b block) json() []byte {
 	}
 }
 
-// missingFromSegmentStart returns the first text that the step at a position
-// expects in the segment_start of the request and that start lacks, or "".
-func (s *script) missingFromSegmentStart(at position, arguments map[string]string, start string) string {
+// segmentStartMismatch is the stop text of the step at a position when the
+// segment_start of the request lacks a text the step expects in it or holds
+// one the step expects it to lack, or "".
+func (s *script) segmentStartMismatch(at position, arguments map[string]string, start string) string {
 	step := s.stepAt(at)
 	if step == nil {
 		return ""
 	}
 	for _, expected := range step.ExpectSegmentStart {
 		if rendered := s.render(expected, arguments); !strings.Contains(start, rendered) {
-			return rendered
+			return fmt.Sprintf("Mock scenario %s stopped at %s: the first message of the context segment lacks %q", s.Name, at, rendered)
+		}
+	}
+	for _, unexpected := range step.ExpectSegmentStartLacks {
+		if rendered := s.render(unexpected, arguments); strings.Contains(start, rendered) {
+			return fmt.Sprintf("Mock scenario %s stopped at %s: the first message of the context segment holds %q", s.Name, at, rendered)
 		}
 	}
 	return ""

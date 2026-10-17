@@ -9,11 +9,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { ExampleCategory } from "@/lib/api/example";
+import type { ExampleCategory } from "@/lib/examples/example-catalog";
 import { cx } from "@/components/ui/cx";
 import { BuiltExampleCard } from "./ExampleCard";
-import { appsOf, browsedExamples, CATEGORY_ORDER, type ExampleIndex } from "./example-match";
-import type { BuiltExample } from "./template-catalog";
+import { appsOf, browsedExamples, CATEGORY_ORDER } from "./example-match";
+import { BUILT_EXAMPLES, type BuiltExample } from "./template-catalog";
 
 const FIELD =
   "rounded-lg border border-line bg-panel px-3 py-2 text-body text-ink placeholder:text-ink-faint focus:border-accent focus:shadow-(--focus-ring) focus:outline-none";
@@ -22,20 +22,12 @@ const FIELD =
  * Every built example, to search by words and narrow by category and app: the closest first for a search,
  * otherwise by category and title. Each opens like a card of the grid.
  */
-export function ExampleBrowser({
-  index,
-  disabled,
-  onOpen,
-}: {
-  index: ExampleIndex;
-  disabled: boolean;
-  onOpen: (example: BuiltExample) => void;
-}) {
+export function ExampleBrowser({ disabled, onOpen }: { disabled: boolean; onOpen: (example: BuiltExample) => void }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<ExampleCategory | null>(null);
   const [app, setApp] = useState<string | null>(null);
-  const apps = useMemo(() => appsOf(index.examples), [index]);
-  const shown = useMemo(() => browsedExamples(index, { query, category, app }), [index, query, category, app]);
+  const apps = useMemo(() => appsOf(BUILT_EXAMPLES), []);
+  const shown = useMemo(() => browsedExamples({ query, category, app }), [query, category, app]);
   return (
     <div className="mt-3 grid gap-3 rounded-xl border border-line-soft bg-well p-3.5">
       <div className="flex flex-wrap gap-2">

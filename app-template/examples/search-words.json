@@ -1,0 +1,20 @@
+{
+  "stopWords": [
+    "about", "after", "all", "also", "am", "an", "and", "any", "are", "as", "at", "be", "before", "build", "but", "by",
+    "can", "could", "do", "each", "every", "for", "from", "get", "gets", "has", "have", "he", "how", "if", "in", "into",
+    "is", "it", "its", "just", "like", "make", "me", "my", "need", "new", "of", "on", "one", "or", "our", "out", "please",
+    "should", "so", "that", "the", "their", "them", "then", "they", "this", "to", "up", "us", "want", "was", "we", "what",
+    "when", "which", "who", "will", "with", "would", "you", "your"
+  ],
+  "synonyms": [
+    ["approve", "sign off", "signoff", "authorize", "authorise"],
+    ["email", "e-mail", "gmail", "mail"],
+    ["summary", "summarize", "summarise", "tl;dr", "tldr", "condense"],
+    ["newsletter", "news letter", "digest", "bulletin"],
+    ["release", "changelog"],
+    ["ai", "llm", "openai", "gpt", "chatgpt", "claude", "anthropic", "gemini", "language model"],
+    ["reply", "respond", "answer"],
+    ["subscribe", "subscriber", "sign up", "signup", "mailing list"],
+    ["github", "git hub"]
+  ]
+}

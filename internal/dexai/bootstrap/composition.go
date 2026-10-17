@@ -278,8 +278,9 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 		Releases: releaseClient, Deployments: deploymentClient, Publishing: publishingService, RecentEvents: slack,
 		Connections: tenancy.Connections{Connections: shared.Connections, Access: connectionDAO, StudioOrigin: config.oauthCallbackOrigin, Unrouted: slack},
 		// The Claude models need the key; the mock model needs agent.mockModel.
-		SessionModels: api.SessionModels{Claude: config.agent.Claude.APIKey != "", Mock: config.mockModel, Local: config.localKind},
-		RemoteAgents:  remoteService,
+		SessionModels:      api.SessionModels{Claude: config.agent.Claude.APIKey != "", Mock: config.mockModel, Local: config.localKind},
+		ClosestExamplePick: config.closestExamplePick,
+		RemoteAgents:       remoteService,
 	})
 	credentials := http.NewServeMux()
 	credentials.Handle(connections.CredentialReadPath, connections.NewReadEndpoint(credentialReader))

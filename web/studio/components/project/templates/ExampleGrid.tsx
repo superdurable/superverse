@@ -13,8 +13,8 @@ import { Button } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { ExampleBrowser } from "./ExampleBrowser";
 import { BuiltExampleCard, PlaceholderCard } from "./ExampleCard";
-import { closestExamples, describesProcess, indexExamples, starterTemplates } from "./example-match";
-import { PROCESS_TEMPLATES, type BuiltExample, type ProcessTemplate } from "./template-catalog";
+import { closestExamples, describesProcess, starterTemplates } from "./example-match";
+import { BUILT_EXAMPLES, PROCESS_TEMPLATES, type BuiltExample, type ProcessTemplate } from "./template-catalog";
 import { useCardMotion } from "./use-card-motion";
 import { useSettledText } from "./use-settled-text";
 
@@ -28,7 +28,6 @@ import { useSettledText } from "./use-settled-text";
  */
 export function ExampleGrid({
   description,
-  examples,
   showPlaceholders,
   picked,
   disabled,
@@ -37,7 +36,6 @@ export function ExampleGrid({
 }: {
   /** What the person typed, which ranks the examples; nothing of it is sent from here. */
   description: string;
-  examples: readonly BuiltExample[];
   /** The placeholders fill the composer, which the mock model's scenario composer replaces. */
   showPlaceholders: boolean;
   /** The placeholder whose description the composer holds, if any. */
@@ -47,23 +45,22 @@ export function ExampleGrid({
   onPick: (template: ProcessTemplate) => void;
 }) {
   const [browsing, setBrowsing] = useState(false);
-  const index = useMemo(() => indexExamples(examples), [examples]);
   const settled = useSettledText(description);
   const ranking = describesProcess(settled);
   const shown: readonly ProcessTemplate[] = useMemo(
     () =>
-      ranking ? closestExamples(index, settled) : starterTemplates(examples, showPlaceholders ? PROCESS_TEMPLATES : []),
-    [examples, index, ranking, settled, showPlaceholders],
+      ranking ? closestExamples(settled) : starterTemplates(BUILT_EXAMPLES, showPlaceholders ? PROCESS_TEMPLATES : []),
+    [ranking, settled, showPlaceholders],
   );
   const cardRef = useCardMotion(shown.map((template) => `${template.kind}:${template.id}`).join(","));
-  if (examples.length === 0 && !showPlaceholders) return null;
+  if (BUILT_EXAMPLES.length === 0 && !showPlaceholders) return null;
   return (
     <section aria-labelledby="start-examples" className="mt-8">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <Eyebrow id="start-examples">
           {browsing ? "All examples" : ranking ? "Closest to your description" : "Start from an example"}
         </Eyebrow>
-        {examples.length > 0 && (
+        {BUILT_EXAMPLES.length > 0 && (
           <Button size="sm" aria-expanded={browsing} onClick={() => setBrowsing(!browsing)}>
             {browsing ? "Hide all examples" : "Browse all examples"}
           </Button>
@@ -73,7 +70,7 @@ export function ExampleGrid({
         Open example creates the project from the built example as it is. What you typed waits in its chat, unsent, for
         you to change it.
       </p>
-      {browsing && <ExampleBrowser index={index} disabled={disabled} onOpen={onOpen} />}
+      {browsing && <ExampleBrowser disabled={disabled} onOpen={onOpen} />}
       {!browsing && ranking && shown.length === 0 && (
         <p className="mt-3 text-body text-ink-dim">No built example is close to your description yet.</p>
       )}

@@ -10,6 +10,7 @@ package main
 
 import (
 	"os"
+	"slices"
 	"strings"
 )
 
@@ -43,7 +44,8 @@ func readChangedPaths(file string) ([]string, error) {
 
 // changedExamples returns, in examples' order, the default example and every
 // example the changed paths reach: a path of an example folder reaches that
-// example and the examples extending it, one of everyExamplePaths every example.
+// example and the examples extending it, one of everyExamplePaths every example
+// and a file every example shares, which no tree holds, none.
 func changedExamples(examples []composedExample, changed []string) []string {
 	reached := map[string]bool{}
 	for _, name := range changed {
@@ -51,7 +53,7 @@ func changedExamples(examples []composedExample, changed []string) []string {
 			reached[id] = true
 			continue
 		}
-		if name == "app-template/"+examplesDirectory+"/"+examplesReadme {
+		if shared, found := strings.CutPrefix(name, "app-template/"+examplesDirectory+"/"); found && slices.Contains(sharedExampleFiles, shared) {
 			continue
 		}
 		for _, every := range everyExamplePaths {

@@ -80,21 +80,6 @@ function configuration(store: MockStore, target: ProjectConfigurationTarget__Out
   return mockConfigurationDraft(store, projectId, "preview");
 }
 
-// Like Go, every account lists the same examples, without the cards the Sessions record.
-export const exampleService: MockService<"ExampleService"> = {
-  ListExamples: () => ({
-    examples: MOCK_EXAMPLES.map(({ exampleId, title, category, apps, decider, description, connectorIds }) => ({
-      exampleId,
-      title,
-      category,
-      apps,
-      decider,
-      description,
-      connectorIds,
-    })),
-  }),
-};
-
 export const projectService: MockService<"ProjectService"> = {
   // Like Go, the first message comes with its message ID, and the new Session starts with it and the model.
   CreateProject: (

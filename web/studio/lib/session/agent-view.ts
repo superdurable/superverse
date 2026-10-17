@@ -236,6 +236,10 @@ function agentDescriptionView(value: AgentDescription__Output) {
       input: value.mockProgress.input,
       nextInput: value.mockProgress.nextInput,
     },
+    startingExample: value.startingExample && {
+      exampleId: value.startingExample.exampleId,
+      choice: agentLiteral(value.startingExample.choice, "CHOICE", "starting example choice"),
+    },
   };
 }
 

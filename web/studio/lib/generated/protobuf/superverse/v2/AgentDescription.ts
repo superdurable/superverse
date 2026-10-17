@@ -11,6 +11,7 @@ import type { AgentMockProgress as _superverse_v2_AgentMockProgress, AgentMockPr
 import type { AgentSubagent as _superverse_v2_AgentSubagent, AgentSubagent__Output as _superverse_v2_AgentSubagent__Output } from '../../superverse/v2/AgentSubagent';
 import type { Actor as _superverse_v2_Actor, Actor__Output as _superverse_v2_Actor__Output } from '../../superverse/v2/Actor';
 import type { SessionExecutor as _superverse_v2_SessionExecutor, SessionExecutor__Output as _superverse_v2_SessionExecutor__Output } from '../../superverse/v2/SessionExecutor';
+import type { AgentStartingExample as _superverse_v2_AgentStartingExample, AgentStartingExample__Output as _superverse_v2_AgentStartingExample__Output } from '../../superverse/v2/AgentStartingExample';
 import type { Long } from '@grpc/proto-loader';
 
 // Original file: api/superverse/v2/superverse.proto
@@ -74,6 +75,7 @@ export interface AgentDescription {
   'modelChangedBy'?: (_superverse_v2_Actor | null);
   'previewAutoDeployChangedBy'?: (_superverse_v2_Actor | null);
   'executor'?: (_superverse_v2_SessionExecutor | null);
+  'startingExample'?: (_superverse_v2_AgentStartingExample | null);
 }
 
 export interface AgentDescription__Output {
@@ -101,4 +103,5 @@ export interface AgentDescription__Output {
   'modelChangedBy': (_superverse_v2_Actor__Output | null);
   'previewAutoDeployChangedBy': (_superverse_v2_Actor__Output | null);
   'executor': (_superverse_v2_SessionExecutor__Output | null);
+  'startingExample': (_superverse_v2_AgentStartingExample__Output | null);
 }

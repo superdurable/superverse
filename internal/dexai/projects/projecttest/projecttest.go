@@ -85,6 +85,33 @@ func CreateInTeamSpaceForTest(ctx context.Context, t testing.TB, client *project
 	return AwaitReadyForTest(ctx, t, client, startProject(ctx, t, client, name, owner, teamSpaceID, nil))
 }
 
+// CreateMatchedForTest creates a READY Project of owner in owner's TeamSpace
+// teamSpaceID from the example exampleID of this build, recording what a
+// CreateProject that matched it to a first message records, the facets and
+// the score, but no message: its Session starts from the example as matched
+// and waits for a message, for a test that reads that Session before any turn.
+func CreateMatchedForTest(ctx context.Context, t testing.TB, client *projects.ProjectFlowClient, name, owner, teamSpaceID, exampleID string, matched projects.MatchedExample) projects.Project {
+	t.Helper()
+	template, err := apptemplate.ExampleTemplate(exampleID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return AwaitReadyForTest(ctx, t, client, startProjectAs(ctx, t, client, name, owner, teamSpaceID, nil, func(start *projects.ProjectStart) {
+		start.TemplateRevision, start.InitialSession = template.Revision, &projects.SessionStartRequest{MatchedExample: &matched}
+	}))
+}
+
+// CreateAtRevisionForTest creates a READY Project of owner in owner's
+// TeamSpace teamSpaceID whose ProjectFlow records the template revision
+// revision, such as a tree of an earlier build that this build keeps, with no
+// first message.
+func CreateAtRevisionForTest(ctx context.Context, t testing.TB, client *projects.ProjectFlowClient, name, owner, teamSpaceID, revision string) projects.Project {
+	t.Helper()
+	return AwaitReadyForTest(ctx, t, client, startProjectAs(ctx, t, client, name, owner, teamSpaceID, nil, func(start *projects.ProjectStart) {
+		start.TemplateRevision = revision
+	}))
+}
+
 // RegisterAccountForTest registers an ordinary account as the Projects of
 // StartForTest do and returns its ID, for a test that needs a second person.
 func RegisterAccountForTest(ctx context.Context, t testing.TB) string {
@@ -96,6 +123,13 @@ func RegisterAccountForTest(ctx context.Context, t testing.TB) string {
 // nil, ran with its ID, and owns its deletion.
 func startProject(ctx context.Context, t testing.TB, client *projects.ProjectFlowClient, name, owner, teamSpaceID string, before func(projectID string)) string {
 	t.Helper()
+	return startProjectAs(ctx, t, client, name, owner, teamSpaceID, before, func(*projects.ProjectStart) {})
+}
+
+// startProjectAs is startProject with the start that shape changes from the
+// default template's.
+func startProjectAs(ctx context.Context, t testing.TB, client *projects.ProjectFlowClient, name, owner, teamSpaceID string, before func(projectID string), shape func(*projects.ProjectStart)) string {
+	t.Helper()
 	if os.Getenv("SUPERVERSE_TEST_GITHUB_EFFECTS") != "true" {
 		t.Fatal("a Project's Setup creates its GitHub repository: requires SUPERVERSE_TEST_GITHUB_EFFECTS=true")
 	}
@@ -104,6 +138,7 @@ func startProject(ctx context.Context, t testing.TB, client *projects.ProjectFlo
 	// CreateProject admits names of at most 120 bytes; a test's name may be longer.
 	start := projects.ProjectStart{ProjectID: projectID, CreatorAccountID: owner, Name: name[:min(len(name), 120)], SetupFlowID: flowid.SetupFlowID(projectID, setupID),
 		TemplateRevision: apptemplate.Current().Revision, TeamSpaceID: teamSpaceID}
+	shape(&start)
 	fingerprint := flowid.Fingerprint(start)
 	start.Identity = dexflow.StartIdentity{RequestID: fingerprint, Fingerprint: fingerprint, ActorAccountID: owner}
 	// The test owns the deletion before the start, also when the start's

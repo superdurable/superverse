@@ -40,8 +40,9 @@ type StartRequest struct {
 	// FirstMessage is the creator's first message, which the start Step admits
 	// once into QueuedUserMessages; nil without one.
 	FirstMessage *conversation.PendingUserMessage `json:"first_message,omitempty"`
-	// ExampleBrief is the card of the example the Project was created from,
-	// which the start Step records as version 1; nil without a picked example.
+	// ExampleBrief is the example the Project was created from: a picked
+	// example's card, which the start Step records as version 1, or the
+	// example the server matched to the first message; nil for the default.
 	ExampleBrief *ExampleBrief `json:"example_brief,omitempty"`
 }
 
@@ -53,17 +54,63 @@ type SessionStartInput struct {
 	ExampleBrief *ExampleBrief                    `json:"example_brief,omitempty"`
 }
 
-// ExampleBrief is the requirements card of the example a Project was created
-// from, as the server build that created it embeds it: Card is the
+// ExampleBrief is the example a Project was created from, as the server
+// build that starts its Session embeds it. A picked example's Card is the
 // confirm_requirements input as JSON text, which the start Step records as
-// version 1 without a model call. Problem is why there is no card, such as an
-// example this build holds at another tree; the Session then records none.
+// version 1 without a model call; Problem is why there is no card, such as an
+// example this build holds at another tree, and the Session then records none.
+// A matched example records no card: MatchedOn is what the server matched the
+// first message on, and the agent writes version 1 from that message.
 type ExampleBrief struct {
 	ExampleID string `json:"example_id"`
 	Tree      string `json:"tree"`
 	Title     string `json:"title"`
 	Card      string `json:"card,omitempty"`
 	Problem   string `json:"problem,omitempty"`
+	// Choice is how the example was chosen; empty, as a start input of an
+	// earlier build has it, is picked.
+	Choice    ExampleChoice `json:"choice,omitempty"`
+	MatchedOn []string      `json:"matched_on,omitempty"`
+}
+
+// ExampleChoice is how the example a Project started from was chosen, a
+// closed set that AgentState and the Session's description store.
+type ExampleChoice string
+
+const (
+	// ExampleChoicePicked is an example the person opened in Studio, whose
+	// card the Session records as version 1.
+	ExampleChoicePicked ExampleChoice = "picked"
+	// ExampleChoiceMatched is the example the server found closest to the
+	// first message; the agent writes version 1 itself.
+	ExampleChoiceMatched ExampleChoice = "matched"
+)
+
+// maximumMatchedFacets bounds StartingExample.MatchedOn.
+const maximumMatchedFacets = 12
+
+// StartingExample is the example a Session's Project started from, as the
+// start Step recorded it: its ID, tree and title, how it was chosen and what
+// a matched one matched on, at most maximumMatchedFacets facets, within 512
+// bytes. The starting_example section of a segment is built from it.
+type StartingExample struct {
+	ExampleID string        `json:"example_id"`
+	Tree      string        `json:"tree"`
+	Title     string        `json:"title"`
+	Choice    ExampleChoice `json:"choice"`
+	MatchedOn []string      `json:"matched_on,omitempty"`
+}
+
+// StartingExample is what the start Step records of the brief.
+func (brief ExampleBrief) StartingExample() *StartingExample {
+	started := &StartingExample{ExampleID: brief.ExampleID, Tree: brief.Tree, Title: brief.Title, Choice: brief.Choice}
+	if started.Choice == "" {
+		started.Choice = ExampleChoicePicked
+	}
+	if started.Choice == ExampleChoiceMatched {
+		started.MatchedOn = slices.Clone(brief.MatchedOn[:min(len(brief.MatchedOn), maximumMatchedFacets)])
+	}
+	return started
 }
 
 // AgentStatus describes the active durable state-machine boundary.
@@ -153,6 +200,9 @@ type AgentState struct {
 	// no message of the person yet: until the first one starts a turn, a READY
 	// Preview holds the Sandbox only for the idle Sandbox hold.
 	AwaitsFirstMessage bool `json:"awaits_first_message,omitempty"`
+	// StartingExample is the example the Project started from, which the
+	// start Step records once; nil for the default.
+	StartingExample *StartingExample `json:"starting_example,omitempty"`
 	// SubagentsStartedWithoutUser counts the subagents admitted since the
 	// user last started a turn; start_agent admits at most
 	// agenttasks.MaximumSubagentsWithoutUser.
@@ -393,6 +443,9 @@ type AgentDescription struct {
 	// IsPreviewAutoDeployEnabled is whether the Preview deploys each pushed
 	// commit after its turn.
 	IsPreviewAutoDeployEnabled bool `json:"is_preview_auto_deploy_enabled"`
+	// StartingExample is the example the Project started from; nil for the
+	// default.
+	StartingExample *StartingExample `json:"starting_example,omitempty"`
 	// ConnectorSlugs is the union of platform and remote connector slugs whose
 	// ConnectorContributionFlows the Snapshot reads.
 	ConnectorSlugs []string `json:"connector_slugs,omitempty"`

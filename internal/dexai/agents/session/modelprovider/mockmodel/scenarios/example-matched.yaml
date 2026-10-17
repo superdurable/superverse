@@ -1,0 +1,85 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# The quiet start from the closest example (start: matched): the first message
+# describes a Slack thread approval that posts Approved. instead of Processing
+# complete., so CreateProject, with agent.closestExamplePick on, starts the
+# Project from the slack-thread-approval example, which the loader checks, and
+# the Session records no card. The first reply proves the session-start segment
+# carries the starting_example section, writes version 1 itself, reusing R1 to
+# R3 with R3's new text and the example's design, and reports enough usage to
+# compact; the next reply proves the section is still there after the
+# compaction and now says version 1 is recorded instead of asking for it. Two
+# edits change the reply text, the push traces R1 to R3 at version 1 and
+# builds the design. Input 2 compacts again and proves the section is gone
+# once the change is pushed. No reply mentions the example.
+name: example-matched
+title: "Start from the closest example"
+description: "A first message close to the Slack thread approval example: the server starts the Project from it, and the agent writes version 1, changes the reply text and pushes it, without announcing the example."
+category: product
+workspace: slack-thread-approval
+start: matched
+compaction_summary: "The person asked for a Slack thread approval that posts Approved. in the thread; version 1 records it and the work goes on."
+inputs:
+  - label: "Describe the process"
+    message: "When someone posts a new message in our approvals Slack channel, wait for the first reply in its thread from an allowed member, then post Approved. in the thread."
+    replies:
+      - thinking: "The Project's first commit already is a Slack thread approval; I keep it and change only the reply text, so version 1 reuses its features."
+        text: "Here is what I will build. I am starting now; tell me in the chat if anything should change."
+        expect_segment_start:
+          - "<starting_example>"
+          - "(slack-thread-approval, Git tree"
+          - "The platform chose it as the closest example"
+          - "Write version 1 from the person's request"
+          - "R3 After the reply, the application posts Processing complete. into the same thread"
+          - "tests: TestThreadApprovalStartsOnRootMessage"
+        usage: {input_tokens: 850000, output_tokens: 300}
+        tool_uses:
+          - name: confirm_requirements
+            input: {"title": "Slack thread approval", "summary": "A process that follows threads in one Slack channel: a new message starts it, and a reply in its thread finishes it with Approved. posted in the thread.", "features": [{"id": "R1", "text": "A new top-level message in the configured Slack channel starts one approval for its thread; a redelivered message starts no second one."}, {"id": "R2", "text": "The first matching reply in that thread is accepted and moves the approval on; a later reply changes nothing."}, {"id": "R3", "text": "After the reply, the application posts Approved. into the same thread and completes the approval."}], "connections": [{"need": "Receive new channel messages and thread replies, and reply in the thread", "connector": "slack", "operations": ["postThreadReply"], "status": "existing", "user_setup": "Select the TeamSpace Slack connection as slack-approvals, then choose the channel and the members allowed to reply for both triggers in Studio Configuration."}], "user_setup": ["Invite the platform's Slack app to the approval channel."], "acceptance": ["A new message in the channel starts a run in Studio that waits for a reply.", "A reply in its thread makes the application post Approved. in the thread, and the run completes."], "design": {"summary": "A process that follows threads in one Slack channel: a new message starts it, and a reply in its thread finishes it with Approved. posted in the thread.", "flows": [{"flow_type": "SlackThreadApprovalFlow", "purpose": "Follows one Slack thread: its root message starts the Flow, the first matching reply posts the completion reply and ends it.", "start_step": "RecordThread", "steps": [{"step_type": "RecordThread", "group": "Thread", "explanation": "Keep the Slack thread that the new channel message started and wait for a reply in it.", "waits_for": {"kind": "none"}, "next": [{"to": "PostCompletionReply", "when": "the first matching reply arrives in the thread (ReceiveThreadReply)"}], "features": ["R1"]}, {"step_type": "PostCompletionReply", "group": "Reply", "explanation": "Post Approved. into the thread once a matching reply arrived.", "waits_for": {"kind": "none"}, "next": [{"to": "CompleteThread", "when": "Slack confirms the reply (sent)"}, {"to": "RecordReplyFailure", "when": "Slack rejects the reply, a defect, or the outcome is unknown"}], "features": ["R2", "R3"]}, {"step_type": "CompleteThread", "group": "Reply", "explanation": "Complete once Slack confirms the completion reply.", "waits_for": {"kind": "none"}, "next": [{"to": "complete"}], "features": ["R3"]}, {"step_type": "RecordReplyFailure", "group": "Reply", "explanation": "Record why the completion reply was not confirmed, without posting it again.", "waits_for": {"kind": "none"}, "next": [{"to": "complete"}], "features": ["R3"]}], "channels": [], "actions": [], "attributes": [{"name": "ThreadApprovalStatus", "value": "waiting_for_reply, posting_reply, completed, failed or unknown"}, {"name": "ThreadApprovalThread", "value": "the Slack team, channel and root message timestamp"}, {"name": "ThreadApprovalReplyEventID", "value": "the Slack event of the accepted reply"}, {"name": "ThreadApprovalReplyUserID", "value": "the member whose reply was accepted"}, {"name": "ThreadApprovalNotice", "value": "why the completion reply was not confirmed"}], "starts": []}], "removed_flows": []}}
+      - text: "Reading the Flow that posts the reply."
+        expect_segment_start:
+          - "<starting_example>"
+          - "(slack-thread-approval, Git tree"
+          - "Version 1 of the requirements is recorded: build it from this source"
+          - "<confirmed_requirements>"
+        expect_segment_start_lacks:
+          - "Write version 1 from the person's request"
+        tool_uses:
+          - name: read
+            input: {path: internal/process/slack_thread_approval_flow.go}
+      - text: "Changing the reply the Flow posts."
+        tool_uses:
+          - name: edit
+            input: {"path": "internal/process/slack_thread_approval_flow.go", "old_string": "const CompletionReplyText = \"Processing complete.\"", "new_string": "const CompletionReplyText = \"Approved.\""}
+          - name: edit
+            input: {"path": "internal/process/slack_thread_approval_flow.go", "old_string": "Explanation: \"Post Processing complete. into the thread once a matching reply arrived.\"", "new_string": "Explanation: \"Post Approved. into the thread once a matching reply arrived.\""}
+      - text: "Building and vetting the application with its API tests."
+        tool_uses:
+          - name: bash
+            input: {"command": "make bootstrap && make generate && go build ./... && go vet ./... && go vet -tags apptest ./...", "description": "Generate the API code, then build and vet the application", "timeout_seconds": 600}
+      - text: "Running the source checks and pushing the change."
+        tool_uses:
+          - name: commit_and_push
+            input: {"summary": "Post Approved. into the Slack thread after the first matching reply", "verification": ["make generate, go build ./..., go vet ./... and go vet -tags apptest ./... succeeded"], "remaining_risks": ["Relayed Slack events and the real thread reply run only in a Preview whose slack-approvals connection and both trigger bindings are configured."], "requirements": [{"id": "R1", "evidence": ["internal/process/slack_thread_approval_flow.go", "internal/process/slack_thread_triggers.go", "internal/worker/triggers.go"], "tests": ["TestThreadApprovalStartsOnRootMessage"]}, {"id": "R2", "evidence": ["internal/process/slack_thread_approval_flow.go"], "tests": ["TestThreadApprovalReplyPostsCompletion"]}, {"id": "R3", "evidence": ["internal/process/slack_thread_approval_flow.go"], "untested_reason": "The Slack connector has no mocks yet, so no test can make Slack confirm the reply; the tests cover only a connection without credentials."}], "requirements_revision": 1}
+      - text: "A matching reply in the thread now gets Approved. back; the change is pushed and the Preview deploys it."
+  - label: "Check the context"
+    message: "Check the context."
+    replies:
+      - text: "Recording the progress."
+        usage: {input_tokens: 850000, output_tokens: 200}
+        tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Post Approved. in the thread", status: completed}
+      - text: "The context holds version 1 and nothing more to adapt."
+        expect_segment_start:
+          - "<confirmed_requirements>"
+        expect_segment_start_lacks:
+          - "<starting_example>"

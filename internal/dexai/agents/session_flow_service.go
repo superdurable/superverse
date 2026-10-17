@@ -108,8 +108,9 @@ func (v Snapshot) Preview() preview.Snapshot { return previewView(v.Session, v.P
 // default profile on the Project's AppManifest commit, on the model the
 // creator chose or the server's default, with the creator's first message,
 // which its start Step admits once, and, for a Project created from an
-// example, that example's brief. A retried or replayed start joins the
-// accepted execution.
+// example, that example's brief: picked, or matched when the creation
+// recorded what the server matched the first message on. A retried or
+// replayed start joins the accepted execution.
 func (s *SessionFlowService) StartForProject(ctx context.Context, project projects.Project, initial *projects.SessionStartRequest) error {
 	identity := agentloop.SessionIdentity{ProjectID: project.ProjectID, Profile: agentloop.ProfileSessionV1, HeadCommit: project.AppManifest.SourceCommit}
 	request := s.Agent.SessionRequest(identity)
@@ -122,6 +123,10 @@ func (s *SessionFlowService) StartForProject(ctx context.Context, project projec
 	}
 	if id, tree, fromExample := apptemplate.ParseExampleRevision(project.TemplateRevision); fromExample {
 		request.ExampleBrief = exampleBrief(id, tree)
+		if initial != nil && initial.MatchedExample != nil {
+			request.ExampleBrief.Choice, request.ExampleBrief.MatchedOn = agentloop.ExampleChoiceMatched, initial.MatchedExample.Facets
+			request.ExampleBrief.Card = ""
+		}
 	}
 	return s.Agent.StartAccepted(ctx, request)
 }
@@ -131,7 +136,7 @@ func (s *SessionFlowService) StartForProject(ctx context.Context, project projec
 // not at all, starts the Session with the problem instead of the card: the
 // card would not describe the committed source.
 func exampleBrief(id, tree string) *agentloop.ExampleBrief {
-	brief := &agentloop.ExampleBrief{ExampleID: id, Tree: tree, Title: id}
+	brief := &agentloop.ExampleBrief{ExampleID: id, Tree: tree, Title: id, Choice: agentloop.ExampleChoicePicked}
 	example, found := apptemplate.FindExample(id)
 	template, err := apptemplate.ExampleTemplate(id)
 	switch {

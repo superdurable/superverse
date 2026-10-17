@@ -8,9 +8,9 @@ Configuration, Runs, Start Flow, Display, Actions and Inbox.
 
 ## Adapt this example
 
-The person chose this example as a starting point. Change it to what they
-ask; keep every process and requirement they still want, and remove one only
-when they say it no longer applies. A new Flow follows the existing one.
+This Project starts from this example; the conversation says how it was
+chosen. Keep what the request needs, change what differs and remove the rest
+with its tests. A new Flow follows the existing one.
 
 ## Files
 
