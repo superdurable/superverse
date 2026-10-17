@@ -1,9 +1,9 @@
 # Agent interaction
 
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
-Purpose: What the Agent asks of and shows the reader: question batches, an old waiting requirements card, the current requirements, queued messages, todo progress, timers and background tasks.
+Purpose: What the Agent asks of and shows the reader: question batches, an old waiting requirements card, each recorded version's line, queued messages, todo progress, timers and background tasks.
 
-Importers: `components/agent` imports this directory.
+Importers: `components/agent` and `components/agent/conversation` import this directory.
 
 Imports: it imports `components/ui`, `components/ui/reveal`, `lib/session` and `lib/shared`.
 
@@ -11,6 +11,7 @@ Imports: it imports `components/ui`, `components/ui/reveal`, `lib/session` and `
 flowchart LR
   self["components/agent/interaction"]
   c0["components/agent"] --> self
+  c1["components/agent/conversation"] --> self
   self --> d0["components/ui"]
   self --> d1["components/ui/reveal"]
   self --> d2["lib/session"]

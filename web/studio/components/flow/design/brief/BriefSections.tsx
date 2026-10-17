@@ -9,30 +9,15 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Badge } from "@/components/ui/badge/Badge";
 import { MoreDetails } from "@/components/ui/reveal/MoreDetails";
-import { connectorName } from "@/components/flow/canvas/layout/step-card";
-import type { BriefCard, BriefLine, BriefProcess, BriefRule, StepWait } from "./brief-model";
+import type { BriefCard, BriefLine, BriefRule } from "./brief-model";
 
 const HEADING = "text-caption font-semibold tracking-wider text-ink-faint uppercase";
 
 /** One part of the Brief under its heading; a region, so its heading names it. */
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section aria-label={title} className="grid content-start gap-2">
-      <h3 className={HEADING}>{title}</h3>
-      {children}
-    </section>
-  );
-}
-
-/** One short part of the summary grid, in a cell of its own. */
-export function GridPart({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section
-      aria-label={title}
-      className="grid min-w-0 content-start gap-2 rounded-lg border border-line-faint bg-raised px-3 py-2.5"
-    >
+    <section aria-label={title} className="grid content-start gap-1.5">
       <h3 className={HEADING}>{title}</h3>
       {children}
     </section>
@@ -42,11 +27,11 @@ export function GridPart({ title, children }: { title: string; children: ReactNo
 /** Lines that each lead with who or what they are about. */
 export function LineList({ lines }: { lines: readonly BriefLine[] }) {
   return (
-    <ul className="grid gap-2">
+    <ul className="grid gap-1.5">
       {lines.map((line) => (
-        <li className="grid gap-0.5 wrap-anywhere" key={line.key}>
+        <li className="wrap-anywhere" key={line.key}>
           <strong className="font-semibold text-ink">{line.lead}</strong>
-          {line.text && <span>{line.text}</span>}
+          {line.text && <span> · {line.text}</span>}
         </li>
       ))}
     </ul>
@@ -88,33 +73,17 @@ export function BulletList({ items }: { items: readonly string[] }) {
   );
 }
 
-const WAIT_BADGE: Record<StepWait, { tone: "busy" | "neutral"; text: string }> = {
-  person: { tone: "busy", text: "A person acts" },
-  message: { tone: "neutral", text: "Waits for a message" },
-  time: { tone: "neutral", text: "Waits for a time" },
-};
-
-/** The Steps of each process in reading order, for a design the Brief does not draw. */
-export function StepsPart({ processes }: { processes: readonly BriefProcess[] }) {
+/** The features, each under its ID. */
+export function FeatureList({ features }: { features: BriefCard["features"] }) {
   return (
-    <Section title="Steps">
-      {processes.map((process) => (
-        <div className="grid gap-1.5" key={process.flowType}>
-          {processes.length > 1 && <h4 className="text-body font-semibold text-ink">{process.name}</h4>}
-          <ol className="grid list-decimal gap-2 pl-5 marker:text-ink-faint">
-            {process.steps.map((step) => (
-              <li className="wrap-anywhere" key={step.key}>
-                <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                  <strong className="font-semibold text-ink">{step.title}</strong>
-                  {step.waits && <Badge tone={WAIT_BADGE[step.waits].tone}>{WAIT_BADGE[step.waits].text}</Badge>}
-                </span>
-                {step.explanation && <span className="block">{step.explanation}</span>}
-              </li>
-            ))}
-          </ol>
-        </div>
+    <ol className="grid gap-1.5">
+      {features.map((feature, index) => (
+        <li className="flex gap-2" key={`${feature.id}:${index}`}>
+          <strong className="shrink-0 font-semibold text-ink">{feature.id}</strong>
+          <span className="wrap-anywhere">{feature.text}</span>
+        </li>
       ))}
-    </Section>
+    </ol>
   );
 }
 
@@ -148,42 +117,37 @@ export function OutlineLines({ outline }: { outline: string }) {
   );
 }
 
-/** The apps the card connects to, as chips of the names people know; whether each is new, what it is for and its operations behind More details. */
-export function AppsPart({ connections }: { connections: BriefCard["connections"] }) {
+/**
+ * Under the canvas: the agent's own one-line summary of the card, or `pending` until it arrives, one More
+ * details with the rest (`more`, absent when there is nothing more) and an optional small note. It keeps to
+ * the lower part and scrolls on its own, so the drawing always shows.
+ */
+export function BriefFoot({
+  summary,
+  pending,
+  more,
+  note,
+}: {
+  summary: string;
+  pending?: string;
+  more: ReactNode;
+  note?: string;
+}) {
   return (
-    <GridPart title="Apps">
-      <ul className="flex flex-wrap gap-1.5" aria-label="Apps">
-        {connections.map((connection) => (
-          <li key={`${connection.connector}:${connection.need}`}>
-            <Badge className="text-body">{connectorName(connection.connector)}</Badge>
-          </li>
-        ))}
-      </ul>
-      <MoreDetails surface="brief.apps">
-        <ul className="grid gap-2">
-          {connections.map((connection) => (
-            <li className="grid gap-0.5 wrap-anywhere" key={`${connection.connector}:${connection.need}`}>
-              <span className="flex flex-wrap items-center gap-2">
-                <strong className="font-semibold text-ink">{connectorName(connection.connector)}</strong>
-                {connection.status === "new" ? (
-                  <Badge tone="busy">New connection</Badge>
-                ) : (
-                  <Badge>Existing connection</Badge>
-                )}
-              </span>
-              <span>{connection.need}</span>
-              {connection.userSetup !== "" && (
-                <span className="text-caption text-ink-faint">You set up: {connection.userSetup}</span>
-              )}
-              {connection.operations.length > 0 && (
-                <span className="font-mono text-caption text-ink-faint">
-                  {connection.connector}: {connection.operations.join(", ")}
-                </span>
-              )}
-            </li>
-          ))}
-        </ul>
-      </MoreDetails>
-    </GridPart>
+    <div className="grid max-h-[45%] min-h-0 shrink-0 content-start gap-1 overflow-x-hidden overflow-y-auto overscroll-contain border-t border-line-soft bg-panel px-4 py-2.5">
+      {summary ? (
+        <p className="text-body wrap-anywhere text-ink" data-testid="brief-summary">
+          {summary}
+        </p>
+      ) : (
+        pending && <p className="text-body text-ink-faint">{pending}</p>
+      )}
+      {more && (
+        <MoreDetails surface="brief.more">
+          <div className="grid max-w-[48rem] gap-3.5 py-1 text-body text-ink-dim">{more}</div>
+        </MoreDetails>
+      )}
+      {note && <p className="text-caption text-ink-faint">{note}</p>}
+    </div>
   );
 }

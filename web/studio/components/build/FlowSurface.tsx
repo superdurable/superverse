@@ -117,7 +117,7 @@ function FlowView({ environment }: { environment: ProjectEnvironment }) {
       data-pick-scope={processName(requested)}
     >
       {(changed || more > 0 || liveBanner) && (
-        <div className="pointer-events-none absolute top-2.5 left-3 z-5 flex max-w-[calc(100%-32rem)] flex-wrap items-center gap-2 text-[12.5px] text-ink-faint @max-[54rem]/canvas:top-14 @max-[54rem]/canvas:max-w-[calc(100%-1.5rem)]">
+        <div className="pointer-events-none absolute top-2.5 left-3 z-5 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center gap-2 text-[12.5px] text-ink-faint">
           {changed && (
             <span className="rounded-lg border border-line-soft bg-panel px-2.25 py-1 text-busy">
               changed since Live
@@ -131,7 +131,7 @@ function FlowView({ environment }: { environment: ProjectEnvironment }) {
           {liveBanner && <span className="pointer-events-auto">{liveBanner}</span>}
         </div>
       )}
-      <LazyFlowCanvas flowType={requested} />
+      <LazyFlowCanvas flowType={requested} opensWhole />
     </section>
   );
 }
@@ -160,7 +160,7 @@ export function PreviewSource({ projectId }: { projectId: string }) {
  * draws the designed Flows from the design instead, and shows them by itself once per card version.
  * Until processes are built from the agent's own push, Preview draws nothing of the template the
  * Project started from: it waits calmly, with Build processes only where a person must press it. While
- * the agent writes its first card, the card's draft shows as the Brief, drafting.
+ * the agent writes a card, its draft shows as the drafting overview: the drafted Step names and the summary.
  */
 export function FlowSurface({
   projectId,

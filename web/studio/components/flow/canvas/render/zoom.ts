@@ -19,13 +19,14 @@ export const MAX_ZOOM = 2.2;
 /**
  * The canvas opens on the whole Flow when it fits at a readable size (titles of 10px or more, up to
  * 1:1). A Flow too large for that opens at the readable floor on its start rather than shrinking
- * past legibility or centring the start off screen; the reader pans, or uses Fit.
+ * past legibility or centring the start off screen; the reader pans, or uses Fit. A host that opens
+ * whole, as the Flow tab does, opens as Fit shows it instead.
  */
 export const OPEN_FLOOR = READABLE_ZOOM;
 const OPEN_CEILING = 1;
 
-/** The Fit button shows the whole Flow at whatever size that takes. */
-const FIT_FLOOR = 0.2;
+/** The Fit button shows the whole Flow at whatever size that takes; so does a canvas that opens whole. */
+export const FIT_FLOOR = 0.2;
 
 /** The zoom buttons move this much, within these bounds; the wheel keeps the wider range above. */
 export const ZOOM_STEP = 0.15;

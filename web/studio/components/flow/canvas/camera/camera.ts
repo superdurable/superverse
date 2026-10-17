@@ -154,21 +154,25 @@ function joinedTo(scene: Scene, boxIds: ReadonlySet<string>, transitionBoxIds: r
   return scene.boxes.filter((box) => joined.has(box.id) && !boxIds.has(box.id));
 }
 
-/** Opens on the whole drawing when it reads, else on its start at the readable floor. */
+/**
+ * Opens on the whole drawing when it fits at `floor` or more, else on its start at the floor. The floor is
+ * the readable zoom unless the host opens whole, as Fit does, down to Fit's own floor.
+ */
 export function openingView(
   scene: Scene,
   room: CameraRoom,
   direction: Direction,
   maxZoom: number,
+  floor = OPEN_FLOOR,
 ): { view: CameraView; scope: FramingScope } {
   const whole = drawingBounds(scene);
   const fit = zoomToFit(whole, room);
   const start = scene.boxes.find((box) => box.isStart) ?? scene.boxes[0];
-  if (fit >= OPEN_FLOOR || start === undefined) {
+  if (fit >= floor || start === undefined) {
     return { view: viewCentredOn(whole, room, Math.min(maxZoom, fit)), scope: "whole" };
   }
-  // Too large to read whole: open at the readable floor with the start in view; focusView frames "now".
-  const zoom = OPEN_FLOOR;
+  // Too large to show whole: open at the floor with the start in view; focusView frames "now".
+  const zoom = floor;
   const across = (low: number, span: number, roomSpan: number, at: number): number =>
     span * zoom <= roomSpan
       ? (roomSpan - span * zoom) / 2 - low * zoom

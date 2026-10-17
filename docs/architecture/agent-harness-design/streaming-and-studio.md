@@ -346,31 +346,31 @@ snapshot reports:
 The agent shows a requirements card and goes on building it; the Session records it as the
 current version ([session](session.md#requirements-cards)). The card shows four parts: the
 features (R1, R2, ...), the connections (existing and new, with their operations), what the
-user must prepare, and how acceptance works. A card with a Flow design reads as its
-**Process Brief** on the Flow tab, the card and the design together in business words; the
-card in the chat shows its title, version and summary with **Open the brief**
+user must prepare, and how acceptance works. A card with a Flow design draws on the Flow tab,
+with its **Process Brief** kept small while the design is built: the title and status on the
+canvas's corner, the card's summary and one More details under it
 ([design before implementation](../design-first/studio.md#the-process-brief)).
 
-- **While the agent writes the card**, the Flow tab shows its newest draft as the Brief with the
-  badge "Brief · drafting": the title, the summary, the features, the apps and a plain list of the
-  designed Steps' names per process, as they arrive, and the note that the drawing appears when the
-  agent records the card. No drawing is made of a draft. A Project created in this browser leaves
-  its first conversation for the Flow tab at its first draft. A revision's draft takes the place of
-  the current version's Brief until it is recorded.
-- The Brief's badge reads "Building from this brief · version N". There is no Confirm and no
-  Request changes, and the composer stays enabled.
-- **Change something…** sends the person's text as a chat message and steers it, so the
-  agent applies it at its next safe boundary; any chat message changes the card too, queued
-  while a turn runs. The agent answers with a revised card, version N + 1.
-- In the chat, the card is a work item, "Recorded what to build"; the current
-  requirements can be opened at any time.
+- **While the agent writes the card**, the Flow tab shows its newest draft: "Drafting" on the
+  corner over the title, the designed Steps' names per process as a row of dashed boxes, the
+  summary line as it fills in and the features behind More details. No drawing is made of a
+  draft. A Project created in this browser leaves its first conversation for the Flow tab at its
+  first draft. A revision's draft takes the place of the current version's Brief until it is
+  recorded.
+- There is no Confirm, no Request changes and no Change something, and the composer stays
+  enabled: a chat message changes the card, queued while a turn runs. The agent answers with a
+  revised card, version N + 1.
+- In the chat, the card is a work item, "Recorded what to build", and after that turn's work one
+  line, "Recorded version N: <title>", which opens to the card's text; nothing stays pinned
+  ([the card in the chat](../design-first/studio.md#the-card-in-the-chat)).
 - A card a Session still waits at from before cards stopped waiting shows read only with
   "Reply in the chat to build or change it"; the reply is an ordinary chat message.
 - From a card with a design until its build is complete, the Flow tab draws the designed Flows
-  under a Design label, and shows them by itself once per card version
+  and shows them by itself once per card version
   ([the Flow tab](../design-first/studio.md#the-flow-tab)). While the agent builds it, a Step whose
-  code is not written yet is drawn dashed and the label counts "N of M steps written"
-  ([written Steps](../design-first/flow-design.md#written-steps)).
+  code is not written yet is drawn dashed and the corner's chip counts "N of M steps written"
+  ([written Steps](../design-first/flow-design.md#written-steps)); once it is built the corner,
+  the line and More details go.
 
 ### Progress, notices and markers
 
@@ -471,8 +471,9 @@ Flow-owned state.
 - **E2E.** The three cases (`registration.spec.ts`, `create-project.spec.ts` and `template-approval.spec.ts`),
   run on the lanes `make required-lanes` names, exercise the work log, the requirements card and the
   conversation against the real BFF and gRPC path. `template-approval.spec.ts` on the mock model sees
-  the Brief, drafting, with the designed Steps' names while the card streams, and the design's
-  "6 of 6 steps written" with the approval Step solid after the scripted edit. No new E2E is added for edge cases; Studio-only
+  "Drafting" with the designed Steps' names while the card streams, the overview while the design is
+  built, the chat's "Recorded version 1" line, the design's "6 of 6 steps written" with the approval
+  Step solid after the scripted edit, and the overview gone once the push built the design. No new E2E is added for edge cases; Studio-only
   behaviors (model selector rendering, Stop, tasks panel) are covered by the static checks and observed
   during those cases.
 - **Not verified.** Stream trimming under the real 10 MiB shared budget at scale, and the

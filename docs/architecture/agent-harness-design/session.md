@@ -327,8 +327,8 @@ There is no mode switch, no "execute plan" command, no confirmation and no force
   current revision, from the same turn on
   ([commit gate and application tests](commit-gate-and-app-tests.md)).
 - **Changes come as messages.** Studio shows the card as the Process Brief, building from it.
-  The person changes it with a chat message: a message sent during a turn queues, and the
-  Brief's **Change something…** sends it and steers it at once, so the next `CheckSteered`
+  The person changes it only with a chat message: a message sent during a turn queues, and
+  steering it from the queue moves it in at once, so the next `CheckSteered`
   boundary skips the calls not yet run (`superseded_by_steered_user_message`) and starts a turn
   with it. The agent then calls `confirm_requirements` again with the revised card, which records
   version N + 1, and builds only what changed. A `commit_and_push` already running finishes at
@@ -767,7 +767,7 @@ answer, approval or notification; a stale message is rejected, never applied.
 | `ReasoningSummary` | string chunks | `CallModel` | Conversation UI |
 | `AssistantText` | string chunks | `CallModel` | Conversation UI |
 | `AgentActivity` | `AgentEvent` (with `target`; kinds include `compacted`, `compaction_failed`, `agent_interrupted`, `user_input_requested`) | Steps (state, model and compaction, tools, input consumption, interrupts) | Conversation UI |
-| `RequirementsDraft` | `agentloop.RequirementsDraft`, the whole draft of a requirements card per event | `CallModel`, at most once a second per card call and once complete ([streaming and Studio](streaming-and-studio.md#requirements-drafts)) | The Brief, drafting |
+| `RequirementsDraft` | `agentloop.RequirementsDraft`, the whole draft of a requirements card per event | `CallModel`, at most once a second per card call and once complete ([streaming and Studio](streaming-and-studio.md#requirements-drafts)) | The Flow tab's drafting overview |
 
 Each Stream is declared with `10 << 20` bytes. In the pinned Dex SDK that budget is shared by every
 execution with the same Flow type and Stream name; it is not per Session and it is not a durable
@@ -1045,9 +1045,11 @@ and the runtime (Kubernetes or Docker) owns object existence.
   page shows the error.
 - A Stop button next to the input, also bound to Escape, shown while a turn or task runs. It stops
   everything and sends the running `Turn` for stale-request protection.
-- The requirements card as the Process Brief, building from the current version ("Building from
-  this brief · version N", viewable at any time, changed with a message), and a one-line progress
-  indicator. A card a Session still waits at from before cards stopped waiting shows read only
+- The requirements card as the Process Brief while its design is built: the drawn design with
+  "Building · N of M steps written" on its corner and the card's summary with More details under
+  it, gone once the design is built; changed only with a chat message; in the chat each recorded
+  version once, as one line "Recorded version N: <title>" that opens to the current card; and a
+  one-line progress indicator. A card a Session still waits at from before cards stopped waiting shows read only
   with "Reply in the chat to build or change it". The model selector below the Session controls (Opus 5.5 strongest, Sonnet 5.5 faster and
   cheaper, Haiku 4.5 cheapest, for tests), with "takes effect at the next turn" after a change, and the
   current model and effort ("Claude Opus 5.5 - medium").

@@ -26,7 +26,6 @@ import { actionableSteps, type ActionableStep } from "@/components/flow/canvas/m
 import { stepContext, type StepContextView } from "@/components/flow/canvas/model/step-context";
 import { PaneResizeHandle, paneWidthStyle, useCollapsibleColumn } from "@/components/ui/pane/PaneResizeHandle";
 import { STEP_PANEL_PANE } from "@/components/flow/frame/pane-bounds";
-import { cx } from "@/components/ui/cx";
 import { EMPTY } from "@/components/flow/frame/workspace-styles";
 
 /** The selected Step's run status, so a host drawer can label it without owning selection. */
@@ -90,6 +89,7 @@ export function FlowGraphCanvas({
   showStepPanel = true,
   isRunLoaded = true,
   initialDirection = "tb",
+  opensWhole = false,
 }: {
   flowType: string;
   flow: FlowModel;
@@ -98,6 +98,8 @@ export function FlowGraphCanvas({
   fitKey: string;
   /** The way the Flow first reads; the reader's own choice then stays. */
   initialDirection?: Direction;
+  /** Opens on the whole Flow, as Fit shows it, however large; otherwise a Flow too large to read opens on its start. */
+  opensWhole?: boolean;
   /** False while the run that `overlay` will show is still loading, so the last drawing stays on screen. */
   isRunLoaded?: boolean;
   overlay?: RunOverlay | null;
@@ -105,7 +107,7 @@ export function FlowGraphCanvas({
   marks?: ReadonlyMap<string, StepMarkText>;
   /** The ids of Steps whose code is not written yet, such as a design's while the agent builds it. */
   unwritten?: ReadonlySet<string>;
-  /** A line under the controls, such as a failed run read. */
+  /** A line above the drawing, such as a failed run read. */
   notice?: ReactNode;
   /** The selected Step's panel in place of its definition, for a view that explains Steps its own way. */
   renderPanel?: (step: StepModel, close: () => void) => ReactNode;
@@ -271,29 +273,6 @@ export function FlowGraphCanvas({
       style={ownsPanel ? paneWidthStyle(stepPanelPane) : undefined}
     >
       <ArrowDefs />
-      {/*
-       * Top right and sized to its content, so it does not read as a banner. One row that scrolls
-       * sideways if it must: the pane reserves a fixed inset for it, and a wrapped bar would grow
-       * exactly when the canvas is narrowest and cover the first Step. Translucent, so the drawing
-       * is never fully hidden behind its own switches.
-       */}
-      <div
-        className={cx(
-          "absolute top-2.5 z-5 flex w-max [scrollbar-width:none] items-center gap-2 overflow-x-auto rounded-lg border border-line-faint bg-bg/88 px-2.25 py-1.5 backdrop-blur-[6px] [&::-webkit-scrollbar]:hidden",
-          // Beside the Step panel while it is open, never under it.
-          ownsPanel
-            ? "right-[calc(var(--v2-panel-w,290px)+12px)] max-w-[calc(100%-var(--v2-panel-w,290px)-24px)]"
-            : "right-3 max-w-[calc(100%-24px)]",
-        )}
-      >
-        <CanvasControls
-          stages={stages.hasStages ? stages.state : null}
-          direction={direction}
-          onCollapseAll={stages.collapseAll}
-          onExpandAll={stages.expandAll}
-          onDirection={setDirection}
-        />
-      </div>
       {notice}
       <Stage
         // A new Flow type enters afresh; another run of it moves into place.
@@ -302,6 +281,7 @@ export function FlowGraphCanvas({
         targetNeighbours={targetNeighbours}
         dimUnrelated={selectedByReader}
         focusNodeId={targetId}
+        opensWhole={opensWhole}
         nowNodeId={markNow ? (blockingStep?.id ?? null) : null}
         scene={scene}
         direction={direction}
@@ -313,6 +293,15 @@ export function FlowGraphCanvas({
         onOpenStage={openStage}
         onSelect={selectStep}
         legend={legend}
+        controls={
+          <CanvasControls
+            stages={stages.hasStages ? stages.state : null}
+            direction={direction}
+            onCollapseAll={stages.collapseAll}
+            onExpandAll={stages.expandAll}
+            onDirection={setDirection}
+          />
+        }
         cue={stages.cue}
         fitKey={`${fitKey}|${stages.view}|${refocusKey}`}
       />

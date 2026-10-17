@@ -51,6 +51,7 @@ export function useCamera({
   targetNeighbours = NO_FRAMING_NEIGHBOURS,
   insetRightPx,
   wholeMaxZoom,
+  openFloor,
   fitWhole,
   keepSelectionInView,
   onFramed,
@@ -68,6 +69,8 @@ export function useCamera({
   targetNeighbours?: FramingNeighbours;
   insetRightPx: number | null | undefined;
   wholeMaxZoom: number;
+  /** The least zoom the opening view shows the whole drawing at; the readable zoom when absent. */
+  openFloor?: number;
   fitWhole: () => void;
   /** Pans a reader's selection into view; false when there is none. */
   keepSelectionInView: () => boolean;
@@ -125,9 +128,9 @@ export function useCamera({
     const room = cameraRoom(el.clientWidth, el.clientHeight, inset);
     return (
       (target === null ? null : focusView(shown, target, joined, room, wholeMaxZoom)) ??
-      openingView(shown, room, reading, wholeMaxZoom)
+      openingView(shown, room, reading, wholeMaxZoom, openFloor)
     );
-  }, [flowElement, wholeMaxZoom]);
+  }, [flowElement, openFloor, wholeMaxZoom]);
 
   useEffect(() => {
     if (isEntered || isSettled) return undefined;

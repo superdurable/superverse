@@ -8,14 +8,7 @@
 
 "use client";
 
-import {
-  AgentTasksPanel,
-  ConversationView,
-  PendingMessageQueue,
-  ConfirmedRequirementsView,
-  TimerCard,
-  TodoProgress,
-} from "@/components/agent";
+import { AgentTasksPanel, ConversationView, PendingMessageQueue, TimerCard, TodoProgress } from "@/components/agent";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Icons";
@@ -266,6 +259,8 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
               isExecutionLive={productInteractive}
               streamState={productInteractive && state.assistant?.isComplete === false ? "streaming" : "complete"}
               notificationLinks={linksOfNotification}
+              confirmedRequirements={description?.confirmedRequirements ?? null}
+              waitingRequirementsCallId={pendingInput?.kind === "requirements" ? pendingInput.callId : null}
             />
             {live && liveChange.offered && <SeeOnPreview live={live} onFollow={liveChange.dismiss} />}
             {description?.todoList && <TodoProgress items={description.todoList.items} />}
@@ -277,9 +272,6 @@ export function SessionChat({ live }: { live?: LiveViewing }) {
                 contributions={contributions}
                 stopping={state.stopping}
               />
-            )}
-            {description?.confirmedRequirements && (
-              <ConfirmedRequirementsView confirmed={description.confirmedRequirements} />
             )}
             {pendingTimer && <TimerCard durationSeconds={pendingTimer.durationSeconds} reason={pendingTimer.reason} />}
             <PendingMessageQueue

@@ -23,7 +23,7 @@ import { EDGE_MARKER, RoutedEdge, edgeAttributes, type RoutedEdgeData } from "./
 import { anchorHandles, NODE_TYPES, type BoxData } from "./SceneNodes";
 import { cameraMotion, entranceStyle, type FramingNeighbours } from "@/components/flow/canvas/camera/camera";
 import { useCamera, useRunTravel, useSettledDrawing } from "@/components/flow/canvas/camera/use-camera";
-import { chromeCompensation, edgeContrastBoost, fitOptions, MAX_ZOOM, MIN_ZOOM, OPEN_FLOOR } from "./zoom";
+import { chromeCompensation, edgeContrastBoost, FIT_FLOOR, fitOptions, MAX_ZOOM, MIN_ZOOM, OPEN_FLOOR } from "./zoom";
 import { ZoomControls } from "./ZoomControls";
 
 /**
@@ -47,10 +47,13 @@ interface StageProps {
   onOpenStage: (stageId: string) => void;
   /** Rendered as a node beside the drawing; pass a stable element so the nodes are not rebuilt. */
   legend: ReactNode;
+  controls?: ReactNode;
   /** False when the selection was made for the reader, so the graph is not faded for them. */
   dimUnrelated: boolean;
   /** When set, the view frames this Step with its neighbours; null opens on the whole Flow, or its start. */
   focusNodeId: string | null;
+  /** Opens on the whole Flow at any size, as Fit does, instead of on its start when it is too large to read. */
+  opensWhole?: boolean;
   /** The cards of the Steps a transition joins to the focus, or to "now", which its framing keeps in view. */
   targetNeighbours?: FramingNeighbours;
   /** False while the drawing is on its way, such as a run's history; the last settled one stays meanwhile. */
@@ -75,8 +78,10 @@ function Inner({
   onCloseStage,
   onOpenStage,
   legend,
+  controls,
   dimUnrelated,
   focusNodeId,
+  opensWhole = false,
   nowNodeId: latestNowNodeId = null,
   insetRightPx,
   fitKey,
@@ -108,6 +113,7 @@ function Inner({
     targetNeighbours,
     insetRightPx,
     wholeMaxZoom: 1,
+    openFloor: opensWhole ? FIT_FLOOR : undefined,
     fitWhole,
     keepSelectionInView: () => keepSelectionInView.current(),
     onFramed: (scope) => setFitted(scope === "whole"),
@@ -130,10 +136,8 @@ function Inner({
       const kind = (node.data as BoxData | undefined)?.box.kind;
       if (kind === "step") onSelect(id);
       if (kind === "stage") onOpenStage(id);
-      const w = node.width ?? 0;
-      const h = node.height ?? 0;
       setOwner("reader");
-      void rf.setCenter(node.position.x + w / 2, node.position.y + h / 2, {
+      void rf.setCenter(node.position.x + (node.width ?? 0) / 2, node.position.y + (node.height ?? 0) / 2, {
         zoom: Math.max(rf.getZoom(), OPEN_FLOOR),
         ...cameraMotion(),
       });
@@ -142,8 +146,7 @@ function Inner({
   );
   const travel = useRunTravel(scene, fitKey, nowNodeId, isEntered);
 
-  // Sizes are declared from the Scene, so fitting never measures unrendered nodes. Nothing is drawn
-  // until the camera has framed it, so the drawing enters in place.
+  // Sizes come from the Scene, so fitting never measures unrendered nodes; nothing draws before the camera frames it.
   const nodes = useMemo<Node[]>(() => {
     if (!isEntered) return [];
     const travelledTo = travel === null ? undefined : scene.links.find((l) => l.id === travel.linkId)?.to;
@@ -262,8 +265,7 @@ function Inner({
     applyZoomVars(rf.getZoom());
   }, [applyZoomVars, rf, fitKey]);
 
-  // After a stage opens or closes: focus what the reader acted on and pan just enough to show it,
-  // once per cue, however often the panel resizes afterwards.
+  // After a stage opens or closes: focus what the reader acted on and pan just enough, once per cue.
   const appliedCue = useRef(0);
   useEffect(() => {
     if (cue === null || cue.nonce === appliedCue.current) return;
@@ -279,8 +281,7 @@ function Inner({
     return () => cancelAnimationFrame(raf);
   }, [cue, panToShow]);
 
-  // The reader's own selection, with the failure detour it opened, stays in view beside the Step panel:
-  // pan once per selection, just enough to show it.
+  // The reader's selection, with the detour it opened, stays in view beside the Step panel: one pan per selection.
   const selection = useMemo(() => {
     if (!dimUnrelated || selectedId === null) return null;
     const parts = scene.boxes.filter((b) => b.id === selectedId || b.detourOf === selectedId);
@@ -324,8 +325,7 @@ function Inner({
   );
 
   return (
-    // The controls bar overlays the pane, so the pane insets itself: an overlay may cover empty
-    // canvas, never the first Step. Stage writes the zoom variables on every move.
+    // The pane insets its top, where a host's heading may cover empty canvas, never a Step; zoom vars follow moves.
     <div
       className="size-full min-h-0 pt-[54px] pb-3 [--arrive-delay:0ms] [--edge-boost:1] [--enter-delay:0ms] [--len:0px] [--zoom-comp:1]"
       ref={paneRef}
@@ -381,6 +381,7 @@ function Inner({
             setOwner("reader");
           }}
           insetRightPx={insetRightPx}
+          controls={controls}
         />
       </ReactFlow>
     </div>

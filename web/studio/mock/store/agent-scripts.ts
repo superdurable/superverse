@@ -9,7 +9,8 @@
 // The mock Agent's scripts: scripted replies to exact phrases, ordinary turns and waits.
 // Development only; no model or tool is called.
 import type { AgentRequirements__Output } from "@/lib/generated/protobuf/superverse/v2/AgentRequirements";
-import { MOCK_QUESTIONS, MOCK_REQUIREMENTS } from "@/mock/fixture/agent-requests";
+import type { AgentRequirementsDraft } from "@/lib/generated/protobuf/superverse/v2/AgentRequirementsDraft";
+import { MOCK_FLOW_DESIGN, MOCK_QUESTIONS, MOCK_REQUIREMENTS } from "@/mock/fixture/agent-requests";
 import { appendMessage, bumpWaitingRound, syncDescriptionCounts, type MockAgent } from "./agent-state";
 import { nowIso } from "./clock";
 import { recordAgentCommit } from "./publishing";
@@ -24,6 +25,7 @@ const MOCK_SCRIPT_PHRASES = {
   ASK_QUESTIONS: "ask questions",
   CONFIRM_REQUIREMENTS: "confirm requirements",
   CONFIRM_PLAIN_REQUIREMENTS: "confirm plain requirements",
+  FINISH_BUILD: "finish build",
   NEED_APPROVAL: "need approval",
   TOOL_FAILED: "tool failed",
   SHOW_TODOS: "show todos",
@@ -118,12 +120,72 @@ function applyGenericTurn(agent: MockAgent, userContent: string) {
   bumpWaitingRound(agent);
 }
 
+/** The designed Steps of a card in the mock model's order: each Flow's Steps, which it writes first. */
+function draftedFlows(spec: AgentRequirements__Output) {
+  return spec.design ? MOCK_FLOW_DESIGN.flows.map(({ flowType, steps }) => ({ flowType, steps })) : [];
+}
+
+/** How long the agent writes a card: one second per designed Step, then the features, summary and title. */
+function draftMs(spec: AgentRequirements__Output): number {
+  return (draftedFlows(spec).reduce((sum, flow) => sum + flow.steps.length, 0) + 5) * 1_000;
+}
+
+/** The agent starts writing a requirements card, whose draft the Session Watch streams until it is recorded. */
+function draftRequirementsCard(agent: MockAgent, spec: AgentRequirements__Output) {
+  agent.description.status = "STATUS_CALLING_MODEL";
+  agent.requirementsDraft = {
+    callId: `confirm-${agent.nextSequence}`,
+    turn: agent.description.turn,
+    baseRevision: agent.description.confirmedRequirements?.revision ?? 0,
+    startedAtMs: Date.parse(nowIso()),
+    spec,
+  };
+}
+
 /**
- * The agent shows a requirements card, which is recorded at once as the next version, and goes on building
- * from it; the mock never builds it, so its design stays `Design · building`.
+ * The card the agent is writing as far as it wrote it, which the Session Watch streams; null when it writes
+ * none. Like the mock model, it writes the design's Steps first, one a second, then the features and
+ * connections, the summary and the title last.
  */
-function recordRequirementsCard(agent: MockAgent, spec: AgentRequirements__Output) {
-  const callId = `confirm-${agent.nextSequence}`;
+export function mockRequirementsDraft(store: MockStore, projectId: string): AgentRequirementsDraft | null {
+  const draft = store.agents.get(projectId)?.requirementsDraft;
+  if (!draft) return null;
+  const { spec } = draft;
+  let left = Math.floor((Date.parse(nowIso()) - draft.startedAtMs) / 1_000);
+  const flows = draftedFlows(spec).flatMap(({ flowType, steps }) => {
+    const written = steps.slice(0, Math.max(0, left)).map((step) => step.stepType);
+    left -= steps.length;
+    return written.length > 0 ? [{ flowType, stepTypes: written }] : [];
+  });
+  return {
+    callId: draft.callId,
+    turn: draft.turn,
+    baseRevision: draft.baseRevision,
+    title: left >= 3 ? spec.title : "",
+    summary: left >= 2 ? spec.summary : "",
+    features: left >= 1 ? spec.features : [],
+    connections: left >= 1 ? spec.connections.map(({ need, connector }) => ({ need, connector })) : [],
+    designSummary: flows.length > 0 ? (spec.design?.summary ?? "") : "",
+    flows,
+    complete: false,
+  };
+}
+
+/** Records the card the agent wrote once its draft has streamed, as the Session records the finished call. */
+export function advanceMockDraft(store: MockStore, projectId: string) {
+  const agent = store.agents.get(projectId);
+  const draft = agent?.requirementsDraft;
+  if (!agent || !draft || Date.parse(nowIso()) - draft.startedAtMs < draftMs(draft.spec)) return;
+  agent.requirementsDraft = null;
+  recordRequirementsCard(agent, draft.spec, draft.callId);
+  syncDescriptionCounts(agent);
+}
+
+/**
+ * The agent's requirements card is recorded as the next version, and it goes on building from it; the mock
+ * builds it only on `finish build`.
+ */
+function recordRequirementsCard(agent: MockAgent, spec: AgentRequirements__Output, callId: string) {
   const revision = (agent.description.confirmedRequirements?.revision ?? 0) + 1;
   appendMessage(
     agent,
@@ -157,7 +219,24 @@ function reviseRequirements(agent: MockAgent, spec: AgentRequirements__Output, c
   startTurn(agent);
   const change = content.replace(SCENARIO_MARKERS, "").trim().slice(0, 200);
   const feature = { id: `R${String(spec.features.length + 1)}`, text: change };
-  recordRequirementsCard(agent, { ...spec, features: [...spec.features, feature] });
+  draftRequirementsCard(agent, { ...spec, features: [...spec.features, feature] });
+}
+
+/**
+ * The agent finishes building the recorded card: every designed Step is written and the design is built at
+ * the Session's head, which it stays until the Preview's processes are built from that commit.
+ */
+function finishDesignBuild(agent: MockAgent, headCommit: string) {
+  const current = agent.description.confirmedRequirements;
+  if (current?.spec?.design) {
+    const written = MOCK_FLOW_DESIGN.flows.flatMap(({ flowType, steps }) =>
+      steps.map((s) => `${flowType}.${s.stepType}`),
+    );
+    current.spec = { ...current.spec, designBuilt: true, designBuiltCommit: headCommit, designWrittenSteps: written };
+    appendMessage(agent, mockMessage("ROLE_ASSISTANT", `I built version ${String(current.revision)} as recorded.`));
+  } else appendMessage(agent, mockMessage("ROLE_ASSISTANT", "No recorded design is waiting to be built."));
+  agent.description.status = "STATUS_WAITING_FOR_MESSAGE";
+  bumpWaitingRound(agent);
 }
 
 export function sendMessage(store: MockStore, projectId: string, content: string): boolean {
@@ -199,10 +278,12 @@ export function sendMessage(store: MockStore, projectId: string, content: string
     };
     bumpWaitingRound(agent);
   } else if (phrase === MOCK_SCRIPT_PHRASES.CONFIRM_REQUIREMENTS) {
-    recordRequirementsCard(agent, MOCK_REQUIREMENTS);
+    draftRequirementsCard(agent, MOCK_REQUIREMENTS);
   } else if (phrase === MOCK_SCRIPT_PHRASES.CONFIRM_PLAIN_REQUIREMENTS) {
-    // A card without a Flow design, which the Flow tab shows as the Brief alone.
-    recordRequirementsCard(agent, { ...MOCK_REQUIREMENTS, design: null });
+    // A card without a Flow design, which the Flow tab shows without a drawing.
+    draftRequirementsCard(agent, { ...MOCK_REQUIREMENTS, design: null });
+  } else if (phrase === MOCK_SCRIPT_PHRASES.FINISH_BUILD) {
+    finishDesignBuild(agent, session?.headCommitSha ?? "");
   } else if (phrase === MOCK_SCRIPT_PHRASES.NEED_APPROVAL) {
     agent.description.status = "STATUS_WAITING_FOR_TOOL_APPROVAL";
     agent.description.pendingApproval = {

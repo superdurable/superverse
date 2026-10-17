@@ -55,6 +55,7 @@ function FlowCanvasContent({
   | "focusBlockingStep"
   | "markNow"
   | "showStepPanel"
+  | "opensWhole"
 > & {
   flowType: string;
   flowId?: string;

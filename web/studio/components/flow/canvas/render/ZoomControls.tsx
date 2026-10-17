@@ -7,6 +7,7 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 import { Panel, useReactFlow } from "@xyflow/react";
+import type { ReactNode } from "react";
 import { cx } from "@/components/ui/cx";
 import { BUTTON_MAX_ZOOM, BUTTON_MIN_ZOOM, ZOOM_STEP } from "./zoom";
 import { cameraMotion } from "@/components/flow/canvas/camera/camera";
@@ -18,19 +19,21 @@ const BUTTON = cx(
 /**
  * The canvas's zoom, as the prototype draws it: − and + move 15 points between 40% and 140%, and Fit
  * draws the whole Flow again, marked while the view is fitted. It sits bottom right, left of the Step
- * panel when one is open (`insetRightPx`).
+ * panel when one is open (`insetRightPx`), after the canvas's own `controls`, such as its View button.
  */
 export function ZoomControls({
   fitted,
   onFit,
   onZoomed,
   insetRightPx,
+  controls,
 }: {
   fitted: boolean;
   onFit: () => void;
   /** Called after − or +, which leave the fitted view. */
   onZoomed: () => void;
   insetRightPx?: number | null;
+  controls?: ReactNode;
 }) {
   const rf = useReactFlow();
   const zoomBy = (step: number) => {
@@ -39,7 +42,12 @@ export function ZoomControls({
     onZoomed();
   };
   return (
-    <Panel position="bottom-right" style={insetRightPx ? { right: insetRightPx } : undefined}>
+    <Panel
+      position="bottom-right"
+      className="flex items-center gap-1.5"
+      style={insetRightPx ? { right: insetRightPx } : undefined}
+    >
+      {controls}
       <div
         role="group"
         aria-label="Zoom"

@@ -20,6 +20,7 @@ import type { AgentPendingApproval__Output } from "@/lib/generated/protobuf/supe
 import type { AgentPendingTimer__Output } from "@/lib/generated/protobuf/superverse/v2/AgentPendingTimer";
 import type { AgentPendingUserInput__Output } from "@/lib/generated/protobuf/superverse/v2/AgentPendingUserInput";
 import type { AgentPendingUserMessage__Output } from "@/lib/generated/protobuf/superverse/v2/AgentPendingUserMessage";
+import type { AgentRequirements__Output } from "@/lib/generated/protobuf/superverse/v2/AgentRequirements";
 import type { AgentSubagent__Output } from "@/lib/generated/protobuf/superverse/v2/AgentSubagent";
 import type { AgentConfirmedRequirements__Output } from "@/lib/generated/protobuf/superverse/v2/AgentConfirmedRequirements";
 import type { AgentTodoList__Output } from "@/lib/generated/protobuf/superverse/v2/AgentTodoList";
@@ -120,6 +121,16 @@ export interface MockActivityEvent {
   value: MockActivity;
 }
 
+/** A requirements card the mock Agent is writing, whose draft the Session Watch streams until it is recorded. */
+interface MockRequirementsDraft {
+  callId: string;
+  turn: number;
+  baseRevision: number;
+  /** When the agent started writing it, on the mock clock. */
+  startedAtMs: number;
+  spec: AgentRequirements__Output;
+}
+
 export interface MockAgent {
   messages: MockSequencedMessage[];
   nextSequence: number;
@@ -127,6 +138,7 @@ export interface MockAgent {
   steered: AgentPendingUserMessage__Output[];
   description: MockAgentDescription;
   activity: MockActivityEvent[];
+  requirementsDraft?: MockRequirementsDraft | null;
 }
 
 /** What the Session snapshot reads of the Agent. */

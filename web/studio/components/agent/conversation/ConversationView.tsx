@@ -10,7 +10,16 @@
 
 import { useMemo } from "react";
 import { Badge, type BadgeTone } from "@/components/ui/badge/Badge";
-import type { ActivityStreamEvent, LiveTextEntry, SequencedMessage } from "@/lib/session/agent-types";
+import type {
+  ActivityStreamEvent,
+  ConfirmedRequirements,
+  LiveTextEntry,
+  SequencedMessage,
+} from "@/lib/session/agent-types";
+import {
+  RecordedRequirementsLine,
+  recordedRequirementsVersions,
+} from "@/components/agent/interaction/RecordedRequirements";
 import { ConversationClockProvider } from "./ConversationClockProvider";
 import { ConversationMessage, type NotificationLinks } from "./ConversationMessage";
 import { MarkdownContent } from "./MarkdownContent";
@@ -33,6 +42,10 @@ export interface ConversationViewProps {
   streamState: ConversationStreamState;
   /** Where the page lets a person act on a notification; a notice without links shows none. */
   notificationLinks?: NotificationLinks;
+  /** The current version of the requirements, whose recording each turn that recorded a version shows once. */
+  confirmedRequirements?: ConfirmedRequirements | null;
+  /** The call of a requirements card a Session still waits at, which is not recorded yet. */
+  waitingRequirementsCallId?: string | null;
 }
 
 /** How a question of the history ended, in words, and its badge tone. */
@@ -84,6 +97,8 @@ export function ConversationView({
   isExecutionLive,
   streamState,
   notificationLinks,
+  confirmedRequirements = null,
+  waitingRequirementsCallId = null,
 }: ConversationViewProps) {
   const unfinishedTools = useMemo(() => hasUnfinishedTools(messages), [messages]);
   const isLive =
@@ -93,6 +108,10 @@ export function ConversationView({
     () =>
       buildConversationPresentation({ messages, reasoning, activities, pendingWaits, isModelRunning, isExecutionLive }),
     [activities, isModelRunning, isExecutionLive, messages, pendingWaits, reasoning],
+  );
+  const recorded = useMemo(
+    () => recordedRequirementsVersions(messages, confirmedRequirements, waitingRequirementsCallId),
+    [confirmedRequirements, messages, waitingRequirementsCallId],
   );
 
   return (
@@ -107,6 +126,12 @@ export function ConversationView({
                 <ConversationMessage entry={entry} key={entry.sequence} notificationLinks={notificationLinks} />
               ))}
             <WorkLog turn={turn} markers={turn.messages.filter(isMarker)} />
+            {turn.messages.flatMap(({ message }) =>
+              message.toolCalls.flatMap((call) => {
+                const version = recorded.get(call.id);
+                return version ? [<RecordedRequirementsLine recorded={version} key={call.id} />] : [];
+              }),
+            )}
             {turn.questions.map((question) => (
               <QuestionCard item={question} key={question.key} />
             ))}

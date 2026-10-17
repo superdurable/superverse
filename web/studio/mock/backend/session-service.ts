@@ -9,7 +9,9 @@
 // The mock SessionService over the in-memory store and scripted Agent; development only.
 import { httpError } from "@/lib/server/request-body";
 import { isoToTimestamp } from "@/lib/shared/protobuf";
+import { advanceMockDraft, mockRequirementsDraft } from "@/mock/store/agent-scripts";
 import { archivedMessages, recentActivity } from "@/mock/store/agent-state";
+import { nowIso } from "@/mock/store/clock";
 import { mockSessionSnapshot } from "@/mock/store/resource-snapshots";
 import { getSession, keepWorkspaceRunning, type MockStore } from "@/mock/store/store";
 import type { MockResponse, MockService } from "./mock-backend";
@@ -47,14 +49,17 @@ function resumedPosition(cursor: string, projectId: string): number {
 export const sessionService: MockService<"SessionService"> = {
   GetSession: ({ projectId }, { store }) => {
     projectSession(store, projectId);
+    advanceMockDraft(store, projectId);
     return { session: mockSessionSnapshot(store, projectId) };
   },
-  // Each changed snapshot, then the activity events after the resumed position.
+  // Each changed snapshot, then the activity events after the resumed position and the card's changed draft.
   WatchSession: ({ projectId, resumeCursor: cursor }, { store }, signal) => {
     let position = resumedPosition(cursor, projectId);
     let fingerprint = "";
+    let draftFingerprint = "";
     return pollStore(signal, () => {
       if (!getSession(store, projectId)) return null;
+      advanceMockDraft(store, projectId);
       const frames: MockResponse<"WatchSession">[] = [];
       const snapshot = mockSessionSnapshot(store, projectId);
       const text = JSON.stringify(snapshot);
@@ -76,6 +81,14 @@ export const sessionService: MockService<"SessionService"> = {
           resumeCursor: resumeCursor(projectId, position),
         });
       }
+      const draft = mockRequirementsDraft(store, projectId);
+      const draftText = JSON.stringify(draft);
+      if (draft && draftText !== draftFingerprint)
+        frames.push({
+          progress: { requirementsDraft: draft, createdAt: isoToTimestamp(nowIso()), source: "mock-draft", taskId: "" },
+          resumeCursor: resumeCursor(projectId, position),
+        });
+      draftFingerprint = draftText;
       return frames;
     });
   },

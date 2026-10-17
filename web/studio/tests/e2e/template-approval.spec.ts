@@ -47,16 +47,38 @@ const APPROVAL_PROMPT = [
 
 /**
  * On the mock model the card's reply streams for about 16 seconds: from its first draft until the card is
- * recorded, the Flow tab, to which the first conversation switches, shows the draft as the Brief, drafting,
- * with no drawing. The mock writes the card's keys in sorted order, so its design, with the names of its
- * Steps, arrives first and its title last. It settles to the failure, if any, so that the watch can run beside
- * the Project's creation.
+ * recorded, the Flow tab, to which the first conversation switches, shows the draft, with "Drafting" on the
+ * canvas's corner and the designed Steps' names as a row of dashed boxes. The mock writes the card's keys in
+ * sorted order, so its design, with the names of its Steps, arrives first and its title last. Once the card is
+ * recorded the drawn design replaces the boxes under the overview the agent builds from: "Building · N of 6
+ * steps written" on the corner, the card's own summary under the canvas, no Confirm and build and no Change
+ * something…, and behind More details, in its nested code names, the outline, one line per Flow with the main
+ * story in reading order and the failure-handling count, and what the design changes against the template's
+ * initial design in the names the canvas shows. The script's edits, checks and gated push take minutes, so
+ * the design is still being built while the overview is read. It settles to the failure, if any, so that the
+ * watch can run beside the Project's creation.
  */
-async function draftingBriefShown(page: Page): Promise<unknown> {
+async function overviewShown(page: Page): Promise<unknown> {
   try {
-    const brief = page.locator('[data-brief-state="drafting"]');
-    await expect(brief.getByText("Brief · drafting", { exact: true })).toBeVisible({ timeout: 25 * 60_000 });
-    await expect(brief.getByRole("region", { name: "Steps", exact: true })).toContainText("Prepare summary");
+    const drafting = page.locator('[data-brief-state="drafting"]');
+    await expect(drafting.getByTestId("design-status")).toHaveText("Drafting", { timeout: 25 * 60_000 });
+    await expect(drafting.getByRole("region", { name: "Drafted steps", exact: true })).toContainText("Prepare summary");
+    const building = page.locator('[data-brief-state="building"]');
+    await expect(building.getByTestId("design-status")).toHaveText(/^Building · \d of 6 steps written$/, {
+      timeout: 10 * 60_000,
+    });
+    await expect(building.getByTestId("brief-summary")).toHaveText(
+      "A person approves each generated summary in Studio before it is saved.",
+    );
+    await expect(building.getByRole("button", { name: /^(Confirm and build|Change something…)$/ })).toHaveCount(0);
+    await building.locator('[data-more-details="brief.more"] > button').click();
+    await building.locator('[data-more-details="brief.code"] > button').click();
+    await expect(building.getByRole("region", { name: "Outline", exact: true })).toContainText(
+      "TextSummaryFlow: PrepareSummary, GenerateSummary, AwaitSummaryApproval [Approve summary], SaveSummaryResult, RecordSummaryFailure; +1 failure-handling Step",
+    );
+    await expect(building.getByRole("list", { name: "What the design changes" })).toHaveText(
+      "Text summary · changed: adds Await summary approval, Approve summary; changes Generate summary",
+    );
     return null;
   } catch (failure) {
     return failure;
@@ -76,7 +98,7 @@ test("template project Agent adds a summary approval that Preview and an operato
   // model input 1 of the scenario, as SUPERVERSE_E2E_MODEL_TARGET or the lane decides; CreateProject
   // carries it, and the Session starts with it.
   const mock = await choosesMockModel(page);
-  let drafting: Promise<unknown> = Promise.resolve(null);
+  let overview: Promise<unknown> = Promise.resolve(null);
   const created = await createProject(
     page,
     teamSpaceId,
@@ -84,7 +106,7 @@ test("template project Agent adds a summary approval that Preview and an operato
     testInfo,
     mock
       ? async () => {
-          drafting = draftingBriefShown(page);
+          overview = overviewShown(page);
         }
       : undefined,
   );
@@ -92,42 +114,31 @@ test("template project Agent adds a summary approval that Preview and an operato
   // changes from the start: Preview's processes build from a clean pushed head, and the person configures
   // Preview once the push's automatic deployment stops at it with the configuration notice.
   await waitForRequirementsCard(page, created.projectId, 10 * 60_000);
-  const draftFailure = await drafting;
-  if (draftFailure) throw draftFailure;
-  // The scripted card carries the Flow design of the approval, which the Flow tab shows as the Process Brief
-  // of version 1 while the agent builds it, until the Preview's processes are built from its push: a summary
-  // grid above the drawn design, with no Confirm and build. Behind the Brief's More details are the outline,
-  // one line per Flow with the main story in reading order and the failure-handling count, and what the
-  // design changes against the template's initial design in the names the canvas shows.
+  const overviewFailure = await overview;
+  if (overviewFailure) throw overviewFailure;
+  // The chat shows the recorded version once, where the agent recorded it, as one line that opens to the card.
+  // On the Flow tab the diagram shows its marks against the template's process, fitted whole: the Result stage
+  // that holds the approval Step is changed and the Step new, GenerateSummary changed, and nothing starts a run.
   if (mock) {
     await page.goto(`/p/${created.projectId}/flow?flowType=TextSummaryFlow`);
-    const brief = page.getByRole("region", { name: "Brief", exact: true });
+    const recorded = page.locator('[data-recorded-version="1"]');
+    await expect(recorded).toContainText("Recorded version 1: Summary approval");
+    await recorded.locator("summary").click();
+    await expect(recorded.getByRole("region", { name: "Features", exact: true })).toContainText("R2");
     const design = page.getByRole("region", { name: "Flow design" });
-    // The push may have built the design already, which then waits for the Preview's processes.
-    await expect(brief.getByText(/^(Building|Built) from this brief · version 1$/)).toBeVisible();
-    await expect(design).toContainText(/Design · (building|built, building processes)/);
-    await expect(brief.getByRole("button", { name: "Confirm and build" })).toHaveCount(0);
-    await expect(brief.getByRole("button", { name: "Change something…", exact: true })).toHaveCount(0);
-    await brief.locator('[data-more-details="brief.more"]').getByRole("button").click();
-    await expect(brief.getByRole("region", { name: "Outline", exact: true })).toContainText(
-      "TextSummaryFlow: PrepareSummary, GenerateSummary, AwaitSummaryApproval [Approve summary], SaveSummaryResult, RecordSummaryFailure; +1 failure-handling Step",
-    );
-    await expect(brief.getByRole("list", { name: "What the design changes" })).toHaveText(
-      "Text summary · changed: adds Await summary approval, Approve summary; changes Generate summary",
-    );
-    // Below the summary the diagram shows its marks, fitted whole: the Result stage that holds the approval Step
-    // is changed and the Step new, GenerateSummary changed, and nothing starts a run.
     await design.getByRole("button", { name: "Fit", exact: true }).click();
     await design.getByRole("button", { name: /^Result, 3 steps, changed\. Open the stage\.$/ }).click();
     await expect(design.getByRole("button", { name: /^Await summary approval\b.*, new$/ })).toBeVisible();
     await expect(design.getByRole("button", { name: /^Generate summary\b.*, changed$/ })).toBeVisible();
     await expect(design.getByRole("button", { name: /^(Test run|Live run|Start)/ })).toHaveCount(0);
     // A designed Step is dashed until its code is written. The template holds the five it keeps or changes,
-    // and the scripted edit declares AwaitSummaryApproval, which then turns solid: all six read written, as
-    // they do once the push built the design.
-    await expect(design.getByTestId("design-steps-written")).toHaveText("6 of 6 steps written", {
-      timeout: 10 * 60_000,
-    });
+    // and the scripted edit declares AwaitSummaryApproval, which then turns solid: all six read written, unless
+    // the push built the design first, which takes the overview away.
+    const allWritten = page
+      .locator('[data-brief-state="building"]')
+      .getByTestId("design-status")
+      .filter({ hasText: /^Building · 6 of 6 steps written$/ });
+    await expect(allWritten.or(page.locator('[data-design-phase="built"]'))).toBeVisible({ timeout: 10 * 60_000 });
     await expect(design.getByRole("button", { name: /^Await summary approval\b.*, new$/ })).not.toHaveAttribute(
       "data-emphasis",
       "planned",
@@ -137,12 +148,20 @@ test("template project Agent adds a summary approval that Preview and an operato
   else await waitForCompletedTurn(page, created.projectId, -1, 25 * 60_000);
   const session = await readSession(page, created.projectId);
   await expectPushedHead(await readProject(page, created.projectId), session);
-  // The scripted push, without blocked, completes the build of the recorded design.
-  if (mock)
+  // The scripted push, without blocked, completes the build of the recorded design. The overview goes with it:
+  // the Flow tab shows only the flow, the design until the Preview's processes are built from that push.
+  if (mock) {
     expect(
       session.agent?.description?.confirmedRequirements?.spec?.designBuilt,
       "the push built the recorded design",
     ).toBe(true);
+    await page.goto(`/p/${created.projectId}/flow?flowType=TextSummaryFlow`);
+    await expect(
+      page.locator('[data-design-phase="built"]').or(page.getByRole("region", { name: "Flow definition" })),
+    ).toBeVisible({ timeout: 5 * 60_000 });
+    await expect(page.locator("[data-brief-state]")).toHaveCount(0);
+    await expect(page.getByTestId("design-status")).toHaveCount(0);
+  }
 
   await configureAndStartPreview(page, created.projectId, session.headCommit);
   // The processes built from that push replace the design: the implemented Flow draws without its label.
@@ -154,6 +173,7 @@ test("template project Agent adds a summary approval that Preview and an operato
     });
     await expect(page.getByRole("region", { name: "Flow design" })).toHaveCount(0);
     await expect(page.getByRole("status", { name: "Flow design" })).toHaveCount(0);
+    await expect(page.locator("[data-brief-state]")).toHaveCount(0);
   }
   await exerciseApprovalInStudio(page, created.projectId, "preview");
 

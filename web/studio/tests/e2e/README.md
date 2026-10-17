@@ -187,14 +187,16 @@ The card does not wait: the agent records it as version 1 and builds it in the s
 On the mock model the `summary-approval` scenario's one input, chosen on the creation page,
 shows it (R1 the approval Step, R2 the Action), streamed at 100 ms per delta: from the moment the
 Project is created the case watches the Flow tab, to which the first conversation switches at the
-card's first draft, show the Brief, drafting, with the designed Steps' names, until the card is
-recorded. As soon as the Project is created, the person
+card's first draft, show "Drafting" on the canvas's corner with the designed Steps' names as dashed
+boxes, until the card is recorded; then, while the design is built, the drawn design with "Building ·
+N of 6 steps written", the card's summary under the canvas, no Confirm and build or Change something…,
+and behind More details the outline and the design changes. As soon as the Project is created, the person
 configures the Session's Preview, saving the `summary-model` connection, while the turn runs up
 to its source gate. The case then waits for the card (`waitForRequirementsCard`) and, on the mock
-model, checks the Process Brief of version 1 on the Flow tab (Building or Built from this brief,
-no Confirm and build, the outline, the design changes and the marked diagram) and that, once
-the scripted edit declared `AwaitSummaryApproval`, the design reads "6 of 6 steps written" with
-that Step solid. The turn's
+model, checks the chat's one line "Recorded version 1: Summary approval", which opens to the card, the
+marked diagram, and that, once the scripted edit declared `AwaitSummaryApproval`, the design reads
+"6 of 6 steps written" with that Step solid, unless the push built it first. Once the push built the
+design, the overview is gone and the Flow tab shows only the flow. The turn's
 `commit_and_push` traces R1 and R2 at version 1 (each with an `untested_reason`, because the llm
 connector has no mocks yet) and passes the commit gate's test stage, which runs the template's
 API tests. The case waits for

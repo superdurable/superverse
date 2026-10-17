@@ -1957,9 +1957,10 @@ visual spec [prototype.html](studio-setup/studio.md)): the sidebar, one 48px bar
 lined up with the columns, the Project's chat column on every surface, and one of the surfaces
 Flow, Runs, Inbox, Interface and Tools (Publishing, Setup, Permissions). A new Project is its
 conversation alone until the agent starts writing its first requirements card, then switches once
-to the Builder on the Flow tab, where the card's draft streams in as the Brief and the recorded card is a Process Brief, a summary above the drawn design, that the agent
-builds from at once ([session](agent-harness-design/session.md#requirements-cards)); a chat
-message, which the Brief's Change something… sends and steers, changes it.
+to the Builder on the Flow tab, where the card's draft streams in and the recorded card's design
+fills the canvas, with the card's summary and one More details under it until it is built, which
+the agent builds from at once ([session](agent-harness-design/session.md#requirements-cards)); only
+a chat message changes it, and the chat shows each recorded version once as one line.
 Surfaces appear when they have something to show: Runs, Tools, Publish and Preview's status once
 processes are built from the agent's own push, Inbox once something has waited for a person,
 Interface once Preview serves a page, Live once a version is published; a link to a surface still

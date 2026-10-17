@@ -54,4 +54,8 @@ A focused Step, or the Step a shown run is at, is framed by these rules, in orde
   does it once more: the reader's selection goes and the stage holding the Step opens again. Collapsed,
   Expanded and a new direction release that framing and return to the opening view (the whole Flow when
   it reads, else its start) until the run is picked again; the Step stays ringed "now".
+- **Opening whole.** A host may open on the whole Flow at any size, as Fit shows it (`opensWhole`, the
+  opening view's floor lowered to Fit's 20%). The Flow tab does, for a design and for the implemented
+  processes, so a new drawing, or a pane the summary under it resizes, frames the whole main story
+  while the view is still the camera's; a reader who panned or zoomed keeps their place.
 - **Reduced motion.** With `prefers-reduced-motion`, every change is instant and nothing traces or travels.

@@ -1,11 +1,11 @@
 # Process Brief
 
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
-Purpose: The Process Brief on the Flow tab: the current requirements card and its Flow design in business words, a summary grid above the drawing, Change something, and the card's draft.
+Purpose: The Process Brief on the Flow tab while a design is drafted or built: the summary line under the canvas with one More details, and the draft's Step names.
 
 Importers: `components/flow/scope` imports this directory.
 
-Imports: it imports `components/flow/canvas/layout`, `components/flow/canvas/model`, `components/flow/design`, `components/ui`, `components/ui/badge`, `components/ui/reveal` and `lib/shared`.
+Imports: it imports `components/flow/canvas/layout`, `components/flow/canvas/model`, `components/flow/design`, `components/ui/reveal` and `lib/shared`.
 
 ```mermaid
 flowchart LR
@@ -14,10 +14,8 @@ flowchart LR
   self --> d0["components/flow/canvas/layout"]
   self --> d1["components/flow/canvas/model"]
   self --> d2["components/flow/design"]
-  self --> d3["components/ui"]
-  self --> d4["components/ui/badge"]
-  self --> d5["components/ui/reveal"]
-  self --> d6["lib/shared"]
+  self --> d3["components/ui/reveal"]
+  self --> d4["lib/shared"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
@@ -25,24 +23,27 @@ The Brief reads the current version of the requirements, which the agent recorde
 card and builds from at once, together with its Flow design
 ([design before implementation](../../../../../../docs/architecture/design-first/studio.md#the-process-brief)).
 `components/build/DesignSurface.tsx` hosts it through `components/flow/scope` and passes the card,
-the design, the drawing and the actions as props, so this directory reads no Session.
+the design, the drawing and a note as props, so this directory reads no Session.
 
-| File                | Responsibility                                                                                                                          |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `brief-model.ts`    | A design in business words: Steps in the canvas's reading order with its titles, what starts each process, who acts, rules and failures |
-| `ProcessBrief.tsx`  | The Brief: its header, the summary grid, More details, the drawing below and its foot                                                   |
-| `BriefSections.tsx` | The parts with their headings: grid cells, lines, the rules, the Steps, the change lines, the outline and the apps                      |
-| `BriefActions.tsx`  | Change something…, which opens a box in place with Send changes: a message, steered into a running turn, that revises the card          |
-| `DraftBrief.tsx`    | The Brief, drafting, while the agent writes its card: the draft's title, summary, features, apps and Step names as they stream, no drawing |
+| File                | Responsibility                                                                                                                                               |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `brief-model.ts`    | A design in business words: what starts each process, who acts, the rules and failures in the canvas's titles and reading order, and what the person sets up |
+| `ProcessBrief.tsx`  | The Brief while the design is built: the drawing, or an empty canvas for a card without a design, the summary line and the More details panel                |
+| `BriefSections.tsx` | The parts with their headings: lines, rules, features, bullets, the change lines, the outline, and the foot under the canvas                                 |
+| `DraftBrief.tsx`    | The Flow tab while the agent writes its card: "Drafting" on the corner, the drafted Step names as dashed boxes, the summary as it arrives                    |
 
-The summary grid holds the short parts (Starts when, People, Rules and exceptions, Apps) in three
-columns when its container (`brief`) is wide, then two, then one; container queries, never the
-viewport. What it does, You need to prepare, Done when, Features, the change lines and the outline
-wait behind one **More details** (`brief.more`); the apps' connections and operations behind their
-own (`brief.apps`). The Brief derives its main story and failure count from the canvas's own split
-(`failureHandling` and `mainStory`), so it counts the Steps the canvas folds away. Its Steps list
-shows only for a design it does not draw.
+The canvas leads. While the design is drafted or built, the Brief is the process title and one
+status chip on the canvas's corner (`DesignHeading` in `components/flow/design`), the card's own
+one-line summary under the canvas, never a sentence put together from inferred parts, and one
+**More details** (`brief.more`) that holds, each only when it has content: What you'll set up, Who
+decides, Starts when, Rules and exceptions, What it must do, How it's accepted, and a nested More
+details (`brief.code`) with the outline and what the design changes. The foot keeps to the lower
+part and scrolls on its own, so the drawing always shows. The Brief derives its rules and failure
+count from the canvas's own split (`failureHandling` and `mainStory`), so it counts the Steps the
+canvas folds away. Once the design is built its host shows the drawing alone. There is no Change
+something: a person changes the card only in the chat.
 
 While the agent writes a requirements card, its host shows the card's latest draft, which the
-Session Watch streams at most once a second, as the Brief, drafting (`DraftBrief`): a plain list of
-what arrived, without the summary grid or a drawing, until the recorded card replaces it.
+Session Watch streams at most once a second (`DraftBrief`): "Drafting" on the corner, the drafted
+Step names per process as a row of dashed boxes and the summary as it arrives, with the features
+behind More details, until the recorded card's drawing replaces it.

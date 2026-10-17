@@ -14,14 +14,14 @@ import {
   stepByType,
   type FlowModel,
 } from "@/components/flow/canvas/model/flow-model";
-import { stepTitle } from "@/components/flow/canvas/layout/step-card";
+import { connectorName, stepTitle } from "@/components/flow/canvas/layout/step-card";
 import { processName, stepName } from "@/lib/shared/format";
 import { decodeDesignedFlow } from "@/components/flow/design/design-compare";
 import type { DesignedFlow, DesignedStep, FlowDesign } from "@/components/flow/design/design-graph";
 
 /**
- * A Flow design in business words for the Process Brief: Steps in the canvas's reading order with the
- * canvas's titles, who acts, each condition of an ordinary way out with where it leads, and the number of
+ * A Flow design in business words for the Process Brief: what starts each process, who acts, each condition
+ * of an ordinary way out with where it leads in the canvas's titles and reading order, and the number of
  * failure-handling Steps, which the canvas's own split of the main story decides.
  */
 
@@ -56,26 +56,7 @@ export interface BriefRule {
   to: string;
 }
 
-/** What a Step waits for, in the words of a badge. */
-export type StepWait = "person" | "message" | "time";
-
-interface BriefStep {
-  key: string;
-  title: string;
-  explanation: string;
-  waits: StepWait | null;
-}
-
-export interface BriefProcess {
-  flowType: string;
-  name: string;
-  purpose: string;
-  /** The main story in reading order. */
-  steps: BriefStep[];
-}
-
 export interface DesignBrief {
-  processes: BriefProcess[];
   startsWhen: BriefLine[];
   people: BriefLine[];
   rules: BriefRule[];
@@ -91,12 +72,6 @@ interface ReadFlow {
   titleOf: (stepType: string) => string;
   failureSteps: number;
 }
-
-const WAITS: Partial<Record<string, StepWait>> = {
-  KIND_ACTION: "person",
-  KIND_CHANNEL: "message",
-  KIND_TIMER: "time",
-};
 
 /** The main story in the canvas's order: breadth-first from the start, then the Steps it does not reach. */
 function storyOrder(model: FlowModel): string[] {
@@ -189,17 +164,6 @@ export function designBrief(design: FlowDesign): DesignBrief {
   const startersOf = (flowType: string) =>
     reads.filter((read) => read.flow.starts.includes(flowType)).map((read) => read.name);
   return {
-    processes: reads.map((read) => ({
-      flowType: read.flow.flowType,
-      name: read.name,
-      purpose: read.flow.purpose,
-      steps: read.story.map(({ step, title }) => ({
-        key: step.stepType,
-        title,
-        explanation: step.explanation,
-        waits: WAITS[step.waitsFor?.kind ?? ""] ?? null,
-      })),
-    })),
     startsWhen: reads.flatMap((read) => named(read, [startOf(read, startersOf(read.flow.flowType))], "start")),
     people: reads.flatMap((read) => named(read, peopleOf(read), "people")),
     rules: reads.flatMap((read) =>
@@ -211,4 +175,18 @@ export function designBrief(design: FlowDesign): DesignBrief {
     ),
     failureSteps: reads.reduce((sum, read) => sum + read.failureSteps, 0),
   };
+}
+
+/**
+ * What a person sets up for a card: each connection that says what to do, or that is new, under its app's
+ * name; the card's own list follows it in the Brief.
+ */
+export function setupLines(card: BriefCard): BriefLine[] {
+  return card.connections
+    .filter((connection) => connection.userSetup !== "" || connection.status === "new")
+    .map((connection) => ({
+      key: `${connection.connector}:${connection.need}`,
+      lead: connectorName(connection.connector),
+      text: connection.userSetup,
+    }));
 }

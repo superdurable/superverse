@@ -212,8 +212,8 @@ its Flow), and the Session holds the full arguments of every `write` and `edit` 
   nothing. The push that builds the design is the completion ([build completion](#build-completion)).
 - **Studio.** While the design is built, Studio draws a Step solid when it is written or when the
   compared current source already holds it (unchanged or changed), and dashed, with the planned
-  emphasis, otherwise; the design's label counts "N of M steps written" and the legend names the dashed
-  shape. Once the design is built every Step is solid ([the Flow tab](studio.md#the-flow-tab)).
+  emphasis, otherwise; the status chip on the canvas's corner counts "N of M steps written" and the
+  legend names the dashed shape. Once the design is built every Step is solid ([the Flow tab](studio.md#the-flow-tab)).
 
 ## API
 
