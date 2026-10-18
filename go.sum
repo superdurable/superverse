@@ -248,8 +248,8 @@ github.com/superdurable/dex-connectors-library/sdkgo v0.28.2 h1:bbsMBuQ3ZYK+Uehs
 github.com/superdurable/dex-connectors-library/sdkgo v0.28.2/go.mod h1:OtrqqFir3pwN0Jw0tLw0E+4DaJnkoHwALHaGDmgWqbo=
 github.com/superdurable/dex/blob-cache-go v0.1.1 h1:cswtUCelKqhYA+kuSKdk0u3us3QmDA2hTh1Fs3kLGJE=
 github.com/superdurable/dex/blob-cache-go v0.1.1/go.mod h1:Atepb7+sztvDCztVKmlvEKCSKFCkHKtDhoFYjaFmtEw=
-github.com/superdurable/dex/sdk-go v1.10.1 h1:GUoK1VbQhw3z/JzAeGR/qoEibfhcIAgkYDdPLEnxbC8=
-github.com/superdurable/dex/sdk-go v1.10.1/go.mod h1:8Wj5wPf9dyb7hDnA40j8xISR/zjhX57NrUDVcXgf5x8=
+github.com/superdurable/dex/sdk-go v1.11.0 h1:VoXtAJbrmHyDE2JKUOJ142EcbagFhn7Qglk2O5AWCbw=
+github.com/superdurable/dex/sdk-go v1.11.0/go.mod h1:8Wj5wPf9dyb7hDnA40j8xISR/zjhX57NrUDVcXgf5x8=
 github.com/tidwall/gjson v1.14.2/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
 github.com/tidwall/gjson v1.19.0 h1:xwxm7n691Uf3u5OFjzngavjGTh55KX5q/9w9xHW88JU=
 github.com/tidwall/gjson v1.19.0/go.mod h1:V37/opeE/JbLUOfH0QTXiNez2l0RUjYUhpT4szFQAfc=

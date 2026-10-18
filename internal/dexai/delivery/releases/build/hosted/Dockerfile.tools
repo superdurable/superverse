@@ -14,8 +14,8 @@ ARG TARGETARCH
 ARG DEXCLI_VERSION
 ARG HOSTED_BUILD_TOOLS_VERSION
 RUN set -eu; case "$TARGETARCH" in \
-      amd64) digest=8299979482b73315829eafead4c99bc18dacb9a305153c3763bd0f412aad6558 ;; \
-      arm64) digest=996a4ac0f1dc9229de18e2535d74372fa131928ad6831294606b12dd81028347 ;; \
+      amd64) digest=c187c64ecaa01c48310b923835665ce725de83f6198fe96e16fe0ea0a43dc140 ;; \
+      arm64) digest=12f157f1fcf6e923aa2e671b6d8479c1d4c09753eb04e9a37899dd1f6e70ef02 ;; \
       *) exit 64 ;; \
     esac; \
     test -n "$DEXCLI_VERSION"; test -n "$HOSTED_BUILD_TOOLS_VERSION"; \

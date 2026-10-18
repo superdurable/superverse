@@ -21,8 +21,8 @@ interface ExampleDesignImport {
 
 /** Every example's design, by example ID; the default example's is app-template.json. */
 export const EXAMPLE_DESIGNS: Readonly<Record<string, ExampleDesignImport>> = {
-  "text-summary": { tree: "a55a6493a398e24a2d27c5706fa21e6025f3325d", definitions: () => import("./app-template.json") },
+  "text-summary": { tree: "44599412971e650bac5afca8bfa24141d15aa783", definitions: () => import("./app-template.json") },
   "github-releases-newsletter": { tree: "8e0e253d88e24a92ea9440607764aabd5c47b7ef", definitions: () => import("./examples/github-releases-newsletter.json") },
   "slack-thread-approval": { tree: "362fcb2a4edb59a1ac2782be0f29da2a3e9411f4", definitions: () => import("./examples/slack-thread-approval.json") },
-  "summary-approval": { tree: "6c121e64b4390dbff7e1cd5dc8772d3e4ed359b0", definitions: () => import("./examples/summary-approval.json") },
+  "summary-approval": { tree: "3fb32254e6899d650ba9dc473f5ce4276d250686", definitions: () => import("./examples/summary-approval.json") },
 };

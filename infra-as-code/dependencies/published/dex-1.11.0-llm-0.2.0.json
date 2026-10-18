@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "buildProfile": {
+    "id": "go-react-v1",
+    "version": "bp1",
+    "sha256": "595867455f2f9e5337c45b72d16cb5fb19e687a6ca55a63608c7c68e42805af1",
+    "digest": "4aba963de3d0d740aff1ff3c144aa8af5fa46a18c0773fb314f907ba6ab73dd9"
+  },
+  "projectDexImage": "docker.io/superdurable/dex-server@sha256:d3763711ddb7da727aefda14cca4bd30e184343912773df1ff2fb2aff902fdc9",
+  "artifactAuthority": {
+    "kind": "published",
+    "sourceCommit": "2d693c8f94c6845a9349fee96fd18cc08b49e767",
+    "sha256": "df1ba4e9bf6b4f0a42584a5acdaa7dbef2913bf00d1e58ce02897826106bf76b",
+    "url": "https://github.com/superdurable/dex-connectors-library/releases/download/connectors/superdurable/llm/v0.2.0/connector-release.json"
+  }
+}
