@@ -51,6 +51,7 @@ type BindingRecord struct {
 	ProviderID       string    `json:"providerId,omitempty"`
 	SessionID        string    `json:"orcaSessionId"`
 	ProviderThreadID string    `json:"providerThreadId"`
+	WorkDir          string    `json:"workDir,omitempty"`
 	ProviderVersion  string    `json:"orcaVersion"`
 	AgentVersion     string    `json:"codexVersion"`
 	HostLabel        string    `json:"hostLabel"`
