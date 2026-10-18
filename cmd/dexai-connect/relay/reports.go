@@ -115,7 +115,7 @@ func (r *relay) call(ctx context.Context, name string, arguments json.RawMessage
 	r.mu.Lock()
 	if r.runningTurn != turnID {
 		r.mu.Unlock()
-		return mcpserver.CallResult{Text: "the Codex turn ended before Superverse accepted this call; retry in a new turn", IsError: true}, nil
+		return mcpserver.CallResult{Text: "the " + r.provider.AgentLabel() + " turn ended before Superverse accepted this call; retry in a new turn", IsError: true}, nil
 	}
 	err := r.storeLocked(r.progress, []bridgeapi.Report{report}, call)
 	r.mu.Unlock()
@@ -191,12 +191,12 @@ func (r *relay) abandonWith(call *pendingCall, acceptedText string) mcpserver.Ca
 // bound provider thread, read just before the call is stored; another thread
 // stops the relay. A change after this read is the gap the README records.
 func (r *relay) confirmConversation(ctx context.Context) *mcpserver.CallResult {
-	conversation, err := r.orca.Conversation(ctx, r.sessionID)
+	conversation, err := r.provider.Conversation(ctx, r.sessionID)
 	switch {
 	case err != nil:
-		return &mcpserver.CallResult{Text: "the Bridge could not confirm the Orca conversation: " + err.Error(), IsError: true}
+		return &mcpserver.CallResult{Text: "the Bridge could not confirm the " + r.provider.ProviderName() + " conversation: " + err.Error(), IsError: true}
 	case conversation.ProviderThreadID == "":
-		return &mcpserver.CallResult{Text: "the Bridge could not confirm the Orca conversation's Codex thread", IsError: true}
+		return &mcpserver.CallResult{Text: "the Bridge could not confirm the " + r.provider.ProviderName() + " conversation's " + r.provider.AgentLabel() + " thread", IsError: true}
 	case conversation.ProviderThreadID != r.binding.Record.ProviderThreadID:
 		r.mu.Lock()
 		select {
@@ -205,12 +205,14 @@ func (r *relay) confirmConversation(ctx context.Context) *mcpserver.CallResult {
 			close(r.lost)
 		}
 		r.mu.Unlock()
-		return &mcpserver.CallResult{Text: ErrConversationChanged.Error(), IsError: true}
+		return &mcpserver.CallResult{Text: r.provider.SessionChangedError().Error(), IsError: true}
 	}
 	return nil
 }
 
-const turnEndedResult = "this Codex turn ended before Superverse answered the call; its result will arrive as a message. Do not run it again."
+func (r *relay) turnEndedResult() string {
+	return "this " + r.provider.AgentLabel() + " turn ended before Superverse answered the call; its result will arrive as a message. Do not run it again."
+}
 
 // retireTurnCallsLocked leaves results of a completed Codex turn for the
 // ordinary delivery path. An MCP response to that turn can no longer inform
@@ -219,13 +221,13 @@ func (r *relay) retireTurnCallsLocked(turnID string) {
 	for slot, call := range r.slotCalls {
 		if call.turnID == turnID {
 			delete(r.slotCalls, slot)
-			call.finish(mcpserver.CallResult{Text: turnEndedResult})
+			call.finish(mcpserver.CallResult{Text: r.turnEndedResult()})
 		}
 	}
 	for id, call := range r.calls {
 		if call.turnID == turnID {
 			delete(r.calls, id)
-			call.finish(mcpserver.CallResult{Text: turnEndedResult})
+			call.finish(mcpserver.CallResult{Text: r.turnEndedResult()})
 		}
 	}
 }

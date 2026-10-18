@@ -26,7 +26,25 @@ type scriptedAnswerOrca struct {
 }
 
 func (orca *scriptedAnswerOrca) Runtime(context.Context) (Runtime, error) {
-	return Runtime{RuntimeID: "test-runtime"}, nil
+	return Runtime{InstanceID: "test-runtime"}, nil
+}
+
+func (orca *scriptedAnswerOrca) SubmissionMode() SubmissionMode { return SubmissionJournal }
+
+func (orca *scriptedAnswerOrca) ProviderName() string { return "Orca" }
+
+func (orca *scriptedAnswerOrca) ProviderID() string { return OrcaProviderID }
+
+func (orca *scriptedAnswerOrca) AgentLabel() string { return "Codex" }
+
+func (orca *scriptedAnswerOrca) SessionChangedError() error { return ErrConversationChanged }
+
+func (orca *scriptedAnswerOrca) SubmittedMessageID(operationID, _ string) string {
+	return SentMessageID(operationID)
+}
+
+func (orca *scriptedAnswerOrca) EventAfter(position, boundary state.EventPosition) bool {
+	return position.Epoch != boundary.Epoch || position.Sequence > boundary.Sequence
 }
 
 func (orca *scriptedAnswerOrca) Send(_ context.Context, request SendRequest) (SendResult, error) {
@@ -46,12 +64,12 @@ func TestRelayAnswerAfterTurnCompleted(t *testing.T) {
 		answer       = "Superverse message (JSON): answer to GitHub signal source"
 	)
 	binding, err := dir.AddBinding(state.BindingRecord{Endpoint: "http://127.0.0.1:26089", ConnectionID: connectionID,
-		ProjectID: "9oj2", ProjectName: "Hotspot Radar", OrcaSessionID: "test-session", ProviderThreadID: "test-thread"}, "test-token")
+		ProjectID: "9oj2", ProjectName: "Hotspot Radar", SessionID: "test-session", ProviderThreadID: "test-thread"}, "test-token")
 	if err != nil {
 		t.Fatal(err)
 	}
 	progress := state.Progress{Activated: true, Epoch: 2, Generation: 2, Cursor: 88,
-		Boundary: state.Position{Epoch: "test-epoch", Sequence: 1},
+		Boundary: state.EventPosition{Epoch: "test-epoch", Sequence: 1},
 		Turns:    []state.TurnGeneration{{TurnID: turnID, Generation: 2}}}
 	if err := binding.SaveProgress(progress); err != nil {
 		t.Fatal(err)
@@ -69,7 +87,7 @@ func TestRelayAnswerAfterTurnCompleted(t *testing.T) {
 
 	// The question's MCP call remains open, but Codex completed the turn
 	// after its functions.exec cell yielded. The answer arrives minutes later.
-	completion := Event{Kind: EventTurnCompleted, TurnID: turnID, Position: state.Position{Epoch: "test-epoch", Sequence: 2}}
+	completion := Event{Kind: EventTurnCompleted, TurnID: turnID, Position: state.EventPosition{Epoch: "test-epoch", Sequence: 2}}
 	if err := r.handleEvents([]Event{completion}, completion.Position); err != nil {
 		t.Fatal(err)
 	}

@@ -21,9 +21,8 @@ outcome.
   bindings/<connectionId>/     0700, at most 8 bindings
   bindings/.staging-*/         a binding being assembled; never listed
     token                      the connection token
-    binding.json               BindingRecord: endpoint, Project, Orca session and versions
-    progress.json              Progress: epoch, generation and boundary, delivery cursor,
-                               immutable brief activation cursor and the
+    binding.json               BindingRecord: endpoint, Project, provider session and versions
+    progress.json              Progress: epoch, generation and boundary, delivery cursor and the
                                sending record, acknowledged report sequence, last imported Orca
                                message, recent turn generations and delivered Orca message IDs,
                                and the last committed report slot
@@ -33,10 +32,16 @@ outcome.
 - Every file is replaced by writing a synced temporary file in the same directory and renaming it,
   so a reader (`status`) or a crash never sees a partial file. Records decode strictly.
 - `AddBinding` holds `bindings.lock` (a blocking `flock`) across the check of the bound and of the
-  Orca session's uniqueness and the publication, assembles the binding in a `.staging-` directory
+  provider session's uniqueness and the publication, assembles the binding in a `.staging-` directory
   and publishes it with one rename, so a crash leaves no partial binding and concurrent connects
   cannot bind one Orca session twice or pass 8 bindings. It removes staging directories a crash
   left; `Bindings` lists only published bindings.
+- Existing Orca records have no `providerId` and keep their `orcaSessionId`, `orcaVersion` and
+  `codexVersion` JSON keys. New provider records name their `providerId`; the relay refuses a
+  record loaded with a different provider. The progress event position keeps Orca's `epoch` and
+  `sequence` and permits a direct provider's opaque `cursor`. A one-write sending record adds a
+  marker, `oneWrite` and `attempted`; these are absent from existing Orca records. The attempted
+  bit commits before its sole provider write, so a crash can cause uncertainty but not a resend.
 - `Lock` takes an exclusive, non-blocking `flock` on `serve.lock`; a second `serve` fails with
   `ErrLocked`, and `Running` probes it for `status` and `disconnect`.
 - `StoreReports` writes new reports to the slots after the last one, then commits them with the

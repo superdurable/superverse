@@ -373,7 +373,7 @@ func (r *relay) resetQueueLocked() {
 func (r *relay) refreshTools(ctx context.Context) error {
 	record := r.binding.Record
 	activation, err := r.client.Activate(ctx, bridgeapi.Binding{
-		OrcaVersion: record.OrcaVersion, CodexVersion: record.CodexVersion, OrcaSessionID: record.OrcaSessionID,
+		OrcaVersion: record.ProviderVersion, CodexVersion: record.AgentVersion, OrcaSessionID: record.SessionID,
 		ProviderThreadID: record.ProviderThreadID, HostLabel: record.HostLabel,
 	})
 	if err != nil {

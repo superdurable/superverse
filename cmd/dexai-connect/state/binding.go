@@ -41,16 +41,18 @@ const (
 // ErrStoreFull is returned by StoreReports while the store is at a bound.
 var ErrStoreFull = errors.New("the Bridge holds too many unacknowledged reports; wait for the platform to acknowledge them")
 
-// BindingRecord is what a binding is: the connection and its Orca session.
+// BindingRecord names the connection and the provider's stable local session.
+// Empty ProviderID is an existing Orca record; its JSON keys stay unchanged.
 type BindingRecord struct {
 	Endpoint         string    `json:"endpoint"`
 	ConnectionID     string    `json:"connectionId"`
 	ProjectID        string    `json:"projectId"`
 	ProjectName      string    `json:"projectName"`
-	OrcaSessionID    string    `json:"orcaSessionId"`
+	ProviderID       string    `json:"providerId,omitempty"`
+	SessionID        string    `json:"orcaSessionId"`
 	ProviderThreadID string    `json:"providerThreadId"`
-	OrcaVersion      string    `json:"orcaVersion"`
-	CodexVersion     string    `json:"codexVersion"`
+	ProviderVersion  string    `json:"orcaVersion"`
+	AgentVersion     string    `json:"codexVersion"`
 	HostLabel        string    `json:"hostLabel"`
 	PairedAt         time.Time `json:"pairedAt"`
 }
@@ -62,11 +64,11 @@ type Progress struct {
 	Activated  bool   `json:"activated"`
 	Epoch      uint64 `json:"epoch"`
 	Generation uint64 `json:"generation"`
-	// Boundary is the Orca event position at which Generation was adopted;
+	// Boundary is the provider event position at which Generation was adopted;
 	// zero until the first adoption.
-	Boundary Position `json:"boundary"`
-	// EventCursor is where the event loop resumes reading Orca's events.
-	EventCursor Position `json:"eventCursor"`
+	Boundary EventPosition `json:"boundary"`
+	// EventCursor is where the event loop resumes reading provider events.
+	EventCursor EventPosition `json:"eventCursor"`
 	// Cursor is the last conversation entry the delivery loop handled.
 	Cursor uint64 `json:"cursor"`
 	// BriefActivationCursor caps recent messages in the brief, even after delivery advances Cursor.
@@ -86,9 +88,9 @@ type Progress struct {
 	ContextFollowupStartedAt time.Time `json:"contextFollowupStartedAt,omitzero"`
 	ContextFollowupCheckedAt time.Time `json:"contextFollowupCheckedAt,omitzero"`
 	ContextFollowupText      string    `json:"contextFollowupText,omitempty"`
-	// Turns binds recent Codex turns to the generation they belong to.
+	// Turns binds recent provider turns to the generation they belong to.
 	Turns []TurnGeneration `json:"turns,omitempty"`
-	// Delivered holds the Orca message IDs of recent deliveries with the
+	// Delivered holds the provider message IDs of recent deliveries with the
 	// generation each was sent for: the event loop does not report them back,
 	// and a turn they open belongs to that generation.
 	Delivered []DeliveredMessage `json:"delivered,omitempty"`
@@ -111,31 +113,30 @@ type Draining struct {
 	Slot             uint64 `json:"slot,omitempty"`
 }
 
-// Position is a place in the one order of an Orca session's events: the
-// journal epoch and sequence. A different epoch is a later one.
-type Position struct {
+// EventPosition stores a provider-owned resume point. Epoch and Sequence retain
+// the existing Orca JSON format; direct providers use Cursor instead.
+type EventPosition struct {
 	Epoch    string `json:"epoch"`
 	Sequence uint64 `json:"sequence"`
+	Cursor   string `json:"cursor,omitempty"`
 }
 
 // IsZero reports a position that was never recorded.
-func (position Position) IsZero() bool { return position == Position{} }
+func (position EventPosition) IsZero() bool { return position == EventPosition{} }
 
-// After reports whether position comes after other.
-func (position Position) After(other Position) bool {
-	return position.Epoch != other.Epoch || position.Sequence > other.Sequence
-}
-
-// Sending is the delivery in flight: kept until Orca settles it, so a restart
-// asks Orca again with the same operation instead of sending twice.
+// Sending is the delivery in flight. Journal providers can query the same
+// operation again; one-write providers persist Attempted before the only write.
 type Sending struct {
 	Key           string `json:"key"`
 	EntrySequence uint64 `json:"entrySequence"`
 	Generation    uint64 `json:"generation"`
 	OperationID   string `json:"operationId"`
 	Fingerprint   string `json:"fingerprint"`
-	// RuntimeID identifies the Orca process of the first submission.
-	RuntimeID   string    `json:"runtimeId"`
+	Marker        string `json:"marker,omitempty"`
+	OneWrite      bool   `json:"oneWrite,omitempty"`
+	Attempted     bool   `json:"attempted,omitempty"`
+	// InstanceID identifies the Orca journal process of the first submission.
+	InstanceID  string    `json:"runtimeId"`
 	FirstSentAt time.Time `json:"firstSentAt"`
 }
 

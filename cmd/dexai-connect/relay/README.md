@@ -1,10 +1,10 @@
 # Bridge relay
 
-Purpose: Runs each binding's delivery, tool call and event loops between the remote agent endpoint and its Orca session, and binds a new Orca session to a Project.
+Purpose: Runs each binding's provider-neutral delivery, tool and event loops and binds Orca sessions for the current command.
 
-Callers: `cmd/dexai-connect` and `cmd/dexai-connect/orca` (which implements `Orca`).
+Callers: `cmd/dexai-connect` and `cmd/dexai-connect/orca` (which implements `Orca` and `Provider`).
 
-Dependencies: `cmd/dexai-connect/mcpserver`, `cmd/dexai-connect/platform`, `cmd/dexai-connect/state`, `internal/dexai/agents/remoteagent/bridgeapi` and `internal/comm`; it calls the remote agent endpoint through `platform` and Orca through `Orca`.
+Dependencies: `cmd/dexai-connect/mcpserver`, `cmd/dexai-connect/platform`, `cmd/dexai-connect/state`, `internal/dexai/agents/remoteagent/bridgeapi` and `internal/comm`; it calls the remote agent endpoint through `platform` and the local provider through `Provider`.
 
 The [remote agent protocol](../../../docs/api/remote-agent.md) defines the platform boundary; this README describes the relay.
 
@@ -13,6 +13,33 @@ the matching result first appears in `sync`. These times and the remote call ID 
 private local socket to `mcp`, which writes the bounded [call trace](../README.md) after its response
 write. Retried reports keep the first send time and latest report answer time. Trace failures do not
 delay or fail a tool call.
+
+## Provider boundary
+
+`Provider` owns session identity, version and process identity, turn cancellation, public history,
+events, positions and a declared submission mode. `Supervisor` and the delivery/event loops depend
+only on it. `Orca` extends it with the tab/worktree inventory and `Reload` used by the current
+`dexai-connect connect` flow. A future direct command can import these packages without
+implementing Orca's UI operations. The current command selects Orca only; no direct provider is
+enabled here.
+
+`SubmissionJournal` resends the same operation ID to Orca's idempotent journal, as before.
+`SubmissionOneWrite` requires `OneWriteProvider`: the relay persists a random marker and the
+platform key, generation, operation ID and fingerprint before the first write. It persists
+`Attempted` before calling `Send`. A restarted relay never calls `Send` for that record again.
+`Send` may report accepted only with a positive canonical user item ID, and rejected only on a
+definite pre-admission refusal. An ambiguous response, lost process or pending result gets one
+read-only `FindSubmittedMessage` check, bounded to ten seconds, for the exact marker in canonical
+public user history. A match accepts; absence or failure reports `delivery_uncertain` and advances
+without another write. A direct adapter must put the marker in its user content and make no
+internal send retry. Its event IDs must match its deterministic `SubmittedMessageID` for echo
+suppression. Provider history and event cursors exclude hidden reasoning.
+
+`state.EventPosition` keeps Orca's existing `epoch` and `sequence` JSON while a direct provider
+can store an opaque `cursor`. The provider compares its own event positions at generation
+boundaries. Existing Orca binding JSON keys and the bridgeapi fields remain unchanged. An empty
+local `providerId` identifies a pre-existing Orca binding; direct bindings use their provider ID
+and address the MCP socket by the connection ID. Orca MCP processes keep using the Orca session ID.
 
 ## Orca
 
@@ -25,7 +52,7 @@ starts it with the current MCP servers on the same thread, and show the chat), `
 accepted, pending, rejected or unknown), `Cancel` (returns once no turn runs, with the event
 position: a generation's boundary), `History` and `Subscribe` (each event once, in batches with
 the position to resume from; a turn's assistant messages, each with its final text, come in the
-batch of its completion, just before it). A `state.Position` is the journal's `{epoch, sequence}`; an event's
+batch of its completion, just before it). An Orca `state.EventPosition` is the journal's `{epoch, sequence}`; an event's
 position is where its item was first written, so a turn's position is its start.
 `cmd/dexai-connect/orca` implements the interface with its method allow-list
 and the shared version policy. `VersionPolicy` declares a minimum and newest
@@ -160,10 +187,11 @@ none otherwise. It refuses to start a second binding of an Orca session, so that
     unqueued input; a restart reads again from it.
   - So a delivery that Orca holds `pending` while Codex waits on a Superverse tool never blocks that
     tool's result, even with a full queue.
-- **Delivery** (`delivery.go`). One delivery at a time, with the sending record of the design:
-  written before the first submission, asked again with the same operation ID while `pending`,
-  settled only by Orca's answer; `rejected` reports `delivery_failed`, `unknown` (also after an Orca
-  restart or 24 hours) reports `delivery_uncertain`; the failure report is stored in the same write
+- **Delivery** (`delivery.go`). One delivery at a time, with the sending record written before
+  submission. Orca is asked again with the same operation ID while `pending` and is settled only
+  by its journal answer. For a one-write provider, the persisted attempt is never repeated and
+  only an exact marker in canonical history can settle an ambiguous answer. `rejected` reports
+  `delivery_failed`; `unknown` reports `delivery_uncertain`. The failure report is stored in the same write
   that advances the cursor. A new tool set digest refetches the tools by repeating `activate`.
 - **Tool calls** (`reports.go`). An MCP call becomes a report of the running turn (it waits up to
   5 s for the turn's start event) and waits for its `tool_result` entry, call ID

@@ -27,6 +27,8 @@ import (
 const (
 	// pendingRetry is how often a pending submission is asked about again.
 	pendingRetry = 2 * time.Second
+	// historyProofTimeout bounds one positive check after a one-write send.
+	historyProofTimeout = 10 * time.Second
 	// journalLimit is how long Orca's submission journal keeps a submission.
 	journalLimit = 24 * time.Hour
 	// briefEntries is how many recent entries the brief reads.
@@ -92,36 +94,52 @@ func (r *relay) deliverEntry(ctx context.Context, message delivery) error {
 	return r.deliver(ctx, message)
 }
 
-// deliver sends one message so that it is never sent twice by the Bridge:
-// the sending record is written before the first submission, and only Orca's
-// submission state settles it.
+// deliver persists identity before a provider write. A journal provider may
+// query the same operation again; a one-write provider may only read history.
 func (r *relay) deliver(ctx context.Context, message delivery) error {
 	r.mu.Lock()
 	sending := r.progress.Sending
 	r.mu.Unlock()
 	if sending != nil && sending.Key != message.key {
-		// The record names another message, which this one follows: Orca
-		// cannot settle it any more.
+		// The record names another message, which this one follows.
 		if err := r.finishDelivery(*sending, SendResult{State: SubmissionUnknown}); err != nil {
 			return err
 		}
 		sending = nil
 	}
 	if sending == nil {
-		runtime, err := r.orca.Runtime(ctx)
-		if err != nil {
-			return fmt.Errorf("read the Orca runtime fence: %w", err)
+		mode := r.provider.SubmissionMode()
+		if mode != SubmissionJournal && mode != SubmissionOneWrite {
+			panic("provider declared an unknown submission mode")
 		}
 		now := time.Now()
+		var runtimeID, marker string
+		if mode == SubmissionJournal {
+			runtime, err := r.provider.Runtime(ctx)
+			if err != nil {
+				return fmt.Errorf("read the %s runtime fence: %w", r.provider.ProviderName(), err)
+			}
+			runtimeID = runtime.InstanceID
+		} else {
+			if _, ok := r.provider.(OneWriteProvider); !ok {
+				panic("one-write provider cannot prove a submitted marker")
+			}
+			marker = NewOperationID(now)
+		}
+		operationID := NewOperationID(now)
+		messageID := r.provider.SubmittedMessageID(operationID, marker)
+		if messageID == "" {
+			panic("provider returned an empty submitted-message ID")
+		}
 		r.mu.Lock()
 		sending = &state.Sending{
 			Key: message.key, EntrySequence: message.entrySequence, Generation: r.progress.Generation,
-			OperationID: NewOperationID(now), Fingerprint: fingerprint(message.text), RuntimeID: runtime.RuntimeID, FirstSentAt: now,
+			OperationID: operationID, Fingerprint: fingerprint(message.text), InstanceID: runtimeID,
+			Marker: marker, OneWrite: mode == SubmissionOneWrite, FirstSentAt: now,
 		}
 		r.progress.Sending = sending
-		// Orca writes the message, and may start its turn, before it answers.
-		rememberDelivery(&r.progress, SentMessageID(sending.OperationID), sending.Generation)
-		err = r.saveLocked()
+		rememberDelivery(&r.progress, messageID, sending.Generation)
+		err := r.saveLocked()
 		r.mu.Unlock()
 		if err != nil {
 			return err
@@ -137,28 +155,34 @@ func (r *relay) deliver(ctx context.Context, message delivery) error {
 	return r.finishDelivery(*sending, result)
 }
 
-// settle asks Orca with the same operation until the submission settles. If
-// Orca restarted (its runtime ID changed) or the journal limit passed,
-// anything but accepted or rejected is unknown.
+// settle chooses the persisted delivery rule, including after restart.
 func (r *relay) settle(ctx context.Context, sending state.Sending, text string) (SendResult, error) {
+	if sending.OneWrite {
+		return r.settleOneWrite(ctx, sending, text)
+	}
+	return r.settleJournal(ctx, sending, text)
+}
+
+// settleJournal preserves Orca's retryable journal behavior.
+func (r *relay) settleJournal(ctx context.Context, sending state.Sending, text string) (SendResult, error) {
 	backoff := pendingRetry
 	for {
 		if time.Since(sending.FirstSentAt) > journalLimit {
 			return SendResult{State: SubmissionUnknown}, nil
 		}
-		result, sendErr := r.orca.Send(ctx, SendRequest{SessionID: r.sessionID, ProviderThreadID: r.binding.Record.ProviderThreadID,
-			Text: text, ClientOperationID: sending.OperationID, RuntimeID: sending.RuntimeID})
+		result, sendErr := r.provider.Send(ctx, SendRequest{SessionID: r.sessionID, ProviderThreadID: r.binding.Record.ProviderThreadID,
+			Text: text, ClientOperationID: sending.OperationID, InstanceID: sending.InstanceID})
 		if ctx.Err() != nil {
 			return SendResult{}, ctx.Err()
 		}
-		if errors.Is(sendErr, ErrConversationChanged) {
+		if isSessionChanged(sendErr) {
 			return SendResult{}, sendErr
 		}
 		if sendErr == nil && (result.State == SubmissionAccepted || result.State == SubmissionRejected) {
 			return result, nil
 		}
-		runtime, err := r.orca.Runtime(ctx)
-		if err == nil && runtime.RuntimeID != sending.RuntimeID {
+		runtime, err := r.provider.Runtime(ctx)
+		if err == nil && runtime.InstanceID != sending.InstanceID {
 			return SendResult{State: SubmissionUnknown}, nil
 		}
 		if sendErr == nil && result.State == SubmissionUnknown {
@@ -177,7 +201,61 @@ func (r *relay) settle(ctx context.Context, sending state.Sending, text string) 
 	}
 }
 
-// finishDelivery reports an outcome Orca could not confirm, advances the
+// settleOneWrite marks the only provider write as attempted before calling it.
+// A crash before the call sacrifices delivery certainty rather than risking a
+// duplicate. Only an accepted response or exact marker proof can confirm it.
+func (r *relay) settleOneWrite(ctx context.Context, sending state.Sending, text string) (SendResult, error) {
+	provider, ok := r.provider.(OneWriteProvider)
+	if !ok {
+		panic("one-write delivery resumed with a provider lacking history proof")
+	}
+	if !sending.Attempted {
+		r.mu.Lock()
+		r.progress.Sending.Attempted = true
+		err := r.saveLocked()
+		r.mu.Unlock()
+		if err != nil {
+			return SendResult{}, err
+		}
+		sending.Attempted = true
+		result, sendErr := provider.Send(ctx, SendRequest{
+			SessionID: r.sessionID, ProviderThreadID: r.binding.Record.ProviderThreadID,
+			Text: text, ClientOperationID: sending.OperationID, Marker: sending.Marker,
+		})
+		if ctx.Err() != nil {
+			return SendResult{}, ctx.Err()
+		}
+		if isSessionChanged(sendErr) {
+			return SendResult{}, sendErr
+		}
+		if sendErr == nil {
+			if result.State == SubmissionRejected {
+				return result, nil
+			}
+			if result.State == SubmissionAccepted && result.ProviderItemID != "" {
+				return result, nil
+			}
+		}
+	}
+	proofCtx, cancel := context.WithTimeout(ctx, historyProofTimeout)
+	defer cancel()
+	itemID, err := provider.FindSubmittedMessage(proofCtx, r.sessionID, r.binding.Record.ProviderThreadID, sending.Marker)
+	if ctx.Err() != nil {
+		return SendResult{}, ctx.Err()
+	}
+	if isSessionChanged(err) {
+		return SendResult{}, err
+	}
+	if err != nil {
+		r.logger.WarnContext(ctx, "provider history could not prove delivery", "project", r.projectName, "error", err)
+	}
+	if err != nil || itemID == "" {
+		return SendResult{State: SubmissionUnknown}, nil
+	}
+	return SendResult{State: SubmissionAccepted, ProviderItemID: itemID}, nil
+}
+
+// finishDelivery reports an outcome the provider could not confirm, advances the
 // cursor and clears the sending record, all in one write.
 func (r *relay) finishDelivery(sending state.Sending, result SendResult) error {
 	r.mu.Lock()

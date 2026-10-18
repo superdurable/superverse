@@ -47,7 +47,7 @@ func chooseConversation(ctx context.Context, orca relay.Orca, dir *state.Dir, wo
 	}
 	boundTo := map[string]string{}
 	for _, binding := range bindings {
-		boundTo[binding.Record.OrcaSessionID] = binding.Record.ProjectName
+		boundTo[binding.Record.SessionID] = binding.Record.ProjectName
 	}
 	tty, err := os.OpenFile("/dev/tty", os.O_RDWR, 0)
 	if err != nil {

@@ -76,8 +76,8 @@ func (r *relay) beginDrain(ctx context.Context, conversation Conversation, track
 	// Only the named turn is cancelled: a later latest turn is the owner's new
 	// turn and proves the named one is over.
 	if draining.TurnID != "" && conversation.TurnID == draining.TurnID && conversation.Turn != TurnIdle {
-		if _, err := r.orca.Cancel(ctx, r.sessionID, r.binding.Record.ProviderThreadID); err != nil {
-			return fmt.Errorf("stop the Codex turn that ran at the restart: %w", err)
+		if _, err := r.provider.Cancel(ctx, r.sessionID, r.binding.Record.ProviderThreadID); err != nil {
+			return fmt.Errorf("stop the %s turn that ran at the restart: %w", r.provider.AgentLabel(), err)
 		}
 	}
 	return r.interruptUnsent(*draining)
@@ -169,9 +169,9 @@ func (r *relay) finishDrain(ctx context.Context, answer bridgeapi.SyncResponse) 
 	if draining == nil || answer.SettledThrough < draining.Admitted || answer.ExaminedThrough < answer.LastSequence {
 		return nil
 	}
-	conversation, err := r.orca.Conversation(ctx, r.sessionID)
+	conversation, err := r.provider.Conversation(ctx, r.sessionID)
 	if err != nil {
-		r.logger.WarnContext(ctx, "read the Orca conversation to end a drain", "project", r.projectName, "error", err)
+		r.logger.WarnContext(ctx, "read the "+r.provider.ProviderName()+" conversation to end a drain", "project", r.projectName, "error", err)
 		return nil
 	}
 	// A page that names no thread leaves the binding unconfirmed: wait for the
@@ -180,7 +180,7 @@ func (r *relay) finishDrain(ctx context.Context, answer bridgeapi.SyncResponse) 
 		return nil
 	}
 	if conversation.ProviderThreadID != r.binding.Record.ProviderThreadID {
-		return ErrConversationChanged
+		return r.provider.SessionChangedError()
 	}
 	if draining.TurnID != "" && conversation.TurnID == draining.TurnID && conversation.Turn != TurnIdle {
 		return nil
@@ -229,7 +229,7 @@ func (r *relay) readyResult() *mcpserver.CallResult {
 // reason, serving nothing, until serve stops or the Builder disconnects it,
 // which removes the binding without touching the Orca session.
 func (r *relay) holdChanged(ctx context.Context, err error) {
-	r.logger.ErrorContext(ctx, "The Orca conversation changed; reconnect from Studio", "project", r.projectName)
+	r.logger.ErrorContext(ctx, "The "+r.provider.ProviderName()+" conversation changed; reconnect from Studio", "project", r.projectName)
 	r.setProblem(err)
 	<-ctx.Done()
 	r.mu.Lock()

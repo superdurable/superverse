@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/superdurable/superversev2/cmd/dexai-connect/relay"
+	"github.com/superdurable/superversev2/cmd/dexai-connect/state"
 	"github.com/superdurable/superversev2/internal/comm"
 )
 
@@ -106,7 +107,7 @@ func (client *Client) Runtime(ctx context.Context) (relay.Runtime, error) {
 	if codexWarning != "" {
 		warning = codexWarning
 	}
-	return relay.Runtime{OrcaVersion: status.AppVersion, CodexVersion: codex, RuntimeID: runtimeID, Warning: warning}, nil
+	return relay.Runtime{ProviderVersion: status.AppVersion, AgentVersion: codex, InstanceID: runtimeID, Warning: warning}, nil
 }
 
 // codexVersion runs `codex --version` the way Orca resolves codex, through
@@ -416,4 +417,25 @@ func randomHex(bytes int) string {
 	random := make([]byte, bytes)
 	comm.Must(rand.Read(random))
 	return hex.EncodeToString(random)
+}
+
+// SubmissionMode uses Orca's idempotent operation journal.
+func (client *Client) SubmissionMode() relay.SubmissionMode { return relay.SubmissionJournal }
+
+func (client *Client) ProviderName() string { return "Orca" }
+
+func (client *Client) ProviderID() string { return relay.OrcaProviderID }
+
+func (client *Client) AgentLabel() string { return "Codex" }
+
+func (client *Client) SessionChangedError() error { return relay.ErrConversationChanged }
+
+// SubmittedMessageID matches the existing Orca echo identity.
+func (client *Client) SubmittedMessageID(operationID, _ string) string {
+	return relay.SentMessageID(operationID)
+}
+
+// EventAfter compares the existing Orca journal epoch and sequence.
+func (client *Client) EventAfter(position, boundary state.EventPosition) bool {
+	return position.Epoch != boundary.Epoch || position.Sequence > boundary.Sequence
 }

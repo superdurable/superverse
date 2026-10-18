@@ -11,7 +11,7 @@ package relay
 import (
 	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"slices"
 	"time"
 
@@ -34,7 +34,7 @@ const (
 )
 
 // reportBatch is the reports made from one page of events, in their order:
-// consecutive events of one generation and Codex turn share an events report
+// consecutive events of one generation and provider turn share an events report
 // of at most 32 events and maxBatchEventBytes encoded; a turn completion is a
 // report of its own, after its turn's events.
 type reportBatch struct {
@@ -71,29 +71,29 @@ func (r *relay) eventLoop(ctx context.Context) error {
 		r.mu.Lock()
 		after := r.progress.EventCursor
 		r.mu.Unlock()
-		err := r.orca.Subscribe(ctx, r.sessionID, r.binding.Record.ProviderThreadID, after, func(events []Event, next state.Position) error {
+		err := r.provider.Subscribe(ctx, r.sessionID, r.binding.Record.ProviderThreadID, after, func(events []Event, next state.EventPosition) error {
 			return r.handleEvents(events, next)
 		})
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		if errors.Is(err, ErrConversationChanged) {
+		if isSessionChanged(err) {
 			return err
 		}
-		r.logger.WarnContext(ctx, "the Orca session subscription ended; resubscribing", "project", r.projectName, "error", err)
+		r.logger.WarnContext(ctx, fmt.Sprintf("the %s session subscription ended; resubscribing", r.provider.ProviderName()), "project", r.projectName, "error", err)
 		if err := sleep(ctx, subscribeRetry); err != nil {
 			return err
 		}
 	}
 }
 
-// handleEvents maps a page of Orca events to reports and stores them with
+// handleEvents maps a page of provider events to reports and stores them with
 // the cursor after the page in one atomic write, so no event is lost and none
 // is reported twice. A failure, such as a full store, keeps the saved cursor:
 // the subscription ends and resumes from it. Echoes of delivered messages and
 // turns that started before the generation's boundary are not reported; the
-// Orca client never passes hidden reasoning or raw tool output.
-func (r *relay) handleEvents(events []Event, next state.Position) error {
+// provider adapter never passes hidden reasoning or raw tool output.
+func (r *relay) handleEvents(events []Event, next state.EventPosition) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	var batch reportBatch
@@ -152,7 +152,7 @@ func (r *relay) bindTurnLocked(event Event) uint64 {
 	generation, delivered := r.deliveredLocked(event.MessageID)
 	if event.Kind != EventTurnStarted || !delivered {
 		generation = 0
-		if event.Position.After(r.progress.Boundary) {
+		if r.provider.EventAfter(event.Position, r.progress.Boundary) {
 			generation = r.progress.Generation
 		}
 	}
@@ -217,7 +217,7 @@ func (r *relay) importHistory(ctx context.Context) error {
 	if imported {
 		return nil
 	}
-	messages, err := r.orca.History(ctx, r.sessionID, maxImportedMessages)
+	messages, err := r.provider.History(ctx, r.sessionID, maxImportedMessages)
 	if err != nil {
 		return err
 	}

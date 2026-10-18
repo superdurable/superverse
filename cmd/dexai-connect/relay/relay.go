@@ -33,16 +33,17 @@ const detachTimeout = 15 * time.Second
 // relay runs one binding: activation, then the sync, delivery, report and
 // event loops until the binding ends or serve stops.
 type relay struct {
-	binding *state.Binding
-	client  *platform.Client
-	orca    Orca
-	logger  *slog.Logger
+	binding  *state.Binding
+	client   *platform.Client
+	provider Provider
+	logger   *slog.Logger
 	// toolWait is toolWaitBudget; tests shorten it.
 	toolWait time.Duration
 	// changed tells the supervisor that the tool set or the relay ended.
 	changed func()
 
 	connectionID string
+	bindingID    string
 	sessionID    string
 	projectName  string
 
@@ -90,7 +91,7 @@ type relay struct {
 	lost         chan struct{}
 	lastSync     time.Time
 	interrupt    *bridgeapi.Interrupt
-	codexVersion string
+	agentVersion string
 	problem      string
 	stopping     *detachment
 	cancel       context.CancelFunc
@@ -128,20 +129,32 @@ func detachOn(err error) error {
 	}
 }
 
-func newRelay(binding *state.Binding, client *platform.Client, orca Orca, logger *slog.Logger, changed func()) (*relay, error) {
+func newRelay(binding *state.Binding, client *platform.Client, provider Provider, logger *slog.Logger, changed func()) (*relay, error) {
+	if binding.Record.ProviderID != provider.ProviderID() && !(binding.Record.ProviderID == "" && provider.ProviderID() == OrcaProviderID) {
+		return nil, fmt.Errorf("binding %s belongs to provider %q, not %q", binding.Record.ConnectionID, binding.Record.ProviderID, provider.ProviderID())
+	}
 	progress, err := binding.Progress()
 	if err != nil {
 		return nil, err
 	}
 	return &relay{
-		binding: binding, client: client, orca: orca, logger: logger, changed: changed, toolWait: toolWaitBudget,
-		connectionID: binding.Record.ConnectionID, sessionID: binding.Record.OrcaSessionID,
-		projectName: binding.Record.ProjectName, codexVersion: binding.Record.CodexVersion,
+		binding: binding, client: client, provider: provider, logger: logger, changed: changed, toolWait: toolWaitBudget,
+		connectionID: binding.Record.ConnectionID, bindingID: mcpBindingID(binding.Record), sessionID: binding.Record.SessionID,
+		projectName: binding.Record.ProjectName, agentVersion: binding.Record.AgentVersion,
 		wake: make(chan struct{}, 1), done: make(chan struct{}),
 		queued: make(chan struct{}, 1), dequeued: make(chan struct{}, 1),
 		progress: progress, slotCalls: map[uint64]*pendingCall{}, calls: map[string]*pendingCall{},
 		turnStarted: make(chan struct{}), lost: make(chan struct{}),
 	}, nil
+}
+
+// mcpBindingID retains the Orca session address for existing MCP processes.
+// Direct providers address the local socket by the unique connection ID.
+func mcpBindingID(record state.BindingRecord) string {
+	if record.ProviderID == "" || record.ProviderID == OrcaProviderID {
+		return record.SessionID
+	}
+	return record.ConnectionID
 }
 
 // run keeps the binding's loops running until it is detached or ctx ends.
@@ -162,7 +175,7 @@ func (r *relay) run(ctx context.Context) {
 			r.finishDetach(ctx, ended, true)
 			return
 		}
-		if errors.Is(err, ErrConversationChanged) {
+		if isSessionChanged(err) {
 			r.holdChanged(ctx, err)
 			return
 		}
@@ -217,7 +230,7 @@ func (r *relay) runLoops(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case <-r.lost:
-			return ErrConversationChanged
+			return r.provider.SessionChangedError()
 		}
 	})
 	return group.Wait()
@@ -229,24 +242,24 @@ func (r *relay) runLoops(ctx context.Context) error {
 // binding's one-time history import. The brief waits for the relay to be
 // ready (deliveryLoop).
 func (r *relay) start(ctx context.Context) error {
-	runtime, err := r.orca.Runtime(ctx)
+	runtime, err := r.provider.Runtime(ctx)
 	if err != nil {
-		return fmt.Errorf("read the Orca runtime: %w", err)
+		return fmt.Errorf("read the %s runtime: %w", r.provider.ProviderName(), err)
 	}
 	if runtime.Warning != "" {
 		r.logger.WarnContext(ctx, runtime.Warning, "project", r.projectName)
 	}
-	conversation, err := r.orca.Conversation(ctx, r.sessionID)
+	conversation, err := r.provider.Conversation(ctx, r.sessionID)
 	if err != nil {
-		return fmt.Errorf("read the Orca conversation: %w", err)
+		return fmt.Errorf("read the %s conversation: %w", r.provider.ProviderName(), err)
 	}
 	switch conversation.ProviderThreadID {
 	case r.binding.Record.ProviderThreadID:
 	case "":
 		// Unconfirmed, not changed: start again later.
-		return errors.New("the Orca conversation has no Codex thread to confirm")
+		return fmt.Errorf("the %s conversation has no %s thread to confirm", r.provider.ProviderName(), r.provider.AgentLabel())
 	default:
-		return ErrConversationChanged
+		return r.provider.SessionChangedError()
 	}
 	// adopt clears the running turn; the drain needs to know it.
 	r.mu.Lock()
@@ -254,18 +267,17 @@ func (r *relay) start(ctx context.Context) error {
 	r.mu.Unlock()
 	record := r.binding.Record
 	activation, err := r.client.Activate(ctx, bridgeapi.Binding{
-		OrcaVersion: runtime.OrcaVersion, CodexVersion: runtime.CodexVersion, OrcaSessionID: record.OrcaSessionID,
+		OrcaVersion: runtime.ProviderVersion, CodexVersion: runtime.AgentVersion, OrcaSessionID: record.SessionID,
 		ProviderThreadID: record.ProviderThreadID, HostLabel: record.HostLabel,
 	})
 	if err != nil {
 		return err
 	}
 	r.mu.Lock()
-	r.codexVersion = runtime.CodexVersion
+	r.agentVersion = runtime.AgentVersion
 	if !r.progress.Activated {
 		r.progress.Activated = true
 		r.progress.Cursor = activation.LastSequence
-		r.progress.BriefActivationCursor = activation.LastSequence
 	}
 	r.progress.Epoch = activation.Epoch
 	r.progress.Acknowledged = activation.Reported
@@ -291,9 +303,9 @@ func (r *relay) start(ctx context.Context) error {
 // records Orca's event position once no turn runs as the boundary, before
 // which no turn belongs to the new generation.
 func (r *relay) adopt(ctx context.Context, generation uint64) error {
-	position, err := r.orca.Cancel(ctx, r.sessionID, r.binding.Record.ProviderThreadID)
+	position, err := r.provider.Cancel(ctx, r.sessionID, r.binding.Record.ProviderThreadID)
 	if err != nil {
-		return fmt.Errorf("cancel the Codex turn for generation %d: %w", generation, err)
+		return fmt.Errorf("cancel the %s turn for generation %d: %w", r.provider.AgentLabel(), generation, err)
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -317,8 +329,8 @@ func (r *relay) finishDetach(ctx context.Context, reason *detachment, cancelTurn
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), detachTimeout)
 	defer cancel()
 	if cancelTurn {
-		if _, err := r.orca.Cancel(ctx, r.sessionID, r.binding.Record.ProviderThreadID); err != nil {
-			r.logger.WarnContext(ctx, "cancel the Codex turn of an ended binding", "project", r.projectName, "error", err)
+		if _, err := r.provider.Cancel(ctx, r.sessionID, r.binding.Record.ProviderThreadID); err != nil {
+			r.logger.WarnContext(ctx, "cancel the "+r.provider.AgentLabel()+" turn of an ended binding", "project", r.projectName, "error", err)
 		}
 	}
 	if reason.code == bridgeapi.ErrorExecutorChanged {
@@ -414,7 +426,7 @@ func (r *relay) statusLine() string {
 	if r.problem != "" {
 		state += " (last problem: " + r.problem + ")"
 	}
-	return fmt.Sprintf("Connected to %s as the agent · Codex %s · %s", r.projectName, r.codexVersion, state)
+	return fmt.Sprintf("Connected to %s as the agent · %s %s · %s", r.projectName, r.provider.AgentLabel(), r.agentVersion, state)
 }
 
 // saveLocked writes the progress; the caller holds mu.

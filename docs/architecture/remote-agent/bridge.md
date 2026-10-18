@@ -3,9 +3,10 @@
 `dexai-connect` is the program a Builder runs next to Orca. It holds the connection to one or
 more Projects, drives the bound Codex conversation through Orca's structured session protocol, and
 serves the Superverse tools to Codex as a local MCP server. It calls no model and keeps no Project
-state the platform depends on. This document owns the Bridge, its Orca and Codex integration, the
-Orca plugin, distribution and the security posture. The server side is in [connection](connection.md)
-and [executor](executor.md).
+state the platform depends on. The relay and local state also define a provider boundary for a
+future direct client; this command still selects Orca. This document owns the Bridge, its Orca and
+Codex integration, the provider boundary, the Orca plugin, distribution and security. The server
+side is in [connection](connection.md) and [executor](executor.md).
 
 ## Shape
 
@@ -29,6 +30,40 @@ flowchart LR
   over a local socket (mode 0600, in the state directory) and forwards tool listings and calls.
 - **`connect`**, **`status`** and **`disconnect`** are the manual commands; `connect` asks for the
   pairing code interactively and then runs `serve` in the foreground.
+
+### Provider boundary for direct clients
+
+The shared `cmd/dexai-connect/relay`, `state`, `platform` and `mcpserver` packages are importable
+from a future `cmd/dexai-cli` binary. `relay.Provider` owns the local session and thread IDs,
+runtime versions, cancel, public history, event subscription, event positions, and a declared
+submission mode. `relay.Orca` adds only the tab, worktree and reload operations used by the
+current connect UI. The active `dexai-connect` command still uses Orca and keeps the same local
+MCP server name, `superverse`.
+
+Orca's existing `binding.json` keys and `progress.json` positions remain readable and are written
+the same way. Empty `providerId` identifies these Orca bindings. Direct bindings will carry their
+provider ID and an opaque event cursor; their local MCP process addresses the binding by its
+connection ID instead of an Orca session ID. A single `serve` supervisor uses one provider and
+rejects a binding for a different provider. The bridgeapi field names and endpoint paths are
+unchanged; its binding values remain opaque to the platform.
+
+The delivery record has two policies selected by the provider. Orca's `SubmissionJournal` keeps
+the exact current behavior: save the operation ID and runtime fence, ask Orca again with the same
+ID while pending, and settle from the journal. `SubmissionOneWrite` first saves the platform key,
+generation, operation ID, payload fingerprint and random marker. It then durably marks the record
+attempted before one provider write. On an accepted response with a canonical user item ID, it
+settles immediately. Otherwise it makes one read-only history check, bounded to ten seconds, for
+the exact marker in canonical public user history. A positive match accepts. No match, read
+failure, lost response, or restart after the attempted bit returns `delivery_uncertain` and advances
+the platform cursor without another write. Only a definite pre-admission refusal reports
+`delivery_failed`. A crash after persisting `attempted` but before writing can therefore lose a
+message and report uncertainty; it cannot create a duplicate send. Direct adapters must embed the
+marker in user content, avoid internal send retries, filter hidden reasoning, and normalize the
+submitted user's event ID to the deterministic ID they gave the relay for echo suppression.
+
+The direct Codex and Claude adapters, their runtime and event replay details, direct connection
+UI, and real-provider acceptance are separate implementation work. No direct provider is enabled
+by this boundary change.
 
 ## Binding
 
@@ -263,11 +298,15 @@ in the first version.
 
 ## Dex Flow Changes
 
-None here; see [executor](executor.md#dex-flow-changes).
+None here; see [executor](executor.md#dex-flow-changes). The direct-client boundary adds no Flow,
+Step, RPC, Attribute, AttributeMap, Channel, ChannelMap, or Stream and changes no Flow identity,
+execution, retention, or recovery behavior.
 
 ## Database Schema Changes
 
-None; the Bridge's local state is a client cache, not a source of truth.
+None; the Bridge's local state is a client cache, not a source of truth. Existing Orca records are
+read without migration; the optional provider ID, opaque event cursor and one-write attempt fields
+are local JSON only.
 
 ## UI/UX
 
@@ -276,6 +315,7 @@ None; the Bridge's local state is a client cache, not a source of truth.
 - The terminal command prints the same states, one line each.
 - Every error says what to do: upgrade the Bridge, reconnect from Studio, choose a structured session,
   restart Orca.
+- The provider boundary adds no UI. The current command continues to connect through Orca.
 
 ## Tests
 
@@ -297,12 +337,18 @@ None; the Bridge's local state is a client cache, not a source of truth.
   report, history import bounds, refusal of an unlisted Orca version.
 - **Acceptance** with the real Codex model on the owner's machine before the feature is announced;
   the owner decides when and with which account, as for any real-model acceptance.
+- The provider boundary runs the Bridge race, real Orca PTY and protocol cases, real Native
+  Bridge/Dex integration, and the lane selected by `make required-lanes`. Direct adapters require
+  their own real-provider tests and acceptance when implemented. A one-write adapter must prove
+  exact marker matching, ambiguous write and restart uncertainty, no resend, replay and echo
+  suppression against its real provider.
 
 ## Documentation
 
 - `docs/runbooks/remote-agent.md` (new): install, connect, takeover, disconnect, upgrade, uninstall,
   troubleshooting.
-- `integrations/orca-plugin/README.md` and the Bridge's package READMEs.
+- `integrations/orca-plugin/README.md` and the Bridge's package READMEs. The relay and state
+  READMEs document the provider and local record contracts.
 
 ## Resource Scalability
 
@@ -315,3 +361,8 @@ the brief is pending, for at most three minutes. After a timed-out brief, the de
 for the repository section at intervals of at least 15 seconds, for at most 30 minutes, and stops
 immediately on `unavailable`. It makes no timed wake when no follow-up is pending. The local progress file retains at most
 one bounded brief and one repository section for crash recovery.
+The provider boundary adds no platform, cloud, Kubernetes, Temporal, Dex or database resource.
+The one-write path adds at most one bounded provider history read per ambiguous delivery, not per
+poll or event, and one small marker and attempted bit in the existing per-binding progress file.
+It retains no extra file or process. The existing per-profile binding limit and cleanup on local
+state removal apply to future providers. No quota-limited control-plane call enters the hot path.

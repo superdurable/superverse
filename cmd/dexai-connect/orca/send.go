@@ -110,7 +110,7 @@ func (client *Client) Send(ctx context.Context, request relay.SendRequest) (rela
 		var result mutationResult[struct {
 			Submission submission `json:"submission"`
 		}]
-		_, err := client.transport.callAt(ctx, request.RuntimeID, methodSend, params, &result)
+		_, err := client.transport.callAt(ctx, request.InstanceID, methodSend, params, &result)
 		if _, threadErr := client.boundTail(ctx, request.SessionID, request.ProviderThreadID); errors.Is(threadErr, relay.ErrConversationChanged) {
 			return relay.SendResult{}, threadErr
 		}
@@ -224,17 +224,17 @@ func (client *Client) withdraw(ctx context.Context, sessionID, messageID string)
 // thread's turn included); the thread is confirmed before it and while
 // waiting. An idle session is not cancelled, because a cancel would start a
 // Codex process for it.
-func (client *Client) Cancel(ctx context.Context, sessionID, providerThreadID string) (state.Position, error) {
+func (client *Client) Cancel(ctx context.Context, sessionID, providerThreadID string) (state.EventPosition, error) {
 	page, err := client.boundTail(ctx, sessionID, providerThreadID)
 	if err != nil {
-		return state.Position{}, err
+		return state.EventPosition{}, err
 	}
 	if page.Page.idle() {
 		return page.Page.LiveCursor.position(), nil
 	}
 	_, turnID, _ := page.Page.latestTurnIdentity()
 	if turnID == "" {
-		return state.Position{}, fmt.Errorf("orca session %s names no turn ID to cancel", sessionID)
+		return state.EventPosition{}, fmt.Errorf("orca session %s names no turn ID to cancel", sessionID)
 	}
 	fence := client.fence(sessionID)
 	fields := object{"turnId": turnID}
@@ -244,10 +244,10 @@ func (client *Client) Cancel(ctx context.Context, sessionID, providerThreadID st
 		Cancelled bool `json:"cancelled"`
 	}]
 	if err := client.mutate(ctx, methodCancel, params, &result); err != nil {
-		return state.Position{}, err
+		return state.EventPosition{}, err
 	}
 	if err := result.refused(); err != nil {
-		return state.Position{}, err
+		return state.EventPosition{}, err
 	}
 	return client.waitIdle(ctx, sessionID, providerThreadID)
 }
@@ -259,18 +259,18 @@ func (client *Client) Cancel(ctx context.Context, sessionID, providerThreadID st
 // than empty must be named by the page that proves the turn over: another
 // thread fails with relay.ErrConversationChanged, and a page naming none
 // proves nothing, so it keeps waiting and fails at the deadline.
-func (client *Client) waitIdle(ctx context.Context, sessionID, providerThreadID string) (state.Position, error) {
+func (client *Client) waitIdle(ctx context.Context, sessionID, providerThreadID string) (state.EventPosition, error) {
 	ctx, stop := context.WithTimeout(ctx, maxIdleWait)
 	defer stop()
 	for {
 		page, err := client.tail(ctx, sessionID)
 		if err != nil {
-			return state.Position{}, err
+			return state.EventPosition{}, err
 		}
 		confirmed := true
 		if providerThreadID != "" {
 			if err := sameThread(page, providerThreadID); err != nil {
-				return state.Position{}, err
+				return state.EventPosition{}, err
 			}
 			confirmed = page.ProviderSession != nil && page.ProviderSession.ID != ""
 		}
@@ -279,9 +279,9 @@ func (client *Client) waitIdle(ctx context.Context, sessionID, providerThreadID 
 		}
 		if err := pause(ctx, idlePoll); err != nil {
 			if !confirmed {
-				return state.Position{}, fmt.Errorf("orca session %s names no Codex thread to confirm the stop: %w", sessionID, err)
+				return state.EventPosition{}, fmt.Errorf("orca session %s names no Codex thread to confirm the stop: %w", sessionID, err)
 			}
-			return state.Position{}, fmt.Errorf("wait for the Codex turn to stop: %w", err)
+			return state.EventPosition{}, fmt.Errorf("wait for the Codex turn to stop: %w", err)
 		}
 	}
 }

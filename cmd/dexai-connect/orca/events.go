@@ -68,11 +68,11 @@ type cursor struct {
 	Sequence uint64 `json:"sequence"`
 }
 
-func (c *cursor) position() state.Position {
+func (c *cursor) position() state.EventPosition {
 	if c == nil {
-		return state.Position{}
+		return state.EventPosition{}
 	}
-	return state.Position{Epoch: c.Epoch, Sequence: c.Sequence}
+	return state.EventPosition{Epoch: c.Epoch, Sequence: c.Sequence}
 }
 
 type historyAnswer struct {
@@ -316,8 +316,8 @@ func (client *Client) History(ctx context.Context, sessionID string, limit int) 
 // second, and hands each page's new events to handle with the position after
 // the page. A reset (a rewound or compacted journal) restarts from the
 // current end, skipping what this subscription already reported.
-func (client *Client) Subscribe(ctx context.Context, sessionID, providerThreadID string, after state.Position,
-	handle func([]relay.Event, state.Position) error) error {
+func (client *Client) Subscribe(ctx context.Context, sessionID, providerThreadID string, after state.EventPosition,
+	handle func([]relay.Event, state.EventPosition) error) error {
 	seen := newSeenItems()
 	next := &cursor{Epoch: after.Epoch, Sequence: after.Sequence}
 	if after.IsZero() {
@@ -445,7 +445,7 @@ func (seen *seenItems) events(page historyPage, turnMessages func(turn renderIte
 		}
 		progress := seen.reported[item.ItemID]
 		body := item.Body
-		position := state.Position{Epoch: page.Epoch, Sequence: item.Sequence}
+		position := state.EventPosition{Epoch: page.Epoch, Sequence: item.Sequence}
 		event := relay.Event{Position: position, TurnID: item.turnItemID(), MessageID: item.ItemID}
 		if body.Kind == bodyMessage {
 			for _, block := range body.Blocks {
@@ -513,7 +513,7 @@ func (seen *seenItems) events(page historyPage, turnMessages func(turn renderIte
 						continue
 					}
 					events = append(events, relay.Event{
-						Kind: relay.EventAssistantMessage, Position: state.Position{Epoch: page.Epoch, Sequence: message.Sequence},
+						Kind: relay.EventAssistantMessage, Position: state.EventPosition{Epoch: page.Epoch, Sequence: message.Sequence},
 						TurnID: item.ItemID, MessageID: message.ItemID, Text: message.Body.text(),
 					})
 					seen.mark(message.ItemID, itemProgress{finished: true})

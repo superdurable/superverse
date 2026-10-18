@@ -188,8 +188,11 @@ func (dir *Dir) AddBinding(record BindingRecord, token string) (*Binding, error)
 		return nil, fmt.Errorf("this Bridge already holds %d bindings; disconnect one first", MaxBindings)
 	}
 	for _, binding := range existing {
-		if binding.Record.OrcaSessionID == record.OrcaSessionID && record.OrcaSessionID != "" {
-			return nil, fmt.Errorf("the Orca session is already bound to Project %s", binding.Record.ProjectName)
+		if binding.Record.ProviderID == record.ProviderID && binding.Record.SessionID == record.SessionID && record.SessionID != "" {
+			if record.ProviderID == "" {
+				return nil, fmt.Errorf("the Orca session is already bound to Project %s", binding.Record.ProjectName)
+			}
+			return nil, fmt.Errorf("the provider session is already bound to Project %s", binding.Record.ProjectName)
 		}
 	}
 	staging, err := os.MkdirTemp(root, stagingPrefix)

@@ -110,7 +110,7 @@ func checkBindable(dir *state.Dir, sessionID string) error {
 		return fmt.Errorf("this Bridge already holds %d bindings; disconnect one first", state.MaxBindings)
 	}
 	for _, binding := range bindings {
-		if sessionID != "" && binding.Record.OrcaSessionID == sessionID {
+		if sessionID != "" && binding.Record.ProviderID == "" && binding.Record.SessionID == sessionID {
 			return fmt.Errorf("the Orca session is already bound to Project %s", binding.Record.ProjectName)
 		}
 	}
@@ -165,8 +165,8 @@ func bindSession(ctx context.Context, dir *state.Dir, orca Orca, request BindReq
 	}
 	return dir.AddBinding(state.BindingRecord{
 		Endpoint: request.Endpoint, ConnectionID: paired.ConnectionID, ProjectID: paired.ProjectID,
-		ProjectName: paired.ProjectName, OrcaSessionID: session.ID, ProviderThreadID: session.ProviderThreadID,
-		OrcaVersion: runtime.OrcaVersion, CodexVersion: runtime.CodexVersion, HostLabel: host, PairedAt: time.Now().UTC(),
+		ProjectName: paired.ProjectName, SessionID: session.ID, ProviderThreadID: session.ProviderThreadID,
+		ProviderVersion: runtime.ProviderVersion, AgentVersion: runtime.AgentVersion, HostLabel: host, PairedAt: time.Now().UTC(),
 	}, paired.Token)
 }
 

@@ -28,8 +28,8 @@ func TestOrcaVersionAndTabsIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if runtime.OrcaVersion != "1.4.225" || runtime.CodexVersion != "0.163.0" {
-		t.Fatalf("unexpected Orca/Codex versions: %s / %s", runtime.OrcaVersion, runtime.CodexVersion)
+	if runtime.ProviderVersion != "1.4.225" || runtime.AgentVersion != "0.163.0" {
+		t.Fatalf("unexpected Orca/Codex versions: %s / %s", runtime.ProviderVersion, runtime.AgentVersion)
 	}
 	conversations, err := client.OpenConversations(ctx)
 	if err != nil {
@@ -51,5 +51,5 @@ func TestOrcaVersionAndTabsIntegration(t *testing.T) {
 		}
 	}
 	t.Logf("Orca %s, Codex %s: %d conversations and %d resolvable worktrees",
-		runtime.OrcaVersion, runtime.CodexVersion, len(conversations), len(worktrees))
+		runtime.ProviderVersion, runtime.AgentVersion, len(conversations), len(worktrees))
 }

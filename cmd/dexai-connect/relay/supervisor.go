@@ -27,10 +27,10 @@ import (
 // Supervisor runs the relays of every binding in the state directory and
 // answers the mcp processes over the local socket.
 type Supervisor struct {
-	dir    *state.Dir
-	orca   Orca
-	bridge bridgeapi.BridgeInfo
-	logger *slog.Logger
+	dir      *state.Dir
+	provider Provider
+	bridge   bridgeapi.BridgeInfo
+	logger   *slog.Logger
 	// attach hands Run a binding that connect stored while serve ran.
 	attach chan attachRequest
 
@@ -47,9 +47,9 @@ type attachRequest struct {
 var _ mcpserver.Backend = (*Supervisor)(nil)
 
 // NewSupervisor returns the supervisor of dir's bindings.
-func NewSupervisor(dir *state.Dir, orca Orca, bridge bridgeapi.BridgeInfo, logger *slog.Logger) *Supervisor {
+func NewSupervisor(dir *state.Dir, provider Provider, bridge bridgeapi.BridgeInfo, logger *slog.Logger) *Supervisor {
 	return &Supervisor{
-		dir: dir, orca: orca, bridge: bridge, logger: logger, attach: make(chan attachRequest),
+		dir: dir, provider: provider, bridge: bridge, logger: logger, attach: make(chan attachRequest),
 		relays: map[string]*relay{}, changed: make(chan struct{}),
 	}
 }
@@ -87,7 +87,7 @@ func (supervisor *Supervisor) start(ctx context.Context, wait *sync.WaitGroup, b
 	if err != nil {
 		return err
 	}
-	r, err := newRelay(binding, client, supervisor.orca, supervisor.logger, supervisor.notify)
+	r, err := newRelay(binding, client, supervisor.provider, supervisor.logger, supervisor.notify)
 	if err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func (supervisor *Supervisor) start(ctx context.Context, wait *sync.WaitGroup, b
 	}
 	for _, other := range supervisor.relays {
 		if other.sessionID == r.sessionID {
-			return fmt.Errorf("the Orca session of binding %s is already bound by %s", r.connectionID, other.connectionID)
+			return fmt.Errorf("the %s session of binding %s is already bound by %s", supervisor.provider.ProviderName(), r.connectionID, other.connectionID)
 		}
 	}
 	supervisor.relays[r.connectionID] = r
@@ -120,7 +120,7 @@ func (supervisor *Supervisor) notify() {
 	supervisor.changed = make(chan struct{})
 }
 
-// relayOf is the relay of an Orca session; start admits at most one.
+// relayOf is the relay addressed by a local MCP binding ID.
 func (supervisor *Supervisor) relayOf(session string) *relay {
 	supervisor.mu.Lock()
 	defer supervisor.mu.Unlock()
@@ -128,7 +128,7 @@ func (supervisor *Supervisor) relayOf(session string) *relay {
 		return nil
 	}
 	for _, r := range supervisor.relays {
-		if r.sessionID == session {
+		if r.bindingID == session {
 			return r
 		}
 	}
@@ -156,7 +156,7 @@ func (supervisor *Supervisor) Instructions(session string) string {
 func (supervisor *Supervisor) Call(ctx context.Context, session, name string, arguments json.RawMessage) (mcpserver.CallResult, error) {
 	r := supervisor.relayOf(session)
 	if r == nil {
-		return mcpserver.CallResult{Text: "this Codex session is not connected to Superverse", IsError: true}, nil
+		return mcpserver.CallResult{Text: "this " + supervisor.provider.AgentLabel() + " session is not connected to Superverse", IsError: true}, nil
 	}
 	return r.call(ctx, name, arguments)
 }

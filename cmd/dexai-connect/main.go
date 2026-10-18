@@ -246,11 +246,11 @@ func runConnect(ctx context.Context, args []string, logger *slog.Logger) error {
 		return err
 	}
 	fmt.Printf("Paired with %s using Orca %s and Codex %s; connecting Orca session %s.\n",
-		binding.Record.ProjectName, binding.Record.OrcaVersion, binding.Record.CodexVersion, binding.Record.OrcaSessionID)
+		binding.Record.ProjectName, binding.Record.ProviderVersion, binding.Record.AgentVersion, binding.Record.SessionID)
 	// Orca 1.4.224 and 1.4.225 publish the chat's tab to the runtime but may not open it
 	// in a window that is already open.
 	fmt.Printf("Codex restarts with the superverse tools on its next message. If the chat (Orca session %s) "+
-		"is not shown in Orca's window, open it from Agent Session History in the right sidebar.\n", binding.Record.OrcaSessionID)
+		"is not shown in Orca's window, open it from Agent Session History in the right sidebar.\n", binding.Record.SessionID)
 	running, err := dir.Running()
 	if err != nil {
 		return err
@@ -310,11 +310,7 @@ func runStatus(ctx context.Context, args []string) error {
 		return err
 	}
 	if running {
-		if err := printServeStatus(ctx, dir); err != nil {
-			return err
-		}
-		printOrcaVersionWarning(ctx)
-		return nil
+		return printServeStatus(ctx, dir)
 	}
 	bindings, err := dir.Bindings()
 	if err != nil {
@@ -326,7 +322,7 @@ func runStatus(ctx context.Context, args []string) error {
 	}
 	for _, binding := range bindings {
 		fmt.Printf("Bound to %s (Orca session %s) · not running: start dexai-connect serve\n",
-			binding.Record.ProjectName, binding.Record.OrcaSessionID)
+			binding.Record.ProjectName, binding.Record.SessionID)
 	}
 	printOrcaVersionWarning(ctx)
 	return nil
