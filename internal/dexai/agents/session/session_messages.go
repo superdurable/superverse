@@ -500,15 +500,16 @@ func publishNotification(ctx dex.Context, notification conversation.SessionNotif
 // appendNotifications records the consumed notifications as user-role
 // entries, as the Session holds them at its HEAD: a delivery failure of
 // another commit is a notice (AtHead). It returns the recorded ones with their
-// sequences. A Preview that is ready enters no entry: its report already held
-// the instance it serves on (ReportSessionNotification). A task's end holds
+// sequences. An ordinary ready Preview enters no entry: its report already
+// held the instance it serves on (ReportSessionNotification). A ready Preview
+// that resolves an earlier notice enters the conversation. A task's end holds
 // the Sandbox for another Sandbox hold. The caller holds the Workspace lock.
 func (flow *SessionAgentFlow) appendNotifications(ctx dex.Context, notifications []conversation.SessionNotification) ([]conversation.SessionNotification, []conversation.Sequence) {
 	head := comm.Must(headCommitAttribute.Get(ctx))
 	recorded, sequences := make([]conversation.SessionNotification, 0, len(notifications)), make([]conversation.Sequence, 0, len(notifications))
 	for _, notification := range notifications {
 		switch {
-		case notification.IsPreviewReady():
+		case notification.IsSilentPreviewReady():
 			continue
 		case notification.Kind == conversation.NotificationKindTask:
 			holdSandbox(ctx, "", flow.sandboxHold)

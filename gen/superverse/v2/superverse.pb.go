@@ -14748,8 +14748,8 @@ func (x *AgentMessage) GetImported() bool {
 // An automated report of something that happened outside the Agent's turn, such as a background
 // command that ended or a failed Preview or Live deployment. It is never a message of the user.
 // task_id and task_status are set for KIND_TASK, and outcome, owner, code, phase, commit,
-// resource_id, gaps, gap_count and message for KIND_DELIVERY; the report the model reads is not
-// projected.
+// resource_id, resolved_notice_id, url, gaps, gap_count and message for KIND_DELIVERY; the report
+// the model reads is not projected.
 type AgentNotification struct {
 	state      protoimpl.MessageState       `protogen:"open.v1"`
 	Id         string                       `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -14779,7 +14779,11 @@ type AgentNotification struct {
 	// The version of the commit a delivery notification concerns; absent when not recorded.
 	Version *CommitVersion `protobuf:"bytes,19,opt,name=version,proto3" json:"version,omitempty"`
 	// The fix the reader can take for a failed delivery; unspecified otherwise.
-	Remedy        FailureRemedy `protobuf:"varint,20,opt,name=remedy,proto3,enum=superverse.v2.FailureRemedy" json:"remedy,omitempty"`
+	Remedy FailureRemedy `protobuf:"varint,20,opt,name=remedy,proto3,enum=superverse.v2.FailureRemedy" json:"remedy,omitempty"`
+	// The earlier delivery notice that this ready Preview resolves, if any.
+	ResolvedNoticeId string `protobuf:"bytes,21,opt,name=resolved_notice_id,json=resolvedNoticeId,proto3" json:"resolved_notice_id,omitempty"`
+	// The Preview URL when a ready notification resolves an earlier notice.
+	Url           string `protobuf:"bytes,22,opt,name=url,proto3" json:"url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -14952,6 +14956,20 @@ func (x *AgentNotification) GetRemedy() FailureRemedy {
 		return x.Remedy
 	}
 	return FailureRemedy_FAILURE_REMEDY_UNSPECIFIED
+}
+
+func (x *AgentNotification) GetResolvedNoticeId() string {
+	if x != nil {
+		return x.ResolvedNoticeId
+	}
+	return ""
+}
+
+func (x *AgentNotification) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
 }
 
 // An absent counter is unknown, not zero. model is the requested model; served_model the one that
@@ -26452,7 +26470,7 @@ const file_superverse_v2_superverse_proto_rawDesc = "" +
 	"_tool_nameB\x19\n" +
 	"\x17_answered_input_call_idB\r\n" +
 	"\v_started_atB\x06\n" +
-	"\x04_via\"\xa6\r\n" +
+	"\x04_via\"\xe6\r\n" +
 	"\x11AgentNotification\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x129\n" +
 	"\x04kind\x18\x02 \x01(\x0e2%.superverse.v2.AgentNotification.KindR\x04kind\x12?\n" +
@@ -26477,7 +26495,9 @@ const file_superverse_v2_superverse_proto_rawDesc = "" +
 	"\x04slug\x18\x11 \x01(\tR\x04slug\x12X\n" +
 	"\x0fconnector_event\x18\x12 \x01(\x0e2/.superverse.v2.AgentNotification.ConnectorEventR\x0econnectorEvent\x126\n" +
 	"\aversion\x18\x13 \x01(\v2\x1c.superverse.v2.CommitVersionR\aversion\x124\n" +
-	"\x06remedy\x18\x14 \x01(\x0e2\x1c.superverse.v2.FailureRemedyR\x06remedy\"R\n" +
+	"\x06remedy\x18\x14 \x01(\x0e2\x1c.superverse.v2.FailureRemedyR\x06remedy\x12,\n" +
+	"\x12resolved_notice_id\x18\x15 \x01(\tR\x10resolvedNoticeId\x12\x10\n" +
+	"\x03url\x18\x16 \x01(\tR\x03url\"R\n" +
 	"\x04Kind\x12\x14\n" +
 	"\x10KIND_UNSPECIFIED\x10\x00\x12\r\n" +
 	"\tKIND_TASK\x10\x01\x12\x11\n" +

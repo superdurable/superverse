@@ -420,13 +420,18 @@ func TestPreviewIncompatibleDeploymentDexIntegration(t *testing.T) {
 	case len(refused.Preview.ConfigurationGaps) == 0 || !refused.PreparedForForTest(head):
 		t.Fatalf("the refused Preview keeps no gaps or no READY preparation of %s", head)
 	}
+	configurationNoticeID := ""
 	session.await(ctx, "the configuration notice", func() bool {
 		_, messages := session.history(ctx)
 		return slices.ContainsFunc(ofRole(messages, conversation.MessageRoleNotification), func(message conversation.SequencedMessage) bool {
 			notice := message.Message.Notification
-			return notice != nil && notice.Commit == head && notice.Outcome == conversation.DeliveryNotice &&
-				notice.Owner == conversation.DeliveryOwnerConfiguration && notice.Code == preview.FailureIncompatibleForTest &&
-				notice.Remedy == dexflow.RemedyOpenSetup && strings.HasPrefix(notice.Summary, "The Preview needs configuration: ")
+			if notice == nil || notice.Commit != head || notice.Outcome != conversation.DeliveryNotice ||
+				notice.Owner != conversation.DeliveryOwnerConfiguration || notice.Code != preview.FailureIncompatibleForTest ||
+				notice.Remedy != dexflow.RemedyOpenSetup || !strings.HasPrefix(notice.Summary, "The Preview needs configuration: ") {
+				return false
+			}
+			configurationNoticeID = notice.ID
+			return true
 		})
 	})
 
@@ -435,11 +440,20 @@ func TestPreviewIncompatibleDeploymentDexIntegration(t *testing.T) {
 	requireNoFailure(t, session.finishedTurnAfter(ctx, agent.Description.LastSequence).History)
 	session.preparePreview(ctx)
 	session.configurePreview(ctx)
-	if started := session.startPreview(ctx); started.Preview.SourceCommit != head {
+	started := session.startPreview(ctx)
+	if started.Preview.SourceCommit != head {
 		t.Fatalf("the Preview serves %s, not %s", started.Preview.SourceCommit, head)
 	}
+	session.await(ctx, "the resolving Preview-ready notification", func() bool {
+		_, messages := session.history(ctx)
+		return slices.ContainsFunc(ofRole(messages, conversation.MessageRoleNotification), func(message conversation.SequencedMessage) bool {
+			ready := message.Message.Notification
+			return ready != nil && ready.Outcome == conversation.DeliveryReady && ready.Commit == head &&
+				ready.ResolvedNoticeID == configurationNoticeID && ready.URL == started.Preview.URL
+		})
+	})
 	session.stopPreview(ctx)
-	t.Logf("FlowID=%s: the deployment of %s was refused PREVIEW_CONFIGURATION_INCOMPATIBLE before it started anything; the Preview started once configured", session.id, head)
+	t.Logf("FlowID=%s: the deployment of %s was refused PREVIEW_CONFIGURATION_INCOMPATIBLE before it started anything; the resolving READY notification recorded the configured Preview", session.id, head)
 }
 
 // startPreview starts the Session's Preview through the Session Service, as

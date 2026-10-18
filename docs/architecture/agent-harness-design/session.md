@@ -500,8 +500,10 @@ Notifications from subagents, background commands, connectors and delivery outco
 - While the Session is idle, `AwaitUser` takes them last, `AtLeastAtMost(1, 16)`; it takes none
   while a question is pending. A batch opens at most one turn, counted against the kind that
   triggered it (the platform bound when both did).
-- A `delivery` notification with outcome `ready` does not enter the conversation and opens no turn.
-  The RPC that received it has already extended the Sandbox deadline ([below](#sandbox-deadline)).
+- An ordinary `delivery` notification with outcome `ready` does not enter the conversation and
+  opens no turn. A Preview READY that carries a resolved configuration notice ID enters the
+  conversation to confirm resolution, but also opens no turn. The RPC that received either has
+  already extended the Sandbox deadline ([below](#sandbox-deadline)).
 
 Bounds, so that automation can never run away:
 

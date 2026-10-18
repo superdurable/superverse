@@ -171,6 +171,8 @@ export interface AgentNotification {
   'connectorEvent'?: (_superverse_v2_AgentNotification_ConnectorEvent);
   'version'?: (_superverse_v2_CommitVersion | null);
   'remedy'?: (_superverse_v2_FailureRemedy);
+  'resolvedNoticeId'?: (string);
+  'url'?: (string);
 }
 
 export interface AgentNotification__Output {
@@ -194,4 +196,6 @@ export interface AgentNotification__Output {
   'connectorEvent': (_superverse_v2_AgentNotification_ConnectorEvent__Output);
   'version': (_superverse_v2_CommitVersion__Output | null);
   'remedy': (_superverse_v2_FailureRemedy__Output);
+  'resolvedNoticeId': (string);
+  'url': (string);
 }

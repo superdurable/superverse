@@ -1837,8 +1837,8 @@ message AgentMessage {
 // An automated report of something that happened outside the Agent's turn, such as a background
 // command that ended or a failed Preview or Live deployment. It is never a message of the user.
 // task_id and task_status are set for KIND_TASK, and outcome, owner, code, phase, commit,
-// resource_id, gaps, gap_count and message for KIND_DELIVERY; the report the model reads is not
-// projected.
+// resource_id, resolved_notice_id, url, gaps, gap_count and message for KIND_DELIVERY; the report
+// the model reads is not projected.
 message AgentNotification {
   enum Kind {
     KIND_UNSPECIFIED = 0;
@@ -1917,6 +1917,10 @@ message AgentNotification {
   CommitVersion version = 19;
   // The fix the reader can take for a failed delivery; unspecified otherwise.
   FailureRemedy remedy = 20;
+  // The earlier delivery notice that this ready Preview resolves, if any.
+  string resolved_notice_id = 21;
+  // The Preview URL when a ready notification resolves an earlier notice.
+  string url = 22;
 }
 
 // An absent counter is unknown, not zero. model is the requested model; served_model the one that

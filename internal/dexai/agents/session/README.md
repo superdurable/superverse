@@ -56,9 +56,10 @@ deleted. With each successful pushed tool result
 it hands that commit to its `PreviewFlow` (`PreviewHandoff`,
 `DeployPreviewHandoff`) while `PreviewAutoDeploy` is on, which the RPC
 `UpdatePreviewAutoDeploy` switches and the Snapshot reads, and the Preview's
-`delivery` notifications return the outcome: a ready Preview holds the
-instance for `sandbox.previewHold`, and a failure the application owns opens a
-bounded automatic turn. The Live release and deployment Flows report their
+`delivery` notifications return the outcome: an ordinary ready Preview holds
+the instance for `sandbox.previewHold`, while a ready Preview that resolves an
+earlier configuration notice enters the conversation without opening a turn;
+a failure the application owns opens a bounded automatic turn. The Live release and deployment Flows report their
 failures as `delivery` notifications of the same path, through the Session
 Service ([the current contract](../../../../docs/architecture/agent-harness-design/sandbox.md)).
 The user's "Keep running for 7 days" (`RenewSessionWorkspace`) holds the READY

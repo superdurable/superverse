@@ -128,7 +128,7 @@ There is **no AttributeMap**. Every Attribute is an ordinary singleton value.
 | `RecentStarts` | `[]StartRecord`, at most 50, oldest first and dropped first: one per admitted `start-preview` or `deploy-preview`, `{CommandID, Kind, ActorAccountID, Commit, ConfigurationRevision, Applied, AdmittedAt, EndedAt, Outcome, FailureCode, Timings, Version}`. `Outcome` is `RUNNING` until the start ends, then `READY`, `FAILED` (`RecordPreviewFailure`), `REFUSED` (`RecordPreviewRefusal`) or `CANCELLED` (a skipped deployment, or the Project's deletion). Every update finds its record by `CommandID`; a record already dropped is never recreated. The failure message stays in `Failure` |
 | `Failure` | nullable `*dexflow.Failure`: code, phase, a message made of the code's message and its cause, truncated, and the remedy the code declares |
 | `FailureOwner` | `conversation.DeliveryOwner`: who must act on `Failure`, set by the Step that ends the command with it and cleared with it; zero without a failure |
-| `PreviewDeployment` | `PreviewDeployment` struct, fixed size: `Queued`, the newest request waiting for the active command (`{WorkspaceRequestID, Commit, Sequence, RequestedAt}`); `HandledSequence`, the newest request that ran or was cancelled, so a commit deploys once; `Last`, the newest handled deployment `{CommandID, Commit, Sequence, Status, Failure, Owner, UpdatedAt}` with `Status` `RUNNING`, `READY`, `INCOMPATIBLE`, `FAILED`, `SKIPPED` or `CANCELLED` (`DeploymentStatus`); and `NotifiedGapsDigest`, the fingerprint of the configuration gaps the Session was last told about |
+| `PreviewDeployment` | `PreviewDeployment` struct, fixed size: `Queued`, the newest request waiting for the active command (`{WorkspaceRequestID, Commit, Sequence, RequestedAt}`); `HandledSequence`, the newest request that ran or was cancelled, so a commit deploys once; `Last`, the newest handled deployment `{CommandID, Commit, Sequence, Status, Failure, Owner, UpdatedAt}` with `Status` `RUNNING`, `READY`, `INCOMPATIBLE`, `FAILED`, `SKIPPED` or `CANCELLED` (`DeploymentStatus`); `NotifiedGapsDigest`, the fingerprint of the configuration gaps the Session was last told about; and optional `NotifiedGapsNoticeID`, the notice a later READY resolves. Old executions decode it as empty. |
 | `OutcomeReport` | nullable `*conversation.SessionNotification`: the `delivery` notification of the last reportable outcome, which only the Steps that end a command write and `NotifyPreviewOutcome` delivers |
 | `CreatedAt`, `UpdatedAt` | `time.Time` |
 | `CommandLock` | `bool` coordination Attribute; its value is not a lock flag |
@@ -472,10 +472,10 @@ platform symptom.
 
 | Outcome | Owner | Notification |
 | --- | --- | --- |
-| A start or deployment `READY` | none | `ready`: it never enters the conversation; the Session holds the instance it serves on for `sandbox.previewHold` |
+| A start or deployment `READY` | none | ordinary `ready` never enters the conversation and holds the instance it serves on for `sandbox.previewHold`; a READY after the retained configuration notice resolves that notice, enters the conversation without opening a turn, and carries its notice ID, commit and Preview URL |
 | `PREVIEW_FAILED` (`workspace.ErrPreviewSupervisor`: the build failed, or the application exited or missed its health probe) | application | `failure` |
 | `PREVIEW_FDG_INVALID` (`workspace.ErrPreviewDefinitionsRejected`, `ErrDefinitionMismatch`, `projectconfig.ErrInvalidDefinitions`) and `PREVIEW_MANIFEST_FAILED` with `appmanifest.ErrInvalidAppManifest` | application | `failure` |
-| `PREVIEW_CONFIGURATION_INCOMPATIBLE` | configuration | `notice` with the first 8 gap names and their count; the same gaps as the last told (`NotifiedGapsDigest`, reset by `READY`) are not reported again |
+| `PREVIEW_CONFIGURATION_INCOMPATIBLE` | configuration | `notice` with the first 8 gap names and their count; the same gaps as the last told (`NotifiedGapsDigest`, reset by `READY`) are not reported again, and its ID is retained so the next READY can say the configuration is complete |
 | Every other refusal and every `RecordPreviewFailure` | platform | `notice` |
 | `SKIPPED`, `CANCELLED`, a superseded request, a completed source preparation, a stop, a release or a reclamation | none | none |
 
@@ -669,7 +669,8 @@ setting are Studio work that follows.
   `PREVIEW_CONFIGURATION_INCOMPATIBLE` before it starts the Preview, so
   nothing is released: the Preview stays `NOT_STARTED` with the refusal, its
   gaps and the READY preparation, the Session records the configuration
-  notice, and the Preview starts once configured.
+  notice, and the Preview starts once configured with a resolving READY
+  notification in the conversation.
 - `TestPreviewBuildResumesReclaimedInstanceDexIntegration` (`../../`): a
   build on a reclaimed instance resumes a new instance and renders the pinned processes,
   independently of missing Preview configuration.

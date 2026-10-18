@@ -356,7 +356,7 @@ func agentMessage(value conversation.SequencedMessage) *pb.AgentSequencedMessage
 		message.Notification = &pb.AgentNotification{Id: n.ID, Kind: boundary.Enum[pb.AgentNotification_Kind](n.Kind), Source: boundary.Enum[pb.AgentNotification_Source](n.Source),
 			OccurredAt: n.OccurredAt.UTC().Format(time.RFC3339Nano), TaskId: n.TaskID, TaskStatus: boundary.Enum[pb.AgentNotification_TaskStatus](n.TaskStatus), Summary: n.Summary,
 			Outcome: boundary.Enum[pb.AgentNotification_Outcome](n.Outcome.String()), Owner: boundary.Enum[pb.AgentNotification_Owner](n.Owner.String()), Code: n.Code, Phase: n.Phase,
-			Commit: n.Commit, ResourceId: n.ResourceID, Gaps: n.Gaps, GapCount: int32(n.GapCount), Message: n.Message, //nolint:gosec // a notification names a bounded number of gaps
+			Commit: n.Commit, ResourceId: n.ResourceID, ResolvedNoticeId: n.ResolvedNoticeID, Url: n.URL, Gaps: n.Gaps, GapCount: int32(n.GapCount), Message: n.Message, //nolint:gosec // a notification names a bounded number of gaps
 			Remedy: boundary.Enum[pb.FailureRemedy](n.Remedy.String()),
 			Slug:   n.Slug, ConnectorEvent: boundary.Enum[pb.AgentNotification_ConnectorEvent](n.Event.String()), Version: boundary.CommitVersionSnapshot(n.Version)}
 	}

@@ -996,8 +996,9 @@ status; the report the model reads is not projected. It is never a user message.
 the failure, otherwise `notice`), the `owner` who must act (application, configuration or
 platform), the failure's `code` and `phase`, the `commit` it concerns, the `resource_id`
 (the Preview's Sandbox instance, the Release build revision, empty for the Release source,
-or the Deployment), at most the first eight configuration `gaps` (names only) of
-`gap_count`, and the bounded, redacted `message`. The Preview reports its commands and
+or the Deployment), and, for a READY Preview that resolves a configuration notice, its
+`resolved_notice_id` and `url`; it also carries at most the first eight configuration `gaps`
+(names only) of `gap_count`, and the bounded, redacted `message`. The Preview reports its commands and
 automatic deployments; the Live release reports a failed source, build or automatic
 deployment and the Live deployment its failure, except while the Project is being deleted.
 Only an application-owned failure of the Session's HEAD opens an automatic turn, within

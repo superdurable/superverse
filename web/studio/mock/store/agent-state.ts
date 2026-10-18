@@ -170,6 +170,8 @@ export function mockNotification(
     connectorEvent: "CONNECTOR_EVENT_UNSPECIFIED",
     version: null,
     remedy: "FAILURE_REMEDY_UNSPECIFIED",
+    resolvedNoticeId: "",
+    url: "",
     ...value,
   };
 }

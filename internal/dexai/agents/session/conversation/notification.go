@@ -120,11 +120,13 @@ type SessionNotification struct {
 	Phase          string          `json:"phase,omitempty"`
 	Commit         string          `json:"commit,omitempty"`
 	// Version is the version of Commit for a delivery, when it was recorded.
-	Version    *repohost.CommitVersion `json:"version,omitempty"`
-	ResourceID string                  `json:"resource_id,omitempty"`
-	Gaps       []string                `json:"gaps,omitempty"`
-	GapCount   int                     `json:"gap_count,omitempty"`
-	Message    string                  `json:"message,omitempty"`
+	Version          *repohost.CommitVersion `json:"version,omitempty"`
+	ResourceID       string                  `json:"resource_id,omitempty"`
+	ResolvedNoticeID string                  `json:"resolved_notice_id,omitempty"`
+	URL              string                  `json:"url,omitempty"`
+	Gaps             []string                `json:"gaps,omitempty"`
+	GapCount         int                     `json:"gap_count,omitempty"`
+	Message          string                  `json:"message,omitempty"`
 	// Remedy is what the person can do about a delivery failure, which its
 	// code declared.
 	Remedy dexflow.FailureRemedy `json:"remedy,omitzero"`
@@ -239,6 +241,8 @@ func (notification SessionNotification) Validate() error {
 		return errors.New("a delivery notification names its outcome and summary")
 	case notification.Outcome != DeliveryReady && notification.Kind == NotificationKindDelivery && (notification.Code == "" || notification.Owner == DeliveryOwner{}):
 		return errors.New("a delivery failure or notice names its code and owner")
+	case notification.ResolvedNoticeID != "" && (notification.Kind != NotificationKindDelivery || notification.Outcome != DeliveryReady):
+		return errors.New("only a ready delivery resolves a notification")
 	case len(notification.Gaps) > MaximumNotificationGaps || notification.GapCount < len(notification.Gaps):
 		return fmt.Errorf("a notification names at most %d of its gaps", MaximumNotificationGaps)
 	case len(notification.Text()) > limit:
@@ -254,7 +258,8 @@ func (notification SessionNotification) Validate() error {
 type DeliveryOutcome struct{ name string }
 
 var (
-	// DeliveryReady: the deployment serves; it never enters the conversation.
+	// DeliveryReady: the deployment serves. A ready delivery that resolves an
+	// earlier notice enters the conversation; an ordinary one does not.
 	DeliveryReady = DeliveryOutcome{"ready"}
 	// DeliveryFailure: a failure of the application's own source.
 	DeliveryFailure = DeliveryOutcome{"failure"}
@@ -295,10 +300,15 @@ func (notification SessionNotification) OpensPlatformTurn() bool {
 	return notification.Kind == NotificationKindDelivery && notification.Outcome == DeliveryFailure && notification.Owner == DeliveryOwnerApplication
 }
 
-// IsPreviewReady reports a Preview that serves: a delivery that never enters
-// the conversation but holds the Sandbox it serves on.
+// IsPreviewReady reports a Preview that serves and holds the Sandbox it names.
 func (notification SessionNotification) IsPreviewReady() bool {
 	return notification.Kind == NotificationKindDelivery && notification.Source == NotificationSourcePreview && notification.Outcome == DeliveryReady
+}
+
+// IsSilentPreviewReady reports a ready Preview that has no earlier agent
+// notice to resolve, so it does not enter the conversation.
+func (notification SessionNotification) IsSilentPreviewReady() bool {
+	return notification.IsPreviewReady() && notification.ResolvedNoticeID == ""
 }
 
 // AtHead is the notification as the Session records it while head is its

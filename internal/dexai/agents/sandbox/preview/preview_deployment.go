@@ -120,13 +120,14 @@ type DeploymentRecord struct {
 
 // PreviewDeployment is the automatic deployment of the Session's pushed
 // commits. HandledSequence is the newest request that ran or was cancelled,
-// so a commit deploys once; NotifiedGapsDigest names the configuration gaps
-// the Session was last told about, so the same gaps are reported once.
+// so a commit deploys once; NotifiedGapsDigest and NotifiedGapsNoticeID name
+// the configuration gaps and notice the Session was last told about.
 type PreviewDeployment struct {
-	Queued             *QueuedDeployment
-	HandledSequence    int64
-	Last               DeploymentRecord
-	NotifiedGapsDigest string
+	Queued               *QueuedDeployment
+	HandledSequence      int64
+	Last                 DeploymentRecord
+	NotifiedGapsDigest   string
+	NotifiedGapsNoticeID string `json:",omitempty"`
 }
 
 // requestDeployment answers a deployment request under CommandLock and
@@ -443,6 +444,7 @@ func (end commandEnd) status() DeploymentStatus {
 // preparation; never a stop, a reclamation, a skipped deployment, or the same
 // configuration gaps twice in a row.
 func (s *Snapshot) keepReport(command Command, status DeploymentStatus, end commandEnd, now time.Time) bool {
+	resolvedNoticeID := ""
 	switch {
 	case !command.Kind.reports() || status == DeploymentSkipped || status == DeploymentReady && !command.Kind.starts():
 		return false
@@ -453,9 +455,14 @@ func (s *Snapshot) keepReport(command Command, status DeploymentStatus, end comm
 		}
 		s.Deployment.NotifiedGapsDigest = digest
 	case status == DeploymentReady:
+		resolvedNoticeID = s.Deployment.NotifiedGapsNoticeID
 		s.Deployment.NotifiedGapsDigest = ""
+		s.Deployment.NotifiedGapsNoticeID = ""
 	}
-	report := s.deliveryReport(command, status, end, now)
+	report := s.deliveryReport(command, status, end, now, resolvedNoticeID)
+	if status == DeploymentIncompatible {
+		s.Deployment.NotifiedGapsNoticeID = report.ID
+	}
 	s.Report = &report
 	return true
 }
@@ -467,7 +474,7 @@ func (s *Snapshot) keepReport(command Command, status DeploymentStatus, end comm
 // a notice otherwise. The summary names no commit or code, which the
 // notification carries in its own fields. The message is cut until the
 // notification fits its bound.
-func (s Snapshot) deliveryReport(command Command, status DeploymentStatus, end commandEnd, now time.Time) conversation.SessionNotification {
+func (s Snapshot) deliveryReport(command Command, status DeploymentStatus, end commandEnd, now time.Time, resolvedNoticeID string) conversation.SessionNotification {
 	commit := s.outcomeCommit(command)
 	report := conversation.SessionNotification{
 		Kind: conversation.NotificationKindDelivery, Source: conversation.NotificationSourcePreview, OccurredAt: now,
@@ -480,6 +487,10 @@ func (s Snapshot) deliveryReport(command Command, status DeploymentStatus, end c
 	switch {
 	case status == DeploymentReady:
 		report.Outcome, report.Summary = conversation.DeliveryReady, "The Preview is ready."
+		if resolvedNoticeID != "" {
+			report.ResolvedNoticeID, report.URL = resolvedNoticeID, s.Preview.URL
+			report.Summary = previewConfigurationCompleteSummary
+		}
 	case status == DeploymentFailed && end.owner == conversation.DeliveryOwnerApplication:
 		report.Outcome = conversation.DeliveryFailure
 	}
@@ -499,6 +510,8 @@ func (s Snapshot) deliveryReport(command Command, status DeploymentStatus, end c
 
 // maximumSummaryBytes bounds the summary of a report, which Studio shows.
 const maximumSummaryBytes = 512
+
+const previewConfigurationCompleteSummary = "The Preview configuration is complete."
 
 // outcomeCommit is the commit an outcome of command concerns: a deployment's
 // pinned commit, the prepared commit a start runs, or the HEAD a preparation

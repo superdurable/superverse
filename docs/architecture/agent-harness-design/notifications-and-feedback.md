@@ -36,8 +36,10 @@ Other topics own what this one uses:
 - **The source stays the authority.** A notification is a historical copy. The Preview, the
   Release, the Deployment, the subagent record and the command ledger remain readable on their
   own, and the agent reads current state through the platform tools.
-- **Success is silent.** A `delivery` notification with outcome `ready` never enters the
-  conversation and never opens a turn; it only holds the Sandbox the Preview serves on.
+- **Ordinary success is silent.** A `delivery` notification with outcome `ready` normally never
+  enters the conversation and never opens a turn; it holds the Sandbox the Preview serves on. The
+  next READY after a configuration notice instead resolves that notice in the conversation, still
+  without opening a turn.
 - **Automation is bounded.** Sizes, queue length, deduplication memory and the number of
   consecutive automatic turns all have limits. Platform faults never start an automatic turn.
 
@@ -77,7 +79,7 @@ the gap list carries the first names only, and build and application logs are re
 | Kind | Content | Produced by |
 |---|---|---|
 | `task` | `TaskID` (`agent-<id>` or `cmd-<id>`), `TaskStatus`, `Summary`, `Report`. A subagent's report is its final text (a subagent that ended without one passes on why it ended and its last reply), and its notification also carries `Changes`, the result commit and diffstat of the saved worktree, or `ChangesUnsaved` when its end could not save the worktree: the report leads with why, and the summary says that the changes stay in the worktree, where `merge_agent_changes` saves them. A command's report gives the exit code, the end reason (`exit`, `lifetime_limit`, `output_limit` or `lost`) and the output size; the agent reads the output with `read_task_output`. A completed `connector_develop` task also carries its `Contribution` ([connectors](connectors.md#connector-subagents)) | `ReportSubagentOutcome` of the SubagentFlow (through the Service); `AwaitBackgroundCommand` of the Session, when the command's `BackgroundCommandFlow` watch ends |
-| `delivery` | `Outcome` (`ready`, `failure` or `notice`), `Owner` (`application`, `configuration` or `platform`), `Code`, `Phase` (the Preview command kind), `Commit`, `ResourceID` (the instance a Preview ran on, or the Release's build revision or deployment), `Gaps` (at most the first 8 requirement names), `GapCount`, `Summary`, `Message` | `NotifyPreviewOutcome` of the PreviewFlow; `NotifyReleaseFailure` and `NotifyDeploymentFailure` of the delivery Flows |
+| `delivery` | `Outcome` (`ready`, `failure` or `notice`), `Owner` (`application`, `configuration` or `platform`), `Code`, `Phase` (the Preview command kind), `Commit`, `ResourceID` (the instance a Preview ran on, or the Release's build revision or deployment), optional `ResolvedNoticeID` and Preview `URL` on a resolving READY, `Gaps` (at most the first 8 requirement names), `GapCount`, `Summary`, `Message` | `NotifyPreviewOutcome` of the PreviewFlow; `NotifyReleaseFailure` and `NotifyDeploymentFailure` of the delivery Flows |
 | `connector` | `Slug`, `Event` (`pull_request_failed`, `release_candidate_published`, `release_candidate_failed` or `checks_failed`), `Summary`, `Message` | `ReportConnectorEvent` of the connector's `ConnectorContributionFlow`, through the Service ([connectors](connectors.md#the-contribution-branch-and-pull-request)) |
 
 ### Identity and deduplication
@@ -158,8 +160,9 @@ again by its receipt (`workspace/<WorkspaceRequestID>` in `NotificationReceipts`
 
 A Preview that ends READY is not such a report. Its start or deployment returns as a `delivery`
 notification with the outcome `ready`, and the RPC that receives it holds the instance it serves on
-([Admission](#admission)). The notification then enters no conversation entry and opens no turn
-([Consumption](#consumption)).
+([Admission](#admission)). An ordinary ready notification enters no conversation entry and opens no
+turn; one that names a retained configuration `ResolvedNoticeID` enters to confirm that the
+configuration is complete, but still opens no turn ([Consumption](#consumption)).
 
 ### Consumption
 
@@ -171,10 +174,12 @@ notification with the outcome `ready`, and the RPC that receives it holds the in
   the Channel and are taken after the answer.
 - **Stale failures.** A `delivery` failure whose `Commit` is not the Session's HEAD is appended as
   a notice, never as a failure.
-- **`delivery` with outcome `ready`.** Consumed like any other, but not appended and no turn. The Sandbox deadline was already
-  extended to now + `sandbox.previewHold` when the RPC received the notification
-  ([Admission](#admission), [session](session.md#sandbox-deadline)). A task completion consumed
-  here extends the deadline to now + `sandbox.hold`.
+- **`delivery` with outcome `ready`.** Consumed like any other. An ordinary ready notification is
+  not appended and opens no turn; one with `ResolvedNoticeID` is appended to confirm the earlier
+  configuration notice is resolved and also opens no turn. The Sandbox deadline was already extended
+  to now + `sandbox.previewHold` when the RPC received either notification ([Admission](#admission),
+  [session](session.md#sandbox-deadline)). A task completion consumed here extends the deadline to
+  now + `sandbox.hold`.
 - **Termination.** `CompleteProjectSession` cancels the consumers. Pending notifications of a closed
   Session are never consumed; their sources remain readable.
 
@@ -412,8 +417,11 @@ Preview keeps the outcome in `Last`, its failure and its gaps.
 
 - `READY` becomes `ready`; `INCOMPATIBLE` becomes `notice` with the gaps; `FAILED` becomes
   `failure` when its owner is `application` and `notice` otherwise.
-- An `INCOMPATIBLE` outcome whose gap digest equals `NotifiedGapsDigest` is not reported again; a
-  `READY` outcome resets the digest.
+- An `INCOMPATIBLE` outcome whose gap digest equals `NotifiedGapsDigest` is not reported again; its
+  notification ID is retained in `NotifiedGapsNoticeID`. A `READY` outcome resets both values and,
+  when that ID is present, carries it with the commit and Preview URL to resolve the configuration
+  notice in the conversation. Platform-owned notices are not retained: their recovery is not a
+  configuration-completion fact, and a READY cannot identify which transient platform fault it fixes.
 - A manual `start-preview` that reaches `READY` reports `ready`, and the failures of a manual
   `start-preview` or `prepare-preview-source` report like an automatic deployment. A completed
   `prepare-preview-source` reports nothing.
@@ -484,7 +492,7 @@ records it in `PreviewDeployment.Last.Owner` and in the notification kept in `Ou
 | `PREVIEW_MANIFEST_FAILED` with `appmanifest.ErrInvalidAppManifest`: manifest content | application | `failure` |
 | `PREVIEW_CONFIGURATION_INCOMPATIBLE` | configuration | `notice` with the gaps and the Configure link; no turn |
 | `PREVIEW_START_DEADLINE`, `PREVIEW_START_UNAVAILABLE`, `PREVIEW_OWNERSHIP_CONFLICT`, `PREVIEW_HEAD_NOT_READABLE`, `PREVIEW_ROUTE_FAILED`, `PREVIEW_ROUTE_DEADLINE`; `PREVIEW_MANIFEST_FAILED` from a registration or storage failure or the pinned digest check; every exhausted retry and every other `RecordPreviewFailure` (for example `PREVIEW_SOURCE_FAILED`, `PREVIEW_CONFIGURATION_FAILED`, `PREVIEW_ENVIRONMENT_FAILED`); the other `PREVIEW_ENVIRONMENT_*` and `PREVIEW_STATE_*` codes; a refusal of the Step that checks the preparation (`PREVIEW_SOURCE_NOT_PREPARED`); any other code | platform | `notice`; never a turn |
-| Preview `READY` | none | `ready`: no conversation entry |
+| Preview `READY` | none | ordinary `ready`: no conversation entry; a READY resolving `NotifiedGapsNoticeID`: a notice-resolution entry with no automatic turn |
 | `SKIPPED`, `CANCELLED`, a release | none | no notification |
 
 Typed causes: for `StartPreview`, `ErrPreviewSupervisor` is application and
@@ -692,7 +700,7 @@ differences for Preview deployment.
 
 | Attribute | Type | Rules |
 |---|---|---|
-| `PreviewDeployment` | `{Queued *{WorkspaceRequestID, Commit, Sequence, RequestedAt}; HandledSequence int64; Last {CommandID, Commit, Sequence, Status RUNNING, READY, INCOMPATIBLE, FAILED, SKIPPED or CANCELLED, Failure, Owner, UpdatedAt}; NotifiedGapsDigest}` | Changed only under `CommandLock`, by `RequestPreviewDeployment` and by the Steps that end a command or the Preview; `save` never writes it, so a provider Step cannot drop a queued request, and a queuing request writes it alone without a new `Revision`; fixed size; retained for the execution; not indexed; no secret |
+| `PreviewDeployment` | `{Queued *{WorkspaceRequestID, Commit, Sequence, RequestedAt}; HandledSequence int64; Last {CommandID, Commit, Sequence, Status RUNNING, READY, INCOMPATIBLE, FAILED, SKIPPED or CANCELLED, Failure, Owner, UpdatedAt}; NotifiedGapsDigest; optional NotifiedGapsNoticeID}` | Changed only under `CommandLock`, by `RequestPreviewDeployment` and by the Steps that end a command or the Preview; `save` never writes it, so a provider Step cannot drop a queued request, and a queuing request writes it alone without a new `Revision`; fixed size; retained for the execution; not indexed; no secret; an old payload decodes the optional notice ID as empty |
 | `OutcomeReport` | Nullable `*conversation.SessionNotification` | The `delivery` notification of the last reportable outcome, at most 4 KiB. Written only by the Steps that end a command, read by `NotifyPreviewOutcome`; fixed size; retained for the execution; not indexed; no secret, because a failure message is a bounded, redacted cause |
 | `PreviewState.ConfigurationGaps` | `[]appmanifest.RequirementGap`, at most 32, names only | Kept by a stop; cleared when a start or a deployment is admitted |
 
