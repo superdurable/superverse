@@ -40,6 +40,13 @@ numbered lines, at most 2,000 lines and 64 KiB, with the offset to read on from.
 The bundle is read-only: a write, and any path that leaves the roots, is refused.
 Mentioning a path in the prompt does not guarantee it is read.
 
+App Builder's `scripts/` hold the tools of the [workflow import](dex-app-builder/references/workflow-import.md),
+an n8n export inventory and golden harnesses. They need the image's `python3`
+standard library and `node`, plus the npm packages (Luxon, `cron`) a golden asks
+for, which the Agent installs in the workspace. The Agent runs them by their
+installed path with `bash`, and they write only where their arguments point,
+inside the workspace.
+
 ## Why this is outside the application template
 
 An example of [app-template/](../app-template/examples/README.md), the default text summary or the one

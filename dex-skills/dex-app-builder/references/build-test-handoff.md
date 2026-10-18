@@ -64,7 +64,7 @@ management controls, and regenerate both clients.
 For **Custom UI**, implement the requested pages, fields and actions directly.
 Only when a consequential interaction choice remains unresolved, use the
 optional static checkpoint in
-[UI workflow](ui-workflow.md-resolve-material-interaction-choices); the user
+[UI workflow](ui-workflow.md#1-resolve-material-interaction-choices); the user
 opens the pushed pages in Studio Preview, not through a sandbox dev server. Do
 not introduce a mock server, model lifecycle states, generate visual assets, or
 polish the surface before the page inventory is confirmed.

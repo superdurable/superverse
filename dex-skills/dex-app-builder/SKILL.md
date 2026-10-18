@@ -1,6 +1,6 @@
 ---
 name: dex-app-builder
-description: Primary entry point for designing and building Dex applications and process products on the Superverse go-react-v1 application template. Use for Dex product, application, or workflow requests. Orchestrates business discovery, the UI decision, Go backend implementation, connector integration, source verification, and Superverse Studio handoff.
+description: Primary entry point for designing and building Dex applications and process products on the Superverse go-react-v1 application template. Use for Dex product, application, or workflow requests, including importing an exported n8n workflow or reading an image of an existing process. Orchestrates business discovery, the UI decision, Go backend implementation, connector integration, source verification, and Superverse Studio handoff.
 ---
 
 # Dex App Builder
@@ -101,6 +101,8 @@ external integration, text generation, Trigger ingress or hosted configuration.
 
 | Decision | Reference and scope |
 | --- | --- |
+| Exported workflow from another automation tool, such as n8n JSON | [Workflow import](references/workflow-import.md): fidelity ledger, secrets first, Dex redesign proposals with one optimize-or-exact question, golden parity, then the normal stages |
+| An image of an existing process: a flowchart, BPMN or swimlane diagram, whiteboard photo, or a screenshot of an n8n, Zapier or Make canvas | [Process images](references/process-images.md): read it as a description of what to build; what it leaves uncertain becomes a question |
 | Missing business requirements, actors or ownership | [Business contract](references/business-contract.md); record concise decisions instead of requesting already supplied facts |
 | Participant/custom UI or management coverage | [Application surface](references/application-surface.md) and [UI workflow](references/ui-workflow.md); clear requests need no extra static-wireframe approval |
 | Go Flow rendering, Summary/Display, Start input or Inbox Actions | [FDG authoring](references/fdg-authoring.md): exact syntax and focused diagnostics |
