@@ -20,8 +20,10 @@ var regexMap = map[string]ogenregex.Regexp{
 	"^[A-Z][A-Za-z0-9]*$":                    ogenregex.MustCompile("^[A-Z][A-Za-z0-9]*$"),
 	"^[A-Z][A-Za-z0-9]*Flow$":                ogenregex.MustCompile("^[A-Z][A-Za-z0-9]*Flow$"),
 	"^[a-z0-9](?:[a-z0-9-]{0,34}[a-z0-9])?$": ogenregex.MustCompile("^[a-z0-9](?:[a-z0-9-]{0,34}[a-z0-9])?$"),
+	"^[a-z0-9]{12}$":                         ogenregex.MustCompile("^[a-z0-9]{12}$"),
 	"^[a-z][a-z0-9-]{0,31}$":                 ogenregex.MustCompile("^[a-z][a-z0-9-]{0,31}$"),
 	"^[a-z][a-z0-9-]{1,62}$":                 ogenregex.MustCompile("^[a-z][a-z0-9-]{1,62}$"),
+	"^s[1-9][0-9]{0,2}$":                     ogenregex.MustCompile("^s[1-9][0-9]{0,2}$"),
 }
 
 // Ref: #
@@ -2034,6 +2036,52 @@ func (o OptOpenTaskWorktree) Or(d OpenTaskWorktree) OpenTaskWorktree {
 	return d
 }
 
+// NewOptPlaceAttachment returns new OptPlaceAttachment with value set to v.
+func NewOptPlaceAttachment(v PlaceAttachment) OptPlaceAttachment {
+	return OptPlaceAttachment{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptPlaceAttachment is optional PlaceAttachment.
+type OptPlaceAttachment struct {
+	Value PlaceAttachment
+	Set   bool
+}
+
+// IsSet returns true if OptPlaceAttachment was set.
+func (o OptPlaceAttachment) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptPlaceAttachment) Reset() {
+	var v PlaceAttachment
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptPlaceAttachment) SetTo(v PlaceAttachment) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptPlaceAttachment) Get() (v PlaceAttachment, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptPlaceAttachment) Or(d PlaceAttachment) PlaceAttachment {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptRead returns new OptRead with value set to v.
 func NewOptRead(v Read) OptRead {
 	return OptRead{
@@ -2074,6 +2122,52 @@ func (o OptRead) Get() (v Read, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptRead) Or(d Read) Read {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptReadAttachment returns new OptReadAttachment with value set to v.
+func NewOptReadAttachment(v ReadAttachment) OptReadAttachment {
+	return OptReadAttachment{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptReadAttachment is optional ReadAttachment.
+type OptReadAttachment struct {
+	Value ReadAttachment
+	Set   bool
+}
+
+// IsSet returns true if OptReadAttachment was set.
+func (o OptReadAttachment) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptReadAttachment) Reset() {
+	var v ReadAttachment
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptReadAttachment) SetTo(v ReadAttachment) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptReadAttachment) Get() (v ReadAttachment, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptReadAttachment) Or(d ReadAttachment) ReadAttachment {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -2863,6 +2957,22 @@ func (o OptWriteTodos) Or(d WriteTodos) WriteTodos {
 }
 
 // Ref: #
+type PlaceAttachment struct {
+	// The ID of a JSON file the user attached, as its frame or the attachments section names it.
+	AttachmentID string `json:"attachment_id"`
+}
+
+// GetAttachmentID returns the value of AttachmentID.
+func (s *PlaceAttachment) GetAttachmentID() string {
+	return s.AttachmentID
+}
+
+// SetAttachmentID sets the value of AttachmentID.
+func (s *PlaceAttachment) SetAttachmentID(val string) {
+	s.AttachmentID = val
+}
+
+// Ref: #
 type Read struct {
 	// The file to read: relative to the workspace root, or absolute in the workspace or in a read-only
 	// root (installed skills under /opt/superverse/dex-skills, a Go module directory from go list -m -f
@@ -2902,6 +3012,48 @@ func (s *Read) SetOffset(val OptInt) {
 // SetLimit sets the value of Limit.
 func (s *Read) SetLimit(val OptInt) {
 	s.Limit = val
+}
+
+// Ref: #
+type ReadAttachment struct {
+	// The ID of a document or JSON file the user attached, as its frame or the attachments section names
+	// it.
+	AttachmentID string `json:"attachment_id"`
+	// A document's section to read, such as s8; without it a document returns its outline and a JSON file
+	// its text.
+	Section OptString `json:"section"`
+	// The 32 KiB part to read of a section or a JSON file that is longer; 1 when omitted.
+	Part OptInt `json:"part"`
+}
+
+// GetAttachmentID returns the value of AttachmentID.
+func (s *ReadAttachment) GetAttachmentID() string {
+	return s.AttachmentID
+}
+
+// GetSection returns the value of Section.
+func (s *ReadAttachment) GetSection() OptString {
+	return s.Section
+}
+
+// GetPart returns the value of Part.
+func (s *ReadAttachment) GetPart() OptInt {
+	return s.Part
+}
+
+// SetAttachmentID sets the value of AttachmentID.
+func (s *ReadAttachment) SetAttachmentID(val string) {
+	s.AttachmentID = val
+}
+
+// SetSection sets the value of Section.
+func (s *ReadAttachment) SetSection(val OptString) {
+	s.Section = val
+}
+
+// SetPart sets the value of Part.
+func (s *ReadAttachment) SetPart(val OptInt) {
+	s.Part = val
 }
 
 // Ref: #
@@ -3866,6 +4018,8 @@ type ToolInputs struct {
 	ReadPlatformFlowInput            OptReadPlatformFlow            `json:"ReadPlatformFlowInput"`
 	ReadLiveAppRunsInput             OptReadLiveAppRuns             `json:"ReadLiveAppRunsInput"`
 	ReadConnectorChecksInput         OptReadConnectorChecks         `json:"ReadConnectorChecksInput"`
+	ReadAttachmentInput              OptReadAttachment              `json:"ReadAttachmentInput"`
+	PlaceAttachmentInput             OptPlaceAttachment             `json:"PlaceAttachmentInput"`
 	RequestUserInputInput            OptRequestUserInput            `json:"RequestUserInputInput"`
 	WriteTodosInput                  OptWriteTodos                  `json:"WriteTodosInput"`
 	StartAgentInput                  OptStartAgent                  `json:"StartAgentInput"`
@@ -3959,6 +4113,16 @@ func (s *ToolInputs) GetReadLiveAppRunsInput() OptReadLiveAppRuns {
 // GetReadConnectorChecksInput returns the value of ReadConnectorChecksInput.
 func (s *ToolInputs) GetReadConnectorChecksInput() OptReadConnectorChecks {
 	return s.ReadConnectorChecksInput
+}
+
+// GetReadAttachmentInput returns the value of ReadAttachmentInput.
+func (s *ToolInputs) GetReadAttachmentInput() OptReadAttachment {
+	return s.ReadAttachmentInput
+}
+
+// GetPlaceAttachmentInput returns the value of PlaceAttachmentInput.
+func (s *ToolInputs) GetPlaceAttachmentInput() OptPlaceAttachment {
+	return s.PlaceAttachmentInput
 }
 
 // GetRequestUserInputInput returns the value of RequestUserInputInput.
@@ -4084,6 +4248,16 @@ func (s *ToolInputs) SetReadLiveAppRunsInput(val OptReadLiveAppRuns) {
 // SetReadConnectorChecksInput sets the value of ReadConnectorChecksInput.
 func (s *ToolInputs) SetReadConnectorChecksInput(val OptReadConnectorChecks) {
 	s.ReadConnectorChecksInput = val
+}
+
+// SetReadAttachmentInput sets the value of ReadAttachmentInput.
+func (s *ToolInputs) SetReadAttachmentInput(val OptReadAttachment) {
+	s.ReadAttachmentInput = val
+}
+
+// SetPlaceAttachmentInput sets the value of PlaceAttachmentInput.
+func (s *ToolInputs) SetPlaceAttachmentInput(val OptPlaceAttachment) {
+	s.PlaceAttachmentInput = val
 }
 
 // SetRequestUserInputInput sets the value of RequestUserInputInput.
@@ -8421,6 +8595,39 @@ func (s *OptOpenTaskWorktree) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes PlaceAttachment as json.
+func (o OptPlaceAttachment) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes PlaceAttachment from json.
+func (o *OptPlaceAttachment) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptPlaceAttachment to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptPlaceAttachment) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptPlaceAttachment) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes Read as json.
 func (o OptRead) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -8450,6 +8657,39 @@ func (s OptRead) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptRead) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ReadAttachment as json.
+func (o OptReadAttachment) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes ReadAttachment from json.
+func (o *OptReadAttachment) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptReadAttachment to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptReadAttachment) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptReadAttachment) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -9018,6 +9258,102 @@ func (s *OptWriteTodos) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *PlaceAttachment) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *PlaceAttachment) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("attachment_id")
+		e.Str(s.AttachmentID)
+	}
+}
+
+var jsonFieldsNameOfPlaceAttachment = [1]string{
+	0: "attachment_id",
+}
+
+// Decode decodes PlaceAttachment from json.
+func (s *PlaceAttachment) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode PlaceAttachment to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "attachment_id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.AttachmentID = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"attachment_id\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode PlaceAttachment")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfPlaceAttachment) {
+					name = jsonFieldsNameOfPlaceAttachment[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *PlaceAttachment) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *PlaceAttachment) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *Read) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -9144,6 +9480,136 @@ func (s *Read) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *Read) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ReadAttachment) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ReadAttachment) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("attachment_id")
+		e.Str(s.AttachmentID)
+	}
+	{
+		if s.Section.Set {
+			e.FieldStart("section")
+			s.Section.Encode(e)
+		}
+	}
+	{
+		if s.Part.Set {
+			e.FieldStart("part")
+			s.Part.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfReadAttachment = [3]string{
+	0: "attachment_id",
+	1: "section",
+	2: "part",
+}
+
+// Decode decodes ReadAttachment from json.
+func (s *ReadAttachment) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ReadAttachment to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "attachment_id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.AttachmentID = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"attachment_id\"")
+			}
+		case "section":
+			if err := func() error {
+				s.Section.Reset()
+				if err := s.Section.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"section\"")
+			}
+		case "part":
+			if err := func() error {
+				s.Part.Reset()
+				if err := s.Part.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"part\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ReadAttachment")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfReadAttachment) {
+					name = jsonFieldsNameOfReadAttachment[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ReadAttachment) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ReadAttachment) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -11452,6 +11918,18 @@ func (s *ToolInputs) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.ReadAttachmentInput.Set {
+			e.FieldStart("ReadAttachmentInput")
+			s.ReadAttachmentInput.Encode(e)
+		}
+	}
+	{
+		if s.PlaceAttachmentInput.Set {
+			e.FieldStart("PlaceAttachmentInput")
+			s.PlaceAttachmentInput.Encode(e)
+		}
+	}
+	{
 		if s.RequestUserInputInput.Set {
 			e.FieldStart("RequestUserInputInput")
 			s.RequestUserInputInput.Encode(e)
@@ -11501,7 +11979,7 @@ func (s *ToolInputs) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfToolInputs = [25]string{
+var jsonFieldsNameOfToolInputs = [27]string{
 	0:  "ConnectorCatalogInput",
 	1:  "CommitAndPushInput",
 	2:  "ConfirmRequirementsInput",
@@ -11519,14 +11997,16 @@ var jsonFieldsNameOfToolInputs = [25]string{
 	14: "ReadPlatformFlowInput",
 	15: "ReadLiveAppRunsInput",
 	16: "ReadConnectorChecksInput",
-	17: "RequestUserInputInput",
-	18: "WriteTodosInput",
-	19: "StartAgentInput",
-	20: "StartConnectorContributionInput",
-	21: "SubmitConnectorContributionInput",
-	22: "OpenTaskWorktreeInput",
-	23: "MergeTaskWorktreeInput",
-	24: "MergeAgentChangesInput",
+	17: "ReadAttachmentInput",
+	18: "PlaceAttachmentInput",
+	19: "RequestUserInputInput",
+	20: "WriteTodosInput",
+	21: "StartAgentInput",
+	22: "StartConnectorContributionInput",
+	23: "SubmitConnectorContributionInput",
+	24: "OpenTaskWorktreeInput",
+	25: "MergeTaskWorktreeInput",
+	26: "MergeAgentChangesInput",
 }
 
 // Decode decodes ToolInputs from json.
@@ -11706,6 +12186,26 @@ func (s *ToolInputs) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"ReadConnectorChecksInput\"")
+			}
+		case "ReadAttachmentInput":
+			if err := func() error {
+				s.ReadAttachmentInput.Reset()
+				if err := s.ReadAttachmentInput.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"ReadAttachmentInput\"")
+			}
+		case "PlaceAttachmentInput":
+			if err := func() error {
+				s.PlaceAttachmentInput.Reset()
+				if err := s.PlaceAttachmentInput.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"PlaceAttachmentInput\"")
 			}
 		case "RequestUserInputInput":
 			if err := func() error {
@@ -14738,6 +15238,41 @@ func (s *OpenTaskWorktree) Validate() error {
 	return nil
 }
 
+func (s *PlaceAttachment) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:     0,
+			MinLengthSet:  false,
+			MaxLength:     0,
+			MaxLengthSet:  false,
+			Email:         false,
+			Hostname:      false,
+			Regex:         regexMap["^[a-z0-9]{12}$"],
+			MinNumeric:    0,
+			MinNumericSet: false,
+			MaxNumeric:    0,
+			MaxNumericSet: false,
+		}).Validate(string(s.AttachmentID)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "attachment_id",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *Read) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -14820,6 +15355,99 @@ func (s *Read) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "limit",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *ReadAttachment) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:     0,
+			MinLengthSet:  false,
+			MaxLength:     0,
+			MaxLengthSet:  false,
+			Email:         false,
+			Hostname:      false,
+			Regex:         regexMap["^[a-z0-9]{12}$"],
+			MinNumeric:    0,
+			MinNumericSet: false,
+			MaxNumeric:    0,
+			MaxNumericSet: false,
+		}).Validate(string(s.AttachmentID)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "attachment_id",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Section.Get(); ok {
+			if err := func() error {
+				if err := (validate.String{
+					MinLength:     0,
+					MinLengthSet:  false,
+					MaxLength:     0,
+					MaxLengthSet:  false,
+					Email:         false,
+					Hostname:      false,
+					Regex:         regexMap["^s[1-9][0-9]{0,2}$"],
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(value)); err != nil {
+					return errors.Wrap(err, "string")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "section",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Part.Get(); ok {
+			if err := func() error {
+				if err := (validate.Int{
+					MinSet:        true,
+					Min:           1,
+					MaxSet:        true,
+					Max:           4096,
+					MinExclusive:  false,
+					MaxExclusive:  false,
+					MultipleOfSet: false,
+					MultipleOf:    0,
+					Pattern:       nil,
+				}).Validate(int64(value)); err != nil {
+					return errors.Wrap(err, "int")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "part",
 			Error: err,
 		})
 	}
@@ -16398,6 +17026,42 @@ func (s *ToolInputs) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "ReadConnectorChecksInput",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.ReadAttachmentInput.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "ReadAttachmentInput",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.PlaceAttachmentInput.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "PlaceAttachmentInput",
 			Error: err,
 		})
 	}

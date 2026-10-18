@@ -52,8 +52,12 @@ dex:
   workerAddress: 127.0.0.1:25051
   workerTarget: host.docker.internal:25051
 
+# The browser on this machine reaches the platform MinIO on the loopback too, so
+# presigned uploads and downloads name the same endpoint; MinIO answers CORS
+# preflights from any origin by default.
 storage:
   s3Endpoint: http://127.0.0.1:27000
+  browserEndpoint: http://127.0.0.1:27000
   artifactBucket: superverse-v2-artifacts
 
 # The platform PostgreSQL container publishes its port here, on the loopback.

@@ -17,17 +17,23 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"path"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
 	"github.com/superdurable/superversev2/internal/comm/platform"
 )
 
 const MaxObjectBytes = 32 << 20
+
+// digestMetadata is the user metadata key of every object's SHA-256 digest in
+// hex, x-amz-meta-sha256 on the wire, which writes and copies carry.
+const digestMetadata = "sha256"
 
 var errImmutableConflict = errors.New("immutable object identity has different content")
 var errInvalidObject = errors.New("object version or digest is invalid")
@@ -39,15 +45,25 @@ var ErrNotFound = errors.New("object does not exist")
 type S3API interface {
 	PutObject(context.Context, *s3.PutObjectInput, ...func(*s3.Options)) (*s3.PutObjectOutput, error)
 	GetObject(context.Context, *s3.GetObjectInput, ...func(*s3.Options)) (*s3.GetObjectOutput, error)
+	HeadObject(context.Context, *s3.HeadObjectInput, ...func(*s3.Options)) (*s3.HeadObjectOutput, error)
+	CopyObject(context.Context, *s3.CopyObjectInput, ...func(*s3.Options)) (*s3.CopyObjectOutput, error)
 	DeleteObject(context.Context, *s3.DeleteObjectInput, ...func(*s3.Options)) (*s3.DeleteObjectOutput, error)
 	ListObjectVersions(context.Context, *s3.ListObjectVersionsInput, ...func(*s3.Options)) (*s3.ListObjectVersionsOutput, error)
 }
 
-// The media types of the objects the platform stores.
+// MediaType is the media type of a stored object, which ObjectRef records as
+// a plain string. The platform's own objects have the media types below; an
+// uploaded file keeps the one its format declares (internal/comm/fileextract).
+type MediaType = string
+
+// The media types of the objects the platform writes.
 const (
-	MediaTypeJSON = "application/json"
-	MediaTypeYAML = "application/yaml"
-	MediaTypeZip  = "application/zip"
+	MediaTypeJSON MediaType = comm.MediaTypeJSON
+	MediaTypeYAML MediaType = "application/yaml"
+	MediaTypeZip  MediaType = "application/zip"
+	// MediaTypeRendition is a rendition: the exact JSON of one Claude content
+	// block, which a model request carries byte for byte.
+	MediaTypeRendition MediaType = "application/vnd.superverse.content-block+json"
 )
 
 // ObjectRef is persisted in Flow state and build records as plain JSON under
@@ -62,6 +78,8 @@ type ObjectRef struct {
 type Store struct {
 	client                S3API
 	bucket, keyID, prefix string
+	// presigner signs the browser's transfers; only the platform store has one.
+	presigner PresignAPI
 }
 
 // NewStore confines a store to one platform environment prefix; every caller
@@ -157,7 +175,7 @@ func (s *Store) Put(ctx context.Context, key, mediaType string, data []byte) (Ob
 	if !isMissing(err) {
 		return ObjectRef{}, err
 	}
-	input := &s3.PutObjectInput{Bucket: &s.bucket, Key: &fullKey, Body: bytes.NewReader(data), ContentType: &mediaType, IfNoneMatch: aws.String("*"), Metadata: map[string]string{"sha256": strings.TrimPrefix(digest, "sha256:")}}
+	input := &s3.PutObjectInput{Bucket: &s.bucket, Key: &fullKey, Body: bytes.NewReader(data), ContentType: &mediaType, IfNoneMatch: aws.String("*"), Metadata: map[string]string{digestMetadata: strings.TrimPrefix(digest, "sha256:")}}
 	if s.keyID != "" {
 		input.ServerSideEncryption = types.ServerSideEncryptionAwsKms
 		input.SSEKMSKeyId = &s.keyID
@@ -214,6 +232,70 @@ func (s *Store) Delete(ctx context.Context, ref ObjectRef) error {
 	return nil
 }
 
+// CopyVersion copies the exact version of source to key, below the store's
+// prefix, inside storage: the bytes never leave it, and the copy keeps the
+// source's metadata and so its digest. It reads before it writes: a key that
+// already holds source's digest and media type is the copy, which a retry
+// after an uncertain response answers, and a key holding other content is an
+// immutable conflict. A source version that no longer exists, and has no copy
+// at key, is ErrNotFound.
+func (s *Store) CopyVersion(ctx context.Context, source ObjectRef, key string) (ObjectRef, error) {
+	if err := s.validRef(source); err != nil {
+		return ObjectRef{}, err
+	}
+	if !validKey(key) {
+		return ObjectRef{}, fmt.Errorf("%w: key %q is not writable", errInvalidObject, key)
+	}
+	fullKey := s.prefix + key
+	if existing, err := s.inspectCopy(ctx, fullKey, source); !errors.Is(err, ErrNotFound) {
+		return existing, err
+	}
+	copySource := (&url.URL{Path: s.bucket + "/" + source.Key}).EscapedPath() + "?versionId=" + url.QueryEscape(source.Version)
+	input := &s3.CopyObjectInput{Bucket: &s.bucket, Key: &fullKey, CopySource: &copySource, MetadataDirective: types.MetadataDirectiveCopy}
+	if s.keyID != "" {
+		input.ServerSideEncryption = types.ServerSideEncryptionAwsKms
+		input.SSEKMSKeyId = &s.keyID
+	}
+	result, err := s.client.CopyObject(ctx, input)
+	if err != nil {
+		if observed, readErr := s.inspectCopy(ctx, fullKey, source); readErr == nil {
+			return observed, nil
+		} else if errors.Is(readErr, errImmutableConflict) {
+			return ObjectRef{}, readErr
+		}
+		if isMissing(err) {
+			return ObjectRef{}, fmt.Errorf("%w: %s version %s: %w", ErrNotFound, source.Key, source.Version, err)
+		}
+		return ObjectRef{}, fmt.Errorf("copy of %s version %s to %s remains unconfirmed: %w", source.Key, source.Version, fullKey, err)
+	}
+	version := aws.ToString(result.VersionId)
+	if !IsVersion(version) {
+		return ObjectRef{}, fmt.Errorf("%w: the copy to %s returned version %q", errUnversioned, fullKey, version)
+	}
+	return ObjectRef{Key: fullKey, Version: version, Digest: source.Digest, MediaType: source.MediaType}, nil
+}
+
+// inspectCopy reads the head of the current version of key and accepts it only
+// as a copy of source: the digest its metadata records and the media type. Only
+// the store writes that metadata, and every read verifies the digest anyway.
+func (s *Store) inspectCopy(ctx context.Context, key string, source ObjectRef) (ObjectRef, error) {
+	result, err := s.client.HeadObject(ctx, &s3.HeadObjectInput{Bucket: &s.bucket, Key: &key})
+	if isMissing(err) {
+		return ObjectRef{}, fmt.Errorf("%w: %s: %w", ErrNotFound, key, err)
+	}
+	if err != nil {
+		return ObjectRef{}, fmt.Errorf("read the head of %s: %w", key, err)
+	}
+	if digest := "sha256:" + result.Metadata[digestMetadata]; digest != source.Digest || aws.ToString(result.ContentType) != source.MediaType {
+		return ObjectRef{}, fmt.Errorf("%w: %s holds %s of type %q, not a copy of %s version %s", errImmutableConflict, key, digest, aws.ToString(result.ContentType), source.Key, source.Version)
+	}
+	version := aws.ToString(result.VersionId)
+	if !IsVersion(version) {
+		return ObjectRef{}, fmt.Errorf("%w: %s has version %q", errUnversioned, key, version)
+	}
+	return ObjectRef{Key: key, Version: version, Digest: source.Digest, MediaType: source.MediaType}, nil
+}
+
 // inspect reads the current version of key and accepts it only with the exact
 // digest and media type.
 func (s *Store) inspect(ctx context.Context, key, mediaType, digest string) (ObjectRef, error) {
@@ -268,7 +350,7 @@ func readObject(result *s3.GetObjectOutput, key string) ([]byte, error) {
 }
 
 func isMissing(err error) bool {
-	return platform.HasAWSErrorCode(err, "NoSuchKey", "NotFound")
+	return platform.HasAWSErrorCode(err, "NoSuchKey", "NoSuchVersion", "NotFound")
 }
 
 // Digest is the content identity every ObjectRef carries.

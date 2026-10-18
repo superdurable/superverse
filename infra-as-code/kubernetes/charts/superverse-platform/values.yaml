@@ -16,9 +16,11 @@ server:
   # into the <product>-server-config ConfigMap. Non-secret settings only; the chart fills the
   # addresses it owns and fixes environment, localKind and the sandbox profile.
   config: {}
+  # The limit holds 1 GiB for the file extractor child, which the server runs one at a time and which bounds its own
+  # address space to 1 GiB beyond its start (internal/comm/fileextract).
   resources:
     requests: {cpu: 250m, memory: 256Mi}
-    limits: {cpu: "2", memory: 2Gi}
+    limits: {cpu: "2", memory: 3Gi}
 studio:
   enabled: true
   image: {repository: "", digest: "", pullPolicy: IfNotPresent}

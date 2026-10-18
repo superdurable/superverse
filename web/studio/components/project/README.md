@@ -5,7 +5,7 @@ Purpose: The Project pages: the start form, Project creation, Project details, t
 
 Importers: `app` and `mock/surface` import this directory.
 
-Imports: it imports `components/build`, `components/flow/scope`, `components/frame`, `components/project/**` (4), `components/publishing/**` (2), `components/session/**` (4), `components/shell/palette`, `components/teamspace`, `components/ui/**` (4), `lib/api/**` (3), `lib/browser`, `lib/flow`, `lib/generated/protobuf`, `lib/project/**` (3), `lib/session/**` (2), `lib/shared/**` (3) and `lib/teamspace`.
+Imports: it imports `components/build`, `components/flow/scope`, `components/frame`, `components/project/**` (4), `components/publishing/**` (2), `components/session/**` (5), `components/shell/palette`, `components/teamspace`, `components/ui/**` (4), `lib/api/**` (3), `lib/browser`, `lib/flow`, `lib/generated/protobuf`, `lib/project/**` (3), `lib/session/**` (3), `lib/shared/**` (3) and `lib/teamspace`.
 
 ```mermaid
 flowchart LR
@@ -17,7 +17,7 @@ flowchart LR
   self --> d2["components/frame"]
   self --> d3["components/project/** (4)"]
   self --> d4["components/publishing/** (2)"]
-  self --> d5["components/session/** (4)"]
+  self --> d5["components/session/** (5)"]
   self --> d6["components/shell/palette"]
   self --> d7["components/teamspace"]
   self --> d8["components/ui/** (4)"]
@@ -26,7 +26,7 @@ flowchart LR
   self --> d11["lib/flow"]
   self --> d12["lib/generated/protobuf"]
   self --> d13["lib/project/** (3)"]
-  self --> d14["lib/session/** (2)"]
+  self --> d14["lib/session/** (3)"]
   self --> d15["lib/shared/** (3)"]
   self --> d16["lib/teamspace"]
 ```

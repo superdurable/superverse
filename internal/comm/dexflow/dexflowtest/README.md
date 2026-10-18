@@ -77,5 +77,8 @@ that is closed, let it fail, and then serve the target.
 allows one bounded replacement with a fresh Worker, registry and blob cache on that port. It stops
 only that Worker; it never replaces the merged platform server. The test must complete or terminate
 its disposable executions before final cleanup, including on failure, so none remains pinned to the
-closed port. Use `RestartServerForTest` separately for an explicitly authorized merged-server
-replacement on the owned local lane.
+closed port. `WorkerClientWithCrashForTest` is the same with a replacement that, as a crash of
+the Worker does, cuts the handlers still running on the first Worker after its ten-second stop, so
+their attempts are lost and the engine runs them again on the fresh Worker. Use
+`RestartServerForTest` separately for an explicitly authorized merged-server replacement on the
+owned local lane.

@@ -26,8 +26,10 @@ import (
 
 	"golang.org/x/mod/semver"
 
+	"github.com/superdurable/superversev2/internal/comm/fileextract"
 	"github.com/superdurable/superversev2/internal/comm/platform/deploymentnames"
 	"github.com/superdurable/superversev2/internal/comm/platform/eventqueue"
+	"github.com/superdurable/superversev2/internal/comm/platform/objectstore"
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/projects/infra"
@@ -163,6 +165,15 @@ func (c Config) Validate() error {
 	if c.Storage.S3Endpoint != "" && !c.LocalKind {
 		fail("storage.s3Endpoint is restricted to Local Kind")
 	}
+	// Presigned URLs name the browser endpoint, or the AWS regional endpoint
+	// without one, so a storage endpoint of its own needs the browser's.
+	if c.Storage.BrowserEndpoint == "" && c.Storage.S3Endpoint != "" {
+		fail("storage.browserEndpoint is required with storage.s3Endpoint")
+	}
+	if browser, parseErr := url.Parse(c.Storage.BrowserEndpoint); c.Storage.BrowserEndpoint != "" && (parseErr != nil || !validOrigin(c.Storage.BrowserEndpoint) || browser.Scheme == "http" && !c.LocalKind) {
+		fail("storage.browserEndpoint must be an http or https origin, http only in the local lanes")
+	}
+	problems = append(problems, c.validateAttachments()...)
 	provider, providerErr := repohost.ParseProvider(c.RepositoryHost)
 	if providerErr != nil {
 		fail("repohost: %v", providerErr)
@@ -203,6 +214,73 @@ func (c Config) Validate() error {
 		fail("native is accepted only with runtime docker")
 	}
 	return errors.Join(problems...)
+}
+
+// validateAttachments checks the bounds of attachments: what one file, one
+// message and one context segment may hold, how long uploads wait and stay
+// staged, the quotas and the rendition cache.
+func (c Config) validateAttachments() []error {
+	var problems []error
+	fail := func(format string, args ...any) { problems = append(problems, fmt.Errorf(format, args...)) }
+	a := c.Attachments
+	// The Session refuses a message with more than ten attachments.
+	if !between(a.MaxPerMessage, 1, 10) {
+		fail("attachments.maxPerMessage must be an integer from 1 to 10")
+	}
+	if !between(a.ImageLongEdge, 256, 2000) {
+		fail("attachments.imageLongEdge must be an integer from 256 to 2000")
+	}
+	if !between(a.ImageMaxBytes, 64<<10, 4<<20) {
+		fail("attachments.imageMaxBytes must be from 64 KiB to 4 MiB")
+	}
+	if !between(a.DocumentMaxBytes, 1<<20, 30<<20) {
+		fail("attachments.documentMaxBytes must be from 1 MiB to 30 MiB, below the %d MiB object limit", objectstore.MaxObjectBytes>>20)
+	}
+	if !between(a.JSONMaxBytes, 64<<10, fileextract.MaxJSONBytes) {
+		fail("attachments.jsonMaxBytes must be from 64 KiB to %d MiB", fileextract.MaxJSONBytes>>20)
+	}
+	if !between(a.MessageInlineText, 16<<10, 256<<10) {
+		fail("attachments.messageInlineText must be from 16 KiB to 256 KiB")
+	}
+	// One message's attachments always fit a fresh segment, which a compaction opens for them: their
+	// rendered blocks, images as base64, and their images.
+	worst := conversation.MessageAttachmentBytes(a.MaxPerMessage, a.ImageMaxBytes, int64(a.MessageInlineText))
+	if !between(a.SegmentBytes, 1<<20, 24<<20) {
+		fail("attachments.segmentBytes must be from 1 MiB to 24 MiB")
+	} else if worst > a.SegmentBytes {
+		fail("one message of attachments.maxPerMessage attachments renders up to %d bytes (images of attachments.imageMaxBytes as base64, "+
+			"documents within attachments.messageInlineText), which must fit attachments.segmentBytes (%d)", worst, a.SegmentBytes)
+	}
+	if !between(a.SegmentImages, 1, 90) {
+		fail("attachments.segmentImages must be an integer from 1 to 90")
+	} else if a.MaxPerMessage > a.SegmentImages {
+		fail("attachments.maxPerMessage must not exceed attachments.segmentImages, so that the images of one message fit a fresh segment")
+	}
+	if !between(a.UploadWait, time.Minute, 24*time.Hour) {
+		fail("attachments.uploadWait must be a duration from 1m0s to 24h0m0s")
+	}
+	if !between(a.StagingRetention, time.Hour, 72*time.Hour) {
+		fail("attachments.stagingRetention must be a duration from 1h0m0s to 72h0m0s")
+	}
+	if !between(a.TeamSpaceStagedFiles, 10, 2000) {
+		fail("attachments.teamSpaceStagedFiles must be an integer from 10 to 2000")
+	}
+	if !between(a.TeamSpaceStagedBytes, 100<<20, 20<<30) {
+		fail("attachments.teamSpaceStagedBytes must be from 100 MiB to 20 GiB")
+	}
+	if !between(a.ProjectLifetimeFiles, 10, 10_000) {
+		fail("attachments.projectLifetimeFiles must be an integer from 10 to 10000")
+	}
+	if !between(a.ProjectLifetimeBytes, 100<<20, 20<<30) {
+		fail("attachments.projectLifetimeBytes must be from 100 MiB to 20 GiB")
+	}
+	if largest := max(a.ImageMaxBytes, a.DocumentMaxBytes, a.JSONMaxBytes); largest > a.TeamSpaceStagedBytes || largest > a.ProjectLifetimeBytes {
+		fail("attachments.teamSpaceStagedBytes and attachments.projectLifetimeBytes must each hold the largest file a kind admits")
+	}
+	if !between(a.RenditionCacheBytes, 16<<20, 1<<30) {
+		fail("attachments.renditionCacheBytes must be from 16 MiB to 1 GiB")
+	}
+	return problems
 }
 
 // validateRemoteAgent checks the separate Bridge listener against every
@@ -481,7 +559,8 @@ func (c Config) validateNative(environment deploymentnames.Environment, provider
 		}
 	}
 	for _, origin := range []struct{ name, value string }{
-		{"routes.gatewayURL", c.Routes.GatewayURL}, {"native.gatewayAPI", native.GatewayAPI}, {"storage.s3Endpoint", c.Storage.S3Endpoint}, {"builds.localURL", c.Builds.LocalURL},
+		{"routes.gatewayURL", c.Routes.GatewayURL}, {"native.gatewayAPI", native.GatewayAPI}, {"storage.s3Endpoint", c.Storage.S3Endpoint},
+		{"storage.browserEndpoint", c.Storage.BrowserEndpoint}, {"builds.localURL", c.Builds.LocalURL},
 	} {
 		if parsed, err := url.Parse(origin.value); err != nil || !validOrigin(origin.value) || parsed.Hostname() != loopback {
 			fail("%s must be an http origin on %s", origin.name, loopback)

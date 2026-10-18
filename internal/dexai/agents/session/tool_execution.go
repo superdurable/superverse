@@ -267,7 +267,11 @@ func (flow *SessionAgentFlow) runTool(ctx dex.Context, execution context.Context
 	if definition.Platform {
 		return flow.diagnostics.ReadDiagnostics(execution, readSessionIdentity(ctx), call)
 	}
-	result, err := flow.sandbox.Run(execution, definition.Run, newSandboxCall(ctx, call))
+	sandboxCall, err := flow.withBoundAttachment(ctx, execution, call, newSandboxCall(ctx, call))
+	if err != nil {
+		return agentloop.ToolExecutionResult{}, err
+	}
+	result, err := flow.sandbox.Run(execution, definition.Run, sandboxCall)
 	return agentloop.SandboxToolResult(result), err
 }
 

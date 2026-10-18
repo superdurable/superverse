@@ -429,6 +429,20 @@ the operator's engine for the objects.
   runs starts no Session; a deletion as soon as the Project is READY ends the
   Session in one of three ways (never started, denied at admission, or admitted
   and completed by the cleanup), and it never runs on after the deletion.
+- `TestSessionMockAttachmentImageDexIntegration`,
+  `TestSessionMockAttachmentDocumentDexIntegration` and
+  `TestSessionMockAttachmentWorkflowImportDexIntegration` (scenarios
+  `attachment-image`, `attachment-document` and `attachment-workflow-import`):
+  the Project's owner uploads each fixture through the lane's
+  `AttachmentService` with the real presigned PUT, the AttachmentFlow prepares
+  it READY, and the message reaches the Session through the lane's
+  `CreateProject` (image, export) or `SendMessage` (document), which admit and
+  reserve the attachments ([the design](../../../docs/architecture/attachments/conversation.md#mock-scenarios)).
+  `TestSessionRemoteAttachmentRefusalDexIntegration` has the platform agent
+  take a message with an image, then activates a local agent through the
+  remote-agent endpoint: the same message sent again and a new message with
+  the image and another one are refused as not admitted, and the Project still
+  counts only the taken image.
 - `TestSessionNeverExpiresDexIntegration`: an idle Session holds no Flow timeout
   and no timer and only waits for the user.
 - `TestSessionWorkspaceWorkerRestartDexIntegration` (`SUPERVERSE_TEST_LANE`):

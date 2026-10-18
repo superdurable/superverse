@@ -14,3 +14,4 @@ export { TodoProgress } from "@/components/agent/interaction/TodoProgress";
 export { PendingQuestionBatch } from "@/components/agent/interaction/PendingQuestionBatch";
 export { RequirementsCard } from "@/components/agent/interaction/RequirementsCard";
 export { PendingMessageQueue, type PendingMessageQueueItem } from "@/components/agent/interaction/PendingMessageQueue";
+export { AttachmentFilesProvider } from "@/components/agent/attachments/AttachmentFilesProvider";

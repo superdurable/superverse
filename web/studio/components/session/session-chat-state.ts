@@ -19,6 +19,22 @@ import type { KnownSessionStatus } from "@/lib/session/session-status";
 import { withoutMockMarkersInMessages } from "@/lib/session/mock-scenarios";
 import { studioRoutes } from "@/lib/shared/studio-routes";
 
+/** What the conversation shows the Agent waiting on: an approval, a question batch or a timer. */
+export function pendingWaitsOf(
+  approval: AgentDescription["pendingApproval"],
+  input: AgentDescription["pendingUserInput"],
+  timer: AgentDescription["pendingTimer"],
+) {
+  const waits = [
+    ["approval", approval],
+    ["question", input],
+    ["timer", timer],
+  ] as const;
+  return waits.flatMap(([kind, pending]) =>
+    pending ? [{ kind, callId: pending.callId, startedAt: pending.startedAt ?? null }] : [],
+  );
+}
+
 /** What the Agent waits for the user to answer. */
 export type PendingInputKind = NonNullable<AgentDescription["pendingUserInput"]>["kind"];
 
@@ -130,12 +146,14 @@ export function mapPendingMessages(
     ...steered.map((message): PendingMessageQueueItem => ({
       id: message.messageId,
       content: message.value.content,
+      attachments: message.value.attachments,
       label: "Steering",
       kind: "steered",
     })),
     ...queued.map((message): PendingMessageQueueItem => ({
       id: message.messageId,
       content: message.value.content,
+      attachments: message.value.attachments,
       label: "Queued",
       kind: "queued",
     })),
@@ -210,6 +228,7 @@ export function pendingQueueActions(
     deleteMessage: (messageId: string) => Promise<unknown>;
   },
   setComposerText: (text: string) => void,
+  restoreAttachments: (attachments: PendingUserMessage["value"]["attachments"]) => void,
 ) {
   return {
     onSteer: (messageId: string) => void commands.steer(messageId).catch(() => undefined),
@@ -218,7 +237,11 @@ export function pendingQueueActions(
       if (!message) return;
       void commands
         .deleteMessage(messageId)
-        .then(() => setComposerText(message.value.content))
+        .then(() => {
+          setComposerText(message.value.content);
+          // Its files come back as chips: they are still staged and ready to be sent again.
+          restoreAttachments(message.value.attachments);
+        })
         .catch(() => undefined);
     },
     onDelete: (messageId: string) => void commands.deleteMessage(messageId).catch(() => undefined),

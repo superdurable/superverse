@@ -13,6 +13,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -84,6 +85,27 @@ type ContextSegment struct {
 	// read it appends it once as a notice (RepositoryContextNotice) and clears
 	// the mark. A segment of an earlier binary decodes false.
 	AwaitsRepositoryContext bool `json:"awaits_repository_context,omitempty"`
+	// AttachmentBudget bounds the attachments the segment shows, frozen when
+	// it opened; AttachmentBytes, AttachmentImages and AttachmentTokens count
+	// what they render: block bytes, images and visual tokens. A segment of an
+	// earlier binary has no budget, so its first attachment compacts it.
+	AttachmentBudget AttachmentBudget `json:"attachment_budget"`
+	AttachmentBytes  int64            `json:"attachment_bytes,omitempty"`
+	AttachmentImages int              `json:"attachment_images,omitempty"`
+	AttachmentTokens int64            `json:"attachment_tokens,omitempty"`
+	// Attachments are the newest attachments the Session's messages held up
+	// to the segment, newest last, at most maximumListedAttachments, which the
+	// next segment_start lists.
+	Attachments []RememberedAttachment `json:"attachments,omitempty"`
+}
+
+// RememberedAttachment is an attachment a segment remembers for the next
+// segment_start's list: its label, and whether no model call showed its
+// content yet. Such an attachment was only ever a placeholder, so the Project
+// never bound it and its tools cannot read it.
+type RememberedAttachment struct {
+	conversation.AttachmentLabel
+	Unshown bool `json:"unshown,omitempty"`
 }
 
 // PromptsKey is the ContextSegmentPrompts instance key of the segment, its
@@ -149,6 +171,8 @@ type ModelSettings struct {
 	// CompactionTokens is the configured compaction threshold, capped per model.
 	CompactionTokens int64
 	PrefixMismatch   conversation.PrefixMismatchBehavior
+	// Attachments is the attachment budget each new segment freezes.
+	Attachments AttachmentBudget
 }
 
 // SessionPrompt is what the current binary sends a segment of one model: the
@@ -232,7 +256,9 @@ func SessionPromptFor(model conversation.Model) SessionPrompt {
 // NewSegment is the segment that opens at first with reason and the given
 // segment_start bytes, on model with the configured settings.
 func NewSegment(previous *ContextSegment, first conversation.Sequence, reason SegmentReason, model conversation.Model, settings ModelSettings, startBytes int64) ContextSegment {
-	return NewSegmentFor(previous, first, reason, model, SessionPromptFor(model), modelprovider.ProfileOf(model).BaseEffort(settings.Effort), startBytes)
+	segment := NewSegmentFor(previous, first, reason, model, SessionPromptFor(model), modelprovider.ProfileOf(model).BaseEffort(settings.Effort), startBytes)
+	segment.AttachmentBudget = settings.Attachments
+	return segment
 }
 
 // NewSegmentFor is the segment that opens at first with reason and the given
@@ -240,15 +266,16 @@ func NewSegment(previous *ContextSegment, first conversation.Sequence, reason Se
 // opens its own.
 func NewSegmentFor(previous *ContextSegment, first conversation.Sequence, reason SegmentReason, model conversation.Model, prompt SessionPrompt, effort conversation.Effort, startBytes int64) ContextSegment {
 	number := int64(1)
+	var attachments []RememberedAttachment
 	if previous != nil {
-		number = previous.Number + 1
+		number, attachments = previous.Number+1, previous.Attachments
 	}
 	promptBytes := int64(len(prompt.Prompts.System))
 	for _, tool := range prompt.Prompts.Tools {
 		promptBytes += int64(len(tool))
 	}
 	return ContextSegment{Number: number, FirstSequence: first, Reason: reason, Model: model,
-		Effort: effort, PromptDigest: prompt.Digest, ToolNames: prompt.ToolNames, BaseBytes: promptBytes + startBytes}
+		Effort: effort, PromptDigest: prompt.Digest, ToolNames: prompt.ToolNames, BaseBytes: promptBytes + startBytes, Attachments: attachments}
 }
 
 // SegmentChange decides at a model-call boundary whether the current segment
@@ -286,13 +313,19 @@ type SegmentStart struct {
 	TodoList              *TodoList
 	StartingExample       string
 	CatalogMatches        string
-	PendingRequest        string
+	// Attachments are the attachments of earlier messages
+	// (SegmentAttachments), and WorkflowExports the automation exports of the
+	// pending request, which the workflow-import subskill reads.
+	Attachments     []RememberedAttachment
+	WorkflowExports []conversation.AttachmentRef
+	PendingRequest  string
 }
 
 // Text renders the segment_start text: the summary, the repository context,
 // the current requirements, the card design rule, the todo list, the starting
-// example, the catalog matches and the pending request, each in its own tag;
-// the pending request stays last.
+// example, the catalog matches, the attachments of earlier messages, the
+// workflow import of the pending request's exports and the pending request,
+// each in its own tag; the pending request stays last.
 func (start SegmentStart) Text() string {
 	text := taggedSection("context_summary", start.Summary) +
 		taggedSection(repositoryContextTag, start.RepositoryContext) +
@@ -301,6 +334,8 @@ func (start SegmentStart) Text() string {
 		taggedSection("current_plan", todoListText(start.TodoList)) +
 		taggedSection(startingExampleTag, start.StartingExample) +
 		taggedSection("catalog_matches", start.CatalogMatches) +
+		taggedSection("attachments", attachmentsText(start.Attachments)) +
+		taggedSection("workflow_import", workflowImportText(start.WorkflowExports)) +
 		taggedSection("pending_request", start.PendingRequest)
 	if text == "" {
 		return "<context_summary>\nThe conversation starts here.\n</context_summary>"
@@ -421,14 +456,16 @@ func RetainedFirstSequence(state AgentState, segmentFirst conversation.Sequence)
 	return first
 }
 
-// ExecutorContextStart selects one chronological suffix of complete units.
-// It stops at an incomplete assistant/tool-result unit and never replays a
-// result without its assistant call. The chosen suffix begins with user text.
-func ExecutorContextStart(entries []conversation.SequencedEntry, compactionTokens int64) conversation.Sequence {
+// ExecutorContextStart selects one chronological suffix of complete units
+// within half the compaction threshold and the attachment budget. It stops at
+// an incomplete assistant/tool-result unit and never replays a result without
+// its assistant call. The chosen suffix begins with user text.
+func ExecutorContextStart(entries []conversation.SequencedEntry, compactionTokens int64, attachments AttachmentBudget) conversation.Sequence {
 	if len(entries) == 0 {
 		return 0
 	}
 	budget, used := max(int64(0), compactionTokens*2), int64(0)
+	shown := ContextSegment{AttachmentBudget: attachments}
 	first := conversation.Sequence(0)
 	for end := len(entries); end > 0; {
 		start := end - 1
@@ -463,18 +500,272 @@ func ExecutorContextStart(entries []conversation.SequencedEntry, compactionToken
 		} else if len(entry.Meta.ToolCalls) > 0 {
 			break
 		}
-		unitBytes := int64(0)
+		unitBytes, unit := int64(0), shown
 		for index := start; index < end; index++ {
 			unitBytes += entries[index].Entry.Bytes()
+			unit = unit.withAttachments(entries[index].Entry.AttachmentReferences())
 		}
-		if used+unitBytes > budget {
+		if used+unitBytes > budget || !unit.withinAttachmentBudget() {
 			break
 		}
-		used += unitBytes
+		used, shown = used+unitBytes, unit
 		if entries[start].Entry.Role == conversation.EntryRoleUser && entries[start].Entry.Kind != conversation.EntryKindToolResult {
 			first = entries[start].Sequence
 		}
 		end = start
 	}
 	return first
+}
+
+// AttachmentBudget bounds what the attachments a segment shows add to its
+// requests: the rendered bytes of their blocks (attachments.segmentBytes) and
+// the images (attachments.segmentImages), within the API's request-size and
+// image limits, since every block is resent on each call of the segment, and
+// the text renditions of one message (attachments.messageInlineText).
+type AttachmentBudget struct {
+	SegmentBytes      int64 `json:"segment_bytes"`
+	SegmentImages     int   `json:"segment_images"`
+	MessageInlineText int64 `json:"message_inline_text"`
+}
+
+// maximumListedAttachments bounds the attachments a segment_start lists.
+const maximumListedAttachments = 50
+
+// withAttachments is the segment with the references it shows counted.
+func (segment ContextSegment) withAttachments(references []conversation.AttachmentReference) ContextSegment {
+	for _, reference := range references {
+		if reference.Variant == conversation.AttachmentVariantPlaceholder {
+			continue
+		}
+		segment.AttachmentBytes += reference.RenderedBytes()
+		segment.AttachmentTokens += reference.ContextTokens()
+		if reference.Attachment.Kind == conversation.AttachmentKindImage {
+			segment.AttachmentImages++
+		}
+	}
+	return segment
+}
+
+// withinAttachmentBudget reports whether the counted attachments stay within
+// the segment's budget.
+func (segment ContextSegment) withinAttachmentBudget() bool {
+	return segment.AttachmentBytes <= segment.AttachmentBudget.SegmentBytes && segment.AttachmentImages <= segment.AttachmentBudget.SegmentImages
+}
+
+// messageVariants decides, within the message's inline-text bound, what the
+// text attachments of one message show: in attachment order, a document or
+// generic JSON file shows its full rendition when the full renditions chosen
+// so far plus the briefs of the rest fit, otherwise its brief, which is at
+// most 8 KiB; one without a brief, such as an export's summary, an image or a
+// small generic file, always shows its full rendition.
+func messageVariants(attachments []conversation.AttachmentRef, inline int64) []conversation.AttachmentReference {
+	smallest := func(attachment conversation.AttachmentRef) int64 {
+		switch {
+		case attachment.Kind == conversation.AttachmentKindImage:
+			return 0
+		case attachment.Brief != nil:
+			return attachment.Brief.Bytes
+		default:
+			return attachment.Rendition.Bytes
+		}
+	}
+	rest := int64(0)
+	for _, attachment := range attachments {
+		rest += smallest(attachment)
+	}
+	chosen := int64(0)
+	references := make([]conversation.AttachmentReference, 0, len(attachments))
+	for _, attachment := range attachments {
+		rest -= smallest(attachment)
+		reference := conversation.AttachmentReference{Attachment: attachment, Variant: conversation.AttachmentVariantFull}
+		if attachment.Brief != nil && attachment.Kind != conversation.AttachmentKindImage && chosen+attachment.Rendition.Bytes+rest > inline {
+			reference.Variant = conversation.AttachmentVariantBrief
+		}
+		if attachment.Kind != conversation.AttachmentKindImage {
+			chosen += reference.RenderedBytes()
+		}
+		references = append(references, reference)
+	}
+	return references
+}
+
+// fitting keeps what each reference shows while the segment's budget holds,
+// visiting them in order; one that would pass it, or that follows
+// conversation.MaximumMessageAttachments others, shows the placeholder. It
+// returns the segment with the shown references counted and whether any is a
+// placeholder.
+func (segment ContextSegment) fitting(references []conversation.AttachmentReference, order []int) (ContextSegment, bool) {
+	placed, shown := false, 0
+	for _, index := range order {
+		counted := segment.withAttachments(references[index : index+1])
+		if shown == conversation.MaximumMessageAttachments || !counted.withinAttachmentBudget() {
+			references[index].Variant, placed = conversation.AttachmentVariantPlaceholder, true
+			continue
+		}
+		segment, shown = counted, shown+1
+	}
+	return segment, placed
+}
+
+// AdmitAttachments decides, as a user message's entry is appended to segment,
+// what each of its references shows, frozen into its blocks: the variants of
+// the message's inline-text bound (messageVariants), then, in attachment
+// order, the placeholder for each that does not fit the segment's budget,
+// which forces a compaction whose next segment shows the pending request's
+// attachments again. It returns the segment with the shown attachments
+// counted and every one remembered, and the entry.
+func AdmitAttachments(segment ContextSegment, entry conversation.Entry) (ContextSegment, conversation.Entry) {
+	var attachments []conversation.AttachmentRef
+	var positions []int
+	for position, block := range entry.Blocks {
+		if reference, isReference := conversation.ReadAttachmentReference(block); isReference {
+			attachments, positions = append(attachments, reference.Attachment), append(positions, position)
+		}
+	}
+	if len(attachments) == 0 {
+		return segment, entry
+	}
+	references := messageVariants(attachments, segment.AttachmentBudget.MessageInlineText)
+	inOrder := make([]int, len(references))
+	for index := range inOrder {
+		inOrder[index] = index
+	}
+	segment, placed := segment.fitting(references, inOrder)
+	segment.ForceCompaction = segment.ForceCompaction || placed
+	segment.Attachments = rememberAttachments(segment.Attachments, references)
+	blocks := slices.Clone(entry.Blocks)
+	for index, position := range positions {
+		blocks[position] = references[index].Block()
+	}
+	entry.Blocks = blocks
+	return segment, entry
+}
+
+// SegmentAttachments chooses what the segment_start of a segment opening with
+// budget shows of the attachments of its pending request, given in request
+// order, each once: the variants of the inline-text bound, then, newest
+// first, the placeholder for each that does not fit the fresh budget; a
+// segment_start never forces a compaction. It returns one reference per
+// attachment in request order, and the labels segment_start lists: the
+// Session's earlier attachments (newest last in earlier), newest first, at
+// most maximumListedAttachments, without the pending ones.
+func SegmentAttachments(pending []conversation.AttachmentRef, earlier []RememberedAttachment, budget AttachmentBudget) ([]conversation.AttachmentReference, []RememberedAttachment) {
+	references := messageVariants(pending, budget.MessageInlineText)
+	newestFirst := make([]int, 0, len(references))
+	for index := len(references) - 1; index >= 0; index-- {
+		newestFirst = append(newestFirst, index)
+	}
+	ContextSegment{AttachmentBudget: budget}.fitting(references, newestFirst)
+	isPending := map[string]bool{}
+	for _, attachment := range pending {
+		isPending[attachment.ID] = true
+	}
+	var listed []RememberedAttachment
+	for _, attachment := range slices.Backward(earlier) {
+		if !isPending[attachment.ID] && len(listed) < maximumListedAttachments {
+			listed = append(listed, attachment)
+		}
+	}
+	return references, listed
+}
+
+// OpenedWithAttachments is a segment that opened with the references its
+// segment_start shows, which it counts, remembering the attachments of the
+// pending request as those references show them.
+func (segment ContextSegment) OpenedWithAttachments(shown []conversation.AttachmentReference, pending []conversation.AttachmentRef) ContextSegment {
+	segment = segment.withAttachments(shown)
+	isPending := map[string]bool{}
+	for _, attachment := range pending {
+		isPending[attachment.ID] = true
+	}
+	var requested []conversation.AttachmentReference
+	for _, reference := range shown {
+		if isPending[reference.Attachment.ID] {
+			requested = append(requested, reference)
+		}
+	}
+	segment.Attachments = rememberAttachments(segment.Attachments, requested)
+	return segment
+}
+
+// rememberAttachments appends the attachments of references to the
+// newest-last list, moving one listed already to the end, and keeps the
+// newest maximumListedAttachments. An attachment stays unshown while every
+// reference to it was a placeholder.
+func rememberAttachments(listed []RememberedAttachment, references []conversation.AttachmentReference) []RememberedAttachment {
+	if len(references) == 0 {
+		return listed
+	}
+	remembered := slices.Clone(listed)
+	for _, reference := range references {
+		unshown := reference.Variant == conversation.AttachmentVariantPlaceholder
+		if index := slices.IndexFunc(remembered, func(earlier RememberedAttachment) bool { return earlier.ID == reference.Attachment.ID }); index >= 0 {
+			unshown = unshown && remembered[index].Unshown
+			remembered = slices.Delete(remembered, index, index+1)
+		}
+		remembered = append(remembered, RememberedAttachment{AttachmentLabel: reference.Attachment.Label(), Unshown: unshown})
+	}
+	return remembered[max(0, len(remembered)-maximumListedAttachments):]
+}
+
+// attachmentUse says how the model can use an earlier attachment now.
+var attachmentUse = map[conversation.AttachmentKind]string{
+	conversation.AttachmentKindImage:    "as you saw it before the summary",
+	conversation.AttachmentKindDocument: "read it with read_attachment",
+	conversation.AttachmentKindJSON:     "place it in the workspace with place_attachment",
+}
+
+func init() {
+	for _, kind := range conversation.AttachmentKinds {
+		if attachmentUse[kind] == "" {
+			panic("attachmentUse has no use of attachment kind " + kind.String())
+		}
+	}
+}
+
+// unshownAttachmentUse says what the model can do with an earlier attachment
+// that no model call showed: its message came when the context had no room.
+const unshownAttachmentUse = "never shown to you, since the context had no room for it when it was sent; ask the person to attach it again if you need it"
+
+// attachmentsText is the attachments section: the attachments of earlier
+// messages, newest first, by ID, name and kind with how to use each now.
+func attachmentsText(listed []RememberedAttachment) string {
+	if len(listed) == 0 {
+		return ""
+	}
+	var text strings.Builder
+	text.WriteString("Files the user attached to earlier messages, newest first. Their content is not in this context; your summary records what each contributed.\n")
+	for _, attachment := range listed {
+		use := attachmentUse[attachment.Kind]
+		if attachment.Unshown {
+			use = unshownAttachmentUse
+		}
+		fmt.Fprintf(&text, "- %s %s (%s): %s\n", attachment.ID, comm.Must(json.Marshal(attachment.Name)), attachment.Kind, use)
+	}
+	return text.String()
+}
+
+// The workflow-import subskill and its inventory script, as the coding image
+// installs the in-repository dex-skills.
+const (
+	workflowImportReference = "/opt/superverse/dex-skills/dex-app-builder/references/workflow-import.md"
+	workflowInventoryScript = "/opt/superverse/dex-skills/dex-app-builder/scripts/n8n_inventory.py"
+)
+
+// workflowImportText is the workflow_import section of a pending request that
+// holds automation exports: the subskill, the place_attachment call of each
+// export and the inventory command that reads the placed file.
+func workflowImportText(exports []conversation.AttachmentRef) string {
+	if len(exports) == 0 {
+		return ""
+	}
+	var text strings.Builder
+	fmt.Fprintf(&text, "The pending request holds a workflow export. Follow %s: the export, not an example, is the behavior authority, and you never summarize it by hand. "+
+		"For each export, call place_attachment, then run the inventory on the placed file:\n", workflowImportReference)
+	for _, export := range exports {
+		placed := conversation.AttachmentWorkspacePath(export.Label())
+		fmt.Fprintf(&text, "- %s, an %s export with %d secret values removed: place_attachment with attachment_id %q writes %s; then python3 %s inventory %s --out /workspace/docs/import/<workflow>\n",
+			comm.Must(json.Marshal(export.Name)), export.JSON.Format, export.JSON.Redactions, export.ID, placed, workflowInventoryScript, placed)
+	}
+	return text.String()
 }

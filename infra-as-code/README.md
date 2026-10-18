@@ -151,8 +151,8 @@ credentials with `.local/superverse-v2/git-signing-key`, which the deploy genera
 the server env file. The end-to-end runner writes a fresh administrator token, derived from the same key, to the
 private file `git-administrator-token` for the specs.
 
-Ports: Studio 23000, gRPC 28080, local Git host 28085, platform Dex API 28811, Dex Web 28812, MinIO 29000,
-PostgreSQL 28432 (for the integration tests), Keycloak 28190 (for the connection tests), Temporal 27233, Temporal UI
+Ports: Studio 23000, gRPC 28080, local Git host 28085, platform Dex API 28811, Dex Web 28812, MinIO 29000 (also
+the browser's presigned uploads and downloads, `storage.browserEndpoint`), PostgreSQL 28432 (for the integration tests), Keycloak 28190 (for the connection tests), Temporal 27233, Temporal UI
 28233, Preview/Live gateway 23080, release builder 29792. The Sandbox clones from the
 Service port 8085 in the cluster; `kind ports` forwards 28085 to it for the host builder, which `kind builder`
 starts with the origin of the deployed profile's host, and for the E2E.

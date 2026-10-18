@@ -19,6 +19,7 @@ import {
   PROJECT_EXECUTOR,
   PROJECT_MESSAGE_DELIVERY,
   encodedPendingProjectCreation,
+  forgetStartAttachments,
   readPendingProjectCreation,
   readProjectIntent,
   storeProjectIntent,
@@ -87,7 +88,9 @@ export function ProjectCreationPage() {
       request.current === pending &&
       encodedPendingProjectCreation() === encodedIntent;
     setError(null);
-    const sendsMessage = pending.executor === PROJECT_EXECUTOR.SUPERVERSE && pending.prompt !== "";
+    const attachmentIds = (pending.attachments ?? []).map((attachment) => attachment.attachmentId);
+    const sendsMessage =
+      pending.executor === PROJECT_EXECUTOR.SUPERVERSE && (pending.prompt !== "" || attachmentIds.length > 0);
     try {
       const projectId = await createProject(
         {
@@ -98,6 +101,8 @@ export function ProjectCreationPage() {
           // A creation from an example carries no message, so no message ID.
           initialMessage: sendsMessage ? pending.prompt : undefined,
           messageId: sendsMessage ? pending.messageIdempotencyKey : undefined,
+          // The first message's files, which the start page uploaded; never with an example.
+          initialAttachmentIds: sendsMessage ? attachmentIds : [],
           model:
             pending.executor === PROJECT_EXECUTOR.SUPERVERSE && pending.model !== null && isAgentModel(pending.model)
               ? agentModelInput(pending.model)
@@ -116,6 +121,8 @@ export function ProjectCreationPage() {
         return;
       }
       clearPendingProjectCreation();
+      // The Project's first message took the start page's files.
+      forgetStartAttachments(pending.teamSpaceId);
       // The new Project opens on its first conversation, the chat alone, until the agent's requirements arrive;
       // one created from an example has its brief at once and opens the standard Builder.
       beginFirstRun(projectId);

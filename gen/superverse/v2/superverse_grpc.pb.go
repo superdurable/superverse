@@ -2395,6 +2395,232 @@ var RemoteAgentService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
+	AttachmentService_CreateAttachmentUpload_FullMethodName   = "/superverse.v2.AttachmentService/CreateAttachmentUpload"
+	AttachmentService_CompleteAttachmentUpload_FullMethodName = "/superverse.v2.AttachmentService/CompleteAttachmentUpload"
+	AttachmentService_DeleteAttachment_FullMethodName         = "/superverse.v2.AttachmentService/DeleteAttachment"
+	AttachmentService_GetAttachmentDownloads_FullMethodName   = "/superverse.v2.AttachmentService/GetAttachmentDownloads"
+)
+
+// AttachmentServiceClient is the client API for AttachmentService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// Files attached to messages (AttachmentFlow, one per file, staged in its TeamSpace). The browser
+// declares a file, PUTs its bytes to object storage with the presigned request the creation
+// returns, and completes the upload; the server verifies, prepares and keeps the attachment READY
+// for the staging retention. The bytes never pass through this protocol.
+type AttachmentServiceClient interface {
+	CreateAttachmentUpload(ctx context.Context, in *CreateAttachmentUploadRequest, opts ...grpc.CallOption) (*CreateAttachmentUploadResponse, error)
+	CompleteAttachmentUpload(ctx context.Context, in *CompleteAttachmentUploadRequest, opts ...grpc.CallOption) (*CompleteAttachmentUploadResponse, error)
+	DeleteAttachment(ctx context.Context, in *DeleteAttachmentRequest, opts ...grpc.CallOption) (*DeleteAttachmentResponse, error)
+	GetAttachmentDownloads(ctx context.Context, in *GetAttachmentDownloadsRequest, opts ...grpc.CallOption) (*GetAttachmentDownloadsResponse, error)
+}
+
+type attachmentServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewAttachmentServiceClient(cc grpc.ClientConnInterface) AttachmentServiceClient {
+	return &attachmentServiceClient{cc}
+}
+
+func (c *attachmentServiceClient) CreateAttachmentUpload(ctx context.Context, in *CreateAttachmentUploadRequest, opts ...grpc.CallOption) (*CreateAttachmentUploadResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateAttachmentUploadResponse)
+	err := c.cc.Invoke(ctx, AttachmentService_CreateAttachmentUpload_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *attachmentServiceClient) CompleteAttachmentUpload(ctx context.Context, in *CompleteAttachmentUploadRequest, opts ...grpc.CallOption) (*CompleteAttachmentUploadResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CompleteAttachmentUploadResponse)
+	err := c.cc.Invoke(ctx, AttachmentService_CompleteAttachmentUpload_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *attachmentServiceClient) DeleteAttachment(ctx context.Context, in *DeleteAttachmentRequest, opts ...grpc.CallOption) (*DeleteAttachmentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteAttachmentResponse)
+	err := c.cc.Invoke(ctx, AttachmentService_DeleteAttachment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *attachmentServiceClient) GetAttachmentDownloads(ctx context.Context, in *GetAttachmentDownloadsRequest, opts ...grpc.CallOption) (*GetAttachmentDownloadsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAttachmentDownloadsResponse)
+	err := c.cc.Invoke(ctx, AttachmentService_GetAttachmentDownloads_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// AttachmentServiceServer is the server API for AttachmentService service.
+// All implementations must embed UnimplementedAttachmentServiceServer
+// for forward compatibility.
+//
+// Files attached to messages (AttachmentFlow, one per file, staged in its TeamSpace). The browser
+// declares a file, PUTs its bytes to object storage with the presigned request the creation
+// returns, and completes the upload; the server verifies, prepares and keeps the attachment READY
+// for the staging retention. The bytes never pass through this protocol.
+type AttachmentServiceServer interface {
+	CreateAttachmentUpload(context.Context, *CreateAttachmentUploadRequest) (*CreateAttachmentUploadResponse, error)
+	CompleteAttachmentUpload(context.Context, *CompleteAttachmentUploadRequest) (*CompleteAttachmentUploadResponse, error)
+	DeleteAttachment(context.Context, *DeleteAttachmentRequest) (*DeleteAttachmentResponse, error)
+	GetAttachmentDownloads(context.Context, *GetAttachmentDownloadsRequest) (*GetAttachmentDownloadsResponse, error)
+	mustEmbedUnimplementedAttachmentServiceServer()
+}
+
+// UnimplementedAttachmentServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedAttachmentServiceServer struct{}
+
+func (UnimplementedAttachmentServiceServer) CreateAttachmentUpload(context.Context, *CreateAttachmentUploadRequest) (*CreateAttachmentUploadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateAttachmentUpload not implemented")
+}
+func (UnimplementedAttachmentServiceServer) CompleteAttachmentUpload(context.Context, *CompleteAttachmentUploadRequest) (*CompleteAttachmentUploadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CompleteAttachmentUpload not implemented")
+}
+func (UnimplementedAttachmentServiceServer) DeleteAttachment(context.Context, *DeleteAttachmentRequest) (*DeleteAttachmentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteAttachment not implemented")
+}
+func (UnimplementedAttachmentServiceServer) GetAttachmentDownloads(context.Context, *GetAttachmentDownloadsRequest) (*GetAttachmentDownloadsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAttachmentDownloads not implemented")
+}
+func (UnimplementedAttachmentServiceServer) mustEmbedUnimplementedAttachmentServiceServer() {}
+func (UnimplementedAttachmentServiceServer) testEmbeddedByValue()                           {}
+
+// UnsafeAttachmentServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AttachmentServiceServer will
+// result in compilation errors.
+type UnsafeAttachmentServiceServer interface {
+	mustEmbedUnimplementedAttachmentServiceServer()
+}
+
+func RegisterAttachmentServiceServer(s grpc.ServiceRegistrar, srv AttachmentServiceServer) {
+	// If the following call pancis, it indicates UnimplementedAttachmentServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&AttachmentService_ServiceDesc, srv)
+}
+
+func _AttachmentService_CreateAttachmentUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateAttachmentUploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AttachmentServiceServer).CreateAttachmentUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AttachmentService_CreateAttachmentUpload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AttachmentServiceServer).CreateAttachmentUpload(ctx, req.(*CreateAttachmentUploadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AttachmentService_CompleteAttachmentUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CompleteAttachmentUploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AttachmentServiceServer).CompleteAttachmentUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AttachmentService_CompleteAttachmentUpload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AttachmentServiceServer).CompleteAttachmentUpload(ctx, req.(*CompleteAttachmentUploadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AttachmentService_DeleteAttachment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteAttachmentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AttachmentServiceServer).DeleteAttachment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AttachmentService_DeleteAttachment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AttachmentServiceServer).DeleteAttachment(ctx, req.(*DeleteAttachmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AttachmentService_GetAttachmentDownloads_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAttachmentDownloadsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AttachmentServiceServer).GetAttachmentDownloads(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AttachmentService_GetAttachmentDownloads_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AttachmentServiceServer).GetAttachmentDownloads(ctx, req.(*GetAttachmentDownloadsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// AttachmentService_ServiceDesc is the grpc.ServiceDesc for AttachmentService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var AttachmentService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "superverse.v2.AttachmentService",
+	HandlerType: (*AttachmentServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateAttachmentUpload",
+			Handler:    _AttachmentService_CreateAttachmentUpload_Handler,
+		},
+		{
+			MethodName: "CompleteAttachmentUpload",
+			Handler:    _AttachmentService_CompleteAttachmentUpload_Handler,
+		},
+		{
+			MethodName: "DeleteAttachment",
+			Handler:    _AttachmentService_DeleteAttachment_Handler,
+		},
+		{
+			MethodName: "GetAttachmentDownloads",
+			Handler:    _AttachmentService_GetAttachmentDownloads_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "superverse/v2/superverse.proto",
+}
+
+const (
 	AgentService_SendMessage_FullMethodName         = "/superverse.v2.AgentService/SendMessage"
 	AgentService_AnswerQuestions_FullMethodName     = "/superverse.v2.AgentService/AnswerQuestions"
 	AgentService_UpdateSessionModel_FullMethodName  = "/superverse.v2.AgentService/UpdateSessionModel"

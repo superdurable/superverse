@@ -17,6 +17,12 @@ type HistoryPage = AgentSnapshot["history"];
 export type SequencedMessage = HistoryPage["messages"][number];
 export type AgentMessage = SequencedMessage["message"];
 export type AgentToolCall = AgentMessage["toolCalls"][number];
+/** A file a user message attached; never its content or a URL. */
+export type MessageAttachment = AgentMessage["attachments"][number];
+/** How the Session page reaches its attachments' files, which the transport-free conversation shows. */
+export type { AttachmentFileLinks } from "./attachments/attachment-downloads";
+export { formatFileSize } from "./attachments/attachment-files";
+export { sentAttachmentWhat } from "./attachments/attachment-view";
 export type PendingUserMessage = AgentSnapshot["queued"][number];
 export type AgentEvent = ReturnType<typeof agentActivityView>;
 /** A model a Session can run on: the Agent UI literal of an AgentModel enum value. */

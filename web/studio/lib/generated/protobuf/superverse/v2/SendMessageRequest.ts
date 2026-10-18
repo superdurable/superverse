@@ -6,6 +6,7 @@ export interface SendMessageRequest {
   'projectId'?: (string);
   'messageId'?: (string);
   'text'?: (string);
+  'attachmentIds'?: (string)[];
   'caller'?: (_superverse_v2_CallerContext | null);
 }
 
@@ -13,5 +14,6 @@ export interface SendMessageRequest__Output {
   'projectId': (string);
   'messageId': (string);
   'text': (string);
+  'attachmentIds': (string)[];
   'caller': (_superverse_v2_CallerContext__Output | null);
 }

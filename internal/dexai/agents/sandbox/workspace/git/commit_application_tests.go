@@ -23,6 +23,7 @@ import (
 
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/sandboxd"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/toolfailure"
 )
 
@@ -168,6 +169,27 @@ func (g workspaceGit) rejectProductionMocks(ctx context.Context) error {
 	}
 	return sandboxd.NewToolFailure(toolfailure.ConnectorMockInProduction, fmt.Errorf("these production packages import %s: %s; connector mocks belong in internal/apptest only, behind the apptest build tag",
 		connectorMockPackage, comm.TruncateUTF8(strings.Join(importers, ", "), 2<<10)))
+}
+
+// rejectAttachmentFiles refuses a staged tree that holds a file place_attachment
+// wrote under conversation.AttachmentWorkspaceDirectory: the user's
+// attachments never enter the repository, and the application may edit the
+// .gitignore that ignores them. The refusal unstages everything, which leaves
+// the working tree as it is.
+func (g workspaceGit) rejectAttachmentFiles(ctx context.Context) error {
+	staged, err := g.git(ctx, "ls-files", "--cached", "--", conversation.AttachmentWorkspaceDirectory)
+	if err != nil {
+		return commandError("list the staged attachment files", staged, err)
+	}
+	paths := boundedLines(staged.stdout, 20, func(line string) bool { return line != "" && !strings.ContainsRune(line, '\x00') })
+	if len(paths) == 0 {
+		return nil
+	}
+	if err = g.step(ctx, "unstage the attachment files", "reset", "--quiet"); err != nil {
+		return err
+	}
+	return sandboxd.NewToolFailure(toolfailure.AttachmentInSource, fmt.Errorf("these files hold the user's attachments, so nothing was committed: %s; keep /.local/ in .gitignore and the files out of the index, then retry commit_and_push",
+		comm.TruncateUTF8(strings.Join(paths, ", "), 2<<10)))
 }
 
 func isConnectorMock(importPath string) bool {

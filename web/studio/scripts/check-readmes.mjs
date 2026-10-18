@@ -30,7 +30,10 @@ const PROTO = resolve(studio, "../../api/superverse/v2/superverse.proto");
  */
 const REACHES = {
   "lib/api/flow": { apis: ["Flow API"] },
-  "lib/api/transport": { dispatcher: true, apis: ["Studio BFF API", "Flow API", "Preview application API"] },
+  "lib/api/transport": {
+    dispatcher: true,
+    apis: ["Studio BFF API", "Flow API", "Preview application API", "object storage presigned URL API"],
+  },
   "lib/server/flow": {
     dispatcher: true,
     apis: [
@@ -43,6 +46,7 @@ const REACHES = {
   "lib/server/rpc": { dispatcher: true, apis: ["Superverse business gRPC API"] },
   "tests/e2e/integration": { dispatcher: true, apis: ["`PreviewService` API"] },
   "tests/e2e/support": { apis: ["Studio BFF API", "GitHub REST API", "Local Git host JSON API"] },
+  "tests/e2e/support/attachments": { apis: ["object storage presigned URL API"] },
 };
 
 const write = process.argv.includes("--write");

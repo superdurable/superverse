@@ -20,6 +20,7 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/platform/postgres"
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost"
 	"github.com/superdurable/superversev2/internal/dexai/agents"
+	"github.com/superdurable/superversev2/internal/dexai/agents/attachments"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/mockmodel"
 	"github.com/superdurable/superversev2/internal/dexai/api/boundary"
@@ -51,6 +52,7 @@ type projectServer struct {
 	configuration   *projectconfig.Configuration
 	deployments     *deployments.ProjectDeployFlowClient
 	sessions        *agents.SessionFlowService
+	attachments     *attachments.AttachmentFlowService
 	recentEvents    RecentTriggerEvents
 	models          SessionModels
 	// closestExamplePick starts a creation from a first message, with no
@@ -73,8 +75,10 @@ func projectExample(templateRevision string) *pb.ProjectExample {
 // CreateProject starts a Project of a TeamSpace on a new private managed
 // repository. ProjectFlow's first Step admits it in the TeamSpace, which
 // requires the caller's membership unless the caller is the platform admin.
-// The Session's first message and model travel with it (initialSession).
-// Repeating a request returns the same Project.
+// The Session's first message, its attachments and the model travel with it
+// (initialSession); a first message with an automation export starts from the
+// default template. Repeating a request returns the same Project, also once
+// its attachments expired.
 func (s *projectServer) CreateProject(ctx context.Context, in *pb.CreateProjectRequest) (*pb.CreateProjectResponse, error) {
 	account, err := s.Authenticate(ctx, in.GetCaller())
 	if err != nil {
@@ -92,22 +96,45 @@ func (s *projectServer) CreateProject(ctx context.Context, in *pb.CreateProjectR
 	if err = flowid.ValidateTeamSpaceID(in.GetTeamSpaceId()); err != nil {
 		return nil, boundary.RPCStatus(err)
 	}
-	initial, err := validInitialSession(in, account)
+	initial, err := validInitialSession(in, account, s.attachments)
 	if err != nil {
 		return nil, err
 	}
 	projectID, setupID := flowid.ProjectCreationIDs(account.AccountID, in.GetRequestId(), s.projectIDLength)
-	template, example := apptemplate.Current(), in.GetManagedRepository().GetExample()
-	if example != nil {
-		if template, err = apptemplate.ExampleTemplate(example.GetExampleId()); err != nil {
-			return nil, boundary.RPCStatus(err)
-		}
-	} else if matched := s.closestExample(ctx, projectID, initial); matched != nil {
-		template = comm.Must(apptemplate.ExampleTemplate(matched.ExampleID))
-		initial.MatchedExample = &projects.MatchedExample{Facets: matched.Facets, Score: matched.Score}
+	example := in.GetManagedRepository().GetExample()
+	fingerprint := func(uploads []attachments.UploadIdentity) string {
+		return managedProjectCreationFingerprint(account.AccountID, in.GetRequestId(), in.GetName(), in.GetTeamSpaceId(), example, initial, uploads)
 	}
 	if err = s.admitCreator(ctx, account, in.GetTeamSpaceId()); err != nil {
 		return nil, err
+	}
+	var attached attachments.ProjectStartAttachments
+	if ids := in.GetInitialAttachmentIds(); len(ids) > 0 {
+		attached, err = s.attachments.AdmitProjectStart(ctx, account.AccountID, in.GetTeamSpaceId(), ids)
+		if refusal, isRefused := errors.AsType[*attachments.AdmissionRefusal](err); isRefused {
+			if s.acceptedWith(ctx, projectID, refusal, attached, fingerprint) {
+				return &pb.CreateProjectResponse{ProjectId: projectID}, nil
+			}
+			return nil, attachmentRefusalStatus(refusal)
+		}
+		if err != nil {
+			return nil, boundary.RPCStatus(err)
+		}
+		initial.Attachments = attached.Session()
+	}
+	template := apptemplate.Current()
+	switch {
+	case example != nil:
+		if template, err = apptemplate.ExampleTemplate(example.GetExampleId()); err != nil {
+			return nil, boundary.RPCStatus(err)
+		}
+	case attached.WorkflowExport():
+		// The export is the behavior authority: the Project starts from the default template.
+	default:
+		if matched := s.closestExample(ctx, projectID, initial); matched != nil {
+			template = comm.Must(apptemplate.ExampleTemplate(matched.ExampleID))
+			initial.MatchedExample = &projects.MatchedExample{Facets: matched.Facets, Score: matched.Score}
+		}
 	}
 	if initial != nil && initial.Model != "" {
 		if err = admitModel(ctx, s.Boundary, s.models, account.AccountID, conversation.Model(initial.Model)); err != nil {
@@ -116,12 +143,27 @@ func (s *projectServer) CreateProject(ctx context.Context, in *pb.CreateProjectR
 	}
 	start := projects.ProjectStart{ProjectID: projectID, CreatorAccountID: account.AccountID, Name: in.GetName(), SetupFlowID: flowid.SetupFlowID(projectID, setupID),
 		TemplateRevision: template.Revision, TeamSpaceID: in.GetTeamSpaceId(), CreatorIsPlatformAdmin: accounts.IsAdministrator(account), InitialSession: initial}
-	fingerprint := managedProjectCreationFingerprint(account.AccountID, in.GetRequestId(), in.GetName(), in.GetTeamSpaceId(), example, initial)
-	start.Identity = dexflow.StartIdentity{RequestID: fingerprint, Fingerprint: fingerprint, ActorAccountID: account.AccountID}
+	uploads, _ := attached.Uploads()
+	identity := fingerprint(uploads)
+	start.Identity = dexflow.StartIdentity{RequestID: identity, Fingerprint: identity, ActorAccountID: account.AccountID}
 	if err = s.projects.Create(ctx, start); err != nil {
 		return nil, boundary.RPCStatus(err)
 	}
 	return &pb.CreateProjectResponse{ProjectId: projectID}, nil
+}
+
+// acceptedWith reports whether a creation whose attachments the admission
+// refused as expired is the retry of the Project it already started: the
+// allowed typed-error recovery read of the request's Project, whose
+// fingerprint the expired attachments' uploads still give.
+func (s *projectServer) acceptedWith(ctx context.Context, projectID string, refusal *attachments.AdmissionRefusal, attached attachments.ProjectStartAttachments,
+	fingerprint func([]attachments.UploadIdentity) string) bool {
+	uploads, complete := attached.Uploads()
+	if refusal.Code != attachments.RefusalExpired || !complete {
+		return false
+	}
+	project, err := s.projects.Read(ctx, projectID)
+	return err == nil && project.Identity.Fingerprint == fingerprint(uploads)
 }
 
 // closestExample is the example a creation from a first message starts from
@@ -164,19 +206,23 @@ func (s *projectServer) admitCreator(ctx context.Context, account accounts.Accou
 }
 
 // validInitialSession admits the Session's first turn of a creation before any
-// Flow starts: a first message as SendMessage admits one, with its message ID,
-// and a known model, which admitModel then authorizes. It is nil when the
-// request names neither.
-func validInitialSession(in *pb.CreateProjectRequest, account accounts.AccountSummary) (*projects.SessionStartRequest, error) {
-	if in.GetInitialMessage() == "" && in.GetMessageId() == "" && in.GetModel() == pb.AgentModel_AGENT_MODEL_UNSPECIFIED {
+// Flow starts: a first message as SendMessage admits one, with its message ID
+// and attachment IDs, and a known model, which admitModel then authorizes. It
+// is nil when the request names neither.
+func validInitialSession(in *pb.CreateProjectRequest, account accounts.AccountSummary, admission *attachments.AttachmentFlowService) (*projects.SessionStartRequest, error) {
+	attached := len(in.GetInitialAttachmentIds()) > 0
+	if in.GetInitialMessage() == "" && in.GetMessageId() == "" && !attached && in.GetModel() == pb.AgentModel_AGENT_MODEL_UNSPECIFIED {
 		return nil, nil
 	}
 	initial := &projects.SessionStartRequest{}
-	if in.GetInitialMessage() != "" || in.GetMessageId() != "" {
+	if in.GetInitialMessage() != "" || in.GetMessageId() != "" || attached {
 		if err := boundary.ValidateMessageID(in.GetMessageId()); err != nil {
 			return nil, err
 		}
-		if err := boundary.InvalidIf(!validMessageContent(in.GetInitialMessage()), "invalid initial message content"); err != nil {
+		if err := validAttachmentIDs(in.GetInitialAttachmentIds(), admission); err != nil {
+			return nil, err
+		}
+		if err := boundary.InvalidIf(!validMessageContent(in.GetInitialMessage(), attached), "invalid initial message content"); err != nil {
 			return nil, err
 		}
 		initial.MessageID, initial.Text = in.GetMessageId(), in.GetInitialMessage()
@@ -208,8 +254,10 @@ func refusalStatus(err error) error {
 // that changes the message, its ID or the model conflicts; a request without
 // one keeps the encoding it had before. A picked example enters it by its ID,
 // so a retry that changes or drops the example conflicts; a creation from a
-// description keeps its encoding.
-func managedProjectCreationFingerprint(accountID, requestID, name, teamSpaceID string, example *pb.ExampleReference, initial *projects.SessionStartRequest) string {
+// description keeps its encoding. The first message's attachments enter it
+// as their ordered (ID, SHA-256) pairs, only when there are any.
+func managedProjectCreationFingerprint(accountID, requestID, name, teamSpaceID string, example *pb.ExampleReference, initial *projects.SessionStartRequest,
+	uploads []attachments.UploadIdentity) string {
 	type repositoryCreationIdentity struct {
 		RepositoryID, InstallationID int64
 		FullName, URL, DefaultBranch string
@@ -218,6 +266,7 @@ func managedProjectCreationFingerprint(accountID, requestID, name, teamSpaceID s
 	}
 	type sessionCreationIdentity struct {
 		Model, MessageID, MessageDigest string
+		Attachments                     []attachments.UploadIdentity `json:",omitempty"`
 	}
 	type exampleCreationIdentity struct {
 		ID string
@@ -228,7 +277,7 @@ func managedProjectCreationFingerprint(accountID, requestID, name, teamSpaceID s
 	}
 	var session *sessionCreationIdentity
 	if initial != nil {
-		session = &sessionCreationIdentity{Model: initial.Model, MessageID: initial.MessageID, MessageDigest: flowid.Fingerprint(initial.Text)}
+		session = &sessionCreationIdentity{Model: initial.Model, MessageID: initial.MessageID, MessageDigest: flowid.Fingerprint(initial.Text), Attachments: uploads}
 	}
 	return flowid.Fingerprint(struct {
 		Mode, AccountID, RequestID, Name, TeamSpaceID string

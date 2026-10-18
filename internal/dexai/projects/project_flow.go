@@ -61,9 +61,12 @@ var (
 	ProjectInitialSessionRequest = dex.DefineAttribute[SessionStartRequest]("InitialSessionRequest")
 	ChildFlows                   = dex.DefineAttributeMap[ChildFlowReference]("ChildFlows")
 	// ProjectMembers, by AccountID, syncs as the child table project_members and stays after deletion.
-	ProjectMembers  = dex.DefineAttributeMap[ProjectMember]("Members", dex.SyncToAttributeStore())
-	ProjectCommands = dex.DefineChannel[ProjectCommand]("ProjectCommands")
-	ProjectProgress = dex.DefineStream[dexflow.ProgressEvent]("ProjectProgress", 10<<20)
+	ProjectMembers = dex.DefineAttributeMap[ProjectMember]("Members", dex.SyncToAttributeStore())
+	// ProjectAttachments, by attachment ID, are the files the Project's messages sent, which the totals count.
+	ProjectAttachments      = dex.DefineAttributeMap[ProjectAttachment]("Attachments")
+	ProjectAttachmentTotals = dex.DefineAttribute[AttachmentTotals]("AttachmentTotals")
+	ProjectCommands         = dex.DefineChannel[ProjectCommand]("ProjectCommands")
+	ProjectProgress         = dex.DefineStream[dexflow.ProgressEvent]("ProjectProgress", 10<<20)
 )
 
 // ProjectFlow is the permanent owner of one Project (project-<projectID>): it registers in its TeamSpace, starts
@@ -82,6 +85,7 @@ type ProjectFlow struct {
 	Storage      infra.Storage
 	Cleanup      infra.Cleanup
 	Connections  ConnectionUsages
+	Attachments  AttachmentLimits
 }
 
 func (f *ProjectFlow) GetSteps() []dex.StepDef {
@@ -110,6 +114,7 @@ func (f *ProjectFlow) GetRPCs() []dex.RPCDef {
 		dex.DefineRPC(f.AcquireDeployment, write), dex.DefineRPC(f.RecordLiveExecution, write), dex.DefineRPC(f.CommitLiveDeployment, write),
 		dex.DefineRPC(f.ReleaseDeployment, write),
 		dex.DefineRPC(f.AddProjectMember, members), dex.DefineRPC(f.SetProjectMemberRole, members), dex.DefineRPC(f.RemoveProjectMember, members),
+		dex.DefineRPC(f.ReserveProjectAttachments, write), dex.DefineRPC(f.ReleaseProjectAttachments, write),
 	}
 }
 
@@ -119,7 +124,7 @@ func (f *ProjectFlow) GetPersistenceSchema() dex.PersistenceSchema {
 			ProjectStartIdentity, ProjectRevision, ProjectCreatedAt, ProjectUpdatedAt, ProjectID, ProjectCreatorAccountID, ProjectName, ProjectTemplateRevision,
 			ProjectSetupFlowID, ProjectTeamSpaceID, ProjectStatus, ProjectRepositoryBinding, ProjectAppManifest, ProjectActiveDeployment, ProjectCurrentLive, ProjectStorage,
 			ProjectLiveExecution, ProjectActiveCommand, ProjectLastCommand, ProjectLastFailure, ProjectSessionStartFailure, ChildFlows, ProjectMembers,
-			ProjectInitialSessionRequest,
+			ProjectInitialSessionRequest, ProjectAttachments, ProjectAttachmentTotals,
 		},
 		Channels: []dex.ChannelDef{ProjectCommands},
 		Streams:  []dex.StreamDef{ProjectProgress},
@@ -151,9 +156,15 @@ func (f *ProjectFlow) InitialAttributes(in ProjectStart) []dex.InitialAttributeD
 	dexflow.Add(b, ProjectLastFailure, nil)
 	dexflow.Add(b, ProjectSessionStartFailure, nil)
 	dexflow.AddInstance(b, ProjectMembers, in.CreatorAccountID, ProjectMember{Role: RoleOwner, AddedAt: now, AddedByAccountID: in.CreatorAccountID})
+	totals := AttachmentTotals{}
 	if in.InitialSession != nil {
 		dexflow.Add(b, ProjectInitialSessionRequest, *in.InitialSession)
+		for _, attached := range in.InitialSession.Attachments {
+			dexflow.AddInstance(b, ProjectAttachments, attached.File.ID, projectAttachment(attached.File, in.InitialSession.MessageID, "", now))
+			totals.Count, totals.Bytes = totals.Count+1, totals.Bytes+attached.File.Bytes
+		}
 	}
+	dexflow.Add(b, ProjectAttachmentTotals, totals)
 	return b.Values()
 }
 
@@ -186,6 +197,7 @@ func (f *ProjectFlow) GetProject(ctx dex.Context, _ dex.None) (*dex.RPCResult[Pr
 		LastCommand:         dexflow.Optional(ProjectLastCommand.Get(ctx)),
 		LastFailure:         dexflow.Optional(ProjectLastFailure.Get(ctx)),
 		SessionStartFailure: dexflow.Optional(ProjectSessionStartFailure.Get(ctx)),
+		AttachmentTotals:    dexflow.ValueOrZero(ProjectAttachmentTotals.Get(ctx)),
 		Revision:            comm.Must(ProjectRevision.Get(ctx)),
 		CreatedAt:           comm.Must(ProjectCreatedAt.Get(ctx)),
 		UpdatedAt:           comm.Must(ProjectUpdatedAt.Get(ctx)),
@@ -322,6 +334,65 @@ func (f *ProjectFlow) RequestLiveRemoval(ctx dex.Context, in ProjectCommand) (*d
 func (f *ProjectFlow) RequestProjectDeletion(ctx dex.Context, in ProjectCommand) (*dex.RPCResult[projectResult], error) {
 	in.Kind = CommandDeleteProject
 	return f.requestCommand(ctx, in)
+}
+
+// ReserveProjectAttachments counts a READY Project's message attachments against its lifetime quota under the
+// admission's hold; one reserved already is held again, uncounted, and only the client's named instances load.
+func (f *ProjectFlow) ReserveProjectAttachments(ctx dex.Context, in AttachmentReservation) (*dex.RPCResult[attachmentResult], error) {
+	if comm.Must(ProjectStatus.Get(ctx)) != StatusReady {
+		return attachmentRejected(dexflow.RejectionFailedPrecondition, "the Project accepts no attachments: it is not READY")
+	}
+	totals, now := dexflow.ValueOrZero(ProjectAttachmentTotals.Get(ctx)), time.Now().UTC()
+	ids, changed := []string{}, map[string]ProjectAttachment{}
+	for _, file := range in.Files {
+		reserved, err := ProjectAttachments.Get(ctx, file.ID)
+		switch {
+		case err == nil:
+			if held, isChanged := reserved.held(in.AdmissionID); isChanged {
+				ids, changed[file.ID] = append(ids, file.ID), held
+			}
+		case dexflow.IsAttributeNotFound(err):
+			ids, changed[file.ID] = append(ids, file.ID), projectAttachment(file, in.MessageID, in.AdmissionID, now)
+			totals.Count, totals.Bytes = totals.Count+1, totals.Bytes+file.Bytes
+		default:
+			return nil, err
+		}
+	}
+	if totals.Count > f.Attachments.Files || totals.Bytes > f.Attachments.Bytes {
+		return attachmentRejected(dexflow.RejectionResourceExhausted, fmt.Sprintf("a Project's messages send at most %d attachments and %d bytes over its lifetime", f.Attachments.Files, f.Attachments.Bytes))
+	}
+	for _, id := range ids {
+		comm.MustDo(ProjectAttachments.Set(ctx, id, changed[id]))
+	}
+	comm.MustDo(ProjectAttachmentTotals.Set(ctx, totals))
+	return &dex.RPCResult[attachmentResult]{}, nil
+}
+
+// ReleaseProjectAttachments drops, after a definite refusal of a message admission, that admission's holds; an
+// attachment no admission holds any more and that is not kept is freed, and a repeat finds nothing to drop.
+func (f *ProjectFlow) ReleaseProjectAttachments(ctx dex.Context, in attachmentRelease) (*dex.RPCResult[attachmentResult], error) {
+	totals := dexflow.ValueOrZero(ProjectAttachmentTotals.Get(ctx))
+	for _, id := range in.AttachmentIDs {
+		reserved, err := ProjectAttachments.Get(ctx, id)
+		if dexflow.IsAttributeNotFound(err) {
+			continue
+		} else if err != nil {
+			return nil, err
+		}
+		switch remaining, isChanged, isFree := reserved.released(in.AdmissionID); {
+		case isFree:
+			comm.MustDo(ProjectAttachments.Delete(ctx, id))
+			totals.Count, totals.Bytes = max(totals.Count-1, 0), max(totals.Bytes-reserved.Bytes, 0)
+		case isChanged:
+			comm.MustDo(ProjectAttachments.Set(ctx, id, remaining))
+		}
+	}
+	comm.MustDo(ProjectAttachmentTotals.Set(ctx, totals))
+	return &dex.RPCResult[attachmentResult]{}, nil
+}
+
+func attachmentRejected(code dexflow.RejectionCode, message string) (*dex.RPCResult[attachmentResult], error) {
+	return &dex.RPCResult[attachmentResult]{Output: attachmentResult{Rejection: dexflow.Reject(code, message)}}, nil
 }
 
 // AcquireDeployment leases Live to one deployment at a time; the lease names the Live revision it

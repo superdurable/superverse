@@ -54,6 +54,7 @@ const BROWSER_SERVICES = {
   TeamSpaceMemberService: true,
   ProjectMemberService: true,
   TeamSpaceConnectionService: true,
+  AttachmentService: true,
 } satisfies Record<BrowserService, true>;
 
 /**

@@ -11,6 +11,7 @@ package mockmodel
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -503,6 +504,8 @@ func (replay *interactiveReplay) user(message requestMessage) error {
 					return err
 				}
 			}
+		case conversation.BlockTypeImage.String():
+			// interactiveFields checked the image's source; an image is the user's attachment.
 		case conversation.BlockTypeToolResult.String():
 			var result struct {
 				ID      conversation.CallID `json:"tool_use_id"`
@@ -551,6 +554,11 @@ func interactiveFields(raw json.RawMessage, user bool) (map[string]json.RawMessa
 		allowed = append(allowed, "id", "name", "input")
 	case conversation.BlockTypeToolResult.String():
 		allowed = append(allowed, "tool_use_id", "content", "is_error")
+	case conversation.BlockTypeImage.String():
+		if !user || !validImageSource(fields["source"]) {
+			return nil, "", errors.New("interactive image is not a user's base64 image")
+		}
+		allowed = append(allowed, "source")
 	default:
 		return nil, "", errors.New("interactive content contains thinking or an unknown block")
 	}
@@ -572,6 +580,112 @@ func interactiveFields(raw json.RawMessage, user bool) (map[string]json.RawMessa
 		}
 	}
 	return fields, kind, nil
+}
+
+// validImageSource admits exactly the base64 source an attached image's
+// rendition holds.
+func validImageSource(raw json.RawMessage) bool {
+	var source map[string]string
+	if json.Unmarshal(raw, &source) != nil || len(source) != 3 || source["type"] != "base64" || !strings.HasPrefix(source["media_type"], "image/") {
+		return false
+	}
+	_, err := base64.StdEncoding.DecodeString(source["data"])
+	return err == nil && source["data"] != ""
+}
+
+// attachmentPlace is where an expected attachment is shown: in the
+// segment_start, after its text, or in the newest user message, before its
+// envelope; a closed set of the scripts' expect_attachments.
+type attachmentPlace string
+
+const (
+	attachmentInSegmentStart attachmentPlace = "segment_start"
+	attachmentInMessage      attachmentPlace = "message"
+)
+
+// expectedAttachment is one attachment a step's request must show.
+type expectedAttachment struct {
+	Name string          `json:"name"`
+	Kind string          `json:"kind"`
+	In   attachmentPlace `json:"in"`
+}
+
+// validate checks an expectation against the closed sets it names.
+func (expected expectedAttachment) validate() error {
+	if expected.Name == "" || !slices.Contains(conversation.AttachmentKinds, conversation.AttachmentKind(expected.Kind)) ||
+		expected.In != attachmentInSegmentStart && expected.In != attachmentInMessage {
+		return errors.New("expect_attachments needs a name, a kind of image, document or json, and in: segment_start or message")
+	}
+	return nil
+}
+
+// checkAttachments requires each expected attachment in its place: an image
+// block, for an image, or the framed text that names it, for the others, and
+// a sender envelope there that lists it. A segment_start's envelopes are those
+// of its pending-request quote.
+func (request messagesRequest) checkAttachments(expected []expectedAttachment) error {
+	images := map[attachmentPlace]int{}
+	for _, want := range expected {
+		message, envelopes := request.attachmentsIn(want.In)
+		listed, shown := false, false
+		for _, envelope := range envelopes {
+			for _, label := range conversation.EnvelopeAttachments(envelope) {
+				listed = listed || label.Name == want.Name && label.Kind.String() == want.Kind
+			}
+		}
+		imageBlocks := 0
+		for _, raw := range message.Content {
+			var block textJSON
+			if json.Unmarshal(raw, &block) != nil {
+				return errors.New("the request holds a malformed block")
+			}
+			if block.Type == conversation.BlockTypeImage.String() {
+				imageBlocks++
+			}
+			name, framed := conversation.FramedAttachmentName(block.Text)
+			shown = shown || block.Type == conversation.BlockTypeText.String() && framed && name == want.Name
+		}
+		if want.Kind == conversation.AttachmentKindImage.String() {
+			images[want.In]++
+			shown = imageBlocks >= images[want.In]
+		}
+		if !listed || !shown {
+			return fmt.Errorf("the %s of the request does not show the %s attachment %q (listed %t, shown %t)", want.In, want.Kind, want.Name, listed, shown)
+		}
+	}
+	return nil
+}
+
+// attachmentsIn is the message of place and the sender envelopes it holds.
+func (request messagesRequest) attachmentsIn(place attachmentPlace) (requestMessage, []string) {
+	if place == attachmentInSegmentStart {
+		var envelopes []string
+		if texts := request.Messages[0].texts(); len(texts) > 0 {
+			if pending, found := finalPendingRequest(texts[0]); found {
+				for _, line := range strings.Split(pending, "\n") {
+					if strings.HasPrefix(line, conversation.SenderEnvelopePrefix) {
+						envelopes = append(envelopes, line)
+					}
+				}
+			}
+		}
+		return request.Messages[0], envelopes
+	}
+	for index := len(request.Messages) - 1; index >= 0; index-- {
+		message := request.Messages[index]
+		if message.Role != string(conversation.EntryRoleUser) {
+			continue
+		}
+		var envelopes []string
+		for _, raw := range message.Content {
+			var block textJSON
+			if json.Unmarshal(raw, &block) == nil && strings.HasPrefix(block.Text, conversation.SenderEnvelopePrefix) {
+				envelopes = append(envelopes, block.Text)
+			}
+		}
+		return message, envelopes
+	}
+	return requestMessage{}, nil
 }
 
 // LongHandoffByteFillerForTest is the immutable public body imported through

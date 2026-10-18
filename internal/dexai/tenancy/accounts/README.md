@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Registers, logs in, logs out and authenticates accounts, which the database owns, with Argon2id password records and HMAC-signed login tokens.
 
-Callers: `internal/dexai/agents`, `internal/dexai/agents/remoteagent`, `internal/dexai/api`, `internal/dexai/api/boundary`, `internal/dexai/api/tenancy` and `internal/dexai/bootstrap` import this package.
+Callers: `internal/dexai/agents`, `internal/dexai/agents/remoteagent`, `internal/dexai/api`, `internal/dexai/api/attachments`, `internal/dexai/api/boundary`, `internal/dexai/api/tenancy` and `internal/dexai/bootstrap` import this package.
 
 Dependencies: it imports `internal/comm`, `internal/comm/flowid` and `internal/dexai/tenancy/accountdao`.
 
@@ -13,9 +13,10 @@ flowchart LR
   c0["internal/dexai/agents"] --> self
   c1["internal/dexai/agents/remoteagent"] --> self
   c2["internal/dexai/api"] --> self
-  c3["internal/dexai/api/boundary"] --> self
-  c4["internal/dexai/api/tenancy"] --> self
-  c5["internal/dexai/bootstrap"] --> self
+  c3["internal/dexai/api/attachments"] --> self
+  c4["internal/dexai/api/boundary"] --> self
+  c5["internal/dexai/api/tenancy"] --> self
+  c6["internal/dexai/bootstrap"] --> self
   self --> d0["internal/comm"]
   self --> d1["internal/comm/flowid"]
   self --> d2["internal/dexai/tenancy/accountdao"]

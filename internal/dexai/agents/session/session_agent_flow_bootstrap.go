@@ -35,8 +35,9 @@ type SessionAgentConfig struct {
 	// Mock is the client of the in-process mock model; nil when the server
 	// configuration does not offer it.
 	Mock *modelprovider.ClaudeClientConfig
-	// Settings are the base effort, the compaction threshold and the
-	// thinking prefix-mismatch behavior of every segment.
+	// Settings are the base effort, the compaction threshold, the
+	// thinking prefix-mismatch behavior and the attachment budget of every
+	// segment.
 	Settings agentloop.ModelSettings
 	// AutomaticTurns bound the consecutive turns that task notifications and
 	// application-owned delivery failures open before automatic continuation
@@ -70,9 +71,10 @@ type SessionAgentFlowBootstrap struct {
 }
 
 // NewSessionAgentFlowBootstrap assembles the Flow; instances builds the
-// instance provider on the workspace capabilities it creates.
+// instance provider on the workspace capabilities it creates, and renditions
+// renders the attachment references of its model requests.
 func NewSessionAgentFlowBootstrap(config SessionAgentConfig, credentials *git.HostCredentials, dependency SessionAgentFlowDependency, diagnostics ProjectDiagnosticsReader,
-	catalog connectorCatalogMatcher, addresses workspace.SandboxAddresses, instances func(*workspace.Capabilities) sandbox.InstanceProvider, logger *slog.Logger,
+	catalog connectorCatalogMatcher, renditions attachmentRenditions, addresses workspace.SandboxAddresses, instances func(*workspace.Capabilities) sandbox.InstanceProvider, logger *slog.Logger,
 ) (*SessionAgentFlowBootstrap, error) {
 	httpClient := modelprovider.NewProviderHTTPClient()
 	model, err := modelprovider.NewModelRouter(httpClient, config.Claude, config.Mock, logger)
@@ -83,7 +85,7 @@ func NewSessionAgentFlowBootstrap(config SessionAgentConfig, credentials *git.Ho
 	provider := instances(workspaces)
 	tools := sandboxtools.NewRunner(workspaces.SandboxResolver(), workspaces.Git())
 	return &SessionAgentFlowBootstrap{
-		flow:       newSessionAgentFlow(model, tools, diagnostics, dependency, workspaces, catalog, config.AutomaticTurns, config.SandboxHold, config.PreviewHold, config.Settings),
+		flow:       newSessionAgentFlow(model, tools, diagnostics, dependency, workspaces, catalog, renditions, config.AutomaticTurns, config.SandboxHold, config.PreviewHold, config.Settings),
 		model:      config.Model,
 		workspace:  workspaces,
 		instances:  provider,
@@ -94,9 +96,9 @@ func NewSessionAgentFlowBootstrap(config SessionAgentConfig, credentials *git.Ho
 // newSessionAgentFlow constructs the Flow with every mandatory dependency and
 // the server's model settings.
 func newSessionAgentFlow(modelClient conversation.ModelClient, sandbox *sandboxtools.Runner, diagnostics ProjectDiagnosticsReader, dependency SessionAgentFlowDependency, repository repositoryContextReader,
-	catalog connectorCatalogMatcher, automaticTurns agentloop.AutomaticTurnBounds, sandboxHold, previewHold time.Duration, settings agentloop.ModelSettings,
+	catalog connectorCatalogMatcher, renditions attachmentRenditions, automaticTurns agentloop.AutomaticTurnBounds, sandboxHold, previewHold time.Duration, settings agentloop.ModelSettings,
 ) *SessionAgentFlow {
-	return &SessionAgentFlow{modelClient: modelClient, sandbox: sandbox, diagnostics: diagnostics, dependency: dependency, repository: repository, catalog: catalog,
+	return &SessionAgentFlow{modelClient: modelClient, sandbox: sandbox, diagnostics: diagnostics, dependency: dependency, repository: repository, catalog: catalog, renditions: renditions,
 		automaticTurns: automaticTurns, sandboxHold: sandboxHold, previewHold: previewHold, settings: settings}
 }
 

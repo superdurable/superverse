@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["attachment_id"],
+  "properties": {
+    "attachment_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]{12}$",
+      "description": "The ID of a document or JSON file the user attached, as its frame or the attachments section names it."
+    },
+    "section": {
+      "type": "string",
+      "pattern": "^s[1-9][0-9]{0,2}$",
+      "description": "A document's section to read, such as s8; without it a document returns its outline and a JSON file its text."
+    },
+    "part": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4096,
+      "description": "The 32 KiB part to read of a section or a JSON file that is longer; 1 when omitted."
+    }
+  }
+}

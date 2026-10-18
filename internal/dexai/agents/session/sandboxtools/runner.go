@@ -60,6 +60,10 @@ type Call struct {
 	// return promptly. It is best effort and never keeps the call alive: the
 	// caller heartbeats its Step while the call runs.
 	Progress func(string)
+	// Attachment is the file of the attachment a place_attachment call names,
+	// which the Session read from its Project's bound attachments; nil when
+	// the Project bound none of that ID.
+	Attachment *conversation.AttachmentFile
 }
 
 // ConfirmedRequirements is the version and the feature IDs (R1, R2, ...) of
@@ -88,6 +92,7 @@ var (
 	Glob             Tool = (*Execution).glob
 	ConnectorCatalog Tool = (*Execution).connectorCatalog
 	CommitAndPush    Tool = (*Execution).commitAndPush
+	PlaceAttachment  Tool = (*Execution).placeAttachment
 )
 
 // The bash tool's ledger operations (tool_bash.go): BeginCommand is the

@@ -104,7 +104,14 @@ type Input struct {
 	Content string
 	// Answers are the answers to the pending questions, in question order.
 	Answers []string
+	// attachments name the fixture files the message attaches, in order
+	// (AttachmentFixtureForTest).
+	attachments []string
 }
+
+// AttachmentsForTest names the fixture files the input attaches, which a Dex
+// test stages before it sends the input.
+func (input Input) AttachmentsForTest() []string { return input.attachments }
 
 // Answers is the kind of pending input an input of this kind answers; false
 // for a message, which answers none.
@@ -149,7 +156,7 @@ func (s *script) describe() Scenario {
 	}
 	tools := map[conversation.ToolName]bool{}
 	for index, in := range s.Inputs {
-		input := Input{Number: index + 1, Label: in.Label, Kind: in.kind(), Answers: in.Answers}
+		input := Input{Number: index + 1, Label: in.Label, Kind: in.kind(), Answers: in.Answers, attachments: in.Attachments}
 		switch input.Kind {
 		case InputMessage:
 			input.Content = in.Message + " " + inputMarker(s.Name, input.Number)

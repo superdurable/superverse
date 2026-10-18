@@ -32,8 +32,25 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/app/apptemplate"
 )
 
-//go:embed scenarios/*.yaml
+//go:embed scenarios/*.yaml scenarios/attachments
 var scenarioFiles embed.FS
+
+// AttachmentFixtureForTest is attachmentFixture for the Dex tests, which
+// stage the files a scenario input attaches.
+func AttachmentFixtureForTest(name string) ([]byte, error) { return attachmentFixture(name) }
+
+// attachmentFixture is the bytes of a fixture file a scenario input attaches,
+// under scenarios/attachments/.
+func attachmentFixture(name string) ([]byte, error) {
+	if name == "" || strings.ContainsAny(name, "/\\") {
+		return nil, fmt.Errorf("attachment fixture %q is no file name", name)
+	}
+	data, err := scenarioFiles.ReadFile(path.Join("scenarios", "attachments", name))
+	if err != nil {
+		return nil, fmt.Errorf("attachment fixture %q: %w", name, err)
+	}
+	return data, nil
+}
 
 // script is one scenario: the user inputs it expects, in order, and the
 // replies the model gives to each.
@@ -93,7 +110,10 @@ type input struct {
 	Label   string   `json:"label"`
 	Message string   `json:"message"`
 	Answers []string `json:"answers"`
-	Replies []step   `json:"replies"`
+	// Attachments are the fixture files under scenarios/attachments/ that a
+	// message input attaches, in order.
+	Attachments []string `json:"attachments"`
+	Replies     []step   `json:"replies"`
 }
 
 // InputKind is how a user input reaches the Session.
@@ -177,6 +197,10 @@ type step struct {
 	ExpectSenderEnvelope bool `json:"expect_sender_envelope"`
 	// ExpectPendingRequestBudget checks the real compacted multipart quote.
 	ExpectPendingRequestBudget bool `json:"expect_pending_request_budget"`
+	// ExpectAttachments lists attachments the request must show, each in the
+	// segment_start or the newest user message, with an envelope there that
+	// lists it (checkAttachments); otherwise the call is rejected.
+	ExpectAttachments []expectedAttachment `json:"expect_attachments"`
 	// CompactionError answers the compaction request that follows this reply
 	// with an error instead of the summary, such as the overload that Dex
 	// retries until the Session gives up the compaction.
@@ -307,6 +331,9 @@ func loadScripts() (map[string]*script, error) {
 	}
 	loaded := make(map[string]*script, len(entries))
 	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
 		file := path.Join("scenarios", entry.Name())
 		s, err := parseScript(comm.Must(scenarioFiles.ReadFile(file)))
 		if err == nil && s.Name != strings.TrimSuffix(entry.Name(), ".yaml") {
@@ -477,6 +504,13 @@ func (s *script) validateInput(index int, in input) error {
 		return errors.New("answers must not be blank")
 	case strings.Contains(in.Message, "[["):
 		return errors.New("the text of an input carries no marker; Studio adds it")
+	case len(in.Attachments) > 0 && in.kind() != InputMessage, len(in.Attachments) > conversation.MaximumMessageAttachments:
+		return errors.New("only a message input attaches files, at most ten")
+	}
+	for _, name := range in.Attachments {
+		if _, err := attachmentFixture(name); err != nil {
+			return err
+		}
 	}
 	if in.kind() != InputAnswers {
 		return nil
@@ -499,7 +533,7 @@ func (s *script) validateInput(index int, in input) error {
 }
 
 func (s *script) validateStep(step step, files rootFiles) error {
-	if step.Remote && (s.isSubagent() || step.Thinking != "" || step.Error != nil || step.Usage != nil || step.ChunkDelayMS != 0 || step.CompactionError != nil || step.ExpectHandoff || step.Repeat > 1 || step.StopReason != "" || len(step.ToolUses) > 4 || len(step.Text) > 64<<10 || len(step.ExpectSegmentStart) > 0 || len(step.ExpectSegmentStartLacks) > 0 || step.ExpectRepositoryContextNotice || step.ExpectSenderEnvelope || step.ExpectPendingRequestBudget) {
+	if step.Remote && (s.isSubagent() || step.Thinking != "" || step.Error != nil || step.Usage != nil || step.ChunkDelayMS != 0 || step.CompactionError != nil || step.ExpectHandoff || step.Repeat > 1 || step.StopReason != "" || len(step.ToolUses) > 4 || len(step.Text) > 64<<10 || len(step.ExpectSegmentStart) > 0 || len(step.ExpectSegmentStartLacks) > 0 || step.ExpectRepositoryContextNotice || step.ExpectSenderEnvelope || step.ExpectPendingRequestBudget || len(step.ExpectAttachments) > 0) {
 		return errors.New("a remote step has only exact public text/tool uses and never provider thinking, timing, failure, compaction or handoff expectations")
 	}
 	for _, use := range step.ToolUses {
@@ -540,6 +574,11 @@ func (s *script) validateStep(step step, files rootFiles) error {
 	}
 	if step.Notification != "" {
 		if err := step.Notification.Validate(); err != nil {
+			return err
+		}
+	}
+	for _, expected := range step.ExpectAttachments {
+		if err := expected.validate(); err != nil {
 			return err
 		}
 	}

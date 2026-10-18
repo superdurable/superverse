@@ -20,9 +20,11 @@ import (
 	pb "github.com/superdurable/superversev2/gen/superverse/v2"
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost"
 	"github.com/superdurable/superversev2/internal/dexai/agents"
+	"github.com/superdurable/superversev2/internal/dexai/agents/attachments"
 	remoteconnections "github.com/superdurable/superversev2/internal/dexai/agents/remoteagent"
 	sessionagent "github.com/superdurable/superversev2/internal/dexai/agents/session"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/subagent"
+	attachmentsapi "github.com/superdurable/superversev2/internal/dexai/api/attachments"
 	"github.com/superdurable/superversev2/internal/dexai/api/boundary"
 	remoteapi "github.com/superdurable/superversev2/internal/dexai/api/remoteagent"
 	"github.com/superdurable/superversev2/internal/dexai/api/tenancy"
@@ -69,6 +71,11 @@ type Server struct {
 	Releases    *releases.ProjectReleaseFlowClient
 	Deployments *deployments.ProjectDeployFlowClient
 	Publishing  *deployments.PublishingFlowService
+	// Attachments and Renditions serve the uploads and downloads of attached files;
+	// AttachmentAdmission admits the attachments of messages.
+	Attachments         *attachments.AttachmentFlowClient
+	Renditions          *attachments.RenditionStore
+	AttachmentAdmission *attachments.AttachmentFlowService
 }
 
 // NewGRPCServer serves the business services behind panic recovery.
@@ -88,10 +95,10 @@ func NewGRPCServer(s *Server) *grpc.Server {
 	tenancy.Register(server, b, s.TeamSpaces, s.TeamSpaceReads, s.Members, s.Connections)
 	pb.RegisterProjectServiceServer(server, &projectServer{Boundary: b, projectIDLength: s.ProjectIDLength,
 		projects: s.Projects, members: s.Members, teamSpaces: s.TeamSpaces, setups: s.Setups, configuration: s.Configuration,
-		deployments: s.Deployments, sessions: s.Sessions, recentEvents: s.RecentEvents, models: s.SessionModels, closestExamplePick: s.ClosestExamplePick})
+		deployments: s.Deployments, sessions: s.Sessions, attachments: s.AttachmentAdmission, recentEvents: s.RecentEvents, models: s.SessionModels, closestExamplePick: s.ClosestExamplePick})
 	pb.RegisterProjectMemberServiceServer(server, &projectMemberServer{Boundary: b, projects: s.Projects, members: s.Members})
 	pb.RegisterSessionServiceServer(server, &sessionServer{Boundary: b, sessions: s.Sessions, sessionAgents: s.SessionAgents, subagents: s.Subagents})
-	pb.RegisterAgentServiceServer(server, &agentServer{Boundary: b, sessions: s.Sessions, sessionAgents: s.SessionAgents, models: s.SessionModels})
+	pb.RegisterAgentServiceServer(server, &agentServer{Boundary: b, sessions: s.Sessions, sessionAgents: s.SessionAgents, attachments: s.AttachmentAdmission, models: s.SessionModels})
 	remoteapi.Register(server, b, s.RemoteAgents)
 	pb.RegisterPreviewServiceServer(server, &previewServer{Boundary: b, sessions: s.Sessions})
 	pb.RegisterReleaseServiceServer(server, &releaseServer{Boundary: b, projects: s.Projects, host: s.Host, releases: s.Releases, configuration: s.Configuration, publishing: s.Publishing})
@@ -102,6 +109,7 @@ func NewGRPCServer(s *Server) *grpc.Server {
 	configuration := flowConfiguration{Boundary: b, configuration: s.Configuration}
 	pb.RegisterConnectorServiceServer(server, &connectorServer{flowConfiguration: configuration, publishing: s.Publishing})
 	pb.RegisterApplicationEnvironmentServiceServer(server, &applicationEnvironmentServer{flowConfiguration: configuration})
+	attachmentsapi.Register(server, b, s.Attachments, s.Renditions, s.Members, s.Projects)
 	return server
 }
 

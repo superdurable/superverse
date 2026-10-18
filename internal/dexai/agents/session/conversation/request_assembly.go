@@ -48,7 +48,9 @@ type RequestShape struct {
 //
 // A violated invariant is a programming error and panics: the first entry is
 // segment_start (or an executor's retained user-first entry), every gap holds a user entry, each tool_use is answered
-// exactly once in the gap after it, and the trailing gap is not empty.
+// exactly once in the gap after it, the trailing gap is not empty and only
+// user entries hold attachment references, which keep their positions until
+// the model call replaces each 1:1.
 func AssembleRequest(entries []SequencedEntry, anchor Sequence, shape RequestShape) []RequestMessage {
 	if len(entries) == 0 || (entries[0].Entry.Kind != EntryKindSegmentStart &&
 		(!shape.ExecutorContext || entries[0].Entry.Role != EntryRoleUser || entries[0].Entry.Kind == EntryKindToolResult)) {
@@ -100,6 +102,9 @@ func renderGap(gap []SequencedEntry, toolUses []CallID, anchored Sequence, shape
 		case entry.Entry.Role == EntryRoleSystem:
 			if entry.Entry.Meta.Effort != "" {
 				effort = entry.Entry.Meta.Effort
+			}
+			if slices.ContainsFunc(blocks, IsAttachmentReference) {
+				panic(fmt.Sprintf("system entry %d holds an attachment reference", entry.Sequence))
 			}
 			system = append(system, blocks...)
 			continue

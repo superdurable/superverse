@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -110,8 +111,11 @@ func (flow *SessionAgentFlow) completeModelCall(ctx dex.Context, segment agentlo
 	progress.write(conversation.AgentEvent{Kind: conversation.EventKindModelStarted, Message: "Calling " + segment.Model.ProviderModel() + ".", Attempt: &attempt})
 	request.WriteActivity = progress.writeActivity
 	defer dexflow.KeepAlive(ctx, agentloop.ModelHeartbeat{Phase: agentloop.HeartbeatPhaseModelCall})()
-	reply, err := flow.modelClient.Complete(ctx, request)
 	outcome := platformModelOutcome{Admission: admission, StartedAt: ctx.FirstAttemptAt().UTC()}
+	if err := flow.renderAttachments(ctx, &request); err != nil {
+		return outcome, dex.ErrorWithStack(fmt.Errorf("render the attachments of the request to %s: %w", segment.Model, err))
+	}
+	reply, err := flow.modelClient.Complete(ctx, request)
 	if rejected, ok := errors.AsType[*conversation.ModelRejectedError](err); ok {
 		outcome.Failure = publicModelRejection(rejected)
 		return boundedModelOutcome(outcome), nil
@@ -479,59 +483,62 @@ func (flow *SessionAgentFlow) segmentRequest(ctx dex.Context, kind agentloop.Mod
 
 func discardText(string) error { return nil }
 
-// openSessionStartSegment opens the first segment of the Session on the
-// selected model.
-func (flow *SessionAgentFlow) openSessionStartSegment(ctx dex.Context) agentloop.ContextSegment {
-	return flow.openSegment(ctx, agentloop.SegmentReasonSessionStart, comm.Must(sessionModelAttribute.Get(ctx)).Model, "", currentEntry)
+// attachmentKey is one attachment as a reference shows it.
+type attachmentKey struct {
+	id      string
+	variant conversation.AttachmentVariant
 }
 
-// openSegment opens the next segment for reason on model with summary: one
-// segment_start entry with the summary, the repository context, the confirmed
-// requirements, the card design rule once the agent's cards carry no Flow
-// design (recordsNoCardDesign), the todo list, the starting example while it
-// is described,
-// for the Session's first segment the catalog matches of its request, and the
-// turn's pending request as read finds it, then the notice of a reporting
-// turn. A segment without the repository context awaits it. The segment and
-// its prompts replace the previous ones, and archive chunks before it become
-// eligible for retention.
-func (flow *SessionAgentFlow) openSegment(ctx dex.Context, reason agentloop.SegmentReason, model conversation.Model, summary string, read entryReader) agentloop.ContextSegment {
-	previous, request := dexflow.OptionalValue(contextSegmentAttribute.Get(ctx)), pendingRequestEntries(ctx, read)
-	start := agentloop.SegmentStart{Summary: summary, RepositoryContext: dexflow.ValueOrZero(workspaceAttribute.Get(ctx)).RepositoryContext,
-		ConfirmedRequirements: dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx)),
-		TodoList:              dexflow.OptionalValue(todoListAttribute.Get(ctx)), PendingRequest: conversation.PendingRequestText(request),
-		StartingExample: startingExampleSection(ctx, reason == agentloop.SegmentReasonSessionStart), NoCardDesign: recordsNoCardDesign(ctx)}
-	if reason == agentloop.SegmentReasonSessionStart {
-		start.CatalogMatches = flow.requestCatalogMatches(request)
-	}
-	entry := conversation.SegmentStartEntry(start.Text(), agentloop.SegmentMarker(reason))
-	first := appendEntry(ctx, entry)
-	segment := agentloop.NewSegment(previous, first, reason, model, flow.settings, entry.Bytes())
-	segment.Summary = comm.TruncateUTF8(summary, 8<<10)
-	segment.AwaitsRepositoryContext = start.RepositoryContext == ""
-	comm.MustDo(contextSegmentAttribute.Set(ctx, segment))
-	comm.MustDo(contextSegmentPromptsAttribute.Set(ctx, segment.PromptsKey(), agentloop.SessionPromptFor(model).Prompts))
-	if previous != nil {
-		comm.MustDo(contextSegmentPromptsAttribute.Delete(ctx, previous.PromptsKey()))
-	}
-	trimRetainedEntries(ctx)
-	return comm.Must(contextSegmentAttribute.Get(ctx))
-}
-
-// pendingRequestEntries are the user messages the current turn works on that
-// read finds. A compaction and its failure route load the chunks that hold
-// them (segmentLoad) and read them with loadedEntry. The first segment opens in
-// Steps that load no archive chunk and reads only CurrentMessages
-// (currentEntry), so a message archived before it is left out.
-func pendingRequestEntries(ctx dex.Context, read entryReader) []conversation.Entry {
-	state := comm.Must(agentStateAttribute.Get(ctx))
-	var entries []conversation.Entry
-	for _, sequence := range state.TurnRequestSequences {
-		if entry, found := read(ctx, state, sequence); found {
-			entries = append(entries, entry)
+// renderAttachments replaces each attachment reference of request 1:1 by the
+// block its frozen variant renders: a placeholder's frozen text, the resolved
+// rendition for the others, each attachment and variant resolved once in one
+// call of the port within the calling Step's heartbeat; an error retries the
+// Step. Assembly keeps a reference's position and substitution is one block
+// for one block, so the result, cache anchor included, equals substitution
+// before assembly.
+func (flow *SessionAgentFlow) renderAttachments(ctx dex.Context, request *conversation.ModelRequest) error {
+	rendered := map[attachmentKey]json.RawMessage{}
+	var keys []attachmentKey
+	var resolving []conversation.AttachmentReference
+	for _, message := range request.Messages {
+		for _, block := range message.Blocks {
+			reference, isReference := conversation.ReadAttachmentReference(block)
+			key := attachmentKey{reference.Attachment.ID, reference.Variant}
+			if _, seen := rendered[key]; !isReference || seen || slices.Contains(keys, key) {
+				continue
+			}
+			if reference.Variant == conversation.AttachmentVariantPlaceholder {
+				rendered[key] = conversation.PlaceholderAttachmentBlock(reference.Attachment)
+				continue
+			}
+			keys, resolving = append(keys, key), append(resolving, reference)
 		}
 	}
-	return entries
+	if len(resolving) > 0 {
+		blocks, err := flow.renditions.Resolve(ctx, comm.Must(projectIDAttribute.Get(ctx)), resolving)
+		if err != nil {
+			return err
+		}
+		if len(blocks) != len(resolving) {
+			panic(fmt.Sprintf("resolving %d attachment references returned %d blocks", len(resolving), len(blocks)))
+		}
+		for index, key := range keys {
+			rendered[key] = blocks[index]
+		}
+	}
+	for index, message := range request.Messages {
+		if !slices.ContainsFunc(message.Blocks, conversation.IsAttachmentReference) {
+			continue
+		}
+		blocks := slices.Clone(message.Blocks)
+		for position, block := range blocks {
+			if reference, isReference := conversation.ReadAttachmentReference(block); isReference {
+				blocks[position] = rendered[attachmentKey{reference.Attachment.ID, reference.Variant}]
+			}
+		}
+		request.Messages[index].Blocks = blocks
+	}
+	return nil
 }
 
 // modelFailureCode is a model call without a usable reply that the Session
@@ -637,6 +644,9 @@ func (flow *SessionAgentFlow) completeCompaction(ctx dex.Context, input contextC
 	request := flow.segmentRequest(ctx, agentloop.ModelCallKindCompaction, segment, prompts, conversation.NoticeEntry(conversation.EntryRoleSystem, conversation.CompactionInstruction, ""))
 	request.ToolChoiceNone = input.ToolChoiceNone
 	defer dexflow.KeepAlive(ctx, agentloop.CompactionHeartbeat{Phase: agentloop.HeartbeatPhaseCompacting, Segment: segment.Number})()
+	if err := flow.renderAttachments(ctx, &request); err != nil {
+		return nil, nil, dex.ErrorWithStack(fmt.Errorf("render the attachments of context segment %d: %w", segment.Number, err))
+	}
 	reply, err := flow.modelClient.Complete(ctx, request)
 	outcome := platformModelOutcome{Admission: input.Admission, Compaction: &input, StartedAt: ctx.FirstAttemptAt().UTC()}
 	if rejected, ok := errors.AsType[*conversation.ModelRejectedError](err); ok {
@@ -828,104 +838,6 @@ func capturedPreviewHandoff(ctx dex.Context, handoff agentloop.PreviewHandoff) a
 		handoff.WorkspaceRequestID = ws.Lease.RequestID
 	}
 	return handoff
-}
-
-// executorContextLoads selects exact retained chunks; at most the newest 1000
-// entries contribute to an executor handoff. Missing loads retry the same
-// existing boundary Step, never the model or a new context lifecycle.
-func executorContextLoads(ctx dex.Context) []dex.AttributeMapLoad {
-	state := comm.Must(agentStateAttribute.Get(ctx))
-	first := max(state.FirstRetainedSequence, state.LastSequence-999)
-	first = (first-1)/agentloop.ArchiveMessageChunkSize*agentloop.ArchiveMessageChunkSize + 1
-	var loads []dex.AttributeMapLoad
-	for sequence := first; sequence < state.CurrentFirstSequence; sequence += agentloop.ArchiveMessageChunkSize {
-		key := agentloop.SequenceKey(sequence)
-		_, err := archivedMessagesAttribute.Get(ctx, key)
-		if dexflow.IsAttributeMapNotLoaded(err) {
-			loads = append(loads, archivedMessagesAttribute.Load(key))
-		} else {
-			comm.MustDo(err)
-		}
-	}
-	return loads
-}
-
-func (flow *SessionAgentFlow) openExecutorSegment(ctx dex.Context, executor remoteexec.Executor) agentloop.ContextSegment {
-	state := comm.Must(agentStateAttribute.Get(ctx))
-	read := retainedEntries(ctx, state)
-	entries := make([]conversation.SequencedEntry, 0, 1000)
-	for sequence := max(state.FirstRetainedSequence, state.LastSequence-999); sequence <= state.LastSequence; sequence++ {
-		entries = append(entries, conversation.SequencedEntry{Sequence: sequence, Entry: read(sequence)})
-	}
-	first := agentloop.ExecutorContextStart(entries, flow.settings.CompactionTokens)
-	previous := dexflow.OptionalValue(contextSegmentAttribute.Get(ctx))
-	summary := ""
-	if previous != nil {
-		summary = previous.Summary
-	}
-	handoff := executor.Handoff
-	text := handoff.Notice(comm.Must(headCommitAttribute.Get(ctx)))
-	section := func(label, value string, budget int) {
-		if value != "" {
-			text += "\n\n" + label + ":\n" + boundedHandoffText(value, budget)
-		}
-	}
-	section("Older platform summary", summary, 8<<10)
-	if requirements := dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx)); requirements != nil {
-		section("Current requirements", (agentloop.SegmentStart{ConfirmedRequirements: requirements}).Text(), 2<<10)
-	}
-	if recordsNoCardDesign(ctx) {
-		section("Card design", (agentloop.SegmentStart{NoCardDesign: true}).Text(), 1<<10)
-	}
-	if todos := dexflow.OptionalValue(todoListAttribute.Get(ctx)); todos != nil {
-		section("Todos", (agentloop.SegmentStart{TodoList: todos}).Text(), 2<<10)
-	}
-	var commands []string
-	for _, command := range loadedBackgroundCommands(ctx) {
-		if command.IsRunning() {
-			commands = append(commands, command.TaskID)
-		}
-	}
-	section("Running background commands", strings.Join(commands, ", "), 1<<10)
-	// The starting example takes what the notice leaves, so it never pushes out the sections before it.
-	if room := remoteexec.MaximumHandoffBytes - len(text) - len("\n\nStarting example:\n"); room >= minimumHandoffExampleBytes {
-		section("Starting example", startingExampleSection(ctx, false), room)
-	}
-	entry := conversation.NoticeEntry(conversation.EntryRoleUser, boundedHandoffText(text, remoteexec.MaximumHandoffBytes), "Switched to the Superverse agent")
-	last := appendEntry(ctx, entry)
-	if first == 0 {
-		first = last
-	}
-	bytes := entry.Bytes()
-	for _, item := range entries {
-		if item.Sequence >= first {
-			bytes += item.Entry.Bytes()
-		}
-	}
-	model := comm.Must(sessionModelAttribute.Get(ctx)).Model
-	segment := agentloop.NewSegment(previous, first, agentloop.SegmentReasonExecutor, model, flow.settings, bytes)
-	segment.Summary = comm.TruncateUTF8(summary, 8<<10)
-	comm.MustDo(contextSegmentAttribute.Set(ctx, segment))
-	comm.MustDo(contextSegmentPromptsAttribute.Set(ctx, segment.PromptsKey(), agentloop.SessionPromptFor(model).Prompts))
-	if previous != nil {
-		comm.MustDo(contextSegmentPromptsAttribute.Delete(ctx, previous.PromptsKey()))
-	}
-	executor.Handoff = nil
-	comm.MustDo(executorAttribute.Set(ctx, executor))
-	trimRetainedEntries(ctx)
-	return comm.Must(contextSegmentAttribute.Get(ctx))
-}
-
-// minimumHandoffExampleBytes is the least room for the starting example in
-// the executor handoff notice; with less, the notice leaves it out.
-const minimumHandoffExampleBytes = 512
-
-func boundedHandoffText(text string, budget int) string {
-	if len(text) <= budget {
-		return text
-	}
-	const marker = "\n[earlier details omitted; open Studio for the full state]"
-	return comm.TruncateUTF8(text, budget-len(marker)) + marker
 }
 
 // executorWakePending checks the actual bounded Channel snapshot, under

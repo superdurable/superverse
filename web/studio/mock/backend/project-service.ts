@@ -44,7 +44,7 @@ import { mockEnvironmentEvents } from "@/mock/store/delivery/environment-events"
 import { advanceMockPublishes } from "@/mock/store/delivery/publish-runs";
 import { readableTeamSpace, mockTenancy } from "@/mock/store/tenancy/team-spaces";
 import { withCallerRole } from "@/mock/store/tenancy/tenancy-snapshots";
-import { startMockSession } from "./agent-service";
+import { admitMessageAttachments, startMockSession } from "./agent-service";
 import type { MockService } from "./mock-backend";
 import { watchSnapshots } from "./store-watch";
 
@@ -83,11 +83,12 @@ function configuration(store: MockStore, target: ProjectConfigurationTarget__Out
 export const projectService: MockService<"ProjectService"> = {
   // Like Go, the first message comes with its message ID, and the new Session starts with it and the model.
   CreateProject: (
-    { requestId, name, managedRepository, teamSpaceId, initialMessage, messageId, model, caller },
+    { requestId, name, managedRepository, teamSpaceId, initialMessage, messageId, model, caller, initialAttachmentIds },
     { store },
   ) => {
     if (!managedRepository) throw httpError(400, "managed_repository is required");
-    if (Boolean(initialMessage.trim()) !== Boolean(messageId))
+    // Like Go, a first message may be blank when it attaches files.
+    if (Boolean(initialMessage.trim() || initialAttachmentIds.length) !== Boolean(messageId))
       throw httpError(400, "initial_message and message_id are set together");
     const example = managedRepository.example;
     const offered = example && MOCK_EXAMPLES.find((item) => item.exampleId === example.exampleId);
@@ -100,10 +101,15 @@ export const projectService: MockService<"ProjectService"> = {
     const account = mockAccount(caller);
     const tenancy = mockTenancy(store, account);
     admitMockProject(tenancy, account, teamSpaceId);
+    if (initialAttachmentIds.length && example) throw httpError(400, "an example starts without attachments");
+    admitMessageAttachments(store, caller, null, teamSpaceId, initialAttachmentIds);
     const started = offered ? { exampleId: offered.exampleId, tree: offered.tree } : undefined;
     const { project: created, replayed } = createProject(store, name, requestId || null, started);
     registerMockProject(tenancy, account, teamSpaceId, created.id);
-    if (!replayed) startMockSession(store, created.id, model, initialMessage);
+    if (!replayed) {
+      const attachments = admitMessageAttachments(store, caller, created.id, teamSpaceId, initialAttachmentIds);
+      startMockSession(store, created.id, model, initialMessage, attachments);
+    }
     if (!replayed && offered) startFromMockExample(store, created.id, offered.title, offered.card);
     return { projectId: created.id };
   },

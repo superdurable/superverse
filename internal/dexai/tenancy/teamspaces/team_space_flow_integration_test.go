@@ -13,6 +13,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
 	"sync"
@@ -64,7 +65,7 @@ func TestTeamSpaceDexIntegration(t *testing.T) {
 	defer cancel()
 	db := postgrestest.OpenForTest(t)
 	objects := artifactStore(ctx, t)
-	flow := &TeamSpaceFlow{Connections: connections.NewUsages(connectiondao.New(db), objects)}
+	flow := &TeamSpaceFlow{Connections: connections.NewUsages(connectiondao.New(db), objects), Objects: objects}
 	client := &TeamSpaceFlowClient{Dex: dexflowtest.WorkerClientForTest(ctx, t, address, host, flow), Flow: flow}
 	teamSpaceID := flowid.RandomID(8)
 	account := func(name string) string { return name + "-" + teamSpaceID }
@@ -266,7 +267,8 @@ func TestTeamSpaceDeletionRaceDexIntegration(t *testing.T) {
 	host := dexflowtest.Setting(t, "SUPERVERSE_TEST_WORKER_HOST")
 	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 	defer cancel()
-	flow := &TeamSpaceFlow{Connections: connections.NewUsages(connectiondao.New(postgrestest.OpenForTest(t)), artifactStore(ctx, t))}
+	objects := artifactStore(ctx, t)
+	flow := &TeamSpaceFlow{Connections: connections.NewUsages(connectiondao.New(postgrestest.OpenForTest(t)), objects), Objects: objects}
 	client := &TeamSpaceFlowClient{Dex: dexflowtest.WorkerClientForTest(ctx, t, address, host, flow), Flow: flow}
 	teamSpaceID := flowid.RandomID(8)
 	in := Start{Name: "Race", CreatorAccountID: "creator-" + teamSpaceID}
@@ -304,6 +306,100 @@ func TestTeamSpaceDeletionRaceDexIntegration(t *testing.T) {
 	if deleted := completeDeletion(t, client, teamSpaceID, platformAdmin); deleted.Status != StatusDeleted || deleted.LastCommand == nil || deleted.LastCommand.ID != ids[0] {
 		t.Fatalf("the completed TeamSpace is %+v, want DELETED by %s", deleted, ids[0])
 	}
+}
+
+// TestTeamSpaceAttachmentStagingDexIntegration drives the staging quota of a
+// TeamSpace of five files and 1,000 bytes directly: a replayed reservation
+// changes nothing, eight reservations race for the last two slots and exactly
+// two win, a reservation past the byte cap and one of an outsider are refused,
+// and a release frees its slot once. Once the deletion is requested a
+// reservation is refused while a release still succeeds; the deletion removes
+// the TeamSpace's staging prefix, and a release after it is success.
+func TestTeamSpaceAttachmentStagingDexIntegration(t *testing.T) {
+	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
+	host := dexflowtest.Setting(t, "SUPERVERSE_TEST_WORKER_HOST")
+	ctx, cancel := context.WithTimeout(t.Context(), 3*time.Minute)
+	defer cancel()
+	objects := artifactStore(ctx, t)
+	flow := &TeamSpaceFlow{Connections: connections.NewUsages(connectiondao.New(postgrestest.OpenForTest(t)), objects), Objects: objects, Staging: StagingLimits{Files: 5, Bytes: 1000}}
+	client := &TeamSpaceFlowClient{Dex: dexflowtest.WorkerClientForTest(ctx, t, address, host, flow), Flow: flow}
+	teamSpaceID := flowid.RandomID(8)
+	member := Actor{AccountID: "member-" + teamSpaceID}
+	in := Start{Name: "Staging", CreatorAccountID: member.AccountID}
+	in.Identity.RequestID = flowid.Fingerprint(in)
+	if err := client.Create(ctx, teamSpaceID, in); err != nil {
+		t.Fatalf("create TeamSpace %s: %s", teamSpaceID, dexflowtest.ErrorCategory(err))
+	}
+	platformAdmin := Actor{AccountID: "admin-" + teamSpaceID, PlatformAdmin: true}
+	t.Cleanup(func() { completeDeletion(t, client, teamSpaceID, platformAdmin) })
+	reserve := func(id string, bytes int64, actor Actor) error {
+		return client.ReserveAttachmentStaging(ctx, teamSpaceID, StagingReservation{AttachmentID: id, FlowID: "attachment-" + teamSpaceID + "-" + id, Bytes: bytes, Actor: actor})
+	}
+	for _, id := range []string{"a00000000001", "a00000000001", "a00000000002", "a00000000003"} {
+		if err := reserve(id, 100, member); err != nil {
+			t.Fatalf("reserve %s: %v", id, err)
+		}
+	}
+	var wait sync.WaitGroup
+	var mutex sync.Mutex
+	won, refused := 0, 0
+	for index := range 8 {
+		wait.Go(func() {
+			err := reserve(fmt.Sprintf("r%011d", index), 100, platformAdmin)
+			var rejected *dexflow.Rejection
+			mutex.Lock()
+			defer mutex.Unlock()
+			switch {
+			case err == nil:
+				won++
+			case errors.As(err, &rejected) && rejected.HasCode(dexflow.RejectionResourceExhausted):
+				refused++
+			default:
+				t.Errorf("a racing reservation failed: %v", err)
+			}
+		})
+	}
+	wait.Wait()
+	if won != 2 || refused != 6 {
+		t.Fatalf("%d racing reservations won the last two slots and %d were refused; want 2 and 6", won, refused)
+	}
+	if err := client.ReleaseAttachmentStaging(ctx, teamSpaceID, "a00000000003"); err != nil {
+		t.Fatalf("release a00000000003: %v", err)
+	}
+	requireRejected(t, reserve("b00000000001", 701, member), dexflow.RejectionResourceExhausted, "a reservation past the byte cap")
+	requireRejected(t, reserve("b00000000002", 1, Actor{AccountID: "outsider-" + teamSpaceID}), dexflow.RejectionPermissionDenied, "an outsider's reservation")
+	if err := reserve("b00000000003", 100, member); err != nil {
+		t.Fatalf("the released slot is not free: %v", err)
+	}
+	for range 2 {
+		if err := client.ReleaseAttachmentStaging(ctx, teamSpaceID, "a00000000002"); err != nil {
+			t.Fatalf("release a00000000002: %v", err)
+		}
+	}
+	staged := "attachment-staging/" + teamSpaceID + "/a00000000001/original/" + strings.Repeat("0", 64)
+	if _, err := objects.Put(ctx, staged, "text/plain", []byte("staged")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.RequestDeletion(ctx, teamSpaceID, DeletionRequest{Actor: platformAdmin, ID: "delete-staging"}); err != nil {
+		t.Fatal(err)
+	}
+	var reserveErr error
+	if reserveErr = reserve("c00000000001", 1, member); reserveErr == nil {
+		t.Fatal("a reservation in the deleting TeamSpace was admitted")
+	}
+	if err := client.ReleaseAttachmentStaging(ctx, teamSpaceID, "a00000000001"); err != nil {
+		t.Fatalf("a release in the deleting TeamSpace failed: %v", err)
+	}
+	if deleted := completeDeletion(t, client, teamSpaceID, platformAdmin); deleted.Status != StatusDeleted {
+		t.Fatalf("the TeamSpace completed %+v", deleted)
+	}
+	if done, err := objects.DeletePrefix(ctx, "attachment-staging/"+teamSpaceID+"/"); err != nil || !done {
+		t.Fatalf("the deleted TeamSpace left staged objects (%v)", err)
+	}
+	if err := client.ReleaseAttachmentStaging(ctx, teamSpaceID, "a00000000003"); err != nil {
+		t.Fatalf("a release after the deletion failed: %v", err)
+	}
+	t.Logf("TeamSpace %s: 2 of 8 racing reservations won, byte cap and outsider refused, %v while deleting, staging prefix gone", teamSpaceID, reserveErr)
 }
 
 // completeDeletion deletes the TeamSpace as the platform admin, unless its

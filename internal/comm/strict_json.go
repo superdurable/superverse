@@ -15,6 +15,10 @@ import (
 	"io"
 )
 
+// MediaTypeJSON is the media type of JSON, which stored objects and uploaded
+// files declare alike.
+const MediaTypeJSON = "application/json"
+
 // DecodeStrictJSON decodes exactly one JSON value of data into target. It
 // rejects unknown struct fields and trailing data, so a stored record or a
 // request that does not match its type fails instead of losing fields.

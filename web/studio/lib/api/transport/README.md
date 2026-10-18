@@ -3,9 +3,9 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: The browser network layer owns RPC posts, bounded read retries, snapshot Watches, command recovery, the Flow API client and application URL probes.
 
-Importers: `components/build`, `components/flow/**` (13), `components/project/**` (3), `components/publishing/**` (3), `components/shell`, `components/teamspace/**` (2), `lib/api/**` (4), `lib/browser`, `lib/flow`, `lib/project/**` (2), `lib/session/**` (2) and `lib/teamspace` import this directory.
+Importers: `components/build`, `components/flow/**` (13), `components/project/**` (3), `components/publishing/**` (3), `components/shell`, `components/teamspace/**` (2), `lib/api/**` (4), `lib/browser`, `lib/flow`, `lib/project/**` (2), `lib/session/**` (3) and `lib/teamspace` import this directory.
 
-Imports: it imports `lib/generated/protobuf` and `lib/shared` and calls the Flow, Preview application and Studio BFF APIs.
+Imports: it imports `lib/generated/protobuf` and `lib/shared` and calls the Flow, object storage presigned URL, Preview application and Studio BFF APIs.
 
 ```mermaid
 flowchart LR
@@ -20,13 +20,14 @@ flowchart LR
   c7["lib/browser"] --> self
   c8["lib/flow"] --> self
   c9["lib/project/** (2)"] --> self
-  c10["lib/session/** (2)"] --> self
+  c10["lib/session/** (3)"] --> self
   c11["lib/teamspace"] --> self
   self --> d0["lib/generated/protobuf"]
   self --> d1["lib/shared"]
   self --> e0(["Flow API"])
-  self --> e1(["Preview application API"])
-  self --> e2(["Studio BFF API"])
+  self --> e1(["object storage presigned URL API"])
+  self --> e2(["Preview application API"])
+  self --> e3(["Studio BFF API"])
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 

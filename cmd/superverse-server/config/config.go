@@ -79,6 +79,21 @@ const (
 	DefaultLiveRetirementDrain             = 10 * time.Minute
 	DefaultBuildLogReadsPerSecond          = 2.0
 	DefaultPlatformAdminEmail              = "admin@superverse.test"
+	DefaultAttachmentsPerMessage           = 10
+	DefaultAttachmentImageLongEdge         = 2000
+	DefaultAttachmentImageMaxBytes         = 1 << 20
+	DefaultAttachmentDocumentMaxBytes      = 20 << 20
+	DefaultAttachmentJSONMaxBytes          = 4 << 20
+	DefaultAttachmentMessageInlineText     = 120 << 10
+	DefaultAttachmentSegmentBytes          = 20 << 20
+	DefaultAttachmentSegmentImages         = 60
+	DefaultAttachmentUploadWait            = time.Hour
+	DefaultAttachmentStagingRetention      = 24 * time.Hour
+	DefaultAttachmentTeamSpaceStagedFiles  = 200
+	DefaultAttachmentTeamSpaceStagedBytes  = 2 << 30
+	DefaultAttachmentProjectLifetimeFiles  = 1000
+	DefaultAttachmentProjectLifetimeBytes  = 2 << 30
+	DefaultAttachmentRenditionCacheBytes   = 256 << 20
 )
 
 // SlackEventsPort is the server's port of the public Slack events listener
@@ -135,6 +150,7 @@ type Config struct {
 	Agent        AgentConfig        `yaml:"agent"`
 	Sandbox      SandboxConfig      `yaml:"sandbox"`
 	Storage      StorageConfig      `yaml:"storage"`
+	Attachments  AttachmentsConfig  `yaml:"attachments"`
 	Postgres     PostgresConfig     `yaml:"postgres"`
 	Connections  ConnectionsConfig  `yaml:"connections"`
 	RemoteAgent  RemoteAgentConfig  `yaml:"remoteAgent"`
@@ -344,9 +360,46 @@ type PlatformOAuthClient struct {
 // StorageConfig is the release artifact bucket.
 type StorageConfig struct {
 	// S3Endpoint points S3 at an endpoint of its own. Local Kind only.
-	S3Endpoint       string `yaml:"s3Endpoint"`
+	S3Endpoint string `yaml:"s3Endpoint"`
+	// BrowserEndpoint is the storage endpoint that browsers reach, which the
+	// presigned uploads and downloads name; empty is the AWS regional endpoint.
+	BrowserEndpoint  string `yaml:"browserEndpoint"`
 	ArtifactBucket   string `yaml:"artifactBucket"`
 	ArtifactKMSKeyID string `yaml:"artifactKMSKeyID"`
+}
+
+// AttachmentsConfig bounds the files people attach to messages
+// (docs/architecture/attachments/): their sizes, the share of a model request
+// they take, how long staged uploads live and the quotas that count them.
+type AttachmentsConfig struct {
+	// MaxPerMessage bounds the attachments of one message.
+	MaxPerMessage int `yaml:"maxPerMessage"`
+	// ImageLongEdge and ImageMaxBytes bound an image, which Studio normalizes
+	// to them before it uploads.
+	ImageLongEdge int   `yaml:"imageLongEdge"`
+	ImageMaxBytes int64 `yaml:"imageMaxBytes"`
+	// DocumentMaxBytes and JSONMaxBytes bound an uploaded document and JSON file.
+	DocumentMaxBytes int64 `yaml:"documentMaxBytes"`
+	JSONMaxBytes     int64 `yaml:"jsonMaxBytes"`
+	// MessageInlineText bounds the document text one message renders inline.
+	MessageInlineText int `yaml:"messageInlineText"`
+	// SegmentBytes and SegmentImages bound the rendered attachment blocks of
+	// one context segment, which every model call of the segment resends.
+	SegmentBytes  int64 `yaml:"segmentBytes"`
+	SegmentImages int   `yaml:"segmentImages"`
+	// UploadWait is how long a registered upload waits for its PUT, and
+	// StagingRetention how long a prepared attachment stays staged unsent.
+	UploadWait       time.Duration `yaml:"uploadWait"`
+	StagingRetention time.Duration `yaml:"stagingRetention"`
+	// TeamSpaceStagedFiles and TeamSpaceStagedBytes bound a TeamSpace's staged
+	// attachments; ProjectLifetimeFiles and ProjectLifetimeBytes the
+	// attachments a Project's messages send over its lifetime.
+	TeamSpaceStagedFiles int   `yaml:"teamSpaceStagedFiles"`
+	TeamSpaceStagedBytes int64 `yaml:"teamSpaceStagedBytes"`
+	ProjectLifetimeFiles int   `yaml:"projectLifetimeFiles"`
+	ProjectLifetimeBytes int64 `yaml:"projectLifetimeBytes"`
+	// RenditionCacheBytes bounds this replica's cache of rendition objects.
+	RenditionCacheBytes int64 `yaml:"renditionCacheBytes"`
 }
 
 // BuildsConfig is where Releases are built.
@@ -508,7 +561,16 @@ func Default() Config {
 			CompactionTokens:               DefaultCompactionTokens, ThinkingPrefixMismatch: DefaultThinkingPrefixMismatch,
 			TaskTurns: DefaultTaskTurns, PlatformTurns: DefaultPlatformTurns, ClosestExamplePick: DefaultClosestExamplePick,
 		},
-		Sandbox:      SandboxConfig{Hold: DefaultSandboxHold, PreviewHold: DefaultSandboxPreviewHold, Profile: DefaultSandboxProfile},
+		Sandbox: SandboxConfig{Hold: DefaultSandboxHold, PreviewHold: DefaultSandboxPreviewHold, Profile: DefaultSandboxProfile},
+		Attachments: AttachmentsConfig{
+			MaxPerMessage: DefaultAttachmentsPerMessage, ImageLongEdge: DefaultAttachmentImageLongEdge, ImageMaxBytes: DefaultAttachmentImageMaxBytes,
+			DocumentMaxBytes: DefaultAttachmentDocumentMaxBytes, JSONMaxBytes: DefaultAttachmentJSONMaxBytes, MessageInlineText: DefaultAttachmentMessageInlineText,
+			SegmentBytes: DefaultAttachmentSegmentBytes, SegmentImages: DefaultAttachmentSegmentImages,
+			UploadWait: DefaultAttachmentUploadWait, StagingRetention: DefaultAttachmentStagingRetention,
+			TeamSpaceStagedFiles: DefaultAttachmentTeamSpaceStagedFiles, TeamSpaceStagedBytes: DefaultAttachmentTeamSpaceStagedBytes,
+			ProjectLifetimeFiles: DefaultAttachmentProjectLifetimeFiles, ProjectLifetimeBytes: DefaultAttachmentProjectLifetimeBytes,
+			RenditionCacheBytes: DefaultAttachmentRenditionCacheBytes,
+		},
 		Live:         LiveConfig{RetirementDrain: DefaultLiveRetirementDrain},
 		Builds:       BuildsConfig{LocalURL: DefaultLocalBuildURL, LogReadsPerSecond: DefaultBuildLogReadsPerSecond},
 		GitHub:       GitHubConfig{Owner: DefaultGitHubOwner},

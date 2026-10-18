@@ -26,6 +26,7 @@ import type { AgentToolExecutionMetrics__Output } from "@/lib/generated/protobuf
 import type { ConnectorContribution__Output } from "@/lib/generated/protobuf/superverse/v2/ConnectorContribution";
 import { enumText, required, type EnumText } from "@/lib/shared/protobuf";
 import { versionLabel } from "@/lib/shared/version/version";
+import { agentAttachmentView } from "./attachments/attachment-view";
 
 /*
  * The browser view of the Agent protobuf. Decoded uint64/int64 values arrive as
@@ -103,6 +104,7 @@ function agentMessageView(value: AgentMessage__Output) {
   return {
     role: agentLiteral(value.role, "ROLE", "message role"),
     content: value.content,
+    attachments: value.attachments.map(agentAttachmentView),
     ...(value.via ? { via: value.via } : {}),
     ...(value.imported ? { imported: value.imported } : {}),
     toolCalls: value.toolCalls.map((call) => ({ id: call.id, name: call.name, target: call.target })),
@@ -184,7 +186,10 @@ function agentToolExecutionMetricsView(value: AgentToolExecutionMetrics__Output)
 
 function agentPendingMessageView(value: AgentPendingUserMessage__Output) {
   const message = required(value.value, "pending Agent message");
-  return { messageId: value.messageId, value: { content: message.content } };
+  return {
+    messageId: value.messageId,
+    value: { content: message.content, attachments: message.attachments.map(agentAttachmentView) },
+  };
 }
 
 function agentDescriptionView(value: AgentDescription__Output) {

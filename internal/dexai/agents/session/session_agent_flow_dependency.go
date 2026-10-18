@@ -10,6 +10,7 @@ package session
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace"
@@ -94,4 +95,23 @@ type repositoryContextReader interface {
 // Session's first segment calls it.
 type connectorCatalogMatcher interface {
 	RequestMatches(request string) string
+}
+
+// attachmentRenditions resolves the attachment references of the model
+// requests, which the CallModel and CompactContext Steps make, also in the
+// executor segment. Resolve returns, in order, the exact Claude block each
+// reference (full, or a brief) shows: the immutable block its rendition object
+// holds, byte-identical on every call, which the request carries in place of
+// the reference. The first resolve of an attachment copies its staged objects,
+// at most four at a time, into the Project's prefix
+// <projectID>/attachments/<id>/ and writes its manifest last; later resolves
+// read that copy. The Project's deletion removes the prefix only after this
+// Session completed. An attachment without a manifest whose staged objects are
+// gone resolves to conversation.ExpiredAttachmentBlock, which stays so. An
+// error is transient, and the Step retries. BoundFile reads, for
+// place_attachment, the file of an attachment the Project bound: a JSON
+// file's redacted copy; false when the Project bound none of that ID.
+type attachmentRenditions interface {
+	Resolve(ctx context.Context, projectID string, references []conversation.AttachmentReference) ([]json.RawMessage, error)
+	BoundFile(ctx context.Context, projectID, attachmentID string) (conversation.AttachmentFile, bool, error)
 }

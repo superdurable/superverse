@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Owns Projects for the API, Sessions, Releases and Deployments: ProjectFlow keeps each Project's identity, repository, Live lease, commands and child membership, and starts its one Session.
 
-Callers: `internal/dexai/agents`, `internal/dexai/agents/diagnostics`, `internal/dexai/agents/remoteagent`, `internal/dexai/agents/sandbox/preview`, `internal/dexai/api`, `internal/dexai/api/boundary`, `internal/dexai/api/tenancy`, `internal/dexai/bootstrap`, `internal/dexai/delivery/deployments`, `internal/dexai/delivery/deployments/docker`, `internal/dexai/delivery/deployments/kube`, `internal/dexai/delivery/releases`, `internal/dexai/projects/config`, `internal/dexai/projects/projecttest`, `internal/dexai/projects/setup` and `internal/dexai/studio/runs` import this package.
+Callers: `internal/dexai/agents`, `internal/dexai/agents/attachments`, `internal/dexai/agents/diagnostics`, `internal/dexai/agents/remoteagent`, `internal/dexai/agents/sandbox/preview`, `internal/dexai/api`, `internal/dexai/api/attachments`, `internal/dexai/api/boundary`, `internal/dexai/api/tenancy`, `internal/dexai/bootstrap`, `internal/dexai/delivery/deployments`, `internal/dexai/delivery/deployments/docker`, `internal/dexai/delivery/deployments/kube`, `internal/dexai/delivery/releases`, `internal/dexai/projects/config`, `internal/dexai/projects/projecttest`, `internal/dexai/projects/setup` and `internal/dexai/studio/runs` import this package.
 
 Dependencies: it imports `gen/superverse/v2`, `internal/comm`, `internal/comm/dexflow`, `internal/comm/flowid`, `internal/comm/platform`, `internal/comm/platform/objectstore`, `internal/comm/platform/postgres`, `internal/comm/platform/repohost`, `internal/dexai/app/appmanifest`, `internal/dexai/projects/infra`, `internal/dexai/projects/projectdao`, `internal/dexai/projects/repobinding`, `internal/dexai/tenancy/accountdao`, `internal/dexai/tenancy/memberdao` and `internal/dexai/tenancy/teamspaces` and calls the Dex Flow API.
 
@@ -11,21 +11,23 @@ Dependencies: it imports `gen/superverse/v2`, `internal/comm`, `internal/comm/de
 flowchart LR
   self["internal/dexai/projects"]
   c0["internal/dexai/agents"] --> self
-  c1["internal/dexai/agents/diagnostics"] --> self
-  c2["internal/dexai/agents/remoteagent"] --> self
-  c3["internal/dexai/agents/sandbox/preview"] --> self
-  c4["internal/dexai/api"] --> self
-  c5["internal/dexai/api/boundary"] --> self
-  c6["internal/dexai/api/tenancy"] --> self
-  c7["internal/dexai/bootstrap"] --> self
-  c8["internal/dexai/delivery/deployments"] --> self
-  c9["internal/dexai/delivery/deployments/docker"] --> self
-  c10["internal/dexai/delivery/deployments/kube"] --> self
-  c11["internal/dexai/delivery/releases"] --> self
-  c12["internal/dexai/projects/config"] --> self
-  c13["internal/dexai/projects/projecttest"] --> self
-  c14["internal/dexai/projects/setup"] --> self
-  c15["internal/dexai/studio/runs"] --> self
+  c1["internal/dexai/agents/attachments"] --> self
+  c2["internal/dexai/agents/diagnostics"] --> self
+  c3["internal/dexai/agents/remoteagent"] --> self
+  c4["internal/dexai/agents/sandbox/preview"] --> self
+  c5["internal/dexai/api"] --> self
+  c6["internal/dexai/api/attachments"] --> self
+  c7["internal/dexai/api/boundary"] --> self
+  c8["internal/dexai/api/tenancy"] --> self
+  c9["internal/dexai/bootstrap"] --> self
+  c10["internal/dexai/delivery/deployments"] --> self
+  c11["internal/dexai/delivery/deployments/docker"] --> self
+  c12["internal/dexai/delivery/deployments/kube"] --> self
+  c13["internal/dexai/delivery/releases"] --> self
+  c14["internal/dexai/projects/config"] --> self
+  c15["internal/dexai/projects/projecttest"] --> self
+  c16["internal/dexai/projects/setup"] --> self
+  c17["internal/dexai/studio/runs"] --> self
   self --> d0["gen/superverse/v2"]
   self --> d1["internal/comm"]
   self --> d2["internal/comm/dexflow"]
@@ -68,6 +70,7 @@ README states the behavior the package implements.
 | `project_flow_failure.go` | Typed causes and the safe Failure they record |
 | `project_flow_client.go` | Reads, access, creation, child admission, commands, deployment lease, the members (their writes, and their list from the read model), and the deletion its TeamSpace asks for (`teamspaces.ProjectCleanup`) |
 | `project_flow_client_session.go` | Session child admission and the Session membership read |
+| `project_flow_client_attachments.go` | The reservation and release of message attachments under the lifetime quota |
 | `app_manifest_publication.go` | Publishing a commit's app manifest as source objects |
 
 ## Dex Flow Changes
@@ -156,7 +159,43 @@ replayed attempt passes the same message and joins the one execution, and a
 start whose retries ran out keeps it for the Session's later start. Nothing
 else reads or writes it. A ProjectFlow started without it, a Project created
 without a message or an open execution from before the field existed, starts
-its Session as before.
+its Session as before. The first message may carry attachments and then no
+text: `SessionStartRequest.Attachments` holds, per attachment, the
+`AttachedFile` the quota counts and the Session's reference, which the
+Session's `conversation` package encodes and ProjectFlow only carries to
+`StartForProject`, which maps it into the first message.
+
+**Attachments.** ProjectFlow owns its Project's lifetime attachment quota
+([the contract](../../../docs/architecture/attachments/conversation.md#projectflow-changes)).
+The AttributeMap `Attachments`, keyed by the attachment ID (`a7f2c9xq4m1p`),
+holds `ProjectAttachment{Kind, MediaType, FileName, SHA256, Bytes,
+FirstMessageID, ReservedAt, Holds, Kept}`, where `Bytes` is the size of every
+object the Project's copy holds, `Holds` the message admissions that reserved
+it and that no definite refusal released (at most eight), and `Kept` an
+attachment that nothing releases: a first message's, or one a ninth admission
+held. The Attribute `AttachmentTotals{Count, Bytes}` counts the instances. Neither is synced or indexed, and both stay for the Flow's lifetime, as
+the copies under `<projectID>/attachments/` do until the Project's deletion
+removes its prefix. `InitialAttributes` writes one instance per attachment of
+the first message, with its message ID, kept, and the totals; the first
+message's at most ten attachments are counted, never refused.
+`ReserveProjectAttachments` (`AttachmentReservation{MessageID, AdmissionID,
+Files}`, at most ten) runs under the `Revision` write lock, which it does not
+advance, with exactly the named instances loaded
+(`ProjectFlowClient.ReserveAttachments`): a Project that is not READY, above
+all one DELETING, is FAILED_PRECONDITION; an attachment already reserved, by a
+retry of this message or an earlier message, gains the admission's hold and
+is not counted again; the rest are added unless the totals would pass
+`attachments.projectLifetimeFiles` (1,000) or `attachments.projectLifetimeBytes`
+(2 GiB), which is RESOURCE_EXHAUSTED and writes nothing.
+`ReleaseProjectAttachments` (`{AdmissionID, AttachmentIDs}`) under the same
+lock drops only that admission's holds and frees an instance only when no
+hold remains and it is not kept, so a release never frees what another
+message, or another send of the same message, may have delivered, and a
+repeat finds nothing; the API calls it only after a definite refusal of that
+send (`attachments.AttachmentFlowService`), and every `SendMessage` call
+reserves under an admission of its own because the Session does not
+deduplicate messages. The snapshot's `AttachmentTotals` reads
+the totals.
 
 **Children.** `ProjectFlowClient.AdmitChild` registers a Setup, Session,
 Release or Deployment in the `ChildFlows` AttributeMap
@@ -322,7 +361,7 @@ behind the Flows. `ProjectFlowClient.Authorize` checks one `Capability` with
 one query of the row joined with the caller's account, its `project_members`
 row and its `team_space_members` row of the Project's TeamSpace, and returns a
 `ProjectProjection`: the decoded Project and its Setup's columns, with
-`Identity`, `LastCommand` and `InitialSessionRequest`, which are not synced,
+`Identity`, `LastCommand`, `InitialSessionRequest` and `AttachmentTotals`, which are not synced,
 left zero, and the
 caller's effective role. The effective role (`access.effectiveRole`) is OWNER
 for the platform admin, otherwise the Project role while the account is a
@@ -384,6 +423,14 @@ Build show.
 - `TestTeamSpaceDeletionWorkerRestartIntegration` replaces the server while the
   TeamSpace of a READY Project deletes it; the Project and then the TeamSpace
   still complete DELETED. It restarts the lane's server, so it runs alone.
+- `TestProjectAttachmentsDexIntegration` reserves a throwaway READY Project's
+  message attachments on the lane's Worker: a message and its retry count once,
+  a later message carrying one again counts only the new one, the release of a
+  refused retry or of one of two messages carrying the same file frees nothing
+  another admission holds, an attachment held more than eight times stays
+  counted, messages past the byte and the count caps are RESOURCE_EXHAUSTED
+  and change nothing, and once the deletion is admitted nothing more is
+  reserved.
 - `TestDeletionAfterInterruptedSessionCompletionDexIntegration` deletes a
   throwaway READY Project whose one Session is idle. It cuts off a completion
   call of the deleting Project with a lock wait shorter than the Session's
@@ -405,7 +452,8 @@ first message that `InitialSessionRequest` carries to the Session is covered by
 the Session starts on the chosen model with the message admitted once, a same
 retry returns the Project, a changed retry is ALREADY_EXISTS, a refused model or
 message starts nothing, and ProjectFlow no longer holds the request once the
-Session started.
+Session started. Its attachments, counted at the start, are covered by
+`TestAttachmentMessageAdmissionDexIntegration` there.
 
 `TestApplicationTemplateGitHubIntegration` in `platform/repohost/github` creates an
 isolated repository through the real GitHub App, confirms `archived: true`

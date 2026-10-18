@@ -335,6 +335,28 @@ func newSandboxCallBase(ctx dex.Context, call conversation.ToolCall) sandboxtool
 	}
 }
 
+// withBoundAttachment adds to the trusted context of a place_attachment call
+// the file of the attachment it names, which the Session reads from its
+// Project's bound attachments; a call whose arguments the tool refuses reads
+// none. A storage error retries the Step.
+func (flow *SessionAgentFlow) withBoundAttachment(ctx dex.Context, execution context.Context, call conversation.ToolCall, sandboxCall sandboxtools.Call) (sandboxtools.Call, error) {
+	if call.Name != conversation.ToolPlaceAttachment {
+		return sandboxCall, nil
+	}
+	input, err := toolinput.PlaceAttachment.Decode(call.Arguments.String())
+	if err != nil {
+		return sandboxCall, nil
+	}
+	file, found, err := flow.renditions.BoundFile(execution, comm.Must(projectIDAttribute.Get(ctx)), input.AttachmentID)
+	if err != nil {
+		return sandboxCall, dex.ErrorWithStack(fmt.Errorf("read the file of attachment %s: %w", input.AttachmentID, err))
+	}
+	if found {
+		sandboxCall.Attachment = &file
+	}
+	return sandboxCall, nil
+}
+
 func remoteWorktreeFileMapLoads(name conversation.ToolName) []dex.AttributeDef {
 	switch name {
 	case conversation.ToolRead, conversation.ToolEdit, conversation.ToolWrite, conversation.ToolGrep, conversation.ToolGlob:

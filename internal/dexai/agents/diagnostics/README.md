@@ -5,14 +5,14 @@ Purpose: Runs the Session Agent's read-only platform tools on the server for the
 
 Callers: `internal/dexai/bootstrap` imports this package.
 
-Dependencies: it imports `internal/comm/**` (5) and `internal/dexai/**` (19) and calls the Dex Flow API.
+Dependencies: it imports `internal/comm/**` (5) and `internal/dexai/**` (20) and calls the Dex Flow API.
 
 ```mermaid
 flowchart LR
   self["internal/dexai/agents/diagnostics"]
   c0["internal/dexai/bootstrap"] --> self
   self --> d0["internal/comm/** (5)"]
-  self --> d1["internal/dexai/** (19)"]
+  self --> d1["internal/dexai/** (20)"]
   self --> e0(["Dex Flow API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
@@ -31,6 +31,7 @@ join parallel waves and are repeated safely.
 | --- | --- | --- |
 | `read_delivery_status` | The Project and its Setup from the Project's read model row, a few seconds behind their Flows; the Project's Preview through its Flow client; the newest three Releases and Live Deployments of the read model when no IDs are supplied, or the one named Live Release/Deployment; the active build revision of each Release, and for a failed one its log's end through `deployments.PublishingFlowService.ReadBuildLog`, which reads the build's recipe from its Flow, shares the replica's rate-limited log reads with Studio and answers a deferred read with no tail | Status, phase, failure and FlowID of each resource, the Session HEAD, the Live pointer, the Preview and its engine, and a failed build's log tail of at most 8 KiB, cut shorter when the status would pass 16 KiB |
 | `read_platform_flow` | One platform Flow through the platform Dex FlowService: summary, state or one history page of the current run | The summary with the current Steps and waits; the allowlisted business Attributes of the Flow type, each value at most 1 KiB of JSON; Step executions, decisions, attempts and failures |
+| `read_attachment` | An attachment the Session's Project bound, through `attachments.RenditionStore.ReadBound`: its manifest, a document's sections bundle or a JSON file's redacted copy, by exact version | A document's outline, or one part of a section or of a JSON file's text, at most 32 KiB, framed as material the user attached (`conversation.FrameAttachmentText`) with the file's frame tags escaped (`conversation.EscapeAttachmentText`); an image is `invalid_arguments`, an attachment the Project did not bind `attachment_not_found` |
 | `read_live_app_runs` | The Project's current Live deployment, as the read model's Live target selects it, through `runs.Runs.InvokeLive`: a search through indexed Attributes, one run's summary, state or history page; or the log of the application container through `deployments.Serving` | Runs newest first, run documents as above with every Attribute, and a log tail of at most 12 KiB with the container's state, cut shorter when the result would pass 16 KiB |
 
 `read_platform_flow` admits only `project-<p>`, `setup-<p>-*`, `release-<p>-*`,
@@ -115,6 +116,7 @@ Sandbox against its Sandbox-local engine and reads
 | `platform_flows.go` | `read_platform_flow`: the admitted FlowIDs and the Attribute allowlists |
 | `live_app_runs.go` | `read_live_app_runs`: Live runs, the Live redaction values and the application log |
 | `flow_documents.go` | Summary, state and history documents of one Flow, shared by both engines |
+| `attachment_reads.go` | `read_attachment`: outlines, section and file parts of the Project's bound attachments |
 
 ## Dex Flow Changes
 

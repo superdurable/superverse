@@ -5,20 +5,21 @@ Purpose: Renders an Agent conversation: turns, messages, notices, Markdown, and 
 
 Importers: `components/agent` imports this directory.
 
-Imports: it imports `components/agent/interaction`, `components/ui`, `components/ui/badge`, `components/ui/problem`, `components/ui/reveal`, `lib/session`, `lib/shared` and `lib/shared/problem`.
+Imports: it imports `components/agent/attachments`, `components/agent/interaction`, `components/ui`, `components/ui/badge`, `components/ui/problem`, `components/ui/reveal`, `lib/session`, `lib/shared` and `lib/shared/problem`.
 
 ```mermaid
 flowchart LR
   self["components/agent/conversation"]
   c0["components/agent"] --> self
-  self --> d0["components/agent/interaction"]
-  self --> d1["components/ui"]
-  self --> d2["components/ui/badge"]
-  self --> d3["components/ui/problem"]
-  self --> d4["components/ui/reveal"]
-  self --> d5["lib/session"]
-  self --> d6["lib/shared"]
-  self --> d7["lib/shared/problem"]
+  self --> d0["components/agent/attachments"]
+  self --> d1["components/agent/interaction"]
+  self --> d2["components/ui"]
+  self --> d3["components/ui/badge"]
+  self --> d4["components/ui/problem"]
+  self --> d5["components/ui/reveal"]
+  self --> d6["lib/session"]
+  self --> d7["lib/shared"]
+  self --> d8["lib/shared/problem"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 

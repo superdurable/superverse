@@ -27,7 +27,8 @@ export const PROJECT_MESSAGE_DELIVERY = { UNSENT: "unsent", SENDING: "sending" }
  * brief and waits for the person's change, and what the person had typed (`draft`) waits in the opened
  * Project's composer, never sent by the creation. The creation page always stores a model for the
  * Superverse agent; null is a creation stored before the model was chosen there, which the server starts
- * on its default model.
+ * on its default model. The first message of the Superverse agent may carry the start page's ready
+ * attachments (`attachments`): their IDs and names, never their bytes.
  */
 export type PendingProjectCreation = {
   teamSpaceId: string;
@@ -39,7 +40,32 @@ export type PendingProjectCreation = {
   messageIdempotencyKey: string;
   example?: PendingExample;
   draft?: string;
+  attachments?: PendingAttachment[];
 };
+
+/** An attachment of the first message, as the start page's chip remembered it. */
+type PendingAttachment = {
+  attachmentId: string;
+  uploadRequestId: string;
+  name: string;
+  mediaType: string;
+  size: number;
+  sha256: string;
+};
+
+/** The composer scope under which the start page of a Teamspace remembers its unsent attachments. */
+export function startAttachmentsScope(teamSpaceId: string): string {
+  return `start:${teamSpaceId}`;
+}
+
+/** Forgets the start page's unsent attachments of a Teamspace, once a Project took them. */
+export function forgetStartAttachments(teamSpaceId: string): void {
+  try {
+    removeStored("session", STORAGE_KEYS.composerAttachments(startAttachmentsScope(teamSpaceId)));
+  } catch {
+    // Blocked storage holds nothing to forget.
+  }
+}
 
 /** The example a creation starts from, as the bundled catalog (lib/examples) names it. */
 type PendingExample = { exampleId: string };
@@ -76,16 +102,50 @@ function exampleOf(value: unknown): PendingExample | null | undefined {
   return null;
 }
 
+function attachmentOf(value: unknown): PendingAttachment | null {
+  if (
+    !isRecord(value) ||
+    !nonEmpty(value.attachmentId) ||
+    !nonEmpty(value.uploadRequestId) ||
+    !nonEmpty(value.name) ||
+    !nonEmpty(value.mediaType) ||
+    typeof value.sha256 !== "string" ||
+    typeof value.size !== "number" ||
+    !Number.isSafeInteger(value.size) ||
+    value.size <= 0
+  )
+    return null;
+  const { attachmentId, uploadRequestId, name, mediaType, size, sha256 } = value;
+  return { attachmentId, uploadRequestId, name, mediaType, size, sha256 };
+}
+
+/** The attachments of a stored creation: absent, or one to ten distinct valid entries; null when corrupt. */
+function attachmentsOf(value: unknown): PendingAttachment[] | null | undefined {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value) || value.length === 0 || value.length > 10) return null;
+  const valid = value.flatMap((entry: unknown) => attachmentOf(entry) ?? []);
+  const distinct = new Set(valid.map((attachment) => attachment.attachmentId)).size;
+  return valid.length === value.length && distinct === valid.length ? valid : null;
+}
+
 /**
- * The example and the draft of a stored creation, or null when they are corrupt: the prompt is a first
- * message, or empty with an example, and only an example carries a draft.
+ * The example, the draft and the attachments of a stored creation, or null when they are corrupt: the prompt
+ * is a first message, or empty with an example or attachments; only an example carries a draft, and only a
+ * first message attachments.
  */
-function startOf(value: UnknownRecord): Pick<PendingProjectCreation, "example" | "draft"> | null {
+function startOf(value: UnknownRecord): Pick<PendingProjectCreation, "example" | "draft" | "attachments"> | null {
   const example = exampleOf(value.example);
   const draft = value.draft;
+  const attachments = attachmentsOf(value.attachments);
   if (example === null || (draft !== undefined && (example === undefined || !nonEmpty(draft)))) return null;
-  if (!(nonEmpty(value.prompt) || (example !== undefined && value.prompt === ""))) return null;
-  return { ...(example ? { example } : {}), ...(typeof draft === "string" ? { draft } : {}) };
+  if (attachments === null || (attachments !== undefined && example !== undefined)) return null;
+  if (!(nonEmpty(value.prompt) || (value.prompt === "" && (example !== undefined || attachments !== undefined))))
+    return null;
+  return {
+    ...(example ? { example } : {}),
+    ...(typeof draft === "string" ? { draft } : {}),
+    ...(attachments ? { attachments } : {}),
+  };
 }
 
 export function hasPendingProjectCreation(): boolean {

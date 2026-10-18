@@ -45,7 +45,8 @@ export type BrowserService =
   | "TeamSpaceService"
   | "TeamSpaceMemberService"
   | "ProjectMemberService"
-  | "TeamSpaceConnectionService";
+  | "TeamSpaceConnectionService"
+  | "AttachmentService";
 
 type BrowserMethod = MethodOf<BrowserService>;
 

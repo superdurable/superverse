@@ -111,7 +111,11 @@ the Session for a matched start's first build), and, when the tests stage ran, i
 `ApplicationTestReport` (passed, failed, Flows that ran and the uncovered
 connectors). The gate keeps no result cache.
 
-`CommitAndPush` then stages every change and requires the staged tree to be the
+`CommitAndPush` then stages every change, refuses a staged file under
+`conversation.AttachmentWorkspaceDirectory` (`.local/superverse-attachments/`,
+where `place_attachment` writes the user's attachments) with
+`attachment_in_source`, also for a blocked handoff, unstaging everything
+(`rejectAttachmentFiles`), and requires the staged tree to be the
 verified one (`requireVerifiedTree`): a file that changed after the gate rendered
 the tree, such as a tracked file the tests wrote, fails `source_check_failed`
 with the changed paths, and the index is reset so nothing stays staged. It

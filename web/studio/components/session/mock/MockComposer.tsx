@@ -12,6 +12,9 @@ import { Fragment, useEffect, useId, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
 import type { AgentDescription, UserInputAnswer } from "@/lib/session/agent-types";
+import type { AttachmentTray as Tray } from "@/lib/session/attachments/use-attachment-tray";
+import { AttachButton } from "@/components/session/composer/attachments/AttachButton";
+import { AttachmentTray } from "@/components/session/composer/attachments/AttachmentTray";
 import {
   MOCK_ARGUMENT_VALUE,
   MOCK_CATEGORIES,
@@ -58,7 +61,8 @@ function blockedReason(input: MockScenarioInput, pending: PendingInput | null): 
  * While a turn runs, and from a send until the Session took the input, nothing can be sent, so a
  * second click cannot send an input twice; only a turn that waits on a timer takes a message input,
  * which is steered into it. The creation page shows the same composer before the
- * Session exists, where the next input is the first one of the scenario.
+ * Session exists, where the next input is the first one of the scenario. With `attachments`, a message
+ * input carries the files of the tray, as the text composer's messages do.
  */
 export function MockComposer({
   catalog,
@@ -80,6 +84,7 @@ export function MockComposer({
   stopDisabled = false,
   stopping = false,
   menu,
+  attachments,
 }: {
   catalog: MockScenarioCatalog | null;
   /** Where the newest mock reply left its scenario (AgentDescription.mockProgress). */
@@ -105,10 +110,10 @@ export function MockComposer({
   sendLabel?: string;
   /** The frame around the composer; the Session docks it below its conversation. */
   className?: string;
-  /** Sends a message input as its text, which carries the scenario's and its arguments' markers. */
-  onSend: (text: string) => Promise<unknown>;
-  /** Sends a message input and steers it into the running turn. */
-  onSteer?: (text: string) => Promise<unknown>;
+  /** Sends a message input as its text, which carries the scenario's and its arguments' markers, and its files. */
+  onSend: (text: string, attachmentIds: readonly string[]) => Promise<unknown>;
+  /** Sends a message input with its files and steers it into the running turn. */
+  onSteer?: (text: string, attachmentIds: readonly string[]) => Promise<unknown>;
   onAnswer: (callId: string, answers: readonly UserInputAnswer[]) => Promise<unknown>;
   /** Shown while a turn or a task runs; omitted otherwise. */
   onStop?: () => unknown;
@@ -117,6 +122,8 @@ export function MockComposer({
   stopping?: boolean;
   /** A menu beside Send, such as the Session's ⋯ menu with its model. */
   menu?: ReactNode;
+  /** The files a message input carries; without it the composer attaches nothing. */
+  attachments?: Tray;
 }) {
   const categoryId = useId();
   const scenarioId = useId();
@@ -152,7 +159,11 @@ export function MockComposer({
     ]),
   );
   const invalidArgument = Object.entries(argumentValues).find(([, value]) => !MOCK_ARGUMENT_VALUE.test(value));
-  const reason =
+  const attachmentsWait =
+    attachments && attachments.chips.length > 0 && input?.kind === "KIND_MESSAGE"
+      ? (attachments.disabledReason ?? attachments.waitReason)
+      : null;
+  const scenarioReason =
     catalog === null
       ? "Reading the mock scenarios…"
       : (catalog.error ??
@@ -172,6 +183,7 @@ export function MockComposer({
                     : invalidArgument
                       ? `${invalidArgument[0]}: letters, digits, space and ._:/- up to 128 characters`
                       : blockedReason(input, pendingInput)))));
+  const reason = scenarioReason ?? attachmentsWait;
 
   // Escape stops the running work, unless something else, such as a dialog, already took the key.
   useEffect(() => {
@@ -194,7 +206,11 @@ export function MockComposer({
       switch (input.kind) {
         case "KIND_MESSAGE":
           const text = mockInputText(input, argumentValues);
-          await (steers && onSteer ? onSteer(text) : onSend(text));
+          const deliver = (attachmentIds: readonly string[]) =>
+            steers && onSteer ? onSteer(text, attachmentIds) : onSend(text, attachmentIds);
+          // The tray keeps the sent chips until the send settles, and forgets them once it is delivered.
+          if (attachments) await attachments.send(deliver);
+          else await deliver([]);
           break;
         case "KIND_ANSWERS":
           await onAnswer(
@@ -287,7 +303,9 @@ export function MockComposer({
             Sends: {input.kind === "KIND_ANSWERS" ? input.answers.join(" · ") : withoutMockMarkers(input.content)}
           </p>
         )}
+        {attachments && <AttachmentTray tray={attachments} />}
         <div className="flex flex-wrap items-center justify-end gap-2">
+          {attachments && <AttachButton tray={attachments} disabled={locked} />}
           <span
             className={cx("mr-auto min-w-0 wrap-anywhere", reason === null ? "text-ink" : "text-ink-faint")}
             id={statusId}

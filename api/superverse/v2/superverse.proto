@@ -742,8 +742,12 @@ message CreateProjectRequest {
   string team_space_id = 8;
   string initial_message = 9;
   AgentModel model = 10;
-  // Required with initial_message, absent without it.
+  // Required with initial_message or initial_attachment_ids, absent without them.
   string message_id = 11;
+  // The first message's attachments, admitted as SendMessageRequest.attachment_ids admits them,
+  // against the request's TeamSpace; initial_message may then be blank. A retry that changes them
+  // is ALREADY_EXISTS. A first message with an automation export starts from the default template.
+  repeated string initial_attachment_ids = 12;
   CallerContext caller = 100;
 }
 
@@ -1588,6 +1592,162 @@ message RemoteAgentConnection {
   google.protobuf.Timestamp last_seen_at = 6;
 }
 
+// Files attached to messages (AttachmentFlow, one per file, staged in its TeamSpace). The browser
+// declares a file, PUTs its bytes to object storage with the presigned request the creation
+// returns, and completes the upload; the server verifies, prepares and keeps the attachment READY
+// for the staging retention. The bytes never pass through this protocol.
+service AttachmentService {
+  rpc CreateAttachmentUpload(CreateAttachmentUploadRequest) returns (CreateAttachmentUploadResponse);
+  rpc CompleteAttachmentUpload(CompleteAttachmentUploadRequest) returns (CompleteAttachmentUploadResponse);
+  rpc DeleteAttachment(DeleteAttachmentRequest) returns (DeleteAttachmentResponse);
+  rpc GetAttachmentDownloads(GetAttachmentDownloadsRequest) returns (GetAttachmentDownloadsResponse);
+}
+
+// The status of an attachment (AttachmentFlow's AttachmentStatus).
+enum AttachmentStatus {
+  ATTACHMENT_STATUS_UNSPECIFIED = 0;
+  ATTACHMENT_STATUS_REGISTERING = 1;
+  ATTACHMENT_STATUS_AWAITING_UPLOAD = 2;
+  ATTACHMENT_STATUS_VERIFYING = 3;
+  ATTACHMENT_STATUS_PREPARING = 4;
+  ATTACHMENT_STATUS_READY = 5;
+  ATTACHMENT_STATUS_DELETING = 6;
+  ATTACHMENT_STATUS_EXPIRED = 7;
+  ATTACHMENT_STATUS_DELETED = 8;
+  ATTACHMENT_STATUS_FAILED = 9;
+}
+
+// What an attached file is to the model: an image, a document read as text, or JSON.
+enum AttachmentKind {
+  ATTACHMENT_KIND_UNSPECIFIED = 0;
+  ATTACHMENT_KIND_IMAGE = 1;
+  ATTACHMENT_KIND_DOCUMENT = 2;
+  ATTACHMENT_KIND_JSON = 3;
+}
+
+// How a download is served: inline for an image's thumbnail, or as a file named as the attachment.
+enum AttachmentDisposition {
+  ATTACHMENT_DISPOSITION_UNSPECIFIED = 0;
+  ATTACHMENT_DISPOSITION_INLINE = 1;
+  ATTACHMENT_DISPOSITION_DOWNLOAD = 2;
+}
+
+// Declares one file of a TeamSpace member. A retry with the same request_id joins the same
+// attachment; the same request_id with another file is ALREADY_EXISTS.
+message CreateAttachmentUploadRequest {
+  string team_space_id = 1;
+  // Studio's idempotency key of this file; a retry repeats it.
+  string request_id = 2;
+  string file_name = 3;
+  string media_type = 4;
+  int64 byte_size = 5;
+  // Lowercase hex SHA-256 of the bytes the browser will PUT.
+  string sha256 = 6;
+  CallerContext caller = 100;
+}
+
+message CreateAttachmentUploadResponse {
+  Attachment attachment = 1;
+  // Present while the attachment awaits its upload: a short-lived capability for this browser only.
+  AttachmentUploadTarget upload = 2;
+}
+
+// The presigned PUT of an attachment's bytes: the browser sends exactly these headers, and storage
+// refuses another length, another digest and a second write.
+message AttachmentUploadTarget {
+  string url = 1;
+  repeated UploadHeader headers = 2;
+  string expires_at = 3;
+}
+
+message UploadHeader {
+  string name = 1;
+  string value = 2;
+}
+
+// Ends the upload's wait, then waits at most 20 seconds for READY or FAILED; repeatable.
+message CompleteAttachmentUploadRequest {
+  string team_space_id = 1;
+  string attachment_id = 2;
+  CallerContext caller = 100;
+}
+
+message CompleteAttachmentUploadResponse {
+  Attachment attachment = 1;
+}
+
+// Deletes a staged attachment of its uploader, or of anyone for the platform admin.
+message DeleteAttachmentRequest {
+  string team_space_id = 1;
+  string attachment_id = 2;
+  // The command's identity; a retry repeats it.
+  string request_id = 3;
+  CallerContext caller = 100;
+}
+
+message DeleteAttachmentResponse {
+  Attachment attachment = 1;
+}
+
+// Presigned GETs, valid for five minutes, of at most 20 attachments the Project's Session showed
+// the model, for a caller who may read the Project's conversation.
+message GetAttachmentDownloadsRequest {
+  string project_id = 1;
+  repeated string attachment_ids = 2;
+  AttachmentDisposition disposition = 3;
+  CallerContext caller = 100;
+}
+
+message GetAttachmentDownloadsResponse {
+  // One per requested attachment the Project holds a copy of, in request order.
+  repeated AttachmentDownload downloads = 1;
+}
+
+message AttachmentDownload {
+  string attachment_id = 1;
+  string url = 2;
+  string expires_at = 3;
+}
+
+message Attachment {
+  string attachment_id = 1;
+  string team_space_id = 2;
+  string file_name = 3;
+  string media_type = 4;
+  AttachmentKind kind = 5;
+  int64 byte_size = 6;
+  AttachmentStatus status = 7;
+  // Set once READY.
+  AttachmentSummary summary = 8;
+  // Set for FAILED: the code of the closed set and a safe sentence.
+  AttachmentFailure failure = 9;
+  // When a READY attachment's staging ends, RFC 3339; empty before READY.
+  string expires_at = 10;
+}
+
+// What preparation found, by kind: an image's size, a document's sections, a JSON file's format,
+// nodes and removed secret values.
+message AttachmentSummary {
+  int32 width = 1;
+  int32 height = 2;
+  int32 sections = 3;
+  int32 shown_sections = 4;
+  bool truncated = 5;
+  int32 pages = 6;
+  // n8n or generic, for JSON.
+  string json_format = 7;
+  int32 nodes = 8;
+  int32 redactions = 9;
+}
+
+message AttachmentFailure {
+  // One of attachment_quota_exceeded, teamspace_closed, not_member, upload_missing,
+  // upload_mismatch, unsupported_content, too_large, encrypted, no_text, invalid_json,
+  // extraction_failed and preparation_failed.
+  string code = 1;
+  string message = 2;
+}
+
 // Commands to the Session Agent, the mock model's scenarios and the read of a Flow design. Every
 // command request starts with the project_id of the Session, and every command response is empty:
 // success confirms admission, and the Session Watch owns the state that follows.
@@ -1611,7 +1771,15 @@ service AgentService {
 message SendMessageRequest {
   string project_id = 1;
   string message_id = 3;
+  // May be blank when the message carries attachments.
   string text = 4;
+  // At most attachments.maxPerMessage distinct attachments of the Project's TeamSpace, each READY
+  // and uploaded by the caller, in the order the person attached them. A refused attachment refuses
+  // the message (AGENT_COMMAND_NOT_ADMITTED): FAILED_PRECONDITION for one that is not READY or
+  // expired, or while a local agent executes the Session; PERMISSION_DENIED for another person's;
+  // NOT_FOUND for one the TeamSpace does not hold; RESOURCE_EXHAUSTED past the Project's lifetime
+  // attachment quota.
+  repeated string attachment_ids = 5;
   CallerContext caller = 100;
 }
 
@@ -1832,6 +2000,25 @@ message AgentMessage {
   // The authenticated connection that reported this public entry.
   optional string via = 14;
   bool imported = 15;
+  // Set on user messages: one per attached file, in the order the person attached them.
+  repeated AgentAttachment attachments = 16;
+}
+
+// What a message shows of one attached file: never its content, an object key or a URL
+// (AttachmentService.GetAttachmentDownloads presigns those).
+message AgentAttachment {
+  string attachment_id = 1;
+  string file_name = 2;
+  string media_type = 3;
+  AttachmentKind kind = 4;
+  int64 byte_size = 5;
+  // An image's size in pixels.
+  int32 width = 6;
+  int32 height = 7;
+  // n8n or generic, for JSON.
+  string json_format = 8;
+  // The secret values preparation removed from a JSON file.
+  int32 redactions = 9;
 }
 
 // An automated report of something that happened outside the Agent's turn, such as a background
@@ -1974,6 +2161,7 @@ message AgentPendingUserMessage {
 message AgentUserMessage {
   string content = 1;
   Actor actor = 2;
+  repeated AgentAttachment attachments = 3;
 }
 
 message AgentDescription {

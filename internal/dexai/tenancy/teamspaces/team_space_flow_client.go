@@ -128,6 +128,47 @@ func (c *TeamSpaceFlowClient) UnregisterProject(ctx context.Context, teamSpaceID
 	return err
 }
 
+// ReserveAttachmentStaging reserves the staging slot of an attachment; its
+// instance and the uploader's Members instance are loaded exactly. A refusal
+// is a *dexflow.Rejection; a TeamSpace that never existed or that completed
+// its deletion refuses it like one that is deleting.
+func (c *TeamSpaceFlowClient) ReserveAttachmentStaging(ctx context.Context, teamSpaceID string, in StagingReservation) error {
+	err := c.invokeRegistration(ctx, teamSpaceID, c.Flow.ReserveAttachmentStaging, in, dex.RPCInvokeOptions{LoadAttributeMapInstances: []dex.AttributeMapLoad{
+		TeamSpaceMembers.Load(in.Actor.AccountID), TeamSpaceAttachmentStaging.Load(in.AttachmentID),
+	}})
+	var missing *dex.FlowNotFoundError
+	var inactive *dex.FlowNotActiveOrNotFoundError
+	if errors.As(err, &missing) || errors.As(err, &inactive) {
+		return dexflow.Reject(dexflow.RejectionNotFound, "the TeamSpace does not exist or is deleted")
+	}
+	return err
+}
+
+// ReleaseAttachmentStaging frees the staging slot of an attachment. A
+// TeamSpace that is gone holds no slot, so there is nothing to free.
+func (c *TeamSpaceFlowClient) ReleaseAttachmentStaging(ctx context.Context, teamSpaceID, attachmentID string) error {
+	err := c.invokeRegistration(ctx, teamSpaceID, c.Flow.ReleaseAttachmentStaging, stagingRelease{AttachmentID: attachmentID},
+		dex.RPCInvokeOptions{LoadAttributeMapInstances: []dex.AttributeMapLoad{TeamSpaceAttachmentStaging.Load(attachmentID)}})
+	var missing *dex.FlowNotFoundError
+	var inactive *dex.FlowNotActiveOrNotFoundError
+	if errors.As(err, &missing) || errors.As(err, &inactive) {
+		return nil
+	}
+	return err
+}
+
+// LapsedAttachmentStaging lists, oldest first and at most ten, the staged
+// attachments whose hold lapsed, which their AttachmentFlows no longer
+// release; a TeamSpace that is gone holds none.
+func (c *TeamSpaceFlowClient) LapsedAttachmentStaging(ctx context.Context, teamSpaceID string) ([]string, error) {
+	var lapsed lapsedStaging
+	err := dexflow.InvokeRetainedRead(ctx, c.Dex, flowid.TeamSpaceFlowID(teamSpaceID), c.Flow.ListLapsedAttachmentStaging, nil, &lapsed)
+	if _, missing := errors.AsType[*dex.FlowNotFoundError](err); missing {
+		return nil, nil
+	}
+	return lapsed.AttachmentIDs, err
+}
+
 // invoke calls a TeamSpaceFlow RPC that answers with a Update. It
 // returns the result, with the call's rejection as the error.
 func (c *TeamSpaceFlowClient) invoke(ctx context.Context, teamSpaceID string, rpc, in any, options dex.RPCInvokeOptions) (Update, error) {
@@ -140,7 +181,7 @@ func (c *TeamSpaceFlowClient) invoke(ctx context.Context, teamSpaceID string, rp
 
 // invokeRegistration calls a Project registry RPC, with its rejection as the
 // error.
-func (c *TeamSpaceFlowClient) invokeRegistration(ctx context.Context, teamSpaceID string, rpc any, in registration, options dex.RPCInvokeOptions) error {
+func (c *TeamSpaceFlowClient) invokeRegistration(ctx context.Context, teamSpaceID string, rpc, in any, options dex.RPCInvokeOptions) error {
 	result, err := dexflow.InvokeLockedWith[registrationResult](ctx, c.Dex, lockWait, flowid.TeamSpaceFlowID(teamSpaceID), rpc, in, options)
 	if err != nil {
 		return err

@@ -130,8 +130,32 @@ define the slug.
 | Key | Meaning | Default | Range or rule |
 | --- | --- | --- | --- |
 | `s3Endpoint` | S3 endpoint of its own, such as MinIO | none (AWS S3) | only with `localKind` |
+| `browserEndpoint` | Storage endpoint that browsers reach, which presigned uploads and downloads name; shared by attachments and knowledge documents | none (the bucket's regional S3 endpoint) | an `http` or `https` origin, `http` only with `localKind`; required with `s3Endpoint`. `local-kind.yaml` names the `kind ports` MinIO forward, `http://127.0.0.1:29000`; `native.yaml` the default instance's MinIO and the Native launcher each instance's |
 | `artifactBucket` | Bucket of the release artifacts | none | required |
 | `artifactKMSKeyID` | KMS key of the artifact bucket | none | required outside Local Kind |
+
+### `attachments`
+
+The bounds of the files people attach to messages.
+Sizes are bytes.
+
+| Key | Meaning | Default | Range or rule |
+| --- | --- | --- | --- |
+| `maxPerMessage` | Attachments of one message | `10` | 1 to 10, the Session's bound |
+| `imageLongEdge` | Long edge of an image in pixels, which Studio normalizes to | `2000` | 256 to 2000 |
+| `imageMaxBytes` | Size of an image | `1048576` (1 MiB) | 64 KiB to 4 MiB; one message of `maxPerMessage` attachments must fit `segmentBytes` (below) |
+| `documentMaxBytes` | Size of a Markdown, text, Word or PDF document | `20971520` (20 MiB) | 1 MiB to 30 MiB, below the 32 MiB object limit |
+| `jsonMaxBytes` | Size of a JSON file | `4194304` (4 MiB) | 64 KiB to 4 MiB, the extractor's JSON limit |
+| `messageInlineText` | Document text one message renders inline | `122880` (120 KiB) | 16 KiB to 256 KiB; within one message's bound (below) |
+| `segmentBytes` | Rendered attachment blocks of one context segment, which every model call of the segment resends | `20971520` (20 MiB) | 1 MiB to 24 MiB, and at least the rendered blocks of one message (`conversation.MessageAttachmentBytes`): of its `maxPerMessage` attachments, any number images of `imageMaxBytes` as base64 in their blocks, the rest documents and JSON within `messageInlineText` or their 8 KiB briefs; about 14 MB by default. A fresh segment then always shows a whole message |
+| `segmentImages` | Images of one context segment | `60` | 1 to 90, at least `maxPerMessage` |
+| `uploadWait` | How long a registered upload waits for its PUT | `1h` | `1m` to `24h` |
+| `stagingRetention` | How long a prepared attachment stays staged | `24h` | `1h` to `72h` |
+| `teamSpaceStagedFiles`, `teamSpaceStagedBytes` | A TeamSpace's staged attachments | `200`, `2147483648` (2 GiB) | 10 to 2000; 100 MiB to 20 GiB |
+| `projectLifetimeFiles`, `projectLifetimeBytes` | The attachments a Project's messages send over its lifetime | `1000`, `2147483648` (2 GiB) | 10 to 10000; 100 MiB to 20 GiB |
+| `renditionCacheBytes` | This replica's cache of rendition objects | `268435456` (256 MiB) | 16 MiB to 1 GiB |
+
+The byte quotas hold at least the largest file a kind admits.
 
 ### `postgres`
 
@@ -296,7 +320,7 @@ time; the launcher refuses a port that Kind serves ([runbook](../../../docs/runb
 
 With `runtime: docker` every listener of the server (`server.grpcAddress`, `server.healthAddress`,
 `dex.workerAddress`, `dex.serverAddress`, `native.routesListen` and, with `repohost: localgit`, `localgit.listen`)
-is `127.0.0.1:<port>`, `routes.gatewayURL`, `native.gatewayAPI`, `storage.s3Endpoint` and `builds.localURL` are
+is `127.0.0.1:<port>`, `routes.gatewayURL`, `native.gatewayAPI`, `storage.s3Endpoint`, `storage.browserEndpoint` and `builds.localURL` are
 `http` origins on 127.0.0.1, `dex.workerTarget` is `host.docker.internal:<port of dex.workerAddress>` and
 `localgit.cloneBaseURL` is `http://host.docker.internal:<port of localgit.listen>`, where containers reach the host
 processes; `dex.workerHeadless` is refused.

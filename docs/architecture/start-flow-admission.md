@@ -9,7 +9,7 @@ index, or persistence field. Existing Step/RPC identities, locks and retention
 remain authoritative there and in the owning README.
 
 Start first with a stable FlowID, complete safe logical RequestID, an explicit
-reuse policy and `AlreadyStarted.IgnoreError=true`. Twelve call sites use
+reuse policy and `AlreadyStarted.IgnoreError=true`. Thirteen call sites use
 `IDReuseDisallow`, `TeamSpaceFlow`
 ([contract](teamspace/teamspaces-and-roles.md#identity-and-lifecycle)), the Sandbox
 instance Flows and the subagents among them; the platform issue reports use
@@ -29,7 +29,7 @@ RequestID across a closed execution; a platform issue report then starts a new r
 Authorization, credential verification, admission RPCs and explicit recovery
 reads still serve their own purposes. Get/Watch owns authoritative snapshots. They are not pre-start deduplication.
 
-There are exactly twelve production StartFlow call sites:
+There are exactly thirteen production StartFlow call sites:
 
 Domain Dex access belongs to the Flow client of the Flow it fronts:
 `<FlowType>FlowClient` in `<flow_type>_flow_client.go`, with additional
@@ -40,7 +40,7 @@ reaches another Flow only through that Flow's client. The clients are
 `sessionagent.SessionAgentFlowClient`, `sessionworkspace.SessionWorkspaceFlowClient`,
 `provision.SandboxProvisionFlowClient`,
 `preview.PreviewFlowClient`, `subagent.SubagentFlowClient`,
-`platformissue.PlatformIssueFlowClient`,
+`platformissue.PlatformIssueFlowClient`, `attachments.AttachmentFlowClient`,
 `releases.ProjectReleaseFlowClient` and `deployments.ProjectDeployFlowClient`.
 `ProjectFlowClient` recognizes the administrator through
 `accountdao.AccountDAO.IsPlatformAdmin`.
@@ -114,6 +114,7 @@ supported read-only path.
 | subagent.SubagentFlowClient.Start | `subagent-a7k2-k3n8q5r1` | Fingerprint of the admitted `start_agent` call (`{SessionFlowID, AgentID, Kind, Description, PromptSHA256}`) and the worktree's snapshot commit, without the Session's model, HEAD, lease or a time. `IDReuseDisallow`: a retry, also one with a fresher lease, joins the execution, running or completed. The Session's durable `start_agent` ExecuteTool starts it through the SessionFlowService after it created the worktree; the subagent's first Step asks the Session to admit it before any effect. Return only start success or error. |
 | platformissue.PlatformIssueFlowClient.Report, called through `SessionFlowService.ReportPlatformIssue` from the Session's side-branch ReportPlatformIssue Execute | `platform-issue-test-3f9a1c2b7d4e5f60` | Fingerprint of `{SessionFlowID, CallID, Signature}`. `IDReuseAllowIfNotRunning`: a retry of the same report joins the running run; another report of the signature while it runs is `*dex.FlowAlreadyStartedError`, which the client answers as joined; a report after the run closed starts a new run of the same FlowID, even with the same RequestID. The first Step's label query is the admission check. Return only start success, joined or error. |
 | contribution.ConnectorContributionFlowClient.Submit, called from the Session Service once a COMPLETED develop subagent's report is admitted | `connector-contribution-a7k2-mockfeed` | Fingerprint of `{SessionFlowID, slug, branch, head commit}`. `IDReuseDisallow` with same-request `IgnoreError`. After StartFlow, also after `FlowAlreadyStartedError` of a later head, invoke the UpdateConnectorContribution RPC: the engine joins a same-request start of an ended execution as it answers a new one, and the owner requires an ended contribution to refuse every submission, so the RPC is idempotent for the starting submission and its inactive-execution error is `ErrContributionClosed`. The first Step admits the contribution with its Session before any effect. |
+| attachments.AttachmentFlowClient.Create, called by `CreateAttachmentUpload` | `attachment-k3v9q2ma-a7f2c9xq4m1p` | Fingerprint of `{AccountID, RequestID, TeamSpaceID, FileName, MediaType, ByteSize, SHA256}`; the attachment ID derives from the uploader and the request ID. `IDReuseDisallow`: a replay joins the execution, running or completed; the same request ID with another file is `*dex.FlowAlreadyStartedError` (`ALREADY_EXISTS`). The API promises the registration milestone: a bounded wait of at most 10 seconds, on the Flow's `Revision`, until `AttachmentStatus` leaves REGISTERING; a wait that ends first is `UNAVAILABLE` and a retry joins. The first Step is the staging quota's admission with the TeamSpace, not deduplication ([AttachmentFlow](attachments/upload-and-preparation.md#identity-and-execution-lifecycle)). |
 | releases.ProjectReleaseFlowClient.Prepare | `release-a7k2-<commit>` | Actor + request ID + the immutable project/commit/branch/repository-binding source fingerprint + the server-selected build profile version and digest. Success returns the Release ID. Only typed AlreadyStarted reads immutable identity/revision and admits an explicit source-preparation retry; builds are admitted later by RPC under their own build IDs. |
 | deployments.ProjectDeployFlowClient.Deploy | `deploy-a7k2-d6m4p7w2` | Complete immutable desired deployment + actor + logical command ID. StartDeployment returns the deployment ID. Active/unreleased deployment reads reconcile actual effects, not start existence. Only the explicit different-command/same-immutable-input recovery path compares accepted fingerprint after typed AlreadyStarted. |
 

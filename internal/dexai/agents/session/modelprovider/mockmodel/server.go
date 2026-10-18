@@ -159,6 +159,11 @@ func (h *handler) plan(ctx context.Context, request messagesRequest) (reply, str
 			return reply{}, "", err
 		}
 	}
+	if step := selected.scriptStep(); step != nil && len(step.ExpectAttachments) > 0 {
+		if err := request.checkAttachments(step.ExpectAttachments); err != nil {
+			return reply{}, "", err
+		}
+	}
 	answer, err := selected.nextReply()
 	if err != nil {
 		return reply{}, "", err

@@ -12,6 +12,7 @@ export interface CreateProjectRequest {
   'initialMessage'?: (string);
   'model'?: (_superverse_v2_AgentModel);
   'messageId'?: (string);
+  'initialAttachmentIds'?: (string)[];
   'caller'?: (_superverse_v2_CallerContext | null);
 }
 
@@ -23,5 +24,6 @@ export interface CreateProjectRequest__Output {
   'initialMessage': (string);
   'model': (_superverse_v2_AgentModel__Output);
   'messageId': (string);
+  'initialAttachmentIds': (string)[];
   'caller': (_superverse_v2_CallerContext__Output | null);
 }

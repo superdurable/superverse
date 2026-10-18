@@ -27,7 +27,7 @@ is logged the same way and ends that Watch with the same Internal status.
 
 <!-- BEGIN GENERATED SERVICE TABLE (make generate-proto) -->
 
-16 services, 102 RPCs. A field is a string unless a type is given. Every request
+17 services, 106 RPCs. A field is a string unless a type is given. Every request
 except RegisterAccount and Login also carries `CallerContext caller 100`, which the table omits.
 
 | Service | RPCs | Reached through |
@@ -40,6 +40,7 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 | ProjectMemberService | 4 | `/api/rpc/<Method>` |
 | SessionService | 4 | `/api/rpc/<Method>` |
 | RemoteAgentService | 4 | `/api/rpc/<Method>` |
+| AttachmentService | 4 | `/api/rpc/<Method>` |
 | AgentService | 9 | `/api/rpc/<Method>` |
 | PreviewService | 6 | `/api/rpc/<Method>` |
 | ReleaseService | 10 | `/api/rpc/<Method>` |
@@ -97,7 +98,7 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 
 | RPC | Request | Response |
 | --- | --- | --- |
-| CreateProject | `request_id 2, name 3, ManagedRepositorySource managed_repository 6, team_space_id 8, initial_message 9, AgentModel model 10, message_id 11` | `project_id 1` |
+| CreateProject | `request_id 2, name 3, ManagedRepositorySource managed_repository 6, team_space_id 8, initial_message 9, AgentModel model 10, message_id 11, repeated initial_attachment_ids 12` | `project_id 1` |
 | ListProjects | `int32 page_size 1, page_token 2, repeated ProjectStatus statuses 3, team_space_id 4` | `repeated ProjectSnapshot projects 1, next_page_token 2` |
 | GetProject | `project_id 1` | `ProjectSnapshot project 1` |
 | DeleteProject | `project_id 1, request_id 2, uint64 expected_revision 3` | `ProjectSnapshot project 1` |
@@ -135,11 +136,20 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 | RevokeRemoteAgentConnection | `project_id 1, connection_id 2` | `{}` |
 | SetSessionExecutor | `project_id 1, uint64 basis_epoch 2` | `{}` |
 
+**AttachmentService**
+
+| RPC | Request | Response |
+| --- | --- | --- |
+| CreateAttachmentUpload | `team_space_id 1, request_id 2, file_name 3, media_type 4, int64 byte_size 5, sha256 6` | `Attachment attachment 1, AttachmentUploadTarget upload 2` |
+| CompleteAttachmentUpload | `team_space_id 1, attachment_id 2` | `Attachment attachment 1` |
+| DeleteAttachment | `team_space_id 1, attachment_id 2, request_id 3` | `Attachment attachment 1` |
+| GetAttachmentDownloads | `project_id 1, repeated attachment_ids 2, AttachmentDisposition disposition 3` | `repeated AttachmentDownload downloads 1` |
+
 **AgentService**
 
 | RPC | Request | Response |
 | --- | --- | --- |
-| SendMessage | `project_id 1, message_id 3, text 4` | `{}` |
+| SendMessage | `project_id 1, message_id 3, text 4, repeated attachment_ids 5` | `{}` |
 | AnswerQuestions | `project_id 1, AgentAnswerQuestionsInput input 3` | `{}` |
 | UpdateSessionModel | `project_id 1, AgentModel model 3, optional uint64 expected_revision 4` | `{}` |
 | DeleteQueuedMessage | `project_id 1, message_id 3` | `{}` |
@@ -620,16 +630,21 @@ Setup creates a new private managed repository from the embedded template: its d
 example, or the example that `managed_repository.example` names ([Examples](#examples)). A missing
 managed_repository is InvalidArgument before any Flow start or provider effect. There
 is no repository import API. CreateProject may also carry the
-Session's first message: `initial_message`, its `message_id` and the `model` the Session starts
-on. The message and its ID are validated as SendMessage validates them, and a `message_id`
-without a message, or a message without one, is InvalidArgument; the model is admitted as
-UpdateSessionModel admits it ([the table below](#session-model-update)), with the same refusals,
-before any Flow start. An unspecified model starts the Session on the server's default. The CREATE
-request fingerprint keeps its canonical encoding independently of the durable binding shape; it
-includes the message, its ID and the model, so a retry with the same `request_id` and any of them
-changed is ALREADY_EXISTS like a changed name; it also includes a picked example's ID, so a retry
-that changes or drops the example is ALREADY_EXISTS. It excludes provider results, credentials and
-the server-selected template revision.
+Session's first message: `initial_message`, its `message_id`, its attachments
+`initial_attachment_ids` and the `model` the Session starts on. The message and its ID are
+validated as SendMessage validates them, and a `message_id` without a message or attachments, or
+a message or attachments without one, is InvalidArgument; with attachments the message may be
+blank. After the creator's TeamSpace admission the attachments are admitted as SendMessage admits
+them ([agent commands](#agent-commands)), against the request's TeamSpace, before any Flow start.
+The model is admitted as UpdateSessionModel admits it ([the table below](#session-model-update)),
+with the same refusals, before any Flow start. An unspecified model starts the Session on the
+server's default. The CREATE request fingerprint keeps its canonical encoding independently of
+the durable binding shape; it includes the message, its ID and the model, so a retry with the
+same `request_id` and any of them changed is ALREADY_EXISTS like a changed name; it includes the
+attachments as their ordered (ID, SHA-256) pairs only when there are any, so a retry that changes
+them is ALREADY_EXISTS; and it includes a picked example's ID, so a retry that changes or drops the
+example is ALREADY_EXISTS. A retry whose attachments expired since joins the Project the request
+started. It excludes provider results, credentials and the server-selected template revision.
 CreateProject returns only project_id. GetProject and WatchProject return the current
 state, repository and accepted template revision. There is no GetApplicationInfo or
 browser configuration-discovery round trip.
@@ -655,9 +670,11 @@ realigning readers once it exists. No initial CREATING state is returned as a fa
 current snapshot.
 
 The first message travels with the Project, not with the browser. ProjectFlow holds it in the
-Attribute `InitialSessionRequest` (`{MessageID, Text, Model}` with the creator as the author),
-installed at its start, bounded by the message limit and never synced to the read model, so the
-prompt never reaches SQL. When the Project becomes READY, `StartProjectSession` passes it to the
+Attribute `InitialSessionRequest` (`{MessageID, Text, Model, Attachments}` with the creator as the
+author; each attachment by reference, never its content), installed at its start, bounded by the
+message limit and never synced to the read model, so the prompt never reaches SQL. ProjectFlow
+counts the attachments against its lifetime attachment quota when it starts
+([attachments](../architecture/attachments/conversation.md#projectflow-changes)). When the Project becomes READY, `StartProjectSession` passes it to the
 Session's start and clears it in the commit of the start that succeeded. The Session starts on
 that model and its start Step queues the message once
 ([session](../architecture/agent-harness-design/session.md#one-session-per-project)). A Project
@@ -704,7 +721,8 @@ the default example. A version recorded without a design after a push built the 
 
 A Project created without an example starts from the default example under the revision
 `app-template@<tree>`, as before, and has no `example`, with one exception: when the server's
-`agent.closestExamplePick` is on and the creation carries an `initial_message`, CreateProject
+`agent.closestExamplePick` is on and the creation carries an `initial_message` and no automation
+export among its attachments (an export is the behavior authority), CreateProject
 decides, without a network call or a model, whether that message is clearly closest to one example
 (the search shortlists the examples, and rules on the message's ideas, its negations and a winning
 margin pick one or none; a message that names the default example's source, or that is only
@@ -952,7 +970,21 @@ state that follows. Studio keeps its Watch during a command and corrects accepte
 through canonical snapshots. An uncertain transport response stays an explicit command
 warning across reads, with no automatic retry of ordinary user messages. A deliberate retry
 is a new send with a new `message_id`: the Agent does not deduplicate SendMessage by
-`message_id`, so retrying a send that was in fact admitted queues a second message. SendMessage
+`message_id`, so retrying a send that was in fact admitted queues a second message.
+SendMessage's `attachment_ids` name at most `attachments.maxPerMessage` (10) distinct attachments,
+and `text` may then be blank. After the Session's authorization each must be READY, the caller's
+own upload and of the Project's TeamSpace; the Project counts them against its lifetime quota once
+per attachment, held by this call's admission, and a definite refusal of the message drops only
+that admission's holds, so an attachment an earlier send or another message carries stays
+counted. A refused attachment refuses the message as not admitted: NOT_FOUND for one
+the TeamSpace does not hold, PERMISSION_DENIED for another person's, FAILED_PRECONDITION for one not
+READY or expired and while a local agent executes the Session, RESOURCE_EXHAUSTED past the quota;
+the status message starts with the code (`attachment_not_found`, `attachment_not_yours`,
+`attachment_not_ready`, `attachment_expired`, `attachment_quota_exceeded`)
+([admission](../architecture/attachments/api-and-studio.md#admission-at-send)). `AgentMessage`
+and the queued and steered `AgentUserMessage` show each attachment as an `AgentAttachment`: its
+ID, name, media type, kind, size, an image's pixel size and a JSON file's format and redaction
+count, never its content or a URL. SendMessage
 to a Session that still waits at a requirements card from before cards stopped waiting
 (`AgentPendingUserInput.KIND_REQUIREMENTS`) records that card as the next version of the
 requirements and answers it with the message, which is then not queued.

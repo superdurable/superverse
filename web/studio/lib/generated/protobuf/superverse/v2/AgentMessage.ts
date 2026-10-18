@@ -5,6 +5,7 @@ import type { AgentModelCallMetrics as _superverse_v2_AgentModelCallMetrics, Age
 import type { AgentToolExecutionMetrics as _superverse_v2_AgentToolExecutionMetrics, AgentToolExecutionMetrics__Output as _superverse_v2_AgentToolExecutionMetrics__Output } from '../../superverse/v2/AgentToolExecutionMetrics';
 import type { AgentNotification as _superverse_v2_AgentNotification, AgentNotification__Output as _superverse_v2_AgentNotification__Output } from '../../superverse/v2/AgentNotification';
 import type { Actor as _superverse_v2_Actor, Actor__Output as _superverse_v2_Actor__Output } from '../../superverse/v2/Actor';
+import type { AgentAttachment as _superverse_v2_AgentAttachment, AgentAttachment__Output as _superverse_v2_AgentAttachment__Output } from '../../superverse/v2/AgentAttachment';
 
 // Original file: api/superverse/v2/superverse.proto
 
@@ -49,6 +50,7 @@ export interface AgentMessage {
   'steeredBy'?: (_superverse_v2_Actor | null);
   'via'?: (string);
   'imported'?: (boolean);
+  'attachments'?: (_superverse_v2_AgentAttachment)[];
   '_toolCallId'?: "toolCallId";
   '_toolName'?: "toolName";
   '_answeredInputCallId'?: "answeredInputCallId";
@@ -72,6 +74,7 @@ export interface AgentMessage__Output {
   'steeredBy': (_superverse_v2_Actor__Output | null);
   'via'?: (string);
   'imported': (boolean);
+  'attachments': (_superverse_v2_AgentAttachment__Output)[];
   '_toolCallId'?: "toolCallId";
   '_toolName'?: "toolName";
   '_answeredInputCallId'?: "answeredInputCallId";

@@ -15,6 +15,7 @@ import (
 	"log/slog"
 	"net"
 	"net/netip"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -35,6 +36,7 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost"
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost/github"
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost/localgit"
+	"github.com/superdurable/superversev2/internal/dexai/agents/attachments"
 	"github.com/superdurable/superversev2/internal/dexai/agents/platformissue"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/sandboxd"
 	sessionagent "github.com/superdurable/superversev2/internal/dexai/agents/session"
@@ -46,12 +48,14 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/delivery/releases/build"
 	buildhosted "github.com/superdurable/superversev2/internal/dexai/delivery/releases/build/hosted"
 	buildlocal "github.com/superdurable/superversev2/internal/dexai/delivery/releases/build/local"
+	"github.com/superdurable/superversev2/internal/dexai/projects"
 	"github.com/superdurable/superversev2/internal/dexai/projects/infra"
 	infradocker "github.com/superdurable/superversev2/internal/dexai/projects/infra/docker"
 	infrahosted "github.com/superdurable/superversev2/internal/dexai/projects/infra/kube/hosted"
 	infralocal "github.com/superdurable/superversev2/internal/dexai/projects/infra/kube/local"
 	"github.com/superdurable/superversev2/internal/dexai/tenancy/accounts"
 	"github.com/superdurable/superversev2/internal/dexai/tenancy/connections"
+	"github.com/superdurable/superversev2/internal/dexai/tenancy/teamspaces"
 )
 
 // serverConfig is what composition needs to start: the validated operator
@@ -134,7 +138,18 @@ type serverConfig struct {
 	localGit   *localgit.Host
 	gitAddress string
 	objects    *objectstore.Store
-	profiles   *build.Profiles
+	// attachments bound the uploaded files; staging bounds a TeamSpace's
+	// staged files; attachmentsPerMessage a message's attachments;
+	// projectAttachments what a Project's messages send over its lifetime;
+	// renditionCacheBytes this replica's rendition cache; extractor is the
+	// server binary that runs the extractor child.
+	attachments           attachments.Settings
+	staging               teamspaces.StagingLimits
+	attachmentsPerMessage int
+	projectAttachments    projects.AttachmentLimits
+	renditionCacheBytes   int64
+	extractor           string
+	profiles            *build.Profiles
 	// builder is nil in Local Kind without a build token, which deliberately
 	// leaves Release execution unavailable.
 	builder build.Builder
@@ -186,8 +201,12 @@ func loadConfig(ctx context.Context, logger *slog.Logger, settings serverconfig.
 		agenttasks.SubagentConnectorSelect:  agenttasks.SubagentConnectorSelect.DefaultEffort(),
 		agenttasks.SubagentConnectorDevelop: settings.Agent.SubagentConnectorDevelopEffort,
 	}
-	if c.agent, err = agentConfig(settings.Agent, settings.Sandbox); err != nil {
+	if c.agent, err = agentConfig(settings.Agent, settings.Sandbox, settings.Attachments); err != nil {
 		return c, err
+	}
+	c.attachmentSettings(settings.Attachments)
+	if c.extractor, err = os.Executable(); err != nil {
+		return c, fmt.Errorf("the server binary, which runs the file extractor: %w", err)
 	}
 
 	c.sandboxProfileName = settings.Sandbox.Profile
@@ -294,16 +313,28 @@ func postgresConnection(settings serverconfig.PostgresConfig, role string) (post
 // renders below the lane's state directory.
 const nativeProfilesDirectory = "sandbox-profiles"
 
-// objectStore keeps release artifacts in the artifact bucket. Only Kind may
-// point S3 at its own endpoint, which the configuration enforces.
+// objectStore keeps release artifacts in the artifact bucket. Only the local
+// lanes point S3 at an endpoint of their own, which the configuration
+// enforces; the presigned browser transfers name the endpoint browsers reach,
+// the AWS regional one unless storage.browserEndpoint names another.
 func (c *serverConfig) objectStore(storage serverconfig.StorageConfig) (*objectstore.Store, error) {
-	client := s3.NewFromConfig(c.aws, func(o *s3.Options) {
-		if storage.S3Endpoint != "" {
-			o.BaseEndpoint = aws.String(storage.S3Endpoint)
+	store, err := objectstore.NewStore(s3.NewFromConfig(c.aws, s3Endpoint(storage.S3Endpoint)), storage.ArtifactBucket, storage.ArtifactKMSKeyID,
+		c.names.WorkloadPrefix+"-"+c.environment.String(), c.localKind)
+	if err != nil {
+		return nil, err
+	}
+	return store.WithPresigner(s3.NewPresignClient(s3.NewFromConfig(c.aws, s3Endpoint(storage.BrowserEndpoint)))), nil
+}
+
+// s3Endpoint points an S3 client at endpoint, path style, unless it is empty:
+// the AWS regional endpoint.
+func s3Endpoint(endpoint string) func(*s3.Options) {
+	return func(o *s3.Options) {
+		if endpoint != "" {
+			o.BaseEndpoint = aws.String(endpoint)
 			o.UsePathStyle = true
 		}
-	})
-	return objectstore.NewStore(client, storage.ArtifactBucket, storage.ArtifactKMSKeyID, c.names.WorkloadPrefix+"-"+c.environment.String(), c.localKind)
+	}
 }
 
 // localBuilder builds Releases on the host build service. Without a token,
@@ -470,7 +501,7 @@ func gitHubApp(appID, installationID int64) (*githubapp.App, error) {
 // server offers no Claude model, which only a server whose new Sessions start
 // on the mock model accepts; composition gives the mock model's client its
 // fixed placeholder, never a real key.
-func agentConfig(settings serverconfig.AgentConfig, sandbox serverconfig.SandboxConfig) (sessionagent.SessionAgentConfig, error) {
+func agentConfig(settings serverconfig.AgentConfig, sandbox serverconfig.SandboxConfig, attached serverconfig.AttachmentsConfig) (sessionagent.SessionAgentConfig, error) {
 	config := sessionagent.SessionAgentConfig{
 		Model:          settings.Model,
 		Claude:         modelprovider.ClaudeClientConfig{APIKey: strings.TrimSpace(anthropicAPIKey())},
@@ -484,5 +515,21 @@ func agentConfig(settings serverconfig.AgentConfig, sandbox serverconfig.Sandbox
 	config.Settings.Effort = settings.Effort
 	config.Settings.CompactionTokens = int64(settings.CompactionTokens)
 	config.Settings.PrefixMismatch = settings.ThinkingPrefixMismatch
+	// The attachment budget of every segment and message.
+	config.Settings.Attachments = agentloop.AttachmentBudget{SegmentBytes: attached.SegmentBytes, SegmentImages: attached.SegmentImages, MessageInlineText: int64(attached.MessageInlineText)}
 	return config, nil
+}
+
+// attachmentSettings takes the validated bounds of attachments: the files, the
+// TeamSpace's staging quota and the rendition cache.
+func (c *serverConfig) attachmentSettings(attached serverconfig.AttachmentsConfig) {
+	c.attachments = attachments.Settings{
+		ImageMaxBytes: attached.ImageMaxBytes, DocumentMaxBytes: attached.DocumentMaxBytes, JSONMaxBytes: attached.JSONMaxBytes,
+		ImageLongEdge: attached.ImageLongEdge, InlineTextBytes: attached.MessageInlineText,
+		UploadWait: attached.UploadWait, StagingRetention: attached.StagingRetention, UploadURLValidity: attachments.DefaultUploadURLValidity,
+	}
+	c.staging = teamspaces.StagingLimits{Files: attached.TeamSpaceStagedFiles, Bytes: attached.TeamSpaceStagedBytes}
+	c.attachmentsPerMessage = attached.MaxPerMessage
+	c.projectAttachments = projects.AttachmentLimits{Files: attached.ProjectLifetimeFiles, Bytes: attached.ProjectLifetimeBytes}
+	c.renditionCacheBytes = attached.RenditionCacheBytes
 }

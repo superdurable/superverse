@@ -10,11 +10,13 @@ package agents
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"time"
 
 	"github.com/superdurable/dex/sdk-go/dex"
+	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/dexai/agents/platformissue"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteagentdao"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteexec"
@@ -117,9 +119,16 @@ func (s *SessionFlowService) StartForProject(ctx context.Context, project projec
 	if initial != nil && initial.Model != "" {
 		request.Model = conversation.Model(initial.Model)
 	}
-	if initial != nil && initial.Text != "" {
+	if initial != nil && (initial.Text != "" || len(initial.Attachments) > 0) {
 		author := conversation.Actor{AccountID: initial.AuthorAccountID, Email: initial.AuthorEmail}
-		request.FirstMessage = &conversation.PendingUserMessage{MessageID: conversation.MessageID(initial.MessageID), Value: conversation.UserMessage{Actor: &author, Content: initial.Text}}
+		message := conversation.UserMessage{Actor: &author, Content: initial.Text}
+		for _, attached := range initial.Attachments {
+			// The API encoded the reference; only a defect makes it unreadable.
+			var reference conversation.AttachmentRef
+			comm.MustDo(json.Unmarshal(attached.Reference, &reference))
+			message.Attachments = append(message.Attachments, reference)
+		}
+		request.FirstMessage = &conversation.PendingUserMessage{MessageID: conversation.MessageID(initial.MessageID), Value: message}
 	}
 	if id, tree, fromExample := apptemplate.ParseExampleRevision(project.TemplateRevision); fromExample {
 		request.ExampleBrief = exampleBrief(id, tree)
@@ -150,11 +159,13 @@ func exampleBrief(id, tree string) *agentloop.ExampleBrief {
 	return brief
 }
 
-// SessionCaller is the authenticated author and authorized role of a Session command.
+// SessionCaller is the authenticated author and authorized role of a Session
+// command, with the TeamSpace of the Session's Project.
 type SessionCaller struct {
-	FlowID agentloop.FlowID
-	Actor  conversation.Actor
-	Role   projects.Role
+	FlowID      agentloop.FlowID
+	Actor       conversation.Actor
+	Role        projects.Role
+	TeamSpaceID string
 }
 
 // AuthorizeSession builds the author from the authenticated account and the Project's authorized role.
@@ -170,7 +181,8 @@ func (s *SessionFlowService) AuthorizeSession(ctx context.Context, account accou
 		s.logSessionReadFailure(ctx, "read_session_identity", started, err)
 		return SessionCaller{}, err
 	}
-	return SessionCaller{FlowID: agentloop.SessionFlowID(project), Actor: conversation.Actor{AccountID: account.AccountID, Email: account.CanonicalEmail}, Role: projection.CallerRole}, nil
+	return SessionCaller{FlowID: agentloop.SessionFlowID(project), Actor: conversation.Actor{AccountID: account.AccountID, Email: account.CanonicalEmail}, Role: projection.CallerRole,
+		TeamSpaceID: projection.Project.TeamSpaceID}, nil
 }
 
 // AuthorizeScope admits the account to the Session's Project without reading

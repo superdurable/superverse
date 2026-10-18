@@ -278,7 +278,10 @@ changes, preserving the frozen old segment. Tests prove the request shape, not m
 - Steering is consumed only at safe Step boundaries (`CheckSteered`, `AwaitAgentTimer`,
   `AwaitToolApproval`) and starts a new turn there. It never claims to cancel an in-flight model
   call or tool; the Stop button does that. A steered turn interrupts the calls that follow the
-  current batch with the result `superseded_by_steered_user_message`.
+  current batch with the result `superseded_by_steered_user_message`. All messages steered
+  together start the one turn and are together its pending request (`TurnRequestSequences`): the
+  first of them replaces the request, the rest join it, so a compaction quotes each and shows the
+  attachments of each again.
 - Notification entries delivered at a boundary precede the steering text in the log.
 - Commands are not deduplicated beyond message IDs: a retry after a lost response may apply twice,
   so the caller reads the Snapshot to reconcile.

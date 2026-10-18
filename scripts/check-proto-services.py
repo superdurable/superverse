@@ -50,6 +50,7 @@ ROUTES = {
     "TeamSpaceMemberService": RPC_ROUTE,
     "ProjectMemberService": RPC_ROUTE,
     "TeamSpaceConnectionService": RPC_ROUTE,
+    "AttachmentService": RPC_ROUTE,
 }
 # The BFF accepts none of these in a request it forwards to an /api/rpc service, which carries JSON in
 # string *_json fields instead; bytes fields and maps are refused as well.

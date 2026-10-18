@@ -173,7 +173,9 @@ class Topology:
             "remoteAgent": {"listen": f"127.0.0.1:{self.ports['remote_agent']}"},
             "server": {"grpcAddress": f"127.0.0.1:{self.ports['grpc']}", "healthAddress": f"127.0.0.1:{self.ports['health']}"},
             "dex": {"serverAddress": f"127.0.0.1:{self.ports['dex']}", "workerAddress": f"127.0.0.1:{self.ports['worker']}", "workerTarget": self.worker_target},
-            "storage": {"s3Endpoint": self.s3_endpoint}, "builds": {"localURL": f"http://127.0.0.1:{self.ports['builder']}"},
+            # The browser on the host reaches the instance's MinIO at the same loopback address.
+            "storage": {"s3Endpoint": self.s3_endpoint, "browserEndpoint": self.s3_endpoint},
+            "builds": {"localURL": f"http://127.0.0.1:{self.ports['builder']}"},
             "postgres": {"host": "127.0.0.1", "port": self.ports["postgres"]},
             "localgit": {"listen": f"127.0.0.1:{self.ports['git']}", "cloneBaseURL": "http://" + git_target},
             "connections": {"readListen": f"127.0.0.1:{self.ports['credential_read']}",

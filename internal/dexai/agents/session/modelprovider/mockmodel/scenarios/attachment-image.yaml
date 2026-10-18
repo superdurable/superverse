@@ -1,0 +1,49 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A first message with a process image. The Session's first segment opens
+# after the message, so its segment_start shows the image after its text and
+# its pending-request quote lists it. The first reply reports usage above every
+# compaction threshold (the largest is 800,000 tokens) after a built-in tool
+# call, so the Session compacts, and the new segment shows the pending
+# request's image again. A second message compacts once more: its request has
+# no attachment, so the new segment lists the image among the earlier ones.
+name: attachment-image
+title: "Image attachment"
+description: "A first message with a process image: the model sees the image in the first segment and again after a compaction, then finds it listed among the earlier attachments."
+category: agent_feature
+compaction_summary: "The user attached order-process.png, a flowchart of three steps in a row, and asked what process it shows."
+inputs:
+  - label: "Ask about the attached flowchart"
+    message: "What process does the attached flowchart show?"
+    attachments: [order-process.png]
+    replies:
+      - text: "Reading the process in the attached flowchart."
+        expect_attachments:
+          - {name: order-process.png, kind: image, in: segment_start}
+        tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Read the attached flowchart", status: in_progress}
+        usage: {input_tokens: 850000, output_tokens: 200}
+      - text: "The compacted context still shows the attached flowchart: three steps, each handing over to the next."
+        expect_attachments:
+          - {name: order-process.png, kind: image, in: segment_start}
+  - label: "Plan from the flowchart"
+    message: "Plan the Flow from that process."
+    replies:
+      - text: "Planning the Flow from the process the flowchart showed."
+        tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Plan the Flow from the flowchart", status: in_progress}
+        usage: {input_tokens: 850000, output_tokens: 200}
+      - text: "The new context lists the earlier flowchart among the attachments; the plan follows its three steps."
+        expect_segment_start: ["<attachments>", '"order-process.png" (image)']

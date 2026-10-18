@@ -55,6 +55,7 @@ EXTERNAL = {
     "github.com/go-git/go-git": ("library", "pure-Go Git"),
     "github.com/google/uuid": ("library", "UUID"),
     "github.com/jackc/pgx": ("api", "PostgreSQL API"),
+    "github.com/ledongthuc/pdf": ("library", "PDF object reader"),
     "github.com/minio/madmin-go": ("api", "MinIO admin API"),
     "github.com/minio/minio-go": ("library", "MinIO credentials"),
     "github.com/ogen-go/ogen": ("library", "ogen runtime validation"),

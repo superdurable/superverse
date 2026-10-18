@@ -106,6 +106,7 @@ the current contract.
 | --- | --- |
 | [`app`](app/README.md) | The Next.js routes: signed-in and sign-in pages, the BFF route handlers and the `/dex` Flow API routes, and the only files that choose mock or production code. |
 | [`components/agent`](components/agent/README.md) | The shared Agent UI's single entry `index.ts`; Studio reaches the conversation and interaction presentation only through this entry. |
+| [`components/agent/attachments`](components/agent/attachments/README.md) | The files a sent or queued message attached, as chips with image thumbnails, reached only through the links the page injects, so the shared Agent UI stays transport-free. |
 | [`components/agent/conversation`](components/agent/conversation/README.md) | Renders an Agent conversation: turns, messages, notices, Markdown, and each recorded requirements version and turn's work as one plain line, with its log and metrics folded, on a live clock. |
 | [`components/agent/interaction`](components/agent/interaction/README.md) | What the Agent asks of and shows the reader: question batches, an old waiting requirements card, each recorded version's line, queued messages, todo progress, timers and background tasks. |
 | [`components/build`](components/build/README.md) | The Flow and Interface surfaces: the Flow Definitions of the version shown, the Preview with its source, Start and Stop, problem, phases and history, and the automatic-builds switch. |
@@ -151,6 +152,7 @@ the current contract.
 | [`components/publishing/timings`](components/publishing/timings/README.md) | Where the time of a Release build, a source preparation or a deployment went: one row per measured phase, with the labels of the phase codes. |
 | [`components/session`](components/session/README.md) | Binds the page's Session to the Agent UI: the chat and its rail, composer or mock composer, model picker, pending action dock, status, workspace renewal and startup phases. |
 | [`components/session/composer`](components/session/composer/README.md) | The one message input, large on the start page and compact in the chat, with its About chip and the element picker that fills it. |
+| [`components/session/composer/attachments`](components/session/composer/attachments/README.md) | The composer's attachment controls: Attach (+) with its file picker, the chips with their progress and reasons, and the drop zone that takes files dropped on the chat. |
 | [`components/session/executor`](components/session/executor/README.md) | Shows the composer's Agent picker, SQL-derived remote liveness, offline notice, pairing entry and epoch-fenced return to Superverse. |
 | [`components/session/mock`](components/session/mock/README.md) | The mock model's composer, in a Session and on the creation page: it picks a category, a scenario and its arguments, and sends the next input as its kind arrives. |
 | [`components/session/remoteagent`](components/session/remoteagent/README.md) | Shows Builder connection risk acknowledgement, one-time pairing and safe connection metadata through Studio's typed business API. |
@@ -184,6 +186,7 @@ the current contract.
 | [`lib/server/flow`](lib/server/flow/README.md) | Serves the `/dex` Flow API routes and the Session source catalog: maps each URL to a named Flow API RPC and checks CSRF. |
 | [`lib/server/rpc`](lib/server/rpc/README.md) | Serves `/api/rpc/<Method>` for the six browser services through a fail-closed allowlist and a strict descriptor-driven request decoder. |
 | [`lib/session`](lib/session/README.md) | The page-owned Session: `SessionProvider`, its owner hook with the single Watch and the Agent commands, the reducer, the Agent protobuf projection, message merging and the mock scenarios. |
+| [`lib/session/attachments`](lib/session/attachments/README.md) | The composer's attachments: the accepted formats and limits, image normalization and hashing, the upload through a presigned PUT, the chip state machine, its tray hook and the history download links. |
 | [`lib/session/design`](lib/session/design/README.md) | Reads which Flow design the Flow tab draws from the Session Snapshot, reads its body once per digest, remembers which card version it showed, and whether its Brief shows. |
 | [`lib/session/draft`](lib/session/draft/README.md) | The requirements card the agent is still writing, as the Session Watch streams it, and when the Snapshot says its card call is over. |
 | [`lib/shared`](lib/shared/README.md) | Pure code both sides use: protobuf and JSON types, formatting, abort and delay, RPC method types, Session command errors, Project availability, Flow Definition catalogs and Studio routes. |
@@ -194,6 +197,7 @@ the current contract.
 | [`mock/backend`](mock/backend/README.md) | Provides explicit development business-service fixtures through generated protobuf codecs and store Watches, without production fallback or acceptance evidence. |
 | [`mock/fixture`](mock/fixture/README.md) | The Flow Definition fixtures of mock mode and their classification, the Flow runs recorded from Local Kind that the `/dex` mock serves, and the mock Agent's questions and requirements card. |
 | [`mock/store`](mock/store/README.md) | The mock's in-memory store and its clock: seed data, accounts, the mock Agent's state and scripts, configuration drafts, Releases, builds and Live, phase timings and resource snapshots. |
+| [`mock/store/attachments`](mock/store/attachments/README.md) | Development-only attachment staging, where uploads PUT to the mock route are prepared at once and the attachments a Project's messages carry have downloads. |
 | [`mock/store/delivery`](mock/store/delivery/README.md) | The mock Agent's Live delivery feedback in Studio mock mode: script phrases that stand in for a failed Live deployment or an unfinished Live build. |
 | [`mock/store/scenarios`](mock/store/scenarios/README.md) | The mock model's scenario catalog of Studio mock mode, whose inputs drive the mock Agent's scripts through the mock composer, and the markers its phrases ignore. |
 | [`mock/store/setup`](mock/store/setup/README.md) | The mock's Setup state: the Preview's applied configuration and starts, Live's next-publish layer resolved against current Live, and the Slack and Stripe fixture connections. |
@@ -211,6 +215,7 @@ the current contract.
 | [`tests/e2e/journey`](tests/e2e/journey/README.md) | Retained end-to-end journeys through the real Studio, model, GitHub, Sandbox and application APIs that keep the resources they create. |
 | [`tests/e2e/manual`](tests/e2e/manual/README.md) | Holds opt-in provider E2E cases that require private credentials and operator consent outside the required local lanes. |
 | [`tests/e2e/support`](tests/e2e/support/README.md) | Modules the specs share: Studio BFF calls, accounts, Projects, configuration, publishing, Flow runs, Session transport, repository host reads, private fixtures and JSON assertions. |
+| [`tests/e2e/support/attachments`](tests/e2e/support/attachments/README.md) | The E2E files a first message attaches on the start page, uploaded through presigned PUTs, and the checks of their delivery, downloads and chips once the Session shows them. |
 | [`tests/e2e/support/configuration`](tests/e2e/support/configuration/README.md) | Opt-in configuration helpers: the Native read-fault recovery case and the pieces of a two-version Live fixture for Setup's Live tab specs. |
 | [`tests/e2e/support/coverage`](tests/e2e/support/coverage/README.md) | Records, for each passing E2E spec, the Studio source files whose code ran in its browser pages, for the committed coverage map. |
 | [`tests/e2e/support/mock`](tests/e2e/support/mock/README.md) | Drives the mock model's composer: whether the lane offers it and the Session runs it, the first input chosen on the creation page, and each later input in order. |

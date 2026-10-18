@@ -52,15 +52,17 @@ export function useSessionCommands({ projectId, mutate, dispatch, latestSnapshot
     return {
       // A send is a new message with a new ID. The Agent does not deduplicate by message ID, so reusing
       // one for a retry would queue a second copy under the same ID.
-      send: (text: string) =>
-        mutate("send", (signal) => sendMessage({ ...session, messageId: newRequestId(), text }, signal)),
-      // A change to what the agent builds is a message; while a turn runs (`steer`) it also steers that
-      // turn, which applies it at its next safe boundary. A steer the Agent no longer admits, because the
-      // turn ended and took the message, changes nothing: the message is delivered either way.
-      change: (text: string, steer: boolean) =>
+      send: (text: string, attachmentIds: readonly string[] = []) =>
+        mutate("send", (signal) =>
+          sendMessage({ ...session, messageId: newRequestId(), text, attachmentIds: [...attachmentIds] }, signal),
+        ),
+      // A change to what the agent builds is a message, with its files; while a turn runs (`steer`) it also
+      // steers that turn, which applies it at its next safe boundary. A steer the Agent no longer admits,
+      // because the turn ended and took the message, changes nothing: the message is delivered either way.
+      change: (text: string, steer: boolean, attachmentIds: readonly string[] = []) =>
         mutate("send", async (signal) => {
           const messageId = newRequestId();
-          await sendMessage({ ...session, messageId, text }, signal);
+          await sendMessage({ ...session, messageId, text, attachmentIds: [...attachmentIds] }, signal);
           if (steer) await steerQueuedMessage({ ...session, messageId }, signal).catch(unlessNotAdmitted);
         }),
       steer: (messageId: string) => mutate("steer", (signal) => steerQueuedMessage({ ...session, messageId }, signal)),

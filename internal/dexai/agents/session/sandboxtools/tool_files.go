@@ -15,9 +15,11 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/sandboxd"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/toolinput"
 	"github.com/superdurable/superversev2/internal/dexai/agents/toolfailure"
 )
@@ -116,6 +118,35 @@ func (execution *Execution) write(ctx context.Context, call Call) (Result, error
 		return Result{}, err
 	}
 	return execution.runFiles(ctx, call, "write", writeRequest{Path: input.Path, Content: input.Content}, "")
+}
+
+// placeAttachment writes the file of a JSON attachment the Session's Project
+// bound, its redacted copy, through the helper's write at
+// conversation.AttachmentWorkspacePath, and answers where. Writing it again
+// writes the same bytes.
+func (execution *Execution) placeAttachment(ctx context.Context, call Call) (Result, error) {
+	input, err := toolinput.PlaceAttachment.Decode(call.Arguments)
+	if err != nil {
+		return Result{}, invalidArguments(err)
+	}
+	file := call.Attachment
+	switch {
+	case file == nil || file.Label.ID != input.AttachmentID:
+		return Result{}, sandboxd.NewToolFailure(toolfailure.AttachmentNotFound, fmt.Errorf("this Project holds no readable attachment %s", input.AttachmentID))
+	case file.Label.Kind != conversation.AttachmentKindJSON:
+		return Result{}, invalidArguments(fmt.Errorf("attachment %s is a %s file; place_attachment places JSON files", input.AttachmentID, file.Label.Kind))
+	}
+	path := conversation.AttachmentWorkspacePath(file.Label)
+	// The helper writes inside the agent root, the workspace of the main agent, which is the only caller.
+	if _, err = execution.runFiles(ctx, call, "write", writeRequest{Path: strings.TrimPrefix(path, "/workspace/"), Content: string(file.Data)}, ""); err != nil {
+		return Result{}, err
+	}
+	return Result{Content: string(comm.Must(json.Marshal(struct {
+		Path       string `json:"path"`
+		Bytes      int    `json:"bytes"`
+		Digest     string `json:"digest"`
+		Redactions int    `json:"redactions"`
+	}{path, len(file.Data), file.Digest, file.Redactions})))}, nil
 }
 
 func (execution *Execution) grep(ctx context.Context, call Call) (Result, error) {

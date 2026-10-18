@@ -138,7 +138,12 @@ export function ProjectCreationLocal({
         return;
       }
       await sendMessage(
-        { projectId: intent.projectId, messageId: intent.messageIdempotencyKey, text: intent.prompt },
+        {
+          projectId: intent.projectId,
+          messageId: intent.messageIdempotencyKey,
+          text: intent.prompt,
+          attachmentIds: [],
+        },
         controller.signal,
       );
       if (controller.signal.aborted) return;

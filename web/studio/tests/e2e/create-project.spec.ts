@@ -11,6 +11,7 @@ import { type Browser, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { revisionFenceHeaders, type ConnectionsResponse } from "@/lib/api/flow/connector";
 import { register } from "@/tests/e2e/support/account";
+import { startAttachments } from "@/tests/e2e/support/attachments/start-attachments";
 import { studioRoutes } from "@/lib/shared/studio-routes";
 import { createTeamSpace } from "@/tests/e2e/support/teamspace/teamspace";
 import { expectNativeConfigurationRecovery } from "@/tests/e2e/support/configuration/recovery";
@@ -45,7 +46,8 @@ import { rpc, rpcAnswered, rpcResult, studioOrigin } from "@/tests/e2e/support/s
 // when the platform developer sets it; without it a lane that offers the mock model, as the local lanes do,
 // chooses it. On the mock model every turn is a scenario through the mock composer, the creation page's
 // included: a read-only inspection, a long streamed explanation, the heading edit, two answered questions
-// and a note built by hand. A real model works from the prompts alone.
+// and a note built by hand. A real model works from the prompts alone. The first message also attaches a
+// PNG and an n8n export, which the start page uploads through storage's presigned PUT.
 const INSPECTION_PROMPT =
   "Inspect the existing application template. Run its source checks and report readiness. Preserve TextSummaryFlow, its summary form and its API; use Studio Runs for process management.";
 const EXPLANATION_PROMPT = [
@@ -148,7 +150,7 @@ async function expectStrictBusinessRoutes(page: Page, teamSpaceId: string, proje
   expect((await post("ListProjects", {})).status()).toBe(400);
 }
 
-test("template project edits, pushes, previews, deploys Live twice, denies old grants and cleans up", async ({
+test("template project with attached files edits, pushes, previews, deploys Live twice, denies old grants and cleans up", async ({
   page,
   browser,
   context,
@@ -164,13 +166,17 @@ test("template project edits, pushes, previews, deploys Live twice, denies old g
     // The mock composer starts a scenario that changes the source only in a new project, so on
     // the mock model the heading edit is the first input and the inspection runs later.
     const marker = `V2 approved ${Date.now().toString(36)}`;
+    const attachments = startAttachments();
     const created = await createProject(
       page,
       teamSpaceId,
-      mock ? chooseMockFirstInput("build-basic", { heading: marker }) : typePrompt(INSPECTION_PROMPT),
+      attachments.choose(
+        mock ? chooseMockFirstInput("build-basic", { heading: marker }) : typePrompt(INSPECTION_PROMPT),
+      ),
       testInfo,
     );
     const projectId = created.projectId;
+    await attachments.expectDelivered(page, projectId);
     await expectStrictBusinessRoutes(page, teamSpaceId, projectId);
     if (mock) await waitForFirstMockInput(page, projectId, "build-basic");
     else await waitForCompletedTurn(page, projectId);

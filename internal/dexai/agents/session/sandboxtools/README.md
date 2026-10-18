@@ -28,6 +28,16 @@ flowchart LR
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 
+`place_attachment` writes the file of a JSON attachment the Session's Project
+bound, its redacted copy, through `superverse-files write` at
+`/workspace/.local/superverse-attachments/<id>/<name>`
+(`conversation.AttachmentWorkspacePath`) and answers the path, size, digest
+and redaction count. The Session's Step reads the file from storage through
+its `attachmentRenditions` port and hands it over in `Call.Attachment`, so the
+Runner reads no storage; an attachment the Project did not bind is
+`attachment_not_found`, another kind than JSON `invalid_arguments`. Writing it
+again writes the same bytes.
+
 `Runner.Run` executes one catalog-selected tool for a Session. `Call` carries the
 stable Flow/Call identity, the arguments, the admitted lease, the confirmed HEAD,
 the agent root, the first attempt's time for a retried command and the progress

@@ -8,7 +8,14 @@
 
 "use client";
 
-import { AgentTasksPanel, ConversationView, PendingMessageQueue, TimerCard, TodoProgress } from "@/components/agent";
+import {
+  AgentTasksPanel,
+  AttachmentFilesProvider,
+  ConversationView,
+  PendingMessageQueue,
+  TimerCard,
+  TodoProgress,
+} from "@/components/agent";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Spinner } from "@/components/ui/Icons";
 import { AgentStatus, hasRunningTasks, hasRunningWork } from "@/lib/session/agent-types";
@@ -20,6 +27,7 @@ import { useTemplateCommit } from "@/lib/project/stage/ProjectStageProvider";
 import { useProjectSession } from "@/lib/session/SessionProvider";
 import { isWorkspacePaused, isWorkspacePreparing, isWorkspaceRetainedDirty } from "@/lib/session/session-status";
 import { Composer } from "@/components/session/composer/Composer";
+import { AttachmentDropZone } from "@/components/session/composer/attachments/AttachmentDropZone";
 import { MockComposer } from "./mock/MockComposer";
 import { HistoryJumps } from "./HistoryJumps";
 import { PendingActionDock } from "./PendingActionDock";
@@ -32,6 +40,7 @@ import {
   notificationLinks,
   agentStatusLabel,
   pendingQueueActions,
+  pendingWaitsOf,
   shownChatMessages,
 } from "./session-chat-state";
 import { SessionAgentPicker } from "./executor/SessionAgentPicker";
@@ -40,6 +49,7 @@ import { StartupStatus } from "./start/StartupSteps";
 import { useChatSend } from "./start/use-chat-send";
 import { useComposerText } from "./start/use-first-turn-composer";
 import { RemoteAgentOfflineNotice } from "./executor/SessionAgentPicker";
+import { useSessionAttachments } from "./use-session-attachments";
 
 const FIRST_MESSAGE_WAITS = "Your description waits for the agent…";
 
@@ -163,26 +173,10 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
   const pendingMessages = mapPendingMessages(state.snapshot?.queued ?? [], state.snapshot?.steered ?? []);
   const linksOfNotification = useMemo(() => notificationLinks(state.projectId), [state.projectId]);
   const pendingWaits = useMemo(
-    () =>
-      [
-        pendingApproval && {
-          kind: "approval" as const,
-          callId: pendingApproval.callId,
-          startedAt: pendingApproval.startedAt ?? null,
-        },
-        pendingInput && {
-          kind: "question" as const,
-          callId: pendingInput.callId,
-          startedAt: pendingInput.startedAt ?? null,
-        },
-        pendingTimer && {
-          kind: "timer" as const,
-          callId: pendingTimer.callId,
-          startedAt: pendingTimer.startedAt ?? null,
-        },
-      ].filter((value) => value !== null),
+    () => pendingWaitsOf(pendingApproval, pendingInput, pendingTimer),
     [pendingApproval, pendingInput, pendingTimer],
   );
+  const attachments = useSessionAttachments(state.projectId, remotelyExecuted);
   const placeholder = composerPlaceholder({
     pendingInputKind: pendingInput?.kind ?? null,
     answerAwaitingReconciliation,
@@ -229,7 +223,7 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
       }) ?? firstMessageWaits);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <AttachmentDropZone tray={attachments.tray} className="flex h-full min-h-0 flex-col">
       <aside className="flex min-h-0 flex-1 flex-col">
         <div className="relative flex min-h-0 flex-1 flex-col">
           <div
@@ -253,40 +247,42 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
                     : "Loading earlier messages…"}
                 </div>
               )}
-              <ConversationView
-                key={state.projectId}
-                messages={shownMessages}
-                reasoning={state.reasoning}
-                activities={state.activities}
-                assistant={state.assistant}
-                pendingWaits={pendingWaits}
-                isModelRunning={description?.status === AgentStatus.CALLING_MODEL}
-                isExecutionLive={productInteractive}
-                streamState={productInteractive && state.assistant?.isComplete === false ? "streaming" : "complete"}
-                notificationLinks={linksOfNotification}
-                confirmedRequirements={description?.confirmedRequirements ?? null}
-                waitingRequirementsCallId={pendingInput?.kind === "requirements" ? pendingInput.callId : null}
-                requirementsStartSequence={startedFromExample ? EXAMPLE_GREETING_SEQUENCE : null}
-              />
-              {live && liveChange.offered && <SeeOnPreview live={live} onFollow={liveChange.dismiss} />}
-              {description?.todoList && <TodoProgress items={description.todoList.items} />}
-              {description && (
-                <AgentTasksPanel
-                  commands={description.backgroundCommands}
-                  subagents={description.subagents}
-                  subagentLines={state.subagentLines}
-                  contributions={contributions}
-                  stopping={state.stopping}
+              <AttachmentFilesProvider links={attachments.links}>
+                <ConversationView
+                  key={state.projectId}
+                  messages={shownMessages}
+                  reasoning={state.reasoning}
+                  activities={state.activities}
+                  assistant={state.assistant}
+                  pendingWaits={pendingWaits}
+                  isModelRunning={description?.status === AgentStatus.CALLING_MODEL}
+                  isExecutionLive={productInteractive}
+                  streamState={productInteractive && state.assistant?.isComplete === false ? "streaming" : "complete"}
+                  notificationLinks={linksOfNotification}
+                  confirmedRequirements={description?.confirmedRequirements ?? null}
+                  waitingRequirementsCallId={pendingInput?.kind === "requirements" ? pendingInput.callId : null}
+                  requirementsStartSequence={startedFromExample ? EXAMPLE_GREETING_SEQUENCE : null}
                 />
-              )}
-              {pendingTimer && (
-                <TimerCard durationSeconds={pendingTimer.durationSeconds} reason={pendingTimer.reason} />
-              )}
-              <PendingMessageQueue
-                items={pendingMessages}
-                disabled={state.mutating || agentInteractionDisabled}
-                {...pendingQueueActions(state.snapshot?.queued ?? [], state, setComposerText)}
-              />
+                {live && liveChange.offered && <SeeOnPreview live={live} onFollow={liveChange.dismiss} />}
+                {description?.todoList && <TodoProgress items={description.todoList.items} />}
+                {description && (
+                  <AgentTasksPanel
+                    commands={description.backgroundCommands}
+                    subagents={description.subagents}
+                    subagentLines={state.subagentLines}
+                    contributions={contributions}
+                    stopping={state.stopping}
+                  />
+                )}
+                {pendingTimer && (
+                  <TimerCard durationSeconds={pendingTimer.durationSeconds} reason={pendingTimer.reason} />
+                )}
+                <PendingMessageQueue
+                  items={pendingMessages}
+                  disabled={state.mutating || agentInteractionDisabled}
+                  {...pendingQueueActions(state.snapshot?.queued ?? [], state, setComposerText, attachments.takeBack)}
+                />
+              </AttachmentFilesProvider>
               <StartupStatus
                 messages={shownMessages}
                 description={description}
@@ -356,23 +352,25 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
             pendingInput={pendingInput}
             busy={state.mutating}
             disabledReason={mockDisabledReason}
-            onSend={(text) => {
+            onSend={(text, attachmentIds) => {
               markSent();
-              return sendMessage(text);
+              return sendMessage(text, attachmentIds);
             }}
-            onSteer={(text) => {
+            onSteer={(text, attachmentIds) => {
               markSent();
-              return state.change(text, true);
+              return state.change(text, true, attachmentIds);
             }}
             onAnswer={state.answerQuestions}
             onStop={canStop ? stop : undefined}
             stopDisabled={state.mutating || !state.snapshotCurrent}
             stopping={state.stopping}
             menu={modelMenu}
+            attachments={attachments.tray}
           />
         ) : (
           <Composer
             onSend={send}
+            attachments={attachments.tray}
             about={about}
             onClearAbout={clearAbout}
             focusKey={focusKey + (draft?.focusRequests ?? 0)}
@@ -390,6 +388,6 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
           />
         )}
       </aside>
-    </div>
+    </AttachmentDropZone>
   );
 }

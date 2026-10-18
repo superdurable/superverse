@@ -20,6 +20,7 @@ import (
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
+	"github.com/superdurable/superversev2/internal/comm/platform/objectstore"
 )
 
 var (
@@ -38,15 +39,20 @@ var (
 	TeamSpaceMembers = dex.DefineAttributeMap[Member]("Members", dex.SyncToAttributeStore())
 	// TeamSpaceProjects, by ProjectID, holds the Projects the TeamSpace's deletion deletes.
 	TeamSpaceProjects = dex.DefineAttributeMap[RegisteredProject]("Projects")
-	TeamSpaceCommands = dex.DefineChannel[Command]("TeamSpaceCommands")
+	// TeamSpaceAttachmentStaging, by attachment ID, holds the staged attachments, which the totals count.
+	TeamSpaceAttachmentStaging       = dex.DefineAttributeMap[StagedAttachment]("AttachmentStaging")
+	TeamSpaceAttachmentStagingTotals = dex.DefineAttribute[StagingTotals]("AttachmentStagingTotals")
+	TeamSpaceCommands                = dex.DefineChannel[Command]("TeamSpaceCommands")
 )
 
-// TeamSpaceFlow is the permanent owner of one TeamSpace (teamspace-<teamSpaceID>): its name,
-// members and Project registry, and its deletion, which deletes every registered Project, then its connections.
+// TeamSpaceFlow is the permanent owner of one TeamSpace (teamspace-<teamSpaceID>): its name, members, Project registry
+// and attachment staging quota, and its deletion: every registered Project, its connections, then its staged attachments.
 type TeamSpaceFlow struct {
 	dex.FlowDefaults
 	Projects    ProjectCleanup
 	Connections ConnectionCleanup
+	Objects     *objectstore.Store
+	Staging     StagingLimits
 }
 
 func (f *TeamSpaceFlow) GetSteps() []dex.StepDef {
@@ -61,11 +67,15 @@ func (f *TeamSpaceFlow) GetRPCs() []dex.RPCDef {
 	write := dexflow.ShortRPC(dex.LockAttribute(TeamSpaceRevision))
 	members := dexflow.ShortRPC(dex.LockAttribute(TeamSpaceRevision))
 	members.LoadAttributeMaps = []dex.AttributeDef{TeamSpaceMembers}
+	staging := dexflow.ShortRPC()
+	staging.LoadAttributeMaps = []dex.AttributeDef{TeamSpaceAttachmentStaging}
 	return []dex.RPCDef{
 		dex.DefineRPC(f.GetDexSummary, read), dex.DefineRPC(f.GetDexDisplay, read),
 		dex.DefineRPC(f.AddTeamSpaceMember, members), dex.DefineRPC(f.SetTeamSpaceMemberRole, members), dex.DefineRPC(f.RemoveTeamSpaceMember, members),
 		dex.DefineRPC(f.RenameTeamSpace, write), dex.DefineRPC(f.RequestTeamSpaceDeletion, write),
 		dex.DefineRPC(f.RegisterProject, write), dex.DefineRPC(f.UnregisterProject, write),
+		dex.DefineRPC(f.ReserveAttachmentStaging, write), dex.DefineRPC(f.ReleaseAttachmentStaging, write),
+		dex.DefineRPC(f.ListLapsedAttachmentStaging, staging),
 	}
 }
 
@@ -74,6 +84,7 @@ func (f *TeamSpaceFlow) GetPersistenceSchema() dex.PersistenceSchema {
 		Attributes: []dex.AttributeDef{
 			TeamSpaceStartIdentity, TeamSpaceName, TeamSpaceStatus, TeamSpaceCreatorAccountID, TeamSpaceRevision, TeamSpaceActiveCommand,
 			TeamSpaceLastCommand, TeamSpaceLastFailure, TeamSpaceCreatedAt, TeamSpaceUpdatedAt, TeamSpaceMembers, TeamSpaceProjects,
+			TeamSpaceAttachmentStaging, TeamSpaceAttachmentStagingTotals,
 		},
 		Channels: []dex.ChannelDef{TeamSpaceCommands},
 	}
@@ -92,6 +103,7 @@ func (f *TeamSpaceFlow) InitialAttributes(in Start) []dex.InitialAttributeDef {
 	dexflow.Add(b, TeamSpaceLastFailure, nil)
 	dexflow.Add(b, TeamSpaceCreatedAt, now)
 	dexflow.Add(b, TeamSpaceUpdatedAt, now)
+	dexflow.Add(b, TeamSpaceAttachmentStagingTotals, StagingTotals{})
 	dexflow.AddInstance(b, TeamSpaceMembers, in.CreatorAccountID, Member{Role: RoleAdmin, AddedAt: now, AddedByAccountID: in.CreatorAccountID})
 	return b.Values()
 }
@@ -242,6 +254,55 @@ func (f *TeamSpaceFlow) UnregisterProject(ctx dex.Context, in registration) (*de
 	return &dex.RPCResult[registrationResult]{}, nil
 }
 
+// ReserveAttachmentStaging reserves a staging slot of the TeamSpace for an attachment of a member or the platform
+// admin, within the staging quota; a reserved attachment is accepted again whatever the status.
+func (f *TeamSpaceFlow) ReserveAttachmentStaging(ctx dex.Context, in StagingReservation) (*dex.RPCResult[registrationResult], error) {
+	if _, err := TeamSpaceAttachmentStaging.Get(ctx, in.AttachmentID); err == nil {
+		return &dex.RPCResult[registrationResult]{}, nil
+	} else if !dexflow.IsAttributeNotFound(err) {
+		return nil, err
+	}
+	totals := dexflow.ValueOrZero(TeamSpaceAttachmentStagingTotals.Get(ctx))
+	switch {
+	case comm.Must(TeamSpaceStatus.Get(ctx)) != StatusReady:
+		return registrationRejected(dexflow.RejectionFailedPrecondition, "the TeamSpace is being deleted")
+	case !in.Actor.PlatformAdmin && !isLoadedMember(ctx, in.Actor.AccountID):
+		return registrationRejected(dexflow.RejectionPermissionDenied, "only a member of the TeamSpace attaches files to it")
+	case totals.Count+1 > f.Staging.Files || totals.Bytes+in.Bytes > f.Staging.Bytes:
+		return registrationRejected(dexflow.RejectionResourceExhausted, fmt.Sprintf("a TeamSpace stages at most %d files and %d bytes at once", f.Staging.Files, f.Staging.Bytes))
+	}
+	comm.MustDo(TeamSpaceAttachmentStaging.Set(ctx, in.AttachmentID, StagedAttachment{
+		FlowID: in.FlowID, Bytes: in.Bytes, UploaderAccountID: in.Actor.AccountID, ReservedAt: time.Now().UTC(), HeldUntil: in.HeldUntil,
+	}))
+	comm.MustDo(TeamSpaceAttachmentStagingTotals.Set(ctx, StagingTotals{Count: totals.Count + 1, Bytes: totals.Bytes + in.Bytes}))
+	return &dex.RPCResult[registrationResult]{}, nil
+}
+
+// ReleaseAttachmentStaging frees the slot of an attachment that ended, also while the TeamSpace is deleting; releasing
+// an attachment that holds none changes nothing.
+func (f *TeamSpaceFlow) ReleaseAttachmentStaging(ctx dex.Context, in stagingRelease) (*dex.RPCResult[registrationResult], error) {
+	staged, err := TeamSpaceAttachmentStaging.Get(ctx, in.AttachmentID)
+	if dexflow.IsAttributeNotFound(err) {
+		return &dex.RPCResult[registrationResult]{}, nil
+	} else if err != nil {
+		return nil, err
+	}
+	totals := dexflow.ValueOrZero(TeamSpaceAttachmentStagingTotals.Get(ctx))
+	comm.MustDo(TeamSpaceAttachmentStaging.Delete(ctx, in.AttachmentID))
+	comm.MustDo(TeamSpaceAttachmentStagingTotals.Set(ctx, StagingTotals{Count: max(totals.Count-1, 0), Bytes: max(totals.Bytes-staged.Bytes, 0)}))
+	return &dex.RPCResult[registrationResult]{}, nil
+}
+
+// ListLapsedAttachmentStaging lists, oldest first and bounded, the staged attachments whose hold lapsed: their
+// AttachmentFlow ended without releasing them, so an upload that finds the quota full reclaims them.
+func (*TeamSpaceFlow) ListLapsedAttachmentStaging(ctx dex.Context, _ dex.None) (*dex.RPCResult[lapsedStaging], error) {
+	staged := map[string]StagedAttachment{}
+	for _, id := range TeamSpaceAttachmentStaging.AllInstanceKeys(ctx) {
+		staged[id] = comm.Must(TeamSpaceAttachmentStaging.Get(ctx, id))
+	}
+	return &dex.RPCResult[lapsedStaging]{Output: lapsedOf(staged, time.Now().UTC())}, nil
+}
+
 // dex:group group-id:teamspace group-label:"TeamSpace"
 // dex:explanation text:"Wait for the platform admin's deletion command."
 type AwaitTeamSpaceCommands struct {
@@ -261,7 +322,7 @@ func (s AwaitTeamSpaceCommands) Execute(ctx dex.Context, _ dex.None) (*dex.StepD
 }
 
 // dex:group group-id:teamspace group-label:"TeamSpace"
-// dex:explanation text:"Delete every registered Project and wait until each is DELETED, then delete the TeamSpace's connections."
+// dex:explanation text:"Delete every registered Project and wait until each is DELETED, then delete the TeamSpace's connections and its staged attachments."
 type DeleteTeamSpaceResources struct {
 	dex.StepDefaultsNoWaitFor[Command]
 	flow *TeamSpaceFlow
@@ -294,7 +355,11 @@ func (s DeleteTeamSpaceResources) Execute(ctx dex.Context, command Command) (*de
 			return false, nil
 		}
 		// With every Project DELETED no usage remains, so this is never refused.
-		return s.flow.Connections.DeleteTeamSpaceConnections(callCtx, teamSpaceID)
+		if done, err := s.flow.Connections.DeleteTeamSpaceConnections(callCtx, teamSpaceID); err != nil || !done {
+			return false, err
+		}
+		// A deleting TeamSpace reserves no slot, and each AttachmentFlow deletes its own prefix again when it ends.
+		return s.flow.Objects.DeletePrefix(callCtx, attachmentStagingPrefix(teamSpaceID))
 	})
 	if err != nil {
 		return nil, err

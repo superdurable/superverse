@@ -19,15 +19,15 @@ export function useChatSend({
   clearAbout,
   markSent,
 }: {
-  send: (text: string) => Promise<unknown>;
+  send: (text: string, attachmentIds: readonly string[]) => Promise<unknown>;
   about: string | null;
   clearAbout: () => void;
   markSent: () => void;
-}): (text: string) => Promise<void> {
+}): (text: string, attachmentIds: readonly string[]) => Promise<void> {
   return useCallback(
-    (text: string) => {
+    (text: string, attachmentIds: readonly string[]) => {
       markSent();
-      return send(about ? `About: ${about}\n${text}` : text).then(clearAbout);
+      return send(about ? `About: ${about}\n${text}` : text, attachmentIds).then(clearAbout);
     },
     [about, clearAbout, markSent, send],
   );

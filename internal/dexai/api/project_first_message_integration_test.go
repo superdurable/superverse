@@ -178,7 +178,8 @@ func createWithFirstTurn(ctx context.Context, t *testing.T, api pb.ProjectServic
 // withChange is a copy of create that change edits.
 func withChange(create *pb.CreateProjectRequest, change func(*pb.CreateProjectRequest)) *pb.CreateProjectRequest {
 	retry := &pb.CreateProjectRequest{Caller: create.GetCaller(), RequestId: create.GetRequestId(), Name: create.GetName(), ManagedRepository: create.GetManagedRepository(),
-		TeamSpaceId: create.GetTeamSpaceId(), InitialMessage: create.GetInitialMessage(), MessageId: create.GetMessageId(), Model: create.GetModel()}
+		TeamSpaceId: create.GetTeamSpaceId(), InitialMessage: create.GetInitialMessage(), MessageId: create.GetMessageId(), Model: create.GetModel(),
+		InitialAttachmentIds: create.GetInitialAttachmentIds()}
 	change(retry)
 	return retry
 }

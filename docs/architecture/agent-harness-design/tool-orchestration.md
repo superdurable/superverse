@@ -105,6 +105,8 @@ returns `unknown_or_disabled_tool`.
 | `commit_and_push` | main | mutating | no | yes |
 | `connector_catalog` | all | read only | yes | yes |
 | `read_delivery_status`, `read_platform_flow`, `read_live_app_runs` | main, and the subagent kinds that read the platform (`investigate`, `change`) | none (server side) | yes | no |
+| `read_attachment` | main, platform mode | none (server side) | yes | no |
+| `place_attachment` | main, platform mode | mutating | no | no |
 | `write_todos`, `request_user_input`, `start_timer` | main | none (built-in) | n/a | yes |
 | `confirm_requirements` | main | none (built-in) | n/a | yes |
 | `set_effort` | main, `change` and `connector_develop` subagents, on a model that takes effort | none (built-in) | n/a | yes |
@@ -546,6 +548,7 @@ the hint of a platform code unless the code's own hint replaces it.
 | `command_not_started` | The ledger rejected the start before running anything (agent root missing or not a directory) |
 | `background_limit_reached` | Four background commands are already running |
 | `task_not_found` | `read_task_output` or `stop_task` names an unknown task ID, or `stop_task` or `merge_agent_changes` an agent ID that no subagent of the Session has |
+| `attachment_not_found` | `read_attachment` or `place_attachment` names an attachment the Session's Project has not bound ([attachments](context-management.md#attachments)) |
 | `subagent_limit_reached` | `start_agent` while three subagents already run |
 | `subagent_budget_reached` | `start_agent` after six subagents started since the user's last message (checked before the running limit) |
 | `snapshot_too_large` | `start_agent`: the uncommitted and untracked files its worktree would copy exceed 100 MiB |
@@ -635,6 +638,14 @@ Session. [`internal/dexai/agents/diagnostics`](../../../internal/dexai/agents/di
 | `read_delivery_status` | The Project, its Setup, the Session's Sandbox instance and the Project's Preview, the newest three Releases (with the log tail of a failed build) and Live deployments, the Session HEAD and the Live pointer; each resource names its FlowID |
 | `read_platform_flow` | One platform Flow's summary, allowlisted state, or one page of history. Only the Project's `project-`, `setup-`, `release-` and `deploy-` Flows, its `preview-` and `session-workspace-` Flows and the Session's own `sandbox-provision-` Flows are admitted; any other FlowID, including every SessionAgentFlow, SubagentFlow and BackgroundCommandFlow, is refused with `flow_not_in_project` before any read |
 | `read_live_app_runs` | The Live application's runs (search, summary, state, history) through the same checks as a Studio Live target, and the end of its container log through the runtime (the Pod log, or `docker logs`) |
+| `read_attachment` | An attachment the Session's Project bound ([attachments](context-management.md#attachments)): a document's outline, or one 32 KiB part of a section, or of a JSON file's redacted text, framed as material the user attached; an image is `invalid_arguments` |
+
+`place_attachment` is a Sandbox tool of its own kind: the Session's Step reads the redacted copy of a
+JSON attachment its Project bound through its `attachmentRenditions` port, and the tool writes it
+through `superverse-files write` at `/workspace/.local/superverse-attachments/<id>/<name>`, which the
+application template's `.gitignore` ignores; `commit_and_push` refuses a staged tree that holds such
+a file (`attachment_in_source`). It is mutating, so it joins no wave, and loose, so the measured
+strict tool set is unchanged. Neither attachment tool is offered to a connected local agent.
 
 The platform Dex is shared by every Project, so the Agent never gets raw platform engine access. For
 the Preview the Agent runs `dexcli` against the Sandbox-local engine (read subcommands, `--no-hydrate`)

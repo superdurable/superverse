@@ -21,6 +21,7 @@ import (
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
+	"github.com/superdurable/superversev2/internal/dexai/agents/remoteexec"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/provision"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace"
@@ -371,6 +372,193 @@ func startingExampleSection(ctx dex.Context, describesPicked bool) string {
 // build gets a design.
 func recordsNoCardDesign(ctx dex.Context) bool {
 	return comm.Must(agentStateAttribute.Get(ctx)).StartingExample != nil || dexflow.ValueOrZero(previewHandoffAttribute.Get(ctx)).Commit != ""
+}
+
+// Opening a segment writes its segment_start entry from the sections above:
+// the Session's first segment, a compaction's, a rollover's, an unsummarized
+// one and the executor handoff's. planModelCall decides when one opens.
+
+// openSessionStartSegment opens the first segment of the Session on the
+// selected model.
+func (flow *SessionAgentFlow) openSessionStartSegment(ctx dex.Context) agentloop.ContextSegment {
+	return flow.openSegment(ctx, agentloop.SegmentReasonSessionStart, comm.Must(sessionModelAttribute.Get(ctx)).Model, "", currentEntry)
+}
+
+// openSegment opens the next segment for reason on model with summary: one
+// segment_start entry with the summary, the repository context, the confirmed
+// requirements, the card design rule once the agent's cards carry no Flow
+// design (recordsNoCardDesign), the todo list, the starting example while it
+// is described,
+// for the Session's first segment the catalog matches of its request, the
+// attachments of earlier messages, the workflow import of the request's
+// exports, and the turn's pending request as read finds it, then the notice
+// of a reporting turn; the references of the request's attachments
+// (agentloop.SegmentAttachments) follow the text. A segment without the
+// repository context awaits it. The segment and its prompts replace the
+// previous ones, and archive chunks before it become eligible for retention.
+func (flow *SessionAgentFlow) openSegment(ctx dex.Context, reason agentloop.SegmentReason, model conversation.Model, summary string, read entryReader) agentloop.ContextSegment {
+	previous, request := dexflow.OptionalValue(contextSegmentAttribute.Get(ctx)), pendingRequestEntries(ctx, read)
+	start := agentloop.SegmentStart{Summary: summary, RepositoryContext: dexflow.ValueOrZero(workspaceAttribute.Get(ctx)).RepositoryContext,
+		ConfirmedRequirements: dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx)),
+		TodoList:              dexflow.OptionalValue(todoListAttribute.Get(ctx)), PendingRequest: conversation.PendingRequestText(request),
+		StartingExample: startingExampleSection(ctx, reason == agentloop.SegmentReasonSessionStart), NoCardDesign: recordsNoCardDesign(ctx)}
+	if reason == agentloop.SegmentReasonSessionStart {
+		start.CatalogMatches = flow.requestCatalogMatches(request)
+	}
+	pending, earlier := requestAttachments(request), []agentloop.RememberedAttachment(nil)
+	if previous != nil {
+		earlier = previous.Attachments
+	}
+	shown, listed := agentloop.SegmentAttachments(pending, earlier, flow.settings.Attachments)
+	start.Attachments = listed
+	for _, attachment := range pending {
+		if attachment.IsWorkflowExport() {
+			start.WorkflowExports = append(start.WorkflowExports, attachment)
+		}
+	}
+	entry := conversation.SegmentStartEntry(start.Text(), agentloop.SegmentMarker(reason), shown...)
+	first := appendEntry(ctx, entry)
+	segment := agentloop.NewSegment(previous, first, reason, model, flow.settings, entry.Bytes()).OpenedWithAttachments(shown, pending)
+	segment.Summary = comm.TruncateUTF8(summary, 8<<10)
+	segment.AwaitsRepositoryContext = start.RepositoryContext == ""
+	comm.MustDo(contextSegmentAttribute.Set(ctx, segment))
+	comm.MustDo(contextSegmentPromptsAttribute.Set(ctx, segment.PromptsKey(), agentloop.SessionPromptFor(model).Prompts))
+	if previous != nil {
+		comm.MustDo(contextSegmentPromptsAttribute.Delete(ctx, previous.PromptsKey()))
+	}
+	trimRetainedEntries(ctx)
+	return comm.Must(contextSegmentAttribute.Get(ctx))
+}
+
+// pendingRequestEntries are the user messages the current turn works on that
+// read finds. A compaction and its failure route load the chunks that hold
+// them (segmentLoad) and read them with loadedEntry. The first segment opens in
+// Steps that load no archive chunk and reads only CurrentMessages
+// (currentEntry), so a message archived before it is left out.
+func pendingRequestEntries(ctx dex.Context, read entryReader) []conversation.Entry {
+	state := comm.Must(agentStateAttribute.Get(ctx))
+	var entries []conversation.Entry
+	for _, sequence := range state.TurnRequestSequences {
+		if entry, found := read(ctx, state, sequence); found {
+			entries = append(entries, entry)
+		}
+	}
+	return entries
+}
+
+// requestAttachments are the attachments the entries of a pending request
+// hold, each once, in request order.
+func requestAttachments(request []conversation.Entry) []conversation.AttachmentRef {
+	var attachments []conversation.AttachmentRef
+	seen := map[string]bool{}
+	for _, entry := range request {
+		for _, reference := range entry.AttachmentReferences() {
+			if !seen[reference.Attachment.ID] {
+				seen[reference.Attachment.ID] = true
+				attachments = append(attachments, reference.Attachment)
+			}
+		}
+	}
+	return attachments
+}
+
+// executorContextLoads selects exact retained chunks; at most the newest 1000
+// entries contribute to an executor handoff. Missing loads retry the same
+// existing boundary Step, never the model or a new context lifecycle.
+func executorContextLoads(ctx dex.Context) []dex.AttributeMapLoad {
+	state := comm.Must(agentStateAttribute.Get(ctx))
+	first := max(state.FirstRetainedSequence, state.LastSequence-999)
+	first = (first-1)/agentloop.ArchiveMessageChunkSize*agentloop.ArchiveMessageChunkSize + 1
+	var loads []dex.AttributeMapLoad
+	for sequence := first; sequence < state.CurrentFirstSequence; sequence += agentloop.ArchiveMessageChunkSize {
+		key := agentloop.SequenceKey(sequence)
+		_, err := archivedMessagesAttribute.Get(ctx, key)
+		if dexflow.IsAttributeMapNotLoaded(err) {
+			loads = append(loads, archivedMessagesAttribute.Load(key))
+		} else {
+			comm.MustDo(err)
+		}
+	}
+	return loads
+}
+
+func (flow *SessionAgentFlow) openExecutorSegment(ctx dex.Context, executor remoteexec.Executor) agentloop.ContextSegment {
+	state := comm.Must(agentStateAttribute.Get(ctx))
+	read := retainedEntries(ctx, state)
+	entries := make([]conversation.SequencedEntry, 0, 1000)
+	for sequence := max(state.FirstRetainedSequence, state.LastSequence-999); sequence <= state.LastSequence; sequence++ {
+		entries = append(entries, conversation.SequencedEntry{Sequence: sequence, Entry: read(sequence)})
+	}
+	first := agentloop.ExecutorContextStart(entries, flow.settings.CompactionTokens, flow.settings.Attachments)
+	previous := dexflow.OptionalValue(contextSegmentAttribute.Get(ctx))
+	summary := ""
+	if previous != nil {
+		summary = previous.Summary
+	}
+	handoff := executor.Handoff
+	text := handoff.Notice(comm.Must(headCommitAttribute.Get(ctx)))
+	section := func(label, value string, budget int) {
+		if value != "" {
+			text += "\n\n" + label + ":\n" + boundedHandoffText(value, budget)
+		}
+	}
+	section("Older platform summary", summary, 8<<10)
+	if requirements := dexflow.OptionalValue(confirmedRequirementsAttribute.Get(ctx)); requirements != nil {
+		section("Current requirements", (agentloop.SegmentStart{ConfirmedRequirements: requirements}).Text(), 2<<10)
+	}
+	if recordsNoCardDesign(ctx) {
+		section("Card design", (agentloop.SegmentStart{NoCardDesign: true}).Text(), 1<<10)
+	}
+	if todos := dexflow.OptionalValue(todoListAttribute.Get(ctx)); todos != nil {
+		section("Todos", (agentloop.SegmentStart{TodoList: todos}).Text(), 2<<10)
+	}
+	var commands []string
+	for _, command := range loadedBackgroundCommands(ctx) {
+		if command.IsRunning() {
+			commands = append(commands, command.TaskID)
+		}
+	}
+	section("Running background commands", strings.Join(commands, ", "), 1<<10)
+	// The starting example takes what the notice leaves, so it never pushes out the sections before it.
+	if room := remoteexec.MaximumHandoffBytes - len(text) - len("\n\nStarting example:\n"); room >= minimumHandoffExampleBytes {
+		section("Starting example", startingExampleSection(ctx, false), room)
+	}
+	entry := conversation.NoticeEntry(conversation.EntryRoleUser, boundedHandoffText(text, remoteexec.MaximumHandoffBytes), "Switched to the Superverse agent")
+	last := appendEntry(ctx, entry)
+	if first == 0 {
+		first = last
+	}
+	bytes, shown := entry.Bytes(), []conversation.AttachmentReference(nil)
+	for _, item := range entries {
+		if item.Sequence >= first {
+			bytes += item.Entry.Bytes()
+			shown = append(shown, item.Entry.AttachmentReferences()...)
+		}
+	}
+	model := comm.Must(sessionModelAttribute.Get(ctx)).Model
+	segment := agentloop.NewSegment(previous, first, agentloop.SegmentReasonExecutor, model, flow.settings, bytes).OpenedWithAttachments(shown, nil)
+	segment.Summary = comm.TruncateUTF8(summary, 8<<10)
+	comm.MustDo(contextSegmentAttribute.Set(ctx, segment))
+	comm.MustDo(contextSegmentPromptsAttribute.Set(ctx, segment.PromptsKey(), agentloop.SessionPromptFor(model).Prompts))
+	if previous != nil {
+		comm.MustDo(contextSegmentPromptsAttribute.Delete(ctx, previous.PromptsKey()))
+	}
+	executor.Handoff = nil
+	comm.MustDo(executorAttribute.Set(ctx, executor))
+	trimRetainedEntries(ctx)
+	return comm.Must(contextSegmentAttribute.Get(ctx))
+}
+
+// minimumHandoffExampleBytes is the least room for the starting example in
+// the executor handoff notice; with less, the notice leaves it out.
+const minimumHandoffExampleBytes = 512
+
+func boundedHandoffText(text string, budget int) string {
+	if len(text) <= budget {
+		return text
+	}
+	const marker = "\n[earlier details omitted; open Studio for the full state]"
+	return comm.TruncateUTF8(text, budget-len(marker)) + marker
 }
 
 // recordStartingExampleBuild completes a matched Session's StartingExample,

@@ -73,7 +73,7 @@ Claude model. Studio receives the lane's own browser signing key, its public ori
 | Remote agent Bridge origin | `127.0.0.1:26089`, shifted by the named-instance offset; see [connection operation](remote-agent.md) |
 | Routes the server serves the gateway | `127.0.0.1:26086` |
 | Platform Dex API / Web | `127.0.0.1:26811` / `http://localhost:26812/` |
-| Platform MinIO | `http://127.0.0.1:27000` |
+| Platform MinIO, also the browser's presigned uploads and downloads (`storage.browserEndpoint`) | `http://127.0.0.1:27000` |
 | Platform Temporal / UI | `127.0.0.1:25233` / `http://localhost:26233/` |
 | Preview/Live gateway / its API | `http://<scope>-<project>.localhost:21080` / `http://127.0.0.1:21081` |
 | Local registry | `localhost:25000` |

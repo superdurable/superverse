@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Derives the stable FlowIDs, server-assigned business IDs and Start RequestID fingerprints of the platform Flows, and checks the formats of identifiers that callers supply.
 
-Callers: `cmd/tools/app-manifest`, `internal/comm/**` (4) and `internal/dexai/**` (40) import this package.
+Callers: `cmd/tools/app-manifest`, `internal/comm/**` (4) and `internal/dexai/**` (42) import this package.
 
 Dependencies: it imports `internal/comm`.
 
@@ -12,7 +12,7 @@ flowchart LR
   self["internal/comm/flowid"]
   c0["cmd/tools/app-manifest"] --> self
   c1["internal/comm/** (4)"] --> self
-  c2["internal/dexai/** (40)"] --> self
+  c2["internal/dexai/** (42)"] --> self
   self --> d0["internal/comm"]
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
@@ -30,6 +30,7 @@ package.
 | `project.go` | Project and Project-child FlowIDs: the Project's one Session `session-<projectID>` and Preview `preview-<projectID>`, its Sandbox instances `sandbox-provision-<projectID>-<workspaceRequestID>` and subagents `subagent-<projectID>-<agentID>`, and their parsing |
 | `creation_ids.go` | Server-assigned Project and Setup IDs, and the subagent IDs and task IDs derived from the Session's FlowID and a tool call |
 | `fingerprint.go` | Start RequestID fingerprints |
+| `attachment.go` | The ID of an uploaded file, derived from its uploader's idempotency key, and the FlowID `attachment-<teamSpaceID>-<attachmentID>` of its AttachmentFlow |
 | `platform_issue.go` | The signature of a platform fault and the FlowID `platform-issue-<env>-<sig16>` of its PlatformIssueFlow, which belongs to no Project |
 | `identifier_formats.go` | Commit SHA and SHA-256 formats |
 | `session_scope.go` | The scope check of a Project ID against the name of its Sandbox namespace |

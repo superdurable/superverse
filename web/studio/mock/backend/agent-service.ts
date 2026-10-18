@@ -6,9 +6,10 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-// Development-only Agent commands and typed connection-dialog fixtures; never acceptance evidence.
+// Development-only Agent commands, attachment uploads and typed connection-dialog fixtures; never acceptance evidence.
 import { randomBytes } from "node:crypto";
 import type { AgentModel__Output } from "@/lib/generated/protobuf/superverse/v2/AgentModel";
+import type { AgentAttachment } from "@/lib/generated/protobuf/superverse/v2/AgentAttachment";
 import type { CallerContext__Output } from "@/lib/generated/protobuf/superverse/v2/CallerContext";
 import type { RemoteAgentConnection } from "@/lib/generated/protobuf/superverse/v2/RemoteAgentConnection";
 import { rpcFailure } from "@/lib/server/grpc-client";
@@ -20,11 +21,19 @@ import { AGENT_COMMAND_NOT_ADMITTED } from "@/lib/shared/session-command-error";
 import { MOCK_FLOW_DESIGN } from "@/mock/fixture/agent-requests";
 import { answerQuestions, approveTool, sendMessage } from "@/mock/store/agent-scripts";
 import { deleteQueuedMessage, steerQueuedMessage } from "@/mock/store/agent-state";
+import {
+  admitMockAttachments,
+  completeMockUpload,
+  createMockUpload,
+  deleteMockAttachment,
+  MockAttachmentRefusal,
+  mockDownloads,
+} from "@/mock/store/attachments/mock-attachments";
 import { sendDeliveryScript } from "@/mock/store/delivery/delivery-scripts";
 import { advanceMockProgress, MOCK_SCENARIOS } from "@/mock/store/scenarios/catalog";
 import type { MockStore } from "@/mock/store/store";
 import { requireMockProjectRole } from "@/mock/store/tenancy/project-members";
-import { mockTenancy } from "@/mock/store/tenancy/team-spaces";
+import { mockTenancy, readableTeamSpace } from "@/mock/store/tenancy/team-spaces";
 import { interruptAgent, sendTaskScript } from "@/mock/store/tasks/agent-tasks";
 import type { MockService } from "./mock-backend";
 import { projectSession } from "./session-service";
@@ -49,22 +58,55 @@ function reportProgress(store: MockStore, projectId: string, text: string | null
   return true;
 }
 
-/** One user message as the mock Agent takes it: a task or delivery script, else a phrase or an ordinary turn. */
-function deliverMessage(store: MockStore, projectId: string, text: string): boolean {
-  return (
+/**
+ * One user message as the mock Agent takes it: a task or delivery script, else a phrase or an ordinary turn.
+ * Its attachments are shown on the user message it appends.
+ */
+function deliverMessage(store: MockStore, projectId: string, text: string, attachments: AgentAttachment[] = []) {
+  const agent = store.agents.get(projectId);
+  const before = agent?.nextSequence ?? 0;
+  const delivered =
     (sendTaskScript(store, projectId, text) ??
       sendDeliveryScript(store, projectId, text) ??
       sendMessage(store, projectId, text)) &&
-    reportProgress(store, projectId, text)
-  );
+    reportProgress(store, projectId, text);
+  const message = agent?.messages.find((entry) => entry.sequence >= before && entry.message.role === "ROLE_USER");
+  if (message && attachments.length) message.message.attachments = attachments;
+  return delivered;
+}
+
+/**
+ * Like Go, a message's attachments are admitted for its Project's Teamspace, a null Project only checks
+ * them; a refusal is not admitted.
+ */
+export function admitMessageAttachments(
+  store: MockStore,
+  caller: CallerContext__Output | null,
+  projectId: string | null,
+  teamSpaceId: string,
+  ids: readonly string[],
+): AgentAttachment[] {
+  if (ids.length === 0) return [];
+  try {
+    return admitMockAttachments(store, { accountId: mockAccount(caller).accountId, teamSpaceId, projectId }, ids);
+  } catch (reason) {
+    if (reason instanceof MockAttachmentRefusal) throw notAdmitted(reason.status, reason.message);
+    throw reason;
+  }
 }
 
 /** Like Go, the Session a creation starts runs on its model, when it names one, and takes its first message once. */
-export function startMockSession(store: MockStore, projectId: string, model: AgentModel__Output, text: string) {
+export function startMockSession(
+  store: MockStore,
+  projectId: string,
+  model: AgentModel__Output,
+  text: string,
+  attachments: AgentAttachment[] = [],
+) {
   const description = store.agents.get(projectId)?.description;
   if (!description) return;
   if (model !== "AGENT_MODEL_UNSPECIFIED") description.model = model;
-  if (text) deliverMessage(store, projectId, text);
+  if (text || attachments.length) deliverMessage(store, projectId, text, attachments);
 }
 
 function required(value: string | undefined, name: string): string {
@@ -75,8 +117,18 @@ function required(value: string | undefined, name: string): string {
 export const agentService: MockService<"AgentService"> = {
   SendMessage: (request, { store }) => {
     required(request.messageId, "messageId");
-    const text = required(request.text, "text");
-    return command(store, request, () => deliverMessage(store, request.projectId, text));
+    // Like Go, the text may be blank when the message attaches files.
+    const text = request.attachmentIds.length ? request.text : required(request.text, "text");
+    const teamSpaceId = mockTenancy(store, mockAccount(request.caller)).projectTeamSpace.get(request.projectId) ?? "";
+    projectSession(store, request.projectId);
+    const attachments = admitMessageAttachments(
+      store,
+      request.caller,
+      request.projectId,
+      teamSpaceId,
+      request.attachmentIds,
+    );
+    return command(store, request, () => deliverMessage(store, request.projectId, text, attachments));
   },
   // Answers are the scenario's next input, which carries no marker.
   AnswerQuestions: (request, { store }) =>
@@ -201,5 +253,28 @@ export const remoteAgentService: MockService<"RemoteAgentService"> = {
     const { rows } = remoteConnections(store, projectId, caller);
     if (!rows.delete(connectionId)) throw httpError(404, "Connection not found");
     return {};
+  },
+};
+
+// Only Studio development state: uploads PUT to the mock route and are prepared at once
+// (mock/store/attachments); downloads are of the attachments the Project's messages carry.
+export const attachmentService: MockService<"AttachmentService"> = {
+  CreateAttachmentUpload: (request, { store }) => {
+    const account = mockAccount(request.caller);
+    readableTeamSpace(mockTenancy(store, account), account, request.teamSpaceId);
+    return createMockUpload(store, account.accountId, request);
+  },
+  CompleteAttachmentUpload: (request, { store }) => ({
+    attachment: completeMockUpload(store, mockAccount(request.caller).accountId, request.attachmentId),
+  }),
+  DeleteAttachment: (request, { store }) => ({
+    attachment: deleteMockAttachment(store, mockAccount(request.caller).accountId, request.attachmentId),
+  }),
+  GetAttachmentDownloads: (request, { store }) => {
+    projectSession(store, request.projectId);
+    if (request.attachmentIds.length === 0 || request.attachmentIds.length > 20)
+      throw httpError(400, "name 1 to 20 attachments");
+    const inline = request.disposition === "ATTACHMENT_DISPOSITION_INLINE";
+    return { downloads: mockDownloads(store, request.projectId, request.attachmentIds, inline) };
   },
 };

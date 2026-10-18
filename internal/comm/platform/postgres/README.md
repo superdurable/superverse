@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Opens the server's PostgreSQL pool, runs transactions, applies the embedded schema migrations under an advisory lock and shares the read model's paging and row decoding.
 
-Callers: `internal/comm/platform/postgres/postgrestest`, `internal/dexai/agents/diagnostics`, `internal/dexai/agents/remoteagent`, `internal/dexai/agents/remoteagentdao`, `internal/dexai/api`, `internal/dexai/api/boundary`, `internal/dexai/api/tenancy`, `internal/dexai/bootstrap`, `internal/dexai/delivery/deliverydao`, `internal/dexai/delivery/deployments`, `internal/dexai/delivery/releases`, `internal/dexai/projects`, `internal/dexai/projects/projectdao`, `internal/dexai/projects/setup`, `internal/dexai/studio/runs`, `internal/dexai/tenancy/accountdao`, `internal/dexai/tenancy/connectiondao`, `internal/dexai/tenancy/connections`, `internal/dexai/tenancy/memberdao`, `internal/dexai/tenancy/teamspacedao` and `internal/dexai/tenancy/teamspaces` import this package.
+Callers: `internal/comm/platform/postgres/postgrestest`, `internal/dexai/agents/diagnostics`, `internal/dexai/agents/remoteagent`, `internal/dexai/agents/remoteagentdao`, `internal/dexai/api`, `internal/dexai/api/attachments`, `internal/dexai/api/boundary`, `internal/dexai/api/tenancy`, `internal/dexai/bootstrap`, `internal/dexai/delivery/deliverydao`, `internal/dexai/delivery/deployments`, `internal/dexai/delivery/releases`, `internal/dexai/projects`, `internal/dexai/projects/projectdao`, `internal/dexai/projects/setup`, `internal/dexai/studio/runs`, `internal/dexai/tenancy/accountdao`, `internal/dexai/tenancy/connectiondao`, `internal/dexai/tenancy/connections`, `internal/dexai/tenancy/memberdao`, `internal/dexai/tenancy/teamspacedao` and `internal/dexai/tenancy/teamspaces` import this package.
 
 Dependencies: it calls the PostgreSQL API.
 
@@ -15,22 +15,23 @@ flowchart LR
   c2["internal/dexai/agents/remoteagent"] --> self
   c3["internal/dexai/agents/remoteagentdao"] --> self
   c4["internal/dexai/api"] --> self
-  c5["internal/dexai/api/boundary"] --> self
-  c6["internal/dexai/api/tenancy"] --> self
-  c7["internal/dexai/bootstrap"] --> self
-  c8["internal/dexai/delivery/deliverydao"] --> self
-  c9["internal/dexai/delivery/deployments"] --> self
-  c10["internal/dexai/delivery/releases"] --> self
-  c11["internal/dexai/projects"] --> self
-  c12["internal/dexai/projects/projectdao"] --> self
-  c13["internal/dexai/projects/setup"] --> self
-  c14["internal/dexai/studio/runs"] --> self
-  c15["internal/dexai/tenancy/accountdao"] --> self
-  c16["internal/dexai/tenancy/connectiondao"] --> self
-  c17["internal/dexai/tenancy/connections"] --> self
-  c18["internal/dexai/tenancy/memberdao"] --> self
-  c19["internal/dexai/tenancy/teamspacedao"] --> self
-  c20["internal/dexai/tenancy/teamspaces"] --> self
+  c5["internal/dexai/api/attachments"] --> self
+  c6["internal/dexai/api/boundary"] --> self
+  c7["internal/dexai/api/tenancy"] --> self
+  c8["internal/dexai/bootstrap"] --> self
+  c9["internal/dexai/delivery/deliverydao"] --> self
+  c10["internal/dexai/delivery/deployments"] --> self
+  c11["internal/dexai/delivery/releases"] --> self
+  c12["internal/dexai/projects"] --> self
+  c13["internal/dexai/projects/projectdao"] --> self
+  c14["internal/dexai/projects/setup"] --> self
+  c15["internal/dexai/studio/runs"] --> self
+  c16["internal/dexai/tenancy/accountdao"] --> self
+  c17["internal/dexai/tenancy/connectiondao"] --> self
+  c18["internal/dexai/tenancy/connections"] --> self
+  c19["internal/dexai/tenancy/memberdao"] --> self
+  c20["internal/dexai/tenancy/teamspacedao"] --> self
+  c21["internal/dexai/tenancy/teamspaces"] --> self
   self --> e0(["PostgreSQL API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->

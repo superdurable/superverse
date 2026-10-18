@@ -262,17 +262,17 @@ chunk makes every archive write, history page and segment load read more.
 | `Role` | The Claude role: `user`, `assistant` or `system`. |
 | `Kind` | What the entry is; see below. |
 | `Display` | `public`, `marker` or `hidden`: how the API projects it. |
-| `Blocks` | Claude content blocks, exact JSON, never modified after the entry is appended. |
+| `Blocks` | Claude content blocks, exact JSON, never modified after the entry is appended, except `superverse_attachment` reference blocks, which the model call replaces 1:1 by the immutable block their rendition object holds ([attachments](#attachments)). |
 | `Meta` | Not sent to the model. Used by the UI and metrics: frozen `Actor`, optional `Via`/`SteeredBy`, tool name, target, status, failure code, `ModelCall` and `ToolExecution` measurements. |
 | `StartedAt`, `CreatedAt` | Times. |
 
 | Kind | Role | Blocks | Display |
 | --- | --- | --- | --- |
-| `user_message` | user | The user's text. | public |
+| `user_message` | user | One attachment reference per attached file, then the user's text, whose sender envelope lists the attachments. | public, with attachment summaries |
 | `model_reply` | assistant | Thinking (signed), text and `tool_use`, as Claude returned them. | public |
 | `tool_result` | user | One `tool_result` block. `is_error` is true when the result is not `succeeded`. | public (status only) |
 | `notice` | system or user | Mode text, continuation text, the repository context a segment opened without, or a per-message effort entry. | hidden; a stop notice is a marker |
-| `segment_start` | user | The segment's opening message. | hidden for the first segment, marker after |
+| `segment_start` | user | The segment's opening message, then one reference per attachment of the pending request. | hidden for the first segment, marker after |
 | `notification` | user | A task, delivery or connector notification ([notifications](notifications-and-feedback.md)). | public |
 
 ### Stored and projected
@@ -350,6 +350,9 @@ with fixed system prompt, tools, model and base effort.
 | `ForceCompaction` | Set by `model_context_window_exceeded`. |
 | `CompactionFailedTurn` | The turn in which a compaction last failed. |
 | `AwaitsRepositoryContext` | The segment opened without the repository context and has not received it yet. `openSegment` sets it whenever its `segment_start` carries none; a segment of an earlier binary decodes false. |
+| `AttachmentBudget` | The attachment budget frozen when the segment opened ([attachments](#attachments)); a segment of an earlier binary has none, so its first attachment compacts it. |
+| `AttachmentBytes`, `AttachmentImages`, `AttachmentTokens` | What the attachments the segment shows render: block bytes, images and visual tokens. |
+| `Attachments` | The newest 50 attachments the Session's messages held up to the segment, by ID, name and kind, which the next `segment_start` lists. |
 
 `ContextSegmentPrompts` (AttributeMap, key = segment number such as `3`, value
 `{System, Tools}`, about 40 KB): the frozen prompt and tool definitions. Only the current
@@ -360,9 +363,11 @@ The `segment_start` entry is one user-role message. It contains, in order:
 `<context_summary>`, `<repository_context>`, `<confirmed_requirements>` (the current version,
 when a requirements card was recorded; [session](session.md#requirements-cards)),
 `<current_plan>` (the todo list), `<starting_example>` (the example the Project started from,
-while it is described; [session](session.md)), `<catalog_matches>` and `<pending_request>` (the
-current turn's bounded user request quote), which stays last. The current mode's notice is appended
-after it.
+while it is described; [session](session.md)), `<catalog_matches>`, `<attachments>` and
+`<workflow_import>` ([attachments](#attachments)) and `<pending_request>` (the current turn's
+bounded user request quote), which stays last. That text is the entry's first block; the
+reference blocks of the pending request's attachments follow it. The current mode's notice is
+appended after it.
 
 `<catalog_matches>` opens only the Session's first segment (`session_start`): the released
 connectors that the user's own words in the first request name, as compact JSON of
@@ -433,8 +438,9 @@ context is below the hard limit.
 
 The summary records decisions and results, not private reasoning. The compaction
 instruction keeps its retention rules (objective, constraints, unfinished requirements,
-exact versions and identities, pending questions, reconciled external effects) and has
-no JSON schema.
+exact versions and identities, pending questions, reconciled external effects, what each
+attachment contributed) and has no JSON schema. The compaction call replays the segment's
+frozen attachment references, rendered as in every other call.
 
 **Failure.**
 
@@ -448,6 +454,51 @@ no JSON schema.
 **Presentation.** The first `segment_start` is hidden. Later ones are markers such as
 "Context compacted" and "Context refreshed after a platform update". The summary text is
 not projected.
+
+## Attachments
+
+A user message carries up to ten attachment references (`conversation.AttachmentRef`), which
+name by digest the objects the attachment's preparation staged: the original or a JSON file's
+redacted copy, the rendition, which is the exact Claude block the model reads (a base64 image
+block, or a document's or JSON file's framed text) with its context-token estimate, a brief and a
+document's sections bundle. No attachment byte enters Flow state. `UserMessage.Entry` writes one
+`superverse_attachment` reference block per attachment, in attachment order, before the sender
+envelope, whose optional `attachments` field lists them by ID, name and kind; a reference holds
+the attachment's description and the variant it shows (`full`, `brief` or `placeholder`), never
+content.
+
+**Rendering.** Every model call (`CallModel`, `CompactContext`, also in the executor segment)
+replaces each reference 1:1 before its request leaves the Session: the rendition its variant
+names, or the frozen placeholder. Assembly keeps the reference's position, so the cache anchor
+is unchanged. The renditions come through the Session's `attachmentRenditions` port: the first
+resolve copies the attachment's staged objects into `<projectID>/attachments/<id>/` and writes
+its manifest last, which the Project's deletion removes only after the Session completed, and
+later resolves read that copy, so every render is byte-identical. An attachment without a
+manifest whose staged objects are gone renders a frozen expired placeholder. The provider adapter
+panics on a reference left unexpanded.
+
+**Budgets.** Every choice is frozen into the entry's blocks when it is appended or its segment
+opens. In attachment order, a document or generic JSON file shows its full rendition while the
+full renditions chosen so far plus the briefs of the rest fit 120 KiB, else its brief (at most
+8 KiB). Then each attachment that would take the segment past 20 MiB of rendered attachment
+blocks (the API accepts 32 MB per request, and every image is resent on each call of its segment)
+or 60 images (the API caps 200k-context models at 100) shows the placeholder and forces a
+compaction. `Entry.Bytes` counts a reference as four times its context tokens, the rate the
+compaction trigger divides by; a 1 MiB image's base64 bytes would read as about 350,000 tokens.
+
+**Segment open.** The first message reaches the model only through the first `segment_start`,
+since its entry precedes the segment, and a compaction leaves the pending request's entries
+behind. So every `segment_start` keeps its text as the first block and adds after it one fresh
+reference per attachment of the pending request, decided the same way against the new segment's
+budget, newest first; it never forces a compaction. The pending request holds every message the
+turn works on, all the messages of a steered batch among them. Its `<attachments>` section lists
+up to 50 attachments of earlier messages, newest first, by ID, name and kind with how to use each
+now, or that no model call ever showed one whose every reference was a placeholder, and,
+while the pending request holds an n8n export, its `<workflow_import>` section names the
+in-repository workflow-import subskill, the `place_attachment` call that writes the export at
+`/workspace/.local/superverse-attachments/<id>/<name>` and the inventory command that reads it.
+Both come before `<pending_request>`, which stays last. An image of an earlier, finished request
+is not shown again.
 
 ## Rollover
 

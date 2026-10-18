@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["attachment_id"],
+  "properties": {
+    "attachment_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]{12}$",
+      "description": "The ID of a JSON file the user attached, as its frame or the attachments section names it."
+    }
+  }
+}

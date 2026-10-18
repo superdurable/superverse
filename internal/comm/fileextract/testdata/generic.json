@@ -1,0 +1,20 @@
+{
+  "service": "billing",
+  "config": {
+    "database_password": "EXAMPLEDBPASSWORD01",
+    "endpoints": ["https://billing.example.org/hook?token=EXAMPLEHOOKTOKEN01&region=eu"],
+    "maxTokens": 4096,
+    "session": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJleGFtcGxlIn0.EXAMPLESIGNATURE0",
+    "headers": [
+      { "key": "X-Api-Key", "value": "EXAMPLEPAIRKEY0001" },
+      { "name": "X-Account-Token", "value": "EXAMPLEACCOUNTTOKEN1" }
+    ],
+    "accountPassword": "EXAMPLEACCOUNTPASS01",
+    "pageAccessToken": "EAAEXAMPLEPAGETOKEN01",
+    "tokenUrl": "https://auth.example.org/oauth/token",
+    "nextPageToken": "EXAMPLECURSOR0000000002"
+  },
+  "items": [1, 2, 3],
+  "enabled": true,
+  "note": null
+}

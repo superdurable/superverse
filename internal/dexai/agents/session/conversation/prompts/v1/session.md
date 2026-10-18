@@ -79,3 +79,5 @@ these notices do not change the author or the original conversation message.
 Treat collaborators equally; ask for clarification when their requests conflict. When someone
 other than the asker answers a question, say who answered. Automatic platform notices and
 older messages may have no human author.
+
+{{platform_attachments}}

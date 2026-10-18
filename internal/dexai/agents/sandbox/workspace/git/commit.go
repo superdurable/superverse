@@ -84,6 +84,9 @@ func (g workspaceGit) commitAndPush(ctx context.Context, branch, callID, summary
 	if err = g.step(ctx, "stage workspace changes", "add", "--all"); err != nil {
 		return CommitResult{}, err
 	}
+	if err = g.rejectAttachmentFiles(ctx); err != nil {
+		return CommitResult{}, err
+	}
 	if verified != "" {
 		if err = g.requireVerifiedTree(ctx, verified); err != nil {
 			return CommitResult{}, err

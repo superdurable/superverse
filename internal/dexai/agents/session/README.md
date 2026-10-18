@@ -393,6 +393,103 @@ and long-poll limits are owned by the remote endpoint and its typed config;
 source defaults and measured encoded/decode memory require integration/load
 verification before claiming deployment capacity.
 
+## Attachments
+
+The [attachments design](../../../../docs/architecture/agent-harness-design/context-management.md#attachments)
+owns the conversation contract; this is how the Session implements it.
+
+A user message carries up to `conversation.MaximumMessageAttachments` (10)
+`conversation.AttachmentRef` values in `UserMessage.Attachments`, so
+`QueuedUserMessages`, `SteeredUserMessages`, an answered requirements card and
+`SessionStartInput.FirstMessage` carry them unchanged (additive JSON). A
+reference names an attachment its AttachmentFlow prepared: its ID and
+TeamSpace (which name the staged prefix), kind (`image`, `document` or `json`),
+name, media type and size, and its staged objects by digest and size (the
+original or redacted copy, the rendition, the exact Claude block the model
+reads, with its context tokens, a document's or large JSON file's brief, a
+document's sections bundle), never content. No attachment byte enters Flow
+state; a reference block is about 0.5 KiB. `SendMessage` refuses more than ten
+attachments, blank text without attachments, and any attachment while the
+executor is remote (`ErrAttachmentsNeedPlatformAgent`,
+`attachments_need_platform_agent`).
+
+`UserMessage.Entry` writes one `superverse_attachment` reference block per
+attachment, in attachment order, before the sender envelope, whose
+`attachments` field lists them by ID, name and kind (omitted without
+attachments, so other envelopes keep their bytes). A reference is no Claude
+block: every model call replaces each 1:1, before the request leaves the
+Session, by the block its frozen variant renders (`renderAttachments`, within
+the model or compaction heartbeat): the full rendition, a brief, or the frozen
+placeholder. The renditions come in one call of the `attachmentRenditions`
+port, `Resolve`, which `attachments.RenditionStore` implements: the first
+resolve of an attachment binds it to the Project by copying its staged objects
+into `<projectID>/attachments/<id>/`, at most four attachments at once, and
+writing its manifest last; the Project's deletion removes the prefix only
+after this Session completed; an attachment neither bound nor staged resolves
+to the frozen expired placeholder; a storage error retries the Step.
+Substitution is one block for one block at the reference's position, so it
+equals substitution before assembly, cache anchor included, and every render
+of a reference is byte-identical, which the `thinkingPrefixMismatch: error`
+replay check and prompt caching require. `messageParam` panics on a reference
+left unexpanded, and assembly on one in a system entry.
+
+Every choice is frozen into the entry's blocks, at append or when a segment
+opens, and never recomputed:
+
+- `appendEntry` decides what each reference of a user message shows
+  (`agentloop.AdmitAttachments`). In attachment order, a document or generic
+  JSON file shows its full rendition while the full renditions chosen so far
+  plus the briefs of the rest fit `MessageInlineText` (120 KiB), else its
+  brief; an export's summary, an image and a file without a brief show their
+  full rendition. Then each that would take the segment past `SegmentBytes`
+  (20 MiB of rendered attachment blocks, of the API's 32 MB request limit) or
+  `SegmentImages` (60) shows the placeholder, and the segment is forced to
+  compact. The segment froze its `AttachmentBudget` from
+  `ModelSettings.Attachments` when it opened, counts `AttachmentBytes`,
+  `AttachmentImages` and `AttachmentTokens`, and remembers the Session's
+  newest 50 attachments by label.
+- The segment_start entry of every new segment (session start, compaction,
+  rollover, an unsummarized segment) keeps its text as block 0 and
+  `<pending_request>` last, and adds after the text one fresh reference per
+  attachment of the turn's pending request, decided the same way against the
+  new segment's budget, newest first (`agentloop.SegmentAttachments`): the
+  first message reaches the model before any segment exists, and a compaction
+  leaves the pending request's entries behind. A segment_start never forces a
+  compaction. Its `<attachments>` section lists up to 50 attachments of
+  earlier messages, newest first, by ID, name and kind with how to use each
+  now, and its `<workflow_import>` section, while the pending request holds an
+  n8n export, names the workflow-import subskill, the `place_attachment` call
+  that writes each export at
+  `/workspace/.local/superverse-attachments/<id>/<name>` and the inventory
+  command that reads it.
+- The executor segment after a remote handoff replays a retained suffix that
+  `agentloop.ExecutorContextStart` also keeps within the attachment budget.
+- `Entry.Bytes` counts a reference as four times its context tokens, the rate
+  the compaction trigger divides by: a 1 MiB image's base64 bytes would read as
+  about 350,000 tokens. Only the segment's attachment byte budget counts
+  rendered bytes.
+
+Two tools read attachments the Project bound, in platform mode only:
+`read_attachment`, a read-only platform tool that `ProjectDiagnosticsReader`
+runs on the server (a document's outline or one 32 KiB part of a section or of
+a JSON file's text), and `place_attachment`, a Sandbox tool that writes a JSON
+file's redacted copy at `/workspace/.local/superverse-attachments/<id>/<name>`:
+`runTool` reads it through `attachmentRenditions.BoundFile` and hands it to the
+Runner in `Call.Attachment`. `commit_and_push` refuses a staged file there
+(`attachment_in_source`). The platform prompt's attachments section
+(`prompts/v1/platform_attachments.md`) says how to read them.
+
+The public view (`Entry.PublicMessage`) projects one attachment summary per
+reference (ID, name, kind, media type, size, image dimensions) into
+`AgentMessage.Attachments`. A message queued with attachments before a switch
+to a local agent reaches it as its text plus one line naming the attachments
+it left out (`conversation.UndeliveredAttachmentsNote`).
+
+The budgets come from the server's attachment keys (`attachments.segmentBytes`,
+`attachments.segmentImages`, `attachments.messageInlineText`); until the
+configuration declares them, the bootstrap sets their defaults,
+`agentloop.DefaultAttachmentBudget`.
+
 ## Files
 
 | File | Owns |
@@ -403,8 +500,8 @@ verification before claiming deployment capacity.
 | `session_agent_flow_dependency.go` | `SessionAgentFlowDependency` (admission, the provision and reclaim commands to the SessionWorkspaceFlow, its outcome read, the report of a platform failure, the Preview's announcement, the Preview deployment of a handoff, and the start and stop of a subagent, `agenttasks.AgentTaskLauncher`) and `repositoryContextReader`, the ports the cold-path, deadline and handoff Steps and `ReportPlatformIssue` call, `ProjectDiagnosticsReader`, the port of the [platform tools](../diagnostics/README.md), and `connectorCatalogMatcher`, the port through which the Step that opens the first segment reads the catalog matches of its request from `connectorlibrary.PublishedCatalog`. |
 | `session_lifecycle.go` | The Start input, start Attributes, the ACTIVE check of commands, status transitions, clearing the pending input of an archived Session, the Agent status, the conversation view of the Snapshot with the Preview's automatic deployment and the current design's built and written Steps, the writes of a recorded design and of how far a tool result built it (`recordFlowDesign`, `recordDesignProgress`), the bounded read-only RemoteRead projection, and the option presets of the Steps and RPCs. |
 | `session_messages.go` | Conversation RPC data operations, turn start and steering, the append-only entry log and archive chunks, recording a model reply by its stop reason, todos and effort, Stop admission and settlement, Preview publication data, Session notifications and automatic turns; remote inbox batch sizing, consumption, public-entry persistence and report-batch formation. Waits and scheduling decisions remain in the Flow file. |
-| `session_executor.go` | The executor side of a turn: best-effort Stream activity writes, model and tool attempt activity, the options of the model Steps, model-call planning and selective loads, compaction outcomes, the replayed segment request, the model call with its activity, opening segments, and recording model and compaction failures, with the platform incident of a rejected model call, executor/report admission, fresh platform outcome recording and platform handoff reconstruction. |
-| `session_workspace.go` | The cold-path Step input, request execution and wait budget, trusted task calls on a workspace lease, admitting the workspace Flow's outcome (a reclaimed one clears the Preview's hold), applying and failing a request, the demand of a call or wave that lost its workspace, the dispatch gate with its Sandbox deadline extension (also after a task's end, or for a ready Preview with the Preview hold), the decision at the deadline, which a running task or an unfinished subagent postpones and which revokes the lease of an idle instance, resumption and the Session HEAD, the repository context a segment awaits, appended once as a notice, the catalog matches of the first request, the starting example section of a Project started from an example, whether the agent's cards carry no Flow design, which every segment, the executor handoff and the remote read then state (`recordsNoCardDesign`: an example start or a pushed, unblocked `commit_and_push`), and the record of what a matched Session's first build kept of its example (`StartingExample.FirstBuild`). |
+| `session_executor.go` | The executor side of a turn: best-effort Stream activity writes, model and tool attempt activity, the options of the model Steps, model-call planning and selective loads, compaction outcomes, the replayed segment request, the model call with its activity, and recording model and compaction failures, with the platform incident of a rejected model call, executor/report admission and fresh platform outcome recording. |
+| `session_workspace.go` | The cold-path Step input, request execution and wait budget, trusted task calls on a workspace lease, admitting the workspace Flow's outcome (a reclaimed one clears the Preview's hold), applying and failing a request, the demand of a call or wave that lost its workspace, the dispatch gate with its Sandbox deadline extension (also after a task's end, or for a ready Preview with the Preview hold), the decision at the deadline, which a running task or an unfinished subagent postpones and which revokes the lease of an idle instance, resumption and the Session HEAD, the repository context a segment awaits, appended once as a notice, the catalog matches of the first request, the starting example section of a Project started from an example, whether the agent's cards carry no Flow design, which every segment, the executor handoff and the remote read then state (`recordsNoCardDesign`: an example start or a pushed, unblocked `commit_and_push`), opening segments from these sections (the Session's first, a compaction's, a rollover's, an unsummarized one and the platform handoff reconstruction of the executor segment), and the record of what a matched Session's first build kept of its example (`StartingExample.FirstBuild`). |
 | `remote_worktree_tools.go` | Remote-only connector contribution and Codex task worktree admission and execution, exact or bounded map loads, server-owned file-tool roots, stable keep sets, and closed-task cleanup. |
 | `tool_execution.go` | The refusal of a call the turn may not make, built-in tools, Sandbox and platform tool execution, the foreground `bash` flow (begin, then polling the command ledger within the call's timeout) and its settling, the parallel tool inputs, branches and results, recording tool results with the HEAD and the Preview handoff a push hands off, the platform incidents of recorded results, which ReportPlatformIssue reports beside the turn, background commands: their records, the input of the SubFlow that follows one in the ledger, and the stop of the running ones; and subagents: the admission of `start_agent`, the start, stop and merge of a subagent, and the writes of its record by its admission, its report, a Stop and a failed start. |
 | [`conversation/`](conversation/README.md) | The entry log and its public view, request assembly, models, request and reply, tool calls, events and the embedded `session-v1` prompts. |

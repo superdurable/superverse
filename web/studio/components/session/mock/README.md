@@ -5,14 +5,16 @@ Purpose: The mock model's composer, in a Session and on the creation page: it pi
 
 Importers: `components/project` and `components/session` import this directory.
 
-Imports: it imports `components/ui` and `lib/session`.
+Imports: it imports `components/session/composer/attachments`, `components/ui`, `lib/session` and `lib/session/attachments`.
 
 ```mermaid
 flowchart LR
   self["components/session/mock"]
   c0["components/project"] --> self
   c1["components/session"] --> self
-  self --> d0["components/ui"]
-  self --> d1["lib/session"]
+  self --> d0["components/session/composer/attachments"]
+  self --> d1["components/ui"]
+  self --> d2["lib/session"]
+  self --> d3["lib/session/attachments"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->

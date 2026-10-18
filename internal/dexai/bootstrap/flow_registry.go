@@ -12,6 +12,7 @@ import (
 	"fmt"
 
 	"github.com/superdurable/dex/sdk-go/dex"
+	"github.com/superdurable/superversev2/internal/dexai/agents/attachments"
 	"github.com/superdurable/superversev2/internal/dexai/agents/platformissue"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/preview"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/provision"
@@ -47,11 +48,13 @@ type serverFlows struct {
 	contribution *contribution.ConnectorContributionFlow
 	release      *releases.ProjectReleaseFlow
 	deployment   *deployments.ProjectDeployFlow
+	// attachment is the Flow of one uploaded file of a TeamSpace.
+	attachment *attachments.AttachmentFlow
 }
 
 // list is every server Flow; a Flow left out is nil, which the registry refuses.
 func (flows serverFlows) list() []dex.Flow {
-	return []dex.Flow{flows.teamSpace, flows.project, flows.setup, flows.repository, flows.workspace, flows.provision, flows.preview, flows.session, flows.subagent, flows.background, flows.issue, flows.contribution, flows.release, flows.deployment}
+	return []dex.Flow{flows.teamSpace, flows.project, flows.setup, flows.repository, flows.workspace, flows.provision, flows.preview, flows.session, flows.subagent, flows.background, flows.issue, flows.contribution, flows.release, flows.deployment, flows.attachment}
 }
 
 // CheckFlowRegistry builds the actual SDK registry of every server Flow, as
@@ -65,6 +68,7 @@ func CheckFlowRegistry() ([]string, error) {
 		teamSpace: &teamspaces.TeamSpaceFlow{}, project: &projects.ProjectFlow{}, setup: &setup.ProjectSetupFlow{},
 		repository: &repobinding.RepositoryBindingFlow{}, workspace: &sessionworkspace.SessionWorkspaceFlow{}, provision: &provision.SandboxProvisionFlow{}, preview: &preview.PreviewFlow{}, session: &sessionagent.SessionAgentFlow{},
 		subagent: &subagent.SubagentFlow{}, background: &backgroundcommand.BackgroundCommandFlow{}, issue: &platformissue.PlatformIssueFlow{}, contribution: &contribution.ConnectorContributionFlow{}, release: &releases.ProjectReleaseFlow{}, deployment: &deployments.ProjectDeployFlow{},
+		attachment: &attachments.AttachmentFlow{},
 	}
 	flows := server.list()
 	if _, err := dex.NewRegistry(flows); err != nil {

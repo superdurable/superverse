@@ -14,7 +14,7 @@ import { mockAccount } from "@/mock/store/accounts";
 import { advanceMockPublishes } from "@/mock/store/delivery/publish-runs";
 import { getStudioMockStore, type MockStore } from "@/mock/store/store";
 import { accountService } from "./account-service";
-import { agentService, remoteAgentService } from "./agent-service";
+import { agentService, attachmentService, remoteAgentService } from "./agent-service";
 import { deploymentService } from "./deployment-service";
 import { previewService } from "./preview-service";
 import { projectService } from "./project-service";
@@ -59,6 +59,7 @@ const SERVICES: Partial<Record<Method, Handler>> = {
   ...teamSpaceMemberService,
   ...projectMemberService,
   ...teamSpaceConnectionService,
+  ...attachmentService,
 } as Partial<Record<Method, Handler>>;
 
 // Requests and responses cross the real protobuf codecs, so the mock reads and returns exactly the

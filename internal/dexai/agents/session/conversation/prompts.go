@@ -30,6 +30,8 @@ var (
 	platformSubagentTaskPromptFile string
 	//go:embed prompts/v1/platform_effort.md
 	platformEffortPromptFile string
+	//go:embed prompts/v1/platform_attachments.md
+	platformAttachmentsPromptFile string
 	//go:embed prompts/v1/source_handoff.md
 	sourceHandoffPromptFile string
 	//go:embed prompts/v1/platform_event.md
@@ -101,6 +103,7 @@ func platformSessionPrompt() string {
 		"{{platform_delegation}}":    prompt(platformDelegationPromptFile),
 		"{{platform_subagent_task}}": prompt(platformSubagentTaskPromptFile),
 		"{{platform_effort}}":        prompt(platformEffortPromptFile),
+		"{{platform_attachments}}":   prompt(platformAttachmentsPromptFile),
 	} {
 		text = strings.ReplaceAll(text, marker, part)
 	}
@@ -112,6 +115,7 @@ func remoteSessionPrompt() string {
 	for _, marker := range []string{"{{platform_connectors}}", "{{platform_delegation}}", "{{platform_effort}}"} {
 		text = strings.ReplaceAll(text, marker+"\n\n", "")
 	}
+	text = strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(text), "{{platform_attachments}}"))
 	text = strings.ReplaceAll(text, " {{platform_subagent_task}} ", " ")
 	return text
 }

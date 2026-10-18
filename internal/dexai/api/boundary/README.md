@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Holds the trust boundary every business gRPC handler shares: caller authentication, panic recovery, request input checks, list paging and the mapping of errors to public statuses.
 
-Callers: `internal/dexai/api`, `internal/dexai/api/remoteagent`, `internal/dexai/api/tenancy` and `internal/dexai/bootstrap` import this package.
+Callers: `internal/dexai/api`, `internal/dexai/api/attachments`, `internal/dexai/api/remoteagent`, `internal/dexai/api/tenancy` and `internal/dexai/bootstrap` import this package.
 
 Dependencies: it imports `gen/superverse/v2`, `internal/comm/**` (5) and `internal/dexai/**` (16) and calls the Dex Flow API.
 
@@ -11,9 +11,10 @@ Dependencies: it imports `gen/superverse/v2`, `internal/comm/**` (5) and `intern
 flowchart LR
   self["internal/dexai/api/boundary"]
   c0["internal/dexai/api"] --> self
-  c1["internal/dexai/api/remoteagent"] --> self
-  c2["internal/dexai/api/tenancy"] --> self
-  c3["internal/dexai/bootstrap"] --> self
+  c1["internal/dexai/api/attachments"] --> self
+  c2["internal/dexai/api/remoteagent"] --> self
+  c3["internal/dexai/api/tenancy"] --> self
+  c4["internal/dexai/bootstrap"] --> self
   self --> d0["gen/superverse/v2"]
   self --> d1["internal/comm/** (5)"]
   self --> d2["internal/dexai/** (16)"]

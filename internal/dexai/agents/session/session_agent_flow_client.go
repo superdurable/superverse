@@ -34,6 +34,12 @@ const eventPollTimeout = 20 * time.Second
 // durable state of the Session; the command had no effect.
 var ErrCommandRejected = errors.New("agent command was rejected by current session state")
 
+// ErrAttachmentsNeedPlatformAgent (attachments_need_platform_agent) reports a
+// message with attachments that the Session refused because a local agent
+// executes it, which receives text only; only the Superverse agent reads
+// attachments. It had no effect.
+var ErrAttachmentsNeedPlatformAgent = errors.New("attachments_need_platform_agent: attachments work with the Superverse agent")
+
 // ErrModelRevisionChanged reports a model selection at a revision that no
 // longer holds; it had no effect, and the caller rereads the Session.
 var ErrModelRevisionChanged = errors.New("the Session's model revision changed")
@@ -118,9 +124,20 @@ func (client *SessionAgentFlowClient) StartAccepted(ctx context.Context, request
 // conflict within its deadline. Commands are not deduplicated: one retried
 // after a lost response may apply twice.
 
-// SendPendingMessage preserves the caller's queue identity without claiming exactly-once admission.
+// SendPendingMessage preserves the caller's queue identity without claiming
+// exactly-once admission. A message with attachments sent while a local agent
+// executes the Session is ErrAttachmentsNeedPlatformAgent.
 func (client *SessionAgentFlowClient) SendPendingMessage(ctx context.Context, flowID agentloop.FlowID, pending conversation.PendingUserMessage) error {
-	return client.command(ctx, flowID, client.flow.SendMessage, pending, commandRPCTimeout)
+	admission, err := dexflow.InvokeLocked[messageAdmission](ctx, client.sdk, commandRPCTimeout, string(flowID), client.flow.SendMessage, pending)
+	switch {
+	case err != nil:
+		return client.ended(ctx, flowID, err)
+	case admission.AttachmentsRefused:
+		return ErrAttachmentsNeedPlatformAgent
+	case !admission.Accepted:
+		return ErrCommandRejected
+	}
+	return nil
 }
 
 // UpdateSessionModel selects the Session's model at an exact revision; the next

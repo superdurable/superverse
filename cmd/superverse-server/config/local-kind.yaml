@@ -41,8 +41,12 @@ agent:
   # instead of being dropped, so a broken append-only rule is visible.
   thinkingPrefixMismatch: error
 
+# The browser reaches the platform MinIO through the `kind ports` forward on the
+# loopback, beside Studio; presigned uploads and downloads name it, and the
+# forward passes the Host header they were signed for through to MinIO.
 storage:
   s3Endpoint: http://minio:9000
+  browserEndpoint: http://127.0.0.1:29000
   artifactBucket: superverse-v2-artifacts
 
 # The chart's local PostgreSQL, a Service in the platform namespace; the server

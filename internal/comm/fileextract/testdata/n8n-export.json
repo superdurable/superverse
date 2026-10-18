@@ -1,0 +1,100 @@
+{
+  "name": "Lead intake",
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Incoming lead",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "parameters": { "path": "lead-intake", "httpMethod": "POST" },
+      "webhookId": "00000000-0000-4000-8000-000000000001"
+    },
+    {
+      "id": "2",
+      "name": "Enrich company",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [200, 0],
+      "parameters": {
+        "url": "=https://api.example.com/v1/companies?domain={{ $json.domain }}&api_key=EXAMPLEQUERYKEY0001",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer EXAMPLEBEARERTOKEN000000000001" },
+            { "name": "Accept", "value": "application/json" }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "access_token", "value": "EXAMPLEACCESSTOKEN0001" },
+            { "name": "limit", "value": "10" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "3",
+      "name": "Set fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [400, 0],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "apiKey", "value": "EXAMPLESETFIELDKEY0001", "type": "string" },
+            { "id": "a2", "name": "owner", "value": "={{ $json.owner }}", "type": "string" }
+          ]
+        },
+        "password": "short1",
+        "secretToken": "={{ $json.token }}",
+        "clientSecret": "YOUR_CLIENT_SECRET",
+        "nextPageToken": "EXAMPLECURSOR0000000001",
+        "privateKey": "EXAMPLEPRIVATEFIELD0001"
+      }
+    },
+    {
+      "id": "4",
+      "name": "Notify sales",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [600, 0],
+      "parameters": { "text": "New lead. Debug token xoxb-EXAMPLE-NOT-A-REAL-TOKEN", "otherOptions": {} },
+      "credentials": { "slackApi": { "id": "10", "name": "Sales Slack" } }
+    },
+    {
+      "id": "5",
+      "name": "Store in CRM",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2,
+      "position": [800, 0],
+      "parameters": {
+        "additionalFields": {
+          "note": "deploy key AKIAIOSFODNN7EXAMPLE and ghp_EXAMPLEEXAMPLEEXAMPLEEXAMPLE000000",
+          "callback": "https://ops:EXAMPLEURLPASSWORD@hooks.example.com/crm"
+        }
+      },
+      "credentials": { "hubspotApi": { "id": "11", "name": "HubSpot" } }
+    },
+    {
+      "id": "6",
+      "name": "Sign request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 0],
+      "parameters": { "jsCode": "const key = `-----BEGIN PRIVATE KEY-----\nEXAMPLE\n-----END PRIVATE KEY-----`;\nreturn items;" }
+    }
+  ],
+  "connections": {
+    "Incoming lead": { "main": [[{ "node": "Enrich company", "type": "main", "index": 0 }]] },
+    "Enrich company": { "main": [[{ "node": "Set fields", "type": "main", "index": 0 }]] },
+    "Set fields": {
+      "main": [[{ "node": "Notify sales", "type": "main", "index": 0 }, { "node": "Store in CRM", "type": "main", "index": 0 }]]
+    },
+    "Store in CRM": { "main": [[{ "node": "Sign request", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {}
+}

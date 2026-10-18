@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: The server-only BFF core: the gRPC client and its `RpcBackend` seam, the Server-Sent Events relay, `/api/auth`, the caller cookie, same-origin checks and bounded request bodies.
 
-Importers: `app`, `lib/server/connector-oauth`, `lib/server/flow`, `lib/server/rpc`, `mock`, `mock/backend`, `mock/store`, `mock/store/delivery`, `mock/store/setup`, `mock/store/tenancy` and `mock/store/validation` import this directory.
+Importers: `app`, `lib/server/connector-oauth`, `lib/server/flow`, `lib/server/rpc`, `mock`, `mock/backend`, `mock/store`, `mock/store/attachments`, `mock/store/delivery`, `mock/store/setup`, `mock/store/tenancy` and `mock/store/validation` import this directory.
 
 Imports: it imports `lib/generated/protobuf` and `lib/shared` and calls the `AccountService` API.
 
@@ -17,10 +17,11 @@ flowchart LR
   c4["mock"] --> self
   c5["mock/backend"] --> self
   c6["mock/store"] --> self
-  c7["mock/store/delivery"] --> self
-  c8["mock/store/setup"] --> self
-  c9["mock/store/tenancy"] --> self
-  c10["mock/store/validation"] --> self
+  c7["mock/store/attachments"] --> self
+  c8["mock/store/delivery"] --> self
+  c9["mock/store/setup"] --> self
+  c10["mock/store/tenancy"] --> self
+  c11["mock/store/validation"] --> self
   self --> d0["lib/generated/protobuf"]
   self --> d1["lib/shared"]
   self --> e0(["AccountService API"])

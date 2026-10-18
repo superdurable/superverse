@@ -5,7 +5,7 @@ Purpose: Provides explicit development business-service fixtures through generat
 
 Importers: `app` imports this directory.
 
-Imports: it imports `lib/generated/protobuf`, `lib/server`, `lib/shared`, `mock/fixture`, `mock/store`, `mock/store/delivery`, `mock/store/scenarios`, `mock/store/setup`, `mock/store/tasks` and `mock/store/tenancy`.
+Imports: it imports `lib/generated/protobuf`, `lib/server`, `lib/shared`, `mock/fixture`, `mock/store`, `mock/store/attachments`, `mock/store/delivery`, `mock/store/scenarios`, `mock/store/setup`, `mock/store/tasks` and `mock/store/tenancy`.
 
 ```mermaid
 flowchart LR
@@ -16,11 +16,12 @@ flowchart LR
   self --> d2["lib/shared"]
   self --> d3["mock/fixture"]
   self --> d4["mock/store"]
-  self --> d5["mock/store/delivery"]
-  self --> d6["mock/store/scenarios"]
-  self --> d7["mock/store/setup"]
-  self --> d8["mock/store/tasks"]
-  self --> d9["mock/store/tenancy"]
+  self --> d5["mock/store/attachments"]
+  self --> d6["mock/store/delivery"]
+  self --> d7["mock/store/scenarios"]
+  self --> d8["mock/store/setup"]
+  self --> d9["mock/store/tasks"]
+  self --> d10["mock/store/tenancy"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 

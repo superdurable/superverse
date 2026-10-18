@@ -19,6 +19,7 @@ import (
 	"syscall"
 
 	"github.com/superdurable/superversev2/cmd/superverse-server/config"
+	"github.com/superdurable/superversev2/internal/comm/fileextract"
 	"github.com/superdurable/superversev2/internal/dexai/bootstrap"
 )
 
@@ -28,8 +29,13 @@ import (
 const configFileVariable = "SUPERVERSE_CONFIG_FILE"
 
 // main serves, or with the single argument migrate applies the database
-// migrations and exits, which deployments run before the server starts.
+// migrations and exits, which deployments run before the server starts. The
+// file-extract subcommand is the extractor child that the server itself
+// starts; it reads neither configuration nor environment.
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == fileextract.Subcommand {
+		os.Exit(fileextract.ServeChild(os.Args[2:], os.Stdin, os.Stdout))
+	}
 	logger := slog.Default()
 	migrate := len(os.Args) == 2 && os.Args[1] == "migrate"
 	if len(os.Args) > 1 && !migrate {

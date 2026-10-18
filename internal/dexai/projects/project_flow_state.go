@@ -9,6 +9,8 @@
 package projects
 
 import (
+	"encoding/json"
+	"slices"
 	"time"
 
 	pb "github.com/superdurable/superversev2/gen/superverse/v2"
@@ -37,7 +39,9 @@ type Project struct {
 	LastFailure                                         *dexflow.Failure
 	// SessionStartFailure is SESSION_START_FAILED while the READY Project has
 	// no Session; LastFailure stays the command's.
-	SessionStartFailure  *dexflow.Failure
+	SessionStartFailure *dexflow.Failure
+	// AttachmentTotals count the attachments the Project's messages sent.
+	AttachmentTotals     AttachmentTotals
 	Revision             uint64
 	CreatedAt, UpdatedAt time.Time
 }
@@ -170,6 +174,119 @@ type SessionStartRequest struct {
 	// started the Project from the closest example, which TemplateRevision
 	// names; nil otherwise.
 	MatchedExample *MatchedExample `json:"matched_example,omitempty"`
+	// Attachments are the first message's attachments, which the API
+	// admitted, in the order the creator attached them; the message may then
+	// have no text. ProjectFlow counts them when it starts.
+	Attachments []SessionAttachment `json:"attachments,omitempty"`
+}
+
+// SessionAttachment is one attachment of the first message: the file the
+// Project's lifetime quota counts, and the Session's reference to it, which
+// the Session's conversation package encodes (conversation.AttachmentRef)
+// and the Project only carries to StartForProject.
+type SessionAttachment struct {
+	File      AttachedFile    `json:"file"`
+	Reference json.RawMessage `json:"reference"`
+}
+
+// AttachedFile is one attachment a message of the Project carries, as its
+// AttachmentFlow prepared it: its ID, its kind, media type and name, the
+// SHA-256 of the upload and the bytes of every object the Project's copy of
+// it holds.
+type AttachedFile struct {
+	ID, Kind, MediaType, FileName, SHA256 string
+	Bytes                                 int64
+}
+
+// ProjectAttachment is one instance of the Attachments map, keyed by the
+// attachment ID: the file, the message that first carried it and the
+// admissions that hold it. Holds are the message admissions that reserved it
+// and that no definite refusal released; Kept marks an attachment that nothing
+// releases any more: a Project's first message carries it, or more than
+// maxAttachmentHolds admissions held it. An instance with neither is deleted,
+// otherwise it stays for the Project's lifetime, as its copy does.
+type ProjectAttachment struct {
+	Kind, MediaType, FileName, SHA256 string
+	Bytes                             int64
+	FirstMessageID                    string
+	ReservedAt                        time.Time
+	Holds                             []string `json:",omitempty"`
+	Kept                              bool     `json:",omitempty"`
+}
+
+// maxAttachmentHolds bounds the admissions an instance of the Attachments map
+// lists; one more keeps the attachment counted for the Project's lifetime,
+// which only ever counts too much.
+const maxAttachmentHolds = 8
+
+// held is the instance once the admission admissionID holds it too, and
+// whether that changed it.
+func (a ProjectAttachment) held(admissionID string) (ProjectAttachment, bool) {
+	switch {
+	case a.Kept, slices.Contains(a.Holds, admissionID):
+		return a, false
+	case len(a.Holds) == maxAttachmentHolds:
+		a.Holds, a.Kept = nil, true
+	default:
+		a.Holds = append(slices.Clone(a.Holds), admissionID)
+	}
+	return a, true
+}
+
+// released is the instance once the admission admissionID no longer holds it,
+// whether that changed it, and whether nothing holds it any more.
+func (a ProjectAttachment) released(admissionID string) (ProjectAttachment, bool, bool) {
+	index := slices.Index(a.Holds, admissionID)
+	if index < 0 {
+		return a, false, false
+	}
+	a.Holds = slices.Delete(slices.Clone(a.Holds), index, index+1)
+	return a, true, len(a.Holds) == 0 && !a.Kept
+}
+
+// AttachmentTotals counts the instances of the Attachments map and their
+// bytes.
+type AttachmentTotals struct {
+	Count int
+	Bytes int64
+}
+
+// AttachmentLimits bound the attachments a Project's messages send over its
+// lifetime: their number and their bytes (attachments.projectLifetimeFiles
+// and attachments.projectLifetimeBytes).
+type AttachmentLimits struct {
+	Files int
+	Bytes int64
+}
+
+// AttachmentReservation reserves the attachments of the message MessageID,
+// at most conversation.MaximumMessageAttachments, for one admission of it:
+// AdmissionID is new for each SendMessage call, so a retry of the message
+// holds its attachments under an admission of its own.
+type AttachmentReservation struct {
+	MessageID, AdmissionID string
+	Files                  []AttachedFile
+}
+
+// attachmentRelease frees the holds of the admission AdmissionID.
+type attachmentRelease struct {
+	AdmissionID   string
+	AttachmentIDs []string
+}
+
+// attachmentResult answers an attachment RPC with its rejection only.
+type attachmentResult struct{ Rejection *dexflow.Rejection }
+
+// projectAttachment is the instance of file as the message messageID
+// reserves it at reservedAt, held by the admission admissionID, or kept when
+// that is empty.
+func projectAttachment(file AttachedFile, messageID, admissionID string, reservedAt time.Time) ProjectAttachment {
+	a := ProjectAttachment{Kind: file.Kind, MediaType: file.MediaType, FileName: file.FileName, SHA256: file.SHA256, Bytes: file.Bytes,
+		FirstMessageID: messageID, ReservedAt: reservedAt, Kept: admissionID == ""}
+	if admissionID != "" {
+		a.Holds = []string{admissionID}
+	}
+	return a
 }
 
 // MatchedExample is what the closest-example decision found in the first

@@ -141,7 +141,14 @@ func syncResponse(read session.RemoteRead, request bridgeapi.SyncRequest) (bridg
 	return response, nil
 }
 
+// syncEntry maps one projected entry, which is text or a tool result; the
+// projection already named the attachments a message left out
+// (conversation.UndeliveredAttachmentsNote), and a reference never reaches
+// the Bridge.
 func syncEntry(item conversation.SequencedEntry) (bridgeapi.Entry, error) {
+	if len(item.Entry.AttachmentReferences()) > 0 {
+		panic("remote projection returned an attachment reference")
+	}
 	entry := bridgeapi.Entry{Sequence: uint64(item.Sequence), Role: bridgeapi.EntryRoleUser}
 	switch item.Entry.Kind {
 	case conversation.EntryKindUserMessage:

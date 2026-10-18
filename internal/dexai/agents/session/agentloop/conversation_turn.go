@@ -31,8 +31,10 @@ const outputLimitResult = "Not executed: your reply reached the output limit bef
 
 // StartUserTurn starts the turn of one or more user messages and returns the
 // entries that record them. A message is appended at the next sequence. An
-// answer to a question continues the request the turn works on; any other
-// message replaces it.
+// answer to a question continues the request the turn works on; the first
+// other message of the batch replaces it, and the batch's later ones join
+// it, so that messages steered together are all the pending request and a
+// compaction shows the attachments of each of them again.
 func StartUserTurn(state AgentState, messages []conversation.UserMessage) (AgentState, []conversation.Entry) {
 	state = startTurn(state)
 	// The user is back: notifications may open turns again, and subagents start
@@ -40,10 +42,11 @@ func StartUserTurn(state AgentState, messages []conversation.UserMessage) (Agent
 	state.AutomaticTaskTurns, state.AutomaticPlatformTurns, state.AutomaticTurnsPaused = 0, 0, false
 	state.SubagentsStartedWithoutUser, state.AwaitsFirstMessage = 0, false
 	entries := make([]conversation.Entry, 0, len(messages)+1)
+	replaced := false
 	for _, message := range messages {
 		sequence := state.LastSequence + conversation.Sequence(len(entries)) + 1
-		if message.AnsweredInputCallID == nil {
-			state.TurnRequestSequences = nil
+		if message.AnsweredInputCallID == nil && !replaced {
+			state.TurnRequestSequences, replaced = nil, true
 		}
 		state = AddTurnRequest(state, sequence)
 		entries = append(entries, message.Entry())

@@ -27,6 +27,9 @@ const (
 	ToolSubmitConnectorContribution ToolName = "submit_connector_contribution"
 	ToolOpenTaskWorktree            ToolName = "open_task_worktree"
 	ToolMergeTaskWorktree           ToolName = "merge_task_worktree"
+	// ToolPlaceAttachment writes a JSON attachment's redacted file into the
+	// workspace, which the Session reads from its Project's attachments.
+	ToolPlaceAttachment ToolName = "place_attachment"
 )
 
 // Delegation tools start the Session's subagents and merge what they changed
@@ -43,6 +46,8 @@ const (
 	ToolReadPlatformFlow    ToolName = "read_platform_flow"
 	ToolReadLiveAppRuns     ToolName = "read_live_app_runs"
 	ToolReadConnectorChecks ToolName = "read_connector_checks"
+	// ToolReadAttachment pages a document's sections or a JSON file's text.
+	ToolReadAttachment ToolName = "read_attachment"
 )
 
 // Built-in tools are handled by Steps of SessionAgentFlow.

@@ -16,6 +16,7 @@ import type { AgentNotification, NotificationLink, SequencedMessage } from "@/li
 import { formatMonthDayTime } from "@/lib/shared/format";
 import { reportedProblem } from "@/lib/shared/problem/problem";
 import { ProblemPanel, type RemedyActions } from "@/components/ui/problem/ProblemPanel";
+import { MessageAttachments } from "@/components/agent/attachments/MessageAttachments";
 import { MarkdownContent } from "./MarkdownContent";
 
 /** The links a page offers for a notification, such as where to configure what a failed deployment lacks. */
@@ -275,16 +276,19 @@ export function ConversationMessage({
         className={cx("flex w-full min-w-0 flex-col", isUser && "items-end")}
         data-testid="conversation-message-content"
       >
+        {isUser && <MessageAttachments attachments={entry.message.attachments} className="mb-1.5 justify-end" />}
         {isUser ? (
-          <div
-            className={cx(
-              "w-fit max-w-full rounded-[14px_14px_4px_14px] border border-line-soft bg-well px-3 py-2.5 text-[13px] leading-relaxed wrap-anywhere",
-              !answeredInputCallId && "whitespace-pre-wrap",
-            )}
-          >
-            {/* An answer to a pending input is the Session's Markdown of the answers; anything else is the user's own text. */}
-            {answeredInputCallId ? <MarkdownContent value={content} /> : content}
-          </div>
+          (content || entry.message.attachments.length === 0) && (
+            <div
+              className={cx(
+                "w-fit max-w-full rounded-[14px_14px_4px_14px] border border-line-soft bg-well px-3 py-2.5 text-[13px] leading-relaxed wrap-anywhere",
+                !answeredInputCallId && "whitespace-pre-wrap",
+              )}
+            >
+              {/* An answer to a pending input is the Session's Markdown of the answers; anything else is the user's own text. */}
+              {answeredInputCallId ? <MarkdownContent value={content} /> : content}
+            </div>
+          )
         ) : (
           <div className="text-[13px]">
             {remoteReply && (

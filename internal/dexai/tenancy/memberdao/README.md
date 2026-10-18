@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Reads the team_space_members and project_members child tables that the platform Dex Attribute Store writes from the Members maps of TeamSpaceFlow and ProjectFlow.
 
-Callers: `internal/dexai/api`, `internal/dexai/api/tenancy`, `internal/dexai/bootstrap` and `internal/dexai/projects` import this package.
+Callers: `internal/dexai/api`, `internal/dexai/api/attachments`, `internal/dexai/api/tenancy`, `internal/dexai/bootstrap` and `internal/dexai/projects` import this package.
 
 Dependencies: it imports `internal/comm/platform/postgres`.
 
@@ -11,9 +11,10 @@ Dependencies: it imports `internal/comm/platform/postgres`.
 flowchart LR
   self["internal/dexai/tenancy/memberdao"]
   c0["internal/dexai/api"] --> self
-  c1["internal/dexai/api/tenancy"] --> self
-  c2["internal/dexai/bootstrap"] --> self
-  c3["internal/dexai/projects"] --> self
+  c1["internal/dexai/api/attachments"] --> self
+  c2["internal/dexai/api/tenancy"] --> self
+  c3["internal/dexai/bootstrap"] --> self
+  c4["internal/dexai/projects"] --> self
   self --> d0["internal/comm/platform/postgres"]
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->

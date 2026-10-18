@@ -1,0 +1,33 @@
+{
+  "name": "Lead intake",
+  "nodes": [
+    {
+      "parameters": {"httpMethod": "POST", "path": "lead-intake", "options": {}},
+      "id": "6f1c2d3e-0001-4a5b-8c9d-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "lead-intake"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.example.com/v1/leads?api_key=EXAMPLEQUERYKEY0001",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Authorization", "value": "Bearer EXAMPLEBEARERTOKEN000000000001"}]},
+        "sendBody": true,
+        "bodyParameters": {"parameters": [{"name": "email", "value": "={{ $json.body.email }}"}, {"name": "apiKey", "value": "EXAMPLEBODYAPIKEY0001"}]},
+        "options": {}
+      },
+      "id": "6f1c2d3e-0002-4a5b-8c9d-000000000002",
+      "name": "Create lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0]
+    }
+  ],
+  "connections": {"Webhook": {"main": [[{"node": "Create lead", "type": "main", "index": 0}]]}},
+  "settings": {"executionOrder": "v1"},
+  "active": false
+}

@@ -9,7 +9,10 @@
 package conversation
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -17,8 +20,10 @@ import (
 )
 
 // The entry log is what the model saw, append-only: an entry's Blocks are the
-// exact Claude content blocks and never change once appended. Meta is never
-// sent to the model; the UI and metrics read it.
+// exact Claude content blocks, except superverse_attachment reference blocks,
+// which the model call replaces 1:1 by the immutable block their rendition
+// object holds, and never change once appended. Meta is never sent to the
+// model; the UI and metrics read it.
 
 // EntryRole is the Claude role of an entry.
 type EntryRole string
@@ -154,10 +159,15 @@ type ArchivedEntryChunk struct {
 	Entries []SequencedEntry `json:"entries"`
 }
 
-// Bytes is the size the entry adds to a request.
+// Bytes is the size the entry adds to a request's estimate: its blocks, a
+// reference block by what it renders (AttachmentReference.contextBytes).
 func (entry Entry) Bytes() int64 {
 	var total int64
 	for _, block := range entry.Blocks {
+		if reference, isReference := ReadAttachmentReference(block); isReference {
+			total += reference.contextBytes()
+			continue
+		}
 		total += int64(len(block))
 	}
 	return total
@@ -176,6 +186,7 @@ var (
 	BlockTypeServerToolUse    = BlockType{name: "server_tool_use"}
 	BlockTypeToolResult       = BlockType{name: "tool_result"}
 	BlockTypeFallback         = BlockType{name: "fallback"}
+	BlockTypeImage            = BlockType{name: "image"}
 )
 
 // String is the spelling of the Messages API.
@@ -212,24 +223,37 @@ func UserMessageEntry(text string, answeredInputCallID *CallID) Entry {
 	return UserMessage{Content: text, AnsweredInputCallID: answeredInputCallID}.Entry()
 }
 
-// Entry freezes the sender envelope and public projection when a user message is appended.
+// Entry freezes the sender envelope and public projection when a user message
+// is appended: one reference block per attachment, in the order they were
+// attached, showing its full rendition until the append decides otherwise,
+// then the text, whose sender envelope lists the attachments. An attributed
+// message always has its envelope, also with blank text.
 func (message UserMessage) Entry() Entry {
 	text := message.Content
 	meta := EntryMeta{AnsweredInputCallID: message.AnsweredInputCallID, Actor: message.Actor, Via: message.Via}
-	if message.Actor != nil {
-		text = encodeSenderEnvelope(senderEnvelope{message.Actor.Email, message.Via, message.Content})
+	blocks := make([]json.RawMessage, 0, len(message.Attachments)+1)
+	var labels []AttachmentLabel
+	for _, attachment := range message.Attachments {
+		blocks = append(blocks, AttachmentReference{Attachment: attachment, Variant: AttachmentVariantFull}.Block())
+		labels = append(labels, attachment.Label())
 	}
-	return Entry{Role: EntryRoleUser, Kind: EntryKindUserMessage, Display: EntryDisplayPublic,
-		Blocks: []json.RawMessage{textBlock(text)}, Meta: meta}
+	if message.Actor != nil {
+		text = encodeSenderEnvelope(senderEnvelope{Sender: message.Actor.Email, Via: message.Via, Text: message.Content, Attachments: labels})
+	}
+	return Entry{Role: EntryRoleUser, Kind: EntryKindUserMessage, Display: EntryDisplayPublic, Blocks: append(blocks, textBlock(text)), Meta: meta}
 }
 
 // SenderEnvelopePrefix introduces the single JSON object of an attributed user text block.
 const SenderEnvelopePrefix = "Superverse message (JSON): "
 
+// senderEnvelope is the attributed text of a user message; it lists the
+// message's attachments, which come before it, only when there are any, so
+// every envelope without them keeps its bytes.
 type senderEnvelope struct {
-	Sender string  `json:"sender"`
-	Via    *string `json:"via"`
-	Text   string  `json:"text"`
+	Sender      string            `json:"sender"`
+	Via         *string           `json:"via"`
+	Text        string            `json:"text"`
+	Attachments []AttachmentLabel `json:"attachments,omitempty"`
 }
 
 func encodeSenderEnvelope(envelope senderEnvelope) string {
@@ -263,14 +287,19 @@ func EffortEntry(effort Effort) Entry {
 	return Entry{Role: EntryRoleSystem, Kind: EntryKindNotice, Display: EntryDisplayHidden, Blocks: []json.RawMessage{}, Meta: EntryMeta{Effort: effort}}
 }
 
-// SegmentStartEntry opens a context segment. The first segment of a Session
-// is hidden; a later one shows marker.
-func SegmentStartEntry(text, marker string) Entry {
+// SegmentStartEntry opens a context segment: its text, which stays the first
+// block, then the references of the pending request's attachments. The first
+// segment of a Session is hidden; a later one shows marker.
+func SegmentStartEntry(text, marker string, attachments ...AttachmentReference) Entry {
 	display := EntryDisplayHidden
 	if marker != "" {
 		display = EntryDisplayMarker
 	}
-	return Entry{Role: EntryRoleUser, Kind: EntryKindSegmentStart, Display: display, Blocks: []json.RawMessage{textBlock(text)}, Meta: EntryMeta{Marker: marker}}
+	blocks := []json.RawMessage{textBlock(text)}
+	for _, reference := range attachments {
+		blocks = append(blocks, reference.Block())
+	}
+	return Entry{Role: EntryRoleUser, Kind: EntryKindSegmentStart, Display: display, Blocks: blocks, Meta: EntryMeta{Marker: marker}}
 }
 
 // ModelReplyEntry records a model reply exactly as it will be replayed.
@@ -299,9 +328,10 @@ func readBlock(block json.RawMessage) blockHeader {
 }
 
 // PublicMessage is the projection of an entry for the public API, or false
-// when the entry is hidden. It carries user text, assistant text, tool call
-// identities and a notification's summary; never thinking, tool arguments,
-// tool results or a notification's report.
+// when the entry is hidden. It carries user text with the summaries of its
+// attachments, assistant text, tool call identities and a notification's
+// summary; never thinking, tool arguments, tool results, attachment objects or
+// a notification's report.
 func (entry Entry) PublicMessage() (AgentMessage, bool) {
 	message := AgentMessage{Actor: entry.Meta.Actor, Via: entry.Meta.Via, Imported: entry.Meta.Imported, SteeredBy: entry.Meta.SteeredBy, CreatedAt: entry.CreatedAt, StartedAt: entry.StartedAt, ToolCalls: []ToolCallSummary{}}
 	switch {
@@ -311,6 +341,9 @@ func (entry Entry) PublicMessage() (AgentMessage, bool) {
 		message.Role, message.Content = MessageRoleSystem, entry.Meta.Marker
 	case entry.Kind == EntryKindUserMessage:
 		message.Role, message.Content, message.AnsweredInputCallID = MessageRoleUser, entry.Text(), entry.Meta.AnsweredInputCallID
+		for _, reference := range entry.AttachmentReferences() {
+			message.Attachments = append(message.Attachments, reference.Attachment.Summary())
+		}
 		if entry.Meta.Actor != nil {
 			var envelope struct {
 				Text string `json:"text"`
@@ -346,4 +379,229 @@ func (entry Entry) Text() string {
 		}
 	}
 	return strings.Join(parts, "\n\n")
+}
+
+// AttachmentVariant is what a reference block shows of its attachment, frozen
+// when the entry is appended or its segment opens: the full rendition, the
+// brief of a document or large generic JSON file, or the placeholder that says
+// the attachment is not shown in this part of the conversation.
+type AttachmentVariant struct{ name string }
+
+var (
+	AttachmentVariantFull        = AttachmentVariant{name: "full"}
+	AttachmentVariantBrief       = AttachmentVariant{name: "brief"}
+	AttachmentVariantPlaceholder = AttachmentVariant{name: "placeholder"}
+	attachmentVariants           = []AttachmentVariant{AttachmentVariantFull, AttachmentVariantBrief, AttachmentVariantPlaceholder}
+)
+
+// String is the persisted spelling.
+func (variant AttachmentVariant) String() string { return variant.name }
+
+// MarshalText writes the persisted spelling.
+func (variant AttachmentVariant) MarshalText() ([]byte, error) { return []byte(variant.name), nil }
+
+// UnmarshalText reads a persisted spelling.
+func (variant *AttachmentVariant) UnmarshalText(text []byte) error {
+	return comm.UnmarshalName(text, variant, AttachmentVariant.String, attachmentVariants...)
+}
+
+// attachmentReferenceType is the type of a reference block. It is no Claude
+// block type: a model call replaces every reference block 1:1 before its
+// request leaves the Session, and the provider adapter refuses one that is
+// left (IsAttachmentReference).
+const attachmentReferenceType = "superverse_attachment"
+
+// attachmentReferencePrefix opens every reference block, whose type is
+// encoded first, so that a reader tells one apart without decoding a block.
+var attachmentReferencePrefix = []byte(`{"type":"` + attachmentReferenceType + `",`)
+
+// AttachmentReference is one reference block of an entry: the attachment and
+// the variant it shows. A user message's references precede its envelope; a
+// segment_start's follow its text. The block holds no content, about 0.5 KiB.
+type AttachmentReference struct {
+	Attachment AttachmentRef
+	Variant    AttachmentVariant
+}
+
+// referenceBlock is the stored form of a reference: its type first, the
+// variant, then the attachment's fields.
+type referenceBlock struct {
+	Type    string            `json:"type"`
+	Variant AttachmentVariant `json:"variant"`
+	AttachmentRef
+}
+
+// Block is the stored reference block.
+func (reference AttachmentReference) Block() json.RawMessage {
+	return comm.Must(json.Marshal(referenceBlock{Type: attachmentReferenceType, Variant: reference.Variant, AttachmentRef: reference.Attachment}))
+}
+
+// IsAttachmentReference reports whether block is a reference block.
+func IsAttachmentReference(block json.RawMessage) bool {
+	return bytes.HasPrefix(block, attachmentReferencePrefix)
+}
+
+// ReadAttachmentReference decodes a reference block; false for any other
+// block.
+func ReadAttachmentReference(block json.RawMessage) (AttachmentReference, bool) {
+	if !IsAttachmentReference(block) {
+		return AttachmentReference{}, false
+	}
+	var stored referenceBlock
+	// A reference is a block this binary wrote; any other is corrupt history.
+	comm.MustDo(json.Unmarshal(block, &stored))
+	return AttachmentReference{Attachment: stored.AttachmentRef, Variant: stored.Variant}, true
+}
+
+// AttachmentReferences are the reference blocks of the entry, in order.
+func (entry Entry) AttachmentReferences() []AttachmentReference {
+	var references []AttachmentReference
+	for _, block := range entry.Blocks {
+		if reference, isReference := ReadAttachmentReference(block); isReference {
+			references = append(references, reference)
+		}
+	}
+	return references
+}
+
+// Rendition is the prepared rendition the reference shows; a placeholder
+// shows none.
+func (reference AttachmentReference) Rendition() (AttachmentRendition, bool) {
+	switch reference.Variant {
+	case AttachmentVariantFull:
+		return reference.Attachment.Rendition, true
+	case AttachmentVariantBrief:
+		return *reference.Attachment.Brief, true
+	default:
+		return AttachmentRendition{}, false
+	}
+}
+
+// RenderedBytes is the size of the block the reference renders, which the
+// attachment byte budget of a segment counts; a placeholder counts none.
+func (reference AttachmentReference) RenderedBytes() int64 {
+	rendition, isShown := reference.Rendition()
+	if !isShown {
+		return 0
+	}
+	return rendition.Bytes
+}
+
+// ContextTokens is the reference's estimated share of the context: its
+// rendition's, or for a placeholder its block at four bytes per token.
+func (reference AttachmentReference) ContextTokens() int64 {
+	rendition, isShown := reference.Rendition()
+	if !isShown {
+		return int64(len(PlaceholderAttachmentBlock(reference.Attachment))) / 4
+	}
+	return rendition.ContextTokens
+}
+
+// contextBytes is what the reference adds to a request's size estimate, which
+// the compaction trigger divides by four: four times its context tokens. A
+// rendered image's base64 bytes are no measure of the context it takes, and
+// only the segment's attachment byte budget counts them.
+func (reference AttachmentReference) contextBytes() int64 {
+	return 4 * reference.ContextTokens()
+}
+
+// The text of every text rendition and placeholder is framed in the tag that
+// names its attachment, <attachment id="…" name="…" kind="…">, which a
+// placeholder marks with a status, then the text and </attachment>.
+
+// attachmentFrame opens framed attachment text; status is empty for content.
+func attachmentFrame(attachment AttachmentRef, status string) string {
+	quoted := func(value string) string { return string(comm.Must(json.Marshal(value))) }
+	opening := "<attachment id=" + quoted(attachment.ID) + " name=" + quoted(attachment.Name) + " kind=" + quoted(attachment.Kind.String())
+	if status != "" {
+		opening += " status=" + quoted(status)
+	}
+	return opening + ">"
+}
+
+// attachmentFrameOpening reads the opening tag of framed attachment text.
+var attachmentFrameOpening = regexp.MustCompile(`^<attachment id="[a-z0-9]*" name="((?:[^"\\]|\\.)*)"( kind="[a-z_]+")?( format="[a-z0-9]+")?( status="[a-z]+")?>\n`)
+
+// attachmentPlaceholder is the frozen text block that stands for attachment.
+func attachmentPlaceholder(attachment AttachmentRef, status, text string) json.RawMessage {
+	return textBlock(attachmentFrame(attachment, status) + "\n" + text + "\n</attachment>")
+}
+
+// attachmentFrameTag finds a tag that would open or close the frame of
+// attachment text or a part inside it: a section, an excerpt, an outline, the
+// start of a document or the content of a JSON file.
+var attachmentFrameTag = regexp.MustCompile(`(?i)<\s*(/?)\s*(attachment|section|excerpt|outline|start|content)\b`)
+
+// EscapeAttachmentText is untrusted text of an attachment, such as its
+// content, a heading or a name, made safe to frame: every tag that would open
+// or close a part of the frame starts with "&lt;" instead of "<", so no file
+// ends the frame that marks it as the user's material, never instructions.
+// Every rendition builder and read_attachment apply it to what the file holds
+// before they frame it.
+func EscapeAttachmentText(text string) string {
+	return attachmentFrameTag.ReplaceAllString(text, "&lt;$1$2")
+}
+
+// FrameAttachmentText frames text of the attachment label names, as a text
+// rendition is framed, for a tool result that reads the attachment. The
+// caller escapes what the file holds (EscapeAttachmentText).
+func FrameAttachmentText(label AttachmentLabel, text string) string {
+	return attachmentFrame(AttachmentRef{ID: label.ID, Name: label.Name, Kind: label.Kind}, "") + "\n" + text + "\n</attachment>"
+}
+
+// PlaceholderAttachmentBlock is the frozen text block of a placeholder
+// reference: the attachment is not shown in this part of the conversation.
+func PlaceholderAttachmentBlock(attachment AttachmentRef) json.RawMessage {
+	return attachmentPlaceholder(attachment, "placeholder", "This attachment is not shown in this part of the conversation: the context's attachment budget is used up. The context is compacted next, and the new context shows the attachment again while the request it belongs to is pending.")
+}
+
+// ExpiredAttachmentBlock is the frozen text block of an attachment whose
+// staged and Project objects were both gone when a model call first showed
+// it, which stays so: nothing restores them.
+func ExpiredAttachmentBlock(attachment AttachmentRef) json.RawMessage {
+	return attachmentPlaceholder(attachment, "expired", "This attachment expired or was removed before it was read; ask the person to attach it again if you need it.")
+}
+
+// FramedAttachmentName is the name of the attachment whose content a framed
+// text shows; false for a placeholder and any other text.
+func FramedAttachmentName(text string) (string, bool) {
+	match := attachmentFrameOpening.FindStringSubmatch(text)
+	if match == nil || match[4] != "" {
+		return "", false
+	}
+	var name string
+	if json.Unmarshal([]byte(`"`+match[1]+`"`), &name) != nil {
+		return "", false
+	}
+	return name, true
+}
+
+// EnvelopeAttachments are the attachments an attributed text block lists in
+// its sender envelope; nil for any other text.
+func EnvelopeAttachments(text string) []AttachmentLabel {
+	encoded, found := strings.CutPrefix(text, SenderEnvelopePrefix)
+	var envelope senderEnvelope
+	if !found || json.Unmarshal([]byte(encoded), &envelope) != nil {
+		return nil
+	}
+	return envelope.Attachments
+}
+
+// UndeliveredAttachmentsNote is the line that tells the local agent which
+// attachments of entry it did not receive, or "" when the entry holds none:
+// only the Superverse agent reads attachments.
+func UndeliveredAttachmentsNote(entry Entry) string {
+	references := entry.AttachmentReferences()
+	if len(references) == 0 {
+		return ""
+	}
+	names := make([]string, 0, len(references))
+	for _, reference := range references {
+		names = append(names, reference.Attachment.Name)
+	}
+	count := fmt.Sprintf("%d attachments", len(names))
+	if len(names) == 1 {
+		count = "1 attachment"
+	}
+	return "Not delivered to the connected agent: " + count + " (" + strings.Join(names, ", ") + "). Attachments work with the Superverse agent."
 }

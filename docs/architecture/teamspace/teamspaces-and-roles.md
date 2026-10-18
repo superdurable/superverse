@@ -129,11 +129,13 @@ Package `internal/dexai/tenancy/teamspaces`, file `team_space_flow.go`.
 | ActiveCommand, LastCommand | `*Command` | — | no |
 | LastFailure | `*dexflow.Failure` | — | yes |
 | CreatedAt, UpdatedAt | `time.Time` | — | yes |
+| AttachmentStagingTotals | `StagingTotals{Count, Bytes}` of the staged attachments | — | no |
 
 | Map | Instance key (example) | Value | Loading, locking, limits, cleanup |
 |---|---|---|---|
 | `Members` | AccountID (`Members/0f9c…`) | `{Role ADMIN\|MEMBER, AddedAt, AddedByAccountID}` | The creator, as ADMIN, is the initial instance, so sync writes their row. Member writes load it whole; `RegisterProject` loads only the caller's instance. Writes lock `Revision`, which guards "at least one admin". At most 500. Removed with the member; kept when the TeamSpace is deleted. Synced as the child table `team_space_members` (instance key column `account_id`). |
 | `Projects` | ProjectID (`Projects/ab12`) | `{ProjectFlowID, RegisteredAt, RegisteredByAccountID}` | Exact loads; loaded whole only by the deletion. Unregistered when the Project is deleted. Not synced: `projects.team_space_id` already lists a TeamSpace's Projects. |
+| `AttachmentStaging` | Attachment ID (`AttachmentStaging/a7f2c9xq4m1p`) | `StagedAttachment{FlowID, Bytes, UploaderAccountID, ReservedAt, HeldUntil}` | Exact loads, and the whole map only for `ListLapsedAttachmentStaging`. At most `attachments.teamSpaceStagedFiles` (200). Deleted at the attachment's release, or by the reclaim of a lapsed hold. Not synced ([attachments](../attachments/upload-and-preparation.md#teamspaceflow-changes)). |
 
 No secrets: IDs, roles and names only.
 
@@ -151,7 +153,7 @@ No secrets: IDs, roles and names only.
 | Step | Purpose | Options and routing |
 |---|---|---|
 | `AwaitTeamSpaceCommands` (start) | Waits for the deletion command. | → `DeleteTeamSpaceResources` |
-| `DeleteTeamSpaceResources` | Asks every registered Project to delete itself through `ProjectCleanup` (idempotent; a DELETED Project counts as done), then `dexflow.PollUntil(ctx, 5s, 40s, check)` reads up to eight Project statuses per round. Once every Project is deleted (and with it its connection usages), each round calls `ConnectionCleanup.DeleteTeamSpaceConnections` (database rows and secret objects, idempotent) until it reports done. | `PollingStepOptions(6h)`, failure → `RecordTeamSpaceFailure`; no lock while polling |
+| `DeleteTeamSpaceResources` | Asks every registered Project to delete itself through `ProjectCleanup` (idempotent; a DELETED Project counts as done), then `dexflow.PollUntil(ctx, 5s, 40s, check)` reads up to eight Project statuses per round. Once every Project is deleted (and with it its connection usages), each round calls `ConnectionCleanup.DeleteTeamSpaceConnections` (database rows and secret objects, idempotent) until it reports done, then deletes every version under `attachment-staging/<teamSpaceID>/` until clean. | `PollingStepOptions(6h)`, failure → `RecordTeamSpaceFailure`; no lock while polling |
 | `CompleteTeamSpaceDeletion` | Locks `Revision`, sets DELETED and completes gracefully; the members stay. | Sync durability |
 | `RecordTeamSpaceFailure` | Records the truncated `ctx.RecoveryError().Detail` and clears `ActiveCommand`, so deletion can be requested again. | → `AwaitTeamSpaceCommands` |
 
@@ -169,6 +171,9 @@ whether it is the platform admin; the Flow checks the actor's TeamSpace role in 
 | RequestTeamSpaceDeletion | write | platform admin only | Accepts the deletion command |
 | RegisterProject | write | READY; the actor is a member or the platform admin | Adds to `Projects` |
 | UnregisterProject | write | READY or DELETING; no actor check, because only ProjectFlow's `CompleteDeletion` calls it and the API does not expose it; an unknown instance succeeds | Removes from `Projects`, so a TeamSpace's own cascade can unregister its Projects |
+| ReserveAttachmentStaging | write | A reserved ID succeeds in any status; otherwise READY, the actor is a member or the platform admin, within the staging files and bytes | Adds to `AttachmentStaging` and the totals; the Revision stays |
+| ReleaseAttachmentStaging | write | Any status; an unknown instance succeeds | Removes from `AttachmentStaging` and lowers the totals |
+| ListLapsedAttachmentStaging | read, the whole `AttachmentStaging` map | — | Lists at most ten attachment IDs whose `HeldUntil` passed, oldest first |
 
 Idempotence: adding a member who already has that role, removing an absent member and
 registering a registered Project all succeed without change. Deterministic rejections

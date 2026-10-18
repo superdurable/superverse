@@ -74,6 +74,11 @@ type modelSelection struct{ Accepted, Stale bool }
 // queuedMessageDeletion distinguishes authorization refusal from a stale queue identity.
 type queuedMessageDeletion struct{ Deleted, NotAuthor bool }
 
+// messageAdmission answers SendMessage: whether the Session took the message,
+// and whether it refused it because it carries attachments while a local
+// agent executes the Session, which receives text only.
+type messageAdmission struct{ Accepted, AttachmentsRefused bool }
+
 // setSessionStatus records a lifecycle transition at the next revision.
 func setSessionStatus(ctx dex.Context, status agentloop.SessionStatus, reason string) {
 	comm.MustDo(sessionStatusAttribute.Set(ctx, status))

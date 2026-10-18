@@ -225,6 +225,7 @@ compaction_summary: "..."       # the summary a compaction request gets
 inputs:
   - label: "Describe the application"
     message: "Plan a release tracker."          # or answers: [...]
+    attachments: [order-process.png]  # fixture files under scenarios/attachments/ the message attaches
     replies:
       - thinking: "..."           # emitted as a summarized thinking block, signed
         text: "..."
@@ -243,6 +244,8 @@ inputs:
         expect_segment_start: ["<confirmed_requirements>"]  # texts the request's first message must hold
         expect_segment_start_lacks: ["<starting_example>"]  # texts it must not hold
         expect_repository_context_notice: true  # the repository context in exactly one notice after a segment_start without it
+        expect_attachments:       # attachments the request shows, with an envelope there that lists each
+          - {name: order-process.png, kind: image, in: segment_start}  # in: segment_start or message
         compaction_error: {status: 529, type: overloaded_error, message: "..."}  # the compaction that follows this reply fails
       - error: {status: 400, type: invalid_request_error, message: "..."}
 subagents:                        # the scripts the start_agent prompts name: [[subagent:<scenario>/heading]]
@@ -266,6 +269,18 @@ request's segment_start, the first text block of its first message, must hold no
 Session appends at the first model-call boundary after its workspace read the context. Otherwise
 the reply is a stop text, like a missing `expect_segment_start` text or a present
 `expect_segment_start_lacks` text.
+
+`expect_attachments` proves what the model sees of attachments. Each entry names an attachment
+by name and kind (`image`, `document` or `json`) and the place it must be shown: `segment_start`,
+the request's first message, whose text block stays first and whose pending-request quote holds
+the sender envelope, or `message`, the newest user message, whose envelope follows its
+attachments. The place must hold an image block for an image, or the framed text that names the
+attachment (`<attachment id="…" name="…" kind="…">`, not a placeholder) for the others, and an
+envelope there whose `attachments` field lists the name and kind; otherwise the call is rejected
+with a `400`, which the Session records as a failed turn. A message input's `attachments` name
+fixture files under `scenarios/attachments/`; the Dex test stages each as its preparation would
+(`AttachmentFixtureForTest`, `Input.AttachmentsForTest`) and sends the references with the
+message.
 
 ## Categories
 
@@ -500,7 +515,8 @@ open.
 
 Ordinary interactive mock Sessions, while no script is selected, accept actual
 remote public history through a separate validator. Every block has known
-fields and a permitted type: UTF-8 text, canonical positive globally unique
+fields and a permitted type: UTF-8 text, a user's base64 image (an attachment's
+rendition, exactly `type` and `source{type, media_type, data}`), canonical positive globally unique
 remote tool IDs from the offered remote catalog with its strict schema and
 argument limits, and exactly one matching result in the complete unit before
 the next assistant message. Thinking, unknown blocks/fields, dangling or

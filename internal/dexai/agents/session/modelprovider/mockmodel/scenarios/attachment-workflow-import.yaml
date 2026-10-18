@@ -1,0 +1,55 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A first message with a synthetic n8n export whose three secret values
+# preparation replaced with the redaction marker. The segment_start names the
+# workflow import; place_attachment writes the redacted export into the
+# workspace under /.local/, the ported inventory reports the three markers as
+# literal-secret findings, and once .gitignore no longer ignores /.local/,
+# commit_and_push refuses to commit the placed file. The Dex test stages the
+# export and names its ID with the attachment argument.
+name: attachment-workflow-import
+title: "Workflow export attachment"
+description: "A message with an n8n export: place_attachment puts its redacted copy in the workspace, the inventory finds the removed secrets, and commit_and_push refuses the placed file."
+category: agent_feature
+arguments:
+  attachment: cccccccccccc
+inputs:
+  - label: "Port the attached n8n export"
+    message: "Port the attached n8n lead intake export to Dex."
+    attachments: [lead-intake.json]
+    replies:
+      - text: "Placing the export in the workspace for its inventory."
+        expect_attachments:
+          - {name: lead-intake.json, kind: json, in: segment_start}
+        expect_segment_start: ["<workflow_import>", "place_attachment", "n8n_inventory.py inventory"]
+        tool_uses:
+          - name: place_attachment
+            input: {attachment_id: "{{attachment}}"}
+        expect_result_contains: [".local/superverse-attachments/", "\"redactions\":3"]
+      - text: "Running the inventory on the placed export."
+        tool_uses:
+          - name: bash
+            input:
+              command: "python3 /opt/superverse/dex-skills/dex-app-builder/scripts/n8n_inventory.py inventory /workspace/.local/superverse-attachments/{{attachment}}/lead-intake.json --out /workspace/docs/import/lead-intake && grep -o literal-secret /workspace/docs/import/lead-intake/ledger.md | sort | uniq -c"
+              description: "Inventory the n8n export"
+        expect_result_contains: ["3 literal-secret"]
+      - text: "Removing /.local/ from .gitignore to check the commit gate."
+        tool_uses:
+          - name: edit
+            input: {path: .gitignore, old_string: "/.local/\n", new_string: ""}
+      - text: "Committing a checkpoint."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Checkpoint the workflow import"
+              verification: ["the inventory reports three literal secrets"]
+              blocked: true
+        expect_failure: true
+        expect_failure_text: "attachment_in_source"
+      - text: "The export stays in the workspace only: the commit was refused, and the inventory names three secrets to set up as connections."

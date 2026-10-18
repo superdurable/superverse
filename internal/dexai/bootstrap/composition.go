@@ -19,9 +19,11 @@ import (
 	"github.com/superdurable/dex/sdk-go/dex"
 	"github.com/superdurable/dex/sdk-go/gen/dexpb"
 	serverconfig "github.com/superdurable/superversev2/cmd/superverse-server/config"
+	"github.com/superdurable/superversev2/internal/comm/fileextract"
 	"github.com/superdurable/superversev2/internal/comm/platform/connectorlibrary"
 	"github.com/superdurable/superversev2/internal/comm/platform/postgres"
 	"github.com/superdurable/superversev2/internal/dexai/agents"
+	"github.com/superdurable/superversev2/internal/dexai/agents/attachments"
 	"github.com/superdurable/superversev2/internal/dexai/agents/diagnostics"
 	"github.com/superdurable/superversev2/internal/dexai/agents/platformissue"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteagent"
@@ -155,7 +157,14 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	// the instance provider on it; Session tools, the workspace Flow's
 	// reclamation, the provisioning, the Preview and the deleting Project's
 	// release share them.
-	sessionAgent, err := sessionagent.NewSessionAgentFlowBootstrap(config.agent, &git.HostCredentials{Host: config.host}, sessionService, projectDiagnostics, publishedCatalog, providers.sandboxAddresses, providers.instances, logger)
+	// The Session's model calls render attachment references from the artifact storage, binding each
+	// attachment to its Project on first use; the replica caches the rendered blocks.
+	renditions := attachments.NewRenditionStore(config.objects, config.renditionCacheBytes)
+	// The replica's one extractor runs the server binary as its child, one file at a time, for every
+	// AttachmentFlow this replica's Worker prepares.
+	attachmentFlows := attachments.NewAttachmentFlowBootstrap(config.objects, fileextract.NewExtractor(config.extractor), teamSpaceClient, config.attachments)
+	sessionAgent, err := sessionagent.NewSessionAgentFlowBootstrap(config.agent, &git.HostCredentials{Host: config.host}, sessionService, projectDiagnostics, publishedCatalog, renditions,
+		providers.sandboxAddresses, providers.instances, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -191,8 +200,9 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 
 	// Back references. Each field below refers to a component built later that
 	// itself depends on the field's owner, so it can only be set now.
-	teamSpaceFlow.Projects, teamSpaceFlow.Connections = projectClient, shared.Usages
-	*projectFlow = projects.ProjectFlow{Client: projectClient, TeamSpaces: teamSpaceClient, Setups: setupClient, Repositories: repositoryClient, Host: config.host, Sessions: sessionService, Releases: releaseClient, Deployments: deploymentClient, Objects: config.objects, Storage: providers.storage, Cleanup: providers.cleanup, Connections: shared.Usages}
+	teamSpaceFlow.Projects, teamSpaceFlow.Connections, teamSpaceFlow.Objects, teamSpaceFlow.Staging = projectClient, shared.Usages, config.objects, config.staging
+	*projectFlow = projects.ProjectFlow{Client: projectClient, TeamSpaces: teamSpaceClient, Setups: setupClient, Repositories: repositoryClient, Host: config.host, Sessions: sessionService, Releases: releaseClient, Deployments: deploymentClient, Objects: config.objects, Storage: providers.storage, Cleanup: providers.cleanup, Connections: shared.Usages,
+		Attachments: config.projectAttachments}
 	configuration.Preview = sessionService
 	configuration.Releases = releaseClient
 	deploymentClient.Releases = releaseClient
@@ -205,6 +215,7 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	registry, err := dex.NewRegistry(serverFlows{
 		teamSpace: teamSpaceFlow, project: projectFlow, setup: setupFlow, repository: repositoryFlow,
 		workspace: workspaces.Flow(), provision: provisioning.Flow(), preview: previewFlow, session: sessionAgent.Flow(), subagent: subagents.Flow(), background: backgroundCommands.Flow(), issue: issues.Flow(), contribution: contributions.Flow(), release: releaseFlow, deployment: deploymentFlow,
+		attachment: attachmentFlows.Flow(),
 	}.list())
 	if err != nil {
 		return nil, err
@@ -250,7 +261,7 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 		Projects: projectClient, Previews: previewClient, Releases: releaseClient, Deployments: deploymentClient,
 		Configuration: configuration, Runs: flowRuns, Platform: dexpb.NewFlowServiceClient(executions), Serving: providers.serving, Redactor: providers.redactor,
 		Publishing:    publishingService,
-		Contributions: sessionService.Contributions, ConnectorChecks: config.connectors,
+		Contributions: sessionService.Contributions, ConnectorChecks: config.connectors, Attachments: renditions,
 	}
 	slack := newSlackRelay(config, connectionDAO, configuration, logger)
 	remoteDAO := remoteagentdao.New(db)
@@ -263,6 +274,7 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	}
 	remoteService := &remoteagent.Connections{DAO: remoteDAO, Sessions: sessionService, Endpoint: endpoint,
 		MinimumBridgeVersion: config.remoteAgent.MinimumBridgeVersion, AcceptDevBridge: config.remoteAgent.AcceptDevBridge, PlatformAdminEmail: config.platformAdminEmail}
+	attachmentClient := attachmentFlows.Client(client)
 	var rpcCoverage *api.RPCCoverage
 	if config.rpcCoverageFile != "" {
 		rpcCoverage, err = api.NewRPCCoverage(config.rpcCoverageFile)
@@ -276,6 +288,7 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 		ProjectIDLength: config.projectIDLength, Sessions: sessionService, SessionAgents: sessionAgentClient, Subagents: sessionService.Subagents,
 		Projects: projectClient, TeamSpaces: teamSpaceClient, TeamSpaceReads: teamspacedao.New(db), Members: memberDAO, Setups: setupClient, Host: config.host, Configuration: configuration, Runs: flowRuns,
 		Releases: releaseClient, Deployments: deploymentClient, Publishing: publishingService, RecentEvents: slack,
+		Attachments: attachmentClient, Renditions: renditions, AttachmentAdmission: attachments.NewAttachmentFlowService(attachmentClient, projectClient, config.attachmentsPerMessage),
 		Connections: tenancy.Connections{Connections: shared.Connections, Access: connectionDAO, StudioOrigin: config.oauthCallbackOrigin, Unrouted: slack},
 		// The Claude models need the key; the mock model needs agent.mockModel.
 		SessionModels:      api.SessionModels{Claude: config.agent.Claude.APIKey != "", Mock: config.mockModel, Local: config.localKind},

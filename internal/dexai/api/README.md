@@ -5,7 +5,7 @@ Purpose: Serves the business gRPC services that the Studio BFF calls, one file p
 
 Callers: `internal/dexai/bootstrap` imports this package.
 
-Dependencies: it imports `gen/superverse/v2`, `internal/comm/**` (5) and `internal/dexai/**` (35).
+Dependencies: it imports `gen/superverse/v2`, `internal/comm/**` (5) and `internal/dexai/**` (37).
 
 ```mermaid
 flowchart LR
@@ -13,7 +13,7 @@ flowchart LR
   c0["internal/dexai/bootstrap"] --> self
   self --> d0["gen/superverse/v2"]
   self --> d1["internal/comm/** (5)"]
-  self --> d2["internal/dexai/** (35)"]
+  self --> d2["internal/dexai/** (37)"]
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 
@@ -42,10 +42,10 @@ snapshot or progress.
 | File | Responsibility |
 | --- | --- |
 | `server.go` | `Server`, the dependencies bootstrap composes; `NewGRPCServer`, which registers the services with their interceptors, the account and TeamSpace services through `tenancy.Register` |
-| `project.go` | ProjectService: managed creation in a TeamSpace (a caller whom the read model shows outside a TeamSpace it holds is refused before any Flow starts; ProjectFlow's registration confirms the membership), with the Session's optional first message and model, validated and admitted as SendMessage and UpdateSessionModel are before the start and part of the creation fingerprint; GetProject, ListProjects (the Projects of the required TeamSpace, for its members and the administrator, in keyset pages; an entry without the caller's role is reduced to its ID, name, status, setup status, Live and TeamSpace) and the Project Watch from the read model, which waits for a new Project's row; deletion and Live removal, which return ProjectFlow's state; project configuration; and the Project snapshot with its Setup and Live pointer |
+| `project.go` | ProjectService: managed creation in a TeamSpace (a caller whom the read model shows outside a TeamSpace it holds is refused before any Flow starts; ProjectFlow's registration confirms the membership), with the Session's optional first message, its attachments and model, validated and admitted as SendMessage and UpdateSessionModel are before the start and part of the creation fingerprint (an automation export skips the closest example, and a retry whose attachments expired joins its accepted Project); GetProject, ListProjects (the Projects of the required TeamSpace, for its members and the administrator, in keyset pages; an entry without the caller's role is reduced to its ID, name, status, setup status, Live and TeamSpace) and the Project Watch from the read model, which waits for a new Project's row; deletion and Live removal, which return ProjectFlow's state; project configuration; and the Project snapshot with its Setup and Live pointer |
 | `project_member.go` | ProjectMemberService: a Project's members from the read model for a caller with `CapabilityView`, and the member changes of ProjectFlow for one with `CapabilityManageMembers`, which ProjectFlow checks again; a member added must belong to the Project's TeamSpace, which the read model shows |
 | `session.go` | SessionService: reads of the Project's one Session, the workspace renewal (`RenewWorkspace`), the Session Watch with its Agent event Streams and the live status lines of its running subagents, archived messages and the Session snapshot, whose workspace carries its start phase timings |
-| `agent.go` | AgentService: the Agent commands through one admission helper, their input checks, the model admission of each environment (`SessionModels`: a Claude key, the mock model, Local or the administrator), `ListMockScenarios` and the protobuf conversion of Agent values |
+| `agent.go` | AgentService: the Agent commands through one admission helper, their input checks, the attachments of SendMessage (admitted and reserved through `attachments.AttachmentFlowService` after the Session's authorization, released after a definite refusal), the model admission of each environment (`SessionModels`: a Claude key, the mock model, Local or the administrator), `ListMockScenarios` and the protobuf conversion of Agent values |
 | `preview.go` | PreviewService: Preview reads with the automatic deployment, the configuration gaps and the start phase timings, commands on the observed instance, source preparation, definitions and the automatic deployment switch |
 | `release.go` | ReleaseService: candidates, preparation, builds, recovery, cancellation and the redacted build log (`GetReleaseBuildLog`, builder capability, through `PublishingFlowService`); GetRelease, ListReleases (keyset pages) and the Release Watch from the read model, which waits for a new Release's row; its snapshot carries build and source-preparation timings; GetRelease logs read-phase latency, returns FAILED snapshots without definitions and classifies read deadlines as unavailable |
 | `deployment.go` | DeploymentService: Live deployment and its cancellation; GetDeployment, ListDeployments (keyset pages) and the Deployment Watch from the read model, which waits for a new deployment's row; its snapshot carries the deployment's phase timings |
@@ -61,6 +61,18 @@ only from an admin, the stale rename's `REVISION_CHANGED`, a Project created
 only by a member, the refused removal of a Project's only owner and the count
 of the roles a re-added member regains. Its Project's Setup creates a
 repository, so it requires `SUPERVERSE_TEST_GITHUB_EFFECTS=true`.
+
+`TestAttachmentMessageAdmissionDexIntegration` drives the attachments of
+CreateProject and SendMessage through the actual gRPC API, with TeamSpaceFlow,
+ProjectFlow, AttachmentFlow and SessionAgentFlow on the lane's server Worker and
+real presigned PUTs: the refusals before any Flow starts (another person's, not
+READY, unknown, without a message ID, repeated, eleven), a matching first message
+with an n8n export that starts from the default template and one with an image
+that keeps the match, the export counted once by ProjectFlow, replays and
+conflicting retries, the history's `AgentAttachment` summaries through
+GetSession, SendMessage's not-admitted refusals and a blank message with the
+image counted once when it is sent twice. It requires
+`SUPERVERSE_TEST_GITHUB_EFFECTS=true`.
 
 `TestProjectAuthorizationMatrixDexIntegration` checks the Project capabilities
 through the same API for one Project's owner, builder, operator, a TeamSpace

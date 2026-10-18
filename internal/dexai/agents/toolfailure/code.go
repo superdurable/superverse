@@ -152,6 +152,7 @@ var (
 		"Use a longer timeout_seconds or a smaller step.")
 	BackgroundLimitReached = callCode("background_limit_reached", "Four background commands already run in this Sandbox. Wait for one to finish or stop one first.")
 	TaskNotFound           = callCode("task_not_found", "No task has that ID. Use the task ID that a background command (such as cmd-qjo5x7m2k4ab) or start_agent (such as agent-k3n8q5r1) returned.")
+	AttachmentNotFound     = callCode("attachment_not_found", "This Project holds no readable attachment of that ID: use an ID that an attachment's frame or the attachments section names. An attachment shown as expired is gone; ask the user to attach it again.")
 )
 
 // Delegation to subagents that the call asks for too often or too early.
@@ -180,6 +181,7 @@ var (
 	SourceCheckFailed          = sourceGateCode("source_check_failed", "A source check failed. Fix the cause shown in the message, then call commit_and_push again.")
 	SourceGateWeakened         = applicationCode("source_gate_weakened", "The working tree changed a gate command that HEAD declares (checkStatic or testApplication). Restore it, or call commit_and_push with blocked=true only when the user asked to change the source gate.")
 	ConnectorMockInProduction  = sourceGateCode("connector_mock_in_production", "A production package imports a connector mock. Keep mocks in internal/apptest behind the apptest build tag, then call commit_and_push again.")
+	AttachmentInSource         = sourceGateCode("attachment_in_source", "Files under .local/superverse-attachments/ are the user's attachments and never enter the repository. Keep /.local/ in .gitignore, then call commit_and_push again.")
 	ApplicationTestsFailed     = sourceGateCode("application_tests_failed", "Fix the failing tests and engine problems above in the source or the tests, rerun them with the make test-app command shown, then call commit_and_push again.")
 	ApplicationTestsIncomplete = sourceGateCode("application_tests_incomplete", "The API tests do not exercise what the source declares. Add tests through apptest.Start for every Flow and every wired branch of a mocked connector named above, then call commit_and_push again.")
 	RequirementsUntested       = sourceGateCode("requirements_untested", "Trace every confirmed requirement to tests that pass, or give an untested_reason when no test can prove it; add the missing tests, then call commit_and_push again.")

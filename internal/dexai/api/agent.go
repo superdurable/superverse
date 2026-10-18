@@ -12,12 +12,16 @@ import (
 	"context"
 	"errors"
 	"math"
+	"slices"
 	"strings"
 	"time"
 	"unicode/utf8"
 
 	pb "github.com/superdurable/superversev2/gen/superverse/v2"
+	"github.com/superdurable/superversev2/internal/comm/dexflow"
+	"github.com/superdurable/superversev2/internal/comm/flowid"
 	"github.com/superdurable/superversev2/internal/dexai/agents"
+	"github.com/superdurable/superversev2/internal/dexai/agents/attachments"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteexec"
 	sessionagent "github.com/superdurable/superversev2/internal/dexai/agents/session"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
@@ -40,6 +44,7 @@ type agentServer struct {
 	*boundary.Boundary
 	sessions      *agents.SessionFlowService
 	sessionAgents *sessionagent.SessionAgentFlowClient
+	attachments   *attachments.AttachmentFlowService
 	models        SessionModels
 }
 
@@ -95,6 +100,9 @@ func admitCommand[R any](ctx context.Context, s *agentServer, in agentCommandReq
 	if refusal, isRefused := errors.AsType[*commandRefusalError](err); isRefused {
 		return nil, boundary.NotAdmitted(refusal.public)
 	}
+	if errors.Is(err, sessionagent.ErrAttachmentsNeedPlatformAgent) {
+		return nil, boundary.NotAdmitted(status.Error(codes.FailedPrecondition, "attachments work with the Superverse agent"))
+	}
 	if _, isStopped := errors.AsType[*sessionagent.SessionExecutionStoppedError](err); isStopped || errors.Is(err, sessionagent.ErrCommandRejected) {
 		return nil, notAdmittedCommand(err)
 	}
@@ -113,16 +121,101 @@ func notAdmittedCommand(err error) error {
 	return boundary.NotAdmitted(boundary.AgentRPCStatus(err))
 }
 
+// SendMessage queues a person's message, with its attachments: each READY,
+// the caller's own upload and of the Project's TeamSpace, which the Project
+// counts under this call's own admission before the Session admits the
+// message (AttachmentFlowService). After a definite refusal of the Session
+// the admission's holds are dropped, which frees only what no other
+// admission, of another message or another send of this one, holds; after
+// an uncertain result they stay.
 func (s *agentServer) SendMessage(ctx context.Context, in *pb.SendMessageRequest) (*pb.SendMessageResponse, error) {
+	ids := in.GetAttachmentIds()
 	invalid := boundary.ValidateMessageID(in.GetMessageId())
 	if invalid == nil {
-		invalid = boundary.InvalidIf(!validMessageContent(in.GetText()), "invalid message content")
+		invalid = validAttachmentIDs(ids, s.attachments)
+	}
+	if invalid == nil {
+		invalid = boundary.InvalidIf(!validMessageContent(in.GetText(), len(ids) > 0), "invalid message content")
 	}
 	message := conversation.PendingUserMessage{MessageID: conversation.MessageID(in.GetMessageId()), Value: conversation.UserMessage{Content: in.GetText()}}
 	return admitCommand[pb.SendMessageResponse](ctx, s, in, invalid, func(caller agents.SessionCaller) error {
 		message.Value.Actor = &caller.Actor
-		return s.sessionAgents.SendPendingMessage(ctx, caller.FlowID, message)
+		if len(ids) == 0 {
+			return s.sessionAgents.SendPendingMessage(ctx, caller.FlowID, message)
+		}
+		projectID := in.GetProjectId()
+		admission, err := s.attachments.AdmitMessage(ctx, caller.Actor.AccountID, projectID, caller.TeamSpaceID, in.GetMessageId(), ids)
+		if err != nil {
+			return attachmentRefusal(err)
+		}
+		message.Value.Attachments = admission.References
+		err = s.sessionAgents.SendPendingMessage(ctx, caller.FlowID, message)
+		if refusedSend(err) {
+			if released := s.attachments.ReleaseMessage(context.WithoutCancel(ctx), projectID, admission); released != nil {
+				// The refusal stands; the attachments stay counted, as after an uncertain result.
+				s.Logger.WarnContext(ctx, "Attachment reservation not released", "project", projectID, "message", in.GetMessageId(), "error", released)
+			}
+		}
+		return err
 	})
+}
+
+// refusedSend reports whether the Session definitely refused a message: a
+// question waits, a local agent executes it, it is closed or its engine
+// execution stopped. Any other error leaves the message's admission
+// uncertain.
+func refusedSend(err error) bool {
+	_, stopped := errors.AsType[*sessionagent.SessionExecutionStoppedError](err)
+	return stopped || errors.Is(err, sessionagent.ErrCommandRejected) || errors.Is(err, sessionagent.ErrAttachmentsNeedPlatformAgent)
+}
+
+// attachmentRefusal is the public refusal of a message for its attachments:
+// an AttachmentFlowService refusal or a Project that admits none. Any other
+// error is the admission's own.
+func attachmentRefusal(err error) error {
+	if refusal, isRefused := errors.AsType[*attachments.AdmissionRefusal](err); isRefused {
+		return &commandRefusalError{attachmentRefusalStatus(refusal)}
+	}
+	if _, isRejected := errors.AsType[*dexflow.Rejection](err); isRejected {
+		return &commandRefusalError{boundary.RPCStatus(err)}
+	}
+	return err
+}
+
+// attachmentRefusalStatus is the status of an admission refusal, whose
+// message starts with its code.
+func attachmentRefusalStatus(refusal *attachments.AdmissionRefusal) error {
+	code := codes.FailedPrecondition
+	switch refusal.Code {
+	case attachments.RefusalNotFound:
+		code = codes.NotFound
+	case attachments.RefusalNotYours:
+		code = codes.PermissionDenied
+	case attachments.RefusalQuotaExceeded:
+		code = codes.ResourceExhausted
+	case attachments.RefusalNotReady, attachments.RefusalExpired:
+	}
+	return status.Error(code, refusal.Error())
+}
+
+// validAttachmentIDs admits the distinct attachment IDs of a message, at most
+// what admission admits; a message without attachments needs no admission.
+func validAttachmentIDs(ids []string, admission *attachments.AttachmentFlowService) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	if maximum := admission.MaxPerMessage(); len(ids) > maximum {
+		return status.Errorf(codes.InvalidArgument, "a message carries at most %d attachments", maximum)
+	}
+	for index, id := range ids {
+		if err := flowid.ValidateAttachmentID(id); err != nil {
+			return boundary.RPCStatus(err)
+		}
+		if slices.Contains(ids[:index], id) {
+			return status.Error(codes.InvalidArgument, "an attachment is named twice")
+		}
+	}
+	return nil
 }
 
 func (s *agentServer) AnswerQuestions(ctx context.Context, in *pb.AnswerQuestionsRequest) (*pb.AnswerQuestionsResponse, error) {
@@ -306,10 +399,11 @@ func agentModel(model conversation.Model) pb.AgentModel {
 	return pb.AgentModel_AGENT_MODEL_UNSPECIFIED
 }
 
-// validMessageContent is the content rule of every new user message: nonblank
-// valid UTF-8 without NUL, within the content bound.
-func validMessageContent(text string) bool {
-	return strings.TrimSpace(text) != "" && !strings.ContainsRune(text, '\x00') && utf8.ValidString(text) && len(text) <= conversation.MaximumUserMessageContentBytes
+// validMessageContent is the content rule of every new user message: valid
+// UTF-8 without NUL, within the content bound, and nonblank unless the
+// message carries attachments.
+func validMessageContent(text string, attached bool) bool {
+	return (attached || strings.TrimSpace(text) != "") && !strings.ContainsRune(text, '\x00') && utf8.ValidString(text) && len(text) <= conversation.MaximumUserMessageContentBytes
 }
 
 // Agent conversion belongs to the API boundary; the durable Agent has no
@@ -352,6 +446,7 @@ func agentMessage(value conversation.SequencedMessage) *pb.AgentSequencedMessage
 	for _, call := range m.ToolCalls {
 		message.ToolCalls = append(message.ToolCalls, &pb.AgentToolCall{Id: string(call.ID), Name: string(call.Name), Target: call.Target})
 	}
+	message.Attachments = agentAttachments(m.Attachments)
 	if n := m.Notification; n != nil {
 		message.Notification = &pb.AgentNotification{Id: n.ID, Kind: boundary.Enum[pb.AgentNotification_Kind](n.Kind), Source: boundary.Enum[pb.AgentNotification_Source](n.Source),
 			OccurredAt: n.OccurredAt.UTC().Format(time.RFC3339Nano), TaskId: n.TaskID, TaskStatus: boundary.Enum[pb.AgentNotification_TaskStatus](n.TaskStatus), Summary: n.Summary,
@@ -504,7 +599,24 @@ func agentActivity(value conversation.AgentEvent) *pb.AgentEvent {
 func agentPendingMessages(values []conversation.PendingUserMessage) []*pb.AgentPendingUserMessage {
 	out := make([]*pb.AgentPendingUserMessage, 0, len(values))
 	for _, value := range values {
-		out = append(out, &pb.AgentPendingUserMessage{MessageId: string(value.MessageID), SteeredBy: agentActor(value.SteeredBy), Value: &pb.AgentUserMessage{Content: value.Value.Content, Actor: agentActor(value.Value.Actor)}})
+		var summaries []conversation.AttachmentSummary
+		for _, attachment := range value.Value.Attachments {
+			summaries = append(summaries, attachment.Summary())
+		}
+		out = append(out, &pb.AgentPendingUserMessage{MessageId: string(value.MessageID), SteeredBy: agentActor(value.SteeredBy),
+			Value: &pb.AgentUserMessage{Content: value.Value.Content, Actor: agentActor(value.Value.Actor), Attachments: agentAttachments(summaries)}})
+	}
+	return out
+}
+
+// agentAttachments maps what a message shows of its attachments: never their
+// objects or content.
+func agentAttachments(values []conversation.AttachmentSummary) []*pb.AgentAttachment {
+	var out []*pb.AgentAttachment
+	for _, value := range values {
+		out = append(out, &pb.AgentAttachment{AttachmentId: value.ID, FileName: value.Name, MediaType: value.MediaType, Kind: boundary.Enum[pb.AttachmentKind](value.Kind),
+			ByteSize: value.ByteSize, Width: int32(value.Width), Height: int32(value.Height), JsonFormat: string(value.JSONFormat), //nolint:gosec // an image is at most 8000 px per side
+			Redactions: int32(value.Redactions)}) //nolint:gosec // a JSON file of at most 4 MiB holds fewer values
 	}
 	return out
 }

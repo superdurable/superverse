@@ -11,12 +11,15 @@
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
+import { MessageAttachments } from "@/components/agent/attachments/MessageAttachments";
+import type { MessageAttachment } from "@/lib/session/agent-types";
 
 export interface PendingMessageQueueItem {
   kind: "queued" | "steered";
   id: string;
   content: string;
   label: string;
+  attachments: readonly MessageAttachment[];
 }
 
 /** What a person can do with a queued message: steer it in now, take it back to edit, or delete it. */
@@ -95,7 +98,10 @@ function QueueItem({
       <div className="inline-flex items-center gap-1 text-[10px] whitespace-nowrap text-ink-faint">
         <strong className="font-semibold uppercase">{item.label}</strong>
       </div>
-      <p className="min-w-0 truncate text-[11px] leading-tight">{item.content}</p>
+      <div className="grid min-w-0 gap-0.5">
+        {item.content && <p className="min-w-0 truncate text-[11px] leading-tight">{item.content}</p>}
+        <MessageAttachments attachments={item.attachments} compact />
+      </div>
       {item.kind === "queued" && (
         <div className="flex items-center gap-1 whitespace-nowrap">
           <Button variant="accent" size="sm" disabled={disabled} onClick={() => onSteer(item.id)}>

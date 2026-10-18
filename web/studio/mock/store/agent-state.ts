@@ -8,6 +8,7 @@
 
 // The mock Agent's conversation state, the counters every script keeps current, and what Session reads return.
 // Development only; no model or tool is called.
+import type { AgentAttachment } from "@/lib/generated/protobuf/superverse/v2/AgentAttachment";
 import type { AgentMockProgress__Output } from "@/lib/generated/protobuf/superverse/v2/AgentMockProgress";
 import type { AgentBackgroundCommand__Output } from "@/lib/generated/protobuf/superverse/v2/AgentBackgroundCommand";
 import type { AgentDescription__Output } from "@/lib/generated/protobuf/superverse/v2/AgentDescription";
@@ -49,6 +50,8 @@ export interface MockAgentMessage {
   toolExecution?: AgentToolExecutionMetrics;
   /** A ROLE_NOTIFICATION message's notification; its content is the summary. */
   notification?: AgentNotification__Output;
+  /** The files a user message attached. */
+  attachments?: AgentAttachment[];
 }
 
 /** A background command of the mock Agent, in the shape AgentBackgroundCommand encodes from. */

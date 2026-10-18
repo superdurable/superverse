@@ -50,6 +50,12 @@
     "ReadConnectorChecksInput": {
       "$ref": "#/$defs/ReadConnectorChecksInput"
     },
+    "ReadAttachmentInput": {
+      "$ref": "#/$defs/ReadAttachmentInput"
+    },
+    "PlaceAttachmentInput": {
+      "$ref": "#/$defs/PlaceAttachmentInput"
+    },
     "RequestUserInputInput": {
       "$ref": "#/$defs/RequestUserInputInput"
     },
@@ -125,6 +131,12 @@
     },
     "ReadConnectorChecksInput": {
       "$ref": "schema/read_connector_checks.json"
+    },
+    "ReadAttachmentInput": {
+      "$ref": "schema/read_attachment.json"
+    },
+    "PlaceAttachmentInput": {
+      "$ref": "schema/place_attachment.json"
     },
     "RequestUserInputInput": {
       "$ref": "schema/request_user_input.json"

@@ -8,9 +8,20 @@
 
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ClipboardEvent,
+  type KeyboardEvent,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import { Button } from "@/components/ui/Button";
 import { Glyph, type GlyphName } from "@/components/ui/Glyph";
+import type { AttachmentTray as Tray } from "@/lib/session/attachments/use-attachment-tray";
+import { AttachButton } from "./attachments/AttachButton";
+import { AttachmentTray } from "./attachments/AttachmentTray";
 
 /** A control the composer will have, in its place and named, that does nothing yet. */
 function NotYet({ glyph, name }: { glyph: GlyphName; name: string }) {
@@ -35,11 +46,16 @@ function NotYet({ glyph, name }: { glyph: GlyphName; name: string }) {
  * person can retry it; a resolved send clears it. With onStop, a Stop button
  * beside it stops the running turn and tasks, and so does Escape. The compact
  * box's row reads as chat inputs do: attach and the element picker on the left;
- * the model, voice input and Send on the right. Attach and voice input are
- * placeholders for now.
+ * the model, voice input and Send on the right. Voice input is a placeholder
+ * for now.
+ *
+ * With `attachments`, the files the person attaches (Attach, or images pasted
+ * into the text) sit as chips above the text, and the message carries their
+ * IDs: Send waits until every chip is ready, and the text may then be blank.
  */
 export function Composer({
   onSend,
+  attachments,
   value,
   onChange,
   busy = false,
@@ -58,7 +74,10 @@ export function Composer({
   onPick,
   menu,
 }: {
-  onSend: (text: string) => unknown;
+  /** Sends the message with its ready attachments, in chip order. */
+  onSend: (text: string, attachmentIds: readonly string[]) => unknown;
+  /** The composer's attachment tray; without it the composer attaches nothing. */
+  attachments?: Tray;
   value?: string;
   onChange?: (text: string) => void;
   busy?: boolean;
@@ -89,7 +108,10 @@ export function Composer({
   const textarea = inputRef ?? ownTextarea;
   const text = value ?? localText;
   const disabled = busy || disabledReason !== null;
-  const canSend = !disabled && text.trim() !== "";
+  const chips = attachments?.chips.length ?? 0;
+  // Files a message cannot carry, such as while a local agent runs the Session, hold it until removed.
+  const attachmentsBlock = chips > 0 && attachments ? (attachments.disabledReason ?? attachments.waitReason) : null;
+  const canSend = !disabled && attachmentsBlock === null && (text.trim() !== "" || chips > 0);
 
   function changeText(next: string) {
     if (value === undefined) setLocalText(next);
@@ -119,8 +141,11 @@ export function Composer({
 
   async function send() {
     if (!canSend) return;
+    const message = text.trim();
     try {
-      await onSend(text.trim());
+      // The tray keeps the sent chips until the send settles, and forgets them once it is delivered.
+      if (attachments) await attachments.send(async (attachmentIds) => onSend(message, attachmentIds));
+      else await onSend(message, []);
       changeText("");
     } catch {
       // The draft stays for a retry; the caller already shows why it failed.
@@ -135,11 +160,24 @@ export function Composer({
     void send();
   }
 
+  // An image pasted into the text is attached; pasted text stays text.
+  function attachPasted(event: ClipboardEvent<HTMLTextAreaElement>) {
+    const images = [...event.clipboardData.files].filter((file) => file.type.startsWith("image/"));
+    if (!attachments || images.length === 0) return;
+    event.preventDefault();
+    attachments.add(images);
+  }
+
+  const hint = disabledReason ?? (busy ? "A request is already running" : attachmentsBlock);
+
   if (large)
     return (
       <div className="w-full">
         {/* The shell carries the focus ring, so the borderless box inside it needs none of its own. */}
         <div className="rounded-xl border border-line bg-panel p-3 shadow-(--shadow-lift) focus-within:border-accent focus-within:shadow-(--focus-ring)">
+          {attachments && (
+            <AttachmentTray tray={attachments} className="mb-2" returnFocus={() => textarea.current?.focus()} />
+          )}
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2">
             <textarea
               ref={textarea}
@@ -151,14 +189,16 @@ export function Composer({
               rows={3}
               onChange={(event) => changeText(event.target.value)}
               onKeyDown={sendOnEnter}
+              onPaste={attachPasted}
             />
             <Button variant="primary" disabled={!canSend} onClick={() => void send()}>
               Build
             </Button>
           </div>
-          <p className="pt-1 text-[13px] text-ink-faint">
-            {disabledReason ?? (busy ? "A request is already running" : "Enter to send")}
-          </p>
+          <div className="flex items-center gap-1 pt-1">
+            {attachments && <AttachButton tray={attachments} disabled={disabled} className="-ml-1" />}
+            <p className="text-[13px] text-ink-faint">{hint ?? "Enter to send"}</p>
+          </div>
         </div>
       </div>
     );
@@ -180,6 +220,9 @@ export function Composer({
             </button>
           </span>
         )}
+        {attachments && (
+          <AttachmentTray tray={attachments} className="mb-1.5" returnFocus={() => textarea.current?.focus()} />
+        )}
         <textarea
           ref={textarea}
           className="max-h-35 min-h-10 w-full resize-none bg-transparent text-[13.5px]/normal text-ink outline-hidden placeholder:text-ink-faint disabled:cursor-not-allowed"
@@ -190,9 +233,10 @@ export function Composer({
           rows={2}
           onChange={(event) => changeText(event.target.value)}
           onKeyDown={sendOnEnter}
+          onPaste={attachPasted}
         />
         <div className="mt-0.5 flex items-center gap-1">
-          <NotYet glyph="plus" name="Attach files" />
+          {attachments && <AttachButton tray={attachments} disabled={disabled} />}
           {onPick && (
             <button
               type="button"
@@ -206,7 +250,7 @@ export function Composer({
             </button>
           )}
           <span className="ml-auto min-w-0 truncate px-1 text-[12px] text-ink-faint">
-            {disabledReason ?? (busy ? "A request is already running" : onStop ? "Esc to stop" : "")}
+            {hint ?? (onStop ? "Esc to stop" : "")}
           </span>
           {onStop && (
             <Button

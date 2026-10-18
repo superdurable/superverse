@@ -5,7 +5,7 @@ Purpose: The Next.js routes: signed-in and sign-in pages, the BFF route handlers
 
 Importers: no production directory imports this directory.
 
-Imports: it imports `components/project`, `components/shell`, `components/teamspace`, `components/teamspace/connections`, `lib/account`, `lib/browser`, `lib/generated/protobuf`, `lib/project`, `lib/server`, `lib/server/connector-oauth`, `lib/server/flow`, `lib/server/rpc`, `lib/shared`, `lib/teamspace`, `mock`, `mock/backend` and `mock/surface` and calls the `AccountService` API.
+Imports: it imports `components/project`, `components/shell`, `components/teamspace`, `components/teamspace/connections`, `lib/account`, `lib/browser`, `lib/generated/protobuf`, `lib/project`, `lib/server`, `lib/server/connector-oauth`, `lib/server/flow`, `lib/server/rpc`, `lib/shared`, `lib/teamspace`, `mock`, `mock/backend`, `mock/store`, `mock/store/attachments` and `mock/surface` and calls the `AccountService` API.
 
 ```mermaid
 flowchart LR
@@ -26,7 +26,9 @@ flowchart LR
   self --> d13["lib/teamspace"]
   self --> d14["mock"]
   self --> d15["mock/backend"]
-  self --> d16["mock/surface"]
+  self --> d16["mock/store"]
+  self --> d17["mock/store/attachments"]
+  self --> d18["mock/surface"]
   self --> e0(["AccountService API"])
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->

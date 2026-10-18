@@ -50,6 +50,24 @@
       "kind-e2e",
       "native-e2e"
     ],
+    "/superverse.v2.AttachmentService/CompleteAttachmentUpload": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.AttachmentService/CreateAttachmentUpload": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.AttachmentService/DeleteAttachment": [
+      "api-integration"
+    ],
+    "/superverse.v2.AttachmentService/GetAttachmentDownloads": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
     "/superverse.v2.ConnectorService/InvokeProviderCommand": [
       "kind-e2e",
       "native-e2e"
@@ -255,6 +273,7 @@
       "native-integration"
     ],
     "/superverse.v2.RemoteAgentService/ListRemoteAgentConnections": [
+      "kind-e2e",
       "kind-integration",
       "native-e2e",
       "native-integration"

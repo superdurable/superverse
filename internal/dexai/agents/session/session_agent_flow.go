@@ -101,6 +101,7 @@ type SessionAgentFlow struct {
 	dependency     SessionAgentFlowDependency
 	repository     repositoryContextReader
 	catalog        connectorCatalogMatcher
+	renditions     attachmentRenditions
 	modelClient    conversation.ModelClient
 	sandbox        *sandboxtools.Runner
 	diagnostics    ProjectDiagnosticsReader
@@ -123,10 +124,8 @@ func (flow *SessionAgentFlow) GetSteps() []dex.StepDef {
 		dex.DefineStep(RecoverParallelToolExecution{}), dex.DefineStep(RecordToolFailure{}), dex.DefineStep(SettleForegroundCommand{flow: flow}), dex.DefineStep(ReportPlatformIssue{flow: flow}), dex.DefineStep(AbandonPlatformIssue{}),
 		dex.DefineStep(AwaitBackgroundCommand{flow: flow}), dex.DefineStep(AbandonBackgroundCommand{}), dex.DefineStep(InterruptAgent{flow: flow}), dex.DefineStep(FinishInterrupt{}),
 		dex.DefineStep(RequestSessionWorkspace{flow: flow}), dex.DefineStep(SendWorkspaceCommand{flow: flow}),
-		dex.DefineStep(AwaitSessionWorkspace{flow: flow}), dex.DefineStep(ApplySessionWorkspace{flow: flow}), dex.DefineStep(RecordWorkspaceFailure{flow: flow}),
-		dex.DefineStep(AwaitSandboxDeadline{flow: flow}),
-		dex.DefineStep(DeployPreviewHandoff{flow: flow}), dex.DefineStep(AbandonPreviewHandoff{}),
-		dex.DefineStep(CompleteProjectSession{}),
+		dex.DefineStep(AwaitSessionWorkspace{flow: flow}), dex.DefineStep(ApplySessionWorkspace{flow: flow}), dex.DefineStep(RecordWorkspaceFailure{flow: flow}), dex.DefineStep(AwaitSandboxDeadline{flow: flow}),
+		dex.DefineStep(DeployPreviewHandoff{flow: flow}), dex.DefineStep(AbandonPreviewHandoff{}), dex.DefineStep(CompleteProjectSession{}),
 	}
 }
 
@@ -230,9 +229,9 @@ var (
 		ExecuteRetry: shortStepRetry, ExecuteLockAttributes: []dex.AttributeLock{statusLock}}
 )
 
-// SendMessage queues a user message unless a question awaits its answers; it
-// records and answers an old requirements card a Session still waits at (sendMessage).
-func (*SessionAgentFlow) SendMessage(ctx dex.Context, input conversation.PendingUserMessage) (*dex.RPCResult[bool], error) {
+// SendMessage queues a user message unless a question awaits its answers or a local agent would get its
+// attachments; it records and answers an old requirements card a Session still waits at (sendMessage).
+func (*SessionAgentFlow) SendMessage(ctx dex.Context, input conversation.PendingUserMessage) (*dex.RPCResult[messageAdmission], error) {
 	return sendMessage(ctx, input)
 }
 

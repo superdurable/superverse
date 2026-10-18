@@ -9,19 +9,23 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { newRequestId } from "@/lib/api/transport/api-error";
 import {
   hasPendingProjectCreation,
   readProjectIntent,
   PROJECT_EXECUTOR,
+  startAttachmentsScope,
   storePendingProjectCreation,
   type ProjectExecutor,
 } from "@/lib/project/project-intents";
 import type { AgentModel } from "@/lib/session/agent-types";
+import { LOCAL_REFUSALS } from "@/lib/session/attachments/attachment-files";
+import { useAttachmentTray } from "@/lib/session/attachments/use-attachment-tray";
 import { useMockScenarios } from "@/lib/session/mock-scenarios";
 import { studioRoutes } from "@/lib/shared/studio-routes";
 import { Composer } from "@/components/session/composer/Composer";
+import { AttachmentDropZone } from "@/components/session/composer/attachments/AttachmentDropZone";
 import { MockComposer } from "@/components/session/mock/MockComposer";
 import { StartingModelPicker } from "@/components/session/start/StartingModelPicker";
 import { useStartingModel } from "@/components/session/start/use-starting-model";
@@ -51,7 +55,8 @@ const READING_MODELS = "Reading the model options…";
  * follows from the description, a picked placeholder's title or the opened example's title. Agent is chosen
  * before the model; only the Superverse agent has a model choice. Advanced holds the editable name. Nothing
  * is sent here: the creation intent carries the first message or the example, and the agent choice, to the
- * next page.
+ * next page. The Superverse agent's first message may attach files, uploaded into the Teamspace here; Build
+ * waits until every one is ready, and the intent carries their IDs.
  */
 export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
   const router = useRouter();
@@ -68,6 +73,21 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
   const [formError, setFormError] = useState<string | null>(null);
   const [transitioning, setTransitioning] = useState(false);
   const composer = useRef<HTMLTextAreaElement | null>(null);
+  // In this version only the platform model reads attached files.
+  const tray = useAttachmentTray({
+    teamSpaceId,
+    scope: startAttachmentsScope(teamSpaceId),
+    disabledReason: executor === PROJECT_EXECUTOR.LOCAL ? LOCAL_REFUSALS.needsPlatformAgent : null,
+  });
+  // Build only stores the creation: the chips stay remembered until the Project takes them, so a creation
+  // that fails starts over with them.
+  const attachments = useMemo(
+    () => ({
+      ...tray,
+      send: async (deliver: (ids: readonly string[]) => Promise<unknown>) => void (await deliver(tray.attachmentIds)),
+    }),
+    [tray],
+  );
   // A picked placeholder names the Project while the description still opens as the placeholder does.
   const placeholderOf = (text: string) =>
     picked && projectNameFrom(text) === projectNameFrom(picked.description) ? picked : null;
@@ -95,6 +115,11 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
       setFormError("Give the project a name first, under Advanced");
       throw new Error("The project has no name");
     }
+    // An example opens as it is, with no message for the files to go with.
+    if (from && attachments.chips.length > 0) {
+      setFormError("Remove the attached files to open an example as it is");
+      throw new Error("An example carries no attachments");
+    }
     try {
       storePendingProjectCreation({
         teamSpaceId,
@@ -106,6 +131,7 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
         messageIdempotencyKey: newRequestId(),
         ...(from ? { example: { exampleId: from.example.id } } : {}),
         ...(from?.draft ? { draft: from.draft } : {}),
+        ...(!from && attachments.remembered.length > 0 ? { attachments: [...attachments.remembered] } : {}),
       });
     } catch (reason) {
       setFormError(reason instanceof Error ? reason.message : "Could not keep the project request in this browser");
@@ -177,7 +203,7 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
             />
           )}
         </fieldset>
-        <div className="mt-6">
+        <AttachmentDropZone tray={attachments} className="mt-6">
           {executor === PROJECT_EXECUTOR.SUPERVERSE && model === "mock" ? (
             <MockComposer
               catalog={mockScenarios}
@@ -192,6 +218,7 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
               className="rounded-xl"
               onSend={beginCreation}
               onAnswer={noPendingInput}
+              attachments={attachments}
             />
           ) : (
             <Composer
@@ -204,9 +231,10 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
               disabledReason={executor === PROJECT_EXECUTOR.SUPERVERSE && model === null ? READING_MODELS : null}
               placeholder="For example: when a customer asks for a refund by email, a support lead approves it in Slack and Stripe pays it back…"
               onSend={beginCreation}
+              attachments={attachments}
             />
           )}
-        </div>
+        </AttachmentDropZone>
         <MoreDetails surface="start.advanced" label="Advanced" className="mt-3">
           <div className="grid gap-3 rounded-lg border border-line-soft bg-panel p-3">
             <label className="grid gap-1.5 text-body font-medium text-ink-dim">

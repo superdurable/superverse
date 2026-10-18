@@ -5,14 +5,15 @@ Purpose: The shared Agent UI's single entry `index.ts`; Studio reaches the conve
 
 Importers: `components/session` imports this directory.
 
-Imports: it imports `components/agent/conversation` and `components/agent/interaction`.
+Imports: it imports `components/agent/attachments`, `components/agent/conversation` and `components/agent/interaction`.
 
 ```mermaid
 flowchart LR
   self["components/agent"]
   c0["components/session"] --> self
-  self --> d0["components/agent/conversation"]
-  self --> d1["components/agent/interaction"]
+  self --> d0["components/agent/attachments"]
+  self --> d1["components/agent/conversation"]
+  self --> d2["components/agent/interaction"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 

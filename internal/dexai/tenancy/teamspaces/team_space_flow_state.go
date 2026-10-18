@@ -9,6 +9,7 @@
 package teamspaces
 
 import (
+	"cmp"
 	"slices"
 	"strings"
 	"time"
@@ -156,8 +157,76 @@ type Update struct {
 	Rejection *dexflow.Rejection
 }
 
-// registrationResult confirms a Project's registration without the snapshot.
+// registrationResult confirms a Project's registration or an attachment's
+// staging reservation without the snapshot.
 type registrationResult struct{ Rejection *dexflow.Rejection }
+
+// StagingLimits bound the attachments a TeamSpace stages at once: their
+// number and their declared bytes together (attachments.teamSpaceStagedFiles
+// and attachments.teamSpaceStagedBytes).
+type StagingLimits struct {
+	Files int
+	Bytes int64
+}
+
+// StagingTotals counts the attachments the AttachmentStaging map holds.
+type StagingTotals struct {
+	Count int
+	Bytes int64
+}
+
+// StagedAttachment is one instance of the AttachmentStaging map, keyed by
+// the attachment ID: the AttachmentFlow that holds the slot, its declared
+// bytes, its uploader and when its hold lapses, the latest moment that Flow
+// releases it on its own.
+type StagedAttachment struct {
+	FlowID            string
+	Bytes             int64
+	UploaderAccountID string
+	ReservedAt        time.Time
+	HeldUntil         time.Time `json:",omitempty"`
+}
+
+// StagingReservation reserves a staging slot for the attachment of an
+// AttachmentFlow, uploaded by Actor, until HeldUntil at the latest.
+type StagingReservation struct {
+	AttachmentID, FlowID string
+	Bytes                int64
+	Actor                Actor
+	HeldUntil            time.Time
+}
+
+// maxLapsedStaging bounds the lapsed slots one read lists.
+const maxLapsedStaging = 10
+
+// lapsedStaging lists the attachments whose staging hold lapsed, oldest
+// first.
+type lapsedStaging struct{ AttachmentIDs []string }
+
+// lapsedOf lists the staged attachments whose hold lapsed before now, oldest
+// first and at most maxLapsedStaging. A slot reserved without a hold never
+// lapses.
+func lapsedOf(staged map[string]StagedAttachment, now time.Time) lapsedStaging {
+	ids := make([]string, 0, len(staged))
+	for id, attachment := range staged {
+		if !attachment.HeldUntil.IsZero() && attachment.HeldUntil.Before(now) {
+			ids = append(ids, id)
+		}
+	}
+	slices.SortFunc(ids, func(a, b string) int {
+		return cmp.Or(staged[a].HeldUntil.Compare(staged[b].HeldUntil), strings.Compare(a, b))
+	})
+	return lapsedStaging{AttachmentIDs: ids[:min(len(ids), maxLapsedStaging)]}
+}
+
+// stagingRelease frees the staging slot of an attachment.
+type stagingRelease struct{ AttachmentID string }
+
+// attachmentStagingPrefix is the object prefix of the TeamSpace's staged
+// attachments, which every AttachmentFlow of the TeamSpace writes below.
+func attachmentStagingPrefix(teamSpaceID string) string {
+	return "attachment-staging/" + teamSpaceID + "/"
+}
 
 // memberEntries lists members in the order they were added, then by
 // AccountID.

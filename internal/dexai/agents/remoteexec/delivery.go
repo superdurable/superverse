@@ -73,6 +73,9 @@ func callSequence(epoch uint64, id conversation.CallID) (uint64, bool) {
 
 // projectEntry keeps canonical user input and this connection's results. It
 // cannot expose assistant blocks, thinking, system text or opaque tool input.
+// User input is text only: a message queued with attachments before the
+// switch to the local agent is delivered with one line naming the attachments
+// it left out.
 func projectEntry(request ReadRequest, item conversation.SequencedEntry) (conversation.SequencedEntry, bool, error) {
 	entry := item.Entry
 	if entry.Role != conversation.EntryRoleUser {
@@ -87,7 +90,11 @@ func projectEntry(request ReadRequest, item conversation.SequencedEntry) (conver
 		if via == request.ConnectionID {
 			return item, false, nil
 		}
-		entry = conversation.NoticeEntry(conversation.EntryRoleUser, entry.Text(), "")
+		text := entry.Text()
+		if note := conversation.UndeliveredAttachmentsNote(entry); note != "" {
+			text = strings.TrimPrefix(text+"\n\n"+note, "\n\n")
+		}
+		entry = conversation.NoticeEntry(conversation.EntryRoleUser, text, "")
 		entry.Kind = item.Entry.Kind
 		entry.Meta.Via = item.Entry.Meta.Via
 		if id := item.Entry.Meta.AnsweredInputCallID; id != nil && len(*id) <= 48 && IsCallID(request.Epoch, *id) {

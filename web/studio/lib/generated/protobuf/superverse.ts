@@ -15,6 +15,7 @@ import type { AddProjectMemberResponse as _superverse_v2_AddProjectMemberRespons
 import type { AddTeamSpaceMemberRequest as _superverse_v2_AddTeamSpaceMemberRequest, AddTeamSpaceMemberRequest__Output as _superverse_v2_AddTeamSpaceMemberRequest__Output } from './superverse/v2/AddTeamSpaceMemberRequest';
 import type { AddTeamSpaceMemberResponse as _superverse_v2_AddTeamSpaceMemberResponse, AddTeamSpaceMemberResponse__Output as _superverse_v2_AddTeamSpaceMemberResponse__Output } from './superverse/v2/AddTeamSpaceMemberResponse';
 import type { AgentAnswerQuestionsInput as _superverse_v2_AgentAnswerQuestionsInput, AgentAnswerQuestionsInput__Output as _superverse_v2_AgentAnswerQuestionsInput__Output } from './superverse/v2/AgentAnswerQuestionsInput';
+import type { AgentAttachment as _superverse_v2_AgentAttachment, AgentAttachment__Output as _superverse_v2_AgentAttachment__Output } from './superverse/v2/AgentAttachment';
 import type { AgentBackgroundCommand as _superverse_v2_AgentBackgroundCommand, AgentBackgroundCommand__Output as _superverse_v2_AgentBackgroundCommand__Output } from './superverse/v2/AgentBackgroundCommand';
 import type { AgentConfirmedRequirements as _superverse_v2_AgentConfirmedRequirements, AgentConfirmedRequirements__Output as _superverse_v2_AgentConfirmedRequirements__Output } from './superverse/v2/AgentConfirmedRequirements';
 import type { AgentDescription as _superverse_v2_AgentDescription, AgentDescription__Output as _superverse_v2_AgentDescription__Output } from './superverse/v2/AgentDescription';
@@ -66,6 +67,12 @@ import type { AnswerQuestionsResponse as _superverse_v2_AnswerQuestionsResponse,
 import type { AppManifestSnapshot as _superverse_v2_AppManifestSnapshot, AppManifestSnapshot__Output as _superverse_v2_AppManifestSnapshot__Output } from './superverse/v2/AppManifestSnapshot';
 import type { ApplicationEnvironmentServiceClient as _superverse_v2_ApplicationEnvironmentServiceClient, ApplicationEnvironmentServiceDefinition as _superverse_v2_ApplicationEnvironmentServiceDefinition } from './superverse/v2/ApplicationEnvironmentService';
 import type { AppliedPreviewConfiguration as _superverse_v2_AppliedPreviewConfiguration, AppliedPreviewConfiguration__Output as _superverse_v2_AppliedPreviewConfiguration__Output } from './superverse/v2/AppliedPreviewConfiguration';
+import type { Attachment as _superverse_v2_Attachment, Attachment__Output as _superverse_v2_Attachment__Output } from './superverse/v2/Attachment';
+import type { AttachmentDownload as _superverse_v2_AttachmentDownload, AttachmentDownload__Output as _superverse_v2_AttachmentDownload__Output } from './superverse/v2/AttachmentDownload';
+import type { AttachmentFailure as _superverse_v2_AttachmentFailure, AttachmentFailure__Output as _superverse_v2_AttachmentFailure__Output } from './superverse/v2/AttachmentFailure';
+import type { AttachmentServiceClient as _superverse_v2_AttachmentServiceClient, AttachmentServiceDefinition as _superverse_v2_AttachmentServiceDefinition } from './superverse/v2/AttachmentService';
+import type { AttachmentSummary as _superverse_v2_AttachmentSummary, AttachmentSummary__Output as _superverse_v2_AttachmentSummary__Output } from './superverse/v2/AttachmentSummary';
+import type { AttachmentUploadTarget as _superverse_v2_AttachmentUploadTarget, AttachmentUploadTarget__Output as _superverse_v2_AttachmentUploadTarget__Output } from './superverse/v2/AttachmentUploadTarget';
 import type { CallerContext as _superverse_v2_CallerContext, CallerContext__Output as _superverse_v2_CallerContext__Output } from './superverse/v2/CallerContext';
 import type { CancelDeploymentRequest as _superverse_v2_CancelDeploymentRequest, CancelDeploymentRequest__Output as _superverse_v2_CancelDeploymentRequest__Output } from './superverse/v2/CancelDeploymentRequest';
 import type { CancelDeploymentResponse as _superverse_v2_CancelDeploymentResponse, CancelDeploymentResponse__Output as _superverse_v2_CancelDeploymentResponse__Output } from './superverse/v2/CancelDeploymentResponse';
@@ -73,6 +80,8 @@ import type { CancelReleaseBuildRequest as _superverse_v2_CancelReleaseBuildRequ
 import type { CancelReleaseBuildResponse as _superverse_v2_CancelReleaseBuildResponse, CancelReleaseBuildResponse__Output as _superverse_v2_CancelReleaseBuildResponse__Output } from './superverse/v2/CancelReleaseBuildResponse';
 import type { Cancellation as _superverse_v2_Cancellation, Cancellation__Output as _superverse_v2_Cancellation__Output } from './superverse/v2/Cancellation';
 import type { CommitVersion as _superverse_v2_CommitVersion, CommitVersion__Output as _superverse_v2_CommitVersion__Output } from './superverse/v2/CommitVersion';
+import type { CompleteAttachmentUploadRequest as _superverse_v2_CompleteAttachmentUploadRequest, CompleteAttachmentUploadRequest__Output as _superverse_v2_CompleteAttachmentUploadRequest__Output } from './superverse/v2/CompleteAttachmentUploadRequest';
+import type { CompleteAttachmentUploadResponse as _superverse_v2_CompleteAttachmentUploadResponse, CompleteAttachmentUploadResponse__Output as _superverse_v2_CompleteAttachmentUploadResponse__Output } from './superverse/v2/CompleteAttachmentUploadResponse';
 import type { CompleteTeamSpaceConnectionOAuthRequest as _superverse_v2_CompleteTeamSpaceConnectionOAuthRequest, CompleteTeamSpaceConnectionOAuthRequest__Output as _superverse_v2_CompleteTeamSpaceConnectionOAuthRequest__Output } from './superverse/v2/CompleteTeamSpaceConnectionOAuthRequest';
 import type { CompleteTeamSpaceConnectionOAuthResponse as _superverse_v2_CompleteTeamSpaceConnectionOAuthResponse, CompleteTeamSpaceConnectionOAuthResponse__Output as _superverse_v2_CompleteTeamSpaceConnectionOAuthResponse__Output } from './superverse/v2/CompleteTeamSpaceConnectionOAuthResponse';
 import type { ConfigurationItem as _superverse_v2_ConfigurationItem, ConfigurationItem__Output as _superverse_v2_ConfigurationItem__Output } from './superverse/v2/ConfigurationItem';
@@ -83,6 +92,8 @@ import type { ConnectorContribution as _superverse_v2_ConnectorContribution, Con
 import type { ConnectorRequirement as _superverse_v2_ConnectorRequirement, ConnectorRequirement__Output as _superverse_v2_ConnectorRequirement__Output } from './superverse/v2/ConnectorRequirement';
 import type { ConnectorServiceClient as _superverse_v2_ConnectorServiceClient, ConnectorServiceDefinition as _superverse_v2_ConnectorServiceDefinition } from './superverse/v2/ConnectorService';
 import type { ConnectorTriggerBinding as _superverse_v2_ConnectorTriggerBinding, ConnectorTriggerBinding__Output as _superverse_v2_ConnectorTriggerBinding__Output } from './superverse/v2/ConnectorTriggerBinding';
+import type { CreateAttachmentUploadRequest as _superverse_v2_CreateAttachmentUploadRequest, CreateAttachmentUploadRequest__Output as _superverse_v2_CreateAttachmentUploadRequest__Output } from './superverse/v2/CreateAttachmentUploadRequest';
+import type { CreateAttachmentUploadResponse as _superverse_v2_CreateAttachmentUploadResponse, CreateAttachmentUploadResponse__Output as _superverse_v2_CreateAttachmentUploadResponse__Output } from './superverse/v2/CreateAttachmentUploadResponse';
 import type { CreateProjectRequest as _superverse_v2_CreateProjectRequest, CreateProjectRequest__Output as _superverse_v2_CreateProjectRequest__Output } from './superverse/v2/CreateProjectRequest';
 import type { CreateProjectResponse as _superverse_v2_CreateProjectResponse, CreateProjectResponse__Output as _superverse_v2_CreateProjectResponse__Output } from './superverse/v2/CreateProjectResponse';
 import type { CreateRemoteAgentPairingRequest as _superverse_v2_CreateRemoteAgentPairingRequest, CreateRemoteAgentPairingRequest__Output as _superverse_v2_CreateRemoteAgentPairingRequest__Output } from './superverse/v2/CreateRemoteAgentPairingRequest';
@@ -91,6 +102,8 @@ import type { CreateTeamSpaceConnectionRequest as _superverse_v2_CreateTeamSpace
 import type { CreateTeamSpaceConnectionResponse as _superverse_v2_CreateTeamSpaceConnectionResponse, CreateTeamSpaceConnectionResponse__Output as _superverse_v2_CreateTeamSpaceConnectionResponse__Output } from './superverse/v2/CreateTeamSpaceConnectionResponse';
 import type { CreateTeamSpaceRequest as _superverse_v2_CreateTeamSpaceRequest, CreateTeamSpaceRequest__Output as _superverse_v2_CreateTeamSpaceRequest__Output } from './superverse/v2/CreateTeamSpaceRequest';
 import type { CreateTeamSpaceResponse as _superverse_v2_CreateTeamSpaceResponse, CreateTeamSpaceResponse__Output as _superverse_v2_CreateTeamSpaceResponse__Output } from './superverse/v2/CreateTeamSpaceResponse';
+import type { DeleteAttachmentRequest as _superverse_v2_DeleteAttachmentRequest, DeleteAttachmentRequest__Output as _superverse_v2_DeleteAttachmentRequest__Output } from './superverse/v2/DeleteAttachmentRequest';
+import type { DeleteAttachmentResponse as _superverse_v2_DeleteAttachmentResponse, DeleteAttachmentResponse__Output as _superverse_v2_DeleteAttachmentResponse__Output } from './superverse/v2/DeleteAttachmentResponse';
 import type { DeleteFlowChannelMessageRequest as _superverse_v2_DeleteFlowChannelMessageRequest, DeleteFlowChannelMessageRequest__Output as _superverse_v2_DeleteFlowChannelMessageRequest__Output } from './superverse/v2/DeleteFlowChannelMessageRequest';
 import type { DeleteFlowChannelMessageResponse as _superverse_v2_DeleteFlowChannelMessageResponse, DeleteFlowChannelMessageResponse__Output as _superverse_v2_DeleteFlowChannelMessageResponse__Output } from './superverse/v2/DeleteFlowChannelMessageResponse';
 import type { DeleteProjectRequest as _superverse_v2_DeleteProjectRequest, DeleteProjectRequest__Output as _superverse_v2_DeleteProjectRequest__Output } from './superverse/v2/DeleteProjectRequest';
@@ -118,6 +131,8 @@ import type { FlowRunServiceClient as _superverse_v2_FlowRunServiceClient, FlowR
 import type { FlowSearchFilter as _superverse_v2_FlowSearchFilter, FlowSearchFilter__Output as _superverse_v2_FlowSearchFilter__Output } from './superverse/v2/FlowSearchFilter';
 import type { GetApplicationEnvironmentRequest as _superverse_v2_GetApplicationEnvironmentRequest, GetApplicationEnvironmentRequest__Output as _superverse_v2_GetApplicationEnvironmentRequest__Output } from './superverse/v2/GetApplicationEnvironmentRequest';
 import type { GetApplicationEnvironmentResponse as _superverse_v2_GetApplicationEnvironmentResponse, GetApplicationEnvironmentResponse__Output as _superverse_v2_GetApplicationEnvironmentResponse__Output } from './superverse/v2/GetApplicationEnvironmentResponse';
+import type { GetAttachmentDownloadsRequest as _superverse_v2_GetAttachmentDownloadsRequest, GetAttachmentDownloadsRequest__Output as _superverse_v2_GetAttachmentDownloadsRequest__Output } from './superverse/v2/GetAttachmentDownloadsRequest';
+import type { GetAttachmentDownloadsResponse as _superverse_v2_GetAttachmentDownloadsResponse, GetAttachmentDownloadsResponse__Output as _superverse_v2_GetAttachmentDownloadsResponse__Output } from './superverse/v2/GetAttachmentDownloadsResponse';
 import type { GetCurrentAccountRequest as _superverse_v2_GetCurrentAccountRequest, GetCurrentAccountRequest__Output as _superverse_v2_GetCurrentAccountRequest__Output } from './superverse/v2/GetCurrentAccountRequest';
 import type { GetCurrentAccountResponse as _superverse_v2_GetCurrentAccountResponse, GetCurrentAccountResponse__Output as _superverse_v2_GetCurrentAccountResponse__Output } from './superverse/v2/GetCurrentAccountResponse';
 import type { GetDeploymentRequest as _superverse_v2_GetDeploymentRequest, GetDeploymentRequest__Output as _superverse_v2_GetDeploymentRequest__Output } from './superverse/v2/GetDeploymentRequest';
@@ -322,6 +337,7 @@ import type { UpdateSessionModelRequest as _superverse_v2_UpdateSessionModelRequ
 import type { UpdateSessionModelResponse as _superverse_v2_UpdateSessionModelResponse, UpdateSessionModelResponse__Output as _superverse_v2_UpdateSessionModelResponse__Output } from './superverse/v2/UpdateSessionModelResponse';
 import type { UpdateTeamSpaceConnectionRequest as _superverse_v2_UpdateTeamSpaceConnectionRequest, UpdateTeamSpaceConnectionRequest__Output as _superverse_v2_UpdateTeamSpaceConnectionRequest__Output } from './superverse/v2/UpdateTeamSpaceConnectionRequest';
 import type { UpdateTeamSpaceConnectionResponse as _superverse_v2_UpdateTeamSpaceConnectionResponse, UpdateTeamSpaceConnectionResponse__Output as _superverse_v2_UpdateTeamSpaceConnectionResponse__Output } from './superverse/v2/UpdateTeamSpaceConnectionResponse';
+import type { UploadHeader as _superverse_v2_UploadHeader, UploadHeader__Output as _superverse_v2_UploadHeader__Output } from './superverse/v2/UploadHeader';
 import type { ValidateProjectConfigurationRequest as _superverse_v2_ValidateProjectConfigurationRequest, ValidateProjectConfigurationRequest__Output as _superverse_v2_ValidateProjectConfigurationRequest__Output } from './superverse/v2/ValidateProjectConfigurationRequest';
 import type { ValidateProjectConfigurationResponse as _superverse_v2_ValidateProjectConfigurationResponse, ValidateProjectConfigurationResponse__Output as _superverse_v2_ValidateProjectConfigurationResponse__Output } from './superverse/v2/ValidateProjectConfigurationResponse';
 import type { WaitFlowHistoryRequest as _superverse_v2_WaitFlowHistoryRequest, WaitFlowHistoryRequest__Output as _superverse_v2_WaitFlowHistoryRequest__Output } from './superverse/v2/WaitFlowHistoryRequest';
@@ -361,6 +377,7 @@ export interface ProtoGrpcType {
       AddTeamSpaceMemberRequest: MessageTypeDefinition<_superverse_v2_AddTeamSpaceMemberRequest, _superverse_v2_AddTeamSpaceMemberRequest__Output>
       AddTeamSpaceMemberResponse: MessageTypeDefinition<_superverse_v2_AddTeamSpaceMemberResponse, _superverse_v2_AddTeamSpaceMemberResponse__Output>
       AgentAnswerQuestionsInput: MessageTypeDefinition<_superverse_v2_AgentAnswerQuestionsInput, _superverse_v2_AgentAnswerQuestionsInput__Output>
+      AgentAttachment: MessageTypeDefinition<_superverse_v2_AgentAttachment, _superverse_v2_AgentAttachment__Output>
       AgentBackgroundCommand: MessageTypeDefinition<_superverse_v2_AgentBackgroundCommand, _superverse_v2_AgentBackgroundCommand__Output>
       AgentConfirmedRequirements: MessageTypeDefinition<_superverse_v2_AgentConfirmedRequirements, _superverse_v2_AgentConfirmedRequirements__Output>
       AgentDescription: MessageTypeDefinition<_superverse_v2_AgentDescription, _superverse_v2_AgentDescription__Output>
@@ -414,6 +431,15 @@ export interface ProtoGrpcType {
       AppManifestSnapshot: MessageTypeDefinition<_superverse_v2_AppManifestSnapshot, _superverse_v2_AppManifestSnapshot__Output>
       ApplicationEnvironmentService: SubtypeConstructor<typeof grpc.Client, _superverse_v2_ApplicationEnvironmentServiceClient> & { service: _superverse_v2_ApplicationEnvironmentServiceDefinition }
       AppliedPreviewConfiguration: MessageTypeDefinition<_superverse_v2_AppliedPreviewConfiguration, _superverse_v2_AppliedPreviewConfiguration__Output>
+      Attachment: MessageTypeDefinition<_superverse_v2_Attachment, _superverse_v2_Attachment__Output>
+      AttachmentDisposition: EnumTypeDefinition
+      AttachmentDownload: MessageTypeDefinition<_superverse_v2_AttachmentDownload, _superverse_v2_AttachmentDownload__Output>
+      AttachmentFailure: MessageTypeDefinition<_superverse_v2_AttachmentFailure, _superverse_v2_AttachmentFailure__Output>
+      AttachmentKind: EnumTypeDefinition
+      AttachmentService: SubtypeConstructor<typeof grpc.Client, _superverse_v2_AttachmentServiceClient> & { service: _superverse_v2_AttachmentServiceDefinition }
+      AttachmentStatus: EnumTypeDefinition
+      AttachmentSummary: MessageTypeDefinition<_superverse_v2_AttachmentSummary, _superverse_v2_AttachmentSummary__Output>
+      AttachmentUploadTarget: MessageTypeDefinition<_superverse_v2_AttachmentUploadTarget, _superverse_v2_AttachmentUploadTarget__Output>
       AutoDeployStatus: EnumTypeDefinition
       CallerContext: MessageTypeDefinition<_superverse_v2_CallerContext, _superverse_v2_CallerContext__Output>
       CancelDeploymentRequest: MessageTypeDefinition<_superverse_v2_CancelDeploymentRequest, _superverse_v2_CancelDeploymentRequest__Output>
@@ -422,6 +448,8 @@ export interface ProtoGrpcType {
       CancelReleaseBuildResponse: MessageTypeDefinition<_superverse_v2_CancelReleaseBuildResponse, _superverse_v2_CancelReleaseBuildResponse__Output>
       Cancellation: MessageTypeDefinition<_superverse_v2_Cancellation, _superverse_v2_Cancellation__Output>
       CommitVersion: MessageTypeDefinition<_superverse_v2_CommitVersion, _superverse_v2_CommitVersion__Output>
+      CompleteAttachmentUploadRequest: MessageTypeDefinition<_superverse_v2_CompleteAttachmentUploadRequest, _superverse_v2_CompleteAttachmentUploadRequest__Output>
+      CompleteAttachmentUploadResponse: MessageTypeDefinition<_superverse_v2_CompleteAttachmentUploadResponse, _superverse_v2_CompleteAttachmentUploadResponse__Output>
       CompleteTeamSpaceConnectionOAuthRequest: MessageTypeDefinition<_superverse_v2_CompleteTeamSpaceConnectionOAuthRequest, _superverse_v2_CompleteTeamSpaceConnectionOAuthRequest__Output>
       CompleteTeamSpaceConnectionOAuthResponse: MessageTypeDefinition<_superverse_v2_CompleteTeamSpaceConnectionOAuthResponse, _superverse_v2_CompleteTeamSpaceConnectionOAuthResponse__Output>
       ConfigurationFollowRefusal: EnumTypeDefinition
@@ -436,6 +464,8 @@ export interface ProtoGrpcType {
       ConnectorRequirement: MessageTypeDefinition<_superverse_v2_ConnectorRequirement, _superverse_v2_ConnectorRequirement__Output>
       ConnectorService: SubtypeConstructor<typeof grpc.Client, _superverse_v2_ConnectorServiceClient> & { service: _superverse_v2_ConnectorServiceDefinition }
       ConnectorTriggerBinding: MessageTypeDefinition<_superverse_v2_ConnectorTriggerBinding, _superverse_v2_ConnectorTriggerBinding__Output>
+      CreateAttachmentUploadRequest: MessageTypeDefinition<_superverse_v2_CreateAttachmentUploadRequest, _superverse_v2_CreateAttachmentUploadRequest__Output>
+      CreateAttachmentUploadResponse: MessageTypeDefinition<_superverse_v2_CreateAttachmentUploadResponse, _superverse_v2_CreateAttachmentUploadResponse__Output>
       CreateProjectRequest: MessageTypeDefinition<_superverse_v2_CreateProjectRequest, _superverse_v2_CreateProjectRequest__Output>
       CreateProjectResponse: MessageTypeDefinition<_superverse_v2_CreateProjectResponse, _superverse_v2_CreateProjectResponse__Output>
       CreateRemoteAgentPairingRequest: MessageTypeDefinition<_superverse_v2_CreateRemoteAgentPairingRequest, _superverse_v2_CreateRemoteAgentPairingRequest__Output>
@@ -445,6 +475,8 @@ export interface ProtoGrpcType {
       CreateTeamSpaceRequest: MessageTypeDefinition<_superverse_v2_CreateTeamSpaceRequest, _superverse_v2_CreateTeamSpaceRequest__Output>
       CreateTeamSpaceResponse: MessageTypeDefinition<_superverse_v2_CreateTeamSpaceResponse, _superverse_v2_CreateTeamSpaceResponse__Output>
       CredentialStatus: EnumTypeDefinition
+      DeleteAttachmentRequest: MessageTypeDefinition<_superverse_v2_DeleteAttachmentRequest, _superverse_v2_DeleteAttachmentRequest__Output>
+      DeleteAttachmentResponse: MessageTypeDefinition<_superverse_v2_DeleteAttachmentResponse, _superverse_v2_DeleteAttachmentResponse__Output>
       DeleteFlowChannelMessageRequest: MessageTypeDefinition<_superverse_v2_DeleteFlowChannelMessageRequest, _superverse_v2_DeleteFlowChannelMessageRequest__Output>
       DeleteFlowChannelMessageResponse: MessageTypeDefinition<_superverse_v2_DeleteFlowChannelMessageResponse, _superverse_v2_DeleteFlowChannelMessageResponse__Output>
       DeleteProjectRequest: MessageTypeDefinition<_superverse_v2_DeleteProjectRequest, _superverse_v2_DeleteProjectRequest__Output>
@@ -475,6 +507,8 @@ export interface ProtoGrpcType {
       FlowSearchFilter: MessageTypeDefinition<_superverse_v2_FlowSearchFilter, _superverse_v2_FlowSearchFilter__Output>
       GetApplicationEnvironmentRequest: MessageTypeDefinition<_superverse_v2_GetApplicationEnvironmentRequest, _superverse_v2_GetApplicationEnvironmentRequest__Output>
       GetApplicationEnvironmentResponse: MessageTypeDefinition<_superverse_v2_GetApplicationEnvironmentResponse, _superverse_v2_GetApplicationEnvironmentResponse__Output>
+      GetAttachmentDownloadsRequest: MessageTypeDefinition<_superverse_v2_GetAttachmentDownloadsRequest, _superverse_v2_GetAttachmentDownloadsRequest__Output>
+      GetAttachmentDownloadsResponse: MessageTypeDefinition<_superverse_v2_GetAttachmentDownloadsResponse, _superverse_v2_GetAttachmentDownloadsResponse__Output>
       GetCurrentAccountRequest: MessageTypeDefinition<_superverse_v2_GetCurrentAccountRequest, _superverse_v2_GetCurrentAccountRequest__Output>
       GetCurrentAccountResponse: MessageTypeDefinition<_superverse_v2_GetCurrentAccountResponse, _superverse_v2_GetCurrentAccountResponse__Output>
       GetDeploymentRequest: MessageTypeDefinition<_superverse_v2_GetDeploymentRequest, _superverse_v2_GetDeploymentRequest__Output>
@@ -694,6 +728,7 @@ export interface ProtoGrpcType {
       UpdateSessionModelResponse: MessageTypeDefinition<_superverse_v2_UpdateSessionModelResponse, _superverse_v2_UpdateSessionModelResponse__Output>
       UpdateTeamSpaceConnectionRequest: MessageTypeDefinition<_superverse_v2_UpdateTeamSpaceConnectionRequest, _superverse_v2_UpdateTeamSpaceConnectionRequest__Output>
       UpdateTeamSpaceConnectionResponse: MessageTypeDefinition<_superverse_v2_UpdateTeamSpaceConnectionResponse, _superverse_v2_UpdateTeamSpaceConnectionResponse__Output>
+      UploadHeader: MessageTypeDefinition<_superverse_v2_UploadHeader, _superverse_v2_UploadHeader__Output>
       ValidateProjectConfigurationRequest: MessageTypeDefinition<_superverse_v2_ValidateProjectConfigurationRequest, _superverse_v2_ValidateProjectConfigurationRequest__Output>
       ValidateProjectConfigurationResponse: MessageTypeDefinition<_superverse_v2_ValidateProjectConfigurationResponse, _superverse_v2_ValidateProjectConfigurationResponse__Output>
       WaitFlowHistoryRequest: MessageTypeDefinition<_superverse_v2_WaitFlowHistoryRequest, _superverse_v2_WaitFlowHistoryRequest__Output>

@@ -12,7 +12,8 @@
 Production imports follow the levels and the provider-package rules. The Kubernetes boundary also
 covers test files, because the packages that may reach Kubernetes decide which pull requests need
 the Local Kind lane. Integration tests may import the implementations they exercise, so the
-provider-package rules apply to production imports only."""
+provider-package rules apply to production imports only. The file extractor's dependency graph holds no cgo and no
+unsafe outside the standard library."""
 import json
 import os
 import re
@@ -66,6 +67,11 @@ DOCKER_PACKAGES = ("internal/comm/platform/dockerapi", "internal/dexai/projects/
                    "internal/dexai/delivery/deployments/docker")
 # Each runtime API client with the packages, and the single files, that may import it.
 BOUNDARIES = {KUBERNETES_API: ("Kubernetes", KUBERNETES_PACKAGES, KUBERNETES_FILES), DOCKER_API: ("Docker", DOCKER_PACKAGES, set())}
+# The file extractor parses untrusted bytes in a child process of the server without a sandbox, which memory-safe Go
+# makes acceptable: its dependency graph holds no cgo and no unsafe outside the standard library, on the platforms the
+# server runs on, so a dependency update cannot silently remove that reason.
+MEMORY_SAFE = ("internal/comm/fileextract",)
+MEMORY_SAFE_PLATFORMS = (("linux", "arm64"), ("linux", "amd64"), ("darwin", "arm64"))
 # Every business package has a level and imports only business packages of a strictly lower level.
 # The levels are the longest import chain below each package, so a new edge that needs a higher
 # level shows up in review. A business test helper (sandboxdtest) is levelled like its parent's code.
@@ -97,6 +103,7 @@ LEVELS = {
     "internal/dexai/studio/confighost": 3,
     "internal/dexai/tenancy/accounts": 2,
     "internal/dexai/tenancy/connections": 2,
+    "internal/dexai/agents/attachments": 3,
     "internal/dexai/agents/sandbox/workspace/git": 3,
     "internal/dexai/projects/infra/kube/connect": 3,
     "internal/dexai/projects/infra/kube/hosted/identity": 3,
@@ -140,6 +147,7 @@ LEVELS = {
     "internal/dexai/studio/runs": 9,
     "internal/dexai/agents/diagnostics": 10,
     "internal/dexai/api/tenancy": 10,
+    "internal/dexai/api/attachments": 10,
     "internal/dexai/api/remoteagent": 10,
     "internal/dexai/api": 11,
     "internal/dexai/bootstrap": 12,
@@ -191,6 +199,28 @@ def boundary_violations(api, package, directory, files):
             yield f"{package} imports {api} in {file}; only the {runtime} packages ({allowed}) may, in test files as well"
 
 
+def memory_safety_violations():
+    """Yield the packages outside the standard library that the memory-safe packages depend on and that use cgo or unsafe."""
+    for goos, goarch in MEMORY_SAFE_PLATFORMS:
+        listing = subprocess.check_output(
+            ["go", "list", "-deps", "-json=ImportPath,Standard,CgoFiles,Imports", *["./" + package for package in MEMORY_SAFE]],
+            env={**os.environ, "GOWORK": "off", "GOOS": goos, "GOARCH": goarch, "CGO_ENABLED": "1"}, text=True)
+        decoder, position = json.JSONDecoder(), 0
+        while True:
+            while position < len(listing) and listing[position].isspace():
+                position += 1
+            if position >= len(listing):
+                break
+            entry, position = decoder.raw_decode(listing, position)
+            if entry.get("Standard"):
+                continue
+            uses = [name for name, used in (("cgo", entry.get("CgoFiles") or "C" in entry.get("Imports", [])),
+                                            ("unsafe", "unsafe" in entry.get("Imports", []))) if used]
+            if uses:
+                yield (f"{entry['ImportPath']} uses {' and '.join(uses)} on {goos}/{goarch}; the dependencies of "
+                       f"{', '.join(MEMORY_SAFE)} must be memory-safe Go")
+
+
 def main():
     listing = subprocess.check_output(
         # The tags select the files of the live and hosted tests, so the Kubernetes boundary covers them.
@@ -225,11 +255,12 @@ def main():
                 failures.extend(violations(package, name))
         for (api, package), (directory, files) in sorted(clients.items()):
             failures.extend(boundary_violations(api, package, directory, files))
+        failures.extend(sorted(set(memory_safety_violations())))
     if failures:
         print("\n".join(failures), file=sys.stderr)
         return 1
-    print("Package layers: shared packages stay below business packages, each business package imports only lower levels "
-          "and only the Kubernetes and Docker packages import their API clients")
+    print("Package layers: shared packages stay below business packages, each business package imports only lower levels, "
+          "only the Kubernetes and Docker packages import their API clients and the file extractor depends on memory-safe Go only")
     return 0
 
 

@@ -45,6 +45,13 @@ export const STORAGE_KEYS = {
   projectTabs: (projectId: string) => `superversev2.project-tabs.v1:${projectId}`,
   /** The unsent text of a Project's chat composer in this browser, which nothing sends until the person does. */
   composerDraft: (projectId: string) => `superversev2.composer-draft.v1:${projectId}`,
+  /**
+   * The attachments of a composer that its message has not sent yet, in session storage: their IDs and
+   * names, never their bytes. `scope` is the Project, or `start:<Teamspace>` for the start page.
+   */
+  composerAttachments: (scope: string) => `superversev2.composer-attachments.v1:${scope}`,
+  /** Whether this browser showed the line that the AI model reads attached files. */
+  attachmentDisclosure: "superversev2.attachment-disclosure.v1",
 } as const;
 
 type StorageArea = "local" | "session";

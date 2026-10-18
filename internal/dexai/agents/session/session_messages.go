@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -125,8 +126,17 @@ func findPendingUserMessage(
 // appendEntry records an entry at the next sequence and archives the oldest
 // chunk when the current window is full. What an entry adds to the current
 // segment's request counts toward its compaction trigger; a model reply is
-// counted by the usage its call reported.
+// counted by the usage its call reported. What a user message's attachments
+// show is decided against the segment's attachment budget and frozen into the
+// entry (AdmitAttachments); without a segment, the first one's segment_start
+// shows them.
 func appendEntry(ctx dex.Context, entry conversation.Entry) conversation.Sequence {
+	segment := dexflow.OptionalValue(contextSegmentAttribute.Get(ctx))
+	if segment != nil && entry.Kind == conversation.EntryKindUserMessage {
+		var admitted agentloop.ContextSegment
+		admitted, entry = agentloop.AdmitAttachments(*segment, entry)
+		segment = &admitted
+	}
 	state := comm.Must(agentStateAttribute.Get(ctx))
 	state.LastSequence++
 	if entry.CreatedAt.IsZero() {
@@ -141,7 +151,7 @@ func appendEntry(ctx dex.Context, entry conversation.Entry) conversation.Sequenc
 		state.CurrentFirstSequence += conversation.Sequence(agentloop.ArchiveMessageChunkSize)
 	}
 	comm.MustDo(agentStateAttribute.Set(ctx, state))
-	if segment := dexflow.OptionalValue(contextSegmentAttribute.Get(ctx)); segment != nil && entry.Kind != conversation.EntryKindModelReply {
+	if segment != nil && entry.Kind != conversation.EntryKindModelReply {
 		segment.PendingBytes += entry.Bytes()
 		comm.MustDo(contextSegmentAttribute.Set(ctx, *segment))
 	}
@@ -834,26 +844,38 @@ func currentParallelBatch(ctx dex.Context, batch agentloop.ToolBatchState) bool 
 }
 
 // sendMessage owns the conversation data operation of SendMessage: it queues
-// the message unless questions wait for their answers. A Session that still
-// waits at a requirements card from before cards stopped waiting records that
-// card as the next version, as a card is recorded now when the Agent shows it,
-// and takes the message as the card's reply, which AwaitUser consumes; remove
-// that branch once no Session holds such a card.
-func sendMessage(ctx dex.Context, input conversation.PendingUserMessage) (*dex.RPCResult[bool], error) {
+// the message unless questions wait for their answers. It admits at most
+// conversation.MaximumMessageAttachments attachments and blank text only with
+// attachments. A message with attachments is refused while a local agent
+// executes the Session, since the remote delivery carries text only; one
+// queued before a switch to it is delivered with a line naming what it left
+// out (remoteexec). A Session that
+// still waits at a requirements card from before cards stopped waiting
+// records that card as the next version, as a card is recorded now when the
+// Agent shows it, and takes the message as the card's reply, which AwaitUser
+// consumes; remove that branch once no Session holds such a card.
+func sendMessage(ctx dex.Context, input conversation.PendingUserMessage) (*dex.RPCResult[messageAdmission], error) {
 	if !acceptsUserCommand(ctx) {
-		return rpcAccepted(false), nil
+		return &dex.RPCResult[messageAdmission]{}, nil
 	}
+	switch attachments := len(input.Value.Attachments); {
+	case attachments > conversation.MaximumMessageAttachments, attachments == 0 && strings.TrimSpace(input.Value.Content) == "":
+		return &dex.RPCResult[messageAdmission]{}, nil
+	case attachments > 0 && currentExecutor(ctx).Mode == remoteexec.ModeRemote:
+		return &dex.RPCResult[messageAdmission]{Output: messageAdmission{AttachmentsRefused: true}}, nil
+	}
+	accepted := &dex.RPCResult[messageAdmission]{Output: messageAdmission{Accepted: true}}
 	if pending := dexflow.OptionalValue(pendingUserInputAttribute.Get(ctx)); pending != nil {
 		if pending.Kind != agentloop.PendingUserInputKindRequirements {
-			return rpcAccepted(false), nil
+			return &dex.RPCResult[messageAdmission]{}, nil
 		}
 		version := recordWaitingCard(ctx, *pending.Requirements)
 		comm.MustDo(pendingUserInputAttribute.Delete(ctx))
 		comm.MustDo(answeredUserInputsChannel.Publish(ctx, agentloop.AnswerRequirementsCard(*pending, input.Value, version)))
-		return rpcAccepted(true), nil
+		return accepted, nil
 	}
 	comm.MustDo(queuedUserMessagesChannel.Publish(ctx, input))
-	return rpcAccepted(true), nil
+	return accepted, nil
 }
 
 // recordWaitingCard records the card an old Session waits at over the current

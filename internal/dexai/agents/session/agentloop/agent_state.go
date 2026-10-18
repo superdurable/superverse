@@ -193,8 +193,9 @@ type AgentState struct {
 	// Turn counts the turns; each turn start increments it.
 	Turn int64 `json:"turn,omitempty"`
 	// TurnRequestSequences are the user messages the current turn works on:
-	// the message that started it and the answers given since. A new
-	// segment quotes them as the pending request.
+	// the messages that started it, every one of a steered batch, and the
+	// answers given since. A new segment quotes them as the pending request
+	// and shows their attachments.
 	TurnRequestSequences []conversation.Sequence `json:"turn_request_sequences,omitempty"`
 	// SourceChangedSinceHandoff records a source change of the current turn
 	// after its last unblocked commit_and_push.

@@ -20,6 +20,7 @@ import (
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
 	"github.com/superdurable/superversev2/internal/comm/platform/postgres"
+	"github.com/superdurable/superversev2/internal/dexai/agents/attachments"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/preview"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/sandboxd"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
@@ -63,6 +64,9 @@ type ProjectDiagnostics struct {
 	Publishing      *deployments.PublishingFlowService
 	Contributions   *contribution.ConnectorContributionFlowClient
 	ConnectorChecks contribution.ConnectorChecks
+	// Attachments reads the attachments the Session's Project bound, for
+	// read_attachment.
+	Attachments *attachments.RenditionStore
 }
 
 // RedactConnectorCheck applies the diagnostics output redactor before an
@@ -81,7 +85,8 @@ type callFailureError struct {
 func (f *callFailureError) Error() string { return f.code.String() + ": " + f.message }
 
 // ReadDiagnostics runs one platform tool call for identity's Project. Every
-// string of the result is redacted, and the result is at most 16 KiB.
+// string of the result is redacted, and the result is at most 16 KiB, 32 KiB
+// of attachment text for read_attachment.
 func (d *ProjectDiagnostics) ReadDiagnostics(ctx context.Context, identity agentloop.SessionIdentity, call conversation.ToolCall) (agentloop.ToolExecutionResult, error) {
 	var output []byte
 	var err error
@@ -94,6 +99,8 @@ func (d *ProjectDiagnostics) ReadDiagnostics(ctx context.Context, identity agent
 		output, err = d.readLiveAppRuns(ctx, identity, call.Arguments.String())
 	case conversation.ToolReadConnectorChecks:
 		output, err = d.readConnectorChecks(ctx, identity, call.Arguments.String())
+	case conversation.ToolReadAttachment:
+		output, err = d.readAttachment(ctx, identity, call.Arguments.String())
 	default:
 		panic(fmt.Sprintf("%q is not a platform tool", call.Name))
 	}

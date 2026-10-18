@@ -178,10 +178,14 @@ func messageParams(profile ModelProfile, request conversation.ModelRequest) anth
 }
 
 // messageParam replays the stored blocks of one message byte for byte; the
-// anchored block gains the explicit cache breakpoint.
+// anchored block gains the explicit cache breakpoint. An attachment reference
+// the model call left unexpanded is a programming error.
 func messageParam(message conversation.RequestMessage) anthropic.BetaMessageParam {
 	blocks := make([]anthropic.BetaContentBlockParamUnion, 0, len(message.Blocks))
 	for index, block := range message.Blocks {
+		if conversation.IsAttachmentReference(block) {
+			panic("an attachment reference reached the model request unexpanded")
+		}
 		if index == message.CacheAnchor {
 			block = withCacheControl(block)
 		}

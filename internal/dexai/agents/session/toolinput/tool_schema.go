@@ -66,6 +66,8 @@ var (
 	ReadPlatformFlow    = mustSchema(conversation.ToolReadPlatformFlow, (*generated.ReadPlatformFlow).Validate)
 	ReadLiveAppRuns     = mustSchema(conversation.ToolReadLiveAppRuns, (*generated.ReadLiveAppRuns).Validate)
 	ReadConnectorChecks = mustSchema(conversation.ToolReadConnectorChecks, (*generated.ReadConnectorChecks).Validate)
+	ReadAttachment      = mustSchema(conversation.ToolReadAttachment, (*generated.ReadAttachment).Validate)
+	PlaceAttachment     = mustSchema(conversation.ToolPlaceAttachment, (*generated.PlaceAttachment).Validate)
 	WriteTodos          = mustSchema(conversation.ToolWriteTodos, (*generated.WriteTodos).Validate)
 	StartTimer          = mustSchema(conversation.ToolStartTimer, (*generated.StartTimer).Validate)
 	SetEffort           = mustSchema(conversation.ToolSetEffort, (*generated.SetEffort).Validate)

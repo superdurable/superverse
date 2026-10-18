@@ -133,6 +133,21 @@ func WorkerClientAtForTest(ctx context.Context, t testing.TB, address, workerHos
 // this recreates a test Worker, not the merged platform server process.
 func WorkerClientWithReplacementForTest(ctx context.Context, t testing.TB, address, workerHost string, flows ...dex.Flow) (*dex.Client, func() *dex.Client) {
 	t.Helper()
+	current, replace := workerClientWithReplacement(ctx, t, address, workerHost, false, flows...)
+	return current, replace
+}
+
+// WorkerClientWithCrashForTest is WorkerClientWithReplacementForTest whose
+// replacement also cuts the handlers still running on the first Worker after
+// its ten-second stop, as a crash of the Worker does: the attempts they ran
+// are lost, and the engine's retry policy runs them again on the fresh Worker.
+func WorkerClientWithCrashForTest(ctx context.Context, t testing.TB, address, workerHost string, flows ...dex.Flow) (*dex.Client, func() *dex.Client) {
+	t.Helper()
+	return workerClientWithReplacement(ctx, t, address, workerHost, true, flows...)
+}
+
+func workerClientWithReplacement(ctx context.Context, t testing.TB, address, workerHost string, crash bool, flows ...dex.Flow) (*dex.Client, func() *dex.Client) {
+	t.Helper()
 	port := FreePortForTest(ctx, t)
 	current, stop := workerClientAt(ctx, t, address, workerHost, port, flows...)
 	replaced := false
@@ -142,7 +157,8 @@ func WorkerClientWithReplacementForTest(ctx context.Context, t testing.TB, addre
 			t.Fatal("test Worker replacement is bounded to one")
 		}
 		replaced = true
-		if err := stop(); err != nil {
+		// A stop past its deadline has cut the in-flight handlers and stopped the Worker.
+		if err := stop(); err != nil && !(crash && errors.Is(err, context.DeadlineExceeded)) {
 			t.Fatalf("test Worker did not stop before replacement: %T", err)
 		}
 		fresh, _ := workerClientAt(ctx, t, address, workerHost, port, flows...)
@@ -162,9 +178,10 @@ func workerClientAt(ctx context.Context, t testing.TB, address, workerHost, port
 	}
 	exited := make(chan error, 1)
 	go func() { exited <- worker.Start() }()
+	// The first caller of stop, a replacement or the cleanup, owns its outcome; later calls report nothing.
 	var stopped sync.Once
-	var stopError error
 	stop := func() error {
+		var stopError error
 		stopped.Do(func() {
 			stopCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
 			defer cancel()
