@@ -44,7 +44,9 @@ test("Connect dialog pairs without activating and removes its exact connection",
     const client = scope.track(pairing);
     expect(/^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{10}$/.test(pairing.code)).toBe(true);
     expect(pairing.currentConnectionId === "").toBe(true);
-    await expect(dialog.getByText("Waiting for your Bridge… Press Refresh connections after pairing.")).toBeVisible();
+    await expect(
+      dialog.getByText("Waiting for your dexai-connect… Press Refresh connections after pairing."),
+    ).toBeVisible();
     await expect(dialog.getByText(/^Expires in 9:/)).toBeVisible();
     await expect(create).toBeDisabled();
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);

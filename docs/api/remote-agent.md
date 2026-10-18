@@ -65,7 +65,7 @@ The Bridge appends each shared `bridgeapi.Path...` route to this origin.
 | `/remote-agent/v1/downloads/manifest` | GET | Public environment manifest; missing local builds produce an empty artifact list. |
 | `/remote-agent/v1/downloads/<fixed-artifact>` | GET | Only a manifest-listed fixed build filename within the configured distribution root; no arbitrary filesystem access. |
 
-The four allowed Bridge names are `superverse-bridge-{darwin,linux}-{arm64,amd64}`;
+The four allowed Bridge names remain `superverse-bridge-{darwin,linux}-{arm64,amd64}` for the existing download protocol;
 the fifth allowed name is `superverse-orca-plugin.tgz`. `manifest.json` uses
 `bridgeapi.DownloadsManifest` directly, is capped at 64 KiB and five artifacts,
 and declares each artifact's version, OS/architecture, SHA-256 and fixed path.

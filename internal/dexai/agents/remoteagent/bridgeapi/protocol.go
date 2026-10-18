@@ -289,8 +289,8 @@ type DisconnectResponse struct{}
 const DevBridgeVersion = "0.0.0-dev"
 
 // DownloadsManifest lists the Bridge and plugin builds this environment serves.
-// It is the one schema on disk and on the wire: make build-bridge writes the
-// artifacts into downloadsDir/manifest.json and the server fills in
+// It is the one schema on disk and on the wire: provisioned artifacts and
+// downloadsDir/manifest.json are read by the server, which fills in
 // MinimumBridgeVersion from its configuration when it serves the file.
 type DownloadsManifest struct {
 	MinimumBridgeVersion string     `json:"minimumBridgeVersion"`

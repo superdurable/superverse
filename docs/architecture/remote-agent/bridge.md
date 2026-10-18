@@ -1,6 +1,6 @@
 # Bridge
 
-`superverse-bridge` is the program a Builder runs next to Orca. It holds the connection to one or
+`dexai-connect` is the program a Builder runs next to Orca. It holds the connection to one or
 more Projects, drives the bound Codex conversation through Orca's structured session protocol, and
 serves the Superverse tools to Codex as a local MCP server. It calls no model and keeps no Project
 state the platform depends on. This document owns the Bridge, its Orca and Codex integration, the
@@ -12,10 +12,10 @@ and [executor](executor.md).
 ```mermaid
 flowchart LR
   subgraph Machine["Builder's machine (or their own server)"]
-    plugin["Orca plugin<br/>Connect form, status"] -->|starts, stops| serve["superverse-bridge serve"]
+    plugin["Orca plugin<br/>Connect form, status"] -->|starts, stops| serve["dexai-connect serve"]
     serve <-->|"agentSession.* over the Orca runtime transport"| orca["Orca runtime"]
     orca <--> codex["Codex (structured session)"]
-    codex -->|"stdio MCP"| mcp["superverse-bridge mcp"]
+    codex -->|"stdio MCP"| mcp["dexai-connect mcp"]
     mcp <-->|"local socket"| serve
   end
   serve <-->|"HTTPS, bearer token"| endpoint["Remote agent endpoint"]
@@ -141,7 +141,7 @@ Project has at most one active binding (its executor).
 - **Call trace.** `mcp` writes one private JSON line per tool response in the Bridge state directory,
   with local/remote call IDs, tool name, MCP receipt, first report, report answer, `sync` result,
   response-write timestamps and an outcome code. `calls.jsonl` rotates through two older files at
-  4 MiB each. `superverse-bridge trace` prints each segment and p50/p90/p99; it makes no network
+  4 MiB each. `dexai-connect trace` prints each segment and p50/p90/p99; it makes no network
   call. A missing timing point means that stage was not reached or its response was not observed.
 - **Stop and takeover.** When `sync` shows the turn interrupted, the Bridge calls
   `agentSession.cancel`. A 409 `executor_changed` or a 401 stops every loop, cancels the running
@@ -199,10 +199,9 @@ space), and the call timing trace (three files of at most 4 MiB).
   permission from Orca upstream) remains a future compatibility improvement.
 - **Versions.** The Orca version comes from `status.get` (`appVersion`); no RPC reports Codex's,
   so the Bridge runs `codex --version` itself. `agentSession` is not a published Orca API: its methods and fences change between
-  releases. The Bridge accepts explicit Orca and Codex minor lines (Orca 1.4.x and Codex 0.162.x)
-  and refuses others with a message naming the supported lines. ORCACHECK verified the starting
-  releases; the prefix check also accepts later patches in those lines. A new minor line requires a
-  compatibility check before it is added. The design asks Orca upstream for a stable session API;
+  releases. The shared version policy refuses Orca below 1.4.0 or Codex below
+  0.162.0. Orca 1.4.225 and Codex 0.163.0 are the newest verified versions;
+  newer versions warn while still connecting. The design asks Orca upstream for a stable session API;
   until then this maintenance cost is accepted.
 - No terminal automation and no screen scraping: a missing capability is reported as incompatible.
 
@@ -211,7 +210,7 @@ space), and the call timing trace (three files of at most 4 MiB).
 - Source in `integrations/orca-plugin/` (TypeScript), packaged as an Orca plugin archive. Orca does
   not require plugins to be open source; the plugin is distributed from Superverse, like the Bridge.
 - It shows the Connect form (endpoint, pairing code), the bound Project and its executor state, and
-  "Disconnect". It starts `superverse-bridge serve` as a detached process the first time the Builder
+  "Disconnect". It starts `dexai-connect serve` as a detached process the first time the Builder
   connects, after Orca's consent prompt for running code.
 - Orca reclaims an idle plugin worker after five minutes and kills only the worker, so the Bridge
   outlives it. The Bridge therefore watches its own reasons to run: every 30 seconds it checks that
@@ -219,22 +218,22 @@ space), and the call timing trace (three files of at most 4 MiB).
   `orca-runtime.json` is alive, and exits when either is not. The plugin's `deactivate` hook is not
   relied on, because Orca calls it for reclamation, disabling and exit alike.
 - When the plugin cannot start the Bridge, it shows the manual command
-  `superverse-bridge connect`, which does the same thing in a terminal.
+  `dexai-connect connect`, which does the same thing in a terminal.
 
 ## Distribution
 
-The server image contains the Bridge for macOS and Linux (arm64 and amd64) and the plugin archive,
-built by `make build-bridge` into the image. The contract the endpoint implements:
+The server endpoint can serve provisioned Bridge artifacts for macOS and Linux (arm64 and amd64)
+and the plugin archive. The contract the endpoint implements:
 
 - **Version.** The Bridge's version is a semantic version set at build time (`-X main.version`); the
-  first release is `0.1.0`. A build without one (`make build-bridge-local`, a plain `go build`)
+  first release is `0.1.0`. A build without one (`make build-dexai-connect-local`, a plain `go build`)
   reports exactly `bridgeapi.DevBridgeVersion` (`0.0.0-dev`), which `pair` accepts only when
   `remoteAgent.acceptDevBridge` is true (the local profiles). Any other version, a prerelease
   included, is compared by semantic-version precedence with `remoteAgent.minimumBridgeVersion`; a
   lower one is refused with `bridge_outdated` (403).
-- **Artifacts.** `make build-bridge` writes into `remoteAgent.downloadsDir`: `superverse-bridge-<os>-<arch>`
-  for `darwin` and `linux`, `arm64` and `amd64`, the plugin archive `superverse-orca-plugin.tgz` (once
-  ORCAPLUGIN exists), and `manifest.json` holding `bridgeapi.DownloadsManifest`'s artifacts
+- **Artifacts.** The existing environment download protocol allows `superverse-bridge-<os>-<arch>`
+  for `darwin` and `linux`, `arm64` and `amd64`, the plugin archive `superverse-orca-plugin.tgz`,
+  and `manifest.json` holding `bridgeapi.DownloadsManifest`'s artifacts
   (`{name, version, os, arch, sha256, path}`); the same type is the wire schema, with no second format.
 - **Serving.** `GET /remote-agent/v1/downloads/manifest` returns the artifacts read from `manifest.json` on each request
   and fills in `minimumBridgeVersion` from the configuration; `GET /remote-agent/v1/downloads/<path>`
@@ -242,8 +241,10 @@ built by `make build-bridge` into the image. The contract the endpoint implement
   manifest means an empty manifest and 404 for every artifact, which is the Native lane's normal state:
   there the Builder runs the locally built Bridge.
 
-The plugin and the install guide download from the environment the Builder pairs with and verify the
-digest. No GitHub Actions job is added. Windows (and WSL) are not supported
+The local release script builds `dexai-connect` archives for the same four platforms and creates
+`dexai-connect-v<version>` in the public mirror after publication. Its generated Homebrew formula
+belongs in `superdurable/homebrew-tap`. The existing environment downloads keep their fixed names;
+no GitHub Actions job publishes the new release. Windows (and WSL) are not supported
 in the first version.
 
 ## Security

@@ -39,12 +39,12 @@ which `internal/dexai/studio/runs` implements and `bootstrap` injects, because `
 
 | Path | Owns |
 |---|---|
-| `cmd/superverse-bridge` | `main`: the commands `serve`, `mcp`, `connect`, `status`, `disconnect` |
-| `cmd/superverse-bridge/orca` | The Orca runtime client: transport (local and paired remote), the `agentSession` methods used, the version allow-list, the owner token read from `orca-runtime.json` and the method allow-list |
-| `cmd/superverse-bridge/mcpserver` | The stdio MCP server Codex starts: the tool set the server sent, zero tools for an unbound session, forwarding to `serve` over the local socket |
-| `cmd/superverse-bridge/platform` | The remote agent endpoint client (`bridgeapi`): pair, activate, sync, report, disconnect, backoff |
-| `cmd/superverse-bridge/relay` | The delivery, tool call and event loops of one binding; echo suppression; history import; the brief |
-| `cmd/superverse-bridge/state` | The 0600 state directory, the single-instance lock, the unacknowledged report store |
+| `cmd/dexai-connect` | `main`: the commands `serve`, `mcp`, `connect`, `status`, `disconnect` |
+| `cmd/dexai-connect/orca` | The Orca runtime client: transport (local and paired remote), the `agentSession` methods used, the version allow-list, the owner token read from `orca-runtime.json` and the method allow-list |
+| `cmd/dexai-connect/mcpserver` | The stdio MCP server Codex starts: the tool set the server sent, zero tools for an unbound session, forwarding to `serve` over the local socket |
+| `cmd/dexai-connect/platform` | The remote agent endpoint client (`bridgeapi`): pair, activate, sync, report, disconnect, backoff |
+| `cmd/dexai-connect/relay` | The delivery, tool call and event loops of one binding; echo suppression; history import; the brief |
+| `cmd/dexai-connect/state` | The 0600 state directory, the single-instance lock, the unacknowledged report store |
 | `integrations/orca-plugin` | The Orca plugin (TypeScript): Connect form, status, starting `serve` |
 
 The Bridge packages follow the same limits and README rules as `internal/` packages, although the
@@ -71,12 +71,10 @@ repository's pinned Prettier.
 - **EKS (Terraform)**: the same Ingress path on the existing ALB; no new load balancer, listener or
   certificate.
 - **Native**: a loopback port in `native.yaml` from the [Native instance port layout](../../runbooks/local-native.md).
-- **Server image**: `make build-bridge` cross-compiles the Bridge (macOS and Linux, arm64 and amd64)
-  and packs the plugin into the image for the `downloads` path. The server image is built locally
-  (`sv2 kind build`, the release tooling); no GitHub Actions workflow builds it (checked on
-  2026-10-12: `application-validate.yml`, `infra-validate.yml` and `test-release.yml` run static
-  checks only), so Actions usage does not change. The local image build gains the four cross
-  compilations, measured in BRIDGE.
+- **Distribution**: the endpoint serves only fixed, manifest-listed artifacts provisioned in
+  `remoteAgent.downloadsDir`. The separate local `dexai-connect` release script cross-compiles
+  macOS and Linux, arm64 and amd64 archives for a GitHub release after public mirror publication.
+  Neither path adds a GitHub Actions build.
 
 ## Dex Flow Changes
 

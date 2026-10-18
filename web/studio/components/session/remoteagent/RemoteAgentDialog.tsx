@@ -15,6 +15,8 @@ import { createRemoteAgentPairing, listRemoteAgentConnections, revokeRemoteAgent
 import { timestampToISO } from "@/lib/shared/protobuf";
 import type { RpcOutput } from "@/lib/shared/rpc-methods";
 
+const connectorName = "dexai-connect";
+
 /** Studio owns transport; the shared Agent conversation stays transport-free. */
 export function RemoteAgentDialog({ projectId, onClose }: { projectId: string; onClose: () => void }) {
   return <ProjectConnectionDialog key={projectId} projectId={projectId} onClose={onClose} />;
@@ -156,7 +158,7 @@ function ProjectConnectionDialog({ projectId, onClose }: { projectId: string; on
         {!connections && !pairing
           ? "Current agent information is not available yet."
           : currentID
-            ? `Current agent connected by ${currentOwner?.email ?? "another Builder"}. Activating your Bridge stops their current work.`
+            ? `Current agent connected by ${currentOwner?.email ?? "another Builder"}. Activating your ${connectorName} stops their current work.`
             : "No remote agent is currently running this Session."}
       </p>
       <p id={risk} className="mb-3 rounded-lg border border-line-soft bg-raised p-3 text-sm text-ink-dim">
@@ -196,7 +198,7 @@ function ProjectConnectionDialog({ projectId, onClose }: { projectId: string; on
             {paired
               ? "Paired. Pairing alone does not activate the agent."
               : seconds > 0
-                ? "Waiting for your Bridge… Press Refresh connections after pairing."
+                ? `Waiting for your ${connectorName}… Press Refresh connections after pairing.`
                 : "Pairing code expired. Create a new code."}
           </p>
           {!paired && (

@@ -26,7 +26,7 @@ is read or written only by the RPCs that the request needs anyway, and those che
    that epoch as `basis_epoch`. Studio shows the code (10 characters of Crockford base32, 50 bits),
    who is connected now, the endpoint URL and the warning of the [accepted risk](README.md#decisions).
 2. The Builder gives the code to the Bridge: in the Orca plugin's "Connect" form, or interactively
-   to `superverse-bridge connect` (never as a command-line argument, never logged).
+   to `dexai-connect connect` (never as a command-line argument, never logged).
 3. The Bridge calls `POST /remote-agent/v1/pair` with the code. The server finds the row by the
    code's hash, requires it unexpired (10 minutes) and unused, and in one transaction clears the
    code hash, stores the hash of a new connection token and sets `PAIRED`. The token (32 random
@@ -302,7 +302,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON remote_agent_connections TO superverse_s
   The Connect dialog retains one-time code handling and saved connections.
 - **Project creation**: after READY and an ACTIVE Session, the local-agent
   creation page shows inline risk acknowledgement, a code and the
-  `superverse-bridge connect --endpoint <origin>` command. It renews an
+  `dexai-connect connect --endpoint <origin>` command. It renews an
   expired code while keeping the first message in the browser intent.
 - Errors in plain words: an expired code, a Bridge whose version Studio does not accept, the
   connection replaced by another Builder.

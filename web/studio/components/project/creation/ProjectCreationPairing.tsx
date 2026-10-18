@@ -14,7 +14,7 @@ import type { RpcOutput } from "@/lib/shared/rpc-methods";
 import { timestampToISO } from "@/lib/shared/protobuf";
 import { Button } from "@/components/ui/Button";
 
-const BRIDGE_COMMAND = "superverse-bridge";
+const BRIDGE_COMMAND = "dexai-connect";
 
 /** Inline pairing is scoped to this creation and regenerates a code when its ten-minute TTL ends. */
 export function ProjectCreationPairing({ projectId }: { projectId: string }) {

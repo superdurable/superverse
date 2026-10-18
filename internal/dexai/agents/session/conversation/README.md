@@ -3,14 +3,14 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Defines the values SessionAgentFlow exchanges with its model: the append-only entry log and its public view, request assembly, requests and replies, tool calls, activity events and prompts.
 
-Callers: `cmd/superverse-bridge/relay`, `cmd/superverse-server/config`, `cmd/tools/app-template-archive`, `cmd/tools/check-mock-scenarios`, `internal/dexai/agents`, `internal/dexai/agents/diagnostics`, `internal/dexai/agents/remoteagent`, `internal/dexai/agents/remoteexec`, `internal/dexai/agents/sandbox/preview`, `internal/dexai/agents/sandbox/workspace/git`, `internal/dexai/agents/session`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/agenttasks`, `internal/dexai/agents/session/backgroundcommand`, `internal/dexai/agents/session/contribution`, `internal/dexai/agents/session/modelprovider`, `internal/dexai/agents/session/modelprovider/mockmodel`, `internal/dexai/agents/session/sandboxtools`, `internal/dexai/agents/session/subagent`, `internal/dexai/agents/session/toolinput`, `internal/dexai/api`, `internal/dexai/api/boundary`, `internal/dexai/api/remoteagent`, `internal/dexai/bootstrap`, `internal/dexai/delivery/deployments` and `internal/dexai/delivery/releases` import this package.
+Callers: `cmd/dexai-connect/relay`, `cmd/superverse-server/config`, `cmd/tools/app-template-archive`, `cmd/tools/check-mock-scenarios`, `internal/dexai/agents`, `internal/dexai/agents/diagnostics`, `internal/dexai/agents/remoteagent`, `internal/dexai/agents/remoteexec`, `internal/dexai/agents/sandbox/preview`, `internal/dexai/agents/sandbox/workspace/git`, `internal/dexai/agents/session`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/agenttasks`, `internal/dexai/agents/session/backgroundcommand`, `internal/dexai/agents/session/contribution`, `internal/dexai/agents/session/modelprovider`, `internal/dexai/agents/session/modelprovider/mockmodel`, `internal/dexai/agents/session/sandboxtools`, `internal/dexai/agents/session/subagent`, `internal/dexai/agents/session/toolinput`, `internal/dexai/api`, `internal/dexai/api/boundary`, `internal/dexai/api/remoteagent`, `internal/dexai/bootstrap`, `internal/dexai/delivery/deployments` and `internal/dexai/delivery/releases` import this package.
 
 Dependencies: it imports `internal/comm`, `internal/comm/dexflow`, `internal/comm/platform/connectorlibrary`, `internal/comm/platform/repohost` and `internal/dexai/agents/toolfailure`.
 
 ```mermaid
 flowchart LR
   self["internal/dexai/agents/session/conversation"]
-  c0["cmd/superverse-bridge/relay"] --> self
+  c0["cmd/dexai-connect/relay"] --> self
   c1["cmd/superverse-server/config"] --> self
   c2["cmd/tools/app-template-archive"] --> self
   c3["cmd/tools/check-mock-scenarios"] --> self

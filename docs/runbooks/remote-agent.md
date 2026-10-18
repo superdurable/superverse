@@ -23,7 +23,7 @@ Use the existing deployment procedure, never an ad hoc cloud change.
 After the platform has been rebuilt/deployed from reviewed source, open the Agent picker beside the composer,
 choose My local agent, then Connect on a READY Project with Builder capability. Read and acknowledge the
 local-machine warning. Copy the one-time ten-minute code into the Bridge's
-interactive connect flow and use the dialog's displayed origin as `--endpoint`. The Bridge appends the exact
+interactive `dexai-connect connect` flow and use the dialog's displayed origin as `--endpoint`. The Bridge appends the exact
 `/remote-agent/v1/...` route paths; do not append that prefix to the endpoint. Neither code
 nor token belongs in command arguments, shell history, screenshots, traces,
 logs, receipts or source. The Bridge keeps its returned token in its owning
@@ -31,7 +31,7 @@ private configuration; Studio receives no token.
 
 For a new Project, select My local agent on the start form. After the Project
 is READY and its Session ACTIVE, acknowledge the inline warning and run the
-displayed `superverse-bridge connect --endpoint <origin>` command, entering
+displayed `dexai-connect connect --endpoint <origin>` command, entering
 the code interactively. The page renews an expired code while retaining the
 first message. It sends that message when the Session Watch reports remote
 authority. If the send result is uncertain, inspect the Project conversation
@@ -68,6 +68,22 @@ A missing local distribution yields an empty public manifest and 404 for a
 missing artifact. A malformed manifest or escaping symlink is 503, not successful
 coverage. Artifact paths cannot expose arbitrary files. Diagnose distribution
 content privately and verify SHA-256; never place credentials under this root.
+
+The local command is `dexai-connect`. Its default state directory and environment
+variable are `dexai-connect` under the user's configuration directory and
+`DEXAI_CONNECT_STATE_DIR`. Existing pre-launch state is not migrated automatically;
+use `--state-dir` with the old directory if a binding must be kept, or pair again.
+The fixed server download artifact names remain `superverse-bridge-*` for the
+existing wire contract.
+
+Orca must be at least 1.4.0 and Codex at least 0.162.0; 1.4.225 and 0.163.0
+are the newest verified versions. A newer local version connects with a
+compatibility warning at startup and in `dexai-connect status`.
+
+After the public mirror is published, the CLI release is built locally for four
+platforms, with checked SHA-256 digests and a Homebrew formula proposed to
+`superdurable/homebrew-tap`. No platform deployment or GitHub Actions job
+publishes this CLI.
 
 ## Verification and cleanup
 

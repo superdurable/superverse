@@ -1,6 +1,6 @@
 .PHONY: generate generate-proto generate-go generate-web generate-app-template generate-package-readmes \
-	generate-studio-readmes build build-bridge-local build-web vet compile-tests check check-go check-go-rules check-go-proto \
-	check-web check-web-source check-web-build check-homepage check-generated check-generated-web \
+	generate-studio-readmes build build-dexai-connect-local build-web vet compile-tests check check-go check-go-rules check-go-proto \
+	check-web check-web-source check-web-build check-generated check-generated-web \
 	check-app-template check-app-template-source check-app-template-embedded \
 	check-deployment-names check-package-layers check-package-limits check-package-readmes check-go-file-length license-headers check-license-headers \
 	check-studio-server-boundary check-mock-scenarios check-rpc-coverage check-flow-registry check-config check-exports check-proto-enums check-test-lanes check-terraform-inputs check-dex-versions check-proto-format check-proto check-generated-proto \
@@ -70,11 +70,11 @@ generate-studio-readmes:
 build:
 	go build $(GO_PACKAGES)
 
-# The Bridge for this machine, in ./bin/. BRIDGE_VERSION is the semantic version it reports at
+# The connector for this machine, in ./bin/. DEXAI_CONNECT_VERSION is the semantic version it reports at
 # pairing; a local build is a dev build, which only a local profile's server accepts.
-BRIDGE_VERSION ?= 0.0.0-dev
-build-bridge-local:
-	go build -ldflags "-X main.version=$(BRIDGE_VERSION)" -o bin/superverse-bridge ./cmd/superverse-bridge
+DEXAI_CONNECT_VERSION ?= 0.0.0-dev
+build-dexai-connect-local:
+	go build -ldflags "-X main.version=$(DEXAI_CONNECT_VERSION)" -o bin/dexai-connect ./cmd/dexai-connect
 
 build-web:
 	@npm --prefix web/studio run build

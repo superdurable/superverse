@@ -85,7 +85,7 @@ def main():
             print(f"  native: {path} ({pattern})")
     bridge = bridge_race_required(paths)
     if bridge:
-        print(f"Required Orca bridge check: go test -count=1 ./cmd/superverse-bridge/relay -run '^{BRIDGE_RACE_TEST}$'")
+        print(f"Required Orca bridge check: go test -count=1 ./cmd/dexai-connect/relay -run '^{BRIDGE_RACE_TEST}$'")
         for path, pattern in bridge:
             print(f"  bridge: {path} ({pattern})")
 

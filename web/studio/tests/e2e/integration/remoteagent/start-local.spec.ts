@@ -77,7 +77,7 @@ test("A locally chosen agent receives the creation message once, after remote ac
     if (!paired.ok()) throw new Error(`Pairing returned HTTP ${paired.status()}`);
     const pairing: RpcOutput<"CreateRemoteAgentPairing"> = await paired.json();
     await expect(page.getByLabel("Pairing code")).toHaveText(pairing.code);
-    await expect(page.getByText(`superverse-bridge connect --endpoint ${pairing.endpoint}`)).toBeVisible();
+    await expect(page.getByText(`dexai-connect connect --endpoint ${pairing.endpoint}`)).toBeVisible();
     const client = new RemoteClient(pairing.connectionId, pairing.endpoint);
     await client.pair(pairing);
     const firstSent = page.waitForRequest(rpcPosted("SendMessage"));
