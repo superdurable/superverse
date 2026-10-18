@@ -330,11 +330,14 @@ and the plugin archive. The contract the endpoint implements:
   manifest means an empty manifest and 404 for every artifact, which is the Native lane's normal state:
   there the Builder runs the locally built Bridge.
 
-The local release script builds `dexai-connect` archives for the same four platforms and creates
-`dexai-connect-v<version>` in the public mirror after publication. Its generated Homebrew formula
-belongs in `superdurable/homebrew-tap`. The existing environment downloads keep their fixed names;
-no GitHub Actions job publishes the new release. Windows (and WSL) are not supported
-in the first version.
+The local release script builds `dexai-connect` archives for the same four platforms and `dexai`
+archives for macOS arm64 and amd64. It stamps both commands with a released semantic version no lower
+than the default `remoteAgent.minimumBridgeVersion` (`0.1.0`), refuses a dirty tree or any source
+other than the tip of `origin/main`, and only creates `dexai-connect-v<version>` or `dexai-v<version>`
+in the public mirror when the operator supplies `--publish`; its default is build-only. The generated
+Homebrew formulas belong in `superdurable/homebrew-tap`. The existing environment downloads keep their
+fixed names; no GitHub Actions job publishes a release. Windows (and WSL) are not supported in the
+first version.
 
 ## Security
 
