@@ -178,6 +178,9 @@ func (r *relay) settleJournal(ctx context.Context, sending state.Sending, text s
 		if isSessionChanged(sendErr) {
 			return SendResult{}, sendErr
 		}
+		if errors.Is(sendErr, ErrUnsupportedProtocol) {
+			return SendResult{}, sendErr
+		}
 		if sendErr == nil && (result.State == SubmissionAccepted || result.State == SubmissionRejected) {
 			return result, nil
 		}
@@ -228,6 +231,9 @@ func (r *relay) settleOneWrite(ctx context.Context, sending state.Sending, text 
 		if isSessionChanged(sendErr) {
 			return SendResult{}, sendErr
 		}
+		if errors.Is(sendErr, ErrUnsupportedProtocol) {
+			return SendResult{}, sendErr
+		}
 		if sendErr == nil {
 			if result.State == SubmissionRejected {
 				return result, nil
@@ -244,6 +250,9 @@ func (r *relay) settleOneWrite(ctx context.Context, sending state.Sending, text 
 		return SendResult{}, ctx.Err()
 	}
 	if isSessionChanged(err) {
+		return SendResult{}, err
+	}
+	if errors.Is(err, ErrUnsupportedProtocol) {
 		return SendResult{}, err
 	}
 	if err != nil {
@@ -274,6 +283,7 @@ func (r *relay) finishDelivery(sending state.Sending, result SendResult) error {
 	}
 	if sending.Key == briefKey {
 		progress.BriefSent = true
+		progress.BriefAccepted = result.State == SubmissionAccepted
 		progress.BriefText = ""
 	}
 	if sending.Key == contextFollowupKey {

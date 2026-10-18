@@ -76,6 +76,11 @@ DEXAI_CONNECT_VERSION ?= 0.0.0-dev
 build-dexai-connect-local:
 	go build -ldflags "-X main.version=$(DEXAI_CONNECT_VERSION)" -o bin/dexai-connect ./cmd/dexai-connect
 
+# Direct-agent command; only local profiles accept the development version.
+DEXAI_VERSION ?= 0.0.0-dev
+build-dexai-local:
+	go build -ldflags "-X main.version=$(DEXAI_VERSION)" -o bin/dexai ./cmd/dexai-cli
+
 build-web:
 	@npm --prefix web/studio run build
 

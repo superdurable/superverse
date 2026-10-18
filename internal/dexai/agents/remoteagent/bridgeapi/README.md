@@ -3,19 +3,20 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Declares the remote agent endpoint's paths, body limits, JSON requests, responses, reports and error codes, shared by the endpoint and the Bridge.
 
-Callers: `cmd/dexai-connect`, `cmd/dexai-connect/mcpserver`, `cmd/dexai-connect/platform`, `cmd/dexai-connect/relay`, `cmd/dexai-connect/state` and `internal/dexai/agents/remoteagent` import this package.
+Callers: `cmd/dexai-cli`, `cmd/dexai-connect`, `cmd/dexai-connect/mcpserver`, `cmd/dexai-connect/platform`, `cmd/dexai-connect/relay`, `cmd/dexai-connect/state` and `internal/dexai/agents/remoteagent` import this package.
 
 Dependencies: it imports no other package of this module and calls no remote API.
 
 ```mermaid
 flowchart LR
   self["internal/dexai/agents/remoteagent/bridgeapi"]
-  c0["cmd/dexai-connect"] --> self
-  c1["cmd/dexai-connect/mcpserver"] --> self
-  c2["cmd/dexai-connect/platform"] --> self
-  c3["cmd/dexai-connect/relay"] --> self
-  c4["cmd/dexai-connect/state"] --> self
-  c5["internal/dexai/agents/remoteagent"] --> self
+  c0["cmd/dexai-cli"] --> self
+  c1["cmd/dexai-connect"] --> self
+  c2["cmd/dexai-connect/mcpserver"] --> self
+  c3["cmd/dexai-connect/platform"] --> self
+  c4["cmd/dexai-connect/relay"] --> self
+  c5["cmd/dexai-connect/state"] --> self
+  c6["internal/dexai/agents/remoteagent"] --> self
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 

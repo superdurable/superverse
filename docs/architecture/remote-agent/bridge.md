@@ -1,10 +1,9 @@
 # Bridge
 
-`dexai-connect` is the program a Builder runs next to Orca. It holds the connection to one or
-more Projects, drives the bound Codex conversation through Orca's structured session protocol, and
-serves the Superverse tools to Codex as a local MCP server. It calls no model and keeps no Project
-state the platform depends on. The relay and local state also define a provider boundary for a
-future direct client; this command still selects Orca. This document owns the Bridge, its Orca and
+`dexai-connect` is the program a Builder runs next to Orca. `dexai` is the direct macOS command
+that connects to the Builder's Codex daemon. Both use the same relay, local state, platform client
+and MCP server packages, but keep separate default state directories. They call no platform model
+and keep no Project source state the platform depends on. This document owns the Bridge, its Orca and
 Codex integration, the provider boundary, the Orca plugin, distribution and security. The server
 side is in [connection](connection.md) and [executor](executor.md).
 
@@ -18,8 +17,13 @@ flowchart LR
     orca <--> codex["Codex (structured session)"]
     codex -->|"stdio MCP"| mcp["dexai-connect mcp"]
     mcp <-->|"local socket"| serve
+    direct["dexai serve"] <-->|"Unix WebSocket"| daemon["Builder's Codex daemon"]
+    tui["Codex TUI"] <-->|"same thread"| daemon
+    daemon -->|"per-thread stdio MCP"| directMCP["dexai mcp"]
+    directMCP <-->|"local socket"| direct
   end
   serve <-->|"HTTPS, bearer token"| endpoint["Remote agent endpoint"]
+  direct <-->|"HTTPS, bearer token"| endpoint
   endpoint <--> session["SessionAgentFlow"]
 ```
 
@@ -33,17 +37,19 @@ flowchart LR
 
 ### Provider boundary for direct clients
 
-The shared `cmd/dexai-connect/relay`, `state`, `platform` and `mcpserver` packages are importable
-from a future `cmd/dexai-cli` binary. `relay.Provider` owns the local session and thread IDs,
+The shared `cmd/dexai-connect/relay`, `state`, `platform` and `mcpserver` packages are imported
+by `cmd/dexai-cli`. `relay.Provider` owns the local session and thread IDs,
 runtime versions, cancel, public history, event subscription, event positions, and a declared
 submission mode. `relay.Orca` adds only the tab, worktree and reload operations used by the
-current connect UI. The active `dexai-connect` command still uses Orca and keeps the same local
-MCP server name, `superverse`.
+current Orca connect UI. `dexai-connect` still uses Orca; `dexai` selects the direct Codex
+provider. Both use the local MCP server name `superverse`.
 
 Orca's existing `binding.json` keys and `progress.json` positions remain readable and are written
 the same way. Empty `providerId` identifies these Orca bindings. Direct bindings will carry their
 provider ID and an opaque event cursor; their local MCP process addresses the binding by its
-connection ID instead of an Orca session ID. A single `serve` supervisor uses one provider and
+connection ID instead of an Orca session ID. For Codex, the persisted legacy `orcaSessionId`
+field contains that connection ID, while `providerThreadId` is the Codex thread ID. A single
+`serve` supervisor uses one provider and
 rejects a binding for a different provider. The bridgeapi field names and endpoint paths are
 unchanged; its binding values remain opaque to the platform.
 
@@ -61,9 +67,39 @@ message and report uncertainty; it cannot create a duplicate send. Direct adapte
 marker in user content, avoid internal send retries, filter hidden reasoning, and normalize the
 submitted user's event ID to the deterministic ID they gave the relay for echo suppression.
 
-The direct Codex and Claude adapters, their runtime and event replay details, direct connection
-UI, and real-provider acceptance are separate implementation work. No direct provider is enabled
-by this boundary change.
+### Direct Codex binding
+
+`dexai connect` asks for the code and agent on the terminal. Claude Code is displayed as not
+available until its separate driver is implemented. Codex CLI and the Builder's own managed daemon
+must both be at least 0.162.0 at connect and reconnect; 0.163.0 is the newest
+verified daemon version. A newer version connects with a warning at startup and
+in status. An unrecognized turn status, item type or required answer stops the
+binding with an explicit protocol error. dexai does not install or update either.
+The command pairs, starts one persistent Codex thread in its local working directory
+with a per-thread MCP configuration, stores the binding, activates the platform connection, and
+sends the platform brief as the first user turn. It opens the Codex TUI on that thread only after
+the first user message appears in persisted history. An unmaterialized empty thread cannot be
+resumed into the TUI, so no empty model turn is sent. The default working directory is a private
+per-binding scratch directory; `--cwd` selects an existing local directory. Project source stays
+in the Superverse Sandbox and is reached through the platform tools, not mirrored locally.
+
+The per-thread MCP override runs `dexai mcp` with `DEXAI_BINDING_ID` set to the connection ID.
+It does not edit global Codex configuration or use `ORCA_AGENT_SESSION_ID`. Both the relay's first
+`thread/resume` after daemon reconnection and the TUI resume supply the same override so either
+can resume first. A running turn receives `turn/steer` with the observed `expectedTurnId`; Stop
+uses `turn/interrupt` and confirms idle state. The provider reads public user and final assistant
+items from paginated `thread/turns/list` history; it synthesizes a durable event cursor from turn
+IDs and item ordinals and scans back to it after disconnection. A cursor older than its bounded
+500-turn scan fails visibly. Hidden reasoning and raw tool output never enter platform events.
+The marker proof and one-write rule apply to the brief and every Studio message. If the brief
+cannot be proved, `dexai connect` refuses to open the TUI and reports the local uncertainty;
+queued Studio messages have an entry sequence and report `delivery_uncertain` to Studio.
+
+The command creates no new cloud, Kubernetes, Temporal, Dex or database resource. The Builder's
+existing daemon is shared; each binding adds one Codex thread and one private local state record,
+with at most eight bindings per state directory. Local relay queues and report files are bounded.
+Codex owns thread-history retention; disconnect revokes and removes the platform binding. No
+cloud control-plane call or tenant-wide scan is on a request, poll or event path.
 
 ## Binding
 
@@ -234,10 +270,11 @@ space), and the call timing trace (three files of at most 4 MiB).
   permission from Orca upstream) remains a future compatibility improvement.
 - **Versions.** The Orca version comes from `status.get` (`appVersion`); no RPC reports Codex's,
   so the Bridge runs `codex --version` itself. `agentSession` is not a published Orca API: its methods and fences change between
-  releases. The shared version policy refuses Orca below 1.4.0 or Codex below
-  0.162.0. Orca 1.4.225 and Codex 0.163.0 are the newest verified versions;
-  newer versions warn while still connecting. The design asks Orca upstream for a stable session API;
-  until then this maintenance cost is accepted.
+  releases. The shared relay version policy refuses Orca below 1.4.0 or Codex
+  below 0.162.0. Orca 1.4.225 and Codex 0.163.0 are the newest verified
+  versions; newer versions warn while still connecting. An unrecognized
+  protocol answer stops its binding. The design asks Orca upstream for a stable
+  session API; until then this maintenance cost is accepted.
 - No terminal automation and no screen scraping: a missing capability is reported as incompatible.
 
 ## Orca plugin

@@ -22,8 +22,11 @@ Use the existing deployment procedure, never an ad hoc cloud change.
 
 After the platform has been rebuilt/deployed from reviewed source, open the Agent picker beside the composer,
 choose My local agent, then Connect on a READY Project with Builder capability. Read and acknowledge the
-local-machine warning. Copy the one-time ten-minute code into the Bridge's
-interactive `dexai-connect connect` flow and use the dialog's displayed origin as `--endpoint`. The Bridge appends the exact
+local-machine warning. Copy the one-time ten-minute code into either the Orca
+Bridge's interactive `dexai-connect connect` flow or the direct macOS command
+`dexai connect --endpoint <Studio origin>`. The direct command then asks which
+agent to use; Codex is available and Claude Code is shown as not available yet.
+Use the dialog's displayed origin as `--endpoint`. The Bridge appends the exact
 `/remote-agent/v1/...` route paths; do not append that prefix to the endpoint. Neither code
 nor token belongs in command arguments, shell history, screenshots, traces,
 logs, receipts or source. The Bridge keeps its returned token in its owning
@@ -79,6 +82,21 @@ existing wire contract.
 Orca must be at least 1.4.0 and Codex at least 0.162.0; 1.4.225 and 0.163.0
 are the newest verified versions. A newer local version connects with a
 compatibility warning at startup and in `dexai-connect status`.
+
+The direct `dexai` command has a separate default state directory (`dexai` under
+the user configuration directory, or `DEXAI_STATE_DIR`). Build its local macOS
+binary with `make build-dexai-local`. The Builder's installed Codex CLI and
+shared daemon must both be at least 0.162.0; 0.163.0 is the newest verified
+version and newer versions connect with a compatibility warning; start
+the daemon with `codex app-server daemon start` when it is absent. `dexai`
+does not install, update, downgrade or restart it. The first brief is submitted
+before the Codex TUI opens. Exit the TUI to stop the foreground relay; run
+`dexai serve` to resume a stored binding, or `dexai disconnect` to revoke it.
+The Project source remains in the Sandbox. The default local Codex directory
+is a private scratch directory; `--cwd` selects an existing local directory.
+If Studio reports `delivery_uncertain`, check the thread's public history before
+asking the Builder to send a new message; dexai never repeats an uncertain
+write automatically.
 
 After the public mirror is published, the CLI release is built locally for four
 platforms, with checked SHA-256 digests and a Homebrew formula proposed to

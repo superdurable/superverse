@@ -45,7 +45,7 @@ func (policy VersionPolicy) Check(version string) (string, error) {
 		return "", fmt.Errorf("%s %s is below dexai's minimum supported version %s; update %s", policy.name, version, formatVersion(policy.min), policy.name)
 	}
 	if compareVersion(parsed, policy.newest) > 0 {
-		return fmt.Sprintf("Warning: %s %s is newer than dexai's newest verified version %s; verify provider compatibility", policy.name, version, formatVersion(policy.newest)), nil
+		return fmt.Sprintf("Warning: %s %s is newer than dexai's newest verified version %s; an unknown protocol answer will stop this binding", policy.name, version, formatVersion(policy.newest)), nil
 	}
 	return "", nil
 }

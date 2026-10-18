@@ -59,6 +59,10 @@ const OrcaProviderID = "orca"
 // providers. Orca retains ErrConversationChanged and its existing text.
 var ErrProviderSessionChanged = errors.New("the provider session changed; reconnect from Studio")
 
+// ErrUnsupportedProtocol stops a binding when a provider's answer cannot be
+// interpreted safely. Retrying the binding would repeat the same ambiguity.
+var ErrUnsupportedProtocol = errors.New("unsupported provider protocol answer")
+
 func isSessionChanged(err error) bool {
 	return errors.Is(err, ErrConversationChanged) || errors.Is(err, ErrProviderSessionChanged)
 }

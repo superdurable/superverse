@@ -8,7 +8,7 @@ Dependencies: `cmd/dexai-connect/relay`, `cmd/dexai-connect/state` and `internal
 
 The Orca runtime protocol is confined by this adapter. Orca 1.4.0 and Codex
 0.162.0 are minimum versions; 1.4.225 and 0.163.0 are newest verified versions.
-Newer versions warn and may connect.
+Newer versions warn and may connect. An unknown protocol answer stops the binding.
 
 - **Transport** (`transport.go`). `orca-runtime.json` in `$ORCA_USER_DATA_PATH` or Orca's default
   directory gives the runtime ID, the unix socket and the owner token; all three change on every

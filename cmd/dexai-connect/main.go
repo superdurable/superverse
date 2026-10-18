@@ -310,7 +310,11 @@ func runStatus(ctx context.Context, args []string) error {
 		return err
 	}
 	if running {
-		return printServeStatus(ctx, dir)
+		if err := printServeStatus(ctx, dir); err != nil {
+			return err
+		}
+		printOrcaVersionWarning(ctx)
+		return nil
 	}
 	bindings, err := dir.Bindings()
 	if err != nil {

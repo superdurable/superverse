@@ -11,6 +11,7 @@ package relay
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"slices"
 	"time"
@@ -78,6 +79,9 @@ func (r *relay) eventLoop(ctx context.Context) error {
 			return ctx.Err()
 		}
 		if isSessionChanged(err) {
+			return err
+		}
+		if errors.Is(err, ErrUnsupportedProtocol) {
 			return err
 		}
 		r.logger.WarnContext(ctx, fmt.Sprintf("the %s session subscription ended; resubscribing", r.provider.ProviderName()), "project", r.projectName, "error", err)

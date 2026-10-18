@@ -76,10 +76,13 @@ type Progress struct {
 	Sending               *Sending `json:"sending,omitempty"`
 	// Acknowledged is the highest report sequence the platform admitted; the
 	// next report is Acknowledged+1.
-	Acknowledged             uint64    `json:"acknowledged"`
-	LastImportedMessageID    string    `json:"lastImportedMessageId,omitempty"`
-	HistoryImported          bool      `json:"historyImported"`
-	BriefSent                bool      `json:"briefSent"`
+	Acknowledged          uint64 `json:"acknowledged"`
+	LastImportedMessageID string `json:"lastImportedMessageId,omitempty"`
+	HistoryImported       bool   `json:"historyImported"`
+	BriefSent             bool   `json:"briefSent"`
+	// BriefAccepted distinguishes a proved first brief from an attempted
+	// brief whose one-write submission was uncertain. The relay owns it.
+	BriefAccepted            bool      `json:"briefAccepted,omitempty"`
 	BriefWaitStartedAt       time.Time `json:"briefWaitStartedAt,omitzero"`
 	BriefText                string    `json:"briefText,omitempty"`
 	BriefWithoutContext      bool      `json:"briefWithoutContext,omitempty"`

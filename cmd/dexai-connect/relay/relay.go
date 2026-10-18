@@ -179,6 +179,11 @@ func (r *relay) run(ctx context.Context) {
 			r.holdChanged(ctx, err)
 			return
 		}
+		if errors.Is(err, ErrUnsupportedProtocol) {
+			r.logger.ErrorContext(ctx, "binding stopped after an unsupported provider protocol answer", "project", r.projectName, "error", err)
+			r.holdFailure(ctx, err)
+			return
+		}
 		r.mu.Lock()
 		stopping := r.stopping
 		r.mu.Unlock()

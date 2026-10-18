@@ -1,8 +1,8 @@
 # Bridge relay
 
-Purpose: Runs each binding's provider-neutral delivery, tool and event loops and binds Orca sessions for the current command.
+Purpose: Runs provider-neutral delivery, tool and event loops for Orca and direct local-agent bindings.
 
-Callers: `cmd/dexai-connect` and `cmd/dexai-connect/orca` (which implements `Orca` and `Provider`).
+Callers: `cmd/dexai-connect`, `cmd/dexai-connect/orca` and the direct `cmd/dexai-cli/codexdaemon` provider.
 
 Dependencies: `cmd/dexai-connect/mcpserver`, `cmd/dexai-connect/platform`, `cmd/dexai-connect/state`, `internal/dexai/agents/remoteagent/bridgeapi` and `internal/comm`; it calls the remote agent endpoint through `platform` and the local provider through `Provider`.
 
@@ -19,9 +19,12 @@ delay or fail a tool call.
 `Provider` owns session identity, version and process identity, turn cancellation, public history,
 events, positions and a declared submission mode. `Supervisor` and the delivery/event loops depend
 only on it. `Orca` extends it with the tab/worktree inventory and `Reload` used by the current
-`dexai-connect connect` flow. A future direct command can import these packages without
-implementing Orca's UI operations. The current command selects Orca only; no direct provider is
-enabled here.
+`dexai-connect connect` flow. `cmd/dexai-cli` imports these packages and selects
+`codexdaemon`, which implements `OneWriteProvider`; the Orca command still selects Orca.
+`VersionPolicy` declares a minimum and newest verified version for each provider.
+Versions below the minimum fail; newer versions return one warning and may connect.
+An unsupported protocol answer holds that binding with a clear status problem
+instead of retrying it.
 
 `SubmissionJournal` resends the same operation ID to Orca's idempotent journal, as before.
 `SubmissionOneWrite` requires `OneWriteProvider`: the relay persists a random marker and the
@@ -34,6 +37,8 @@ public user history. A match accepts; absence or failure reports `delivery_uncer
 without another write. A direct adapter must put the marker in its user content and make no
 internal send retry. Its event IDs must match its deterministic `SubmittedMessageID` for echo
 suppression. Provider history and event cursors exclude hidden reasoning.
+`Progress.BriefSent` records that the first-brief attempt settled; `Progress.BriefAccepted`
+records positive admission. The direct command opens the TUI only for an accepted brief.
 
 `state.EventPosition` keeps Orca's existing `epoch` and `sequence` JSON while a direct provider
 can store an opaque `cursor`. The provider compares its own event positions at generation
@@ -44,7 +49,7 @@ and address the MCP socket by the connection ID. Orca MCP processes keep using t
 ## Orca
 
 `Orca` is the narrow interface the relay needs of Orca's structured session protocol
-used by the Bridge:
+used by the Orca Bridge:
 `Runtime` (versions and the runtime ID, which changes when Orca restarts), `OpenConversations`
 (the Codex conversations open in Orca, structured or in a terminal), `ResolveWorktree` (a new
 conversation's worktree selector), `CreateSession` (in a resolved worktree), `ResumeSession`, `Reload` (stop Codex so the next send
@@ -57,7 +62,8 @@ position is where its item was first written, so a turn's position is its start.
 `cmd/dexai-connect/orca` implements the interface with its method allow-list
 and the shared version policy. `VersionPolicy` declares a minimum and newest
 verified version for each provider. Versions below the minimum fail; newer
-versions return one warning and may connect.
+versions return one warning and may connect. An unsupported protocol answer
+stops the affected binding.
 
 ## Supervisor
 
