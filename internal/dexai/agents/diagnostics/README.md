@@ -29,7 +29,7 @@ join parallel waves and are repeated safely.
 
 | Tool | Reads | Output |
 | --- | --- | --- |
-| `read_delivery_status` | The Project and its Setup from the Project's read model row, a few seconds behind their Flows; the Project's Preview through its Flow client; the newest three Releases and Deployments of the read model, or the ones the call names; the active build revision of each Release, and for a failed one its log's end through `deployments.PublishingFlowService.ReadBuildLog`, which reads the build's recipe from its Flow, shares the replica's rate-limited log reads with Studio and answers a deferred read with no tail | Status, phase, failure and FlowID of each resource, the Session HEAD, the Live pointer, the Preview and its engine, and a failed build's log tail of at most 8 KiB, cut shorter when the status would pass 16 KiB |
+| `read_delivery_status` | The Project and its Setup from the Project's read model row, a few seconds behind their Flows; the Project's Preview through its Flow client; the newest three Releases and Live Deployments of the read model when no IDs are supplied, or the one named Live Release/Deployment; the active build revision of each Release, and for a failed one its log's end through `deployments.PublishingFlowService.ReadBuildLog`, which reads the build's recipe from its Flow, shares the replica's rate-limited log reads with Studio and answers a deferred read with no tail | Status, phase, failure and FlowID of each resource, the Session HEAD, the Live pointer, the Preview and its engine, and a failed build's log tail of at most 8 KiB, cut shorter when the status would pass 16 KiB |
 | `read_platform_flow` | One platform Flow through the platform Dex FlowService: summary, state or one history page of the current run | The summary with the current Steps and waits; the allowlisted business Attributes of the Flow type, each value at most 1 KiB of JSON; Step executions, decisions, attempts and failures |
 | `read_live_app_runs` | The Project's current Live deployment, as the read model's Live target selects it, through `runs.Runs.InvokeLive`: a search through indexed Attributes, one run's summary, state or history page; or the log of the application container through `deployments.Serving` | Runs newest first, run documents as above with every Attribute, and a log tail of at most 12 KiB with the container's state, cut shorter when the result would pass 16 KiB |
 
@@ -160,6 +160,13 @@ whose credential files the redaction reads) on Native, `SUPERVERSE_S3_ENDPOINT`,
 `SUPERVERSE_TEST_DIAGNOSTICS_SECRETS_FILE`, a private JSON file
 `{"values": [...]}` of the values the fixture application printed and stored.
 It logs identities only, never a tool result or a value.
+
+`TestReadDeliveryStatusUnknownIDsIntegration` instead needs an existing Session
+Project with a Preview Sandbox instance through
+`SUPERVERSE_TEST_DELIVERY_STATUS_PROJECT_ID`. It verifies that the Sandbox
+instance is refused as a Live deployment ID and that a missing Live Release
+returns the corrective no-argument hint; it neither needs nor changes the
+historical Live diagnostics fixture.
 
 The path through a Session is covered in `internal/dexai/agents` by
 `TestSessionMockPlatformReadsDexIntegration`: a real Session on the mock model

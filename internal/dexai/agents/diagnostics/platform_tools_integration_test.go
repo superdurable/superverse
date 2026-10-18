@@ -125,6 +125,28 @@ func newPlatformTools(t *testing.T) *platformTools {
 	return tools
 }
 
+// newDeliveryStatusTools composes the read_delivery_status dependencies for a
+// Project that has an existing Session. Unlike the historical diagnostics
+// fixture, this reader needs no Live workload or configured secret values.
+func newDeliveryStatusTools(t *testing.T, projectID string) *platformTools {
+	t.Helper()
+	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
+	runtime := newLocalRuntime(t)
+	db := postgrestest.OpenForTest(t)
+	projectClient := &projects.ProjectFlowClient{Flow: &projects.ProjectFlow{}, Projections: projectdao.New(db), ProjectIDLength: len(projectID), PlatformAdminEmail: "admin@superverse.test"}
+	releaseFlow := releases.NewProjectReleaseFlow(projectClient, nil, nil, build.NewProfiles(), nil, deploymentnames.EnvironmentTest, nil, nil)
+	releaseClient := releases.NewProjectReleaseFlowClient(releaseFlow, projectClient, build.NewProfiles())
+	deploymentClient := deployments.NewProjectDeployFlowClient(projectClient, nil, nil)
+	deploymentClient.Releases = releaseClient
+	releaseClient.Rows, deploymentClient.Rows = deliverydao.New(db), deliverydao.New(db)
+	previewClient := &preview.PreviewFlowClient{Flow: &preview.PreviewFlow{}, Execution: dexflowtest.ExecutionReaderForTest(t, address)}
+	client := dexflowtest.ClientForTest(t, address, nil, projectClient.Flow, previewClient.Flow, releaseFlow, &deployments.ProjectDeployFlow{})
+	projectClient.Dex, previewClient.Dex = client, client
+	return &platformTools{reader: &ProjectDiagnostics{
+		Projects: projectClient, Previews: previewClient, Releases: releaseClient, Deployments: deploymentClient, Redactor: runtime.redactor,
+	}, identity: agentloop.SessionIdentity{ProjectID: projectID, Profile: agentloop.ProfileSessionV1}}
+}
+
 // call runs one tool call as a Session Step does and returns its outcome and
 // decoded content.
 func (tools *platformTools) call(t *testing.T, name conversation.ToolName, arguments string) (conversation.ToolOutcome, map[string]any, string) {
@@ -330,6 +352,31 @@ func TestPlatformToolsProjectScopeIntegration(t *testing.T) {
 		t.Fatal("reading the Project changed its Preview")
 	}
 	t.Logf("project=%s read %d platform Flows with the instance reclaimed and refused %d FlowIDs", tools.identity.ProjectID, len(flowIDs), len(refused))
+}
+
+// TestReadDeliveryStatusUnknownIDsIntegration verifies that a Preview Sandbox
+// instance is not accepted as a Live deployment selector and that a missing
+// Live Release tells the Session how to read the Preview instead. It uses the
+// Session Project created by the Native browser lane and changes no Flow.
+func TestReadDeliveryStatusUnknownIDsIntegration(t *testing.T) {
+	projectID := dexflowtest.Setting(t, "SUPERVERSE_TEST_DELIVERY_STATUS_PROJECT_ID")
+	tools := newDeliveryStatusTools(t, projectID)
+	previewState, err := tools.reader.Previews.Get(t.Context(), projectID)
+	if err != nil || previewState.WorkspaceRequestID == "" {
+		t.Fatal("requires an existing Session Project whose Preview acquired a Sandbox instance")
+	}
+	for _, missing := range []struct {
+		arguments, resource, scope string
+	}{
+		{`{"deployment_id":"` + previewState.WorkspaceRequestID + `"}`, "Deployment " + previewState.WorkspaceRequestID, deploymentIDScopeHint},
+		{`{"release_id":"` + strings.Repeat("0", 40) + `"}`, "Release " + strings.Repeat("0", 40), releaseIDScopeHint},
+	} {
+		outcome, content, output := tools.call(t, conversation.ToolReadDeliveryStatus, missing.arguments)
+		if outcome != conversation.ToolOutcomeKnownFailure || content["code"] != toolfailure.FlowNotFound.String() ||
+			!strings.Contains(output, missing.resource+" does not exist. "+missing.scope+" "+deliveryStatusNoArgumentsHint) {
+			t.Fatalf("read_delivery_status missing-resource hint is wrong for %s", missing.resource)
+		}
+	}
 }
 
 // The fixture's Live application printed a configured connection credential

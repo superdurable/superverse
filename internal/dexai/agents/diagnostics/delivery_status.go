@@ -31,6 +31,11 @@ const (
 	newestChildren = 3
 	// maximumBuildLogBytes bounds the log tail of a failed build.
 	maximumBuildLogBytes = 8 << 10
+	// deliveryStatusNoArgumentsHint explains how to recover from an ID that
+	// belongs to Preview rather than a Live delivery resource.
+	deliveryStatusNoArgumentsHint = "Call read_delivery_status with no arguments to report the Preview and newest Releases and Live deployments."
+	releaseIDScopeHint            = "release_id names a Live Release."
+	deploymentIDScopeHint         = "deployment_id names a Live deployment."
 )
 
 // deliveryStatus is where the Project's source stands on its way to Live.
@@ -185,7 +190,7 @@ func (d *ProjectDiagnostics) releaseProjections(ctx context.Context, projectID, 
 	}
 	projection, err := d.Releases.ReadProjection(ctx, projectID, named)
 	if err != nil {
-		return nil, notFound(fmt.Errorf("read Release %s: %w", named, err), "Release "+named)
+		return nil, notFound(fmt.Errorf("read Release %s: %w", named, err), "Release "+named, releaseIDScopeHint+" "+deliveryStatusNoArgumentsHint)
 	}
 	return []releases.ReleaseProjection{projection}, nil
 }
@@ -202,7 +207,7 @@ func (d *ProjectDiagnostics) deploymentProjections(ctx context.Context, projectI
 	}
 	projection, err := d.Deployments.ReadProjection(ctx, projectID, named)
 	if err != nil {
-		return nil, notFound(fmt.Errorf("read Deployment %s: %w", named, err), "Deployment "+named)
+		return nil, notFound(fmt.Errorf("read Deployment %s: %w", named, err), "Deployment "+named, deploymentIDScopeHint+" "+deliveryStatusNoArgumentsHint)
 	}
 	return []deployments.DeploymentProjection{projection}, nil
 }

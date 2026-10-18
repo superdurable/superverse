@@ -2922,9 +2922,11 @@ func (s *ReadConnectorChecks) SetSlug(val string) {
 
 // Ref: #
 type ReadDeliveryStatus struct {
-	// Report this Release, named by its 40-character main commit, instead of the newest three.
+	// Report this Live Release, identified by its 40-character main commit, instead of the newest three.
+	// Leave both IDs absent to report the Preview and newest Releases and Live deployments.
 	ReleaseID OptString `json:"release_id"`
-	// Report this Live deployment instead of the newest three.
+	// Report this Live deployment instead of the newest three. Leave both IDs absent to report the Preview
+	// and newest Releases and Live deployments.
 	DeploymentID OptString `json:"deployment_id"`
 }
 

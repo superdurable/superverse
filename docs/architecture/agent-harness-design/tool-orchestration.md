@@ -138,7 +138,7 @@ optional parameters that count against the strict limit.
 | `set_effort` | `level` (`high` or `xhigh`), `reason` | none |
 | `start_agent` | `description` (1 to 80 characters; for `connector_develop` also the commit and pull request title), `prompt` (at most 32 KiB), `kind` (`investigate`, `change`, `connector_select`, `connector_develop`) | `slug` and `contribution` (`new`, `operation` or `fix`), both for `connector_develop` only (2) |
 | `merge_agent_changes` | `agent_id`, `action` (`apply` or `discard`) | `paths[]` (1; at most 200 workspace-relative paths, only with `apply`) |
-| `read_delivery_status` | none | `release_id` (40 hex), `deployment_id` |
+| `read_delivery_status` | none | `release_id` (40 hex, a Live Release), `deployment_id` (a Live deployment); with neither it reports Preview and newest Live resources |
 | `read_platform_flow` | `flow_id`, `view` (`summary`, `state`, `history`) | `after_event_id`, `page_size` (1 to 50, default 50) |
 | `read_live_app_runs` | `operation` (`search`, `summary`, `state`, `history`, `logs`) | `flow_type`, `flow_id`, `filters[]` (at most 8), `after_event_id`, `page_size`, `tail_lines` (1 to 200) |
 

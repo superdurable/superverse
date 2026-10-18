@@ -125,11 +125,15 @@ func decodeArguments[T any](decode func(string) (T, error), arguments string) (T
 }
 
 // notFound turns a missing Flow into a call failure and keeps any other
-// error.
-func notFound(err error, what string) error {
+// error. hint describes the resource selector when the caller can correct it.
+func notFound(err error, what, hint string) error {
 	var missing *dex.FlowNotFoundError
 	if errors.As(err, &missing) || errors.Is(err, postgres.ErrNotFound) {
-		return &callFailureError{code: toolfailure.FlowNotFound, message: what + " does not exist"}
+		message := what + " does not exist"
+		if hint != "" {
+			message += ". " + hint
+		}
+		return &callFailureError{code: toolfailure.FlowNotFound, message: message}
 	}
 	return err
 }

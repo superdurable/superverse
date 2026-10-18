@@ -28,7 +28,7 @@ func (d *ProjectDiagnostics) readConnectorChecks(ctx context.Context, identity a
 	}
 	snapshot, err := d.Contributions.Snapshot(ctx, contribution.Identity{ProjectID: identity.ProjectID, Slug: input.Slug})
 	if err != nil {
-		return nil, notFound(err, "connector contribution")
+		return nil, notFound(err, "connector contribution", "")
 	}
 	redaction := newRedactor(identity.ProjectID, d.Redactor)
 	if snapshot.Record.HeadCommit == "" || snapshot.Record.Location == connectorlibrary.LocationSandbox {

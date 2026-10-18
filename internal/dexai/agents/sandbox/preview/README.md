@@ -484,7 +484,8 @@ The commands that report are `deploy-preview` (every outcome),
 (failures). The notification is `conversation.SessionNotification{Kind:
 delivery, Source: preview}` with `Outcome`, `Owner`, `Code`, `Phase` (the
 command kind), `Commit` (the deployment's pinned commit, the prepared commit of
-a start or the preparation's HEAD), `ResourceID` (the instance it ran on), the
+a start or the preparation's HEAD), `ResourceID` (the Sandbox instance it ran
+on, rather than a Live deployment), the
 gaps, a summary that names no commit or code, and the Failure's message and
 remedy, the message cut to fit 4 KiB. Its ID is
 `preview/<WorkspaceRequestID>/<command ID>/<outcome>`, for example
