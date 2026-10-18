@@ -30,6 +30,7 @@ import { Glyph } from "@/components/ui/Glyph";
 import { Spinner } from "@/components/ui/Icons";
 import { PopoverCard } from "@/components/ui/Popover";
 import { ProblemPanel } from "@/components/ui/problem/ProblemPanel";
+import { RunningMark } from "@/components/ui/wait/LongWait";
 import { ConsequenceSummary } from "./ConsequenceSummary";
 import { publishProblem, usePublish } from "./publish-commands";
 import type { PublishOpening } from "./publish-opener";
@@ -216,11 +217,16 @@ export function PublishPopover({
                 problem={errorProblem(check.error, { operation: "Checking the next publish" })}
               />
             ) : !configuration ? (
-              <p className={NOTE} role="status">
-                {preparing
-                  ? `Getting ${versionNumber(version)} ready to check. The first time takes a few minutes.`
-                  : "Checking Live's next publish…"}
-              </p>
+              <div className={cx(NOTE, "flex items-center gap-2.5")} role="status">
+                {/* The mark comes with the "few minutes" words, so nothing moves when reading turns into preparing;
+                    its spinner holds the box until the wait runs long. */}
+                {preparing && <RunningMark size="line" />}
+                <p>
+                  {preparing
+                    ? `Getting ${versionNumber(version)} ready to check. The first time takes a few minutes.`
+                    : "Checking Live's next publish…"}
+                </p>
+              </div>
             ) : (
               <>
                 <ConsequenceSummary

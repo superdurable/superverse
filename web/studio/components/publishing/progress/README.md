@@ -5,7 +5,7 @@ Purpose: One publish in Tools ▸ Publishing: its header with Cancel, the five-s
 
 Importers: `components/publishing` imports this directory.
 
-Imports: it imports `components/publishing/timings`, `components/ui`, `components/ui/problem`, `lib/api`, `lib/api/transport`, `lib/browser`, `lib/generated/protobuf`, `lib/project/publishing`, `lib/project/setup`, `lib/shared`, `lib/shared/problem` and `lib/shared/version`.
+Imports: it imports `components/publishing/timings`, `components/ui`, `components/ui/problem`, `components/ui/wait`, `lib/api`, `lib/api/transport`, `lib/browser`, `lib/generated/protobuf`, `lib/project/publishing`, `lib/project/setup`, `lib/shared`, `lib/shared/problem` and `lib/shared/version`.
 
 ```mermaid
 flowchart LR
@@ -14,15 +14,16 @@ flowchart LR
   self --> d0["components/publishing/timings"]
   self --> d1["components/ui"]
   self --> d2["components/ui/problem"]
-  self --> d3["lib/api"]
-  self --> d4["lib/api/transport"]
-  self --> d5["lib/browser"]
-  self --> d6["lib/generated/protobuf"]
-  self --> d7["lib/project/publishing"]
-  self --> d8["lib/project/setup"]
-  self --> d9["lib/shared"]
-  self --> d10["lib/shared/problem"]
-  self --> d11["lib/shared/version"]
+  self --> d3["components/ui/wait"]
+  self --> d4["lib/api"]
+  self --> d5["lib/api/transport"]
+  self --> d6["lib/browser"]
+  self --> d7["lib/generated/protobuf"]
+  self --> d8["lib/project/publishing"]
+  self --> d9["lib/project/setup"]
+  self --> d10["lib/shared"]
+  self --> d11["lib/shared/problem"]
+  self --> d12["lib/shared/version"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 

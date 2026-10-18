@@ -5,7 +5,7 @@ Purpose: The bar's Publish button and its popover: the version, what blocks it, 
 
 Importers: `components/project` and `components/publishing` import this directory.
 
-Imports: it imports `components/flow/scope`, `components/ui`, `components/ui/problem`, `lib/api`, `lib/api/flow/draft`, `lib/api/transport`, `lib/browser`, `lib/generated/protobuf`, `lib/project`, `lib/project/publishing`, `lib/project/setup`, `lib/shared`, `lib/shared/problem` and `lib/shared/version`.
+Imports: it imports `components/flow/scope`, `components/ui`, `components/ui/problem`, `components/ui/wait`, `lib/api`, `lib/api/flow/draft`, `lib/api/transport`, `lib/browser`, `lib/generated/protobuf`, `lib/project`, `lib/project/publishing`, `lib/project/setup`, `lib/shared`, `lib/shared/problem` and `lib/shared/version`.
 
 ```mermaid
 flowchart LR
@@ -15,17 +15,18 @@ flowchart LR
   self --> d0["components/flow/scope"]
   self --> d1["components/ui"]
   self --> d2["components/ui/problem"]
-  self --> d3["lib/api"]
-  self --> d4["lib/api/flow/draft"]
-  self --> d5["lib/api/transport"]
-  self --> d6["lib/browser"]
-  self --> d7["lib/generated/protobuf"]
-  self --> d8["lib/project"]
-  self --> d9["lib/project/publishing"]
-  self --> d10["lib/project/setup"]
-  self --> d11["lib/shared"]
-  self --> d12["lib/shared/problem"]
-  self --> d13["lib/shared/version"]
+  self --> d3["components/ui/wait"]
+  self --> d4["lib/api"]
+  self --> d5["lib/api/flow/draft"]
+  self --> d6["lib/api/transport"]
+  self --> d7["lib/browser"]
+  self --> d8["lib/generated/protobuf"]
+  self --> d9["lib/project"]
+  self --> d10["lib/project/publishing"]
+  self --> d11["lib/project/setup"]
+  self --> d12["lib/shared"]
+  self --> d13["lib/shared/problem"]
+  self --> d14["lib/shared/version"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 

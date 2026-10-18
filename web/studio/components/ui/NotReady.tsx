@@ -6,8 +6,10 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
+"use client";
+
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { buttonStyle } from "./Button";
 import { cx } from "./cx";
 
@@ -42,6 +44,7 @@ export function NotReady({
   action,
   retry = false,
   detail,
+  loader,
 }: {
   kind: NotReadyKind;
   heading: string;
@@ -52,11 +55,19 @@ export function NotReady({
   /* An identifier a person can quote when reporting. Errors carry one; the calm
      kinds have nothing to quote. */
   detail?: string;
+  /** Work is under way: the card is headed by this, the running mark of `ui/wait`, and its heading is announced. */
+  loader?: ReactNode;
 }) {
   const register = REGISTER[kind];
+  const said = useSaidAfterMount(loader ? heading : "");
   return (
     <div className="box-border flex min-h-0 w-full min-w-0 flex-1 items-center justify-center overflow-y-auto p-4 sm:p-8">
       <div className={cx("w-full max-w-md min-w-0 rounded-lg border p-6", register.frame)} data-not-ready={kind}>
+        {/* Only the heading is the status, not the whole card with its instructions. */}
+        <p aria-live="polite" className="sr-only" role="status">
+          {said}
+        </p>
+        {loader && <div className="mb-4">{loader}</div>}
         <div className="flex items-center gap-2">
           {register.mark && <span aria-hidden="true" className={cx("size-2 shrink-0", register.mark)} />}
           <h2 className="text-[17px] font-semibold text-ink">{heading}</h2>
@@ -80,4 +91,17 @@ export function NotReady({
       </div>
     </div>
   );
+}
+
+/**
+ * The status words, set only after the region is in the page: a live region inserted already holding its words,
+ * or turned on around them, is often not announced, while a change inside an existing region is.
+ */
+function useSaidAfterMount(words: string): string {
+  const [said, setSaid] = useState("");
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSaid(words), 0);
+    return () => window.clearTimeout(timer);
+  }, [words]);
+  return said;
 }

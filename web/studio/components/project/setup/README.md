@@ -5,7 +5,7 @@ Purpose: Setup's pieces around the table: why it is not shown yet, the automatic
 
 Importers: `components/project` and `mock/surface` import this directory.
 
-Imports: it imports `components/build`, `components/ui/problem` and `lib/generated/protobuf`.
+Imports: it imports `components/build`, `components/ui/problem`, `components/ui/wait` and `lib/generated/protobuf`.
 
 ```mermaid
 flowchart LR
@@ -14,7 +14,8 @@ flowchart LR
   c1["mock/surface"] --> self
   self --> d0["components/build"]
   self --> d1["components/ui/problem"]
-  self --> d2["lib/generated/protobuf"]
+  self --> d2["components/ui/wait"]
+  self --> d3["lib/generated/protobuf"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 

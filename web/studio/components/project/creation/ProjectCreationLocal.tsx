@@ -178,7 +178,7 @@ export function ProjectCreationLocal({
   if (project?.error || error) return <Banner className="mt-6">{project?.error || error}</Banner>;
   return (
     <div className="mt-6 grid justify-items-start gap-3">
-      {!active && <StartupSteps current={!ready ? "project" : "agent"} />}
+      {!active && <StartupSteps current={!ready ? "project" : "agent"} mark />}
       {!active ? (
         <p className="text-body text-ink-dim">
           Preparing the Project and its agent. Your description is saved in this browser.

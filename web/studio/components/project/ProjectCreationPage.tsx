@@ -168,7 +168,7 @@ export function ProjectCreationPage() {
         )}
         {!localIntent && !missingIntent && !error && (
           <div className="mt-6 grid justify-items-start gap-2">
-            <StartupSteps current="project" />
+            <StartupSteps current="project" mark />
             <p className="text-body text-ink-dim">
               {fromExample
                 ? "The project opens on the example as it is built. What you typed waits in its chat, unsent, for you to change it."

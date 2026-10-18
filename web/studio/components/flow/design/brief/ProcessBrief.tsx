@@ -10,6 +10,7 @@
 
 import { useMemo, type ReactNode } from "react";
 import { MoreDetails } from "@/components/ui/reveal/MoreDetails";
+import { RunningMark } from "@/components/ui/wait/LongWait";
 import type { FlowDesign } from "@/components/flow/design/design-graph";
 import { DesignHeading } from "@/components/flow/design/DesignHeading";
 import { designBrief, setupLines, type BriefCard } from "./brief-model";
@@ -119,13 +120,17 @@ export function ProcessBrief({
             status={stopped ? "Not built yet" : "Building"}
             tone={stopped ? "busy" : "accent"}
           />
-          <p
-            className="max-w-[36rem] text-center text-body text-ink-dim"
-            role="status"
-            data-card-brief-state={stopped ? "stalled" : "building"}
-          >
-            {waiting}
-          </p>
+          <div className="flex flex-col items-center gap-4">
+            {/* Building takes minutes; a card that stopped waits on the person, so its mark stays still in place. */}
+            <RunningMark size="page" still={stopped} />
+            <p
+              className="max-w-[36rem] text-center text-body text-ink-dim"
+              role="status"
+              data-card-brief-state={stopped ? "stalled" : "building"}
+            >
+              {waiting}
+            </p>
+          </div>
         </div>
       )}
       <BriefFoot summary={card.summary} more={parts.length > 0 ? parts : null} note={note} />

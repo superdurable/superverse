@@ -17,6 +17,7 @@ import { probePublicUrl } from "@/lib/api/transport/public-url-probe";
 import { Button } from "@/components/ui/Button";
 import { Glyph } from "@/components/ui/Glyph";
 import { PhaseTimings } from "@/components/ui/timings/PhaseTimings";
+import { RunningMark } from "@/components/ui/wait/LongWait";
 import { PREVIEW_PHASE_LABELS, previewStatusOf, startDurationWords } from "@/lib/project/setup/environment-status";
 import { commitDetail, versionNumber } from "@/lib/shared/version/version";
 import { ProblemPanel } from "@/components/ui/problem/ProblemPanel";
@@ -128,10 +129,15 @@ export function PreviewPanel({ projectId }: { projectId: string }) {
   else if (status === "PREVIEW_STATUS_STARTING")
     body = (
       <div className="rounded-[10px] border border-line-soft bg-panel px-4 py-3.5">
-        <b className="text-[14px] text-ink">Preview is starting{version && ` ${version}`}</b>
-        <p className="mt-1 mb-2.5 text-[12.5px] text-ink-faint">
-          About {startDurationWords(preview).replace(/^about /, "")}. The page appears when it&apos;s ready.
-        </p>
+        <div className="mb-2.5 flex items-center gap-3">
+          <RunningMark size="panel" />
+          <div className="min-w-0">
+            <b className="text-[14px] text-ink">Preview is starting{version && ` ${version}`}</b>
+            <p className="mt-1 text-[12.5px] text-ink-faint">
+              About {startDurationWords(preview).replace(/^about /, "")}. The page appears when it&apos;s ready.
+            </p>
+          </div>
+        </div>
         {preview && preview.phaseTimings.length > 0 && (
           <PhaseTimings title="Preview start phases" timings={preview.phaseTimings} labels={PREVIEW_PHASE_LABELS} />
         )}

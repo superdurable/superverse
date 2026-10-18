@@ -5,7 +5,7 @@ Purpose: The Process Brief on the Flow tab while a design is drafted or built: t
 
 Importers: `components/flow/scope` imports this directory.
 
-Imports: it imports `components/flow/canvas/layout`, `components/flow/canvas/model`, `components/flow/design`, `components/ui/reveal` and `lib/shared`.
+Imports: it imports `components/flow/canvas/layout`, `components/flow/canvas/model`, `components/flow/design`, `components/ui/reveal`, `components/ui/wait` and `lib/shared`.
 
 ```mermaid
 flowchart LR
@@ -15,7 +15,8 @@ flowchart LR
   self --> d1["components/flow/canvas/model"]
   self --> d2["components/flow/design"]
   self --> d3["components/ui/reveal"]
-  self --> d4["lib/shared"]
+  self --> d4["components/ui/wait"]
+  self --> d5["lib/shared"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 

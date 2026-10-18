@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
 import { Glyph } from "@/components/ui/Glyph";
 import { ProblemPanel } from "@/components/ui/problem/ProblemPanel";
+import { RunningMark } from "@/components/ui/wait/LongWait";
 import { CancelPublish } from "./CancelPublish";
 import { PublishLog } from "./PublishLog";
 import { StageBar } from "./StageBar";
@@ -99,6 +100,8 @@ export function PublishProgress({
           {heading(facts.kind, outcome, version)}
         </h3>
         <span>{sub}</span>
+        {/* After the words, no taller than the heading, so neither the heading nor the row moves with it. */}
+        {running && <RunningMark size="line" />}
         {running && (
           <CancelPublish
             projectId={projectId}

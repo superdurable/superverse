@@ -312,6 +312,8 @@ export function FlowSurface({
         ) : session?.requirementsDraft ? (
           <DraftBrief draft={session.requirementsDraft} />
         ) : (
+          // The chat beside it carries this wait with its startup steps and their running mark, so the canvas
+          // stays still and says nothing: one mark and one status per wait.
           <NotReady kind="empty" heading="Reading your description…">
             The processes the agent builds from what you describe show here.
           </NotReady>

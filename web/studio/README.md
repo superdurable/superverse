@@ -168,6 +168,7 @@ the current contract.
 | [`components/ui/problem`](components/ui/problem/README.md) | The one problem panel every failure uses: what happened, why, one remedy button and the folded technical details. |
 | [`components/ui/reveal`](components/ui/reveal/README.md) | The "More details" fold every surface uses to keep engine detail out of its default view, remembered open per surface in this browser. |
 | [`components/ui/timings`](components/ui/timings/README.md) | The list of the phases a Preview start, a build or a deployment measured, each with its label and duration. |
+| [`components/ui/wait`](components/ui/wait/README.md) | The running Dex mark for a long wait: the brand tile GIF shown after a few seconds, with its reduced-motion still and polite status words. |
 | [`lib/account`](lib/account/README.md) | `AccountProvider`, which gives the signed-in pages the account their layout read once. |
 | [`lib/api`](lib/api/README.md) | Browser clients of the BFF, one module per browser service with functions named after its RPCs, and the account client that reaches AccountService through `/api/auth`. |
 | [`lib/api/flow`](lib/api/flow/README.md) | Flow API documents and calls: definition and run wire types, status and history readers, blobs, and one module per Flow API service, so no component builds a Flow API path. |

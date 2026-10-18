@@ -10,6 +10,7 @@
 
 import { DesignHeading } from "@/components/flow/design/DesignHeading";
 import { processName, stepName } from "@/lib/shared/format";
+import { RunningMark } from "@/components/ui/wait/LongWait";
 import { BriefFoot, FeatureList, Section } from "./BriefSections";
 
 /** What a draft of the requirements card holds so far, as the agent writes it. */
@@ -30,8 +31,15 @@ function mainStorySteps({ stepTypes, failureHandlingStepTypes }: BriefDraft["flo
  * the drawn design, the row leaves out the Steps only failure routes reach.
  */
 function DraftedSteps({ flows }: { flows: BriefDraft["flows"] }) {
+  // Until the first Step streams in the canvas is empty, so the running mark holds it; the boxes take over after.
   if (flows.length === 0)
-    return <p className="m-auto text-center text-body text-ink-faint">The steps show here as the agent writes them.</p>;
+    return (
+      // No status region: the brief is aria-busy while it drafts, and the words are already there.
+      <div className="m-auto flex flex-col items-center gap-3 text-center">
+        <RunningMark size="page" />
+        <p className="text-body text-ink-faint">The steps show here as the agent writes them.</p>
+      </div>
+    );
   return (
     <section aria-label="Drafted steps" className="m-auto grid w-full max-w-[64rem] gap-5">
       {flows.map((flow) => (

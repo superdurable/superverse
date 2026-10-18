@@ -18,6 +18,7 @@ import { useEffect, type ReactNode } from "react";
 import { initialTemplateDesign, useExampleDefinitions } from "@/lib/project/initial-template-design";
 import { useProcessDefinitions } from "@/lib/project/ProcessDefinitionsProvider";
 import { useProjectResource } from "@/lib/project/ProjectResourceProvider";
+import { startDurationWords } from "@/lib/project/setup/environment-status";
 import { preparedSourceOf, readyPreparedSource } from "@/lib/session/session-status";
 import { useSessionResource } from "@/lib/session/SessionProvider";
 import { flowApiRoutes } from "@/lib/shared/studio-routes";
@@ -29,6 +30,7 @@ import { FlowNavigationProvider } from "@/lib/flow/FlowNavigationProvider";
 import type { FlowDefinitionCatalog, FlowRuntimeCatalog } from "@/lib/api/flow/flow-types";
 import { Banner } from "@/components/ui/Banner";
 import { NotReady } from "@/components/ui/NotReady";
+import { RunningMark } from "@/components/ui/wait/LongWait";
 import { LazyFlowCatalogProvider } from "./LazyFlowViews";
 
 /** Mounts one Flow API client, Flow navigation and the catalog (with its notice) for the Flow views below. */
@@ -113,8 +115,18 @@ export function LiveFlowScope({
   );
 }
 
-/** Runs and Inbox on Preview while it does not run: why they are empty, and the way to start it. */
+/**
+ * Runs and Inbox on Preview while it does not run: while it starts, how long that takes, with the running mark;
+ * otherwise why they are empty, and the way to start it.
+ */
 function PreviewNotRunning({ start }: { start?: ReactNode }) {
+  const preview = useSessionResource()?.resource?.preview ?? null;
+  if (preview?.status === "PREVIEW_STATUS_STARTING")
+    return (
+      <NotReady kind="placeholder" heading="Preview is starting" loader={<RunningMark size="panel" />}>
+        About {startDurationWords(preview).replace(/^about /, "")}. Runs and Inbox items on Preview appear once it runs.
+      </NotReady>
+    );
   return (
     <NotReady kind="unavailable" heading="Preview is not running">
       Runs and Inbox items on Preview appear while it runs; the agent&apos;s next push starts it.
@@ -191,11 +203,18 @@ export function SessionFlowScope({
     );
   }
   const design = initialTemplateDesign(project, session) ?? lastBuilt?.catalog;
+  // While the head builds the wait runs; otherwise it is unavailable: automatic builds are off or the build failed.
+  const head = preparedSourceOf(session);
+  const building = head?.status === "PREVIEW_SOURCE_STATUS_PREPARING" && head.sourceCommit === session.headCommit;
   // The head's processes are not built yet: the last build read here, else the one the Preview serves, stays.
   if (!design)
     return (
       running ?? (
-        <NotReady kind="unavailable" heading="Processes of this version are not built yet">
+        <NotReady
+          kind={building ? "placeholder" : "unavailable"}
+          heading="Processes of this version are not built yet"
+          loader={building && <RunningMark size="panel" />}
+        >
           Its processes appear after the next push builds them automatically. Turn off automatic builds to use Build
           processes above.
         </NotReady>

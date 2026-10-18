@@ -9,17 +9,25 @@
 "use client";
 
 import type { PreviewSnapshot__Output } from "@/lib/generated/protobuf/superverse/v2/PreviewSnapshot";
+import { RunningMark } from "@/components/ui/wait/LongWait";
 
-/** Why Setup's table is not shown yet: the latest push is building, failed to build, or is not built. */
+/**
+ * Why Setup's table is not shown yet: the latest push is building, with the running mark once that runs long,
+ * failed to build, or is not built.
+ */
 export function UnbuiltStatus({ preview }: { preview: PreviewSnapshot__Output | null }) {
   const source = preview?.preparedSource;
+  const building = source?.status === "PREVIEW_SOURCE_STATUS_PREPARING";
   return (
-    <p className="text-[13px] text-ink-faint" role="status" data-testid="preview-status">
-      {source?.status === "PREVIEW_SOURCE_STATUS_PREPARING"
-        ? "Building the latest push… Setup opens when it is ready."
-        : source?.status === "PREVIEW_SOURCE_STATUS_FAILED"
-          ? "The latest push did not build; Build processes below says why."
-          : "The latest push is not built yet; Build processes below builds it."}
-    </p>
+    <div className="flex items-center gap-3">
+      {building && <RunningMark size="line" />}
+      <p className="text-[13px] text-ink-faint" role="status" data-testid="preview-status">
+        {building
+          ? "Building the latest push… Setup opens when it is ready."
+          : source?.status === "PREVIEW_SOURCE_STATUS_FAILED"
+            ? "The latest push did not build; Build processes below says why."
+            : "The latest push is not built yet; Build processes below builds it."}
+      </p>
+    </div>
   );
 }

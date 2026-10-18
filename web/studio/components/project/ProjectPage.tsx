@@ -25,6 +25,7 @@ import { Button, buttonStyle } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Spinner } from "@/components/ui/Icons";
 import { ProblemPanel, type RemedyActions } from "@/components/ui/problem/ProblemPanel";
+import { LongWait } from "@/components/ui/wait/LongWait";
 import { errorProblem, failureProblem } from "@/lib/shared/problem/problem";
 
 export function ProjectPage({ projectId }: { projectId: string }) {
@@ -232,7 +233,14 @@ function ProjectPageContent({ projectId }: { projectId: string }) {
         )}
 
         {project?.status === "PROJECT_STATUS_CREATING" && (
-          <p className="mt-6 text-[15px] text-ink-dim">Creating the private repository from the trusted template…</p>
+          <LongWait size="panel" className="mt-6 text-[15px] text-ink-dim">
+            Creating the private repository from the trusted template…
+          </LongWait>
+        )}
+        {project?.status === "PROJECT_STATUS_DELETING" && !project.failure && (
+          <LongWait size="panel" className="mt-6 text-[15px] text-ink-dim">
+            Cleaning up the project&apos;s resources…
+          </LongWait>
         )}
 
         {Boolean(error || watch?.error) && (
