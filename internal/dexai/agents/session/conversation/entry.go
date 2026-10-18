@@ -251,6 +251,13 @@ func NoticeEntry(role EntryRole, text, marker string) Entry {
 	return Entry{Role: role, Kind: EntryKindNotice, Display: display, Blocks: []json.RawMessage{textBlock(text)}, Meta: EntryMeta{Marker: marker}}
 }
 
+// DeliveryNoticeEntry is a platform-authored visible record that a remote
+// agent did not definitely receive an already-recorded user message. It uses
+// the ordinary public text projection without claiming it was a model call.
+func DeliveryNoticeEntry(text string) Entry {
+	return Entry{Role: EntryRoleAssistant, Kind: EntryKindModelReply, Display: EntryDisplayPublic, Blocks: []json.RawMessage{textBlock(text)}}
+}
+
 // EffortEntry records a per-message effort: a system message with no content.
 func EffortEntry(effort Effort) Entry {
 	return Entry{Role: EntryRoleSystem, Kind: EntryKindNotice, Display: EntryDisplayHidden, Blocks: []json.RawMessage{}, Meta: EntryMeta{Effort: effort}}

@@ -118,6 +118,9 @@ type SendRequest struct {
 	ClientOperationID string
 	InstanceID        string
 	Marker            string
+	// WithdrawQueuedMessageID names a queued copy a retry must remove before
+	// the replacement operation is submitted. Empty means no queued copy.
+	WithdrawQueuedMessageID string
 }
 
 // SendResult is a provider's answer about a submission. ProviderItemID is
@@ -126,6 +129,10 @@ type SendResult struct {
 	State          SubmissionState
 	Reason         string
 	ProviderItemID string
+	// QueuedMessageID is the retained queued copy after a retryable rejection.
+	// The relay persists it with the replacement operation before asking the
+	// provider to withdraw the copy.
+	QueuedMessageID string
 }
 
 // SubmissionState is what a provider can prove of a submission.
@@ -138,6 +145,10 @@ var (
 	SubmissionPending = SubmissionState{name: "pending"}
 	// SubmissionRejected was definitely refused before admission, with a reason.
 	SubmissionRejected = SubmissionState{name: "rejected"}
+	// SubmissionRetry is a settled retryable rejection. The relay must persist
+	// a replacement operation before retrying, and may need to withdraw a
+	// queued copy first.
+	SubmissionRetry = SubmissionState{name: "retry"}
 	// SubmissionUnknown has no positive delivery or rejection proof.
 	SubmissionUnknown = SubmissionState{name: "unknown"}
 )

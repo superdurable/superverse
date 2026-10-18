@@ -87,7 +87,7 @@ func SentMessageID(clientOperationID string) string { return "orca:" + clientOpe
 
 // ParseSubmissionState reads a state Orca spelled; any other spelling is unknown.
 func ParseSubmissionState(name string) SubmissionState {
-	for _, state := range []SubmissionState{SubmissionAccepted, SubmissionPending, SubmissionRejected} {
+	for _, state := range []SubmissionState{SubmissionAccepted, SubmissionPending, SubmissionRejected, SubmissionRetry} {
 		if state.name == name {
 			return state
 		}

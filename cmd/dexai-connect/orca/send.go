@@ -26,6 +26,28 @@ const (
 	ownerRetryLimit = 2 * time.Minute
 )
 
+// rejectionKind is Orca's persisted rejection.kind discriminator.
+type rejectionKind string
+
+// Orca 1.4.225's unpacked main bundle declares this closed set of message
+// rejections. providerRejected carries arbitrary provider detail, so the
+// Bridge retries it rather than treating its UI content category as final.
+const (
+	rejectionProviderRejected     rejectionKind = "providerRejected"
+	rejectionAttachmentInvalid    rejectionKind = "attachmentInvalid"
+	rejectionAttachmentUnreadable rejectionKind = "attachmentUnreadable"
+	rejectionEmptyMessage         rejectionKind = "emptyMessage"
+	rejectionCommandRefused       rejectionKind = "commandRefused"
+	rejectionRestartFailed        rejectionKind = "restartFailed"
+)
+
+var permanentMessageRejections = map[rejectionKind]struct{}{
+	rejectionAttachmentInvalid:    {},
+	rejectionAttachmentUnreadable: {},
+	rejectionEmptyMessage:         {},
+	rejectionCommandRefused:       {},
+}
+
 // Method-level refusal codes the Bridge tells apart.
 const (
 	refusalOperationUnknown   = "agent_session_operation_unknown"
@@ -77,10 +99,16 @@ func (result mutationResult[V]) refused() error {
 }
 
 type submission struct {
-	DispatchState         string `json:"dispatchState"`
-	Reason                string `json:"reason"`
-	ProviderItemID        string `json:"providerItemId"`
-	KeptAsQueuedMessageID string `json:"keptAsQueuedMessageId"`
+	DispatchState         string     `json:"dispatchState"`
+	Reason                string     `json:"reason"`
+	ProviderItemID        string     `json:"providerItemId"`
+	KeptAsQueuedMessageID string     `json:"keptAsQueuedMessageId"`
+	Rejection             *rejection `json:"rejection"`
+}
+
+// rejection is the subset of an Orca rejection the Bridge persists.
+type rejection struct {
+	Kind rejectionKind `json:"kind"`
 }
 
 // Send submits one user message, or asks about an earlier submission with
@@ -96,6 +124,15 @@ func (client *Client) Send(ctx context.Context, request relay.SendRequest) (rela
 		return relay.SendResult{State: relay.SubmissionRejected, Reason: "the message exceeds Orca's 256 KiB limit"}, nil
 	}
 	body := object{"kind": "message", "role": "user", "blocks": blocks}
+	if request.WithdrawQueuedMessageID != "" {
+		disposition, err := client.withdraw(ctx, request.SessionID, request.WithdrawQueuedMessageID)
+		switch {
+		case err != nil:
+			return relay.SendResult{}, err
+		case disposition == dispositionDispatched:
+			return relay.SendResult{State: relay.SubmissionUnknown, Reason: "Orca dispatched the queued copy of a rejected delivery"}, nil
+		}
+	}
 	fingerprint := payloadFingerprint(methodSend, request.SessionID, object{"body": body})
 	started := time.Now()
 	backoff := time.Second
@@ -173,6 +210,9 @@ func (client *Client) settled(ctx context.Context, sessionID string, sub submiss
 	case relay.SubmissionPending:
 		return relay.SendResult{State: relay.SubmissionPending}, nil
 	case relay.SubmissionRejected:
+		if !permanentRejection(sub.Rejection) {
+			return relay.SendResult{State: relay.SubmissionRetry, Reason: sub.Reason, QueuedMessageID: sub.KeptAsQueuedMessageID}, nil
+		}
 		if sub.KeptAsQueuedMessageID == "" {
 			return relay.SendResult{State: relay.SubmissionRejected, Reason: sub.Reason}, nil
 		}
@@ -191,6 +231,18 @@ func (client *Client) settled(ctx context.Context, sessionID string, sub submiss
 	default:
 		return relay.SendResult{State: relay.SubmissionUnknown, Reason: sub.Reason}, nil
 	}
+}
+
+// permanentRejection is deliberately an allow-list. Orca evolves its
+// rejection kinds independently; an unknown kind can be a failed owner start
+// or restart, so the relay preserves the message and retries it within its
+// bounded delivery window rather than dropping it.
+func permanentRejection(rejection *rejection) bool {
+	if rejection == nil {
+		return false
+	}
+	_, permanent := permanentMessageRejections[rejection.Kind]
+	return permanent
 }
 
 // withdraw deletes a queued message; it returns the disposition, empty when

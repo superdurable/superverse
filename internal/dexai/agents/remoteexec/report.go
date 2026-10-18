@@ -36,11 +36,12 @@ const (
 	EventActivity          EventKind = "activity"
 	EventDeliveryUncertain EventKind = "delivery_uncertain"
 	EventDeliveryFailed    EventKind = "delivery_failed"
+	EventDeliveryDelayed   EventKind = "delivery_delayed"
 )
 
 func (kind EventKind) validate() error {
 	switch kind {
-	case EventAssistantMessage, EventUserMessage, EventImportedMessage, EventActivity, EventDeliveryUncertain, EventDeliveryFailed:
+	case EventAssistantMessage, EventUserMessage, EventImportedMessage, EventActivity, EventDeliveryUncertain, EventDeliveryFailed, EventDeliveryDelayed:
 		return nil
 	default:
 		return conversation.NewEnumValidationError("remote event", string(kind))
@@ -115,7 +116,7 @@ func (report RemoteReport) Validate() error {
 			return errors.New("event text must contain at most 65536 UTF-8 bytes")
 		}
 		switch event.Kind {
-		case EventDeliveryUncertain, EventDeliveryFailed:
+		case EventDeliveryUncertain, EventDeliveryFailed, EventDeliveryDelayed:
 			if event.EntrySequence <= 0 {
 				return errors.New("delivery events must reference an entry sequence")
 			}

@@ -29,8 +29,14 @@ const (
 	pendingRetry = 2 * time.Second
 	// historyProofTimeout bounds one positive check after a one-write send.
 	historyProofTimeout = 10 * time.Second
-	// journalLimit is how long Orca's submission journal keeps a submission.
+	// journalLimit is how long a provider's submission journal keeps a submission.
 	journalLimit = 24 * time.Hour
+	// deliveryRetryLimit bounds retryable settled rejections. A permanently
+	// rejected message is reported immediately; an unclassified rejection gets
+	// this window so a failed agent recovery cannot lose an input.
+	deliveryRetryLimit = 10 * time.Minute
+	// deliveryDelayedAfter is the one user-visible progress notice threshold.
+	deliveryDelayedAfter = 2 * time.Minute
 	// briefEntries is how many recent entries the brief reads.
 	briefEntries = 20
 	// maxBriefMessageBytes bounds each message the brief quotes.
@@ -171,7 +177,7 @@ func (r *relay) settleJournal(ctx context.Context, sending state.Sending, text s
 			return SendResult{State: SubmissionUnknown}, nil
 		}
 		result, sendErr := r.provider.Send(ctx, SendRequest{SessionID: r.sessionID, ProviderThreadID: r.binding.Record.ProviderThreadID,
-			Text: text, ClientOperationID: sending.OperationID, InstanceID: sending.InstanceID})
+			Text: text, ClientOperationID: sending.OperationID, InstanceID: sending.InstanceID, WithdrawQueuedMessageID: sending.WithdrawQueuedMessageID})
 		if ctx.Err() != nil {
 			return SendResult{}, ctx.Err()
 		}
@@ -184,6 +190,18 @@ func (r *relay) settleJournal(ctx context.Context, sending state.Sending, text s
 		if sendErr == nil && (result.State == SubmissionAccepted || result.State == SubmissionRejected) {
 			return result, nil
 		}
+		if sendErr == nil && result.State == SubmissionRetry {
+			if time.Since(sending.FirstSentAt) >= deliveryRetryLimit {
+				return SendResult{State: SubmissionRejected, Reason: "the provider did not recover to accept the message before the delivery retry deadline"}, nil
+			}
+			var retryErr error
+			sending, retryErr = r.prepareRetry(sending, result)
+			if retryErr != nil {
+				return SendResult{}, retryErr
+			}
+			backoff = pendingRetry
+			continue
+		}
 		runtime, err := r.provider.Runtime(ctx)
 		if err == nil && runtime.InstanceID != sending.InstanceID {
 			return SendResult{State: SubmissionUnknown}, nil
@@ -192,7 +210,7 @@ func (r *relay) settleJournal(ctx context.Context, sending state.Sending, text s
 			return result, nil
 		}
 		if sendErr != nil {
-			r.logger.WarnContext(ctx, "Orca did not answer a delivery; asking again", "project", r.projectName, "after", backoff, "error", sendErr)
+			r.logger.WarnContext(ctx, "provider did not answer a delivery; asking again", "project", r.projectName, "after", backoff, "error", sendErr)
 			backoff = min(2*backoff, 30*time.Second)
 		}
 		if err := sleep(ctx, backoff); err != nil {
@@ -204,44 +222,91 @@ func (r *relay) settleJournal(ctx context.Context, sending state.Sending, text s
 	}
 }
 
-// settleOneWrite marks the only provider write as attempted before calling it.
-// A crash before the call sacrifices delivery certainty rather than risking a
-// duplicate. Only an accepted response or exact marker proof can confirm it.
+// prepareRetry durably replaces a retryable operation before the provider
+// deletes any queued copy. A recovery therefore repeats the withdrawal before
+// the same replacement operation, or queries that replacement after submit.
+func (r *relay) prepareRetry(sending state.Sending, result SendResult) (state.Sending, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	current := r.progress.Sending
+	if current == nil || current.Key != sending.Key || current.OperationID != sending.OperationID {
+		return state.Sending{}, errors.New("delivery sending record changed while retrying a transient rejection")
+	}
+	next := *current
+	next.RetryAttempt++
+	next.OperationID = NewOperationID(time.Now())
+	next.WithdrawQueuedMessageID = result.QueuedMessageID
+	if !next.DelayedReported && time.Since(next.FirstSentAt) >= deliveryDelayedAfter {
+		next.DelayedReported = true
+	}
+	r.progress.Sending = &next
+	var reports []bridgeapi.Report
+	if next.DelayedReported && !current.DelayedReported && next.EntrySequence != 0 {
+		reports = append(reports, bridgeapi.Report{Generation: r.progress.Generation, Events: []bridgeapi.Event{{Kind: bridgeapi.EventKindDeliveryDelayed, EntrySequence: next.EntrySequence}}})
+	}
+	if err := r.storeLocked(r.progress, reports, nil); err != nil {
+		return state.Sending{}, err
+	}
+	return next, nil
+}
+
+// settleOneWrite marks the provider write as attempted before calling it. A
+// provider can safely ask for a fresh attempt only after it has proved that its
+// last request was refused before admission. A crash or lost answer remains
+// uncertain rather than risking a duplicate.
 func (r *relay) settleOneWrite(ctx context.Context, sending state.Sending, text string) (SendResult, error) {
 	provider, ok := r.provider.(OneWriteProvider)
 	if !ok {
 		panic("one-write delivery resumed with a provider lacking history proof")
 	}
-	if !sending.Attempted {
-		r.mu.Lock()
-		r.progress.Sending.Attempted = true
-		err := r.saveLocked()
-		r.mu.Unlock()
-		if err != nil {
-			return SendResult{}, err
-		}
-		sending.Attempted = true
-		result, sendErr := provider.Send(ctx, SendRequest{
-			SessionID: r.sessionID, ProviderThreadID: r.binding.Record.ProviderThreadID,
-			Text: text, ClientOperationID: sending.OperationID, Marker: sending.Marker,
-		})
-		if ctx.Err() != nil {
-			return SendResult{}, ctx.Err()
-		}
-		if isSessionChanged(sendErr) {
-			return SendResult{}, sendErr
-		}
-		if errors.Is(sendErr, ErrUnsupportedProtocol) {
-			return SendResult{}, sendErr
-		}
-		if sendErr == nil {
-			if result.State == SubmissionRejected {
-				return result, nil
+	for {
+		if !sending.Attempted {
+			r.mu.Lock()
+			r.progress.Sending.Attempted = true
+			err := r.saveLocked()
+			r.mu.Unlock()
+			if err != nil {
+				return SendResult{}, err
 			}
-			if result.State == SubmissionAccepted && result.ProviderItemID != "" {
-				return result, nil
+			sending.Attempted = true
+			result, sendErr := provider.Send(ctx, SendRequest{
+				SessionID: r.sessionID, ProviderThreadID: r.binding.Record.ProviderThreadID,
+				Text: text, ClientOperationID: sending.OperationID, Marker: sending.Marker,
+			})
+			if ctx.Err() != nil {
+				return SendResult{}, ctx.Err()
+			}
+			if isSessionChanged(sendErr) {
+				return SendResult{}, sendErr
+			}
+			if errors.Is(sendErr, ErrUnsupportedProtocol) {
+				return SendResult{}, sendErr
+			}
+			if sendErr == nil {
+				switch result.State {
+				case SubmissionRejected:
+					return result, nil
+				case SubmissionAccepted:
+					if result.ProviderItemID != "" {
+						return result, nil
+					}
+				case SubmissionRetry:
+					if time.Since(sending.FirstSentAt) >= deliveryRetryLimit {
+						return SendResult{State: SubmissionRejected, Reason: "the provider did not recover to accept the message before the delivery retry deadline"}, nil
+					}
+					var retryErr error
+					sending, retryErr = r.prepareOneWriteRetry(sending)
+					if retryErr != nil {
+						return SendResult{}, retryErr
+					}
+					if err := sleep(ctx, pendingRetry); err != nil {
+						return SendResult{}, err
+					}
+					continue
+				}
 			}
 		}
+		break
 	}
 	proofCtx, cancel := context.WithTimeout(ctx, historyProofTimeout)
 	defer cancel()
@@ -262,6 +327,36 @@ func (r *relay) settleOneWrite(ctx context.Context, sending state.Sending, text 
 		return SendResult{State: SubmissionUnknown}, nil
 	}
 	return SendResult{State: SubmissionAccepted, ProviderItemID: itemID}, nil
+}
+
+// prepareOneWriteRetry replaces a request only after its provider proved that
+// it was refused before admission. Its old marker remains remembered for echo
+// suppression; the persisted new marker fences the next and only write.
+func (r *relay) prepareOneWriteRetry(sending state.Sending) (state.Sending, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	current := r.progress.Sending
+	if current == nil || current.Key != sending.Key || current.OperationID != sending.OperationID || !current.OneWrite {
+		return state.Sending{}, errors.New("delivery sending record changed while retrying a pre-admission refusal")
+	}
+	next := *current
+	next.RetryAttempt++
+	next.OperationID = NewOperationID(time.Now())
+	next.Marker = NewOperationID(time.Now())
+	next.Attempted = false
+	if !next.DelayedReported && time.Since(next.FirstSentAt) >= deliveryDelayedAfter {
+		next.DelayedReported = true
+	}
+	r.progress.Sending = &next
+	rememberDelivery(&r.progress, r.provider.SubmittedMessageID(next.OperationID, next.Marker), next.Generation)
+	var reports []bridgeapi.Report
+	if next.DelayedReported && !current.DelayedReported && next.EntrySequence != 0 {
+		reports = append(reports, bridgeapi.Report{Generation: r.progress.Generation, Events: []bridgeapi.Event{{Kind: bridgeapi.EventKindDeliveryDelayed, EntrySequence: next.EntrySequence}}})
+	}
+	if err := r.storeLocked(r.progress, reports, nil); err != nil {
+		return state.Sending{}, err
+	}
+	return next, nil
 }
 
 // finishDelivery reports an outcome the provider could not confirm, advances the

@@ -53,15 +53,22 @@ field contains that connection ID, while `providerThreadId` is the Codex thread 
 rejects a binding for a different provider. The bridgeapi field names and endpoint paths are
 unchanged; its binding values remain opaque to the platform.
 
-The delivery record has two policies selected by the provider. Orca's `SubmissionJournal` keeps
-the exact current behavior: save the operation ID and runtime fence, ask Orca again with the same
-ID while pending, and settle from the journal. `SubmissionOneWrite` first saves the platform key,
+The delivery record has two policies selected by the provider. A journal provider saves the
+operation ID and runtime fence, asks the provider again with that same ID while pending, and
+settles from the journal. A provider may classify a settled rejection as retryable. In that case,
+the relay writes the replacement operation ID and any queued-copy withdrawal ID into the existing
+sending record before it requests the withdrawal or submits the replacement. It reports
+`delivery_delayed` once at two minutes, keeps the cursor on the entry, and reports
+`delivery_failed` only if a permanent rejection occurs or the ten-minute retry window expires.
+`SubmissionOneWrite` first saves the platform key,
 generation, operation ID, payload fingerprint and random marker. It then durably marks the record
 attempted before one provider write. On an accepted response with a canonical user item ID, it
-settles immediately. Otherwise it makes one read-only history check, bounded to ten seconds, for
-the exact marker in canonical public user history. A positive match accepts. No match, read
-failure, lost response, or restart after the attempted bit returns `delivery_uncertain` and advances
-the platform cursor without another write. Only a definite pre-admission refusal reports
+settles immediately. A provider may return `retry` only after it proves that no user message was
+admitted; the relay then persists a replacement operation ID and fresh marker before its next
+write. Otherwise it makes one read-only history check, bounded to ten seconds, for the exact
+marker in canonical public user history. A positive match accepts. No match, read failure, lost
+response, or restart after the attempted bit returns `delivery_uncertain` and advances the platform
+cursor without another write. Only a provably permanent invalid-content refusal reports
 `delivery_failed`. A crash after persisting `attempted` but before writing can therefore lose a
 message and report uncertainty; it cannot create a duplicate send. Direct adapters must embed the
 marker in user content, avoid internal send retries, filter hidden reasoning, and normalize the
@@ -94,6 +101,11 @@ IDs and item ordinals and scans back to it after disconnection. A cursor older t
 The marker proof and one-write rule apply to the brief and every Studio message. If the brief
 cannot be proved, `dexai connect` refuses to open the TUI and reports the local uncertainty;
 queued Studio messages have an entry sequence and report `delivery_uncertain` to Studio.
+An app-server resume timeout and every current Codex JSON-RPC refusal occur before admission, so
+the provider returns `retry` and the relay makes a durably identified replacement within the
+ten-minute delivery window. The app-server provides no structured permanent-content refusal today,
+so it never turns an arbitrary RPC error or its text into final delivery failure. A lost response
+after `turn/start` or `turn/steer` stays uncertain and is never retried from absence alone.
 
 The command creates no new cloud, Kubernetes, Temporal, Dex or database resource. The Builder's
 existing daemon is shared; each binding adds one Codex thread and one private local state record,
@@ -172,18 +184,23 @@ Project has at most one active binding (its executor).
   3. It acts on the submission state Orca returns, not on the RPC's success:
      - `accepted`: advance the cursor and clear *sending*, in one state-file write;
      - `pending`: keep *sending* and ask again with the same operation ID until it settles;
-     - `rejected`: report `delivery_failed` with Orca's reason (Studio shows "Codex did not accept this
-       message" with "Send again") and advance. A rejection that carries `keptAsQueuedMessageId` means
-       Orca kept a paused copy that a later resume would deliver: the Bridge withdraws it with
-       `agentSession.queuedMessageDelete` and, if that fails, reports `delivery_uncertain` instead;
+     - a permanent `rejected`: report `delivery_failed` with Orca's reason (Studio shows "Codex did not
+       accept this message" with "Send again") and advance;
+     - a retryable `rejected`: persist a replacement operation ID and any `keptAsQueuedMessageId` in
+       *sending* before calling `agentSession.queuedMessageDelete` for that copy and submitting the
+       replacement. This leaves the cursor in place, reports `delivery_delayed` once after two minutes,
+       and reports `delivery_failed` only when the ten-minute retry window expires. A failed withdrawal
+       or a copy already dispatched is `unknown`, because its delivery cannot be determined;
      - `unknown`, including a submission Orca no longer finds: report `delivery_uncertain` (Studio shows
        "This message may not have reached Codex" with "Send again") and advance.
 
   On restart with an entry still *sending*, the Bridge asks again with the same operation ID,
   fingerprint and fence. Orca 1.4.224 and 1.4.225 do not compare `expectedRuntimeFence` (it must be `null` on
   `create` and a positive integer otherwise) and its fence belongs to a session, not to the Orca
-  process; the Bridge detects an Orca restart by a change of `_meta.runtimeId`. Even so: the Bridge does not create a new ID for the same entry, and treats an answer that is not
-  `accepted` or `rejected` as `unknown`. A first submission older than Orca's 24-hour limit is
+  process; the Bridge detects an Orca restart by a change of `_meta.runtimeId`. Except for the durable
+  replacement after a retryable rejection, the Bridge does not create a new ID for the same entry,
+  and treats an answer that is not `accepted`, a permanent `rejected`, or retryable as `unknown`.
+  A first submission older than Orca's 24-hour limit is
   `unknown` too. So the Bridge never sends the same entry twice by itself; whether Codex received it is
   confirmed only by `accepted`, and every other outcome is shown to the Builders. Message text is
   never used to detect a duplicate. The meaning of each state and whether the journal survives an

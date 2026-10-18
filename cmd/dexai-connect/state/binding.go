@@ -128,7 +128,9 @@ type EventPosition struct {
 func (position EventPosition) IsZero() bool { return position == EventPosition{} }
 
 // Sending is the delivery in flight. Journal providers can query the same
-// operation again; one-write providers persist Attempted before the only write.
+// operation again; a retryable rejection persists its replacement operation
+// and queued-copy withdrawal before the replacement is attempted. One-write
+// providers persist Attempted before the only write.
 type Sending struct {
 	Key           string `json:"key"`
 	EntrySequence uint64 `json:"entrySequence"`
@@ -138,9 +140,12 @@ type Sending struct {
 	Marker        string `json:"marker,omitempty"`
 	OneWrite      bool   `json:"oneWrite,omitempty"`
 	Attempted     bool   `json:"attempted,omitempty"`
-	// InstanceID identifies the Orca journal process of the first submission.
-	InstanceID  string    `json:"runtimeId"`
-	FirstSentAt time.Time `json:"firstSentAt"`
+	// InstanceID identifies the provider journal process of the first submission.
+	InstanceID              string    `json:"runtimeId"`
+	FirstSentAt             time.Time `json:"firstSentAt"`
+	RetryAttempt            uint32    `json:"retryAttempt,omitempty"`
+	WithdrawQueuedMessageID string    `json:"withdrawQueuedMessageId,omitempty"`
+	DelayedReported         bool      `json:"delayedReported,omitempty"`
 }
 
 // TurnGeneration binds one Codex turn to a work generation. Completed

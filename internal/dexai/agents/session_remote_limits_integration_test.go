@@ -11,10 +11,13 @@ package agents
 import (
 	"context"
 	"net/http"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteagent/bridgeapi"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 )
 
 // Admission failures use the real endpoint and verify that neither malformed
@@ -76,5 +79,32 @@ func TestSessionRemoteReportBoundsHTTPDexIntegration(t *testing.T) {
 	remote.post(ctx, bridgeapi.PathReport, bridgeapi.Report{Epoch: active.Epoch, Generation: active.Generation, Sequence: 1, TurnCompleted: true}, &accepted, http.StatusOK)
 	if accepted.Reported != 1 || accepted.Duplicate {
 		t.Fatal("first valid report was not admitted exactly once")
+	}
+}
+
+// A Bridge reports this through the actual remote-agent HTTP endpoint after
+// Orca definitively rejects a delivery. The Session persists a visible notice
+// beside the original conversation without starting a platform-model turn.
+func TestSessionRemoteDeliveryFailureNoticeHTTPDexIntegration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
+	defer cancel()
+	session, api, caller := remoteSessionAPI(ctx, t)
+	remote := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
+	var active bridgeapi.ActivateResponse
+	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "delivery-notice", ProviderThreadID: "delivery-notice", HostLabel: "integration host"}}, &active, http.StatusOK)
+	var accepted bridgeapi.ReportResponse
+	remote.post(ctx, bridgeapi.PathReport, bridgeapi.Report{Epoch: active.Epoch, Generation: active.Generation, Sequence: 1,
+		Events: []bridgeapi.Event{{Kind: bridgeapi.EventKindDeliveryFailed, EntrySequence: 7}}}, &accepted, http.StatusOK)
+	if accepted.Reported != 1 || accepted.Duplicate {
+		t.Fatal("delivery failure report was not admitted exactly once")
+	}
+	session.waitForSnapshot(ctx, "durable delivery failure notice", func(agent agentloop.AgentSnapshot) bool {
+		return slices.ContainsFunc(agent.History.Messages, func(message conversation.SequencedMessage) bool {
+			return message.Message.Role == conversation.MessageRoleAssistant && message.Message.Content == "Message delivery failed: the local agent did not receive this message. Send it again."
+		})
+	})
+	snapshot, err := session.client.GetSnapshot(ctx, session.id)
+	if err != nil || snapshot.Agent == nil || snapshot.Agent.Description.ContextModel != "" {
+		t.Fatalf("delivery notice invoked the platform model or could not be read: %v", err)
 	}
 }

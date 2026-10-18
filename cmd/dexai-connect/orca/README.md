@@ -34,13 +34,27 @@ Newer versions warn and may connect. An unknown protocol answer stops the bindin
   runtime, and when the metadata it reads or re-reads on a retry names another runtime it refuses
   before writing and the send is `unknown`. A repeat with
   the same operation ID is answered from Orca's durable ledger. Outcomes follow the spec's mapping:
-  `accepted` (with the provider item for echo suppression), `pending`, `rejected` (a rejection that
-  kept a paused queued copy withdraws it with `queuedMessageDelete`; a failed withdrawal is
-  `unknown`, a copy already dispatched is `unknown`, since it was sent under its own message ID and asking
-  with the original operation only repeats the rejection; it is never resent under a new identity), `unknown`; `operation_expired` and
+  `accepted` (with the provider item for echo suppression), `pending`, `rejected` and `unknown`.
+  Only an allow-list of deterministic local-content rejections (`attachmentInvalid`,
+  `attachmentUnreadable`, `emptyMessage`, and `commandRefused`) is final. Every other settled
+  rejection, including `providerRejected` and `restartFailed`, is retryable: the relay
+  first persists a new operation ID and queued-copy ID, then this client withdraws that copy with
+  `queuedMessageDelete` before submitting the replacement. A failed withdrawal is `unknown`, and a
+  copy already dispatched is `unknown`, since it was sent under its own message ID and asking with
+  the original operation only repeats the rejection. `operation_expired` and
   `operation_unknown` are unknown; a refused admission is rejected, after up to 2 minutes of
   resends while Orca's Codex owner recovers; any other failure is returned for the relay to ask
   again.
+
+  The top-level `rejection.kind` values above were checked against Orca 1.4.225's unpacked
+  application bundle. `out/shared/structured-agent-session-dispatch-rejection.js` declares the
+  complete kind list and labels `providerRejected` as `content`, but
+  `out/shared/agent-session-failure-copy.js` renders it as "The provider did not accept this
+  message[: detail]" and `out/shared/agent-session-failure-words.js` passes through the provider's
+  arbitrary `detail`. That bundle does not prove a content-only cause: overload, rate-limit, and
+  provider-restart errors can have the same form, so the Bridge retries `providerRejected` within
+  the bounded delivery window. `restartFailed` is separately classified as `startFailed`, so it is
+  also not permanent.
 - **Conversations.** `OpenConversations` reads `session.tabs.listAll`: an `agent-session` tab of
   agent `codex` is a structured conversation (its `sessionId`, `title`, the snapshot's `worktree`
   ID `<repoId>::<path>`, and its newest journal row's `observedAt` as the last activity, one `tail`

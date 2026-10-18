@@ -717,8 +717,10 @@ func (flow *SessionAgentFlow) consumeRemote(ctx dex.Context, items []remoteexec.
 		}
 		opensTurn := report.ToolCall != nil
 		for _, event := range report.Events {
-			_, public := event.Entry(report.Owner, report.ConnectionID, time.Time{})
-			opensTurn = opensTurn || public
+			switch event.Kind {
+			case remoteexec.EventAssistantMessage, remoteexec.EventUserMessage, remoteexec.EventImportedMessage:
+				opensTurn = true
+			}
 		}
 		if idle && opensTurn {
 			state, _ := agentloop.StartUserTurn(comm.Must(agentStateAttribute.Get(ctx)), nil)
@@ -762,10 +764,10 @@ func (flow *SessionAgentFlow) consumeRemote(ctx dex.Context, items []remoteexec.
 		comm.MustDo(agentStateAttribute.Set(ctx, state))
 		return agentloop.ContinueRouteTool
 	}
-	if idle {
-		return ""
-	}
-	return agentloop.ContinueCallModel
+	// A remote executor never falls through to the platform model. Remote
+	// messages and delivery notices are durable conversation facts; only its
+	// authenticated tool calls enter the Session's ordinary tool path above.
+	return ""
 }
 
 // consumeReport advances Executor.Consumed in the commit that consumes report;

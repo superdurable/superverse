@@ -1,5 +1,7 @@
 # Remote agent connections
 
+Bridge delivery reports are public durable Session facts: `delivery_failed` says the local agent did not receive the referenced message and the person should send it again; `delivery_uncertain` says it may have arrived; `delivery_delayed` is emitted once after two minutes while the Bridge continues its bounded retry. They name the originating entry sequence, are admitted through `/remote-agent/v1/report`, and append a visible notice to `CurrentMessages`/`ArchivedMessages`; they do not start the platform model in remote mode.
+
 This contract covers the connection layer and its Studio executor integration. Pairing authorizes a Bridge
 credential; it does not select, activate or run an executor. The Session alone
 owns executor mode, epoch and current connection. The executor layer supplies activation,

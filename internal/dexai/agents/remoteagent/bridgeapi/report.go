@@ -64,6 +64,7 @@ const (
 	EventKindActivity          EventKind = "activity"
 	EventKindDeliveryUncertain EventKind = "delivery_uncertain"
 	EventKindDeliveryFailed    EventKind = "delivery_failed"
+	EventKindDeliveryDelayed   EventKind = "delivery_delayed"
 )
 
 // ToolCall is one call of a remote tool; Arguments is its JSON object.
@@ -126,7 +127,7 @@ func (event Event) validate() error {
 		if event.Text == "" || (event.Role != EntryRoleUser && event.Role != EntryRoleAssistant) {
 			return errors.New("an imported message needs text and the user or assistant role")
 		}
-	case EventKindDeliveryUncertain, EventKindDeliveryFailed:
+	case EventKindDeliveryUncertain, EventKindDeliveryFailed, EventKindDeliveryDelayed:
 		if event.EntrySequence == 0 {
 			return fmt.Errorf("a %s event names the entry", event.Kind)
 		}

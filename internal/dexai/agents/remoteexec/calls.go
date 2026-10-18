@@ -45,8 +45,17 @@ func ToolEntry(calls []conversation.ToolCall, summaries []conversation.ToolCallS
 }
 
 // Entry freezes a public remote message with its authenticated connection
-// owner. Activity and delivery diagnostics stay best-effort and have no entry.
+// owner. Delivery diagnostics become durable visible notices but do not open a
+// platform turn; activity remains best-effort.
 func (event RemoteEvent) Entry(owner conversation.Actor, connectionID string, at time.Time) (conversation.Entry, bool) {
+	switch event.Kind {
+	case EventDeliveryFailed:
+		return conversation.DeliveryNoticeEntry("Message delivery failed: the local agent did not receive this message. Send it again."), true
+	case EventDeliveryUncertain:
+		return conversation.DeliveryNoticeEntry("Message delivery is uncertain: the local agent may not have received this message. Send it again if needed."), true
+	case EventDeliveryDelayed:
+		return conversation.DeliveryNoticeEntry("Message delivery is delayed: the local agent has not accepted it yet. It will keep retrying."), true
+	}
 	role := conversation.EntryRoleAssistant
 	switch event.Kind {
 	case EventUserMessage:

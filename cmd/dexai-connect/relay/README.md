@@ -30,8 +30,10 @@ instead of retrying it.
 `SubmissionOneWrite` requires `OneWriteProvider`: the relay persists a random marker and the
 platform key, generation, operation ID and fingerprint before the first write. It persists
 `Attempted` before calling `Send`. A restarted relay never calls `Send` for that record again.
-`Send` may report accepted only with a positive canonical user item ID, and rejected only on a
-definite pre-admission refusal. An ambiguous response, lost process or pending result gets one
+`Send` may report accepted only with a positive canonical user item ID. It reports a permanent
+rejection only for a provably invalid-content refusal; until Codex exposes a structured such
+classification, every definite app-server refusal is `retry`, as is a failure before admission.
+An ambiguous response, lost process after a turn request, or pending result gets one
 read-only `FindSubmittedMessage` check, bounded to ten seconds, for the exact marker in canonical
 public user history. A match accepts; absence or failure reports `delivery_uncertain` and advances
 without another write. A direct adapter must put the marker in its user content and make no
@@ -54,7 +56,7 @@ used by the Orca Bridge:
 (the Codex conversations open in Orca, structured or in a terminal), `ResolveWorktree` (a new
 conversation's worktree selector), `CreateSession` (in a resolved worktree), `ResumeSession`, `Reload` (stop Codex so the next send
 starts it with the current MCP servers on the same thread, and show the chat), `Send` (with the client operation ID, answering `SubmissionState`
-accepted, pending, rejected or unknown), `Cancel` (returns once no turn runs, with the event
+accepted, pending, retry, rejected or unknown), `Cancel` (returns once no turn runs, with the event
 position: a generation's boundary), `History` and `Subscribe` (each event once, in batches with
 the position to resume from; a turn's assistant messages, each with its final text, come in the
 batch of its completion, just before it). An Orca `state.EventPosition` is the journal's `{epoch, sequence}`; an event's
@@ -194,11 +196,15 @@ none otherwise. It refuses to start a second binding of an Orca session, so that
   - So a delivery that Orca holds `pending` while Codex waits on a Superverse tool never blocks that
     tool's result, even with a full queue.
 - **Delivery** (`delivery.go`). One delivery at a time, with the sending record written before
-  submission. Orca is asked again with the same operation ID while `pending` and is settled only
-  by its journal answer. For a one-write provider, the persisted attempt is never repeated and
-  only an exact marker in canonical history can settle an ambiguous answer. `rejected` reports
-  `delivery_failed`; `unknown` reports `delivery_uncertain`. The failure report is stored in the same write
-  that advances the cursor. A new tool set digest refetches the tools by repeating `activate`.
+  submission. A journal provider is asked again with the same operation ID while `pending`; a
+  one-write provider never repeats an ambiguous attempted write and only an exact marker in
+  canonical history can settle it. A permanent `rejected` reports `delivery_failed`; `unknown`
+  reports `delivery_uncertain`. A retryable rejection never advances the cursor: the sending
+  record durably receives a replacement operation ID (and a new marker for a one-write provider)
+  plus any queued-copy withdrawal before retrying, reports `delivery_delayed` once after two
+  minutes, and finally reports `delivery_failed` after ten minutes. The final report is stored in
+  the write that advances the cursor. A new tool set digest refetches the tools by repeating
+  `activate`.
 - **Tool calls** (`reports.go`). An MCP call becomes a report of the running turn (it waits up to
   5 s for the turn's start event) and waits for its `tool_result` entry, call ID
   `remote-<epoch>-<sequence>`, for at most `toolWaitBudget` (1,770 s), so the Bridge answers

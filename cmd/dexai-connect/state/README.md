@@ -23,7 +23,7 @@ outcome.
     token                      the connection token
     binding.json               BindingRecord: endpoint, Project, provider session and versions
     progress.json              Progress: epoch, generation and boundary, delivery cursor and the
-                               sending record, acknowledged report sequence, last imported Orca
+                               sending record (including replacement operation and queued-copy withdrawal), acknowledged report sequence, last imported Orca
                                message, recent turn generations and delivered Orca message IDs,
                                and the last committed report slot
     reports/<slot>.json        unacknowledged reports in order, at most 1,024 or 8 MiB
@@ -42,6 +42,10 @@ outcome.
   `sequence` and permits a direct provider's opaque `cursor`. A one-write sending record adds a
   marker, `oneWrite` and `attempted`; these are absent from existing Orca records. The attempted
   bit commits before its sole provider write, so a crash can cause uncertainty but not a resend.
+  A retryable rejection records its replacement operation ID, retry count and delayed-notice bit
+  in the same existing record; a journal provider also records queued-copy withdrawal, while a
+  one-write provider records a fresh marker before its replacement write. Recovery therefore
+  repeats a safe withdrawal or queries the same replacement without resending an ambiguous write.
 - `Lock` takes an exclusive, non-blocking `flock` on `serve.lock`; a second `serve` fails with
   `ErrLocked`, and `Running` probes it for `status` and `disconnect`.
 - `StoreReports` writes new reports to the slots after the last one, then commits them with the
