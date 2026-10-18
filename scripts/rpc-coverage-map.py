@@ -21,7 +21,7 @@ OPERATIONS = ROOT / "web/studio/lib/server/flow/flow-api-operations.ts"
 MAP = ROOT / "docs/runbooks/rpc-coverage-map.json"
 BACKLOG = ROOT / "docs/runbooks/rpc-coverage-backlog.json"
 INITIAL_BACKLOG = ROOT / "docs/runbooks/rpc-coverage-initial-backlog.json"
-SOURCES = ("api-integration", "native-e2e", "kind-e2e")
+SOURCES = ("api-integration", "kind-e2e", "kind-integration", "native-e2e", "native-integration")
 
 
 def declared():

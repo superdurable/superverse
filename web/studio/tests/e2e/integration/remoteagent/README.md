@@ -57,3 +57,19 @@ Traces, screenshots and videos remain disabled to protect pairing codes and toke
 These are acceptance sources, not observed runtime evidence. Real Native and
 Kind runs remain required. The separate legal maximum-payload, stream-loss,
 shutdown and pressure gates are not established by these browser cases.
+
+## RPC coverage
+
+The root Native and Kind acceptance runners execute only the three root cases;
+they must not receive this directory's observations. After this directory's
+real-dependency specs pass on a dedicated fresh Native run, merge that run's
+private recorder with:
+
+```sh
+python3 scripts/rpc-coverage-map.py merge native-integration <native-rpc-coverage.json>
+```
+
+For the same specs on a freshly deployed Kind server, use `kind-integration`
+and that Pod's private recorder instead. The recorder is cumulative for one
+server lifetime, so do not reuse a recorder that served the root acceptance
+cases; merge only after every requested remote-agent spec has passed.
