@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: Browser-only utilities: storage with every stored key, the theme preference, single-flight user actions, URL query updates and paged lists.
 
-Importers: `app`, `components/build`, `components/flow/**` (5), `components/frame/**` (2), `components/project/**` (3), `components/publishing/**` (3), `components/session/**` (3), `components/shell`, `components/teamspace/**` (2), `components/ui/**` (2), `lib/project/**` (2), `lib/session/design` and `lib/teamspace` import this directory.
+Importers: `app`, `components/build`, `components/flow/connections`, `components/flow/connections/row`, `components/flow/diagnostics`, `components/flow/frame`, `components/flow/scope`, `components/frame`, `components/frame/status`, `components/project`, `components/project/activity`, `components/publishing`, `components/publishing/progress`, `components/publishing/publish`, `components/session`, `components/session/executor`, `components/session/start`, `components/shell`, `components/teamspace`, `components/teamspace/connections`, `components/ui/pane`, `components/ui/reveal`, `lib/project`, `lib/project/stage`, `lib/session/design` and `lib/teamspace` import this directory.
 
 Imports: it imports `lib/api/transport` and `lib/shared`.
 
@@ -12,17 +12,30 @@ flowchart LR
   self["lib/browser"]
   c0["app"] --> self
   c1["components/build"] --> self
-  c2["components/flow/** (5)"] --> self
-  c3["components/frame/** (2)"] --> self
-  c4["components/project/** (3)"] --> self
-  c5["components/publishing/** (3)"] --> self
-  c6["components/session/** (3)"] --> self
-  c7["components/shell"] --> self
-  c8["components/teamspace/** (2)"] --> self
-  c9["components/ui/** (2)"] --> self
-  c10["lib/project/** (2)"] --> self
-  c11["lib/session/design"] --> self
-  c12["lib/teamspace"] --> self
+  c2["components/flow/connections"] --> self
+  c3["components/flow/connections/row"] --> self
+  c4["components/flow/diagnostics"] --> self
+  c5["components/flow/frame"] --> self
+  c6["components/flow/scope"] --> self
+  c7["components/frame"] --> self
+  c8["components/frame/status"] --> self
+  c9["components/project"] --> self
+  c10["components/project/activity"] --> self
+  c11["components/publishing"] --> self
+  c12["components/publishing/progress"] --> self
+  c13["components/publishing/publish"] --> self
+  c14["components/session"] --> self
+  c15["components/session/executor"] --> self
+  c16["components/session/start"] --> self
+  c17["components/shell"] --> self
+  c18["components/teamspace"] --> self
+  c19["components/teamspace/connections"] --> self
+  c20["components/ui/pane"] --> self
+  c21["components/ui/reveal"] --> self
+  c22["lib/project"] --> self
+  c23["lib/project/stage"] --> self
+  c24["lib/session/design"] --> self
+  c25["lib/teamspace"] --> self
   self --> d0["lib/api/transport"]
   self --> d1["lib/shared"]
 ```

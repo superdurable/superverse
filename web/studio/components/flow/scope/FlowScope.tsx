@@ -113,6 +113,25 @@ export function LiveFlowScope({
   );
 }
 
+/** Runs and Inbox on Preview while it does not run: why they are empty, and the way to start it. */
+function PreviewNotRunning({ start }: { start?: ReactNode }) {
+  return (
+    <NotReady kind="unavailable" heading="Preview is not running">
+      Runs and Inbox items on Preview appear while it runs; the agent&apos;s next push starts it.
+      {start && <span className="block">{start}</span>}
+    </NotReady>
+  );
+}
+
+/**
+ * Mock Studio's Runs and Inbox on Preview, which read fixture runs rather than the running Preview's own: they
+ * show only while the mock Preview runs, as the real ones do, and otherwise why not with `start`.
+ */
+export function WhilePreviewRuns({ start, children }: { start?: ReactNode; children: ReactNode }) {
+  const preview = useSessionResource()?.resource?.preview;
+  return preview?.status === "PREVIEW_STATUS_READY" ? children : <PreviewNotRunning start={start} />;
+}
+
 /**
  * The Flow Definitions of the Project's Session: of its prepared current
  * source (Build's Design), or of the Project's running Preview (Preview Runs
@@ -156,15 +175,7 @@ export function SessionFlowScope({
         {children}
       </FlowScope>
     ) : null;
-  if (source === "running")
-    return (
-      running ?? (
-        <NotReady kind="unavailable" heading="Preview is not running">
-          Runs and Inbox items on Preview appear while it runs. The agent&apos;s next push starts it, or start it now.
-          {start && <span className="block">{start}</span>}
-        </NotReady>
-      )
-    );
+  if (source === "running") return running ?? <PreviewNotRunning start={start} />;
   const basePath = flowApiRoutes.preparedSource(projectId);
   const prepared = readyPreparedSource(preparedSourceOf(session), session.headCommit);
   if (prepared) {

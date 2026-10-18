@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: Setup's shared state: each environment's status, the Preview draft, Live's next-publish layer with its items, and the gap links.
 
-Importers: `components/build`, `components/flow/scope`, `components/frame`, `components/frame/bar`, `components/frame/status`, `components/project`, `components/project/activity`, `components/project/setup`, `components/publishing`, `components/publishing/progress` and `components/publishing/publish` import this directory.
+Importers: `components/build`, `components/flow/scope`, `components/frame`, `components/frame/bar`, `components/frame/status`, `components/project`, `components/project/activity`, `components/publishing`, `components/publishing/progress` and `components/publishing/publish` import this directory.
 
 Imports: it imports `lib/api`, `lib/api/flow/draft`, `lib/generated/protobuf`, `lib/project`, `lib/shared`, `lib/shared/problem` and `lib/shared/version`.
 
@@ -17,10 +17,9 @@ flowchart LR
   c4["components/frame/status"] --> self
   c5["components/project"] --> self
   c6["components/project/activity"] --> self
-  c7["components/project/setup"] --> self
-  c8["components/publishing"] --> self
-  c9["components/publishing/progress"] --> self
-  c10["components/publishing/publish"] --> self
+  c7["components/publishing"] --> self
+  c8["components/publishing/progress"] --> self
+  c9["components/publishing/publish"] --> self
   self --> d0["lib/api"]
   self --> d1["lib/api/flow/draft"]
   self --> d2["lib/generated/protobuf"]

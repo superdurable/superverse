@@ -145,8 +145,8 @@ work log shows each model call's metrics with the new field names: the second
 call was served by Claude Sonnet 5.5 after a fallback (a `KIND_MODEL_FALLBACK`
 notice line and `served by` in its metrics) and reports no thinking tokens, shown
 as `unknown`; `npm test` ran two attempts (a `KIND_TOOL_PROGRESS` event carries
-only the attempt number). `Load earlier` and `Jump to beginning` page archived
-history. Completed Sessions show read-only history without a live-update warning
+only the attempt number). Scrolling up pages archived history, and `Jump to beginning`
+loads it all. Completed Sessions show read-only history without a live-update warning
 or a running clock.
 
 ## Model selector
@@ -289,9 +289,13 @@ URL, once per mock server and cumulatively, so restart the mock to see one alone
 - **Flow** (`/flow`) opens on the project map of the fixture catalog, one card
   per Flow Type with its Steps and who acts; a card, or the process picker at
   the head of the tabs (`?flowType=`), opens that Flow's canvas, as production
-  does with the prepared source's definitions. The picker lists the Processes
+  does with the prepared source's definitions. A catalog with one Flow Type, as
+  the mock Project's, opens on its canvas at once. The picker lists the Processes
   of the prepared Preview source, which the mock lacks until it is prepared.
-- **Runs** and **Inbox** read the fixture catalog (below). Under All processes
+- **Runs** and **Inbox** on Preview read the fixture catalog (below) only while
+  the mock Preview runs, as production reads the running Preview; otherwise they
+  say Preview is not running, with Start Preview, or Open Setup while it lacks
+  settings. Under All processes
   the list merges every Flow Type's runs; a selected run is drawn whole with
   its waiting Step ringed "now", and clicking a Step opens the drawer with its
   Actions, Open in Inbox, Time travel, Ask the agent (which puts the run and

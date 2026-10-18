@@ -30,9 +30,9 @@ flowchart LR
 the Live tab the layer alone, each with its own catalog, UI sessions and autosave queue
 (`lib/api/flow/draft`), and lays out the table by the tool panel's width (`@container/tool`, never
 the viewport): controls in the row when wide, status chips below 780px, stacked below 520px
-(the grid is in [`model/`](model/README.md)). Rows are in [`row/`](row/README.md). It hands the bar above it
-(`onNotes`) the connectors' names and what the next publish would do that deserves a look, such as listening
-in Preview's channel. `VariablesBlock.tsx` lists
+(the grid is in [`model/`](model/README.md)). Rows are in [`row/`](row/README.md). Its head names the columns
+only: each row's colours say what a column lacks, and the Publish popover says what the next publish needs.
+`VariablesBlock.tsx` lists
 the variables, required first and the optional ones folded, each with a control per column; a secret
 shows only whether it is set and never follows Preview. On the Live tab, "Release connections older Live
 versions used" lets the Teamspace delete connections no current version selects; `LiveIdentities.tsx`

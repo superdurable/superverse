@@ -10,7 +10,6 @@
 
 import { AgentTasksPanel, ConversationView, PendingMessageQueue, TimerCard, TodoProgress } from "@/components/agent";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Icons";
 import { AgentStatus, hasRunningTasks, hasRunningWork } from "@/lib/session/agent-types";
 import { connectorContributionView } from "@/lib/session/agent-view";
@@ -22,6 +21,7 @@ import { useProjectSession } from "@/lib/session/SessionProvider";
 import { isWorkspacePaused, isWorkspacePreparing, isWorkspaceRetainedDirty } from "@/lib/session/session-status";
 import { Composer } from "@/components/session/composer/Composer";
 import { MockComposer } from "./mock/MockComposer";
+import { HistoryJumps } from "./HistoryJumps";
 import { PendingActionDock } from "./PendingActionDock";
 import {
   EXAMPLE_GREETING_SEQUENCE,
@@ -91,13 +91,21 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
   }, [state]);
 
   const jumpToBeginning = useCallback(async () => {
-    if (state.historyLoading || !state.hasEarlierMessages) return;
-    await state.jumpToBeginning();
+    if (state.historyLoading) return;
+    followsTail.current = false;
+    if (state.hasEarlierMessages) await state.jumpToBeginning();
     window.requestAnimationFrame(() => {
       const current = scroller.current;
       if (current) current.scrollTop = 0;
     });
   }, [state]);
+
+  const jumpToLatest = useCallback(() => {
+    const element = scroller.current;
+    if (!element) return;
+    followsTail.current = true;
+    element.scrollTo({ top: element.scrollHeight, behavior: "smooth" });
+  }, []);
 
   useEffect(() => {
     const element = scroller.current;
@@ -223,102 +231,98 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
   return (
     <div className="flex h-full min-h-0 flex-col">
       <aside className="flex min-h-0 flex-1 flex-col">
-        <div
-          ref={scroller}
-          onScroll={() => {
-            const element = scroller.current;
-            if (element) {
-              followsTail.current = element.scrollHeight - element.scrollTop - element.clientHeight < 80;
-              if (element.scrollTop < 80) void loadEarlierAtTop();
-            }
-          }}
-          className="min-h-32 flex-1 overflow-y-auto px-4 py-5"
-        >
-          <div className="flex flex-col gap-4">
-            <RemoteAgentOfflineNotice />
-            {state.hasEarlierMessages && (
-              <div className="sticky top-0 z-10 flex flex-wrap items-center justify-center gap-2 rounded-md border border-line-soft bg-bg/95 p-2 backdrop-blur">
-                <Button size="sm" disabled={state.historyLoading} onClick={() => void loadEarlierAtTop()}>
-                  Load earlier
-                </Button>
-                <Button
-                  variant="quiet"
-                  size="sm"
-                  disabled={state.historyLoading}
-                  onClick={() => void jumpToBeginning()}
-                >
-                  Jump to beginning
-                </Button>
-              </div>
-            )}
-            {state.historyLoading && (
-              <div className="flex items-center justify-center gap-2 text-[11px] text-ink-faint">
-                <Spinner className="h-3 w-3" />
-                {state.historyLoadMode === "beginning"
-                  ? `Loading from beginning… ${state.historyLoadedCount} loaded · more remain`
-                  : "Loading earlier messages…"}
-              </div>
-            )}
-            <ConversationView
-              key={state.projectId}
-              messages={shownMessages}
-              reasoning={state.reasoning}
-              activities={state.activities}
-              assistant={state.assistant}
-              pendingWaits={pendingWaits}
-              isModelRunning={description?.status === AgentStatus.CALLING_MODEL}
-              isExecutionLive={productInteractive}
-              streamState={productInteractive && state.assistant?.isComplete === false ? "streaming" : "complete"}
-              notificationLinks={linksOfNotification}
-              confirmedRequirements={description?.confirmedRequirements ?? null}
-              waitingRequirementsCallId={pendingInput?.kind === "requirements" ? pendingInput.callId : null}
-              requirementsStartSequence={startedFromExample ? EXAMPLE_GREETING_SEQUENCE : null}
-            />
-            {live && liveChange.offered && <SeeOnPreview live={live} onFollow={liveChange.dismiss} />}
-            {description?.todoList && <TodoProgress items={description.todoList.items} />}
-            {description && (
-              <AgentTasksPanel
-                commands={description.backgroundCommands}
-                subagents={description.subagents}
-                subagentLines={state.subagentLines}
-                contributions={contributions}
-                stopping={state.stopping}
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          <div
+            ref={scroller}
+            onScroll={() => {
+              const element = scroller.current;
+              if (element) {
+                followsTail.current = element.scrollHeight - element.scrollTop - element.clientHeight < 80;
+                if (element.scrollTop < 80) void loadEarlierAtTop();
+              }
+            }}
+            className="min-h-32 flex-1 overflow-y-auto px-4 py-5"
+          >
+            <div className="flex flex-col gap-4">
+              <RemoteAgentOfflineNotice />
+              {state.historyLoading && (
+                <div className="flex items-center justify-center gap-2 text-[11px] text-ink-faint">
+                  <Spinner className="h-3 w-3" />
+                  {state.historyLoadMode === "beginning"
+                    ? `Loading from beginning… ${state.historyLoadedCount} loaded · more remain`
+                    : "Loading earlier messages…"}
+                </div>
+              )}
+              <ConversationView
+                key={state.projectId}
+                messages={shownMessages}
+                reasoning={state.reasoning}
+                activities={state.activities}
+                assistant={state.assistant}
+                pendingWaits={pendingWaits}
+                isModelRunning={description?.status === AgentStatus.CALLING_MODEL}
+                isExecutionLive={productInteractive}
+                streamState={productInteractive && state.assistant?.isComplete === false ? "streaming" : "complete"}
+                notificationLinks={linksOfNotification}
+                confirmedRequirements={description?.confirmedRequirements ?? null}
+                waitingRequirementsCallId={pendingInput?.kind === "requirements" ? pendingInput.callId : null}
+                requirementsStartSequence={startedFromExample ? EXAMPLE_GREETING_SEQUENCE : null}
               />
-            )}
-            {pendingTimer && <TimerCard durationSeconds={pendingTimer.durationSeconds} reason={pendingTimer.reason} />}
-            <PendingMessageQueue
-              items={pendingMessages}
-              disabled={state.mutating || agentInteractionDisabled}
-              {...pendingQueueActions(state.snapshot?.queued ?? [], state, setComposerText)}
-            />
-            <StartupStatus
-              messages={shownMessages}
-              description={description}
-              lifecycle={productInteractive ? null : lifecycle}
-              workspacePreparing={workspacePreparing}
-            />
-            {workspacePaused && (
-              <div
-                className="rounded border border-line-soft bg-panel p-3 text-[12px] text-ink-dim"
-                data-workspace-paused
-                role="status"
-              >
-                Paused; your files are kept. The agent&apos;s next change starts the workspace again.
-              </div>
-            )}
-            {workspaceRetainedDirty && (
-              <div className="rounded border border-line-soft bg-panel p-3 text-[12px] text-ink-dim">
-                The workspace was kept because it has changes that are not committed or checked yet.
-              </div>
-            )}
-            {productInteractive && description?.status !== AgentStatus.WAITING_FOR_MESSAGE && (
-              <div className="flex items-center gap-2 text-caption text-ink-faint" role="status">
-                <Spinner className="h-3.5 w-3.5" /> {agentStatusLabel(description?.status)}
-              </div>
-            )}
-            {state.error && <p className="text-[12px] text-fail">{state.error}</p>}
-            {state.commandError && <p className="text-[12px] text-fail">{state.commandError}</p>}
+              {live && liveChange.offered && <SeeOnPreview live={live} onFollow={liveChange.dismiss} />}
+              {description?.todoList && <TodoProgress items={description.todoList.items} />}
+              {description && (
+                <AgentTasksPanel
+                  commands={description.backgroundCommands}
+                  subagents={description.subagents}
+                  subagentLines={state.subagentLines}
+                  contributions={contributions}
+                  stopping={state.stopping}
+                />
+              )}
+              {pendingTimer && (
+                <TimerCard durationSeconds={pendingTimer.durationSeconds} reason={pendingTimer.reason} />
+              )}
+              <PendingMessageQueue
+                items={pendingMessages}
+                disabled={state.mutating || agentInteractionDisabled}
+                {...pendingQueueActions(state.snapshot?.queued ?? [], state, setComposerText)}
+              />
+              <StartupStatus
+                messages={shownMessages}
+                description={description}
+                lifecycle={productInteractive ? null : lifecycle}
+                workspacePreparing={workspacePreparing}
+              />
+              {workspacePaused && (
+                <div
+                  className="rounded border border-line-soft bg-panel p-3 text-[12px] text-ink-dim"
+                  data-workspace-paused
+                  role="status"
+                >
+                  Paused; your files are kept. The agent&apos;s next change starts the workspace again.
+                </div>
+              )}
+              {workspaceRetainedDirty && (
+                <div className="rounded border border-line-soft bg-panel p-3 text-[12px] text-ink-dim">
+                  The workspace was kept because it has changes that are not committed or checked yet.
+                </div>
+              )}
+              {productInteractive && description?.status !== AgentStatus.WAITING_FOR_MESSAGE && (
+                <div className="flex items-center gap-2 text-caption text-ink-faint" role="status">
+                  <Spinner className="h-3.5 w-3.5" /> {agentStatusLabel(description?.status)}
+                </div>
+              )}
+              {state.error && <p className="text-[12px] text-fail">{state.error}</p>}
+              {state.commandError && <p className="text-[12px] text-fail">{state.commandError}</p>}
+            </div>
           </div>
+          <HistoryJumps
+            scroller={scroller}
+            earlier={state.hasEarlierMessages}
+            loading={state.historyLoading}
+            onBeginning={jumpToBeginning}
+            onLatest={jumpToLatest}
+          />
         </div>
 
         <PendingActionDock

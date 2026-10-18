@@ -646,12 +646,14 @@ RASUBWT adds no SQL table, column, migration, projection or second worktree owne
 - The first message Studio sends immediately after the executor becomes remote is
   delivered as a remote turn. The Bridge's initial delivery cursor stays at the
   admission head even when activation is retried after that message.
-- One Agent picker beside the composer shows "Superverse agent · <model>" or
-  "My Codex · online/offline · connected by <owner>". Its first level chooses
-  Superverse or a local agent; Superverse lists its models while platform
-  execution is active and otherwise offers the epoch-fenced switch back.
-  The local level shows connection state and Connect. The chat header keeps
-  connection and workspace details.
+- One quiet Agent picker on the composer's row shows the model, or the local
+  agent with its liveness dot; its accessible name and hint say "Superverse
+  agent · <model>" or "Local Codex · online/offline · connected by <owner>". Its
+  first level chooses Superverse or a local agent; Superverse lists its models
+  while platform execution is active and otherwise offers the epoch-fenced
+  switch back. The local level shows connection state and Connect. The chat
+  header holds only a dot while live updates reconnect; workspace details are in
+  Project details.
 - While a remote turn runs, the composer works as today: messages queue or steer, Stop stops.
   Remote assistant replies render as assistant messages with a small "Codex" label; tool calls
   render in the work log like the platform agent's.

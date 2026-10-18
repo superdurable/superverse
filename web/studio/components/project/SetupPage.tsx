@@ -9,23 +9,22 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { nextPublishItemAnchor } from "@/lib/api/flow/draft/configuration-draft";
-import { useQueryUpdate } from "@/lib/browser/use-query-update";
+import { FailureRemedy } from "@/lib/generated/protobuf/superverse/v2/FailureRemedy";
 import { itemKeyOf, itemName, itemValueText, setupItems } from "@/lib/project/setup/configuration-items";
 import { usePreviewDraft } from "@/lib/project/setup/PreviewDraftProvider";
 import { useNextPublish } from "@/lib/project/setup/use-next-publish";
 import { useProjectResource } from "@/lib/project/ProjectResourceProvider";
-import { useReleaseVersions } from "@/lib/project/use-release-versions";
 import { useSessionResource } from "@/lib/session/SessionProvider";
 import { flowApiRoutes, studioRoutes, type ProjectEnvironment } from "@/lib/shared/studio-routes";
 import { versionNumber } from "@/lib/shared/version/version";
 import { PreviewSource } from "@/components/build/FlowSurface";
 import { usePreviewCommands } from "@/components/build/use-preview-commands";
-import { SetupChecklistSurface, type SetupNotes } from "@/components/flow/scope/SetupChecklistSurface";
+import { SetupChecklistSurface } from "@/components/flow/scope/SetupChecklistSurface";
 import { LiveBanner } from "@/components/project/setup/LiveBanner";
-import { NextPublishStatus, PreviewStatus, UnbuiltStatus } from "@/components/project/setup/SetupStatus";
-import { autoApplyDue, useAutoApply } from "@/components/project/setup/auto-apply";
+import { UnbuiltStatus } from "@/components/project/setup/SetupStatus";
+import { useAutoApply } from "@/components/project/setup/auto-apply";
 import { ProblemPanel } from "@/components/ui/problem/ProblemPanel";
 
 /** The tool panel, which Setup's table lays out by: its controls in the row, as chips, or stacked. */
@@ -48,7 +47,8 @@ function useLive() {
 /**
  * Setup on the Preview tab: one table with a Preview column, which autosaves into Preview's draft that Setup
  * applies to the Preview on its own once edits settle, and a Next publish column, what Live gets when this
- * version is published; each column's state is under its name. Until the latest push is built, why not.
+ * version is published. Until the latest push is built, why not. A Preview problem shows above the table
+ * unless its fix is Setup, which the table's colours already show.
  */
 function PreviewTab({ projectId }: { projectId: string }) {
   const session = useSessionResource();
@@ -61,16 +61,13 @@ function PreviewTab({ projectId }: { projectId: string }) {
   const next = useNextPublish(projectId, null, `${applied}:${live?.revision ?? ""}`);
   const configuration = draft?.configuration ?? null;
   const items = useMemo(() => (configuration ? setupItems(configuration) : null), [configuration]);
-  const versions = useReleaseVersions(projectId, live?.releaseId ?? null, session?.resource?.headCommit);
-  const { queryHref } = useQueryUpdate();
   const source = session?.resource?.preview?.preparedSource;
-  const newest = versions.ahead[0] ?? null;
-  const [notes, setNotes] = useState<SetupNotes | null>(null);
-  const hrefOf = (anchor: string) => `${queryHref(() => undefined)}#${anchor}`;
+  // A problem whose fix is Setup is what the table's colours already show, here on Setup itself.
+  const problem = commands.problem?.remedy === FailureRemedy.FAILURE_REMEDY_OPEN_SETUP ? null : commands.problem;
   return (
     <Page>
       {!commands.sourceReady && <UnbuiltStatus preview={commands.preview} />}
-      {commands.problem && <ProblemPanel problem={commands.problem} actions={commands.remedyActions} />}
+      {problem && <ProblemPanel problem={problem} actions={commands.remedyActions} />}
       {commands.sourceReady && (
         <SetupChecklistSurface
           previewPath={flowApiRoutes.previewConfiguration(projectId)}
@@ -85,35 +82,6 @@ function PreviewTab({ projectId }: { projectId: string }) {
           items={{ preview: items, next: next.items }}
           live={name}
           addresses={{ preview: commands.preview?.url ?? "", next: live?.url ?? "" }}
-          onNotes={setNotes}
-          states={{
-            preview: (
-              <PreviewStatus
-                configuration={commands.configuration}
-                preview={commands.preview}
-                updating={autoApplyDue(commands, headCommit)}
-                pushUpdating={commands.pushUpdating}
-                applying={commands.busy === "apply" || commands.busy === "start"}
-                hrefOf={hrefOf}
-                version={
-                  commands.preview?.status === "PREVIEW_STATUS_READY" && source
-                    ? versionNumber(source.version, "") || null
-                    : null
-                }
-              />
-            ),
-            next: (
-              <NextPublishStatus
-                previewConfiguration={commands.configuration}
-                next={next.configuration}
-                nextError={next.error}
-                waiting={next.waiting}
-                ahead={newest ? versionNumber(newest.version, "the newest version") : null}
-                hrefOf={hrefOf}
-                connectors={notes?.connectors ?? {}}
-              />
-            ),
-          }}
         />
       )}
       {/* Build processes matters while the latest push is not built, and holds the manual build while automatic
@@ -129,14 +97,12 @@ function PreviewTab({ projectId }: { projectId: string }) {
 
 /**
  * Setup on the Live tab: the same Next publish controls in one column, checked against the version Live
- * runs, under the banner that names it, with what waits for a publish under Live's name; then the
- * connections a newer version adds, set up from Preview, and what the next publish no longer uses.
+ * runs, under the banner that names it; then the connections a newer version adds, set up from Preview,
+ * and what the next publish no longer uses.
  */
 function LiveTab({ projectId }: { projectId: string }) {
   const { live, name } = useLive();
   const session = useSessionResource();
-  const { queryHref } = useQueryUpdate();
-  const [notes, setNotes] = useState<SetupNotes | null>(null);
   const applied = session?.resource?.preview?.appliedConfiguration?.configurationRevision ?? "";
   const reread = `${applied}:${live?.revision ?? ""}`;
   const next = useNextPublish(live ? projectId : null, live?.releaseId ?? null, reread);
@@ -176,20 +142,6 @@ function LiveTab({ projectId }: { projectId: string }) {
           live={name}
           addresses={{ preview: "", next: live.url }}
           framed
-          onNotes={setNotes}
-          states={{
-            next: (
-              <NextPublishStatus
-                previewConfiguration={null}
-                next={next.configuration}
-                nextError={next.error}
-                waiting={next.waiting}
-                ahead={null}
-                hrefOf={(anchor) => `${queryHref(() => undefined)}#${anchor}`}
-                connectors={notes?.connectors ?? {}}
-              />
-            ),
-          }}
         />
       </div>
       {arriving.length > 0 && (

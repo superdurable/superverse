@@ -80,8 +80,8 @@ See [studio.md](studio.md). In summary, as revised by the current contract:
 - Publish opens a small popover instead of the three-step wizard.
 - Tools ▸ Publishing shows the stage bar, the build log and Cancel, what is Live, the
   versions, Live history, Stop Live and rollback.
-- The run list's recent events, the Interface pane, the chat header's timer and Project details
-  take over what the bar's menus held.
+- The run list's recent events, the Interface pane and Project details take over what the bar's
+  menus held.
 - Every failure uses one four-part problem panel.
 
 ## Tests

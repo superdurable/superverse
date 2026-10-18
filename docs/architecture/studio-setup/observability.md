@@ -15,7 +15,7 @@ process picker's pill and the active tab's underline take the same environment c
 
 | Status | When | Dot, word and fix | Source |
 |---|---|---|---|
-| `FAILED` | `PreviewSnapshot.failure` is set, and the last `recent_starts` entry is `FAILED` or `REFUSED` | red, "failed"; the problem panel in the Interface pane, with Fix | `failure`, `recent_starts` |
+| `FAILED` | `PreviewSnapshot.failure` is set, and the last `recent_starts` entry is `FAILED` or `REFUSED` | red, "failed"; the problem panel in the Interface pane, with Fix; Setup at the first missing item when the failure's remedy is Open Setup | `failure`, `recent_starts` |
 | `STOPPING` | `status` is `STOPPING` | pulsing, "stopping"; red, "stop failed", when its cleanup failed, with the Interface pane's retry | `status`, `failure` |
 | `STARTING` | `status` is `STARTING`, or the automatic deployment is `RUNNING` | pulsing, "starting", or "updating" for the automatic deployment of a push; the Interface pane, which shows "step k of 5" with the phase label and elapsed time | `phase_timings` (the phases `configuration`, `environment`, `grant`, `application`, `route`; `preview_snapshot.go:72-81`) |
 | `MISSING` | The configuration's `status` is not `READY` and the gap list is not empty | amber, "needs setup"; Setup, focused on the first gap | `GetProjectConfiguration.status` and `requirement_gaps` |

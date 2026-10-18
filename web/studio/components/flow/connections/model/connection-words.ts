@@ -64,26 +64,26 @@ export const TWO_COLUMNS = cx(
   "@max-[780px]/tool:grid-cols-[minmax(0,1fr)_auto_22px]",
 );
 /**
- * The table's head, on its columns: Connection, then each column's name with its state under it. Once the
- * columns become chips, each name and its state take a line of their own under Connection.
+ * The table's head, on its columns: Connection, then each column's name. Once the columns become chips,
+ * whose controls carry their own captions, Connection alone.
  */
 export const HEAD_COLUMNS = cx(
-  "grid grid-cols-[minmax(0,1fr)_minmax(232px,0.75fr)_minmax(232px,0.75fr)_22px] items-start gap-x-2.5 gap-y-1.5",
-  "border-b border-line-soft px-3.5 pt-2.5 pb-2.5",
+  "grid grid-cols-[minmax(0,1fr)_minmax(232px,0.75fr)_minmax(232px,0.75fr)_22px] items-center gap-x-2.5",
+  "border-b border-line-soft px-3.5 py-2.5",
   "@max-[780px]/tool:grid-cols-1",
 );
-/** Live's one-column head: Connection, then Live's name with its state; under Connection once it stacks. */
+/** Live's one-column head: Connection, then Live's name; Connection alone once it stacks. */
 export const HEAD_ONE_COLUMN = cx(
-  "grid grid-cols-[minmax(0,1fr)_minmax(262px,0.75fr)_22px] items-start gap-x-2.5 gap-y-1.5",
-  "border-b border-line-soft px-3.5 pt-2.5 pb-2.5",
+  "grid grid-cols-[minmax(0,1fr)_minmax(262px,0.75fr)_22px] items-center gap-x-2.5",
+  "border-b border-line-soft px-3.5 py-2.5",
   "@max-[780px]/tool:grid-cols-[minmax(0,1fr)_minmax(0,56%)_22px]",
   "@max-[520px]/tool:grid-cols-1",
 );
-/** Where each part of the head sits, wide and once its columns become chips or stack. */
+/** Each column's name in the head, hidden once its controls carry their own captions. */
 export const HEAD_CELLS = {
-  preview: cx("col-start-2 row-start-1", "@max-[780px]/tool:col-start-1 @max-[780px]/tool:row-start-2"),
-  next: cx("col-start-3 row-start-1", "@max-[780px]/tool:col-start-1 @max-[780px]/tool:row-start-3"),
-  live: cx("col-start-2 row-start-1", "@max-[520px]/tool:col-start-1 @max-[520px]/tool:row-start-2"),
+  preview: "@max-[780px]/tool:hidden",
+  next: "@max-[780px]/tool:hidden",
+  live: "@max-[520px]/tool:hidden",
 } as const;
 /** A line of Live's one-column table: the name, the next publish and the fold. */
 export const ONE_COLUMN = cx(

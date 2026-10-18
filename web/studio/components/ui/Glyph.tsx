@@ -172,6 +172,13 @@ const PATHS = {
     </>
   ),
   arrowUp: <path d="M12 19V5.5M6.5 11 12 5.5 17.5 11" />,
+  arrowDown: <path d="M12 5v13.5M6.5 13l5.5 5.5 5.5-5.5" />,
+  mic: (
+    <>
+      <rect x="9" y="3.5" width="6" height="11" rx="3" />
+      <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5" />
+    </>
+  ),
   pick: (
     <>
       <path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M4 15v4a1 1 0 0 0 1 1h4" strokeDasharray="2.2 2.2" />

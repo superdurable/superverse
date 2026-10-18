@@ -46,7 +46,7 @@ import { SURFACES, surfacesFor, TOOLS } from "@/components/frame/surface-registr
 import { useBuilderLocation } from "@/components/frame/use-builder-location";
 import { useFrameLinks } from "@/components/frame/use-frame-links";
 import { PublishButton } from "@/components/publishing/publish/PublishButton";
-import { SessionChatStatus } from "@/components/session/SessionChatStatus";
+import { SessionConnectionIndicator } from "@/components/session/SessionStatusIndicators";
 import { SessionConversation } from "@/components/session/SessionConversation";
 import { ElementPicker } from "@/components/session/composer/ElementPicker";
 import { usePaletteEntries } from "@/components/shell/palette/use-palette-entries";
@@ -391,7 +391,7 @@ function BuilderFrame({ projectId, role, persistentQuery, children }: BuilderPro
             }
           />
         }
-        chatStatus={<SessionChatStatus />}
+        chatStatus={<SessionConnectionIndicator />}
       >
         {children}
       </ProjectFrame>

@@ -13,8 +13,8 @@ Every version is shown as "V*N* · subject", never as a hash
   `EnvironmentStatusTab` (`components/frame/status/`) shows two tabs, Preview | Live. Each carries
   one dot for its [status](observability.md#environment-status), and a word only when something
   is abnormal, such as "failed", "needs setup", "starting", "stopped" and, on Live, "publishing" and
-  "publish failed". The word is a link to the fix (the Interface, Setup at the first missing item
-  or Tools ▸ Publishing; an operator sees the word without a link): a click on the selected tab
+  "publish failed". The word is a link to the fix (the Interface, Setup at the first missing item,
+  also for a Preview failure whose fix is Setup, or Tools ▸ Publishing; an operator sees the word without a link): a click on the selected tab
   opens the fix, and a click on the other tab selects it. Setup gaps and unapplied changes also
   put an amber badge on the Tools tab and on Setup. The full status stays in the tab's accessible
   name and hover hint, with accessible labels. On phone widths, the Project and environment controls wrap above the
@@ -131,20 +131,17 @@ Container queries on the tool panel decide the layout, never viewport breakpoint
 
 ### Each column's state
 
-Setup has no bar of its own and no Apply or Publish button. Each column's state sits under its name
-in the table's head (`project/setup/SetupStatus.tsx`, drawn by `SetupChecklist`'s head): Preview's
-under Preview, the next publish's under Next publish, and on the Live tab under Live. Below 780px
-the head stacks: Connection, then each name with its state beside it. The bar's "Saving…" and
-"Saved" say what the autosave does; the bar's Publish publishes.
+Setup has no bar of its own and no Apply or Publish button. The table's head names its columns
+only: Connection, Preview and Next publish, or Live on the Live tab; once the controls carry their
+own captions (below 780px, or 520px for Live's one column), Connection alone. Each column's state
+is in its colours, not in words: a row's red "Not connected" control and status chips say what a
+column lacks, the bar's Preview status leads to the first missing item, and the Publish popover
+lists what the next publish needs, with a link to each. A Preview problem shows above the table
+unless its fix is Open Setup, which the table's colours already show. The bar's "Saving…" and "Saved" say what
+the autosave does; the bar's Publish publishes. Before the latest push is built, the table is
+replaced by "Building the latest push… Setup opens when it is ready.", that it did not build, or
+that it is not built yet (`project/setup/SetupStatus.tsx`).
 
-- **Preview's state:** by state "N missing:" with links that open and focus each item;
-  "Updating Preview with N changes…" with "· takes about 30 s" (the median of the last
-  `recent_starts` timings); "Updating Preview…" while it restarts; "Updating to the latest push…
-  Your changes follow." while a push's automatic update runs; "N changes saved; Preview takes them
-  when it starts" or "Not running; starts with these settings" while it is stopped; or "Running V12
-  with these settings". With no gaps and not READY it shows "Cannot check: {reason}". Before the
-  latest push is built, the table is replaced by "Building the latest push… Setup opens when it is
-  ready.", that it did not build, or that it is not built yet.
 - **Applying is automatic, and the only way.** Changes save as they are made, and Setup applies
   them on its own (`project/setup/auto-apply.ts`): three seconds after the last saved change, when
   the configuration is READY, while Preview runs and has unapplied changes, or after its automatic
@@ -158,10 +155,6 @@ the head stacks: Connection, then each name with its state beside it. The bar's 
   (`automaticDeployment` RUNNING), apply and Start are not allowed (`use-preview-commands.ts`): the
   update moves the Preview's revision, so either would be refused with `REVISION_CHANGED`. Setup
   applies once the update finishes.
-- **The next publish's state:** by state "N to set up before publishing:" with links, each in
-  plain words such as "Stripe needs its own connection"; "Follows Preview once Preview is set up"
-  (with the gaps of its own, if any); "Ready to publish V13 with these settings" when a version is
-  ahead of Live; "N changes waiting for a publish"; or "Live runs these settings".
 
 ### Start Preview
 
@@ -360,11 +353,11 @@ holds `publish-stages.ts`, `use-publish-progress.ts` (the Release and Deployment
   ([recent events](observability.md#recent-events-received)).
 - **The Interface pane.** Stop, the start's phases and its problem move from the Preview menu into
   `build/PreviewPanel` and `InterfaceSurface` ([the Interface](#the-interface)).
-- **The chat header's timer.** The workspace timer of `session/SessionStatusIndicators.tsx`
-  becomes a popover with `WorkspaceKeepRunning`, "Keep running for 7 days".
 - **Project details** (`/p/<id>`, `project/ProjectPage.tsx`) holds the Preview's "Build each push
-  automatically" switch (`PreviewAutoDeploy`) and Delete. Setup no longer shows the
-  Project's facts or a delete link.
+  automatically" switch (`PreviewAutoDeploy`), the workspace's time with "Keep running for 7 days"
+  and its startup phases (`WorkspaceDetails` of `session/SessionStatusIndicators.tsx`), and Delete.
+  Setup no longer shows the Project's facts or a delete link, and the chat's header holds only a dot
+  while live updates reconnect.
 - **Live's timeline** moves from `LiveTimelineMenu` to the Live history of Tools ▸ Publishing,
   and the Live Interface's Details keep it open to operators.
 - **Share.** The bar's right side is Share, then Publish, as the prototype's Invite: a popover

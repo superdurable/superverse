@@ -81,22 +81,23 @@ export function expectPhaseTimings(timings: readonly PhaseTiming__Output[], requ
 }
 
 /**
- * Keeps the Project's READY workspace running for seven days with "Keep running for 7 days", which the
- * chat header's More details shows, and requires its Sandbox deadline to be about seven days ahead.
+ * Keeps the Project's READY workspace running for seven days with "Keep running for 7 days" in Project
+ * details' Workspace section, requires its Sandbox deadline to be about seven days ahead, and returns to the
+ * page it started on.
  */
 export async function keepWorkspaceRunning(page: Page, projectId: string) {
-  const keep = page.getByRole("button", { name: "Keep running for 7 days", exact: true });
-  const details = page.locator('[data-more-details="chat.header"] > button');
-  await expect(async () => {
-    if (!(await keep.isVisible()) && (await details.getAttribute("aria-expanded")) !== "true") await details.click();
-    await expect(keep).toBeVisible({ timeout: 2_000 });
-  }).toPass({ timeout: 60_000 });
+  const back = page.url();
+  await page.goto(`/p/${projectId}`);
+  const keep = page
+    .getByRole("region", { name: "Workspace", exact: true })
+    .getByRole("button", { name: "Keep running for 7 days", exact: true });
+  await expect(keep).toBeEnabled({ timeout: 60_000 });
   const clicked = Date.now();
   const [response] = await Promise.all([page.waitForResponse(rpcAnswered("RenewWorkspace")), keep.click()]);
   expect(response.ok()).toBe(true);
   const answer: RpcOutput<"RenewWorkspace"> = await response.json();
   expect(answer.renewed, "The READY workspace must be renewed").toBe(true);
-  await details.click();
+  await page.goto(back);
   const deadline = Number((await readSession(page, projectId)).workspace?.expiresAt?.seconds) * 1000;
   const week = 7 * 24 * 60 * 60 * 1000;
   expect(deadline).toBeGreaterThanOrEqual(clicked + week - 60_000);

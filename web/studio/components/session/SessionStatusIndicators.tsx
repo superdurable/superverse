@@ -10,12 +10,12 @@
 
 import { useEffect, useState } from "react";
 import { renewWorkspace } from "@/lib/api/session";
+import type { SessionWorkspaceSnapshot__Output } from "@/lib/generated/protobuf/superverse/v2/SessionWorkspaceSnapshot";
 import { useSingleFlight } from "@/lib/browser/use-single-flight";
 import { useSessionResource } from "@/lib/session/SessionProvider";
 import { isWorkspacePaused, workspaceDeadline } from "@/lib/session/session-status";
 import { formatRemainingTime } from "@/lib/shared/format";
 import { Button } from "@/components/ui/Button";
-import { MoreDetails } from "@/components/ui/reveal/MoreDetails";
 import { PhaseTimings } from "@/components/ui/timings/PhaseTimings";
 
 /** The phases of a workspace start in order: the Sandbox becoming ready, then the repository checkout. */
@@ -31,47 +31,39 @@ function useConnectionState(): SessionConnectionState {
   return !active ? "complete" : session.streamState === "idle" ? "connecting" : session.streamState;
 }
 
-function connectionLabel(state: SessionConnectionState): string {
-  if (state === "connected") return "Live updates connected";
-  if (state === "reconnecting") {
-    return "Live updates reconnecting; durable history remains current";
-  }
-  return "Connecting to live updates";
-}
+const RECONNECTING = "Live updates reconnecting; durable history remains current";
 
 /** An amber dot beside the chat's heading while live updates reconnect; nothing while they are live. */
 export function SessionConnectionIndicator() {
   const state = useConnectionState();
   if (state !== "reconnecting") return null;
-  const label = connectionLabel(state);
   return (
     <span
-      aria-label={label}
+      aria-label={RECONNECTING}
       className="h-1.5 w-1.5 shrink-0 rounded-full bg-busy"
       data-session-connection={state}
       role="status"
-      title={label}
+      title={RECONNECTING}
     />
   );
 }
 
 /**
- * The chat header's More details, a card below the link: whether live updates are connected, how
- * long the workspace is kept with Keep running for 7 days, and where the time of its last start went.
- * Nothing once the Session is no longer active and has no workspace to tell about.
+ * Project details' Workspace section: how long the workspace is kept, with Keep running for 7 days, and where
+ * the time of its last start went. Nothing while the Session has no workspace to tell about.
  */
-export function SessionDetails() {
-  const state = useConnectionState();
-  const workspace = useSessionResource()?.resource?.workspace;
-  if (state === "complete" && !workspace) return null;
+export function WorkspaceDetails({ headingClassName }: { headingClassName: string }) {
+  const resource = useSessionResource()?.resource ?? null;
+  const kept = resource !== null && (workspaceDeadline(resource) !== null || isWorkspacePaused(resource));
+  if (!kept && !startupMeasured(resource?.workspace)) return null;
   return (
-    <MoreDetails surface="chat.header" className="relative flex items-center">
-      <div className="absolute top-full left-0 z-20 mt-1.5 flex w-72 max-w-[85vw] flex-col gap-2 rounded-lg border border-line-soft bg-panel p-3 text-caption text-ink-dim shadow-(--shadow-lift)">
-        {state !== "complete" && <p data-session-connection-detail={state}>{connectionLabel(state)}</p>}
+    <section aria-label="Workspace" className="mt-6">
+      <h2 className={headingClassName}>Workspace</h2>
+      <div className="flex flex-col items-start gap-2 rounded-[10px] border border-line-soft bg-panel p-4 text-[13px] text-ink-dim">
         <WorkspaceKept />
         <WorkspaceStartup />
       </div>
-    </MoreDetails>
+    </section>
   );
 }
 
@@ -125,14 +117,19 @@ function WorkspaceKept() {
  */
 function WorkspaceStartup() {
   const workspace = useSessionResource()?.resource?.workspace;
-  const settled = workspace?.status === "WORKSPACE_STATUS_READY" || workspace?.status === "WORKSPACE_STATUS_FAILED";
-  if (!workspace || !settled || workspace.phaseTimings.length === 0) return null;
+  if (!workspace || !startupMeasured(workspace)) return null;
   return (
     <details className="text-ink-faint" data-workspace-startup>
       <summary className="cursor-pointer">Workspace startup</summary>
       <PhaseTimings title="Startup phases" timings={workspace.phaseTimings} labels={WORKSPACE_PHASE_LABELS} />
     </details>
   );
+}
+
+/** Whether a settled workspace start recorded its phases. */
+function startupMeasured(workspace: SessionWorkspaceSnapshot__Output | null | undefined): boolean {
+  const settled = workspace?.status === "WORKSPACE_STATUS_READY" || workspace?.status === "WORKSPACE_STATUS_FAILED";
+  return settled && workspace.phaseTimings.length > 0;
 }
 
 /** The current time, read again every minute while a deadline counts down. */

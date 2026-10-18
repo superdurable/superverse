@@ -10,7 +10,22 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { Button } from "@/components/ui/Button";
-import { Glyph } from "@/components/ui/Glyph";
+import { Glyph, type GlyphName } from "@/components/ui/Glyph";
+
+/** A control the composer will have, in its place and named, that does nothing yet. */
+function NotYet({ glyph, name }: { glyph: GlyphName; name: string }) {
+  return (
+    <button
+      type="button"
+      aria-disabled="true"
+      aria-label={`${name}, coming soon`}
+      title={`${name}: coming soon`}
+      className="grid size-7 shrink-0 cursor-default place-items-center rounded-[7px] text-ink-faint"
+    >
+      <Glyph name={glyph} />
+    </button>
+  );
+}
 
 /**
  * Composer is the one input. Enter sends and Shift+Enter breaks the line: the
@@ -18,7 +33,10 @@ import { Glyph } from "@/components/ui/Glyph";
  *
  * onSend reports its own failures. A rejected send keeps the draft so the
  * person can retry it; a resolved send clears it. With onStop, a Stop button
- * beside it stops the running turn and tasks, and so does Escape.
+ * beside it stops the running turn and tasks, and so does Escape. The compact
+ * box's row reads as chat inputs do: attach and the element picker on the left;
+ * the model, voice input and Send on the right. Attach and voice input are
+ * placeholders for now.
  */
 export function Composer({
   onSend,
@@ -63,7 +81,7 @@ export function Composer({
   /** The element picker: point at a Step, run or item to ask about it. */
   picking?: boolean;
   onPick?: () => void;
-  /** A menu beside Send, such as the Session's ⋯ menu with its model. */
+  /** A menu before the voice input and Send, such as the Session's Agent picker with its model. */
   menu?: ReactNode;
 }) {
   const [localText, setLocalText] = useState("");
@@ -174,6 +192,7 @@ export function Composer({
           onKeyDown={sendOnEnter}
         />
         <div className="mt-0.5 flex items-center gap-1">
+          <NotYet glyph="plus" name="Attach files" />
           {onPick && (
             <button
               type="button"
@@ -201,6 +220,7 @@ export function Composer({
             </Button>
           )}
           {menu}
+          <NotYet glyph="mic" name="Voice input" />
           <button
             type="button"
             aria-label="Send"

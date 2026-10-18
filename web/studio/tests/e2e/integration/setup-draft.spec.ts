@@ -9,7 +9,7 @@
 import type { Page } from "@playwright/test";
 import { test, expect } from "@/tests/e2e/support/coverage/spec-coverage";
 import { register } from "@/tests/e2e/support/account";
-import { fillTemplateSummaryConnection } from "@/tests/e2e/support/configuration";
+import { connectionPicker, fillTemplateSummaryConnection } from "@/tests/e2e/support/configuration";
 import { variableControl } from "@/tests/e2e/support/configuration/live-versions";
 import { chooseMockFirstInput, choosesMockModel, waitForFirstMockInput } from "@/tests/e2e/support/mock/mock-composer";
 import { awaitConfigurationNotice } from "@/tests/e2e/support/preview/preview";
@@ -18,7 +18,7 @@ import { chooseOption, rpcAnswered, rpcResult } from "@/tests/e2e/support/studio
 import { createTeamSpace } from "@/tests/e2e/support/teamspace/teamspace";
 
 // Tools, Setup on the Preview tab, on the lane's real server, Dex and Git host, the mock model making the
-// push: Apply waits for READY and lists the missing connection as a link, a selection autosaves, Apply
+// push: Apply waits for READY and the missing connection's row says so in red, a selection autosaves, Apply
 // restarts the Preview with the revision the tab saved, a later edit survives a reload as one unapplied
 // change, and a write on a revision another tab changed shows "Changed elsewhere". The Next publish column
 // beside it writes Live's next-publish layer: a setting follows Preview, becomes Live's own, and follows again.
@@ -56,8 +56,25 @@ function setupMarks(page: Page) {
 
 async function openConnectors(page: Page, projectId: string) {
   await page.goto(`/p/${projectId}/tools?tool=connectors`);
-  await expect(page.getByTestId("preview-status")).toBeVisible({ timeout: 5 * 60_000 });
-  await expect(page.getByTestId("next-publish-status")).toBeVisible();
+  await expect(page.getByTestId("setup-checklist")).toBeVisible({ timeout: 5 * 60_000 });
+}
+
+/**
+ * Preview runs Setup's saved settings: its configuration is READY with no change Preview does not run, and the
+ * bar's Preview tab says it runs. Setup's table says nothing more; its head names the columns only.
+ */
+async function expectPreviewRunsSettings(page: Page, projectId: string, timeout: number) {
+  const target = { projectId, scope: "PROJECT_SCOPE_PREVIEW" as const };
+  await expect
+    .poll(
+      async () => {
+        const { configuration } = await rpcResult(page.request, "GetProjectConfiguration", { target });
+        return configuration?.status === "CONFIGURATION_STATUS_READY" ? configuration.unappliedChangeCount : -1;
+      },
+      { timeout, intervals: [1000, 2000] },
+    )
+    .toBe(0);
+  await expect(page.getByTestId("environment-preview")).toHaveAttribute("data-status", "RUNNING", { timeout });
 }
 
 test("Setup autosaves Preview and applies it on its own once READY, refuses a write another tab overtook and follows Preview on the next publish", async ({
@@ -73,18 +90,14 @@ test("Setup autosaves Preview and applies it on its own once READY, refuses a wr
   const { headCommit } = await readSession(page, projectId);
   await awaitConfigurationNotice(page, projectId, headCommit, "summary-model");
 
-  // The connection is missing: Preview's state under its column names the gap, a link that focuses its row.
+  // The connection is missing: its row's Preview control says so, in the red that marks what a column lacks.
   // Nothing applies by hand; Setup applies on its own.
   await openConnectors(page, projectId);
-  const header = page.getByTestId("preview-status");
   await expect(page.getByRole("button", { name: "Apply to Preview", exact: true })).toHaveCount(0);
-  const gap = header.getByRole("list", { name: "Missing configuration" }).getByRole("link").first();
-  await expect(gap).toContainText("summary-model");
-  await gap.click();
-  await expect(page).toHaveURL(/#setup-item-/);
-  await expect(page.locator(":focus")).toBeVisible();
+  const missing = await connectionPicker(page.getByTestId("setup-checklist"), "summary-model", "preview");
+  await expect(missing).toHaveText(/^Not connected/);
   // The automatic push was refused: FAILED outranks missing configuration in the environment bar,
-  // whose word names it, holds the problem in its hint and leads to the Interface that explains it.
+  // whose word names it, holds the problem in its hint and, Setup being its fix, leads to Setup.
   const previewStatus = page.getByTestId("environment-preview-status");
   await expect(previewStatus).toHaveText("· failed");
   await expect(previewStatus).toHaveAttribute("data-tone", "fail");
@@ -92,7 +105,7 @@ test("Setup autosaves Preview and applies it on its own once READY, refuses a wr
     "title",
     /failed: Updating the Preview to the pushed version needs configuration/,
   );
-  await expect(previewStatus).toHaveAttribute("href", new RegExp(`/p/${projectId}/interface`));
+  await expect(previewStatus).toHaveAttribute("href", new RegExp(`/p/${projectId}/tools\\?tool=setup`));
   // The missing item marks Tools and its Setup entry.
   const marks = setupMarks(page);
   await expect(marks.tab).toBeVisible();
@@ -110,9 +123,7 @@ test("Setup autosaves Preview and applies it on its own once READY, refuses a wr
   await expect(previewTab).toHaveAttribute("data-status", "RUNNING", { timeout: 10 * 60_000 });
   await expect(previewTab).toHaveAttribute("title", /Preview: running · V\d+/);
   await expect(page.getByTestId("environment-preview-status")).toHaveCount(0);
-  await expect(page.getByTestId("unapplied-count")).toHaveText(/^Running (V\d+ )?with these settings$/, {
-    timeout: 60_000,
-  });
+  await expectPreviewRunsSettings(page, projectId, 60_000);
   await expect(marks.tab).toHaveCount(0);
   await expect(marks.entry).toHaveCount(0);
 
@@ -122,9 +133,7 @@ test("Setup autosaves Preview and applies it on its own once READY, refuses a wr
   await expect(page.getByTestId("draft-status")).toHaveText("Saved", { timeout: 30_000 });
   const update = (await updated).request().postDataJSON() as Record<string, unknown>;
   expect(update.applyConfiguration).toBe(true);
-  await expect(page.getByTestId("unapplied-count")).toHaveText(/^Running (V\d+ )?with these settings$/, {
-    timeout: 10 * 60_000,
-  });
+  await expectPreviewRunsSettings(page, projectId, 10 * 60_000);
   await expect(page.getByTestId("environment-preview-status")).toHaveCount(0);
 
   // A second tab writes the same value; this tab's next write is refused for the changed revision
@@ -142,20 +151,18 @@ test("Setup autosaves Preview and applies it on its own once READY, refuses a wr
   await other.close();
 
   // Whichever tab applied last, the Preview ends up running the revision this tab now knows.
-  await expect(page.getByTestId("unapplied-count")).toHaveText(/^Running (V\d+ )?with these settings$/, {
-    timeout: 10 * 60_000,
-  });
+  await expectPreviewRunsSettings(page, projectId, 10 * 60_000);
 
   // The Next publish column: before the first publish the greeting follows what Preview applied, so its
-  // control reads "Same as Preview" and the state under the column offers the version to publish.
-  await expect(page.getByTestId("next-publish-status")).toContainText(/Ready to publish V\d+ with these settings/, {
-    timeout: 60_000,
-  });
-  // The bar's Publish opens the Publish popover on that version; Escape closes it.
+  // control reads "Same as Preview". The bar's Publish opens the Publish popover on the version to publish,
+  // with nothing to set up first; Escape closes it.
   await page.getByTestId("publish-to-live").click();
   const popover = page.getByRole("dialog", { name: "Publish to Live" });
   const head = (await readSession(page, projectId)).headCommit;
   await expect(popover.getByTestId(`publish-version-${head}`)).toHaveAttribute("aria-checked", "true");
+  // Once the popover has read the next publish (its Publish carries the revision), nothing blocks it.
+  await expect(popover.locator("button[data-revision]")).toHaveCount(1, { timeout: 60_000 });
+  await expect(popover.getByTestId("publish-blockers")).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(popover).toHaveCount(0);
   const nextGreeting = await variableControl(page, "SUMMARY_GREETING", "next");

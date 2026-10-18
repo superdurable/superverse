@@ -190,7 +190,8 @@ test("Workspace reads the account once per document and retains it across real n
     await observe(1, 1);
     phase = "Project navigation from the sidebar";
     await page.getByTestId("workspace-project-list").locator(`a[href="/p/${input.projectId}/flow"]`).click();
-    await expect(page).toHaveURL(new RegExp(`/p/${input.projectId}/flow$`));
+    // A version with one Process adds it to the URL (`?flowType=`), which is no navigation of its own.
+    await expect(page).toHaveURL(new RegExp(`/p/${input.projectId}/flow(?:[?#]|$)`));
     await expect(page.getByRole("navigation", { name: "Surface" })).toBeVisible();
     await accountMenu(page);
     await observe(1, 1);

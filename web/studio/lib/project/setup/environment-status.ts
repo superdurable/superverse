@@ -8,6 +8,7 @@
 
 import type { DeploymentSnapshot__Output } from "@/lib/generated/protobuf/superverse/v2/DeploymentSnapshot";
 import type { Failure__Output } from "@/lib/generated/protobuf/superverse/v2/Failure";
+import { FailureRemedy } from "@/lib/generated/protobuf/superverse/v2/FailureRemedy";
 import type { PreviewSnapshot__Output } from "@/lib/generated/protobuf/superverse/v2/PreviewSnapshot";
 import type { ProjectConfigurationSnapshot__Output } from "@/lib/generated/protobuf/superverse/v2/ProjectConfigurationSnapshot";
 import type { ProjectSnapshot__Output } from "@/lib/generated/protobuf/superverse/v2/ProjectSnapshot";
@@ -110,7 +111,8 @@ function phaseInProgress(preview: PreviewSnapshot__Output): string | null {
  * while that is read). A failure counts only while the newest recorded start failed or was refused,
  * so a failed start never shows as starting, and never when that start ran `templateCommit`, the
  * template the Project started from, which is not the person's work. Running says no word; a start, a
- * stop, a failure, Setup that keeps the Preview from starting and a stopped Preview do. Unapplied
+ * stop, a failure, Setup that keeps the Preview from starting and a stopped Preview do. A failure leads
+ * to the Interface, which explains it, unless Setup fixes it: then to Setup's first missing item. Unapplied
  * changes are normal while editing: they say no word, and only `setupNeedsYou` marks them.
  */
 export function previewStatusOf(
@@ -126,7 +128,13 @@ export function previewStatusOf(
     (newest?.outcome === "START_OUTCOME_FAILED" || newest?.outcome === "START_OUTCOME_REFUSED")
   ) {
     const problem = failureProblem(preview.failure, { operation: "Starting the Preview" });
-    return status("FAILED", "fail", "failed", INTERFACE, `failed: ${problem.title}`, problem);
+    // A failure that Setup fixes leads to Setup, at the first item missing now or when the start was refused.
+    const gap = configuration?.requirementGaps[0] ?? preview.configurationGaps[0];
+    const fix: StatusFix =
+      problem.remedy === FailureRemedy.FAILURE_REMEDY_OPEN_SETUP
+        ? { to: "setup", ...(gap ? { anchor: gapAnchor(gap) } : {}) }
+        : INTERFACE;
+    return status("FAILED", "fail", "failed", fix, `failed: ${problem.title}`, problem);
   }
   if (preview?.status === "PREVIEW_STATUS_STOPPING") {
     // A stop whose cleanup failed waits for Retry Preview cleanup, on the Interface.

@@ -19,6 +19,7 @@ import { canBuild, projectRoleOf } from "@/lib/teamspace/project-roles";
 import { enumText } from "@/lib/shared/protobuf";
 import { studioRoutes } from "@/lib/shared/studio-routes";
 import { PreviewAutoDeploy } from "@/components/build/PreviewAutoDeploy";
+import { WorkspaceDetails } from "@/components/session/SessionStatusIndicators";
 import { Banner } from "@/components/ui/Banner";
 import { Button, buttonStyle } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
@@ -40,8 +41,8 @@ function canBuildIn(project: ProjectSnapshot__Output): boolean {
 }
 
 /**
- * The Project's details: its status and repository, the Preview's automatic builds (for those who
- * build, read from the Project's Session), and deletion. Its one Session, which ProjectFlow starts
+ * The Project's details: its status and repository, the Preview's automatic builds and the workspace
+ * (for those who build, read from the Project's Session), and deletion. Its one Session, which ProjectFlow starts
  * once the Project is READY, opens in the Builder's chat.
  */
 function ProjectPageContent({ projectId }: { projectId: string }) {
@@ -140,14 +141,15 @@ function ProjectPageContent({ projectId }: { projectId: string }) {
           </div>
         )}
         {builds && project.status === "PROJECT_STATUS_READY" && (
-          <section aria-label="Automatic builds" className="mt-6">
-            <h2 className={SECTION}>Preview</h2>
-            <div className="rounded-[10px] border border-line-soft bg-panel p-4">
-              <SessionProvider projectId={projectId} active>
+          <SessionProvider projectId={projectId} active>
+            <section aria-label="Automatic builds" className="mt-6">
+              <h2 className={SECTION}>Preview</h2>
+              <div className="rounded-[10px] border border-line-soft bg-panel p-4">
                 <PreviewAutoDeploy projectId={projectId} />
-              </SessionProvider>
-            </div>
-          </section>
+              </div>
+            </section>
+            <WorkspaceDetails headingClassName={SECTION} />
+          </SessionProvider>
         )}
         {deletable && (
           <section aria-label="Delete the project" className="mt-6">

@@ -116,14 +116,7 @@ async function openOnLiveVersion(page: Page, projectId: string, liveReleaseId: s
   };
   const { configuration } = await rpcResult(page.request, "GetProjectConfiguration", { target });
   const waiting = configuration?.items.filter((item) => item.differsFromLive).length ?? 0;
-  // The state under Live's name counts what waits; the bar's Publish publishes Live's version with it, or again
-  // with the settings it runs.
-  await expect(page.getByTestId("next-publish-status")).toHaveText(
-    waiting === 0
-      ? "Live runs these settings"
-      : `${waiting} ${waiting === 1 ? "change" : "changes"} waiting for a publish`,
-    { timeout: 60_000 },
-  );
+  // The bar's Publish counts what waits, and publishes Live's version with it, or again with the settings it runs.
   const publish = page.getByTestId("publish-to-live");
   await expect(publish).toHaveAttribute("aria-label", waiting === 0 ? "Publish" : `Publish, ${waiting} waiting`, {
     timeout: 60_000,

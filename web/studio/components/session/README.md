@@ -5,7 +5,7 @@ Purpose: Binds the page's Session to the Agent UI: the chat and its rail, compos
 
 Importers: `components/project` imports this directory.
 
-Imports: it imports `components/agent`, `components/session/composer`, `components/session/executor`, `components/session/mock`, `components/session/start`, `components/ui`, `components/ui/problem`, `components/ui/reveal`, `components/ui/timings`, `lib/api`, `lib/browser`, `lib/project`, `lib/project/stage`, `lib/session`, `lib/shared` and `lib/shared/problem`.
+Imports: it imports `components/agent`, `components/session/composer`, `components/session/executor`, `components/session/mock`, `components/session/start`, `components/ui`, `components/ui/problem`, `components/ui/reveal`, `components/ui/timings`, `lib/api`, `lib/browser`, `lib/generated/protobuf`, `lib/project`, `lib/project/stage`, `lib/session`, `lib/shared` and `lib/shared/problem`.
 
 ```mermaid
 flowchart LR
@@ -22,16 +22,20 @@ flowchart LR
   self --> d8["components/ui/timings"]
   self --> d9["lib/api"]
   self --> d10["lib/browser"]
-  self --> d11["lib/project"]
-  self --> d12["lib/project/stage"]
-  self --> d13["lib/session"]
-  self --> d14["lib/shared"]
-  self --> d15["lib/shared/problem"]
+  self --> d11["lib/generated/protobuf"]
+  self --> d12["lib/project"]
+  self --> d13["lib/project/stage"]
+  self --> d14["lib/session"]
+  self --> d15["lib/shared"]
+  self --> d16["lib/shared/problem"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
 The `remoteagent` child owns the Connect dialog, acknowledgement and one-time
 code. `SessionChat` places the Agent picker beside either composer, passes the
 Project's Builder capability and keeps the dialog scoped to that Project.
-`SessionChatStatus` retains connection and workspace details in the header.
+The chat's header holds only a dot while live updates reconnect (`SessionConnectionIndicator`); the
+workspace's time, Keep running for 7 days and its startup phases are in Project details (`WorkspaceDetails`).
+`HistoryJumps` floats Jump to beginning and Jump to latest at the bottom of the history once the reader
+scrolls away from the latest message; scrolling up loads earlier messages on its own.
 Requests use the thin typed Studio API and remain outside shared Agent UI.

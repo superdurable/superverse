@@ -11,8 +11,6 @@
 import type { ComponentProps } from "react";
 import { FlowApiProvider, useFlowApiScope, type FlowApiScopeBinding } from "@/lib/flow/FlowApiProvider";
 import type { SetupChecklist } from "@/components/flow/connections/SetupChecklist";
-
-export type { SetupNotes } from "@/components/flow/connections/SetupChecklist";
 import { LazySetupChecklist } from "./LazyFlowViews";
 
 /** What the table takes besides its two configuration hosts. */

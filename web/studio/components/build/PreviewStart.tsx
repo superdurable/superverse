@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useRef } from "react";
 import { startDurationWords } from "@/lib/project/setup/environment-status";
 import { studioRoutes } from "@/lib/shared/studio-routes";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonStyle } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
 import { PopoverCard, usePopover } from "@/components/ui/Popover";
 import { usePreviewCommands } from "./use-preview-commands";
@@ -111,9 +111,21 @@ export function PreviewStartWord({
   );
 }
 
-/** Start Preview where a stopped Preview leaves a surface empty, such as Runs and Inbox. */
+/**
+ * Start Preview where a stopped Preview leaves a surface empty, such as Runs and Inbox. A Preview that lacks
+ * settings cannot start, so there it leads to Setup instead of offering a Start that stays disabled.
+ */
 export function PreviewStartButton({ projectId }: { projectId: string }) {
-  const { allowed, busy, act } = usePreviewCommands(projectId);
+  const { allowed, busy, act, sourceReady, configurationReady } = usePreviewCommands(projectId);
+  if (sourceReady && !configurationReady)
+    return (
+      <span className="mt-4 flex flex-col items-center gap-2">
+        It needs setup before it starts.
+        <Link href={studioRoutes.setup(projectId, "preview")} className={buttonStyle("primary", "sm")}>
+          Open Setup
+        </Link>
+      </span>
+    );
   return (
     <Button variant="primary" size="sm" className="mt-4" disabled={!allowed.start} onClick={() => void act("start")}>
       {busy === "start" ? "Starting…" : "Start Preview"}

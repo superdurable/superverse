@@ -15,7 +15,7 @@ import { useProcessDefinitions, type StepChanges } from "@/lib/project/ProcessDe
 import { useProjectResource } from "@/lib/project/ProjectResourceProvider";
 import { useProjectStage } from "@/lib/project/stage/ProjectStageProvider";
 import { useWaitingRuns, waitingCount } from "@/lib/project/WaitingRunsProvider";
-import { preparedSourceOf } from "@/lib/session/session-status";
+import { preparedSourceOf, readyPreparedSource } from "@/lib/session/session-status";
 import { useSessionResource } from "@/lib/session/SessionProvider";
 import { useDesignShown } from "@/lib/session/design/use-design-shown";
 import { useFlowDesign } from "@/lib/session/design/use-flow-design";
@@ -66,11 +66,23 @@ function useBuildChanges(flowType: string | null, templateCommit: string): StepC
   return id !== null && shown === id ? changes : null;
 }
 
-/** The Flow of the picked Process, or the project map when none is picked. */
-function FlowView({ environment, changes }: { environment: ProjectEnvironment; changes: StepChanges | null }) {
+/**
+ * The Flow of the picked Process, or the project map when none is picked. A version with one Process has
+ * nothing to pick between, so the map never shows for it: the Flow tab draws that Process at once. While
+ * `markChanges`, the Steps the newest build added or changed in the drawn Process are marked for a moment.
+ */
+function FlowView({
+  environment,
+  markChanges,
+  templateCommit,
+}: {
+  environment: ProjectEnvironment;
+  markChanges: boolean;
+  templateCommit: string;
+}) {
   const { catalog, definitions, error, ready } = useFlowCatalog();
-  const requested = useSearchParams().get("flowType");
-  const { queryHref } = useQueryUpdate();
+  const picked = useSearchParams().get("flowType");
+  const { queryHref, replaceQuery } = useQueryUpdate();
   const { changedSinceLive, moreStepsOnPreview } = useProcessDefinitions();
   const waiting = useWaitingRuns();
   const live = useProjectResource()?.snapshot?.live;
@@ -78,6 +90,13 @@ function FlowView({ environment, changes }: { environment: ProjectEnvironment; c
     const valid = new Set((definitions?.definitions ?? []).filter((item) => item.valid).map((item) => item.flowName));
     return [...new Set((catalog?.flows ?? []).map((item) => item.flowType).filter((type) => valid.has(type)))].sort();
   }, [catalog, definitions]);
+  const only = validFlowTypes.length === 1 ? validFlowTypes[0] : null;
+  const requested = picked ?? only;
+  const changes = useBuildChanges(markChanges ? requested : null, templateCommit);
+  // The URL names the one Process too, so everything that reads the picked Process sees it.
+  useEffect(() => {
+    if (!picked && only) replaceQuery((query) => query.set("flowType", only));
+  }, [only, picked, replaceQuery]);
   const processHref = (flowType: string | null) =>
     queryHref((query) => {
       if (flowType) query.set("flowType", flowType);
@@ -197,7 +216,8 @@ export function PreviewSource({ projectId }: { projectId: string }) {
  * started from an example, opened or matched, draws that example's own Flow Definitions while its Session's head
  * is the setup commit and the Preview has built no processes; a push past it waits for its own build. Once
  * processes are built, a change keeps the last built flow while its push builds, under the Build processes strip,
- * and the new build's processes then mark the Steps it added or changed for a moment.
+ * and the new build's processes then mark the Steps it added or changed for a moment; the strip goes once the
+ * latest push is built.
  */
 export function FlowSurface({
   projectId,
@@ -254,9 +274,16 @@ export function FlowSurface({
   // otherwise its turn ended short of a build.
   const cardState =
     agent?.status !== "STATUS_WAITING_FOR_MESSAGE" || (stage.buildsOwnHead && !buildNeedsYou) ? "building" : "stalled";
-  const strip = session && (own || buildNeedsYou) ? <PreviewSource projectId={projectId} /> : null;
-  const changes = useBuildChanges(environment === "preview" && own ? requested : null, stage.templateCommit);
-  const canvas = <FlowView environment={environment} changes={changes} />;
+  // The strip says only what is under way or waits for a person: it goes once the latest push is built.
+  const latestBuilt = readyPreparedSource(prepared, headCommit) !== null;
+  const strip = session && !latestBuilt && (own || buildNeedsYou) ? <PreviewSource projectId={projectId} /> : null;
+  const canvas = (
+    <FlowView
+      environment={environment}
+      markChanges={environment === "preview" && own}
+      templateCommit={stage.templateCommit}
+    />
+  );
   let body;
   if (drawsExample)
     body = (

@@ -45,7 +45,10 @@ type PickerProps = {
   onSelect: (model: AgentModel) => void;
 };
 
-/** One control beside the composer chooses the agent first and then the Superverse model. */
+/**
+ * One quiet control on the composer's row, named by the model alone (or the local agent), chooses the agent
+ * first and then the Superverse model; its accessible name and hint say the whole of it.
+ */
 export function SessionAgentPicker(props: PickerProps) {
   const state = useRemoteStatus();
   return (
@@ -149,13 +152,15 @@ function AgentPickerMenu({
         aria-expanded={popover.open}
         title={label}
         onClick={popover.toggle}
-        className="flex max-w-[min(22rem,70vw)] items-center gap-1.5 rounded-md border border-line-soft bg-panel px-2 py-1 text-[12px] text-ink-dim hover:bg-hover focus-visible:shadow-(--focus-ring) focus-visible:outline-none"
+        className="flex h-7 max-w-[min(14rem,50vw)] items-center gap-1 rounded-[7px] px-1.5 text-[12px] text-ink-dim hover:bg-hover hover:text-ink focus-visible:shadow-(--focus-ring) focus-visible:outline-none aria-expanded:bg-hover aria-expanded:text-ink"
       >
         {switchPending && (
           <span className="size-1.5 shrink-0 rounded-full bg-accent" aria-label="Model changes next turn" />
         )}
         {remote && <LivenessDot online={online} />}
-        <span className="truncate">{remote ? LOCAL_AGENT : label}</span>
+        <span className="truncate">
+          {remote ? LOCAL_AGENT : model === null ? "Choose a model" : agentModelLabel(model)}
+        </span>
         <Glyph name="chevronDown" className="size-3.5 shrink-0" />
       </button>
       {popover.open && (

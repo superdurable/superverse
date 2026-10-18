@@ -28,7 +28,7 @@ import {
   loadFixtureDefinition,
   type DefinitionClassification,
 } from "@/mock/fixture/flow-definitions";
-import { FlowScope } from "@/components/flow/scope/FlowScope";
+import { FlowScope, WhilePreviewRuns } from "@/components/flow/scope/FlowScope";
 import { InboxSurface, RunsSurface } from "@/components/flow/scope/FlowSurfaces";
 import { TryItSurface } from "@/components/flow/scope/TryItSurface";
 import { PreviewAutoApply } from "@/components/project/setup/PreviewAutoApply";
@@ -114,30 +114,46 @@ function MockProjectContent(props: MockProjectContentProps) {
         </FlowScope>
       );
     case "inbox":
-      return <MockInboxSurface {...props} />;
-    case "runs":
-      // The fixture's runs show whether or not the mock Preview runs, so the problem line offers Start.
+      return props.environment === "live" ? (
+        <MockInboxSurface {...props} />
+      ) : (
+        <WhilePreviewRuns start={<PreviewStartButton projectId={projectId} />}>
+          <MockInboxSurface {...props} />
+        </WhilePreviewRuns>
+      );
+    case "runs": {
+      // The fixture's runs show only while the mock Preview runs, as the running Preview's own do.
+      const runs = (
+        <FlowScope>
+          <RunsSurface
+            events={{ notice: <RecentEventsProblem />, log: <RecentEventsLog /> }}
+            empty={
+              props.environment === "live" ? undefined : (
+                <TryItSurface projectId={projectId} autoApply={<PreviewAutoApply projectId={projectId} />} />
+              )
+            }
+          />
+        </FlowScope>
+      );
       return (
         <RecentEventsProvider projectId={projectId} environment={props.environment === "live" ? "Live" : "Preview"}>
-          <FlowScope>
-            <RunsSurface
-              events={{
-                notice: (
-                  <RecentEventsProblem
-                    start={props.environment === "live" ? undefined : <PreviewStartButton projectId={projectId} />}
-                  />
-                ),
-                log: <RecentEventsLog />,
-              }}
-              empty={
-                props.environment === "live" ? undefined : (
-                  <TryItSurface projectId={projectId} autoApply={<PreviewAutoApply projectId={projectId} />} />
-                )
+          {props.environment === "live" ? (
+            runs
+          ) : (
+            <WhilePreviewRuns
+              start={
+                <>
+                  <RecentEventsProblem />
+                  <PreviewStartButton projectId={projectId} />
+                </>
               }
-            />
-          </FlowScope>
+            >
+              {runs}
+            </WhilePreviewRuns>
+          )}
         </RecentEventsProvider>
       );
+    }
   }
 }
 

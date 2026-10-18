@@ -61,3 +61,8 @@ Design, and a later push keeps the real flow: the last built source this browser
 read (`ProcessDefinitionsProvider`'s `lastBuilt`) as a read-only catalog, else the
 definitions the running Preview serves, else it says the processes of this
 version are not built yet. It never draws a design instead.
+
+SessionFlowScope's running source, which Runs and Inbox on Preview read, exists
+only while the Preview runs; otherwise they say Preview is not running, with the
+Start the page passes, which leads to Setup instead while the Preview lacks
+settings. `WhilePreviewRuns` applies the same rule to mock Studio's fixture runs.

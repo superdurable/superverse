@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: The one problem format's copy: remedy buttons, what-happened phrases, gap phrases, refusal texts and the builders that turn a failure, an error or a notice into a problem.
 
-Importers: `components/agent/conversation`, `components/build`, `components/project`, `components/project/activity`, `components/project/setup`, `components/publishing`, `components/publishing/progress`, `components/publishing/publish`, `components/session`, `components/teamspace/connections`, `components/ui/problem`, `lib/project/setup`, `lib/server/connector-oauth`, `lib/server/flow`, `lib/server/rpc`, `lib/session`, `mock/store` and `mock/store/tenancy` import this directory.
+Importers: `components/agent/conversation`, `components/build`, `components/project`, `components/project/activity`, `components/publishing`, `components/publishing/progress`, `components/publishing/publish`, `components/session`, `components/teamspace/connections`, `components/ui/problem`, `lib/project/setup`, `lib/server/connector-oauth`, `lib/server/flow`, `lib/server/rpc`, `lib/session`, `mock/store` and `mock/store/tenancy` import this directory.
 
 Imports: it imports `lib/generated/protobuf`, `lib/shared` and `lib/shared/version`.
 
@@ -14,20 +14,19 @@ flowchart LR
   c1["components/build"] --> self
   c2["components/project"] --> self
   c3["components/project/activity"] --> self
-  c4["components/project/setup"] --> self
-  c5["components/publishing"] --> self
-  c6["components/publishing/progress"] --> self
-  c7["components/publishing/publish"] --> self
-  c8["components/session"] --> self
-  c9["components/teamspace/connections"] --> self
-  c10["components/ui/problem"] --> self
-  c11["lib/project/setup"] --> self
-  c12["lib/server/connector-oauth"] --> self
-  c13["lib/server/flow"] --> self
-  c14["lib/server/rpc"] --> self
-  c15["lib/session"] --> self
-  c16["mock/store"] --> self
-  c17["mock/store/tenancy"] --> self
+  c4["components/publishing"] --> self
+  c5["components/publishing/progress"] --> self
+  c6["components/publishing/publish"] --> self
+  c7["components/session"] --> self
+  c8["components/teamspace/connections"] --> self
+  c9["components/ui/problem"] --> self
+  c10["lib/project/setup"] --> self
+  c11["lib/server/connector-oauth"] --> self
+  c12["lib/server/flow"] --> self
+  c13["lib/server/rpc"] --> self
+  c14["lib/session"] --> self
+  c15["mock/store"] --> self
+  c16["mock/store/tenancy"] --> self
   self --> d0["lib/generated/protobuf"]
   self --> d1["lib/shared"]
   self --> d2["lib/shared/version"]

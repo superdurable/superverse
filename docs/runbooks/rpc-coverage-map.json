@@ -256,6 +256,7 @@
     ],
     "/superverse.v2.RemoteAgentService/ListRemoteAgentConnections": [
       "kind-integration",
+      "native-e2e",
       "native-integration"
     ],
     "/superverse.v2.RemoteAgentService/RevokeRemoteAgentConnection": [

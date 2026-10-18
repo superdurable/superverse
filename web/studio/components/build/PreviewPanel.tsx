@@ -10,6 +10,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
+import { FailureRemedy } from "@/lib/generated/protobuf/superverse/v2/FailureRemedy";
 import { enumText } from "@/lib/shared/protobuf";
 import { studioRoutes } from "@/lib/shared/studio-routes";
 import { probePublicUrl } from "@/lib/api/transport/public-url-probe";
@@ -67,8 +68,8 @@ function Empty({ heading, children }: { heading: string; children: ReactNode }) 
 /**
  * The Interface on Preview, as the prototype draws it: an address bar with "Preview V12" and its status
  * dot, the address, reload, open in a new window and Stop while it runs; then the app's page. While it
- * starts, its phases; failed, its problem with Start Preview; missing settings, the way to Setup; stopped,
- * Start Preview. Under it, folded under Details: the deployed commit, where it stands beside the latest
+ * starts, its phases; failed, its problem with Start Preview; missing settings, one way to Setup (the
+ * problem's own Open Setup when it has one); stopped, Start Preview. Under it, folded under Details: the deployed commit, where it stands beside the latest
  * push, its last start's phases and its history. The parent remounts the panel for a new source or
  * Sandbox instance, which starts new operations.
  */
@@ -107,6 +108,13 @@ export function PreviewPanel({ projectId }: { projectId: string }) {
       {busy === "start" ? "Starting…" : "Start Preview"}
     </Button>
   );
+  // One way to Setup: when the problem above leads there, the middle adds no second link.
+  const problemOpensSetup = problem?.remedy === FailureRemedy.FAILURE_REMEDY_OPEN_SETUP;
+  const setupLink = problemOpensSetup ? null : (
+    <Link className="text-[12.5px] text-accent hover:underline" href={studioRoutes.setup(projectId, "preview")}>
+      Open Setup
+    </Link>
+  );
   let body: ReactNode;
   if (ready && preview?.url)
     body = (
@@ -142,18 +150,15 @@ export function PreviewPanel({ projectId }: { projectId: string }) {
     body = (
       <Empty heading="The latest push isn't built yet">
         <p className="text-[12.5px] text-ink-faint">The agent&apos;s next push builds and starts it.</p>
-        <Link className="text-[12.5px] text-accent hover:underline" href={studioRoutes.setup(projectId, "preview")}>
-          Open Setup
-        </Link>
+        {setupLink}
       </Empty>
     );
   else if (!configurationReady)
-    body = (
+    // The problem above already says what is missing and opens Setup.
+    body = problemOpensSetup ? null : (
       <Empty heading="Preview needs setup before it starts">
         <p className="text-[12.5px] text-ink-faint">{configurationError || "Setup lists what is missing."}</p>
-        <Link className="text-[12.5px] text-accent hover:underline" href={studioRoutes.setup(projectId, "preview")}>
-          Open Setup
-        </Link>
+        {setupLink}
       </Empty>
     );
   else

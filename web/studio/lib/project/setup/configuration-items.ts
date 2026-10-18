@@ -17,7 +17,7 @@ import type { ProjectConfigurationSnapshot__Output } from "@/lib/generated/proto
  * its variable, a trigger binding gap its binding, a Step's missing setting its Step row, and anything
  * else about a connection its row.
  */
-export function gapItemKey(gap: ConfigurationRequirementGap__Output): string {
+function gapItemKey(gap: ConfigurationRequirementGap__Output): string {
   switch (gap.kind) {
     case "KIND_ENVIRONMENT_REQUIRED":
       return draftItemKey({ kind: "KIND_ENVIRONMENT", environmentName: gap.environmentName });
