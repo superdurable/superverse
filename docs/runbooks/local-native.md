@@ -378,9 +378,16 @@ overlap, and it removes only what no process uses:
    and dangling images.
 
 Below 40 GiB free the age limits shrink to one hour, the Go caches are cleared whole and the Go module cache too. Native instances are
-never stopped or deleted by the script: they hold accounts, Projects and demo data, so it only lists them with the
+never deleted by the script: they hold accounts, Projects and demo data, so it only lists them with the
 time of their last change; delete one with `sv2 native delete --instance <name> --confirm <name>` when its owner
 agrees.
+
+`scripts/clean-idle-containers.py` (`--dry-run` lists) releases the memory of containers that nothing serves. A Native
+instance is idle when nobody holds its `owner.lock`; the script then stops (never removes) the instance's running
+`sv2-project-*` and `sv2-session-*` containers that started more than an hour ago, and removes those that exited more
+than 24 hours ago, with their volumes kept. The next `native start` starts them again. It also stops the Kind node when
+no `sv2 kind` command, Kind port-forward, action lock or acceptance fence is in use. Containers of a running
+instance and containers without an instance label are never touched.
 
 The Kind node runs every platform Pod and holds several GiB, so it runs only while a command needs it: every `sv2 kind`
 command except `delete` starts a stopped node and waits for its API server, and the node's Docker restart policy is `no`,
