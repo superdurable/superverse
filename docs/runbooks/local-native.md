@@ -382,6 +382,11 @@ never stopped or deleted by the script: they hold accounts, Projects and demo da
 time of their last change; delete one with `sv2 native delete --instance <name> --confirm <name>` when its owner
 agrees.
 
+The Kind node runs every platform Pod and holds several GiB, so it runs only while a command needs it: every `sv2 kind`
+command except `delete` starts a stopped node and waits for its API server, and the node's Docker restart policy is `no`,
+so the engine does not start it either. `./infra-as-code/sv2 kind stop` stops it (its state, images and data stay); the
+long-running `sv2 kind ports` ends with it, and `sv2 kind builder` keeps the node counted as in use until it ends.
+
 ## Actual acceptance
 
 With an owner started with `--studio build` and ready, the three real browser cases run on the local Git host and the

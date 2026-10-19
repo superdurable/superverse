@@ -14,6 +14,7 @@ operator's current context. An existing cluster is used only when this checkout'
 import json
 import re
 import shutil
+import time
 from typing import NamedTuple
 from urllib.parse import urlsplit
 
@@ -129,7 +130,28 @@ def save(value):
     write_private_json(STATE_FILE, value)
 
 
+def start_nodes():
+    """Start the stopped Kind nodes and wait for the API server: the cluster runs only while a command needs it.
+
+    Docker must not restart a node with its engine, so every node is set to `--restart=no`; `stop` and the idle
+    cleanup stop it again, and the next command starts it here with its state and images intact.
+    """
+    for node in kind_nodes():
+        run(["docker", "update", "--restart=no", node], capture=True)
+        if run(["docker", "inspect", node, "--format", "{{.State.Running}}"], capture=True) != "true":
+            run(["docker", "start", node], capture=True, timeout=120)
+    deadline = time.monotonic() + 240
+    while True:
+        try:
+            kubectl("--request-timeout=10s", "get", "--raw", "/readyz", capture=True, timeout=30)
+            return
+        except Exception:
+            require(time.monotonic() < deadline, "The Kind API server is not ready 240 s after the node started")
+            time.sleep(3)
+
+
 def verify_owner():
+    start_nodes()
     value = state()
     marker = read_object("configmap", "superverse-v2-owner")
     require(marker["data"] == {"checkout": str(MAIN_CHECKOUT), "owner": value["owner"]}, "Cluster ownership marker differs; refusing to use this cluster")

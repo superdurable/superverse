@@ -27,7 +27,7 @@ import git_host
 import published_dependencies
 from kind.cluster import (CLUSTER, GIT, KIND_NODE_IMAGE, KUBECONFIG, NAMESPACE, NODE_PATH, SERVER_CONFIG, SERVER_CONFIG_KEY, apply, helm, kubectl,
                           missing_node_mounts, object_meta, port_forward_argv, prepare_repositories, read_object, recreation_advice,
-                          require_node_mount, require_tools, save, state, verify_owner)
+                          require_node_mount, require_tools, save, start_nodes, state, verify_owner)
 from kind import gateway, server_config
 from local_platform import (POSTGRES_CREDENTIALS, POSTGRES_DATABASE, POSTGRES_OWNER, POSTGRES_SERVER, POSTGRES_SUPERUSER, READ_MODEL_STORES, create_buckets,
                             dex_config, keycloak_credentials, keycloak_secret_environment, postgres_credentials, postgres_roles_sql)
@@ -66,6 +66,7 @@ def up(_args):
         write_private(config_path, json.dumps({"kind": "Cluster", "apiVersion": "kind.x-k8s.io/v1alpha4",
                                                "nodes": [{"role": "control-plane", "extraMounts": mounts}]}))
         run(["kind", "create", "cluster", "--name", CLUSTER, "--image", KIND_NODE_IMAGE, "--kubeconfig", KUBECONFIG, "--config", config_path, "--wait", "180s"], timeout=900)
+        start_nodes()  # a created node restarts with the engine until this sets its restart policy
         KUBECONFIG.chmod(0o600)
         apply({"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": NAMESPACE, "labels": {"app.kubernetes.io/part-of": "superverse-v2"}}})
         apply({"apiVersion": "v1", "kind": "ConfigMap", "metadata": object_meta("superverse-v2-owner"), "data": {"checkout": str(MAIN_CHECKOUT), "owner": value["owner"]}})

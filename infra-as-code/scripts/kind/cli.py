@@ -18,7 +18,7 @@ import build_inputs
 from commands import child_cancellation, run, stop_children
 from kind.acceptance import e2e
 from kind.builder import builder
-from kind.cluster import CLUSTER, FORWARDS, NAMESPACE, PORTS, STATE_FILE, kubectl, port_forward_argv, require_kind_version, verify_owner
+from kind.cluster import CLUSTER, FORWARDS, NAMESPACE, PORTS, STATE_FILE, kind_nodes, kubectl, port_forward_argv, require_kind_version, verify_owner
 from kind.images import build
 from kind.locks import kind_action_lock
 from kind import server_config
@@ -55,6 +55,13 @@ def status(_args):
     print(json.dumps({"checkout": str(MAIN_CHECKOUT), "worktree": str(ROOT), "images": value["images"], "ports": PORTS}, indent=2))
 
 
+def stop(_args):
+    """Stop the Kind node to free its memory; its state stays and the next Kind command starts it again."""
+    verify_owner()
+    for node in kind_nodes():
+        run(["docker", "stop", "--time", "60", node], timeout=180)
+
+
 def delete(args):
     verify_owner()
     require(args.confirm == CLUSTER, "Explicit --confirm superverse-v2 is required to delete this owned cluster")
@@ -63,7 +70,7 @@ def delete(args):
     STATE_FILE.unlink()
 
 
-COMMANDS = {"up": up, "build": build, "deploy": deploy, "ports": ports, "status": status, "e2e": e2e, "delete": delete, "builder": builder}
+COMMANDS = {"up": up, "build": build, "deploy": deploy, "ports": ports, "status": status, "e2e": e2e, "stop": stop, "delete": delete, "builder": builder}
 
 
 def monitoring(args):
