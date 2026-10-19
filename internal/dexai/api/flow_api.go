@@ -49,7 +49,7 @@ func flowAPIDocument(document flowapi.Document) *pb.FlowApiDocument {
 	if document.StatusCode < 100 || document.StatusCode > 999 {
 		panic("Flow API document has an invalid HTTP status")
 	}
-	return &pb.FlowApiDocument{Json: document.JSON, HttpStatus: uint32(document.StatusCode)}
+	return &pb.FlowApiDocument{Json: document.JSON, HttpStatus: uint32(document.StatusCode), RetryAfterSeconds: document.RetryAfterSeconds}
 }
 
 // documentResponse returns response, or only err when serving its document

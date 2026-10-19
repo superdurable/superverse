@@ -27,3 +27,12 @@ flowchart LR
   self --> d12["lib/shared"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
+
+Runs and Inbox make one composite search of each displayed Flow type and, for
+Runs, its health groups. While visible, each list schedules its next quiet read
+10 seconds after the last result. A failed quiet read, including a failed group
+read, doubles the interval to at most 120 seconds; a 429 also backs off after a
+reader-initiated search. A `Retry-After` hint can postpone the next read beyond
+that cap. Success resets the interval to 10 seconds. Reader-initiated searches
+run immediately. Failed reads preserve the last rows as stale; a 429 before the
+first result also uses the stale state instead of the hard unreachable state.

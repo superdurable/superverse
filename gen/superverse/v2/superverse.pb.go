@@ -26523,11 +26523,13 @@ func (x *FlowApiContext) GetCredentialRevision() uint64 {
 // FDG and renderer payloads keep exact JSON numbers across the generated transport, so the
 // document is JSON bytes with the HTTP status the Flow UI expects.
 type FlowApiDocument struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Json          []byte                 `protobuf:"bytes,1,opt,name=json,proto3" json:"json,omitempty"`
-	HttpStatus    uint32                 `protobuf:"varint,2,opt,name=http_status,json=httpStatus,proto3" json:"http_status,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Json       []byte                 `protobuf:"bytes,1,opt,name=json,proto3" json:"json,omitempty"`
+	HttpStatus uint32                 `protobuf:"varint,2,opt,name=http_status,json=httpStatus,proto3" json:"http_status,omitempty"`
+	// A positive Retry-After delta for a rate-limited Flow API response.
+	RetryAfterSeconds uint32 `protobuf:"varint,3,opt,name=retry_after_seconds,json=retryAfterSeconds,proto3" json:"retry_after_seconds,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *FlowApiDocument) Reset() {
@@ -26570,6 +26572,13 @@ func (x *FlowApiDocument) GetJson() []byte {
 func (x *FlowApiDocument) GetHttpStatus() uint32 {
 	if x != nil {
 		return x.HttpStatus
+	}
+	return 0
+}
+
+func (x *FlowApiDocument) GetRetryAfterSeconds() uint32 {
+	if x != nil {
+		return x.RetryAfterSeconds
 	}
 	return 0
 }
@@ -28932,11 +28941,12 @@ const file_superverse_v2_superverse_proto_rawDesc = "" +
 	"\x13definition_revision\x18\x02 \x01(\tR\x12definitionRevision\x122\n" +
 	"\x15app_manifest_revision\x18\x03 \x01(\x04R\x13appManifestRevision\x125\n" +
 	"\x16configuration_revision\x18\x04 \x01(\x04R\x15configurationRevision\x12/\n" +
-	"\x13credential_revision\x18\x05 \x01(\x04R\x12credentialRevision\"F\n" +
+	"\x13credential_revision\x18\x05 \x01(\x04R\x12credentialRevision\"v\n" +
 	"\x0fFlowApiDocument\x12\x12\n" +
 	"\x04json\x18\x01 \x01(\fR\x04json\x12\x1f\n" +
 	"\vhttp_status\x18\x02 \x01(\rR\n" +
-	"httpStatus\"e\n" +
+	"httpStatus\x12.\n" +
+	"\x13retry_after_seconds\x18\x03 \x01(\rR\x11retryAfterSeconds\"e\n" +
 	"\x10FlowSearchFilter\x12\x14\n" +
 	"\x05field\x18\x01 \x01(\tR\x05field\x12\x1a\n" +
 	"\boperator\x18\x02 \x01(\tR\boperator\x12\x1f\n" +

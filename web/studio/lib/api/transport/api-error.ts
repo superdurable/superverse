@@ -21,17 +21,19 @@ export class ApiError extends Error {
   readonly errorInfo?: ErrorInfo__Output;
   readonly code?: string;
   readonly grpcCode?: number;
+  readonly retryAfter?: string;
 
   constructor(
     readonly status: number,
     message: string,
-    detail: { errorInfo?: ErrorInfo__Output; code?: string; grpcCode?: number } = {},
+    detail: { errorInfo?: ErrorInfo__Output; code?: string; grpcCode?: number; retryAfter?: string } = {},
   ) {
     super(message);
     this.name = "ApiError";
     this.errorInfo = detail.errorInfo;
     this.code = detail.code;
     this.grpcCode = detail.grpcCode;
+    this.retryAfter = detail.retryAfter;
   }
 }
 
@@ -65,6 +67,7 @@ export async function readFlowApiJson<T>(response: Response): Promise<T> {
     throw new ApiError(response.status, data.error?.trim() || describe(response, "an error"), {
       code: data.code,
       grpcCode: typeof data.grpcCode === "number" ? data.grpcCode : undefined,
+      retryAfter: response.headers.get("retry-after") ?? undefined,
     });
   }
   return data;

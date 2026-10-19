@@ -62,6 +62,7 @@ function documentResponse(
     "x-content-type-options": "nosniff",
     "referrer-policy": "no-referrer",
   });
+  if (status === 429 && result.retryAfterSeconds > 0) headers.set("retry-after", String(result.retryAfterSeconds));
   let body = result.json.toString("utf8");
   if (token) {
     headers.set("x-superverse-csrf-token", token);

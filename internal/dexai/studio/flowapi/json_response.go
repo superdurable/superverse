@@ -11,9 +11,11 @@ package flowapi
 import (
 	"encoding/json"
 	"errors"
+	"math"
 	"net/http"
 	"strings"
 
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -21,8 +23,9 @@ import (
 // Document is one Studio JSON document with the HTTP status that classifies it
 // for the Studio BFF.
 type Document struct {
-	StatusCode int
-	JSON       []byte
+	StatusCode        int
+	JSON              []byte
+	RetryAfterSeconds uint32
 }
 
 // JSONDocument encodes value as a document with status.
@@ -69,6 +72,8 @@ func grpcErrorDocument(err error, operation string) Document {
 		httpStatus = http.StatusNotFound
 	case codes.DeadlineExceeded:
 		httpStatus = http.StatusRequestTimeout
+	case codes.ResourceExhausted:
+		httpStatus = http.StatusTooManyRequests
 	case codes.Canceled:
 		httpStatus = 499
 	default:
@@ -78,7 +83,17 @@ func grpcErrorDocument(err error, operation string) Document {
 		message = operation + " failed"
 	}
 	grpcCode := uint32(statusError.Code())
-	return JSONDocument(httpStatus, errorResponse{Error: flowRunNotFoundMessage(statusError.Code(), message), GRPCCode: &grpcCode})
+	document := JSONDocument(httpStatus, errorResponse{Error: flowRunNotFoundMessage(statusError.Code(), message), GRPCCode: &grpcCode})
+	if httpStatus == http.StatusTooManyRequests {
+		for _, detail := range statusError.Details() {
+			if retry, ok := detail.(*errdetails.RetryInfo); ok && retry.GetRetryDelay().IsValid() && retry.GetRetryDelay().AsDuration() > 0 {
+				seconds := math.Ceil(retry.GetRetryDelay().AsDuration().Seconds())
+				document.RetryAfterSeconds = uint32(min(seconds, math.MaxUint32))
+				break
+			}
+		}
+	}
+	return document
 }
 
 // flowRunNotFoundMessage rewords Temporal's missing-execution message in Flow terms.

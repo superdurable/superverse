@@ -61,6 +61,11 @@ Executions without a current binding keep diagnostics, but current Summary,
 Display, edit and Action interpretation is rejected. JSON document mapping keeps
 number tokens without a float64 conversion.
 
+`ResourceExhausted` from Dex maps to HTTP 429. A positive gRPC `RetryInfo.retry_delay`
+is rounded up to seconds and carried in the Flow API document for Studio's
+`Retry-After` header. Older Dex versions report a throttled visibility read as
+`Internal`; Studio backs off after any failed quiet search read as well.
+
 ## Diagnostic long polls
 
 `WaitHistory` and `ReadStream` have a 30-second idle window, shorter than Studio's

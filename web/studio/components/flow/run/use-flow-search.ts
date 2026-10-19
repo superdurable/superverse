@@ -7,16 +7,23 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { errorMessage } from "@/lib/api/transport/api-error";
+import { ApiError, errorMessage } from "@/lib/api/transport/api-error";
 import { searchFlows, type SearchFilter } from "@/lib/api/flow/flow-run";
 import type { FlowRuntimeCatalogEntry, FlowSearchRow } from "@/lib/api/flow/flow-types";
 import { absorb, nothingHeld, type Liveness } from "@/components/flow/run/detail/read-liveness";
 import { useFlowCatalog } from "@/lib/flow/FlowCatalogProvider";
 import { useFlowRequestScope } from "@/lib/flow/FlowApiProvider";
 import { RUN_PAGE_SIZE, readGroupPages, tallyHealth, type RunHealth } from "./run-groups";
+import {
+  FLOW_SEARCH_OUTCOME_FAILURE,
+  FLOW_SEARCH_OUTCOME_SUCCESS,
+  FLOW_SEARCH_OUTCOME_UNCHANGED,
+  FlowSearchBackoff,
+} from "./flow-search-backoff";
 
-/** While the page is visible the list reads itself again this often, quietly, as the Inbox count does. */
-const REREAD_MS = 10_000;
+function isRateLimited(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.status === 429;
+}
 
 /** What one read holds: the list's runs and, when asked for, each group's runs and count. */
 interface SearchRead {
@@ -60,17 +67,22 @@ export function useFlowSearch({
   const [reads, setReads] = useState(0);
   const [loading, setLoading] = useState(false);
   const pending = useRef<AbortController | null>(null);
+  const backoff = useRef<FlowSearchBackoff | null>(null);
   useEffect(() => () => pending.current?.abort(), [flowTypes]);
 
   // A quiet read is the timer's: it neither shows "Searching…" nor cuts short a read the reader asked for.
   const search = useCallback(
     async (quiet: boolean) => {
-      if (flowTypes === "" || (quiet && pending.current)) return;
+      if (flowTypes === "" || (quiet && pending.current)) {
+        if (quiet) backoff.current?.settled(FLOW_SEARCH_OUTCOME_UNCHANGED);
+        return;
+      }
       pending.current?.abort();
       const controller = new AbortController();
       pending.current = controller;
       if (!quiet) setLoading(true);
       try {
+        const groupFailures: unknown[] = [];
         const results = await Promise.all(
           flowTypes.split(",").map((flowType) => {
             const read = (scope: { workQueueOnly: boolean; filters: readonly SearchFilter[] }) =>
@@ -79,7 +91,10 @@ export function useFlowSearch({
                 { flowType, ...scope, pageSize: RUN_PAGE_SIZE },
                 { definitionRevision, signal: controller.signal },
               );
-            return Promise.all([read({ workQueueOnly, filters }), health ? readGroupPages(read, filters) : null]);
+            return Promise.all([
+              read({ workQueueOnly, filters }),
+              health ? readGroupPages(read, filters, (error) => groupFailures.push(error)) : null,
+            ]);
           }),
         );
         controller.signal.throwIfAborted();
@@ -91,15 +106,30 @@ export function useFlowSearch({
         const value = { flows, health: health ? tallyHealth(groups) : null };
         setHeld((prior) => absorb(prior, { state: "ok", value }));
         setReads((count) => count + 1);
+        // A failed group page leaves only its group unknown, but still slows the next quiet read.
+        const rateLimitedGroup = groupFailures.find(isRateLimited);
+        if (groupFailures.length === 0) {
+          backoff.current?.settled(FLOW_SEARCH_OUTCOME_SUCCESS);
+        } else {
+          backoff.current?.settled(
+            quiet || rateLimitedGroup ? FLOW_SEARCH_OUTCOME_FAILURE : FLOW_SEARCH_OUTCOME_UNCHANGED,
+            rateLimitedGroup?.retryAfter,
+          );
+        }
       } catch (failedSearch) {
         if (controller.signal.aborted) return;
+        const rateLimited = isRateLimited(failedSearch);
+        backoff.current?.settled(
+          quiet || rateLimited ? FLOW_SEARCH_OUTCOME_FAILURE : FLOW_SEARCH_OUTCOME_UNCHANGED,
+          rateLimited ? failedSearch.retryAfter : undefined,
+        );
         if (handleDefinitionError(failedSearch)) {
           setHeld(nothingHeld<SearchRead>());
           return;
         }
         // Keep the rows that were true a moment ago; absorb marks them stale.
         setHeld((prior) =>
-          absorb(prior, {
+          absorb(rateLimited && prior.value === null ? { ...prior, value: { flows: [], health: null } } : prior, {
             state: "unreachable",
             reason: errorMessage(failedSearch, String(failedSearch)),
           }),
@@ -120,10 +150,16 @@ export function useFlowSearch({
   useEffect(() => runSearch(), [definitionUpdateKey, runSearch]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
+    const poller = new FlowSearchBackoff(() => {
       if (document.visibilityState === "visible") void search(true);
-    }, REREAD_MS);
-    return () => window.clearInterval(timer);
+      else poller.settled(FLOW_SEARCH_OUTCOME_UNCHANGED);
+    });
+    backoff.current = poller;
+    poller.start();
+    return () => {
+      poller.stop();
+      if (backoff.current === poller) backoff.current = null;
+    };
   }, [search]);
 
   return {

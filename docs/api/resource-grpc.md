@@ -1750,8 +1750,10 @@ Preview Runs require the observed `workspace_request_id` and `generation`, and a
 names neither a deployment nor a Sandbox instance (InvalidArgument otherwise). Go re-authenticates each
 request and resolves resource ownership independently. Safe body limits and typed revision
 checks apply before the selected adapter runs. `FlowApiDocument {bytes json; uint32
-http_status}` returns the exact JSON bytes, which keep FDG and renderer number tokens, and
-the HTTP status the Flow UI expects; it never exposes provider credentials or an arbitrary
+http_status; uint32 retry_after_seconds}` returns the exact JSON bytes, which keep FDG and renderer number tokens, and
+the HTTP status the Flow UI expects. A positive `retry_after_seconds` carries a gRPC
+`RetryInfo.retry_delay` on a `ResourceExhausted` response; the BFF sends it as the HTTP
+`Retry-After` delta. The document never exposes provider credentials or an arbitrary
 transport operation. Run IDs are diagnostic selectors only and never select a business
 resource or start target. WaitFlowHistory is a unary long poll after `after_event_id`, and
 TimeTravelFlow is the Dex ResetFlow call.

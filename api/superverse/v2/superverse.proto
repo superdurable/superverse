@@ -3617,6 +3617,8 @@ message FlowApiContext {
 message FlowApiDocument {
   bytes json = 1;
   uint32 http_status = 2;
+  // A positive Retry-After delta for a rate-limited Flow API response.
+  uint32 retry_after_seconds = 3;
 }
 
 message FlowSearchFilter {

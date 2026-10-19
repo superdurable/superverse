@@ -66,7 +66,7 @@ export const INBOX_COPY = {
 export const LIVENESS_COPY = {
   loading: "Asking the process…",
   unreachable: "Cannot reach the process, so this list is not the whole picture.",
-  stale: "Showing the last answer: the process did not respond just now.",
+  stale: "This list may be out of date. Trying again soon.",
   staleShort: "stale",
   /**
    * Dex routes a Flow RPC to the worker that owns the run, so this run is unreadable for

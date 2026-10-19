@@ -101,10 +101,11 @@ function groupSearches(applied: readonly SearchFilter[], midnight: Date): Record
 type GroupPage = FlowSearchResult | "ruled-out" | "unknown";
 export type GroupPages = Record<RunGroupKey, GroupPage>;
 
-/** Reads every group's page for one Flow type with `read`; a group that fails is unknown, not an error. */
+/** Reads every group's page for one Flow type; a failed group is unknown and reported to the caller. */
 export async function readGroupPages(
   read: (search: GroupSearch) => Promise<FlowSearchResult>,
   applied: readonly SearchFilter[],
+  onFailure?: (error: unknown) => void,
 ): Promise<GroupPages> {
   const midnight = new Date();
   midnight.setHours(0, 0, 0, 0);
@@ -112,7 +113,12 @@ export async function readGroupPages(
   const pages = await Promise.all(
     RUN_GROUP_KEYS.map((key) => {
       const search = searches[key];
-      return search === null ? "ruled-out" : read(search).catch((): GroupPage => "unknown");
+      return search === null
+        ? "ruled-out"
+        : read(search).catch((error): GroupPage => {
+            onFailure?.(error);
+            return "unknown";
+          });
     }),
   );
   return Object.fromEntries(RUN_GROUP_KEYS.map((key, index) => [key, pages[index]])) as GroupPages;
