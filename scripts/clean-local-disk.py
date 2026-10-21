@@ -13,13 +13,16 @@ Every rule names what it removes, the condition and the protection; there is no 
 
 1. Git worktrees of this repository that are clean, whose work reached origin/main (or whose PR is merged or closed)
    and that no process uses: `git worktree remove`.
-2. In every other idle worktree (not Orca's, which is never touched), the regenerable `node_modules` and `.next` of Studio.
-3. Dormant scratchpads (nothing in them changed within the age limit, no process uses them) and old `sv2-*` temporary
+2. Orca worktrees of this repository that are clean, whose branch's PR is merged, that Orca has not used and nothing
+   changed for 24 hours, that are not pinned and that no process uses: `orca worktree rm`, so Orca forgets them too.
+   Nothing else in an Orca worktree is touched.
+3. In every other idle worktree, the regenerable `node_modules` and `.next` of Studio.
+4. Dormant scratchpads (nothing in them changed within the age limit, no process uses them) and old `sv2-*` temporary
    directories.
-4. Kind E2E artifacts older than the age limit.
-5. The Go build caches (the default one and the Makefile's `/tmp/superverse-v2-go-cache`) above their size limit: files
+5. Kind E2E artifacts older than the age limit.
+6. The Go build caches (the default one and the Makefile's `/tmp/superverse-v2-go-cache`) above their size limit: files
    unused for 24 hours, then the whole cache when no `go` command runs; the npm cache above its size limit.
-6. Docker: `sv2 local prune` (images no lane records, old build cache) and dangling images.
+7. Docker: `sv2 local prune` (images no lane records, old build cache) and dangling images.
 
 Native instances are never stopped or deleted: they hold users' demo data. They are only listed, with their age.
 Below the low-disk threshold the age limits shrink to one hour and the Go caches and module cache are cleared whole.
@@ -55,6 +58,7 @@ NPM_CACHE_LIMIT_BYTES = 5 * GIB
 
 # Age limits in hours; `LOW_DISK_AGE_HOURS` replaces all of them below the low-disk threshold.
 WORKTREE_IDLE_HOURS = 6
+ORCA_WORKTREE_IDLE_HOURS = 24
 REGENERABLE_IDLE_HOURS = 48
 SCRATCH_HOURS = 72
 KIND_E2E_HOURS = 72
@@ -65,7 +69,7 @@ SCRATCH_ROOT = Path(tempfile.gettempdir()) / f"claude-{os.getuid()}"
 REMOVABLE_WORKTREE_ROOTS = (SCRATCH_ROOT, HOME / "Documents" / "superdurable" / "superversev2" / ".claude" / "worktrees")
 TEMPORARY_ROOT = Path(tempfile.gettempdir())
 TEMPORARY_PATTERN = re.compile(r"^sv2-[\w.-]+$")
-# Orca runs its workers here and a worktree can look idle between steps: nothing under it is ever touched.
+# Orca runs its workers here and a worktree can look idle between steps: only a merged, long-idle one is removed, by Orca.
 ORCA_WORKSPACES = HOME / "orca" / "workspaces"
 # Commands that read the Go cache or the worktrees' Studio directories while they run.
 BUILD_PATTERN = r"^\S*(go (build|test|run|vet|install)|make (ci|test|check|generate)|npm (ci|install|run)|playwright test)\b|sv2 (native|kind) (e2e|build|deploy)"
@@ -181,27 +185,56 @@ class Cleaner:
                 found.append((Path(fields["worktree"]), fields.get("branch", "").removeprefix("refs/heads/"), fields.get("HEAD", "")))
         return [entry for entry in found if entry[0] != REPOSITORY]
 
-    def pull_request_closed(self, branch):
+    def pull_request_state(self, branch):
+        """The state of the branch's newest PR (OPEN, MERGED, CLOSED), or "" when it has none or gh fails."""
         if branch not in self.pull_requests:
             result = run(["gh", "pr", "list", "--head", branch, "--state", "all", "--json", "state", "--jq", ".[0].state"], cwd=REPOSITORY, timeout=60)
-            self.pull_requests[branch] = result.stdout.strip() in ("MERGED", "CLOSED")
+            self.pull_requests[branch] = result.stdout.strip() if result.returncode == 0 else ""
         return self.pull_requests[branch]
 
     def work_is_on_main(self, branch, head):
         merged = run(["git", "merge-base", "--is-ancestor", head, "origin/main"], cwd=REPOSITORY).returncode == 0
-        return merged or (bool(branch) and self.pull_request_closed(branch))
+        return merged or (bool(branch) and self.pull_request_state(branch) in ("MERGED", "CLOSED"))
+
+    def orca_worktrees(self):
+        """Orca's records of this repository's worktrees by path; empty when Orca cannot be asked, so nothing is removed."""
+        result = run(["orca", "worktree", "list", "--json", "--repo", f"path:{REPOSITORY}"], timeout=60)
+        try:
+            return {entry["path"]: entry for entry in json.loads(result.stdout)["result"]["worktrees"]}
+        except (ValueError, KeyError, TypeError):
+            return {}
+
+    def sweep_orca_worktree(self, path, branch, record):
+        if not record or record.get("isPinned") or not branch:
+            return
+        hours = ORCA_WORKTREE_IDLE_HOURS
+        if time.time() - record.get("lastActivityAt", time.time() * 1000) / 1000 <= hours * HOUR or not self.is_idle(path, hours):
+            return
+        if run(["git", "status", "--porcelain"], cwd=path).stdout.strip() != "" or self.pull_request_state(branch) != "MERGED":
+            return
+        size = size_bytes(path)
+        self.freed.append(("merged idle Orca worktree", str(path), size))
+        print(f"{'would remove' if self.dry_run else 'remove'} Orca worktree {path} ({gib(size)}): clean, PR merged, idle {hours} h")
+        if not self.dry_run:
+            result = run(["orca", "worktree", "rm", "--worktree", f"path:{path}", "--json"], timeout=300)
+            if result.returncode != 0:
+                print(f"  failed ({result.returncode}): {(result.stderr or result.stdout).strip()[-200:]}")
 
     def is_idle(self, path, hours):
         return not self.processes.uses(path) and modified_seconds_ago(path) > hours * HOUR
 
     def sweep_worktrees(self):
         run(["git", "fetch", "-q", "origin", "main"], cwd=REPOSITORY, timeout=120)
+        orca = None
         for path, branch, head in self.worktrees():
             if not path.exists() or any(name in str(path) or name in branch for name in PROTECTED_NAMES):
                 continue
+            if ORCA_WORKSPACES in path.parents:
+                orca = self.orca_worktrees() if orca is None else orca
+                self.sweep_orca_worktree(path, branch, orca.get(str(path)))
+                continue
             if not any(root in path.parents for root in REMOVABLE_WORKTREE_ROOTS):
-                if ORCA_WORKSPACES not in path.parents:
-                    self.sweep_regenerable(path)
+                self.sweep_regenerable(path)
                 continue
             clean = run(["git", "status", "--porcelain"], cwd=path).stdout.strip() == ""
             if clean and self.is_idle(path, self.hours(WORKTREE_IDLE_HOURS)) and self.work_is_on_main(branch, head):
