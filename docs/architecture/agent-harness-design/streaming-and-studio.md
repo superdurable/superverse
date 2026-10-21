@@ -420,7 +420,7 @@ This topic adds no Flow, Attribute, AttributeMap, Channel, Step or RPC; those ar
 | Consumers | The Session Watch, which Studio's BFF relays | The Session Watch reads only `AgentActivity` of RUNNING subagents |
 
 - **Budget and scope.** Each Stream declares a 10 MiB buffer (`10<<20`). In the pinned Dex
-  SDK (`sdk-go` v1.10.1, `dex/stream.go`), all Flow instances that share a Flow type and a
+  SDK (`sdk-go` v1.12.0, `dex/stream.go`), all Flow instances that share a Flow type and a
   Stream name share that budget, and it is approximate. It is not a per-Flow budget:
   every Session's events compete for the same space, and SubagentFlow has its own budget
   separate from SessionAgentFlow.

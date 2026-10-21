@@ -89,8 +89,8 @@ github.com/superdurable/dex-connectors-library/sdkgo v0.29.1 h1:opv7OsOxwvnvfGAQ
 github.com/superdurable/dex-connectors-library/sdkgo v0.29.1/go.mod h1:OtrqqFir3pwN0Jw0tLw0E+4DaJnkoHwALHaGDmgWqbo=
 github.com/superdurable/dex/blob-cache-go v0.1.1 h1:cswtUCelKqhYA+kuSKdk0u3us3QmDA2hTh1Fs3kLGJE=
 github.com/superdurable/dex/blob-cache-go v0.1.1/go.mod h1:Atepb7+sztvDCztVKmlvEKCSKFCkHKtDhoFYjaFmtEw=
-github.com/superdurable/dex/sdk-go v1.11.0 h1:VoXtAJbrmHyDE2JKUOJ142EcbagFhn7Qglk2O5AWCbw=
-github.com/superdurable/dex/sdk-go v1.11.0/go.mod h1:8Wj5wPf9dyb7hDnA40j8xISR/zjhX57NrUDVcXgf5x8=
+github.com/superdurable/dex/sdk-go v1.12.0 h1:hHZ+fKbO8d1y/OVoVoNv2Vq5brIWudAgCyFwByRfOo0=
+github.com/superdurable/dex/sdk-go v1.12.0/go.mod h1:8Wj5wPf9dyb7hDnA40j8xISR/zjhX57NrUDVcXgf5x8=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=
 go.opentelemetry.io/auto/sdk v1.2.1/go.mod h1:KRTj+aOaElaLi+wW1kO/DZRXwkF4C5xPbEe3ZiIhN7Y=
 go.opentelemetry.io/otel v1.46.0 h1:FHt5/CDyVxi/8IM1CH7VE/rRgq3kLHa2mSTVMO8AWyc=

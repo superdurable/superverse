@@ -10,7 +10,7 @@ require (
 	github.com/superdurable/dex-connectors-library/connectors/slack v1.0.0
 	github.com/superdurable/dex-connectors-library/sdkgo v0.28.1
 	github.com/superdurable/dex/blob-cache-go v0.1.1
-	github.com/superdurable/dex/sdk-go v1.10.1
+	github.com/superdurable/dex/sdk-go v1.12.0
 	go.opentelemetry.io/otel v1.46.0
 	go.opentelemetry.io/otel/metric v1.46.0
 	go.opentelemetry.io/otel/trace v1.46.0

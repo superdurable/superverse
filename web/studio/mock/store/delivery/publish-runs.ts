@@ -238,7 +238,7 @@ const BUILD_OUTPUT = [
   "#4 [builder 2/6] WORKDIR /src",
   "#5 [builder 3/6] COPY go.mod go.sum ./",
   "#6 [builder 4/6] RUN --mount=type=cache,target=/go/pkg/mod go mod download",
-  "#6 go: downloading github.com/superdurable/dex/sdk-go v1.10.1",
+  "#6 go: downloading github.com/superdurable/dex/sdk-go v1.12.0",
   "#6 go: downloading github.com/superdurable/dex-connectors-library/llm v0.21.0",
   "#6 38 of 41 modules from cache",
   "#7 [builder 5/6] COPY . .",

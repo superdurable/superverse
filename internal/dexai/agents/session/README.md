@@ -286,7 +286,7 @@ its separate implementation.
 
 Streams are `ReasoningSummary`, `AssistantText`, `AgentActivity` and
 `RequirementsDraft`, each 10 MiB shared by every SessionAgentFlow instance with
-that Stream name (verified against pinned SDK v1.10.1 stream.go). CallModel writes
+that Stream name (verified against pinned SDK v1.12.0 stream.go). CallModel writes
 the drafts of a requirements card while the model writes it, at most once a
 second, through `agentloop.RequirementsDrafter`; the recorded card is canonical
 ([requirements drafts](../../../../docs/architecture/agent-harness-design/streaming-and-studio.md#requirements-drafts)). Remote reports never populate reasoning. Activity

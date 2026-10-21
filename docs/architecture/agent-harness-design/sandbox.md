@@ -407,7 +407,7 @@ new immutable ConfigMap name.
 | `superverse-files` | `read`, `edit`, `write`, `grep` and `glob` with the path rules above. `grep` and `glob` use `rg --no-config`, which honors `.gitignore` and skips `.git` |
 | `superverse-previewctl` | The Preview supervisor ([Preview](#preview)) |
 | Shims of `dexcli` and `temporal` on PATH | `dexcli` passes only the read subcommands (`flow search`, `summary`, `state`, `history`, `inspect`, `watch`, `health`, `version`, `visualize`) unless `--allow-mutation` is given, which the Dex skills reserve for an explicit user request; `dexcli dev` and `temporal server start-dev` are refused always. The real binaries live in `/usr/local/libexec/superverse` for `superverse-previewctl`. The shims guard against mistakes, not against a hostile Agent of the same UID |
-| Toolchain | Git, Go (with a prewarmed proxy of the module graphs of `app-template/` and of each example the server's catalog lists at `/opt/superverse/go-module-proxy`), Node.js and npm, Python 3, `ripgrep`, `jq`, `make`, Chromium Headless Shell, Dex CLI v1.10.1 and Temporal CLI 1.8.1 |
+| Toolchain | Git, Go (with a prewarmed proxy of the module graphs of `app-template/` and of each example the server's catalog lists at `/opt/superverse/go-module-proxy`), Node.js and npm, Python 3, `ripgrep`, `jq`, `make`, Chromium Headless Shell, Dex CLI v1.12.0 and Temporal CLI 1.8.1 |
 | Skills | The repository's Dex skills (`dex-app-builder`, `dex-sdk` and `dex-connector-contributor`), copied read-only to `/opt/superverse/dex-skills` |
 
 The three commands are built from the repository's own Go module, so they share

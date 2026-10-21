@@ -46,7 +46,7 @@ mode 0600 under the main checkout's ignored `.local/superverse-v2`; never upload
 # is in the configuration profile (cmd/superverse-server/config/README.md).
 ./infra-as-code/sv2 kind deploy \
   --secret-env-file /private/path/v2-server.env \
-  --published-dependencies infra-as-code/dependencies/published/dex-1.11.0-llm-0.2.0.json
+  --published-dependencies infra-as-code/dependencies/published/dex-1.12.0-llm-0.2.0.json
 ./infra-as-code/sv2 kind ports
 # Separate terminal, with real provider prerequisites:
 ./infra-as-code/sv2 kind e2e

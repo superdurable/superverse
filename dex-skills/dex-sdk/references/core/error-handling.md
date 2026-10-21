@@ -81,6 +81,10 @@ Commit-confirming API: StartFlow succeeds or deduplicates
                       → return confirmed database commit
 ```
 
+### SubFlow start rejection
+
+When **WaitFor** starts a SubFlow and Dex rejects that start before the child begins, the parent receives the rejection detail in its failure. Keep that detail visible in the parent Step's failure route or recovery record; it identifies the rejected child-start configuration or admission condition. Do not replace it with a generic timeout, child-completion, or retry outcome. This detail is available with Server v1.12.0; older Servers retain their existing error shape.
+
 ## Closed-Flow races
 
 For an operation that requires an active target, a typed terminal or not-active error proves that the attempted interaction had no active target. It does not prove that the requested work succeeded. First reconcile from already loaded authoritative domain state and operation invariants. Re-inspect the Flow only when the outcome depends on distinguishing running, successfully completed, other terminal, and missing states and that distinction is not otherwise available. Do not spend a status call when every possible state has the same idempotent outcome. Interpret query-only RPC errors under the [missing query target rule](#missing-query-targets) instead.
