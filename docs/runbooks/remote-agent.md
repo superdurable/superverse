@@ -90,8 +90,18 @@ shared daemon must both be at least 0.162.0; 0.163.0 is the newest verified
 version and newer versions connect with a compatibility warning. `dexai`
 starts the daemon with `codex app-server daemon start` when it is absent; it
 does not install, update, downgrade or restart it. The first brief is submitted
-before the Codex TUI opens. Exit the TUI to stop the foreground relay; run
-`dexai serve` to resume a stored binding, or `dexai disconnect` to revoke it.
+before the Codex TUI opens. Each `dexai connect` owns a fresh private connection
+directory, so run it again in another terminal to connect another Project or
+endpoint; no separate `--state-dir` is needed. Codex opens a separate thread/TUI,
+and Claude Code runs a separate headless child. Exit the TUI or press Ctrl+C to
+stop and revoke only that connection; the others keep relaying. The Project stays
+in remote mode, offline: reconnect with a new pairing code or switch to the
+Superverse agent in Studio. `dexai status` lists every endpoint, Project and
+connection ID; `dexai disconnect --connection <id>` stops a selected connection.
+Normal exit deletes its private directory after revocation; failed cleanup keeps
+an offline record for disconnect to finish. At most eight connections share a
+state root, including retained records. `dexai serve` resumes only legacy flat
+bindings; new foreground connections do not resume after exit.
 The Project source remains in the Sandbox. The default local Codex directory
 is a private scratch directory; `--cwd` selects an existing local directory.
 If Studio reports `delivery_uncertain`, check the thread's public history before

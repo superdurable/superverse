@@ -1,7 +1,7 @@
 # Bridge
 
 `dexai-connect` is the program a Builder runs next to Orca. `dexai` is the direct macOS command
-that connects to the Builder's Codex daemon. Both use the same relay, local state, platform client
+that connects to the Builder's Codex daemon or Claude Code. Both use the same relay, local state, platform client
 and MCP server packages, but keep separate default state directories. They call no platform model
 and keep no Project source state the platform depends on. This document owns the Bridge, its Orca and
 Codex integration, the provider boundary, the Orca plugin, distribution and security. The server
@@ -48,9 +48,15 @@ Orca's existing `binding.json` keys and `progress.json` positions remain readabl
 the same way. Empty `providerId` identifies these Orca bindings. Direct bindings will carry their
 provider ID and an opaque event cursor; their local MCP process addresses the binding by its
 connection ID instead of an Orca session ID. For Codex, the persisted legacy `orcaSessionId`
-field contains that connection ID, while `providerThreadId` is the Codex thread ID. A single
-`serve` supervisor uses one provider and
-rejects a binding for a different provider. The bridgeapi field names and endpoint paths are
+field contains that connection ID, while `providerThreadId` is the Codex thread ID.
+Each direct `connect` process owns a fresh mode-0700 directory under its state
+root's `connections/`, with one provider, binding, lifetime lock and local socket.
+Different Projects, endpoints and provider kinds run independently in different
+terminals. The default root needs no per-command override. The root's short
+admission lock reserves at most eight slots across active connection directories,
+failed-cleanup records and legacy flat bindings; it is never held during a prompt,
+provider call, pairing or relay polling. A single legacy `serve` supervisor still
+uses one provider and rejects a binding for a different provider. The bridgeapi field names and endpoint paths are
 unchanged; its binding values remain opaque to the platform.
 
 The delivery record has two policies selected by the provider. A journal provider saves the
@@ -76,8 +82,8 @@ submitted user's event ID to the deterministic ID they gave the relay for echo s
 
 ### Direct Codex binding
 
-`dexai connect` asks for the code and agent on the terminal. Claude Code is displayed as not
-available until its separate driver is implemented. Codex CLI and the Builder's own managed daemon
+`dexai connect` asks for the code and agent on the terminal. It offers Codex and
+Claude Code; Claude uses one headless child owned by this foreground process. Codex CLI and the Builder's own managed daemon
 must both be at least 0.162.0 at connect and reconnect; 0.163.0 is the newest
 verified daemon version. A newer version connects with a warning at startup and
 in status. An unrecognized turn status, item type or required answer stops the
@@ -107,10 +113,21 @@ ten-minute delivery window. The app-server provides no structured permanent-cont
 so it never turns an arbitrary RPC error or its text into final delivery failure. A lost response
 after `turn/start` or `turn/steer` stays uncertain and is never retried from absence alone.
 
+Exiting a direct Codex TUI or stopping its Claude foreground command ends and
+revokes only that connection. Its local turn is cancelled and its private directory
+is removed after successful revocation; failed revocation retains state for
+explicit disconnect. The platform executor remains remote, offline, and work
+already admitted by the platform is not cancelled by credential revocation.
+Reconnecting requires a new pairing code; choosing the Superverse agent remains
+an explicit Studio action. Status and disconnect enumerate the root's isolated
+connections and pre-existing flat bindings. An exited empty reservation is
+reclaimed at the next admission. Legacy `dexai serve` does not acquire or resume
+new isolated bindings, and holding its root lock does not block new connects.
+
 The command creates no new cloud, Kubernetes, Temporal, Dex or database resource. The Builder's
-existing daemon is shared; each binding adds one Codex thread and one private local state record,
+existing daemon is shared; each binding adds one Codex thread or Claude child and one private local state record,
 with at most eight bindings per state directory. Local relay queues and report files are bounded.
-Codex owns thread-history retention; disconnect revokes and removes the platform binding. No
+The local agent owns history retention; disconnect revokes the credential and removes its local binding. No
 cloud control-plane call or tenant-wide scan is on a request, poll or event path.
 
 ## Binding
