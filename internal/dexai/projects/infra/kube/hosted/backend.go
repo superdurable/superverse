@@ -10,14 +10,11 @@ package hosted
 
 import (
 	"context"
-	"crypto/tls"
 
 	"github.com/superdurable/superversev2/internal/comm/platform/kubeapi"
 	"github.com/superdurable/superversev2/internal/dexai/projects/infra"
 	"github.com/superdurable/superversev2/internal/dexai/projects/infra/kube"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/metadata"
 )
 
 var _ kube.Backend = (*CloudAccount)(nil)
@@ -29,27 +26,22 @@ func (*CloudAccount) BucketBoundToNamespace() bool { return true }
 func (*CloudAccount) StorageComplete(infra.StorageRefs) bool { return true }
 
 // ExtraEgress admits the Pod Identity agent to the Dex and the applications,
-// and the Dex also the public Temporal Cloud endpoint.
+// and the Dex also the private Temporal frontend.
 func (*CloudAccount) ExtraEgress(_ *kube.Infrastructure, component kube.Component) []any {
 	if component != kube.ComponentDex && component != kube.ComponentApplication {
 		return nil
 	}
 	egress := []any{kube.EgressTo(kubeapi.Object{"ipBlock": kubeapi.Object{"cidr": "169.254.170.23/32"}}, 80)}
 	if component == kube.ComponentDex {
-		egress = append(egress, kube.PublicEgress(infra.TemporalPort, []string{"10.0.0.0/8", "100.64.0.0/10", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16", "127.0.0.0/8"}))
+		egress = append(egress, kube.EgressTo(kubeapi.Object{"namespaceSelector": kubeapi.Object{"matchLabels": kubeapi.Object{"kubernetes.io/metadata.name": "temporal"}}, "podSelector": kubeapi.Object{"matchLabels": kubeapi.Object{"app.kubernetes.io/component": "frontend", "app.kubernetes.io/name": "xtemporal"}}}, infra.TemporalPort))
 	}
 	return egress
 }
 
-// DialTemporal dials the namespace endpoint over TLS and authenticates with the
-// API key as a bearer token and the namespace header.
-func (*CloudAccount) DialTemporal(ctx context.Context, _ *kube.Infrastructure, _ string, _ infra.StorageRefs, _ infra.ResourceRef, access infra.TemporalAccess) (context.Context, *grpc.ClientConn, func() error, error) {
-	connection, err := grpc.NewClient("passthrough:///"+access.HostPort, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12})))
-	if err != nil {
-		return ctx, nil, nil, err
-	}
-	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+access.APIKey, "temporal-namespace", access.Namespace)
-	return ctx, connection, connection.Close, nil
+// DialTemporal connects to the private frontend without credentials or TLS.
+func (*CloudAccount) DialTemporal(ctx context.Context, k *kube.Infrastructure, _ string, _ infra.StorageRefs, _ infra.ResourceRef, access infra.TemporalAccess) (context.Context, *grpc.ClientConn, func() error, error) {
+	connection, closeConnection, err := k.DialPrivate(ctx, access.HostPort)
+	return ctx, connection, closeConnection, err
 }
 
 // SharedApplicationServiceAccount is false: each generation's grant creates the

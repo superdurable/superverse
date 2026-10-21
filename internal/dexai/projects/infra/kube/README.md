@@ -41,8 +41,7 @@ in every environment. What differs is behind the `Backend` port
 (`backend.go`): where the storage and the Temporal come from, how a workload
 is granted the storage, how a scope is destroyed, and how an application is
 published. Local Kind runs a MinIO and a Temporal start-dev in the scope
-([`local`](local/README.md)); hosted environments use a Temporal Cloud
-namespace, an S3 bucket and IAM roles in the project cloud account
+([`local`](local/README.md)); hosted environments use a namespace on the shared self-hosted Temporal cluster, an S3 bucket and IAM roles in the project cloud account
 ([`hosted`](hosted/README.md)). Both build on this package and this package
 imports neither; only `internal/dexai/bootstrap` selects one. The runtime asks the
 `Backend` wherever the environments differ and holds no other check. The
@@ -101,8 +100,7 @@ read that MinIO denies fails at once instead of waiting.
   environment on accepted storage, and each verifies that storage first.
   `EnsureTemporal` converges the Temporal namespace and its credential: in
   Local Kind the project's own Temporal (`start-dev` with `app-<project>` and
-  `ProjectSearchAttributes`) behind `allow-temporal`, hosted the Temporal
-  Cloud namespace, service account, API key and `temporal-credential` Secret.
+  `ProjectSearchAttributes`) behind `allow-temporal`, hosted the self-hosted Temporal namespace and its UUID.
   It ends with one data-plane check, and an answer other than Ready is
   `ErrPending`. `EnsureExecutionAccess` converges the Dex and application
   service accounts, `allow-dex` and `allow-application`, and hosted the IAM
@@ -112,13 +110,10 @@ read that MinIO denies fails at once instead of waiting.
   applications and Sandboxes, and in Local Kind the lane's Keycloak. `StartProjectDex` reads the
   accepted Temporal access without changing it and converges the project Dex
   (`start --services api,interpreter`, gRPC on 8801 only). The Dex
-  configuration Secret is immutable and named by the accepted credential's
-  generation (`dex-server-config`, then `dex-server-config-<generation>`); a
-  new generation replaces the Pod, whose template carries
-  `superdurable.io/temporal-credential-generation`, and the superseded
-  generation's Secret is removed once the Dex is ready.
-  `ProjectDexCredentialGeneration` reports which generation the Dex runs, so a
-  Backend revokes a rotated key only after no Pod holds it. The Dex Deployment and Service, the
+  configuration Secret is immutable and named `dex-server-config`. Its spec digest
+  controls replacement of the Pod when the configuration changes.
+  Hosted Temporal uses generation zero and no credential Secret; its accepted reference
+  stores the Temporal namespace UUID under the retained `TemporalCredential` field name. The Dex Deployment and Service, the
   `live-worker` Service and every `allow-<component>` policy are updated in place under their
   resourceVersion.
   ProjectSetupFlow calls only `EnsureStorage`. A Live deployment calls
@@ -127,17 +122,13 @@ read that MinIO denies fails at once instead of waiting.
   Attribute.
 - **Temporal data plane.** `CheckTemporalDataPlane` reads the accepted access
   without changing anything and sends one `DescribeNamespace` within 10
-  seconds: hosted over TLS to the namespace endpoint with the API key as a
-  bearer token and the `temporal-namespace` header, in Local Kind to the
+  seconds: hosted over plaintext gRPC to the private shared frontend, in Local Kind to the
   `temporal` Service, which `allow-temporal` opens to the platform server, and
   in Local Native through a forward bound to its namespace and Service UIDs. A
   registered namespace of the same name is `DataPlaneReady`, PermissionDenied
   and Unauthenticated are `DataPlaneUnauthorized`, and Unavailable,
   DeadlineExceeded and NotFound are `DataPlaneUnreachable`; any other outcome
-  is an error carrying only the gRPC code. `TemporalAccess` holds the API key
-  in memory only and its String omits it. `ErrTemporalCredential` marks an
-  accepted credential only an operator can repair: absent, replaced, unlisted,
-  disabled or owned by another identity; an expiring hosted key is rotated.
+  is an error carrying only the gRPC code. `TemporalAccess` has no credential.
 - **Configuration access.** `VerifyProjectStorage`, `ReadConfiguration` and
   `ConfigurationObjects` need no running Dex. Both scopes keep their
   configuration in the Project's storage; the `ScopeRef` these methods take
@@ -174,7 +165,7 @@ read that MinIO denies fails at once instead of waiting.
   `<project-namespace>`, `<workload>` for `app-<workload>-<generation>` and
   its credential Secret, `<temporal-namespace>` for `app-<project>`, and,
   through the hosted `RedactionPatterns`, `<cloud-resource>` for every cloud
-  name of the project (roles, the Temporal Cloud namespace with its account)
+  name of the project (roles and the self-hosted Temporal namespace)
   and `<bucket>`. It owns the pattern list: a change that introduces another
   internal name adds its pattern there.
 - **Public routes.** `PublicRoutes` derives the Live (`live-<project>`) and
@@ -252,8 +243,7 @@ Kind chart with `kubectl auth can-i`:
 - the gateway namespace runs only the controller and its proxies, behind ClusterIP
   Services.
 
-The hosted data-plane check against Temporal Cloud with a real API key, its
-Unauthorized answer, `Redact`, Hosted Pod Identity negative access, association
+The hosted xtemporal data-plane and NetworkPolicy checks, `Redact`, Hosted Pod Identity negative access, association
 moves and fence expiry, Temporal response-loss recovery, revocation
 propagation, the platform ALB's project wildcard rule and DNS record, and cloud
 deletion remain unverified.

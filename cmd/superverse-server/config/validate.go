@@ -498,9 +498,10 @@ func (c Config) validateHosted() []error {
 	if !between(c.ProjectCloud.TemporalRetentionDays, 1, 90) {
 		problems = append(problems, errors.New("projectCloud.temporalRetentionDays must be an integer from 1 to 90"))
 	}
-	if !between(c.ProjectCloud.TemporalKeyRenewDays, 2, 60) {
-		problems = append(problems, errors.New("projectCloud.temporalKeyRenewDays must be an integer from 2 to 60"))
+	if host, port, err := net.SplitHostPort(c.ProjectCloud.TemporalAddress); err != nil || host != "xtemporal-frontend.temporal.svc.cluster.local" || port != "7233" {
+		problems = append(problems, errors.New("projectCloud.temporalAddress must be the private xtemporal frontend on port 7233"))
 	}
+
 	hostedBuild, cloud := c.Builds.Hosted, c.ProjectCloud
 	for _, setting := range []struct{ name, value string }{
 		{"storage.artifactKMSKeyID", c.Storage.ArtifactKMSKeyID},
@@ -508,8 +509,7 @@ func (c Config) validateHosted() []error {
 		{"builds.hosted.prefix", hostedBuild.Prefix}, {"builds.hosted.kmsKeyARN", hostedBuild.KMSKeyARN},
 		{"builds.hosted.toolImage", hostedBuild.ToolImage}, {"builds.hosted.hostImage", hostedBuild.HostImage},
 		{"projectCloud.eksClusterName", cloud.EKSClusterName}, {"projectCloud.bucketPrefix", cloud.BucketPrefix}, {"projectCloud.kmsKeyARN", cloud.KMSKeyARN},
-		{"projectCloud.permissionsBoundaryARN", cloud.PermissionsBoundaryARN}, {"projectCloud.temporalAccountId", cloud.TemporalAccountID},
-		{"projectCloud.temporalRegion", cloud.TemporalRegion},
+		{"projectCloud.permissionsBoundaryARN", cloud.PermissionsBoundaryARN},
 	} {
 		if setting.value == "" {
 			problems = append(problems, fmt.Errorf("%s is required outside Local Kind", setting.name))

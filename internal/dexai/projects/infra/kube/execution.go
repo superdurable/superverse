@@ -14,7 +14,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/superdurable/superversev2/internal/comm"
@@ -27,11 +26,9 @@ const dataPlaneTimeout = 10 * time.Second
 
 // EnsureTemporal converges a project's Temporal namespace and the credential
 // that reaches it, on the project's accepted storage: in Local Kind its own
-// Temporal on its own volume, hosted its Temporal Cloud namespace, service
-// account, API key and the temporal-credential Secret that holds the key. It
+// Temporal on its own volume, hosted its self-hosted namespace and UUID. It
 // ends with one data-plane check: an answer other than Ready is ErrPending, so
-// an API key that the data plane does not accept yet keeps the owning Flow
-// waiting. A credential only an operator can repair is ErrTemporalCredential.
+// a data-plane endpoint not ready yet keeps the owning Flow waiting.
 // It returns the references it observed even with an error, and a reference
 // the call does not reach stays the accepted one.
 func (k *Infrastructure) EnsureTemporal(ctx context.Context, project string, storage infra.StorageRefs, accepted infra.ExecutionRefs) (infra.ExecutionRefs, error) {
@@ -119,13 +116,8 @@ func (k *Infrastructure) EnsureExecutionAccess(ctx context.Context, project stri
 	return k.Backend.EnsureDexIdentity(ctx, k, project, storage)
 }
 
-// StartProjectDex converges a project's Live Dex on its accepted storage and
-// Temporal access, which it reads without changing anything: the immutable
-// server configuration Secret of the accepted credential's generation, the
-// Deployment and Service, updated in place, and their readiness. A rotated
-// credential replaces the Pod; once it is ready, the superseded generation's
-// configuration Secret is removed. It returns the references with the Dex
-// Service, also while the Deployment becomes ready.
+// StartProjectDex converges the immutable configuration, Deployment and Service
+// on the Project's accepted storage and Temporal namespace.
 func (k *Infrastructure) StartProjectDex(ctx context.Context, project string, storage infra.StorageRefs, accepted infra.ExecutionRefs) (infra.ExecutionRefs, error) {
 	if err := k.VerifyProjectStorage(ctx, project, storage); err != nil {
 		return accepted, err
@@ -139,42 +131,11 @@ func (k *Infrastructure) StartProjectDex(ctx context.Context, project string, st
 		return accepted, err
 	}
 	refs := accepted
-	generation := accepted.TemporalCredential.Generation
-	service, err := k.ensureProjectDex(ctx, project, accepted.DexService.UID, generation, dex)
+	service, err := k.ensureProjectDex(ctx, project, accepted.DexService.UID, dex)
 	if service.UID != "" {
 		refs.DexService = service
 	}
-	if err == nil && generation > 0 {
-		err = k.RemoveDexSecret(ctx, project, dexServerConfigName(generation-1))
-	}
 	return refs, err
-}
-
-// ProjectDexCredentialGeneration reports the Temporal credential generation
-// whose configuration the project Dex Deployment runs and whether it is ready
-// on it; found is false without a Dex Deployment, so no Pod holds a key.
-func (k *Infrastructure) ProjectDexCredentialGeneration(ctx context.Context, project string) (generation uint64, ready, found bool, err error) {
-	deployment, ready, err := k.DeploymentReady(ctx, project, ComponentDex.String(), ComponentDex, "")
-	if err != nil || deployment == nil {
-		return 0, false, false, err
-	}
-	annotations := kubeapi.Child(kubeapi.Child(kubeapi.Child(kubeapi.Child(deployment, "spec"), "template"), "metadata"), "annotations")
-	if value := kubeapi.String(annotations, credentialGenerationAnnotation); value != "" {
-		if generation, err = strconv.ParseUint(value, 10, 64); err != nil {
-			return 0, false, true, errors.New("project Dex credential generation is invalid")
-		}
-	}
-	return generation, ready, true, nil
-}
-
-// RemoveDexSecret deletes the project Dex's Secret name when it exists.
-func (k *Infrastructure) RemoveDexSecret(ctx context.Context, project, name string) error {
-	secrets := k.NamespacePath(project) + "/secrets"
-	found, err := k.GetOwned(ctx, secrets+"/"+name, project, ComponentDex)
-	if err != nil || found == nil {
-		return err
-	}
-	return k.Remove(ctx, secrets, ResourceReference(found), project, ComponentDex)
 }
 
 // ProjectDexSpec is what a project's storage and Temporal access decide about
@@ -199,27 +160,14 @@ func projectDexConfig(dex ProjectDexSpec) kubeapi.Object {
 	return infra.ProjectDexConfig(dex.Temporal, dex.Storage, dex.HistoryRetentionDays)
 }
 
-// dexServerConfig names the immutable Secret that holds the project Dex
-// server configuration of credential generation 0; a later generation's
-// carries its number, so a rotated credential never rewrites a Secret.
+// dexServerConfig names the Project Dex immutable configuration Secret.
 const dexServerConfig = "dex-server-config"
-
-// credentialGenerationAnnotation marks the Dex Pod template of a credential
-// generation above 0; without it the generation is 0.
-const credentialGenerationAnnotation = "superdurable.io/temporal-credential-generation"
-
-func dexServerConfigName(generation uint64) string {
-	if generation == 0 {
-		return dexServerConfig
-	}
-	return dexServerConfig + "-" + strconv.FormatUint(generation, 10)
-}
 
 // ensureProjectDex converges the project Dex: its immutable configuration
 // Secret, the Deployment and Service updated in place, and their readiness. It
 // returns the Service reference, also while the Deployment becomes ready.
-func (k *Infrastructure) ensureProjectDex(ctx context.Context, project, acceptedServiceUID string, generation uint64, dex ProjectDexSpec) (infra.ResourceRef, error) {
-	configName := dexServerConfigName(generation)
+func (k *Infrastructure) ensureProjectDex(ctx context.Context, project, acceptedServiceUID string, dex ProjectDexSpec) (infra.ResourceRef, error) {
+	configName := dexServerConfig
 	config := kubeapi.ImmutableSecret(k.Metadata(project, configName, ComponentDex), kubeapi.Object{"config.yaml": base64.StdEncoding.EncodeToString(comm.Must(json.Marshal(projectDexConfig(dex))))})
 	MarkSpec(config)
 	if err := k.replaceChangedSecret(ctx, config, project, ComponentDex); err != nil {
@@ -236,9 +184,6 @@ func (k *Infrastructure) ensureProjectDex(ctx context.Context, project, accepted
 	deployment := k.InfrastructureDeployment(project, ComponentDex, k.DexImage, []string{"--services", "api,interpreter"}, infra.DexPort, env, mounts, volumes)
 	template := kubeapi.Child(kubeapi.Child(deployment, "spec"), "template")
 	annotations := kubeapi.Object{specDigestAnnotation: specDigest(config)}
-	if generation > 0 {
-		annotations[credentialGenerationAnnotation] = strconv.FormatUint(generation, 10)
-	}
 	kubeapi.Child(template, "metadata")["annotations"] = annotations
 	if dex.NodeSelector != nil {
 		kubeapi.Child(template, "spec")["nodeSelector"] = dex.NodeSelector

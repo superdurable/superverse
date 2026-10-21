@@ -53,7 +53,7 @@ const (
 	DefaultLocalBuildURL                   = "http://host.docker.internal:29792"
 	DefaultGitHubOwner                     = "superdurable-apps"
 	DefaultTemporalRetentionDays           = 30
-	DefaultTemporalKeyRenewDays            = 14
+	DefaultTemporalAddress                 = "xtemporal-frontend.temporal.svc.cluster.local:7233"
 	DefaultRuntime                         = RuntimeKubernetes
 	DefaultLocalRoutePort                  = 23080
 	DefaultPostgresPort                    = 5432
@@ -498,10 +498,8 @@ type ProjectCloudConfig struct {
 	BucketPrefix           string `yaml:"bucketPrefix"`
 	KMSKeyARN              string `yaml:"kmsKeyARN"`
 	PermissionsBoundaryARN string `yaml:"permissionsBoundaryARN"`
-	TemporalAccountID      string `yaml:"temporalAccountId"`
-	TemporalRegion         string `yaml:"temporalRegion"`
+	TemporalAddress        string `yaml:"temporalAddress"`
 	TemporalRetentionDays  int32  `yaml:"temporalRetentionDays"`
-	TemporalKeyRenewDays   int32  `yaml:"temporalKeyRenewDays"`
 }
 
 // RoutesConfig are the public routes of the local lanes: every application at
@@ -574,7 +572,7 @@ func Default() Config {
 		Live:         LiveConfig{RetirementDrain: DefaultLiveRetirementDrain},
 		Builds:       BuildsConfig{LocalURL: DefaultLocalBuildURL, LogReadsPerSecond: DefaultBuildLogReadsPerSecond},
 		GitHub:       GitHubConfig{Owner: DefaultGitHubOwner},
-		ProjectCloud: ProjectCloudConfig{TemporalRetentionDays: DefaultTemporalRetentionDays, TemporalKeyRenewDays: DefaultTemporalKeyRenewDays},
+		ProjectCloud: ProjectCloudConfig{TemporalRetentionDays: DefaultTemporalRetentionDays, TemporalAddress: DefaultTemporalAddress},
 		Routes:       RoutesConfig{LocalPort: DefaultLocalRoutePort},
 		Postgres:     PostgresConfig{Port: DefaultPostgresPort, Database: DefaultPostgresDatabase, SSLMode: DefaultPostgresSSLMode, MaxConnections: DefaultPostgresMaxConnections},
 		Connections: ConnectionsConfig{ReadListen: DefaultConnectionsReadListen, SlackRelay: SlackRelayConfig{

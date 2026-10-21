@@ -294,10 +294,8 @@ provider also checks each value against the catalog when it starts.
 | `bucketPrefix` | Prefix of the project buckets | none | |
 | `kmsKeyARN` | KMS key of the project storage | none | |
 | `permissionsBoundaryARN` | Permissions boundary of project roles | none | |
-| `temporalAccountId` | Temporal Cloud account | none | |
-| `temporalRegion` | Temporal Cloud region | none | `aws-<region>` |
+| `temporalAddress` | Shared private Temporal frontend for hosted Project namespaces | `xtemporal-frontend.temporal.svc.cluster.local:7233` | must equal this in-cluster endpoint; plaintext, port `7233` |
 | `temporalRetentionDays` | Retention of project Temporal namespaces | `30` | `1` to `90` |
-| `temporalKeyRenewDays` | Remaining lifetime, in days, below which `EnsureTemporal` rotates a project's 89-day Temporal Cloud API key | `14` | `2` to `60` |
 
 ### `native`
 
@@ -358,7 +356,7 @@ the key. It takes no env file. Before the server it runs `superverse-server migr
 
 **Hosted environments** (the pre-provisioned `<product>-server` Secret; Terraform neither reads nor writes it):
 `SUPERVERSE_COOKIE_SIGNING_KEY`, `ANTHROPIC_API_KEY`, one form of the GitHub App private key (hosted environments
-always use `repohost: github`), `SUPERVERSE_PROJECT_TEMPORAL_API_KEY`, the Temporal Cloud API key of the project cloud, which `kind deploy` does not accept,
+always use `repohost: github`),
 `SUPERVERSE_POSTGRES_PASSWORD`, the password of `superverse_server`, and, once the environment configures
 `connections.platformClients`, `SUPERVERSE_CONNECTOR_OAUTH_CLIENT_SECRETS`, and `SUPERVERSE_SLACK_SIGNING_SECRET`: without it the server
 does not open its Slack events listener, so the platform ALB's `/api/slack/events` rule routes to a port nothing serves
@@ -403,7 +401,7 @@ the Kind deploy and Native ignore such keys, and a hosted Secret can drop them w
 | `SUPERVERSE_LIVE_DEX_IMAGE`, `_TEMPORAL_IMAGE`, `_S3_IMAGE` | `live.dexImage`, `temporalImage`, `s3Image` |
 | `AWS_REGION`, `AWS_ACCOUNT_ID` | `aws.region`, `aws.accountId` |
 | `SUPERVERSE_EKS_CLUSTER_NAME`, `SUPERVERSE_PROJECT_BUCKET_PREFIX`, `SUPERVERSE_PROJECT_KMS_KEY_ARN`, `SUPERVERSE_PROJECT_PERMISSIONS_BOUNDARY_ARN` | `projectCloud.eksClusterName`, `bucketPrefix`, `kmsKeyARN`, `permissionsBoundaryARN` |
-| `SUPERVERSE_PROJECT_TEMPORAL_ACCOUNT_ID`, `_REGION`, `_RETENTION_DAYS` | `projectCloud.temporalAccountId`, `temporalRegion`, `temporalRetentionDays` |
+| `SUPERVERSE_PROJECT_TEMPORAL_RETENTION_DAYS` | `projectCloud.temporalRetentionDays` |
 | `SUPERVERSE_LOCAL_NATIVE`, `SUPERVERSE_NATIVE_RUN_ID`, `SUPERVERSE_KUBE_API_URL`, `SUPERVERSE_KUBE_CA_FILE`, `SUPERVERSE_KUBE_TOKEN_FILE`, `SUPERVERSE_NATIVE_KUBECONFIG` | none since [the current contract](../../../docs/runbooks/local-native.md): `runtime: docker` and `native.runId`; Native needs no Kubernetes credentials |
 
 The duration keys replace whole seconds with Go durations: `SUPERVERSE_SANDBOX_HOLD_SECONDS=3600` is `hold: 1h`.

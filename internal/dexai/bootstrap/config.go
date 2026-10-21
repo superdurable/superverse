@@ -148,8 +148,8 @@ type serverConfig struct {
 	attachmentsPerMessage int
 	projectAttachments    projects.AttachmentLimits
 	renditionCacheBytes   int64
-	extractor           string
-	profiles            *build.Profiles
+	extractor             string
+	profiles              *build.Profiles
 	// builder is nil in Local Kind without a build token, which deliberately
 	// leaves Release execution unavailable.
 	builder build.Builder
@@ -355,11 +355,8 @@ func hostedProjects(settings serverconfig.Config, environment deploymentnames.En
 		BucketPrefix:           cloud.BucketPrefix,
 		KMSKeyARN:              cloud.KMSKeyARN,
 		PermissionsBoundaryARN: cloud.PermissionsBoundaryARN,
-		TemporalAccountID:      cloud.TemporalAccountID,
-		TemporalRegion:         cloud.TemporalRegion,
-		TemporalAPIKey:         projectTemporalAPIKey(),
+		TemporalAddress:        cloud.TemporalAddress,
 		TemporalRetentionDays:  cloud.TemporalRetentionDays,
-		TemporalKeyRenewWindow: time.Duration(cloud.TemporalKeyRenewDays) * 24 * time.Hour,
 	}
 }
 

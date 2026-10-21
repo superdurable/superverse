@@ -139,8 +139,6 @@ github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/grafana/regexp v0.0.0-20250905093917-f7b3be9d1853 h1:cLN4IBkmkYZNnk7EAJ0BHIethd+J6LqxFNw5mSiI2bM=
 github.com/grafana/regexp v0.0.0-20250905093917-f7b3be9d1853/go.mod h1:+JKpmjMGhpgPL+rXZ5nsZieVzvarn86asRlBg4uNGnk=
-github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.2.0 h1:kQ0NI7W1B3HwiN5gAYtY+XFItDPbLBwYRxAqbFTyDes=
-github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.2.0/go.mod h1:zrT2dxOAjNFPRGjTUe2Xmb4q4YdUwVvQFV6xiCSf+z0=
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 h1:5VipnvEpbqr2gA2VbM+nYVbkIF28c5ZQfqCBQ5g2xfk=
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0/go.mod h1:Hyl3n6Twe1hvtd9XUXDec4pTvgMSEixRuQKPTMH2bNs=
 github.com/hashicorp/hcl/v2 v2.25.0 h1:HmmQVYRny4MaBo4b20TjmL46wyuUxpnMWkPZ4+NTbWk=
@@ -292,8 +290,6 @@ go.opentelemetry.io/otel/trace v1.45.0 h1:l/mP6Uv7oNO7/TblbhpbgMidxhq1uO/rPsikOy
 go.opentelemetry.io/otel/trace v1.45.0/go.mod h1:qoJJA2xNMnxRrdISU/kLtfUH2wNeQbiv+jhs/CxI8bc=
 go.temporal.io/api v1.44.1 h1:sb5Hq08AB0WtYvfLJMiWmHzxjqs2b+6Jmzg4c8IOeng=
 go.temporal.io/api v1.44.1/go.mod h1:1WwYUMo6lao8yl0371xWUm13paHExN5ATYT/B7QtFis=
-go.temporal.io/cloud-sdk v0.19.0 h1:Vjr8a75hdxbq6VAiZJz7WboqhGA2NhmXl5A6ZFrVt60=
-go.temporal.io/cloud-sdk v0.19.0/go.mod h1:W2O9t9tvo3Q/LhGgYdj8JijWbN5C84os+cz/BadIHYI=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
 go.uber.org/goleak v1.3.0/go.mod h1:CoHD4mav9JJNrW/WLlf7HGZPjdw8EucARQHekz1X6bE=
 go.uber.org/multierr v1.11.0 h1:blXXJkSxSSfBVBlC76pxqeO+LN3aDfLQo+309xJstO0=

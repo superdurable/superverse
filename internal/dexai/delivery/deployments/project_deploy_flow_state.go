@@ -110,8 +110,8 @@ var nextPhase = map[string]string{
 // Wait limits of the Steps that wait for their provider, which the engine
 // enforces through PollingStepOptions.
 const (
-	// prepareTemporalWaitLimit covers a Temporal Cloud API key that the data
-	// plane does not accept yet, which no rule in code bounds.
+	// prepareTemporalWaitLimit bounds namespace readiness and data-plane
+	// convergence during execution provisioning.
 	prepareTemporalWaitLimit = 20 * time.Minute
 	prepareAccessWaitLimit   = 15 * time.Minute
 	startDexWaitLimit        = 10 * time.Minute

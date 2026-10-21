@@ -185,8 +185,8 @@ func (k *Infrastructure) DialPrivate(ctx context.Context, address string) (*grpc
 	}, nil
 }
 
-// SecretValue decodes one non-empty value of a Secret's data.
-func SecretValue(o kubeapi.Object, key string) (string, error) {
+// secretValue decodes one non-empty value of a Secret's data.
+func secretValue(o kubeapi.Object, key string) (string, error) {
 	value, err := base64.StdEncoding.DecodeString(kubeapi.String(kubeapi.Child(o, "data"), key))
 	if err != nil || len(value) == 0 {
 		return "", errors.New("project credential object is invalid")
@@ -195,10 +195,10 @@ func SecretValue(o kubeapi.Object, key string) (string, error) {
 }
 
 func CredentialPair(o kubeapi.Object) (access, secret string, err error) {
-	if access, err = SecretValue(o, infra.AccessKeyIDVariable); err != nil {
+	if access, err = secretValue(o, infra.AccessKeyIDVariable); err != nil {
 		return "", "", err
 	}
-	secret, err = SecretValue(o, infra.SecretAccessKeyVariable)
+	secret, err = secretValue(o, infra.SecretAccessKeyVariable)
 	return access, secret, err
 }
 

@@ -81,9 +81,6 @@ func slackSigningSecret() []byte { return []byte(os.Getenv("SUPERVERSE_SLACK_SIG
 // anthropicAPIKey is the Claude API key; without it only the mock model runs.
 func anthropicAPIKey() string { return os.Getenv("ANTHROPIC_API_KEY") }
 
-// projectTemporalAPIKey is the Temporal Cloud key of the hosted project cloud.
-func projectTemporalAPIKey() string { return os.Getenv("SUPERVERSE_PROJECT_TEMPORAL_API_KEY") }
-
 // localBuildToken is the shared token of the Local Kind build service,
 // preferably read from its file; it is empty when none is configured.
 func localBuildToken() (string, error) {

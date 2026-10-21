@@ -404,25 +404,24 @@ A branch decides two outcomes inside its loop as business conditions. A lost
 lease (the Project is no longer READY or holds another lease, which only its
 deletion causes) ends the branch at once with a Cancelled result: the join
 continues with cleanup when CleanupRequested is set and otherwise fails the
-round. `infra.ErrOwnershipConflict`, `infra.ErrTemporalCredential` (a
-credential only an operator repairs) and `connections.ErrConnectionDeleted` (a
+round. `infra.ErrOwnershipConflict` (an external owner or identity conflict only an operator repairs) and `connections.ErrConnectionDeleted` (a
 selected TeamSpace connection that is no longer ACTIVE, which only selecting
 another connection and deploying again repairs) and `infra.ErrGrantTooLarge`
 (a workload grant whose configuration names more secrets than its IAM policy
 holds, which only fewer secrets repair) end it with a Failure by decision. The Live usages are idempotent and never removed by a deployment, so
 a retry or a later round records them again and the version that serves keeps
 reading its credentials until a release of the unused ones. An
-unauthorized or unreachable Temporal data plane stays pending: an API key's
+unauthorized or unreachable Temporal data plane stays pending: the endpoint's
 propagation has no bound in code, and the branch's wait limit ends a wait that
 never converges. RecordLivePreparationFailure then classifies a timed-out
 Temporal branch with one read-only check within 20 seconds of the Project's
-accepted credential: the data plane did not accept the API key, stayed
-unreachable, or became ready after the limit; with no accepted credential yet
-the namespace or API key was not ready, and an error makes the cause
+accepted namespace: the data plane denied access, stayed
+unreachable, or became ready after the limit; with no accepted namespace reference yet
+the namespace was not ready, and an error makes the cause
 unclassified, so the classification never fails the Step. A failure of the
 join, which only merges committed results, is a defect.
 
-The first deployment creates the Temporal namespace and its credential, the
+The first deployment creates the Temporal namespace and records its identity, the
 access of Dex and the applications and the Live Dex on the Project's storage;
 later deployments reuse them through the same queries. Each round hands every
 new execution identity to the Project through `RecordLiveExecution` under the

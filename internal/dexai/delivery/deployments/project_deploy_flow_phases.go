@@ -201,7 +201,7 @@ func (f *ProjectDeployFlow) prepareBranch(ctx dex.Context, s Snapshot, in livePr
 	var decided error
 	result, err := converge(ctx, func(call context.Context) (LivePreparationResult, error) {
 		result, err := round(call)
-		if errors.Is(err, errLeaseLost) || errors.Is(err, infra.ErrOwnershipConflict) || errors.Is(err, infra.ErrTemporalCredential) || errors.Is(err, connections.ErrConnectionDeleted) || errors.Is(err, infra.ErrGrantTooLarge) {
+		if errors.Is(err, errLeaseLost) || errors.Is(err, infra.ErrOwnershipConflict) || errors.Is(err, connections.ErrConnectionDeleted) || errors.Is(err, infra.ErrGrantTooLarge) {
 			decided, err = err, nil
 		}
 		return result, err
@@ -359,7 +359,7 @@ func (f *ProjectDeployFlow) temporalWaitCause(ctx context.Context, s Snapshot) s
 	limit := minutes(prepareTemporalWaitLimit)
 	project, err := f.projects.Read(ctx, s.ProjectID)
 	if err == nil && project.LiveExecution.TemporalCredential.UID == "" {
-		return "The Temporal namespace or API key was not ready within " + limit + "."
+		return "The Temporal namespace was not ready within " + limit + "."
 	}
 	var answer infra.DataPlaneAnswer
 	if err == nil {
@@ -369,7 +369,7 @@ func (f *ProjectDeployFlow) temporalWaitCause(ctx context.Context, s Snapshot) s
 	case err != nil:
 		return "The Temporal data plane check is unclassified: " + dexflow.TruncateCause(f.redactor.Redact(s.ProjectID, err.Error()))
 	case answer == infra.DataPlaneUnauthorized:
-		return "The Temporal data plane did not accept the project's API key within " + limit + "."
+		return "The Temporal data plane denied the Project namespace within " + limit + "."
 	case answer == infra.DataPlaneUnreachable:
 		return "The Temporal data plane stayed unreachable for " + limit + "."
 	default:

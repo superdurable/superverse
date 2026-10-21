@@ -28,7 +28,6 @@ require (
 	github.com/superdurable/dex/sdk-go v1.12.0
 	github.com/zclconf/go-cty v1.19.0
 	go.temporal.io/api v1.44.1
-	go.temporal.io/cloud-sdk v0.19.0
 	golang.org/x/crypto v0.56.0
 	golang.org/x/sync v0.22.0
 	golang.org/x/tools v0.48.0
@@ -61,7 +60,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/grafana/regexp v0.0.0-20250905093917-f7b3be9d1853 // indirect
-	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
 	github.com/invopop/jsonschema v0.14.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -138,7 +136,7 @@ require (
 	github.com/superdurable/dex-connectors-library/sdkgo v0.28.2
 	github.com/yuin/goldmark v1.8.2 // indirect
 	golang.org/x/mod v0.38.0
-	golang.org/x/net v0.58.0 // indirect
+	golang.org/x/net v0.58.0
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260803160001-6ac0973c030d

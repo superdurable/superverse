@@ -20,18 +20,14 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/projects/projecttest"
 )
 
-// TestLiveCredentialRotationDexIntegration records Live execution identities
-// of a throwaway READY Project on the server Worker under a deployment lease:
-// the next generation of the Temporal credential in the same boundary replaces
-// the accepted one, as a rotated API key does, while a skipped generation, a
-// same-generation replacement, another boundary and a stale Expected are
-// refused and leave the accepted credential.
-func TestLiveCredentialRotationDexIntegration(t *testing.T) {
+// TestLiveExecutionIdentityDexIntegration verifies immutable accepted Live identities
+// through real Project RPCs, including rejection of the retired rotation transition.
+func TestLiveExecutionIdentityDexIntegration(t *testing.T) {
 	projectClient, _ := teamSpaceClients(t)
 	ctx, cancel := context.WithTimeout(t.Context(), 20*time.Minute)
 	defer cancel()
 	project := projecttest.CreateForTest(ctx, t, projectClient, t.Name())
-	lease, err := projectClient.AcquireDeployment(ctx, project.ProjectID, projects.DeploymentLease{DeploymentID: "rotation-" + project.ProjectID})
+	lease, err := projectClient.AcquireDeployment(ctx, project.ProjectID, projects.DeploymentLease{DeploymentID: "identity-" + project.ProjectID})
 	if err != nil {
 		t.Fatalf("acquire the deployment lease: %s", dexflowtest.ErrorCategory(err))
 	}
@@ -44,30 +40,32 @@ func TestLiveCredentialRotationDexIntegration(t *testing.T) {
 	})
 	boundary := project.Storage.Boundary.Name
 	credential := func(name, uid string, generation uint64) infra.ExecutionRefs {
-		return infra.ExecutionRefs{TemporalNamespace: "rotation", TemporalCredential: infra.ResourceRef{Boundary: boundary, Name: name, UID: uid, Generation: generation}}
+		return infra.ExecutionRefs{TemporalNamespace: "identity", TemporalCredential: infra.ResourceRef{Boundary: boundary, Name: name, UID: uid, Generation: generation}}
 	}
 	record := func(expected, next infra.ExecutionRefs) error {
 		return projectClient.RecordLiveExecution(ctx, project.ProjectID, projects.LiveExecutionUpdate{Lease: lease, Expected: expected, Execution: next})
 	}
-	first := credential("temporal-credential", "uid-0", 0)
+	first := credential("temporal", "uid-0", 0)
 	if err = record(infra.ExecutionRefs{}, first); err != nil {
 		t.Fatalf("record the first credential: %s", dexflowtest.ErrorCategory(err))
 	}
-	rotated := credential("temporal-credential-1", "uid-1", 1)
-	if err = record(first, rotated); err != nil {
-		t.Fatalf("record the rotated credential: %s", dexflowtest.ErrorCategory(err))
+	if err = record(infra.ExecutionRefs{}, first); err != nil {
+		t.Fatalf("repeat first identity: %s", dexflowtest.ErrorCategory(err))
 	}
-	if err = record(first, rotated); err != nil {
-		t.Fatalf("repeat the rotated credential: %s", dexflowtest.ErrorCategory(err))
-	}
-	requireRejection(t, record(rotated, credential("temporal-credential-3", "uid-3", 3)), dexflow.RejectionFailedPrecondition, "a skipped credential generation")
-	requireRejection(t, record(rotated, credential("temporal-credential-1", "uid-other", 1)), dexflow.RejectionFailedPrecondition, "a same-generation replacement")
-	other := credential("temporal-credential-2", "uid-2", 2)
+	next := credential("temporal", "uid-1", 1)
+	requireRejection(t, record(first, next), dexflow.RejectionFailedPrecondition, "a retired credential rotation")
+	requireRejection(t, record(first, credential("temporal", "uid-other", 0)), dexflow.RejectionFailedPrecondition, "a same-generation replacement")
+	other := first
 	other.TemporalCredential.Boundary += "-other"
-	requireRejection(t, record(rotated, other), dexflow.RejectionFailedPrecondition, "a credential in another boundary")
-	requireRejection(t, record(first, credential("temporal-credential-2", "uid-2", 2)), dexflow.RejectionAborted, "a stale Expected")
+	requireRejection(t, record(first, other), dexflow.RejectionFailedPrecondition, "another boundary")
+	// Repeating the accepted result succeeds even with an old Expected; a
+	// different result must still reconcile the current accepted identity.
+	if err = record(next, first); err != nil {
+		t.Fatalf("repeat accepted identity with stale Expected: %s", dexflowtest.ErrorCategory(err))
+	}
+	requireRejection(t, record(infra.ExecutionRefs{}, next), dexflow.RejectionAborted, "a stale Expected")
 	read, err := projectClient.Read(ctx, project.ProjectID)
-	if err != nil || read.LiveExecution != rotated {
+	if err != nil || read.LiveExecution != first {
 		t.Fatalf("the accepted Live execution is %+v: %v", read.LiveExecution, err)
 	}
 }

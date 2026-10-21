@@ -21,7 +21,7 @@ import (
 // own namespace everywhere, but its storage, its Temporal and the way a
 // workload reaches them are not: Local Kind runs a MinIO and a Temporal
 // start-dev in the namespace (package local), hosted environments use an S3
-// bucket, a Temporal Cloud namespace and IAM roles of the project cloud account
+// bucket, a self-hosted Temporal namespace and IAM roles of the project cloud account
 // (package hosted). The runtime asks the Backend wherever the environments
 // differ and holds no other environment check.
 //
@@ -60,7 +60,7 @@ type Backend interface {
 	// namespace, and the credential that reaches it, and returns the access
 	// with the reference of the credential as soon as it exists. credential
 	// is the one the owning Flow accepted. An accepted credential that is gone
-	// or replaced is infra.ErrTemporalCredential.
+	// or replaced is infra.ErrOwnershipConflict.
 	EnsureTemporal(ctx context.Context, k *Infrastructure, project string, storage infra.StorageRefs, namespace string, credential infra.ResourceRef) (infra.TemporalAccess, infra.ResourceRef, error)
 	// ReadTemporalAccess reads the access of the accepted namespace and
 	// credential without changing anything.

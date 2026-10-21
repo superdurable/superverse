@@ -21,12 +21,9 @@ import (
 )
 
 // TemporalAccess is how a project Dex and the data-plane check reach the
-// project's Temporal namespace. It holds the API key, so it is never persisted
-// or logged, and its String omits the key.
+// project's Temporal namespace over the private network; it has no credential.
 type TemporalAccess struct {
 	HostPort, Namespace string
-	// APIKey authenticates to a hosted namespace; Local Kind needs none.
-	APIKey string
 }
 
 func (a TemporalAccess) String() string { return a.Namespace + " at " + a.HostPort }
@@ -74,9 +71,9 @@ func DescribeTemporalNamespace(ctx context.Context, connection *grpc.ClientConn,
 	}
 }
 
-// ProjectSearchAttributes are the Temporal search attributes project Dex
+// projectSearchAttributes are the Temporal search attributes project Dex
 // queries, in the order the local Temporal server registers them.
-var ProjectSearchAttributes = []struct {
+var projectSearchAttributes = []struct {
 	Name        string
 	KeywordList bool
 }{{"FlowType", false}, {"DexParentFlowID", false}, {"ActiveStepTypes", true}, {"keyword1", false}, {"keyword2", false}, {"keyword3", false}}
@@ -93,10 +90,10 @@ func LocalTemporalAccess(namespace string) TemporalAccess {
 
 // TemporalStartDevArgs are the arguments of a project's Temporal start-dev
 // server: every address, the namespace its Dex uses with the
-// ProjectSearchAttributes, and the database file it keeps on its volume.
+// projectSearchAttributes, and the database file it keeps on its volume.
 func TemporalStartDevArgs(namespace, database string) []string {
 	args := []string{"server", "start-dev", "--ip", "0.0.0.0", "--namespace", namespace, "--db-filename", database}
-	for _, attribute := range ProjectSearchAttributes {
+	for _, attribute := range projectSearchAttributes {
 		valueType := "Keyword"
 		if attribute.KeywordList {
 			valueType = "KeywordList"

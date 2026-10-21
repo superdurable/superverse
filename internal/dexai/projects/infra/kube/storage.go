@@ -137,7 +137,7 @@ func (k *Infrastructure) networkPolicy(project, name string, spec kubeapi.Object
 // outside private ranges. Storage also admits the project's
 // Sandbox Pods, whose Preview reads its configuration there, and Temporal the
 // platform server, which checks its data plane. Hosted Dex and applications
-// also reach the Pod Identity agent, and hosted Dex reaches Temporal Cloud.
+// also reach the Pod Identity agent, and hosted Dex reaches the private Temporal frontend.
 func (k *Infrastructure) componentTraffic(project string, component Component) (ingress, egress []any) {
 	names := k.Names()
 	platform := kubeapi.Peer(kubeapi.NamespaceNamed(names.PlatformNamespace), nil)
@@ -150,10 +150,10 @@ func (k *Infrastructure) componentTraffic(project string, component Component) (
 		// The generation's HTTP admission is installed with the application.
 		ingress = append(ingress, ingressFrom(componentPods(ComponentDex), infra.LiveWorkerPort), ingressFrom(platformServer, infra.LiveWorkerPort))
 		egress = append(egress, EgressTo(componentPods(ComponentDex), infra.DexPort), EgressTo(componentPods(ComponentStorage), infra.StoragePort),
-			EgressTo(platformServer, infra.CredentialReadPort), PublicEgress(443, privateRanges))
+			EgressTo(platformServer, infra.CredentialReadPort), publicEgress(443, privateRanges))
 	case ComponentDex:
 		ingress = append(ingress, ingressFrom(componentPods(ComponentApplication), infra.DexPort), ingressFrom(platform, infra.DexPort))
-		egress = append(egress, EgressTo(componentPods(ComponentApplication), infra.LiveWorkerPort), EgressTo(componentPods(ComponentTemporal), infra.TemporalPort), EgressTo(componentPods(ComponentStorage), infra.StoragePort), PublicEgress(443, privateRanges))
+		egress = append(egress, EgressTo(componentPods(ComponentApplication), infra.LiveWorkerPort), EgressTo(componentPods(ComponentTemporal), infra.TemporalPort), EgressTo(componentPods(ComponentStorage), infra.StoragePort), publicEgress(443, privateRanges))
 	case ComponentTemporal:
 		ingress = append(ingress, ingressFrom(componentPods(ComponentDex), infra.TemporalPort), ingressFrom(platformServer, infra.TemporalPort))
 	case ComponentStorage:
@@ -186,6 +186,6 @@ func componentPods(component Component) kubeapi.Object {
 	return kubeapi.Peer(nil, componentLabels(component))
 }
 
-func PublicEgress(port int, except []string) kubeapi.Object {
+func publicEgress(port int, except []string) kubeapi.Object {
 	return EgressTo(kubeapi.Object{"ipBlock": kubeapi.Object{"cidr": "0.0.0.0/0", "except": except}}, port)
 }

@@ -63,7 +63,6 @@ EXTERNAL = {
     "github.com/superdurable/dex/blob-cache-go": ("library", "Dex payload blob cache"),
     "github.com/superdurable/dex/sdk-go": ("api", "Dex Flow API"),
     "go.temporal.io/api": ("api", "Temporal WorkflowService API"),
-    "go.temporal.io/cloud-sdk": ("api", "Temporal Cloud API"),
     "golang.org/x/crypto": ("library", "Argon2id"),
     "golang.org/x/mod": ("library", "semantic versions"),
     "golang.org/x/sync": ("library", "errgroup"),

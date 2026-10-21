@@ -312,9 +312,10 @@ Preview holds no lease: its route belongs to the Project until the deletion
 releases it.
 
 **Storage and Live execution.** The Project owns two sets of external
-identities, each extend-only: a recorded UID or name is added, never replaced,
-except that a Temporal credential whose `Generation` is the next one in the
-same boundary replaces the recorded one, as a rotated hosted API key does.
+identities, each extend-only: a recorded UID or name is added, never replaced.
+Hosted Temporal retains its namespace UUID in the persisted `TemporalCredential`
+reference field; no rotation transition is admitted. Existing hosted Cloud data is
+wiped at cutover, while local Service references keep their existing meaning.
 `ProjectStorage` (`infra.StorageRefs`: the namespace, the bucket, its key
 prefix and the Local Kind MinIO Service) is written by the Project's own Setup
 through `RecordProjectStorage`, also while the Project is deleting, and

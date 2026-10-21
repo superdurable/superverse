@@ -21,7 +21,7 @@ import (
 )
 
 // DestroyScope removes a hosted scope: its project Dex, the IAM roles and
-// Pod Identity associations, the Temporal Cloud namespace and the bucket, and
+// Pod Identity associations, the self-hosted Temporal namespace and the bucket, and
 // finally the namespace. Cloud resources outlive serving generations, and the
 // namespace goes last because its UID binds every external resource.
 func (h *CloudAccount) DestroyScope(ctx context.Context, k *kube.Infrastructure, project string, refs infra.ScopeRefs) error {
@@ -51,7 +51,7 @@ func (h *CloudAccount) DestroyScope(ctx context.Context, k *kube.Infrastructure,
 	if err = h.identity.DestroyIdentities(ctx, k, identity.LiveName(k, project), k.ProjectNamespace(project), identity.LiveTags(k, project, uid)); err != nil {
 		return err
 	}
-	if err = h.destroyTemporal(ctx, k, project, uid, namespace != nil); err != nil {
+	if err = h.destroyTemporal(ctx, k, project, uid, refs.Execution.TemporalCredential); err != nil {
 		return err
 	}
 	if err = h.storage.DestroyBucket(ctx, k, project, uid); err != nil {

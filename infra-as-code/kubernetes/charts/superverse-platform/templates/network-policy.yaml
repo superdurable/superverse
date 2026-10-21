@@ -94,12 +94,11 @@ spec:
           podSelector: {matchLabels: {superdurable.io/component: application}}
       ports: [{port: 8080, protocol: TCP}, {port: 8811, protocol: TCP}]
 ---
-# Platform Dex runs on Temporal Cloud, and the server checks the data plane of
-# each project's Temporal Cloud namespace before the project Dex uses it.
+# Platform Dex and the server use the shared private Temporal frontend.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ include "v2.product" $ }}-platform-temporal-cloud
+  name: {{ include "v2.product" $ }}-platform-temporal
   namespace: {{ include "v2.namespace" $ }}
 spec:
   podSelector:
@@ -107,8 +106,9 @@ spec:
   policyTypes: [Egress]
   egress:
     - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-            except: [10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16]
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: temporal}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: xtemporal, app.kubernetes.io/component: frontend}
       ports: [{port: 7233, protocol: TCP}]
 {{- end }}

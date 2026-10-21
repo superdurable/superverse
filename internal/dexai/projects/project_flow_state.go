@@ -351,17 +351,7 @@ func storageExtends(old, next infra.StorageRefs) bool {
 }
 
 func executionExtends(old, next infra.ExecutionRefs) bool {
-	credential := next.TemporalCredential
-	if rotatesCredential(old.TemporalCredential, credential) {
-		credential = old.TemporalCredential
-	}
-	return keepsIdentities([][2]infra.ResourceRef{{old.TemporalCredential, credential}, {old.DexService, next.DexService}}, [][2]string{{old.TemporalNamespace, next.TemporalNamespace}})
-}
-
-// rotatesCredential reports whether next is the following generation of a
-// recorded Temporal credential in the same boundary: a rotated API key.
-func rotatesCredential(old, next infra.ResourceRef) bool {
-	return old.UID != "" && next.UID != "" && next.Boundary == old.Boundary && next.Generation == old.Generation+1
+	return keepsIdentities([][2]infra.ResourceRef{{old.TemporalCredential, next.TemporalCredential}, {old.DexService, next.DexService}}, [][2]string{{old.TemporalNamespace, next.TemporalNamespace}})
 }
 
 // keepsIdentities reports whether each (old, next) pair keeps a recorded old

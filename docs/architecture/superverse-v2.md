@@ -243,7 +243,7 @@ package owns the following;
 | [`dexai/projects/infra/docker/dockertest/configprobe`](../../internal/dexai/projects/infra/docker/dockertest/configprobe/README.md) | Loads a workload's project configuration through the Connector SDK from its grant environment, as an application starts, for the Docker integration tests. |
 | [`dexai/projects/infra/kube`](../../internal/dexai/projects/infra/kube/README.md) | Provisions, reaches and removes each project's Live namespace, Dex, storage and Temporal in the Kubernetes cluster, and grants Live and Preview workloads that storage. |
 | [`dexai/projects/infra/kube/connect`](../../internal/dexai/projects/infra/kube/connect/README.md) | Dials a project's Live Dex or a Sandbox's Preview Dex and checks the Live application Worker, after verifying the accepted namespace, controller and Service identities. |
-| [`dexai/projects/infra/kube/hosted`](../../internal/dexai/projects/infra/kube/hosted/README.md) | Implements the project cloud account of hosted environments for project infrastructure: S3 buckets, IAM roles with EKS Pod Identity and Temporal Cloud namespaces and keys. |
+| [`dexai/projects/infra/kube/hosted`](../../internal/dexai/projects/infra/kube/hosted/README.md) | Implements the project cloud account of hosted environments for project infrastructure: S3 buckets, IAM roles with EKS Pod Identity and self-hosted Temporal namespaces. |
 | [`dexai/projects/infra/kube/hosted/identity`](../../internal/dexai/projects/infra/kube/hosted/identity/README.md) | Owns hosted IAM roles, Pod Identity associations, policy documents, grant lifecycle, and cloud resource ownership tags. |
 | [`dexai/projects/infra/kube/hosted/storage`](../../internal/dexai/projects/infra/kube/hosted/storage/README.md) | Creates, verifies, and deletes hosted project buckets and exposes their object clients. |
 | [`dexai/projects/infra/kube/kubetest`](../../internal/dexai/projects/infra/kube/kubetest/README.md) | Gives integration tests the Kubernetes runtime of the isolated Local Kind cluster as the platform server, so tests outside the Kubernetes packages need not import the Kubernetes API client. |
@@ -761,13 +761,13 @@ generation. ProjectStorage (`infra.StorageRefs`, snapshot field
 `Storage`) holds the project's configuration storage: the namespace and its
 UID, the bucket, its key prefix and, in Local Kind, the MinIO Service.
 LiveExecution (`infra.ExecutionRefs`) holds the Live execution environment:
-the Temporal namespace, the credential that reaches it (Local Kind: the
-Temporal Service; hosted: the `temporal-credential[-<generation>]` Secret)
+the Temporal namespace and its identity reference (Local Kind: the Temporal Service;
+hosted: the self-hosted namespace name and UUID retained in `TemporalCredential`)
 and the Live Dex Service. Both are ordinary structs without secrets or index,
-loaded with the snapshot, of constant size and retained for the Flow's
-lifetime. Each is extend-only: a recorded UID or name is added, never
-replaced. The one exception is a rotated hosted API key: a credential whose
-`Generation` is the next one in the same boundary replaces the recorded one. Setup is the
+loaded with the snapshot, of constant size and retained for the Flow's lifetime.
+Each is extend-only: a recorded UID or name is added, never replaced. There is no
+Temporal credential rotation transition; hosted Cloud executions are wiped at the
+test/staging cutover, with primitive keys preserved. Setup is the
 only writer of ProjectStorage, and the deployment that holds the active lease
 the only writer of LiveExecution, so Setup prepares only storage and the first
 Live deployment prepares the execution environment that later deployments
@@ -2146,7 +2146,7 @@ recorded.
 The [project infrastructure roles](../../internal/dexai/projects/infra/README.md), which
 the [Kubernetes runtime](../../internal/dexai/projects/infra/kube/README.md) implements
 with a Local Kind backend and a [hosted backend](../../internal/dexai/projects/infra/kube/hosted/README.md),
-own concrete isolated S3/KMS, workload IAM/Pod Identity and Temporal Cloud
+own concrete isolated S3/KMS, workload IAM/Pod Identity and self-hosted Temporal namespace
 effects behind the existing Project, Deployment and Sandbox Steps. Accepted
 Flow references retain business authority; provider generations and UID checks
 fence cleanup. Local Kind admission preserves the four Project/component owner
@@ -2156,9 +2156,10 @@ HTTPRoute. Namespace identity remains immutable. The hosted activation policy ha
 no whole-label-map equality constraint. A hosted grant or revocation that is still pending keeps its
 lock-free polling Step waiting (`dexflow.PollUntil`), without adding another
 Flow or mirrored lifecycle. The platform server checks the data plane of each
-project's Temporal namespace with the project's own credential before a project
-Dex uses it, so the hosted platform network policy admits the server, like
-platform Dex, to public addresses on 7233. Its source and
+project's Temporal namespace through the private self-hosted frontend before a project
+Dex uses it. Platform and Project Dex egress admits only the frontend in Kubernetes
+namespace `temporal` on port 7233, without Temporal Cloud API keys or TLS.
+Its source and
 chart checks do not establish actual AWS propagation, revocation or cleanup.
 
 The initial complete cloud plan can create repositories with hosted builds

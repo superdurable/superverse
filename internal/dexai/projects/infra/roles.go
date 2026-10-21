@@ -54,9 +54,8 @@ type Storage interface {
 // and its Dex.
 type Execution interface {
 	// EnsureTemporal converges the project's Temporal namespace and the
-	// credential that reaches it, and ends with one data-plane check: an
-	// answer other than DataPlaneReady is ErrPending, and a credential only an
-	// operator can repair is ErrTemporalCredential.
+	// reference that identifies it, and ends with one data-plane check: an
+	// answer other than DataPlaneReady is ErrPending; replacement is ErrOwnershipConflict.
 	EnsureTemporal(ctx context.Context, project string, storage StorageRefs, accepted ExecutionRefs) (ExecutionRefs, error)
 	// CheckTemporalDataPlane asks the data plane of the accepted Temporal
 	// access once, changing nothing.

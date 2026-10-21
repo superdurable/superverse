@@ -87,7 +87,6 @@ func TestKindLiveInfrastructureAndFDG(t *testing.T) {
 	fixture.assertDeployments(ctx, live, "storage", "temporal")
 	fixture.prepareDex(ctx, live)
 	fixture.verifyProjectDexConnection(ctx, live)
-	fixture.rollDexCredential(ctx, live)
 
 	s := deployments.Snapshot{ProjectID: fixture.project, DeploymentID: deploymentID, ReleaseID: strings.Repeat("a", 40) + "-bp1", Lease: projects.DeploymentLease{Generation: 1}, Inputs: deployments.Inputs{ApplicationPort: 8080, HealthPath: "/healthz", BundleDigest: "sha256:" + strings.Repeat("b", 64)}, Resources: deployments.DeploymentResources{Storage: live.storage, Execution: live.execution}}
 	generation, err := fixture.k.EnsureGenerationService(ctx, s)
@@ -411,37 +410,6 @@ func (f *kindProjectFixture) prepareDex(ctx context.Context, state *kindProjectS
 		f.test.Fatalf("project execution references are incomplete: %+v", state.execution)
 	}
 	f.assertDeployments(ctx, state, "storage", "temporal", "dex")
-}
-
-// rollDexCredential starts the project Dex on credential generation 1, as a
-// rotated hosted API key does: the Pod is replaced on that generation's
-// configuration Secret and reported ready on it, the superseded Secret is
-// removed, and the Dex still reaches its Temporal.
-func (f *kindProjectFixture) rollDexCredential(ctx context.Context, state *kindProjectScope) {
-	f.test.Helper()
-	if generation, ready, found, err := f.k.ProjectDexCredentialGeneration(ctx, f.project); err != nil || !found || !ready || generation != 0 {
-		f.test.Fatalf("the project Dex runs credential generation %d (ready %t, found %t): %v", generation, ready, found, err)
-	}
-	rotated := state.execution
-	rotated.TemporalCredential.Generation = 1
-	f.awaitReady(ctx, "project Dex on the rotated credential", func() (err error) {
-		state.execution, err = f.k.StartProjectDex(ctx, f.project, state.storage, rotated)
-		return err
-	})
-	if state.execution != rotated {
-		f.test.Fatalf("rolling the Dex changed its references to %+v", state.execution)
-	}
-	if generation, ready, found, err := f.k.ProjectDexCredentialGeneration(ctx, f.project); err != nil || !found || !ready || generation != 1 {
-		f.test.Fatalf("the rolled project Dex runs credential generation %d (ready %t, found %t): %v", generation, ready, found, err)
-	}
-	superseded, code, err := f.k.API.Call(ctx, http.MethodGet, f.k.NamespacePath(f.project)+"/secrets/dex-server-config", nil)
-	if err != nil || code != http.StatusNotFound && !kubeapi.Deleting(superseded) {
-		f.test.Fatalf("the superseded Dex configuration Secret remains (%d): %v", code, err)
-	}
-	// A kubectl service forward binds the Pod selected when it opened, so the
-	// forward opened for generation 0 reaches the replaced Pod; dial afresh.
-	f.k.Dial = f.cluster.ServiceForwards(f.test)
-	f.verifyProjectDexConnection(ctx, state)
 }
 
 // awaitReady calls ensure until it no longer reports infra.ErrPending and

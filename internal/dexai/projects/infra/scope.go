@@ -126,11 +126,11 @@ type StorageRefs struct {
 // them.
 type ExecutionRefs struct {
 	// TemporalNamespace is app-<project> in Local Kind, and hosted the
-	// project's Temporal Cloud namespace.
+	// project's self-hosted Temporal namespace.
 	TemporalNamespace string
 	// TemporalCredential is the Local Kind Temporal Service, and hosted the
-	// Secret that holds the API key, whose Generation counts its rotations;
-	// only the next generation in the same boundary may replace it.
+	// Temporal namespace name and UUID (Generation zero), without a credential.
+	// The persisted field name stays compatible with existing local executions.
 	TemporalCredential ResourceRef
 	DexService         ResourceRef
 }
@@ -175,12 +175,6 @@ var ErrOwnershipConflict = errors.New("project resource ownership conflict")
 
 // ErrAccessDenied rejects a configuration object outside the accepted scope.
 var ErrAccessDenied = errors.New("project configuration access denied")
-
-// ErrTemporalCredential reports an accepted Temporal credential that only an
-// operator can repair: absent, replaced, unlisted, disabled or owned by
-// another identity. An expiring key is rotated, not refused. Waiting does not
-// change it.
-var ErrTemporalCredential = errors.New("project Temporal credential requires operator rotation")
 
 // ErrGrantTooLarge reports a workload grant whose policy exceeds its
 // provider's size limit because the scope's configuration names too many

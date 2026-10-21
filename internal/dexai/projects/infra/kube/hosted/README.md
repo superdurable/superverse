@@ -1,11 +1,11 @@
 # Hosted project cloud account
 
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
-Purpose: Implements the project cloud account of hosted environments for project infrastructure: S3 buckets, IAM roles with EKS Pod Identity and Temporal Cloud namespaces and keys.
+Purpose: Implements the project cloud account of hosted environments for project infrastructure: S3 buckets, IAM roles with EKS Pod Identity and self-hosted Temporal namespaces.
 
 Callers: `internal/dexai/bootstrap` imports this package.
 
-Dependencies: it imports `internal/comm/platform/deploymentnames`, `internal/comm/platform/kubeapi`, `internal/dexai/projects/infra`, `internal/dexai/projects/infra/kube`, `internal/dexai/projects/infra/kube/hosted/identity` and `internal/dexai/projects/infra/kube/hosted/storage` and calls the Amazon EKS, AWS IAM, AWS S3 and Temporal Cloud APIs.
+Dependencies: it imports `internal/comm/platform/deploymentnames`, `internal/comm/platform/kubeapi`, `internal/dexai/projects/infra`, `internal/dexai/projects/infra/kube`, `internal/dexai/projects/infra/kube/hosted/identity` and `internal/dexai/projects/infra/kube/hosted/storage` and calls the Amazon EKS, AWS IAM, AWS S3 and Temporal WorkflowService APIs.
 
 ```mermaid
 flowchart LR
@@ -20,12 +20,12 @@ flowchart LR
   self --> e0(["Amazon EKS API"])
   self --> e1(["AWS IAM API"])
   self --> e2(["AWS S3 API"])
-  self --> e3(["Temporal Cloud API"])
+  self --> e3(["Temporal WorkflowService API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 
 `CloudAccount` composes [storage](storage/README.md) and [identity](identity/README.md) for a hosted environment: S3 buckets,
-IAM roles bound by EKS Pod Identity and Temporal Cloud namespaces and API keys.
+IAM roles bound by EKS Pod Identity and self-hosted Temporal namespaces.
 It implements `kube.Backend`; bootstrap builds it with `New` from `Config`
 outside Local Kind, assigns it to `Infrastructure.Backend` and owns its `Close`.
 Besides the cloud resources, it answers how the AWS environment publishes an
@@ -33,14 +33,11 @@ application: the load balancer annotations and TLS section of a route, the
 gVisor runtime class, the Pod Identity egress of the Dex and the applications,
 and a service account of its own for each application generation. It provisions a project's Live scope in two parts and verifies its
 resource references first: the storage (`EnsureStorage`, the bucket) and the
-execution environment (`EnsureTemporal`, the Temporal Cloud namespace, service
-account, API key and its `temporal-credential` Secret; `EnsureDexIdentity`,
-the Dex IAM role; `DexSpec`, the project Dex on that bucket and namespace).
-`ReadTemporalAccess` reads the accepted namespace endpoint and API key without
-changing anything. A credential that only an operator can repair is
-`infra.ErrTemporalCredential`: an accepted Secret that is gone or replaced is
-never replaced again, and an accepted key that is unlisted, disabled or owned
-by another identity is never used. A Live
+execution environment (`EnsureTemporal`, a namespace on the shared private Temporal
+frontend; `EnsureDexIdentity`, the Dex IAM role; `DexSpec`, Project Dex on that bucket and
+namespace). `ReadTemporalAccess` verifies the accepted namespace UUID and owner metadata
+without mutation. Namespace ownership includes the Kubernetes namespace UID; a replaced
+scope cannot adopt another scope's namespace. A Live
 generation's grant is an IAM role of its own with its own service account and
 association; a revoked one keeps a deny policy and a `revoked-at` tag as a
 fence for 12 hours, longer than the 6-hour credentials Pod Identity issues
@@ -134,46 +131,41 @@ bucket name also binds the namespace UID. Live tags name the scope and the
 namespace UID; Preview tags also name the Session and, on a grant's role and
 association, its principal's namespace and service account UIDs.
 `RedactionPatterns` gives `infra.Redact` the project's cloud names and bucket.
-The `temporal-identity` Secret records the ID of the scope's service account,
-which `CreateServiceAccount` returns, so calls read the account by ID. Only a
-scope without the record, whose create response was lost or that predates the
-record, or whose namespace is gone during cleanup, finds it by name in one
-list of the account's service accounts (at most 100 pages of 1000).
+Hosted Temporal uses `identity.LiveName(k, project)` without an account suffix. The
+shared frontend is private, plaintext gRPC on port 7233. `EnsureTemporal` describes the
+namespace before registering it with the existing retention and `identity.LiveTags`
+metadata. An AlreadyExists response requires a second describe and exact owner check.
+The infrastructure registration Job owns the six cluster-wide Dex search attributes
+for the ParadeDB Dex visibility store; the Project provider does not register indexes.
+Namespace state and retention must match.
+The accepted `ExecutionRefs.TemporalCredential` field retains its persisted name but now
+holds the namespace name and Temporal UUID, with generation zero; it identifies no Secret
+or credential. Its UUID fences replacement on both provision and read. ProjectFlow remains
+the durable owner of that accepted reference. ProjectDeployFlow Step identities and
+primitive registrations are unchanged. Existing hosted Cloud executions are incompatible
+with the new namespace identity and are wiped during the authorized test/staging migration;
+local executions retain their existing Service reference semantics.
 
-Temporal Cloud API keys last 89 days, a platform choice below the provider's
-two-year maximum. Keys rotate per key holder (`temporalKeyHolder`: a service
-account and the namespace whose Secrets keep its tokens), by credential
-generation: generation `g` has the key display name `<live name>` or
-`<live name>-<g>` and the Secrets `temporal-credential[-<g>]` and
-`temporal-key-attempt[-<g>]`. Once the accepted key has less than
-`projectCloud.temporalKeyRenewDays` left, `EnsureTemporal` creates generation
-`g+1` through its persisted attempt, like the first key, and returns it once
-active, so the data-plane check verifies it before the deployment records it
-and `StartProjectDex` moves the Dex to it. A listed key named for `g+1`
-without a stored token lost its token and is revoked before another create.
-The previous generation's key stays while a project Dex Deployment exists and
-is not ready on the accepted generation; after that it is revoked and its
-Secrets removed. A holder keeps at most three keys, below the provider's 20
-per service account. Only a Live deployment calls `EnsureTemporal`, so a
-Project that deploys nothing for longer than the key lifetime minus the
-renewal window still reaches the expiry; its next deployment rotates the key
-only if Temporal Cloud still lists the expired key (unverified), and is
-otherwise refused with `infra.ErrTemporalCredential`. This gap is interim:
-the shared Temporal shards of the linear-scaling design replace per-Project
-keys with per-shard keys that a platform-level owner rotates. A next generation that
-is not accepted yet and is broken (unlisted after its create finished,
-disabled or owned by another identity) is revoked and created again.
-All cloud calls are bounded by 20 seconds.
+Cleanup first stops Project Dex, checks namespace ownership and calls OperatorService
+DeleteNamespace by the verified UUID. NotFound and an already deleted namespace are
+success. The server owns one reusable gRPC connection per replica, closed by bootstrap;
+data-plane probes own and close their separate connection. All namespace operations share
+a bounded 20-second context. No namespace operation occurs per application request or poll,
+and no account-wide list is used. No Temporal API key, service account, renewal or
+`temporal-identity` Secret is created.
 
-| File | Responsibility |
+`TestHostedTemporalNamespaceIntegration` launches an isolated real `temporal server
+start-dev` frontend and covers concurrent/idempotent registration,
+owner conflicts, accepted reads, and idempotent deletion. It does not establish xtemporal,
+PostgreSQL visibility, NetworkPolicy, hosted rollout or 10,000-Project capacity evidence.
+
+| File or component | Responsibility |
 | --- | --- |
-| `account.go` | `CloudAccount`, `Config`, `New`, cloud names and tags, their redaction patterns |
-| `backend.go` | The answers of `kube.Backend` that need no cloud call: egress, TLS dial, runtime class, route annotations |
-| `iam_policy.go` | IAM policy documents: statements, effects, actions and condition operators, and the inline policy size limit |
-| `identity.go` | IAM roles and Pod Identity associations |
-| `storage.go` | Project buckets |
-| `temporal.go` | Temporal Cloud namespaces, service accounts and API keys, and the access to them |
-| `execution_provisioning.go` | The project Dex's IAM role and its hosted specification |
-| `scope_cleanup.go` | Removal of the hosted backends of a scope, and of identities below a cloud name |
-| `workload_grants.go` | IAM workload grants, their revocation and a Session Preview's grant cleanup |
-| `preview_grants.go` | A Preview's principal role: its generation tags, its `scope` policy by generation and the propagation delay |
+| `account.go` | Validated hosted clients, fixed configuration and resource redaction |
+| `backend.go` | Backend capabilities, private egress/dial and delegation to storage/identity |
+| `identity/` | IAM policies, roles, Pod Identity, workload/Preview grants and their cleanup |
+| `storage/` | Project buckets and scoped object access |
+| `temporal.go` | Self-hosted namespace registration, ownership and deletion |
+| `execution_provisioning.go` | Project Dex's hosted specification |
+| `scope_cleanup.go` | Ordered removal of the hosted scope backends |
+| `temporal_integration_test.go` | Real frontend namespace lifecycle and identity checks |
