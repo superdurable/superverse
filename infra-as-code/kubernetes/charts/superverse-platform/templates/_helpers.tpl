@@ -7,6 +7,7 @@
 {{- define "v2.product" -}}{{ (include "v2.names" . | fromJson).product }}{{- end -}}
 {{- define "v2.workloadPrefix" -}}{{ (include "v2.names" . | fromJson).workload_prefix }}{{- end -}}
 {{- define "v2.namespace" -}}{{ (include "v2.names" . | fromJson).platform_namespace }}{{- end -}}
+{{- define "v2.studioHostname" -}}{{ required "hosted Studio hostname is required" .Values.studio.hostname }}{{- end -}}
 {{- define "v2.domain" -}}{{ (include "v2.names" . | fromJson).dns_domain }}{{- end -}}
 {{/*
 The platform server's ServiceAccount. Fixed across environments: Go project scope provisioning

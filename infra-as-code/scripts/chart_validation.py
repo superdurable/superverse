@@ -49,6 +49,7 @@ GIT_MOUNT = "/var/lib/superverse/git"
 # Local Native's platform services, which run with Local Kind's arguments.
 NATIVE_COMPOSE = Path(__file__).resolve().parent / "native/compose.yaml"
 # Reserved examples exercise hosted templates without AWS credentials or DNS ownership.
+STUDIO_CERTIFICATE = "arn:aws:acm:us-west-2:000000000000:certificate/00000001-0000-0000-0000-000000000000"
 CERTIFICATE = "arn:aws:acm:us-west-2:000000000000:certificate/00000000-0000-0000-0000-000000000000"
 # The Kubernetes API address range that Terraform supplies (network.kubernetesApiCIDRs).
 KUBERNETES_API_CIDR = "10.0.32.0/24"
@@ -76,6 +77,10 @@ def main():
             expect_render_rejected(directory, environment, values, ("server", "config", "SUPERVERSE_ENV"), "test", "environment variable name is not a setting")
             if environment not in LOCAL:
                 expect_render_rejected(directory, environment, values, ("server", "config", "repohost"), LOCAL_GIT, "exists only in the local lanes")
+                for hostname in ("", "*.example.com", "https://studio.example.com"):
+                    expect_render_rejected(directory, environment, values, ("studio", "hostname"), hostname, "Studio")
+                for keys in (("server", "config", "studio", "publicOrigin"), ("studio", "config", "SUPERVERSE_STUDIO_PUBLIC_ORIGIN")):
+                    expect_render_rejected(directory, environment, values, keys, "https://wrong.example.com", "origins must match")
                 for cidrs in ([], ["0.0.0.0/0"]):
                     expect_render_rejected(directory, environment, values, ("ingress", "targetCIDRs"), cidrs, "platform ALB health checks require")
             if environment == "prod":
@@ -125,6 +130,15 @@ def catalog(environment):
     return names_for("test" if environment in LOCAL else environment)
 
 
+def studio_hostname(environment):
+    # Test and staging deliberately use a separate reserved product domain; prod preserves the catalog host.
+    return {"test": "test.studio.example.com", "staging": "studio.example.com"}.get(environment, catalog(environment)["dns_domain"])
+
+
+def studio_certificate(environment):
+    return STUDIO_CERTIFICATE if environment in ("test", "staging") else CERTIFICATE
+
+
 def environment_values(environment):
     """The chart inputs Terraform or Kind supplies for one environment, with shape-only images."""
     names = catalog(environment)
@@ -139,7 +153,7 @@ def environment_values(environment):
                       "gvisorRelease": "release/20260907.0", "gvisorSHA256": "2b162adb35860f598ab2f89b9d752bff2c7ee6175c05d9cc532174a336cfb38c"},
     }
     # The server configuration the Kind deploy renders from its profile, or Terraform from its variables.
-    values["server"]["config"] = {"studio": {"publicOrigin": "http://localhost:23000" if local else "https://" + names["dns_domain"]}}
+    values["server"]["config"] = {"studio": {"publicOrigin": "http://localhost:23000" if local else "https://" + studio_hostname(environment)}}
     if local:
         # The local lanes use the local Git host of the base profile; hosted environments always use GitHub.
         profile = yaml.safe_load(LOCAL_KIND_PROFILE.read_text())
@@ -152,10 +166,11 @@ def environment_values(environment):
         values["localDependencies"] = {"temporalImage": "temporalio/temporal@" + SHAPE_DIGEST, "minioImage": "superverse-v2/minio@" + SHAPE_DIGEST,
                                        "postgresImage": "postgres@" + SHAPE_DIGEST, "keycloakImage": "keycloak@" + SHAPE_DIGEST}
         return values
-    domain = names["dns_domain"]
+    domain = studio_hostname(environment)
+    values["studio"]["hostname"] = domain
     values["hostedProjects"] = {"dexImage": "docker.io/superdurable/dex-server@" + SHAPE_DIGEST, "certificateArn": CERTIFICATE,
                                 "applicationRepository": "000000000000.dkr.ecr.us-west-2.amazonaws.com/" + names["ecr_prefix"] + "/applications"}
-    values["ingress"] = {"certificateArn": CERTIFICATE, "targetCIDRs": ["198.51.100.0/24"]}
+    values["ingress"] = {"certificateArn": studio_certificate(environment), "targetCIDRs": ["198.51.100.0/24"]}
     values["network"] = {"kubernetesApiCIDRs": [KUBERNETES_API_CIDR]}
     values["studio"]["config"] = {"SUPERVERSE_STUDIO_PUBLIC_ORIGIN": "https://" + domain}
     if environment in ("test", "staging"):
@@ -215,6 +230,8 @@ class Render:
         names = catalog(environment)
         self.environment, self.namespace, self.product = environment, names["platform_namespace"], names["product"]
         self.domain = names["dns_domain"]
+        self.studio_hostname = studio_hostname(environment)
+        self.studio_certificate = studio_certificate(environment)
         self.hosted = environment not in LOCAL
         self.debug = environment in ("test", "staging") if debug_enabled is None else debug_enabled
         self.web = not self.hosted or self.debug
@@ -264,7 +281,7 @@ class Render:
                 self.fail_if(service["spec"].get("type", "ClusterIP") != "ClusterIP" or
                              [port for port in service["spec"]["ports"] if port["port"] == 8802] != [{"name": "web", "port": 8802, "targetPort": "web-proxy" if self.debug else "web"}],
                              "Dex Web Service target or private Service type changed")
-        origin = "https://" + self.domain if self.hosted else "http://localhost:23000"
+        origin = "https://" + self.studio_hostname if self.hosted else "http://localhost:23000"
         studio_origins = [item.get("value") for item in self.get("Deployment", self.product + "-studio")["spec"]["template"]["spec"]["containers"][0]["env"]
                           if item["name"] == "SUPERVERSE_STUDIO_PUBLIC_ORIGIN"]
         self.fail_if(studio_origins != [origin] or self.server_configuration().get("studio", {}).get("publicOrigin") != origin,
@@ -470,7 +487,7 @@ class Render:
     def check_ingresses(self):
         """Hosted Studio and, in test/staging, the two debug surfaces are the only Ingresses, each on its fixed host."""
         if self.hosted:
-            self.ingresses[self.product + "-studio"] = (self.domain, self.product + "-studio", 3000, None)
+            self.ingresses[self.product + "-studio"] = (self.studio_hostname, self.product + "-studio", 3000, None)
         if self.debug:
             self.ingresses[self.product + "-platform-dex-server"] = ("dex-server." + self.domain, self.product + "-dex", 8801, "GRPC")
             self.ingresses[self.product + "-platform-dex-web"] = ("dex-web." + self.domain, self.product + "-dex", 8802, "HTTP1")
@@ -488,13 +505,13 @@ class Render:
             # The two public server endpoints reuse the existing Studio host and ALB.
             ingress = self.get("Ingress", slack_events)
             annotations = ingress["metadata"]["annotations"]
-            rule = {"host": self.domain, "http": {"paths": [{"path": "/api/slack/events", "pathType": "Exact",
+            rule = {"host": self.studio_hostname, "http": {"paths": [{"path": "/api/slack/events", "pathType": "Exact",
                                                             "backend": {"service": {"name": self.product + "-server", "port": {"number": SLACK_EVENTS_PORT}}}},
                 {"path": "/remote-agent/", "pathType": "Prefix", "backend": {"service": {"name": self.product + "-server", "port": {"number": REMOTE_AGENT_PORT}}}}]}}
             self.fail_if(ingress["spec"]["ingressClassName"] != "alb" or ingress["spec"]["rules"] != [rule] or
                          annotations["alb.ingress.kubernetes.io/group.name"] != self.product + "-platform" or
                          json.loads(annotations["alb.ingress.kubernetes.io/listen-ports"]) != [{"HTTPS": 443}] or
-                         not annotations["alb.ingress.kubernetes.io/certificate-arn"] or
+                         annotations["alb.ingress.kubernetes.io/certificate-arn"] != self.studio_certificate or
                          annotations["alb.ingress.kubernetes.io/healthcheck-port"] != "8082" or annotations["alb.ingress.kubernetes.io/healthcheck-path"] != "/readyz",
                          "the shared server Ingress must route exactly Slack events and the remote-agent prefix on the platform ALB")
             # Slack's exact path comes before Studio's "/" prefix on the shared ALB.
@@ -506,13 +523,17 @@ class Render:
                 "podSelector": {"matchLabels": {"app": self.product + "-server"}}, "policyTypes": ["Ingress"],
                 "ingress": [{"from": [{"ipBlock": {"cidr": "198.51.100.0/24"}}], "ports": [{"port": 8082, "protocol": "TCP"}]}]},
                 "the platform ALB's health checks must reach the server's health port from the ALB subnets only")
+        if self.hosted:
+            studio = self.get("Ingress", self.product + "-studio")
+            self.fail_if(studio["metadata"]["annotations"]["external-dns.alpha.kubernetes.io/hostname"] != self.studio_hostname,
+                         "external-dns must publish only the exact Studio hostname")
         for name, (host, service, port, protocol) in self.ingresses.items():
             ingress = self.get("Ingress", name)
             annotations = ingress["metadata"]["annotations"]
             rule = {"host": host, "http": {"paths": [{"path": "/", "pathType": "Prefix", "backend": {"service": {"name": service, "port": {"number": port}}}}]}}
             self.fail_if(ingress["spec"]["ingressClassName"] != "alb" or ingress["spec"]["rules"] != [rule], f"unexpected Ingress host/backend for {name}")
-            self.fail_if(json.loads(annotations["alb.ingress.kubernetes.io/listen-ports"]) != [{"HTTPS": 443}] or not annotations["alb.ingress.kubernetes.io/certificate-arn"],
-                         f"missing HTTPS/TLS configuration for {name}")
+            self.fail_if(json.loads(annotations["alb.ingress.kubernetes.io/listen-ports"]) != [{"HTTPS": 443}] or annotations["alb.ingress.kubernetes.io/certificate-arn"] != (CERTIFICATE if protocol else self.studio_certificate),
+                         f"incorrect HTTPS/TLS certificate ownership for {name}")
             self.fail_if(annotations["alb.ingress.kubernetes.io/group.name"] != self.product + "-platform", f"{name} is not on the platform's one ALB")
             self.fail_if(protocol and (
                 annotations["alb.ingress.kubernetes.io/backend-protocol-version"] != protocol or

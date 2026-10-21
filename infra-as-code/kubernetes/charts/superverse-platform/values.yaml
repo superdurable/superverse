@@ -22,6 +22,8 @@ server:
     requests: {cpu: 250m, memory: 256Mi}
     limits: {cpu: "2", memory: 3Gi}
 studio:
+  # Hosted deployments require an exact hostname independent of the application/debug domain.
+  hostname: ""
   enabled: true
   image: {repository: "", digest: "", pullPolicy: IfNotPresent}
   # Studio keeps no state between requests; above 1 a PodDisruptionBudget keeps one Pod serving.

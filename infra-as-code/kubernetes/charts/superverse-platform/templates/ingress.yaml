@@ -23,11 +23,11 @@ metadata:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
     alb.ingress.kubernetes.io/certificate-arn: {{ .Values.ingress.certificateArn | quote }}
-    external-dns.alpha.kubernetes.io/hostname: {{ include "v2.domain" . | quote }}
+    external-dns.alpha.kubernetes.io/hostname: {{ include "v2.studioHostname" . | quote }}
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   rules:
-    - host: {{ include "v2.domain" . }}
+    - host: {{ include "v2.studioHostname" . }}
       http:
         paths:
           - path: /
@@ -54,7 +54,7 @@ metadata:
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   rules:
-    - host: {{ include "v2.domain" . }}
+    - host: {{ include "v2.studioHostname" . }}
       http:
         paths:
           - path: /api/slack/events

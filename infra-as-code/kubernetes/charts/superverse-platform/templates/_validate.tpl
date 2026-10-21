@@ -12,6 +12,10 @@
 {{- end -}}
 {{- if not .Values.localKind -}}
 {{- if eq (get (default (dict) .Values.server.config) "repohost" | toString) "localgit" }}{{ fail "the local Git host (repohost localgit) exists only in the local lanes" }}{{ end -}}
+{{- $host := include "v2.studioHostname" . -}}
+{{- if or (gt (len $host) 253) (not (regexMatch "^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$" $host)) }}{{ fail "hosted Studio requires an exact DNS hostname" }}{{ end -}}
+{{- $origin := printf "https://%s" $host -}}
+{{- if or (ne (dig "studio" "publicOrigin" "" .Values.server.config) $origin) (ne (get .Values.studio.config "SUPERVERSE_STUDIO_PUBLIC_ORIGIN") $origin) }}{{ fail "hosted Studio origins must match studio.hostname" }}{{ end -}}
 {{- required "hosted TLS certificate is required" .Values.ingress.certificateArn | trunc 0 -}}
 {{- if empty .Values.ingress.targetCIDRs }}{{ fail "platform ALB health checks require the ALB subnet CIDRs (ingress.targetCIDRs)" }}{{ end -}}
 {{- range .Values.ingress.targetCIDRs -}}
