@@ -46,7 +46,7 @@ check remains incomplete, use blocked=true and preserve the concrete blocker.
 An explicit request for executed integration testing still remains incomplete
 until the actual configured dependency path passes; never invent that evidence.
 
-In Superverse, configure credentials through Studio after pushed source is
+In Studio, configure credentials through Studio after pushed source is
 prepared. The host validates actual Preview and Live runs separately. Never
 embed keys in source or replace the Connector with a fake provider to make a
 check pass. Keep repository documentation and code comments in English.

@@ -22,6 +22,7 @@ flowchart LR
 | `check-modules.mjs` | Directory and file limits, names, no JavaScript, an acyclic directory graph and client reachability. |
 | `check-readmes.mjs` | Every directory README's generated summary, the module table and relative links; `--write` regenerates them. |
 | `check-example-search.mjs` | A data check of the generated example search: on every labelled request the TypeScript search ranks as the Go search does, each expected example is in the grid's top six, and every placeholder is a labelled request that starts from the default. |
+| `check-visible-product-name.mjs` | Checks literal prose and JSX for the internal product name, excluding technical identifiers and generated code. |
 | `check-styles.mjs` | After `next build`: CSS only in `app/`, selector allowlists, no `@apply`, every class token in the built CSS, every custom property defined, no glued class strings. |
 
 `tsconfig.json` type-checks these scripts (`tsc -p scripts`).

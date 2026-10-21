@@ -67,7 +67,7 @@ export const LOCAL_REFUSALS = {
   tooLarge: "This file is larger than the limit for its type.",
   tooMany: `Up to ${ATTACHMENT_LIMITS.perMessage} files per message`,
   /** A local agent runs the Session: in this version only the platform model reads attached files. */
-  needsPlatformAgent: "Attachments work with the Superverse agent",
+  needsPlatformAgent: "Attachments work with the Platform agent",
 } as const;
 
 function extensionOf(name: string): string {

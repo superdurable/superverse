@@ -100,7 +100,7 @@ function loadedBrowserProtocol() {
       !hasCallerField(schema, requestType) ||
       unsupportedRequestField(schema, requestType)
     )
-      throw httpError(503, "Superverse browser protocol is unsupported");
+      throw httpError(503, "Platform browser protocol is unsupported");
     (OWN_ROUTE_METHODS.has(method) ? ownRoutes : rpcs).set(method, { method, entry, requestType, watch });
   }
   browserProtocol = { rpcs, ownRoutes, schema };
@@ -145,7 +145,7 @@ function allowedErrorInfo(rpc: BrowserRpc, original: unknown): ErrorInfo__Output
 export function decodeOwnRouteRequest(method: UnaryMethod, body: unknown): Record<string, unknown> {
   const { ownRoutes, schema } = loadedBrowserProtocol();
   const rpc = ownRoutes.get(method);
-  if (!rpc) throw httpError(503, "Superverse browser protocol is unsupported");
+  if (!rpc) throw httpError(503, "Platform browser protocol is unsupported");
   return decodeRequestBody(schema, rpc.requestType, body);
 }
 

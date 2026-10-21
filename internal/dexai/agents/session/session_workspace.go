@@ -523,7 +523,7 @@ func (flow *SessionAgentFlow) openExecutorSegment(ctx dex.Context, executor remo
 	if room := remoteexec.MaximumHandoffBytes - len(text) - len("\n\nStarting example:\n"); room >= minimumHandoffExampleBytes {
 		section("Starting example", startingExampleSection(ctx, false), room)
 	}
-	entry := conversation.NoticeEntry(conversation.EntryRoleUser, boundedHandoffText(text, remoteexec.MaximumHandoffBytes), "Switched to the Superverse agent")
+	entry := conversation.NoticeEntry(conversation.EntryRoleUser, boundedHandoffText(text, remoteexec.MaximumHandoffBytes), "Switched to the Platform agent")
 	last := appendEntry(ctx, entry)
 	if first == 0 {
 		first = last

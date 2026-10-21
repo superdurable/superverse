@@ -101,7 +101,7 @@ func admitCommand[R any](ctx context.Context, s *agentServer, in agentCommandReq
 		return nil, boundary.NotAdmitted(refusal.public)
 	}
 	if errors.Is(err, sessionagent.ErrAttachmentsNeedPlatformAgent) {
-		return nil, boundary.NotAdmitted(status.Error(codes.FailedPrecondition, "attachments work with the Superverse agent"))
+		return nil, boundary.NotAdmitted(status.Error(codes.FailedPrecondition, "attachments work with the Platform agent"))
 	}
 	if _, isStopped := errors.AsType[*sessionagent.SessionExecutionStoppedError](err); isStopped || errors.Is(err, sessionagent.ErrCommandRejected) {
 		return nil, notAdmittedCommand(err)

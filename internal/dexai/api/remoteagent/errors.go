@@ -29,7 +29,7 @@ type refusalReason struct {
 var (
 	reasonConnectionsFull = refusalReason{"REMOTE_AGENT_CONNECTIONS_FULL", "Remove an unused connection before pairing another", codes.ResourceExhausted}
 	reasonExecutorChanged = refusalReason{"REMOTE_AGENT_EXECUTOR_CHANGED", "The executor changed; refresh the Session before choosing again", codes.Aborted}
-	reasonCurrentExecutor = refusalReason{"REMOTE_AGENT_CURRENT_EXECUTOR", "Use the Superverse agent before removing its current connection", codes.FailedPrecondition}
+	reasonCurrentExecutor = refusalReason{"REMOTE_AGENT_CURRENT_EXECUTOR", "Use the Platform agent before removing its current connection", codes.FailedPrecondition}
 )
 
 func rpcStatus(err error) error {

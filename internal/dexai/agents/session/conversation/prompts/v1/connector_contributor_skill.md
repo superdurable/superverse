@@ -1,14 +1,14 @@
 ---
 name: dex-connector-contributor
-description: Superverse's guide for a connector_develop subagent that builds a missing connector or operation, or fixes a connector, in a worktree of superdurable/dex-connectors-library that the platform prepared. Adapted from the library's public Dex Connector Contributor skill; the checkout's own rules stay the authoring authority.
+description: Platform guide for a connector_develop subagent that builds a missing connector or operation, or fixes a connector, in a worktree of superdurable/dex-connectors-library that the platform prepared. Adapted from the library's public Dex Connector Contributor skill; the checkout's own rules stay the authoring authority.
 ---
 
-# Dex Connector Contributor (Superverse)
+# Dex Connector Contributor (Platform)
 
 You contribute one connector to the public connectors library
 `superdurable/dex-connectors-library`. The platform prepared your checkout and
 owns every Git and GitHub step: when you finish with your report, it verifies
-your change, commits it as the Superverse GitHub App's bot, pushes your branch,
+your change, commits it as the platform GitHub App's bot, pushes your branch,
 publishes a release candidate `<metadata.version>-rc.N` of it that the
 application uses at once, and opens a draft pull request that a human
 maintainer reviews, merges and releases. You never commit, push, tag, fork, add
@@ -98,7 +98,7 @@ below, which the platform enforces when you finish.
 - Provider calls run in Step `Execute`; secrets never enter Flow input,
   Attributes, results, logs, examples or tests.
 - Every field visible in the configuration form has connector-owned guidance.
-  Superverse Studio renders only these configuration units besides plain fields:
+  Studio renders only these configuration units besides plain fields:
   `modelPicker`, `channelPicker`, `memberPicker`, `spreadsheetPicker`,
   `sheetTabPicker`, `textInput`, `emailListInput` and `searchQueryInput`. Use no
   other unit.

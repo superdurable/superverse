@@ -262,7 +262,7 @@ function ProjectConnectionDialog({ projectId, onClose }: { projectId: string; on
         ))}
       </ul>
       {currentID && (
-        <p className="mt-2 text-xs text-ink-faint">Use the Superverse agent before removing the current connection.</p>
+        <p className="mt-2 text-xs text-ink-faint">Use the Platform agent before removing the current connection.</p>
       )}
       {pending && (
         <p className="mt-3 text-sm text-ink-faint" role="status">

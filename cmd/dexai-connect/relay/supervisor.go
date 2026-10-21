@@ -156,7 +156,7 @@ func (supervisor *Supervisor) Instructions(session string) string {
 func (supervisor *Supervisor) Call(ctx context.Context, session, name string, arguments json.RawMessage) (mcpserver.CallResult, error) {
 	r := supervisor.relayOf(session)
 	if r == nil {
-		return mcpserver.CallResult{Text: "this " + supervisor.provider.AgentLabel() + " session is not connected to Superverse", IsError: true}, nil
+		return mcpserver.CallResult{Text: "this " + supervisor.provider.AgentLabel() + " session is not connected to the platform", IsError: true}, nil
 	}
 	return r.call(ctx, name, arguments)
 }

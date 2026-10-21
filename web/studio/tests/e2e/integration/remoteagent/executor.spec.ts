@@ -41,7 +41,7 @@ test("Studio pairs a remote executor, renders its reply and takes over with the 
     if (authority?.remote?.connectionId !== client.connectionId) throw new Error("Reported remote lost authority");
     const menu = await openExecutorMenu(page);
     const switching = page.waitForResponse(rpcAnswered("SetSessionExecutor"));
-    await menu.getByRole("button", { name: "Use the Superverse agent", exact: true }).click();
+    await menu.getByRole("button", { name: "Use the Platform agent", exact: true }).click();
     const switched = await switching;
     if (!switched.ok()) throw new Error(`Executor takeover returned HTTP ${switched.status()}`);
     const command = object(switched.request().postDataJSON(), "Executor takeover request");

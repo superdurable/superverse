@@ -42,7 +42,7 @@ test("Project navigation cancels a pending switch before dispatch and leaves bot
     const gate = await installSwitchGate(page, projectId, before.epoch);
     scope.defer(() => gate.dispose());
     const menu = await openExecutorMenu(page);
-    await menu.getByRole("button", { name: "Use the Superverse agent", exact: true }).click();
+    await menu.getByRole("button", { name: "Use the Platform agent", exact: true }).click();
     await gate.pending();
     await expect(menu.getByRole("button", { name: "Switching…", exact: true })).toBeDisabled();
     // This is the real Next Link navigation; no clock or backend response is replaced.
@@ -86,7 +86,7 @@ test("Actual Builder downgrade aborts the pending browser switch; the real BFF i
     const gate = await installSwitchGate(builder.page, projectId, before.epoch);
     scope.defer(() => gate.dispose());
     const menu = await openExecutorMenu(builder.page);
-    await menu.getByRole("button", { name: "Use the Superverse agent", exact: true }).click();
+    await menu.getByRole("button", { name: "Use the Platform agent", exact: true }).click();
     await gate.pending();
     await expect(menu.getByRole("button", { name: "Switching…", exact: true })).toBeDisabled();
     const changed = await rpc(page.request, "SetProjectMemberRole", {
@@ -100,7 +100,7 @@ test("Actual Builder downgrade aborts the pending browser switch; the real BFF i
       .toBe("PROJECT_ROLE_OPERATOR");
     await gate.assertCancelled();
     await gate.dispose();
-    await expect(builder.page.getByRole("button", { name: "Use the Superverse agent", exact: true })).toHaveCount(0);
+    await expect(builder.page.getByRole("button", { name: "Use the Platform agent", exact: true })).toHaveCount(0);
     await expect(builder.page.getByRole("button", { name: "Connect my agent", exact: true })).toHaveCount(0);
     await expect(builder.page.getByRole("button", { name: "Switching…", exact: true })).toHaveCount(0);
     await expect(builder.page.locator("[data-session-executor]").getByRole("alert")).toHaveCount(0);

@@ -66,7 +66,7 @@ function superverseProtoPath(): string {
     path.resolve(process.cwd(), "api/superverse/v2/superverse.proto"),
   ];
   const proto = candidates.find((candidate) => candidate && existsSync(candidate));
-  if (!proto) throw httpError(503, "Superverse protobuf contract is unavailable");
+  if (!proto) throw httpError(503, "Platform protobuf contract is unavailable");
   return proto;
 }
 
@@ -106,7 +106,7 @@ function loadedProtocol() {
   for (const [name, value] of Object.entries(definition)) {
     if (!name.startsWith(PACKAGE) || "format" in value) continue;
     for (const [method, methodDefinition] of Object.entries(value as ServiceDefinition)) {
-      if (methods.has(method)) throw httpError(503, "Superverse RPC names are not unique");
+      if (methods.has(method)) throw httpError(503, "Platform RPC names are not unique");
       methods.set(method, { service: name.slice(PACKAGE.length) as Service, definition: methodDefinition });
     }
   }
@@ -135,7 +135,7 @@ let client: Client | undefined;
 function grpcClient(): Client {
   if (client) return client;
   const address = process.env.SUPERVERSE_GRPC_ADDRESS;
-  if (!address || !/^[a-zA-Z0-9.\-]+:[0-9]+$/.test(address)) throw httpError(503, "Superverse gRPC is not configured");
+  if (!address || !/^[a-zA-Z0-9.\-]+:[0-9]+$/.test(address)) throw httpError(503, "Platform gRPC is not configured");
   const certificate = process.env.SUPERVERSE_GRPC_CA_FILE;
   const transport =
     process.env.SUPERVERSE_GRPC_TLS === "true"
@@ -180,7 +180,7 @@ export async function callRpc<M extends Method>(
         if (error) {
           logGrpcFailure(method, error, signal?.aborted);
           reject(rpcError(error, method));
-        } else if (response === undefined) reject(new Error("Superverse RPC returned no response"));
+        } else if (response === undefined) reject(new Error("Platform RPC returned no response"));
         else resolve(response as RpcOutput<M>);
       },
     );
@@ -258,9 +258,9 @@ function browserMessage(httpStatus: number, detail: string): string {
   return httpStatus === 401
     ? "Sign in to continue"
     : httpStatus === 503
-      ? "Superverse service is unavailable"
+      ? "Platform service is unavailable"
       : httpStatus >= 500
-        ? "Superverse request failed"
+        ? "Platform request failed"
         : detail;
 }
 
@@ -346,10 +346,10 @@ export function errorResponse(error: unknown, errorInfo?: ErrorInfo__Output): Re
   const failure = isAbortError(error)
     ? { status: 499, message: "Request canceled" }
     : isTimeoutError(error)
-      ? { status: 504, message: "Superverse request timed out" }
+      ? { status: 504, message: "Platform request timed out" }
       : error instanceof Error && "status" in error && typeof error.status === "number"
         ? { status: error.status, message: browserMessage(error.status, error.message) }
-        : { status: 500, message: "Superverse request failed" };
+        : { status: 500, message: "Platform request failed" };
   const retryableReleaseRead =
     failure.status === 503 &&
     error instanceof Error &&

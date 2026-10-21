@@ -38,7 +38,7 @@ var ErrCommandRejected = errors.New("agent command was rejected by current sessi
 // message with attachments that the Session refused because a local agent
 // executes it, which receives text only; only the Superverse agent reads
 // attachments. It had no effect.
-var ErrAttachmentsNeedPlatformAgent = errors.New("attachments_need_platform_agent: attachments work with the Superverse agent")
+var ErrAttachmentsNeedPlatformAgent = errors.New("attachments_need_platform_agent: attachments work with the Platform agent")
 
 // ErrModelRevisionChanged reports a model selection at a revision that no
 // longer holds; it had no effect, and the caller rereads the Session.

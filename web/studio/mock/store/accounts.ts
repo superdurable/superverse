@@ -13,7 +13,7 @@ import type { CallerContext__Output } from "@/lib/generated/protobuf/superverse/
 import { httpError } from "@/lib/server/request-body";
 import { randomHex } from "./clock";
 
-const MOCK_ADMIN_EMAIL = "admin@superverse.test";
+const MOCK_ADMIN_EMAIL = "admin@example.test";
 
 type MockAccounts = {
   accounts: Map<string, { salt: Buffer; hash: Buffer; account: AccountSnapshot__Output }>;

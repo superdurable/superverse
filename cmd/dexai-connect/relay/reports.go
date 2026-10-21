@@ -98,7 +98,7 @@ func (r *relay) call(ctx context.Context, name string, arguments json.RawMessage
 		return *refused, nil
 	}
 	if !r.offered(name) {
-		return mcpserver.CallResult{Text: fmt.Sprintf("the tool %q is not offered by Superverse", name), IsError: true}, nil
+		return mcpserver.CallResult{Text: fmt.Sprintf("the tool %q is not offered by the platform", name), IsError: true}, nil
 	}
 	turnID, generation := r.callTurn(ctx)
 	r.mu.Lock()
@@ -115,7 +115,7 @@ func (r *relay) call(ctx context.Context, name string, arguments json.RawMessage
 	r.mu.Lock()
 	if r.runningTurn != turnID {
 		r.mu.Unlock()
-		return mcpserver.CallResult{Text: "the " + r.provider.AgentLabel() + " turn ended before Superverse accepted this call; retry in a new turn", IsError: true}, nil
+		return mcpserver.CallResult{Text: "the " + r.provider.AgentLabel() + " turn ended before the platform accepted this call; retry in a new turn", IsError: true}, nil
 	}
 	err := r.storeLocked(r.progress, []bridgeapi.Report{report}, call)
 	r.mu.Unlock()
@@ -178,9 +178,9 @@ func (r *relay) abandonWith(call *pendingCall, acceptedText string) mcpserver.Ca
 	}
 	if call.callID != "" {
 		if acceptedText != "" {
-			return mcpserver.CallResult{Text: fmt.Sprintf("Superverse call %s was accepted and %s", call.callID, acceptedText)}
+			return mcpserver.CallResult{Text: fmt.Sprintf("Platform call %s was accepted and %s", call.callID, acceptedText)}
 		}
-		return mcpserver.CallResult{Text: fmt.Sprintf("Superverse call %s is still running after %s; its result will arrive "+
+		return mcpserver.CallResult{Text: fmt.Sprintf("Platform call %s is still running after %s; its result will arrive "+
 			"as a message naming that call. Do not run it again.", call.callID, r.toolWait)}
 	}
 	return mcpserver.CallResult{Text: fmt.Sprintf("the call is still running after %s; its result will arrive as a "+
@@ -211,7 +211,7 @@ func (r *relay) confirmConversation(ctx context.Context) *mcpserver.CallResult {
 }
 
 func (r *relay) turnEndedResult() string {
-	return "this " + r.provider.AgentLabel() + " turn ended before Superverse answered the call; its result will arrive as a message. Do not run it again."
+	return "this " + r.provider.AgentLabel() + " turn ended before the platform answered the call; its result will arrive as a message. Do not run it again."
 }
 
 // retireTurnCallsLocked leaves results of a completed Codex turn for the
@@ -406,7 +406,7 @@ func (r *relay) sendHead(ctx context.Context, head state.StoredReport) error {
 		return r.saveLocked()
 	case code == bridgeapi.ErrorMalformed || code == bridgeapi.ErrorTooLarge:
 		r.logger.ErrorContext(ctx, "the platform refused a report", "project", r.projectName, "sequence", report.Sequence, "error", err)
-		return r.settleHead(head, &mcpserver.CallResult{Text: "Superverse refused the call: " + refusal.Body.Message, IsError: true})
+		return r.settleHead(head, &mcpserver.CallResult{Text: "The platform refused the call: " + refusal.Body.Message, IsError: true})
 	default:
 		return detachOn(err)
 	}

@@ -534,7 +534,7 @@ func composeBrief(projectName string, answer bridgeapi.SyncResponse, activationC
 	if answer.AgentContext != "" {
 		fmt.Fprintf(&brief, "%s\n\n", answer.AgentContext)
 	}
-	fmt.Fprintf(&brief, "Superverse Project: %s\n", projectName)
+	fmt.Fprintf(&brief, "Project: %s\n", projectName)
 	if answer.Requirements != "" {
 		fmt.Fprintf(&brief, "\nCurrent requirements:\n%s\n", answer.Requirements)
 	}

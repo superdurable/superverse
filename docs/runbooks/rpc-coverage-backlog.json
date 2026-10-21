@@ -15,7 +15,6 @@
     "/superverse.v2.FlowRunService/RecoverFlowStart",
     "/superverse.v2.FlowRunService/UpdateFlowDisplayField",
     "/superverse.v2.PreviewService/StopPreview",
-    "/superverse.v2.ProjectMemberService/SetProjectMemberRole",
     "/superverse.v2.ProjectService/ValidateProjectConfiguration",
     "/superverse.v2.ReleaseService/CancelReleaseBuild",
     "/superverse.v2.ReleaseService/GetReleaseBuildLog",

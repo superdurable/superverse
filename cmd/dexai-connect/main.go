@@ -40,7 +40,7 @@ var version = bridgeapi.DevBridgeVersion
 
 const localTimeout = 30 * time.Second
 
-const usage = `dexai-connect connects a Codex conversation in Orca to a Superverse Project.
+const usage = `dexai-connect connects a Codex conversation in Orca to a Project.
 
 Commands:
   connect --endpoint <studio origin> [--session <orca session id> | --new --worktree <selector>]

@@ -146,7 +146,7 @@ export function requestSchema(files: readonly Buffer[]): RequestSchema {
 
 function messageOf(schema: RequestSchema, name: string): SchemaMessage {
   const message = schema.get(name);
-  if (message?.kind !== "message") throw httpError(503, "Superverse request descriptors are unavailable");
+  if (message?.kind !== "message") throw httpError(503, "Platform request descriptors are unavailable");
   return message;
 }
 

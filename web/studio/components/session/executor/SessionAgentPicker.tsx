@@ -117,7 +117,7 @@ function AgentPickerMenu({
       : "Offline · last seen unavailable";
   const label = remote
     ? `${LOCAL_AGENT} · ${liveness.toLowerCase()} · connected by ${owner}`
-    : `Superverse agent · ${model === null ? "Not selected yet" : agentModelLabel(model)}`;
+    : `Platform agent · ${model === null ? "Not selected yet" : agentModelLabel(model)}`;
   const active = session.status === "SESSION_STATUS_ACTIVE";
   const switchable = canManage && active;
   const switchPending = !remote && contextModel !== null && contextModel !== model;
@@ -197,13 +197,13 @@ function AgentPickerMenu({
                   disabled={action.busy !== null}
                   onClick={() => void switchToPlatform()}
                 >
-                  {action.busy ? "Switching…" : "Use the Superverse agent"}
+                  {action.busy ? "Switching…" : "Use the Platform agent"}
                 </button>
               )
             ) : (
               <>
                 <p className="flex items-center px-2.25 pt-1 text-ink">
-                  <span className="font-medium">Superverse agent</span>
+                  <span className="font-medium">Platform agent</span>
                   <span className="ml-auto text-xs text-ink-faint">Current</span>
                 </p>
                 {AGENT_MODEL_OPTIONS.filter(({ value }) => value !== "mock" || mockSelectable || model === "mock").map(
@@ -276,7 +276,7 @@ export function RemoteAgentOfflineNotice() {
       role="status"
       data-remote-offline
     >
-      Codex is offline; messages are kept until it reconnects. Use the agent picker to reconnect or use the Superverse
+      Codex is offline; messages are kept until it reconnects. Use the agent picker to reconnect or use the Platform
       agent.
     </p>
   );

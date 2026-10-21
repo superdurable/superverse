@@ -39,7 +39,7 @@ export function connectionDetail(connection: TeamSpaceConnection): string {
   if (connection.credentialStatus === "CREDENTIAL_STATUS_REAUTHORIZATION_REQUIRED" && connection.credentialExpiresAt)
     parts.push(`Ended ${day(connection.credentialExpiresAt)}`);
   else if (connection.updatedAt) parts.push(`Changed ${day(connection.updatedAt)}`);
-  if (connection.clientSource === "CONNECTION_CLIENT_SOURCE_PLATFORM") parts.push("Superverse's app");
+  if (connection.clientSource === "CONNECTION_CLIENT_SOURCE_PLATFORM") parts.push("Platform app");
   return parts.join(" · ");
 }
 

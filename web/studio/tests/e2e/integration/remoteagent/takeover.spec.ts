@@ -51,7 +51,7 @@ test("A distinct Builder takes over remotely; replaced-valid is 409 and platform
     expect(replaced.code).toBe("executor_changed");
     const menu = await openExecutorMenu(page);
     const switched = page.waitForResponse(rpcAnswered("SetSessionExecutor"));
-    await menu.getByRole("button", { name: "Use the Superverse agent", exact: true }).click();
+    await menu.getByRole("button", { name: "Use the Platform agent", exact: true }).click();
     const response = await switched;
     if (!response.ok()) throw new Error(`Owner platform switch returned HTTP ${response.status()}`);
     expect(object(response.request().postDataJSON(), "Owner switch").basisEpoch).toBe(authority?.epoch);

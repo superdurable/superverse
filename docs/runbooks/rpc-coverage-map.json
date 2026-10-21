@@ -188,9 +188,12 @@
       "native-e2e"
     ],
     "/superverse.v2.ProjectMemberService/RemoveProjectMember": [
-      "api-integration"
+      "api-integration",
+      "native-e2e"
     ],
-    "/superverse.v2.ProjectMemberService/SetProjectMemberRole": [],
+    "/superverse.v2.ProjectMemberService/SetProjectMemberRole": [
+      "native-e2e"
+    ],
     "/superverse.v2.ProjectService/CreateProject": [
       "api-integration",
       "kind-e2e",
@@ -270,6 +273,7 @@
       "native-e2e"
     ],
     "/superverse.v2.RemoteAgentService/CreateRemoteAgentPairing": [
+      "native-e2e",
       "native-integration"
     ],
     "/superverse.v2.RemoteAgentService/ListRemoteAgentConnections": [
@@ -279,9 +283,11 @@
       "native-integration"
     ],
     "/superverse.v2.RemoteAgentService/RevokeRemoteAgentConnection": [
+      "native-e2e",
       "native-integration"
     ],
     "/superverse.v2.RemoteAgentService/SetSessionExecutor": [
+      "native-e2e",
       "native-integration"
     ],
     "/superverse.v2.SessionService/GetSession": [

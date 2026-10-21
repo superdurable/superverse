@@ -50,7 +50,7 @@ export function Disclosure({ label, children }: { label: string; children: React
  */
 const SHARED_PLATFORM_INSTALLATION: Record<string, string> = {
   slack:
-    "Teamspaces that connect the same Slack workspace with Superverse's app share its bot: its channels, its events and an uninstall. Use your own app to keep them apart.",
+    "Teamspaces that connect the same Slack workspace with the platform app share its bot: its channels, its events and an uninstall. Use your own app to keep them apart.",
 };
 
 /** Whether an authorization uses the platform's own OAuth application or the person's. */
@@ -67,7 +67,7 @@ export function OAuthClientChoice({
   return (
     <div className="grid gap-1.5" role="radiogroup" aria-label="OAuth application">
       {[
-        { value: true, label: "Superverse's app", note: "No provider app to create; Superverse keeps its client." },
+        { value: true, label: "Platform app", note: "No provider app to create; the platform keeps its client." },
         { value: false, label: "Your own app", note: "Enter the client of an app you registered with the provider." },
       ].map((choice) => (
         <label className={CHOICE} key={choice.label}>

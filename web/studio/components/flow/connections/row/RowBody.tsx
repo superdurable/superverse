@@ -94,7 +94,7 @@ function SettingsCell({
     ? "the same connection as Preview"
     : [
         chosen?.name,
-        chosen?.clientSource === "CONNECTION_CLIENT_SOURCE_PLATFORM" ? "Superverse's app" : "",
+        chosen?.clientSource === "CONNECTION_CLIENT_SOURCE_PLATFORM" ? "Platform app" : "",
         own?.status === "Ready" ? "" : "sign in again",
       ]
         .filter(Boolean)

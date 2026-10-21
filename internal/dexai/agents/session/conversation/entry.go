@@ -603,5 +603,5 @@ func UndeliveredAttachmentsNote(entry Entry) string {
 	if len(names) == 1 {
 		count = "1 attachment"
 	}
-	return "Not delivered to the connected agent: " + count + " (" + strings.Join(names, ", ") + "). Attachments work with the Superverse agent."
+	return "Not delivered to the connected agent: " + count + " (" + strings.Join(names, ", ") + "). Attachments work with the Platform agent."
 }

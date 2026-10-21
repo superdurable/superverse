@@ -185,7 +185,7 @@ func (server *server) handle(ctx context.Context, wait *sync.WaitGroup, line []b
 			})
 		default:
 			server.reply(ctx, message.ID, toolError(fmt.Sprintf(
-				"%d Superverse calls are already running in this session; wait for one to finish", maxConcurrentCalls)), nil)
+				"%d platform calls are already running in this session; wait for one to finish", maxConcurrentCalls)), nil)
 		}
 	default:
 		server.answer(ctx, message)
@@ -280,7 +280,7 @@ func (server *server) initialize(ctx context.Context, params json.RawMessage) an
 	if server.session != "" {
 		response, err := askLocal(ctx, server.socketPath, localRequest{Op: opTools, Session: server.session})
 		if err != nil {
-			server.logger.WarnContext(ctx, "read the Superverse instructions", "error", err)
+			server.logger.WarnContext(ctx, "read the platform instructions", "error", err)
 		} else if response.Instructions != "" {
 			answer["instructions"] = response.Instructions
 		}
@@ -297,7 +297,7 @@ func (server *server) tools(ctx context.Context) []mcpTool {
 	}
 	response, err := askLocal(ctx, server.socketPath, localRequest{Op: opTools, Session: server.session})
 	if err != nil {
-		server.logger.WarnContext(ctx, "list the Superverse tools", "error", err)
+		server.logger.WarnContext(ctx, "list the platform tools", "error", err)
 		return listed
 	}
 	for _, tool := range response.Tools {
@@ -328,13 +328,13 @@ func (server *server) call(ctx context.Context, params json.RawMessage) (any, *r
 		return toolError("the arguments must be a JSON object"), nil, none
 	}
 	if server.session == "" {
-		return toolError("this Codex session is not connected to Superverse"), nil, none
+		return toolError("this Codex session is not connected to the platform"), nil, none
 	}
 	response, done, err := callLocal(ctx, server.socketPath, localRequest{
 		Op: opCall, Session: server.session, Name: request.Name, Arguments: request.Arguments,
 	})
 	if err != nil {
-		return toolError("Superverse could not run the tool: " + err.Error()), nil, none
+		return toolError("platform could not run the tool: " + err.Error()), nil, none
 	}
 	if response.Result == nil {
 		done(false)

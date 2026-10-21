@@ -240,7 +240,7 @@ export function ConnectorForm({
       {(oauth || requiredManifestFormFields.length > 0) && (
         <fieldset className={FIELD_GROUP}>
           <StepLegend number={stepNumber("fields")}>
-            {platform ? "Sign in with Superverse's app" : oauth ? "Your app's client ID and secret" : "Fill in"}
+            {platform ? "Sign in with the platform app" : oauth ? "Your app's client ID and secret" : "Fill in"}
           </StepLegend>
           {platformOffered && (
             <OAuthClientChoice connectorId={connection.connectorId} platform={usePlatform} onChange={setUsePlatform} />

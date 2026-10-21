@@ -158,7 +158,7 @@ export const projectService: MockService<"ProjectService"> = {
     const source = getProject(store, draft.projectId);
     if (source && (source.configurationReadFailures ?? 0) > 0) {
       source.configurationReadFailures! -= 1;
-      throw httpError(503, "Superverse service is unavailable");
+      throw httpError(503, "Platform service is unavailable");
     }
     const nextPublish = Boolean(target?.nextPublish);
     return {

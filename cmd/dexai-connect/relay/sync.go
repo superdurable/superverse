@@ -161,7 +161,7 @@ func (r *relay) queueAnswerLocked(answer bridgeapi.SyncResponse) {
 	if dropped := answer.Dropped; dropped != nil && !r.scanning {
 		notice := delivery{
 			key: fmt.Sprintf("%s/dropped/%d-%d", r.connectionID, dropped.From, dropped.Through),
-			text: fmt.Sprintf("Superverse messages %d-%d were dropped by retention while this agent was disconnected; "+
+			text: fmt.Sprintf("platform messages %d-%d were dropped by retention while this agent was disconnected; "+
 				"the repository and its commits hold the work.", dropped.From, dropped.Through),
 		}
 		if !r.enqueueDeliveryLocked(notice) {
@@ -238,7 +238,7 @@ func (r *relay) lateResultsLocked(entry bridgeapi.Entry) ([]*resultAck, string) 
 		if result.IsError {
 			outcome = "Error result"
 		}
-		text := fmt.Sprintf("%s of Superverse call %s (it finished after the call was answered): %s",
+		text := fmt.Sprintf("%s of platform call %s (it finished after the call was answered): %s",
 			outcome, result.CallID, comm.TruncateUTF8(result.Content, bridgeapi.MaxEventTextBytes))
 		if ack := r.resolveEntryLocked(entry.Sequence, result.CallID, mcpserver.CallResult{Text: result.Content, IsError: result.IsError}, text); ack != nil {
 			acks = append(acks, ack)

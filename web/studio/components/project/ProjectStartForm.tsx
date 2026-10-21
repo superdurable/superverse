@@ -175,7 +175,7 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
                 onChange={() => setExecutor(PROJECT_EXECUTOR.SUPERVERSE)}
               />
               <span>
-                <strong className="block font-medium text-ink">Superverse agent</strong>Runs in your Project workspace.
+                <strong className="block font-medium text-ink">Platform agent</strong>Runs in your Project workspace.
               </span>
             </label>
             <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-line-soft p-3 text-reading text-ink-dim has-checked:border-accent-rule has-checked:bg-accent-wash">

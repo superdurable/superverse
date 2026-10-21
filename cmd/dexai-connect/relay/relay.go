@@ -361,7 +361,7 @@ func (r *relay) finishDetach(ctx context.Context, reason *detachment, cancelTurn
 	case "":
 		r.logger.InfoContext(ctx, "disconnected", "project", r.projectName)
 	case bridgeapi.ErrorExecutorChanged:
-		r.logger.WarnContext(ctx, "Connection replaced by another connection or the Superverse agent; reconnect from Studio to take over again",
+		r.logger.WarnContext(ctx, "Connection replaced by another connection or the Platform agent; reconnect from Studio to take over again",
 			"project", r.projectName, "detail", reason.message)
 	default:
 		r.logger.WarnContext(ctx, "Reconnect from Studio: the connection is no longer authorized", "project", r.projectName, "detail", reason.message)
@@ -440,13 +440,13 @@ func (r *relay) saveLocked() error {
 }
 
 var interruptedResult = mcpserver.CallResult{
-	Text:    "interrupted: the Superverse Session stopped this work (Stop or a change of agent) before it ran",
+	Text:    "interrupted: the Project Session stopped this work (Stop or a change of agent) before it ran",
 	IsError: true,
 }
 
 // detachedResult answers a call that was sent, so may have run, when its
 // binding ends: its outcome is unknown here.
 var detachedResult = mcpserver.CallResult{
-	Text:    "the Superverse binding ended after this call was sent; it may have run, and its result is not available here",
+	Text:    "the platform binding ended after this call was sent; it may have run, and its result is not available here",
 	IsError: true,
 }

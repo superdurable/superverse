@@ -32,7 +32,7 @@ import (
 )
 
 // ErrCurrentExecutor refuses removal of the connection the Session names now.
-var ErrCurrentExecutor = errors.New("use the Superverse agent before removing its current connection")
+var ErrCurrentExecutor = errors.New("use the Platform agent before removing its current connection")
 
 // Connections owns pairing and authentication; the Session owns executor authority.
 // Only bootstrap assembles it, using existing singleton clients and SQL pool.
