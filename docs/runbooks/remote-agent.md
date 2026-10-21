@@ -87,8 +87,8 @@ The direct `dexai` command has a separate default state directory (`dexai` under
 the user configuration directory, or `DEXAI_STATE_DIR`). Build its local macOS
 binary with `make build-dexai-local`. The Builder's installed Codex CLI and
 shared daemon must both be at least 0.162.0; 0.163.0 is the newest verified
-version and newer versions connect with a compatibility warning; start
-the daemon with `codex app-server daemon start` when it is absent. `dexai`
+version and newer versions connect with a compatibility warning. `dexai`
+starts the daemon with `codex app-server daemon start` when it is absent; it
 does not install, update, downgrade or restart it. The first brief is submitted
 before the Codex TUI opens. Exit the TUI to stop the foreground relay; run
 `dexai serve` to resume a stored binding, or `dexai disconnect` to revoke it.
