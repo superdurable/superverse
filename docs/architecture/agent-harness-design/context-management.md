@@ -9,9 +9,18 @@ prompts, configuration and the mock model used in tests.
 owns the tools and their results, and [streaming and Studio](streaming-and-studio.md)
 owns what reaches the browser.
 
+The compiled [model catalog](../../../internal/dexai/agents/session/modelprovider/README.md#catalog-and-availability)
+also records unavailable providers. These are identities and reviewed target policies,
+not selectable or verified adapters. `SessionModel` and `ContextSegment.Model` keep their
+existing JSON spelling, revision and primitive keys; old Claude/mock executions remain readable.
+Protocol/replay policy is immutable for a published model identity; an incompatible change needs
+another versioned identity. New providers cannot borrow the platform Claude key. New opaque
+replay must stay private to the current segment and be dropped when it closes; it is never
+public history or compaction input. PROVCAT introduces no opaque blocks or replay cleanup change.
+
 ## Principles
 
-- **Claude only.** The Agent talks to the Claude API through the official Go SDK.
+- **Available models.** The Agent currently talks to the Claude API through the official Go SDK.
   Three Claude models are selectable per Session, and where the server offers it the
   [mock model](#mock-model-for-tests), which speaks the same API for tests. There is no
   other provider and no compatibility layer.

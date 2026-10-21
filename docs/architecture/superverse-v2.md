@@ -53,7 +53,13 @@ Current architecture:
   conversation history. Do not introduce archive-segment Flows.
 - The coding Agent is specified in [the Agent harness design](agent-harness-design/README.md):
   Claude (Opus 5.5 by default, Sonnet 5.5 or Haiku 4.5 selectable, and the mock
-  model for tests where the server offers it), an append-only model context, one
+  model for tests where the server offers it). A reviewed typed provider/model catalog
+  records additional identities, protocol/replay policy and unavailability reasons;
+  it does not enable another provider before adapters and Session API keys ship.
+  Unknown or unavailable models fail closed, with no provider/key/protocol fallback.
+  Except for existing private Claude signed replay, readable reasoning is never
+  persisted; new opaque replay is private to the active segment and dropped when
+  that segment closes. The Agent retains an append-only model context, one
   Session per Project, a Stop button that stops everything, subagents, and
   failures that go to the model rather than to a manual recovery.
 - PostgreSQL holds the accounts and login sessions, the read model, which only the

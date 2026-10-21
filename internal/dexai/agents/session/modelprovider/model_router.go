@@ -70,6 +70,9 @@ func mockProgress(response *http.Response) *conversation.MockProgress {
 // the server stopped offering it, such as a Claude model before the key was
 // taken out, gets a rejection that ends its turn.
 func (router *ModelRouter) Complete(ctx context.Context, request conversation.ModelRequest) (conversation.ModelReply, error) {
+	if availability := ProfileOf(request.Model).Availability; !availability.Selectable() {
+		return conversation.ModelReply{}, (&conversation.ModelRejectedError{Code: "model_unavailable", Hint: availability.Reason()})
+	}
 	client := router.claude
 	if request.Model == conversation.ModelMock {
 		client = router.mock

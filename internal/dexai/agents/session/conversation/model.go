@@ -12,47 +12,117 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 )
 
-// Model is a model a Session can run on: a provider-qualified Claude model or
-// the mock model.
+// Model is a catalog model's durable identity. Published spellings never change.
 type Model string
 
-// The supported models: three Claude models and the mock model, which the
-// in-process mock Claude API serves for tests (mockmodel) where the server
-// configuration offers it. Any other value is rejected at startup and at the
-// API boundary; there is no compatibility for other providers.
 const (
-	ModelOpus55   Model = "anthropic/claude-opus-5-5"
-	ModelSonnet55 Model = "anthropic/claude-sonnet-5-5"
-	ModelHaiku45  Model = "anthropic/claude-haiku-4-5"
-	ModelMock     Model = "mock"
+	ModelOpus55          Model = "anthropic/claude-opus-5-5"
+	ModelSonnet55        Model = "anthropic/claude-sonnet-5-5"
+	ModelHaiku45         Model = "anthropic/claude-haiku-4-5"
+	ModelMock            Model = "mock"
+	ModelGPT6Astra       Model = "openai/gpt-6-astra"
+	ModelDeepSeekFlash   Model = "deepseek/deepseek-flash"
+	ModelGrok47          Model = "xai/grok-4.7"
+	ModelMuseWonder10    Model = "meta/muse-wonder-1.0"
+	ModelGemini4Argon    Model = "gemini/gemini-4-argon"
+	ModelKimiK3          Model = "kimi/kimi-k3"
+	ModelGLM53           Model = "glm/glm-5.3"
+	ModelQwen38Max       Model = "qwen/qwen3.8-max"
+	ModelKimiK26         Model = "kimi/kimi-k2.6"
+	ModelGLM52           Model = "glm/glm-5.2"
+	ModelMiniMaxM3       Model = "minimax/MiniMax-M3"
+	ModelMiniMaxM31Flash Model = "minimax/MiniMax-M3.1-Flash"
 )
 
-// Validate rejects a model the Agent does not support.
+// APIStyle is a closed wire protocol; a compatible provider never selects it at runtime.
+type APIStyle struct{ id string }
+
+var (
+	AnthropicMessages     = APIStyle{"anthropic_messages"}
+	OpenAIResponses       = APIStyle{"openai_responses"}
+	OpenAIChatCompletions = APIStyle{"openai_chat_completions"}
+)
+
+func (style APIStyle) String() string { return style.id }
+
+// Provider holds reviewed endpoint metadata, never credentials or a user-supplied URL.
+// Mock is a test transport of the Anthropic profile, not a BYOK provider.
+type Provider struct {
+	id, displayName  string
+	style            APIStyle
+	baseURL, keyHint string
+}
+
+var (
+	ProviderAnthropic = Provider{"anthropic", "Anthropic", AnthropicMessages, "https://api.anthropic.com", "Anthropic API key"}
+	ProviderOpenAI    = Provider{"openai", "OpenAI", OpenAIResponses, "https://api.openai.com/v1", "OpenAI API key"}
+	ProviderDeepSeek  = Provider{"deepseek", "DeepSeek", AnthropicMessages, "https://api.deepseek.com/anthropic", "DeepSeek API key"}
+	ProviderXAI       = Provider{"xai", "xAI Grok", OpenAIResponses, "https://api.x.ai/v1", "xAI API key"}
+	ProviderMeta      = Provider{"meta", "Meta Muse AI", AnthropicMessages, "https://api.meta.ai", "Meta Model API key"}
+	ProviderGemini    = Provider{"gemini", "Google Gemini", OpenAIChatCompletions, "https://generativelanguage.googleapis.com/v1beta/openai", "Gemini API key"}
+	ProviderKimi      = Provider{"kimi", "Kimi", OpenAIChatCompletions, "https://api.moonshot.ai/v1", "Kimi API key"}
+	ProviderGLM       = Provider{"glm", "GLM", OpenAIChatCompletions, "https://open.bigmodel.cn/api/paas/v4", "GLM API key"}
+	// This is a reviewed endpoint template, not a usable or user-editable URL.
+	// Regional endpoint admission belongs to the later adapter/BYOK implementation.
+	ProviderQwen    = Provider{"qwen", "Qwen", OpenAIChatCompletions, "https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/compatible-mode/v1", "Model Studio API key for the endpoint region"}
+	ProviderMiniMax = Provider{"minimax", "MiniMax", AnthropicMessages, "https://api.minimax.io/anthropic", "MiniMax API key"}
+)
+
+func (provider Provider) String() string      { return provider.id }
+func (provider Provider) DisplayName() string { return provider.displayName }
+func (provider Provider) APIStyle() APIStyle  { return provider.style }
+func (provider Provider) BaseURL() string     { return provider.baseURL }
+func (provider Provider) KeyHint() string     { return provider.keyHint }
+
+// ModelDetails is a model's identity data; capability and availability belong to ModelProfile.
+type ModelDetails struct {
+	Provider          Provider
+	APIModelID, Label string
+}
+
+var models = map[Model]ModelDetails{
+	ModelOpus55:          {ProviderAnthropic, "claude-opus-5-5", "Claude Opus 5.5"},
+	ModelSonnet55:        {ProviderAnthropic, "claude-sonnet-5-5", "Claude Sonnet 5.5"},
+	ModelHaiku45:         {ProviderAnthropic, "claude-haiku-4-5", "Claude Haiku 4.5"},
+	ModelMock:            {ProviderAnthropic, "mock", "Mock"},
+	ModelGPT6Astra:       {ProviderOpenAI, "gpt-6-astra", "GPT-6 Astra"},
+	ModelDeepSeekFlash:   {ProviderDeepSeek, "deepseek-flash", "DeepSeek V4.1 Flash"},
+	ModelGrok47:          {ProviderXAI, "grok-4.7", "Grok 4.7"},
+	ModelMuseWonder10:    {ProviderMeta, "muse-wonder-1.0", "Muse Wonder 1.0"},
+	ModelGemini4Argon:    {ProviderGemini, "gemini-4-argon", "Gemini 4 Argon"},
+	ModelKimiK3:          {ProviderKimi, "kimi-k3", "Kimi K3"},
+	ModelGLM53:           {ProviderGLM, "glm-5.3", "GLM 5.3"},
+	ModelQwen38Max:       {ProviderQwen, "qwen3.8-max", "Qwen 3.8 Max"},
+	ModelKimiK26:         {ProviderKimi, "kimi-k2.6", "Kimi K2.6"},
+	ModelGLM52:           {ProviderGLM, "glm-5.2", "GLM 5.2"},
+	ModelMiniMaxM3:       {ProviderMiniMax, "MiniMax-M3", "MiniMax M3"},
+	ModelMiniMaxM31Flash: {ProviderMiniMax, "MiniMax-M3.1-Flash", "MiniMax M3.1 Flash"},
+}
+
+// Models returns a copy of the catalog identities, in stable picker order.
+func Models() []Model {
+	return []Model{ModelOpus55, ModelSonnet55, ModelHaiku45, ModelMock, ModelGPT6Astra, ModelDeepSeekFlash, ModelGrok47, ModelMuseWonder10, ModelGemini4Argon, ModelKimiK3, ModelGLM53, ModelQwen38Max, ModelMiniMaxM31Flash, ModelKimiK26, ModelGLM52, ModelMiniMaxM3}
+}
+func (model Model) Details() ModelDetails {
+	details, found := models[model]
+	if !found {
+		panic(fmt.Sprintf("no catalog identity for %q", model))
+	}
+	return details
+}
+
+// Validate accepts declared identities, including unavailable catalog entries.
+// Admission separately checks availability before any model call.
 func (model Model) Validate() error {
-	switch model {
-	case ModelOpus55, ModelSonnet55, ModelHaiku45, ModelMock:
-		return nil
-	default:
+	if _, found := models[model]; !found {
 		return fmt.Errorf("unsupported model %q", string(model))
 	}
+	return nil
 }
-
-// UnmarshalJSON decodes and validates a model.
-func (model *Model) UnmarshalJSON(data []byte) error {
-	return DecodeEnum(data, model, Model.Validate)
-}
-
-// ProviderModel returns the API model name without its provider prefix; the
-// mock model has none.
-func (model Model) ProviderModel() string {
-	if _, name, found := strings.Cut(string(model), "/"); found {
-		return name
-	}
-	return string(model)
-}
+func (model *Model) UnmarshalJSON(data []byte) error { return DecodeEnum(data, model, Model.Validate) }
+func (model Model) ProviderModel() string            { return model.Details().APIModelID }
 
 // Effort is how much effort the model puts into a reply.
 type Effort string

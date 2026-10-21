@@ -1074,6 +1074,12 @@ of untrusted CI output when available.
 
 ### Session model update
 
+`AgentModel` is an explicit wire mapping of the compiled provider/model catalog. Enum numbers 1–4
+and the existing durable Claude/mock spellings are unchanged. New catalog enum values are recognized
+but unavailable: CreateProject and UpdateSessionModel refuse them with FailedPrecondition before
+any mutation, even when the server has a Claude key. Server startup also refuses an unavailable
+default. Studio maps every enum explicitly while keeping unavailable entries out of its picker.
+
 UpdateSessionModel selects the model the Session's next turn starts on, at any time: an
 `AgentModel` and the observed `AgentDescription.model_revision` as `expected_revision`, which
 is optional on the wire only to detect an omitted value, and omission is rejected. The

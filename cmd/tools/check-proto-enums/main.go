@@ -68,6 +68,7 @@ func main() {
 		fail(errors.New("internal/ does not load"))
 	}
 	var problems []problem
+	problems = append(problems, checkModelCatalog(byPath)...)
 	calls := 0
 	for _, p := range loaded {
 		for _, file := range p.Syntax {

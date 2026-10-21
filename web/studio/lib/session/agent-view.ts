@@ -13,7 +13,7 @@ import type { AgentDescription__Output } from "@/lib/generated/protobuf/superver
 import type { AgentEvent__Output } from "@/lib/generated/protobuf/superverse/v2/AgentEvent";
 import type { AgentHistoryPage__Output } from "@/lib/generated/protobuf/superverse/v2/AgentHistoryPage";
 import type { AgentMessage__Output } from "@/lib/generated/protobuf/superverse/v2/AgentMessage";
-import type { AgentModel__Output } from "@/lib/generated/protobuf/superverse/v2/AgentModel";
+import { agentModelView } from "./model/agent-model";
 import type { AgentModelCallMetrics__Output } from "@/lib/generated/protobuf/superverse/v2/AgentModelCallMetrics";
 import type { AgentNotification__Output } from "@/lib/generated/protobuf/superverse/v2/AgentNotification";
 import type { AgentPendingUserMessage__Output } from "@/lib/generated/protobuf/superverse/v2/AgentPendingUserMessage";
@@ -54,27 +54,6 @@ function agentLiteral<P extends string, V extends `${P}_${string}`>(value: V, pr
   const text = enumText(value, prefix);
   if (!text) throw new Error(`Agent ${name} is unavailable`);
   return text.toLowerCase() as AgentLiteral<V, P>;
-}
-
-/** The Agent UI literal of each selectable model; the Record type makes a new enum value a compile error here. */
-const AGENT_MODEL_LITERALS = {
-  AGENT_MODEL_OPUS_5_5: "opus-5.5",
-  AGENT_MODEL_SONNET_5_5: "sonnet-5.5",
-  AGENT_MODEL_HAIKU_4_5: "haiku-4.5",
-  AGENT_MODEL_MOCK: "mock",
-} as const satisfies Record<Exclude<AgentModel__Output, "AGENT_MODEL_UNSPECIFIED">, string>;
-
-type AgentModelName = keyof typeof AGENT_MODEL_LITERALS;
-type AgentModelLiteral = (typeof AGENT_MODEL_LITERALS)[AgentModelName];
-
-/** A model's UI literal; null while no model is set, as a context segment before its first turn. */
-function agentModelView(value: AgentModel__Output): AgentModelLiteral | null {
-  return value === "AGENT_MODEL_UNSPECIFIED" ? null : AGENT_MODEL_LITERALS[value];
-}
-
-/** The UpdateSessionModel enum value of a model literal. */
-export function agentModelInput(model: AgentModelLiteral): AgentModelName {
-  return (Object.keys(AGENT_MODEL_LITERALS) as AgentModelName[]).find((name) => AGENT_MODEL_LITERALS[name] === model)!;
 }
 
 export function agentSnapshotView(value: AgentSnapshot__Output) {

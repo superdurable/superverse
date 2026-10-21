@@ -32,6 +32,7 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/platform/objectstore"
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/projects/infra"
 	"github.com/superdurable/superversev2/internal/dexai/tenancy/connections"
 )
@@ -115,6 +116,8 @@ func (c Config) Validate() error {
 
 	if modelErr := c.Agent.Model.Validate(); modelErr != nil {
 		fail("agent.model: %v", modelErr)
+	} else if availability := modelprovider.ProfileOf(c.Agent.Model).Availability; !availability.Selectable() {
+		fail("agent.model: %s", availability.Reason())
 	}
 	if c.Agent.Effort.Validate() != nil {
 		fail("agent.effort must be low, medium, high, xhigh or max")

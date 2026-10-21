@@ -28,7 +28,7 @@ import {
 } from "@/lib/project/project-intents";
 import { beginFirstRun } from "@/lib/project/stage/ProjectStageProvider";
 import { isAgentModel } from "@/lib/session/agent-types";
-import { agentModelInput } from "@/lib/session/agent-view";
+import { agentModelInput } from "@/lib/session/model/agent-model";
 import { studioRoutes } from "@/lib/shared/studio-routes";
 import { StartupSteps } from "@/components/session/start/StartupSteps";
 import { Banner } from "@/components/ui/Banner";

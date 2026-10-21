@@ -41,7 +41,9 @@
       "native-e2e"
     ],
     "/superverse.v2.AgentService/SteerQueuedMessage": [],
-    "/superverse.v2.AgentService/UpdateSessionModel": [],
+    "/superverse.v2.AgentService/UpdateSessionModel": [
+      "native-integration"
+    ],
     "/superverse.v2.ApplicationEnvironmentService/GetApplicationEnvironment": [
       "kind-e2e",
       "native-e2e"

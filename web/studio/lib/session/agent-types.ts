@@ -60,17 +60,31 @@ export const AgentStatus = {
   CALLING_MODEL: "calling_model",
 } as const satisfies Record<string, AgentDescription["status"]>;
 const AGENT_MODEL_DETAILS = {
-  "opus-5.5": { label: "Claude Opus 5.5", description: "Strongest" },
-  "sonnet-5.5": { label: "Claude Sonnet 5.5", description: "Faster and cheaper" },
-  "haiku-4.5": { label: "Claude Haiku 4.5", description: "Cheapest, suited to testing" },
-  mock: { label: "Mock", description: "Testing, no model cost" },
-} as const satisfies Record<AgentModel, { label: string; description: string }>;
+  "opus-5.5": { label: "Claude Opus 5.5", description: "Strongest", selectable: true },
+  "sonnet-5.5": { label: "Claude Sonnet 5.5", description: "Faster and cheaper", selectable: true },
+  "haiku-4.5": { label: "Claude Haiku 4.5", description: "Cheapest, suited to testing", selectable: true },
+  mock: { label: "Mock", description: "Testing, no model cost", selectable: true },
+  "gpt-6-astra": { label: "GPT-6 Astra", description: "Provider unavailable", selectable: false },
+  "deepseek-flash": { label: "DeepSeek V4.1 Flash", description: "Provider unavailable", selectable: false },
+  "grok-4.7": { label: "Grok 4.7", description: "Provider unavailable", selectable: false },
+  "muse-wonder-1.0": { label: "Muse Wonder 1.0", description: "Provider unavailable", selectable: false },
+  "gemini-4-argon": { label: "Gemini 4 Argon", description: "Provider unavailable", selectable: false },
+  "kimi-k3": { label: "Kimi K3", description: "Provider unavailable", selectable: false },
+  "glm-5.3": { label: "GLM 5.3", description: "Provider unavailable", selectable: false },
+  "qwen3.8-max": { label: "Qwen 3.8 Max", description: "Provider unavailable", selectable: false },
+  "minimax-m3.1-flash": { label: "MiniMax M3.1 Flash", description: "Provider unavailable", selectable: false },
+  "kimi-k2.6": { label: "Kimi K2.6", description: "Provider unavailable", selectable: false },
+  "glm-5.2": { label: "GLM 5.2", description: "Provider unavailable", selectable: false },
+  "minimax-m3": { label: "MiniMax M3", description: "Provider unavailable", selectable: false },
+} as const satisfies Record<AgentModel, { label: string; description: string; selectable: boolean }>;
 
 /** The models a Session can switch between, in picker order; Studio offers mock only where the server allows it. */
-export const AGENT_MODEL_OPTIONS = (Object.keys(AGENT_MODEL_DETAILS) as AgentModel[]).map((value) => ({
-  value,
-  ...AGENT_MODEL_DETAILS[value],
-}));
+export const AGENT_MODEL_OPTIONS = (Object.keys(AGENT_MODEL_DETAILS) as AgentModel[])
+  .filter((value) => AGENT_MODEL_DETAILS[value].selectable)
+  .map((value) => ({
+    value,
+    ...AGENT_MODEL_DETAILS[value],
+  }));
 
 /** Whether a stored name is a model the picker offers. */
 export function isAgentModel(name: string): name is AgentModel {

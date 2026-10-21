@@ -433,3 +433,7 @@ Project, atomically enforced in PostgreSQL. See [the connection API](../../../do
 and [operation runbook](../../../docs/runbooks/remote-agent.md). Native offsets
 its configured port; Kind's ordinary ports command forwards 28089 to 8088.
 Hosted routing adds `/remote-agent/` to the existing server Ingress/Studio ALB.
+
+The `agent.model` default must be a selectable catalog model. A recognized but unavailable
+provider/model fails configuration validation with its catalog reason. Registering new wire
+identities does not change the existing Claude key requirement or enable another provider.

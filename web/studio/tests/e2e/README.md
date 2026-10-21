@@ -515,8 +515,9 @@ and Live still call the real provider configured through Studio.
 ## Agent model coverage
 
 Changing an existing Session's model (`UpdateSessionModel`, accepted at any time and
-effective at the next turn) is covered by a Go Dex integration test, not by a Studio
-spec. The Go live Claude tests (`make test-claude-live`, which reads
+effective at the next turn) is covered by Go Dex integration tests and the real
+`integration/catalog/model-catalog.spec.ts` picker/BFF/gRPC case, which also checks
+unavailable catalog admission and a stored Claude value followed by a mock turn. The Go live Claude tests (`make test-claude-live`, which reads
 `ANTHROPIC_API_KEY` from the main checkout's `.env` unless it is exported) check real streaming, compaction and cross-model
 provider-context behavior. No result from these checks substitutes for
 Preview/Live business acceptance.

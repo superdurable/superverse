@@ -28,6 +28,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/flowdesign"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/mockmodel"
 	"github.com/superdurable/superversev2/internal/dexai/api/boundary"
 	"github.com/superdurable/superversev2/internal/dexai/projects"
@@ -247,6 +248,9 @@ func (s *agentServer) UpdateSessionModel(ctx context.Context, in *pb.UpdateSessi
 // Claude key; the mock model needs a server that offers it and, outside Local
 // Kind and Native, the administrator.
 func admitModel(ctx context.Context, b *boundary.Boundary, models SessionModels, accountID string, model conversation.Model) error {
+	if availability := modelprovider.ProfileOf(model).Availability; !availability.Selectable() {
+		return &commandRefusalError{status.Error(codes.FailedPrecondition, availability.Reason())}
+	}
 	if model != conversation.ModelMock {
 		if !models.Claude {
 			return &commandRefusalError{status.Error(codes.FailedPrecondition, "this environment has no Claude key")}
@@ -383,20 +387,35 @@ var flowDesignSlots = map[pb.AgentFlowDesignSlot]flowdesign.Slot{
 
 // sessionModels maps the API model enum to the Session's models.
 var sessionModels = map[pb.AgentModel]conversation.Model{
-	pb.AgentModel_AGENT_MODEL_OPUS_5_5:   conversation.ModelOpus55,
-	pb.AgentModel_AGENT_MODEL_SONNET_5_5: conversation.ModelSonnet55,
-	pb.AgentModel_AGENT_MODEL_HAIKU_4_5:  conversation.ModelHaiku45,
-	pb.AgentModel_AGENT_MODEL_MOCK:       conversation.ModelMock,
+	pb.AgentModel_AGENT_MODEL_GPT_6_ASTRA:        conversation.ModelGPT6Astra,
+	pb.AgentModel_AGENT_MODEL_DEEPSEEK_FLASH:     conversation.ModelDeepSeekFlash,
+	pb.AgentModel_AGENT_MODEL_GROK_4_7:           conversation.ModelGrok47,
+	pb.AgentModel_AGENT_MODEL_MUSE_WONDER_1_0:    conversation.ModelMuseWonder10,
+	pb.AgentModel_AGENT_MODEL_GEMINI_4_ARGON:     conversation.ModelGemini4Argon,
+	pb.AgentModel_AGENT_MODEL_KIMI_K3:            conversation.ModelKimiK3,
+	pb.AgentModel_AGENT_MODEL_GLM_5_3:            conversation.ModelGLM53,
+	pb.AgentModel_AGENT_MODEL_QWEN_3_8_MAX:       conversation.ModelQwen38Max,
+	pb.AgentModel_AGENT_MODEL_MINIMAX_M3_1_FLASH: conversation.ModelMiniMaxM31Flash,
+	pb.AgentModel_AGENT_MODEL_KIMI_K2_6:          conversation.ModelKimiK26,
+	pb.AgentModel_AGENT_MODEL_GLM_5_2:            conversation.ModelGLM52,
+	pb.AgentModel_AGENT_MODEL_MINIMAX_M3:         conversation.ModelMiniMaxM3,
+	pb.AgentModel_AGENT_MODEL_OPUS_5_5:           conversation.ModelOpus55,
+	pb.AgentModel_AGENT_MODEL_SONNET_5_5:         conversation.ModelSonnet55,
+	pb.AgentModel_AGENT_MODEL_HAIKU_4_5:          conversation.ModelHaiku45,
+	pb.AgentModel_AGENT_MODEL_MOCK:               conversation.ModelMock,
 }
 
 // agentModel is the API enum of a Session model; unspecified for none.
 func agentModel(model conversation.Model) pb.AgentModel {
+	if model == "" {
+		return pb.AgentModel_AGENT_MODEL_UNSPECIFIED
+	}
 	for value, sessionModel := range sessionModels {
 		if sessionModel == model {
 			return value
 		}
 	}
-	return pb.AgentModel_AGENT_MODEL_UNSPECIFIED
+	panic("catalog model has no AgentModel mapping")
 }
 
 // validMessageContent is the content rule of every new user message: valid

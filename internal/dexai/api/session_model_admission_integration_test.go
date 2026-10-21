@@ -102,6 +102,14 @@ func TestSessionModelAdmissionDexIntegration(t *testing.T) {
 			t.Fatalf("%s: admission answered %s, want %s", decision.name, got, decision.want)
 		}
 	}
+	for _, model := range conversation.Models() {
+		if model == conversation.ModelMock || model.Details().Provider == conversation.ProviderAnthropic {
+			continue
+		}
+		if got := admissionCode(t, admitModel(ctx, local.Boundary, local.models, owner, model)); got != codes.FailedPrecondition {
+			t.Fatalf("catalog-only model %s admitted with code %s", model, got)
+		}
+	}
 	for _, listing := range []struct {
 		name    string
 		server  *agentServer

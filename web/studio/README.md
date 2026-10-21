@@ -190,6 +190,7 @@ the current contract.
 | [`lib/session/attachments`](lib/session/attachments/README.md) | The composer's attachments: the accepted formats and limits, image normalization and hashing, the upload through a presigned PUT, the chip state machine, its tray hook and the history download links. |
 | [`lib/session/design`](lib/session/design/README.md) | Reads which Flow design the Flow tab draws from the Session Snapshot, reads its body once per digest, remembers which card version it showed, and whether its Brief shows. |
 | [`lib/session/draft`](lib/session/draft/README.md) | The requirements card the agent is still writing, as the Session Watch streams it, and when the Snapshot says its card call is over. |
+| [`lib/session/model`](lib/session/model/README.md) | Maps every catalog AgentModel enum explicitly to its Studio literal and back, preserving historical values and recognizing unavailable identities. |
 | [`lib/shared`](lib/shared/README.md) | Pure code both sides use: protobuf and JSON types, formatting, abort and delay, RPC method types, Session command errors, Project availability, Flow Definition catalogs and Studio routes. |
 | [`lib/shared/problem`](lib/shared/problem/README.md) | The one problem format's copy: remedy buttons, what-happened phrases, gap phrases, refusal texts and the builders that turn a failure, an error or a notice into a problem. |
 | [`lib/shared/version`](lib/shared/version/README.md) | How Studio names a commit: "V12 · subject" from the version the server froze with each record, never a cut hash. |
@@ -209,6 +210,7 @@ the current contract.
 | [`scripts`](scripts/README.md) | Generators and checks of the Studio source: protobuf types, consumed pins, the module graph, the module and styling rules, the example search's data and these directory READMEs. |
 | [`tests/e2e`](tests/e2e/README.md) | The three required acceptance specs of the local lanes: registration, a Project edited and released through Studio, and an Agent-added Flow approval. |
 | [`tests/e2e/integration`](tests/e2e/integration/README.md) | Focused Studio scenarios that run against an existing environment and private fixtures; they are run one at a time and are not acceptance. |
+| [`tests/e2e/integration/catalog`](tests/e2e/integration/catalog/README.md) | Exercises catalog admission, existing model mappings, persisted Claude selection and mock continuation through the real Studio, BFF, gRPC, Dex and Sandbox. |
 | [`tests/e2e/integration/publishing`](tests/e2e/integration/publishing/README.md) | The Publish popover and cancellation on a local lane: the Preview validation or a skip reason, the stated consequences, Live's waiting settings, and a cancelled build. |
 | [`tests/e2e/integration/remoteagent`](tests/e2e/integration/remoteagent/README.md) | Exercises real Studio pairing, public remote replies, and epoch-fenced takeover through the lane's existing BFF, gRPC, remote HTTP listener, SQL and Dex. |
 | [`tests/e2e/integration/setup`](tests/e2e/integration/setup/README.md) | Focused Tools, Setup scenarios on a local lane: the Live tab's banner and Next publish controls over two versions the mock model pushes. |

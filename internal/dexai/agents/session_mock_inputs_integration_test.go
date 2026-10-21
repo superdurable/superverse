@@ -10,10 +10,12 @@ package agents
 
 import (
 	"context"
+	"encoding/json"
 	"slices"
 	"strings"
 	"testing"
 
+	"github.com/superdurable/superversev2/internal/comm/dexflow/dexflowtest"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/mockmodel"
@@ -219,12 +221,32 @@ func TestSessionMockPlatformReadsDexIntegration(t *testing.T) {
 func TestSessionMockModelSwitchDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
 	defer cancel()
-	session := newSession(t, ctx, conversation.ModelOpus55, "")
+	// Historical SessionModel bytes keep their exact model/revision shape.
+	// The real Session stores this value before a fresh snapshot decodes it,
+	// then continues on mock without ever calling a paid model.
+	var historical agentloop.SessionModel
+	if err := json.Unmarshal([]byte(`{"model":"anthropic/claude-opus-5-5","revision":0}`), &historical); err != nil {
+		t.Fatalf("historical SessionModel no longer decodes: %v", err)
+	}
+	if historical.Model != conversation.ModelOpus55 || historical.Revision != 0 {
+		t.Fatal("historical SessionModel changed meaning")
+	}
+	session := newSession(t, ctx, historical.Model, "")
 	started := session.waitForSnapshot(ctx, "the empty Session on Opus", func(agent agentloop.AgentSnapshot) bool {
 		return agent.Description.Status == agentloop.AgentStatusWaitingForMessage && agent.Description.Model == conversation.ModelOpus55
 	})
 	if started.Description.ContextModel != "" {
 		t.Fatalf("the Session opened a segment on %q before its first message", started.Description.ContextModel)
+	}
+	// Run this case alone: replace this lane's actual Worker while the Session
+	// still stores its historical Claude value, then decode it on the new Worker.
+	dexflowtest.RestartServerForTest(ctx, t, func(ctx context.Context) error {
+		_, err := session.client.GetSnapshot(ctx, session.id)
+		return err
+	})
+	restored := session.awaitStarted(ctx)
+	if restored.Model != historical.Model || restored.ModelRevision != started.Description.ModelRevision {
+		t.Fatalf("open Session changed model/revision across Worker replacement: %q/%d", restored.Model, restored.ModelRevision)
 	}
 	if err := session.client.UpdateSessionModel(ctx, session.id, agentloop.UpdateSessionModelRequest{Model: conversation.ModelMock, ExpectedRevision: started.Description.ModelRevision}); err != nil {
 		t.Fatalf("switching to the mock model failed: %v", err)

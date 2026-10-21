@@ -1400,23 +1400,60 @@ const (
 	AgentModel_AGENT_MODEL_SONNET_5_5  AgentModel = 2
 	AgentModel_AGENT_MODEL_HAIKU_4_5   AgentModel = 3
 	AgentModel_AGENT_MODEL_MOCK        AgentModel = 4
+	// Catalog identities; new providers remain unavailable until adapter and Session keys ship.
+	AgentModel_AGENT_MODEL_GPT_6_ASTRA        AgentModel = 5
+	AgentModel_AGENT_MODEL_DEEPSEEK_FLASH     AgentModel = 6
+	AgentModel_AGENT_MODEL_GROK_4_7           AgentModel = 7
+	AgentModel_AGENT_MODEL_MUSE_WONDER_1_0    AgentModel = 8
+	AgentModel_AGENT_MODEL_GEMINI_4_ARGON     AgentModel = 9
+	AgentModel_AGENT_MODEL_KIMI_K3            AgentModel = 10
+	AgentModel_AGENT_MODEL_GLM_5_3            AgentModel = 11
+	AgentModel_AGENT_MODEL_QWEN_3_8_MAX       AgentModel = 12
+	AgentModel_AGENT_MODEL_MINIMAX_M3_1_FLASH AgentModel = 13
+	AgentModel_AGENT_MODEL_KIMI_K2_6          AgentModel = 14
+	AgentModel_AGENT_MODEL_GLM_5_2            AgentModel = 15
+	AgentModel_AGENT_MODEL_MINIMAX_M3         AgentModel = 16
 )
 
 // Enum value maps for AgentModel.
 var (
 	AgentModel_name = map[int32]string{
-		0: "AGENT_MODEL_UNSPECIFIED",
-		1: "AGENT_MODEL_OPUS_5_5",
-		2: "AGENT_MODEL_SONNET_5_5",
-		3: "AGENT_MODEL_HAIKU_4_5",
-		4: "AGENT_MODEL_MOCK",
+		0:  "AGENT_MODEL_UNSPECIFIED",
+		1:  "AGENT_MODEL_OPUS_5_5",
+		2:  "AGENT_MODEL_SONNET_5_5",
+		3:  "AGENT_MODEL_HAIKU_4_5",
+		4:  "AGENT_MODEL_MOCK",
+		5:  "AGENT_MODEL_GPT_6_ASTRA",
+		6:  "AGENT_MODEL_DEEPSEEK_FLASH",
+		7:  "AGENT_MODEL_GROK_4_7",
+		8:  "AGENT_MODEL_MUSE_WONDER_1_0",
+		9:  "AGENT_MODEL_GEMINI_4_ARGON",
+		10: "AGENT_MODEL_KIMI_K3",
+		11: "AGENT_MODEL_GLM_5_3",
+		12: "AGENT_MODEL_QWEN_3_8_MAX",
+		13: "AGENT_MODEL_MINIMAX_M3_1_FLASH",
+		14: "AGENT_MODEL_KIMI_K2_6",
+		15: "AGENT_MODEL_GLM_5_2",
+		16: "AGENT_MODEL_MINIMAX_M3",
 	}
 	AgentModel_value = map[string]int32{
-		"AGENT_MODEL_UNSPECIFIED": 0,
-		"AGENT_MODEL_OPUS_5_5":    1,
-		"AGENT_MODEL_SONNET_5_5":  2,
-		"AGENT_MODEL_HAIKU_4_5":   3,
-		"AGENT_MODEL_MOCK":        4,
+		"AGENT_MODEL_UNSPECIFIED":        0,
+		"AGENT_MODEL_OPUS_5_5":           1,
+		"AGENT_MODEL_SONNET_5_5":         2,
+		"AGENT_MODEL_HAIKU_4_5":          3,
+		"AGENT_MODEL_MOCK":               4,
+		"AGENT_MODEL_GPT_6_ASTRA":        5,
+		"AGENT_MODEL_DEEPSEEK_FLASH":     6,
+		"AGENT_MODEL_GROK_4_7":           7,
+		"AGENT_MODEL_MUSE_WONDER_1_0":    8,
+		"AGENT_MODEL_GEMINI_4_ARGON":     9,
+		"AGENT_MODEL_KIMI_K3":            10,
+		"AGENT_MODEL_GLM_5_3":            11,
+		"AGENT_MODEL_QWEN_3_8_MAX":       12,
+		"AGENT_MODEL_MINIMAX_M3_1_FLASH": 13,
+		"AGENT_MODEL_KIMI_K2_6":          14,
+		"AGENT_MODEL_GLM_5_2":            15,
+		"AGENT_MODEL_MINIMAX_M3":         16,
 	}
 )
 
@@ -29086,14 +29123,27 @@ const file_superverse_v2_superverse_proto_rawDesc = "" +
 	"\x1fATTACHMENT_DISPOSITION_DOWNLOAD\x10\x02*c\n" +
 	"\x13AgentFlowDesignSlot\x12&\n" +
 	"\"AGENT_FLOW_DESIGN_SLOT_UNSPECIFIED\x10\x00\x12$\n" +
-	" AGENT_FLOW_DESIGN_SLOT_CONFIRMED\x10\x02*\x90\x01\n" +
+	" AGENT_FLOW_DESIGN_SLOT_CONFIRMED\x10\x02*\xec\x03\n" +
 	"\n" +
 	"AgentModel\x12\x1b\n" +
 	"\x17AGENT_MODEL_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14AGENT_MODEL_OPUS_5_5\x10\x01\x12\x1a\n" +
 	"\x16AGENT_MODEL_SONNET_5_5\x10\x02\x12\x19\n" +
 	"\x15AGENT_MODEL_HAIKU_4_5\x10\x03\x12\x14\n" +
-	"\x10AGENT_MODEL_MOCK\x10\x04*\xb2\x02\n" +
+	"\x10AGENT_MODEL_MOCK\x10\x04\x12\x1b\n" +
+	"\x17AGENT_MODEL_GPT_6_ASTRA\x10\x05\x12\x1e\n" +
+	"\x1aAGENT_MODEL_DEEPSEEK_FLASH\x10\x06\x12\x18\n" +
+	"\x14AGENT_MODEL_GROK_4_7\x10\a\x12\x1f\n" +
+	"\x1bAGENT_MODEL_MUSE_WONDER_1_0\x10\b\x12\x1e\n" +
+	"\x1aAGENT_MODEL_GEMINI_4_ARGON\x10\t\x12\x17\n" +
+	"\x13AGENT_MODEL_KIMI_K3\x10\n" +
+	"\x12\x17\n" +
+	"\x13AGENT_MODEL_GLM_5_3\x10\v\x12\x1c\n" +
+	"\x18AGENT_MODEL_QWEN_3_8_MAX\x10\f\x12\"\n" +
+	"\x1eAGENT_MODEL_MINIMAX_M3_1_FLASH\x10\r\x12\x19\n" +
+	"\x15AGENT_MODEL_KIMI_K2_6\x10\x0e\x12\x17\n" +
+	"\x13AGENT_MODEL_GLM_5_2\x10\x0f\x12\x1a\n" +
+	"\x16AGENT_MODEL_MINIMAX_M3\x10\x10*\xb2\x02\n" +
 	"\x17PreviewDeploymentStatus\x12)\n" +
 	"%PREVIEW_DEPLOYMENT_STATUS_UNSPECIFIED\x10\x00\x12%\n" +
 	"!PREVIEW_DEPLOYMENT_STATUS_RUNNING\x10\x01\x12#\n" +

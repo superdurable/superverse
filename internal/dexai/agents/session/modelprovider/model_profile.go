@@ -19,6 +19,12 @@ import (
 // mid-segment.
 type ModelProfile struct {
 	model conversation.Model
+	// Catalog capabilities are reviewed protocol policy, not proof of live compatibility.
+	Capabilities  ModelCapabilities
+	Availability  ModelAvailability
+	ContextWindow int64
+	SourceURL     string
+	CheckedOn     string
 	// maxTokens bounds one reply.
 	maxTokens int64
 	// adaptiveThinking sends adaptive thinking with summarized display and
@@ -57,6 +63,61 @@ var profiles = map[conversation.Model]ModelProfile{
 	// assembles and parses exactly what a Claude Session does.
 	conversation.ModelMock: {model: conversation.ModelMock, maxTokens: 64_000, adaptiveThinking: true,
 		Effort: true, MaxEffort: conversation.EffortMax, systemMessages: true, fallbacks: true, HardLimit: 900_000},
+}
+
+func init() {
+	populateCandidateProfiles()
+	for _, model := range conversation.Models() {
+		profile, found := profiles[model]
+		if !found {
+			panic(fmt.Sprintf("no model profile for %q", model))
+		}
+		details := model.Details()
+		if details.Provider.String() == "" || details.Provider.DisplayName() == "" || details.Provider.BaseURL() == "" || details.Provider.KeyHint() == "" || details.Provider.APIStyle().String() == "" || details.APIModelID == "" || details.Label == "" {
+			panic(fmt.Sprintf("incomplete catalog identity for %q", model))
+		}
+		if profile.model != model {
+			panic(fmt.Sprintf("profile identity mismatch for %q", model))
+		}
+		// Existing published Claude/mock request policies and thresholds are unchanged.
+		if profile.Availability.state.id == "" {
+			switch model {
+			case conversation.ModelOpus55, conversation.ModelSonnet55, conversation.ModelHaiku45, conversation.ModelMock:
+			default:
+				panic(fmt.Sprintf("missing explicit availability for %q", model))
+			}
+			profile.Availability = ModelAvailability{state: AvailabilityAvailable}
+			profile.ContextWindow = 1_000_000
+			if model == conversation.ModelHaiku45 {
+				profile.ContextWindow = 200_000
+			}
+			profile.SourceURL = "https://platform.claude.com/docs/en/about-claude/models/overview"
+			profile.CheckedOn = "2026-10-21"
+			profile.Capabilities = ModelCapabilities{Replay: ReplayClaudeSigned, Thinking: thinkingFixed, Effort: effortDisabled, StrictSchema: strictEnabled, PromptCache: cacheAnthropic, Fallback: fallbackDisabled, MidSystem: midSystemReminder, Stream: streamMessages, SupportsImages: true, SupportsParallelTools: true}
+			if profile.Effort {
+				profile.Capabilities.Effort = effortOutputConfig
+			}
+			if profile.adaptiveThinking {
+				profile.Capabilities.Thinking = thinkingAdaptive
+			}
+			if profile.fallbacks {
+				profile.Capabilities.Fallback = fallbackAnthropic
+			}
+			if profile.systemMessages {
+				profile.Capabilities.MidSystem = midSystemNative
+			}
+		}
+		if profile.ContextWindow <= 0 || profile.maxTokens <= 0 || profile.HardLimit <= profile.maxTokens || profile.HardLimit > profile.ContextWindow || profile.compactionCeiling >= profile.HardLimit || profile.SourceURL == "" || profile.CheckedOn == "" || profile.Capabilities.Replay.id == "" {
+			panic(fmt.Sprintf("incomplete model profile for %q", model))
+		}
+		if profile.Availability.state != AvailabilityAvailable && profile.Availability.reason == "" {
+			panic(fmt.Sprintf("missing availability reason for %q", model))
+		}
+		profiles[model] = profile
+	}
+	if len(profiles) != len(conversation.Models()) {
+		panic("model profile catalog contains undeclared identities")
+	}
 }
 
 // ProfileOf returns the profile of a supported model; the model was validated

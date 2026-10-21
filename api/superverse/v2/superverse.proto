@@ -1941,6 +1941,19 @@ enum AgentModel {
   AGENT_MODEL_SONNET_5_5 = 2;
   AGENT_MODEL_HAIKU_4_5 = 3;
   AGENT_MODEL_MOCK = 4;
+  // Catalog identities; new providers remain unavailable until adapter and Session keys ship.
+  AGENT_MODEL_GPT_6_ASTRA = 5;
+  AGENT_MODEL_DEEPSEEK_FLASH = 6;
+  AGENT_MODEL_GROK_4_7 = 7;
+  AGENT_MODEL_MUSE_WONDER_1_0 = 8;
+  AGENT_MODEL_GEMINI_4_ARGON = 9;
+  AGENT_MODEL_KIMI_K3 = 10;
+  AGENT_MODEL_GLM_5_3 = 11;
+  AGENT_MODEL_QWEN_3_8_MAX = 12;
+  AGENT_MODEL_MINIMAX_M3_1_FLASH = 13;
+  AGENT_MODEL_KIMI_K2_6 = 14;
+  AGENT_MODEL_GLM_5_2 = 15;
+  AGENT_MODEL_MINIMAX_M3 = 16;
 }
 
 // Agent DTOs are transport-independent contracts shared by gRPC and Studio. Their date strings

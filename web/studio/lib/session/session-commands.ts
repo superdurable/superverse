@@ -20,7 +20,8 @@ import { ApiError, errorMessage, newRequestId } from "@/lib/api/transport/api-er
 import type { RpcInput } from "@/lib/shared/rpc-methods";
 import { isSessionExecutionStopped } from "@/lib/shared/session-command-error";
 import type { AgentModel, AgentSnapshot, UserInputAnswer } from "./agent-types";
-import { agentModelInput, validatePendingAnswers } from "./agent-view";
+import { validatePendingAnswers } from "./agent-view";
+import { agentModelInput } from "./model/agent-model";
 import type { SessionAction } from "./session-reducer";
 
 // The Agent commands of the page Session, and how a failed one reads for the person: a definite rejection or
