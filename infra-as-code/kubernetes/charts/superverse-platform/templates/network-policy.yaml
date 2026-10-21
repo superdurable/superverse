@@ -109,6 +109,8 @@ spec:
         - namespaceSelector:
             matchLabels: {kubernetes.io/metadata.name: temporal}
           podSelector:
-            matchLabels: {app.kubernetes.io/name: xtemporal, app.kubernetes.io/component: frontend}
+            # The exact selector of the xtemporal-frontend Service: the EKS network policy agent admits the
+            # Service ClusterIP only for a peer selector equal to the Service's selector.
+            matchLabels: {app: xtemporal, component: frontend}
       ports: [{port: 7233, protocol: TCP}]
 {{- end }}

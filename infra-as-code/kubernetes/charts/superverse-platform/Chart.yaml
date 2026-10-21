@@ -10,7 +10,7 @@ apiVersion: v2
 name: superverse-v2-platform
 description: Isolated Superverse V2 server, Studio and Dex
 type: application
-version: 2.0.11
+version: 2.0.12
 appVersion: "2.0.0"
 dependencies:
   - {name: agent-sandbox, alias: sandboxController, version: 0.1.0+superdurable.1}

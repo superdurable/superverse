@@ -26,14 +26,15 @@ func (*CloudAccount) BucketBoundToNamespace() bool { return true }
 func (*CloudAccount) StorageComplete(infra.StorageRefs) bool { return true }
 
 // ExtraEgress admits the Pod Identity agent to the Dex and the applications,
-// and the Dex also the private Temporal frontend.
+// and the Dex also the private Temporal frontend, selected exactly as its Service selects it so the
+// EKS network policy agent also admits the Service ClusterIP.
 func (*CloudAccount) ExtraEgress(_ *kube.Infrastructure, component kube.Component) []any {
 	if component != kube.ComponentDex && component != kube.ComponentApplication {
 		return nil
 	}
 	egress := []any{kube.EgressTo(kubeapi.Object{"ipBlock": kubeapi.Object{"cidr": "169.254.170.23/32"}}, 80)}
 	if component == kube.ComponentDex {
-		egress = append(egress, kube.EgressTo(kubeapi.Object{"namespaceSelector": kubeapi.Object{"matchLabels": kubeapi.Object{"kubernetes.io/metadata.name": "temporal"}}, "podSelector": kubeapi.Object{"matchLabels": kubeapi.Object{"app.kubernetes.io/component": "frontend", "app.kubernetes.io/name": "xtemporal"}}}, infra.TemporalPort))
+		egress = append(egress, kube.EgressTo(kubeapi.Object{"namespaceSelector": kubeapi.Object{"matchLabels": kubeapi.Object{"kubernetes.io/metadata.name": "temporal"}}, "podSelector": kubeapi.Object{"matchLabels": kubeapi.Object{"app": "xtemporal", "component": "frontend"}}}, infra.TemporalPort))
 	}
 	return egress
 }
