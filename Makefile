@@ -107,8 +107,8 @@ compile-tests:
 
 check: check-license-headers check-go check-web
 
-# Every check of the application validation workflow, run locally before a pull request is marked Ready.
-ci: check-license-headers governance-check check-dex-versions lint-workflows check-go check-app-template check-web check-homepage
+# Every application validation check plus registered Flow graph validation, run locally before a pull request is marked Ready.
+ci: check-license-headers governance-check check-dex-versions lint-workflows check-flow-definition check-go check-app-template check-web check-homepage
 
 check-go: build vet compile-tests check-go-rules check-go-proto
 
