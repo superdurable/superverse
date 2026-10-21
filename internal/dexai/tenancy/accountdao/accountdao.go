@@ -46,13 +46,13 @@ type LoginSession struct {
 
 // AccountDAO reads and writes the accounts and login_sessions tables.
 type AccountDAO struct {
-	db                 *sql.DB
-	PlatformAdminEmail string
+	db                  *sql.DB
+	PlatformAdminEmails []string
 }
 
 // New returns the DAO of db.
-func New(db *sql.DB, platformAdminEmail string) *AccountDAO {
-	return &AccountDAO{db: db, PlatformAdminEmail: platformAdminEmail}
+func New(db *sql.DB, platformAdminEmails []string) *AccountDAO {
+	return &AccountDAO{db: db, PlatformAdminEmails: platformAdminEmails}
 }
 
 const accountColumns = `account_id, canonical_email, status, password_record, credential_revision, auth_epoch,
@@ -90,7 +90,7 @@ func (d *AccountDAO) AccountByEmail(ctx context.Context, canonicalEmail string) 
 func (d *AccountDAO) IsPlatformAdmin(ctx context.Context, accountID string) (bool, error) {
 	var administrator bool
 	err := d.db.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM accounts
-		WHERE account_id = $1 AND canonical_email = $2 AND status = $3)`, accountID, d.PlatformAdminEmail, StatusActive).Scan(&administrator)
+		WHERE account_id = $1 AND canonical_email = ANY($2::text[]) AND status = $3)`, accountID, d.PlatformAdminEmails, StatusActive).Scan(&administrator)
 	if err != nil {
 		return false, fmt.Errorf("read the account: %w", err)
 	}

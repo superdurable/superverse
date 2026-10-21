@@ -67,8 +67,8 @@ func newClosestExampleLane(ctx context.Context, t *testing.T) closestExampleLane
 	reader := dexflowtest.ExecutionReaderForTest(t, address)
 	db := postgrestest.OpenForTest(t)
 	idLength := projecttest.IDLengthForTest(t)
-	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), ProjectIDLength: idLength, PlatformAdminEmail: "admin@superverse.test"}
-	accountService := &accounts.Accounts{DAO: accountdao.New(db, "admin@superverse.test"), Signer: comm.Must(accounts.NewTokenSigner([]byte(strings.Repeat("f", 32))))}
+	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), ProjectIDLength: idLength, PlatformAdminEmails: []string{"admin@superverse.test"}}
+	accountService := &accounts.Accounts{DAO: accountdao.New(db, []string{"admin@superverse.test"}), Signer: comm.Must(accounts.NewTokenSigner([]byte(strings.Repeat("f", 32))))}
 	creator := registerCaller(ctx, t, accountService)
 	return closestExampleLane{
 		projects: projectClient,

@@ -42,7 +42,7 @@ func TestDeletionAfterInterruptedSessionCompletionDexIntegration(t *testing.T) {
 	// This client registry supplies definitions only. Real handlers and every
 	// application dependency belong to the existing Worker selected above.
 	sessions := sessionagent.NewSessionAgentFlowClientForTest(sdk, flow, dexflowtest.ExecutionReaderForTest(t, address), "")
-	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(postgrestest.OpenForTest(t)), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmail: "admin@superverse.test"}
+	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(postgrestest.OpenForTest(t)), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmails: []string{"admin@superverse.test"}}
 	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Minute)
 	defer cancel()
 	projectID := projecttest.CreateForTest(ctx, t, projectClient, t.Name()).ProjectID

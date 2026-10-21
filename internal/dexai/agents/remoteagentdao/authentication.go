@@ -30,7 +30,7 @@ type Access struct {
 const accessColumns = `c.connection_id, c.project_id, c.account_id, c.login_session_id, c.status,
 	c.pairing_code_hash, c.pairing_expires_at, c.token_hash, c.basis_epoch, c.binding,
 	c.last_seen_at, c.revoke_reason, c.created_at, c.revoked_at,
-	a.canonical_email, a.canonical_email = $2, p.name, p.project_status, pm.role, tm.role`
+	a.canonical_email, a.canonical_email = ANY($2::text[]), p.name, p.project_status, pm.role, tm.role`
 
 const accessJoins = ` FROM remote_agent_connections c
 	JOIN accounts a ON a.account_id = c.account_id AND a.status = $3
@@ -42,21 +42,21 @@ const accessJoins = ` FROM remote_agent_connections c
 
 // Authenticate performs one indexed SQL authorization join. No Flow read or
 // projection write occurs; unknown, revoked and expired credentials are absent.
-func (d *DAO) Authenticate(ctx context.Context, tokenHash, adminEmail, activeStatus string) (Access, error) {
+func (d *DAO) Authenticate(ctx context.Context, tokenHash string, adminEmails []string, activeStatus string) (Access, error) {
 	return scanAccess(d.db.QueryRowContext(ctx, `SELECT `+accessColumns+accessJoins+
-		` WHERE c.token_hash = $1 AND c.status = 'PAIRED'`, tokenHash, adminEmail, activeStatus).Scan)
+		` WHERE c.token_hash = $1 AND c.status = 'PAIRED'`, tokenHash, adminEmails, activeStatus).Scan)
 }
 
 // Redeem checks the issuing login and current Project access under the same
 // row lock that consumes the pairing hash. validate applies the consumer's
 // Project rules before a token is committed; concurrent redemption has one winner.
-func (d *DAO) Redeem(ctx context.Context, codeHash, tokenHash, adminEmail, activeStatus string, validate func(Access) error) (Access, error) {
+func (d *DAO) Redeem(ctx context.Context, codeHash, tokenHash string, adminEmails []string, activeStatus string, validate func(Access) error) (Access, error) {
 	var access Access
 	err := postgres.InTransaction(ctx, d.db, func(tx *sql.Tx) error {
 		var err error
 		access, err = scanAccess(tx.QueryRowContext(ctx, `SELECT `+accessColumns+accessJoins+
 			` WHERE c.pairing_code_hash = $1 AND c.status = 'PAIRING' AND c.pairing_expires_at > now() FOR UPDATE OF c`,
-			codeHash, adminEmail, activeStatus).Scan)
+			codeHash, adminEmails, activeStatus).Scan)
 		if err != nil {
 			return err
 		}

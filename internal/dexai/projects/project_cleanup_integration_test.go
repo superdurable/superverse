@@ -31,7 +31,7 @@ func TestDeletedProjectCleanupDexIntegration(t *testing.T) {
 	}
 	flow, repositoryFlow := &ProjectFlow{}, &repobinding.RepositoryBindingFlow{}
 	sdk := dexflowtest.ClientForTest(t, address, nil, flow, repositoryFlow)
-	client := &ProjectFlowClient{Dex: sdk, Flow: flow, ProjectIDLength: 4, PlatformAdminEmail: "admin@superverse.test"}
+	client := &ProjectFlowClient{Dex: sdk, Flow: flow, ProjectIDLength: 4, PlatformAdminEmails: []string{"admin@superverse.test"}}
 	ctx, cancel := context.WithTimeout(t.Context(), 20*time.Second)
 	defer cancel()
 	project, err := client.Read(ctx, projectID)

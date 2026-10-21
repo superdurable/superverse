@@ -27,7 +27,7 @@ func TestMissingDeploymentReadDexIntegration(t *testing.T) {
 	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
 	projectFlow, deploymentFlow := &projects.ProjectFlow{}, &deployments.ProjectDeployFlow{}
 	client := dexflowtest.ClientForTest(t, address, nil, projectFlow, deploymentFlow)
-	deploymentClient := deployments.NewProjectDeployFlowClient(&projects.ProjectFlowClient{Dex: client, Flow: projectFlow, ProjectIDLength: 4, PlatformAdminEmail: "admin@superverse.test"}, nil, nil)
+	deploymentClient := deployments.NewProjectDeployFlowClient(&projects.ProjectFlowClient{Dex: client, Flow: projectFlow, ProjectIDLength: 4, PlatformAdminEmails: []string{"admin@superverse.test"}}, nil, nil)
 	ctx, cancel := context.WithTimeout(t.Context(), 45*time.Second)
 	defer cancel()
 	projectID, deploymentID := flowid.RandomID(4), flowid.RandomID(16)
@@ -56,7 +56,7 @@ func TestRetainedDeploymentReadsDexIntegration(t *testing.T) {
 	deploymentID := dexflowtest.Setting(t, "SUPERVERSE_TEST_RETAINED_DEPLOYMENT_ID")
 	projectFlow, deploymentFlow := &projects.ProjectFlow{}, &deployments.ProjectDeployFlow{}
 	client := dexflowtest.ClientForTest(t, address, nil, projectFlow, deploymentFlow)
-	deploymentClient := deployments.NewProjectDeployFlowClient(&projects.ProjectFlowClient{Dex: client, Flow: projectFlow, ProjectIDLength: len(projectID), PlatformAdminEmail: "admin@superverse.test"}, nil, nil)
+	deploymentClient := deployments.NewProjectDeployFlowClient(&projects.ProjectFlowClient{Dex: client, Flow: projectFlow, ProjectIDLength: len(projectID), PlatformAdminEmails: []string{"admin@superverse.test"}}, nil, nil)
 	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 	defer cancel()
 	flowID, err := deployments.FlowID(projectID, deploymentID)

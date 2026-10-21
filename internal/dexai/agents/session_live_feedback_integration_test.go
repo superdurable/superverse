@@ -101,7 +101,7 @@ func newLiveDelivery(s *mockSession) *liveDelivery {
 	}
 	address, target := dexflowtest.Setting(s.t, "SUPERVERSE_TEST_DEX_ADDRESS"), dexflowtest.Setting(s.t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET")
 	projectFlow, deployFlow := &projects.ProjectFlow{}, &deployments.ProjectDeployFlow{}
-	projectClient := &projects.ProjectFlowClient{Flow: projectFlow, Projections: s.projects.Projections, ProjectIDLength: s.projects.ProjectIDLength, PlatformAdminEmail: "admin@superverse.test"}
+	projectClient := &projects.ProjectFlowClient{Flow: projectFlow, Projections: s.projects.Projections, ProjectIDLength: s.projects.ProjectIDLength, PlatformAdminEmails: []string{"admin@superverse.test"}}
 	deploymentClient := deployments.NewProjectDeployFlowClient(projectClient, nil, nil)
 	// Build admission runs in this client: it checks the Live draft through the publishing Service and
 	// reads the Preview's starts through the Session Service, as the server's composition does.

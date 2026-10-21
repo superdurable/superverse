@@ -52,7 +52,7 @@ func TestRemoteConnectionsDeletionRaceIntegration(t *testing.T) {
 				if operation == "create" {
 					contender <- createPairing(ctx, dao, "race", 1)
 				} else {
-					_, err := dao.Redeem(ctx, hash("race-code-0"), hash("race-token"), "admin@superverse.test", accountdao.StatusActive, authorize)
+					_, err := dao.Redeem(ctx, hash("race-code-0"), hash("race-token"), []string{"admin@superverse.test"}, accountdao.StatusActive, authorize)
 					contender <- err
 				}
 			}()
@@ -81,7 +81,7 @@ func TestRemoteConnectionsDeletionRaceIntegration(t *testing.T) {
 			if err = db.QueryRowContext(ctx, `SELECT count(*) FROM remote_agent_connections WHERE project_id='race'`).Scan(&count); err != nil || count != 0 {
 				t.Fatalf("cleanup left %d rows: %v", count, err)
 			}
-			if _, err = dao.Authenticate(ctx, hash("race-token"), "admin@superverse.test", accountdao.StatusActive); !errors.Is(err, postgres.ErrNotFound) {
+			if _, err = dao.Authenticate(ctx, hash("race-token"), []string{"admin@superverse.test"}, accountdao.StatusActive); !errors.Is(err, postgres.ErrNotFound) {
 				t.Fatalf("post-cleanup token survived: %v", err)
 			}
 		})
@@ -119,7 +119,7 @@ func TestRemoteConnectionsPairedRetentionAndLivenessIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if _, err := dao.Redeem(ctx, hash("paired-code-0"), hash("paired-token"), "admin@superverse.test", accountdao.StatusActive, authorize); err != nil {
+	if _, err := dao.Redeem(ctx, hash("paired-code-0"), hash("paired-token"), []string{"admin@superverse.test"}, accountdao.StatusActive, authorize); err != nil {
 		t.Fatal(err)
 	}
 	// A real unique-token violation includes value-bearing server fields.
@@ -177,10 +177,10 @@ func TestRemoteConnectionsPairedRetentionAndLivenessIntegration(t *testing.T) {
 	}
 	// An ACTIVE platform administrator retains the real owning capability even
 	// without either membership; a changed authentication epoch invalidates its issuing login.
-	execute(t, db, `UPDATE accounts SET canonical_email=$1 WHERE account_id='builder'`, "admin@superverse.test")
+	execute(t, db, `UPDATE accounts SET canonical_email=$1 WHERE account_id='builder'`, "second-admin@example.com")
 	execute(t, db, `DELETE FROM project_members`)
 	execute(t, db, `DELETE FROM team_space_members`)
-	access, err := dao.Authenticate(ctx, hash("paired-token"), "admin@superverse.test", accountdao.StatusActive)
+	access, err := dao.Authenticate(ctx, hash("paired-token"), []string{"admin@superverse.test", "second-admin@example.com"}, accountdao.StatusActive)
 	if err != nil || !access.PlatformAdmin || authorize(access) != nil {
 		t.Fatalf("platform-admin rules were lost: %v", err)
 	}
@@ -191,7 +191,7 @@ func TestRemoteConnectionsPairedRetentionAndLivenessIntegration(t *testing.T) {
 		t.Fatalf("revoked connection liveness was exposed: %v", err)
 	}
 	// Restore a separate real paired credential to verify administrator invalidation.
-	if _, err := dao.Redeem(ctx, hash("paired-code-1"), hash("admin-token"), "admin@superverse.test", accountdao.StatusActive, authorize); err != nil {
+	if _, err := dao.Redeem(ctx, hash("paired-code-1"), hash("admin-token"), []string{"admin@superverse.test", "second-admin@example.com"}, accountdao.StatusActive, authorize); err != nil {
 		t.Fatal(err)
 	}
 	// The current account schema permits ACTIVE only; do not invent another
@@ -200,7 +200,7 @@ func TestRemoteConnectionsPairedRetentionAndLivenessIntegration(t *testing.T) {
 		t.Fatal("account status schema accepted an undeclared value")
 	}
 	execute(t, db, `UPDATE accounts SET auth_epoch=auth_epoch+1 WHERE account_id='builder'`)
-	if _, err = dao.Authenticate(ctx, hash("admin-token"), "admin@superverse.test", accountdao.StatusActive); !errors.Is(err, postgres.ErrNotFound) {
+	if _, err = dao.Authenticate(ctx, hash("admin-token"), []string{"admin@superverse.test", "second-admin@example.com"}, accountdao.StatusActive); !errors.Is(err, postgres.ErrNotFound) {
 		t.Fatalf("changed administrator auth epoch authenticated: %v", err)
 	}
 }

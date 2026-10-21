@@ -51,8 +51,8 @@ func TestRemoteAgentPairingDexIntegration(t *testing.T) {
 	s := newActorSession(t, ctx)
 	dao := remoteagentdao.New(postgrestest.OpenForTest(t))
 	s.service.RemoteConnections = dao
-	accountService := &accounts.Accounts{DAO: accountdao.New(postgrestest.OpenForTest(t), "admin@superverse.test"), Signer: comm.Must(accounts.NewTokenSigner([]byte(strings.Repeat("a", 32))))}
-	capability := &connections.Connections{DAO: dao, Sessions: s.service, MinimumBridgeVersion: "0.1.0", PlatformAdminEmail: "admin@superverse.test"}
+	accountService := &accounts.Accounts{DAO: accountdao.New(postgrestest.OpenForTest(t), []string{"admin@superverse.test"}), Signer: comm.Must(accounts.NewTokenSigner([]byte(strings.Repeat("a", 32))))}
+	capability := &connections.Connections{DAO: dao, Sessions: s.service, MinimumBridgeVersion: "0.1.0", PlatformAdminEmails: []string{"admin@superverse.test"}}
 	transport := serveLoopback(ctx, t, &Server{Boundary: &boundary.Boundary{Accounts: accountService, Logger: slog.Default()}, RemoteAgents: capability})
 	rpc := pb.NewRemoteAgentServiceClient(transport)
 	endpoint := httptest.NewServer(connections.NewEndpoint(capability, t.TempDir(), slog.Default(), 1000, 4, 16))
@@ -111,7 +111,7 @@ func TestRemoteAgentPairingDexIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 	awaitTrue(ctx, t, "actual role-loss projection", func() bool {
-		access, readErr := dao.Authenticate(ctx, remoteTokenHash(demoted.Token), "admin@superverse.test", accountdao.StatusActive)
+		access, readErr := dao.Authenticate(ctx, remoteTokenHash(demoted.Token), []string{"admin@superverse.test"}, accountdao.StatusActive)
 		if readErr != nil {
 			t.Fatalf("role projection SQL error: %v", readErr)
 		}
@@ -196,7 +196,7 @@ func TestRemoteAgentHTTPRestrictionsDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Minute)
 	defer cancel()
 	s := newActorSession(t, ctx)
-	service := &connections.Connections{DAO: remoteagentdao.New(postgrestest.OpenForTest(t)), Sessions: s.service, MinimumBridgeVersion: "0.1.0", PlatformAdminEmail: "admin@superverse.test"}
+	service := &connections.Connections{DAO: remoteagentdao.New(postgrestest.OpenForTest(t)), Sessions: s.service, MinimumBridgeVersion: "0.1.0", PlatformAdminEmails: []string{"admin@superverse.test"}}
 	root := t.TempDir()
 	endpoint := httptest.NewServer(connections.NewEndpoint(service, root, slog.Default(), 1000, 4, 16))
 	defer endpoint.Close()

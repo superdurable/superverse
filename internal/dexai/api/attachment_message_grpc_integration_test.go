@@ -86,12 +86,12 @@ func TestAttachmentMessageAdmissionDexIntegration(t *testing.T) {
 	sdk := dexflowtest.ServerWorkerClient(t, teamSpaceFlow, projectFlow, sessionFlow, previewFlow, workspaceFlow, flows.Flow())
 	reader := dexflowtest.ExecutionReaderForTest(t, dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS"))
 	teamSpaceClient := &teamspaces.TeamSpaceFlowClient{Dex: sdk, Flow: teamSpaceFlow}
-	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), Members: memberdao.New(db), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmail: "admin@superverse.test"}
+	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), Members: memberdao.New(db), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmails: []string{"admin@superverse.test"}}
 	sessionClient := sessionagent.NewSessionAgentFlowClientForTest(sdk, sessionFlow, reader, "")
 	sessions := &agents.SessionFlowService{Projects: projectClient, Agent: sessionClient, Logger: slog.Default(), Previews: &preview.PreviewFlowClient{Dex: sdk, Flow: previewFlow, Execution: reader},
 		Workspaces: sessionworkspace.NewSessionWorkspaceFlowClientForTest(sdk, workspaceFlow, reader)}
 	attachmentClient := flows.Client(sdk)
-	b := &boundary.Boundary{Logger: slog.Default(), Accounts: &accounts.Accounts{DAO: accountdao.New(db, "admin@superverse.test"), Signer: comm.Must(accounts.NewTokenSigner(key))}, Cursors: watch.NewCursorCodec(key)}
+	b := &boundary.Boundary{Logger: slog.Default(), Accounts: &accounts.Accounts{DAO: accountdao.New(db, []string{"admin@superverse.test"}), Signer: comm.Must(accounts.NewTokenSigner(key))}, Cursors: watch.NewCursorCodec(key)}
 	connection := serveLoopback(ctx, t, &Server{Boundary: b, ProjectIDLength: projectClient.ProjectIDLength, Projects: projectClient, TeamSpaces: teamSpaceClient,
 		TeamSpaceReads: teamspacedao.New(db), Members: memberdao.New(db), Sessions: sessions, SessionAgents: sessionClient,
 		SessionModels: SessionModels{Mock: true, Local: true}, ClosestExamplePick: true, Attachments: attachmentClient, Renditions: attachments.NewRenditionStore(objects, 1<<20),

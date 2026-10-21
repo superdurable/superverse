@@ -100,7 +100,7 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	}
 	owned.add(db.Close)
 	memberDAO := memberdao.New(db)
-	accountService := &accounts.Accounts{DAO: accountdao.New(db, config.platformAdminEmail), Signer: config.signer}
+	accountService := &accounts.Accounts{DAO: accountdao.New(db, config.platformAdminEmails), Signer: config.signer}
 	// One provider client with the address policy makes every provider call
 	// of the TeamSpace connections.
 	providerClient := connections.NewProviderHTTPClient(config.privateProviderHTTP)
@@ -126,7 +126,7 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	projectFlow := &projects.ProjectFlow{}
 	teamSpaceFlow := &teamspaces.TeamSpaceFlow{}
 	teamSpaceClient := &teamspaces.TeamSpaceFlowClient{Flow: teamSpaceFlow}
-	projectClient := &projects.ProjectFlowClient{Flow: projectFlow, Projections: projectdao.New(db), Members: memberDAO, ProjectIDLength: config.projectIDLength, PlatformAdminEmail: config.platformAdminEmail}
+	projectClient := &projects.ProjectFlowClient{Flow: projectFlow, Projections: projectdao.New(db), Members: memberDAO, ProjectIDLength: config.projectIDLength, PlatformAdminEmails: config.platformAdminEmails}
 	deliveryRows := deliverydao.New(db)
 	repositoryFlow := &repobinding.RepositoryBindingFlow{}
 	repositoryClient := &repobinding.RepositoryBindingFlowClient{Flow: repositoryFlow}
@@ -273,7 +273,7 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 		endpoint = "http://127.0.0.1:" + strconv.Itoa(serverconfig.LocalKindRemoteAgentPort)
 	}
 	remoteService := &remoteagent.Connections{DAO: remoteDAO, Sessions: sessionService, Endpoint: endpoint,
-		MinimumBridgeVersion: config.remoteAgent.MinimumBridgeVersion, AcceptDevBridge: config.remoteAgent.AcceptDevBridge, PlatformAdminEmail: config.platformAdminEmail}
+		MinimumBridgeVersion: config.remoteAgent.MinimumBridgeVersion, AcceptDevBridge: config.remoteAgent.AcceptDevBridge, PlatformAdminEmails: config.platformAdminEmails}
 	attachmentClient := attachmentFlows.Client(client)
 	var rpcCoverage *api.RPCCoverage
 	if config.rpcCoverageFile != "" {

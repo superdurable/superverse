@@ -37,11 +37,11 @@ func TestAdministratorProjectAccessDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 45*time.Second)
 	defer cancel()
 	db := postgrestest.OpenForTest(t)
-	admin, err := accountdao.New(db, "admin@superverse.test").AccountByEmail(ctx, "admin@superverse.test")
+	admin, err := accountdao.New(db, []string{"admin@superverse.test"}).AccountByEmail(ctx, "admin@superverse.test")
 	if err != nil || admin.Status != accountdao.StatusActive {
 		t.Fatal("requires the actual active ordinary administrator account")
 	}
-	boundary := &ProjectFlowClient{Dex: client, Flow: projectFlow, Projections: projectdao.New(db), ProjectIDLength: 4, PlatformAdminEmail: "admin@superverse.test"}
+	boundary := &ProjectFlowClient{Dex: client, Flow: projectFlow, Projections: projectdao.New(db), ProjectIDLength: 4, PlatformAdminEmails: []string{"admin@superverse.test"}}
 	first, err := boundary.Read(ctx, firstID)
 	if err != nil || first.ProjectStatus == StatusDeleted {
 		t.Fatal("first actual Project is unavailable")

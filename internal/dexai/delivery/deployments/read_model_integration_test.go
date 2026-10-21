@@ -44,7 +44,7 @@ func TestRetainedDeploymentSyncDexIntegration(t *testing.T) {
 	projectID := dexflowtest.Setting(t, "SUPERVERSE_TEST_RETAINED_RELEASE_PROJECT_ID")
 	projectFlow, deploymentFlow := &projects.ProjectFlow{}, &deployments.ProjectDeployFlow{}
 	client := dexflowtest.ClientForTest(t, address, nil, projectFlow, deploymentFlow)
-	deploymentClient := deployments.NewProjectDeployFlowClient(&projects.ProjectFlowClient{Dex: client, Flow: projectFlow, ProjectIDLength: len(projectID), PlatformAdminEmail: "admin@superverse.test"}, nil, nil)
+	deploymentClient := deployments.NewProjectDeployFlowClient(&projects.ProjectFlowClient{Dex: client, Flow: projectFlow, ProjectIDLength: len(projectID), PlatformAdminEmails: []string{"admin@superverse.test"}}, nil, nil)
 	db := postgrestest.OpenForTest(t)
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Minute)
 	defer cancel()

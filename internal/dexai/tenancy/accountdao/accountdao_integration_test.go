@@ -25,7 +25,7 @@ import (
 // admission, and the expiry, epoch and status conditions of authentication.
 func TestAccountDAOIntegration(t *testing.T) {
 	db := postgrestest.OpenForTest(t)
-	dao := New(db, "admin@superverse.test")
+	dao := New(db, []string{"admin@superverse.test"})
 	ctx, cancel := context.WithTimeout(t.Context(), time.Minute)
 	defer cancel()
 	now := time.Now().UTC().Truncate(time.Microsecond)
@@ -119,8 +119,8 @@ func TestAccountDAOIntegration(t *testing.T) {
 }
 
 // TestPlatformAdminIntegration registers the platform admin's email in a
-// scratch database, where taking it hides no real account: only that ACTIVE
-// account is the platform admin.
+// scratch database, where taking them hides no real account: only listed
+// ACTIVE accounts are platform administrators.
 func TestPlatformAdminIntegration(t *testing.T) {
 	db := postgrestest.ScratchDatabaseForTest(t)
 	ctx, cancel := context.WithTimeout(t.Context(), time.Minute)
@@ -128,7 +128,7 @@ func TestPlatformAdminIntegration(t *testing.T) {
 	if _, err := postgres.Migrate(ctx, db); err != nil {
 		t.Fatal(err)
 	}
-	dao := New(db, "admin@superverse.test")
+	dao := New(db, []string{"admin@superverse.test", "second-admin@example.com"})
 	now := time.Now().UTC()
 	register := func(email string) Account {
 		t.Helper()
@@ -141,11 +141,11 @@ func TestPlatformAdminIntegration(t *testing.T) {
 		}
 		return account
 	}
-	admin, other := register("admin@superverse.test"), register("other@example.com")
+	admin, second, other := register("admin@superverse.test"), register("second-admin@example.com"), register("other@example.com")
 	for _, check := range []struct {
 		accountID string
 		want      bool
-	}{{admin.AccountID, true}, {other.AccountID, false}, {flowid.RandomID(32), false}} {
+	}{{admin.AccountID, true}, {second.AccountID, true}, {other.AccountID, false}, {flowid.RandomID(32), false}} {
 		if got, err := dao.IsPlatformAdmin(ctx, check.accountID); err != nil || got != check.want {
 			t.Errorf("IsPlatformAdmin = %t, want %t: %v", got, check.want, err)
 		}

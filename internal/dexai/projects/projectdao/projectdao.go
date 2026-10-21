@@ -93,15 +93,15 @@ func (d *ProjectDAO) Project(ctx context.Context, projectID string) (ProjectRow,
 
 // AuthorizeProject returns the row of a Project that ProjectFlow has written
 // with what accountID holds: whether it is the platform admin, the account
-// with platformAdminEmail in activeStatus, and its roles in the Project and in
+// with platformAdminEmails in activeStatus, and its roles in the Project and in
 // the Project's TeamSpace. An unknown account holds nothing.
-func (d *ProjectDAO) AuthorizeProject(ctx context.Context, projectID, accountID, platformAdminEmail, activeStatus string) (ProjectAccess, error) {
+func (d *ProjectDAO) AuthorizeProject(ctx context.Context, projectID, accountID string, platformAdminEmails []string, activeStatus string) (ProjectAccess, error) {
 	var access ProjectAccess
-	err := d.db.QueryRowContext(ctx, `SELECT `+projectColumns+`, COALESCE(a.canonical_email = $3 AND a.status = $4, false), pm.role, tm.role
+	err := d.db.QueryRowContext(ctx, `SELECT `+projectColumns+`, COALESCE(a.canonical_email = ANY($3::text[]) AND a.status = $4, false), pm.role, tm.role
 		FROM projects p`+liveRelease+` LEFT JOIN accounts a ON a.account_id = $2
 		LEFT JOIN project_members pm ON pm.project_id = p.project_id AND pm.account_id = $2
 		LEFT JOIN team_space_members tm ON tm.team_space_id = p.team_space_id AND tm.account_id = $2
-		WHERE p.project_id = $1 AND p.project_status IS NOT NULL`, projectID, accountID, platformAdminEmail, activeStatus).
+		WHERE p.project_id = $1 AND p.project_status IS NOT NULL`, projectID, accountID, platformAdminEmails, activeStatus).
 		Scan(append(access.Project.destinations(), &access.PlatformAdmin, &access.ProjectRole, &access.TeamSpaceRole)...)
 	return access, postgres.RowError("authorize the project", err)
 }

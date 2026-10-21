@@ -59,11 +59,11 @@ func TestTeamSpaceServicesDexIntegration(t *testing.T) {
 	defer cancel()
 	db := postgrestest.OpenForTest(t)
 	key := []byte(strings.Repeat("x", 32))
-	accountDAO := accountdao.New(db, "admin@superverse.test")
+	accountDAO := accountdao.New(db, []string{"admin@superverse.test"})
 	teamSpaceFlow, projectFlow := &teamspaces.TeamSpaceFlow{}, &projects.ProjectFlow{}
 	sdk := dexflowtest.ServerWorkerClient(t, teamSpaceFlow, projectFlow)
 	teamSpaceClient := &teamspaces.TeamSpaceFlowClient{Dex: sdk, Flow: teamSpaceFlow}
-	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), Members: memberdao.New(db), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmail: "admin@superverse.test"}
+	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), Members: memberdao.New(db), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmails: []string{"admin@superverse.test"}}
 	b := &boundary.Boundary{Logger: slog.Default(), Accounts: &accounts.Accounts{DAO: accountDAO, Signer: comm.Must(accounts.NewTokenSigner(key))}, Cursors: watch.NewCursorCodec(key)}
 	connection := serveLoopback(ctx, t, &Server{Boundary: b, ProjectIDLength: projectClient.ProjectIDLength, Projects: projectClient,
 		TeamSpaces: teamSpaceClient, TeamSpaceReads: teamspacedao.New(db), Members: memberdao.New(db)})

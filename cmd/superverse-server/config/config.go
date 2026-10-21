@@ -78,6 +78,7 @@ const (
 	DefaultRunsDexConnections              = 128
 	DefaultLiveRetirementDrain             = 10 * time.Minute
 	DefaultBuildLogReadsPerSecond          = 2.0
+	MaxPlatformAdminEmails                 = 20
 	DefaultPlatformAdminEmail              = "admin@superverse.test"
 	DefaultAttachmentsPerMessage           = 10
 	DefaultAttachmentImageLongEdge         = 2000
@@ -166,7 +167,7 @@ type Config struct {
 
 // AccountsConfig selects the ordinary account with platform-wide authority.
 type AccountsConfig struct {
-	PlatformAdminEmail string `yaml:"platformAdminEmail"`
+	PlatformAdminEmails []string `yaml:"platformAdminEmails"`
 }
 
 // RemoteAgentConfig is the dedicated Bridge listener and its approved bounds.
@@ -546,7 +547,7 @@ func Default() Config {
 		Environment:    deploymentnames.EnvironmentTest.String(),
 		Runtime:        DefaultRuntime,
 		RepositoryHost: repohost.ProviderGitHub.String(),
-		Accounts:       AccountsConfig{PlatformAdminEmail: DefaultPlatformAdminEmail},
+		Accounts:       AccountsConfig{PlatformAdminEmails: []string{DefaultPlatformAdminEmail}},
 		Server: ServerConfig{
 			GRPCAddress: DefaultGRPCAddress, HealthAddress: DefaultHealthAddress, BlobCacheDir: DefaultBlobCacheDir,
 			ProjectIDLength: DefaultProjectIDLength,

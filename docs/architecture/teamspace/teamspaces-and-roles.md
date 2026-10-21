@@ -16,7 +16,7 @@ everything the roles below it hold, with no extra grants.
 | Project owner | Everything in the Project, plus its members and roles, and deleting the Project. |
 | Project builder | The agent, Flow, Interface, Preview, publishing and rollback, Runs, Inbox, Stop and Time travel, and the Project's configuration: Step settings, triggers, environment and connection selection. |
 | Project operator | Live only: Runs, Inbox, starting runs by hand and handling any Inbox item; Flow and Interface read-only. No Preview, no Stop or Time travel. |
-| Platform admin (configured platform administrator account (`accounts.platformAdminEmail`), ACTIVE) | Everything in every TeamSpace and Project, including creating Projects in a TeamSpace they are not a member of; the only one who deletes a TeamSpace. |
+| Platform admin (configured platform administrator accounts (`accounts.platformAdminEmails`), ACTIVE) | Everything in every TeamSpace and Project, including creating Projects in a TeamSpace they are not a member of; the only role that deletes a TeamSpace. |
 
 Rules:
 

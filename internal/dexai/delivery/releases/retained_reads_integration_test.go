@@ -28,7 +28,7 @@ func TestMissingReleaseReadDexIntegration(t *testing.T) {
 	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
 	projectFlow, releaseFlow := &projects.ProjectFlow{}, &releases.ProjectReleaseFlow{}
 	client := dexflowtest.ClientForTest(t, address, nil, projectFlow, releaseFlow)
-	releaseClient := releases.NewProjectReleaseFlowClient(releaseFlow, &projects.ProjectFlowClient{Dex: client, Flow: projectFlow, ProjectIDLength: 4, PlatformAdminEmail: "admin@superverse.test"}, nil)
+	releaseClient := releases.NewProjectReleaseFlowClient(releaseFlow, &projects.ProjectFlowClient{Dex: client, Flow: projectFlow, ProjectIDLength: 4, PlatformAdminEmails: []string{"admin@superverse.test"}}, nil)
 	ctx, cancel := context.WithTimeout(t.Context(), 45*time.Second)
 	defer cancel()
 	projectID, releaseID := flowid.RandomID(4), strings.Repeat("0", 40)
@@ -56,7 +56,7 @@ func TestRetainedReleaseReadsDexIntegration(t *testing.T) {
 	releaseID := dexflowtest.Setting(t, "SUPERVERSE_TEST_RETAINED_RELEASE_ID")
 	projectFlow, releaseFlow := &projects.ProjectFlow{}, &releases.ProjectReleaseFlow{}
 	client := dexflowtest.ClientForTest(t, address, nil, projectFlow, releaseFlow)
-	releaseClient := releases.NewProjectReleaseFlowClient(releaseFlow, &projects.ProjectFlowClient{Dex: client, Flow: projectFlow, ProjectIDLength: len(projectID), PlatformAdminEmail: "admin@superverse.test"}, nil)
+	releaseClient := releases.NewProjectReleaseFlowClient(releaseFlow, &projects.ProjectFlowClient{Dex: client, Flow: projectFlow, ProjectIDLength: len(projectID), PlatformAdminEmails: []string{"admin@superverse.test"}}, nil)
 	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 	defer cancel()
 	flowID, err := releases.FlowID(projectID, releaseID)

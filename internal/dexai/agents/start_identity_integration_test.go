@@ -225,5 +225,5 @@ func projectClients(t *testing.T) (*dex.Client, *projects.ProjectFlowClient, *se
 	projectFlow, flow := &projects.ProjectFlow{}, &sessionagent.SessionAgentFlow{}
 	sdk := dexflowtest.ClientForTest(t, dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS"), &dex.WorkerTarget{Address: dexflowtest.Setting(t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET")},
 		projectFlow, flow)
-	return sdk, &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(postgrestest.OpenForTest(t)), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmail: "admin@superverse.test"}, flow
+	return sdk, &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(postgrestest.OpenForTest(t)), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmails: []string{"admin@superverse.test"}}, flow
 }

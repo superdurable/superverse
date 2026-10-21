@@ -80,7 +80,7 @@ func TestRemoteConnectionsCapAndRedemptionIntegration(t *testing.T) {
 	results := make(chan error, 8)
 	for i := 0; i < 8; i++ {
 		group.Go(func() {
-			_, err := dao.Redeem(ctx, hash("redeem-code-0"), hash(fmt.Sprintf("token-%d", i)), "admin@superverse.test", accountdao.StatusActive, authorize)
+			_, err := dao.Redeem(ctx, hash("redeem-code-0"), hash(fmt.Sprintf("token-%d", i)), []string{"admin@superverse.test"}, accountdao.StatusActive, authorize)
 			results <- err
 		})
 	}
@@ -103,7 +103,7 @@ func TestRemoteConnectionsCapAndRedemptionIntegration(t *testing.T) {
 	if err := db.QueryRowContext(ctx, `SELECT pairing_code_hash, token_hash, basis_epoch FROM remote_agent_connections WHERE project_id = 'redeem'`).Scan(&code, &token, &basis); err != nil || code.Valid || !token.Valid || basis != 7 {
 		t.Fatalf("redemption did not preserve immutable basis and consume code: %v", err)
 	}
-	if access, err := dao.Authenticate(ctx, token.V, "admin@superverse.test", accountdao.StatusActive); err != nil || authorize(access) != nil {
+	if access, err := dao.Authenticate(ctx, token.V, []string{"admin@superverse.test"}, accountdao.StatusActive); err != nil || authorize(access) != nil {
 		t.Fatalf("redeemed credential authentication: %v", err)
 	}
 }
@@ -122,7 +122,7 @@ func TestRemoteConnectionsCleanupAndInvalidationIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 	execute(t, db, `UPDATE remote_agent_connections SET pairing_expires_at = now() - interval '1 second' WHERE connection_id = 'cleanup-1'`)
-	if _, err := dao.Redeem(ctx, hash("cleanup-code-1"), hash("expired-token"), "admin@superverse.test", accountdao.StatusActive, authorize); !errors.Is(err, postgres.ErrNotFound) {
+	if _, err := dao.Redeem(ctx, hash("cleanup-code-1"), hash("expired-token"), []string{"admin@superverse.test"}, accountdao.StatusActive, authorize); !errors.Is(err, postgres.ErrNotFound) {
 		t.Fatalf("expired pairing redeemed: %v", err)
 	}
 	if err := createPairing(ctx, dao, "cleanup", 6); err != nil {
@@ -142,7 +142,7 @@ func TestRemoteConnectionsCleanupAndInvalidationIntegration(t *testing.T) {
 	if err := createPairing(ctx, dao, "cleanup", 7); !errors.Is(err, postgres.ErrNotFound) {
 		t.Fatalf("delayed pairing reappeared after cleanup: %v", err)
 	}
-	if _, err := dao.Redeem(ctx, hash("cleanup-code-2"), hash("late"), "admin@superverse.test", accountdao.StatusActive, authorize); !errors.Is(err, postgres.ErrNotFound) {
+	if _, err := dao.Redeem(ctx, hash("cleanup-code-2"), hash("late"), []string{"admin@superverse.test"}, accountdao.StatusActive, authorize); !errors.Is(err, postgres.ErrNotFound) {
 		t.Fatalf("redemption recreated deleted credential: %v", err)
 	}
 	if err := db.QueryRowContext(ctx, `SELECT count(*) FROM remote_agent_connections WHERE project_id = 'cleanup'`).Scan(&count); err != nil || count != 0 {
@@ -156,7 +156,7 @@ func TestRemoteConnectionsCleanupAndInvalidationIntegration(t *testing.T) {
 			if err := createPairing(t.Context(), dao, "auth", 0); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := dao.Redeem(t.Context(), hash("auth-code-0"), hash("credential"), "admin@superverse.test", accountdao.StatusActive, authorize); err != nil {
+			if _, err := dao.Redeem(t.Context(), hash("auth-code-0"), hash("credential"), []string{"admin@superverse.test"}, accountdao.StatusActive, authorize); err != nil {
 				t.Fatal(err)
 			}
 			switch mutation {
@@ -181,7 +181,7 @@ func TestRemoteConnectionsCleanupAndInvalidationIntegration(t *testing.T) {
 			case "deleted":
 				execute(t, db, `UPDATE projects SET project_status = 'DELETED'`)
 			}
-			access, err := dao.Authenticate(t.Context(), hash("credential"), "admin@superverse.test", accountdao.StatusActive)
+			access, err := dao.Authenticate(t.Context(), hash("credential"), []string{"admin@superverse.test"}, accountdao.StatusActive)
 			if err == nil {
 				err = authorize(access)
 			}
@@ -213,7 +213,7 @@ func createPairing(ctx context.Context, dao *remoteagentdao.DAO, project string,
 	return dao.CreatePairing(ctx, remoteagentdao.Connection{ConnectionID: fmt.Sprintf("%s-%d", project, n),
 		ProjectID: project, AccountID: "builder", LoginSessionID: "login", BasisEpoch: 7, CreatedAt: time.Now().UTC(),
 		PairingCodeHash:  sql.Null[string]{V: hash(fmt.Sprintf("%s-code-%d", project, n)), Valid: true},
-		PairingExpiresAt: time.Now().UTC().Add(10 * time.Minute)}, "admin@superverse.test", accountdao.StatusActive, authorize)
+		PairingExpiresAt: time.Now().UTC().Add(10 * time.Minute)}, []string{"admin@superverse.test"}, accountdao.StatusActive, authorize)
 }
 
 func authorize(access remoteagentdao.Access) error {

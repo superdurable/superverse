@@ -90,7 +90,7 @@ func newPlatformTools(t *testing.T) *platformTools {
 		t.Fatal(err)
 	}
 	db := postgrestest.OpenForTest(t)
-	projectClient := &projects.ProjectFlowClient{Flow: &projects.ProjectFlow{}, Projections: projectdao.New(db), ProjectIDLength: len(projectID), PlatformAdminEmail: "admin@superverse.test"}
+	projectClient := &projects.ProjectFlowClient{Flow: &projects.ProjectFlow{}, Projections: projectdao.New(db), ProjectIDLength: len(projectID), PlatformAdminEmails: []string{"admin@superverse.test"}}
 	releaseFlow := releases.NewProjectReleaseFlow(projectClient, nil, builder, build.NewProfiles(), objects, deploymentnames.EnvironmentTest, nil, nil)
 	releaseClient := releases.NewProjectReleaseFlowClient(releaseFlow, projectClient, build.NewProfiles())
 	deploymentClient := deployments.NewProjectDeployFlowClient(projectClient, nil, nil)
@@ -133,7 +133,7 @@ func newDeliveryStatusTools(t *testing.T, projectID string) *platformTools {
 	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
 	runtime := newLocalRuntime(t)
 	db := postgrestest.OpenForTest(t)
-	projectClient := &projects.ProjectFlowClient{Flow: &projects.ProjectFlow{}, Projections: projectdao.New(db), ProjectIDLength: len(projectID), PlatformAdminEmail: "admin@superverse.test"}
+	projectClient := &projects.ProjectFlowClient{Flow: &projects.ProjectFlow{}, Projections: projectdao.New(db), ProjectIDLength: len(projectID), PlatformAdminEmails: []string{"admin@superverse.test"}}
 	releaseFlow := releases.NewProjectReleaseFlow(projectClient, nil, nil, build.NewProfiles(), nil, deploymentnames.EnvironmentTest, nil, nil)
 	releaseClient := releases.NewProjectReleaseFlowClient(releaseFlow, projectClient, build.NewProfiles())
 	deploymentClient := deployments.NewProjectDeployFlowClient(projectClient, nil, nil)

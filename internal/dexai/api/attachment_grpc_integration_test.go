@@ -76,9 +76,9 @@ func TestAttachmentServiceDexIntegration(t *testing.T) {
 	})
 	sdk := dexflowtest.ServerWorkerClient(t, teamSpaceFlow, projectFlow, flows.Flow())
 	teamSpaceClient := &teamspaces.TeamSpaceFlowClient{Dex: sdk, Flow: teamSpaceFlow}
-	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), Members: memberdao.New(db), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmail: "admin@superverse.test"}
+	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), Members: memberdao.New(db), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmails: []string{"admin@superverse.test"}}
 	attachmentClient, renditions := flows.Client(sdk), attachments.NewRenditionStore(objects, 1<<20)
-	b := &boundary.Boundary{Logger: slog.Default(), Accounts: &accounts.Accounts{DAO: accountdao.New(db, "admin@superverse.test"), Signer: comm.Must(accounts.NewTokenSigner(key))}, Cursors: watch.NewCursorCodec(key)}
+	b := &boundary.Boundary{Logger: slog.Default(), Accounts: &accounts.Accounts{DAO: accountdao.New(db, []string{"admin@superverse.test"}), Signer: comm.Must(accounts.NewTokenSigner(key))}, Cursors: watch.NewCursorCodec(key)}
 	connection := serveLoopback(ctx, t, &Server{Boundary: b, ProjectIDLength: projectClient.ProjectIDLength, Projects: projectClient, TeamSpaces: teamSpaceClient,
 		TeamSpaceReads: teamspacedao.New(db), Members: memberdao.New(db), Attachments: attachmentClient, Renditions: renditions})
 	teamSpaceAPI, memberAPI, accountAPI := pb.NewTeamSpaceServiceClient(connection), pb.NewTeamSpaceMemberServiceClient(connection), pb.NewAccountServiceClient(connection)

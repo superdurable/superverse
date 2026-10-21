@@ -12,6 +12,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"slices"
 	"time"
 
 	"github.com/superdurable/superversev2/internal/comm"
@@ -187,7 +188,7 @@ func (a *Accounts) IsAdministrator(ctx context.Context, accountID string) (bool,
 
 func (a *Accounts) summary(account accountdao.Account) AccountSummary {
 	return AccountSummary{AccountID: account.AccountID, CanonicalEmail: account.CanonicalEmail,
-		PlatformAdmin: account.AccountID != "" && account.Status == accountdao.StatusActive && account.CanonicalEmail == a.DAO.PlatformAdminEmail}
+		PlatformAdmin: account.AccountID != "" && account.Status == accountdao.StatusActive && slices.Contains(a.DAO.PlatformAdminEmails, account.CanonicalEmail)}
 }
 
 // verifyStoredPassword checks password against the account's stored record.

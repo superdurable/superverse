@@ -317,7 +317,9 @@ func TestSessionMockAttachmentWorkflowImportDexIntegration(t *testing.T) {
 	}
 	// The scenario ends with the workspace dirty, so the platform's automatic turns follow its last reply.
 	assistant := replies(agent.History)
-	if !slices.ContainsFunc(assistant, func(reply conversation.SequencedMessage) bool { return strings.Contains(reply.Message.Content, "the commit was refused") }) {
+	if !slices.ContainsFunc(assistant, func(reply conversation.SequencedMessage) bool {
+		return strings.Contains(reply.Message.Content, "the commit was refused")
+	}) {
 		for _, message := range agent.History.Messages {
 			t.Logf("%d %s %q", message.Sequence, message.Message.Role, message.Message.Content)
 		}

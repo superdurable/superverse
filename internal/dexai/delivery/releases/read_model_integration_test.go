@@ -57,7 +57,7 @@ func TestRetainedReleaseSyncDexIntegration(t *testing.T) {
 	projectID := dexflowtest.Setting(t, "SUPERVERSE_TEST_RETAINED_RELEASE_PROJECT_ID")
 	projectFlow, releaseFlow := &projects.ProjectFlow{}, &releases.ProjectReleaseFlow{}
 	client := dexflowtest.ClientForTest(t, address, nil, projectFlow, releaseFlow)
-	projectClient := &projects.ProjectFlowClient{Dex: client, Flow: projectFlow, ProjectIDLength: len(projectID), PlatformAdminEmail: "admin@superverse.test"}
+	projectClient := &projects.ProjectFlowClient{Dex: client, Flow: projectFlow, ProjectIDLength: len(projectID), PlatformAdminEmails: []string{"admin@superverse.test"}}
 	releaseClient := releases.NewProjectReleaseFlowClient(releaseFlow, projectClient, nil)
 	reader := dexflowtest.ExecutionReaderForTest(t, address)
 	db := postgrestest.OpenForTest(t)

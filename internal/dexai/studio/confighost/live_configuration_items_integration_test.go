@@ -96,7 +96,7 @@ func TestLiveNextPublishLayer(t *testing.T) {
 	dao := connectiondao.New(db)
 	account := flowid.RandomID(32)
 	now := time.Now().UTC()
-	if _, _, err := accountdao.New(db, "admin@superverse.test").Register(f.ctx, accountdao.Account{
+	if _, _, err := accountdao.New(db, []string{"admin@superverse.test"}).Register(f.ctx, accountdao.Account{
 		AccountID: account, CanonicalEmail: "next-publish-" + account + "@example.com", Status: accountdao.StatusActive,
 		PasswordRecord: json.RawMessage(`{}`), CredentialRevision: 1, AuthEpoch: 1, RegistrationFingerprint: account, CreatedAt: now, UpdatedAt: now,
 	}); err != nil {

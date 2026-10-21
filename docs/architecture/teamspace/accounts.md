@@ -32,7 +32,7 @@ CREATE INDEX login_sessions_expiry ON login_sessions (expires_at);
 - **Authentication** of every request is one query, `login_sessions` joined with
   `accounts`, that accepts only an unexpired session whose epoch matches the account's.
   It returns `Caller{AccountID, CanonicalEmail, PlatformAdmin}`; the platform admin is the
-  configured ACTIVE platform administrator account (`accounts.platformAdminEmail`).
+  ACTIVE accounts with canonical emails in `accounts.platformAdminEmails`.
 - **Logout** deletes the session; raising `auth_epoch` ends every session of the account.
 - **Expired sessions** are never accepted. Login deletes the account's expired sessions;
   there is no background cleanup.

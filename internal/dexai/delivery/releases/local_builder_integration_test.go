@@ -142,7 +142,7 @@ func TestReleaseBuildTimingsWorkerRestartIntegration(t *testing.T) {
 	// the Steps with every real dependency.
 	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Address: target}, projectFlow, releaseFlow)
 	reader := dexflowtest.ExecutionReaderForTest(t, address)
-	projectsClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(postgrestest.OpenForTest(t)), ProjectIDLength: len(fixture.ProjectID), PlatformAdminEmail: "admin@superverse.test"}
+	projectsClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(postgrestest.OpenForTest(t)), ProjectIDLength: len(fixture.ProjectID), PlatformAdminEmails: []string{"admin@superverse.test"}}
 	client := NewProjectReleaseFlowClient(releaseFlow, projectsClient, nil)
 	ctx, cancel := context.WithTimeout(t.Context(), 20*time.Minute)
 	defer cancel()

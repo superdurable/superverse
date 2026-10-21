@@ -30,7 +30,7 @@ func newAccountsForTest(t *testing.T) *Accounts {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &Accounts{DAO: accountdao.New(postgrestest.OpenForTest(t), "admin@superverse.test"), Signer: signer}
+	return &Accounts{DAO: accountdao.New(postgrestest.OpenForTest(t), []string{"admin@superverse.test"}), Signer: signer}
 }
 
 // TestAccountsIntegration registers, logs in, authenticates and logs out

@@ -84,12 +84,12 @@ func TestProjectAuthorizationMatrixDexIntegration(t *testing.T) {
 	deployFlow, previewFlow := &deployments.ProjectDeployFlow{}, &preview.PreviewFlow{}
 	sdk := dexflowtest.ServerWorkerClient(t, teamSpaceFlow, projectFlow, setupFlow, releaseFlow, deployFlow, previewFlow)
 	teamSpaceClient := &teamspaces.TeamSpaceFlowClient{Dex: sdk, Flow: teamSpaceFlow}
-	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), Members: memberdao.New(db), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmail: "admin@superverse.test"}
+	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), Members: memberdao.New(db), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmails: []string{"admin@superverse.test"}}
 	releaseClient := releases.NewProjectReleaseFlowClient(releaseFlow, projectClient, nil)
 	releaseClient.Rows = deliverydao.New(db)
 	deployClient := deployments.NewProjectDeployFlowClient(projectClient, nil, nil)
 	deployClient.Rows, deployClient.Releases = deliverydao.New(db), releaseClient
-	b := &boundary.Boundary{Logger: slog.Default(), Accounts: &accounts.Accounts{DAO: accountdao.New(db, "admin@superverse.test"), Signer: comm.Must(accounts.NewTokenSigner(key))}, Cursors: watch.NewCursorCodec(key)}
+	b := &boundary.Boundary{Logger: slog.Default(), Accounts: &accounts.Accounts{DAO: accountdao.New(db, []string{"admin@superverse.test"}), Signer: comm.Must(accounts.NewTokenSigner(key))}, Cursors: watch.NewCursorCodec(key)}
 	connection := serveLoopback(ctx, t, &Server{Boundary: b, ProjectIDLength: projectClient.ProjectIDLength, Projects: projectClient, TeamSpaces: teamSpaceClient,
 		TeamSpaceReads: teamspacedao.New(db), Members: memberdao.New(db), Setups: &setup.ProjectSetupFlowClient{Dex: sdk, Flow: setupFlow}, Releases: releaseClient,
 		Deployments: deployClient, Publishing: deployments.NewPublishingFlowService(projectClient, deployClient, nil, nil, deployments.BuildLogReads{PerSecond: 2}), Sessions: &agents.SessionFlowService{Previews: &preview.PreviewFlowClient{Dex: sdk, Flow: previewFlow}},

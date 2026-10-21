@@ -58,9 +58,9 @@ canonical email to a token whose signature, expiry and `account-` name check
 first, then reads the exact login joined with its account. Every request
 authenticates this way; there is no cache.
 
-**Administrator.** The configured ACTIVE platform administrator account (`accounts.platformAdminEmail`) is the single
+**Administrator.** Every ACTIVE account whose canonical email is in `accounts.platformAdminEmails` is a platform
 administrator (`IsAdministrator`, and `accountdao.AccountDAO.IsPlatformAdmin`
-for Project access). It manages every Project without owning it.
+for Project access). Each manages every Project without owning it.
 
 ## Database Schema Changes
 

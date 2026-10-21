@@ -34,7 +34,7 @@ func TestProjectReadModelSyncDexIntegration(t *testing.T) {
 	projectFlow, setupFlow := &projects.ProjectFlow{}, &setup.ProjectSetupFlow{}
 	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Address: target}, projectFlow, setupFlow)
 	db := postgrestest.OpenForTest(t)
-	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmail: "admin@superverse.test"}
+	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmails: []string{"admin@superverse.test"}}
 	setupClient := &setup.ProjectSetupFlowClient{Dex: sdk, Flow: setupFlow}
 	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Minute)
 	defer cancel()

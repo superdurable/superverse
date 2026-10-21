@@ -65,10 +65,19 @@ func (c Config) Validate() error {
 	if c.LocalKind && environment != deploymentnames.EnvironmentTest {
 		fail("localKind is restricted to the test environment")
 	}
-	adminEmail := c.Accounts.PlatformAdminEmail
-	parsedAdmin, adminErr := mail.ParseAddress(adminEmail)
-	if adminErr != nil || parsedAdmin.Address != adminEmail || strings.ContainsAny(adminEmail, " <>\t\r\n") || strings.ToLower(adminEmail) != adminEmail {
-		fail("accounts.platformAdminEmail must be a canonical email address")
+	if len(c.Accounts.PlatformAdminEmails) == 0 || len(c.Accounts.PlatformAdminEmails) > MaxPlatformAdminEmails {
+		fail("accounts.platformAdminEmails must contain between 1 and %d addresses", MaxPlatformAdminEmails)
+	}
+	seenAdmins := make(map[string]bool, len(c.Accounts.PlatformAdminEmails))
+	for _, email := range c.Accounts.PlatformAdminEmails {
+		parsed, err := mail.ParseAddress(email)
+		if err != nil || parsed.Address != email || strings.ContainsAny(email, " <>\t\r\n/$:") || len(email) > 254 || strings.IndexFunc(email, func(r rune) bool { return r < 33 || r > 127 }) >= 0 || strings.ToLower(email) != email {
+			fail("accounts.platformAdminEmails must contain canonical email addresses")
+		}
+		if seenAdmins[email] {
+			fail("accounts.platformAdminEmails must not contain duplicates")
+		}
+		seenAdmins[email] = true
 	}
 	if c.Server.RPCCoverageFile != "" && (!c.LocalKind || !filepath.IsAbs(c.Server.RPCCoverageFile)) {
 		fail("server.rpcCoverageFile requires a local lane and an absolute path")

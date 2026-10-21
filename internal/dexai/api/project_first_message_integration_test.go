@@ -65,9 +65,9 @@ func TestCreateProjectFirstMessageDexIntegration(t *testing.T) {
 	reader := dexflowtest.ExecutionReaderForTest(t, address)
 	db := postgrestest.OpenForTest(t)
 	idLength := projecttest.IDLengthForTest(t)
-	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), ProjectIDLength: idLength, PlatformAdminEmail: "admin@superverse.test"}
+	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), ProjectIDLength: idLength, PlatformAdminEmails: []string{"admin@superverse.test"}}
 	sessions := sessionagent.NewSessionAgentFlowClientForTest(sdk, sessionFlow, reader, "")
-	accountService := &accounts.Accounts{DAO: accountdao.New(db, "admin@superverse.test"), Signer: comm.Must(accounts.NewTokenSigner([]byte(strings.Repeat("f", 32))))}
+	accountService := &accounts.Accounts{DAO: accountdao.New(db, []string{"admin@superverse.test"}), Signer: comm.Must(accounts.NewTokenSigner([]byte(strings.Repeat("f", 32))))}
 	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Minute)
 	defer cancel()
 	server := func(models SessionModels) pb.ProjectServiceClient {

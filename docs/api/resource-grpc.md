@@ -558,7 +558,7 @@ and `login_sessions` tables ([accounts](../architecture/teamspace/accounts.md));
 Argon2id algorithm, version, parameters, salt and hash are the account's
 `password_record`, and plaintext and hash are never in a public DTO.
 
-The configured ACTIVE, authenticated platform administrator account (`accounts.platformAdminEmail`) may view and manage every Project
+The ACTIVE, authenticated accounts with canonical emails in `accounts.platformAdminEmails` may view and manage every Project
 through these same resource APIs. ListProjects lists any TeamSpace; all child resources
 and mutations still validate the owning Project and scope. The server checks the
 administrator's opaque AccountID against its account row. Browser

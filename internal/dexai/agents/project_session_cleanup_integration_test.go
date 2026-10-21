@@ -312,7 +312,7 @@ func startCleanupProbeOn(t *testing.T, ctx context.Context, model conversation.M
 	// This client registry supplies definitions only. Real handlers and every
 	// application dependency belong to the existing Worker selected above.
 	probe := &cleanupProbe{t: t, sdk: sdk, flow: flow, reader: reader, objects: objects,
-		projects:   &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(postgrestest.OpenForTest(t)), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmail: "admin@superverse.test"},
+		projects:   &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(postgrestest.OpenForTest(t)), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmails: []string{"admin@superverse.test"}},
 		client:     sessionagent.NewSessionAgentFlowClientForTest(sdk, flow, reader, ""),
 		provisions: provision.NewSandboxProvisionFlowClientForTest(sdk, provisionFlow, reader, names),
 		workspaces: sessionworkspace.NewSessionWorkspaceFlowClientForTest(sdk, workspaceFlow, reader),

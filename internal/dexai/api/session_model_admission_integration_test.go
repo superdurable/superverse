@@ -55,10 +55,10 @@ func TestSessionModelAdmissionDexIntegration(t *testing.T) {
 	// This client registry supplies definitions only. Real handlers and every
 	// application dependency belong to the existing Worker selected above.
 	db := postgrestest.OpenForTest(t)
-	accountDAO := accountdao.New(db, "admin@superverse.test")
+	accountDAO := accountdao.New(db, []string{"admin@superverse.test"})
 	client := sessionagent.NewSessionAgentFlowClientForTest(sdk, flow, reader, "")
 	service := &agents.SessionFlowService{
-		Projects: &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmail: "admin@superverse.test"},
+		Projects: &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmails: []string{"admin@superverse.test"}},
 		Previews: &preview.PreviewFlowClient{Dex: sdk, Flow: previewFlow, Execution: reader}, Agent: client,
 		Workspaces: sessionworkspace.NewSessionWorkspaceFlowClientForTest(sdk, workspaceFlow, reader),
 		Logger:     slog.New(slog.DiscardHandler),

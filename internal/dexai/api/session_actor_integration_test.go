@@ -65,9 +65,9 @@ func newActorSession(t *testing.T, ctx context.Context) *actorSession {
 	sdk := dexflowtest.ServerWorkerClient(t, projectFlow, flow, teamSpaceFlow, previewFlow, workspaceFlow)
 	reader := dexflowtest.ExecutionReaderForTest(t, dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS"))
 	client := sessionagent.NewSessionAgentFlowClientForTest(sdk, flow, reader, "")
-	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmail: "admin@superverse.test"}
+	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmails: []string{"admin@superverse.test"}}
 	service := &agents.SessionFlowService{Projects: projectClient, Agent: client, Logger: slog.Default(), Previews: &preview.PreviewFlowClient{Dex: sdk, Flow: previewFlow, Execution: reader}, Workspaces: sessionworkspace.NewSessionWorkspaceFlowClientForTest(sdk, workspaceFlow, reader)}
-	dao := accountdao.New(db, "admin@superverse.test")
+	dao := accountdao.New(db, []string{"admin@superverse.test"})
 	accountService := &accounts.Accounts{DAO: dao, Signer: comm.Must(accounts.NewTokenSigner([]byte(strings.Repeat("a", 32))))}
 	connection := serveLoopback(ctx, t, &Server{Boundary: &boundary.Boundary{Logger: slog.Default(), Accounts: accountService}, Sessions: service, SessionAgents: client, SessionModels: SessionModels{Mock: true, Local: true}})
 	api := pb.NewAccountServiceClient(connection)

@@ -132,7 +132,7 @@ func newSessionOf(t *testing.T, ctx context.Context, model conversation.Model, c
 	// This client registry supplies definitions only. Real handlers and every
 	// application dependency belong to the existing Worker selected above,
 	// which starts the Session with its own start model.
-	projectsClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(postgrestest.OpenForTest(t)), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmail: "admin@superverse.test"}
+	projectsClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(postgrestest.OpenForTest(t)), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmails: []string{"admin@superverse.test"}}
 	project := create(projectsClient)
 	// The Session starts at Setup's commit.
 	row, err := projectsClient.Projections.Project(ctx, project.ProjectID)

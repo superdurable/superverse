@@ -35,7 +35,7 @@ Current architecture:
 - Implement immediate email/password registration and login without OIDC,
   email verification, invitations or onboarding hooks. Accounts and login
   sessions are PostgreSQL rows ([accounts](teamspace/accounts.md)).
-- Users access only their own projects. The configured platform administrator account (`accounts.platformAdminEmail`) registers through
+- Users access only their own projects. The configured platform administrator accounts (`accounts.platformAdminEmails`) register through
   the same flow and may view and operate all projects. Do not add a separate
   administrator bootstrap procedure.
 - The active administrator lists every non-DELETED Project and can use the same
@@ -652,7 +652,7 @@ Login issues a random bearer secret in a signed HttpOnly, SameSite=Lax cookie;
 hosted cookies are Secure. The lifetime is a fixed seven days, without per-request
 sliding writes. The cookie carries account and login identities plus the secret;
 the database stores only the secret's hash and the expiry. Administrator
-authorization is derived server-side from the configured platform administrator account (`accounts.platformAdminEmail`)
+authorization is derived server-side from the configured platform administrator accounts (`accounts.platformAdminEmails`)
 account identity, not from browser-provided roles.
 
 Accounts that existed as AccountFlow executions are not migrated: the executions

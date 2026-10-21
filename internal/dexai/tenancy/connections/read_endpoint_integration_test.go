@@ -240,7 +240,7 @@ func post(t *testing.T, target, token string, body []byte) int {
 func registerAccount(ctx context.Context, t *testing.T, db *sql.DB, account, teamSpaceID string) {
 	t.Helper()
 	now := time.Now().UTC()
-	if _, _, err := accountdao.New(db, "admin@superverse.test").Register(ctx, accountdao.Account{
+	if _, _, err := accountdao.New(db, []string{"admin@superverse.test"}).Register(ctx, accountdao.Account{
 		AccountID: account, CanonicalEmail: "connections-" + account + "@example.com", Status: accountdao.StatusActive,
 		PasswordRecord: json.RawMessage(`{}`), CredentialRevision: 1, AuthEpoch: 1, RegistrationFingerprint: account, CreatedAt: now, UpdatedAt: now,
 	}); err != nil {

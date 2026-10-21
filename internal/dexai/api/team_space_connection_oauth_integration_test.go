@@ -67,7 +67,7 @@ func TestTeamSpaceConnectionOAuthCompletionIntegration(t *testing.T) {
 	reader := connections.NewCredentialReader(dao, objects, releases, providers, connections.PlatformClients{}, slog.Default())
 	shared := connections.NewTeamSpaceConnections(dao, objects, releases, connectormanifest.NewCatalog(releaseClient, connectorlibrary.NewPublishedCatalog(releaseClient)), connections.PlatformClients{}, providers, reader, nil, true)
 	usages := connections.NewUsages(dao, objects)
-	b := &boundary.Boundary{Logger: slog.Default(), Accounts: &accounts.Accounts{DAO: accountdao.New(db, "admin@superverse.test"), Signer: comm.Must(accounts.NewTokenSigner(key))}, Cursors: watch.NewCursorCodec(key)}
+	b := &boundary.Boundary{Logger: slog.Default(), Accounts: &accounts.Accounts{DAO: accountdao.New(db, []string{"admin@superverse.test"}), Signer: comm.Must(accounts.NewTokenSigner(key))}, Cursors: watch.NewCursorCodec(key)}
 	connection := serveLoopback(ctx, t, &Server{Boundary: b, Connections: tenancy.Connections{Connections: shared, Access: dao, StudioOrigin: keycloak.StudioOrigin,
 		Unrouted: slackrelay.New(slackrelay.Config{}, dao, memory.New(eventqueue.Limits{MaxItems: 1, MaxBytes: 1, MaxItemBytes: 1, MaxKeyItems: 1, Concurrency: 1}, slog.Default()), nil, nil, slog.Default())}})
 	api, accountAPI := pb.NewTeamSpaceConnectionServiceClient(connection), pb.NewAccountServiceClient(connection)

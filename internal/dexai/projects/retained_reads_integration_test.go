@@ -30,7 +30,7 @@ func TestMissingProjectReadsDexIntegration(t *testing.T) {
 	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
 	projectFlow, setupFlow, repositoryFlow := &projects.ProjectFlow{}, &setup.ProjectSetupFlow{}, &repobinding.RepositoryBindingFlow{}
 	client := dexflowtest.ClientForTest(t, address, nil, projectFlow, setupFlow, repositoryFlow)
-	projectClient := &projects.ProjectFlowClient{Dex: client, Flow: projectFlow, ProjectIDLength: 4, PlatformAdminEmail: "admin@superverse.test"}
+	projectClient := &projects.ProjectFlowClient{Dex: client, Flow: projectFlow, ProjectIDLength: 4, PlatformAdminEmails: []string{"admin@superverse.test"}}
 	setupClient := &setup.ProjectSetupFlowClient{Dex: client, Flow: setupFlow}
 	repositoryClient := &repobinding.RepositoryBindingFlowClient{Dex: client, Flow: repositoryFlow}
 	ctx, cancel := context.WithTimeout(t.Context(), 45*time.Second)
@@ -83,7 +83,7 @@ func TestRetainedProjectReadsDexIntegration(t *testing.T) {
 	// The Flows provide the client registry only; every handler runs in the
 	// existing Worker.
 	client := dexflowtest.ClientForTest(t, address, nil, projectFlow, setupFlow)
-	projectClient := &projects.ProjectFlowClient{Dex: client, Flow: projectFlow, ProjectIDLength: len(projectID), PlatformAdminEmail: "admin@superverse.test"}
+	projectClient := &projects.ProjectFlowClient{Dex: client, Flow: projectFlow, ProjectIDLength: len(projectID), PlatformAdminEmails: []string{"admin@superverse.test"}}
 	setupClient := &setup.ProjectSetupFlowClient{Dex: client, Flow: setupFlow}
 	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 	defer cancel()

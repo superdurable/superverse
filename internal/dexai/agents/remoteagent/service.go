@@ -42,7 +42,7 @@ type Connections struct {
 	Endpoint             string
 	MinimumBridgeVersion string
 	AcceptDevBridge      bool
-	PlatformAdminEmail   string
+	PlatformAdminEmails  []string
 }
 
 // Pairing is the one-time Studio response; Code is never listed or persisted.
@@ -82,7 +82,7 @@ func (s *Connections) CreatePairing(ctx context.Context, account accounts.Accoun
 		ConnectionID: pairing.ConnectionID, ProjectID: projectID, AccountID: account.AccountID, LoginSessionID: loginSessionID,
 		PairingCodeHash: sql.Null[string]{V: credentialHash(code), Valid: true}, PairingExpiresAt: pairing.ExpiresAt,
 		BasisEpoch: int64(executor.Epoch), CreatedAt: now,
-	}, s.PlatformAdminEmail, accountdao.StatusActive, authorizeAccess)
+	}, s.PlatformAdminEmails, accountdao.StatusActive, authorizeAccess)
 	if errors.Is(err, remoteagentdao.ErrCredentialInvalid) {
 		return Pairing{}, accounts.ErrInvalidCredential
 	}
@@ -110,7 +110,7 @@ func (s *Connections) pair(ctx context.Context, request bridgeapi.PairRequest) (
 		return bridgeapi.PairResponse{}, err
 	}
 	token := base64.RawURLEncoding.EncodeToString(raw)
-	access, err := s.DAO.Redeem(ctx, credentialHash(code), credentialHash(token), s.PlatformAdminEmail, accountdao.StatusActive, func(access remoteagentdao.Access) error {
+	access, err := s.DAO.Redeem(ctx, credentialHash(code), credentialHash(token), s.PlatformAdminEmails, accountdao.StatusActive, func(access remoteagentdao.Access) error {
 		if err := authorizeAccess(access); errors.Is(err, postgres.ErrNotFound) {
 			return refusal(bridgeapi.ErrorNotFound)
 		} else {
@@ -136,7 +136,7 @@ func (s *Connections) authenticate(ctx context.Context, token string) (remoteage
 	if err != nil || len(raw) != 32 || base64.RawURLEncoding.EncodeToString(raw) != token {
 		return remoteagentdao.Access{}, refusal(bridgeapi.ErrorUnauthorized)
 	}
-	access, err := s.DAO.Authenticate(ctx, credentialHash(token), s.PlatformAdminEmail, accountdao.StatusActive)
+	access, err := s.DAO.Authenticate(ctx, credentialHash(token), s.PlatformAdminEmails, accountdao.StatusActive)
 	if errors.Is(err, postgres.ErrNotFound) {
 		return remoteagentdao.Access{}, refusal(bridgeapi.ErrorUnauthorized)
 	}

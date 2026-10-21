@@ -89,7 +89,7 @@ func TestSlackRelayRecentEventsDexIntegration(t *testing.T) {
 
 	// The API of this process over the lane's database and Dex.
 	key := []byte(strings.Repeat("e", 32))
-	b := &boundary.Boundary{Logger: logger, Accounts: &accounts.Accounts{DAO: accountdao.New(db, "admin@superverse.test"), Signer: comm.Must(accounts.NewTokenSigner(key))}, Cursors: watch.NewCursorCodec(key)}
+	b := &boundary.Boundary{Logger: logger, Accounts: &accounts.Accounts{DAO: accountdao.New(db, []string{"admin@superverse.test"}), Signer: comm.Must(accounts.NewTokenSigner(key))}, Cursors: watch.NewCursorCodec(key)}
 	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)

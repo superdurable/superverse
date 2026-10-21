@@ -47,12 +47,12 @@ const memberLockWait = 30 * time.Second
 // and its read model rows, which Dex syncs into PostgreSQL, through
 // Projections; Members reads the members of a Project from the read model.
 type ProjectFlowClient struct {
-	Dex                *dex.Client
-	Flow               *ProjectFlow
-	Projections        *projectdao.ProjectDAO
-	Members            *memberdao.MemberDAO
-	ProjectIDLength    int
-	PlatformAdminEmail string
+	Dex                 *dex.Client
+	Flow                *ProjectFlow
+	Projections         *projectdao.ProjectDAO
+	Members             *memberdao.MemberDAO
+	ProjectIDLength     int
+	PlatformAdminEmails []string
 }
 
 // ProjectProjection is a Project as the read model holds it, seconds behind
@@ -112,7 +112,7 @@ func (c *ProjectFlowClient) ReadAuthorized(ctx context.Context, accountID, proje
 		return ProjectProjection{}, ErrForbidden
 	}
 	row, err := postgres.AwaitRow(ctx, func(ctx context.Context) (projectdao.ProjectAccess, error) {
-		return c.Projections.AuthorizeProject(ctx, projectID, accountID, c.PlatformAdminEmail, accountdao.StatusActive)
+		return c.Projections.AuthorizeProject(ctx, projectID, accountID, c.PlatformAdminEmails, accountdao.StatusActive)
 	}, func(ctx context.Context) (bool, error) { return c.exists(ctx, projectID) })
 	if err != nil {
 		return ProjectProjection{}, err

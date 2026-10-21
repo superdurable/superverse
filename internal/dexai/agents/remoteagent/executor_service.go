@@ -44,7 +44,7 @@ func (s *Connections) activate(ctx context.Context, access remoteagentdao.Access
 	}
 	// Close removal-before-activation even when both remover reads preceded this
 	// commit. A dependency failure leaves an explicit offline residual, not success.
-	fresh, err := s.DAO.Authenticate(ctx, access.TokenHash.V, s.PlatformAdminEmail, accountdao.StatusActive)
+	fresh, err := s.DAO.Authenticate(ctx, access.TokenHash.V, s.PlatformAdminEmails, accountdao.StatusActive)
 	if errors.Is(err, postgres.ErrNotFound) {
 		_, switchErr := s.Sessions.Agent.SetExecutor(ctx, remoteexec.SetRequest{ProjectID: access.ProjectID, BasisEpoch: result.Executor.Epoch,
 			Mode: remoteexec.ModePlatform, Owner: accessActor(access), Reason: remoteexec.HandoffConnectionRemoved})

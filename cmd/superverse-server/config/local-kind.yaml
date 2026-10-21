@@ -86,3 +86,7 @@ aws:
 # it; the hosted default is ten minutes (decision 0025).
 live:
   retirementDrain: 30s
+
+accounts:
+  platformAdminEmails:
+    - admin@superverse.test

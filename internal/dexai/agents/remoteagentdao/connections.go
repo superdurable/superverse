@@ -69,7 +69,7 @@ func New(db *sql.DB) *DAO { return &DAO{db: db} }
 
 // CreatePairing serializes admission even when the Project has no rows.
 // Expired PAIRING and REVOKED rows can never act again; PAIRED rows are never evicted.
-func (d *DAO) CreatePairing(ctx context.Context, c Connection, adminEmail, activeStatus string, validate func(Access) error) error {
+func (d *DAO) CreatePairing(ctx context.Context, c Connection, adminEmails []string, activeStatus string, validate func(Access) error) error {
 	return postgres.InTransaction(ctx, d.db, func(tx *sql.Tx) error {
 		if err := lockProject(ctx, tx, c.ProjectID); err != nil {
 			return err
@@ -77,14 +77,14 @@ func (d *DAO) CreatePairing(ctx context.Context, c Connection, adminEmail, activ
 		// The service's earlier read cannot authorize a delayed insert. Recheck
 		// current issuing login and Project roles/status after the shared lock.
 		access := Access{Connection: c}
-		err := tx.QueryRowContext(ctx, `SELECT a.canonical_email, a.canonical_email = $4,
+		err := tx.QueryRowContext(ctx, `SELECT a.canonical_email, a.canonical_email = ANY($4::text[]),
 			p.name, p.project_status, pm.role, tm.role FROM accounts a
 			JOIN login_sessions l ON l.account_id = a.account_id AND l.session_id = $3
 				AND l.auth_epoch = a.auth_epoch AND l.expires_at > now()
 			LEFT JOIN projects p ON p.project_id = $1
 			LEFT JOIN project_members pm ON pm.project_id = p.project_id AND pm.account_id = a.account_id
 			LEFT JOIN team_space_members tm ON tm.team_space_id = p.team_space_id AND tm.account_id = a.account_id
-			WHERE a.account_id = $2 AND a.status = $5`, c.ProjectID, c.AccountID, c.LoginSessionID, adminEmail, activeStatus).
+			WHERE a.account_id = $2 AND a.status = $5`, c.ProjectID, c.AccountID, c.LoginSessionID, adminEmails, activeStatus).
 			Scan(&access.CanonicalEmail, &access.PlatformAdmin, &access.ProjectName, &access.ProjectStatus, &access.ProjectRole, &access.TeamSpaceRole)
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrCredentialInvalid

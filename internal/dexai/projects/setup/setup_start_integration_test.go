@@ -249,7 +249,7 @@ func startStorageScenario(ctx context.Context, t *testing.T, name string) *stora
 	projectFlow, setupFlow, repositoryFlow := &projects.ProjectFlow{}, &setup.ProjectSetupFlow{}, &repobinding.RepositoryBindingFlow{}
 	sdk := dexflowtest.ClientForTest(t, settings.dexAddress, &settings.worker, projectFlow, setupFlow, repositoryFlow)
 	s := &storageScenario{
-		settings: settings, projects: &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, ProjectIDLength: settings.idLength, PlatformAdminEmail: "admin@superverse.test"},
+		settings: settings, projects: &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, ProjectIDLength: settings.idLength, PlatformAdminEmails: []string{"admin@superverse.test"}},
 		setups: &setup.ProjectSetupFlowClient{Dex: sdk, Flow: setupFlow}, bindings: &repobinding.RepositoryBindingFlowClient{Dex: sdk, Flow: repositoryFlow}, reader: dexflowtest.ExecutionReaderForTest(t, settings.dexAddress), requestID: flowid.RandomID(24),
 	}
 	projectID, setupID := flowid.ProjectCreationIDs(owner, s.requestID, settings.idLength)
@@ -566,7 +566,7 @@ func TestProjectSetupSurvivesInitiatingClientExitIntegration(t *testing.T) {
 	if _, err := observer.StartFlow(ctx, projectFlow, "project-"+projectID, projects.StartInputForTest(input), options); err != nil {
 		t.Fatal("same-request root replay failed")
 	}
-	reader := &projects.ProjectFlowClient{Dex: observer, Flow: projectFlow, ProjectIDLength: settings.idLength, PlatformAdminEmail: "admin@superverse.test"}
+	reader := &projects.ProjectFlowClient{Dex: observer, Flow: projectFlow, ProjectIDLength: settings.idLength, PlatformAdminEmails: []string{"admin@superverse.test"}}
 	setups := &setup.ProjectSetupFlowClient{Dex: observer, Flow: setupFlow}
 	if err := reader.Create(ctx, input); err != nil {
 		t.Fatal("matching Project start depended on an unavailable snapshot Worker")

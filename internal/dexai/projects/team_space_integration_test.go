@@ -35,7 +35,7 @@ func teamSpaceClients(t *testing.T) (*projects.ProjectFlowClient, *teamspaces.Te
 	projectFlow, teamSpaceFlow := &projects.ProjectFlow{}, &teamspaces.TeamSpaceFlow{}
 	sdk := dexflowtest.ServerWorkerClient(t, projectFlow, teamSpaceFlow)
 	db := postgrestest.OpenForTest(t)
-	return &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), Members: memberdao.New(db), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmail: "admin@superverse.test"},
+	return &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), Members: memberdao.New(db), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmails: []string{"admin@superverse.test"}},
 		&teamspaces.TeamSpaceFlowClient{Dex: sdk, Flow: teamSpaceFlow}
 }
 
@@ -173,7 +173,7 @@ func TestTeamSpaceDeletionClosedProjectDexIntegration(t *testing.T) {
 	}
 	projectFlow := &projects.ProjectFlow{TeamSpaces: teamSpaces}
 	ownWorker := dexflowtest.WorkerClientForTest(ctx, t, dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS"), dexflowtest.Setting(t, "SUPERVERSE_TEST_WORKER_HOST"), projectFlow)
-	projectClient := &projects.ProjectFlowClient{Dex: ownWorker, Flow: projectFlow, ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmail: "admin@superverse.test"}
+	projectClient := &projects.ProjectFlowClient{Dex: ownWorker, Flow: projectFlow, ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmails: []string{"admin@superverse.test"}}
 	requestID := flowid.RandomID(24)
 	projectID, setupID := flowid.ProjectCreationIDs(owner, requestID, projectClient.ProjectIDLength)
 	admin := teamspaces.Actor{AccountID: "admin-" + teamSpaceID, PlatformAdmin: true}

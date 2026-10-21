@@ -74,10 +74,10 @@ type serverConfig struct {
 	cursors *watch.CursorCodec
 	// formKey is the root key of the connection forms' nonces, the same in
 	// every replica so that each opens the others'.
-	formKey            []byte
-	projectIDLength    int
-	platformAdminEmail string
-	rpcCoverageFile    string
+	formKey             []byte
+	projectIDLength     int
+	platformAdminEmails []string
+	rpcCoverageFile     string
 	// runsDexConnections bounds the Dex connections of Studio Runs.
 	runsDexConnections int
 	studioOrigin       string
@@ -189,7 +189,7 @@ func loadConfig(ctx context.Context, logger *slog.Logger, settings serverconfig.
 	c.cursors = watch.NewCursorCodec(key)
 	c.formKey = key
 	c.projectIDLength, c.runsDexConnections = settings.Server.ProjectIDLength, settings.Studio.RunsDexConnections
-	c.platformAdminEmail = settings.Accounts.PlatformAdminEmail
+	c.platformAdminEmails = settings.Accounts.PlatformAdminEmails
 	c.rpcCoverageFile = settings.Server.RPCCoverageFile
 	c.studioOrigin, c.oauthCallbackOrigin = settings.Studio.PublicOrigin, settings.Connections.OAuthCallbackOrigin
 	if c.oauthCallbackOrigin == "" {

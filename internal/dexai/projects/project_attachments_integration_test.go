@@ -42,7 +42,7 @@ func TestProjectAttachmentsDexIntegration(t *testing.T) {
 	projectFlow := &projects.ProjectFlow{}
 	// This client registry supplies the definition only; the existing Worker runs the Flow with its server's caps.
 	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Address: target}, projectFlow)
-	client := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(postgrestest.OpenForTest(t)), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmail: "admin@superverse.test"}
+	client := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(postgrestest.OpenForTest(t)), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmails: []string{"admin@superverse.test"}}
 	ctx, cancel := context.WithTimeout(t.Context(), 20*time.Minute)
 	defer cancel()
 	projectID := projecttest.CreateForTest(ctx, t, client, t.Name()).ProjectID

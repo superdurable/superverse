@@ -45,7 +45,7 @@ func newFixture(t *testing.T) fixture {
 	db := postgrestest.OpenForTest(t)
 	f := fixture{dao: New(db), db: db, teamSpaceID: "ts" + flowid.RandomID(10), account: flowid.RandomID(32)}
 	now := time.Now().UTC()
-	if _, _, err := accountdao.New(db, "admin@superverse.test").Register(t.Context(), accountdao.Account{
+	if _, _, err := accountdao.New(db, []string{"admin@superverse.test"}).Register(t.Context(), accountdao.Account{
 		AccountID: f.account, CanonicalEmail: "conn-" + f.account + "@example.com", Status: accountdao.StatusActive,
 		PasswordRecord: json.RawMessage(`{}`), CredentialRevision: 1, AuthEpoch: 1, RegistrationFingerprint: f.account, CreatedAt: now, UpdatedAt: now,
 	}); err != nil {
@@ -402,7 +402,7 @@ func TestDeletedProjectUsagesIntegration(t *testing.T) {
 	ctx := t.Context()
 	f := fixture{dao: New(db), db: db, teamSpaceID: "ts" + flowid.RandomID(10), account: flowid.RandomID(32)}
 	now := time.Now().UTC()
-	if _, _, err := accountdao.New(db, "admin@superverse.test").Register(ctx, accountdao.Account{
+	if _, _, err := accountdao.New(db, []string{"admin@superverse.test"}).Register(ctx, accountdao.Account{
 		AccountID: f.account, CanonicalEmail: "conn-" + f.account + "@example.com", Status: accountdao.StatusActive,
 		PasswordRecord: json.RawMessage(`{}`), CredentialRevision: 1, AuthEpoch: 1, RegistrationFingerprint: f.account, CreatedAt: now, UpdatedAt: now,
 	}); err != nil {

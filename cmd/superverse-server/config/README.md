@@ -73,7 +73,7 @@ define the slug.
 
 | Key | Meaning | Default | Valid range |
 | --- | --- | --- | --- |
-| `platformAdminEmail` | Canonical email of the ACTIVE ordinary account with platform-wide authority | `admin@superverse.test` | Required lowercase plain email address; hosted environments set their own value |
+| `platformAdminEmails` | Canonical emails of ACTIVE ordinary accounts with platform-wide authority | `[admin@superverse.test]` | 1–20 unique lowercase plain email addresses; hosted environments set their own list; the singular key is rejected |
 
 ### `server`
 

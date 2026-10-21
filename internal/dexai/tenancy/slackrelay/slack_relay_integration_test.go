@@ -168,7 +168,7 @@ func slackConnectionWithUsage(ctx context.Context, t *testing.T, db *sql.DB, dao
 	t.Helper()
 	teamSpaceID, account, project := "ts"+flowid.RandomID(10), flowid.RandomID(32), "p"+flowid.RandomID(7)
 	now := time.Now().UTC()
-	if _, _, err := accountdao.New(db, "admin@superverse.test").Register(ctx, accountdao.Account{
+	if _, _, err := accountdao.New(db, []string{"admin@superverse.test"}).Register(ctx, accountdao.Account{
 		AccountID: account, CanonicalEmail: "relay-" + account + "@example.com", Status: accountdao.StatusActive,
 		PasswordRecord: json.RawMessage(`{}`), CredentialRevision: 1, AuthEpoch: 1, RegistrationFingerprint: account, CreatedAt: now, UpdatedAt: now,
 	}); err != nil {

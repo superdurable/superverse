@@ -99,7 +99,7 @@ func TestProjectDAOIntegration(t *testing.T) {
 	}
 
 	if _, err = db.ExecContext(ctx, `INSERT INTO accounts (account_id, canonical_email, status, password_record, credential_revision, auth_epoch,
-		registration_fingerprint, created_at, updated_at) VALUES ('admin', $1, $2, '{}', 1, 1, 'f1', now(), now()), ('c2', 'c2@example.com', $2, '{}', 1, 1, 'f2', now(), now())`,
+		registration_fingerprint, created_at, updated_at) VALUES ('admin', $1, $2, '{}', 1, 1, 'f1', now(), now()), ('c2', 'c2@example.com', $2, '{}', 1, 1, 'f2', now(), now()), ('admin2', 'admin2@example.com', $2, '{}', 1, 1, 'f3', now(), now())`,
 		adminEmail, active); err != nil {
 		t.Fatal(err)
 	}
@@ -107,14 +107,14 @@ func TestProjectDAOIntegration(t *testing.T) {
 		account string
 		admin   bool
 		roles   string
-	}{{"admin", true, ":"}, {"c2", false, ":"}, {"c1", false, "OWNER:ADMIN"}, {"unregistered", false, ":"}} {
-		access, authorizeErr := dao.AuthorizeProject(ctx, a001, c.account, adminEmail, active)
+	}{{"admin", true, ":"}, {"admin2", true, ":"}, {"c2", false, ":"}, {"c1", false, "OWNER:ADMIN"}, {"unregistered", false, ":"}} {
+		access, authorizeErr := dao.AuthorizeProject(ctx, a001, c.account, []string{adminEmail, "admin2@example.com"}, active)
 		if authorizeErr != nil || access.PlatformAdmin != c.admin || access.ProjectRole.V+":"+access.TeamSpaceRole.V != c.roles ||
 			access.Project.ProjectID != a001 || access.Project.CreatorAccountID.V != "c1" || access.Project.SetupStatus.V != "DONE" {
 			t.Fatalf("authorize %s on a001: %+v: %v", c.account, access, authorizeErr)
 		}
 	}
-	if _, err = dao.AuthorizeProject(ctx, "a005", "admin", adminEmail, active); !errors.Is(err, postgres.ErrNotFound) {
+	if _, err = dao.AuthorizeProject(ctx, "a005", "admin", []string{adminEmail, "admin2@example.com"}, active); !errors.Is(err, postgres.ErrNotFound) {
 		t.Fatalf("authorize the admin on a005, which ProjectFlow has not written: %v", err)
 	}
 }

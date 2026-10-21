@@ -19,6 +19,7 @@ import (
 	pb "github.com/superdurable/superversev2/gen/superverse/v2"
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
+	"github.com/superdurable/superversev2/internal/comm/platform/postgres"
 	"github.com/superdurable/superversev2/internal/comm/platform/postgres/postgrestest"
 	"github.com/superdurable/superversev2/internal/dexai/agents"
 	"github.com/superdurable/superversev2/internal/dexai/api/boundary"
@@ -37,12 +38,12 @@ func TestAccountGRPCIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 90*time.Second)
 	defer cancel()
 	signer := comm.Must(accounts.NewTokenSigner([]byte(strings.Repeat("x", 32))))
-	service := &accounts.Accounts{DAO: accountdao.New(postgrestest.OpenForTest(t), "admin@superverse.test"), Signer: signer}
+	service := &accounts.Accounts{DAO: accountdao.New(postgrestest.OpenForTest(t), []string{"admin@superverse.test"}), Signer: signer}
 	// The real Session Service rejects a malformed Project ID before it reads
 	// any dependency: every Session, Agent and Preview request validates the
 	// Project ID while it authorizes the Project. Its Project client has no
 	// Dex client, so a request that reached Dex would fail otherwise.
-	sessionService := &agents.SessionFlowService{Projects: &projects.ProjectFlowClient{ProjectIDLength: 4, PlatformAdminEmail: "admin@superverse.test"}, Logger: slog.Default()}
+	sessionService := &agents.SessionFlowService{Projects: &projects.ProjectFlowClient{ProjectIDLength: 4, PlatformAdminEmails: []string{"admin@superverse.test"}}, Logger: slog.Default()}
 	var failureLogs bytes.Buffer
 	connection := serveLoopback(ctx, t, &Server{Boundary: &boundary.Boundary{Logger: slog.New(slog.NewTextHandler(&failureLogs, nil)), Accounts: service}, ProjectIDLength: 4, Sessions: sessionService})
 	accountAPI, sessionAPI := pb.NewAccountServiceClient(connection), pb.NewSessionServiceClient(connection)
@@ -170,4 +171,42 @@ func TestAccountGRPCIntegration(t *testing.T) {
 		t.Fatal("unrelated login revoked", err)
 	}
 	t.Logf("verified typed gRPC caller account=%s accountID=%s, missing/forged caller and metadata-only identity rejected, malformed Project IDs of the Session rejected before Dex, expiry and precise logout enforced", caller.GetCanonicalEmail(), caller.GetAccountId())
+}
+
+// TestMultiplePlatformAdminsGRPCIntegration uses real account SQL and the
+// authenticated gRPC boundary for registration, login and current-account reads.
+func TestMultiplePlatformAdminsGRPCIntegration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), 90*time.Second)
+	defer cancel()
+	db := postgrestest.ScratchDatabaseForTest(t)
+	if _, err := postgres.Migrate(ctx, db); err != nil {
+		t.Fatal(err)
+	}
+	emails := []string{"admin-one@example.com", "admin-two@example.com"}
+	service := &accounts.Accounts{DAO: accountdao.New(db, emails), Signer: comm.Must(accounts.NewTokenSigner([]byte(strings.Repeat("m", 32))))}
+	connection := serveLoopback(ctx, t, &Server{Boundary: &boundary.Boundary{Logger: slog.Default(), Accounts: service}})
+	client := pb.NewAccountServiceClient(connection)
+	for _, email := range append(emails, "ordinary@example.com") {
+		t.Run(email, func(t *testing.T) {
+			want := email != "ordinary@example.com"
+			registered, err := client.RegisterAccount(ctx, &pb.RegisterAccountRequest{Email: strings.ToUpper(email), Password: "multi-admin-password", RequestId: "register-" + email})
+			if err != nil || registered.GetLogin().GetAccount().GetIsAdmin() != want {
+				t.Fatalf("registration admin=%t: %v", registered.GetLogin().GetAccount().GetIsAdmin(), err)
+			}
+			loggedIn, err := client.Login(ctx, &pb.LoginRequest{Email: email, Password: "multi-admin-password"})
+			if err != nil || loggedIn.GetLogin().GetAccount().GetIsAdmin() != want {
+				t.Fatalf("login admin=%t: %v", loggedIn.GetLogin().GetAccount().GetIsAdmin(), err)
+			}
+			login := loggedIn.GetLogin()
+			caller := &pb.CallerContext{AccountId: login.GetAccount().GetAccountId(), CanonicalEmail: email, SessionToken: login.GetSessionToken()}
+			current, err := client.GetCurrentAccount(ctx, &pb.GetCurrentAccountRequest{Caller: caller})
+			if err != nil || current.GetAccount().GetIsAdmin() != want {
+				t.Fatalf("authenticated account admin=%t: %v", current.GetAccount().GetIsAdmin(), err)
+			}
+			admin, err := service.IsAdministrator(ctx, caller.GetAccountId())
+			if err != nil || admin != want {
+				t.Fatalf("SQL authorization admin=%t: %v", admin, err)
+			}
+		})
+	}
 }

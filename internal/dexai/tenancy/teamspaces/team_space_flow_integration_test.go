@@ -207,7 +207,7 @@ func TestTeamSpaceDexIntegration(t *testing.T) {
 func teamSpaceConnection(ctx context.Context, t *testing.T, db *sql.DB, objects *objectstore.Store, teamSpaceID, creator string) (string, string) {
 	t.Helper()
 	now := time.Now().UTC()
-	if _, _, err := accountdao.New(db, "admin@superverse.test").Register(ctx, accountdao.Account{
+	if _, _, err := accountdao.New(db, []string{"admin@superverse.test"}).Register(ctx, accountdao.Account{
 		AccountID: creator, CanonicalEmail: creator + "@example.com", Status: accountdao.StatusActive, PasswordRecord: json.RawMessage(`{}`),
 		CredentialRevision: 1, AuthEpoch: 1, RegistrationFingerprint: creator, CreatedAt: now, UpdatedAt: now,
 	}); err != nil {
