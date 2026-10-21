@@ -24,7 +24,11 @@ only on it. `Orca` extends it with the tab/worktree inventory and `Reload` used 
 `VersionPolicy` declares a minimum and newest verified version for each provider.
 Versions below the minimum fail; newer versions return one warning and may connect.
 An unsupported protocol answer holds that binding with a clear status problem
-instead of retrying it.
+instead of retrying it. A definite `platform.ErrEndpointGone` similarly holds
+the binding, exposes the endpoint problem in status and explains local cleanup;
+it neither retries forever nor removes credentials implicitly. An explicit
+local-only disconnect cancels the local turn and removes its binding without
+revoking platform access.
 
 `SubmissionJournal` resends the same operation ID to Orca's idempotent journal, as before.
 `SubmissionOneWrite` requires `OneWriteProvider`: the relay persists a random marker and the

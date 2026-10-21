@@ -230,16 +230,16 @@ func (r *relay) readyResult() *mcpserver.CallResult {
 // which removes the binding without touching the Orca session.
 func (r *relay) holdChanged(ctx context.Context, err error) {
 	r.logger.ErrorContext(ctx, "The "+r.provider.ProviderName()+" conversation changed; reconnect from Studio", "project", r.projectName)
-	r.holdFailure(ctx, err)
+	r.holdFailure(ctx, err, false)
 }
 
-func (r *relay) holdFailure(ctx context.Context, err error) {
+func (r *relay) holdFailure(ctx context.Context, err error, cancelTurn bool) {
 	r.setProblem(err)
 	<-ctx.Done()
 	r.mu.Lock()
 	stopping := r.stopping
 	r.mu.Unlock()
 	if stopping != nil {
-		r.finishDetach(ctx, stopping, false)
+		r.finishDetach(ctx, stopping, cancelTurn)
 	}
 }

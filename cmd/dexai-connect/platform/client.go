@@ -292,6 +292,9 @@ func (client *Client) retry(ctx context.Context, path string, attempt func(conte
 
 // retryable is a network failure, a gateway failure or a transient refusal.
 func retryable(err error) bool {
+	if errors.Is(err, ErrEndpointGone) {
+		return false
+	}
 	if code, ok := RefusalCode(err); ok {
 		return code.Transient()
 	}
@@ -318,6 +321,9 @@ func (client *Client) send(request *http.Request, response any, limit int64) err
 	request.Header.Set("User-Agent", client.agent)
 	answer, err := client.http.Do(request)
 	if err != nil {
+		if endpointAddressGone(err, client.endpoint.Hostname()) {
+			return fmt.Errorf("%w: %w", ErrEndpointGone, err)
+		}
 		return fmt.Errorf("call the endpoint: %w", err)
 	}
 	defer func() { _ = answer.Body.Close() }()
@@ -328,8 +334,13 @@ func (client *Client) send(request *http.Request, response any, limit int64) err
 		return &protocolError{err: fmt.Errorf("HTTP %d: the endpoint does not redirect", answer.StatusCode)}
 	}
 	var refusal bridgeapi.ErrorBody
-	if err := decodeLimited(answer.Body, bridgeapi.MaxErrorBodyBytes, &refusal); err != nil {
+	if err := decodeLimited(answer.Body, bridgeapi.MaxErrorBodyBytes, &refusal); err != nil || refusal.Code == "" {
+		if err == nil {
+			err = errors.New("the error body lacks a code")
+		}
 		switch answer.StatusCode {
+		case http.StatusNotFound:
+			return fmt.Errorf("%w: HTTP 404 without a coded body", ErrEndpointGone)
 		case http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout:
 			return &gatewayError{status: answer.StatusCode}
 		}

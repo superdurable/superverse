@@ -201,16 +201,19 @@ func (supervisor *Supervisor) Status() []string {
 	return lines
 }
 
-// Disconnect revokes a binding's connection, then ends and removes it.
-func (supervisor *Supervisor) Disconnect(ctx context.Context, connectionID string) error {
+// Disconnect optionally revokes the connection, then stops its local turn
+// and removes its binding. localOnly never claims platform revocation.
+func (supervisor *Supervisor) Disconnect(ctx context.Context, connectionID string, localOnly bool) error {
 	supervisor.mu.Lock()
 	r := supervisor.relays[connectionID]
 	supervisor.mu.Unlock()
 	if r == nil {
 		return fmt.Errorf("no running binding has connection %s", connectionID)
 	}
-	if err := Revoke(ctx, r.client); err != nil {
-		return err
+	if !localOnly {
+		if err := Revoke(ctx, r.client); err != nil {
+			return err
+		}
 	}
 	r.stop(&detachment{})
 	return nil

@@ -4,7 +4,7 @@ Purpose: Serves the Superverse tools to Codex as a stdio MCP server and forwards
 
 Callers: `cmd/dexai-connect` (the `mcp` command, and `serve`, `status` and `disconnect` through the local socket).
 
-Dependencies: `internal/dexai/agents/remoteagent/bridgeapi` and `internal/comm`; it calls no remote API, only serve's local socket.
+Dependencies: `cmd/dexai-connect/platform`, `internal/dexai/agents/remoteagent/bridgeapi` and `internal/comm`; it calls no remote API, only serve's local socket.
 
 ## MCP
 
@@ -63,7 +63,10 @@ JSON-escaped); serve handles at most 64 connections at once.
 | `call` | `session`, `name`, `arguments` | `{result: {text, isError}}` when the platform recorded the call's result, or `{error}`; then one acknowledgement byte from `mcp` |
 | `watch` | `session` | `{digest}` now and after every change, until either side closes |
 | `status` | — | `{lines}`: one status line per binding |
-| `disconnect` | `connectionId` | `{}` once the binding is disconnected and removed, or `{error}` |
+| `disconnect` | `connectionId`, optional `localOnly` | `{}` after stopping the local turn and removing its binding; revokes platform access unless `localOnly`; `{error, endpointGone?}` on failure |
 | `attach` | `connectionId` | `{}` once serve runs the binding that `connect` stored, or `{error}` |
 
-Any refusal is `{error: "<reason>"}`.
+Any refusal carries `{error: "<reason>"}`. A definite missing endpoint also carries
+`endpointGone: true`, preserving its typed classification across the local socket
+without inspecting error text. `localOnly` is an explicit caller decision, never
+an automatic response to a timeout. It makes no platform revocation claim.

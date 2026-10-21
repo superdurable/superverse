@@ -21,6 +21,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/superdurable/superversev2/cmd/dexai-connect/platform"
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteagent/bridgeapi"
 )
@@ -47,6 +48,7 @@ type localRequest struct {
 	Name         string          `json:"name,omitempty"`
 	Arguments    json.RawMessage `json:"arguments,omitempty"`
 	ConnectionID string          `json:"connectionId,omitempty"`
+	LocalOnly    bool            `json:"localOnly,omitempty"`
 }
 
 type localResponse struct {
@@ -57,6 +59,7 @@ type localResponse struct {
 	Result       *CallResult `json:"result,omitempty"`
 	Lines        []string    `json:"lines,omitempty"`
 	Error        string      `json:"error,omitempty"`
+	EndpointGone bool        `json:"endpointGone,omitempty"`
 }
 
 // CallResult is the outcome of one tool call as Codex sees it. Delivered,
@@ -104,7 +107,7 @@ type Backend interface {
 	// one, until ctx ends.
 	WatchTools(ctx context.Context, session string, changed func(digest string) error) error
 	Status() []string
-	Disconnect(ctx context.Context, connectionID string) error
+	Disconnect(ctx context.Context, connectionID string, localOnly bool) error
 	// Attach starts the relay of a binding another process stored.
 	Attach(ctx context.Context, connectionID string) error
 }
@@ -227,8 +230,8 @@ func answerLocal(ctx context.Context, request localRequest, backend Backend) loc
 	case opStatus:
 		return localResponse{Lines: backend.Status()}
 	case opDisconnect:
-		if err := backend.Disconnect(ctx, request.ConnectionID); err != nil {
-			return localResponse{Error: err.Error()}
+		if err := backend.Disconnect(ctx, request.ConnectionID, request.LocalOnly); err != nil {
+			return localResponse{Error: err.Error(), EndpointGone: errors.Is(err, platform.ErrEndpointGone)}
 		}
 		return localResponse{}
 	case opAttach:
@@ -252,6 +255,12 @@ func Status(ctx context.Context, socketPath string) ([]string, error) {
 // Disconnect asks a running serve to disconnect one binding.
 func Disconnect(ctx context.Context, socketPath, connectionID string) error {
 	_, err := askLocal(ctx, socketPath, localRequest{Op: opDisconnect, ConnectionID: connectionID})
+	return err
+}
+
+// Forget stops and removes a local binding without revoking its platform access.
+func Forget(ctx context.Context, socketPath, connectionID string) error {
+	_, err := askLocal(ctx, socketPath, localRequest{Op: opDisconnect, ConnectionID: connectionID, LocalOnly: true})
 	return err
 }
 
@@ -299,6 +308,9 @@ func callLocal(ctx context.Context, socketPath string, request localRequest) (lo
 	}
 	if response.Error != "" {
 		done(false)
+		if response.EndpointGone {
+			return response, func(bool) {}, fmt.Errorf("%w: %s", platform.ErrEndpointGone, response.Error)
+		}
 		return response, func(bool) {}, errors.New(response.Error)
 	}
 	return response, done, nil

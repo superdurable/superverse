@@ -15,7 +15,12 @@ Dependencies: `internal/dexai/agents/remoteagent/bridgeapi` and `internal/comm`;
 - A refusal is a `*RefusalError` with the coded `bridgeapi.ErrorBody`; `RefusalCode` reads its code.
   Refusals are final for their request (400, 401, 403, 409, 413), except the transient codes
   `rate_limited` and `reports_pending` (429) and `unavailable` (503).
-- Network failures, gateway answers without a coded body (502, 503, 504) and transient refusals are
+- An uncoded 404, DNS name-not-found or TLS hostname mismatch is
+  `ErrEndpointGone`: no API at this endpoint is confirmed and the original
+  platform credential is not known to be revoked. These failures are not retried. Address errors must name the configured
+  endpoint itself; a missing proxy or its hostname mismatch remains a network
+  failure and never authorizes forgetting the endpoint.
+- Other network failures, gateway answers without a coded body (502, 503, 504) and transient refusals are
   retried with backoff from 1 s to 60 s until the caller's context ends; a 429's `Retry-After` in
   seconds (at most 5 minutes) is the least wait before its retry.
 - Redirects are never followed, so the token and body never reach another URL: any 3xx is a

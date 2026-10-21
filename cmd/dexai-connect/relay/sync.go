@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/superdurable/superversev2/cmd/dexai-connect/mcpserver"
+	"github.com/superdurable/superversev2/cmd/dexai-connect/platform"
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteagent/bridgeapi"
 )
@@ -79,6 +80,9 @@ func (r *relay) syncLoop(ctx context.Context) error {
 			continue
 		}
 		if err != nil {
+			if errors.Is(err, platform.ErrEndpointGone) {
+				return err
+			}
 			var ended *detachment
 			if errors.As(detachOn(err), &ended) {
 				return ended

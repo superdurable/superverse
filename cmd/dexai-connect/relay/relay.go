@@ -175,13 +175,18 @@ func (r *relay) run(ctx context.Context) {
 			r.finishDetach(ctx, ended, true)
 			return
 		}
+		if errors.Is(err, platform.ErrEndpointGone) {
+			r.logger.ErrorContext(ctx, "The endpoint no longer serves this connection; platform access was not revoked. Use dexai disconnect --local, then switch to the platform agent in Studio or pair again to take over.", "project", r.projectName)
+			r.holdFailure(ctx, err, true)
+			return
+		}
 		if isSessionChanged(err) {
 			r.holdChanged(ctx, err)
 			return
 		}
 		if errors.Is(err, ErrUnsupportedProtocol) {
 			r.logger.ErrorContext(ctx, "binding stopped after an unsupported provider protocol answer", "project", r.projectName, "error", err)
-			r.holdFailure(ctx, err)
+			r.holdFailure(ctx, err, false)
 			return
 		}
 		r.mu.Lock()

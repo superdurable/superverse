@@ -80,14 +80,24 @@ message and report uncertainty; it cannot create a duplicate send. Direct adapte
 marker in user content, avoid internal send retries, filter hidden reasoning, and normalize the
 submitted user's event ID to the deterministic ID they gave the relay for echo suppression.
 
+A definite missing endpoint (an uncoded 404, missing DNS name or TLS hostname
+mismatch) holds the relay without further retry. It retains local state until
+explicit disconnect. Local-only disconnect stops the local turn and removes its
+binding without claiming platform revocation; the existing credential owner is
+unchanged. The direct CLI asks before forgetting on transient-looking failures.
+
 ### Direct Codex binding
 
-`dexai connect` asks for the code and agent on the terminal. It offers Codex and
-Claude Code; Claude uses one headless child owned by this foreground process. Codex CLI and the Builder's own managed daemon
+`dexai connect` selects the agent using the login shell PATH, offers explicit
+installation/login when needed and checks its version and authentication before
+asking for the code. Installation and login default to No without a TTY. It
+offers Codex and Claude Code; Claude uses one headless child owned by this foreground process. Claude Code requires 2.1.41 for documented authentication checks. Its built-in tools are disabled with an empty `--tools` list; only the strict platform MCP catalog is allowed, with `DEXAI_BINDING_ID` selecting its binding. Codex CLI and the Builder's own managed daemon
 must both be at least 0.162.0 at connect and reconnect; 0.163.0 is the newest
 verified daemon version. A newer version connects with a warning at startup and
 in status. An unrecognized turn status, item type or required answer stops the
-binding with an explicit protocol error. dexai does not install or update either.
+binding with an explicit protocol error. Missing CLIs install only after explicit
+confirmation using the documented vendor command; existing CLIs are never
+silently updated. Codex daemon startup follows CLI version and login checks.
 The command pairs, starts one persistent Codex thread in its local working directory
 with a per-thread MCP configuration, stores the binding, activates the platform connection, and
 sends the platform brief as the first user turn. It opens the Codex TUI on that thread only after

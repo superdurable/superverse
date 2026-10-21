@@ -85,19 +85,37 @@ compatibility warning at startup and in `dexai-connect status`.
 
 The direct `dexai` command has a separate default state directory (`dexai` under
 the user configuration directory, or `DEXAI_STATE_DIR`). Build its local macOS
-binary with `make build-dexai-local`. The Builder's installed Codex CLI and
+binary with `make build-dexai-local`. It offers the agent before the pairing
+code and marks Codex/Claude Code installed or missing using the user's login
+shell PATH. Missing agents offer the documented vendor install command with
+explicit `Y/n` confirmation; declining prints the command and exits. Logged-out
+agents offer interactive login, then recheck it. These actions default to No
+without a TTY, even with piped confirmation. The CLI README records the vendor
+commands, official sources and verification date. Only after setup, supported
+versions, login and the Codex daemon check does it ask for the Studio code.
+Claude Code must be at least 2.1.41 for its documented `auth status` and `auth login` commands. It receives only the platform MCP tools; its built-in tools are disabled.
+The Builder's installed Codex CLI and
 shared daemon must both be at least 0.162.0; 0.163.0 is the newest verified
 version and newer versions connect with a compatibility warning. `dexai`
 starts the daemon with `codex app-server daemon start` when it is absent; it
-does not install, update, downgrade or restart it. The first brief is submitted
+never updates, downgrades or restarts an existing daemon. Installation of a missing
+CLI requires the separate confirmation above. The first brief is submitted
 before the Codex TUI opens. Each `dexai connect` owns a fresh private connection
 directory, so run it again in another terminal to connect another Project or
 endpoint; no separate `--state-dir` is needed. Codex opens a separate thread/TUI,
 and Claude Code runs a separate headless child. Exit the TUI or press Ctrl+C to
 stop and revoke only that connection; the others keep relaying. The Project stays
 in remote mode, offline: reconnect with a new pairing code or switch to the
-Superverse agent in Studio. `dexai status` lists every endpoint, Project and
+platform agent in Studio. `dexai status` lists every endpoint, Project and
 connection ID; `dexai disconnect --connection <id>` stops a selected connection.
+If a domain moved, `dexai disconnect` forgets a binding after a definite uncoded
+404, missing DNS name or TLS hostname mismatch. It states that platform access
+was not revoked; switch to the platform agent in Studio, or pair again to take
+over. Transient-looking errors ask before local removal and default to retaining
+the binding without a TTY. `dexai disconnect --local` explicitly skips revocation.
+A definite missing API holds the relay with a clear status problem instead of
+retrying forever. No token is printed.
+
 Normal exit deletes its private directory after revocation; failed cleanup keeps
 an offline record for disconnect to finish. At most eight connections share a
 state root, including retained records. `dexai serve` resumes only legacy flat
