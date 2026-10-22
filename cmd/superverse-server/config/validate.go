@@ -33,7 +33,6 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/platform/objectstore"
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
-	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/projects/infra"
 	"github.com/superdurable/superversev2/internal/dexai/tenancy/connections"
 )
@@ -136,7 +135,7 @@ func (c Config) Validate() error {
 
 	if modelErr := c.Agent.Model.Validate(); modelErr != nil {
 		fail("agent.model: %v", modelErr)
-	} else if availability := modelprovider.ProfileOf(c.Agent.Model).Availability; !availability.Selectable() {
+	} else if availability := c.Agent.Providers.Availability(c.Agent.Model); !availability.Selectable() {
 		fail("agent.model: %s", availability.Reason())
 	}
 	if c.Agent.Effort.Validate() != nil {
@@ -162,6 +161,15 @@ func (c Config) Validate() error {
 	}
 	if !between(c.Agent.PlatformTurns, 0, 100) {
 		fail("agent.platformTurns must be an integer from 0 to 100")
+	}
+	if err := c.Agent.Providers.Validate(c.LocalKind, c.Agent.MockModel); err != nil {
+		fail("%v", err)
+	}
+	if err := c.Agent.ModelEndpoints.Validate(c.LocalKind); err != nil {
+		fail("%v", err)
+	}
+	if c.Agent.Providers.MockEndpoint && !c.Agent.ModelEndpoints.AllowLocalLoopback {
+		fail("agent.providers.mockEndpoint requires agent.modelEndpoints.allowLocalLoopback")
 	}
 	if c.Agent.MockModel && environment == deploymentnames.EnvironmentProd {
 		fail("agent.mockModel is refused in prod")

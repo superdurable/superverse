@@ -10,7 +10,20 @@ package bootstrap
 
 import (
 	"context"
+	"errors"
+	serverconfig "github.com/superdurable/superversev2/cmd/superverse-server/config"
+	"github.com/superdurable/superversev2/internal/comm/dexflow/dexflowtest"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/mockmodel"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"log/slog"
+	"net"
+	"os"
+	"strings"
 	"testing"
+	"time"
 
 	pb "github.com/superdurable/superversev2/gen/superverse/v2"
 	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
@@ -72,5 +85,64 @@ func assertBYOKProvidersAbsent(t *testing.T, ctx context.Context, sessions *sess
 		if err != nil || exact != nil {
 			t.Fatalf("Project cleanup retained %s source credential (%T)", provider.String(), err)
 		}
+	}
+}
+
+// Startup uses real Native dependencies while the enabled provider has no DNS record.
+func TestProviderDNSOutageStartupDexIntegration(t *testing.T) {
+	if dexflowtest.LocalLaneForTest(t).String() != "native" {
+		t.Fatal("requires Local Native")
+	}
+	ctx, cancel := context.WithTimeout(t.Context(), time.Minute)
+	defer cancel()
+	logger := slog.New(slog.DiscardHandler)
+	settings, err := serverconfig.Load(strings.Split(os.Getenv("SUPERVERSE_CONFIG_FILE"), ",")...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	config, err := loadConfig(ctx, logger, settings)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Supply the configured model transport directly, without starting a local endpoint.
+	config.mockModel = false
+	config.agent.Mock = &modelprovider.MockClientConfig{ClaudeClientConfig: modelprovider.ClaudeClientConfig{APIKey: mockmodel.APIKey, BaseURL: "https://provider.invalid"}}
+	config.providers = modelprovider.ProviderConfig{Enabled: []conversation.Provider{conversation.ProviderOpenAI}, MockEndpoint: true}
+	config.blobCache.Dir = t.TempDir()
+	config.rpcCoverageFile = ""
+	var owned resources
+	defer func() {
+		if err := owned.release(); err != nil {
+			t.Error(err)
+		}
+	}()
+	server, err := compose(ctx, config, logger, &owned)
+	if err != nil {
+		t.Fatal("DNS outage prevented server composition:", err)
+	}
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	served := make(chan error, 1)
+	go func() { served <- server.business.Serve(listener) }()
+	defer func() { server.business.Stop(); <-served }()
+	transport, err := grpc.NewClient(listener.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer transport.Close()
+	_, err = pb.NewAgentServiceClient(transport).ListAgentModels(ctx, &pb.ListAgentModelsRequest{})
+	if status.Code(err) != codes.Unauthenticated {
+		t.Fatal("composed server did not serve authenticated API:", err)
+	}
+	runtime, err := modelprovider.NewCompatibleProviders(ctx, config.providers, config.modelEndpoints, config.agent.Mock.BaseURL, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer runtime.Close()
+	var dns *net.DNSError
+	if err := runtime.ValidateCredential(ctx, conversation.ProviderOpenAI, mockmodel.APIKey); !errors.As(err, &dns) {
+		t.Fatal("provider call must fail closed at DNS dial:", err)
 	}
 }

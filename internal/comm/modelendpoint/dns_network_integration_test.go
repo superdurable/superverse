@@ -39,9 +39,15 @@ func TestEndpointDNSChangeNetworkIntegration(t *testing.T) {
 	}
 	defer client.CloseIdleConnections()
 	admitted := queries.Load()
-	if admitted == 0 {
-		t.Fatal("admission did not read the actual DNS service")
+	if admitted != 0 {
+		t.Fatal("client construction must not depend on DNS")
 	}
+	// Observe the original zone through the real resolver, then prove the dial
+	// resolves again rather than trusting that earlier public/allowed answer.
+	if _, err := (policy{allowLocalLoopback: true, resolver: resolver}).resolve(ctx, "model.endpoint.test"); err != nil {
+		t.Fatal("original DNS answer:", err)
+	}
+	admitted = queries.Load()
 	private.Store(true)
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, base+"/v1/models?limit=1", nil)
 	if err != nil {

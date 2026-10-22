@@ -638,7 +638,7 @@ func TestProjectAnthropicCredentialDexIntegration(t *testing.T) {
 		t.Fatalf("set normal-cleanup credential (%s)", status.Code(err))
 	}
 	seedBYOKProviders(t, ctx, sessions, credentials, agentloop.SessionFlowID(normal.ProjectID), normal.ProjectID, normalCaller, firstKey)
-	retainedChild := exerciseBYOKChildIsolation(t, ctx, config, &owned, reader, sessions, children, credentials, agent, normal.ProjectID, normalCaller, firstKey, probe, wait)
+	retainedChild := exerciseBYOKChildIsolation(t, ctx, sessions, children, credentials, agent, normal.ProjectID, normalCaller, firstKey, probe, wait)
 	projecttest.DeleteForTest(ctx, t, projectClient, normal.ProjectID)
 	assertBYOKChildAbsent(t, ctx, sessions, children, agentloop.SessionFlowID(normal.ProjectID), retainedChild, modelcredential.ForModel(conversation.ModelGPT6Astra))
 	assertBYOKProvidersAbsent(t, ctx, sessions, agentloop.SessionFlowID(normal.ProjectID))

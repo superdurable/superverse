@@ -26,10 +26,11 @@ import (
 
 // ModelCredentialFlowService owns the only cross-Flow credential mutation path.
 type ModelCredentialFlowService struct {
-	Sessions  *sessionagent.SessionAgentFlowClient
-	Subagents *subagent.SubagentFlowClient
-	HTTP      *http.Client
-	Logger    *slog.Logger
+	Compatible *modelprovider.CompatibleProviders
+	Sessions   *sessionagent.SessionAgentFlowClient
+	Subagents  *subagent.SubagentFlowClient
+	HTTP       *http.Client
+	Logger     *slog.Logger
 	// ValidationBaseURL is empty in production; real-dependency tests use the mock model endpoint.
 	ValidationBaseURL string
 }
@@ -45,11 +46,14 @@ func (s *ModelCredentialFlowService) Mutate(ctx context.Context, flowID agentloo
 		return current, modelcredential.ErrRevision
 	}
 	if !input.Delete && current.OperationID != input.OperationID {
-		if input.Provider != modelcredential.Anthropic {
-			return current, conversation.ModelUnavailable.Rejected()
+		var validationErr error
+		if input.Provider == modelcredential.Anthropic {
+			validationErr = modelprovider.ValidateCredential(ctx, s.HTTP, key, conversation.ModelHaiku45, s.ValidationBaseURL, s.Logger)
+		} else {
+			validationErr = s.Compatible.ValidateCredential(ctx, input.Provider.Catalog(), key)
 		}
-		if err := modelprovider.ValidateCredential(ctx, s.HTTP, key, conversation.ModelHaiku45, s.ValidationBaseURL, s.Logger); err != nil {
-			return current, err
+		if validationErr != nil {
+			return current, validationErr
 		}
 	}
 	admission, err := s.Sessions.ReserveModelCredential(ctx, flowID, input)

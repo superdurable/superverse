@@ -71,7 +71,7 @@ func (CallCompatibleProbe) GetStepOptions() *dex.StepOptions {
 }
 func (step CallCompatibleProbe) Execute(ctx dex.Context, input string) (*dex.StepDecision, error) {
 	entry := conversation.UserMessageEntry(input, nil)
-	request := conversation.ModelRequest{Model: conversation.ModelMock, Prompts: agentloop.SessionPromptFor(conversation.ModelMock).Prompts,
+	request := conversation.ModelRequest{Model: compatibleProbeModel(step.flow.policy), APIKey: mockmodel.APIKey, Prompts: agentloop.SessionPromptFor(conversation.ModelMock).Prompts,
 		Messages: []conversation.RequestMessage{{Role: entry.Role, Blocks: entry.Blocks, CacheAnchor: -1}}}
 	reasoningWrites := 0
 	callContext, cancel := context.WithCancel(ctx)
@@ -372,5 +372,24 @@ func TestCompatibleProtocolFailuresDexIntegration(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+// Protocol fixtures use the policy's actual catalog identity and an explicit
+// non-secret mock key; production provider binding and admission stay enforced.
+func compatibleProbeModel(policy openaicompat.Policy) conversation.Model {
+	switch policy.Provider {
+	case conversation.ProviderOpenAI:
+		return conversation.ModelGPT6Astra
+	case conversation.ProviderXAI:
+		return conversation.ModelGrok47
+	case conversation.ProviderGemini:
+		return conversation.ModelGemini4Argon
+	case conversation.ProviderKimi:
+		return conversation.ModelKimiK26
+	case conversation.ProviderQwen:
+		return conversation.ModelQwen38Max
+	default:
+		panic("unsupported protocol fixture provider")
 	}
 }

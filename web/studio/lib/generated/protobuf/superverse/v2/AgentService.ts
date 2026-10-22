@@ -10,6 +10,8 @@ import type { GetFlowDesignRequest as _superverse_v2_GetFlowDesignRequest, GetFl
 import type { GetFlowDesignResponse as _superverse_v2_GetFlowDesignResponse, GetFlowDesignResponse__Output as _superverse_v2_GetFlowDesignResponse__Output } from '../../superverse/v2/GetFlowDesignResponse';
 import type { InterruptAgentRequest as _superverse_v2_InterruptAgentRequest, InterruptAgentRequest__Output as _superverse_v2_InterruptAgentRequest__Output } from '../../superverse/v2/InterruptAgentRequest';
 import type { InterruptAgentResponse as _superverse_v2_InterruptAgentResponse, InterruptAgentResponse__Output as _superverse_v2_InterruptAgentResponse__Output } from '../../superverse/v2/InterruptAgentResponse';
+import type { ListAgentModelsRequest as _superverse_v2_ListAgentModelsRequest, ListAgentModelsRequest__Output as _superverse_v2_ListAgentModelsRequest__Output } from '../../superverse/v2/ListAgentModelsRequest';
+import type { ListAgentModelsResponse as _superverse_v2_ListAgentModelsResponse, ListAgentModelsResponse__Output as _superverse_v2_ListAgentModelsResponse__Output } from '../../superverse/v2/ListAgentModelsResponse';
 import type { ListMockScenariosRequest as _superverse_v2_ListMockScenariosRequest, ListMockScenariosRequest__Output as _superverse_v2_ListMockScenariosRequest__Output } from '../../superverse/v2/ListMockScenariosRequest';
 import type { ListMockScenariosResponse as _superverse_v2_ListMockScenariosResponse, ListMockScenariosResponse__Output as _superverse_v2_ListMockScenariosResponse__Output } from '../../superverse/v2/ListMockScenariosResponse';
 import type { ResolveToolApprovalRequest as _superverse_v2_ResolveToolApprovalRequest, ResolveToolApprovalRequest__Output as _superverse_v2_ResolveToolApprovalRequest__Output } from '../../superverse/v2/ResolveToolApprovalRequest';
@@ -57,6 +59,15 @@ export interface AgentServiceClient extends grpc.Client {
   interruptAgent(argument: _superverse_v2_InterruptAgentRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_superverse_v2_InterruptAgentResponse__Output>): grpc.ClientUnaryCall;
   interruptAgent(argument: _superverse_v2_InterruptAgentRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_InterruptAgentResponse__Output>): grpc.ClientUnaryCall;
   interruptAgent(argument: _superverse_v2_InterruptAgentRequest, callback: grpc.requestCallback<_superverse_v2_InterruptAgentResponse__Output>): grpc.ClientUnaryCall;
+
+  ListAgentModels(argument: _superverse_v2_ListAgentModelsRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_ListAgentModelsResponse__Output>): grpc.ClientUnaryCall;
+  ListAgentModels(argument: _superverse_v2_ListAgentModelsRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_superverse_v2_ListAgentModelsResponse__Output>): grpc.ClientUnaryCall;
+  ListAgentModels(argument: _superverse_v2_ListAgentModelsRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_ListAgentModelsResponse__Output>): grpc.ClientUnaryCall;
+  ListAgentModels(argument: _superverse_v2_ListAgentModelsRequest, callback: grpc.requestCallback<_superverse_v2_ListAgentModelsResponse__Output>): grpc.ClientUnaryCall;
+  listAgentModels(argument: _superverse_v2_ListAgentModelsRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_ListAgentModelsResponse__Output>): grpc.ClientUnaryCall;
+  listAgentModels(argument: _superverse_v2_ListAgentModelsRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_superverse_v2_ListAgentModelsResponse__Output>): grpc.ClientUnaryCall;
+  listAgentModels(argument: _superverse_v2_ListAgentModelsRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_ListAgentModelsResponse__Output>): grpc.ClientUnaryCall;
+  listAgentModels(argument: _superverse_v2_ListAgentModelsRequest, callback: grpc.requestCallback<_superverse_v2_ListAgentModelsResponse__Output>): grpc.ClientUnaryCall;
 
   ListMockScenarios(argument: _superverse_v2_ListMockScenariosRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_ListMockScenariosResponse__Output>): grpc.ClientUnaryCall;
   ListMockScenarios(argument: _superverse_v2_ListMockScenariosRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_superverse_v2_ListMockScenariosResponse__Output>): grpc.ClientUnaryCall;
@@ -114,6 +125,8 @@ export interface AgentServiceHandlers extends grpc.UntypedServiceImplementation 
 
   InterruptAgent: grpc.handleUnaryCall<_superverse_v2_InterruptAgentRequest__Output, _superverse_v2_InterruptAgentResponse>;
 
+  ListAgentModels: grpc.handleUnaryCall<_superverse_v2_ListAgentModelsRequest__Output, _superverse_v2_ListAgentModelsResponse>;
+
   ListMockScenarios: grpc.handleUnaryCall<_superverse_v2_ListMockScenariosRequest__Output, _superverse_v2_ListMockScenariosResponse>;
 
   ResolveToolApproval: grpc.handleUnaryCall<_superverse_v2_ResolveToolApprovalRequest__Output, _superverse_v2_ResolveToolApprovalResponse>;
@@ -131,6 +144,7 @@ export interface AgentServiceDefinition extends grpc.ServiceDefinition {
   DeleteQueuedMessage: MethodDefinition<_superverse_v2_DeleteQueuedMessageRequest, _superverse_v2_DeleteQueuedMessageResponse, _superverse_v2_DeleteQueuedMessageRequest__Output, _superverse_v2_DeleteQueuedMessageResponse__Output>
   GetFlowDesign: MethodDefinition<_superverse_v2_GetFlowDesignRequest, _superverse_v2_GetFlowDesignResponse, _superverse_v2_GetFlowDesignRequest__Output, _superverse_v2_GetFlowDesignResponse__Output>
   InterruptAgent: MethodDefinition<_superverse_v2_InterruptAgentRequest, _superverse_v2_InterruptAgentResponse, _superverse_v2_InterruptAgentRequest__Output, _superverse_v2_InterruptAgentResponse__Output>
+  ListAgentModels: MethodDefinition<_superverse_v2_ListAgentModelsRequest, _superverse_v2_ListAgentModelsResponse, _superverse_v2_ListAgentModelsRequest__Output, _superverse_v2_ListAgentModelsResponse__Output>
   ListMockScenarios: MethodDefinition<_superverse_v2_ListMockScenariosRequest, _superverse_v2_ListMockScenariosResponse, _superverse_v2_ListMockScenariosRequest__Output, _superverse_v2_ListMockScenariosResponse__Output>
   ResolveToolApproval: MethodDefinition<_superverse_v2_ResolveToolApprovalRequest, _superverse_v2_ResolveToolApprovalResponse, _superverse_v2_ResolveToolApprovalRequest__Output, _superverse_v2_ResolveToolApprovalResponse__Output>
   SendMessage: MethodDefinition<_superverse_v2_SendMessageRequest, _superverse_v2_SendMessageResponse, _superverse_v2_SendMessageRequest__Output, _superverse_v2_SendMessageResponse__Output>

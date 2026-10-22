@@ -1299,8 +1299,9 @@ the typed missing-credential result, rather than panicking on an unloaded map.
 `SessionAgentFlow` owns two new AttributeMaps. `ModelKeys<Envelope{Revision
 uint64, Key string}>` uses `dex.HardDeleteOnNull()`. Its instances are the ten typed providers derived from the server's closed catalog,
 for example `anthropic` and `openai`, with physical keys `ModelKeys/anthropic` and
-`ModelKeys/openai`. Mock has no credential instance. New provider execution remains
-unavailable; only the existing Anthropic models accept a newly submitted key. `ModelKeyInfo<Info>` has the same instance
+`ModelKeys/openai`. Mock has no credential instance. Additional execution is admitted by `agent.providers.enabled` for the implemented
+OpenAI GPT-6 Astra, xAI Grok 4.7 and Gemini 4 Argon profiles. Hosted defaults leave
+that list empty; local profiles use the explicit validated mock endpoint policy. `ModelKeyInfo<Info>` has the same instance
 key and owns revision, active/pending/revoked status, last four characters,
 setting actor/time, the current operation ID, and whether the operation deletes
 a key. The admitted writer records its UTC clock once on a fresh reservation;
@@ -1327,9 +1328,12 @@ and `DeleteModelCredential`, each authorized against the authenticated account,
 Project scope/status and Builder capability (including the platform admin).
 The browser receives the typed `ModelCredentialInfo` protobuf message only;
 `ModelProvider` and `ModelCredentialStatus` are closed protobuf enums checked
-against the domain catalog/status sets by `make check-proto-enums`. Set performs a bounded ten-second,
-one-token official Anthropic request before reserving a writer. Only existing
-Claude catalog models and the official endpoint are supported. Keys are bounded
+against the domain catalog/status sets by `make check-proto-enums`. Set performs a
+bounded credential inference request before reserving a writer: one output token
+for the existing Anthropic check, at most 64 for an enabled compatible provider.
+The provider runtime uses the reviewed official API root or the explicit local
+mock routing, with the same shared endpoint validation. Custom user endpoints
+and discovery are not admitted. Keys are bounded
 to 4–4096 printable ASCII characters without spaces.
 
 Three non-secret Session Flow RPCs are necessary: `ReadModelCredentialInfo`
@@ -1416,8 +1420,8 @@ index, mirrored lifecycle or migration exists.
 
 The Agent picker contains a password field, set/not-set status, last four
 characters and the setting actor/time. It clears the input on submission and
-never receives a saved key. Replace and delete show the count of active
-subagents they will stop, read from the existing Session Snapshot. GetModelCredentialInfo
+never receives a saved key. Replace and delete explain that only running subagents using the affected
+provider stop; the Session Snapshot supplies active task presence. GetModelCredentialInfo
 reads credential metadata only, without a second Snapshot RPC. Snapshot projects
 a non-secret credential version containing the selected model and each declared
 provider's revision/status/high-water revision; the
@@ -1430,7 +1434,7 @@ write no Step-only Stream and introduce no notification Step or Channel. Model d
 changes do not trigger credential reads. Missing/pending credentials disable the platform
 composer with “Set your key or connect your local agent.” Mock and remote modes
 retain their existing admission rules. The server independently rejects bypasses.
-Saving warns that all Builders use the Project key and Anthropic may charge the
+Saving explains that all Builders use the Project key and the selected provider may charge the
 validation request and subsequent calls. Pending operation identity and kind
 are metadata; after a reload, any Builder sees “Finish pending change”.
 
@@ -1451,14 +1455,14 @@ This section owns the credential persistence and admission contract. The
 
 ### Resource Scalability
 
-New cloud, Kubernetes, Temporal and database resources: None. Each Session has
-one provider key blob and one bounded metadata instance; each active subagent
-has one bounded execution copy. There is one supported provider and at most
+New cloud, Kubernetes, Temporal and database resources: None. Each configured
+provider of a Session has one key blob and one bounded metadata instance; each
+active subagent has one bounded execution copy. There are at most ten catalog provider namespaces and at most
 three unfinished subagents per Session. Replacement overwrites the same object;
 delete, Project cleanup and subagent terminal cleanup delete it. An abnormal
 termination relies on retention or explicit operator cleanup. Metadata and one
 operation tombstone remain for the Flow lifetime, with no object per request.
-At 10,000 Projects the bound is 10,000 source keys plus 30,000 concurrent copies;
+At 10,000 Projects the catalog bound is 100,000 source keys plus 30,000 concurrent copies;
 100,000 deployments introduce no credential objects. The key limit is enforced
 at the API boundary; backend blob quotas and provider-account rate limits remain
 those of the existing configured services, with no quota increase requested.
@@ -1467,3 +1471,13 @@ mutation performs constant exact reads/writes and scans at most three active
 subagents, never all tenants. Model calls perform exact instance loads and data
 plane HTTP only. Shared transports cap connections at 64 per host and do not
 cache keys or create per-key pools.
+
+
+The Agent picker obtains its provider groups from authenticated `ListAgentModels`,
+which projects the server's reviewed catalog/configuration and the caller's mock
+admission. It returns no keys or Flow state and creates no execution. A Builder
+can enter a new provider key before selecting its model; the password form and
+pending metadata remain scoped by Project plus provider. The local endpoint flag
+explains its non-secret test key and lack of model charges. Only caller-selectable
+profiles appear. Every implemented profile has frozen Session and Subagent prompt
+entries, and a provider switch takes effect at the existing segment boundary.

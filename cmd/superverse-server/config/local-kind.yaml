@@ -29,6 +29,11 @@ studio:
   publicOrigin: http://localhost:23000
 
 agent:
+  providers:
+    enabled: [openai, xai, gemini]
+    mockEndpoint: true
+  modelEndpoints:
+    allowLocalLoopback: true
   # New Sessions run the mock model. Any account may select Claude after entering
   # the Project's own key through ModelCredentialService. The acceptance profile
   # starts Sessions on Claude; its real-model tests provision their own Project key.

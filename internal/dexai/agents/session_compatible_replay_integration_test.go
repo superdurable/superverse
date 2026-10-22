@@ -30,11 +30,11 @@ import (
 // TestCompatibleSessionReplayDexIntegration drives both real wire adapters through
 // the existing Worker, real parallel Sandbox reads, archive movement and compaction.
 func TestCompatibleSessionReplayDexIntegration(t *testing.T) {
-	for _, model := range []conversation.Model{conversation.ModelMockResponses, conversation.ModelMockChat} {
+	for _, model := range []conversation.Model{conversation.ModelMockResponses, conversation.ModelMockChat, conversation.ModelGPT6Astra, conversation.ModelGrok47, conversation.ModelGemini4Argon} {
 		t.Run(string(model), func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(t.Context(), 12*time.Minute)
 			defer cancel()
-			session := newSession(t, ctx, model, mockInput(t, "compatible-replay", 1).Content)
+			session := newSelectableSession(t, ctx, model, mockInput(t, "compatible-replay", 1).Content)
 			first := session.finishedTurn(ctx)
 			requireNoFailure(t, first.History)
 			if first.Description.ContextModel != model || first.History.NextBeforeSequence == nil {

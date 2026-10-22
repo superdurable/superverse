@@ -3,14 +3,15 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: Owns the Project page’s non-secret credential status and focus refresh.
 
-Importers: `lib/session` imports this directory.
+Importers: `components/session/executor` and `lib/session` import this directory.
 
 Imports: it imports `lib/api` and `lib/shared`.
 
 ```mermaid
 flowchart LR
   self["lib/session/credentials"]
-  c0["lib/session"] --> self
+  c0["components/session/executor"] --> self
+  c1["lib/session"] --> self
   self --> d0["lib/api"]
   self --> d1["lib/shared"]
 ```

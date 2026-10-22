@@ -7,6 +7,7 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 // Development-only Agent commands, attachment uploads and typed connection-dialog fixtures; never acceptance evidence.
+import { mockAgentModels } from "./catalog/models";
 import { ModelCredentialStatus, type CredentialInfo } from "@/lib/api/model-credential";
 import { randomBytes } from "node:crypto";
 import type { AgentModel__Output } from "@/lib/generated/protobuf/superverse/v2/AgentModel";
@@ -172,6 +173,7 @@ export const agentService: MockService<"AgentService"> = {
     command(store, request, () => interruptAgent(store, request.projectId, Number(request.turn))),
   // Mock mode is a local environment: every account may select the mock model and run its scenarios.
   ListMockScenarios: () => ({ selectable: true, scenarios: MOCK_SCENARIOS }),
+  ListAgentModels: () => ({ models: mockAgentModels }),
   // Like Go, a slot without a design is NOT_FOUND, and another digest than the slot's is REVISION_CHANGED.
   GetFlowDesign: (request, { store }) => {
     projectSession(store, request.projectId);

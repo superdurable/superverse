@@ -1958,6 +1958,7 @@ service AgentService {
   rpc ResolveToolApproval(ResolveToolApprovalRequest) returns (ResolveToolApprovalResponse);
   rpc InterruptAgent(InterruptAgentRequest) returns (InterruptAgentResponse);
   rpc ListMockScenarios(ListMockScenariosRequest) returns (ListMockScenariosResponse);
+  rpc ListAgentModels(ListAgentModelsRequest) returns (ListAgentModelsResponse);
   rpc GetFlowDesign(GetFlowDesignRequest) returns (GetFlowDesignResponse);
 }
 
@@ -2070,6 +2071,24 @@ enum AgentFlowDesignSlot {
 // server, in name order, and is empty when selectable is false.
 message ListMockScenariosRequest {
   CallerContext caller = 100;
+}
+
+// The server-authorized model catalog for this authenticated caller. Only implemented,
+// configured profiles are returned; the mock model retains its account admission rule.
+message ListAgentModelsRequest {
+  CallerContext caller = 100;
+}
+message ListAgentModelsResponse {
+  repeated AgentModelChoice models = 1;
+}
+message AgentModelChoice {
+  AgentModel model = 1;
+  ModelProvider provider = 2;
+  string label = 3;
+  string provider_name = 4;
+  string key_hint = 5;
+  // Local verification uses the owned scenario endpoint and its fixed non-secret test key.
+  bool mock_endpoint = 6;
 }
 
 message ListMockScenariosResponse {

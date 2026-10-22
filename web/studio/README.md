@@ -203,6 +203,7 @@ the current contract.
 | [`lib/teamspace`](lib/teamspace/README.md) | The current Teamspace of the signed-in pages with its one read, the Teamspace list, and the closed sets of Teamspace and Project roles. |
 | [`mock`](mock/README.md) | Mock mode for local presentation: the mock switch, the `/dex` Flow API mock and the mock application page, selected only by `app/` route files. |
 | [`mock/backend`](mock/backend/README.md) | Provides explicit development business-service fixtures through generated protobuf codecs and store Watches, without production fallback or acceptance evidence. |
+| [`mock/backend/catalog`](mock/backend/catalog/README.md) | Supplies development-only provider model metadata to the mock Agent service. |
 | [`mock/fixture`](mock/fixture/README.md) | The Flow Definition fixtures of mock mode and their classification, the Flow runs recorded from Local Kind that the `/dex` mock serves, and the mock Agent's questions and requirements card. |
 | [`mock/store`](mock/store/README.md) | The mock's in-memory store and its clock: seed data, accounts, the mock Agent's state and scripts, configuration drafts, Releases, builds and Live, phase timings and resource snapshots. |
 | [`mock/store/attachments`](mock/store/attachments/README.md) | Development-only attachment staging, where uploads PUT to the mock route are prepared at once and the attachments a Project's messages carry have downloads. |

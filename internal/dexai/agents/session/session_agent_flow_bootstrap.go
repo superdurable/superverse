@@ -27,6 +27,7 @@ import (
 
 // SessionAgentConfig is the process configuration of the Session Agent.
 type SessionAgentConfig struct {
+	Compatible *modelprovider.CompatibleProviders
 	// Model is the model a new Session starts with.
 	Model conversation.Model
 	// Claude selects the official adapter configuration; Session requests
@@ -77,7 +78,7 @@ func NewSessionAgentFlowBootstrap(config SessionAgentConfig, credentials *git.Ho
 	catalog connectorCatalogMatcher, renditions attachmentRenditions, addresses workspace.SandboxAddresses, instances func(*workspace.Capabilities) sandbox.InstanceProvider, logger *slog.Logger,
 ) (*SessionAgentFlowBootstrap, error) {
 	httpClient := modelprovider.NewProviderHTTPClient()
-	model, err := modelprovider.NewModelRouter(httpClient, config.Claude, config.Mock, logger)
+	model, err := modelprovider.NewModelRouter(httpClient, config.Claude, config.Mock, logger, config.Compatible)
 	if err != nil {
 		return nil, err
 	}

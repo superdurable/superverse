@@ -79,6 +79,20 @@ func (provider Provider) APIStyle() APIStyle  { return provider.style }
 func (provider Provider) BaseURL() string     { return provider.baseURL }
 func (provider Provider) KeyHint() string     { return provider.keyHint }
 
+// UnmarshalText accepts only the exact declared provider spelling.
+func (provider *Provider) UnmarshalText(text []byte) error {
+	for _, model := range Models() {
+		candidate := model.Details().Provider
+		if candidate.String() == string(text) {
+			*provider = candidate
+			return nil
+		}
+	}
+	return NewEnumValidationError("Provider", string(text))
+}
+
+func (provider Provider) MarshalText() ([]byte, error) { return []byte(provider.String()), nil }
+
 // ModelDetails is a model's identity data; capability and availability belong to ModelProfile.
 type ModelDetails struct {
 	Provider          Provider

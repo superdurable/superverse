@@ -16,6 +16,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents"
 	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/openaicompat"
 	"github.com/superdurable/superversev2/internal/dexai/api/boundary"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -141,6 +142,9 @@ func credentialDocument(info modelcredential.Info, provider modelcredential.Prov
 }
 
 func credentialError(err error) error {
+	if errors.Is(err, openaicompat.ErrModelCapacity) {
+		return status.Error(codes.ResourceExhausted, "model credential validation is busy; try again shortly")
+	}
 	if errors.Is(err, modelcredential.ErrCanceled) {
 		return status.Error(codes.FailedPrecondition, modelcredential.ErrCanceled.Error())
 	}

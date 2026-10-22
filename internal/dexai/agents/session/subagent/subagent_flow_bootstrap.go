@@ -26,6 +26,7 @@ import (
 
 // SubagentFlowConfig is the process configuration of the subagents.
 type SubagentFlowConfig struct {
+	Compatible *modelprovider.CompatibleProviders
 	// Claude is the Claude API client; Mock the client of the in-process mock
 	// model, nil when the server does not offer it. A subagent runs on the
 	// model its Session ran on when it started.
@@ -56,7 +57,7 @@ func NewSubagentFlowBootstrap(config SubagentFlowConfig, dependency SubagentFlow
 		}
 	}
 	httpClient := modelprovider.NewProviderHTTPClient()
-	model, err := modelprovider.NewModelRouter(httpClient, config.Claude, config.Mock, logger)
+	model, err := modelprovider.NewModelRouter(httpClient, config.Claude, config.Mock, logger, config.Compatible)
 	if err != nil {
 		return nil, err
 	}

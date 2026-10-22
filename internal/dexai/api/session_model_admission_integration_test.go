@@ -86,6 +86,12 @@ func TestSessionModelAdmissionDexIntegration(t *testing.T) {
 	keyless := server(SessionModels{Mock: true, Local: true})
 	prod := server(SessionModels{Claude: true})
 
+	configured := server(SessionModels{Claude: true, Local: true, Providers: modelprovider.ProviderConfig{Enabled: []conversation.Provider{conversation.ProviderOpenAI, conversation.ProviderXAI, conversation.ProviderGemini}}})
+	for _, model := range []conversation.Model{conversation.ModelGPT6Astra, conversation.ModelGrok47, conversation.ModelGemini4Argon} {
+		if got := admissionCode(t, admitModel(ctx, configured.Boundary, configured.models, owner, model)); got != codes.OK {
+			t.Fatal("configured implemented provider was unavailable")
+		}
+	}
 	for _, decision := range []struct {
 		name    string
 		server  *agentServer

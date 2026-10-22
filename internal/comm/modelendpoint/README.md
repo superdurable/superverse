@@ -3,25 +3,30 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Validates model endpoint destinations and connects only to public DNS results, with an explicit local loopback policy.
 
-Callers: no production package imports this package.
+Callers: `cmd/superverse-server/config`, `internal/dexai/agents/session/modelprovider` and `internal/dexai/bootstrap` import this package.
 
 Dependencies: it imports no other package of this module and calls no remote API.
 
 ```mermaid
 flowchart LR
   self["internal/comm/modelendpoint"]
+  c0["cmd/superverse-server/config"] --> self
+  c1["internal/dexai/agents/session/modelprovider"] --> self
+  c2["internal/dexai/bootstrap"] --> self
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 
-This shared implementation is staged for the custom endpoint delivery; it has no
-production callers yet. That delivery must expose its local loopback flag only
-through server configuration validated against the local environment. There is
-no implicit mock or test hostname exception.
+The compatible provider runtime owns this shared transport for official endpoints
+and explicit local verification routing. `agent.modelEndpoints.allowLocalLoopback`
+is checked by server `Validate` and is refused outside Local Native and Kind.
+No implicit mock hostname exception is used. Custom endpoint admission and
+Messages-provider integration reuse this same validator when delivered.
 
 Base admission requires HTTPS and rejects URL credentials, queries and fragments,
 and rejects private, special-use, loopback, link-local and metadata targets.
-Its explicit local policy permits loopback HTTP/HTTPS only. Admission resolves
-and checks the complete DNS answer set. Every new connection
+Its explicit local policy permits loopback HTTP/HTTPS only. Client construction
+validates syntax and authority without DNS, so provider DNS outages do not prevent
+server startup. Every new connection
 resolves DNS, rejects the complete answer set if any address is forbidden, and
 dials the checked address directly. TLS authenticates the original hostname.
 Request URLs retain the admitted origin while allowing protocol query parameters,

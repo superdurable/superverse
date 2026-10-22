@@ -187,7 +187,7 @@ type SessionPrompt struct {
 }
 
 // promptModels are the models a prompt is built for.
-var promptModels = []conversation.Model{conversation.ModelOpus55, conversation.ModelSonnet55, conversation.ModelHaiku45, conversation.ModelMock, conversation.ModelMockResponses, conversation.ModelMockChat}
+var promptModels = []conversation.Model{conversation.ModelOpus55, conversation.ModelSonnet55, conversation.ModelHaiku45, conversation.ModelMock, conversation.ModelMockResponses, conversation.ModelMockChat, conversation.ModelGPT6Astra, conversation.ModelGrok47, conversation.ModelGemini4Argon}
 
 // sessionPrompts holds the prompt of each model; the catalog and the prompts
 // are compiled in, so they are built once.

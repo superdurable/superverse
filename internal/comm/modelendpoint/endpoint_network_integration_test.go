@@ -26,6 +26,13 @@ import (
 
 // These actual transport HTTP/TLS/DNS calls establish no model compatibility.
 func TestEndpointTransportNetworkIntegration(t *testing.T) {
+	if (Config{AllowLocalLoopback: true}).Validate(false) == nil {
+		t.Fatal("hosted Validate admitted loopback policy")
+	}
+	if err := (Config{AllowLocalLoopback: true}).Validate(true); err != nil {
+		t.Fatal("local Validate refused its explicit policy")
+	}
+
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "probe"), []byte("endpoint transport"), 0600); err != nil {
 		t.Fatal(err)
@@ -38,7 +45,9 @@ func TestEndpointTransportNetworkIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 15*time.Second)
 	defer cancel()
 	for _, base := range []string{secured.URL, plain.URL} {
-		local, err := policy{allowLocalLoopback: true}.newClient(ctx, base)
+		owned := NewPool(Config{AllowLocalLoopback: true})
+		defer owned.Close()
+		local, err := owned.Client(ctx, base)
 		if err != nil {
 			t.Fatal(err)
 		}

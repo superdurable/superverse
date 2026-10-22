@@ -2777,6 +2777,7 @@ const (
 	AgentService_ResolveToolApproval_FullMethodName = "/superverse.v2.AgentService/ResolveToolApproval"
 	AgentService_InterruptAgent_FullMethodName      = "/superverse.v2.AgentService/InterruptAgent"
 	AgentService_ListMockScenarios_FullMethodName   = "/superverse.v2.AgentService/ListMockScenarios"
+	AgentService_ListAgentModels_FullMethodName     = "/superverse.v2.AgentService/ListAgentModels"
 	AgentService_GetFlowDesign_FullMethodName       = "/superverse.v2.AgentService/GetFlowDesign"
 )
 
@@ -2796,6 +2797,7 @@ type AgentServiceClient interface {
 	ResolveToolApproval(ctx context.Context, in *ResolveToolApprovalRequest, opts ...grpc.CallOption) (*ResolveToolApprovalResponse, error)
 	InterruptAgent(ctx context.Context, in *InterruptAgentRequest, opts ...grpc.CallOption) (*InterruptAgentResponse, error)
 	ListMockScenarios(ctx context.Context, in *ListMockScenariosRequest, opts ...grpc.CallOption) (*ListMockScenariosResponse, error)
+	ListAgentModels(ctx context.Context, in *ListAgentModelsRequest, opts ...grpc.CallOption) (*ListAgentModelsResponse, error)
 	GetFlowDesign(ctx context.Context, in *GetFlowDesignRequest, opts ...grpc.CallOption) (*GetFlowDesignResponse, error)
 }
 
@@ -2887,6 +2889,16 @@ func (c *agentServiceClient) ListMockScenarios(ctx context.Context, in *ListMock
 	return out, nil
 }
 
+func (c *agentServiceClient) ListAgentModels(ctx context.Context, in *ListAgentModelsRequest, opts ...grpc.CallOption) (*ListAgentModelsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAgentModelsResponse)
+	err := c.cc.Invoke(ctx, AgentService_ListAgentModels_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *agentServiceClient) GetFlowDesign(ctx context.Context, in *GetFlowDesignRequest, opts ...grpc.CallOption) (*GetFlowDesignResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetFlowDesignResponse)
@@ -2913,6 +2925,7 @@ type AgentServiceServer interface {
 	ResolveToolApproval(context.Context, *ResolveToolApprovalRequest) (*ResolveToolApprovalResponse, error)
 	InterruptAgent(context.Context, *InterruptAgentRequest) (*InterruptAgentResponse, error)
 	ListMockScenarios(context.Context, *ListMockScenariosRequest) (*ListMockScenariosResponse, error)
+	ListAgentModels(context.Context, *ListAgentModelsRequest) (*ListAgentModelsResponse, error)
 	GetFlowDesign(context.Context, *GetFlowDesignRequest) (*GetFlowDesignResponse, error)
 	mustEmbedUnimplementedAgentServiceServer()
 }
@@ -2947,6 +2960,9 @@ func (UnimplementedAgentServiceServer) InterruptAgent(context.Context, *Interrup
 }
 func (UnimplementedAgentServiceServer) ListMockScenarios(context.Context, *ListMockScenariosRequest) (*ListMockScenariosResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListMockScenarios not implemented")
+}
+func (UnimplementedAgentServiceServer) ListAgentModels(context.Context, *ListAgentModelsRequest) (*ListAgentModelsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAgentModels not implemented")
 }
 func (UnimplementedAgentServiceServer) GetFlowDesign(context.Context, *GetFlowDesignRequest) (*GetFlowDesignResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFlowDesign not implemented")
@@ -3116,6 +3132,24 @@ func _AgentService_ListMockScenarios_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AgentService_ListAgentModels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAgentModelsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).ListAgentModels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_ListAgentModels_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).ListAgentModels(ctx, req.(*ListAgentModelsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AgentService_GetFlowDesign_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetFlowDesignRequest)
 	if err := dec(in); err != nil {
@@ -3172,6 +3206,10 @@ var AgentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListMockScenarios",
 			Handler:    _AgentService_ListMockScenarios_Handler,
+		},
+		{
+			MethodName: "ListAgentModels",
+			Handler:    _AgentService_ListAgentModels_Handler,
 		},
 		{
 			MethodName: "GetFlowDesign",

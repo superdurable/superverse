@@ -5,7 +5,7 @@ Purpose: Shows the composer's Agent picker, SQL-derived remote liveness, offline
 
 Importers: `components/session` and `components/session/start` import this directory.
 
-Imports: it imports `components/session/remoteagent`, `components/ui`, `lib/api`, `lib/browser`, `lib/session` and `lib/shared`.
+Imports: it imports `components/session/remoteagent`, `components/ui`, `lib/api`, `lib/browser`, `lib/session`, `lib/session/credentials`, `lib/session/model` and `lib/shared`.
 
 ```mermaid
 flowchart LR
@@ -17,7 +17,9 @@ flowchart LR
   self --> d2["lib/api"]
   self --> d3["lib/browser"]
   self --> d4["lib/session"]
-  self --> d5["lib/shared"]
+  self --> d5["lib/session/credentials"]
+  self --> d6["lib/session/model"]
+  self --> d7["lib/shared"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
@@ -43,3 +45,9 @@ An absent executor on a present agent description renders the legacy
 Superverse selection and permission-gated Connect action only. It creates no
 executor state or epoch and never offers switching. Mock Studio fixtures do
 not implement executor switching; their authorized command returns 503.
+
+Model choices stay disabled after a successful update until the canonical Watch
+or an explicit Session refresh displays its next model revision. A synchronous
+component guard also rejects a second click before React renders. The existing
+command owner admits the one request and reports failures; the picker never
+replays a failed mutation. Executor switching retains its existing epoch fence.

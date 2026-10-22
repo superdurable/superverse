@@ -11,9 +11,13 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useSessionOwner } from "./use-session-owner";
 import { agentModelProvider } from "./model/agent-model";
+import { useAgentModels } from "./model/agent-model-catalog";
 import { useModelCredential } from "./credentials/use-model-credential";
 
-type SessionContextValue = ReturnType<typeof useSessionOwner> & { credential: ReturnType<typeof useModelCredential> };
+type SessionContextValue = ReturnType<typeof useSessionOwner> & {
+  credential: ReturnType<typeof useModelCredential>;
+  modelCatalog: ReturnType<typeof useAgentModels>;
+};
 type SessionResourceValue = Pick<
   SessionContextValue,
   | "projectId"
@@ -25,26 +29,39 @@ type SessionResourceValue = Pick<
   | "refresh"
   | "requirementsDraft"
   | "credential"
+  | "modelCatalog"
 >;
 const SessionContext = createContext<SessionContextValue | null>(null);
 const SessionResourceContext = createContext<SessionResourceValue | null>(null);
 
 function SessionOwner({ projectId, children }: { projectId: string; children: ReactNode }) {
   const owned = useSessionOwner(projectId);
+  const modelCatalog = useAgentModels();
   const credential = useModelCredential(
     projectId,
     agentModelProvider(owned.resource?.agent?.description?.model),
     owned.status === "SESSION_STATUS_ACTIVE",
     owned.resource?.agent?.description?.modelCredentialVersion,
   );
-  const session = { ...owned, credential };
+  const session = { ...owned, credential, modelCatalog };
   const { resource, status, loading, error, streamState, refresh, requirementsDraft } = session;
   // Streamed text changes only the conversation context. Resource views and
   // indicators read this stable selection of the same owner, with the card's
   // draft, which changes at most once a second while the agent writes it.
   const selected = useMemo(
-    () => ({ projectId, resource, status, loading, error, streamState, refresh, requirementsDraft, credential }),
-    [projectId, resource, status, loading, error, streamState, refresh, requirementsDraft, credential],
+    () => ({
+      projectId,
+      resource,
+      status,
+      loading,
+      error,
+      streamState,
+      refresh,
+      requirementsDraft,
+      credential,
+      modelCatalog,
+    }),
+    [projectId, resource, status, loading, error, streamState, refresh, requirementsDraft, credential, modelCatalog],
   );
   return (
     <SessionResourceContext.Provider value={selected}>

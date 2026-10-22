@@ -6,17 +6,18 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
+import { MOCK_MODEL_API_KEY } from "@/lib/api/model-credential";
 import { randomUUID } from "node:crypto";
 import { test, expect } from "@/tests/e2e/support/coverage/spec-coverage";
 import { register } from "@/tests/e2e/support/account";
 import { createTeamSpace } from "@/tests/e2e/support/teamspace/teamspace";
 import { readProject, readSession } from "@/tests/e2e/support/project";
 import { rpc, rpcAnswered, rpcResult } from "@/tests/e2e/support/studio-api";
-import { sendMockInput, waitForFirstMockInput } from "@/tests/e2e/support/mock/mock-composer";
+import { runMockScenario } from "@/tests/e2e/support/mock/mock-composer";
 
 // Every command crosses the real Studio BFF, gRPC and Dex. Only the model endpoint is mock.
 test.use({ trace: "off", screenshot: "off", video: "off" });
-test("catalog mappings preserve a stored Claude selection and refuse unavailable providers", async ({ page }) => {
+test("configured provider groups admit Project keys and preserve stored model mappings", async ({ page }) => {
   test.setTimeout(20 * 60_000);
   if (process.env.SUPERVERSE_E2E_BYOK_FIXTURE !== "true")
     throw new Error("This spec requires TestProjectAnthropicCredentialDexIntegration's real Native server fixture");
@@ -56,7 +57,7 @@ test("catalog mappings preserve a stored Claude selection and refuse unavailable
     });
     const initial = (await readSession(page, projectId)).agent!.description!;
     const revision = initial.modelRevision;
-    // New enum values decode correctly but cannot become selected, even with an active Project key.
+    // A different provider cannot become selected using the Anthropic Project key.
     const refused = await rpc(page.request, "UpdateSessionModel", {
       projectId,
       model: "AGENT_MODEL_GPT_6_ASTRA",
@@ -68,6 +69,38 @@ test("catalog mappings preserve a stored Claude selection and refuse unavailable
     await page.getByRole("button", { name: /^Agent:/ }).click();
     const picker = page.getByRole("dialog", { name: "Choose agent" });
     await expect(picker.getByRole("button", { name: /GPT-6 Astra/ })).toHaveCount(0);
+    await expect(picker.getByRole("button", { name: "OpenAI", exact: true })).toBeVisible();
+    await expect(picker.getByRole("button", { name: "Qwen", exact: true })).toHaveCount(0);
+    for (const option of [
+      { provider: "OpenAI", label: "GPT-6 Astra", key: "OpenAI API key", model: "AGENT_MODEL_GPT_6_ASTRA" },
+      { provider: "xAI Grok", label: "Grok 4.7", key: "xAI API key", model: "AGENT_MODEL_GROK_4_7" },
+      {
+        provider: "Google Gemini",
+        label: "Gemini 4 Argon",
+        key: "Gemini API key",
+        model: "AGENT_MODEL_GEMINI_4_ARGON",
+      },
+    ] as const) {
+      await picker.getByRole("button", { name: option.provider, exact: true }).click();
+      const key = picker.getByLabel(option.key, { exact: true });
+      await expect(key).toHaveAttribute("type", "password");
+      await expect(key).toHaveValue("");
+      await key.fill(MOCK_MODEL_API_KEY);
+      const saved = page.waitForResponse(rpcAnswered("SetModelCredential"));
+      await picker.getByRole("button", { name: "Save key", exact: true }).click();
+      expect((await saved).ok()).toBe(true);
+      await expect(key).toHaveCount(0);
+      const selectedModel = page.waitForResponse(rpcAnswered("UpdateSessionModel"));
+      await picker.getByRole("button", { name: option.label, exact: true }).click();
+      expect((await selectedModel).status(), option.label).toBe(200);
+      await runMockScenario(page, projectId, "inspect-basic", { inputs: [1] });
+      const completed = (await readSession(page, projectId)).agent!.description!;
+      expect(completed.model).toBe(option.model);
+      expect(completed.contextModel).toBe(option.model);
+      expect(JSON.stringify(await readSession(page, projectId))).not.toContain(MOCK_MODEL_API_KEY);
+      await page.getByRole("button", { name: /^Agent:/ }).click();
+    }
+    await picker.getByRole("button", { name: "Anthropic", exact: true }).click();
     const selected = page.waitForResponse(rpcAnswered("UpdateSessionModel"));
     await picker.getByRole("button", { name: /Claude Sonnet 5.5/ }).click();
     expect((await selected).ok()).toBe(true);
@@ -84,8 +117,7 @@ test("catalog mappings preserve a stored Claude selection and refuse unavailable
     await expect
       .poll(async () => (await readSession(page, projectId)).agent!.description!.model)
       .toBe("AGENT_MODEL_MOCK");
-    await sendMockInput(page, projectId, "explain", 1);
-    await waitForFirstMockInput(page, projectId, "explain");
+    await runMockScenario(page, projectId, "explain", { inputs: [1] });
     const final = (await readSession(page, projectId)).agent!.description!;
     expect(final.model).toBe("AGENT_MODEL_MOCK");
     expect(final.contextModel).toBe("AGENT_MODEL_MOCK");

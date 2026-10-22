@@ -52,6 +52,7 @@ type agentServer struct {
 
 // SessionModels is which Session models the server offers and to whom.
 type SessionModels struct {
+	Providers modelprovider.ProviderConfig
 	// Claude offers the Claude catalog; each Session admits its own credential.
 	Claude bool
 	// Mock offers the mock model (agent.mockModel).
@@ -252,11 +253,11 @@ func (s *agentServer) UpdateSessionModel(ctx context.Context, in *pb.UpdateSessi
 // Session checks its own credential. The mock model needs an offer and, outside Local
 // Kind and Native, the administrator.
 func admitModel(ctx context.Context, b *boundary.Boundary, models SessionModels, accountID string, model conversation.Model) error {
-	if availability := modelprovider.ProfileOf(model).Availability; !availability.Selectable() {
+	if availability := models.Providers.Availability(model); !availability.Selectable() {
 		return &commandRefusalError{status.Error(codes.FailedPrecondition, availability.Reason())}
 	}
 	if model != conversation.ModelMock {
-		if !models.Claude {
+		if model.Details().Provider == conversation.ProviderAnthropic && !models.Claude {
 			return &commandRefusalError{status.Error(codes.FailedPrecondition, "this environment does not offer Claude models")}
 		}
 		return nil
@@ -285,8 +286,35 @@ func mockSelectable(ctx context.Context, b *boundary.Boundary, models SessionMod
 	return b.Accounts.IsAdministrator(ctx, accountID)
 }
 
-// ListMockScenarios returns the mock model's scenarios when the caller may
-// select it, so Studio offers the mock model and its inputs only then.
+// ListAgentModels projects reviewed config, never credentials or Flow state.
+func (s *agentServer) ListAgentModels(ctx context.Context, in *pb.ListAgentModelsRequest) (*pb.ListAgentModelsResponse, error) {
+	account, err := s.Authenticate(ctx, in.GetCaller())
+	if err != nil {
+		return nil, err
+	}
+	out := &pb.ListAgentModelsResponse{}
+	for _, model := range conversation.Models() {
+		if !s.models.Providers.Availability(model).Selectable() {
+			continue
+		}
+		if model.IsMock() {
+			allowed, err := mockSelectable(ctx, s.Boundary, s.models, account.AccountID)
+			if err != nil {
+				return nil, boundary.RPCStatus(err)
+			}
+			if !allowed {
+				continue
+			}
+		} else if model.Details().Provider == conversation.ProviderAnthropic && !s.models.Claude {
+			continue
+		}
+		details := model.Details()
+		out.Models = append(out.Models, &pb.AgentModelChoice{Model: agentModel(model), Provider: boundary.Enum[pb.ModelProvider](details.Provider.String()), Label: details.Label, ProviderName: details.Provider.DisplayName(), KeyHint: details.Provider.KeyHint(), MockEndpoint: s.models.Providers.MockEndpoint && details.Provider != conversation.ProviderAnthropic})
+	}
+	return out, nil
+}
+
+// ListMockScenarios returns scenarios only when the caller may select the mock model.
 func (s *agentServer) ListMockScenarios(ctx context.Context, in *pb.ListMockScenariosRequest) (*pb.ListMockScenariosResponse, error) {
 	account, err := s.Authenticate(ctx, in.GetCaller())
 	if err != nil {

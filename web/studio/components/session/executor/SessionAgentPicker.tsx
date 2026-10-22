@@ -12,11 +12,12 @@ import { useEffect, useRef, useState } from "react";
 import { Glyph } from "@/components/ui/Glyph";
 import { PopoverCard, POPOVER_ITEM, usePopover } from "@/components/ui/Popover";
 import { RemoteAgentDialog } from "@/components/session/remoteagent/RemoteAgentDialog";
-import { ModelCredentialEntry } from "./ModelCredentialEntry";
+import { ProviderModelPicker } from "./ProviderModelPicker";
 import { setSessionExecutor } from "@/lib/api/agent";
 import { useSingleFlight } from "@/lib/browser/use-single-flight";
-import { agentModelLabel, AGENT_MODEL_OPTIONS, type AgentModel } from "@/lib/session/agent-types";
+import { agentModelLabel, type AgentModel } from "@/lib/session/agent-types";
 import { useRemoteAgentStatus } from "./use-remote-agent-status";
+import { useModelChoice } from "@/lib/session/model/use-model-choice";
 
 type PickerProps = {
   model: AgentModel | null;
@@ -25,7 +26,8 @@ type PickerProps = {
   mockSelectable: boolean;
   canManage: boolean;
   modelDisabled: boolean;
-  onSelect: (model: AgentModel) => void;
+  modelRevision: number;
+  onSelect: (model: AgentModel) => Promise<void>;
 };
 
 /**
@@ -60,9 +62,9 @@ function AgentPickerMenu({
   model,
   contextModel,
   effort,
-  mockSelectable,
   canManage,
   modelDisabled,
+  modelRevision,
   onSelect,
 }: ReturnType<typeof useRemoteAgentStatus> & PickerProps) {
   const anchor = useRef<HTMLSpanElement>(null);
@@ -71,6 +73,7 @@ function AgentPickerMenu({
   const popover = usePopover(anchor);
   const [connect, setConnect] = useState(false);
   const action = useSingleFlight<"platform">();
+  const choice = useModelChoice(modelRevision, onSelect, () => session?.refresh(undefined, true) ?? Promise.resolve());
   const wasOpen = useRef(false);
   const wasConnecting = useRef(false);
   useEffect(() => {
@@ -157,7 +160,6 @@ function AgentPickerMenu({
           className="w-80 max-w-[90vw] p-2"
         >
           <div className="grid gap-1 text-[12px]">
-            <ModelCredentialEntry key={session.credential.provider} canManage={switchable} />
             {remote && (
               <div
                 className="rounded-md bg-accent-wash px-2.25 py-1.75"
@@ -190,25 +192,19 @@ function AgentPickerMenu({
                   <span className="font-medium">Platform agent</span>
                   <span className="ml-auto text-xs text-ink-faint">Current</span>
                 </p>
-                {AGENT_MODEL_OPTIONS.filter(({ value }) => value !== "mock" || mockSelectable || model === "mock").map(
-                  (option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={POPOVER_ITEM}
-                      aria-current={option.value === model ? "page" : undefined}
-                      disabled={!canManage || modelDisabled}
-                      onClick={() => {
-                        onSelect(option.value);
-                        close();
-                      }}
-                    >
-                      <span>
-                        {option.label}
-                        <span className="block text-xs text-ink-faint">{option.description}</span>
-                      </span>
-                    </button>
-                  ),
+                <ProviderModelPicker
+                  model={model}
+                  canManage={canManage}
+                  disabled={modelDisabled || choice.pending}
+                  onSelect={(value) => {
+                    choice.select(value);
+                    close();
+                  }}
+                />
+                {choice.pending && (
+                  <p role="status" className="px-2.25 text-xs text-ink-faint">
+                    Changing model…
+                  </p>
                 )}
                 {contextModel !== null && (
                   <p className="px-2.25 text-xs text-ink-faint">

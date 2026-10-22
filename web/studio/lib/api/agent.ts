@@ -116,3 +116,8 @@ export function listRemoteAgentConnections(projectId: string, signal: AbortSigna
 export async function revokeRemoteAgentConnection(projectId: string, connectionId: string, signal: AbortSignal) {
   await unary("RevokeRemoteAgentConnection", { projectId, connectionId }, { signal });
 }
+
+/** Only the models this server and authenticated caller can use. */
+export function listAgentModels(signal: AbortSignal): Promise<RpcOutput<"ListAgentModels">> {
+  return readUnary("ListAgentModels", {}, { signal });
+}

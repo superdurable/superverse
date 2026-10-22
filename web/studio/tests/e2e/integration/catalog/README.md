@@ -5,15 +5,16 @@ Purpose: Exercises catalog admission, existing model mappings, persisted Claude 
 
 Importers: no production directory imports this directory.
 
-Imports: it imports `tests/e2e/support`, `tests/e2e/support/coverage`, `tests/e2e/support/mock` and `tests/e2e/support/teamspace`.
+Imports: it imports `lib/api`, `tests/e2e/support`, `tests/e2e/support/coverage`, `tests/e2e/support/mock` and `tests/e2e/support/teamspace`.
 
 ```mermaid
 flowchart LR
   self["tests/e2e/integration/catalog"]
-  self --> d0["tests/e2e/support"]
-  self --> d1["tests/e2e/support/coverage"]
-  self --> d2["tests/e2e/support/mock"]
-  self --> d3["tests/e2e/support/teamspace"]
+  self --> d0["lib/api"]
+  self --> d1["tests/e2e/support"]
+  self --> d2["tests/e2e/support/coverage"]
+  self --> d3["tests/e2e/support/mock"]
+  self --> d4["tests/e2e/support/teamspace"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 

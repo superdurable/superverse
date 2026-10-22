@@ -142,11 +142,11 @@ func subagentNotification(t *testing.T, messages []conversation.SequencedMessage
 // the agent ID. A repeated start of the closed execution joins it, and the
 // Session denies a late admission.
 func TestSessionMockSubagentInvestigateDexIntegration(t *testing.T) {
-	for _, model := range []conversation.Model{conversation.ModelMock, conversation.ModelMockResponses, conversation.ModelMockChat} {
+	for _, model := range []conversation.Model{conversation.ModelMock, conversation.ModelMockResponses, conversation.ModelMockChat, conversation.ModelGPT6Astra, conversation.ModelGrok47, conversation.ModelGemini4Argon} {
 		t.Run(string(model), func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
 			defer cancel()
-			session := newSession(t, ctx, model, mockInput(t, "subagent-investigate", 1).Content)
+			session := newSelectableSession(t, ctx, model, mockInput(t, "subagent-investigate", 1).Content)
 			running := onlySubagent(t, session.waitForSnapshot(ctx, "the subagent running", func(agent agentloop.AgentSnapshot) bool {
 				records := agent.Description.Subagents
 				return len(records) == 1 && records[0].Status == agenttasks.SubagentRunning

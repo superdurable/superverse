@@ -20,6 +20,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Spinner } from "@/components/ui/Icons";
 import { AgentStatus, hasRunningTasks, hasRunningWork } from "@/lib/session/agent-types";
 import { connectorContributionView } from "@/lib/session/agent-view";
+import { usesMockEndpoint } from "@/lib/session/model/agent-model-catalog";
 import { useMockScenarios } from "@/lib/session/mock-scenarios";
 import { useComposerProposal } from "@/lib/session/ComposerDraftProvider";
 import { useProjectResource } from "@/lib/project/ProjectResourceProvider";
@@ -192,8 +193,9 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
     }) ??
     firstMessageWaits ??
     credentialDisabledReason(remotelyExecuted, description?.model, state.credential.info?.status);
-  // A Session on the mock model takes its scenarios' inputs, answers included, from the mock composer.
-  const runsMock = !remotelyExecuted && !localCreation.pending && description?.model === "mock";
+  // A local scenario endpoint takes ordered scenario inputs from the mock composer.
+  const runsMock =
+    !remotelyExecuted && !localCreation.pending && usesMockEndpoint(state.modelCatalog, description?.model);
   const modelMenu = localCreation.waitingForConnection ? (
     <span className="px-1.5 text-[12px] text-ink-dim">Local agent · not connected</span>
   ) : (
@@ -206,7 +208,8 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
         mockSelectable={mockScenarios?.selectable ?? false}
         canManage={canManage}
         modelDisabled={state.mutating || agentInteractionDisabled}
-        onSelect={(model) => void state.updateModel(model, description.modelRevision).catch(() => undefined)}
+        modelRevision={description.modelRevision}
+        onSelect={(model) => state.updateModel(model, description.modelRevision)}
       />
     )
   );

@@ -115,7 +115,7 @@ func (step RejectCorruptReplay) Execute(ctx dex.Context, input string) (*dex.Ste
 	if step.flow.corruption == replayWrongRole {
 		role = conversation.EntryRoleUser
 	}
-	request := conversation.ModelRequest{Model: conversation.ModelMock, Prompts: agentloop.SessionPromptFor(conversation.ModelMock).Prompts,
+	request := conversation.ModelRequest{Model: compatibleProbeModel(step.flow.policy), APIKey: mockmodel.APIKey, Prompts: agentloop.SessionPromptFor(conversation.ModelMock).Prompts,
 		Messages: []conversation.RequestMessage{{Role: entry.Role, Blocks: entry.Blocks, CacheAnchor: -1}, {Role: role, Blocks: reply.Blocks, CacheAnchor: -1}}}
 	_, err = step.flow.client.Complete(ctx, request)
 	var rejected *conversation.ModelRejectedError

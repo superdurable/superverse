@@ -348,7 +348,11 @@ func StartCredentialProbeForTest(ctx context.Context, logger *slog.Logger, key s
 
 // serveOpenAI drives the same ordered scripts through the real compatible adapter.
 func (h *handler) serveOpenAI(w http.ResponseWriter, r *http.Request) {
-	if r.Header.Get("Authorization") != "Bearer "+APIKey {
+	accepted := r.Header.Get("Authorization") == "Bearer "+APIKey
+	if h.probe != nil {
+		accepted = h.probe.accept(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
+	}
+	if !accepted {
 		writeOpenAIError(w, http.StatusUnauthorized, authenticationError, "Only the mock placeholder key is accepted.")
 		return
 	}
@@ -357,18 +361,38 @@ func (h *handler) serveOpenAI(w http.ResponseWriter, r *http.Request) {
 		writeOpenAIError(w, http.StatusRequestEntityTooLarge, requestTooLarge, "Request exceeds the mock limit.")
 		return
 	}
+	var admission struct {
+		Stream *bool `json:"stream"`
+	}
+	if json.Unmarshal(body, &admission) == nil && admission.Stream != nil && !*admission.Stream {
+		model, valid := credentialAdmission(body, r.URL.Path == openaicompat.ResponsesPath)
+		if !valid {
+			writeOpenAIError(w, http.StatusBadRequest, invalidRequestError, "Invalid credential admission request.")
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"id": "mock_credential_admission", "model": model})
+		return
+	}
+
 	request, err := parseOpenAIRequest(body, r.URL.Path == openaicompat.ResponsesPath)
 	if err != nil {
+		h.logger.WarnContext(r.Context(), "the mock compatible request was rejected", "reason", err.Error())
 		writeOpenAIError(w, http.StatusBadRequest, invalidRequestError, "Invalid compatible request.")
 		return
 	}
 	request.WireProvider, err = mockWirePolicy(r.Header.Get(openaicompat.MockProviderHeader), request.WireMode, body)
 	if err != nil {
+		h.logger.WarnContext(r.Context(), "the mock compatible policy was rejected", "reason", err.Error())
 		writeOpenAIError(w, http.StatusBadRequest, invalidRequestError, "Invalid compatible policy.")
+		return
+	}
+	if h.probe != nil && !h.probe.await(r.Context()) {
 		return
 	}
 	answer, id, err := h.plan(r.Context(), request)
 	if err != nil {
+		h.logger.WarnContext(r.Context(), "the mock compatible scenario was rejected", "reason", err.Error())
 		writeOpenAIError(w, http.StatusBadRequest, invalidRequestError, err.Error())
 		return
 	}
@@ -448,6 +472,20 @@ func mockWirePolicy(id string, mode conversation.APIStyle, body []byte) (convers
 	return provider, nil
 }
 
+// compatibleMockModel admits reviewed wire fixtures with the matching protocol.
+// Protocol coverage does not make a profile selectable in the server catalog.
+func compatibleMockModel(apiModel string, responses bool) bool {
+	if apiModel == mockModel {
+		return true
+	}
+	for _, model := range append(modelprovider.CompatibleModels(), conversation.ModelKimiK26, conversation.ModelQwen38Max) {
+		if model.ProviderModel() == apiModel {
+			return (model.Details().Provider.APIStyle() == conversation.OpenAIResponses) == responses
+		}
+	}
+	return false
+}
+
 func parseOpenAIRequest(body []byte, responses bool) (messagesRequest, error) {
 	var wire struct {
 		Model    string            `json:"model"`
@@ -464,7 +502,7 @@ func parseOpenAIRequest(body []byte, responses bool) (messagesRequest, error) {
 		} `json:"tools"`
 		Choice string `json:"tool_choice"`
 	}
-	if json.Unmarshal(body, &wire) != nil || wire.Model != mockModel || !wire.Stream || len(wire.Previous) > 0 {
+	if json.Unmarshal(body, &wire) != nil || !compatibleMockModel(wire.Model, responses) || !wire.Stream || len(wire.Previous) > 0 {
 		return messagesRequest{}, errors.New("invalid mock compatible request")
 	}
 	request := messagesRequest{Model: wire.Model, Stream: true, WireMode: conversation.OpenAIChatCompletions}
@@ -621,4 +659,30 @@ func writeOpenAIError(w http.ResponseWriter, status int, kind errorType, message
 	w.Header().Set("x-request-id", requestID)
 	w.WriteHeader(status)
 	_, _ = w.Write(comm.Must(json.Marshal(map[string]any{"error": map[string]any{"type": kind, "message": message, "param": nil, "code": code}})))
+}
+
+// credentialAdmission verifies the exact bounded inference probe, including privacy controls.
+func credentialAdmission(body []byte, responses bool) (string, bool) {
+	var request struct {
+		Model     string   `json:"model"`
+		Stream    *bool    `json:"stream"`
+		MaxOutput int      `json:"max_output_tokens"`
+		MaxTokens int      `json:"max_tokens"`
+		Store     *bool    `json:"store"`
+		Include   []string `json:"include"`
+		Input     string   `json:"input"`
+		Messages  []struct {
+			Role    string `json:"role"`
+			Content string `json:"content"`
+		} `json:"messages"`
+	}
+	decoder := json.NewDecoder(strings.NewReader(string(body)))
+	decoder.DisallowUnknownFields()
+	if decoder.Decode(&request) != nil || !compatibleMockModel(request.Model, responses) || request.Stream == nil || *request.Stream {
+		return "", false
+	}
+	if responses {
+		return request.Model, request.MaxOutput == 64 && request.MaxTokens == 0 && request.Store != nil && !*request.Store && len(request.Include) == 1 && request.Include[0] == "reasoning.encrypted_content" && request.Input == "Reply OK." && len(request.Messages) == 0
+	}
+	return request.Model, request.MaxTokens == 64 && request.MaxOutput == 0 && request.Store == nil && len(request.Include) == 0 && request.Input == "" && len(request.Messages) == 1 && request.Messages[0].Role == "user" && request.Messages[0].Content == "Reply OK."
 }

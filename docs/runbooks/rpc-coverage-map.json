@@ -33,6 +33,11 @@
       "native-e2e"
     ],
     "/superverse.v2.AgentService/InterruptAgent": [],
+    "/superverse.v2.AgentService/ListAgentModels": [
+      "kind-e2e",
+      "native-e2e",
+      "native-integration"
+    ],
     "/superverse.v2.AgentService/ListMockScenarios": [
       "kind-e2e",
       "native-e2e",

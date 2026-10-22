@@ -5,7 +5,7 @@ Purpose: Routes catalog-selected model calls and validates requests, private rep
 
 Callers: `cmd/superverse-server/config`, `cmd/tools/check-proto-enums`, `internal/dexai/agents`, `internal/dexai/agents/session`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/modelprovider/mockmodel`, `internal/dexai/agents/session/subagent`, `internal/dexai/api` and `internal/dexai/bootstrap` import this package.
 
-Dependencies: it imports `internal/comm`, `internal/dexai/agents/session/conversation` and `internal/dexai/agents/session/modelprovider/openaicompat` and calls the Claude and compatible Messages APIs and Dex Flow APIs.
+Dependencies: it imports `internal/comm`, `internal/comm/modelendpoint`, `internal/dexai/agents/session/conversation` and `internal/dexai/agents/session/modelprovider/openaicompat` and calls the Claude and compatible Messages APIs and Dex Flow APIs.
 
 ```mermaid
 flowchart LR
@@ -20,8 +20,9 @@ flowchart LR
   c7["internal/dexai/api"] --> self
   c8["internal/dexai/bootstrap"] --> self
   self --> d0["internal/comm"]
-  self --> d1["internal/dexai/agents/session/conversation"]
-  self --> d2["internal/dexai/agents/session/modelprovider/openaicompat"]
+  self --> d1["internal/comm/modelendpoint"]
+  self --> d2["internal/dexai/agents/session/conversation"]
+  self --> d3["internal/dexai/agents/session/modelprovider/openaicompat"]
   self --> e0(["Claude and compatible Messages APIs"])
   self --> e1(["Dex Flow API"])
 ```
@@ -63,7 +64,7 @@ type is shared with unrelated invalid requests. The message is inspected only fo
 classification; its text never enters the resulting credit or spend-limit
 error. Other rejected requests retain only fixed error categories in diagnostics; raw
 provider bodies and request IDs are discarded so they cannot echo a credential.
-The [OpenAI-compatible adapter](openaicompat/README.md) implements Responses and Chat Completions against the existing loopback mock engine. Real compatible models remain unavailable until protocol acceptance and their credential boundary are delivered.
+The [OpenAI-compatible adapter](openaicompat/README.md) implements Responses and Chat Completions through the shared endpoint runtime. Reviewed compatible profiles use Session-owned provider keys when enabled by configuration; local profiles route them to the owned mock engine.
 `MockClientConfig.CompatibleTransports` enables the internal `mock/openai-responses`
 and `mock/openai-chat` identities only in Local Native and Kind. `ExecutionModels`
 includes those fixture transports for validation and prompt freezing; `Models`
@@ -100,8 +101,14 @@ key hint. Neither provider nor wire style can be constructed from arbitrary stri
 package. Mock retains its existing Anthropic request shape and needs no user key.
 `ModelProfile` owns request budgets, capability policy, dated sources and `ModelAvailability`.
 The closed states are Candidate, Available and Unavailable; the latter two non-callable states
-carry reasons. Only the original three Claude models and mock are Available. API admission,
-startup configuration and `ModelRouter` enforce availability independently of enum recognition.
+carry reasons. The original Claude/mock profiles retain their availability. `ProviderConfig`
+combines implementation capability and strictly parsed `agent.providers.enabled`
+provider identities, derived from one reviewed provider-to-flagship mapping, without changing
+this global catalog. OpenAI GPT-6 Astra, xAI Grok 4.7 and Gemini 4 Argon can be
+admitted; other candidates remain unavailable. Startup, key admission, the
+server model catalog and `ModelRouter` use the same configuration. The local
+profiles enable those three and explicitly route them through the owned mock
+endpoint; hosted defaults offer none of the additional providers.
 
 The closed replay policies are ClaudeSigned (existing private signed blocks), EncryptedOpaque
 (unreadable protocol items), NonThinking (explicit provider control), and PlaintextRequired
@@ -109,8 +116,7 @@ The closed replay policies are ClaudeSigned (existing private signed blocks), En
 dropped when that segment closes; no readable thinking, summary or opaque payload enters public
 history or compaction. Compatible mock replies encode private replay with `conversation.OpaqueReplay`; the catalog itself does not own reply payloads.
 
-The following official sources were read on **2026-10-21**. Every new entry remains unavailable:
-adapters, protocol verification and Session API keys are pending. Capability flags are conservative
+The catalog sources below were read on **2026-10-21**, with OpenAI, xAI and Gemini flagship sources rechecked on **2026-10-22**. Those three profiles have Session key admission and mock-endpoint protocol acceptance; hosted availability remains disabled by default. Other entries remain unavailable. Capability flags are conservative
 request policies, not live claims. Context budgets stay below documented context limits; reply budgets
 are also deliberately conservative. Existing Claude/mock budgets and request behavior are unchanged.
 
@@ -120,7 +126,7 @@ are also deliberately conservative. Existing Claude/mock budgets and request beh
 | DeepSeek | `deepseek-flash` | NonThinking; [1M context / 384K output](https://api-docs.deepseek.com/quick_start/pricing/), current Flash version V4.1-Flash-1017; request output budget 64,000. |
 | xAI | `grok-4.7` | EncryptedOpaque, Responses only; [500,000 context, no separate text output ceiling](https://docs.x.ai/developers/grok-4-7); request output budget 32,000. |
 | Meta | `muse-wonder-1.0` | EncryptedOpaque pending Wonder verification; [1,048,576 context](https://dev.meta.ai/docs/models). [Messages](https://dev.meta.ai/docs/protocols/messages) documents a 1,024-token Spark example; the candidate uses that provisional request budget and explicitly requires Wonder output verification. |
-| Gemini | `gemini-4-argon` | EncryptedOpaque pending compatible-layer verification; [1,048,576 unified context / 65,536 synchronous output](https://ai.google.dev/gemini-api/docs/models/gemini-4-argon); request output budget 32,000. |
+| Gemini | `gemini-4-argon` | EncryptedOpaque via compatible Chat; [1,048,576 unified context / 65,536 synchronous output](https://ai.google.dev/gemini-api/docs/models/gemini-4-argon); request output budget 32,000. |
 | Kimi | `kimi-k3`, `kimi-k2.6` | K3 is PlaintextRequired and unavailable: [always-on preserved thinking](https://platform.kimi.ai/docs/api/chat). K2.6 is the newest [listed API model with non-thinking support and 256K context](https://platform.kimi.ai/docs/models); request output budget 16,000. Coding-subscription routing is not an API-model contract. |
 | GLM | `glm-5.3`, `glm-5.2` | 5.3 is PlaintextRequired and unavailable: [1M context / 128K output, thinking cannot be disabled](https://docs.bigmodel.cn/cn/guide/models/text/glm-5.3). 5.2 has [1M context / 128K output](https://docs.bigmodel.cn/cn/guide/models/text/glm-5.2) and an explicit [disabled thinking switch](https://docs.bigmodel.cn/cn/guide/capabilities/thinking); request output budget 64,000. |
 | Qwen | `qwen3.8-max` | NonThinking pending verification; [1,000,000 context / 131,072 output](https://help.aliyun.com/en/model-studio/qwen3-8-max); request output budget 64,000. The base URL is an inert reviewed workspace/region template; endpoint admission remains pending. |
@@ -128,10 +134,10 @@ are also deliberately conservative. Existing Claude/mock budgets and request beh
 
 `make check-proto-enums` additionally checks all Model constants against Models, profiles, dated
 source data and both directions of the explicit AgentModel mapping, including duplicate rejection.
-Studio's Record mappings require every enum and preserve picker filtering. No RPC or persistent
-primitive is added. SessionModel's revision CAS, segment rollover, subagent frozen selection,
+Studio's Record mappings require every enum and preserve stored selections. Authenticated `ListAgentModels` returns only usable configured models and local mock-endpoint metadata; it creates no persistent
+primitive. SessionModel's revision CAS, segment rollover, subagent frozen selection,
 Flow identities, Step graph, Maps, Channels and Streams are unchanged. There is no database
-migration, new resource, pool, per-request control-plane operation or additional tenant scan.
+migration, per-request control-plane operation or additional tenant scan. The shared endpoint pool bounds active and idle connections across origins to 128 per replica; the adapter bounds concurrent requests to 32 without a wait queue.
 
 ## Compatible Messages adapter
 
@@ -186,3 +192,18 @@ protocol support; mock-wire checks do not establish live-provider acceptance.
 existing mock model's HTTP Messages endpoint. That endpoint checks profile controls,
 authentication and omitted Claude-only fields, and replays synthetic opaque blocks
 exactly. The requests and replies cross real Dex Steps and persistence on an owned test Worker. These tests cover adapter serialization and HTTP behavior, not full Session/Sandbox or live-provider acceptance.
+
+`CompatibleProviders` is one shared replica-owned runtime for Session, Subagent
+and credential admission. Its endpoint pool performs HTTPS/origin admission and
+fresh checked DNS connections, refuses redirects/proxy inheritance, and bounds
+active plus idle sockets across providers. The adapter separately admits at most
+32 active calls without a capacity queue. Clients retain no key: the exact
+Session or child envelope supplies `ModelRequest.APIKey` for that request only.
+A save first makes a bounded inference admission request with at most 64 output
+tokens; only known machine error fields enter diagnostics.
+
+`ListAgentModels` returns only server-configured, caller-selectable models and
+provider display/key hints. Its local mock-endpoint flag lets Studio explain the
+non-secret test key and avoid claiming a model charge. Frozen Session and child
+prompts include every implemented model, independently of runtime enablement;
+configuration never mutates prompt or capability facts.

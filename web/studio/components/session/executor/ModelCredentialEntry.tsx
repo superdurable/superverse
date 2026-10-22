@@ -9,19 +9,37 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ModelCredentialStatus, saveModelCredential, deleteModelCredential } from "@/lib/api/model-credential";
+import {
+  MOCK_MODEL_API_KEY,
+  ModelCredentialStatus,
+  saveModelCredential,
+  deleteModelCredential,
+} from "@/lib/api/model-credential";
 import { useSessionResource } from "@/lib/session/SessionProvider";
+import type { useModelCredential } from "@/lib/session/credentials/use-model-credential";
 import { useSingleFlight } from "@/lib/browser/use-single-flight";
 
 /** A write-only password field and ModelKeyInfo metadata; the saved key is never returned. */
-export function ModelCredentialEntry({ canManage }: { canManage: boolean }) {
+export function ModelCredentialEntry({
+  canManage,
+  providerName = "Anthropic",
+  keyHint = "Anthropic API key",
+  credential: chosenCredential,
+  mockEndpoint = false,
+}: {
+  canManage: boolean;
+  providerName?: string;
+  keyHint?: string;
+  credential?: ReturnType<typeof useModelCredential>;
+  mockEndpoint?: boolean;
+}) {
   const session = useSessionResource();
   const field = useRef<HTMLInputElement>(null);
   const [editing, setEditing] = useState(false);
   const [confirm, setConfirm] = useState<"replace" | "delete" | null>(null);
   const action = useSingleFlight<"save" | "delete">();
   if (!session) return null;
-  const credential = session.credential,
+  const credential = chosenCredential ?? session.credential,
     info = credential.info;
   const running =
     session.resource?.agent?.description?.subagents.filter(
@@ -96,7 +114,7 @@ export function ModelCredentialEntry({ canManage }: { canManage: boolean }) {
   return (
     <div className="my-1 grid gap-2 rounded-md border border-line p-2.25 text-xs" data-model-credential>
       <p className="font-medium text-ink">
-        Anthropic API key ·{" "}
+        {keyHint} ·{" "}
         {active
           ? `••••${info.last4}`
           : info?.status === ModelCredentialStatus.MODEL_CREDENTIAL_STATUS_PENDING
@@ -110,15 +128,16 @@ export function ModelCredentialEntry({ canManage }: { canManage: boolean }) {
         </p>
       )}
       <p className="text-ink-faint">
-        All Builders of this Project use this key. Anthropic bills your account. Saving tests the key with a small
-        billable request.
+        {mockEndpoint
+          ? `This local endpoint accepts the test key ${MOCK_MODEL_API_KEY}. No model charge.`
+          : `All Builders of this Project use this key. ${providerName} bills your account. Saving tests the key with a small billable request.`}
       </p>
       {canManage && !credential.pending && (
         <>
           {(!active || editing) && (
             <>
               <label className="grid gap-1">
-                Anthropic API key
+                {keyHint}
                 <input
                   ref={field}
                   type="password"
@@ -155,7 +174,7 @@ export function ModelCredentialEntry({ canManage }: { canManage: boolean }) {
           )}
           {confirm && (
             <div role="alert" className="grid gap-1 text-ink">
-              <p>This will stop {running} running subagents because the model credential changed.</p>
+              <p>Running subagents that use this provider will stop because its key changed.</p>
               <button type="button" onClick={() => (confirm === "delete" ? remove() : save())}>
                 Confirm {confirm}
               </button>

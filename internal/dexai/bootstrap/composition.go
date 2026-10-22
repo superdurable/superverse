@@ -157,6 +157,16 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 		owned.add(func() error { stop(); return nil })
 		config.agent.Mock = &modelprovider.MockClientConfig{ClaudeClientConfig: modelprovider.ClaudeClientConfig{APIKey: mockmodel.APIKey, BaseURL: baseURL}, CompatibleTransports: config.localKind}
 	}
+	mockURL := ""
+	if config.agent.Mock != nil {
+		mockURL = config.agent.Mock.BaseURL
+	}
+	compatible, err := modelprovider.NewCompatibleProviders(ctx, config.providers, config.modelEndpoints, mockURL, logger)
+	if err != nil {
+		return nil, err
+	}
+	config.agent.Compatible = compatible
+	owned.add(compatible.Close)
 	// The Session Agent Flow bootstrap owns the one pooled Sandbox resolver and
 	// the instance provider on it; Session tools, the workspace Flow's
 	// reclamation, the provisioning, the Preview and the deleting Project's
@@ -175,7 +185,7 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	owned.add(sessionAgent.Close)
 	// A subagent shares the Session's pooled Sandbox resolver and runs on the
 	// model its Session ran on.
-	subagents, err := subagent.NewSubagentFlowBootstrap(subagent.SubagentFlowConfig{Claude: config.agent.Claude, Mock: config.agent.Mock, Settings: config.agent.Settings,
+	subagents, err := subagent.NewSubagentFlowBootstrap(subagent.SubagentFlowConfig{Compatible: config.agent.Compatible, Claude: config.agent.Claude, Mock: config.agent.Mock, Settings: config.agent.Settings,
 		Efforts: config.subagentEfforts}, sessionService, projectDiagnostics, sessionAgent.Workspace(), logger)
 	if err != nil {
 		return nil, err
@@ -275,7 +285,7 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	sessionService.Workspaces = workspaces.Client(client, dexpb.NewFlowServiceClient(executions))
 	sessionAgentClient := sessionAgent.Client(client, dexpb.NewFlowServiceClient(executions))
 	sessionService.Agent, sessionService.Subagents, sessionService.Issues, sessionService.Contributions = sessionAgentClient, subagents.Client(client, dexpb.NewFlowServiceClient(executions)), issues.Client(client), contributions.Client(client)
-	sessionService.ModelCredentials = &agents.ModelCredentialFlowService{Sessions: sessionAgentClient, Subagents: sessionService.Subagents, HTTP: modelprovider.NewProviderHTTPClient(), Logger: logger, ValidationBaseURL: config.agent.Claude.BaseURL}
+	sessionService.ModelCredentials = &agents.ModelCredentialFlowService{Sessions: sessionAgentClient, Subagents: sessionService.Subagents, HTTP: modelprovider.NewProviderHTTPClient(), Compatible: config.agent.Compatible, Logger: logger, ValidationBaseURL: config.agent.Claude.BaseURL}
 	owned.add(sessionService.ModelCredentials.Close)
 	sessionService.BackgroundCommands = backgroundCommands.Client(client)
 
@@ -319,7 +329,7 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 		Attachments: attachmentClient, Renditions: renditions, AttachmentAdmission: attachments.NewAttachmentFlowService(attachmentClient, projectClient, config.attachmentsPerMessage),
 		Connections: tenancy.Connections{Connections: shared.Connections, Access: connectionDAO, StudioOrigin: config.oauthCallbackOrigin, Unrouted: slack},
 		// Claude credentials belong to each Project; mock availability is configured.
-		SessionModels:      api.SessionModels{Claude: true, Mock: config.mockModel, Local: config.localKind},
+		SessionModels:      api.SessionModels{Claude: true, Mock: config.mockModel, Local: config.localKind, Providers: config.providers},
 		ClosestExamplePick: config.closestExamplePick,
 		RemoteAgents:       remoteService,
 		Evolve:             evolveClient,

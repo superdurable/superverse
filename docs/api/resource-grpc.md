@@ -27,7 +27,7 @@ is logged the same way and ends that Watch with the same Internal status.
 
 <!-- BEGIN GENERATED SERVICE TABLE (make generate-proto) -->
 
-19 services, 111 RPCs. A field is a string unless a type is given. Every request
+19 services, 112 RPCs. A field is a string unless a type is given. Every request
 except RegisterAccount and Login also carries `CallerContext caller 100`, which the table omits.
 
 | Service | RPCs | Reached through |
@@ -42,7 +42,7 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 | RemoteAgentService | 4 | `/api/rpc/<Method>` |
 | AttachmentService | 4 | `/api/rpc/<Method>` |
 | EvolveService | 2 | `/api/rpc/<Method>` |
-| AgentService | 9 | `/api/rpc/<Method>` |
+| AgentService | 10 | `/api/rpc/<Method>` |
 | PreviewService | 6 | `/api/rpc/<Method>` |
 | ReleaseService | 10 | `/api/rpc/<Method>` |
 | DeploymentService | 5 | `/api/rpc/<Method>` |
@@ -166,6 +166,7 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 | ResolveToolApproval | `project_id 1, call_id 3, optional bool is_approved 4` | `{}` |
 | InterruptAgent | `project_id 1, int64 turn 3` | `{}` |
 | ListMockScenarios | `{}` | `bool selectable 1, repeated AgentMockScenario scenarios 2` |
+| ListAgentModels | `{}` | `repeated AgentModelChoice models 1` |
 | GetFlowDesign | `project_id 1, AgentFlowDesignSlot slot 3, digest 4` | `AgentFlowDesign design 1` |
 
 **PreviewService**

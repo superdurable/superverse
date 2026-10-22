@@ -27,6 +27,7 @@ import (
 	"github.com/superdurable/dex/sdk-go/dex"
 	serverconfig "github.com/superdurable/superversev2/cmd/superverse-server/config"
 	"github.com/superdurable/superversev2/internal/comm"
+	"github.com/superdurable/superversev2/internal/comm/modelendpoint"
 	"github.com/superdurable/superversev2/internal/comm/platform/connectorlibrary"
 	"github.com/superdurable/superversev2/internal/comm/platform/deploymentnames"
 	"github.com/superdurable/superversev2/internal/comm/platform/githubapp"
@@ -65,10 +66,12 @@ import (
 // providers that need nothing else. The settings are read and validated by
 // cmd/superverse-server/config; the secrets only here (see secrets.go).
 type serverConfig struct {
-	environment deploymentnames.Environment
-	names       deploymentnames.Names
-	localKind   bool
-	aws         aws.Config
+	providers      modelprovider.ProviderConfig
+	modelEndpoints modelendpoint.Config
+	environment    deploymentnames.Environment
+	names          deploymentnames.Names
+	localKind      bool
+	aws            aws.Config
 
 	// signer issues login tokens; cursors signs the API's resume cursors and
 	// page tokens with the same key.
@@ -207,6 +210,7 @@ func loadConfig(ctx context.Context, logger *slog.Logger, settings serverconfig.
 	if c.oauthCallbackOrigin == "" {
 		c.oauthCallbackOrigin = c.studioOrigin
 	}
+	c.providers, c.modelEndpoints = settings.Agent.Providers, settings.Agent.ModelEndpoints
 	c.mockModel, c.closestExamplePick = settings.Agent.MockModel, settings.Agent.ClosestExamplePick
 	c.subagentEfforts = map[agenttasks.SubagentKind]conversation.Effort{
 		agenttasks.SubagentInvestigate: settings.Agent.SubagentInvestigateEffort, agenttasks.SubagentChange: settings.Agent.SubagentChangeEffort,

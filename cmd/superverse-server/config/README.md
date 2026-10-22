@@ -114,7 +114,7 @@ Readiness waits for every queue's acknowledged registration. A permanent rejecti
 
 | Key | Meaning | Default | Range or rule |
 | --- | --- | --- | --- |
-| `model` | Model a new Session starts with | none | required; `anthropic/claude-opus-5-5`, `anthropic/claude-sonnet-5-5`, `anthropic/claude-haiku-4-5`, or `mock` with `mockModel` in Local Kind and Native only |
+| `model` | Model a new Session starts with | none | required; a reviewed configured profile, or `mock` with `mockModel` in Local Kind and Native only |
 | `effort` | Base effort of every model call, clamped per model | `medium` | `low`, `medium`, `high`, `xhigh` or `max` |
 | `subagentInvestigateEffort` | Base effort of the model calls of an `investigate` subagent, clamped per model | `low` | `low`, `medium`, `high`, `xhigh` or `max` |
 | `subagentChangeEffort` | Base effort of the model calls of a `change` subagent, clamped per model; the subagent may raise it with `set_effort` | `medium` | `low`, `medium`, `high`, `xhigh` or `max` |
@@ -125,6 +125,20 @@ Readiness waits for every queue's acknowledged registration. A permanent rejecti
 | `platformTurns` | Consecutive turns that application-owned delivery failures of the Session's HEAD, such as a Preview whose application failed, open before automatic continuation pauses; `0` opens none | `3` | `0` to `100` |
 | `mockModel` | Start the [mock model](../../../internal/dexai/agents/session/modelprovider/mockmodel/README.md) in this process and offer it to every Session as the model `mock`, besides the Claude models: any account selects it in Local Kind and Native, only the administrator elsewhere | `false` | refused in `prod` |
 | `closestExamplePick` | Start a Project created from a first message, with no example picked, from the [example the server finds closest](../../../app-template/examples/README.md#closest-example) to that message instead of the default; the Session's agent adapts it to the message without announcing it | `false` | on in `native.yaml` and `local-kind.yaml` (and so `local-kind-acceptance.yaml`), and in test, staging and prod through Terraform's `agent_closest_example_pick` |
+
+### `agent.providers` and `agent.modelEndpoints`
+
+| Key | Meaning | Default | Rule |
+| --- | --- | --- | --- |
+| `providers.enabled` | Additional usable provider identities | `[]` | Unique values from `openai`, `xai`, `gemini`; each uses its reviewed flagship profile. Unsupported provider names are refused. |
+| `providers.mockEndpoint` | Use the owned scenario endpoint for those compatible profiles | `false` | Requires Local Native/Kind, `agent.mockModel` and `modelEndpoints.allowLocalLoopback`; the local profiles set it explicitly. |
+| `modelEndpoints.allowLocalLoopback` | Permit loopback HTTP/HTTPS in the shared endpoint validator | `false` | `Validate` refuses it outside Local Native/Kind. It never permits arbitrary private, link-local or metadata targets. |
+
+Hosted profiles leave additional providers disabled. The authenticated model
+catalog projects this configuration; clients do not infer availability from enum
+recognition. Local compatible verification requires the fixed non-secret mock key
+shown by Studio. Disabling mock routing uses the reviewed official provider
+endpoint; provider keys still belong to each Session and never to server config.
 
 ### `sandbox`
 

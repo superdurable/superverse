@@ -27,7 +27,8 @@ type ModelRouter struct {
 	claude   *claudeClient
 	messages *messagesClient
 	// mock is nil when the server configuration does not offer the mock model.
-	mock map[conversation.APIStyle]conversation.ModelClient
+	mock       map[conversation.APIStyle]conversation.ModelClient
+	compatible *CompatibleProviders
 }
 
 // MockClientConfig keeps internal wire fixtures confined to the local lanes.
@@ -39,8 +40,8 @@ type MockClientConfig struct {
 
 // NewModelRouter builds the clients the server offers over one owned HTTP
 // client: official Claude with per-request authentication, and the configured mock.
-func NewModelRouter(httpClient *http.Client, claude ClaudeClientConfig, mock *MockClientConfig, logger *slog.Logger) (*ModelRouter, error) {
-	router := &ModelRouter{messages: newMessagesClient(httpClient, logger)}
+func NewModelRouter(httpClient *http.Client, claude ClaudeClientConfig, mock *MockClientConfig, logger *slog.Logger, compatible *CompatibleProviders) (*ModelRouter, error) {
+	router := &ModelRouter{messages: newMessagesClient(httpClient, logger), compatible: compatible}
 	var err error
 	if router.claude, err = newClaudeClient(httpClient, ClaudeClientConfig{BaseURL: claude.BaseURL}, logger); err != nil {
 		return nil, err
@@ -91,7 +92,7 @@ func mockProgress(response *http.Response) *conversation.MockProgress {
 // admits only available catalog models. A stored unavailable model or a Claude
 // request without its Project key gets a rejection that ends its turn.
 func (router *ModelRouter) Complete(ctx context.Context, request conversation.ModelRequest) (conversation.ModelReply, error) {
-	if availability := ProfileOf(request.Model).Availability; !availability.Selectable() {
+	if availability := router.compatible.availability(request.Model); !availability.Selectable() {
 		rejection := conversation.ModelUnavailable.Rejected()
 		rejection.Hint = availability.Reason()
 		return conversation.ModelReply{}, rejection
@@ -114,8 +115,7 @@ func (router *ModelRouter) Complete(ctx context.Context, request conversation.Mo
 		// BYOK will supply a request-local key here; no platform key is borrowed.
 		return router.messages.completeWithKey(ctx, request, "")
 	case conversation.OpenAIResponses, conversation.OpenAIChatCompletions:
-		// There is no credential path for these providers before BYOK.
-		return conversation.ModelReply{}, conversation.ModelUnavailable.Rejected()
+		return router.compatible.Complete(ctx, request)
 	default:
 		return conversation.ModelReply{}, conversation.ModelUnavailable.Rejected()
 	}

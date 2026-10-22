@@ -12,7 +12,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/superdurable/superversev2/internal/comm/modelendpoint"
 	"log/slog"
+	"net"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -167,7 +170,7 @@ func requireMessagesKeyAdmission(t *testing.T) {
 		t.Fatal("plaintext-required profile admitted")
 	}
 	// A missing mock key never falls back to the platform's Claude key.
-	router, err := modelprovider.NewModelRouter(httpClient, modelprovider.ClaudeClientConfig{}, nil, slog.Default())
+	router, err := modelprovider.NewModelRouter(httpClient, modelprovider.ClaudeClientConfig{}, nil, slog.Default(), compatibleRuntime(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -311,7 +314,7 @@ func TestMessagesLegacyClaudeReplayDexIntegration(t *testing.T) {
 	defer stop()
 	httpClient := modelprovider.NewProviderHTTPClient()
 	defer httpClient.CloseIdleConnections()
-	router, err := modelprovider.NewModelRouter(httpClient, modelprovider.ClaudeClientConfig{}, &modelprovider.MockClientConfig{ClaudeClientConfig: modelprovider.ClaudeClientConfig{APIKey: mockmodel.APIKey, BaseURL: baseURL}}, slog.Default())
+	router, err := modelprovider.NewModelRouter(httpClient, modelprovider.ClaudeClientConfig{}, &modelprovider.MockClientConfig{ClaudeClientConfig: modelprovider.ClaudeClientConfig{APIKey: mockmodel.APIKey, BaseURL: baseURL}}, slog.Default(), compatibleRuntime(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -335,5 +338,76 @@ func TestMessagesLegacyClaudeReplayDexIntegration(t *testing.T) {
 	request.Messages = append(request.Messages, conversation.RequestMessage{Role: conversation.EntryRoleUser, Blocks: results, CacheAnchor: -1})
 	if _, err := harness.complete(t, t.Context(), request, false); err != nil {
 		t.Fatalf("legacy replay rejected: %v", err)
+	}
+}
+
+// An unavailable DNS zone must not prevent constructing the server's shared runtime.
+func TestCompatibleProviderStartupDNSNetworkIntegration(t *testing.T) {
+	runtime, err := modelprovider.NewCompatibleProviders(t.Context(), modelprovider.ProviderConfig{Enabled: []conversation.Provider{conversation.ProviderOpenAI}, MockEndpoint: true}, modelendpoint.Config{}, "https://provider.invalid", slog.Default())
+	if err != nil {
+		t.Fatal("startup must admit syntax without DNS:", err)
+	}
+	defer runtime.Close()
+	var dns *net.DNSError
+	if err := runtime.ValidateCredential(t.Context(), conversation.ProviderOpenAI, mockmodel.APIKey); !errors.As(err, &dns) {
+		t.Fatal("unresolvable provider call must fail at DNS dial:", err)
+	}
+}
+
+func compatibleRuntime(t *testing.T) *modelprovider.CompatibleProviders {
+	t.Helper()
+	runtime, err := modelprovider.NewCompatibleProviders(t.Context(), modelprovider.ProviderConfig{}, modelendpoint.Config{}, "", slog.Default())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { runtime.Close() })
+	return runtime
+}
+
+// Both inference protocols validate the actual admission shape at their HTTP endpoint.
+func TestCompatibleCredentialShapeNetworkIntegration(t *testing.T) {
+	base, stop, err := mockmodel.Start(t.Context(), slog.Default())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer stop()
+	config := modelprovider.ProviderConfig{MockEndpoint: true}
+	for _, model := range modelprovider.CompatibleModels() {
+		config.Enabled = append(config.Enabled, model.Details().Provider)
+	}
+	runtime, err := modelprovider.NewCompatibleProviders(t.Context(), config, modelendpoint.Config{AllowLocalLoopback: true}, base, slog.Default())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer runtime.Close()
+	for _, model := range modelprovider.CompatibleModels() {
+		if err := runtime.ValidateCredential(t.Context(), model.Details().Provider, mockmodel.APIKey); err != nil {
+			t.Fatal(model, err)
+		}
+	}
+	for _, body := range []string{
+		`{"model":"gpt-6-astra","stream":false,"max_output_tokens":64,"input":"Reply OK."}`,
+		`{"model":"gpt-6-astra","stream":false,"max_output_tokens":64,"input":"Reply OK.","store":true,"include":["reasoning.encrypted_content"]}`,
+		`{"model":"gpt-6-astra","stream":false,"max_output_tokens":64,"input":"Reply OK.","store":false,"include":[]}`,
+		`{"model":"gemini-4-argon","stream":false,"max_tokens":64,"messages":[]}`,
+		`{"model":"gemini-4-argon","stream":false,"max_tokens":64,"messages":[{"role":"system","content":"Reply OK."}]}`,
+	} {
+		path := "/v1/responses"
+		if strings.Contains(body, "gemini") {
+			path = "/v1/chat/completions"
+		}
+		request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, base+path, strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		request.Header.Set("Authorization", "Bearer "+mockmodel.APIKey)
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+		response.Body.Close()
+		if response.StatusCode != http.StatusBadRequest {
+			t.Fatal("malformed credential probe accepted", response.StatusCode)
+		}
 	}
 }

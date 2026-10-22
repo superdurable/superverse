@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Encodes frozen tools and canonical conversation into Responses or Chat Completions, validates streamed replies, and retains bounded private encrypted replay.
 
-Callers: `internal/dexai/agents/session/modelprovider` and `internal/dexai/agents/session/modelprovider/mockmodel` import this package.
+Callers: `internal/dexai/agents/session/modelprovider`, `internal/dexai/agents/session/modelprovider/mockmodel` and `internal/dexai/api/modelcredential` import this package.
 
 Dependencies: it imports `internal/comm` and `internal/dexai/agents/session/conversation` and calls the Dex Flow API.
 
@@ -12,6 +12,7 @@ flowchart LR
   self["internal/dexai/agents/session/modelprovider/openaicompat"]
   c0["internal/dexai/agents/session/modelprovider"] --> self
   c1["internal/dexai/agents/session/modelprovider/mockmodel"] --> self
+  c2["internal/dexai/api/modelcredential"] --> self
   self --> d0["internal/comm"]
   self --> d1["internal/dexai/agents/session/conversation"]
   self --> e0(["Dex Flow API"])
@@ -20,9 +21,11 @@ flowchart LR
 
 This package implements both wire modes of one compatible adapter. The router supplies
 catalog policy; it does not infer protocol from a failed endpoint or switch providers.
-Before Session API keys are available, `NewMock` accepts only the existing scenario
-engine on loopback HTTP, and `Complete` refuses every real model identity. Real
-provider availability remains controlled by the model catalog.
+`New` consumes an origin-admitted HTTP client and complete API root from the
+shared provider runtime. `Complete` obtains a request-local key, validates the
+provider binding and never stores authentication. `NewMock` retains the internal
+scenario transport. Operator configuration and reviewed implementation capability
+jointly control real catalog availability; custom user URLs are not admitted here.
 
 Responses requests explicitly send `store: false`, request `reasoning.encrypted_content`,
 and rebuild `input` from the current segment without `previous_response_id`. Frozen
@@ -121,3 +124,17 @@ frames aggregate alongside text and require agreement with the completed item.
 A fully completed refusal is definitive even when the aggregate Responses reply
 ends with incomplete/max_output_tokens. Refusal takes precedence over the output
 limit and ends the turn; completed ordinary text at that limit still continues.
+
+Credential admission uses the same bounded client and shared call limit, sends a
+small stateless inference request, discards the bounded response and retains
+only allowlisted rejection codes. Local scenario headers/progress are accepted
+only when the validated runtime explicitly selects its owned mock endpoint.
+
+Credential admission shares the replica's 32 compatible-call slots with inference,
+with no queue or automatic retry. Saturation reaches the Builder as ResourceExhausted
+(HTTP 429) with an explicit try-again message, before reserving a credential mutation.
+The inference probe has a 60-second total deadline, allowing reasoning-model latency
+within its fixed 64-token budget; connection/TLS limits remain 10 seconds. Earlier
+caller cancellation still applies: Studio retains its existing 35-second RPC
+deadline, so its effective admission budget is shorter than the provider ceiling. A timeout
+is retryable admission failure and never marks a key invalid or persists it.

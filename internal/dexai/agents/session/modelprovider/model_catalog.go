@@ -8,7 +8,11 @@
 
 package modelprovider
 
-import "github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+import (
+	"errors"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"slices"
+)
 
 // AvailabilityState separates a reviewed identity from a callable implementation.
 type AvailabilityState struct{ id string }
@@ -114,16 +118,23 @@ func populateCandidateProfiles() {
 	profiles[conversation.ModelKimiK26] = candidate(conversation.ModelKimiK26, 262_144, 16_000, 160_000, 210_000, conversation.ReplayNonThinking, true, "https://platform.kimi.ai/docs/api/chat", adapterBYOKPending)
 	profiles[conversation.ModelGLM52] = candidate(conversation.ModelGLM52, 1_000_000, 64_000, 650_000, 800_000, conversation.ReplayNonThinking, false, "https://docs.bigmodel.cn/cn/guide/models/text/glm-5.2", adapterBYOKPending)
 	profiles[conversation.ModelMiniMaxM3] = candidate(conversation.ModelMiniMaxM3, 1_000_000, 4_096, 650_000, 800_000, conversation.ReplayNonThinking, true, "https://platform.minimax.io/docs/api-reference/text-anthropic-api", messagesBYOKPending)
-	// Official limits: 1,050,000 context / 128,000 output. Request budget stays below output maximum.
+	// Checked 2026-10-22: https://developers.openai.com/api/docs/models/gpt-6-astra; flagship, 1,050,000 context / 128,000 output.
 	profiles[conversation.ModelGPT6Astra] = candidate(conversation.ModelGPT6Astra, 1_050_000, 64_000, 700_000, 850_000, conversation.ReplayEncryptedOpaque, true, "https://developers.openai.com/api/docs/models/gpt-6-astra", adapterBYOKPending)
 	// Official limits: 1M context / 384K output; Flash is the current multimodal flagship.
 	profiles[conversation.ModelDeepSeekFlash] = candidate(conversation.ModelDeepSeekFlash, 1_000_000, 64_000, 650_000, 800_000, conversation.ReplayNonThinking, true, "https://api-docs.deepseek.com/quick_start/pricing/", messagesBYOKPending)
-	// Official limits: 500,000 context; no separate text output limit.
+	// Checked 2026-10-22: https://docs.x.ai/developers/grok-4-7 (updated 2026-10-10); flagship, 500,000 context.
 	profiles[conversation.ModelGrok47] = candidate(conversation.ModelGrok47, 500_000, 32_000, 300_000, 400_000, conversation.ReplayEncryptedOpaque, true, "https://docs.x.ai/developers/grok-4-7", adapterBYOKPending)
 	// Official context: 1,048,576. Messages documents max_tokens=1024 for Spark; Wonder output verification is pending; larger output remains unverified.
 	profiles[conversation.ModelMuseWonder10] = candidate(conversation.ModelMuseWonder10, 1_048_576, 1_024, 650_000, 800_000, conversation.ReplayEncryptedOpaque, true, "https://dev.meta.ai/docs/models", "Wonder encrypted replay and output limit live verification, and Session API keys are pending.")
-	// Official unified context: 1,048,576; synchronous output: 65,536 (long decode is not used).
+	// Checked 2026-10-22: https://ai.google.dev/gemini-api/docs/models/gemini-4-argon (updated 2026-10-14); flagship, 1,048,576 context.
 	profiles[conversation.ModelGemini4Argon] = candidate(conversation.ModelGemini4Argon, 1_048_576, 32_000, 650_000, 800_000, conversation.ReplayEncryptedOpaque, true, "https://ai.google.dev/gemini-api/docs/models/gemini-4-argon", adapterBYOKPending)
+	for _, model := range CompatibleModels() {
+		profile := profiles[model]
+		profile.CheckedOn = "2026-10-22"
+		profile.Capabilities.SupportsParallelTools = true
+		profile.Availability.reason = "This environment does not offer this model provider."
+		profiles[model] = profile
+	}
 	// Official limits: 1M context / up to 1,048,576 output. K3 cannot disable preserved thinking.
 	profiles[conversation.ModelKimiK3] = candidate(conversation.ModelKimiK3, 1_048_576, 64_000, 650_000, 800_000, conversation.ReplayPlaintextRequired, true, "https://platform.kimi.ai/docs/api/chat", "Kimi K3 requires preserved thinking; no approved opaque replay or non-thinking path exists.")
 	// Official limits: 1M context / 128K output. GLM 5.3 cannot disable thinking.
@@ -132,4 +143,71 @@ func populateCandidateProfiles() {
 	profiles[conversation.ModelQwen38Max] = candidate(conversation.ModelQwen38Max, 1_000_000, 64_000, 650_000, 800_000, conversation.ReplayNonThinking, true, "https://help.aliyun.com/en/model-studio/qwen3-8-max", "Chat adapter, non-thinking verification, regional endpoint admission and Session API keys are pending.")
 	// Official context: 1,000,000. The official request example uses 4096 output tokens.
 	profiles[conversation.ModelMiniMaxM31Flash] = candidate(conversation.ModelMiniMaxM31Flash, 1_000_000, 4_096, 650_000, 800_000, conversation.ReplayPlaintextRequired, true, "https://platform.minimax.io/docs/api-reference/text-anthropic-api", "MiniMax M3.1 Flash requires readable thinking replay and rejects disabled thinking; no compliant replay path exists.")
+}
+
+// ProviderConfig is operator admission for implemented compatible profiles.
+// Hosted profiles default to no additional providers; local profiles opt in.
+type ProviderConfig struct {
+	Enabled      []conversation.Provider `yaml:"enabled"`
+	MockEndpoint bool                    `yaml:"mockEndpoint"`
+}
+
+// Validate rejects unsupported/duplicate providers and confines mock routing locally.
+func (config ProviderConfig) Validate(local, mock bool) error {
+	seen := make(map[conversation.Provider]bool, len(config.Enabled))
+	for _, provider := range config.Enabled {
+		if _, supported := compatibleFlagships[provider]; !supported {
+			return errors.New("agent.providers.enabled contains an unsupported provider")
+		}
+		if seen[provider] {
+			return errors.New("agent.providers.enabled contains a duplicate provider")
+		}
+		seen[provider] = true
+	}
+	if config.MockEndpoint && (!local || !mock) {
+		return errors.New("agent.providers.mockEndpoint requires a local lane with agent.mockModel")
+	}
+	return nil
+}
+
+// Availability combines reviewed implementation capability with this server's policy.
+// The global catalog is immutable and never changed by a replica configuration.
+func (config ProviderConfig) Availability(model conversation.Model) ModelAvailability {
+	profile := ProfileOf(model)
+	if profile.Availability.Selectable() {
+		return profile.Availability
+	}
+	if compatibleFlagships[model.Details().Provider] == model {
+		if slices.Contains(config.Enabled, model.Details().Provider) {
+			return ModelAvailability{state: AvailabilityAvailable}
+		}
+		return ModelAvailability{state: AvailabilityUnavailable, reason: "This environment does not offer this model provider."}
+	}
+	return profile.Availability
+}
+
+// compatibleFlagships owns the enabled-provider to reviewed flagship mapping.
+var compatibleFlagships = map[conversation.Provider]conversation.Model{
+	conversation.ProviderOpenAI: conversation.ModelGPT6Astra,
+	conversation.ProviderXAI:    conversation.ModelGrok47,
+	conversation.ProviderGemini: conversation.ModelGemini4Argon,
+}
+
+// CompatibleModels returns implemented provider flagships in stable catalog order.
+func CompatibleModels() []conversation.Model {
+	var result []conversation.Model
+	for _, model := range conversation.Models() {
+		if compatibleFlagships[model.Details().Provider] == model {
+			result = append(result, model)
+		}
+	}
+	return result
+}
+
+// defaultModel is the reviewed current flagship for one implemented provider.
+func defaultModel(provider conversation.Provider) (conversation.Model, error) {
+	if model, ok := compatibleFlagships[provider]; ok {
+		return model, nil
+	}
+	return "", errors.New("model provider is not implemented")
 }

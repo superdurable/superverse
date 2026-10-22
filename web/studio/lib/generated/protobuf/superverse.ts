@@ -37,6 +37,7 @@ import type { AgentMockScenario as _superverse_v2_AgentMockScenario, AgentMockSc
 import type { AgentMockScenarioArgument as _superverse_v2_AgentMockScenarioArgument, AgentMockScenarioArgument__Output as _superverse_v2_AgentMockScenarioArgument__Output } from './superverse/v2/AgentMockScenarioArgument';
 import type { AgentMockScenarioInput as _superverse_v2_AgentMockScenarioInput, AgentMockScenarioInput__Output as _superverse_v2_AgentMockScenarioInput__Output } from './superverse/v2/AgentMockScenarioInput';
 import type { AgentModelCallMetrics as _superverse_v2_AgentModelCallMetrics, AgentModelCallMetrics__Output as _superverse_v2_AgentModelCallMetrics__Output } from './superverse/v2/AgentModelCallMetrics';
+import type { AgentModelChoice as _superverse_v2_AgentModelChoice, AgentModelChoice__Output as _superverse_v2_AgentModelChoice__Output } from './superverse/v2/AgentModelChoice';
 import type { AgentNotification as _superverse_v2_AgentNotification, AgentNotification__Output as _superverse_v2_AgentNotification__Output } from './superverse/v2/AgentNotification';
 import type { AgentPendingApproval as _superverse_v2_AgentPendingApproval, AgentPendingApproval__Output as _superverse_v2_AgentPendingApproval__Output } from './superverse/v2/AgentPendingApproval';
 import type { AgentPendingTimer as _superverse_v2_AgentPendingTimer, AgentPendingTimer__Output as _superverse_v2_AgentPendingTimer__Output } from './superverse/v2/AgentPendingTimer';
@@ -194,6 +195,8 @@ import type { InvokeProviderCommandRequest as _superverse_v2_InvokeProviderComma
 import type { InvokeProviderCommandResponse as _superverse_v2_InvokeProviderCommandResponse, InvokeProviderCommandResponse__Output as _superverse_v2_InvokeProviderCommandResponse__Output } from './superverse/v2/InvokeProviderCommandResponse';
 import type { InvokeTeamSpaceConnectionCommandRequest as _superverse_v2_InvokeTeamSpaceConnectionCommandRequest, InvokeTeamSpaceConnectionCommandRequest__Output as _superverse_v2_InvokeTeamSpaceConnectionCommandRequest__Output } from './superverse/v2/InvokeTeamSpaceConnectionCommandRequest';
 import type { InvokeTeamSpaceConnectionCommandResponse as _superverse_v2_InvokeTeamSpaceConnectionCommandResponse, InvokeTeamSpaceConnectionCommandResponse__Output as _superverse_v2_InvokeTeamSpaceConnectionCommandResponse__Output } from './superverse/v2/InvokeTeamSpaceConnectionCommandResponse';
+import type { ListAgentModelsRequest as _superverse_v2_ListAgentModelsRequest, ListAgentModelsRequest__Output as _superverse_v2_ListAgentModelsRequest__Output } from './superverse/v2/ListAgentModelsRequest';
+import type { ListAgentModelsResponse as _superverse_v2_ListAgentModelsResponse, ListAgentModelsResponse__Output as _superverse_v2_ListAgentModelsResponse__Output } from './superverse/v2/ListAgentModelsResponse';
 import type { ListArchivedMessagesRequest as _superverse_v2_ListArchivedMessagesRequest, ListArchivedMessagesRequest__Output as _superverse_v2_ListArchivedMessagesRequest__Output } from './superverse/v2/ListArchivedMessagesRequest';
 import type { ListArchivedMessagesResponse as _superverse_v2_ListArchivedMessagesResponse, ListArchivedMessagesResponse__Output as _superverse_v2_ListArchivedMessagesResponse__Output } from './superverse/v2/ListArchivedMessagesResponse';
 import type { ListConnectionsRequest as _superverse_v2_ListConnectionsRequest, ListConnectionsRequest__Output as _superverse_v2_ListConnectionsRequest__Output } from './superverse/v2/ListConnectionsRequest';
@@ -422,6 +425,7 @@ export interface ProtoGrpcType {
       AgentMockScenarioInput: MessageTypeDefinition<_superverse_v2_AgentMockScenarioInput, _superverse_v2_AgentMockScenarioInput__Output>
       AgentModel: EnumTypeDefinition
       AgentModelCallMetrics: MessageTypeDefinition<_superverse_v2_AgentModelCallMetrics, _superverse_v2_AgentModelCallMetrics__Output>
+      AgentModelChoice: MessageTypeDefinition<_superverse_v2_AgentModelChoice, _superverse_v2_AgentModelChoice__Output>
       AgentNotification: MessageTypeDefinition<_superverse_v2_AgentNotification, _superverse_v2_AgentNotification__Output>
       AgentPendingApproval: MessageTypeDefinition<_superverse_v2_AgentPendingApproval, _superverse_v2_AgentPendingApproval__Output>
       AgentPendingTimer: MessageTypeDefinition<_superverse_v2_AgentPendingTimer, _superverse_v2_AgentPendingTimer__Output>
@@ -599,6 +603,8 @@ export interface ProtoGrpcType {
       InvokeProviderCommandResponse: MessageTypeDefinition<_superverse_v2_InvokeProviderCommandResponse, _superverse_v2_InvokeProviderCommandResponse__Output>
       InvokeTeamSpaceConnectionCommandRequest: MessageTypeDefinition<_superverse_v2_InvokeTeamSpaceConnectionCommandRequest, _superverse_v2_InvokeTeamSpaceConnectionCommandRequest__Output>
       InvokeTeamSpaceConnectionCommandResponse: MessageTypeDefinition<_superverse_v2_InvokeTeamSpaceConnectionCommandResponse, _superverse_v2_InvokeTeamSpaceConnectionCommandResponse__Output>
+      ListAgentModelsRequest: MessageTypeDefinition<_superverse_v2_ListAgentModelsRequest, _superverse_v2_ListAgentModelsRequest__Output>
+      ListAgentModelsResponse: MessageTypeDefinition<_superverse_v2_ListAgentModelsResponse, _superverse_v2_ListAgentModelsResponse__Output>
       ListArchivedMessagesRequest: MessageTypeDefinition<_superverse_v2_ListArchivedMessagesRequest, _superverse_v2_ListArchivedMessagesRequest__Output>
       ListArchivedMessagesResponse: MessageTypeDefinition<_superverse_v2_ListArchivedMessagesResponse, _superverse_v2_ListArchivedMessagesResponse__Output>
       ListConnectionsRequest: MessageTypeDefinition<_superverse_v2_ListConnectionsRequest, _superverse_v2_ListConnectionsRequest__Output>

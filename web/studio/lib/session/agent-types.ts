@@ -88,7 +88,7 @@ export const AGENT_MODEL_OPTIONS = (Object.keys(AGENT_MODEL_DETAILS) as AgentMod
 
 /** Whether a stored name is a model the picker offers. */
 export function isAgentModel(name: string): name is AgentModel {
-  return AGENT_MODEL_OPTIONS.some((option) => option.value === name);
+  return Object.hasOwn(AGENT_MODEL_DETAILS, name);
 }
 
 export function agentModelLabel(model: AgentModel): string {

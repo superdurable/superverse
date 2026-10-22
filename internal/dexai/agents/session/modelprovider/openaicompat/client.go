@@ -39,12 +39,13 @@ type Policy struct {
 }
 
 // Client owns no HTTP pool or durable state; its owner closes the shared transport.
-// The only credential admitted before BYOK is the mock model's placeholder.
+// The caller supplies request-local credentials after Session admission.
 type Client struct {
-	http    *http.Client
-	baseURL string
-	policy  Policy
-	logger  *slog.Logger
+	http      *http.Client
+	baseURL   string
+	policy    Policy
+	logger    *slog.Logger
+	localMock bool
 }
 
 // NewMock connects the real adapter to the existing loopback scenario engine.
@@ -63,14 +64,32 @@ func NewMock(client *http.Client, baseURL string, policy Policy, logger *slog.Lo
 	if policy.Provider.APIStyle() != policy.WireMode {
 		return nil, errors.New("the mock policy must use the catalog wire mode")
 	}
-	return &Client{http: client, baseURL: strings.TrimRight(baseURL, "/"), policy: policy, logger: logger}, nil
+	return New(client, strings.TrimRight(baseURL, "/")+"/v1", policy, true, logger)
+}
+
+// New uses an origin-admitted shared HTTP client and the provider's complete API root.
+// localMock controls scenario metadata only; transport policy still admits every URL.
+func New(client *http.Client, baseURL string, policy Policy, localMock bool, logger *slog.Logger) (*Client, error) {
+	if client == nil || policy.MaxTokens <= 0 || policy.Provider.APIStyle() != policy.WireMode || (policy.WireMode != conversation.OpenAIResponses && policy.WireMode != conversation.OpenAIChatCompletions) {
+		return nil, errors.New("invalid compatible provider configuration")
+	}
+	return &Client{http: client, baseURL: strings.TrimRight(baseURL, "/"), policy: policy, logger: logger, localMock: localMock}, nil
+}
+
+func (client *Client) endpointPath() string {
+	if client.policy.WireMode == conversation.OpenAIResponses {
+		return strings.TrimPrefix(ResponsesPath, "/v1")
+	}
+	return strings.TrimPrefix(ChatPath, "/v1")
 }
 
 // At most 32 compatible model calls run in a replica; admission queues no goroutines.
 const maximumConcurrentCalls = 32
 
 var compatibleCalls = make(chan struct{}, maximumConcurrentCalls)
-var errModelCapacity = errors.New("compatible model call capacity is exhausted")
+
+// ErrModelCapacity is retryable replica admission pressure; no provider call has started.
+var ErrModelCapacity = errors.New("compatible model call capacity is exhausted")
 
 // Complete performs one bounded streamed request, with no automatic retry.
 func (client *Client) Complete(ctx context.Context, request conversation.ModelRequest) (reply conversation.ModelReply, err error) {
@@ -80,26 +99,37 @@ func (client *Client) Complete(ctx context.Context, request conversation.ModelRe
 				slog.String("model", request.Model.ProviderModel()), slog.String("code", rejection.Code), slog.Int("status", rejection.Status), slog.String("detail", rejection.Detail))
 		}
 	}()
-	if !request.Model.IsMock() {
+	if request.Model.Details().Provider != client.policy.Provider {
 		return conversation.ModelReply{}, conversation.ModelUnavailable.Rejected()
+	}
+	key := request.APIKey
+	if request.Model.IsMock() {
+		key = "mock-model-not-a-secret"
+	}
+	if key == "" {
+		return conversation.ModelReply{}, conversation.NoProviderKey.Rejected()
+	}
+	for _, character := range key {
+		if character < 0x21 || character > 0x7e {
+			return conversation.ModelReply{}, conversation.InvalidProviderKey.Rejected()
+		}
 	}
 	started := time.Now()
 	body, err := encodeRequest(request, client.policy)
 	if err != nil {
 		return conversation.ModelReply{}, err
 	}
-	path := ChatPath
-	if client.policy.WireMode == conversation.OpenAIResponses {
-		path = ResponsesPath
-	}
+	path := client.endpointPath()
 	call, err := http.NewRequestWithContext(ctx, http.MethodPost, client.baseURL+path, bytes.NewReader(body))
 	if err != nil {
 		return conversation.ModelReply{}, errors.New("construct model request")
 	}
 	call.Header.Set("Content-Type", "application/json")
 	call.Header.Set("Accept", "text/event-stream")
-	call.Header.Set("Authorization", "Bearer mock-model-not-a-secret")
-	call.Header.Set(MockProviderHeader, client.policy.Provider.String())
+	call.Header.Set("Authorization", "Bearer "+key)
+	if client.localMock {
+		call.Header.Set(MockProviderHeader, client.policy.Provider.String())
+	}
 	var headers http.Header
 	reply, headers, err = client.streamRequest(ctx, call, request, started)
 	if err != nil {
@@ -120,7 +150,7 @@ func (client *Client) Complete(ctx context.Context, request conversation.ModelRe
 	reply.Metrics.Model = request.Model.ProviderModel()
 	reply.Metrics.Effort = requestEffort(request, client.policy)
 	reply.Metrics.DurationMS = time.Since(started).Milliseconds()
-	if value := headers.Get("Superverse-Mock-Progress"); value != "" {
+	if value := headers.Get("Superverse-Mock-Progress"); client.localMock && value != "" {
 		var progress conversation.MockProgress
 		if json.Unmarshal([]byte(value), &progress) != nil {
 			return conversation.ModelReply{}, rejected(failureInvalidMockProgress)
@@ -136,7 +166,7 @@ func (client *Client) streamRequest(ctx context.Context, call *http.Request, req
 	case compatibleCalls <- struct{}{}:
 		defer func() { <-compatibleCalls }()
 	default:
-		return conversation.ModelReply{}, nil, errModelCapacity
+		return conversation.ModelReply{}, nil, ErrModelCapacity
 	}
 	response, err := client.http.Do(call)
 	if err != nil {

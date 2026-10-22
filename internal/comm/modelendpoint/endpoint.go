@@ -236,12 +236,9 @@ func (p policy) newPool() *pool {
 }
 
 // client binds one admitted origin without allocating another connection pool.
-func (p *pool) client(ctx context.Context, baseURL string) (*http.Client, error) {
+func (p *pool) client(_ context.Context, baseURL string) (*http.Client, error) {
 	base, err := p.policy.validate(baseURL)
 	if err != nil {
-		return nil, err
-	}
-	if _, err := p.policy.resolve(ctx, base.Hostname()); err != nil {
 		return nil, err
 	}
 	return &http.Client{Transport: &transport{base: base, pool: p}, CheckRedirect: func(*http.Request, []*http.Request) error { return errEndpointDenied }}, nil

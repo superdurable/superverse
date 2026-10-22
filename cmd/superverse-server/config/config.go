@@ -20,10 +20,12 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/superdurable/superversev2/internal/comm/modelendpoint"
 	"github.com/superdurable/superversev2/internal/comm/platform/deploymentnames"
 	"github.com/superdurable/superversev2/internal/comm/platform/eventqueue"
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve"
 	"github.com/superdurable/superversev2/internal/dexai/projects/infra"
 	"gopkg.in/yaml.v3"
@@ -231,6 +233,8 @@ type StudioConfig struct {
 
 // AgentConfig is the Session Agent's model and turn settings.
 type AgentConfig struct {
+	Providers      modelprovider.ProviderConfig `yaml:"providers"`
+	ModelEndpoints modelendpoint.Config         `yaml:"modelEndpoints"`
 	// Model is the model a new Session starts with: a Claude model, or mock
 	// with MockModel.
 	Model conversation.Model `yaml:"model"`

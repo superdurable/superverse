@@ -51,3 +51,6 @@ export async function deleteModelCredential(
   );
   return info(response.credential);
 }
+
+/** Fixed non-secret placeholder accepted by the local mock model endpoint. */
+export const MOCK_MODEL_API_KEY = "mock-model-not-a-secret";
