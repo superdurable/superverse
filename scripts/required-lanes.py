@@ -8,8 +8,8 @@
 # SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 """Name the local lane a change runs its E2E cases and Dex integration tests on: Local Kind when the change touches a
-path of scripts/kind-required-paths.txt, Local Native otherwise, and both when it touches a Kind path and a path of
-scripts/native-required-paths.txt, which only Local Native exercises.
+runtime path of scripts/kind-required-paths.txt, excluding documentation and test files, Local Native otherwise,
+and both when it touches a Kind path and a path of scripts/native-required-paths.txt, which only Local Native exercises.
 
 The change is every path that differs between the merge base of HEAD and --base (origin/main by default) and the
 working tree, staged or not, plus untracked files. The answer goes into the pull request's Tests section; before an
@@ -56,9 +56,22 @@ def touched(paths, list_path):
             for path in paths if any(expression.match(path) for _, expression in matchers)]
 
 
+def runtime_path(path):
+    """Documentation and tests do not change the Kubernetes runtime."""
+    parts = Path(path).parts
+    name = parts[-1].lower()
+    return not (
+        any(part.lower() in {"docs", "test", "tests", "__tests__", "testdata"} for part in parts[:-1])
+        or name.startswith("readme") or name.endswith((".md", ".markdown", ".mdx", ".rst", ".adoc"))
+        or name.endswith(("_test.go", "_test.py", ".test.ts", ".test.tsx", ".spec.ts", ".spec.tsx"))
+        or name.startswith("test_") and name.endswith(".py")
+    )
+
+
 def required_lanes(paths):
     """The lanes the paths require, as `native`, `kind` or `native, kind`, with the Kind and Native paths touched."""
-    kind, native = touched(paths, KIND_LIST), touched(paths, NATIVE_LIST)
+    kind = touched([path for path in paths if runtime_path(path)], KIND_LIST)
+    native = touched(paths, NATIVE_LIST)
     return "native, kind" if kind and native else "kind" if kind else "native", kind, native
 
 

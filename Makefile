@@ -5,7 +5,7 @@
 	check-deployment-names check-package-layers check-package-limits check-package-readmes check-go-file-length license-headers check-license-headers \
 	check-studio-server-boundary check-mock-scenarios check-rpc-coverage check-flow-registry check-config check-exports check-proto-enums check-test-lanes check-terraform-inputs check-dex-versions check-proto-format check-proto check-generated-proto \
 	check-flow-definition format-check check-agent-rules check-prelaunch-identities governance-check \
-	test test-integration test-e2e test-claude-live test-example-comparison-live required-lanes affected-tests affected-specs studio-coverage-map check-local-full-evidence ci \
+	test test-integration test-e2e test-claude-live test-example-comparison-live required-lanes overlapping-prs affected-tests affected-specs studio-coverage-map check-local-full-evidence ci \
 	lint lint-go lint-web lint-workflows vulnerability-check audit-web \
 	install-dexcli install-osv-scanner install-buf
 
@@ -245,10 +245,15 @@ governance-check: check-prelaunch-identities
 
 test: test-integration
 
-# The local lanes this change needs: Local Native always, and Local Kind when it touches a path of
-# scripts/kind-required-paths.txt. BASE is the branch it merges into (origin/main by default).
+# The local lane: Kind for substantive Kubernetes runtime paths, Native otherwise (both for mixed providers).
+# scripts/kind-required-paths.txt excludes documentation, tests and configuration-default profiles.
+# BASE is the branch it merges into (origin/main by default).
 required-lanes:
 	@python3 scripts/required-lanes.py $(if $(BASE),--base '$(BASE)')
+
+# Open pull requests that overlap the current change against origin/main.
+overlapping-prs:
+	@python3 scripts/overlapping-prs.py
 
 # The tests that cover the Go packages the change touches, for the Tests field of the evidence block.
 affected-tests:
