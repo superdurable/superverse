@@ -22,9 +22,17 @@ The preparation request has `buildRevisionId: source` and `sourceOnly: true`,
 omitting configuration fields. It uses the exact accepted profile, clones the
 exact readable commit of the repository host and performs strict FDG/manifest validation, then
 returns READY with four payloads and empty image fields. It never invokes image
-build/load. A shared four-minute work deadline bounds its subprocesses; owned
-analysis containers are stopped, observed and removed with a separate bounded
-cleanup budget. Native process cancellation stops, then kills, the exact
+build/load. A shared four-minute work deadline bounds its subprocesses. Every metadata and analysis
+container, including those of an image build, has an exact owned name. Timeout and
+cancellation query that name before removal and confirm absence afterward, with a
+separate bounded cleanup budget. An aborted Docker create can finish after its client exits;
+absence before that container has been observed stays UNKNOWN. The private build
+state retains the one pending owned name and original redacted failure. Inspect and
+Release cleanup use one exact-name reconciler, including after helper restart,
+and settle FAILED with the original failure only after observing and removing it.
+Observation is retained before removal, so a later absence also confirms a removal
+whose response was lost or timed out.
+A create that never becomes observable remains UNKNOWN for operator reconciliation. Native process cancellation stops, then kills, the exact
 observed child tree of the running command and confirms the build `CANCELLED`
 once every observed child is gone; it retains UNKNOWN only when the tree cannot
 be established or stopped under the existing launcher ownership contract.
@@ -32,17 +40,22 @@ Native child admission tolerates the spawn/exit observation race and validates
 the direct child's parent rather than assuming its process group. A failed
 command records a bounded exception class and trusted command kind in the job
 log, without exception text, arguments, environment or credentials. Container
-cleanup queries exact owned names even when `docker rm` times out; proven
-absence settles FAILED. Inspect reconciles UNKNOWN source jobs once the job
-has ended, the child is proven settled and every container of its exact
-attempt prefix is absent. Persisted child settlement survives builder restart;
+cleanup queries exact owned names even when `docker rm` times out; absence
+is conclusive only after an uncertain create was observed. Inspect reconciles
+UNKNOWN source jobs once the job has ended, the child is proven settled and
+every owned container has been reconciled. Persisted child settlement survives builder restart;
 historical UNKNOWN jobs without that proof remain unresolved after restart.
-Failed source inspections also check that prefix: a Docker create can finish
+The same reconciler checks the exact attempt prefix for failed source jobs: a Docker create can finish
 after its CLI was cancelled. For an ended job with settled-child proof,
-inspection continues its admitted cleanup, removing at most one exact observed
-container per call and rechecking absence before reporting FAILED. Explicit
+inspection merges discovered names into the pending-container record, then
+continues its admitted cleanup, removing at most one exact observed container
+per call and rechecking absence before reporting FAILED. Original redacted
+failures survive reconciliation; older helper records with settled-child proof
+use the same path without a second container lifecycle. Explicit
 cancellation and Release cleanup also reconcile names of ended jobs, including
 after a builder restart; no newer attempt starts while their outcome is unknown.
+An admitted cancellation stays pending when child or container cleanup is
+unconfirmed, while Inspect retains UNKNOWN and its owned cleanup identity.
 Each SDK metadata probe has up to 120 seconds for tool-container startup under
 load, within the same shared four-minute source deadline.
 A cancellation of a build revision that has no state yet records the attempt
@@ -129,7 +142,7 @@ so its fixed tool image and executable match the accepted build. Never delete a 
 MISSING result: retry the same Release through its explicit preparation
 admission, which advances the attempt after known failure.
 
-Private local state is under `<state-dir>/<environment>/<project>/<release>/<buildRevisionId>/`. Inspect reconciles the request, published image and four payloads, and returns the bounded failure classification of a FAILED or UNKNOWN build (`BUILD_FAILED`, `CANCELLED`, `CANCEL_OUTCOME_UNKNOWN` or `NATIVE_CANCEL_OUTCOME_UNKNOWN`), never provider output. Running state without a live owning helper thread is UNKNOWN and requires inspection; automatic restart never assumes it succeeded or starts duplicate work. A failed build can be rerun only with an explicitly higher attempt. Cancel confirms process termination before reporting completion. Release cleanup removes private fixture files after Flow-owned S3 artifact cleanup. Immutable node images are an owned-cluster cache and are removed with that disposable cluster, and registry images stay in the Native registry's volume; neither is an application serving resource. SIGTERM/interrupt cancels child process groups.
+Private local state is under `<state-dir>/<environment>/<project>/<release>/<buildRevisionId>/`. Inspect reconciles the request, published image and four payloads, and returns the bounded failure classification of a FAILED or UNKNOWN build (`BUILD_FAILED`, `COMMAND_TIMEOUT`, `CANCELLED`, `CANCEL_OUTCOME_UNKNOWN` or `NATIVE_CANCEL_OUTCOME_UNKNOWN`). Metadata command failures retain `METADATA_COMMAND_TIMEOUT` or `METADATA_COMMAND_FAILED` with the logical command, deadline or exit status, and at most 2,048 bytes of redacted stderr tail; metadata stdout remains suppressed. Redaction precedes truncation and removes the repository credential, credential assignments, authorization headers, credential-bearing URLs and recognized token/private-key forms. Only an explicit cancellation request sets `CANCELLED`; command timeout stops and reconciles owned work without setting cancellation. Unproven cleanup retains UNKNOWN. Running state without a live owning helper thread is UNKNOWN and requires inspection; automatic restart never assumes it succeeded or starts duplicate work. A failed build can be rerun only with an explicitly higher attempt. Cancel confirms process termination before reporting completion. Release cleanup removes private fixture files after Flow-owned S3 artifact cleanup. Immutable node images are an owned-cluster cache and are removed with that disposable cluster, and registry images stay in the Native registry's volume; neither is an application serving resource. SIGTERM/interrupt cancels child process groups.
 
 Inspect also returns the `phaseTimings` that the job measured and that
 `state.json` keeps with its terminal state, as `build.BuildPhaseTiming`
@@ -165,4 +178,4 @@ Hosted CodeBuild/ECR transport is implemented separately in `../hosted/README.md
 Builds use the application's own `go.mod` with `GOWORK=off` and the published
 `go-react-v1` recipe, `bp3` for a new local build ([the current contract](../../../../../../docs/architecture/superverse-v2.md)).
 
-Live source preparation resolves `github.com/superdurable/dex/sdk-go` with the isolated Go toolchain after replacements. The selected version must be at least `v1.13.0`; missing, local-path, malformed and older selections produce the typed application rejection `unsupported-dex-sdk` with an upgrade hint. Preliminary module metadata rejects invalid replacements before downloads; the offline selected module check follows dependency preparation. No selected version is retained in state, artifacts or logs.
+Live source preparation resolves `github.com/superdurable/dex/sdk-go` with the isolated Go toolchain after replacements. The selected version must be at least `v1.13.0`; missing, local-path, malformed and older selections produce the typed application rejection `unsupported-dex-sdk` with an upgrade hint. Both metadata commands (`go mod edit -json` and `go list -m -json`) have a 120-second deadline, including host Docker startup. This is four times the former deadline to accommodate cold-host contention; the source-only attempt still caps all work at four minutes. A metadata subprocess failure is a platform build failure with its retained diagnostic, rather than an SDK-version rejection. Preliminary module metadata rejects invalid replacements before downloads; the offline selected module check follows dependency preparation. Successful metadata checks retain no selected version in state, artifacts or logs. A metadata command failure retains its bounded, redacted diagnostic, which can identify invalid source declarations.

@@ -20,6 +20,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import shlex
 import signal
 import subprocess
 import tempfile
@@ -63,6 +64,9 @@ PROFILES = {"bp1": "internal/dexai/delivery/releases/build/build-profiles/go-rea
 MODULE_PATH = re.compile(r"[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:/[A-Za-z0-9._-]+)+")
 CLONE_URL = re.compile(r"(?:https://[A-Za-z0-9.-]+|http://host\.docker\.internal)(?::[0-9]+)?(?:/[A-Za-z0-9._-]+)+\.git")
 SOURCE_TIMEOUT = 240
+# Includes cold Docker container startup; source-only work still shares SOURCE_TIMEOUT.
+METADATA_TIMEOUT = 120
+MAX_FAILURE_STDERR_BYTES = 2048
 # The job log keeps the end of the build commands' output for log-read pages of at most LOG_PAGE bytes.
 MAX_JOB_LOG = 256 * 1024
 LOG_PAGE = 64 * 1024
@@ -388,10 +392,54 @@ def cancel_native_child(identity):
     raise ValueError("Native build child cleanup is incomplete")
 
 
+def cleanup_container(name, *, require_observation, on_observed):
+    """An aborted Docker create may finish after its client exits. Absence
+    proves cleanup only after the exact container has been observed."""
+    def present():
+        inspection = subprocess.run(["docker", "container", "ls", "--all", "--filter", "name=^/" + name + "$", "--format", "{{.Names}}"], capture_output=True, text=True, timeout=10, check=False)
+        if inspection.returncode or inspection.stdout.strip() not in ("", name):
+            raise ValueError("build container cleanup inspection is unknown")
+        return bool(inspection.stdout.strip())
+    if not present():
+        return not require_observation
+    on_observed()
+    subprocess.run(["docker", "rm", "--force", "--volumes", name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10, check=False)
+    if present():
+        raise ValueError("build container cleanup is unknown")
+    return True
+
+
 class CommandFailed(ValueError):
-    def __init__(self, status):
+    def __init__(self, status, stderr=b""):
         super().__init__("owned build command failed")
-        self.status = status
+        self.status, self.stderr = status, stderr
+
+
+class CommandDeadlineExceeded(ValueError):
+    def __init__(self, timeout, stderr=b""):
+        super().__init__("build command deadline exceeded")
+        self.timeout, self.stderr = timeout, stderr
+
+
+class MetadataCommandFailure(ValueError):
+    def __init__(self, command, error, secrets):
+        self.code = "METADATA_COMMAND_TIMEOUT" if isinstance(error, CommandDeadlineExceeded) else "METADATA_COMMAND_FAILED"
+        reason = f"deadline exceeded after {error.timeout:g}s" if isinstance(error, CommandDeadlineExceeded) else f"exit status {error.status}"
+        # Redact before truncating: never expose a suffix of a cut credential.
+        tail = error.stderr.decode(errors="replace")
+        for secret in secrets:
+            if secret:
+                tail = tail.replace(secret, "[REDACTED]")
+        tail = re.sub(r"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z ]*PRIVATE KEY-----|$)", "[REDACTED]", tail)
+        tail = re.sub(r"(?i)(https?://)[^/\s@]+@", r"\1[REDACTED]@", tail)
+        tail = re.sub(r"(?i)(\b(?:bearer|basic)\s+)[^\s\"\']+", r"\1[REDACTED]", tail)
+        tail = re.sub(r"(?i)((?:[\w.-]*(?:token|password|secret|credential|api[_-]?key|access[_-]?key)[\w.-]*)[\"\']?\s*[:=]\s*)(?:\"[^\"]*\"|\'[^\']*\'|[^\s,;&\"\']+)", r"\1[REDACTED]", tail)
+        tail = re.sub(r"\b(?:gh[pousr]_[A-Za-z0-9]+|github_pat_[A-Za-z0-9_]+|(?:AKIA|ASIA)[A-Z0-9]{16}|sk-[A-Za-z0-9_-]+)\b", "[REDACTED]", tail)
+        tail = re.sub(r"\beyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+", "[REDACTED]", tail)
+        tail = " ".join(tail.split())
+        tail = tail.encode()
+        tail = ("[truncated] " if len(tail) > MAX_FAILURE_STDERR_BYTES else "") + tail[-MAX_FAILURE_STDERR_BYTES:].decode(errors="ignore")
+        super().__init__(f"{self.code}: {command}: {reason}; stderr tail: {tail or '[empty]'}")
 
 
 def validate_live_sdk(metadata, *, resolved):
@@ -428,6 +476,7 @@ class Job:
         self.sdk_rejected = False
         self.request = request
         self.credential = credential
+        self.failure_secrets = (credential,)
         self.tool_image = tool_image
         self.app_manifest_tool = app_manifest_tool
         self.git_base_url = git_base_url
@@ -440,6 +489,7 @@ class Job:
         self.deadline = time.monotonic() + SOURCE_TIMEOUT if request.get("sourceOnly") else None
         self.container_sequence = 0
         self.containers = set()
+        self.uncertain_containers = set()
         self.cleanup_unknown = False
         self.command_kind = "none"
         # A Native cancellation that could not establish or stop the exact child tree.
@@ -470,14 +520,13 @@ class Job:
         if self.deadline is not None:
             timeout = min(timeout, self.deadline - time.monotonic())
             if timeout <= 0:
-                self.cancel()
-                raise ValueError("source preparation deadline exceeded")
+                raise CommandDeadlineExceeded(timeout)
         with self.lock:
             if self.cancelled.is_set(): raise ValueError("build cancelled")
             # Docker client cancellation alone does not prove its container exited.
-            # Source preparation containers have exact owned names for reconciliation.
+            # Metadata and analysis containers have exact owned names for reconciliation.
             container_name = None
-            if self.request.get("sourceOnly") and argv[:2] == ["docker", "run"]:
+            if argv[:2] == ["docker", "run"]:
                 self.container_sequence += 1
                 container_name = f"sv2-source-{self.request['requestId'][:32]}-{self.request['attempt']}-{self.container_sequence}"
                 self.containers.add(container_name)
@@ -504,7 +553,6 @@ class Job:
                             raise ValueError("Native build child identity could not be established")
                     except Exception:
                         append_job_log(self.request, b"CHILD_IDENTITY_EXCEPTION class=native-child-observation-failed\n")
-                        self.cancelled.set()  # A spawned but untracked child cannot be retried as a known failure.
                         self.cancel_unknown = True
                         raise
             output, errors = self.process.communicate(timeout=timeout)
@@ -513,15 +561,22 @@ class Job:
             if self.cancelled.is_set():
                 raise ValueError("build cancelled")
             if self.process.returncode:
-                raise CommandFailed(self.process.returncode)
+                raise CommandFailed(self.process.returncode, errors)
             if container_name is not None:
                 with self.lock:
                     self.containers.discard(container_name)
             return output.decode().strip()
-        except subprocess.TimeoutExpired:
-            self.cancel()
-            self.process.communicate(timeout=10)
-            raise ValueError("build command deadline exceeded")
+        except subprocess.TimeoutExpired as error:
+            errors = error.stderr or b""
+            try:
+                self.stop_command()
+            except (OSError, ValueError, subprocess.SubprocessError):
+                self.cleanup_unknown = True
+            try:
+                _, errors = self.process.communicate(timeout=10)
+            except subprocess.TimeoutExpired:
+                self.cancel_unknown = True
+            raise CommandDeadlineExceeded(timeout, errors) from error
         finally:
             with self.lock:
                 # Retain uncertain Native process responsibility for shutdown.
@@ -531,16 +586,12 @@ class Job:
 
     def cleanup_containers_locked(self):
         for name in tuple(self.containers):
-            # rm --force is idempotent for this exact privately generated name.
             try:
-                try:
-                    subprocess.run(["docker", "rm", "--force", "--volumes", name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10, check=False)
-                except subprocess.TimeoutExpired:
-                    pass  # A timed-out rm may have succeeded: query before deciding.
-                inspection = subprocess.run(["docker", "container", "ls", "--all", "--filter", "name=^/" + name + "$", "--format", "{{.Names}}"], capture_output=True, text=True, timeout=10, check=False)
-                if inspection.returncode or inspection.stdout.strip():
-                    raise ValueError("source preparation container cleanup is unknown")
+                if not cleanup_container(name, require_observation=name in self.uncertain_containers,
+                                         on_observed=lambda: self.uncertain_containers.discard(name)):
+                    raise ValueError("aborted build container creation is unconfirmed")
                 self.containers.discard(name)
+                self.uncertain_containers.discard(name)
             except (OSError, ValueError, subprocess.SubprocessError):
                 self.cleanup_unknown = True
                 raise
@@ -548,8 +599,18 @@ class Job:
 
     def cancel(self):
         self.cancelled.set()
+        try:
+            self.stop_command()
+        except (OSError, ValueError, subprocess.SubprocessError):
+            # Cancellation is admitted; Inspect keeps unresolved owned work
+            # pending instead of rejecting the caller's accepted cancellation.
+            if not self.cleanup_unknown and not self.cancel_unknown:
+                raise
+
+    def stop_command(self):
+        """Stop owned work without turning a command failure into user cancellation."""
         with self.lock:
-            if self.native:
+            if self.native and self.cancelled.is_set():
                 path = directory(self.request) / "state.json"
                 try: previous = json.loads(path.read_bytes())
                 except FileNotFoundError: previous = None  # Already-cleaned jobs must not recreate storage.
@@ -557,6 +618,7 @@ class Job:
                     private_json(path, {"request": self.request, "state": "UNKNOWN", "failure": "NATIVE_CANCEL_OUTCOME_UNKNOWN"})
             try:
                 if self.process is not None and self.process.poll() is None:
+                    self.uncertain_containers.update(self.containers)
                     if self.native:
                         # The cancellation is confirmed once every observed child of the
                         # command is gone; otherwise its outcome stays unknown.
@@ -587,14 +649,13 @@ class Job:
 
     def check_live_sdk(self, argv, *, resolved):
         try:
-            # Starting the immutable tool container can dominate a tiny
-            # metadata read on a loaded Native host. The shared source
-            # deadline still bounds both probes and every other command.
-            metadata = self.command(argv, timeout=120, log_output=False)
-        except CommandFailed as error:
-            # Docker launch/transport failures are not source rejections.
-            self.sdk_rejected = error.status == 1
-            raise
+            metadata = self.command(argv, timeout=METADATA_TIMEOUT, log_output=False)
+        except (CommandFailed, CommandDeadlineExceeded, OSError) as error:
+            if isinstance(error, OSError):
+                error = CommandFailed("launch error", str(error).encode())
+            # Only trusted logical command arguments are retained, never Docker mounts or environment.
+            command = shlex.join(["docker", "run", "<tool-image>", "go", *argv[argv.index(self.tool_image) + 1:]])
+            raise MetadataCommandFailure(command, error, self.failure_secrets) from error
         try:
             validate_live_sdk(json.loads(metadata), resolved=resolved)
         except (ValueError, TypeError, KeyError):
@@ -724,33 +785,40 @@ class Job:
                     if self.native and self.cancelled.is_set(): raise ValueError("Native build cancelled before its result")
                     private_json(state, {"request": request, "state": "READY", "artifactReference": reference, "imageId": digest, "phaseTimings": phase_timings(self.timings)})
         except Exception as error:
-            # Never log exception messages, argv, environments or provider
-            # output here: any can carry credentials. These classifications
-            # are bounded and still identify the failing command and layer.
-            classification = "command-failed" if isinstance(error, CommandFailed) else "command-timeout" if isinstance(error, subprocess.TimeoutExpired) else "os-error" if isinstance(error, OSError) else "validation-or-ownership" if isinstance(error, ValueError) else "internal-error"
-            if isinstance(error, ValueError) and not isinstance(error, CommandFailed):
-                classification = {"build command deadline exceeded": "command-timeout", "source preparation deadline exceeded": "source-timeout", "build cancelled": "cancelled", "Native build child identity could not be established": "native-child-identity"}.get(str(error), classification)
+            # Only trusted classifications and command kinds enter the job log.
+            classification = "metadata-command-failed" if isinstance(error, MetadataCommandFailure) else "command-failed" if isinstance(error, CommandFailed) else "command-timeout" if isinstance(error, CommandDeadlineExceeded) else "os-error" if isinstance(error, OSError) else "validation-or-ownership" if isinstance(error, ValueError) else "internal-error"
             append_job_log(request, f"\nBUILD_EXCEPTION class={classification} command={self.command_kind}\n".encode())
             # A failed Docker client may still own a source analysis container.
             if self.containers or (self.process is not None and self.process.poll() is None):
                 try:
                     if self.process is not None and self.process.poll() is None:
-                        self.cancel()
+                        self.stop_command()
                     else:
                         with self.lock:
                             self.cleanup_containers_locked()
                 except Exception:
                     self.cleanup_unknown = True
                     append_job_log(request, b"CLEANUP_EXCEPTION class=container-or-child-outcome-unknown\n")
-            # Provider output can contain source or credential material; expose only a bounded failure classification.
+            # Keep a late Docker create owned across Inspect and helper restart.
             with self.lock:
                 unknown = self.cleanup_unknown or self.cancel_unknown
-                private_json(state, {"request": request, "state": "UNKNOWN" if unknown else "FAILED", "failure": "CANCEL_OUTCOME_UNKNOWN" if self.cleanup_unknown else "NATIVE_CANCEL_OUTCOME_UNKNOWN" if unknown else "CANCELLED" if self.cancelled.is_set() else "BUILD_FAILED",
-                                     "failureCategory": self.sdk_failure_category if self.sdk_rejected and not unknown and not self.cancelled.is_set() else "unclassified-platform-failure" if self.cancelled.is_set() or not isinstance(error, CommandFailed) else "",
-                                     "childSettled": not self.cancel_unknown and (self.process is None or self.process.poll() is not None),
-                                     "ownedContainers": sorted(self.containers), "phaseTimings": phase_timings(self.timings)})
+                failure = ("CANCELLED" if self.cancelled.is_set() else str(error) if isinstance(error, MetadataCommandFailure)
+                           else "COMMAND_TIMEOUT" if isinstance(error, CommandDeadlineExceeded) else "BUILD_FAILED")
+                terminal = {"request": request, "state": "UNKNOWN" if unknown else "FAILED",
+                            "failure": (failure + "; container cleanup outcome unknown") if self.cleanup_unknown and isinstance(error, MetadataCommandFailure) and not self.cancelled.is_set() else "CANCEL_OUTCOME_UNKNOWN" if self.cleanup_unknown else "NATIVE_CANCEL_OUTCOME_UNKNOWN" if unknown else failure,
+                            "failureCategory": self.sdk_failure_category if self.sdk_rejected and not unknown and not self.cancelled.is_set() else "unclassified-platform-failure" if self.cancelled.is_set() or not isinstance(error, CommandFailed) else "",
+                            "childSettled": not self.cancel_unknown and (self.process is None or self.process.poll() is not None),
+                            "phaseTimings": phase_timings(self.timings)}
+                if self.containers:
+                    terminal["pendingContainers"] = sorted(self.containers)
+                    terminal["unobservedContainers"] = sorted(self.uncertain_containers)
+                    terminal["failureAfterCleanup"] = failure
+                    terminal["nativeCancelUnknown"] = self.cancel_unknown
+                private_json(state, terminal)
+
         finally:
             self.credential = ""
+            self.failure_secrets = ()
 
 
 class Server(http.server.ThreadingHTTPServer):
@@ -762,23 +830,6 @@ class Server(http.server.ThreadingHTTPServer):
         self.jobs = {}
         self.lock = threading.Lock()
         self.stopping = False
-
-    def cancel_ended_source(self, request):
-        # A Docker create can outlive its cancelled CLI and become visible
-        # after the first cleanup. Reconcile exact observed names even when
-        # the Job thread ended or the builder restarted.
-        path = directory(request) / "state.json"
-        state = json.loads(path.read_bytes())
-        previous = state["request"]
-        check_request_identity(previous, request)
-        if previous["attempt"] != request["attempt"]:
-            raise ValueError("source cancellation belongs to another attempt")
-        for name in source_containers(previous):
-            try:
-                subprocess.run(["docker", "rm", "--force", "--volumes", name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10, check=False)
-            except subprocess.TimeoutExpired:
-                pass  # Inspect proves the effect before another attempt starts.
-        return self.inspect(request)
 
     def cleanup_fence(self, request):
         try: fence = json.loads(cleanup_fence_path(request).read_bytes())
@@ -839,9 +890,7 @@ class Server(http.server.ThreadingHTTPServer):
                 unsettled = unsettled or "RUNNING"
                 continue
             if receipt is None:
-                if previous.get("sourceOnly") and state["state"] in ("FAILED", "UNKNOWN"):
-                    self.cancel_ended_source(previous)
-                    state = json.loads(path.read_bytes())
+                state = self.reconcile_container_cleanup(path, state)
                 if state["state"] in ("RUNNING", "UNKNOWN"):
                     unsettled = "UNKNOWN"
                     continue
@@ -885,6 +934,63 @@ class Server(http.server.ThreadingHTTPServer):
         following = offset + len(page)
         return {"text": page.decode(errors="replace"), "next": following, "complete": not running and following >= end}
 
+    def reconcile_container_cleanup(self, path, state):
+        request = state["request"]
+        job = self.jobs.get(str(path))
+        if state["state"] not in ("FAILED", "UNKNOWN") or state.get("nativeCancelUnknown"):
+            return state
+        child_settled = state.get("childSettled", state["state"] == "FAILED" or (bool(state.get("pendingContainers")) and state.get("nativeCancelUnknown") is False)) or (job is not None and not job.cancel_unknown and (job.process is None or job.process.poll() is not None))
+        if not child_settled or (job is not None and job.thread.is_alive()):
+            return state
+        names = state.get("pendingContainers", state.get("ownedContainers", []))
+        prefix = f"sv2-source-{request['requestId'][:32]}-{request['attempt']}-"
+        if len(names) > 16 or any(not re.fullmatch(re.escape(prefix) + r"[1-9][0-9]*", name) for name in names):
+            raise ValueError("invalid pending build container ownership")
+        unobserved = set(state.get("unobservedContainers", names))
+        if not unobserved.issubset(names):
+            raise ValueError("invalid unobserved build container ownership")
+        # Source retry also discovers late creates from an ended older helper.
+        # Feed them into the same exact-name cleanup used for Live builds.
+        discovered = source_containers(request) if request.get("sourceOnly") else []
+        names = sorted(set(names) | set(discovered))
+        if len(names) > 16:
+            raise ValueError("invalid pending build container ownership")
+        unobserved.difference_update(discovered)
+        if not names and (state["state"] != "UNKNOWN" or not request.get("sourceOnly")):
+            return state
+        original = state.get("failureAfterCleanup", state["failure"] if state["state"] == "FAILED" else "BUILD_FAILED")
+        state.update(state="UNKNOWN", pendingContainers=names, unobservedContainers=sorted(unobserved), failureAfterCleanup=original, childSettled=True)
+        state.pop("ownedContainers", None)
+        private_json(path, state)
+        remaining = list(names)
+        # One removal per inspection keeps retry and Release cleanup bounded.
+        for name in names[:1]:
+            def observed():
+                # Persist proof before an uncertain removal, so later absence is conclusive.
+                unobserved.discard(name)
+                state["unobservedContainers"] = sorted(unobserved)
+                private_json(path, state)
+            try:
+                if cleanup_container(name, require_observation=name in unobserved, on_observed=observed):
+                    remaining.remove(name)
+            except (OSError, ValueError, subprocess.SubprocessError):
+                pass  # Retain the exact identity until its effect can be proved.
+        if remaining:
+            state.update(pendingContainers=remaining, unobservedContainers=sorted(unobserved.intersection(remaining)))
+            private_json(path, state)
+            return state
+        state.update(state="FAILED", failure=original)
+        for key in ("pendingContainers", "unobservedContainers", "failureAfterCleanup", "nativeCancelUnknown"):
+            state.pop(key, None)
+        private_json(path, state)
+        append_job_log(request, b"RECONCILED class=owned-containers-absent outcome=FAILED\n")
+        if job is not None:
+            with job.lock:
+                job.containers.difference_update(names)
+                job.uncertain_containers.difference_update(names)
+                job.cleanup_unknown = False
+        return state
+
     def inspect(self, request):
         fence = self.cleanup_fence(request)
         if fence is not None:
@@ -897,29 +1003,8 @@ class Server(http.server.ThreadingHTTPServer):
         state = json.loads(path.read_bytes())
         previous = state["request"]
         check_request_identity(previous, request)
-        if state["state"] in ("FAILED", "UNKNOWN") and previous.get("sourceOnly"):
-            job = self.jobs.get(str(path))
-            child_settled = state.get("childSettled", state["state"] == "FAILED") or (job is not None and not job.cancel_unknown and (job.process is None or job.process.poll() is not None))
-            if child_settled and (job is None or not job.thread.is_alive()):
-                names = source_containers(previous)
-                if names:
-                    # Continue the ended job's already-admitted cleanup. A
-                    # cancelled Docker create may appear after its CLI exits;
-                    # never let that late container overlap a newer attempt.
-                    # One removal per inspection keeps reconciliation bounded.
-                    try:
-                        subprocess.run(["docker", "rm", "--force", "--volumes", names[0]], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10, check=False)
-                    except subprocess.TimeoutExpired:
-                        pass
-                    names = source_containers(previous)
-                if names:
-                    state.update(state="UNKNOWN", failure="CANCEL_OUTCOME_UNKNOWN", childSettled=True, ownedContainers=names)
-                    private_json(path, state)
-                elif state["state"] == "UNKNOWN":
-                    state.update(state="FAILED", failure="BUILD_FAILED", failureCategory="unclassified-platform-failure", ownedContainers=[])
-                    private_json(path, state)
-                    append_job_log(previous, b"RECONCILED class=owned-containers-absent outcome=FAILED\n")
-        # The failure classification is bounded fixture text, never provider output.
+        state = self.reconcile_container_cleanup(path, state)
+        # Failure detail is bounded and redacted before persistence.
         result = {key: state[key] for key in ("state", "artifactReference", "imageId", "failure", "failureCategory", "phaseTimings") if key in state}
         result["operationId"] = request["requestId"] + "-" + str(previous["attempt"])
         result["attempt"] = previous["attempt"]
@@ -1001,8 +1086,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     if job is not None and job.thread.is_alive():
                         job.cancel()
                         result = {"state": "RUNNING"}
-                    elif request.get("sourceOnly") and result["state"] != "MISSING":
-                        result = self.server.cancel_ended_source(request)
                     elif result["state"] == "MISSING" and not request.get("sourceOnly") and self.server.cleanup_fence(request) is None and self.server.release_cleanup_fence(request) is None:
                         # A Start of this attempt that arrives after its cancellation is refused:
                         # a FAILED attempt admits only a newer one.
