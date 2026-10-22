@@ -35,7 +35,7 @@ studio:
     requests: {cpu: 100m, memory: 192Mi}
     limits: {cpu: "1", memory: 1Gi}
 dex:
-  image: {repository: docker.io/superdurable/dex-server, tag: "v1.13.0", digest: "sha256:5a1e81eb46b60df3363725f1b576fe14832edc851ce07660dce91bbcb421034d", pullPolicy: IfNotPresent}
+  image: {repository: docker.io/superdurable/dex-server, tag: "v1.14.2", digest: "sha256:3c4acb0b214164850810a2d9b378b4c158b5a3d46bdbf20682d00ff5364c1a50", pullPolicy: IfNotPresent}
   # More than one replica requires sharedStreamStore: the memory Stream store is per process,
   # so a Stream written on one replica is never read on another.
   replicas: 1

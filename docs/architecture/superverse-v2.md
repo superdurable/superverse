@@ -116,7 +116,7 @@ Use constructor-injected typed interfaces for former Agent-to-Control-Plane
 callbacks. Do not replace those callbacks with
 self-gRPC calls. The BFF calls the business gRPC API using generated clients.
 
-Every platform server replica runs a listener-free pull Worker on Dex Server and Go SDK 1.13.0.
+Every platform server replica runs a listener-free pull Worker on Dex Server and Go SDK 1.14.2.
 It opens outbound streams to `dex.serverAddress`; the Dex Client starts platform Flows with the
 Worker's pull target. Project Live application Workers retain their existing push transport.
 Readiness waits for all platform Worker queues to acknowledge registration, probes
@@ -314,7 +314,7 @@ records that the later package moves changed no Flow.
 | Source | Authority |
 | --- | --- |
 | Dex skills | `dex-skills/`, Superverse-owned source (the current contract) |
-| Platform | Go SDK `v1.13.0`, Server `v1.13.0`, CLI `v1.13.0`; kept at the newest stable release |
+| Platform | Go SDK `v1.14.2`, Server `v1.14.2`, CLI `v1.14.2`; kept at the newest stable release |
 | New-project template | The examples of `app-template/` (a shared base and one folder per example): the default text summary, served as `app-template@<tree ID>`, and each example a person picks, served as `app-template/<id>@<tree ID>` (the current contract) |
 
 Do not upgrade generated application dependencies merely because the

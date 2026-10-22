@@ -17,13 +17,13 @@ destination=${2:?destination path is required}
 version=${3:?release version is required}
 
 # Reviewed pins. scripts/update-dex-versions.py rewrites the dexcli lines.
-dexcli_commit=0eb7037dcc8b454c3efdc7e34795b5efb433042d
+dexcli_commit=dfb1a1e05c99eb4b3211b921f2bf1b9ed273dbf3
 pinned_checksum() {
   case "$1" in
-    "dexcli v1.13.0 darwin_amd64") echo 64cd29557862ffa84308894d4850ee5c26dc3de1a947ec0fe37d207a1a9a0962 ;;
-    "dexcli v1.13.0 darwin_arm64") echo 1334de57bc19844cb03b04419074366f96057f24775817e94b4010f576bbe882 ;;
-    "dexcli v1.13.0 linux_amd64") echo ea6465638669e08ebae7a8d035d75b798f30988fe5ab485ba3e31c1829769aa7 ;;
-    "dexcli v1.13.0 linux_arm64") echo 1d57659bce8fd01761ebca35f6bc326b3cd3393e45a8e3445ef8b7287717b08f ;;
+    "dexcli v1.14.2 darwin_amd64") echo 40f81562f499e926a20df2a7e2e4c1d1230b408bc4982ede25e9b2ab143aa5c8 ;;
+    "dexcli v1.14.2 darwin_arm64") echo 40f3d5f8724380546ae5690b843d605e5d075037dd12eadd0f19bae838ae2f0c ;;
+    "dexcli v1.14.2 linux_amd64") echo 380052570e021339e32dd50f20a3c92ea94fccf0ad2f611745f9e304b53ae409 ;;
+    "dexcli v1.14.2 linux_arm64") echo 39b0588346025ba0818f2c450ff3bb162aec0ae01f46fc78d44f5b2ffd1db611 ;;
     "osv-scanner v2.5.1 darwin_amd64") echo 9f89beb6c3d784893cb1cae0a3d56c529bfe91075418c2f9440c45b79654198b ;;
     "osv-scanner v2.5.1 darwin_arm64") echo 75c44d6332f892a1e56286f4105a98ed751ae28d215ca0a8b65cc00d84103054 ;;
     "osv-scanner v2.5.1 linux_amd64") echo f9f25499a2c8cc367b3af45df2ea7eeca7fbccceab9c35079968f4b3652194be ;;
