@@ -1299,7 +1299,7 @@ the typed missing-credential result, rather than panicking on an unloaded map.
 `SessionAgentFlow` owns two new AttributeMaps. `ModelKeys<Envelope{Revision
 uint64, Key string}>` uses `dex.HardDeleteOnNull()`. Its instances are the ten typed providers derived from the server's closed catalog,
 for example `anthropic` and `openai`, with physical keys `ModelKeys/anthropic` and
-`ModelKeys/openai`. Mock has no credential instance. Additional execution is admitted by `agent.providers.enabled` for the implemented
+`ModelKeys/openai`. Credential rollover derives the next model call's exact archive loads from the message window after appending its notice, because that append can archive a previously current chunk. Mock has no credential instance. Additional execution is admitted by `agent.providers.enabled` for the implemented
 OpenAI GPT-6 Astra, xAI Grok 4.7 and Gemini 4 Argon profiles. Hosted defaults leave
 that list empty; local profiles use the explicit validated mock endpoint policy. `ModelKeyInfo<Info>` has the same instance
 key and owns revision, active/pending/revoked status, last four characters,

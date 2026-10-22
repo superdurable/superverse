@@ -448,7 +448,7 @@ func (flow *SessionAgentFlow) planModelCall(ctx dex.Context, next agentloop.Cont
 			return modelCallPlan{next: nextLoadExecutorContext, load: &dex.StepOptions{ExecuteLoadAttributeMapInstances: append(credentialInfoLoads(), loads...)}}
 		}
 		opened := flow.openExecutorSegment(ctx, executor, true)
-		return modelCallPlan{next: nextCallModel, load: modelRequestLoad(state, opened, false)}
+		return modelCallPlan{next: nextCallModel, load: modelRequestLoad(comm.Must(agentStateAttribute.Get(ctx)), opened, false)}
 	}
 	if next != agentloop.ContinueCallModel {
 		selected := comm.Must(sessionModelAttribute.Get(ctx)).Model
