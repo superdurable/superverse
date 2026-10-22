@@ -15,25 +15,7 @@ import { RemoteAgentDialog } from "@/components/session/remoteagent/RemoteAgentD
 import { setSessionExecutor } from "@/lib/api/agent";
 import { useSingleFlight } from "@/lib/browser/use-single-flight";
 import { agentModelLabel, AGENT_MODEL_OPTIONS, type AgentModel } from "@/lib/session/agent-types";
-import { useSessionResource } from "@/lib/session/SessionProvider";
-import { timestampToISO } from "@/lib/shared/protobuf";
-
-/** SQL last-seen information is presentation only; the canonical executor owns authority. */
-function useRemoteStatus() {
-  const session = useSessionResource();
-  const executor = session?.resource?.agent?.description?.executor;
-  const remote = executor?.mode === "SESSION_EXECUTOR_MODE_REMOTE" ? executor.remote : null;
-  const seen = timestampToISO(remote?.lastSeenAt);
-  const connection = remote?.connectionId;
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!connection) return;
-    const timer = window.setInterval(() => setNow(Date.now()), 15_000);
-    return () => window.clearInterval(timer);
-  }, [connection]);
-  const online = seen !== null && Number.isFinite(Date.parse(seen)) && now - Date.parse(seen) <= 90_000;
-  return { session, executor, remote, seen, online };
-}
+import { useRemoteAgentStatus } from "./use-remote-agent-status";
 
 type PickerProps = {
   model: AgentModel | null;
@@ -50,7 +32,7 @@ type PickerProps = {
  * first and then the Superverse model; its accessible name and hint say the whole of it.
  */
 export function SessionAgentPicker(props: PickerProps) {
-  const state = useRemoteStatus();
+  const state = useRemoteAgentStatus();
   return (
     <AgentPickerMenu
       key={`${state.session?.projectId}:${state.executor?.epoch}:${state.executor?.generation}:${state.remote?.connectionId ?? "platform"}:${state.session?.status}:${props.canManage}`}
@@ -81,7 +63,7 @@ function AgentPickerMenu({
   canManage,
   modelDisabled,
   onSelect,
-}: ReturnType<typeof useRemoteStatus> & PickerProps) {
+}: ReturnType<typeof useRemoteAgentStatus> & PickerProps) {
   const anchor = useRef<HTMLSpanElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const card = useRef<HTMLDivElement>(null);
@@ -268,7 +250,7 @@ function AgentPickerMenu({
 
 /** Offline keeps the remote executor and the ordinary queue, steer and Stop controls. */
 export function RemoteAgentOfflineNotice() {
-  const { remote, online, session } = useRemoteStatus();
+  const { remote, online, session } = useRemoteAgentStatus();
   if (!remote || online || session?.status !== "SESSION_STATUS_ACTIVE") return null;
   return (
     <p

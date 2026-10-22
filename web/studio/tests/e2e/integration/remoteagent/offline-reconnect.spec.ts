@@ -24,13 +24,18 @@ test("Real last-seen expiry keeps remote authority; reconnect delivers the ordin
     const projectId = scope.fixture.projectId;
     const client = await scope.connect();
     const fence = await client.activate("Offline reconnect browser case");
-    // A real public remote report opens a turn. Ordinary input must stay queued
-    // until that remote turn ends; SQL liveness never controls its consumption.
-    await client.post("report", {
-      ...fence,
-      sequence: 1,
-      events: [{ kind: "assistant_message", text: "Remote work before reconnect." }],
-    });
+    // A real user input starts the remote turn; an assistant-only report from
+    // idle returns to AwaitUser. Later ordinary input must queue until this turn ends.
+    const started = page.waitForResponse(rpcAnswered("SendMessage"));
+    const starting = page.waitForRequest(rpcPosted("SendMessage"));
+    await page
+      .getByRole("textbox", { name: "Message the agent", exact: true })
+      .fill(`Start remote work ${randomUUID()}`);
+    await page.getByRole("button", { name: "Send", exact: true }).click();
+    scope.ownedMessages.add(
+      string(object((await starting).postDataJSON(), "Starting message").messageId, "Starting message ID"),
+    );
+    if (!(await started).ok()) throw new Error("Starting the real remote turn was refused");
     await expect
       .poll(async () => (await readSession(page, projectId)).agent?.description?.status, { timeout: 60_000 })
       .toBe("STATUS_CALLING_MODEL");
@@ -97,7 +102,7 @@ test("Real last-seen expiry keeps remote authority; reconnect delivers the ordin
     await page.reload();
     await expect(page.locator("[data-remote-offline]")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Chat options", exact: true })).toHaveCount(0);
-    await client.post("report", { ...fence, sequence: 2, turnCompleted: true });
+    await client.post("report", { ...fence, sequence: 1, turnCompleted: true });
     await expect
       .poll(
         async () =>
@@ -117,10 +122,10 @@ test("Real last-seen expiry keeps remote authority; reconnect delivers the ordin
     await expect(page.getByText(text, { exact: true })).toHaveCount(1);
     await client.post("report", {
       ...fence,
-      sequence: 3,
+      sequence: 2,
       events: [{ kind: "assistant_message", text: "Received the queued message once." }],
     });
-    await client.post("report", { ...fence, sequence: 4, turnCompleted: true });
+    await client.post("report", { ...fence, sequence: 3, turnCompleted: true });
     await expect
       .poll(async () => (await readSession(page, projectId)).agent?.description?.status, { timeout: 60_000 })
       .toBe("STATUS_WAITING_FOR_MESSAGE");

@@ -138,7 +138,7 @@ export function ProjectCreationPairing({ projectId }: { projectId: string }) {
           </p>
         </div>
       )}
-      <LocalAgentInstructions endpoint={pairing?.endpoint ?? null} />
+      <LocalAgentInstructions endpoint={pairing?.endpoint ?? null} awaitingAcknowledgement={!accepted} />
     </section>
   );
 }

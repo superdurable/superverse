@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createProject } from "@/lib/api/project";
-import { STORAGE_KEYS, writeStoredPreference } from "@/lib/browser/storage";
+import { readStoredPreference, STORAGE_KEYS, writeStoredPreference } from "@/lib/browser/storage";
 import { errorMessage } from "@/lib/api/transport/api-error";
 import {
   clearPendingProjectCreation,
@@ -22,7 +22,9 @@ import {
   forgetStartAttachments,
   readPendingProjectCreation,
   readProjectIntent,
+  storeCreationProjectIntent,
   storeProjectIntent,
+  releaseProjectIntent,
   type PendingProjectCreation,
   type ProjectIntent,
 } from "@/lib/project/project-intents";
@@ -34,12 +36,11 @@ import { StartupSteps } from "@/components/session/start/StartupSteps";
 import { Banner } from "@/components/ui/Banner";
 import { Button, buttonStyle } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
-import { ProjectCreationLocal } from "./creation/ProjectCreationLocal";
 
 /**
  * Creates the stored Project with stable request IDs. The Superverse agent starts with its first
  * message and model on the server. A local-agent creation keeps its message in ProjectIntent,
- * waits for the Project and Session, pairs inline and sends after remote authority is visible. A
+ * opens the accepted Project, and lets its chat pair and send after remote authority is visible. A
  * creation from an example carries the example and no message; what the person typed becomes the new
  * Project's unsent composer draft.
  */
@@ -54,16 +55,18 @@ export function ProjectCreationPage() {
   const [startHref, setStartHref] = useState(studioRoutes.home);
   const [error, setError] = useState<string | null>(null);
   const [missingIntent, setMissingIntent] = useState(false);
-  const [localIntent, setLocalIntent] = useState<ProjectIntent | null>(null);
   const [startingLocal, setStartingLocal] = useState(false);
 
   const admitProject = useCallback(async () => {
     if (!mounted.current || inFlight.current) return;
     const resumed = readProjectIntent();
     if (resumed) {
-      setLocalIntent(resumed);
-      setProjectName(resumed.name);
-      setMissingIntent(false);
+      storeProjectIntent(resumed);
+      if (readStoredPreference(STORAGE_KEYS.composerDraft(resumed.projectId)) === null)
+        writeStoredPreference(STORAGE_KEYS.composerDraft(resumed.projectId), resumed.draft ?? resumed.prompt);
+      releaseProjectIntent(resumed.projectId);
+      beginFirstRun(resumed.projectId);
+      router.replace(studioRoutes.projectSurface(resumed.projectId, "flow"));
       return;
     }
     const encodedIntent = encodedPendingProjectCreation();
@@ -115,10 +118,9 @@ export function ProjectCreationPage() {
       if (pending.draft) writeStoredPreference(STORAGE_KEYS.composerDraft(projectId), pending.draft);
       if (pending.executor === PROJECT_EXECUTOR.LOCAL) {
         const intent: ProjectIntent = { ...pending, projectId, delivery: PROJECT_MESSAGE_DELIVERY.UNSENT };
-        storeProjectIntent(intent);
-        clearPendingProjectCreation();
-        setLocalIntent(intent);
-        return;
+        storeCreationProjectIntent(intent);
+        writeStoredPreference(STORAGE_KEYS.composerDraft(projectId), pending.draft ?? pending.prompt);
+        releaseProjectIntent(projectId);
       }
       clearPendingProjectCreation();
       // The Project's first message took the start page's files.
@@ -157,16 +159,7 @@ export function ProjectCreationPage() {
       <div className="w-full max-w-2xl">
         <h1 className="text-display font-semibold tracking-tight">{projectName}</h1>
 
-        {localIntent && (
-          <ProjectCreationLocal
-            intent={localIntent}
-            onDone={(projectId) => {
-              beginFirstRun(projectId);
-              router.replace(studioRoutes.projectSurface(projectId, "flow"));
-            }}
-          />
-        )}
-        {!localIntent && !missingIntent && !error && (
+        {!missingIntent && !error && (
           <div className="mt-6 grid justify-items-start gap-2">
             <StartupSteps current="project" mark />
             <p className="text-body text-ink-dim">
@@ -178,7 +171,7 @@ export function ProjectCreationPage() {
             </p>
           </div>
         )}
-        {!localIntent && !missingIntent && error && (
+        {!missingIntent && error && (
           <section className="mt-6 rounded-lg border border-line-soft bg-well p-5">
             <h2 className="text-title font-medium text-ink">The project was not created</h2>
             <p className="mt-1 text-reading text-ink-dim">
@@ -187,7 +180,7 @@ export function ProjectCreationPage() {
           </section>
         )}
 
-        {!localIntent && error && (
+        {error && (
           <div className="mt-4">
             <Banner>{error}</Banner>
             <div className="mt-3 flex flex-wrap gap-2">

@@ -33,11 +33,12 @@ logs, receipts or source. The Bridge keeps its returned token in its owning
 private configuration; Studio receives no token.
 
 For a new Project, select My local agent on the start form. After the Project
-is READY and its Session ACTIVE, acknowledge the inline warning and run the
-displayed `dexai-connect connect --endpoint <origin>` command, entering
-the code interactively. The page renews an expired code while retaining the
-first message. It sends that message when the Session Watch reports remote
-authority. If the send result is uncertain, inspect the Project conversation
+is accepted, its page opens immediately, with your description visible and editable
+in the composer. Reloading keeps the draft. Acknowledge the inline warning and
+run `dexai connect --endpoint <origin>`, entering the requested code interactively.
+The chat renews an expired code while retaining the draft. Send stays disabled
+until connection; the Session Watch reporting remote authority sends the current
+draft automatically once (an example's draft remains manual). If the send result is uncertain, inspect the Project conversation
 before sending the original text manually; do not assume a retry is safe.
 
 Refresh connections explicitly to observe a PAIRED credential. Remove an unused

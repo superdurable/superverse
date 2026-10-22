@@ -51,11 +51,11 @@ export function useSessionCommands({ projectId, mutate, dispatch, latestSnapshot
       }
     };
     return {
-      // A send is a new message with a new ID. The Agent does not deduplicate by message ID, so reusing
-      // one for a retry would queue a second copy under the same ID.
-      send: (text: string, attachmentIds: readonly string[] = []) =>
+      // A send takes a new ID, or the pending local creation's chosen ID. IDs never deduplicate a retry;
+      // callers must reconcile an uncertain send before another attempt.
+      send: (text: string, attachmentIds: readonly string[] = [], messageId = newRequestId()) =>
         mutate("send", (signal) =>
-          sendMessage({ ...session, messageId: newRequestId(), text, attachmentIds: [...attachmentIds] }, signal),
+          sendMessage({ ...session, messageId, text, attachmentIds: [...attachmentIds] }, signal),
         ),
       // A change to what the agent builds is a message, with its files; while a turn runs (`steer`) it also
       // steers that turn, which applies it at its next safe boundary. A steer the Agent no longer admits,

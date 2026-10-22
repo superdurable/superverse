@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: Project resources: the Project Watch provider and list, resource Watches, release versions, Process definitions, waiting runs, configuration reads, requirement gap names, the pending creation and the generated designs.
 
-Importers: `app`, `components/build`, `components/flow/scope`, `components/frame/bar`, `components/project`, `components/project/creation`, `components/publishing`, `components/publishing/publish`, `components/session`, `components/shell`, `components/shell/palette`, `components/teamspace/connections`, `lib/project/publishing`, `lib/project/setup` and `lib/project/stage` import this directory.
+Importers: `app`, `components/build`, `components/flow/scope`, `components/frame/bar`, `components/project`, `components/publishing`, `components/publishing/publish`, `components/session`, `components/session/start`, `components/shell`, `components/shell/palette`, `components/teamspace/connections`, `lib/project/publishing`, `lib/project/setup` and `lib/project/stage` import this directory.
 
 Imports: it imports `lib/api`, `lib/api/flow`, `lib/api/transport`, `lib/browser`, `lib/generated/protobuf`, `lib/generated/template-design` and `lib/shared` and calls the `DeploymentService`, `ProjectService` and `ReleaseService` APIs.
 
@@ -15,10 +15,10 @@ flowchart LR
   c2["components/flow/scope"] --> self
   c3["components/frame/bar"] --> self
   c4["components/project"] --> self
-  c5["components/project/creation"] --> self
-  c6["components/publishing"] --> self
-  c7["components/publishing/publish"] --> self
-  c8["components/session"] --> self
+  c5["components/publishing"] --> self
+  c6["components/publishing/publish"] --> self
+  c7["components/session"] --> self
+  c8["components/session/start"] --> self
   c9["components/shell"] --> self
   c10["components/shell/palette"] --> self
   c11["components/teamspace/connections"] --> self

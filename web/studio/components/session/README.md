@@ -36,6 +36,10 @@ flowchart LR
 The `remoteagent` child owns the Connect dialog, acknowledgement and one-time
 code. `SessionChat` places the Agent picker beside either composer, passes the
 Project's Builder capability and keeps the dialog scoped to that Project.
+A local creation opens this chat before pairing. Until its first connection,
+connection instructions appear inline and the description stays editable in the
+composer, while Send explains that a local connection is required. The `start`
+child owns that first message's persisted admission boundary and recovery.
 The chat's header holds only a dot while live updates reconnect (`SessionConnectionIndicator`); the
 workspace's time, Keep running for 7 days and its startup phases are in Project details (`WorkspaceDetails`).
 `HistoryJumps` floats Jump to beginning and Jump to latest at the bottom of the history once the reader

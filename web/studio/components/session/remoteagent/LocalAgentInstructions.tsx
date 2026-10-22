@@ -16,10 +16,12 @@ import { Button } from "@/components/ui/Button";
 export function LocalAgentInstructions({
   endpoint,
   showHelpLink = true,
+  awaitingAcknowledgement = false,
 }: {
   /** Omitted for public help; null keeps Project setup here while its endpoint loads. */
   endpoint?: string | null;
   showHelpLink?: boolean;
+  awaitingAcknowledgement?: boolean;
 }) {
   return (
     <div className="mt-4 space-y-3 text-sm text-ink-dim">
@@ -43,6 +45,8 @@ export function LocalAgentInstructions({
               Run this in Terminal:
               <CopyCommand command={`dexai connect --endpoint ${endpoint}`} />
             </>
+          ) : awaitingAcknowledgement ? (
+            "Acknowledge the local-machine permissions above to show your pairing code and connection command here."
           ) : (
             "Studio will show your connection command here after the connection details load."
           )}

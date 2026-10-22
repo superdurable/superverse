@@ -1,35 +1,23 @@
 # Local Project creation
 
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
-Purpose: Watches a newly created Project and Session, then shows inline pairing until the chosen local agent activates.
+Purpose: Connects a local agent using inline risk acknowledgement and an expiring pairing code.
 
-Importers: `components/project` imports this directory.
+Importers: `components/session/start` imports this directory.
 
-Imports: it imports `components/session/remoteagent`, `components/session/start`, `components/ui`, `lib/api`, `lib/api/transport`, `lib/generated/protobuf`, `lib/project`, `lib/session` and `lib/shared` and calls the `SessionService` API.
+Imports: it imports `components/session/remoteagent`, `components/ui`, `lib/api` and `lib/shared`.
 
 ```mermaid
 flowchart LR
   self["components/project/creation"]
-  c0["components/project"] --> self
+  c0["components/session/start"] --> self
   self --> d0["components/session/remoteagent"]
-  self --> d1["components/session/start"]
-  self --> d2["components/ui"]
-  self --> d3["lib/api"]
-  self --> d4["lib/api/transport"]
-  self --> d5["lib/generated/protobuf"]
-  self --> d6["lib/project"]
-  self --> d7["lib/session"]
-  self --> d8["lib/shared"]
-  self --> e0(["SessionService API"])
+  self --> d1["components/ui"]
+  self --> d2["lib/api"]
+  self --> d3["lib/shared"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
-The Project Watch gates Session reads. The Session Watch supplies canonical
-executor authority; an ACTIVE Session alone does not send the first message. An
-example opened for a local agent has no first message: the Project opens once the
-agent holds the Session.
-The inline card shows the warning, ten-minute code, endpoint command and
-waiting state. Expiry requests a fresh code without losing ProjectIntent.
-Before SendMessage, Studio persists a sending marker because the RPC does not
-deduplicate message IDs. A lost response is never retried automatically; the
-person can inspect the original message and Project conversation.
+Creation opens the accepted Project immediately. Creation never waits for
+pairing or sends a message to the platform agent. The Project chat owns inline
+connection instructions, the editable browser draft and its remote-only send.

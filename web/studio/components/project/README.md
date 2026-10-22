@@ -5,7 +5,7 @@ Purpose: The Project pages: the start form, Project creation, Project details, t
 
 Importers: `app` and `mock/surface` import this directory.
 
-Imports: it imports `components/build`, `components/flow/scope`, `components/frame`, `components/project/**` (4), `components/publishing/**` (2), `components/session/**` (5), `components/shell/palette`, `components/teamspace`, `components/ui/**` (5), `lib/api/**` (3), `lib/browser`, `lib/flow`, `lib/generated/protobuf`, `lib/project/**` (3), `lib/session/**` (4), `lib/shared/**` (3) and `lib/teamspace`.
+Imports: it imports `components/build`, `components/flow/scope`, `components/frame`, `components/project/**` (3), `components/publishing/**` (2), `components/session/**` (5), `components/shell/palette`, `components/teamspace`, `components/ui/**` (5), `lib/api/**` (3), `lib/browser`, `lib/flow`, `lib/generated/protobuf`, `lib/project/**` (3), `lib/session/**` (4), `lib/shared/**` (3) and `lib/teamspace`.
 
 ```mermaid
 flowchart LR
@@ -15,7 +15,7 @@ flowchart LR
   self --> d0["components/build"]
   self --> d1["components/flow/scope"]
   self --> d2["components/frame"]
-  self --> d3["components/project/** (4)"]
+  self --> d3["components/project/** (3)"]
   self --> d4["components/publishing/** (2)"]
   self --> d5["components/session/** (5)"]
   self --> d6["components/shell/palette"]
@@ -45,11 +45,10 @@ the first input of a scenario in place of free text when that model is chosen.
 ProjectCreationPage admits the managed source with a stable request ID and
 marks the Project's first conversation in this browser before opening the Builder.
 The Superverse path includes its first message and model in CreateProject.
-The local path retains its message in ProjectIntent, watches Project READY and
-Session ACTIVE, shows inline pairing, and sends after the Snapshot reports
-remote authority. A creation from an example sends no message on either path:
+The local path retains its message in ProjectIntent, opens the accepted Project, then its chat shows inline connection instructions
+and sends the editable composer draft once after the Snapshot reports remote authority. A creation from an example sends no message on either path:
 it writes the draft as the new Project's composer draft, and the local path
-opens the Project once the agent holds the Session. An example Project has its
+opens the Project before pairing; its example draft remains unsent. An example Project has its
 card at once, so it skips the chat-only first conversation. ProjectBuilder follows the Project's stage (`lib/project/stage`): the chat
 alone until the first draft of the agent's first requirements card or the agent's own processes, or until
 the person picks "Open the Flow tab" in its bar when no card comes, then the standard frame, whose tabs, Publish and Preview's status appear as they have something

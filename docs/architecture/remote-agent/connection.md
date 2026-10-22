@@ -300,10 +300,12 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON remote_agent_connections TO superverse_s
 - **Agent picker**: beside the composer, its local-agent level shows connection
   status, Connect and, while remote owns the Session, Use the Superverse agent.
   The Connect dialog retains one-time code handling and saved connections.
-- **Project creation**: after READY and an ACTIVE Session, the local-agent
-  creation page shows inline risk acknowledgement, a code and the
-  `dexai-connect connect --endpoint <origin>` command. It renews an
-  expired code while keeping the first message in the browser intent.
+- **Project creation**: a local-agent creation opens the Project as soon as creation is accepted without
+  waiting for pairing. Until its first local connection, the chat shows inline
+  instructions and risk acknowledgement, with a pairing code requested on demand
+  and `dexai connect --endpoint <origin>`. Expired codes renew without losing the
+  editable browser draft. Activation sends the current creation draft once;
+  manual Send uses the same admission boundary. Example drafts remain manual.
 - Errors in plain words: an expired code, a Bridge whose version Studio does not accept, the
   connection replaced by another Builder.
 

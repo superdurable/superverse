@@ -665,9 +665,13 @@ RASUBWT adds no SQL table, column, migration, projection or second worktree owne
   component. The path, base and conflict list are in the ordinary tool result.
 - At Project creation the person selects the Agent before any model. A local
   choice omits the first message and model from CreateProject, keeps the message
-  in the browser's Project intent through READY/ACTIVE and pairing, and sends
-  it once only after a Session Snapshot shows remote authority. An uncertain
-  SendMessage outcome is never retried automatically.
+  in a Project-scoped browser intent, and opens the Project as soon as creation is accepted.
+  Before the first local connection its chat shows inline connection instructions
+  and an editable, reload-persistent composer draft. Send is disabled until remote
+  authority is visible. Activation sends the current draft automatically once;
+  manual Send shares that admission boundary and never updates the platform model.
+  Studio persists a sending marker before the RPC. An uncertain SendMessage
+  outcome is never retried automatically; an example's draft remains manual.
 
 ## Tests
 

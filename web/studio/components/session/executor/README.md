@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: Shows the composer's Agent picker, SQL-derived remote liveness, offline notice, pairing entry and epoch-fenced return to Superverse.
 
-Importers: `components/session` imports this directory.
+Importers: `components/session` and `components/session/start` import this directory.
 
 Imports: it imports `components/session/remoteagent`, `components/ui`, `lib/api`, `lib/browser`, `lib/session` and `lib/shared`.
 
@@ -11,6 +11,7 @@ Imports: it imports `components/session/remoteagent`, `components/ui`, `lib/api`
 flowchart LR
   self["components/session/executor"]
   c0["components/session"] --> self
+  c1["components/session/start"] --> self
   self --> d0["components/session/remoteagent"]
   self --> d1["components/ui"]
   self --> d2["lib/api"]
@@ -20,7 +21,10 @@ flowchart LR
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
-The canonical Session resource supplies executor authority and SQL last-seen metadata. Ninety seconds without a last-seen update displays offline; that label never switches execution. The UI clock refreshes only this label and makes no request.
+The canonical Session resource supplies executor authority and SQL last-seen metadata. Ninety seconds without a last-seen update displays offline; that label never switches execution. The UI clock refreshes liveness and Send availability and makes no request.
+The existing Session Watch includes SQL last-seen updates; no extra poll is added.
+Offline keeps the draft editable, disables new sends and retains already queued
+messages for reconnect. It changes no server admission or executor authority.
 
 Operators can read the executor label and remote liveness. Only Builders can connect an agent or switch execution; the server checks that capability independently of the menu.
 

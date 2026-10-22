@@ -60,6 +60,7 @@ export function Composer({
   onChange,
   busy = false,
   disabledReason = null,
+  sendDisabledReason = null,
   placeholder = "Describe a change...",
   autoFocus = false,
   inputRef,
@@ -82,6 +83,8 @@ export function Composer({
   onChange?: (text: string) => void;
   busy?: boolean;
   disabledReason?: string | null;
+  /** Blocks sending while leaving the draft editable, for example before a local agent connects. */
+  sendDisabledReason?: string | null;
   placeholder?: string;
   autoFocus?: boolean;
   /** The text box, for a caller that moves the focus there when it has a draft to show. */
@@ -111,7 +114,8 @@ export function Composer({
   const chips = attachments?.chips.length ?? 0;
   // Files a message cannot carry, such as while a local agent runs the Session, hold it until removed.
   const attachmentsBlock = chips > 0 && attachments ? (attachments.disabledReason ?? attachments.waitReason) : null;
-  const canSend = !disabled && attachmentsBlock === null && (text.trim() !== "" || chips > 0);
+  const canSend =
+    !disabled && sendDisabledReason === null && attachmentsBlock === null && (text.trim() !== "" || chips > 0);
 
   function changeText(next: string) {
     if (value === undefined) setLocalText(next);
@@ -169,6 +173,7 @@ export function Composer({
   }
 
   const hint = disabledReason ?? (busy ? "A request is already running" : attachmentsBlock);
+  const sendHint = disabledReason === null ? sendDisabledReason : null;
 
   if (large)
     return (
@@ -197,7 +202,7 @@ export function Composer({
           </div>
           <div className="flex items-center gap-1 pt-1">
             {attachments && <AttachButton tray={attachments} disabled={disabled} className="-ml-1" />}
-            <p className="text-[13px] text-ink-faint">{hint ?? "Enter to send"}</p>
+            <p className="text-[13px] text-ink-faint">{sendHint ?? hint ?? "Enter to send"}</p>
           </div>
         </div>
       </div>
@@ -235,6 +240,11 @@ export function Composer({
           onKeyDown={sendOnEnter}
           onPaste={attachPasted}
         />
+        {sendHint && (
+          <p role="status" className="mt-1 text-[12px] text-ink-dim">
+            {sendHint}
+          </p>
+        )}
         <div className="mt-0.5 flex items-center gap-1">
           {attachments && <AttachButton tray={attachments} disabled={disabled} />}
           {onPick && (

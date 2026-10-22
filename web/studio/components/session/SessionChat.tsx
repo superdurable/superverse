@@ -43,25 +43,21 @@ import {
   pendingWaitsOf,
   shownChatMessages,
 } from "./session-chat-state";
-import { SessionAgentPicker } from "./executor/SessionAgentPicker";
+import { RemoteAgentOfflineNotice, SessionAgentPicker } from "./executor/SessionAgentPicker";
 import { LiveNote, SeeOnPreview, useLiveChange, type LiveViewing } from "./LiveNote";
 import { StartupStatus } from "./start/StartupSteps";
 import { useChatSend } from "./start/use-chat-send";
 import { useComposerText } from "./start/use-first-turn-composer";
-import { RemoteAgentOfflineNotice } from "./executor/SessionAgentPicker";
+import { useLocalCreation } from "./start/use-local-creation";
+import { LocalCreationNotice } from "./start/LocalCreationNotice";
 import { useSessionAttachments } from "./use-session-attachments";
 
 const FIRST_MESSAGE_WAITS = "Your description waits for the agent…";
 
 /**
- * The Project's Session chat: its conversation, todo progress and queued messages, the pending
- * action dock and the composer. CreateProject carries a Superverse agent's first message; a local
- * agent's first message arrives after remote activation. Until the agent takes the message the
- * composers wait. A message is how the person changes what the agent builds; a requirements card a
- * Session still waits at from before cards stopped waiting takes it as its reply. The model sits in
- * the Agent picker on the composer's row. While the person views Live
- * the chat stays live, and a note above the composer says that what they ask for is built on
- * Preview; once the agent made a change they asked for there, it offers See it on Preview.
+ * The Project's conversation, pending actions and composer. A local creation keeps its editable
+ * first message here until remote activation; platform creation supplies its message on the server.
+ * Live viewing keeps chat active and offers Preview once the requested change appears there.
  */
 export function SessionChat({ canManage, live }: { canManage: boolean; live?: LiveViewing }) {
   const state = useProjectSession();
@@ -75,7 +71,8 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
     state.snapshot?.description?.status === AgentStatus.WAITING_FOR_MESSAGE,
   );
   const markSent = liveChange.markSent;
-  const sendMessage = state.send;
+  const localCreation = useLocalCreation(state, composerText, setComposerText);
+  const sendMessage = localCreation.send;
   const send = useChatSend({ send: sendMessage, about, clearAbout, markSent });
   const template = useTemplateCommit();
   // An example the server matched to the first message greets with nothing and records no version 1 of its own.
@@ -176,7 +173,7 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
     () => pendingWaitsOf(pendingApproval, pendingInput, pendingTimer),
     [pendingApproval, pendingInput, pendingTimer],
   );
-  const attachments = useSessionAttachments(state.projectId, remotelyExecuted);
+  const attachments = useSessionAttachments(state.projectId, remotelyExecuted || localCreation.pending);
   const placeholder = composerPlaceholder({
     pendingInputKind: pendingInput?.kind ?? null,
     answerAwaitingReconciliation,
@@ -198,18 +195,22 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
       placeholder,
     }) ?? firstMessageWaits;
   // A Session on the mock model takes its scenarios' inputs, answers included, from the mock composer.
-  const runsMock = !remotelyExecuted && description?.model === "mock";
-  const modelMenu = description && (
-    <SessionAgentPicker
-      key={`${state.projectId}:${state.resource?.agent?.description?.executor?.epoch}:${state.resource?.agent?.description?.executor?.generation}:${state.status}:${canManage}`}
-      model={description.model}
-      contextModel={description.contextModel}
-      effort={description.effort}
-      mockSelectable={mockScenarios?.selectable ?? false}
-      canManage={canManage}
-      modelDisabled={state.mutating || agentInteractionDisabled}
-      onSelect={(model) => void state.updateModel(model, description.modelRevision).catch(() => undefined)}
-    />
+  const runsMock = !remotelyExecuted && !localCreation.pending && description?.model === "mock";
+  const modelMenu = localCreation.waitingForConnection ? (
+    <span className="px-1.5 text-[12px] text-ink-dim">Local agent · not connected</span>
+  ) : (
+    description && (
+      <SessionAgentPicker
+        key={`${state.projectId}:${state.resource?.agent?.description?.executor?.epoch}:${state.resource?.agent?.description?.executor?.generation}:${state.status}:${canManage}`}
+        model={description.model}
+        contextModel={description.contextModel}
+        effort={description.effort}
+        mockSelectable={mockScenarios?.selectable ?? false}
+        canManage={canManage}
+        modelDisabled={state.mutating || agentInteractionDisabled}
+        onSelect={(model) => void state.updateModel(model, description.modelRevision).catch(() => undefined)}
+      />
+    )
   );
   const mockDisabledReason = answerAwaitingReconciliation
     ? placeholder
@@ -283,12 +284,14 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
                   {...pendingQueueActions(state.snapshot?.queued ?? [], state, setComposerText, attachments.takeBack)}
                 />
               </AttachmentFilesProvider>
-              <StartupStatus
-                messages={shownMessages}
-                description={description}
-                lifecycle={productInteractive ? null : lifecycle}
-                workspacePreparing={workspacePreparing}
-              />
+              {!localCreation.waitingForConnection && (
+                <StartupStatus
+                  messages={shownMessages}
+                  description={description}
+                  lifecycle={productInteractive ? null : lifecycle}
+                  workspacePreparing={workspacePreparing}
+                />
+              )}
               {workspacePaused && (
                 <div
                   className="rounded border border-line-soft bg-panel p-3 text-[12px] text-ink-dim"
@@ -308,6 +311,7 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
                   <Spinner className="h-3.5 w-3.5" /> {agentStatusLabel(description?.status)}
                 </div>
               )}
+              <LocalCreationNotice creation={localCreation} />
               {state.error && <p className="text-[12px] text-fail">{state.error}</p>}
               {state.commandError && <p className="text-[12px] text-fail">{state.commandError}</p>}
             </div>
@@ -379,7 +383,8 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
             value={composerText}
             onChange={setComposerText}
             busy={state.mutating}
-            disabledReason={disabledReason}
+            disabledReason={localCreation.waitingForConnection ? null : disabledReason}
+            sendDisabledReason={localCreation.sendDisabledReason}
             placeholder={placeholder}
             onStop={canStop ? stop : undefined}
             stopDisabled={state.mutating || !state.snapshotCurrent}

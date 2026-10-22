@@ -72,7 +72,7 @@ type PendingExample = { exampleId: string };
 
 /**
  * The local-agent first message remains browser-owned after CreateProject accepts the Project; an example
- * opened for a local agent has none and only waits for the agent to connect.
+ * opened for a local agent has none; its draft stays manual after connection.
  */
 export type ProjectIntent = PendingProjectCreation & {
   projectId: string;
@@ -195,13 +195,15 @@ export function clearPendingProjectCreation(): void {
   removeStored("session", STORAGE_KEYS.projectCreation);
 }
 
-export function readProjectIntent(): ProjectIntent | null {
-  const value = read(STORAGE_KEYS.projectIntent);
+export function readProjectIntent(projectId?: string): ProjectIntent | null {
+  const key = projectId ? STORAGE_KEYS.localProjectIntent(projectId) : STORAGE_KEYS.projectIntent;
+  const value = read(key);
   if (!value) return null;
   const model = value.model ?? null;
   const start = startOf(value);
   if (
     nonEmpty(value.projectId) &&
+    (projectId === undefined || value.projectId === projectId) &&
     nonEmpty(value.teamSpaceId) &&
     nonEmpty(value.name) &&
     start !== null &&
@@ -224,14 +226,45 @@ export function readProjectIntent(): ProjectIntent | null {
       delivery: value.delivery,
       ...start,
     };
-  removeStored("session", STORAGE_KEYS.projectIntent);
+  removeStored("session", key);
   return null;
 }
 
+const intentListeners = new Set<() => void>();
+
+/** Reads a stable browser-store snapshot for the Project chat. */
+export function encodedProjectIntent(projectId: string): string | null {
+  return readStored("session", STORAGE_KEYS.localProjectIntent(projectId));
+}
+
+/** Subscribes the chat to its pending creation's admission changes. */
+export function subscribeProjectIntents(listener: () => void): () => void {
+  intentListeners.add(listener);
+  window.addEventListener("storage", listener);
+  return () => {
+    intentListeners.delete(listener);
+    window.removeEventListener("storage", listener);
+  };
+}
+
 export function storeProjectIntent(intent: ProjectIntent): void {
-  writeStored("session", STORAGE_KEYS.projectIntent, JSON.stringify(intent));
+  writeStored("session", STORAGE_KEYS.localProjectIntent(intent.projectId), JSON.stringify(intent));
+  intentListeners.forEach((listener) => listener());
 }
 
 export function clearProjectIntent(projectId: string): void {
+  removeStored("session", STORAGE_KEYS.localProjectIntent(projectId));
+  releaseProjectIntent(projectId);
+  intentListeners.forEach((listener) => listener());
+}
+
+/** Stops resuming the creation page, retaining the Project chat's first-message ownership. */
+export function releaseProjectIntent(projectId: string): void {
   if (readProjectIntent()?.projectId === projectId) removeStored("session", STORAGE_KEYS.projectIntent);
+}
+
+/** The creation page pointer is cleared once the Project opens. */
+export function storeCreationProjectIntent(intent: ProjectIntent): void {
+  storeProjectIntent(intent);
+  writeStored("session", STORAGE_KEYS.projectIntent, JSON.stringify(intent));
 }

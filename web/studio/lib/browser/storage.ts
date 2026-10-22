@@ -31,8 +31,10 @@ export const STORAGE_KEYS = {
   diagnosticsTab: "dex.run.selected-tab",
   /** The Project being created, in session storage. */
   projectCreation: "superversev2.project-create.v3",
-  /** A locally executed Project's first message, held through pairing and delivery. */
+  /** The creation page's resumable pointer to a pending local-agent Project. */
   projectIntent: "superversev2.project-intent.v1",
+  /** A local-agent Project keeps its pending first-message admission separately from other Projects. */
+  localProjectIntent: (projectId: string) => `superversev2.local-project-intent.v1:${projectId}`,
   /** The publish wizard's unsent reason to publish without running on Preview, in session storage. */
   publishSkipReason: (projectId: string) => `superversev2.publish-skip-reason.v1:${projectId}`,
   /** The card version whose Flow design the Flow tab last showed of a Project, so a reload does not move the person. */
@@ -43,7 +45,7 @@ export const STORAGE_KEYS = {
   projectStage: (projectId: string) => `superversev2.project-stage.v1:${projectId}`,
   /** The Builder tabs a Project has shown in this browser and those not visited since they appeared, as JSON. */
   projectTabs: (projectId: string) => `superversev2.project-tabs.v1:${projectId}`,
-  /** The unsent text of a Project's chat composer in this browser, which nothing sends until the person does. */
+  /** The unsent composer text; local creation may send its current draft once after connection. */
   composerDraft: (projectId: string) => `superversev2.composer-draft.v1:${projectId}`,
   /**
    * The attachments of a composer that its message has not sent yet, in session storage: their IDs and

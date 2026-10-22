@@ -178,9 +178,11 @@ existing typed projection.
 
 At Project creation, a local-agent choice omits the initial message and model
 from CreateProject. Studio retains the first message in its Project intent,
-shows inline pairing after READY and ACTIVE, regenerates a code after its
-ten-minute expiry, and sends once after a Session Snapshot shows remote
-authority. A lost SendMessage response is uncertain because that RPC does not
+opens the Project as soon as creation is accepted and shows inline connection instructions in its chat.
+The description is an editable composer draft retained through browser reload.
+Pairing codes are requested on demand and renewed after their ten-minute expiry.
+A Session Snapshot with remote authority triggers one send of the current draft;
+manual Send shares that boundary and neither path updates the platform model. A lost SendMessage response is uncertain because that RPC does not
 deduplicate IDs; Studio does not resend it automatically.
 
 ## Verification scope

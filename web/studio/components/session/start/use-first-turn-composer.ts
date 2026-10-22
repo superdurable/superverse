@@ -18,8 +18,8 @@ import {
 /**
  * The composer's text: what the person typed, or took back into it from the queue, kept per Project. An
  * unsent text also stays in this browser, so a reload keeps it and a Project opened from an example starts
- * with what the person had typed on the start page; nothing sends it until the person does, and sending
- * clears it.
+ * with what the person had typed on the start page. Sending clears it; local creation may automatically
+ * send its current draft once after connection, while an example's draft remains manual.
  */
 export function useComposerText(projectId: string) {
   const key = STORAGE_KEYS.composerDraft(projectId);

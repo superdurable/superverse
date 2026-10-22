@@ -143,7 +143,7 @@ the current contract.
 | [`components/frame/status`](components/frame/status/README.md) | The bar's environment tabs: one status dot each, and a word only when something is off, which links to its fix or, for a stopped Preview, opens Start. |
 | [`components/project`](components/project/README.md) | The Project pages: the start form, Project creation, Project details, the Project's one Session provider, the surfaces and tools inside the Builder frame, and Setup on either tab. |
 | [`components/project/activity`](components/project/activity/README.md) | The per-environment timeline and the recent trigger events: Preview's starts, Live's publishes and deployments, each with version, outcome and problem. |
-| [`components/project/creation`](components/project/creation/README.md) | Watches a newly created Project and Session, then shows inline pairing until the chosen local agent activates. |
+| [`components/project/creation`](components/project/creation/README.md) | Connects a local agent using inline risk acknowledgement and an expiring pairing code. |
 | [`components/project/setup`](components/project/setup/README.md) | Setup's pieces around the table: why it is not shown yet, the automatic apply of Preview's saved changes, and the Live tab's banner. |
 | [`components/project/templates`](components/project/templates/README.md) | The start page's starting points: the bundled built examples and the placeholder templates, their gallery, the suggestions while typing, and the Project name a description gives. |
 | [`components/publishing`](components/publishing/README.md) | Tools, Publishing: the publish in progress, what is Live with Stop Live, every version with its builds, rollback after its consequences, and Live's history. |
