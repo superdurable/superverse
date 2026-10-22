@@ -47,7 +47,7 @@ const (
 	// worktree's snapshot copies; minimumFreeBytes is the free space of the
 	// workspace volume a new worktree needs.
 	maximumSnapshotBytes = 100 << 20
-	minimumFreeBytes     = 1 << 30
+	minimumFreeBytes     = 256 << 20
 	// maximumWorktreeAnswerBytes bounds one helper answer, whose merge lists
 	// name every merged file.
 	maximumWorktreeAnswerBytes = 4 << 20
@@ -174,7 +174,7 @@ func IsCreationRefusal(code toolfailure.Code) bool {
 // nothing. A first creation saves and removes the worktrees of earlier
 // subagents that keep does not name, the Session's unfinished ones, and is
 // refused (snapshot_too_large, workspace_disk_low) when the snapshot would
-// exceed 100 MiB or the volume has less than 1 GiB free.
+// exceed 100 MiB or the volume has less than 256 MiB free.
 func (operations *GitOperations) CreateAgentWorktree(ctx context.Context, client *sandboxd.SandboxClient, agentID string, keep []string) (AgentWorktree, error) {
 	if keep == nil {
 		keep = []string{}

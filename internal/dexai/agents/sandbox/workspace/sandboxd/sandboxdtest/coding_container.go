@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -29,23 +30,38 @@ import (
 // a container restart in a Pod, and replace it with a new container, like a
 // new Pod.
 type codingContainer struct {
-	t          testing.TB
-	image      string
-	name       string
-	connection *grpc.ClientConn
-	client     *sandboxd.SandboxClient
+	t            testing.TB
+	image        string
+	name         string
+	connection   *grpc.ClientConn
+	client       *sandboxd.SandboxClient
+	workspaceMiB int
 }
 
 // StartCodingContainerForTest runs SUPERVERSE_TEST_CODING_IMAGE, a coding image built
 // from the current source, and connects to its real sandboxd. A missing image
 // or Docker fails the test; the container is removed with the test.
 func StartCodingContainerForTest(t testing.TB) *codingContainer {
+	return startCodingContainer(t, 0)
+}
+
+// StartCodingContainerWithWorkspaceForTest runs the real coding container with
+// a size-limited tmpfs workspace, so disk-budget tests use actual filesystem limits.
+func StartCodingContainerWithWorkspaceForTest(t testing.TB, sizeMiB int) *codingContainer {
+	t.Helper()
+	if sizeMiB <= 0 {
+		t.Fatal("workspace size must be positive")
+	}
+	return startCodingContainer(t, sizeMiB)
+}
+
+func startCodingContainer(t testing.TB, workspaceMiB int) *codingContainer {
 	t.Helper()
 	image := os.Getenv("SUPERVERSE_TEST_CODING_IMAGE")
 	if image == "" {
 		t.Fatal("SUPERVERSE_TEST_CODING_IMAGE must name a coding image built from the current source")
 	}
-	container := &codingContainer{t: t, image: image, name: fmt.Sprintf("sv2-coding-test-%d", time.Now().UnixNano())}
+	container := &codingContainer{t: t, image: image, name: fmt.Sprintf("sv2-coding-test-%d", time.Now().UnixNano()), workspaceMiB: workspaceMiB}
 	t.Cleanup(func() {
 		if container.connection != nil {
 			_ = container.connection.Close()
@@ -64,10 +80,14 @@ func (container *codingContainer) Client() *sandboxd.SandboxClient { return cont
 
 func (container *codingContainer) run() {
 	container.t.Helper()
-	output, err := docker(2*time.Minute, "run", "--detach", "--name", container.name,
+	arguments := []string{"run", "--detach", "--name", container.name,
 		"--publish", "127.0.0.1::8080", "--publish", "127.0.0.1::9090",
-		"--env", "SUPERVERSE_PREVIEW_STATE_DIR=/var/lib/superverse/preview", "--env", "SUPERVERSE_POD_UID="+container.name,
-		container.image, "--root-dir=/workspace", "--rest-port=8080", "--grpc-port=9090")
+		"--env", "SUPERVERSE_PREVIEW_STATE_DIR=/var/lib/superverse/preview", "--env", "SUPERVERSE_POD_UID=" + container.name}
+	if container.workspaceMiB != 0 {
+		arguments = append(arguments, "--tmpfs", "/workspace:rw,size="+strconv.Itoa(container.workspaceMiB)+"m,mode=0700,uid=1000,gid=1000")
+	}
+	arguments = append(arguments, container.image, "--root-dir=/workspace", "--rest-port=8080", "--grpc-port=9090")
+	output, err := docker(2*time.Minute, arguments...)
 	if err != nil {
 		container.t.Fatalf("run the coding image: %v: %s", err, output)
 	}

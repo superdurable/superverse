@@ -145,7 +145,7 @@ endpoint; provider keys still belong to each Session and never to server config.
 | Key | Meaning | Default | Range or rule |
 | --- | --- | --- | --- |
 | `hold` | How long the Sandbox stays after the main agent or a Preview command last used it; the Session reclaims the idle Pod at that deadline and keeps the volume | `1h` | `1m` to `168h` |
-| `previewHold` | How long the Sandbox stays after a Preview became READY on it, which the Preview's ready notification tells the Session | `168h` | `1m` to `168h` |
+| `previewHold` | How long the Sandbox stays after a Preview became READY on it, which the Preview's ready notification tells the Session | `72h` | `1m` to `168h` |
 | `profile` | Name of the installed immutable coding profile | `coding-sandbox-profile-coding-v4` | not empty; the chart and `sv2 kind deploy` supply the content-addressed name |
 
 ### `storage`

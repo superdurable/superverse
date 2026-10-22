@@ -162,7 +162,7 @@ Every operation queries before it writes:
   (`TestAgentWorktreeActualSandbox`). An existing base ref is reused. A first
   creation first saves and removes the worktrees of subagents that the caller
   does not name as running, and is refused with `workspace_disk_low` below
-  1 GiB free on the volume and with `snapshot_too_large` above 100 MiB of
+  256 MiB free on the volume and with `snapshot_too_large` above 100 MiB of
   uncommitted and untracked files.
 - **`FinishAgentWorktree`** saves the worktree on top of its base
   (`add -A`, `commit-tree -p base`) as `refs/superverse/agents/<agent ID>/result`,
@@ -225,7 +225,7 @@ environment carries (`sandboxd.RunRemoteHelperJSON`, which replaces an error tha
   branch `superverse/<lane>/<projectID>/<slug>` out: from the remote branch when an earlier
   contribution pushed it, otherwise from main. Its base is `refs/superverse/contributions/<agent ID>/base`
   in the clone; a recorded base is reused. A worktree of a subagent that never finished and still
-  holds the branch is removed first. It is refused with `workspace_disk_low` below 1 GiB free.
+  holds the branch is removed first. It is refused with `workspace_disk_low` below 256 MiB free.
 - **`FinishContribution`** saves the worktree as a commit on its base, by the committer the library names
   (the GitHub App's bot with an upstream), with the subject `connector(<slug>): <summary>` and no
   trailer, into `.../result`. For a completed subagent it verifies that the change touches exactly one
@@ -295,7 +295,14 @@ These tests call an owned, disposable real sandboxd (`SUPERVERSE_TEST_SANDBOX_GR
   records, resumes a merge between its plan and its receipt writing each file
   once, discards, refuses a merge without a result and a snapshot above
   100 MiB, saves and removes an orphan worktree and keeps a running one's. The
-  refusal below 1 GiB of free volume is not provoked.
+  disk-budget boundary is covered separately below.
+
+- `TestAgentWorktreeDiskBudgetActualSandbox` and
+  `TestConnectorWorktreeDiskBudgetActualSandbox` use real coding containers with
+  size-limited tmpfs workspace mounts. A 1 GiB filesystem admits a small dirty
+  source snapshot and a checkout of the official connector library; a 128 MiB
+  filesystem refuses both with `workspace_disk_low` before creating a worktree.
+  These tests do not establish full Preview build capacity or EBS enforcement.
 
 - `TestCommitRecoveryActualGitHubAndSandbox` also needs isolated GitHub effects
   and App credentials (`SUPERVERSE_TEST_GITHUB_EFFECTS=true`, `SUPERVERSE_TEST_GITHUB_OWNER`, `SUPERVERSE_TEST_GITHUB_APP_ID`, `SUPERVERSE_TEST_GITHUB_INSTALLATION_ID` and the App private key in `GITHUB_APP_PRIVATE_KEY_BASE64`). It creates and archives its own repository and covers

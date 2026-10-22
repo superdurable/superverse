@@ -55,7 +55,7 @@ const (
 	DefaultPlatformTurns                   = 3
 	DefaultClosestExamplePick              = false
 	DefaultSandboxHold                     = time.Hour
-	DefaultSandboxPreviewHold              = 7 * 24 * time.Hour
+	DefaultSandboxPreviewHold              = 3 * 24 * time.Hour
 	DefaultSandboxProfile                  = "coding-sandbox-profile-" + infra.CodingSandboxProfile
 	DefaultLocalBuildURL                   = "http://host.docker.internal:29792"
 	DefaultGitHubOwner                     = "superdurable-apps"

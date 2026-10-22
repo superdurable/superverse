@@ -122,7 +122,7 @@ type ContributionResult struct {
 // branch out as the subagent's worktree: from the remote branch when an
 // earlier contribution pushed it, otherwise from main. A recorded base is
 // reused, so a repeated creation creates nothing. It is refused
-// (workspace_disk_low) when the volume has less than 1 GiB free.
+// (workspace_disk_low) when the volume has less than 256 MiB free.
 func (operations *GitOperations) CreateContributionWorktree(ctx context.Context, client *sandboxd.SandboxClient, target ContributionTarget) (ContributionWorktree, error) {
 	remote, err := operations.Library.FetchRemote(ctx)
 	if err != nil {

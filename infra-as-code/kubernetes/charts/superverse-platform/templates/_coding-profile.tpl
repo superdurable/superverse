@@ -64,7 +64,7 @@ namespaceBaseline:
     requestsStorage: 20Gi
   limits:
     container:
-      defaultRequest: {cpu: 500m, memory: 1Gi, ephemeral-storage: 1Gi}
+      defaultRequest: {cpu: 500m, memory: 256Mi, ephemeral-storage: 1Gi}
       default: {cpu: "2", memory: 4Gi, ephemeral-storage: 8Gi}
       min: {cpu: 50m, memory: 64Mi}
       max: {cpu: "4", memory: 8Gi, ephemeral-storage: 20Gi}
@@ -80,7 +80,7 @@ securityContext:
   runAsGroup: 1000
   fsGroup: 1000
 resources:
-  requests: {cpu: 500m, memory: 1Gi, ephemeral-storage: 1Gi}
+  requests: {cpu: 500m, memory: 256Mi, ephemeral-storage: 1Gi}
   limits: {cpu: "2", memory: 4Gi, ephemeral-storage: 8Gi}
 workspace:
   pvcName: workspace

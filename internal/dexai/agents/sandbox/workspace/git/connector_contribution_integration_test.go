@@ -13,6 +13,7 @@ package git
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -23,6 +24,39 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/sandboxd/sandboxdtest"
 	"github.com/superdurable/superversev2/internal/dexai/agents/toolfailure"
 )
+
+// TestConnectorWorktreeDiskBudgetActualSandbox uses real bounded filesystems
+// and the official library clone, without invoking a connector's build gate.
+func TestConnectorWorktreeDiskBudgetActualSandbox(t *testing.T) {
+	for _, size := range []int{1024, 128} {
+		t.Run(fmt.Sprintf("workspace-%dMiB", size), func(t *testing.T) {
+			client := sandboxdtest.StartCodingContainerWithWorkspaceForTest(t, size).Client()
+			shell(t, client, "git init -q -b main /workspace")
+			remote := connectorlibrary.Remote{CloneURL: "https://github.com/superdurable/dex-connectors-library.git", Location: connectorlibrary.LocationSandbox}
+			if size == 1024 {
+				shell(t, client, "git clone -q --bare https://github.com/superdurable/dex-connectors-library.git /tmp/library.git")
+				remote.CloneURL = "file:///tmp/library.git"
+			}
+			const branch = "superverse/localkind/ab12/stripe"
+			request := map[string]any{"branch": branch, "slug": "stripe", "url": remote.CloneURL, "minimumFreeBytes": minimumFreeBytes}
+			var worktree ContributionWorktree
+			err := runContribution(testContext(t), client, "create", "k3n8q5r1", remote, request, &worktree)
+			if size == 1024 {
+				if err != nil || !flowid.IsCommitSHA(worktree.Base) || worktree.Branch != branch {
+					t.Fatalf("a 1 GiB workspace must admit the official connector library: %+v, %v", worktree, err)
+				}
+				return
+			}
+			var typed *sandboxd.ToolFailure
+			if !errors.As(err, &typed) || typed.Code() != toolfailure.WorkspaceDiskLow {
+				t.Fatalf("a workspace below 256 MiB must refuse the contribution before fetching: %v", err)
+			}
+			if got := shell(t, client, "test -e /workspace/.git/superverse/connectors/library && echo unexpected; true"); got != "" {
+				t.Fatalf("the refused contribution created its library: %q", got)
+			}
+		})
+	}
+}
 
 // TestConnectorContributionHelperActualSandbox runs the actual contribution
 // helper through the real sandboxd of a coding container, against a bare copy

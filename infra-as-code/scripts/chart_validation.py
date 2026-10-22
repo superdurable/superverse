@@ -618,6 +618,7 @@ class Render:
                      "a Sandbox must reach the platform server only on the credential read endpoint")
         volume_claim = yaml.safe_load(profile["data"]["pvc.yaml"])["spec"]
         self.fail_if(volume_claim["accessModes"] != ["ReadWriteOncePod" if self.hosted else "ReadWriteOnce"], "the workspace volume must be single-writer where the storage enforces it")
+        self.fail_if(volume_claim["resources"]["requests"]["storage"] != "1Gi", "the default workspace claim must request 1 GiB")
         pod = yaml.safe_load(profile["data"]["sandbox.yaml"])["spec"]["podTemplate"]["spec"]
         self.check_coding_pod(pod)
         identity_token = {"name": "eks-pod-identity-token", "projected": {"defaultMode": 420, "sources": [{"serviceAccountToken": {
@@ -632,6 +633,9 @@ class Render:
     def check_coding_pod(self, pod):
         """coding-v4: tini as PID 1, the Preview engine state on the workspace volume, its preStop stop and the Preview Dex port."""
         container = pod["containers"][0]
+        self.fail_if(container["resources"] != {"requests": {"cpu": "500m", "memory": "256Mi", "ephemeral-storage": "1Gi"},
+                                                "limits": {"cpu": "2", "memory": "4Gi", "ephemeral-storage": "8Gi"}},
+                     "the coding Sandbox must request 256 MiB without changing its CPU or resource limits")
         self.fail_if(pod["terminationGracePeriodSeconds"] != 45 or container["command"] != ["/usr/bin/tini", "--", "/usr/local/bin/sandboxd"],
                      "the Sandbox must run sandboxd under tini with the preStop grace period")
         self.fail_if(container["lifecycle"] != {"preStop": {"exec": {"command": ["/usr/local/bin/superverse-previewctl", "shutdown", "--timeout", "30s"]}}},

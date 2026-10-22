@@ -172,7 +172,7 @@ acts on.
 | `subagent_budget_reached` | call, none | Six subagents were started since the user's last message (checked before the running limit) |
 | `subagent_limit_reached` | call, none | Three subagents are already running |
 | `snapshot_too_large` | call, none | The uncommitted and untracked files a worktree would snapshot exceed 100 MiB; commit, delete or ignore files first |
-| `workspace_disk_low` | platform, none | The volume has less than 1 GiB free, so no worktree is created |
+| `workspace_disk_low` | platform, none | The volume has less than 256 MiB free, so no worktree is created |
 | `agent_not_finished` | call, none | `merge_agent_changes` names a subagent that is still running (one the Session counts as lost is not) |
 | `task_not_found` | call, none | `stop_task` or `merge_agent_changes` names an unknown agent ID |
 
@@ -229,7 +229,7 @@ of the main agent.
   2. A first creation first saves and removes the worktrees of earlier subagents that the
      caller does not name as unfinished (orphans of earlier failures; a worktree that was
      not saved yet is saved into its result ref first). It then refuses the request when
-     the volume has less than 1 GiB free (`workspace_disk_low`) or the dirty snapshot would
+     the volume has less than 256 MiB free (`workspace_disk_low`) or the dirty snapshot would
      exceed 100 MiB (`snapshot_too_large`).
   3. The snapshot uses a temporary index: `read-tree HEAD`, `add -A`, `write-tree`,
      `commit-tree -p HEAD`. It captures uncommitted and untracked (but not ignored) files
@@ -538,8 +538,11 @@ three end-to-end cases stay the only E2E; subagent paths are Dex integration tes
   still refuses a registered checkout; only expiry requests checkout removal.
 - **Unverified until the final acceptance.** Quality of real subagent work; the real
   model's use of the delegation rules; whether `start_agent` and `merge_agent_changes` fit
-  the strict grammar (the live strict-tool test measures it); the refusal below 1 GiB of
-  free volume, which no test provokes.
+  the strict grammar (the live strict-tool test measures it). The disk-budget
+  refusal is exercised separately against real size-limited filesystems by
+  `TestAgentWorktreeDiskBudgetActualSandbox` and
+  `TestConnectorWorktreeDiskBudgetActualSandbox`; hosted EBS enforcement remains
+  outside those tests.
 
 ## Documentation
 

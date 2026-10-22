@@ -25,6 +25,11 @@ entrypoint with sandboxd's ports published on loopback, removed with the test.
 `/tmp`) and `Replace` replaces it like a new Pod. It needs Docker; a missing image
 fails the test.
 
+`StartCodingContainerWithWorkspaceForTest` uses the same real container with a
+size-limited tmpfs mounted at `/workspace`. Disk-budget tests exercise the actual
+filesystem's available bytes, not a substituted disk-space reading. This does
+not establish EBS performance or hosted PVC enforcement.
+
 | File | Responsibility |
 | --- | --- |
 | `owned_sandboxd.go` | `ClientForTest` of the owned sandboxd the environment names |

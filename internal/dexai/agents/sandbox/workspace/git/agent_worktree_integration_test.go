@@ -13,6 +13,7 @@ package git
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
 	"testing"
@@ -22,6 +23,38 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/sandboxd/sandboxdtest"
 	"github.com/superdurable/superversev2/internal/dexai/agents/toolfailure"
 )
+
+// TestAgentWorktreeDiskBudgetActualSandbox exercises the admission threshold
+// against actual bounded filesystems, without replacing the disk-space API.
+func TestAgentWorktreeDiskBudgetActualSandbox(t *testing.T) {
+	for _, size := range []int{1024, 128} {
+		t.Run(fmt.Sprintf("workspace-%dMiB", size), func(t *testing.T) {
+			client := sandboxdtest.StartCodingContainerWithWorkspaceForTest(t, size).Client()
+			shell(t, client, `set -e; cd /workspace; git init -q -b main .
+printf 'base\n' > note.txt
+git add note.txt; git -c user.name=t -c user.email=t@example.com commit -q -m init
+printf 'dirty\n' >> note.txt`)
+			operations := &GitOperations{}
+			worktree, err := operations.CreateAgentWorktree(testContext(t), client, "k3n8q5r1", nil)
+			if size == 1024 {
+				if err != nil {
+					t.Fatalf("a 1 GiB workspace must admit a small snapshot: %v", err)
+				}
+				if got := shell(t, client, "cat "+worktree.Root+"/note.txt"); got != "base\ndirty\n" {
+					t.Fatalf("the snapshot lost dirty source: %q", got)
+				}
+				return
+			}
+			var typed *sandboxd.ToolFailure
+			if !errors.As(err, &typed) || typed.Code() != toolfailure.WorkspaceDiskLow {
+				t.Fatalf("a workspace below 256 MiB must retain the typed refusal: %v", err)
+			}
+			if got := shell(t, client, "cd /workspace; git for-each-ref refs/superverse/agents; git worktree list --porcelain | grep -c '^worktree '"); got != "1\n" {
+				t.Fatalf("the refused creation left a ref or worktree: %q", got)
+			}
+		})
+	}
+}
 
 // TestAgentWorktreeActualSandbox drives the subagent worktree helper through
 // the real sandboxd of a coding image container that the test owns, with the

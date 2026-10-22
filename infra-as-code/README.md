@@ -16,6 +16,15 @@ Karpenter On-Demand launches; delivery can duplicate or fail and needs a confirm
 CodeBuild has no Spot purchase option and is billed per build minute. Local lanes do not exercise EKS capacity,
 Spot interruption or these hosted alerts.
 
+The coding Sandbox and Preview share one Pod. The profile requests 500m CPU and
+256 MiB memory, retaining its 2 CPU / 4 GiB limits, and defaults new workspace
+claims to 1 GiB. Repository files and Preview engine state share that volume;
+large repositories and accumulated build or engine data can exhaust it. New
+subagent and connector worktrees require at least 256 MiB free, while dirty
+snapshots remain capped at 100 MiB. The server's default `sandbox.previewHold`
+is 72 hours after Preview becomes READY. Reclaiming an idle Pod retains its
+workspace volume; Project deletion removes it. Existing claims are not shrunk.
+
 Hosted deployment is described in private operations material.
 The optional monitoring installation is also maintained as private operations material.
 

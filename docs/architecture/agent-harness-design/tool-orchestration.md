@@ -589,7 +589,7 @@ the hint of a platform code unless the code's own hint replaces it.
 | `test_environment_unavailable` | none | The application test engine could not start ([commit gate](commit-gate-and-app-tests.md#stage-4-checks)) |
 | `platform_command_unavailable` | none | `superverse-exec` or `superverse-files` is missing or incompatible |
 | `workspace_unavailable` | none | The call was never dispatched: the workspace could not be restored after repeated losses |
-| `workspace_disk_low` | none | `start_agent`: the volume has less than 1 GiB free, so no subagent worktree was created |
+| `workspace_disk_low` | none | `start_agent`: the volume has less than 256 MiB free, so no subagent worktree was created |
 | `execution_conflict` | none | The ledger saw the same execution ID with a different request digest |
 | `command_interrupted` | unknown | An earlier attempt of a mutating call may have run and the instance that could tell is gone, or the ledger reports the command `lost` or `instance_replaced` |
 | `tool_error` | none or unknown | A non-transient error with no more specific code |

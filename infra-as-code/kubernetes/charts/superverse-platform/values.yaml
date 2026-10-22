@@ -91,7 +91,7 @@ sandboxProfiles:
       # Deploy coding Sandboxes by immutable digest, never a mutable tag.
       digest: ""
     workspace:
-      size: 10Gi
+      size: 1Gi
 nodePools:
   clusterName: ""
   nodeRoleName: ""
