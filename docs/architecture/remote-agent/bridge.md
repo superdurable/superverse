@@ -420,7 +420,9 @@ are local JSON only.
   trip, echo suppression, Stop, takeover by a second Bridge, reconnection with an unacknowledged
   report, history import bounds, refusal of an unlisted Orca version.
 - **Acceptance** with the real Codex model on the owner's machine before the feature is announced;
-  the owner decides when and with which account, as for any real-model acceptance.
+  the owner decides when and with which account. Any real LLM API also requires a strong, stated
+  reason approved by the platform developer before the run, recorded with the model in the
+  release record or PR Tests section.
 - The provider boundary runs the Bridge race, real Orca PTY and protocol cases, real Native
   Bridge/Dex integration, and the lane selected by `make required-lanes`. Direct adapters require
   their own real-provider tests and acceptance when implemented. A one-write adapter must prove

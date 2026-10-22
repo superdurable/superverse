@@ -715,9 +715,10 @@ is the reference for scenarios, markers and checks.
   model, because a turn needs a real Sandbox. The package's `Start` can also serve a test
   process.
 - A Kind acceptance receipt records the server configuration profile and the model the E2E
-  cases ran on. Whether the final acceptance before a publication to AWS runs the mock model or a real
-  Claude model, and which one, is the platform developer's decision, asked before the run and
-  never chosen by an agent: `SUPERVERSE_E2E_MODEL_TARGET` of `sv2 kind e2e` names it, and
+  cases ran on. The final acceptance before a publication to AWS defaults to the mock model. Any real
+  model or real LLM API requires a strong, stated reason approved by the platform developer
+  before the run; record the model and, when real, the reason in the release record or PR Tests
+  section. Set `SUPERVERSE_E2E_MODEL_TARGET=mock` for `sv2 kind e2e` by default, and
   the receipt records it as `modelTarget`. `release attest` accepts only a receipt deployed
   from the unchanged `local-kind-acceptance.yaml` and copies its `modelTarget` into the
   release record.
@@ -774,8 +775,8 @@ or subagent kind ships with its scenario and the test that runs it.
 
 **What it cannot test.** Real model behavior and quality, Claude's server-side signature and
 binding checks, cache hits and refusals. Those are covered by the short
-[live API tests](#tests) and by a final acceptance on a real Claude model, when the platform
-developer chooses one for it.
+[live API tests](#tests) and by a final acceptance on a real Claude model, only under the approved
+strong-reason exception to the mock verification default.
 
 ## Flow contract
 
@@ -863,14 +864,15 @@ are described in [streaming and Studio](streaming-and-studio.md#uiux).
 ## Tests
 
 Per the test policy, the model is the only substitute: the mock model in every pull
-request, and a real Claude model only when the platform developer asks for it (the live API
-tests, and the final acceptance when the developer chooses a real model for it).
+request, including final acceptance. A real model or any real LLM API runs only for a strong, stated
+reason approved by the platform developer before the run; record the model and reason in the
+release record or PR Tests section. This exception also governs live API tests and LLM connectors.
 
 | Where | Covers |
 | --- | --- |
 | Dex integration tests with the mock model | Compaction trigger from the scenario's `usage`, `<summary>` extraction and the `tool_choice: none` retry; rollover on a changed prompt digest, model or base effort; `unsummarized` at the hard limit; model failure returns to waiting for the user; `max_tokens`, `model_context_window_exceeded` and non-retryable error routing; a model switch rolls over at the next turn; selective loading (checked read-only with `dexcli ... --no-hydrate`). |
-| Live Claude API tests (`make test-claude-live`; a missing key is `t.Fatal`) | Run only for the Claude change and the final acceptance. A multi-turn tool loop in `error` mode plus `count_tokens` replay; cache hits; a compaction; error classification; one accepted request per model of `ModelProfile`. |
-| Final acceptance | Before a deployment to AWS test, the three Local Kind journeys on `local-kind-acceptance.yaml` (which keeps `agent.thinkingPrefixMismatch: error` of its base layer), with the model the platform developer chose for the run. On a real Claude model a broken append-only rule fails this run. |
+| Live Claude API tests (`make test-claude-live`; a missing key is `t.Fatal`) | Run only under the approved strong-reason exception to the mock verification default. A multi-turn tool loop in `error` mode plus `count_tokens` replay; cache hits; a compaction; error classification; one accepted request per model of `ModelProfile`. |
+| Final acceptance | Before a deployment to AWS test, the three Local Kind journeys on `local-kind-acceptance.yaml` (which keeps `agent.thinkingPrefixMismatch: error` of its base layer), with the mock model by default, or an approved real-model exception. On a real Claude model a broken append-only rule fails this run. |
 
 Unverified: refusal and fallback (no safe, repeatable trigger), HTTP 429 and 529 behavior,
 and anything that depends on model behavior; the observed outcome is recorded as it was.

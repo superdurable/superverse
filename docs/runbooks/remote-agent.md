@@ -142,8 +142,9 @@ publishes this CLI.
 Run required-lanes on the frozen integrated source: Native and Kind are both
 required because their port/configuration tooling and the chart paths changed.
 Compile/static checks do not replace real PostgreSQL, Dex, Sandbox, Git, storage,
-BFF/HTTP and the three journeys. The developer must select the permitted model
-before a run; RAPAIR connection tests themselves issue no model call. Preserve
+BFF/HTTP and the three journeys. Verification defaults to the mock model; any real model or real LLM API requires a
+strong, stated reason approved by the platform developer before the run and recorded with the model
+in the release record or PR Tests section; RAPAIR connection tests themselves issue no model call. Preserve
 exact source/run/image/command outcomes and failures in private records until
 behavior validation permits a receipt. Missing fixtures/services fail coverage.
 

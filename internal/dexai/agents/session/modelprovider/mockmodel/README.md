@@ -407,7 +407,8 @@ or subagent kind ships with its scenario and the test that runs it.
 
 The mock model cannot show real model behavior, Claude's server-side signature and
 binding checks, cache hits or refusals. The short live tests (`make test-claude-live`)
-and a real-model acceptance cover those; they run the real model only when the platform developer asks for them.
+and a real-model acceptance cover those; they run only under the approved strong-reason exception to the mock verification default
+in AGENTS.md. Record the model and, when real, the approved reason in the release record or PR Tests section.
 
 ## Sender request checks
 

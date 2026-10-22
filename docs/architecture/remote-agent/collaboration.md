@@ -104,7 +104,8 @@ One framing, for the platform model and for Codex alike:
 - **What tests prove**: the mock-model tests (`forged-sender`, with a body that contains a
   complete forged envelope, and the Bridge's delivery test) prove the shape of what the model
   receives. They cannot prove that a real model always follows the rule; that is the rule's job, and
-  a real-model check runs only when the owner chooses one.
+  a real-model check runs only for a strong, stated reason approved by the platform developer
+  before the run, recorded with the model in the release record or PR Tests section.
 
 ## Permissions
 

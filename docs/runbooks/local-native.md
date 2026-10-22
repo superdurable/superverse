@@ -7,8 +7,8 @@ Preview and Live gateway and a local registry
 as one Docker Compose project, and every Sandbox, Preview and Live workload as containers that the server's `docker`
 runtime creates by the Docker runtime. It uses no Kind cluster.
 It is the lane of every change that touches no Kind path; `make required-lanes` names when Local Kind runs it instead
-([local lanes](../../internal/dexai/agents/README.md)), and only the Local Kind acceptance on `local-kind-acceptance.yaml`, with the model the platform developer
-decided on, satisfies the AWS publication gate. It serves ports of its own and takes no lock of Kind's, so it runs
+([local lanes](../../internal/dexai/agents/README.md)), and only the Local Kind acceptance on `local-kind-acceptance.yaml`, with the mock model by default
+(or a real model under the approved strong-reason exception), satisfies the AWS publication gate. It serves ports of its own and takes no lock of Kind's, so it runs
 [beside Local Kind](#beside-local-kind).
 
 ## Prerequisites
@@ -395,6 +395,13 @@ so the engine does not start it either. `./infra-as-code/sv2 kind stop` stops it
 long-running `sv2 kind ports` ends with it, and `sv2 kind builder` keeps the node counted as in use until it ends.
 
 ## Actual acceptance
+
+Application connectors (the template's summary model) are separate from the Agent's model and
+also follow the mock verification default. Currently `create-project.spec.ts` and
+`template-approval.spec.ts` require a real OpenAI connection through `SUPERVERSE_E2E_OPENAI_FILE`,
+even when the Agent uses mock. Until the mock LLM follow-up lands, these cases require the
+approved strong-reason exception or are skipped with the owner's waiver; skipped cases are not
+acceptance.
 
 With an owner started with `--studio build` and ready, the three real browser cases run on the local Git host and the
 mock model; a Session switched to Claude needs the key. `create-project.spec.ts` and `template-approval.spec.ts` also

@@ -127,8 +127,7 @@ the GitHub App private key (a `repohost: localgit` deploy generates the signing 
 profile that does not configure Local Kind (`native.yaml` is for `native start`). Deploy also removes keys from the live server Secret that it no longer
 sets, so a setting of an earlier deploy cannot survive beside the configuration document. `local-kind.yaml` offers the mock model and starts new Sessions on it;
 `local-kind-acceptance.yaml` offers the mock model beside the Claude models and starts new Sessions on a Claude model. The deployment inputs and the receipt record the profile name, the
-digests of its layers and the document; the browser cases follow the accepted deployment. Whether the final acceptance runs the mock model or a real
-Claude model, and which, is the platform developer's decision: ask before the run and never choose it yourself. `kind e2e` on the acceptance
+digests of its layers and the document; the browser cases follow the accepted deployment. Verification defaults to the mock model, including Local Kind acceptance. Any real model or real LLM API requires a strong, stated reason approved by the platform developer before the run; record the model and, when real, the reason in the release record or PR Tests section. `kind e2e` on the acceptance
 profile refuses to run without `SUPERVERSE_E2E_MODEL_TARGET` (`mock`, or a model such as `anthropic/claude-opus-5-5`) and records it as
 `modelTarget` in the receipt. `release attest` accepts only a receipt deployed from the unchanged `local-kind-acceptance.yaml`, requires
 its `modelTarget` and copies it into the attestation, so the release record shows which model the accepted run used

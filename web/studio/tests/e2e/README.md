@@ -47,7 +47,7 @@ with TLS verification enabled.
 The acceptance runners are `./infra-as-code/sv2 native e2e` and
 `./infra-as-code/sv2 kind e2e`, which run exactly the three root specs on the lanes
 `make required-lanes` names; only a Kind receipt of the unchanged `local-kind-acceptance.yaml` gates an AWS
-wave, with the model the platform developer decided on ([Mock model](#mock-model)). Playwright's `testDir` (`tests/e2e`) includes every
+wave, with the mock model by default or an approved real-model exception ([Mock model](#mock-model)). Playwright's `testDir` (`tests/e2e`) includes every
 sub-directory, so `npm --prefix web/studio run test:e2e` (and `npm test`) runs
 every spec: also the `integration/` scenarios, which fail without their private
 fixtures, and the `journey/` specs, which keep their resources. Its result is
@@ -454,7 +454,9 @@ New Sessions on Local Kind and Native start on the mock model
 preselects Sonnet for a non-admin account, which needs the Claude key, so the specs of those
 lanes choose Mock explicitly; a real-model run is never automatic. A spec reads the
 Session's model from its Snapshot (`runsMockModel` in `support/mock/`).
-`SUPERVERSE_E2E_MODEL_TARGET`, the platform developer's decision, decides the model of a spec
+Verification defaults to the mock model. Any real model or real LLM API requires a strong, stated
+reason approved by the platform developer before the run, recorded with the model in the release
+record or PR Tests section. `SUPERVERSE_E2E_MODEL_TARGET` decides the model of a spec
 when it is set: `mock` chooses the mock model and a scenario's first input on the creation page
 (`chooseMockFirstInput`), and a Claude model is chosen there with the prompt typed (`typePrompt`).
 When it is unset, a lane that offers the mock model chooses it, and a lane that does not fails
@@ -500,17 +502,20 @@ reply of the mock model itself, such as an input out of order, fails the spec wi
   mock model, so that never counts as passed.
 - A run on a local profile is not publication evidence. The final acceptance deploys
   `kind deploy --config cmd/superverse-server/config/local-kind-acceptance.yaml`, which offers
-  the mock model beside the Claude models, and the platform developer decides before the run
-  whether it runs the mock model or a real Claude model, and which: the agent asks and never
-  chooses. `kind e2e` on that profile refuses to run without `SUPERVERSE_E2E_MODEL_TARGET`
+  the mock model beside the Claude models, and verification defaults to the mock model. Any real model or real LLM API requires
+  prior platform-developer approval of a strong, stated reason. `kind e2e` on that profile refuses to run without `SUPERVERSE_E2E_MODEL_TARGET`
   (`mock`, or a Claude model such as `anthropic/claude-opus-5-5`), hands it to the specs and
   records it as `modelTarget` in the receipt, beside the server configuration profile and
   `mockModel`. `release attest` accepts only a receipt deployed from the unchanged profile and
   copies its `modelTarget` into the attestation. The settings are in the
   [server configuration reference](../../../../cmd/superverse-server/config/README.md).
 
-Application connectors (the template's summary model) are not the Agent's model: Preview
-and Live still call the real provider configured through Studio.
+Application connectors (the template's summary model) are separate from the Agent's model and
+also follow the mock verification default. Currently `create-project.spec.ts` and
+`template-approval.spec.ts` require a real OpenAI connection through `SUPERVERSE_E2E_OPENAI_FILE`,
+even when the Agent uses mock. Until the mock LLM follow-up lands, these cases require the
+approved strong-reason exception or are skipped with the owner's waiver; skipped cases are not
+acceptance.
 
 ## Agent model coverage
 

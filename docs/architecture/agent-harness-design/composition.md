@@ -398,7 +398,7 @@ Profiles, checked in next to `config.go`:
 |---|---|---|
 | `local-kind.yaml` | Local Kind, the default of `sv2 kind deploy --config` | the mock model offered and new Sessions on it, `repohost: localgit` |
 | `native.yaml` | Local Native, complete on its own: `runtime: docker`, `environment: test` only | the mock model offered and new Sessions on it, `repohost: localgit`, the fixed loopback addresses of the host processes and of the Compose platform, and the `native.*` keys |
-| `local-kind-acceptance.yaml` | The final acceptance before a publication to AWS, layered over `local-kind.yaml` | new Sessions on Opus 5.5 with the mock model still offered, `repohost: github` with `github.connectors` naming the connectors test repository; the platform developer chooses the model the E2E cases run on |
+| `local-kind-acceptance.yaml` | The final acceptance before a publication to AWS, layered over `local-kind.yaml` | new Sessions on Opus 5.5 with the mock model still offered, `repohost: github` with `github.connectors` naming the connectors test repository; verification explicitly selects `mock` by default; any real LLM API requires prior platform-developer approval of a strong, stated reason, recorded with the model in the release record or PR Tests section |
 
 - **Deployment.** The chart renders the configuration as a ConfigMap, mounts it and sets
   `SUPERVERSE_CONFIG_FILE`; a change of its digest rolls the server. Hosted environments take their values

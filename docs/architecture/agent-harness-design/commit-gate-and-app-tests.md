@@ -316,7 +316,7 @@ Go SDK v1.5.0. The current pins are in [the platform specification](../supervers
 
 | Subject | Policy |
 |---|---|
-| Superverse's own tests | Real dependencies only: Dex, Kubernetes (Kind) or Docker, a real Sandbox, GitHub test repositories, S3 and MinIO. The one controlled substitute is the mock model, in every pull request; a real model runs the final acceptance before AWS ([context management](context-management.md#mock-model-for-tests)) |
+| Superverse's own tests | Real dependencies only: Dex, Kubernetes (Kind) or Docker, a real Sandbox, GitHub test repositories, S3 and MinIO. The one controlled substitute is the mock model, in every pull request; the final acceptance before AWS also defaults to mock, with any real LLM API requiring prior developer approval of a strong, stated reason ([context management](context-management.md#mock-model-for-tests)) |
 | Generated applications | Each Flow is tested through its API against a real Dex and Temporal that exist only for that run, with mocked connectors. These tests verify source; they are never Superverse, provider or acceptance evidence |
 | `dex-connectors-library` | The library's own rules ([connectors.md](connectors.md)) |
 

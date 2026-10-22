@@ -2244,8 +2244,9 @@ separate. Never run both platform Workers concurrently or treat a Native receipt
 as a Kind receipt.
 
 Every major change must pass all three complete Local Kind scenarios on
-`local-kind-acceptance.yaml` before an AWS wave, with the mock model or a real Claude
-model as the platform developer decides before the run; the receipt records the answer. Real Studio/BFF/gRPC, Dex/Temporal, Agent, Git push, build, immutable
+`local-kind-acceptance.yaml` before an AWS wave, with the mock model by default. Any real model or real LLM API requires a strong, stated
+reason approved by the platform developer before the run; record the model and, when real, the
+reason in the release record or PR Tests section. Real Studio/BFF/gRPC, Dex/Temporal, Agent, Git push, build, immutable
 configuration, Go/SDK scoped storage and business application behavior are required.
 Scripted fixtures are not business acceptance. Local API coverage does not replace
 hosted provider acceptance.

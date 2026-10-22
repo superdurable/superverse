@@ -102,7 +102,9 @@ request may supply either actor. The actor integration scenario checks the retai
 typed public projection and canonical gRPC response after consumption.
 
 `TestLiveExampleComparison` (build tag `live`, `make test-example-comparison-live` only) is the
-real-model comparison of the closest-example start: four Projects on Claude Sonnet 5.5 from the
+real-model comparison of the closest-example start, requiring a strong, stated reason approved
+by the platform developer before the run and recorded with the model in the release record or
+PR Tests section: four Projects on Claude Sonnet 5.5 from the
 labelled set's Slack thread approval request, created through API servers with
 `agent.closestExamplePick` on and off, each observed for at most 30 minutes from its creation until
 its first build or the end of its first turn with no background command or subagent left running,
