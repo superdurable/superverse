@@ -110,12 +110,49 @@ type responseItem struct {
 	Name      string                            `json:"name"`
 	Arguments string                            `json:"arguments"`
 	Encrypted string                            `json:"encrypted_content"`
-	Summary   []json.RawMessage                 `json:"summary"`
 	Content   []struct {
 		Type    string `json:"type"`
 		Text    string `json:"text"`
 		Refusal string `json:"refusal"`
 	} `json:"content"`
+}
+
+// UnmarshalJSON discards readable reasoning before an item reaches aggregation or replay.
+func (item *responseItem) UnmarshalJSON(raw []byte) error {
+	type wireItem responseItem
+	var decoded wireItem
+	envelope := struct {
+		*wireItem
+		Content []json.RawMessage `json:"content"`
+	}{wireItem: &decoded}
+	if err := json.Unmarshal(raw, &envelope); err != nil {
+		return err
+	}
+	if decoded.Type != ItemReasoning.String() {
+		for _, rawPart := range envelope.Content {
+			var identity struct {
+				Type    string `json:"type"`
+				Thought bool   `json:"thought"`
+			}
+			if err := json.Unmarshal(rawPart, &identity); err != nil {
+				return err
+			}
+			if identity.Type == "reasoning_text" || identity.Type == "summary_text" || identity.Thought {
+				continue
+			}
+			var visible struct {
+				Type    string `json:"type"`
+				Text    string `json:"text"`
+				Refusal string `json:"refusal"`
+			}
+			if err := json.Unmarshal(rawPart, &visible); err != nil {
+				return err
+			}
+			decoded.Content = append(decoded.Content, visible)
+		}
+	}
+	*item = responseItem(decoded)
+	return nil
 }
 
 type usage struct {
@@ -147,8 +184,24 @@ type responseStream struct {
 }
 
 func (stream *responseStream) event(raw []byte, request conversation.ModelRequest) (bool, error) {
-	if readableReasoning(raw) {
-		return false, rejected(failurePlaintextReasoning)
+	var identity struct {
+		Type     string `json:"type"`
+		Sequence *int   `json:"sequence_number"`
+		Index    int    `json:"output_index"`
+	}
+	if json.Unmarshal(raw, &identity) != nil {
+		return false, rejected(failureInvalidStreamEvent)
+	}
+	switch identity.Type {
+	case EventResponseReasoningTextDelta.String(), EventResponseReasoningSummaryDelta.String(), EventResponseReasoningTextDone.String(), EventResponseReasoningSummaryDone.String(), EventResponseReasoningPartAdded.String(), EventResponseReasoningPartDone.String():
+		if identity.Sequence == nil || *identity.Sequence != stream.lastSequence+1 {
+			return false, rejected(failureInvalidStreamOrder)
+		}
+		if identity.Index < 0 || identity.Index >= maximumOutputItems {
+			return false, rejected(failureInvalidOutputIndex)
+		}
+		stream.lastSequence = *identity.Sequence
+		return false, nil
 	}
 	var event struct {
 		Type     string       `json:"type"`
@@ -304,8 +357,6 @@ func (stream *responseStream) event(raw []byte, request conversation.ModelReques
 		}
 		stream.outputLimit, stream.usage, stream.model = true, event.Response.Usage, event.Response.Model
 		return true, nil
-	case EventResponseReasoningTextDelta.String(), EventResponseReasoningSummaryDelta.String():
-		return false, rejected(failurePlaintextReasoning)
 	// Structural frames carry no business content; no reasoning field is retained.
 	case EventResponseCreated.String(), EventResponseInProgress.String(), EventResponseContentPartAdded.String(), EventResponseContentPartDone.String(), EventResponseOutputTextDone.String(), EventResponseFunctionArgumentsDone.String(), EventResponseRefusalDone.String():
 	default:
@@ -326,7 +377,10 @@ func (stream *responseStream) reply(request conversation.ModelRequest, policy Po
 		}
 		switch item.Type {
 		case ItemReasoning.String():
-			if policy.Replay != conversation.ReplayEncryptedOpaque || item.Encrypted == "" || len(item.Summary) > 0 || len(item.Content) > 0 {
+			if item.Encrypted == "" {
+				continue
+			}
+			if policy.Replay != conversation.ReplayEncryptedOpaque {
 				return conversation.ModelReply{}, rejected(failureInvalidReasoningReplay)
 			}
 			replay := conversation.OpaqueReplay{Provider: policy.Provider.String(), WireMode: policy.WireMode.String(), Position: len(reply.Blocks), ItemID: item.ID, Status: conversation.ProviderReplyCompleted, Ciphertext: item.Encrypted}
@@ -416,9 +470,6 @@ func (stream *chatStream) event(raw []byte, request conversation.ModelRequest) (
 		}
 		return true, nil
 	}
-	if readableReasoning(raw) {
-		return false, rejected(failurePlaintextReasoning)
-	}
 	var event struct {
 		Model   string          `json:"model"`
 		Error   json.RawMessage `json:"error"`
@@ -427,8 +478,6 @@ func (stream *chatStream) event(raw []byte, request conversation.ModelRequest) (
 			Finish *string `json:"finish_reason"`
 			Delta  struct {
 				Content   string `json:"content"`
-				Reasoning string `json:"reasoning_content"`
-				Thinking  string `json:"thinking"`
 				ToolCalls []struct {
 					Index int `json:"index"`
 					chatCall
@@ -460,9 +509,6 @@ func (stream *chatStream) event(raw []byte, request conversation.ModelRequest) (
 			return false, rejected(failureInvalidChoiceOrder)
 		}
 		delta := choice.Delta
-		if delta.Reasoning != "" || delta.Thinking != "" {
-			return false, rejected(failurePlaintextReasoning)
-		}
 		if delta.Content != "" {
 			stream.text.WriteString(delta.Content)
 			if request.WriteAssistant != nil {
@@ -490,7 +536,7 @@ func (stream *chatStream) event(raw []byte, request conversation.ModelRequest) (
 				call.ID = part.ID
 			}
 			if part.Type != "" {
-				if call.Type != "" || part.Type != ItemFunction.String() {
+				if part.Type != ItemFunction.String() || call.Type != "" && call.Type != part.Type {
 					return false, rejected(failureInvalidToolType)
 				}
 				call.Type = part.Type
@@ -614,56 +660,6 @@ func toolInputProgress(request conversation.ModelRequest, id, name, arguments st
 	if request.WriteToolInput != nil && id != "" && name == string(conversation.ToolConfirmRequirements) {
 		request.WriteToolInput(conversation.ToolInputProgress{CallID: conversation.CallID(id), Name: conversation.ToolConfirmRequirements, Input: arguments, Complete: complete})
 	}
-}
-
-// readableReasoning checks protocol payloads, not echoed request schemas or metadata.
-// Tool arguments and ordinary text stay atomic strings; recursion has a fixed bound.
-func readableReasoning(raw json.RawMessage) bool { return readablePayload(raw, 0, "") }
-
-func readablePayload(raw json.RawMessage, depth int, parent string) bool {
-	if depth > 16 {
-		return true
-	}
-	var object map[string]json.RawMessage
-	if json.Unmarshal(raw, &object) == nil && object != nil {
-		for key, value := range object {
-			switch key {
-			case "reasoning_content", "thinking", "thoughts", "summary":
-				if !emptyProtocolValue(value) {
-					return true
-				}
-			case "reasoning":
-				// The response-level reasoning object echoes effort/summary configuration.
-				// Actual reasoning items live in output; Chat reasoning lives in delta.
-				if parent != "response" && !emptyProtocolValue(value) {
-					return true
-				}
-			case "thought":
-				if string(value) == "true" {
-					return true
-				}
-			case "type":
-				var kind string
-				if json.Unmarshal(value, &kind) == nil && (kind == "reasoning_text" || kind == "summary_text") {
-					return true
-				}
-			case "response", "output", "item", "choices", "delta", "content", "part", "extra_content", "google", "tool_calls", "function":
-				if readablePayload(value, depth+1, key) {
-					return true
-				}
-			}
-		}
-	} else {
-		var array []json.RawMessage
-		if json.Unmarshal(raw, &array) == nil {
-			for _, value := range array {
-				if readablePayload(value, depth+1, parent) {
-					return true
-				}
-			}
-		}
-	}
-	return false
 }
 
 func emptyProtocolValue(raw json.RawMessage) bool {

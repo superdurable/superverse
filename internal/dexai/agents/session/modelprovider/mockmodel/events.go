@@ -166,6 +166,15 @@ func writeOpenAIStream(ctx context.Context, w http.ResponseWriter, id, model str
 		answer.stopReason = conversation.StopReasonMaxTokens
 	}
 	answer.blocks = compatibleReplyBlocks(answer, mode)
+	if answer.custom && mode == conversation.OpenAIResponses {
+		kept := make([]block, 0, len(answer.blocks))
+		for _, b := range answer.blocks {
+			if b.kind != conversation.BlockTypeThinking {
+				kept = append(kept, b)
+			}
+		}
+		answer.blocks = kept
+	}
 	if fault == WireFaultOutputLimitTextForTest {
 		answer.blocks = []block{{kind: conversation.BlockTypeText, text: "Synthetic completed text at the output limit."}}
 	}
@@ -211,6 +220,38 @@ func writeOpenAIStream(ctx context.Context, w http.ResponseWriter, id, model str
 		}
 		return nil
 	}
+	if fault == WireFaultQwenChunksForTest || fault == WireFaultQwenConflictingTypeForTest {
+		if err := send("", chatFrame(model, map[string]any{"role": "assistant", "content": "", "reasoning_content": nil}, nil)); err != nil {
+			return err
+		}
+		if err := send("", chatFrame(model, map[string]any{"reasoning_content": "synthetic forbidden reasoning"}, nil)); err != nil {
+			return err
+		}
+		if err := send("", chatFrame(model, map[string]any{"role": nil, "content": "\n\n", "reasoning_content": nil, "tool_calls": nil}, nil)); err != nil {
+			return err
+		}
+		if err := send("", chatFrame(model, map[string]any{"role": nil, "content": nil, "reasoning_content": nil, "tool_calls": []any{map[string]any{"id": "call_qwen_weather", "index": 0, "type": openaicompat.ItemFunction.String(), "function": map[string]any{"name": "get_weather", "arguments": ""}}}}, nil)); err != nil {
+			return err
+		}
+		for _, piece := range []string{"{", "\"city\"", ": ", "\"Paris\"", "}"} {
+			kind := openaicompat.ItemFunction.String()
+			if fault == WireFaultQwenConflictingTypeForTest {
+				kind = "conflicting_type"
+			}
+			if err := send("", chatFrame(model, map[string]any{"tool_calls": []any{map[string]any{"id": nil, "index": 0, "type": kind, "function": map[string]any{"name": nil, "arguments": piece}}}}, nil)); err != nil {
+				return err
+			}
+		}
+		if err := send("", map[string]any{"model": model, "usage": nil, "choices": []any{map[string]any{"index": 0, "delta": map[string]any{"reasoning_content": nil}, "finish_reason": openaicompat.FinishToolCalls.String(), "matched_stop": 248046}}}); err != nil {
+			return err
+		}
+		_, err := fmt.Fprint(w, "data: [DONE]\n\n")
+		if flusher != nil {
+			flusher.Flush()
+		}
+		return err
+	}
+
 	if fault == WireFaultStreamRejectedForTest || fault == WireFaultChatRejectedForTest {
 		failure := map[string]any{"code": "invalid_prompt", "type": "invalid_request_error", "message": "Synthetic secret-bearing provider message must be discarded."}
 		if mode == conversation.OpenAIResponses {
@@ -221,11 +262,22 @@ func writeOpenAIStream(ctx context.Context, w http.ResponseWriter, id, model str
 		}
 		return send("", map[string]any{"error": failure})
 	}
-	if fault == WireFaultPlaintextForTest {
+	if fault == WireFaultPlaintextForTest || answer.protocolFault == faultCompatibleReasoning {
 		if mode == conversation.OpenAIResponses {
-			return send(openaicompat.EventResponseReasoningTextDelta.String(), map[string]any{"delta": "synthetic forbidden reasoning"})
+			if err := send(openaicompat.EventResponseReasoningTextDelta.String(), map[string]any{"delta": "synthetic forbidden reasoning"}); err != nil {
+				return err
+			}
+			if err := send(openaicompat.EventResponseReasoningSummaryDelta.String(), map[string]any{"delta": "synthetic forbidden reasoning"}); err != nil {
+				return err
+			}
+			for _, kind := range []openaicompat.EventType{openaicompat.EventResponseReasoningTextDone, openaicompat.EventResponseReasoningSummaryDone, openaicompat.EventResponseReasoningPartAdded, openaicompat.EventResponseReasoningPartDone} {
+				if err := send(kind.String(), map[string]any{"text": "synthetic forbidden reasoning", "part": map[string]string{"type": "summary_text", "text": "synthetic forbidden reasoning"}}); err != nil {
+					return err
+				}
+			}
+		} else if err := send("", chatFrame(model, map[string]any{"reasoning_content": "synthetic forbidden reasoning", "thinking": "synthetic forbidden reasoning"}, nil)); err != nil {
+			return err
 		}
-		return send("", chatFrame(model, map[string]any{"reasoning_content": "synthetic forbidden reasoning"}, nil))
 	}
 	if mode == conversation.OpenAIChatCompletions {
 		toolIndex := 0
@@ -235,13 +287,13 @@ func writeOpenAIStream(ctx context.Context, w http.ResponseWriter, id, model str
 				continue
 			case conversation.BlockTypeText:
 				for _, piece := range chunks(b.text, deltaRunes) {
-					if err := send("", chatFrame(model, map[string]any{"content": piece}, nil)); err != nil {
+					if err := send("", chatFrame(model, map[string]any{"content": piece, "reasoning_content": compatibleReasoning(fault, answer.protocolFault)}, nil)); err != nil {
 						return err
 					}
 				}
 			case conversation.BlockTypeToolUse:
 				for index, piece := range chunks(string(b.input), deltaRunes) {
-					call := map[string]any{"index": toolIndex, openaicompat.ItemFunction.String(): map[string]string{"arguments": piece}}
+					call := map[string]any{"index": toolIndex, "type": openaicompat.ItemFunction.String(), "id": nil, openaicompat.ItemFunction.String(): map[string]any{"name": nil, "arguments": piece}}
 					if index == 0 {
 						if provider == conversation.ProviderGemini && !answer.custom && toolIndex == 0 && fault != WireFaultMissingReplayForTest && !limited {
 							call["extra_content"] = map[string]any{"google": map[string]string{"thought_signature": fixtureCiphertext("mock-encrypted-"+b.id, fault)}}
@@ -292,6 +344,10 @@ func writeOpenAIStream(ctx context.Context, w http.ResponseWriter, id, model str
 			itemID = final["id"].(string)
 			final["encrypted_content"] = fixtureCiphertext(final["encrypted_content"].(string), fault)
 			initial = map[string]any{"type": openaicompat.ItemReasoning.String(), "id": itemID, "summary": []any{}}
+			if fault == WireFaultPlaintextForTest {
+				final["summary"] = []any{map[string]string{"type": "summary_text", "text": "synthetic forbidden reasoning"}}
+				final["content"] = []any{map[string]string{"type": "reasoning_text", "text": "synthetic forbidden reasoning"}}
+			}
 		case conversation.BlockTypeText:
 			initial = map[string]any{"type": openaicompat.ItemMessage.String(), "id": itemID, "role": "assistant", "status": conversation.ProviderReplyInProgress, "content": []any{}}
 			final = map[string]any{"type": openaicompat.ItemMessage.String(), "id": itemID, "role": "assistant", "status": conversation.ProviderReplyCompleted, "content": []any{map[string]any{"type": openaicompat.ItemOutputText.String(), "text": b.text, "annotations": []any{}}}}
@@ -374,6 +430,13 @@ func writeOpenAIStream(ctx context.Context, w http.ResponseWriter, id, model str
 	return send(openaicompat.EventResponseCompleted.String(), map[string]any{"response": map[string]any{"id": id, "status": conversation.ProviderReplyCompleted, "model": model, "output": output, "tools": echoTools, "reasoning": map[string]any{"effort": nil, "summary": nil}, "usage": map[string]int64{"input_tokens": answer.inputTokens, "output_tokens": answer.outputTokens}}})
 }
 
+func compatibleReasoning(fault WireFaultForTest, scenarioFault protocolFault) string {
+	if fault == WireFaultPlaintextForTest || scenarioFault == faultCompatibleReasoning {
+		return "synthetic forbidden reasoning"
+	}
+	return ""
+}
+
 func chatFrame(model string, delta map[string]any, finish any) map[string]any {
 	return map[string]any{"error": nil, "model": model, "choices": []any{map[string]any{"index": 0, "delta": delta, "finish_reason": finish}}}
 }
@@ -395,6 +458,8 @@ var (
 	WireFaultHTTP429ForTest                   = WireFaultForTest{"http_429"}
 	WireFaultHTTP503ForTest                   = WireFaultForTest{"http_503"}
 	WireFaultTruncatedForTest                 = WireFaultForTest{"truncated"}
+	WireFaultQwenChunksForTest                = WireFaultForTest{"qwen_tool_chunks"}
+	WireFaultQwenConflictingTypeForTest       = WireFaultForTest{"qwen_conflicting_type"}
 	WireFaultPlaintextForTest                 = WireFaultForTest{"plaintext"}
 	WireFaultMissingReplayForTest             = WireFaultForTest{"missing_replay"}
 	WireFaultOversizedReplayForTest           = WireFaultForTest{"oversized_replay"}

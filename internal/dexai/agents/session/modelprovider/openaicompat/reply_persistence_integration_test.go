@@ -9,9 +9,11 @@
 package openaicompat_test
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"io"
 	"log/slog"
@@ -22,6 +24,7 @@ import (
 	"time"
 
 	"github.com/superdurable/dex/sdk-go/dex"
+	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
 	"github.com/superdurable/superversev2/internal/comm/dexflow/dexflowtest"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
@@ -45,6 +48,7 @@ type CompatibleReplyPersistenceFlow struct {
 	policy           openaicompat.Policy
 	corruption       replayCorruption
 	cancelStream     bool
+	qwenChunks       bool
 	returnedFailures atomic.Int32
 }
 
@@ -73,6 +77,9 @@ func (step CallCompatibleProbe) Execute(ctx dex.Context, input string) (*dex.Ste
 	entry := conversation.UserMessageEntry(input, nil)
 	request := conversation.ModelRequest{Model: compatibleProbeModel(step.flow.policy), APIKey: mockmodel.APIKeyForTest, Prompts: agentloop.SessionPromptFor(conversation.ModelMock).Prompts,
 		Messages: []conversation.RequestMessage{{Role: entry.Role, Blocks: entry.Blocks, CacheAnchor: -1}}}
+	if step.flow.qwenChunks {
+		request.Prompts.Tools = append(append([]json.RawMessage(nil), request.Prompts.Tools...), json.RawMessage(`{"name":"get_weather","description":"Weather protocol fixture","input_schema":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"],"additionalProperties":false}}`))
+	}
 	reasoningWrites := 0
 	callContext, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -98,7 +105,7 @@ func (step CallCompatibleProbe) Execute(ctx dex.Context, input string) (*dex.Ste
 	if err != nil {
 		step.flow.returnedFailures.Add(1)
 		if rejected, ok := errors.AsType[*conversation.ModelRejectedError](err); ok {
-			return dex.GracefulComplete(compatibleProbeRejection{Code: rejected.Code, Status: rejected.Status}), nil
+			return dex.GracefulComplete(compatibleProbeRejection{Code: rejected.Code, Status: rejected.Status, Hint: rejected.Hint}), nil
 		}
 		return nil, dex.ErrorWithStack(err)
 	}
@@ -114,17 +121,20 @@ func (step CallCompatibleProbe) Execute(ctx dex.Context, input string) (*dex.Ste
 type compatibleProbeRejection struct {
 	ReasoningWrites int    `json:"reasoning_writes"`
 	Code            string `json:"code"`
+	Hint            string `json:"hint"`
 	Status          int    `json:"status"`
 }
 
 type compatibleReplySnapshot struct {
-	StopReason   conversation.StopReason    `json:"stop_reason"`
-	Present      bool                       `json:"present"`
-	Public       *conversation.AgentMessage `json:"public,omitempty"`
-	ReplayDigest string                     `json:"replay_digest"`
-	ReplayBlocks int                        `json:"replay_blocks"`
-	Bytes        int64                      `json:"bytes"`
-	VisibleBytes int64                      `json:"visible_bytes"`
+	WeatherCall       bool                       `json:"weather_call"`
+	ContainsReasoning bool                       `json:"contains_reasoning"`
+	StopReason        conversation.StopReason    `json:"stop_reason"`
+	Present           bool                       `json:"present"`
+	Public            *conversation.AgentMessage `json:"public,omitempty"`
+	ReplayDigest      string                     `json:"replay_digest"`
+	ReplayBlocks      int                        `json:"replay_blocks"`
+	Bytes             int64                      `json:"bytes"`
+	VisibleBytes      int64                      `json:"visible_bytes"`
 }
 
 // ReadCompatibleReply deliberately returns no raw blocks, tool arguments or encrypted payload.
@@ -154,7 +164,16 @@ func (flow *CompatibleReplyPersistenceFlow) ReadCompatibleReply(ctx dex.Context,
 		_, _ = digest.Write(block)
 		count++
 	}
-	return &dex.RPCResult[compatibleReplySnapshot]{Output: compatibleReplySnapshot{Present: true, StopReason: reply.StopReason, Public: &public, ReplayDigest: hex.EncodeToString(digest.Sum(nil)), ReplayBlocks: count, Bytes: entry.Bytes(), VisibleBytes: entry.WithoutOpaqueReplay().Bytes()}}, nil
+	weatherCall := false
+	if len(reply.ToolCalls) == 1 {
+		call := reply.ToolCalls[0]
+		var arguments map[string]any
+		if err := json.Unmarshal([]byte(call.Arguments), &arguments); err != nil {
+			return nil, err
+		}
+		weatherCall = string(call.Name) == "get_weather" && call.ID == "call_qwen_weather" && reflect.DeepEqual(arguments, map[string]any{"city": "Paris"})
+	}
+	return &dex.RPCResult[compatibleReplySnapshot]{Output: compatibleReplySnapshot{WeatherCall: weatherCall, ContainsReasoning: bytes.Contains(comm.Must(json.Marshal(reply)), []byte("synthetic forbidden reasoning")), Present: true, StopReason: reply.StopReason, Public: &public, ReplayDigest: hex.EncodeToString(digest.Sum(nil)), ReplayBlocks: count, Bytes: entry.Bytes(), VisibleBytes: entry.WithoutOpaqueReplay().Bytes()}}, nil
 }
 func (*CompatibleReplyPersistenceFlow) CompleteCompatibleProbe(_ dex.Context, _ dex.None) (*dex.RPCResult[dex.None], error) {
 	return &dex.RPCResult[dex.None]{NextSteps: []dex.StepMovement{dex.MovementOf(FinishCompatibleProbe{}, nil)}}, nil
@@ -285,34 +304,47 @@ func TestCompatibleProtocolFailuresDexIntegration(t *testing.T) {
 			name     string
 			fault    mockmodel.WireFaultForTest
 			rejected bool
+			accepted bool
 		}{
-			{"plaintext", mockmodel.WireFaultPlaintextForTest, true},
-			{"missing-replay", mockmodel.WireFaultMissingReplayForTest, true},
-			{"oversized-replay", mockmodel.WireFaultOversizedReplayForTest, true},
-			{"multiline-oversized", mockmodel.WireFaultMultilineOversizedForTest, true},
-			{"credit-exhausted", mockmodel.WireFaultCreditExhaustedForTest, true},
-			{"context-rejected", mockmodel.WireFaultContextRejectedForTest, true},
-			{"stream-rejected", mockmodel.WireFaultStreamRejectedForTest, true},
-			{"error-event", mockmodel.WireFaultChatRejectedForTest, true},
-			{"authentication", mockmodel.WireFaultHTTP401ForTest, true},
-			{"refusal-with-tools", mockmodel.WireFaultRefusalWithToolsForTest, true},
-			{"truncated", mockmodel.WireFaultTruncatedForTest, false},
-			{"rate-limit", mockmodel.WireFaultHTTP429ForTest, false},
-			{"overload", mockmodel.WireFaultHTTP503ForTest, false},
+			{"plaintext", mockmodel.WireFaultPlaintextForTest, false, true},
+			{"qwen-tool-chunks", mockmodel.WireFaultQwenChunksForTest, false, true},
+			{"qwen-conflicting-type", mockmodel.WireFaultQwenConflictingTypeForTest, true, false},
+			{"missing-replay", mockmodel.WireFaultMissingReplayForTest, true, false},
+			{"oversized-replay", mockmodel.WireFaultOversizedReplayForTest, true, false},
+			{"multiline-oversized", mockmodel.WireFaultMultilineOversizedForTest, true, false},
+			{"credit-exhausted", mockmodel.WireFaultCreditExhaustedForTest, true, false},
+			{"context-rejected", mockmodel.WireFaultContextRejectedForTest, true, false},
+			{"stream-rejected", mockmodel.WireFaultStreamRejectedForTest, true, false},
+			{"error-event", mockmodel.WireFaultChatRejectedForTest, true, false},
+			{"authentication", mockmodel.WireFaultHTTP401ForTest, true, false},
+			{"refusal-with-tools", mockmodel.WireFaultRefusalWithToolsForTest, true, false},
+			{"truncated", mockmodel.WireFaultTruncatedForTest, false, false},
+			{"rate-limit", mockmodel.WireFaultHTTP429ForTest, false, false},
+			{"overload", mockmodel.WireFaultHTTP503ForTest, false, false},
 		} {
+			qwenChunks := test.fault == mockmodel.WireFaultQwenChunksForTest || test.fault == mockmodel.WireFaultQwenConflictingTypeForTest
+			if qwenChunks && policy.WireMode != conversation.OpenAIChatCompletions {
+				continue
+			}
 			t.Run(policy.Provider.String()+"/"+test.name, func(t *testing.T) {
+				policy := policy
+				if qwenChunks {
+					policy = openaicompat.Policy{Provider: conversation.ProviderQwen, WireMode: conversation.OpenAIChatCompletions, MaxTokens: 64000, Replay: conversation.ReplayNonThinking, ChatThinking: conversation.ChatThinkingQwenDisabled}
+				}
 				ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 				defer cancel()
-				base, stop, err := mockmodel.StartForTest(ctx, slog.New(slog.NewTextHandler(io.Discard, nil)), test.fault)
+				var logs bytes.Buffer
+				logger := slog.New(slog.NewTextHandler(&logs, nil))
+				base, stop, err := mockmodel.StartForTest(ctx, logger, test.fault)
 				if err != nil {
 					t.Fatal("start approved model fixture:", err)
 				}
 				defer stop()
-				adapter, err := newMockAdapter(t, ctx, base, policy, slog.New(slog.NewTextHandler(io.Discard, nil)))
+				adapter, err := newMockAdapter(t, ctx, base, policy, logger)
 				if err != nil {
 					t.Fatal(err)
 				}
-				flow := &CompatibleReplyPersistenceFlow{client: adapter, policy: policy}
+				flow := &CompatibleReplyPersistenceFlow{client: adapter, policy: policy, qwenChunks: qwenChunks}
 				sdk := dexflowtest.WorkerClientForTest(ctx, t, dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS"), dexflowtest.Setting(t, "SUPERVERSE_TEST_WORKER_HOST"), flow)
 				id := "compatible-failure-probe-" + flowid.RandomID(16)
 				defer func() {
@@ -328,6 +360,15 @@ func TestCompatibleProtocolFailuresDexIntegration(t *testing.T) {
 					t.Fatal("start failure probe:", dexflowtest.ErrorCategory(err))
 				}
 				t.Logf("FlowID=%s RunID=%s FlowType=%s", id, runID, dex.GetFinalFlowType(flow))
+				if test.accepted {
+					if err := sdk.WaitForStepCompletion(ctx, id, dex.StepExecutionID{StepType: dex.GetFinalStepType(CallCompatibleProbe{})}, dex.WaitForStepCompletionOptions{RequestTimeout: time.Minute}); err != nil {
+						t.Fatal(err)
+					}
+					var none dex.None
+					if err := sdk.InvokeRPC(ctx, id, flow.CompleteCompatibleProbe, nil, &none); err != nil {
+						t.Fatal(err)
+					}
+				}
 				result, err := sdk.WaitForFlow(ctx, id, dex.WaitForFlowOptions{NeedsResults: true})
 				if err != nil {
 					t.Fatal("wait for protocol classification:", dexflowtest.ErrorCategory(err))
@@ -340,26 +381,56 @@ func TestCompatibleProtocolFailuresDexIntegration(t *testing.T) {
 					if err := result.DecodeSingleOutput(&rejection); err != nil || rejection.Code == "" || rejection.ReasoningWrites != 0 {
 						t.Fatal("missing typed rejection outcome")
 					}
+					if test.fault == mockmodel.WireFaultContextRejectedForTest || test.fault == mockmodel.WireFaultStreamRejectedForTest {
+						if rejection.Code != conversation.ProviderRequestRejected.Rejected(0).Code || !strings.Contains(rejection.Hint, "require readable reasoning to be sent back") {
+							t.Fatal("provider rejection lost its type or reasoning-passback guidance")
+						}
+					}
 					if test.fault == mockmodel.WireFaultCreditExhaustedForTest && rejection.Code != conversation.ProviderCreditExhausted.Rejected(429).Code {
 						t.Fatal("quota failure was not classified as exhausted credit")
 					}
 					if flow.returnedFailures.Load() != 1 {
 						t.Fatal("deterministic rejection was retried")
 					}
+					if test.fault == mockmodel.WireFaultQwenConflictingTypeForTest && rejection.Code != "invalid_tool_type" {
+						t.Fatal("conflicting type was admitted")
+					}
 					if test.fault == mockmodel.WireFaultMultilineOversizedForTest && rejection.Code != "response_too_large" {
 						t.Fatal("multiline event bypassed the aggregate event budget")
+					}
+				} else if test.accepted {
+					if result.Status != dex.FlowCompleted {
+						t.Fatal("reasoning-bearing response did not complete")
 					}
 				} else if result.Status != dex.FlowFailed {
 					t.Fatal("retryable model failure did not exhaust the real Dex retry policy")
 				}
-				if !test.rejected && flow.returnedFailures.Load() != 2 {
+				if !test.rejected && !test.accepted && flow.returnedFailures.Load() != 2 {
 					t.Fatalf("provider errors returned %d times instead of both Dex attempts", flow.returnedFailures.Load())
 				}
 				var snapshot compatibleReplySnapshot
 				if err := sdk.InvokeRPC(ctx, id, flow.ReadCompatibleReply, nil, &snapshot); err != nil {
 					t.Fatal("read terminal outcome:", dexflowtest.ErrorCategory(err))
 				}
-				if snapshot.Present || snapshot.Public != nil {
+				if test.accepted {
+					if !snapshot.Present || snapshot.Public == nil || snapshot.Public.Content == "" || len(snapshot.Public.ToolCalls) != 1 {
+						t.Fatal("discarding reasoning lost content or tool calls")
+					}
+					if qwenChunks && !snapshot.WeatherCall {
+						t.Fatal("Qwen chunk shape did not aggregate one get_weather call for Paris")
+					}
+					if snapshot.ContainsReasoning {
+						t.Fatal("reasoning entered the canonical reply")
+					}
+					var assistant dex.StreamMessagesPage[string]
+					if err := sdk.ListStreamMessages(ctx, id, compatibleProbeAssistant, 100, "", &assistant); err != nil || len(assistant.Messages) == 0 {
+						t.Fatal("visible assistant stream missing")
+					}
+					encoded, err := json.Marshal(assistant)
+					if err != nil || bytes.Contains(encoded, []byte("synthetic forbidden reasoning")) || strings.Contains(logs.String(), "synthetic forbidden reasoning") {
+						t.Fatal("reasoning entered a Stream or log")
+					}
+				} else if snapshot.Present || snapshot.Public != nil {
 					t.Fatal("invalid/incomplete provider response committed a tool-bearing reply")
 				}
 				var reasoning dex.StreamMessagesPage[string]

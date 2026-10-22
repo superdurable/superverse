@@ -19,7 +19,7 @@ replay must stay private to the current segment and be dropped when it closes; i
 public history or compaction input. Compatible adapters encode only the private
 `conversation.OpaqueReplay` allowlist, bounded to 256 KiB per completed reply.
 Responses retain encrypted reasoning items and Gemini retains call-bound thought
-signatures; raw provider response objects and readable reasoning are rejected.
+signatures; raw provider response objects are never retained. Compatible Responses and Chat Completions discard readable reasoning at the decoding boundary and continue visible text and tool calls. No writer, Stream, Attribute, log or later request receives that reasoning. Providers that require readable reasoning passback return the existing typed provider rejection; no passback is added. Preset-only thinking controls stay provider-specific.
 An omitted Responses item status becomes canonical `completed` only after the
 item's done event and the completed response agree; explicit non-completion or
 either missing proof rejects an ordinary reply before any tool can be committed.

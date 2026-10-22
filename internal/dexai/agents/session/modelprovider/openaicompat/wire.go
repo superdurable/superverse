@@ -29,6 +29,10 @@ var (
 	EventResponseIncomplete             = EventType{"response.incomplete"}
 	EventResponseReasoningTextDelta     = EventType{"response.reasoning_text.delta"}
 	EventResponseReasoningSummaryDelta  = EventType{"response.reasoning_summary_text.delta"}
+	EventResponseReasoningTextDone      = EventType{"response.reasoning_text.done"}
+	EventResponseReasoningSummaryDone   = EventType{"response.reasoning_summary_text.done"}
+	EventResponseReasoningPartAdded     = EventType{"response.reasoning_summary_part.added"}
+	EventResponseReasoningPartDone      = EventType{"response.reasoning_summary_part.done"}
 	EventResponseRefusalDelta           = EventType{"response.refusal.delta"}
 	EventResponseRefusalDone            = EventType{"response.refusal.done"}
 	EventProviderError                  = EventType{"error"}

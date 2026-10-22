@@ -212,7 +212,7 @@ Custom selections use one version-1 conservative profile per fixed wire family,
 with a 32,768-token context, 4,096 output tokens, a 22,528 compaction threshold
 and a 24,576 hard limit. They offer text and serial tools; images, effort,
 parallel tools, strict schemas, prompt cache, thinking controls and reasoning
-replay are disabled. Unexpected reasoning or parallel tool proposals are refused.
+replay are disabled. Compatible Responses and Chat Completions discard readable reasoning before any writer or durable state while continuing visible content and serial tools. Parallel tool proposals are refused.
 The frozen system/tool prompt is about 17.7K estimated tokens, leaving about
 4.8K tokens of conversation between compactions. Custom context sizes are fixed.
 
@@ -226,8 +226,7 @@ lanes with the mock model and mock endpoint policy. Custom URLs retain their
 explicit destination and never fall back to an official or mock origin.
 
 A workspace/region-matched Model Studio key and public HTTPS compatible API root
-can use `qwen/custom` with a bounded model ID. An endpoint whose models require
-readable reasoning is refused. Region/workspace mistakes remain provider
+can use `qwen/custom` with a bounded model ID. Readable reasoning streamed by compatible endpoints is discarded, never persisted, displayed or replayed. A model that requires reasoning passback fails through the typed provider rejection with guidance to use a non-thinking mode or another model. Custom endpoints receive no provider-specific thinking switch. Region/workspace mistakes remain provider
 authentication or model-admission errors; no default workspace or region is
 invented. These are protocol boundaries, without a live DashScope acceptance claim.
 

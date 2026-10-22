@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -147,8 +148,12 @@ func TestCustomEndpointDiscoveryNetworkIntegration(t *testing.T) {
 		request.ToolTarget = func(conversation.ToolCall) string { return "" }
 		reply, err := runtime.Complete(t.Context(), request)
 		stop()
-		if err == nil || len(reply.ToolCalls) != 0 || len(reply.Blocks) != 0 {
-			t.Fatalf("custom readable reasoning was admitted on %s", model)
+		if model == conversation.ModelAnthropicCustom {
+			if err == nil || len(reply.ToolCalls) != 0 || len(reply.Blocks) != 0 {
+				t.Fatal("malformed Messages reply was admitted")
+			}
+		} else if err != nil || len(reply.ToolCalls) != 1 || strings.Contains(reply.Text, "synthetic forbidden reasoning") {
+			t.Fatalf("discarding custom reasoning lost valid output on %s: %v", model, err)
 		}
 	}
 	for _, fixture := range []string{"empty", "many", "unsupported"} {

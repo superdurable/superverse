@@ -39,8 +39,10 @@ test("Builder discovers a custom Qwen endpoint and runs tools, a child and compa
       .click();
     await page.getByRole("button", { name: "Qwen", exact: true }).click();
     const key = page.locator('[data-model-credential] input[type="password"]');
-    await key.fill(MOCK_MODEL_API_KEY);
+    await expect(page.getByLabel("Model Studio API key for the endpoint region", { exact: true })).toBeVisible();
     await page.getByLabel("Use a custom endpoint", { exact: true }).check();
+    await expect(page.getByLabel("Model Studio API key for the endpoint region", { exact: true })).toHaveCount(0);
+    await page.getByLabel("Custom endpoint API key", { exact: true }).fill(MOCK_MODEL_API_KEY);
     await page.getByLabel("Endpoint API base URL", { exact: true }).fill(endpoint);
     const model = page.getByLabel("Model ID (optional)", { exact: true });
     const discovered = page.waitForResponse(rpcAnswered("ListModelCredentialModels"));
@@ -91,6 +93,8 @@ test("Builder discovers a custom Qwen endpoint and runs tools, a child and compa
     expect(JSON.stringify(snapshot)).toContain("The custom endpoint child completed");
     expect(JSON.stringify(snapshot)).toContain("Context compacted");
     expect(JSON.stringify(snapshot)).not.toContain("Model call failed");
+    expect(JSON.stringify(snapshot)).not.toContain("synthetic forbidden reasoning");
+    await expect(page.locator("body")).not.toContainText("synthetic forbidden reasoning");
   } finally {
     await deleteProject(page, projectId);
   }

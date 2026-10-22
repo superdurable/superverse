@@ -55,7 +55,6 @@ const (
 	failureMissingReplay           failureCode = "missing_replay"
 	failureModelChangedInStream    failureCode = "model_changed_in_stream"
 	failureOpaqueReplayTooLarge    failureCode = "opaque_replay_too_large"
-	failurePlaintextReasoning      failureCode = "plaintext_reasoning"
 	failureResponseTooLarge        failureCode = "response_too_large"
 	failureUnexpectedChoice        failureCode = "unexpected_choice"
 	failureUnexpectedReplay        failureCode = "unexpected_replay"
@@ -112,6 +111,9 @@ func providerFailure(raw json.RawMessage, status int) error {
 	}
 	if rejection != nil {
 		rejection.Detail = code
+		if rejection.Code == conversation.ProviderRequestRejected.Rejected(status).Code {
+			rejection.Hint += " Models that require readable reasoning to be sent back are unsupported; select a non-thinking mode or another model."
+		}
 		return rejection
 	}
 	return &retryableError{status: status, code: code}

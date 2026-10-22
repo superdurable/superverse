@@ -8,14 +8,15 @@
 
 name: custom-endpoint
 title: "Custom endpoint Session"
-description: "Serial repository tools, a child investigation, compaction and a next turn on a replaced endpoint."
+description: "Readable reasoning is discarded while serial tools, a child investigation, compaction and a next turn complete."
 category: agent_feature
 compaction_summary: "The manifest was read and the child investigation is running."
 inputs:
   - label: "Use the custom endpoint"
     message: "Inspect the manifest and delegate one investigation."
     replies:
-      - text: "Reading the manifest."
+      - protocol_fault: compatible_readable_reasoning
+        text: "Reading the manifest."
         tool_uses:
           - name: read
             input: {path: dex-app.yaml, limit: 20}

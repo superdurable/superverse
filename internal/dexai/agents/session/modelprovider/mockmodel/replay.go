@@ -464,16 +464,17 @@ func (request messagesRequest) validateMessagesProfile(r *http.Request, body []b
 type protocolFault string
 
 const (
-	faultNone            protocolFault = ""
-	faultPlaintext       protocolFault = "plaintext_reasoning"
-	faultMissingOpaque   protocolFault = "missing_opaque"
-	faultDuplicateOpaque protocolFault = "duplicate_opaque"
-	faultOversizeOpaque  protocolFault = "oversize_opaque"
-	faultTruncated       protocolFault = "truncated_stream"
-	faultWrongModel      protocolFault = "wrong_model"
+	faultNone                protocolFault = ""
+	faultCompatibleReasoning protocolFault = "compatible_readable_reasoning"
+	faultPlaintext           protocolFault = "plaintext_reasoning"
+	faultMissingOpaque       protocolFault = "missing_opaque"
+	faultDuplicateOpaque     protocolFault = "duplicate_opaque"
+	faultOversizeOpaque      protocolFault = "oversize_opaque"
+	faultTruncated           protocolFault = "truncated_stream"
+	faultWrongModel          protocolFault = "wrong_model"
 )
 
-var protocolFaults = []protocolFault{faultNone, faultPlaintext, faultMissingOpaque, faultDuplicateOpaque, faultOversizeOpaque, faultTruncated, faultWrongModel}
+var protocolFaults = []protocolFault{faultNone, faultCompatibleReasoning, faultPlaintext, faultMissingOpaque, faultDuplicateOpaque, faultOversizeOpaque, faultTruncated, faultWrongModel}
 
 var quotedCustomRun = regexp.MustCompile(`^toolu_mock_([a-f0-9]{8}_[0-9]+)_[0-9]+_[0-9]+_[0-9]+$`)
 

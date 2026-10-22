@@ -32,7 +32,9 @@ and rebuild `input` from the current segment without `previous_response_id`. Fro
 Anthropic-shaped tool definitions become function tools without modifying persisted
 prompts. Complete encrypted reasoning items retain their ordered position through
 `conversation.OpaqueReplay`; no raw response object is stored. Chat tools preserve
-call IDs and aggregate arguments by choice/tool index. Gemini signatures bind to the
+call IDs and aggregate arguments by choice/tool index. Repeated matching `function`
+types are accepted on argument fragments; conflicting types fail. Null optional
+Chat delta fields are absent, and unknown metadata such as `matched_stop` is ignored. Gemini signatures bind to the
 immediately following call. Kimi/GLM non-thinking profiles explicitly disable thinking;
 Qwen disables both thinking and its preservation. These are protocol implementations,
 not claims of live provider verification.
@@ -48,7 +50,11 @@ non-assistant replay, wrong bindings and unknown fields, and applies the aggrega
 
 Only ordinary assistant text is forwarded provisionally. A terminal frame and complete,
 consistent tool arguments are required before returning a reply to the Flow. Readable
-reasoning and reasoning summaries cause deterministic rejection. Per-event input is
+reasoning and reasoning summaries are discarded at the decoding boundary before
+writers, aggregation, persistence or replay. Visible content and tool calls continue;
+malformed frames still fail validation. A provider that requires readable reasoning
+passback returns the existing typed provider rejection, with a non-thinking-mode
+recommendation; readable reasoning is never sent back. Per-event input is
 bounded to 1 MiB, each stream to 16 MiB, output to 256 items, and private replay to
 256 KiB per reply. The owner supplies the shared HTTP transport and cancellation;
 there are no goroutines, automatic request retries, key caches or per-provider connection pools here.
@@ -79,7 +85,10 @@ private replay digest. Its two test Streams each have a 1 MiB budget shared by t
 fixture Flow type's instances; the reasoning writer is observed while retaining its
 real Dex destination. The test also reads the reply after execution completion.
 
-`TestCompatibleProtocolFailuresDexIntegration` exercises readable reasoning,
+`TestCompatibleProtocolFailuresDexIntegration` exercises successful reasoning-bearing
+content/tool replies with canonical reply, Stream and log non-retention assertions,
+the Qwen-compatible null/whitespace/repeated-type chunk shape producing exactly one
+`get_weather` call for Paris, and conflicting-type rejection, plus
 missing/oversized replay, authentication rejection, truncated streams, throttling
 and overload through real Dex retry/terminal decisions. Its short two-attempt retry
 policy belongs only to the fixture. No rejected or incomplete response may commit

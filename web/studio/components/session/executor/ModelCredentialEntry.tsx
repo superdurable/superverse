@@ -150,7 +150,7 @@ export function ModelCredentialEntry({
   return (
     <div className="my-1 grid gap-2 rounded-md border border-line p-2.25 text-xs" data-model-credential>
       <p className="font-medium text-ink">
-        {keyHint} ·{" "}
+        {custom || info?.baseUrl ? "Custom endpoint API key" : keyHint} ·{" "}
         {active
           ? `••••${info.last4}`
           : info?.status === ModelCredentialStatus.MODEL_CREDENTIAL_STATUS_PENDING
@@ -174,7 +174,7 @@ export function ModelCredentialEntry({
           {(!active || editing) && (
             <>
               <label className="grid gap-1">
-                {keyHint}
+                {custom ? "Custom endpoint API key" : keyHint}
                 <input
                   ref={field}
                   type="password"
