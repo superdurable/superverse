@@ -55,19 +55,19 @@ namespaceBaseline:
     services: 3
     persistentVolumeClaims: 1
     secrets: 4
-    requestsCpu: "4"
-    requestsMemory: 8Gi
-    limitsCpu: "4"
-    limitsMemory: 8Gi
+    requestsCpu: 200m
+    requestsMemory: 512Mi
+    limitsCpu: "2"
+    limitsMemory: 4Gi
     requestsEphemeralStorage: 20Gi
     limitsEphemeralStorage: 20Gi
     requestsStorage: 20Gi
   limits:
     container:
-      defaultRequest: {cpu: 500m, memory: 256Mi, ephemeral-storage: 1Gi}
-      default: {cpu: "2", memory: 4Gi, ephemeral-storage: 8Gi}
+      defaultRequest: {cpu: 100m, memory: 256Mi, ephemeral-storage: 1Gi}
+      default: {cpu: "1", memory: 2Gi, ephemeral-storage: 8Gi}
       min: {cpu: 50m, memory: 64Mi}
-      max: {cpu: "4", memory: 8Gi, ephemeral-storage: 20Gi}
+      max: {cpu: "1", memory: 2Gi, ephemeral-storage: 20Gi}
     persistentVolumeClaim:
       minStorage: 1Gi
       maxStorage: 20Gi
@@ -80,8 +80,8 @@ securityContext:
   runAsGroup: 1000
   fsGroup: 1000
 resources:
-  requests: {cpu: 500m, memory: 256Mi, ephemeral-storage: 1Gi}
-  limits: {cpu: "2", memory: 4Gi, ephemeral-storage: 8Gi}
+  requests: {cpu: 100m, memory: 256Mi, ephemeral-storage: 1Gi}
+  limits: {cpu: "1", memory: 2Gi, ephemeral-storage: 8Gi}
 workspace:
   pvcName: workspace
   # One volume holds the repository checkout and the Preview engine state.
@@ -132,9 +132,10 @@ revision 6 is coding-v4 with image contract revision 7, which ships the dex-conn
 revision 7 is coding-v4 with image contract revision 8, whose file helper refuses a path that
 permissions deny as a failure of the call; revision 8 lets the Sandbox reach the platform
 server's credential read endpoint; revision 9 matches the platform Service selector so
-Preview credential reads work through the ClusterIP.
+Preview credential reads work through the ClusterIP; revision 10 reduces the coding container
+and its namespace baseline to the shared-node budget.
 */}}
-{{- define "v2.codingProfile.metadataRevision" -}}9{{- end -}}
+{{- define "v2.codingProfile.metadataRevision" -}}10{{- end -}}
 
 {{/* Called with the merged sandboxProfiles dict. */}}
 {{- define "v2.codingProfile.configName" -}}

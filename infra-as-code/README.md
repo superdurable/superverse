@@ -16,8 +16,14 @@ Karpenter On-Demand launches; delivery can duplicate or fail and needs a confirm
 CodeBuild has no Spot purchase option and is billed per build minute. Local lanes do not exercise EKS capacity,
 Spot interruption or these hosted alerts.
 
-The coding Sandbox and Preview share one Pod. The profile requests 500m CPU and
-256 MiB memory, retaining its 2 CPU / 4 GiB limits, and defaults new workspace
+Test and staging each configure one shared 2 vCPU / 4–8 GiB platform Spot node across diversified
+`t4g.large`, `c6gd.large` and `c6g.large` types.
+All platform Pods and one additional Server replica for start-before-stop rollout share that node.
+A Spot interruption causes a short platform outage until the replacement node is Ready; the owner accepts
+this pre-launch tradeoff. Requests reserve scheduling capacity; burst limits are deliberately overcommitted.
+
+The coding Sandbox and Preview share one Pod. The profile requests 100m CPU and
+256 MiB memory, with 1 CPU / 2 GiB limits, and defaults new workspace
 claims to 1 GiB. Repository files and Preview engine state share that volume;
 large repositories and accumulated build or engine data can exhaust it. New
 subagent and connector worktrees require at least 256 MiB free, while dirty
@@ -90,6 +96,16 @@ deployed before the server configuration profiles has no configuration to instal
 once after updating a cluster that predates them. Existing versioned MinIO and Temporal PVCs remain
 in place. A fresh cluster uses pinned dependency images. Existing owned clusters
 retain their accepted MinIO identity rather than silently selecting another image.
+Kind names both shared and Project MinIO images by their verified loaded digest in
+the canonical registry repository. Kubernetes 1.35 enables
+[`KubeletEnsureSecretPulledImages`](https://kubernetes.io/docs/concepts/containers/images/#image-pull-credential-verification):
+once kubelet pulls an image, it tracks credentials by image identity and repository.
+Reusing those bytes under a synthetic local repository can trigger an impossible
+registry pull despite `IfNotPresent`. `up` and `deploy` retain the accepted bytes
+and render the canonical repository; Project Dex/Temporal and shared
+Temporal/PostgreSQL/Keycloak already use canonical pinned references. Locally built
+Server, Studio and coding images retain their verified local aliases because they
+have no alternate registry pull identity.
 SQLite Temporal is a local development dependency, not hosted persistence. The dependencies also include Keycloak, the
 OAuth provider of the connection tests: it imports the realm of the chart's `files/keycloak-realm.json` into a new
 database whenever its Pod starts, and `up` keeps its administrator, client and user secrets in the private

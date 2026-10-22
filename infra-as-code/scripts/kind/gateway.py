@@ -20,7 +20,7 @@ from private_files import write_private
 PIN = LOCK["envoyGateway"]
 # The controller settings Terraform's helm_release.envoy_gateway sets too: one replica with bounded resources, and no
 # topology injector, whose admission webhook the project routes do not need.
-CONTROLLER_VALUES = {"deployment": {"replicas": 1, "envoyGateway": {"resources": {"requests": {"cpu": "100m", "memory": "256Mi"},
+CONTROLLER_VALUES = {"deployment": {"replicas": 1, "envoyGateway": {"resources": {"requests": {"cpu": "10m", "memory": "64Mi"},
                                                                                    "limits": {"cpu": "1", "memory": "1Gi"}}}},
                      "topologyInjector": {"enabled": False}}
 

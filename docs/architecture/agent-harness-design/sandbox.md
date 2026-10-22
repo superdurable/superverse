@@ -66,11 +66,11 @@ reach the Session through [notifications](notifications-and-feedback.md).
 
 The coding profile `coding-v4` (an immutable ConfigMap content-addressed by the chart)
 defines the Pod: one container from the coding image; `tini` as PID 1 with `sandboxd`
-as its child; UID/GID 1000; requests 500m CPU and 1 GiB, limits 2 CPU and 4 GiB, 8 GiB
+as its child; UID/GID 1000; requests 100m CPU and 256 MiB, limits 1 CPU and 2 GiB, 8 GiB
 ephemeral storage; a 2 GiB `/tmp` volume; a 45-second termination grace period with a
 preStop hook that stops the Preview engine; `containerPort` 8801 beside sandboxd's 8080
 and 9090. The namespace is bounded by a quota of one Sandbox, two Pods, three Services,
-one PVC, four Secrets and 4 CPU and 8 GiB. Local Native runs the same profile: the server
+one PVC, four Secrets, 200m CPU / 512 MiB requests and 2 CPU / 4 GiB limits. Local Native runs the same profile: the server
 reads the chart's rendering of it and starts the Pod template's container with the Pod's
 hardening (UID 1000, a read-only root, every capability dropped, `no-new-privileges`, the
 CPU and memory limits), the workspace subPaths as two named volumes, `/tmp` as a volume on
@@ -392,8 +392,9 @@ symlinks before the check.
 ## Coding image
 
 The image `superverse-coding-sandbox` (build: `sandbox/coding/Dockerfile`) implements
-**sandbox image contract revision 8** under the profile name `coding-v4` (metadata revision 9, which
-matches the platform Service selector for Sandbox credential reads).
+**sandbox image contract revision 8** under the profile name `coding-v4` (metadata revision 10, which
+reduces the shared-node coding budget; metadata revision 9 fixed the platform
+Service selector for Sandbox credential reads).
 Revision 6 added the application test engine, revision 7 the `dex-connector-contributor`
 skill and revision 8 the file helper's `path_permission_denied`. Raising the revision
 increments the profile's `metadataRevision`, which is what gives the changed profile bytes a
@@ -966,19 +967,20 @@ measures take them off the agent's path:
 
 | Component | Budget | Lives in |
 |---|---|---|
-| Coding container | 500m / 1 GiB requests; 2 CPU / 4 GiB limits; 10 GiB PVC; 8 GiB ephemeral; 2 GiB `/tmp` | `_coding-profile.tpl`; Terraform `coding_profile.workspace_size` |
-| Platform Dex | 250m / 512 MiB to 2 CPU / 2 GiB | chart `dex.resources` |
-| Server | 250m / 256 MiB to 2 CPU / 2 GiB | `server.resources` |
-| Studio | 100m / 192 MiB to 1 CPU / 1 GiB | `studio.resources` |
-| Sandbox controller | 25m / 64 MiB to 500m / 256 MiB | `sandboxController.resources` |
+| Coding container | 100m / 256 MiB requests; 1 CPU / 2 GiB limits; 1 GiB default PVC; 8 GiB ephemeral; 2 GiB `/tmp` | `_coding-profile.tpl`; Terraform `coding_profile.workspace_size` |
+| Platform Dex | 10m / 64 MiB to 2 CPU / 2 GiB | chart `dex.resources` |
+| Server | 10m / 64 MiB to 2 CPU / 3 GiB | `server.resources` |
+| Studio | 10m / 96 MiB to 1 CPU / 1 GiB | `studio.resources` |
+| Sandbox controller | 10m / 32 MiB to 500m / 256 MiB | `sandboxController.resources` |
 | Live Project Dex | 100m / 256 MiB to 2 CPU / 2 GiB | `internal/dexai/projects/infra/kube/resources.go` |
-| Deployed application default | 100m / 128 MiB to 2 CPU / 1 GiB | `live_serving_application.go` |
-| Platform nodes | t4g.large on demand (test and staging); gVisor Sandbox nodes and, apart from them, gVisor Live application nodes from Karpenter, Spot backed by On-Demand; ceilings per environment in `node_pool_limits`  | `environments/{test,staging}/cloud.tfvars`, `terraform/cloud/karpenter.tf` and the chart's node pools |
+| Deployed application default | 100m / 128 MiB to 1 CPU / 1 GiB | `live_serving_application.go` |
+| Platform nodes | one shared diversified ARM64 Spot baseline node (test and staging); Karpenter shares platform, gVisor Sandbox and gVisor Live pools across Pods with On-Demand fallback; ceilings per environment in `node_pool_limits`  | `environments/{test,staging}/cloud.tfvars`, `terraform/cloud/karpenter.tf` and the chart's node pools |
 
-Limits are concurrency limits, not larger budgets. The namespace quota stays
-4 CPU / 8 GiB. A Sandbox runs the engine (Temporal and Dex), the Preview application, the
+Limits are concurrency limits, not larger budgets. The namespace quota is
+200m / 512 MiB requests and 2 CPU / 4 GiB limits for at most two Pods. Each
+container is capped at 1 CPU / 2 GiB. A Sandbox runs the engine (Temporal and Dex), the Preview application, the
 builds of the main agent, up to three subagents' builds and at most one application test
-engine (about 300 MiB), all in a 4 GiB container. That is why subagent commands run with
+engine (about 300 MiB), all in a 2 GiB container. That is why subagent commands run with
 `nice -n 10`, `GOMAXPROCS=2` and a bounded Node heap, why at most three subagents run at
 once, and why test engines queue ([subagents](subagents.md#resource-rules),
 [commit gate](commit-gate-and-app-tests.md)). The commit gate starts its test engine beside

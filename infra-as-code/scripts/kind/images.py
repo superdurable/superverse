@@ -117,6 +117,14 @@ def load_dependency(name, reference):
     return {"source": reference, "image": local, "id": identity}
 
 
+def dependency_reference(name, record):
+    """Verify the cached dependency and name its loaded digest in its canonical repository."""
+    # Kubelet 1.35 tracks pull credentials by image ID and repository. After a real pull,
+    # the same bytes under a synthetic repository may require a nonexistent registry pull.
+    repository = record["source"].split("@", 1)[0].rsplit(":", 1)[0]
+    return alias_loaded_image(name, record["image"], record["id"], repository)
+
+
 def resolve_project_dependency_images(value, project_dex_image):
     """Project Dex, Temporal and storage images for project scopes, verified on every Kind node."""
     require(project_dex_image, "The reviewed dependency approval must name the project Dex engine image")
@@ -138,5 +146,5 @@ def resolve_project_dependency_images(value, project_dex_image):
     return {
         "dexImage": project_dex_image,
         "temporalImage": local_dependency_image("temporal", architecture),
-        "s3Image": alias_loaded_image("minio", minio["image"], minio["id"]),
+        "s3Image": dependency_reference("minio", minio),
     }

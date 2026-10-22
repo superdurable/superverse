@@ -33,7 +33,7 @@ from local_platform import (POSTGRES_CREDENTIALS, POSTGRES_DATABASE, POSTGRES_OW
                             dex_config, keycloak_credentials, keycloak_secret_environment, postgres_credentials, postgres_roles_sql)
 from kind.deployment_identity import json_digest, kind_deployment_identity
 from image_identity import docker_image_id
-from kind.images import load_dependency, resolve_project_dependency_images
+from kind.images import dependency_reference, load_dependency, resolve_project_dependency_images
 from kind.node_images import component_reference
 from kind.server_secrets import read_server_secrets, require_server_secrets
 from operator_errors import require
@@ -87,7 +87,7 @@ def up(_args):
         dependencies["minio"] = load_dependency("minio", local_dependency_image("minio", architecture))
     elif docker_image_id(dependencies["minio"]["image"]) is None:
         require(load_dependency("minio", dependencies["minio"]["source"]) == dependencies["minio"], "The restored MinIO dependency is not the recorded image")
-    value["localDependencies"] = {"temporalImage": local_dependency_image("temporal", architecture), "minioImage": dependencies["minio"]["image"],
+    value["localDependencies"] = {"temporalImage": local_dependency_image("temporal", architecture), "minioImage": dependency_reference("minio", dependencies["minio"]),
                                   "postgresImage": local_image("postgres"), "keycloakImage": local_image("keycloak")}
     # Once a deploy migrated the read model and gave Dex its Attribute Store, Dex keeps the stores that deploy rendered, not
     # the checkout's, whose new tables only the next deploy's migrations create; a new cluster starts without.
@@ -246,7 +246,8 @@ def studio_origin():
 
 def local_chart_values(value):
     """The dependency images, each built component's Kind-loaded digest alias and the server configuration last deployed."""
-    result = {"localDependencies": value["localDependencies"], "server": {}, "studio": {}, "dex": {"configRevision": value.get("dexConfigRevision", "")}}
+    dependencies = dict(value["localDependencies"], minioImage=dependency_reference("minio", value["dependencies"]["minio"]))
+    result = {"localDependencies": dependencies, "server": {}, "studio": {}, "dex": {"configRevision": value.get("dexConfigRevision", "")}}
     deployed = value.get("deploymentInputs", {}).get("config", {}).get("input")
     if deployed:
         result["server"]["config"] = deployed

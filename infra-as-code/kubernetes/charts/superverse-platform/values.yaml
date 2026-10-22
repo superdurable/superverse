@@ -21,7 +21,7 @@ server:
   # The limit holds 1 GiB for the file extractor child, which the server runs one at a time and which bounds its own
   # address space to 1 GiB beyond its start (internal/comm/fileextract).
   resources:
-    requests: {cpu: 250m, memory: 256Mi}
+    requests: {cpu: 10m, memory: 64Mi}
     limits: {cpu: "2", memory: 3Gi}
 studio:
   # Hosted deployments require an exact hostname independent of the application/debug domain.
@@ -32,7 +32,7 @@ studio:
   replicas: 1
   config: {}
   resources:
-    requests: {cpu: 100m, memory: 192Mi}
+    requests: {cpu: 10m, memory: 96Mi}
     limits: {cpu: "1", memory: 1Gi}
 dex:
   image: {repository: docker.io/superdurable/dex-server, tag: "v1.14.2", digest: "sha256:3c4acb0b214164850810a2d9b378b4c158b5a3d46bdbf20682d00ff5364c1a50", pullPolicy: IfNotPresent}
@@ -52,7 +52,7 @@ dex:
     subnetIDs: []
     targetCIDRs: []
   resources:
-    requests: {cpu: 250m, memory: 512Mi}
+    requests: {cpu: 10m, memory: 64Mi}
     limits: {cpu: "2", memory: 2Gi}
 ingress:
   className: alb
@@ -77,7 +77,7 @@ sandboxController:
     tag: v1.0.1@sha256:e1787f95cda406e2d81322e8637b6dfa2d77514fbbd0536a872b8e5d409b7154
   nodeSelector: {superdurable.io/pool: platform}
   resources:
-    requests: {cpu: 25m, memory: 64Mi}
+    requests: {cpu: 10m, memory: 32Mi}
     limits: {cpu: 500m, memory: 256Mi}
   podSecurityContext: {runAsNonRoot: true, runAsUser: 65532, seccompProfile: {type: RuntimeDefault}}
   containerSecurityContext: {allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
@@ -98,7 +98,8 @@ nodePools:
   gvisorRelease: ""
   gvisorSHA256: ""
   # vCPU ceilings per Karpenter pool (not spend). Terraform sets them per environment (node_pool_limits).
-  # A coding Sandbox requests 500m, so a 2 vCPU node holds 3: 160 vCPU is 80 nodes, 240 Sessions.
+  # A coding Sandbox requests 100m / 256Mi; daemonsets, Pod slots and memory also bound density.
+  # A pool CPU ceiling is a capacity ceiling, not a Session count or a spending limit.
   limits: {platform: 32, runsc: 160, live: 64}
 
 hostedProjects:

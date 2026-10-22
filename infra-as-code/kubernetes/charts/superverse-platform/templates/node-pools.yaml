@@ -6,7 +6,7 @@
 #
 # SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-{{/* Broad ARM64 compute, general-purpose, memory and burstable families at the caller's vCPU counts and >=8 GiB.
+{{/* Broad ARM64 compute, general-purpose, memory and burstable families at the caller's vCPU counts and memory floor.
 Karpenter prefers Spot before On-Demand across all discovered zones; diversity reduces fallback but cannot
 guarantee Spot inventory. A bound EBS volume still constrains its Pod to one zone. */}}
 {{- define "v2.karpenterRequirements" -}}
@@ -27,7 +27,7 @@ guarantee Spot inventory. A bound EBS volume still constrains its Pod to one zon
   values: {{ toJson .cpus }}
 - key: karpenter.k8s.aws/instance-memory
   operator: Gt
-  values: ["7999"]
+  values: [{{ default "7999" .memoryFloor | quote }}]
 {{- end -}}
 
 {{/* A node pool's ceiling: its vCPU count and 8 GiB per vCPU, which the largest memory-optimized instances reach, so
@@ -74,7 +74,7 @@ spec:
         kind: EC2NodeClass
         name: {{ include "v2.product" $ }}-platform
       requirements:
-        {{- include "v2.karpenterRequirements" (dict "cpus" (list "2" "4" "8") "capacityTypes" (list "spot" "on-demand")) | nindent 8 }}
+        {{- include "v2.karpenterRequirements" (dict "cpus" (list "2" "4" "8") "memoryFloor" "3999" "capacityTypes" (list "spot" "on-demand")) | nindent 8 }}
       expireAfter: 720h
   limits:
     {{- include "v2.karpenterLimits" .Values.nodePools.limits.platform | nindent 4 }}

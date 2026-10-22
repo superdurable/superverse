@@ -284,8 +284,8 @@ class Render:
                                 "karpenter.k8s.aws/instance-category": ["c", "m", "r", "t"],
                                 "karpenter.k8s.aws/instance-cpu": ["2", "4", "8"]}.items():
                 self.fail_if(requirements[key] != {"key": key, "operator": "In", "values": values}, f"{name}: capacity diversity differs")
-            self.fail_if(requirements["karpenter.k8s.aws/instance-memory"] != {"key": "karpenter.k8s.aws/instance-memory", "operator": "Gt", "values": ["7999"]},
-                         f"{name}: every instance needs at least 8 GiB")
+            self.fail_if(requirements["karpenter.k8s.aws/instance-memory"] != {"key": "karpenter.k8s.aws/instance-memory", "operator": "Gt", "values": ["3999" if name.endswith("-platform") else "7999"]},
+                         f"{name}: instance memory floor differs")
             self.fail_if("topology.kubernetes.io/zone" in requirements, f"{name}: capacity must use all discovered cluster zones")
             self.fail_if(pool["spec"]["disruption"] != {"consolidationPolicy": "WhenEmptyOrUnderutilized", "consolidateAfter": "5m"},
                          f"{name}: fallback must be eligible for automatic cheaper Spot replacement")
@@ -599,7 +599,7 @@ class Render:
         metadata = json.loads(profile["data"]["contract.json"])
         self.fail_if(metadata.get("profile") != CODING_PROFILE or metadata.get("sandboxImageContractRevision") != 8 or not profile["metadata"]["name"].startswith(
             "coding-sandbox-profile-" + CODING_PROFILE + "-"), "the coding profile is not coding-v4 with image contract revision 8")
-        self.fail_if(metadata.get("metadataRevision") != 9 or "databaseIdentifiers" in metadata or
+        self.fail_if(metadata.get("metadataRevision") != 10 or "databaseIdentifiers" in metadata or
                      metadata.get("ownerIdentifiers") != ["namespaceName", "namespaceUid", "sandboxName", "sandboxUid", "workspacePvcName", "workspacePvcUid", "profileVersion"],
                      "profile owner metadata revision differs")
         self.fail_if(not profile.get("immutable") or profile["metadata"].get("annotations", {}).get("helm.sh/resource-policy") != "keep", "admitted Session profile retention changed")
@@ -633,8 +633,8 @@ class Render:
     def check_coding_pod(self, pod):
         """coding-v4: tini as PID 1, the Preview engine state on the workspace volume, its preStop stop and the Preview Dex port."""
         container = pod["containers"][0]
-        self.fail_if(container["resources"] != {"requests": {"cpu": "500m", "memory": "256Mi", "ephemeral-storage": "1Gi"},
-                                                "limits": {"cpu": "2", "memory": "4Gi", "ephemeral-storage": "8Gi"}},
+        self.fail_if(container["resources"] != {"requests": {"cpu": "100m", "memory": "256Mi", "ephemeral-storage": "1Gi"},
+                                                "limits": {"cpu": "1", "memory": "2Gi", "ephemeral-storage": "8Gi"}},
                      "the coding Sandbox must request 256 MiB without changing its CPU or resource limits")
         self.fail_if(pod["terminationGracePeriodSeconds"] != 45 or container["command"] != ["/usr/bin/tini", "--", "/usr/local/bin/sandboxd"],
                      "the Sandbox must run sandboxd under tini with the preStop grace period")

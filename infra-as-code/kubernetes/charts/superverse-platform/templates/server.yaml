@@ -60,7 +60,7 @@ spec:
             - name: SUPERVERSE_POSTGRES_OWNER_PASSWORD
               valueFrom: {secretKeyRef: {name: {{ include "v2.product" $ }}-postgres, key: SUPERVERSE_POSTGRES_OWNER_PASSWORD}}
           resources:
-            requests: {cpu: 50m, memory: 64Mi}
+            requests: {cpu: 25m, memory: 64Mi}
             limits: {cpu: 500m, memory: 256Mi}
           volumeMounts:
             - {name: server-config, mountPath: /etc/superverse, readOnly: true}

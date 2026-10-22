@@ -101,7 +101,7 @@ func (l *LiveServing) applicationPod(s deployments.Snapshot, env []any, mode dep
 		"ports":          []any{kubeapi.ContainerPort("http", s.Inputs.ApplicationPort)},
 		"volumeMounts":   []any{kubeapi.VolumeMount("tmp", "/tmp"), kubeapi.VolumeMount("runtime", deployments.ApplicationRuntimeDirectory)},
 		"readinessProbe": kubeapi.Object{"httpGet": kubeapi.Object{"path": s.Inputs.HealthPath, "port": s.Inputs.ApplicationPort}, "periodSeconds": 2, "failureThreshold": 30},
-		"resources":      kubeapi.Resources("100m", "128Mi", "2", "1Gi")}
+		"resources":      kubeapi.Resources("100m", "128Mi", "1", "1Gi")}
 	pod := kubeapi.Object{"serviceAccountName": l.WorkloadServiceAccount(infra.Workload{ProjectID: s.ProjectID, WorkloadID: s.DeploymentID, Generation: s.Lease.Generation}), "automountServiceAccountToken": false,
 		"securityContext": kubeapi.Object{"runAsNonRoot": true, "runAsUser": 65532, "runAsGroup": 65532, "fsGroup": 65532, "seccompProfile": kubeapi.Object{"type": "RuntimeDefault"}},
 		"volumes":         []any{kubeapi.EmptyDirVolume("tmp", "1Gi"), kubeapi.SecretVolume("runtime", infra.WorkloadName(s.DeploymentID, s.Lease.Generation)+"-environment")}, "containers": []any{container}}
