@@ -95,6 +95,7 @@ func TestProjectAnthropicCredentialDexIntegration(t *testing.T) {
 	port := socket.Addr().(*net.TCPAddr).Port
 	_ = socket.Close()
 	target := dex.WorkerTarget{Address: fmt.Sprintf("host.docker.internal:%d", port)}
+	config.dexWorker.Pull = nil // This fixture owns a test-process push Worker.
 	config.dexWorker.BindAddress = fmt.Sprintf(":%d", port)
 	config.dexWorker.WorkerTarget = target
 	config.dexClient.WorkerTarget = &target

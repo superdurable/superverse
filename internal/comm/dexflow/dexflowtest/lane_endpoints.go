@@ -31,9 +31,6 @@ const (
 	dexEndpoint endpoint = iota
 	// apiEndpoint is the merged business gRPC API of the server under test.
 	apiEndpoint
-	// workerTargetEndpoint is the target under which the lane's platform Dex dials the
-	// server's Worker. Every Flow of the lane records it.
-	workerTargetEndpoint
 	// workerHostEndpoint is the host through which the lane's platform Dex dials a
 	// Worker that the test process runs.
 	workerHostEndpoint
@@ -42,7 +39,7 @@ const (
 	endpointCount
 )
 
-var endpointNames = [endpointCount]string{"platform Dex API", "business gRPC API", "server Worker target", "test Worker host", "local Git host"}
+var endpointNames = [endpointCount]string{"platform Dex API", "business gRPC API", "test Worker host", "local Git host"}
 
 // endpoints are the addresses of one lane, indexed by endpoint.
 type endpoints [endpointCount]string
@@ -55,25 +52,19 @@ var laneInputs = []struct {
 }{
 	{"SUPERVERSE_TEST_DEX_ADDRESS", dexEndpoint},
 	{"SUPERVERSE_TEST_API_ADDRESS", apiEndpoint},
-	{"SUPERVERSE_TEST_WORKER_TARGET", workerTargetEndpoint},
-	{"SUPERVERSE_TEST_EXISTING_WORKER_TARGET", workerTargetEndpoint},
+
 	{"SUPERVERSE_TEST_WORKER_HOST", workerHostEndpoint},
 }
 
-// Local Kind's endpoints. Their owners are scripts, not Go: the three ports are
-// the forwards of `kind ports` (FORWARDS in infra-as-code/scripts/kind/cluster.py),
-// the Worker target is the Service that the chart renders into the server
-// configuration (infra-as-code/kubernetes/charts/superverse-platform/templates/_server-config.tpl)
-// in the cluster's namespace (NAMESPACE in cluster.py), and the Worker host is
-// what a container reaches the host as (HostFromContainers in
-// internal/dexai/projects/infra). scripts/check-test-lanes.py, part of
-// `make check-go-rules`, fails when one of them changes without the other.
+// Local Kind's host forwards are owned by kind/cluster.py. The test Worker
+// host matches HostFromContainers in projects/infra/addresses.go; the static
+// lane check verifies both without a comm-to-product import.
 const (
-	kindDex          = "127.0.0.1:28811"
-	kindAPI          = "127.0.0.1:28080"
-	kindServerWorker = "superverse-server-worker.superverse-v2-system.svc.cluster.local:50051"
-	kindWorkerHost   = "host.docker.internal"
-	kindLocalGit     = "127.0.0.1:28085"
+	kindDex = "127.0.0.1:28811"
+	kindAPI = "127.0.0.1:28080"
+
+	kindWorkerHost = "host.docker.internal"
+	kindLocalGit   = "127.0.0.1:28085"
 	// kindPostgres is the forward of the lane's PostgreSQL.
 	kindPostgres = "127.0.0.1:28432"
 )
@@ -88,7 +79,7 @@ func (l localLane) endpoints(t testing.TB) endpoints {
 	t.Helper()
 	switch l {
 	case LaneKindForTest:
-		return endpoints{dexEndpoint: kindDex, apiEndpoint: kindAPI, workerTargetEndpoint: kindServerWorker, workerHostEndpoint: kindWorkerHost, localGitEndpoint: kindLocalGit}
+		return endpoints{dexEndpoint: kindDex, apiEndpoint: kindAPI, workerHostEndpoint: kindWorkerHost, localGitEndpoint: kindLocalGit}
 	case laneNative:
 		return nativeEndpoints(t)
 	}
@@ -101,11 +92,7 @@ func (l localLane) endpoints(t testing.TB) endpoints {
 func nativeEndpoints(t testing.TB) endpoints {
 	t.Helper()
 	profile := nativeRunProfile(t)
-	host, _, err := net.SplitHostPort(profile.Dex.WorkerTarget)
-	if err != nil {
-		t.Fatalf("dex.workerTarget of the effective Native run is not host:port: %v", err)
-	}
-	return endpoints{dexEndpoint: profile.Dex.ServerAddress, apiEndpoint: profile.Server.GRPCAddress, workerTargetEndpoint: profile.Dex.WorkerTarget, workerHostEndpoint: host,
+	return endpoints{dexEndpoint: profile.Dex.ServerAddress, apiEndpoint: profile.Server.GRPCAddress, workerHostEndpoint: kindWorkerHost,
 		localGitEndpoint: profile.LocalGit.Listen}
 }
 
@@ -146,7 +133,6 @@ type nativeRunProfileDocument struct {
 	} `yaml:"server"`
 	Dex struct {
 		ServerAddress string `yaml:"serverAddress"`
-		WorkerTarget  string `yaml:"workerTarget"`
 	} `yaml:"dex"`
 	Native struct {
 		Instance      string `yaml:"instance"`

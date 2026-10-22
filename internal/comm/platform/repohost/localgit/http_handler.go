@@ -42,6 +42,15 @@ const (
 // ServeHTTP serves the Git smart HTTP protocol of every repository and the
 // administrator's read-only JSON interface.
 func (h *Host) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.httpMu.Lock()
+	if h.closing {
+		h.httpMu.Unlock()
+		http.Error(w, "Git host stopping", http.StatusServiceUnavailable)
+		return
+	}
+	h.requests.Add(1)
+	h.httpMu.Unlock()
+	defer h.requests.Done()
 	w.Header().Set("Cache-Control", "no-cache")
 	if strings.HasPrefix(r.URL.Path, apiPrefix) {
 		h.serveAPI(w, r)

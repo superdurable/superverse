@@ -19,7 +19,7 @@ spec:
   ingress:
     - from:
         - podSelector: {matchLabels: {app.kubernetes.io/part-of: {{ include "v2.product" $ }}}}
-      ports: [{port: 50051, protocol: TCP}, {port: 8801, protocol: TCP}]
+      ports: [{port: 8801, protocol: TCP}]
     - from:
         - podSelector: {matchLabels: {app: {{ include "v2.product" $ }}-studio}}
       ports: [{port: 8080, protocol: TCP}]

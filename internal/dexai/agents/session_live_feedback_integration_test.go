@@ -99,7 +99,7 @@ func newLiveDelivery(s *mockSession) *liveDelivery {
 	if err != nil {
 		s.t.Fatal(err)
 	}
-	address, target := dexflowtest.Setting(s.t, "SUPERVERSE_TEST_DEX_ADDRESS"), dexflowtest.Setting(s.t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET")
+	address := dexflowtest.Setting(s.t, "SUPERVERSE_TEST_DEX_ADDRESS")
 	projectFlow, deployFlow := &projects.ProjectFlow{}, &deployments.ProjectDeployFlow{}
 	projectClient := &projects.ProjectFlowClient{Flow: projectFlow, Projections: s.projects.Projections, ProjectIDLength: s.projects.ProjectIDLength, PlatformAdminEmails: []string{"admin@superverse.test"}}
 	deploymentClient := deployments.NewProjectDeployFlowClient(projectClient, nil, nil)
@@ -113,7 +113,7 @@ func newLiveDelivery(s *mockSession) *liveDelivery {
 	releaseFlow := releases.NewProjectReleaseFlow(projectClient, nil, builder, recipes, nil, deploymentnames.EnvironmentTest, publishing, nil)
 	// This client registry supplies definitions only; the existing Worker
 	// runs the Flows with every dependency of its server.
-	projectClient.Dex = dexflowtest.ClientForTest(s.t, address, &dex.WorkerTarget{Address: target}, projectFlow, releaseFlow, deployFlow)
+	projectClient.Dex = dexflowtest.ClientForTest(s.t, address, &dex.WorkerTarget{Pull: true}, projectFlow, releaseFlow, deployFlow)
 	releaseClient := releases.NewProjectReleaseFlowClient(releaseFlow, projectClient, build.NewProfiles())
 	deploymentClient.Releases = releaseClient
 	rows := deliverydao.New(postgrestest.OpenForTest(s.t))

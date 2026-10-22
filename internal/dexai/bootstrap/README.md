@@ -45,3 +45,19 @@ hosted environments the Studio origin, with no path prefix. The Bridge joins
 shared protocol paths itself. The
 credential DAO also enters existing Session cleanup; no parallel bootstrap or
 background cleaner exists. See [connection operation](../../../docs/runbooks/remote-agent.md).
+
+The platform Worker is listener-free pull. Bootstrap waits at most two minutes for all queue
+registrations before opening the listeners; readiness checks the Worker's registration state and
+Dex health. A permanent rejection returns a typed error and stops the process. Shutdown marks
+readiness false, drains the Worker with its own configured budget, then stops the listeners.
+The Git host's owner lock remains held until its last HTTP operation returns.
+
+`ComposeWorkerForTest` reuses this assembly for the Native held-Preview race's isolated push
+Worker. The test child supplies the same effective run configuration, secrets and server binary;
+no second set of Flow bootstraps or dependency substitutes exists. Host composition cannot reach
+Kind-only Sandbox addresses, so that transport-gated race runs on Native.
+
+`TestPlatformPushWorkerCompositionIntegration` exercises that same production assembly against
+Native's real dependencies without an application connector: it creates, renames and deletes a
+TeamSpace through its own push target and waits for the Flow to complete. This covers assembly
+and handler execution; the held-Preview test separately owns its transport race assertions.

@@ -62,7 +62,7 @@ def instance_ports(document, index):
     def url_port(url): return urlsplit(url).port + offset
     return {
         "studio": url_port(document["studio"]["publicOrigin"]), "grpc": port(document["server"]["grpcAddress"]),
-        "health": port(document["server"]["healthAddress"]), "worker": port(document["dex"]["workerAddress"]),
+        "health": port(document["server"]["healthAddress"]),
         "git": port(document["localgit"]["listen"]), "routes": port(document["native"]["routesListen"]),
         "dex": port(document["dex"]["serverAddress"]), "dex_web": DEX_WEB_PORT + offset,
         "minio": url_port(document["storage"]["s3Endpoint"]), "temporal": TEMPORAL_PORT + offset,
@@ -159,7 +159,6 @@ class Topology:
         require(max(self.ports.values()) < DYNAMIC_PORTS, f"The Native lane's ports must be below {DYNAMIC_PORTS}, where the engine draws the ports it publishes")
         self.local_git_url = f"http://127.0.0.1:{self.ports['git']}"
         self.registry = f"localhost:{self.ports['registry']}"
-        self.worker_target = f"host.docker.internal:{self.ports['worker']}"
         self.s3_endpoint = f"http://127.0.0.1:{self.ports['minio']}"
         self.network_prefix = f"10.{BASE_NETWORK_SECOND_OCTET + instance.index}.0.0/16"
         # The browser's origin of Keycloak, which its tokens carry as their issuer.
@@ -172,7 +171,7 @@ class Topology:
             "studio": {"publicOrigin": self.studio_origin},
             "remoteAgent": {"listen": f"127.0.0.1:{self.ports['remote_agent']}"},
             "server": {"grpcAddress": f"127.0.0.1:{self.ports['grpc']}", "healthAddress": f"127.0.0.1:{self.ports['health']}"},
-            "dex": {"serverAddress": f"127.0.0.1:{self.ports['dex']}", "workerAddress": f"127.0.0.1:{self.ports['worker']}", "workerTarget": self.worker_target},
+            "dex": {"serverAddress": f"127.0.0.1:{self.ports['dex']}"},
             # The browser on the host reaches the instance's MinIO at the same loopback address.
             "storage": {"s3Endpoint": self.s3_endpoint, "browserEndpoint": self.s3_endpoint},
             "builds": {"localURL": f"http://127.0.0.1:{self.ports['builder']}"},

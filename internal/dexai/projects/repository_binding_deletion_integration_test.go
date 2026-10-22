@@ -32,10 +32,10 @@ import (
 // without starting the FlowID again.
 func TestProjectDeletionEndsRepositoryBindingDexIntegration(t *testing.T) {
 	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
-	target := dexflowtest.Setting(t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET")
+
 	projectFlow, repositoryFlow := &projects.ProjectFlow{}, &repobinding.RepositoryBindingFlow{}
 	// This client registry supplies definitions only; every handler runs in the existing Worker.
-	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Address: target}, projectFlow, repositoryFlow)
+	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Pull: true}, projectFlow, repositoryFlow)
 	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(postgrestest.OpenForTest(t)), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmails: []string{"admin@superverse.test"}}
 	repositories := &repobinding.RepositoryBindingFlowClient{Dex: sdk, Flow: repositoryFlow}
 	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Minute)

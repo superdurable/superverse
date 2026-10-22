@@ -46,7 +46,7 @@ mode 0600 under the main checkout's ignored `.local/superverse-v2`; never upload
 # is in the configuration profile (cmd/superverse-server/config/README.md).
 ./infra-as-code/sv2 kind deploy \
   --secret-env-file /private/path/v2-server.env \
-  --published-dependencies infra-as-code/dependencies/published/dex-1.12.0-llm-0.2.0.json
+  --published-dependencies infra-as-code/dependencies/published/dex-1.13.0-llm-0.2.0.json
 ./infra-as-code/sv2 kind ports
 # Separate terminal, with real provider prerequisites:
 ./infra-as-code/sv2 kind e2e
@@ -64,8 +64,7 @@ those Projects (a repository ID must never be reused in a cluster whose Dex alre
 Studio start after build/deploy. The dependencies include the platform PostgreSQL: `up` keeps its role passwords in
 the private `postgres-credentials.json`, adding a password for a role the source added, and, on every run, creates the
 missing roles and sets their passwords through the container's socket; `deploy` does the same before the server Pod's
-init container applies the migrations, which grant to those roles. It also writes the platform Dex configuration, which re-resolves the headless
-Worker Service every two seconds, and restarts Dex when that configuration changed (`dex.configRevision`). Dex refuses to
+init container applies the migrations, which grant to those roles. It also writes the platform Dex configuration for outbound platform pull Workers and restarts Dex when that configuration changed (`dex.configRevision`). Dex refuses to
 start while a table of its read model Attribute Store is missing, so the first `deploy` adds the store
 (`scripts/local_platform.py`, as the `superverse_dex` role) only after the server's rollout migrated, then restarts Dex;
 until then that deploy's server cannot start the Flows that select the store. Later `up` runs keep the store definitions that the last deploy rendered, which its migrations made tables for, and a later `deploy` renders the checkout's after its own migrations; an `up` from a checkout with a new store or AttributeMap therefore never points Dex at a missing table. Native

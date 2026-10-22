@@ -54,7 +54,7 @@ services:
 
   dex:
     image: ${SV2_DEX_IMAGE:?}
-    command: [--services, "api,interpreter,web"]
+    command: [--services, "api,interpreter,matching,web"]
     environment:
       CONFIG_TEMPLATE_PATH: /etc/dex/config.yaml
       TEMPORAL_HOST_PORT: temporal:7233

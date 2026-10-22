@@ -49,7 +49,7 @@ one that does not set `localKind`, that selects `runtime: docker` or that has a 
 name, the digest of each layer and the document that the server loaded.
 A hosted environment has no profile file: its Terraform wiring renders the same document from chart
 values (`server.config`) into the ConfigMap, and the chart fills the addresses it owns, such as the
-Dex and Worker Service names, and fixes `dex.workerHeadless`, `environment`, `localKind` and `sandbox.profile`.
+Dex Service name, and fixes `environment`, `localKind` and `sandbox.profile`.
 
 ## Reference
 
@@ -90,9 +90,18 @@ define the slug.
 | Key | Meaning | Default | Range or rule |
 | --- | --- | --- | --- |
 | `serverAddress` | Platform Dex Flow API | `127.0.0.1:8801` | |
-| `workerAddress` | Address this process's Worker binds | `:50051` | |
-| `workerTarget` | Address the Dex Server dials to reach the Worker | `127.0.0.1:50051` | |
-| `workerHeadless` | Dex resolves `workerTarget`, a headless Service, to its Pods and routes each Flow to one Worker | `false` | The chart sets `true`; refused with `runtime: docker` |
+| `pull.maxConcurrentTasks` | Maximum simultaneous platform Worker handlers | `256` | `1` to `256` |
+| `pull.idleStreamsPerQueue` | Idle stream target per registered Flow type and process queue | `1` | `1` to `8` |
+| `pull.stopDrainTimeout` | Drain before cancelling active handler contexts | `60s` | `1s` to `60s`; fits the 120-second Pod grace with preStop and listener shutdown |
+
+The platform registers 15 Flow types. SDK 1.13.0 keeps surplus idle streams after tasks finish, so its lifetime stream bound is `(F + 1) * (idleStreamsPerQueue + maxConcurrentTasks)`: 4,112 at the defaults and 4,224 at the supported maxima. Bootstrap refuses a registry/options combination above `PlatformDexWorkerStreamCap` (4,224). Platform Dex must set `matching.maxConcurrentTasksCap: 4224` and `matching.maxStreams: 100000`; these count registered streams, including idle streams. Budget every server replica and rollout overlap against one matching instance, plus other pull Workers; at the supported maximum, 23 Workers consume 97,152 streams. Review both settings before increasing replicas or adding Flow types.
+
+The 256 slots are shared by Steps and RPCs, with no reserved RPC capacity. Size each replica for active Session handlers (up to four during parallel tools), background watches, subagents, provider/build/cleanup polling and RPC bursts. A workload of 32 Session handlers, 32 background watches, 32 subagent handlers, 64 pollers and 32 RPCs uses 192 slots; simultaneous four-way tool waves can exceed this envelope. A finite cap cannot match uncapped push under arbitrary load. Engine-side Timer, Channel and SubFlow waits release their handler after `WaitFor` returns; `PollUntil` holds one for its full attempt.
+
+Each open stream uses two SDK goroutines, contexts, control channels and gRPC stream state; a busy stream adds a task goroutine and its loaded payload/state. The defaults bound transport/task goroutines at `2 * 4112 + 256 + 1 = 8481`, excluding shared gRPC/runtime and application helpers. Two initial Go stacks alone cost at least 4 KiB per stream; 16–64 KiB per stream per endpoint is a planning estimate, not measured memory or a payload bound. Keep application payload limits and container memory limits in the capacity budget. Matching sends idle Ping/Pong traffic every 20 seconds by default; fully retained default streams can therefore produce about 206 exchanges per second per Worker, even after its workload subsides.
+
+The Worker opens outbound streams to `serverAddress`; it has no listener or advertised address.
+Readiness waits for every queue's acknowledged registration. A permanent rejection with no remaining registered stream on its queue stops the Worker; rejected surplus streams can log and retry. Initial readiness does not prove the server accepts the full stream envelope.
 
 ### `studio`
 
@@ -317,11 +326,10 @@ the launcher runs with Docker Compose ([runbook](../../../docs/runbooks/local-na
 time; the launcher refuses a port that Kind serves ([runbook](../../../docs/runbooks/local-native.md#beside-local-kind)).
 
 With `runtime: docker` every listener of the server (`server.grpcAddress`, `server.healthAddress`,
-`dex.workerAddress`, `dex.serverAddress`, `native.routesListen` and, with `repohost: localgit`, `localgit.listen`)
+`dex.serverAddress`, `native.routesListen` and, with `repohost: localgit`, `localgit.listen`)
 is `127.0.0.1:<port>`, `routes.gatewayURL`, `native.gatewayAPI`, `storage.s3Endpoint`, `storage.browserEndpoint` and `builds.localURL` are
-`http` origins on 127.0.0.1, `dex.workerTarget` is `host.docker.internal:<port of dex.workerAddress>` and
-`localgit.cloneBaseURL` is `http://host.docker.internal:<port of localgit.listen>`, where containers reach the host
-processes; `dex.workerHeadless` is refused.
+`http` origins on 127.0.0.1, `localgit.cloneBaseURL` is `http://host.docker.internal:<port of localgit.listen>`, where containers reach the host
+processes.
 
 ## Secrets (environment only)
 
@@ -388,7 +396,7 @@ the Kind deploy and Native ignore such keys, and a hosted Secret can drop them w
 | `SUPERVERSE_PROJECT_ID_LENGTH` | `server.projectIDLength` |
 | `SUPERVERSE_GRPC_ADDRESS`, `SUPERVERSE_HEALTH_ADDRESS` | `server.grpcAddress`, `server.healthAddress` |
 | `SUPERVERSE_BLOB_CACHE_DIR` | `server.blobCacheDir` |
-| `DEX_SERVER_ADDRESS`, `DEX_WORKER_ADDRESS`, `DEX_WORKER_TARGET`, `DEX_WORKER_HEADLESS` | `dex.serverAddress`, `dex.workerAddress`, `dex.workerTarget`, `dex.workerHeadless` |
+| `DEX_SERVER_ADDRESS` | `dex.serverAddress` |
 | `SUPERVERSE_STUDIO_PUBLIC_ORIGIN` | `studio.publicOrigin` (Studio keeps its own variable) |
 | `SUPERVERSE_AGENT_MODEL`, `_EFFORT`, `_COMPACTION_TOKENS`, `_THINKING_PREFIX_MISMATCH`, `_TASK_TURNS` | `agent.model`, `effort`, `compactionTokens`, `thinkingPrefixMismatch`, `taskTurns` |
 | `SUPERVERSE_AGENT_SCRIPTED_MODEL` | none: `agent.mockModel` offers the mock model per Session instead of switching the whole server |

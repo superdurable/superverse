@@ -49,7 +49,7 @@ spec:
           env:
             - {name: CONFIG_TEMPLATE_PATH, value: /etc/dex/config.yaml}
             - {name: TEMPORAL_HOST_PORT, value: {{ .Values.dex.temporalAddress | quote }}}
-          args: ["--services", {{ ternary "api,interpreter,web" "api,interpreter" $webEnabled | quote }}]
+          args: ["--services", {{ ternary "api,interpreter,matching,web" "api,interpreter,matching" $webEnabled | quote }}]
           ports:
             - {name: grpc, containerPort: 8801}
             {{- if $webEnabled }}

@@ -223,7 +223,7 @@ func TestProjectSessionStartFailureDexIntegration(t *testing.T) {
 func projectClients(t *testing.T) (*dex.Client, *projects.ProjectFlowClient, *sessionagent.SessionAgentFlow) {
 	t.Helper()
 	projectFlow, flow := &projects.ProjectFlow{}, &sessionagent.SessionAgentFlow{}
-	sdk := dexflowtest.ClientForTest(t, dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS"), &dex.WorkerTarget{Address: dexflowtest.Setting(t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET")},
+	sdk := dexflowtest.ClientForTest(t, dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS"), &dex.WorkerTarget{Pull: true},
 		projectFlow, flow)
 	return sdk, &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(postgrestest.OpenForTest(t)), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmails: []string{"admin@superverse.test"}}, flow
 }

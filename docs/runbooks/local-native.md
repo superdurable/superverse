@@ -68,7 +68,7 @@ Project’s Anthropic key through the Agent picker; no Session uses a platform e
 | Boundary | Address |
 | --- | --- |
 | Studio (host process) | `http://localhost:21000` |
-| Business gRPC, health, Worker | `127.0.0.1:26080`, `127.0.0.1:26082`, `127.0.0.1:25051`; platform Dex dials the Worker at `host.docker.internal:25051` |
+| Business gRPC, health | `127.0.0.1:26080`, `127.0.0.1:26082`; platform Worker streams are outbound to Dex |
 | Local Git host | `127.0.0.1:26085`; a Sandbox clones from `http://host.docker.internal:26085` |
 | Remote agent Bridge origin | `127.0.0.1:26089`, shifted by the named-instance offset; see [connection operation](remote-agent.md) |
 | Routes the server serves the gateway | `127.0.0.1:26086` |
@@ -80,7 +80,7 @@ Project’s Anthropic key through the Agent picker; no Session uses a platform e
 | Release builder | `http://127.0.0.1:27792` |
 
 Every port is on the loopback and is the lane's own: it is the port Kind serves for the same boundary, or Native's
-former one, minus 2000, except the Worker and the registry, whose addresses every Flow and every Release image record.
+former one, minus 2000, except the registry, whose address every Release image records.
 `native.yaml` declares them, and `infra-as-code/scripts/native/lane.py` the Temporal, Temporal UI and Dex Web ports that no server
 setting names; the Compose project publishes them from there. The launcher refuses a port that the Kind lane serves
 and one from 32768 up, where the engine draws the ephemeral loopback ports of the project containers, which the
@@ -128,8 +128,6 @@ the other lane ([lane inputs](../../internal/dexai/agents/README.md)).
 ```sh
 SUPERVERSE_TEST_LANE=native SUPERVERSE_TEST_NATIVE_INSTANCE=default SUPERVERSE_TEST_NATIVE_RUN_ID=<run-id> \
 SUPERVERSE_TEST_DEX_ADDRESS=127.0.0.1:26811 SUPERVERSE_TEST_API_ADDRESS=127.0.0.1:26080 \
-SUPERVERSE_TEST_WORKER_TARGET=host.docker.internal:25051 SUPERVERSE_TEST_WORKER_HEADLESS=false \
-SUPERVERSE_TEST_EXISTING_WORKER_TARGET=host.docker.internal:25051 SUPERVERSE_TEST_EXISTING_WORKER_HEADLESS=false \
 SUPERVERSE_TEST_PROJECT_ID_LENGTH=4 go test <packages> -run '<tests>' -count=1
 ```
 
@@ -195,10 +193,10 @@ docker network ls --filter label=superdurable.io/project-id=<projectID>
 docker volume ls --filter label=superdurable.io/project-id=<projectID>
 ```
 
-## Dex callback proof
+## Dex pull delivery proof
 
 Before marking the owner ready, the launcher uses the pinned `dexcli` to discover an open platform Flow, requires
-that its Worker target is `host.docker.internal:25051`, invokes only its read-only `GetDexSummary` RPC and confirms
+that its Worker target has `pull: true`, invokes only its read-only `GetDexSummary` RPC and confirms
 the run is still current; reads have eight-second deadlines within two minutes. The run records
 `callbackReadiness.level=CALLBACK_VERIFIED` with the Flow type, RunID, a hash of the FlowID and the CLI identity,
 never the CLI output. A lane with no open platform Flow, such as one whose Projects are all deleted, records
@@ -206,7 +204,7 @@ never the CLI output. A lane with no open platform Flow, such as one whose Proje
 Platform Dex Web on 26812 serves the flow list, graph and timeline for read-only diagnosis.
 
 Real integration tests may retain Flows on temporary Workers. Discovery counts these as
-`otherWorkerCandidates` and continues to a Flow whose address and headless mode match Native;
+`otherWorkerCandidates` and continues to a Flow whose target selects the platform pull Worker;
 it never invokes their RPCs or changes their state. Open platform Flows of which none matches
 still fail readiness. A candidate with missing Worker identity also fails readiness.
 
@@ -428,3 +426,8 @@ never replaces a Kind receipt.
 The retained journey `web/studio/tests/e2e/journey/new-project.spec.ts` runs directly with Playwright against the ready
 Native Studio, as the [E2E contract](../../web/studio/tests/e2e/README.md#retained-journeys-no-cleanup) shows; it is
 not acceptance. Its Preview and Live URLs answer while the run's gateway runs.
+
+The Native owner allows the server 120 seconds after SIGTERM before forcing exit, including
+server restarts and recovery. This covers the validated platform Worker drain (at most 60 seconds)
+and listener shutdown. A restart command also allows two minutes for replacement registration;
+the stopping server reports not ready before draining.

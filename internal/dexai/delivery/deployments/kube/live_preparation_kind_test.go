@@ -61,7 +61,7 @@ type deployScenario struct {
 func newDeployScenario(ctx context.Context, t *testing.T, fixture string) *deployScenario {
 	t.Helper()
 	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
-	target := dexflowtest.Setting(t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET")
+
 	kubeconfig := dexflowtest.Setting(t, "SUPERVERSE_TEST_KIND_KUBECONFIG")
 	data, err := os.ReadFile(dexflowtest.Setting(t, fixture))
 	if err != nil {
@@ -77,7 +77,7 @@ func newDeployScenario(ctx context.Context, t *testing.T, fixture string) *deplo
 	projectFlow, releaseFlow, deployFlow := &projects.ProjectFlow{}, &releases.ProjectReleaseFlow{}, &deployments.ProjectDeployFlow{}
 	// The client registry supplies definitions only; the existing Worker runs
 	// the Steps with every real dependency.
-	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Address: target}, projectFlow, releaseFlow, deployFlow)
+	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Pull: true}, projectFlow, releaseFlow, deployFlow)
 	db := postgrestest.OpenForTest(t)
 	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), Members: memberdao.New(db), ProjectIDLength: len(request.ProjectID)}
 	releaseClient := releases.NewProjectReleaseFlowClient(releaseFlow, projectClient, nil)
@@ -486,9 +486,7 @@ func TestDeployLivePreparationWorkerRestartIntegration(t *testing.T) {
 		active, _ = s.branch(ctx, deployment, "PrepareLiveTemporal")
 		s.pause(ctx, "the Temporal branch of "+deployment)
 	}
-	if out, err := s.kubectl(ctx, "-n", "superverse-v2-system", "delete", "pod", "-l", "app=superverse-v2-server", "--wait=false"); err != nil {
-		t.Fatalf("Worker replacement failed: %s", out)
-	}
+	dexflowtest.RestartServerForTest(ctx, t, func(call context.Context) error { _, err := s.projects.Read(call, s.build.ProjectID); return err })
 	for retried := false; !retried; {
 		_, retried = s.branch(ctx, deployment, "PrepareLiveTemporal")
 		s.pause(ctx, "a new attempt of the Temporal branch of "+deployment)
@@ -500,7 +498,7 @@ func TestDeployLivePreparationWorkerRestartIntegration(t *testing.T) {
 	}
 	s.requireBranchTimings(ready)
 	s.requireNoPendingResults(ctx, deployment)
-	t.Logf("deployment %s READY in one round after a heartbeat-timeout retry of its Temporal branch", deployment)
+	t.Logf("deployment %s READY in one round after rollout cancellation and retry of its Temporal branch", deployment)
 }
 
 // TestDeployLiveTemporalWaitLimitIntegration keeps the project's Temporal

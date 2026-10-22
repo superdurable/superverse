@@ -60,6 +60,10 @@ def run_directory(instance, record):
     return instance.runs / record["runId"]
 
 
+# Match the platform Pod grace; config validation bounds the Worker drain to at most 60s.
+SERVER_SHUTDOWN_GRACE = 120
+SERVER_REGISTRATION_WAIT = 120
+
 def host_environment(*keys):
     return {key: os.environ[key] for key in keys if key in os.environ}
 
@@ -258,12 +262,12 @@ def serve(instance, record, topology, prepared, processes):
     processes["builder"] = spawn(instance, builder, record, "builder", env=builder_environment)
     await_child(processes["builder"], "builder", lambda: services.connect(ports["builder"]), seconds=60)
     processes["server"] = spawn(instance, [record["binary"]], record, "server", env=environment)
-    await_child(processes["server"], "server", lambda: ready(ports["health"], record["runId"]))
+    await_child(processes["server"], "server", lambda: ready(ports["health"], record["runId"]), seconds=SERVER_REGISTRATION_WAIT)
     studio_argv, studio_cwd, studio_environment = prepared["studio"]
     processes["studio"] = spawn(instance, studio_argv, record, "studio", env=studio_environment, cwd=studio_cwd)
     await_child(processes["studio"], "studio", lambda: services.connect(ports["studio"]))
     record["runtimeIdentity"] = environment_identity(instance, topology, record)
-    record["callbackReadiness"] = callback_readiness(f"127.0.0.1:{ports['dex']}", topology.worker_target, False, stop_requested)
+    record["callbackReadiness"] = callback_readiness(f"127.0.0.1:{ports['dex']}", stop_requested)
     if record["studio"]["mode"] == "build":
         # Only an acceptance-capable run binds its startup source; a dev run is edited while it starts.
         require(inputs_unchanged(instance, record), "Native behavioral/host inputs changed during startup")
@@ -303,13 +307,13 @@ def restart(instance, record, processes, environment, ports):
     old = processes.pop("server")
     old.terminate()
     try:
-        old.wait(timeout=20)
+        old.wait(timeout=SERVER_SHUTDOWN_GRACE)
     except subprocess.TimeoutExpired:
         old.kill()
         old.wait(timeout=5)
     record["children"] = [child for child in record["children"] if child["pid"] != old.pid]
     processes["server"] = spawn(instance, [record["binary"]], record, "server", env=environment)
-    await_child(processes["server"], "server", lambda: ready(ports["health"], record["runId"]))
+    await_child(processes["server"], "server", lambda: ready(ports["health"], record["runId"]), seconds=SERVER_REGISTRATION_WAIT)
     record.update(phase="ready", serverRestarts=record["serverRestarts"] + 1)
     save_run(instance, record)
     print(f"Native server restarted ({record['serverRestarts']})", flush=True)
@@ -319,7 +323,7 @@ def shut_down(instance, record, topology, processes):
     """Stop every owned process, then the platform services, and release the run once both are proven stopped."""
     record["phase"] = "stopping"
     save_run(instance, record)
-    stop_group(record, owner_pid=os.getpid(), processes=list(processes.values()))
+    stop_group(record, owner_pid=os.getpid(), processes=list(processes.values()), term_seconds=SERVER_SHUTDOWN_GRACE)
     for process in processes.values():
         process.wait(timeout=5)
     record.update(phase="stopped", stoppedAt=time.time())
@@ -341,7 +345,7 @@ def stop(args):
     expected = record["ownerProcess"]
     require(process_identity(expected["pid"]) == expected, "Native owner is absent or changed; use explicit recover")
     os.kill(expected["pid"], signal.SIGTERM)
-    deadline = time.monotonic() + 360
+    deadline = time.monotonic() + SERVER_SHUTDOWN_GRACE + 360
     while time.monotonic() < deadline:
         if not group_members(expected["group"]):
             require(retained(instance).get("runId") != record["runId"], "Native stopped without stopping its platform services; run native recover --instance " + instance.name + " --run-id " + record["runId"])
@@ -361,7 +365,7 @@ def recover(args):
         members = group_members(expected["group"])
         known = [{key: child[key] for key in ("pid", "group", "started")} for child in record.get("children", [])]
         require(not members or any(child in members for child in known), "No surviving recorded child proves group ownership; manual identity reconciliation required")
-        stop_group(record)
+        stop_group(record, term_seconds=SERVER_SHUTDOWN_GRACE)
         services.stop(Topology(instance))
         record.update(phase="stopped", stoppedAt=time.time(), recovered=True)
         if run_directory(instance, record).is_dir():
@@ -376,7 +380,7 @@ def restart_server(args):
     record = require_run(instance, args, running=True)
     before = record["serverRestarts"]
     os.kill(record["ownerProcess"]["pid"], signal.SIGUSR1)
-    deadline = time.monotonic() + 180
+    deadline = time.monotonic() + SERVER_SHUTDOWN_GRACE + SERVER_REGISTRATION_WAIT + 30
     while time.monotonic() < deadline:
         current = require_run(instance, args)
         require(process_identity(current["ownerProcess"]["pid"]) == current["ownerProcess"], "Native owner exited during the server restart")

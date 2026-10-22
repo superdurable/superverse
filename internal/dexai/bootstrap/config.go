@@ -10,6 +10,7 @@ package bootstrap
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -170,6 +171,13 @@ type serverConfig struct {
 // only one mode uses are used only in that mode: the local build service in
 // Local Kind, CodeBuild and the project cloud elsewhere.
 func loadConfig(ctx context.Context, logger *slog.Logger, settings serverconfig.Config) (c serverConfig, err error) {
+	defer func() {
+		if err != nil && c.localGit != nil {
+			err = errors.Join(err, c.localGit.Close())
+			c.localGit = nil
+		}
+	}()
+
 	// Validate accepted the name, so parsing it cannot fail.
 	c.environment = comm.Must(deploymentnames.ParseEnvironment(settings.Environment))
 	c.names = deploymentnames.MustFor(c.environment)
@@ -276,9 +284,13 @@ func loadConfig(ctx context.Context, logger *slog.Logger, settings serverconfig.
 	}
 
 	// The Dex Server reaches this process's Worker at target.
-	target := dex.WorkerTarget{Address: settings.Dex.WorkerTarget, Headless: settings.Dex.WorkerHeadless}
-	c.dexClient = dex.ClientOptions{FlowServiceAddress: settings.Dex.ServerAddress, WorkerTarget: &target}
-	c.dexWorker = dex.WorkerOptions{BindAddress: settings.Dex.WorkerAddress, WorkerTarget: target, FlowServiceAddress: settings.Dex.ServerAddress}
+	c.dexClient = dex.ClientOptions{FlowServiceAddress: settings.Dex.ServerAddress}
+	c.dexWorker = dex.WorkerOptions{FlowServiceAddress: settings.Dex.ServerAddress, Pull: &dex.PullWorkerOptions{
+		MaxConcurrentTasks:             settings.Dex.Pull.MaxConcurrentTasks,
+		IdleStreamsPerQueue:            settings.Dex.Pull.IdleStreamsPerQueue,
+		StopDrainTimeout:               settings.Dex.Pull.StopDrainTimeout,
+		StopOnPermanentStreamRejection: true,
+	}}
 	c.blobCache = blobcache.Config{Dir: settings.Server.BlobCacheDir, MaxBytes: 256 << 20}
 	c.grpcAddress = settings.Server.GRPCAddress
 	c.healthAddress = settings.Server.HealthAddress

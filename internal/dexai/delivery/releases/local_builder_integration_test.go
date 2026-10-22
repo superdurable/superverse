@@ -135,12 +135,12 @@ func TestLocalBuilderImmutableArtifactsIntegration(t *testing.T) {
 // deletion removes it.
 func TestReleaseBuildTimingsWorkerRestartIntegration(t *testing.T) {
 	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
-	target := dexflowtest.Setting(t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET")
+
 	fixture, builder := fixtureBuild(t)
 	projectFlow, releaseFlow := &projects.ProjectFlow{}, &ProjectReleaseFlow{}
 	// The client registry supplies definitions only; the existing Worker runs
 	// the Steps with every real dependency.
-	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Address: target}, projectFlow, releaseFlow)
+	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Pull: true}, projectFlow, releaseFlow)
 	reader := dexflowtest.ExecutionReaderForTest(t, address)
 	projectsClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(postgrestest.OpenForTest(t)), ProjectIDLength: len(fixture.ProjectID), PlatformAdminEmails: []string{"admin@superverse.test"}}
 	client := NewProjectReleaseFlowClient(releaseFlow, projectsClient, nil)

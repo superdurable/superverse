@@ -51,10 +51,10 @@ import (
 // turn runs, so no model is called and no segment opens.
 func TestSessionModelAdmissionDexIntegration(t *testing.T) {
 	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
-	target := dexflowtest.Setting(t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET")
+
 	projectFlow, previewFlow, flow := &projects.ProjectFlow{}, &preview.PreviewFlow{}, &sessionagent.SessionAgentFlow{}
 	workspaceFlow := &sessionworkspace.SessionWorkspaceFlow{}
-	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Address: target}, projectFlow, previewFlow, flow, workspaceFlow)
+	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Pull: true}, projectFlow, previewFlow, flow, workspaceFlow)
 	reader := dexflowtest.ExecutionReaderForTest(t, address)
 	// This client registry supplies definitions only. Real handlers and every
 	// application dependency belong to the existing Worker selected above.

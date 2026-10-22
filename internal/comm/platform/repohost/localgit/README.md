@@ -5,7 +5,7 @@ Purpose: Hosts bare Git repositories inside the server for the local lanes, serv
 
 Callers: `internal/dexai/bootstrap` imports this package.
 
-Dependencies: it imports `internal/comm`, `internal/comm/flowid`, `internal/comm/platform/deploymentnames`, `internal/comm/platform/repohost` and `internal/comm/platform/repohost/localgit/releases`.
+Dependencies: it imports `internal/comm`, `internal/comm/flowid`, `internal/comm/platform/deploymentnames`, `internal/comm/platform/repohost`, `internal/comm/platform/repohost/localgit/filelocks` and `internal/comm/platform/repohost/localgit/releases`.
 
 ```mermaid
 flowchart LR
@@ -15,7 +15,8 @@ flowchart LR
   self --> d1["internal/comm/flowid"]
   self --> d2["internal/comm/platform/deploymentnames"]
   self --> d3["internal/comm/platform/repohost"]
-  self --> d4["internal/comm/platform/repohost/localgit/releases"]
+  self --> d4["internal/comm/platform/repohost/localgit/filelocks"]
+  self --> d5["internal/comm/platform/repohost/localgit/releases"]
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 
@@ -35,7 +36,7 @@ opens.
 
 Bare repositories live in `localgit.dir`, the main checkout's
 `.local/superverse-v2/git`, which Local Kind mounts into the node and Local Native uses
-directly. The lanes never run at the same time.
+directly in its own lane directory. During a Kind rolling update two server processes share the same hostPath; no PVC access-mode change is needed.
 
 ```text
 <dir>/repository-sequence                                  the last repository ID handed out
@@ -44,7 +45,15 @@ directly. The lanes never run at the same time.
 <dir>/.receiving-*                                         the pack of a push being received
 ```
 
-A start removes the `.creating-*` directories and `.receiving-*` files a crash left.
+A process holds an OS advisory owner lock for its lifetime. Its temporary paths carry a random
+owner ID; startup removes them only after acquiring that owner's released lock. Live replicas'
+temporary files remain intact, and dead owner records are reclaimed at the next startup.
+Root creation and repository ID allocation share one advisory lock. Every repository has its
+own lock for push ref compare/write, archival and template initialization. Acquisition checks
+cancellation every 20 ms and waits only until the caller deadline. Startup alone bounds
+owner registration to 30 seconds because it performs only local cleanup. Locks release
+when the operation ends or the process dies. Lock files persist to retain stable inode identity;
+there is one creation lock and at most one repository lock per retained repository.
 
 - Every repository belongs to `superverse-local` and is named like its GitHub twin,
   `<prefix>-<name slug>-<projectID>` with the prefix `localkind` or `localnative`
@@ -208,3 +217,7 @@ name that Git does not allow 400.
 | `read_api.go` | The administrator's JSON interface |
 | `localgit_integration_test.go` | The real `git` command against a running host |
 | `push_refusal_integration_test.go` | Pushes the host refuses, with the real `git` command or as a client that sends what `git` would not, and the repository they leave |
+
+`TestLocalGitMultiProcessIntegration` runs two OS processes over the same directory, drives
+real Git HTTP pushes, and verifies distinct IDs, ref CAS, archival during an upload and
+live/dead temporary-file cleanup.

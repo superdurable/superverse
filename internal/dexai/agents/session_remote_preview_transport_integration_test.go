@@ -9,11 +9,12 @@
 package agents
 
 import (
+	"bufio"
 	"context"
-	"io"
 	"net"
+	"os"
 	"os/exec"
-	"strings"
+	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -103,89 +104,76 @@ func (cleanup *remotePreviewCleanup) awaitTerminal(ctx context.Context) bool {
 	}
 }
 
-// The Flow target is how platform Dex reaches the real lane Worker, not how
-// this host reaches it. Validate the selected lane before translating it.
-// Native's launcher binds the SAME effective port on loopback; Kind requires
-// a private, bounded forward to the SAME Service, never another test Worker.
-func remotePreviewWorkerDialTarget(ctx context.Context, t *testing.T, original string, cleanup *remotePreviewCleanup) string {
+// The gated Session uses a push Worker in a child process with the production
+// assembly. Native host composition uses the effective lane endpoints directly.
+func remotePreviewWorkerDialTarget(ctx context.Context, t *testing.T, cleanup *remotePreviewCleanup) string {
 	t.Helper()
-	if original != dexflowtest.Setting(t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET") {
-		t.Fatal("Preview relay original Worker target differs from the selected lane")
+	if dexflowtest.LocalLaneForTest(t) == dexflowtest.LaneKindForTest {
+		t.Fatal("held Preview race requires Native: production host composition cannot reach Kind-only Sandbox addresses")
 	}
-	host, port, err := net.SplitHostPort(original)
-	if err != nil {
-		t.Fatal("Preview relay original Worker target is not host:port")
+	if os.Getenv("SUPERVERSE_CONFIG_FILE") == "" {
+		t.Fatal("held Preview race requires the selected Native run's effective SUPERVERSE_CONFIG_FILE and secret environment")
 	}
-	if dexflowtest.LocalLaneForTest(t) != dexflowtest.LaneKindForTest {
-		if host != "host.docker.internal" {
-			t.Fatal("Preview relay Native target differs from the effective launcher callback")
-		}
-		address := net.JoinHostPort("127.0.0.1", port)
-		awaitRemotePreviewWorkerPort(ctx, t, address, nil)
-		return address
+	binary := filepath.Join(t.TempDir(), "platform-worker.test")
+	build := exec.CommandContext(ctx, "go", "test", "-c", "-o", binary, "../bootstrap")
+	if output, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("compile real platform Worker fixture: %v %s", err, output)
 	}
-	parts := strings.Split(host, ".")
-	if len(parts) != 5 || strings.Join(parts[2:], ".") != "svc.cluster.local" {
-		t.Fatal("Preview relay Kind target does not name the selected Worker Service")
-	}
-	localPort := dexflowtest.FreePortForTest(ctx, t)
-	address := net.JoinHostPort("127.0.0.1", localPort)
-	// Survive body cancellation and ordinary fixture deletion when config
-	// restoration is unconfirmed. The early owner always closes this forward
-	// last, even when terminal confirmation fails, within this hard lifetime.
+	port := dexflowtest.FreePortForTest(ctx, t)
 	deadline := time.Now().Add(previewSetupTimeout + 2*previewDeployTimeout + remotePreviewCleanupLifetime)
 	if testDeadline, ok := t.Deadline(); ok && testDeadline.Add(remotePreviewCleanupLifetime).Before(deadline) {
 		deadline = testDeadline.Add(remotePreviewCleanupLifetime)
 	}
-	forward, cancel := context.WithDeadline(context.Background(), deadline)
-	command := exec.CommandContext(forward, "kubectl", "--kubeconfig", dexflowtest.Setting(t, "SUPERVERSE_TEST_KIND_KUBECONFIG"), //nolint:gosec // the validated lane's exact Worker Service
-		"--context", "kind-superverse-v2", "--request-timeout=15s", "-n", parts[1], "port-forward", "--address=127.0.0.1", "service/"+parts[0], localPort+":"+port)
-	command.Stdout, command.Stderr = io.Discard, io.Discard
-	command.WaitDelay = 5 * time.Second
-	if err := command.Start(); err != nil {
-		cancel()
-		t.Fatal("Preview relay exact Kind Worker forward could not start")
+	lifetime, cancelLifetime := context.WithDeadline(context.Background(), deadline)
+	child := exec.CommandContext(lifetime, binary, "-test.run=^TestPlatformPushWorkerProcess$", "-test.timeout=35m")
+	child.Env = append(os.Environ(), "SUPERVERSE_TEST_PUSH_WORKER_PORT="+port)
+	input, err := child.StdinPipe()
+	if err != nil {
+		t.Fatal(err)
 	}
-	done := make(chan struct{})
+	output, err := child.StdoutPipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	child.Stderr = os.Stderr
+	if err = child.Start(); err != nil {
+		t.Fatal(err)
+	}
+	ready := make(chan bool, 1)
 	go func() {
-		_ = command.Wait()
-		close(done)
+		scanner := bufio.NewScanner(output)
+		found := false
+		for scanner.Scan() {
+			if scanner.Text() == "PULLPLATFORM_PUSH_WORKER_READY" && !found {
+				ready <- true
+				found = true
+			}
+		}
+		if !found {
+			ready <- false
+		}
 	}()
+	done := make(chan error, 1)
+	go func() { done <- child.Wait() }()
 	cleanup.closeForward = func() {
-		cancel()
+		defer cancelLifetime()
+		_ = input.Close()
 		select {
 		case <-done:
-		case <-time.After(5 * time.Second):
-			t.Error("Preview relay owned Worker forward did not exit within5s")
+		case <-time.After(15 * time.Second):
+			_ = child.Process.Kill()
+			<-done
 		}
 	}
-	awaitRemotePreviewWorkerPort(ctx, t, address, done)
-	return address
-}
-
-func awaitRemotePreviewWorkerPort(ctx context.Context, t *testing.T, address string, stopped <-chan struct{}) {
-	t.Helper()
-	ready, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-	ticker := time.NewTicker(100 * time.Millisecond)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-stopped:
-			t.Fatal("Preview relay exact Worker forward exited before readiness")
-		default:
+	select {
+	case ok := <-ready:
+		if !ok {
+			cleanup.closeForward()
+			t.Fatal("real platform Worker child exited before readiness")
 		}
-		connection, err := (&net.Dialer{Timeout: time.Second}).DialContext(ready, "tcp", address)
-		if err == nil {
-			_ = connection.Close()
-			return
-		}
-		select {
-		case <-ready.Done():
-			t.Fatal("Preview relay real Worker host transport was not reachable within10s")
-		case <-stopped:
-			t.Fatal("Preview relay exact Worker forward exited before readiness")
-		case <-ticker.C:
-		}
+	case <-ctx.Done():
+		cleanup.closeForward()
+		t.Fatal(ctx.Err())
 	}
+	return net.JoinHostPort("127.0.0.1", port)
 }

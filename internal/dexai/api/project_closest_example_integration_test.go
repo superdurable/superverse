@@ -59,11 +59,11 @@ func newClosestExampleLane(ctx context.Context, t *testing.T) closestExampleLane
 		t.Fatal("CreateProject runs a Project's Setup, which creates its repository: requires SUPERVERSE_TEST_GITHUB_EFFECTS=true")
 	}
 	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
-	target := dexflowtest.Setting(t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET")
+
 	projectFlow, setupFlow, sessionFlow := &projects.ProjectFlow{}, &setup.ProjectSetupFlow{}, &sessionagent.SessionAgentFlow{}
 	// This client registry supplies definitions only; the existing Worker
 	// runs the Flows with every dependency of its server.
-	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Address: target}, projectFlow, setupFlow, sessionFlow)
+	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Pull: true}, projectFlow, setupFlow, sessionFlow)
 	reader := dexflowtest.ExecutionReaderForTest(t, address)
 	db := postgrestest.OpenForTest(t)
 	idLength := projecttest.IDLengthForTest(t)

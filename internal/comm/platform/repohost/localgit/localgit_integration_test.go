@@ -66,7 +66,7 @@ func startHost(t *testing.T, dir string) (*Host, string) {
 	}
 	server := &http.Server{Handler: host, ReadHeaderTimeout: 10 * time.Second}
 	go func() { _ = server.Serve(listener) }()
-	t.Cleanup(func() { _ = server.Close() })
+	t.Cleanup(func() { _ = server.Close(); _ = host.Close() })
 	return host, base
 }
 
@@ -268,9 +268,12 @@ func TestLocalGitHostTemplateAndRepositories(t *testing.T) {
 	}
 	// A repository that a Project created before its name carried the slug keeps
 	// the name its binding recorded: it is read and archived by that name.
-	host.store.creating.Lock()
+	releaseCreation, err := host.store.locks.Lock(ctx, "creation")
+	if err != nil {
+		t.Fatal(err)
+	}
 	legacy, err := host.store.create("sv2-test-xy99", repohost.ManagedMarker(deploymentnames.EnvironmentTest, "xy99", "setup-7"), true)
-	host.store.creating.Unlock()
+	releaseCreation()
 	if err != nil {
 		t.Fatal(err)
 	}

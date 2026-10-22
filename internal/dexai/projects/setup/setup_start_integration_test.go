@@ -57,18 +57,18 @@ func requireSetupSettings(t *testing.T) setupSettings {
 	t.Helper()
 	settings := setupSettings{
 		dexAddress: os.Getenv("SUPERVERSE_TEST_DEX_ADDRESS"), apiAddress: os.Getenv("SUPERVERSE_TEST_API_ADDRESS"),
-		worker: dex.WorkerTarget{Address: os.Getenv("SUPERVERSE_TEST_WORKER_TARGET")}, projects: newProjectObjects(t),
+		worker: dex.WorkerTarget{Pull: true}, projects: newProjectObjects(t),
 	}
-	var headlessErr, lengthErr error
-	settings.worker.Headless, headlessErr = strconv.ParseBool(os.Getenv("SUPERVERSE_TEST_WORKER_HEADLESS"))
+	var lengthErr error
+
 	settings.idLength, lengthErr = strconv.Atoi(os.Getenv("SUPERVERSE_TEST_PROJECT_ID_LENGTH"))
 	loopback := func(address string) bool {
 		host, _, err := net.SplitHostPort(address)
 		return err == nil && net.ParseIP(host) != nil && net.ParseIP(host).IsLoopback()
 	}
-	if os.Getenv("SUPERVERSE_TEST_GITHUB_EFFECTS") != "true" || !loopback(settings.dexAddress) || !loopback(settings.apiAddress) || settings.worker.Address == "" ||
-		headlessErr != nil || lengthErr != nil || settings.idLength < 1 || settings.idLength > 32 {
-		t.Fatal("requires explicit isolated effects, loopback Dex and merged API, exact existing Worker target/headless setting and Project ID length")
+	if os.Getenv("SUPERVERSE_TEST_GITHUB_EFFECTS") != "true" || !loopback(settings.dexAddress) || !loopback(settings.apiAddress) ||
+		lengthErr != nil || settings.idLength < 1 || settings.idLength > 32 {
+		t.Fatal("requires explicit isolated effects, loopback Dex and merged API, platform pull Worker and Project ID length")
 	}
 	return settings
 }
@@ -590,7 +590,7 @@ func TestProjectSetupSurvivesInitiatingClientExitIntegration(t *testing.T) {
 		project, readErr := reader.Read(readCtx, projectID)
 		done()
 		if readErr != nil {
-			t.Fatal("authoritative Project read failed")
+			t.Fatalf("authoritative Project read failed (%s)", dexflowtest.ErrorCategory(readErr))
 		}
 		if project.ProjectStatus == projects.StatusSetupFailedForTest || project.LastFailure != nil {
 			t.Fatal("durable Setup start or actual provider setup failed")

@@ -25,6 +25,10 @@ func Run(ctx context.Context, logger *slog.Logger, settings serverconfig.Config)
 	if err != nil {
 		return err
 	}
+	if config.localGit != nil {
+		// serve has stopped Git admission and waited for every HTTP operation before ownership is released.
+		defer func() { err = errors.Join(err, config.localGit.Close()) }()
+	}
 	var owned resources
 	defer func() { err = errors.Join(err, owned.release()) }()
 	server, err := compose(ctx, config, logger, &owned)

@@ -15,6 +15,7 @@ contracts are checked, and the template guards must reject invalid debug configu
 import copy
 import hashlib
 import json
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -25,7 +26,8 @@ import yaml
 from git_host import GITHUB, LOCAL_GIT
 from kind.cluster import FORWARDS, NODE_PATH as GIT_NODE_PATH
 from kind.server_config import BASE as LOCAL_KIND_PROFILE
-from paths import CHART, LOCAL_KIND_VALUES
+from paths import CHART, LOCAL_KIND_VALUES, ROOT
+from local_platform import dex_config
 from pins import names_for
 
 LOCAL = ("local-kind",)
@@ -289,21 +291,13 @@ class Render:
                           if item["name"] == "SUPERVERSE_STUDIO_PUBLIC_ORIGIN"]
         self.fail_if(studio_origins != [origin] or self.server_configuration().get("studio", {}).get("publicOrigin") != origin,
                      "Go and Studio OAuth public origins must match their fixed environment")
-        worker = self.get("Service", "superverse-server-worker")["spec"]
-        self.fail_if(worker.get("clusterIP") != "None" or worker["selector"] != {"app": self.product + "-server"} or
-                     worker["ports"] != [{"name": "worker", "port": 50051}], "Worker callback Service identity changed")
+        self.fail_if(any(kind == "Service" and name == "superverse-server-worker" for kind, _, name in self.resources), "pull Workers have no callback Service")
         self.get("ServiceAccount", "superverse-server")
         server = self.get("Deployment", self.product + "-server")["spec"]
         self.fail_if(server["selector"]["matchLabels"] != {"app": self.product + "-server"} or server["replicas"] != 1, "unexpected server replica/Pod selector")
-        # In a hosted rolling update the replaced Pod serves until platform Dex re-resolves the headless Worker Service
-        # to its replacement; Local Kind's Recreate strategy starts the replacement only after the Pod exited, so it has
-        # no sleep. The sleep and the server's 10-second shutdown fit the termination grace.
-        self.fail_if(server["template"]["spec"]["containers"][0].get("lifecycle") != ({"preStop": {"sleep": {"seconds": 15}}} if self.hosted else None),
-                     "only a hosted server, which rolls out beside its replacement, has the preStop sleep that keeps a replaced Worker serving")
-        self.fail_if(server["template"]["spec"]["terminationGracePeriodSeconds"] != 45, "the server's termination grace must cover its preStop sleep and shutdown")
-        # The local server owns the repository directory of the local Git host alone, so a rollout never overlaps two Pods.
-        self.fail_if(server.get("strategy") != (None if self.hosted else {"type": "Recreate"}), "only the local server replaces its Pod before it starts the next")
-        # One Dex process holds the memory Stream store, and a rollout replaces it before the next starts.
+        self.fail_if(server["template"]["spec"]["containers"][0].get("lifecycle") != {"preStop": {"sleep": {"seconds": 15}}}, "server endpoint removal sleep must be 15 seconds")
+        self.fail_if(server["template"]["spec"]["terminationGracePeriodSeconds"] != 120, "server grace must cover preStop, pull drain and listener shutdown")
+        self.fail_if(server.get("strategy") != {"type": "RollingUpdate", "rollingUpdate": {"maxUnavailable": 0, "maxSurge": 1}}, "platform server must start a ready replacement before terminating the old Pod")
         dex = self.get("Deployment", self.product + "-dex")["spec"]
         self.fail_if(dex["replicas"] != 1 or dex.get("strategy") != {"type": "Recreate"}, "platform Dex must run one replica replaced by Recreate")
         # Studio keeps no state between requests: Local Kind runs two Pods, which a PodDisruptionBudget keeps serving.
@@ -333,7 +327,7 @@ class Render:
             self.fail_if(companion, "only Local Kind keeps the server's other ports open with a companion policy")
         else:
             ports = sorted(port["port"] for port in self.get("NetworkPolicy", product + "-server-local")["spec"]["ingress"][0]["ports"])
-            self.fail_if(ports != sorted([8080, 8082, 50051, SLACK_EVENTS_PORT, REMOTE_AGENT_PORT, GIT_PORT]), "the Local Kind companion policy must keep exactly the server's other ports open")
+            self.fail_if(ports != sorted([8080, 8082, SLACK_EVENTS_PORT, REMOTE_AGENT_PORT, GIT_PORT]), "the Local Kind companion policy must keep exactly the server's other ports open")
         connections = self.server_configuration().get("connections", {})
         self.fail_if(connections.get("readListen") != f":{CREDENTIAL_READ_PORT}" or connections.get("readURL") !=
                      f"http://{product}-server.{self.namespace}.svc.cluster.local:{CREDENTIAL_READ_PORT}/internal/connection-credentials/read",
@@ -357,9 +351,8 @@ class Render:
         configuration = self.server_configuration()
         self.fail_if(configuration.get("environment") != ("test" if self.environment in LOCAL else self.environment) or configuration.get("localKind") is not (self.environment in LOCAL),
                      "the chart must fix the environment and the Local Kind flag of the server configuration")
-        self.fail_if(configuration.get("dex") != {"serverAddress": self.product + "-dex:8801", "workerAddress": ":50051",
-                                                  "workerTarget": f"superverse-server-worker.{self.namespace}.svc.cluster.local:50051", "workerHeadless": True},
-                     "the server configuration must name the platform Dex and the Worker Service")
+        self.fail_if(configuration.get("dex") != {"serverAddress": self.product + "-dex:8801", "pull": {"maxConcurrentTasks": 256, "idleStreamsPerQueue": 1, "stopDrainTimeout": "60s"}},
+                     "server configuration must name platform Dex and bounded pull options")
         self.fail_if(configuration.get("server") != {"grpcAddress": ":8080", "healthAddress": ":8082", "blobCacheDir": "/var/cache/superverse/dex-blobs"},
                      "the server configuration must bind the Pod's ports and its cache volume")
         self.fail_if(not pod["metadata"]["annotations"].get("checksum/server-config"), "the server Pod must roll when its rendered configuration changes")
@@ -405,11 +398,24 @@ class Render:
                      localgit.get("cloneBaseURL") != f"http://{self.product}-server.{self.namespace}.svc.cluster.local:{GIT_PORT}",
                      "the local Git host's directory, address and clone URL must be those of the server Pod and Service")
 
+    def check_pull_capacity(self):
+        """The Go owner, local Dex generators and rollout stream budget must agree."""
+        source = (ROOT / "cmd/superverse-server/config/config.go").read_text()
+        cap = int(re.search(r"PlatformDexWorkerStreamCap\s+int\s*=\s*(\d+)", source).group(1))
+        matching = dex_config({"access": "shape", "secret": "shape"})["matching"]
+        self.fail_if(matching != {"maxConcurrentTasksCap": cap, "maxStreams": 100000},
+                     "local platform Dex matching limits must match the typed Go stream cap")
+        server = self.get("Deployment", self.product + "-server")["spec"]
+        surge = server["strategy"]["rollingUpdate"]["maxSurge"]
+        self.fail_if((server["replicas"] + surge) * cap > matching["maxStreams"],
+                     "server replicas plus rollout surge exceed one matching instance's stream budget")
+
     def check_dex(self, containers):
         """Dex Web is served only locally or behind the canonical private debug proxy."""
+        self.check_pull_capacity()
         dex = containers[0]
         ports = [{"name": "grpc", "containerPort": 8801}] + ([{"name": "web", "containerPort": 8802}] if self.web else [])
-        self.fail_if(dex.get("args") != ["--services", "api,interpreter,web" if self.web else "api,interpreter"] or dex.get("ports") != ports, "unexpected platform Dex components/ports")
+        self.fail_if(dex.get("args") != ["--services", "api,interpreter,matching,web" if self.web else "api,interpreter,matching"] or dex.get("ports") != ports, "unexpected platform Dex components/ports")
         pod = self.get("Deployment", self.product + "-dex")["spec"]["template"]["spec"]
         auth_volumes = [v for v in pod["volumes"] if v["name"] == "web-proxy-auth"]
         if not self.debug:

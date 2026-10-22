@@ -1,8 +1,8 @@
 # Reviewed published dependency inputs
 
-`dex-1.12.0-llm-0.2.0.json` records the formal Dex Server v1.12.0 multi-platform
-image index (`sha256:91694948…e2572`, inspected in the public registry on
-2026-10-17), the bp1 build profile identity and the published LLM Connector v0.2.0
+`dex-1.13.0-llm-0.2.0.json` records the formal Dex Server v1.13.0 multi-platform
+image index (`sha256:5a1e81eb…1034d`, inspected in the public registry on
+2026-10-21), the bp1 build profile identity and the published LLM Connector v0.2.0
 release metadata. Dex Server is backward compatible with every earlier SDK
 release, so the platform keeps this image at the newest stable release. It
 supersedes `dex-1.11.0-llm-0.2.0.json` (`sha256:d3763711…02fdc9`), which superseded `dex-1.10.1-llm-0.2.0.json`, which used

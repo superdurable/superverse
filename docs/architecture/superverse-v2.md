@@ -116,24 +116,22 @@ Use constructor-injected typed interfaces for former Agent-to-Control-Plane
 callbacks. Do not replace those callbacks with
 self-gRPC calls. The BFF calls the business gRPC API using generated clients.
 
-The Dex SDK owns an internal Worker listener, which remains necessary. It does not create another business-service deployment. Health and
-protocol-specific ingress do not reintroduce a second project/session API.
+Every platform server replica runs a listener-free pull Worker on Dex Server and Go SDK 1.13.0.
+It opens outbound streams to `dex.serverAddress`; the Dex Client starts platform Flows with the
+Worker's pull target. Project Live application Workers retain their existing push transport.
+Readiness waits for all platform Worker queues to acknowledge registration, probes
+`PullRegistrationState().IsReady` and Dex health, and turns false before shutdown starts.
+A permanent rejection without a registered stream is fatal and identifies its queue and gRPC code.
 
-Every Flow stores the Worker target `superverse-server-worker.<platform namespace>.svc.cluster.local:50051`
-with headless routing (`dex.workerHeadless`): platform Dex resolves the headless Service to the server Pods and
-routes a Flow to the Worker that last served it, whose BlobCache already holds its payloads. Platform Dex
-re-resolves the Service every two seconds (`worker.headlessAddressRefreshInterval: 2s`). A hosted server rolls out
-with a rolling update, which starts the replacement beside the old Pod; the old Pod keeps serving for 15 seconds (a
-`preStop` sleep) while Kubernetes removes it from the Service, so Dex keeps invoking it until it routes to the
-replacement. Local Kind's server rolls out with the Recreate strategy, which starts the replacement only after the
-old Pod exited, and has no `preStop` sleep, which would only delay the replacement: Dex cannot invoke a Worker from
-the old Pod's exit until shortly after its replacement is ready, about six to eight seconds per rollout or Pod
-deletion (up to about three and a half of them after the replacement is ready) and ten to twelve for two rollouts in a
-row.
-A Flow keeps the target it started with:
-Flows started without headless routing keep resolving through gRPC, which re-resolves a name at most every 30
-seconds and can keep a replaced Pod's address that long
-(measurements).
+Hosted and Local Kind server Deployments use RollingUpdate with zero unavailable replicas and one
+surge. A new replica registers before Kubernetes terminates the old replica. The old Pod's 15-second
+preStop precedes SIGTERM; the server first marks itself not ready, drains the Worker for the configured
+60 seconds, then stops its listeners. The Pod allows 120 seconds for these operations. Polling Steps
+observe cancellation and resume their idempotent queries within the existing retry budget.
+Local Kind's embedded Git hosts share the same node-mounted directory; OS advisory locks serialize
+creation and per-repository mutation across processes, and process owner locks protect live temporary
+files from another replica's startup cleanup. No Worker Service, port or headless DNS refresh remains
+for the platform. Test-process Workers keep their own isolated push listeners.
 
 The server shares one Flow registry and process-local BlobCache between its
 Dex Client and Worker. Cache contents are disposable, not durable authority.
@@ -184,6 +182,7 @@ package owns the following;
 | [`comm/platform/repohost`](../../internal/comm/platform/repohost/README.md) | Defines the Git host interface, its repository, commit and credential values and its typed errors, so every caller works with GitHub and the local Git host alike. |
 | [`comm/platform/repohost/github`](../../internal/comm/platform/repohost/github/README.md) | Implements the repository host on GitHub for Project setup, Releases and Sandbox Git: repository reads, scoped credentials, managed repositories and template initialization. |
 | [`comm/platform/repohost/localgit`](../../internal/comm/platform/repohost/localgit/README.md) | Hosts bare Git repositories inside the server for the local lanes, served over smart HTTP with repository-scoped credentials and a read-only JSON interface for the end-to-end tests. |
+| [`comm/platform/repohost/localgit/filelocks`](../../internal/comm/platform/repohost/localgit/filelocks/README.md) | Serializes local Git mutations across processes and protects temporary files with process lifetime advisory locks. |
 | [`comm/platform/repohost/localgit/releases`](../../internal/comm/platform/repohost/localgit/releases/README.md) | Keeps the release assets of the local Git host's repositories as immutable files and serves them read-only at GitHub's download path. |
 | [`comm/signedtoken`](../../internal/comm/signedtoken/README.md) | Seals short-lived claims into HMAC-SHA256 tokens with a key derived per purpose by HKDF, so any server replica opens what another sealed without shared state. |
 | [`dexai/agents`](../../internal/dexai/agents/README.md) | Coordinates each Project's one Session across its Project, Session Agent, provisioning and Preview Flows for the API and those Flows: start, reads, workspace cold path, Preview commands, cleanup. |
@@ -315,7 +314,7 @@ records that the later package moves changed no Flow.
 | Source | Authority |
 | --- | --- |
 | Dex skills | `dex-skills/`, Superverse-owned source (the current contract) |
-| Platform | Go SDK `v1.12.0`, Server `v1.12.0`, CLI `v1.12.0`; kept at the newest stable release |
+| Platform | Go SDK `v1.13.0`, Server `v1.13.0`, CLI `v1.13.0`; kept at the newest stable release |
 | New-project template | The examples of `app-template/` (a shared base and one folder per example): the default text summary, served as `app-template@<tree ID>`, and each example a person picks, served as `app-template/<id>@<tree ID>` (the current contract) |
 
 Do not upgrade generated application dependencies merely because the

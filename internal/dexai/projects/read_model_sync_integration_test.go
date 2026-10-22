@@ -30,9 +30,9 @@ import (
 // Project to DELETED, where it stays.
 func TestProjectReadModelSyncDexIntegration(t *testing.T) {
 	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
-	target := dexflowtest.Setting(t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET")
+
 	projectFlow, setupFlow := &projects.ProjectFlow{}, &setup.ProjectSetupFlow{}
-	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Address: target}, projectFlow, setupFlow)
+	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Pull: true}, projectFlow, setupFlow)
 	db := postgrestest.OpenForTest(t)
 	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), ProjectIDLength: projecttest.IDLengthForTest(t), PlatformAdminEmails: []string{"admin@superverse.test"}}
 	setupClient := &setup.ProjectSetupFlowClient{Dex: sdk, Flow: setupFlow}

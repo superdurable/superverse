@@ -26,8 +26,7 @@ was started with, so a test whose Dex, Worker and API addresses belong to
 different lanes starts Flows that the other lane's server runs, against that
 server's own state. `ClientForTest`, `WorkerClientForTest` and `ExecutionReaderForTest`, and
 `Setting` for a lane input (`SUPERVERSE_TEST_DEX_ADDRESS`,
-`SUPERVERSE_TEST_API_ADDRESS`, `SUPERVERSE_TEST_WORKER_TARGET`,
-`SUPERVERSE_TEST_EXISTING_WORKER_TARGET`, `SUPERVERSE_TEST_WORKER_HOST`), fail
+`SUPERVERSE_TEST_API_ADDRESS`, `SUPERVERSE_TEST_WORKER_HOST`), fail
 the test before any connection unless `SUPERVERSE_TEST_LANE` names `kind` or
 `native` (a missing lane is a failure, never a skip) and every one of these
 variables that is set, and every address passed to the constructor, is that
@@ -82,3 +81,13 @@ the Worker does, cuts the handlers still running on the first Worker after its t
 their attempts are lost and the engine runs them again on the fresh Worker. Use
 `RestartServerForTest` separately for an explicitly authorized merged-server replacement on the
 owned local lane.
+
+The platform server Worker uses a pull target. `ServerWorkerClient` selects `Pull: true`;
+Workers owned by a test process keep isolated push listeners on recorded ephemeral ports.
+Native derives the test Worker host from the same container-host constant checked for Kind,
+independently of the platform server configuration.
+
+Kind server replacement uses a real RollingUpdate, verifies the new Pod's readiness condition
+before old Pod termination, and observes the old Pod's drain and deletion. The Setup storage
+restart scenario holds actual MinIO storage pending to prove `PollUntil` cancellation and
+same-storage recovery without an application connector or LLM connection.

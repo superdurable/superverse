@@ -56,9 +56,9 @@ func LocalLaneForTest(t testing.TB) localLane {
 
 // RestartServerForTest replaces the platform server, and with it the application
 // Worker, of the local lane the test runs against, as an operator does, and
-// returns once platform Dex invokes the new Worker. Local Kind deletes the
-// server Pod with the operator's kubeconfig (SUPERVERSE_TEST_KIND_KUBECONFIG)
-// and waits until it is gone, so no read reaches the old Worker; Local Native
+// returns once platform Dex invokes the new Worker. Local Kind rolls the
+// server Deployment, requires replacement registration readiness before old
+// Pod termination, and waits until the old Pod is gone; Local Native
 // asks the launcher of its run (SUPERVERSE_TEST_NATIVE_RUN_ID) to restart the
 // host server, which answers once the new server is ready. Platform Dex
 // reaches a new Worker later than the Worker serves, so the next read could
@@ -71,14 +71,15 @@ func RestartServerForTest(ctx context.Context, t testing.TB, read func(context.C
 	var command *exec.Cmd
 	switch LocalLaneForTest(t) {
 	case LaneKindForTest:
-		command = exec.CommandContext(ctx, "kubectl", "--kubeconfig", Setting(t, "SUPERVERSE_TEST_KIND_KUBECONFIG"), "--context", "kind-superverse-v2", //nolint:gosec // kubectl with the test's own arguments
-			"-n", "superverse-v2-system", "delete", "pod", "-l", "app=superverse-v2-server", "--wait=true", "--timeout="+podDeletionWait.String())
+		rollKindServer(ctx, t)
 	case laneNative:
 		command = exec.CommandContext(ctx, filepath.Join(repositoryRoot(t), "infra-as-code/sv2"), "native", "restart-server", //nolint:gosec // the repository's launcher
 			"--instance", nativeInstance(t), "--run-id", Setting(t, "SUPERVERSE_TEST_NATIVE_RUN_ID"))
 	}
-	if out, err := command.CombinedOutput(); err != nil {
-		t.Fatalf("Worker replacement failed: %s", out)
+	if command != nil {
+		if out, err := command.CombinedOutput(); err != nil {
+			t.Fatalf("Worker replacement failed: %s", out)
+		}
 	}
 	replaced := time.Now()
 	wait, cancel := context.WithTimeout(ctx, workerInvocationWait)

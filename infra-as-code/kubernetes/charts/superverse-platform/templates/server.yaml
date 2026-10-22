@@ -35,10 +35,7 @@ metadata:
 spec:
   replicas: {{ .Values.server.replicas }}
   revisionHistoryLimit: 3
-  {{- if .Values.localKind }}
-  # Two Pods never share the local Git host's repository directory, not even while a rollout replaces one.
-  strategy: {type: Recreate}
-  {{- end }}
+  strategy: {type: RollingUpdate, rollingUpdate: {maxUnavailable: 0, maxSurge: 1}}
   selector:
     matchLabels: {app: {{ include "v2.product" $ }}-server}
   template:
@@ -49,7 +46,7 @@ spec:
         # The rendered configuration also holds what the chart derives, such as the profile name.
         checksum/server-config: {{ include "v2.serverConfig" . | sha256sum | quote }}
     spec:
-      {{- include "v2.platformPodSpec" (dict "root" $ "serviceAccount" (include "v2.serverAccount" .) "automountToken" true) | nindent 6 }}
+      {{- include "v2.platformPodSpec" (dict "root" $ "serviceAccount" (include "v2.serverAccount" .) "automountToken" true "terminationGrace" 120) | nindent 6 }}
       initContainers:
         # Applies the pending database migrations as the schema owner before the server starts, which never migrates.
         # Only this container receives the owner's password.
@@ -77,18 +74,12 @@ spec:
             - secretRef: {name: {{ include "v2.product" $ }}-server}
           env:
             - {name: SUPERVERSE_CONFIG_FILE, value: /etc/superverse/server.yaml}
-          ports: [{name: grpc, containerPort: 8080}, {name: health, containerPort: 8082}, {name: worker, containerPort: 50051}, {name: credential-read, containerPort: {{ include "v2.credentialRead.port" . }}}, {name: slack-events, containerPort: {{ include "v2.slackEvents.port" . }}}, {name: remote-agent, containerPort: {{ include "v2.remoteAgent.port" . }}}{{ if .Values.localKind }}, {name: git-http, containerPort: {{ include "v2.localGit.port" . }}}{{ end }}]
+          ports: [{name: grpc, containerPort: 8080}, {name: health, containerPort: 8082}, {name: credential-read, containerPort: {{ include "v2.credentialRead.port" . }}}, {name: slack-events, containerPort: {{ include "v2.slackEvents.port" . }}}, {name: remote-agent, containerPort: {{ include "v2.remoteAgent.port" . }}}{{ if .Values.localKind }}, {name: git-http, containerPort: {{ include "v2.localGit.port" . }}}{{ end }}]
           startupProbe: {tcpSocket: {port: health}, periodSeconds: 3, failureThreshold: 100}
           readinessProbe: {httpGet: {path: /readyz, port: health}, periodSeconds: 5}
           livenessProbe: {httpGet: {path: /healthz, port: health}, periodSeconds: 10, failureThreshold: 6}
-          {{- if not .Values.localKind }}
-          # A rolling update starts the replacement beside the old Pod, which keeps serving until platform Dex, which
-          # re-resolves the headless Worker Service every two seconds (with DNS records cached for five), routes to the
-          # replacement; it keeps its open connection meanwhile. The sleep and the server's 10-second shutdown fit the
-          # Pod's 45-second termination grace. Local Kind's Recreate strategy starts the replacement only after the old
-          # Pod exited, where a sleep would only delay it.
+          # Keep serving during endpoint removal; SIGTERM then drains the pull Worker before listeners.
           lifecycle: {preStop: {sleep: {seconds: 15}}}
-          {{- end }}
           resources: {{ toYaml .Values.server.resources | nindent 12 }}
           volumeMounts:
             {{- include "v2.platformScratchMounts" . | nindent 12 }}

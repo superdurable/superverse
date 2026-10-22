@@ -49,8 +49,6 @@ dex:
   # The platform Dex container publishes its API here, and dials this process's
   # Worker through host.docker.internal.
   serverAddress: 127.0.0.1:26811
-  workerAddress: 127.0.0.1:25051
-  workerTarget: host.docker.internal:25051
 
 # The browser on this machine reaches the platform MinIO on the loopback too, so
 # presigned uploads and downloads name the same endpoint; MinIO answers CORS

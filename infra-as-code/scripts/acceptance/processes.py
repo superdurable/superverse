@@ -37,10 +37,10 @@ def group_members(group):
             if len(v := row.split(None, 2)) == 3 and int(v[1]) == group and int(v[0]) != observer.pid]
 
 
-def stop_group(record, *, owner_pid=None, processes=()):
+def stop_group(record, *, owner_pid=None, processes=(), term_seconds=20):
     """TERM, then KILL, every member of the owner's group until none remain."""
     group = record["ownerProcess"]["group"]
-    for sig, seconds in ((signal.SIGTERM, 20), (signal.SIGKILL, 5)):
+    for sig, seconds in ((signal.SIGTERM, term_seconds), (signal.SIGKILL, 5)):
         deadline = time.monotonic() + seconds
         while True:
             current_owner = process_identity(record["ownerProcess"]["pid"])

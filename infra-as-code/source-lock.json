@@ -1,10 +1,10 @@
 {
   "dex": {
-    "server": "1.12.0",
-    "cli": "1.12.0",
-    "goSDK": "1.12.0",
-    "serverImageDigest": "sha256:91694948c61fcb083879828dae44debe4b8122817ec814861b6705d34dce2572",
-    "cliCommit": "303301c6ece4d306393c324b487d35534c160499"
+    "server": "1.13.0",
+    "cli": "1.13.0",
+    "goSDK": "1.13.0",
+    "serverImageDigest": "sha256:5a1e81eb46b60df3363725f1b576fe14832edc851ce07660dce91bbcb421034d",
+    "cliCommit": "0eb7037dcc8b454c3efdc7e34795b5efb433042d"
   },
   "hostedBuildTools": {
     "version": "v1"

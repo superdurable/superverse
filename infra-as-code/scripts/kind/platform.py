@@ -213,8 +213,8 @@ def deploy(args):
 
 
 def kind_dex_config(credentials, postgres=None, stores=None):
-    """The shared platform Dex configuration, re-resolving the headless Worker Service within the server's 15-second preStop sleep."""
-    return {**dex_config(credentials, postgres, stores), "worker": {"headlessAddressRefreshInterval": "2s"}}
+    """The shared platform Dex configuration for outbound pull Workers."""
+    return dex_config(credentials, postgres, stores)
 
 
 def create_postgres_roles(postgres):
@@ -277,30 +277,31 @@ def rendered_profile_name(values):
     return profiles.pop()
 
 
-# The Local Kind chart runs the server with the Recreate strategy (one writer of the local Git host's repositories).
+# Older Kind deployments used a kubectl-owned Recreate strategy for the local Git directory.
 SERVER_DEPLOYMENT = "superverse-v2-server"
-RECREATE = "Recreate"
 
 
-def adopt_recreate_strategy():
-    """Switch an existing server Deployment to Recreate before the upgrade.
+def adopt_rolling_strategy():
+    """Transfer an old Recreate strategy to Helm before its server-side apply.
 
-    A Deployment that a branch without the local Git host installed keeps the RollingUpdate parameters the API server
-    defaulted. Server-side apply leaves fields it does not own, so the upgrade would send `type: Recreate` next to them,
-    which validation refuses. Replacing the whole strategy drops them; the Pod template is unchanged, so no rollout starts.
+    Cross-process Git locks allow overlapping replicas. The previous migration used kubectl-patch as the field manager;
+    transferring the strategy with Helm's manager avoids an ownership conflict on the first upgrade. The Pod template is
+    unchanged, so this migration alone starts no rollout.
     """
     found = kubectl("--request-timeout=30s", "get", "deployment", SERVER_DEPLOYMENT, "-n", NAMESPACE, "--ignore-not-found",
                     "-o", "json", capture=True)
-    if not found.strip() or json.loads(found).get("spec", {}).get("strategy", {}).get("type") == RECREATE:
+    if not found.strip() or json.loads(found).get("spec", {}).get("strategy", {}).get("type") != "Recreate":
         return
-    patch = [{"op": "replace", "path": "/spec/strategy", "value": {"type": RECREATE}}]
-    kubectl("--request-timeout=30s", "patch", "deployment", SERVER_DEPLOYMENT, "-n", NAMESPACE, "--type=json", "-p", json.dumps(patch))
+    patch = [{"op": "replace", "path": "/spec/strategy", "value": {
+        "type": "RollingUpdate", "rollingUpdate": {"maxUnavailable": 0, "maxSurge": 1}}}]
+    kubectl("--request-timeout=30s", "patch", "deployment", SERVER_DEPLOYMENT, "-n", NAMESPACE,
+            "--field-manager=helm", "--type=json", "-p", json.dumps(patch))
 
 
 def install_chart(values, *, wait=True):
     gateway.install(helm, kubectl)
     write_private(CHART_VALUES, json.dumps(values))
-    adopt_recreate_strategy()
+    adopt_rolling_strategy()
     helm("upgrade", "--install", "superverse-v2", CHART, "--namespace", NAMESPACE, "-f", LOCAL_KIND_VALUES, "-f", CHART_VALUES,
          "--timeout", "10m", *(["--wait"] if wait else []), timeout=660)
     # Project routes were Ingresses that Traefik served before the project Gateway; none is served any more, and the next

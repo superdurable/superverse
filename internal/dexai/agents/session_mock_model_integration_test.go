@@ -124,10 +124,10 @@ func newMockSessionIn(t *testing.T, ctx context.Context, owner, teamSpaceID, nam
 func newSessionOf(t *testing.T, ctx context.Context, model conversation.Model, content string, create func(*projects.ProjectFlowClient) projects.Project) *mockSession {
 	t.Helper()
 	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
-	target := dexflowtest.Setting(t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET")
+
 	projectFlow, provisionFlow, previewFlow, flow, subagentFlow := &projects.ProjectFlow{}, &provision.SandboxProvisionFlow{}, &preview.PreviewFlow{}, &sessionagent.SessionAgentFlow{}, &subagent.SubagentFlow{}
 	issueFlow, contributionFlow, workspaceFlow := &platformissue.PlatformIssueFlow{}, &contribution.ConnectorContributionFlow{}, &sessionworkspace.SessionWorkspaceFlow{}
-	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Address: target}, projectFlow, provisionFlow, previewFlow, flow, subagentFlow, issueFlow, contributionFlow, workspaceFlow)
+	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Pull: true}, projectFlow, provisionFlow, previewFlow, flow, subagentFlow, issueFlow, contributionFlow, workspaceFlow)
 	reader := dexflowtest.ExecutionReaderForTest(t, address)
 	// This client registry supplies definitions only. Real handlers and every
 	// application dependency belong to the existing Worker selected above,

@@ -60,7 +60,7 @@ nodeSelector: {{ toYaml . | nindent 2 }}
 serviceAccountName: {{ .serviceAccount }}
 automountServiceAccountToken: {{ .automountToken }}
 enableServiceLinks: false
-terminationGracePeriodSeconds: 45
+terminationGracePeriodSeconds: {{ default 45 .terminationGrace }}
 securityContext:
   runAsNonRoot: true
   runAsUser: 65532

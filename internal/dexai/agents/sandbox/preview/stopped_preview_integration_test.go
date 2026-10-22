@@ -33,9 +33,9 @@ import (
 // route and changes nothing; the test ends the Preview itself.
 func TestStoppedPreviewTimeTravelDexIntegration(t *testing.T) {
 	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
-	target := dexflowtest.Setting(t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET")
+
 	flow := &preview.PreviewFlow{}
-	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Address: target}, flow)
+	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Pull: true}, flow)
 	reader := dexflowtest.ExecutionReaderForTest(t, address)
 	client := &preview.PreviewFlowClient{Dex: sdk, Flow: flow, Execution: reader}
 	project := flowid.RandomID(8)

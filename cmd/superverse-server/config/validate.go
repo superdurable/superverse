@@ -89,7 +89,7 @@ func (c Config) Validate() error {
 	for _, setting := range []struct{ name, value string }{
 		{"aws.region", c.AWS.Region},
 		{"server.grpcAddress", c.Server.GRPCAddress}, {"server.healthAddress", c.Server.HealthAddress}, {"server.blobCacheDir", c.Server.BlobCacheDir},
-		{"dex.serverAddress", c.Dex.ServerAddress}, {"dex.workerAddress", c.Dex.WorkerAddress}, {"dex.workerTarget", c.Dex.WorkerTarget},
+		{"dex.serverAddress", c.Dex.ServerAddress},
 		{"sandbox.profile", c.Sandbox.Profile}, {"storage.artifactBucket", c.Storage.ArtifactBucket},
 	} {
 		if setting.value == "" {
@@ -97,6 +97,15 @@ func (c Config) Validate() error {
 		}
 	}
 
+	if !between(c.Dex.Pull.MaxConcurrentTasks, 1, 256) {
+		fail("dex.pull.maxConcurrentTasks must be an integer from 1 to 256")
+	}
+	if !between(c.Dex.Pull.IdleStreamsPerQueue, 1, 8) {
+		fail("dex.pull.idleStreamsPerQueue must be an integer from 1 to 8")
+	}
+	if c.Dex.Pull.StopDrainTimeout < time.Second || c.Dex.Pull.StopDrainTimeout > 60*time.Second {
+		fail("dex.pull.stopDrainTimeout must be from 1s to 60s")
+	}
 	if c.Postgres.Host == "" || c.Postgres.Database == "" {
 		fail("postgres.host and postgres.database are required")
 	}
@@ -326,7 +335,7 @@ func (c Config) validateRemoteAgent() []error {
 	}
 	for _, other := range []struct{ name, value string }{
 		{"server.grpcAddress", c.Server.GRPCAddress}, {"server.healthAddress", c.Server.HealthAddress},
-		{"dex.workerAddress", c.Dex.WorkerAddress}, {"dex.serverAddress", c.Dex.ServerAddress},
+		{"dex.serverAddress", c.Dex.ServerAddress},
 		{"connections.readListen", c.Connections.ReadListen}, {"connections.slackRelay.listenAddress", c.Connections.SlackRelay.ListenAddress},
 		{"localgit.listen", c.LocalGit.Listen}, {"native.routesListen", c.Native.RoutesListen},
 	} {
@@ -349,7 +358,7 @@ func (c Config) validateConnections() []error {
 		fail("connections.readListen must use port %d with runtime kubernetes, the port the chart and the project network policies admit", infra.CredentialReadPort)
 	}
 	for _, other := range []struct{ name, value string }{
-		{"server.grpcAddress", c.Server.GRPCAddress}, {"server.healthAddress", c.Server.HealthAddress}, {"dex.workerAddress", c.Dex.WorkerAddress},
+		{"server.grpcAddress", c.Server.GRPCAddress}, {"server.healthAddress", c.Server.HealthAddress},
 	} {
 		if samePort(settings.ReadListen, other.value) {
 			fail("connections.readListen must not share the port of %s", other.name)
@@ -385,7 +394,7 @@ func (c Config) validateSlackRelay() []error {
 		fail("connections.slackRelay.listenAddress must use port %d with runtime kubernetes, the port the chart and its load balancer route", SlackEventsPort)
 	}
 	for _, other := range []struct{ name, value string }{
-		{"server.grpcAddress", c.Server.GRPCAddress}, {"server.healthAddress", c.Server.HealthAddress}, {"dex.workerAddress", c.Dex.WorkerAddress},
+		{"server.grpcAddress", c.Server.GRPCAddress}, {"server.healthAddress", c.Server.HealthAddress},
 		{"connections.readListen", c.Connections.ReadListen},
 	} {
 		if samePort(relay.ListenAddress, other.value) {
@@ -557,7 +566,7 @@ func (c Config) validateNative(environment deploymentnames.Environment, provider
 		fail("native.registry must be localhost:<port>, which the engine pushes to and pulls from without TLS")
 	}
 	listeners := []struct{ name, value string }{
-		{"server.grpcAddress", c.Server.GRPCAddress}, {"server.healthAddress", c.Server.HealthAddress}, {"dex.workerAddress", c.Dex.WorkerAddress},
+		{"server.grpcAddress", c.Server.GRPCAddress}, {"server.healthAddress", c.Server.HealthAddress},
 		{"dex.serverAddress", c.Dex.ServerAddress}, {"native.routesListen", native.RoutesListen}, {"connections.readListen", c.Connections.ReadListen},
 		{"connections.slackRelay.listenAddress", c.Connections.SlackRelay.ListenAddress},
 		{"remoteAgent.listen", c.RemoteAgent.Listen},
@@ -577,12 +586,6 @@ func (c Config) validateNative(environment deploymentnames.Environment, provider
 		if parsed, err := url.Parse(origin.value); err != nil || !validOrigin(origin.value) || parsed.Hostname() != loopback {
 			fail("%s must be an http origin on %s", origin.name, loopback)
 		}
-	}
-	if _, port, err := net.SplitHostPort(c.Dex.WorkerAddress); err == nil && c.Dex.WorkerTarget != net.JoinHostPort(infra.HostFromContainers, port) {
-		fail("dex.workerTarget must be %s, where the Dex container reaches this process's Worker", net.JoinHostPort(infra.HostFromContainers, port))
-	}
-	if c.Dex.WorkerHeadless {
-		fail("dex.workerHeadless is not accepted with runtime docker")
 	}
 	if _, port, err := net.SplitHostPort(c.Connections.ReadListen); err == nil && c.Connections.ReadURL != "http://"+net.JoinHostPort(infra.HostFromContainers, port)+connections.CredentialReadPath {
 		fail("connections.readURL must be http://%s%s, where the applications reach the credential read endpoint", net.JoinHostPort(infra.HostFromContainers, port), connections.CredentialReadPath)

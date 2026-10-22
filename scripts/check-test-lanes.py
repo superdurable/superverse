@@ -38,12 +38,10 @@ def one(pattern, path, text=None):
 def kind_constants():
     guard = (GUARD / "lane_endpoints.go").read_text()
     return {name: one(rf'^\s*{name}\s*=\s*"([^"]*)"', GUARD / "lane_endpoints.go", guard)
-            for name in ("kindDex", "kindAPI", "kindServerWorker", "kindWorkerHost", "kindLocalGit", "kindPostgres")}
+            for name in ("kindDex", "kindAPI", "kindWorkerHost", "kindLocalGit", "kindPostgres")}
 
 
 def expected_kind_constants():
-    namespace = one(r'^NAMESPACE = "([^"]+)"', CLUSTER)
-    worker = one(r'"workerTarget" \(printf "([^"]+)"', CHART_CONFIG)
     dex_port = one(r'^\s*"dex": Forward\("superverse-v2-dex", (\d+), 8801,', CLUSTER)
     grpc_port = one(r'^\s*"grpc": Forward\("superverse-v2-server", (\d+), 8080,', CLUSTER)
     git_port = one(r'^\s*"git": Forward\("superverse-v2-server", (\d+), 8085,', CLUSTER)
@@ -53,7 +51,6 @@ def expected_kind_constants():
         "kindAPI": f"127.0.0.1:{grpc_port}",
         "kindLocalGit": f"127.0.0.1:{git_port}",
         "kindPostgres": f"127.0.0.1:{postgres_port}",
-        "kindServerWorker": worker % namespace,
         "kindWorkerHost": one(r'^const HostFromContainers = "([^"]+)"', HOST_FROM_CONTAINERS),
     }
 

@@ -20,7 +20,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 
@@ -31,6 +30,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/storer"
 	"github.com/go-git/go-git/v5/storage/filesystem"
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost"
+	"github.com/superdurable/superversev2/internal/comm/platform/repohost/localgit/filelocks"
 )
 
 // The layout of the directory the host owns:
@@ -76,38 +76,21 @@ type repository struct {
 	path string
 }
 
-// store owns the directory of bare repositories. Creation and the ID sequence
-// are serialized in this process; the lanes that share the directory never run
-// at the same time.
+// store owns bare repositories with cross-process creation and mutation locks.
 type store struct {
-	dir string
-
-	// creating serializes the creation of repositories and their IDs.
-	creating sync.Mutex
-	// mu guards locks, the write lock of each repository by ID: a channel with
-	// one slot, so that a caller can stop waiting for it.
-	mu    sync.Mutex
-	locks map[int64]chan struct{}
+	dir   string
+	locks *filelocks.Store
 }
 
 func newStore(dir string) (*store, error) {
 	if err := os.MkdirAll(filepath.Join(dir, repositoryOwner), 0o755); err != nil { //nolint:gosec // G301: the lanes share this directory with the server Pod's user
-		return nil, fmt.Errorf("create the repository directory: %w", err)
+		return nil, err
 	}
-	// A crash between creating and publishing a repository leaves its directory
-	// behind, and a crash during a push the pack it was receiving.
-	for _, prefix := range []string{creatingPrefix, receivingPrefix} {
-		stale, err := filepath.Glob(filepath.Join(dir, prefix+"*"))
-		if err != nil {
-			return nil, err
-		}
-		for _, path := range stale {
-			if err = os.RemoveAll(path); err != nil {
-				return nil, fmt.Errorf("remove an unfinished repository or push: %w", err)
-			}
-		}
+	locks, err := filelocks.New(dir)
+	if err != nil {
+		return nil, err
 	}
-	return &store{dir: dir, locks: map[int64]chan struct{}{}}, nil
+	return &store{dir: dir, locks: locks}, nil
 }
 
 // splitFullName validates owner/name. Only repositoryOwner owns repositories.
@@ -146,26 +129,14 @@ func (s *store) find(fullName string) (repository, error) {
 // release. A caller whose ctx ends first gets ctx's error and holds nothing,
 // so a cleanup round is not stuck behind a long push.
 func (s *store) lock(ctx context.Context, id int64) (release func(), err error) {
-	s.mu.Lock()
-	slot := s.locks[id]
-	if slot == nil {
-		slot = make(chan struct{}, 1)
-		s.locks[id] = slot
-	}
-	s.mu.Unlock()
-	select {
-	case slot <- struct{}{}:
-		return func() { <-slot }, nil
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	}
+	return s.locks.Lock(ctx, "repository-"+strconv.FormatInt(id, 10))
 }
 
 // receive copies the pack of a push into a file of the directory before the
 // push takes its repository's lock, because reading the network is the slow
 // part of a push. The caller closes and removes the file.
 func (s *store) receive(pack io.Reader) (*os.File, error) {
-	file, err := os.CreateTemp(s.dir, receivingPrefix+"*")
+	file, err := os.CreateTemp(s.dir, s.locks.TempPrefix(receivingPrefix))
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +161,7 @@ func (s *store) create(name, description string, private bool) (repository, erro
 	if err != nil {
 		return repository{}, err
 	}
-	temporary, err := os.MkdirTemp(s.dir, creatingPrefix)
+	temporary, err := os.MkdirTemp(s.dir, s.locks.TempPrefix(creatingPrefix))
 	if err != nil {
 		return repository{}, fmt.Errorf("create a repository directory: %w", err)
 	}

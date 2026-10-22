@@ -559,7 +559,7 @@ with a completed image-build request from
 Its `TestReleaseBuildTimingsWorkerRestartIntegration` admits a new build of
 that request's Release through the Flow client against the existing Worker of
 the local lane (`SUPERVERSE_TEST_DEX_ADDRESS`,
-`SUPERVERSE_TEST_EXISTING_WORKER_TARGET`, `SUPERVERSE_TEST_LANE`), replaces the
+`SUPERVERSE_TEST_LANE`), replaces the
 Worker through `dexflowtest.RestartServerForTest` while AwaitReleaseBuildRevision polls
 and requires a failed attempt of that Step and
 a READY build whose Timings are CONFIGURATION_FREEZE, the builder's six phases

@@ -53,8 +53,15 @@ func Setting(t testing.TB, name string) string {
 func ClientForTest(t testing.TB, address string, target *dex.WorkerTarget, flows ...dex.Flow) *dex.Client {
 	t.Helper()
 	passed := []passedInput{{"the Dex address passed to Client", dexEndpoint, address}}
-	if target != nil {
-		passed = append(passed, workerTargetInput(target.Address))
+	if target != nil && !target.Pull {
+		host, port, err := net.SplitHostPort(target.Address)
+		if err != nil {
+			t.Fatalf("test push Worker target must be host:port: %v", err)
+		}
+		if _, owned := testWorkerPorts.Load(port); !owned {
+			t.Fatal("push Worker target must use an owned ephemeral test port; lane server targets use Pull:true")
+		}
+		passed = append(passed, passedInput{"the host of the test Worker target", workerHostEndpoint, host})
 	}
 	requireLane(t, passed...)
 	registry, cache := registryAndCache(t, flows)
@@ -62,13 +69,13 @@ func ClientForTest(t testing.TB, address string, target *dex.WorkerTarget, flows
 }
 
 // ServerWorkerClient is ClientForTest for the lane's server Worker
-// (SUPERVERSE_TEST_DEX_ADDRESS and SUPERVERSE_TEST_EXISTING_WORKER_TARGET),
+// (SUPERVERSE_TEST_DEX_ADDRESS and a pull Worker target),
 // which runs the executions with every dependency of the server; the flows
 // only supply the client's definitions. Test fixtures that act through a
 // Flow of their own use it.
 func ServerWorkerClient(t testing.TB, flows ...dex.Flow) *dex.Client {
 	t.Helper()
-	target := &dex.WorkerTarget{Address: Setting(t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET")}
+	target := &dex.WorkerTarget{Pull: true}
 	return ClientForTest(t, Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS"), target, flows...)
 }
 
@@ -103,20 +110,6 @@ func FreePortForTest(ctx context.Context, t testing.TB) string {
 // testWorkerPorts are the ports FreePortForTest returned, on which a Worker of
 // the test process serves or will serve.
 var testWorkerPorts sync.Map
-
-// workerTargetInput is the lane input that a Worker target passed to
-// ClientForTest names: the lane's test Worker host when the port is one
-// FreePortForTest returned, otherwise the lane's server Worker target. Another
-// instance's server Worker may share the host, so only the test's own ports
-// pass on the host alone.
-func workerTargetInput(address string) passedInput {
-	if host, port, err := net.SplitHostPort(address); err == nil {
-		if _, own := testWorkerPorts.Load(port); own {
-			return passedInput{"the host of the test Worker target passed to Client", workerHostEndpoint, host}
-		}
-	}
-	return passedInput{"the Worker target passed to Client", workerTargetEndpoint, address}
-}
 
 // WorkerClientAtForTest is WorkerClientForTest on port, which FreePortForTest returned. Executions
 // that earlier named the port as their Worker target meet the Worker once it

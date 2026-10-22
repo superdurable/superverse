@@ -25,7 +25,7 @@ require (
 	github.com/minio/minio-go/v7 v7.0.90
 	github.com/ogen-go/ogen v1.24.0
 	github.com/superdurable/dex/blob-cache-go v0.1.1
-	github.com/superdurable/dex/sdk-go v1.12.0
+	github.com/superdurable/dex/sdk-go v1.13.0
 	github.com/zclconf/go-cty v1.19.0
 	go.temporal.io/api v1.44.1
 	golang.org/x/crypto v0.56.0

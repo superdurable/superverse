@@ -36,9 +36,9 @@ import (
 // complete with its graceful receipt.
 func TestDeletionAfterInterruptedSessionCompletionDexIntegration(t *testing.T) {
 	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
-	target := dexflowtest.Setting(t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET")
+
 	projectFlow, flow := &projects.ProjectFlow{}, &sessionagent.SessionAgentFlow{}
-	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Address: target}, projectFlow, flow)
+	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Pull: true}, projectFlow, flow)
 	// This client registry supplies definitions only. Real handlers and every
 	// application dependency belong to the existing Worker selected above.
 	sessions := sessionagent.NewSessionAgentFlowClientForTest(sdk, flow, dexflowtest.ExecutionReaderForTest(t, address), "")

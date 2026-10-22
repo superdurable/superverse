@@ -29,13 +29,3 @@ spec:
   ports: {{ toYaml $ports | nindent 4 }}
 {{- end }}
 {{- end }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: superverse-server-worker
-  namespace: {{ include "v2.namespace" $ }}
-spec:
-  clusterIP: None
-  selector: {app: {{ include "v2.product" $ }}-server}
-  ports: [{name: worker, port: 50051}]

@@ -410,7 +410,7 @@ Project ID with the server's `SUPERVERSE_TEST_PROJECT_ID_LENGTH` and requires
 `SUPERVERSE_TEST_GITHUB_EFFECTS=true`, since Setup creates the Project's
 repository on the lane's Git host. Every test also needs
 `SUPERVERSE_TEST_LANE` (`kind` or `native`), `SUPERVERSE_TEST_DEX_ADDRESS` and
-the actual Worker of the local lane, `SUPERVERSE_TEST_EXISTING_WORKER_TARGET`,
+the actual Worker of the local lane,
 whose server offers the mock model, all of that one lane
 ([lane inputs](README.md)),
 besides the inputs it names, and runs on either lane. A test that replaces the Worker or reads the
@@ -725,8 +725,6 @@ document.
 ```sh
 SUPERVERSE_TEST_LANE=kind \
 SUPERVERSE_TEST_DEX_ADDRESS=127.0.0.1:28811 \
-SUPERVERSE_TEST_EXISTING_WORKER_TARGET=superverse-server-worker.superverse-v2-system.svc.cluster.local:50051 \
-SUPERVERSE_TEST_EXISTING_WORKER_HEADLESS=true \
 SUPERVERSE_TEST_API_ADDRESS=127.0.0.1:28080 \
 SUPERVERSE_TEST_PROJECT_ID_LENGTH=<the server's Project ID length> \
 SUPERVERSE_TEST_GITHUB_EFFECTS=true \

@@ -52,12 +52,12 @@ import (
 // resource absence and ends DELETED.
 func TestStoppedSessionCommandsDexIntegration(t *testing.T) {
 	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
-	target := dexflowtest.Setting(t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET")
+
 	// The Preview configuration read finds the HEAD's prepared source in the
 	// platform's artifact bucket, as the server's Preview configuration does.
 	previewFlow := &preview.PreviewFlow{Preview: preview.NewPreviewConfiguration(nil, nil, artifactStore(t), nil, nil, nil, nil)}
 	projectFlow, flow, workspaceFlow := &projects.ProjectFlow{}, &sessionagent.SessionAgentFlow{}, &sessionworkspace.SessionWorkspaceFlow{}
-	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Address: target}, projectFlow, previewFlow, flow, workspaceFlow)
+	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Pull: true}, projectFlow, previewFlow, flow, workspaceFlow)
 	reader := dexflowtest.ExecutionReaderForTest(t, address)
 	// This client registry supplies definitions only. Real handlers and every
 	// application dependency belong to the existing Worker selected above.

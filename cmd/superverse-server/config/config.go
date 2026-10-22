@@ -28,6 +28,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// PlatformDexWorkerStreamCap bounds retained streams per app Worker ID on each matching owner.
+const PlatformDexWorkerStreamCap int = 4224
+
 // Defaults of the settings that have one. A setting without a default is
 // required, or empty where its section says so.
 const (
@@ -36,8 +39,9 @@ const (
 	DefaultBlobCacheDir                    = "/tmp/superverse-blob-cache"
 	DefaultProjectIDLength                 = 4
 	DefaultDexServerAddress                = "127.0.0.1:8801"
-	DefaultDexWorkerAddress                = ":50051"
-	DefaultDexWorkerTarget                 = "127.0.0.1:50051"
+	DefaultDexPullMaxConcurrentTasks       = 256
+	DefaultDexPullIdleStreamsPerQueue      = 1
+	DefaultDexPullStopDrainTimeout         = 60 * time.Second
 	DefaultEffort                          = conversation.EffortMedium
 	DefaultSubagentInvestigate             = conversation.EffortLow
 	DefaultSubagentChange                  = conversation.EffortMedium
@@ -195,13 +199,15 @@ type ServerConfig struct {
 
 // DexConfig is how the server reaches the platform Dex and how Dex reaches this process's Worker.
 type DexConfig struct {
-	ServerAddress string `yaml:"serverAddress"`
-	// WorkerAddress is the address the Worker binds; WorkerTarget the one Dex dials.
-	WorkerAddress string `yaml:"workerAddress"`
-	WorkerTarget  string `yaml:"workerTarget"`
-	// WorkerHeadless has Dex resolve WorkerTarget, a headless Service, to its
-	// Pods and route each Flow to the Worker whose BlobCache holds its payloads.
-	WorkerHeadless bool `yaml:"workerHeadless"`
+	ServerAddress string        `yaml:"serverAddress"`
+	Pull          DexPullConfig `yaml:"pull"`
+}
+
+// DexPullConfig bounds this process's outbound Worker task streams and drain.
+type DexPullConfig struct {
+	MaxConcurrentTasks  int           `yaml:"maxConcurrentTasks"`
+	IdleStreamsPerQueue int           `yaml:"idleStreamsPerQueue"`
+	StopDrainTimeout    time.Duration `yaml:"stopDrainTimeout"`
 }
 
 // StudioConfig is the Studio the server returns OAuth actors to, and the
@@ -552,7 +558,7 @@ func Default() Config {
 			GRPCAddress: DefaultGRPCAddress, HealthAddress: DefaultHealthAddress, BlobCacheDir: DefaultBlobCacheDir,
 			ProjectIDLength: DefaultProjectIDLength,
 		},
-		Dex:    DexConfig{ServerAddress: DefaultDexServerAddress, WorkerAddress: DefaultDexWorkerAddress, WorkerTarget: DefaultDexWorkerTarget},
+		Dex:    DexConfig{ServerAddress: DefaultDexServerAddress, Pull: DexPullConfig{MaxConcurrentTasks: DefaultDexPullMaxConcurrentTasks, IdleStreamsPerQueue: DefaultDexPullIdleStreamsPerQueue, StopDrainTimeout: DefaultDexPullStopDrainTimeout}},
 		Studio: StudioConfig{RunsDexConnections: DefaultRunsDexConnections},
 		Agent: AgentConfig{
 			Effort: DefaultEffort, SubagentInvestigateEffort: DefaultSubagentInvestigate, SubagentChangeEffort: DefaultSubagentChange,

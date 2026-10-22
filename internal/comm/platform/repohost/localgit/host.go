@@ -19,6 +19,7 @@ import (
 	"log/slog"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-git/go-git/v5"
@@ -54,11 +55,16 @@ type Config struct {
 // Host is the local Git host. It implements repohost.Host and, as an
 // http.Handler, serves the Git protocol and the JSON interface.
 type Host struct {
-	config   Config
-	store    *store
-	releases *releases.Store
-	signer   tokenSigner
-	logger   *slog.Logger
+	httpMu     sync.Mutex
+	closing    bool
+	requests   sync.WaitGroup
+	closeOnce  sync.Once
+	closeError error
+	config     Config
+	store      *store
+	releases   *releases.Store
+	signer     tokenSigner
+	logger     *slog.Logger
 	// pushing is the one slot for the objects of a push: the host stores and
 	// checks the objects of one push at a time.
 	pushing chan struct{}
@@ -74,12 +80,25 @@ func New(config Config, logger *slog.Logger) (*Host, error) {
 	}
 	assets, err := releases.New(filepath.Join(config.Dir, releasesDir))
 	if err != nil {
+		_ = repositories.locks.Close()
 		return nil, err
 	}
 	config.CloneBaseURL = strings.TrimRight(config.CloneBaseURL, "/")
 	config.ServerBaseURL = strings.TrimRight(config.ServerBaseURL, "/")
 	return &Host{config: config, store: repositories, releases: assets, signer: tokenSigner{key: config.SigningKey}, logger: logger,
 		pushing: make(chan struct{}, 1)}, nil
+}
+
+// Close releases this host's temporary-file owner after all listeners and operations stop.
+func (h *Host) Close() error {
+	h.closeOnce.Do(func() {
+		h.httpMu.Lock()
+		h.closing = true
+		h.httpMu.Unlock()
+		h.requests.Wait()
+		h.closeError = h.store.locks.Close()
+	})
+	return h.closeError
 }
 
 // Provider is the local Git host.
@@ -103,9 +122,12 @@ func (h *Host) publish(r repository) repohost.Repository {
 // ManagedRepository returns the Project's active managed repository, creating
 // it on first use. The host answers from its own disk, so there is no lost
 // response to reconcile.
-func (h *Host) ManagedRepository(_ context.Context, setup repohost.SetupIdentity) (repohost.Repository, error) {
-	h.store.creating.Lock()
-	defer h.store.creating.Unlock()
+func (h *Host) ManagedRepository(ctx context.Context, setup repohost.SetupIdentity) (repohost.Repository, error) {
+	release, err := h.store.locks.Lock(ctx, "creation")
+	if err != nil {
+		return repohost.Repository{}, err
+	}
+	defer release()
 	found, err := h.findManaged(setup)
 	if err != nil {
 		return repohost.Repository{}, err
@@ -126,7 +148,7 @@ func (h *Host) ManagedRepository(_ context.Context, setup repohost.SetupIdentity
 // FindManagedRepository returns the Project's managed repository by its
 // deterministic name, or nil when it does not exist; it creates nothing, so
 // cleanup can use it.
-func (h *Host) FindManagedRepository(_ context.Context, setup repohost.SetupIdentity) (*repohost.Repository, error) {
+func (h *Host) FindManagedRepository(ctx context.Context, setup repohost.SetupIdentity) (*repohost.Repository, error) {
 	found, err := h.findManaged(setup)
 	if err != nil || found == nil {
 		return nil, err
@@ -214,7 +236,7 @@ const connectorLibraryMarker = "superverse:connectors-library-copy"
 // holds the copy's lock, so it never interleaves with a push; it ends with
 // ctx.
 func (h *Host) ConnectorLibraryMirror(ctx context.Context, source string) (repohost.Repository, error) {
-	found, err := h.connectorLibrary()
+	found, err := h.connectorLibrary(ctx)
 	if err != nil || source == "" {
 		return h.publish(found), err
 	}
@@ -283,7 +305,7 @@ func (h *Host) ConnectorLibraryCloneURL() string {
 // without force: a target branch that already holds it is published, and one
 // that moved elsewhere refuses the push. The token is used for this push only.
 func (h *Host) PushConnectorBranch(ctx context.Context, branch, target, token string) error {
-	found, err := h.connectorLibrary()
+	found, err := h.connectorLibrary(ctx)
 	if err != nil {
 		return err
 	}
@@ -304,9 +326,12 @@ func (h *Host) PushConnectorBranch(ctx context.Context, branch, target, token st
 
 // connectorLibrary is the copy of the connectors library, created when it is
 // missing.
-func (h *Host) connectorLibrary() (repository, error) {
-	h.store.creating.Lock()
-	defer h.store.creating.Unlock()
+func (h *Host) connectorLibrary(ctx context.Context) (repository, error) {
+	release, err := h.store.locks.Lock(ctx, "creation")
+	if err != nil {
+		return repository{}, err
+	}
+	defer release()
 	found, err := h.store.find(repositoryOwner + "/" + connectorLibraryName)
 	switch {
 	case errors.Is(err, repohost.ErrNotFound):

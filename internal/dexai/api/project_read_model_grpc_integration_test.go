@@ -62,11 +62,11 @@ func TestProjectReadModelGRPCDexIntegration(t *testing.T) {
 		t.Fatal("CreateProject runs a Project's Setup, which creates its repository: requires SUPERVERSE_TEST_GITHUB_EFFECTS=true")
 	}
 	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
-	target := dexflowtest.Setting(t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET")
+
 	projectFlow, setupFlow := &projects.ProjectFlow{}, &setup.ProjectSetupFlow{}
 	// This client registry supplies definitions only; the existing Worker
 	// runs both Flows with every dependency of its server.
-	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Address: target}, projectFlow, setupFlow)
+	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Pull: true}, projectFlow, setupFlow)
 	db := postgrestest.OpenForTest(t)
 	idLength := projecttest.IDLengthForTest(t)
 	projectClient := &projects.ProjectFlowClient{Dex: sdk, Flow: projectFlow, Projections: projectdao.New(db), ProjectIDLength: idLength, PlatformAdminEmails: []string{"admin@superverse.test"}}

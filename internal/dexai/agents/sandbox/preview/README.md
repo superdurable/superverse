@@ -634,7 +634,7 @@ setting are Studio work that follows.
 - `TestMissingPreviewReadDexIntegration` (`SUPERVERSE_TEST_LANE`, `SUPERVERSE_TEST_DEX_ADDRESS`): a read
   of a Preview that never started reports absence and creates no execution.
 - `TestStoppedPreviewTimeTravelDexIntegration` (`SUPERVERSE_TEST_LANE`,
-  `SUPERVERSE_TEST_DEX_ADDRESS`, `SUPERVERSE_TEST_EXISTING_WORKER_TARGET`): a Preview whose engine execution
+  `SUPERVERSE_TEST_DEX_ADDRESS`): a Preview whose engine execution
   an operator terminated refuses every command `ErrClosed`, a new start joins
   the closed execution, and the runbook's time travel to `AwaitPreviewCommands-1`
   brings it back to admit and run a stop to `STOPPED`.

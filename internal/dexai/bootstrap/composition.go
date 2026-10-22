@@ -212,19 +212,33 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	// Second phase: the one Dex client needs the complete registry, so the
 	// clients built above are bound to it before the Worker or any listener
 	// starts. Release and Deployment clients reach Dex through projectClient.
-	registry, err := dex.NewRegistry(serverFlows{
+	flows := serverFlows{
 		teamSpace: teamSpaceFlow, project: projectFlow, setup: setupFlow, repository: repositoryFlow,
 		workspace: workspaces.Flow(), provision: provisioning.Flow(), preview: previewFlow, session: sessionAgent.Flow(), subagent: subagents.Flow(), background: backgroundCommands.Flow(), issue: issues.Flow(), contribution: contributions.Flow(), release: releaseFlow, deployment: deploymentFlow,
 		attachment: attachmentFlows.Flow(),
-	}.list())
+	}.list()
+	registry, err := dex.NewRegistry(flows)
 	if err != nil {
 		return nil, err
+	}
+	if pull := config.dexWorker.Pull; pull != nil {
+		// SDK 1.13 retains surplus idle streams after a queue's busy tasks finish.
+		streams := (len(flows) + 1) * (pull.IdleStreamsPerQueue + pull.MaxConcurrentTasks)
+		if streams > serverconfig.PlatformDexWorkerStreamCap {
+			return nil, fmt.Errorf("platform pull Worker needs up to %d streams for %d Flow types; matching cap is %d: review concurrency and matching capacity", streams, len(flows), serverconfig.PlatformDexWorkerStreamCap)
+		}
 	}
 	cache, err := blobcache.New(&config.blobCache)
 	if err != nil {
 		return nil, err
 	}
 	owned.add(cache.Close)
+	worker, err := dex.NewWorker(registry, cache, config.dexWorker)
+	if err != nil {
+		return nil, err
+	}
+	target := worker.WorkerTarget()
+	config.dexClient.WorkerTarget = target
 	client, err := dex.NewClient(registry, cache, config.dexClient)
 	if err != nil {
 		return nil, err
@@ -248,10 +262,6 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	sessionService.ModelCredentials = &agents.ModelCredentialFlowService{Sessions: sessionAgentClient, Subagents: sessionService.Subagents, HTTP: modelprovider.NewProviderHTTPClient(), Logger: logger, ValidationBaseURL: config.agent.Claude.BaseURL}
 	owned.add(sessionService.ModelCredentials.Close)
 	sessionService.BackgroundCommands = backgroundCommands.Client(client)
-	worker, err := dex.NewWorker(registry, cache, config.dexWorker)
-	if err != nil {
-		return nil, err
-	}
 
 	flowRuns := &runs.Runs{
 		Projects: projectClient, Deployments: deploymentClient, Sessions: sessionService,

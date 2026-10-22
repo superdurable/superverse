@@ -299,11 +299,11 @@ func installRemotePreviewRelay(ctx context.Context, t *testing.T, session *mockS
 		t.Fatal("Preview relay lacks the exact live Session identity")
 	}
 	state, err := session.reader.GetFlowState(ctx, &dexpb.GetFlowStateRequest{FlowId: flowID, RunId: summary.GetFlowExecutionId().GetRunId()})
-	if err != nil || state.GetFlowConfig().GetWorkerTarget().GetAddress() == "" {
+	if err != nil || !state.GetFlowConfig().GetWorkerTarget().GetIsPullMode() {
 		t.Fatal("Preview relay cannot preserve a missing original Worker target/config")
 	}
 	original := proto.Clone(state.GetFlowConfig()).(*dexpb.FlowConfig)
-	connection, err := grpc.NewClient(remotePreviewWorkerDialTarget(ctx, t, original.GetWorkerTarget().GetAddress(), cleanup), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	connection, err := grpc.NewClient(remotePreviewWorkerDialTarget(ctx, t, cleanup), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Fatal("Preview relay real Worker connection failed")
 	}
@@ -331,7 +331,7 @@ func installRemotePreviewRelay(ctx context.Context, t *testing.T, session *mockS
 		}
 	}()
 	redirected := proto.Clone(original).(*dexpb.FlowConfig)
-	redirected.WorkerTarget.Address = net.JoinHostPort(dexflowtest.Setting(t, "SUPERVERSE_TEST_WORKER_HOST"), port)
+	redirected.WorkerTarget = &dexpb.WorkerTarget{Address: net.JoinHostPort(dexflowtest.Setting(t, "SUPERVERSE_TEST_WORKER_HOST"), port)}
 	t.Cleanup(func() {
 		gate.open()
 		reconcile, cancel := context.WithTimeout(context.Background(), 30*time.Second)

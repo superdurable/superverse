@@ -6,7 +6,7 @@
 #
 # SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-"""Bounded, read-only proof that platform Dex reaches the Native Worker through an existing Flow.
+"""Bounded, read-only proof of Native pull Worker delivery through an existing Flow.
 
 Only fixed reads repeat, and the one invoked RPC is the Attribute-only GetDexSummary. CLI output
 may carry private Flow state: it stays in memory and never reaches logs or the run record.
@@ -57,17 +57,17 @@ def dex_answers(cli, dex_address):
     require(result.returncode == 0 and isinstance(json.loads(result.stdout or "null"), dict), "Platform Dex does not answer yet")
 
 
-def callback_readiness(dex_address, worker_address, headless, cancelled, *, seconds=120):
+def callback_readiness(dex_address, cancelled, *, seconds=120):
     cli = dexcli()
     identity = {"cliVersion": DEXCLI_VERSION, "cliCommit": DEXCLI_COMMIT, "cliDigest": hashlib.sha256(cli.read_bytes()).hexdigest()}
-    return {**identity, **CallbackProbe(cli, dex_address, time.monotonic() + seconds, cancelled).verify(worker_address, headless)}
+    return {**identity, **CallbackProbe(cli, dex_address, time.monotonic() + seconds, cancelled).verify()}
 
 
 class CallbackProbe:
     def __init__(self, cli, dex_address, deadline, cancelled):
         self.cli, self.dex_address, self.deadline, self.cancelled = cli, dex_address, deadline, cancelled
 
-    def verify(self, worker_address, headless):
+    def verify(self):
         attempts = 0
         other_workers = 0
         saw_execution = False
@@ -81,11 +81,9 @@ class CallbackProbe:
                     require(candidate.get("flowType") == flow_type, "Native readiness candidate type changed")
                     config = self.read("GetFlowState", {"flowId": flow_id, "runId": run_id}).get("flowConfig", {})
                     target = config.get("workerTarget", {}) if isinstance(config, dict) else {}
-                    require(isinstance(target, dict) and isinstance(target.get("address"), str) and target["address"],
-                            "Existing Flow Worker target is missing")
-                    # Real integration tests can retain Flows on their own temporary Workers. They are
-                    # not a callback probe of the Native server; never invoke an RPC on another target.
-                    if target["address"] != worker_address or target.get("isHeadlessAddress", False) is not headless:
+                    require(isinstance(target, dict), "Existing Flow Worker target is missing")
+                    # Test-process push Workers are isolated from the platform pull queues.
+                    if target.get("isPullMode") is not True:
                         other_workers += 1
                         continue
                     attempts += 1
@@ -94,7 +92,7 @@ class CallbackProbe:
                     if self.current(flow_id) != (flow_type, run_id):
                         raise RetryRead()
                     return {"level": "CALLBACK_VERIFIED", "flowType": flow_type, "flowIdSHA256": hashlib.sha256(flow_id.encode()).hexdigest(),
-                            "runId": run_id, "workerAddress": worker_address, "workerHeadless": headless, "attempts": attempts,
+                            "runId": run_id, "workerPull": True, "attempts": attempts,
                             "otherWorkerCandidates": other_workers}
                 # Open platform Flows that all run on other Workers mean this Worker is not the lane's.
                 # Without any open platform Flow, nothing can be invoked: explicitly weaker than a callback proof.

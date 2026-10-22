@@ -38,7 +38,7 @@ import (
 // These scenarios create a throwaway READY Project each (projecttest) and
 // delete it with the actual Worker of the local lane that
 // SUPERVERSE_TEST_LANE names (SUPERVERSE_TEST_DEX_ADDRESS and
-// SUPERVERSE_TEST_EXISTING_WORKER_TARGET). The deletion is the only close of
+// the platform pull target). The deletion is the only close of
 // the Project's one Session. Each demands the Session's workspace through the
 // Preview-scope RPC, so no model is called, and reads what remains of the
 // Session in the lane's runtime with the operator's tools (sandboxObjects).
@@ -302,11 +302,11 @@ func startCleanupProbe(t *testing.T, ctx context.Context) *cleanupProbe {
 func startCleanupProbeOn(t *testing.T, ctx context.Context, model conversation.Model) *cleanupProbe {
 	t.Helper()
 	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
-	target := dexflowtest.Setting(t, "SUPERVERSE_TEST_EXISTING_WORKER_TARGET")
+
 	objects := newSandboxObjects(t)
 	projectFlow, provisionFlow, previewFlow, flow, subagentFlow := &projects.ProjectFlow{}, &provision.SandboxProvisionFlow{}, &preview.PreviewFlow{}, &sessionagent.SessionAgentFlow{}, &subagent.SubagentFlow{}
 	workspaceFlow := &sessionworkspace.SessionWorkspaceFlow{}
-	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Address: target}, projectFlow, provisionFlow, previewFlow, flow, subagentFlow, workspaceFlow)
+	sdk := dexflowtest.ClientForTest(t, address, &dex.WorkerTarget{Pull: true}, projectFlow, provisionFlow, previewFlow, flow, subagentFlow, workspaceFlow)
 	reader := dexflowtest.ExecutionReaderForTest(t, address)
 	names := deploymentnames.MustFor(deploymentnames.EnvironmentTest)
 	// This client registry supplies definitions only. Real handlers and every

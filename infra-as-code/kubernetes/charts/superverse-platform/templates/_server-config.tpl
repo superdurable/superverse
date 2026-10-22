@@ -10,8 +10,7 @@ private Secret.
 {{- $config := deepCopy (default (dict) .Values.server.config) -}}
 {{- $chart := dict
     "server" (dict "grpcAddress" ":8080" "healthAddress" ":8082" "blobCacheDir" "/var/cache/superverse/dex-blobs")
-    "dex" (dict "serverAddress" (printf "%s-dex:8801" $product) "workerAddress" ":50051"
-                "workerTarget" (printf "superverse-server-worker.%s.svc.cluster.local:50051" (include "v2.namespace" .)) "workerHeadless" true) -}}
+    "dex" (dict "serverAddress" (printf "%s-dex:8801" $product) "pull" (dict "maxConcurrentTasks" 256 "idleStreamsPerQueue" 1 "stopDrainTimeout" "60s")) -}}
 {{- $config = merge $config $chart -}}
 {{- /* The credential read endpoint's listener and the Service address applications reach it at, which configurations carry. */}}
 {{- $connections := default (dict) (index $config "connections") -}}

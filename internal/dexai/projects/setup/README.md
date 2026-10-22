@@ -139,8 +139,8 @@ Step identities; there is no old handler or repository source compatibility path
 
 Every scenario runs on the merged Worker with real Dex, the repository host
 and the runtime of the local lane (`SUPERVERSE_TEST_DEX_ADDRESS`,
-`SUPERVERSE_TEST_API_ADDRESS`, `SUPERVERSE_TEST_WORKER_TARGET`,
-`SUPERVERSE_TEST_WORKER_HEADLESS`, `SUPERVERSE_TEST_PROJECT_ID_LENGTH`,
+`SUPERVERSE_TEST_API_ADDRESS`,
+`SUPERVERSE_TEST_PROJECT_ID_LENGTH`,
 `SUPERVERSE_TEST_LANE`, with `SUPERVERSE_TEST_KIND_KUBECONFIG` on Kind or
 `SUPERVERSE_TEST_NATIVE_RUN_ID` on Native, and
 `SUPERVERSE_TEST_GITHUB_EFFECTS=true`) and deletes its Project at the end. It
