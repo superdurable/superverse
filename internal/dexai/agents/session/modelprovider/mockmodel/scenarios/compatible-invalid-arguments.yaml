@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# Tool schema rejection is a correctable result; the next request must succeed.
+name: compatible-invalid-arguments
+title: "Compatible invalid arguments"
+description: "An out-of-range timer argument is corrected through a tool result."
+category: agent_error
+inputs:
+  - label: "Make a correctable schema mistake"
+    message: "Exercise compatible tool argument recovery."
+    replies:
+      - text: "Requesting an invalid timer duration."
+        invalid_tool_arguments: true
+        expect_failure: true
+        expect_failure_text: "invalid_duration_seconds"
+        tool_uses:
+          - name: start_timer
+            input: {duration_seconds: -1, reason: "Schema correction probe"}
+      - text: "The invalid tool argument became a correctable result."

@@ -147,11 +147,14 @@ func checkLongHandoffNotice(text string, selected selection) error {
 // messagesRequest is the part of a Messages API request the mock model
 // reads; the client sends much more, which it ignores.
 type messagesRequest struct {
-	Model      string             `json:"model"`
-	Stream     bool               `json:"stream"`
-	Messages   []requestMessage   `json:"messages"`
-	Tools      []requestTool      `json:"tools"`
-	ToolChoice *requestToolChoice `json:"tool_choice"`
+	WireTools    []json.RawMessage     `json:"-"`
+	WireMode     conversation.APIStyle `json:"-"`
+	WireProvider conversation.Provider `json:"-"`
+	Model        string                `json:"model"`
+	Stream       bool                  `json:"stream"`
+	Messages     []requestMessage      `json:"messages"`
+	Tools        []requestTool         `json:"tools"`
+	ToolChoice   *requestToolChoice    `json:"tool_choice"`
 }
 
 // requestToolChoice is how a request lets the model use its tools.

@@ -142,72 +142,87 @@ func subagentNotification(t *testing.T, messages []conversation.SequencedMessage
 // the agent ID. A repeated start of the closed execution joins it, and the
 // Session denies a late admission.
 func TestSessionMockSubagentInvestigateDexIntegration(t *testing.T) {
-	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
-	defer cancel()
-	session := newMockSession(t, ctx, mockInput(t, "subagent-investigate", 1).Content)
-	running := onlySubagent(t, session.waitForSnapshot(ctx, "the subagent running", func(agent agentloop.AgentSnapshot) bool {
-		records := agent.Description.Subagents
-		return len(records) == 1 && records[0].Status == agenttasks.SubagentRunning
-	}))
-	other := agenttasks.SubagentAdmission{AgentID: running.AgentID, Fingerprint: "another call", BaseCommit: running.BaseCommit}
-	if answer, err := session.client.AdmitSubagent(ctx, session.id, other); err != nil || answer.Admitted || answer.Stopped {
-		t.Fatalf("the Session admitted another call for its running subagent (%+v, %T)", answer, err)
+	for _, model := range []conversation.Model{conversation.ModelMock, conversation.ModelMockResponses, conversation.ModelMockChat} {
+		t.Run(string(model), func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
+			defer cancel()
+			session := newSession(t, ctx, model, mockInput(t, "subagent-investigate", 1).Content)
+			running := onlySubagent(t, session.waitForSnapshot(ctx, "the subagent running", func(agent agentloop.AgentSnapshot) bool {
+				records := agent.Description.Subagents
+				return len(records) == 1 && records[0].Status == agenttasks.SubagentRunning
+			}))
+			other := agenttasks.SubagentAdmission{AgentID: running.AgentID, Fingerprint: "another call", BaseCommit: running.BaseCommit}
+			if answer, err := session.client.AdmitSubagent(ctx, session.id, other); err != nil || answer.Admitted || answer.Stopped {
+				t.Fatalf("the Session admitted another call for its running subagent (%+v, %T)", answer, err)
+			}
+			same := agenttasks.SubagentAdmission{AgentID: running.AgentID, Fingerprint: running.Fingerprint, BaseCommit: running.BaseCommit}
+			if answer, err := session.client.AdmitSubagent(ctx, session.id, same); err != nil || !answer.Admitted {
+				t.Fatalf("the Session did not admit its running subagent's own call again (%+v, %T)", answer, err)
+			}
+			snapshot, err := session.client.GetSnapshot(ctx, session.id)
+			if err != nil || snapshot.Agent == nil {
+				t.Fatalf("the Session read after the admissions failed (%T)", err)
+			}
+			if again := onlySubagent(t, *snapshot.Agent); again.Status != agenttasks.SubagentRunning || !again.AdmittedAt.Equal(running.AdmittedAt) || again.Fingerprint != running.Fingerprint {
+				t.Fatalf("an admission changed the running record: %+v, then %+v", running, again)
+			}
+			session.waitForSnapshot(ctx, "the automatic turn after the subagent's report", func(agent agentloop.AgentSnapshot) bool {
+				return len(replies(agent.History)) >= 3 && agent.Description.Status == agentloop.AgentStatusWaitingForMessage
+			})
+			agent, messages := session.history(ctx)
+			requireNoFailure(t, conversation.HistoryPage{Messages: messages})
+			assistant := ofRole(messages, conversation.MessageRoleAssistant)
+			if len(assistant) != 3 || !strings.Contains(assistant[2].Message.Content, "web/src/App.tsx defines the page heading") {
+				t.Fatalf("expected the 3 mock replies ending with the relayed report; a stopped scenario answers with one text: %+v", assistant)
+			}
+			record := onlySubagent(t, agent)
+			if record.Kind != agenttasks.SubagentInvestigate || record.Status != agenttasks.SubagentCompleted || record.Description != "Find the page heading" ||
+				!flowid.IsCommitSHA(record.BaseCommit) || record.AdmittedAt.IsZero() || record.FinishedAt.IsZero() || record.Changes != nil {
+				t.Fatalf("the record of the investigation is wrong: %+v", record)
+			}
+			identity := session.subagentOf(record)
+			if record.AgentID != flowid.AgentTaskID(string(session.id), string(record.CallID)) ||
+				identity.FlowID() != "subagent-"+session.identity.ProjectID+"-"+record.AgentID {
+				t.Fatalf("the subagent's identity does not derive from the Session and the call: %+v", record)
+			}
+			if notification := subagentNotification(t, messages, record, agenttasks.SubagentCompleted); notification.Sequence < assistant[1].Sequence || notification.Sequence > assistant[2].Sequence {
+				t.Fatal("the notification is not between the first turn's end and the automatic turn")
+			}
+			state := session.awaitSubagentEnd(ctx, record)
+			if state.Status != subagent.StatusCompleted || state.Outcome.Delivery != subagent.ReportDeliveredForTest || !strings.Contains(state.Outcome.Report, "line 51") ||
+				state.Config == nil || state.Config.Model != model || state.Config.Kind != agenttasks.SubagentInvestigate {
+				t.Fatalf("the subagent's own state is wrong: %+v, %+v, %+v", state, state.Config, state.Outcome)
+			}
+			before := session.execution(ctx, identity.FlowID())
+			start := agenttasks.SubagentStart{Identity: identity, Call: agenttasks.SubagentCall{Kind: record.Kind, Description: record.Description, Prompt: "A repeated start."},
+				Fingerprint: record.Fingerprint, BaseCommit: record.BaseCommit, Model: model}
+			if err := session.subagents.Start(ctx, start); err != nil {
+				t.Fatalf("a repeated start of the closed subagent did not join it (%T)", err)
+			}
+			if after := session.execution(ctx, identity.FlowID()); after.GetFlowExecutionId().GetRunId() != before.GetFlowExecutionId().GetRunId() ||
+				after.GetFlowStatus() != dexpb.FlowStatus_FLOW_STATUS_COMPLETED {
+				t.Fatalf("a repeated start ran the subagent again: %v, then %v", before.GetFlowExecutionId(), after.GetFlowExecutionId())
+			}
+			for _, fingerprint := range []string{record.Fingerprint, "another call"} {
+				admission := agenttasks.SubagentAdmission{AgentID: record.AgentID, Fingerprint: fingerprint, BaseCommit: record.BaseCommit}
+				if answer, err := session.client.AdmitSubagent(ctx, session.id, admission); err != nil || answer.Admitted || answer.Stopped {
+					t.Fatalf("the Session admitted a finished subagent again (%+v, %T)", answer, err)
+				}
+			}
+			t.Logf("FlowID=%s started subagent %s, which reported and completed", session.id, identity.FlowID())
+
+			child := *session
+			child.id = agentloop.FlowID(identity.FlowID())
+			for _, item := range compatibleCanonicalEntries(ctx, t, &child) {
+				for _, block := range item.Entry.Blocks {
+					if conversation.IsOpaqueReplay(block) {
+						t.Fatal("completed subagent retained opaque replay")
+					}
+				}
+			}
+
+		})
 	}
-	same := agenttasks.SubagentAdmission{AgentID: running.AgentID, Fingerprint: running.Fingerprint, BaseCommit: running.BaseCommit}
-	if answer, err := session.client.AdmitSubagent(ctx, session.id, same); err != nil || !answer.Admitted {
-		t.Fatalf("the Session did not admit its running subagent's own call again (%+v, %T)", answer, err)
-	}
-	snapshot, err := session.client.GetSnapshot(ctx, session.id)
-	if err != nil || snapshot.Agent == nil {
-		t.Fatalf("the Session read after the admissions failed (%T)", err)
-	}
-	if again := onlySubagent(t, *snapshot.Agent); again.Status != agenttasks.SubagentRunning || !again.AdmittedAt.Equal(running.AdmittedAt) || again.Fingerprint != running.Fingerprint {
-		t.Fatalf("an admission changed the running record: %+v, then %+v", running, again)
-	}
-	session.waitForSnapshot(ctx, "the automatic turn after the subagent's report", func(agent agentloop.AgentSnapshot) bool {
-		return len(replies(agent.History)) >= 3 && agent.Description.Status == agentloop.AgentStatusWaitingForMessage
-	})
-	agent, messages := session.history(ctx)
-	requireNoFailure(t, conversation.HistoryPage{Messages: messages})
-	assistant := ofRole(messages, conversation.MessageRoleAssistant)
-	if len(assistant) != 3 || !strings.Contains(assistant[2].Message.Content, "web/src/App.tsx defines the page heading") {
-		t.Fatalf("expected the 3 mock replies ending with the relayed report; a stopped scenario answers with one text: %+v", assistant)
-	}
-	record := onlySubagent(t, agent)
-	if record.Kind != agenttasks.SubagentInvestigate || record.Status != agenttasks.SubagentCompleted || record.Description != "Find the page heading" ||
-		!flowid.IsCommitSHA(record.BaseCommit) || record.AdmittedAt.IsZero() || record.FinishedAt.IsZero() || record.Changes != nil {
-		t.Fatalf("the record of the investigation is wrong: %+v", record)
-	}
-	identity := session.subagentOf(record)
-	if record.AgentID != flowid.AgentTaskID(string(session.id), string(record.CallID)) ||
-		identity.FlowID() != "subagent-"+session.identity.ProjectID+"-"+record.AgentID {
-		t.Fatalf("the subagent's identity does not derive from the Session and the call: %+v", record)
-	}
-	if notification := subagentNotification(t, messages, record, agenttasks.SubagentCompleted); notification.Sequence < assistant[1].Sequence || notification.Sequence > assistant[2].Sequence {
-		t.Fatal("the notification is not between the first turn's end and the automatic turn")
-	}
-	state := session.awaitSubagentEnd(ctx, record)
-	if state.Status != subagent.StatusCompleted || state.Outcome.Delivery != subagent.ReportDeliveredForTest || !strings.Contains(state.Outcome.Report, "line 51") ||
-		state.Config == nil || state.Config.Model != conversation.ModelMock || state.Config.Kind != agenttasks.SubagentInvestigate {
-		t.Fatalf("the subagent's own state is wrong: %+v, %+v, %+v", state, state.Config, state.Outcome)
-	}
-	before := session.execution(ctx, identity.FlowID())
-	start := agenttasks.SubagentStart{Identity: identity, Call: agenttasks.SubagentCall{Kind: record.Kind, Description: record.Description, Prompt: "A repeated start."},
-		Fingerprint: record.Fingerprint, BaseCommit: record.BaseCommit, Model: conversation.ModelMock}
-	if err := session.subagents.Start(ctx, start); err != nil {
-		t.Fatalf("a repeated start of the closed subagent did not join it (%T)", err)
-	}
-	if after := session.execution(ctx, identity.FlowID()); after.GetFlowExecutionId().GetRunId() != before.GetFlowExecutionId().GetRunId() ||
-		after.GetFlowStatus() != dexpb.FlowStatus_FLOW_STATUS_COMPLETED {
-		t.Fatalf("a repeated start ran the subagent again: %v, then %v", before.GetFlowExecutionId(), after.GetFlowExecutionId())
-	}
-	for _, fingerprint := range []string{record.Fingerprint, "another call"} {
-		admission := agenttasks.SubagentAdmission{AgentID: record.AgentID, Fingerprint: fingerprint, BaseCommit: record.BaseCommit}
-		if answer, err := session.client.AdmitSubagent(ctx, session.id, admission); err != nil || answer.Admitted || answer.Stopped {
-			t.Fatalf("the Session admitted a finished subagent again (%+v, %T)", answer, err)
-		}
-	}
-	t.Logf("FlowID=%s started subagent %s, which reported and completed", session.id, identity.FlowID())
 }
 
 // A change subagent edits the page heading in its own worktree while the

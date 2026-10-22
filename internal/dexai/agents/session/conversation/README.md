@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Defines the values SessionAgentFlow exchanges with its model: the append-only entry log and its public view, request assembly, requests and replies, tool calls, activity events and prompts.
 
-Callers: `cmd/**` (5) and `internal/dexai/**` (25) import this package.
+Callers: `cmd/**` (5) and `internal/dexai/**` (26) import this package.
 
 Dependencies: it imports `internal/comm`, `internal/comm/dexflow`, `internal/comm/platform/connectorlibrary`, `internal/comm/platform/repohost` and `internal/dexai/agents/toolfailure`.
 
@@ -11,7 +11,7 @@ Dependencies: it imports `internal/comm`, `internal/comm/dexflow`, `internal/com
 flowchart LR
   self["internal/dexai/agents/session/conversation"]
   c0["cmd/** (5)"] --> self
-  c1["internal/dexai/** (25)"] --> self
+  c1["internal/dexai/** (26)"] --> self
   self --> d0["internal/comm"]
   self --> d1["internal/comm/dexflow"]
   self --> d2["internal/comm/platform/connectorlibrary"]
@@ -70,3 +70,21 @@ toward the limit. Body scanning is linear, and the Session's first-plus-eight re
 bound remains unchanged. Historical authorless parts remain plain text; this never alters stored
 blocks, public originals, segment boundaries or subagent tasks. See
 [context management](../../../../../docs/architecture/agent-harness-design/context-management.md).
+
+## Private compatible-provider replay
+
+`OpaqueReplay` is an allowlisted `opaque_replay` block in the existing `Entry.Blocks`.
+Its fields are provider, wireMode, position, optional callID/itemID/status and ciphertext.
+Responses reasoning requires an item ID and completed status; Gemini signatures bind
+to a call ID at their exact position; Messages redacted replay has no call or item ID.
+The decoder rejects unknown fields, unsupported provider/mode combinations, wrong
+positions, missing ciphertext and encoded blocks above 256 KiB. Adapters enforce the
+same 256 KiB budget across the complete reply. `Entry.Bytes` includes those bytes.
+
+`PublicMessage` and `Text` use their existing text/tool metadata allowlists, so replay
+never becomes public history or ordinary text. `WithoutOpaqueReplay` supplies a
+non-mutating projection for segment cleanup; it leaves existing Claude signed replay
+and canonical text/tool blocks intact. `WithoutProtocolHistory` explicitly projects
+compatible compaction and foreign executor history: text, images and attachment
+references remain, tool calls/results become recorded JSON text, and private
+protocol blocks are omitted. This is transient input, never a replacement history.

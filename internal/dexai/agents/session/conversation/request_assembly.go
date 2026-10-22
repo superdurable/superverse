@@ -18,9 +18,10 @@ import (
 // entries it renders, in order. A system message may carry a per-message
 // effort and no blocks.
 type RequestMessage struct {
-	Role   EntryRole
-	Blocks []json.RawMessage
-	Effort Effort
+	ModelStopReason StopReason
+	Role            EntryRole
+	Blocks          []json.RawMessage
+	Effort          Effort
 	// CacheAnchor is the index of the block that carries the explicit cache
 	// breakpoint, or -1.
 	CacheAnchor int
@@ -80,7 +81,7 @@ func AssembleRequest(entries []SequencedEntry, anchor Sequence, shape RequestSha
 		}
 		messages = append(messages, renderGap(gap, toolUses, anchored, shape)...)
 		gap, toolUses = nil, toolUseIDs(entry.Entry)
-		messages = append(messages, RequestMessage{Role: EntryRoleAssistant, Blocks: entry.Entry.Blocks, CacheAnchor: -1})
+		messages = append(messages, RequestMessage{Role: EntryRoleAssistant, Blocks: entry.Entry.Blocks, ModelStopReason: entry.Entry.Meta.ModelStopReason, CacheAnchor: -1})
 	}
 	if len(gap) == 0 {
 		panic("a model call needs a non-empty trailing gap")

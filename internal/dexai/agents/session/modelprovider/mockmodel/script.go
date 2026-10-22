@@ -168,6 +168,8 @@ type step struct {
 	// ExpectFailure lets the scenario continue when a tool of this step fails;
 	// without it a failed tool stops the scenario.
 	ExpectFailure bool `json:"expect_failure"`
+	// InvalidToolArguments deliberately tests correction through the real tool boundary.
+	InvalidToolArguments bool `json:"invalid_tool_arguments"`
 	// ExpectFailureText, with ExpectFailure, requires a tool of this step to fail
 	// with a result whose first line holds it; otherwise the scenario stops.
 	ExpectFailureText string `json:"expect_failure_text"`
@@ -610,13 +612,20 @@ func (s *script) validateStep(step step, files rootFiles) error {
 	switch stopReason := step.stopReason(); {
 	case stopReason != conversation.StopReasonEndTurn && stopReason != conversation.StopReasonToolUse && stopReason != conversation.StopReasonMaxTokens:
 		return fmt.Errorf("stop_reason %q is not end_turn, tool_use or max_tokens", stopReason)
-	case (stopReason == conversation.StopReasonToolUse) != (len(step.ToolUses) > 0):
+	case stopReason != conversation.StopReasonMaxTokens && (stopReason == conversation.StopReasonToolUse) != (len(step.ToolUses) > 0):
 		return errors.New("a reply stops with tool_use exactly when it has tool uses")
 	}
 	if step.Usage != nil && (step.Usage.InputTokens < 0 || step.Usage.OutputTokens < 0) {
 		return errors.New("usage must not be negative")
 	}
 	for _, use := range step.ToolUses {
+		if step.InvalidToolArguments {
+			input, err := s.renderInput(use.Input, s.Arguments)
+			if err != nil || !step.ExpectFailure || use.Name != conversation.ToolStartTimer || toolinput.DecodeInput(use.Name, string(input)) == nil {
+				return errors.New("invalid_tool_arguments needs an invalid start_timer input and expect_failure")
+			}
+			continue
+		}
 		if err := s.validateToolUse(use, files, step.ExpectFailure, step.Remote); err != nil {
 			return fmt.Errorf("tool use %s: %w", use.Name, err)
 		}

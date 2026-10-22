@@ -166,7 +166,7 @@ func (c Config) Validate() error {
 	}
 	// Hosted environments offer the mock model only as the administrator's
 	// choice; only Local Kind and Native start new Sessions on it.
-	if c.Agent.Model == conversation.ModelMock && (!c.Agent.MockModel || !c.LocalKind) {
+	if c.Agent.Model.IsMock() && (!c.Agent.MockModel || !c.LocalKind) {
 		fail("agent.model may be mock only with agent.mockModel in Local Kind and Native")
 	}
 

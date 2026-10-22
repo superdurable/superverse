@@ -35,7 +35,14 @@ func checkModelCatalog(byPath map[string]*packages.Package) []problem {
 	var problems []problem
 	at := declaring.Fset.Position(set.Pos())
 	listed := map[string]bool{}
+	public := map[string]bool{}
 	for _, model := range conversation.Models() {
+		public[string(model)] = true
+	}
+	for _, model := range conversation.ExecutionModels() {
+		if !public[string(model)] && (!model.IsMock() || model == conversation.ModelMock) {
+			problems = append(problems, problem{at, fmt.Sprintf("non-fixture model %q is missing from the public catalog", model)})
+		}
 		if listed[string(model)] {
 			problems = append(problems, problem{at, fmt.Sprintf("duplicate catalog identity %q", model)})
 		}
@@ -85,7 +92,7 @@ func checkModelCatalog(byPath map[string]*packages.Package) []problem {
 				value := constant.StringVal(api.TypesInfo.Types[pair.Value].Value)
 				number, exact := constant.Int64Val(api.TypesInfo.Types[pair.Key].Value)
 				_, declaredEnum := pb.AgentModel_name[int32(number)]
-				if !exact || number == 0 || !declaredEnum || !listed[value] || enums[number] || mappings[value] {
+				if !exact || number == 0 || !declaredEnum || !public[value] || enums[number] || mappings[value] {
 					problems = append(problems, problem{at, "AgentModel mapping is not one-to-one"})
 				}
 				mappings[value], enums[number] = true, true
@@ -94,7 +101,7 @@ func checkModelCatalog(byPath map[string]*packages.Package) []problem {
 		})
 	}
 	for _, value := range values {
-		if !mappings[value] {
+		if public[value] && !mappings[value] {
 			problems = append(problems, problem{at, fmt.Sprintf("AgentModel has no mapping for Model %q", value)})
 		}
 	}

@@ -1,0 +1,52 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# One tool call whose reported usage is above every compaction threshold (the
+
+name: compatible-replay
+title: "Compatible wire replay and cleanup"
+description: "Real parallel repository reads and repeated manifest reads retain private replay across archive movement, then compact it away."
+category: agent_feature
+compaction_summary: "The application manifest and repository were read successfully; encrypted wire replay is not part of this summary."
+inputs:
+  - label: "Read across the archive window"
+    message: "Inspect the repository and repeatedly read the manifest."
+    replies:
+      - thinking: "Synthetic private reasoning for the parallel read."
+        text: "Inspecting the repository."
+        tool_uses:
+          - name: grep
+            input: {pattern: flowDefinitions, path: dex-app.yaml, output_mode: content}
+          - name: glob
+            input: {pattern: "*.yaml"}
+      - thinking: "Synthetic private reasoning for the next manifest read."
+        text: "Reading the manifest again."
+        tool_uses:
+          - name: read
+            input: {path: dex-app.yaml, limit: 20}
+        repeat: 12
+      - text: "The compatible repository reads completed."
+  - label: "Compact the replay"
+    message: "Read the manifest and compact the accumulated context."
+    replies:
+      - thinking: "Synthetic private reasoning before compaction."
+        text: "Reading the manifest before compaction."
+        tool_uses:
+          - name: read
+            input: {path: dex-app.yaml, limit: 20}
+        usage: {input_tokens: 950000, output_tokens: 200}
+      - text: "Compatible context compacted; the repository reads remain recorded."
+  - label: "Retain one active reply"
+    message: "Read the manifest once more without compacting."
+    replies:
+      - thinking: "Synthetic private reasoning for the last active segment."
+        text: "Reading the manifest once more."
+        tool_uses:
+          - name: read
+            input: {path: dex-app.yaml, limit: 20}
+      - text: "The last compatible read completed."

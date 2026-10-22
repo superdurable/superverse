@@ -18,10 +18,13 @@ import (
 type Model string
 
 const (
-	ModelOpus55          Model = "anthropic/claude-opus-5-5"
-	ModelSonnet55        Model = "anthropic/claude-sonnet-5-5"
-	ModelHaiku45         Model = "anthropic/claude-haiku-4-5"
-	ModelMock            Model = "mock"
+	ModelOpus55   Model = "anthropic/claude-opus-5-5"
+	ModelSonnet55 Model = "anthropic/claude-sonnet-5-5"
+	ModelHaiku45  Model = "anthropic/claude-haiku-4-5"
+	ModelMock     Model = "mock"
+	// Internal fixture transports: never mapped to a public AgentModel.
+	ModelMockResponses   Model = "mock/openai-responses"
+	ModelMockChat        Model = "mock/openai-chat"
 	ModelGPT6Astra       Model = "openai/gpt-6-astra"
 	ModelDeepSeekFlash   Model = "deepseek/deepseek-flash"
 	ModelGrok47          Model = "xai/grok-4.7"
@@ -87,6 +90,8 @@ var models = map[Model]ModelDetails{
 	ModelSonnet55:        {ProviderAnthropic, "claude-sonnet-5-5", "Claude Sonnet 5.5"},
 	ModelHaiku45:         {ProviderAnthropic, "claude-haiku-4-5", "Claude Haiku 4.5"},
 	ModelMock:            {ProviderAnthropic, "mock", "Mock"},
+	ModelMockResponses:   {ProviderOpenAI, "mock", "Mock Responses"},
+	ModelMockChat:        {ProviderGemini, "mock", "Mock Chat"},
 	ModelGPT6Astra:       {ProviderOpenAI, "gpt-6-astra", "GPT-6 Astra"},
 	ModelDeepSeekFlash:   {ProviderDeepSeek, "deepseek-flash", "DeepSeek V4.1 Flash"},
 	ModelGrok47:          {ProviderXAI, "grok-4.7", "Grok 4.7"},
@@ -105,12 +110,22 @@ var models = map[Model]ModelDetails{
 func Models() []Model {
 	return []Model{ModelOpus55, ModelSonnet55, ModelHaiku45, ModelMock, ModelGPT6Astra, ModelDeepSeekFlash, ModelGrok47, ModelMuseWonder10, ModelGemini4Argon, ModelKimiK3, ModelGLM53, ModelQwen38Max, ModelMiniMaxM31Flash, ModelKimiK26, ModelGLM52, ModelMiniMaxM3}
 }
+
+// ExecutionModels includes internal fixture transports as well as public catalog identities.
+// Only Models participates in public API mappings and picker construction.
+func ExecutionModels() []Model { return append(Models(), ModelMockResponses, ModelMockChat) }
+
 func (model Model) Details() ModelDetails {
 	details, found := models[model]
 	if !found {
 		panic(fmt.Sprintf("no catalog identity for %q", model))
 	}
 	return details
+}
+
+// IsMock identifies the approved scenario engine independently of its wire mode.
+func (model Model) IsMock() bool {
+	return model == ModelMock || model == ModelMockResponses || model == ModelMockChat
 }
 
 // Validate accepts declared identities, including unavailable catalog entries.
@@ -358,6 +373,12 @@ func (reason ModelRejectionReason) Rejected(status int) *ModelRejectedError {
 type ServerRejection struct{ code, hint string }
 
 var (
+	// ModelUnavailable refuses a catalog model whose execution boundary is unavailable.
+	ModelUnavailable = ServerRejection{code: "model_unavailable",
+		hint: "This model is unavailable. Select another model for the Session, then continue."}
+	// ProviderRequestRejected describes deterministic provider request rejection.
+	ProviderRequestRejected = ModelRejectionReason{code: "provider_rejected",
+		hint: "The provider rejected the request. Correct the model configuration or request before continuing."}
 	// MockModelUnavailable refuses the mock model where the server does not
 	// start it.
 	MockModelUnavailable = ServerRejection{code: "mock_model_unavailable",
@@ -378,3 +399,25 @@ func (err *ModelRejectedError) Error() string {
 	}
 	return fmt.Sprintf("model request rejected: %s (HTTP %d)", err.Code, err.Status)
 }
+
+// ReasoningReplayMode is a closed policy for private, same-segment protocol replay.
+type ReasoningReplayMode struct{ id, reason string }
+
+var (
+	ReplayClaudeSigned      = ReasoningReplayMode{id: "claude_signed"}
+	ReplayEncryptedOpaque   = ReasoningReplayMode{id: "encrypted_opaque"}
+	ReplayPlaintextRequired = ReasoningReplayMode{"plaintext_replay_required", "The model requires readable reasoning replay; platform policy forbids persisting it."}
+	ReplayNonThinking       = ReasoningReplayMode{id: "non_thinking"}
+)
+
+func (mode ReasoningReplayMode) String() string { return mode.id }
+func (mode ReasoningReplayMode) Reason() string { return mode.reason }
+
+// ChatThinkingMode is the catalog-selected switch for a non-thinking Chat model.
+type ChatThinkingMode struct{ id string }
+
+var (
+	ChatThinkingDefault      = ChatThinkingMode{}
+	ChatThinkingDisabled     = ChatThinkingMode{"type_disabled"}
+	ChatThinkingQwenDisabled = ChatThinkingMode{"qwen_disabled"}
+)

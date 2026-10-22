@@ -16,6 +16,7 @@ import (
 
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/openaicompat"
 )
 
 // ModelRouter is the Flow's model client: it sends each request to the
@@ -25,22 +26,45 @@ type ModelRouter struct {
 	// claude uses the key of each admitted Session request.
 	claude *claudeClient
 	// mock is nil when the server configuration does not offer the mock model.
-	mock *claudeClient
+	mock map[conversation.APIStyle]conversation.ModelClient
+}
+
+// MockClientConfig keeps internal wire fixtures confined to the local lanes.
+// Hosted administrator mock Sessions retain only the published Anthropic mock.
+type MockClientConfig struct {
+	ClaudeClientConfig
+	CompatibleTransports bool
 }
 
 // NewModelRouter builds the clients the server offers over one owned HTTP
 // client: official Claude with per-request authentication, and the configured mock.
-func NewModelRouter(httpClient *http.Client, claude ClaudeClientConfig, mock *ClaudeClientConfig, logger *slog.Logger) (*ModelRouter, error) {
+func NewModelRouter(httpClient *http.Client, claude ClaudeClientConfig, mock *MockClientConfig, logger *slog.Logger) (*ModelRouter, error) {
 	router := &ModelRouter{}
 	var err error
 	if router.claude, err = newClaudeClient(httpClient, ClaudeClientConfig{BaseURL: claude.BaseURL}, logger); err != nil {
 		return nil, err
 	}
 	if mock != nil {
-		if router.mock, err = newClaudeClient(httpClient, *mock, logger); err != nil {
+		messages, err := newClaudeClient(httpClient, mock.ClaudeClientConfig, logger)
+		if err != nil {
 			return nil, err
 		}
-		router.mock.readsMockProgress = true
+		messages.readsMockProgress = true
+		router.mock = map[conversation.APIStyle]conversation.ModelClient{conversation.AnthropicMessages: messages}
+		if !mock.CompatibleTransports {
+			return router, nil
+		}
+		for _, model := range []conversation.Model{conversation.ModelMockResponses, conversation.ModelMockChat} {
+			profile := ProfileOf(model)
+			policy := openaicompat.Policy{Provider: model.Details().Provider, WireMode: model.Details().Provider.APIStyle(), MaxTokens: profile.maxTokens,
+				Images: profile.Capabilities.SupportsImages, Strict: profile.Capabilities.StrictSchema == strictEnabled,
+				Effort: profile.Effort, Replay: profile.Capabilities.Replay, ChatThinking: profile.Capabilities.chatThinking}
+			client, err := openaicompat.NewMock(httpClient, mock.BaseURL, policy, logger)
+			if err != nil {
+				return nil, err
+			}
+			router.mock[policy.WireMode] = client
+		}
 	}
 	return router, nil
 }
@@ -67,21 +91,30 @@ func mockProgress(response *http.Response) *conversation.MockProgress {
 // request without its Project key gets a rejection that ends its turn.
 func (router *ModelRouter) Complete(ctx context.Context, request conversation.ModelRequest) (conversation.ModelReply, error) {
 	if availability := ProfileOf(request.Model).Availability; !availability.Selectable() {
-		return conversation.ModelReply{}, (&conversation.ModelRejectedError{Code: "model_unavailable", Hint: availability.Reason()})
+		rejection := conversation.ModelUnavailable.Rejected()
+		rejection.Hint = availability.Reason()
+		return conversation.ModelReply{}, rejection
 	}
-	if request.Model != conversation.ModelMock && request.APIKey == "" {
-		return conversation.ModelReply{}, conversation.NoClaudeKey.Rejected()
-	}
-	client := router.claude
-	if request.Model == conversation.ModelMock {
-		client = router.mock
-	}
-	switch {
-	case client != nil:
-		return client.Complete(ctx, request)
-	case request.Model == conversation.ModelMock:
+	style := request.Model.Details().Provider.APIStyle()
+	if request.Model.IsMock() {
+		if client := router.mock[style]; client != nil {
+			return client.Complete(ctx, request)
+		}
 		return conversation.ModelReply{}, conversation.MockModelUnavailable.Rejected()
-	default:
+	}
+	switch style {
+	case conversation.AnthropicMessages:
+		if request.APIKey == "" {
+			return conversation.ModelReply{}, conversation.NoClaudeKey.Rejected()
+		}
+		if request.Model.Details().Provider == conversation.ProviderAnthropic && router.claude != nil {
+			return router.claude.Complete(ctx, request)
+		}
 		return conversation.ModelReply{}, conversation.NoClaudeKey.Rejected()
+	case conversation.OpenAIResponses, conversation.OpenAIChatCompletions:
+		// There is no credential path for these providers before BYOK.
+		return conversation.ModelReply{}, conversation.ModelUnavailable.Rejected()
+	default:
+		return conversation.ModelReply{}, conversation.ModelUnavailable.Rejected()
 	}
 }

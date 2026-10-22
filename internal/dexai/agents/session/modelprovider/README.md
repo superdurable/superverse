@@ -1,11 +1,11 @@
 # Model provider
 
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
-Purpose: Implements the Session Agent's model client over the Claude Messages API: model profiles, byte-exact replay of stored blocks, streamed summaries and tool activity, fallback cleanup and error classification.
+Purpose: Routes catalog-selected model calls and owns Claude Messages requests, capability profiles, private replay, streaming and failure classification.
 
 Callers: `cmd/superverse-server/config`, `cmd/tools/check-proto-enums`, `internal/dexai/agents`, `internal/dexai/agents/session`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/modelprovider/mockmodel`, `internal/dexai/agents/session/subagent`, `internal/dexai/api` and `internal/dexai/bootstrap` import this package.
 
-Dependencies: it imports `internal/comm` and `internal/dexai/agents/session/conversation` and calls the Claude Messages API.
+Dependencies: it imports `internal/comm`, `internal/dexai/agents/session/conversation` and `internal/dexai/agents/session/modelprovider/openaicompat` and calls the Claude Messages API.
 
 ```mermaid
 flowchart LR
@@ -21,6 +21,7 @@ flowchart LR
   c8["internal/dexai/bootstrap"] --> self
   self --> d0["internal/comm"]
   self --> d1["internal/dexai/agents/session/conversation"]
+  self --> d2["internal/dexai/agents/session/modelprovider/openaicompat"]
   self --> e0(["Claude Messages API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
@@ -45,6 +46,7 @@ and timeout flag. Provider bodies, request URLs and headers are never formatted.
 
 | File | Owns |
 | --- | --- |
+| `openaicompat/` | Responses and Chat Completions encoding, bounded stream aggregation and private encrypted replay; currently callable only through the mock transport. |
 | `model_catalog.go` | Closed replay/availability policy and dated unavailable candidate profiles; no new adapter. |
 | `model_profile.go` | `ModelProfile`: what differs between Opus 5.5, Sonnet 5.5, Haiku 4.5 and the mock model, which takes Sonnet 5.5's request shape (thinking, effort, system messages, fallbacks, compaction ceiling, hard limit). |
 | `model_router.go` | `ModelRouter`: the client of each call's model, Claude or the mock model. |
@@ -58,7 +60,13 @@ type is shared with unrelated invalid requests. The message is inspected only fo
 classification; its text never enters the resulting credit or spend-limit
 error. Other rejected requests retain only fixed error categories in diagnostics; raw
 provider bodies and request IDs are discarded so they cannot echo a credential.
-There is no OpenAI-compatible model adapter in this package.
+The [OpenAI-compatible adapter](openaicompat/README.md) implements Responses and Chat Completions against the existing loopback mock engine. Real compatible models remain unavailable until protocol acceptance and their credential boundary are delivered.
+`MockClientConfig.CompatibleTransports` enables the internal `mock/openai-responses`
+and `mock/openai-chat` identities only in Local Native and Kind. `ExecutionModels`
+includes those fixture transports for validation and prompt freezing; `Models`
+excludes them from public catalog/AgentModel mappings. The enum check rejects an
+accidental public mapping. The router dispatches their catalog APIStyle without
+changing the published `mock` identity or hosted mock behavior.
 The monthly enforced spend cap is identified by Anthropic's structured
 `error.details.error_code`; user-set spending caps have only documented
 message prefixes under `invalid_request_error`. Both use separate, fixed
@@ -96,7 +104,7 @@ The closed replay policies are ClaudeSigned (existing private signed blocks), En
 (unreadable protocol items), NonThinking (explicit provider control), and PlaintextRequired
 (a policy rejection with its reason). New opaque replay is private to its segment and must be
 dropped when that segment closes; no readable thinking, summary or opaque payload enters public
-history or compaction. This catalog change adds no replay payload or adapter.
+history or compaction. Compatible mock replies encode private replay with `conversation.OpaqueReplay`; the catalog itself does not own reply payloads.
 
 The following official sources were read on **2026-10-21**. Every new entry remains unavailable:
 adapters, protocol verification and Session API keys are pending. Capability flags are conservative

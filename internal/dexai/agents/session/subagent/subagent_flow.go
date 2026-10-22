@@ -88,7 +88,7 @@ func (flow *SubagentFlow) GetSteps() []dex.StepDef {
 		dex.DefineStep(RecoverSubagentParallelToolExecution{}), dex.DefineStep(AwaitSubagentParallelToolResults{flow: flow}),
 		dex.DefineStep(RefreshSubagentWorkspace{flow: flow}), dex.DefineStep(BeginSubagentFinish{}), dex.DefineStep(FinishSubagent{flow: flow}), dex.DefineStep(ResumeConnectorAfterCheckFailure{flow: flow}),
 		dex.DefineStep(RefreshFinishingWorkspace{flow: flow}), dex.DefineStep(RecordSubagentOutcome{}), dex.DefineStep(ReportSubagentOutcome{flow: flow}),
-		dex.DefineStep(RecordUndeliveredReport{}),
+		dex.DefineStep(RecordUndeliveredReport{}), dex.DefineStep(PurgeSubagentReplay{}),
 	}
 }
 
@@ -251,7 +251,7 @@ func (RecordSubagentAdmissionFailure) Execute(ctx dex.Context, _ dex.None) (*dex
 	finish := subagentFinish{Status: agenttasks.SubagentFailed, Failure: failure}
 	comm.MustDo(outcomeAttribute.Set(ctx, Outcome{Status: StatusFailed, Report: describeEnd(finish), Failure: failure, FinishedAt: time.Now().UTC()}))
 	comm.MustDo(statusAttribute.Set(ctx, StatusFailed.String()))
-	return dex.GoTo(ReportSubagentOutcome{}, nil), nil
+	return dex.GoTo(PurgeSubagentReplay{}, nil, dex.WithStepOptions(closedReplayOptions(ctx))), nil
 }
 
 // dex:group group-id:lifecycle group-label:"Lifecycle"
@@ -270,7 +270,7 @@ func (step ApplySubagentAdmission) Execute(ctx dex.Context, answer agenttasks.Su
 	case answer.Stopped:
 		comm.MustDo(outcomeAttribute.Set(ctx, Outcome{Status: StatusStopped, Report: "The subagent was stopped before it started, so it changed nothing.", FinishedAt: time.Now().UTC()}))
 		comm.MustDo(statusAttribute.Set(ctx, StatusStopped.String()))
-		return dex.GoTo(ReportSubagentOutcome{}, nil), nil
+		return dex.GoTo(PurgeSubagentReplay{}, nil, dex.WithStepOptions(closedReplayOptions(ctx))), nil
 	case !answer.Admitted:
 		comm.MustDo(statusAttribute.Set(ctx, StatusDenied.String()))
 		comm.MustDo(outcomeAttribute.Set(ctx, Outcome{Status: StatusDenied, Failure: "admission_denied", FinishedAt: time.Now().UTC()}))
@@ -341,7 +341,7 @@ func (step CallSubagentModel) Execute(ctx dex.Context, _ dex.None) (*dex.StepDec
 		if sequence >= state.CurrentFirstSequence {
 			return comm.Must(currentMessagesAttribute.Get(ctx, agentloop.SequenceKey(sequence)))
 		}
-		return archivedEntry(comm.Must(archivedMessagesAttribute.Get(ctx, agentloop.SequenceKey(archiveChunkFirst(sequence)))), sequence)
+		return archivedEntry(comm.Must(archivedMessagesAttribute.Get(ctx, agentloop.SequenceKey(agentloop.ArchiveChunkFirst(sequence)))), sequence)
 	}
 	request := step.flow.segmentRequest(ctx, agentloop.ModelCallKindResponse, prompts, read)
 	assistant, assistantErr := dex.NewBufferedTextStream(ctx, assistantTextStream)
@@ -409,7 +409,7 @@ func (step CompactSubagentContext) Execute(ctx dex.Context, _ dex.None) (*dex.St
 		if sequence >= state.CurrentFirstSequence {
 			return comm.Must(currentMessagesAttribute.Get(ctx, agentloop.SequenceKey(sequence)))
 		}
-		return archivedEntry(comm.Must(archivedMessagesAttribute.Get(ctx, agentloop.SequenceKey(archiveChunkFirst(sequence)))), sequence)
+		return archivedEntry(comm.Must(archivedMessagesAttribute.Get(ctx, agentloop.SequenceKey(agentloop.ArchiveChunkFirst(sequence)))), sequence)
 	}
 	request := step.flow.segmentRequest(ctx, agentloop.ModelCallKindCompaction, prompts, read, conversation.NoticeEntry(conversation.EntryRoleSystem, conversation.CompactionInstruction, ""))
 	defer dexflow.KeepAlive(ctx, agentloop.CompactionHeartbeat{Phase: agentloop.HeartbeatPhaseCompacting, Segment: segment.Number})()
@@ -439,7 +439,7 @@ func (RecordSubagentFailure) GetStepOptions() *dex.StepOptions { return loopStep
 
 func (RecordSubagentFailure) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, error) {
 	failure := "its model call did not finish before the retries ran out"
-	if model := dexflow.ValueOrZero(configAttribute.Get(ctx)).Model; model != conversation.ModelMock {
+	if model := dexflow.ValueOrZero(configAttribute.Get(ctx)).Model; !model.IsMock() {
 		if _, err := subagentModelCredential(ctx, model); err != nil {
 			failure = modelcredential.UnavailableCode.String() + ": " + modelcredential.ErrUnavailable.Error()
 		}
@@ -825,6 +825,8 @@ type RecordSubagentOutcome struct {
 
 func (RecordSubagentOutcome) GetStepOptions() *dex.StepOptions {
 	options := *statusStepOptions
+	options.ExecuteLockAttributes = append([]dex.AttributeLock{statusLock}, messageLocks...)
+	options.ExecuteLoadAttributeMaps = messageMaps
 	options.ExecuteLoadChannelMaps = []dex.ChannelDef{parallelToolResultsChannel}
 	return &options
 }
@@ -848,7 +850,7 @@ func (RecordSubagentOutcome) Execute(ctx dex.Context, finish subagentFinish) (*d
 	comm.MustDo(outcomeAttribute.Set(ctx, Outcome{CredentialChangeReason: finish.CredentialChangeReason, Status: status, Report: describeEnd(finish), Changes: finish.Changes, Failure: finish.Failure, Unsaved: finish.Unsaved,
 		FinishedAt: time.Now().UTC(), Contribution: finish.Contribution, Refused: finish.Refused}))
 	comm.MustDo(statusAttribute.Set(ctx, status.String()))
-	return dex.GoTo(ReportSubagentOutcome{}, nil), nil
+	return dex.GoTo(PurgeSubagentReplay{}, nil, dex.WithStepOptions(closedReplayOptions(ctx))), nil
 }
 
 // dex:group group-id:lifecycle group-label:"Lifecycle"
@@ -909,4 +911,16 @@ func (RecordUndeliveredReport) Execute(ctx dex.Context, _ dex.None) (*dex.StepDe
 	outcome.Delivery = reportUndelivered
 	comm.MustDo(outcomeAttribute.Set(ctx, outcome))
 	return dex.GracefulComplete(receipt{Identity: identity, Status: outcome.Status}), nil
+}
+
+// dex:group group-id:lifecycle group-label:"Lifecycle"
+// dex:explanation text:"Discard the ended segment's encrypted replay before reporting the subagent outcome."
+type PurgeSubagentReplay struct {
+	dex.StepDefaultsNoWaitFor[dex.None]
+}
+
+func (PurgeSubagentReplay) GetStepOptions() *dex.StepOptions { return loopStepOptions }
+func (PurgeSubagentReplay) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, error) {
+	purgeClosedReplay(ctx)
+	return dex.GoTo(ReportSubagentOutcome{}, nil), nil
 }

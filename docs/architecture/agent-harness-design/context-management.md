@@ -16,19 +16,60 @@ existing JSON spelling, revision and primitive keys; old Claude/mock executions 
 Protocol/replay policy is immutable for a published model identity; an incompatible change needs
 another versioned identity. New providers cannot borrow the platform Claude key. New opaque
 replay must stay private to the current segment and be dropped when it closes; it is never
-public history or compaction input. PROVCAT introduces no opaque blocks or replay cleanup change.
+public history or compaction input. Compatible adapters encode only the private
+`conversation.OpaqueReplay` allowlist, bounded to 256 KiB per completed reply.
+Responses retain encrypted reasoning items and Gemini retains call-bound thought
+signatures; raw provider response objects and readable reasoning are rejected.
+An omitted Responses item status becomes canonical `completed` only after the
+item's done event and the completed response agree; explicit non-completion or
+either missing proof rejects an ordinary reply before any tool can be committed.
+
+Compatible output-limit replies use the existing continuation path: Chat length
+and Responses incomplete/max_output_tokens preserve completed items, normalize
+truncated pending calls to an empty argument object, and answer every call with
+a not-executed result. These calls never execute. Only this path may omit opaque
+replay. Optional EntryMeta.ModelStopReason records max_tokens at model-result
+recording and reaches RequestMessage; the compatible adapter transiently quotes
+only that assistant's tool proposals and their not-executed results as a tool
+name and fixed not-executed marker, excluding arguments and replay. Canonical
+tool-use/result history remains intact; all ordinary replies keep exact replay
+requirements. Tool argument schema mistakes are admitted as JSON objects and
+become correctable runtime tool results, matching the Claude path.
+
+Closing a segment removes opaque blocks from its existing CurrentMessages entries
+and exact ArchivedMessages chunks under MessageWindowLock. Compaction and rollover
+purge before opening the next segment. Executor takeover schedules the idempotent
+`PurgeClosedModelReplay` Step with an inclusive captured sequence range; its exact
+chunk loads include chunks still in the current window so a queued cleanup remains
+valid if that window moves. Project cleanup performs the same purge before engine
+completion, retaining the SessionStatus lock and synchronous lifecycle durability.
+Only encrypted-opaque profiles need this purge. Subagent compaction purges inline; terminal outcome recording schedules
+`PurgeSubagentReplay` before reporting. No new Attribute, Map, Channel, Stream or
+database owns a second lifecycle. Existing Claude signed blocks remain unchanged.
+
+Compatible compaction uses `Entry.WithoutProtocolHistory`: text, images and attachment
+references are allowlisted, tool calls/results become explicit recorded JSON text,
+and private reasoning/replay is omitted. This prevents unsigned native tool history
+after signatures are removed. An executor segment records `ProtocolStartSequence`
+at its handoff notice; earlier retained history uses the same projection while
+subsequent same-segment calls retain their exact protocol replay. Its additive zero
+default preserves existing segment decoding; Flow/Step identities remain stable.
 
 ## Principles
 
 - **Available models.** The Agent currently talks to the Claude API through the official Go SDK.
   Three Claude models are selectable per Session, and where the server offers it the
-  [mock model](#mock-model-for-tests), which speaks the same API for tests. There is no
-  other provider and no compatibility layer.
+  [mock model](#mock-model-for-tests), which speaks the same API for tests.
+  Internal local fixture identities `mock/openai-responses` and `mock/openai-chat`
+  exercise the compatible adapter through the same scenario engine. They have no
+  public AgentModel enum or picker entry; hosted mock Sessions retain only `mock`.
+  Every real compatible provider remains unavailable pending Session API keys.
 - **Append-only context.** What was sent to the model is never edited, deleted or
   reordered: each request repeats the previous one byte for byte and appends to it.
   An instruction is an appended entry. Renewing the context means opening a new
   segment that starts with a summary. The rule is about the request; the stored
-  message log was already append-only.
+  canonical text/tool history remains append-only; closing a segment removes its
+  private opaque replay payload as described above.
 - **Authenticated sender framing.** At append time, an attributed user message becomes one text
   block containing `Superverse message (JSON): ` and encoded `{sender, via, text}`. The outer sender
   is the frozen account email, and body text cannot add keys. `EntryMeta.Actor`, `Via`, `SteeredBy`
@@ -351,6 +392,7 @@ with fixed system prompt, tools, model and base effort.
 | Field | Meaning |
 | --- | --- |
 | `Number`, `FirstSequence` | The segment's number and the sequence of its `segment_start`. |
+| `ProtocolStartSequence` | Optional first same-executor sequence. Earlier retained context is projected as text without replay or native tool calls; zero preserves existing decoding. |
 | `Reason` | `session_start`, `compaction`, `rollover`, `unsummarized` or `executor`. |
 | `Summary` | Optional last platform summary, at most 8 KiB of UTF-8, copied by `openSegment` from its opening summary. Existing segments without the field read empty. It survives deletion of the opening entry during remote retention. |
 | `Model`, `Effort` | The model and base effort the segment runs on. |
@@ -908,3 +950,7 @@ A fresh fenced result boundary then re-admits CompactContext with ToolChoiceNone
 which sends the correction as a separate provider invocation. There is no second
 provider request hidden inside an old transport snapshot. Existing three-attempt,
 one-hour retry budgets and compaction reason semantics remain.
+
+A fully completed refusal is definitive even when the aggregate Responses reply
+ends with incomplete/max_output_tokens. Refusal takes precedence over the output
+limit and ends the turn; completed ordinary text at that limit still continues.

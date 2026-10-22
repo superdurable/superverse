@@ -151,7 +151,7 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 			return nil, startErr
 		}
 		owned.add(func() error { stop(); return nil })
-		config.agent.Mock = &modelprovider.ClaudeClientConfig{APIKey: mockmodel.APIKey, BaseURL: baseURL}
+		config.agent.Mock = &modelprovider.MockClientConfig{ClaudeClientConfig: modelprovider.ClaudeClientConfig{APIKey: mockmodel.APIKey, BaseURL: baseURL}, CompatibleTransports: config.localKind}
 	}
 	// The Session Agent Flow bootstrap owns the one pooled Sandbox resolver and
 	// the instance provider on it; Session tools, the workspace Flow's

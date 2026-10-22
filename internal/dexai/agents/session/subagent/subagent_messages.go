@@ -70,17 +70,10 @@ func archiveEntryChunk(ctx dex.Context, first conversation.Sequence) {
 	comm.MustDo(archivedMessagesAttribute.Set(ctx, agentloop.SequenceKey(first), chunk))
 }
 
-// archiveChunkFirst is the first sequence of the archive chunk that holds
-// sequence, which is its instance key.
-func archiveChunkFirst(sequence conversation.Sequence) conversation.Sequence {
-	size := conversation.Sequence(agentloop.ArchiveMessageChunkSize)
-	return (sequence-1)/size*size + 1
-}
-
 // archivedEntry is the entry at sequence of the archive chunk that holds it.
 // A missing entry is corrupt history.
 func archivedEntry(chunk conversation.ArchivedEntryChunk, sequence conversation.Sequence) conversation.Entry {
-	index := sequence - archiveChunkFirst(sequence)
+	index := sequence - agentloop.ArchiveChunkFirst(sequence)
 	if index >= conversation.Sequence(len(chunk.Entries)) || chunk.Entries[index].Sequence != sequence {
 		panic(fmt.Sprintf("archived entry %d is missing from its chunk", sequence))
 	}
@@ -114,7 +107,11 @@ func (flow *SubagentFlow) segmentRequest(ctx dex.Context, kind agentloop.ModelCa
 	state, segment := comm.Must(agentStateAttribute.Get(ctx)), comm.Must(contextSegmentAttribute.Get(ctx))
 	entries := make([]conversation.SequencedEntry, 0, int(state.LastSequence-segment.FirstSequence+1)+len(transient))
 	for sequence := segment.FirstSequence; sequence <= state.LastSequence; sequence++ {
-		entries = append(entries, conversation.SequencedEntry{Sequence: sequence, Entry: read(sequence)})
+		entry := read(sequence)
+		if kind == agentloop.ModelCallKindCompaction && modelprovider.ProfileOf(segment.Model).Capabilities.Replay == conversation.ReplayEncryptedOpaque {
+			entry = entry.WithoutProtocolHistory()
+		}
+		entries = append(entries, conversation.SequencedEntry{Sequence: sequence, Entry: entry})
 	}
 	for index, entry := range transient {
 		entries = append(entries, conversation.SequencedEntry{Sequence: state.LastSequence + conversation.Sequence(index) + 1, Entry: entry})
@@ -158,6 +155,7 @@ func openFirstSegment(ctx dex.Context, config Config, repositoryContext, task st
 // the task, so the task survives every compaction.
 func openNextSegment(ctx dex.Context, summary, repositoryContext, task string) agentloop.ContextSegment {
 	previous := comm.Must(contextSegmentAttribute.Get(ctx))
+	purgeClosedReplay(ctx)
 	prompts := comm.Must(contextSegmentPromptsAttribute.Get(ctx, previous.PromptsKey()))
 	start := agentloop.SegmentStart{Summary: summary, RepositoryContext: repositoryContext, PendingRequest: comm.TruncateUTF8(task, conversation.MaximumUserMessageContentBytes)}
 	entry := conversation.SegmentStartEntry(start.Text(), agentloop.SegmentMarker(agentloop.SegmentReasonCompaction))
@@ -317,7 +315,7 @@ func (progress modelProgress) writeActivity(event conversation.AgentEvent) error
 
 // subagentModelCredential fails closed until the direct copy of the frozen revision exists.
 func subagentModelCredential(ctx dex.Context, model conversation.Model) (string, error) {
-	if model == conversation.ModelMock {
+	if model.IsMock() {
 		return "", nil
 	}
 	revision := dexflow.ValueOrZero(credentialRevisionAttribute.Get(ctx))
@@ -326,4 +324,38 @@ func subagentModelCredential(ctx dex.Context, model conversation.Model) (string,
 		return "", modelcredential.ErrUnavailable
 	}
 	return envelope.Key, nil
+}
+
+// closedReplayOptions loads exact chunks of the last segment for terminal cleanup.
+// CurrentMessages stays a whole-window load; archive instances are never scanned.
+func closedReplayOptions(ctx dex.Context) *dex.StepOptions {
+	options := *loopStepOptions
+	if segment := dexflow.OptionalValue(contextSegmentAttribute.Get(ctx)); segment != nil && modelprovider.ProfileOf(segment.Model).Capabilities.Replay == conversation.ReplayEncryptedOpaque {
+		state := comm.Must(agentStateAttribute.Get(ctx))
+		size := conversation.Sequence(agentloop.ArchiveMessageChunkSize)
+		for first := agentloop.ArchiveChunkFirst(segment.FirstSequence); first <= state.LastSequence; first += size {
+			options.ExecuteLoadAttributeMapInstances = append(options.ExecuteLoadAttributeMapInstances, archivedMessagesAttribute.Load(agentloop.SequenceKey(first)))
+		}
+	}
+	return &options
+}
+
+// purgeClosedReplay runs under MessageWindowLock after a segment ends. The two
+// existing message maps remain the sole owners of its canonical history.
+func purgeClosedReplay(ctx dex.Context) {
+	segment := dexflow.OptionalValue(contextSegmentAttribute.Get(ctx))
+	if segment == nil || modelprovider.ProfileOf(segment.Model).Capabilities.Replay != conversation.ReplayEncryptedOpaque {
+		return
+	}
+	state := comm.Must(agentStateAttribute.Get(ctx))
+	agentloop.PurgeModelReplay(state, segment.FirstSequence, state.LastSequence, agentloop.ModelReplayHistory{
+		ReadCurrent:  func(key string) conversation.Entry { return comm.Must(currentMessagesAttribute.Get(ctx, key)) },
+		WriteCurrent: func(key string, entry conversation.Entry) { comm.MustDo(currentMessagesAttribute.Set(ctx, key, entry)) },
+		ReadArchive: func(key string) conversation.ArchivedEntryChunk {
+			return comm.Must(archivedMessagesAttribute.Get(ctx, key))
+		},
+		WriteArchive: func(key string, chunk conversation.ArchivedEntryChunk) {
+			comm.MustDo(archivedMessagesAttribute.Set(ctx, key, chunk))
+		},
+	})
 }

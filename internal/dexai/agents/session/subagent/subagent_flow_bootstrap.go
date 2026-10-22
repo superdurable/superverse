@@ -30,7 +30,7 @@ type SubagentFlowConfig struct {
 	// model, nil when the server does not offer it. A subagent runs on the
 	// model its Session ran on when it started.
 	Claude modelprovider.ClaudeClientConfig
-	Mock   *modelprovider.ClaudeClientConfig
+	Mock   *modelprovider.MockClientConfig
 	// Settings are the compaction threshold and the thinking behavior of every
 	// segment; their effort is unused.
 	Settings agentloop.ModelSettings

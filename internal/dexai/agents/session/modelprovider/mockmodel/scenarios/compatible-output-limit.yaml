@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A pending call is cut off at the model output limit; it must never execute.
+name: compatible-output-limit
+title: "Compatible output limit"
+description: "Continues a truncated pending call using text projection, preserving canonical history."
+category: agent_feature
+inputs:
+  - label: "Reach the output limit"
+    message: "Exercise compatible output limit."
+    replies:
+      - text: "Preparing a read that must not execute."
+        stop_reason: max_tokens
+        tool_uses:
+          - name: read
+            input: {path: dex-app.yaml, limit: 1}
+      - text: "The output-limit continuation was accepted."
+  - label: "Read the same history next turn"
+    message: "Continue after the output limit."
+    replies:
+      - text: "The next turn accepted the projected history."

@@ -1,11 +1,11 @@
 # internal/dexai/agents/session/modelprovider/mockmodel
 
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
-Purpose: Serves the mock model: a loopback Claude Messages API whose embedded scenarios answer ordered user inputs, so Sessions run real tools without model cost.
+Purpose: Serves one ordered mock model scenario engine over Messages, Responses and Chat Completions so local Sessions execute real tools without model cost.
 
 Callers: `cmd/tools/check-mock-scenarios`, `internal/dexai/api` and `internal/dexai/bootstrap` import this package.
 
-Dependencies: it imports `internal/comm`, `internal/dexai/agents/remoteexec`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/agenttasks`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/session/modelprovider`, `internal/dexai/agents/session/toolinput` and `internal/dexai/app/apptemplate`.
+Dependencies: it imports `internal/comm`, `internal/dexai/agents/remoteexec`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/agenttasks`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/session/modelprovider`, `internal/dexai/agents/session/modelprovider/openaicompat`, `internal/dexai/agents/session/toolinput` and `internal/dexai/app/apptemplate`.
 
 ```mermaid
 flowchart LR
@@ -19,8 +19,9 @@ flowchart LR
   self --> d3["internal/dexai/agents/session/agenttasks"]
   self --> d4["internal/dexai/agents/session/conversation"]
   self --> d5["internal/dexai/agents/session/modelprovider"]
-  self --> d6["internal/dexai/agents/session/toolinput"]
-  self --> d7["internal/dexai/app/apptemplate"]
+  self --> d6["internal/dexai/agents/session/modelprovider/openaicompat"]
+  self --> d7["internal/dexai/agents/session/toolinput"]
+  self --> d8["internal/dexai/app/apptemplate"]
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 
@@ -40,8 +41,10 @@ request shape is Sonnet 5.5's). `agent.mockModel: true` of the
 [server configuration](../../../../../../cmd/superverse-server/config/README.md) makes
 `internal/dexai/bootstrap` start the server on `127.0.0.1:0` with `Start(ctx, logger)` and give the
 `modelprovider.ModelRouter` a second Claude client for it (`ClaudeClientConfig.BaseURL` and the
-fixed placeholder key `APIKey`). The router sends the calls of mock Sessions there and every
-other call to the Claude API, so one server runs both. Where the mock model may be selected:
+fixed placeholder key `APIKey`). Local lanes also enable the internal Responses and
+Chat fixture identities through `MockClientConfig.CompatibleTransports`; these have
+no public enum or picker entry. Hosted environments keep only the published mock
+identity. Where that published mock model may be selected:
 
 | Environment | `agent.mockModel` | Who may select `mock` | New Sessions start on |
 | --- | --- | --- | --- |
@@ -529,3 +532,31 @@ same. This interactive path does not prove replay binding; every selected script
 still takes the unchanged exact sameBlocks comparison. The actual endpoint and
 Sandbox interactive write/read/switch source is TestSessionRemoteInteractiveHandoffHTTPDexIntegration;
 it is uncompiled and unrun.
+
+## Compatible wire endpoints
+
+The same handler and ordered scenario engine also serve streamed `POST /v1/responses`
+and `POST /v1/chat/completions`. They require the existing placeholder key as Bearer
+authentication and accept only model `mock`. Responses requires `store: false` and
+rejects `previous_response_id`. The decoder converts wire messages back to the
+scenario engine's canonical input, and replay checks compare every returned public
+block plus synthetic encrypted material. Readable scenario thinking is never emitted
+on either compatible endpoint. Gemini fixture signatures preserve their call position;
+non-thinking Chat fixtures omit thinking entirely.
+
+`Start` optionally accepts one closed `WireFault` for protocol verification: truncated
+stream, forbidden readable reasoning, missing replay, replay above the per-reply
+budget, or HTTP 401/429/503. These faults corrupt the model wire after the original scenario engine plans
+the reply. They do not replace Sandbox, Git, storage or Dex behavior, and the normal
+platform bootstrap passes no fault. These endpoints verify the adapter against the
+allowed mock model; they establish no live-provider compatibility.
+
+
+The compatible-output-limit scenario emits a truncated pending call and checks
+the adapter's transient not-executed text projection on automatic continuation and
+the next turn. The compatible-invalid-arguments scenario deliberately emits an
+out-of-range start_timer argument and expects the real tool boundary's correctable
+error result. Its explicit invalid_tool_arguments switch requires a schema-invalid
+timer input and expect_failure; ordinary scenario input validation stays strict.
+Compatible fault fixtures cover HTTP credit/context rejection, Responses failed and
+error events, Chat errors, null error fields and streamed refusal delta/done frames.

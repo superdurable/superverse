@@ -19,10 +19,11 @@ import (
 	"github.com/superdurable/superversev2/internal/comm"
 )
 
-// The entry log is what the model saw, append-only: an entry's Blocks are the
-// exact Claude content blocks, except superverse_attachment reference blocks,
+// The entry log keeps canonical text/tool blocks and private provider replay.
+// Existing Claude blocks retain their exact shape; opaque replay has an explicit cleanup projection.
+// Except for replay cleanup and superverse_attachment reference blocks,
 // which the model call replaces 1:1 by the immutable block their rendition
-// object holds, and never change once appended. Meta is never sent to the
+// object holds, blocks never change once appended. Meta is never sent to the
 // model; the UI and metrics read it.
 
 // EntryRole is the Claude role of an entry.
@@ -118,10 +119,12 @@ type Entry struct {
 
 // EntryMeta is what the UI and metrics read of an entry; the model never sees it.
 type EntryMeta struct {
-	Actor     *Actor  `json:"actor,omitempty"`
-	Via       *string `json:"via,omitempty"`
-	Imported  bool    `json:"imported,omitempty"`
-	SteeredBy *Actor  `json:"steered_by,omitempty"`
+	// ModelStopReason records only output limits for safe compatible history projection.
+	ModelStopReason StopReason `json:"model_stop_reason,omitempty"`
+	Actor           *Actor     `json:"actor,omitempty"`
+	Via             *string    `json:"via,omitempty"`
+	Imported        bool       `json:"imported,omitempty"`
+	SteeredBy       *Actor     `json:"steered_by,omitempty"`
 	// AnsweredInputCallID is the question batch a user message answers.
 	AnsweredInputCallID *CallID `json:"answered_input_call_id,omitempty"`
 	// ToolCalls summarizes the tool_use blocks of a model reply.
@@ -179,6 +182,7 @@ func (entry Entry) Bytes() int64 {
 type BlockType struct{ name string }
 
 var (
+	BlockTypeOpaqueReplay     = BlockType{name: "opaque_replay"}
 	BlockTypeText             = BlockType{name: "text"}
 	BlockTypeThinking         = BlockType{name: "thinking"}
 	BlockTypeRedactedThinking = BlockType{name: "redacted_thinking"}
@@ -305,8 +309,12 @@ func SegmentStartEntry(text, marker string, attachments ...AttachmentReference) 
 // ModelReplyEntry records a model reply exactly as it will be replayed.
 func ModelReplyEntry(reply ModelReply, toolCalls []ToolCallSummary, startedAt time.Time) Entry {
 	metrics := reply.Metrics
+	var stopReason StopReason
+	if reply.StopReason == StopReasonMaxTokens {
+		stopReason = reply.StopReason
+	}
 	return Entry{Role: EntryRoleAssistant, Kind: EntryKindModelReply, Display: EntryDisplayPublic, Blocks: reply.Blocks,
-		Meta: EntryMeta{ToolCalls: toolCalls, ModelCall: &metrics, MockProgress: reply.MockProgress}, StartedAt: &startedAt}
+		Meta: EntryMeta{ModelStopReason: stopReason, ToolCalls: toolCalls, ModelCall: &metrics, MockProgress: reply.MockProgress}, StartedAt: &startedAt}
 }
 
 // blockHeader reads the fields of a stored block that assembly and projection need.
@@ -605,3 +613,138 @@ func UndeliveredAttachmentsNote(entry Entry) string {
 	}
 	return "Not delivered to the connected agent: " + count + " (" + strings.Join(names, ", ") + "). Attachments work with the Platform agent."
 }
+
+// MaximumOpaqueReplayBytes bounds the encoded private replay blocks of one reply.
+const MaximumOpaqueReplayBytes = 256 << 10
+
+// ProviderReplyStatus is the retained execution state of a provider output item.
+type ProviderReplyStatus string
+
+const (
+	ProviderReplyCompleted  ProviderReplyStatus = "completed"
+	ProviderReplyInProgress ProviderReplyStatus = "in_progress"
+	ProviderReplyIncomplete ProviderReplyStatus = "incomplete"
+)
+
+// OpaqueReplay stores only encrypted protocol material and its binding metadata.
+// It is private to the frozen segment; no public projection copies it.
+type OpaqueReplay struct {
+	Type       string              `json:"type"`
+	Provider   string              `json:"provider"`
+	WireMode   string              `json:"wireMode"`
+	Position   int                 `json:"position"`
+	CallID     CallID              `json:"callID,omitempty"`
+	ItemID     string              `json:"itemID,omitempty"`
+	Status     ProviderReplyStatus `json:"status,omitempty"`
+	Ciphertext string              `json:"ciphertext"`
+}
+
+// Block validates and encodes replay material without retaining a raw provider object.
+func (replay OpaqueReplay) Block() (json.RawMessage, error) {
+	replay.Type = BlockTypeOpaqueReplay.String()
+	if err := replay.validate(); err != nil {
+		return nil, err
+	}
+	block, err := json.Marshal(replay)
+	if err != nil {
+		return nil, err
+	}
+	if len(block) > MaximumOpaqueReplayBytes {
+		return nil, fmt.Errorf("opaque replay exceeds the reply budget")
+	}
+	return block, nil
+}
+
+func (replay OpaqueReplay) validate() error {
+	if replay.Type != BlockTypeOpaqueReplay.String() || replay.Position < 0 || replay.Ciphertext == "" || len(replay.Ciphertext) > MaximumOpaqueReplayBytes {
+		return fmt.Errorf("invalid opaque replay metadata")
+	}
+	switch {
+	case (replay.Provider == ProviderOpenAI.String() || replay.Provider == ProviderXAI.String()) && replay.WireMode == OpenAIResponses.String():
+		if replay.CallID != "" || replay.ItemID == "" || replay.Status != ProviderReplyCompleted {
+			return fmt.Errorf("invalid Responses replay binding")
+		}
+	case replay.Provider == ProviderGemini.String() && replay.WireMode == OpenAIChatCompletions.String():
+		if replay.CallID == "" || replay.ItemID != "" || replay.Status != "" {
+			return fmt.Errorf("invalid Gemini replay binding")
+		}
+	case replay.Provider == ProviderMeta.String() && replay.WireMode == AnthropicMessages.String():
+		if replay.CallID != "" || replay.ItemID != "" || replay.Status != "" {
+			return fmt.Errorf("invalid Messages replay binding")
+		}
+	default:
+		return fmt.Errorf("unsupported opaque replay protocol")
+	}
+	return nil
+}
+
+// IsOpaqueReplay recognizes private replay regardless of JSON field order.
+func IsOpaqueReplay(block json.RawMessage) bool {
+	var header struct {
+		Type string `json:"type"`
+	}
+	return json.Unmarshal(block, &header) == nil && header.Type == BlockTypeOpaqueReplay.String()
+}
+
+// ReadOpaqueReplay rejects unknown fields, wrong providers, modes and positions.
+// Errors never include encrypted content or provider payloads.
+func ReadOpaqueReplay(block json.RawMessage, provider Provider, mode APIStyle, position int) (OpaqueReplay, error) {
+	var replay OpaqueReplay
+	decoder := json.NewDecoder(bytes.NewReader(block))
+	decoder.DisallowUnknownFields()
+	if decoder.Decode(&replay) != nil || !json.Valid(block) || len(block) > MaximumOpaqueReplayBytes {
+		return OpaqueReplay{}, fmt.Errorf("invalid opaque replay encoding")
+	}
+	if err := replay.validate(); err != nil {
+		return OpaqueReplay{}, err
+	}
+	if replay.Provider != provider.String() || replay.WireMode != mode.String() || replay.Position != position {
+		return OpaqueReplay{}, fmt.Errorf("opaque replay does not match the frozen segment")
+	}
+	return replay, nil
+}
+
+// WithoutOpaqueReplay removes private protocol material when a segment closes
+// and when compaction builds its allowlisted input. Original block slices stay immutable.
+func (entry Entry) WithoutOpaqueReplay() Entry {
+	blocks := make([]json.RawMessage, 0, len(entry.Blocks))
+	for _, block := range entry.Blocks {
+		if !IsOpaqueReplay(block) {
+			blocks = append(blocks, block)
+		}
+	}
+	entry.Blocks = blocks
+	return entry
+}
+
+// WithoutProtocolHistory projects canonical content for compaction or a new
+// executor's context. Tools become quoted history rather than unsigned native
+// calls; only text, images and attachment references remain protocol blocks.
+// The persisted entry and its original block slice remain unchanged.
+func (entry Entry) WithoutProtocolHistory() Entry {
+	blocks := make([]json.RawMessage, 0, len(entry.Blocks))
+	for _, block := range entry.Blocks {
+		header := readBlock(block)
+		switch header.Type {
+		case BlockTypeText.String(), BlockTypeImage.String():
+			blocks = append(blocks, block)
+		case BlockTypeToolUse.String(), BlockTypeToolResult.String():
+			blocks = append(blocks, textBlock(RecordedToolHistoryPrefix+string(block)))
+		default:
+			if IsAttachmentReference(block) {
+				blocks = append(blocks, block)
+			}
+		}
+	}
+	if len(blocks) == 0 {
+		blocks = append(blocks, textBlock("(No visible message content.)"))
+	}
+	entry.Blocks = blocks
+	if entry.Kind == EntryKindToolResult {
+		entry.Kind = EntryKindNotice
+	}
+	return entry
+}
+
+// RecordedToolHistoryPrefix labels tool JSON as quoted context rather than a native call.
+const RecordedToolHistoryPrefix = "Recorded tool history (JSON):\n"

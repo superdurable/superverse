@@ -89,6 +89,15 @@ ToolChoiceNone before its second provider request. Exhausted transport retries
 route to the original admission's fenced RecordModelFailure or
 RecordCompactionFailure.
 
+Opaque provider replay stays in the active segment's canonical message blocks.
+Compaction/rollover remove it from current and exact archived entries under the
+message lock before opening the next segment. Executor takeover schedules the
+idempotent `PurgeClosedModelReplay` Step for the captured closed range; project
+cleanup purges before engine completion. Compaction uses explicit textual tool
+history without private protocol blocks. An executor segment's additive
+`ProtocolStartSequence` separates that projected history from newly replayable
+same-segment replies. Existing Claude signed blocks are unchanged.
+
 RouteTool routes the tool call at the cursor of `AgentState.PendingToolCalls`:
 `write_todos`, `set_effort` and `confirm_requirements` finish there (a card is recorded as
 the next version of `ConfirmedRequirements`, with its design in `FlowDesigns[confirmed]` and its

@@ -128,7 +128,7 @@ func (flow *SessionAgentFlow) GetSteps() []dex.StepDef {
 		dex.DefineStep(AwaitBackgroundCommand{flow: flow}), dex.DefineStep(AbandonBackgroundCommand{}), dex.DefineStep(InterruptAgent{flow: flow}), dex.DefineStep(FinishInterrupt{}),
 		dex.DefineStep(RequestSessionWorkspace{flow: flow}), dex.DefineStep(SendWorkspaceCommand{flow: flow}),
 		dex.DefineStep(AwaitSessionWorkspace{flow: flow}), dex.DefineStep(ApplySessionWorkspace{flow: flow}), dex.DefineStep(RecordWorkspaceFailure{flow: flow}), dex.DefineStep(AwaitSandboxDeadline{flow: flow}),
-		dex.DefineStep(DeployPreviewHandoff{flow: flow}), dex.DefineStep(AbandonPreviewHandoff{}), dex.DefineStep(CompleteProjectSession{}),
+		dex.DefineStep(DeployPreviewHandoff{flow: flow}), dex.DefineStep(AbandonPreviewHandoff{}), dex.DefineStep(CompleteProjectSession{}), dex.DefineStep(PurgeClosedModelReplay{}),
 	}
 }
 
@@ -344,18 +344,7 @@ func (*SessionAgentFlow) GetFlowDesign(ctx dex.Context, slot flowdesign.Slot) (*
 // direct reads of StartIdentity and HeadCommit, which the pinned Dex CLI requires of each.
 func (*SessionAgentFlow) GetSessionSummary(ctx dex.Context, _ dex.None) (*dex.RPCResult[agentloop.SessionSummary], error) {
 	comm.Must(sessionStartIdentityAttribute.Get(ctx))
-	status := comm.Must(sessionStatusAttribute.Get(ctx))
-	summary := agentloop.SessionSummary{
-		Identity: agentloop.SessionIdentity{ProjectID: comm.Must(projectIDAttribute.Get(ctx)), Profile: comm.Must(sessionProfileAttribute.Get(ctx)),
-			HeadCommit: comm.Must(headCommitAttribute.Get(ctx))},
-		Status: status, CloseReason: comm.Must(closeReasonAttribute.Get(ctx)), Revision: comm.Must(sessionRevisionAttribute.Get(ctx)),
-		CreatedAt: comm.Must(sessionCreatedAtAttribute.Get(ctx)), UpdatedAt: comm.Must(sessionUpdatedAtAttribute.Get(ctx)),
-		Workspace: dexflow.ValueOrZero(workspaceAttribute.Get(ctx)).Summary(),
-	}
-	// WorkspaceUse is missing until InitializeSessionAgent commits; only a value read proves a drained wave.
-	use, err := workspaceUseAttribute.Get(ctx)
-	summary.WorkspaceUse, summary.WorkspaceUseKnown = dexflow.ValueOrZero(use, err), err == nil
-	return &dex.RPCResult[agentloop.SessionSummary]{Output: summary}, nil
+	return sessionSummary(ctx, comm.Must(headCommitAttribute.Get(ctx))), nil
 }
 
 // GetDexSummary is the Session row of the Dex Web Flow list, which shows the
@@ -388,7 +377,7 @@ func (*SessionAgentFlow) CompleteProjectSession(ctx dex.Context, input agentloop
 	}
 	setSessionStatus(ctx, agentloop.SessionStatusArchived, agentloop.CloseReasonProjectCleanupComplete.String())
 	stopBackgroundCommandWatches(ctx)
-	return (&dex.RPCResult[bool]{Output: true, NextSteps: []dex.StepMovement{dex.MovementOf(CompleteProjectSession{}, nil)}}).CancelSteps(
+	return (&dex.RPCResult[bool]{Output: true, NextSteps: []dex.StepMovement{dex.MovementOf(CompleteProjectSession{}, nil, dex.WithStepOptions(projectCompletionOptions(closedModelReplayRange(ctx))))}}).CancelSteps(
 		ActivateSession{}, AwaitUser{}, AwaitRemoteAgent{}, AnsweredInput{}, CompactContext{}, CallModel{}, RecordPlatformModelResult{}, RecordModelFailure{}, RecordCompactionFailure{}, CheckSteered{}, RouteTool{}, AwaitToolApproval{}, ExecuteTool{}, ExecuteParallelTool{}, RecoverParallelToolExecution{}, AwaitParallelToolResults{}, RecordToolFailure{}, SettleForegroundCommand{}, ReportPlatformIssue{}, AbandonPlatformIssue{}, InterruptAgent{}, FinishInterrupt{}, AwaitAgentTimer{}, RequestSessionWorkspace{}, SendWorkspaceCommand{}, AwaitSessionWorkspace{}, ApplySessionWorkspace{}, RecordWorkspaceFailure{}, AwaitSandboxDeadline{},
 		DeployPreviewHandoff{}, AbandonPreviewHandoff{}), nil
 }
@@ -414,14 +403,7 @@ func (flow *SessionAgentFlow) RequestSessionWorkspace(ctx dex.Context, input age
 // RenewSessionWorkspace is the user's "Keep running" (Session Service only): it moves the READY
 // instance's Sandbox deadline to at least now + agentloop.KeepRunningHold, else answers false.
 func (*SessionAgentFlow) RenewSessionWorkspace(ctx dex.Context, _ dex.None) (*dex.RPCResult[bool], error) {
-	ws := dexflow.ValueOrZero(workspaceAttribute.Get(ctx))
-	if !acceptsUserCommand(ctx) || ws.State != agentloop.WorkspaceReady {
-		return rpcAccepted(false), nil
-	}
-	if ws.ExtendDeadline(time.Now(), agentloop.KeepRunningHold) {
-		comm.MustDo(workspaceAttribute.Set(ctx, ws))
-	}
-	return rpcAccepted(true), nil
+	return rpcAccepted(renewSessionWorkspace(ctx)), nil
 }
 
 // dex:group group-id:session group-label:"Session"
@@ -1522,27 +1504,15 @@ func (AbandonPreviewHandoff) Execute(dex.Context, agentloop.PreviewHandoff) (*de
 	return dex.DeadEnd(), nil
 }
 
-// dex:group group-id:session group-label:"Session"
-// dex:explanation text:"Complete the Session of a deleting Project, which releases its resources by label."
-type CompleteProjectSession struct {
-	dex.StepDefaultsNoWaitFor[dex.None]
-}
-
-func (CompleteProjectSession) GetStepOptions() *dex.StepOptions { return lifecycleStepOptions(nil) }
-
-// Execute completes the Session irreversibly, so it checks again the admission
-// the CompleteProjectSession RPC recorded.
-func (CompleteProjectSession) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, error) {
-	status, reason := comm.Must(sessionStatusAttribute.Get(ctx)), comm.Must(closeReasonAttribute.Get(ctx))
-	if status != agentloop.SessionStatusArchived || reason != agentloop.CloseReasonProjectCleanupComplete.String() {
-		return nil, dex.ErrorWithStack(fmt.Errorf("project cleanup admission missing: Session is %s with reason %q", status, reason))
-	}
-	return dex.GracefulComplete(agentloop.SessionCleanupReceipt{ProjectID: readSessionIdentity(ctx).ProjectID, Reason: reason}), nil
-}
-
 // SetExecutor changes only the exact scoped Session's executor fence.
 func (flow *SessionAgentFlow) SetExecutor(ctx dex.Context, input remoteexec.SetRequest) (*dex.RPCResult[remoteexec.SetResult], error) {
-	return setExecutorRPC(ctx, input)
+	result, err := setExecutorRPC(ctx, input)
+	if err == nil && result.Output.Changed && result.Output.Executor.Mode == remoteexec.ModeRemote {
+		scope := closedModelReplayRange(ctx)
+		return &dex.RPCResult[remoteexec.SetResult]{Output: result.Output, CancelingSteps: result.CancelingSteps,
+			NextSteps: append(result.NextSteps, dex.MovementOf(PurgeClosedModelReplay{}, scope, dex.WithStepOptions(closedReplayOptions(scope))))}, nil
+	}
+	return result, err
 }
 
 // ReportRemote atomically admits a report and publishes its inbox message.
@@ -1596,4 +1566,35 @@ func (*SessionAgentFlow) FinalizeModelCredential(ctx dex.Context, input modelcre
 // UpdateSessionModel delegates the Session admission/state transition.
 func (*SessionAgentFlow) UpdateSessionModel(ctx dex.Context, input agentloop.UpdateSessionModelRequest) (*dex.RPCResult[modelSelection], error) {
 	return updateSessionModel(ctx, input)
+}
+
+// dex:group group-id:session group-label:"Session"
+// dex:explanation text:"Purge private replay and complete the archived Session of a deleting Project."
+type CompleteProjectSession struct {
+	dex.StepDefaultsNoWaitFor[dex.None]
+}
+
+func (CompleteProjectSession) GetStepOptions() *dex.StepOptions {
+	return projectCompletionOptions(closedReplayRange{})
+}
+func (CompleteProjectSession) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, error) {
+	receipt, err := completeProjectSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return dex.GracefulComplete(receipt), nil
+}
+
+// dex:group group-id:conversation group-label:"Conversation"
+// dex:explanation text:"Discard encrypted replay after an executor switch while preserving canonical history."
+type PurgeClosedModelReplay struct {
+	dex.StepDefaultsNoWaitFor[closedReplayRange]
+}
+
+func (PurgeClosedModelReplay) GetStepOptions() *dex.StepOptions {
+	return closedReplayOptions(closedReplayRange{})
+}
+func (PurgeClosedModelReplay) Execute(ctx dex.Context, scope closedReplayRange) (*dex.StepDecision, error) {
+	purgeClosedModelReplay(ctx, scope)
+	return dex.DeadEnd(), nil
 }

@@ -60,8 +60,11 @@ type ContextSegment struct {
 	Summary       string                `json:"summary,omitempty"`
 	Number        int64                 `json:"number"`
 	FirstSequence conversation.Sequence `json:"first_sequence"`
-	Reason        SegmentReason         `json:"reason"`
-	Model         conversation.Model    `json:"model"`
+	// ProtocolStartSequence fences history imported from another executor: older
+	// entries are textual context, never unsigned calls on the new wire.
+	ProtocolStartSequence conversation.Sequence `json:"protocol_start_sequence,omitempty"`
+	Reason                SegmentReason         `json:"reason"`
+	Model                 conversation.Model    `json:"model"`
 	// Effort is the segment's base effort; CurrentEffort the latest
 	// per-message effort, empty while the base applies.
 	Effort        conversation.Effort     `json:"effort,omitempty"`
@@ -184,7 +187,7 @@ type SessionPrompt struct {
 }
 
 // promptModels are the models a prompt is built for.
-var promptModels = []conversation.Model{conversation.ModelOpus55, conversation.ModelSonnet55, conversation.ModelHaiku45, conversation.ModelMock}
+var promptModels = []conversation.Model{conversation.ModelOpus55, conversation.ModelSonnet55, conversation.ModelHaiku45, conversation.ModelMock, conversation.ModelMockResponses, conversation.ModelMockChat}
 
 // sessionPrompts holds the prompt of each model; the catalog and the prompts
 // are compiled in, so they are built once.
@@ -431,14 +434,14 @@ func ExtractSummary(text string) string {
 // archived entries from first on.
 func ArchiveChunksFrom(state AgentState, first conversation.Sequence) []string {
 	var keys []string
-	for chunk := archiveChunkFirst(max(first, state.FirstRetainedSequence)); chunk < state.CurrentFirstSequence; chunk += ArchiveMessageChunkSize {
+	for chunk := ArchiveChunkFirst(max(first, state.FirstRetainedSequence)); chunk < state.CurrentFirstSequence; chunk += ArchiveMessageChunkSize {
 		keys = append(keys, SequenceKey(chunk))
 	}
 	return keys
 }
 
-// archiveChunkFirst is the first sequence of the archive chunk holding sequence.
-func archiveChunkFirst(sequence conversation.Sequence) conversation.Sequence {
+// ArchiveChunkFirst is the first sequence of the archive chunk holding sequence.
+func ArchiveChunkFirst(sequence conversation.Sequence) conversation.Sequence {
 	return (sequence-1)/ArchiveMessageChunkSize*ArchiveMessageChunkSize + 1
 }
 
@@ -768,4 +771,54 @@ func workflowImportText(exports []conversation.AttachmentRef) string {
 			comm.Must(json.Marshal(export.Name)), export.JSON.Format, export.JSON.Redactions, export.ID, placed, workflowInventoryScript, placed)
 	}
 	return text.String()
+}
+
+// ModelReplayHistory reads and mutates the canonical message maps under the
+// caller's MessageWindowLock, with exact archive instances already loaded.
+type ModelReplayHistory struct {
+	ReadCurrent  func(string) conversation.Entry
+	WriteCurrent func(string, conversation.Entry)
+	ReadArchive  func(string) conversation.ArchivedEntryChunk
+	WriteArchive func(string, conversation.ArchivedEntryChunk)
+}
+
+// PurgeModelReplay removes only opaque payloads within an inclusive retained range.
+// Map ownership, selective loads and the enclosing commit stay with the caller.
+func PurgeModelReplay(state AgentState, first, last conversation.Sequence, history ModelReplayHistory) {
+	if first <= 0 {
+		return
+	}
+	first, last = max(first, state.FirstRetainedSequence), min(last, state.LastSequence)
+	if first > last {
+		return
+	}
+	for sequence := max(first, state.CurrentFirstSequence); sequence <= last; sequence++ {
+		key := SequenceKey(sequence)
+		entry := history.ReadCurrent(key)
+		clean := entry.WithoutOpaqueReplay()
+		if len(clean.Blocks) != len(entry.Blocks) {
+			history.WriteCurrent(key, clean)
+		}
+	}
+	archiveState := state
+	archiveState.CurrentFirstSequence = min(state.CurrentFirstSequence, last+1)
+	for _, key := range ArchiveChunksFrom(archiveState, first) {
+		chunk := history.ReadArchive(key)
+		changed := false
+		for index, item := range chunk.Entries {
+			if item.Sequence < first || item.Sequence > last {
+				continue
+			}
+			clean := item.Entry.WithoutOpaqueReplay()
+			if len(clean.Blocks) != len(item.Entry.Blocks) {
+				chunk.Entries[index].Entry, changed = clean, true
+			}
+		}
+		if changed {
+			history.WriteArchive(key, chunk)
+		}
+		if len(chunk.Entries) > 0 && chunk.Entries[len(chunk.Entries)-1].Sequence >= last {
+			break
+		}
+	}
 }

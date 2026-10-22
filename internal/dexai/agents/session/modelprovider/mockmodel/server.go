@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/openaicompat"
 	"io"
 	"log/slog"
 	"net"
@@ -26,8 +27,8 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 )
 
-// APIKey is the fixed, non-secret key the Claude client sends to the mock
-// model; the server refuses any other, so a real key is never expected here.
+// APIKey is the fixed non-secret key of every mock model protocol.
+// The server refuses any other, so a real key is never expected here.
 const APIKey = "mock-model-not-a-secret"
 
 // maximumRequestBytes bounds one request body. A Session context stays far
@@ -35,11 +36,18 @@ const APIKey = "mock-model-not-a-secret"
 const maximumRequestBytes = 64 << 20
 
 // Start serves the mock model on a random loopback port and returns the
-// base URL for ClaudeClientConfig.BaseURL. The owner calls stop once; it also
+// base URL for the model adapters. The owner calls stop once; it also
 // runs when ctx ends. Requests are served over real HTTP, so the Claude client
 // runs unchanged.
-func Start(ctx context.Context, logger *slog.Logger) (baseURL string, stop func(), err error) {
-	return startHandler(ctx, &handler{logger: logger})
+func Start(ctx context.Context, logger *slog.Logger, faults ...WireFault) (baseURL string, stop func(), err error) {
+	fault := WireFault{}
+	if len(faults) > 1 {
+		panic("mock model accepts at most one wire fault")
+	}
+	if len(faults) == 1 {
+		fault = faults[0]
+	}
+	return startHandler(ctx, &handler{logger: logger, wireFault: fault})
 }
 
 func startHandler(ctx context.Context, h *handler) (baseURL string, stop func(), err error) {
@@ -73,14 +81,19 @@ func startHandler(ctx context.Context, h *handler) (baseURL string, stop func(),
 	return "http://" + listener.Addr().String(), stop, nil
 }
 
-// handler implements POST /v1/messages with stream: true. It keeps no state:
+// handler serves the Messages and compatible streamed endpoints. It keeps no state:
 // the reply depends only on the request.
 type handler struct {
-	logger *slog.Logger
-	probe  *CredentialProbeForTest
+	logger    *slog.Logger
+	probe     *CredentialProbeForTest
+	wireFault WireFault
 }
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost && (r.URL.Path == openaicompat.ResponsesPath || r.URL.Path == openaicompat.ChatPath) {
+		h.serveOpenAI(w, r)
+		return
+	}
 	if r.Method != http.MethodPost || r.URL.Path != "/v1/messages" {
 		writeError(w, http.StatusNotFound, notFoundError, onlyStreamedMessages)
 		return
@@ -141,7 +154,13 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // returned, and returns the reply with its message ID. A compaction request is
 // answered with the mock summary, or with the error the step before it declares.
 func (h *handler) plan(ctx context.Context, request messagesRequest) (reply, string, error) {
-	selected, err := followReplay(request.Messages)
+	var selected selection
+	var err error
+	if request.WireMode == conversation.OpenAIResponses || request.WireMode == conversation.OpenAIChatCompletions {
+		selected, err = followWireReplay(request.Messages, request.WireMode, request.WireProvider)
+	} else {
+		selected, err = followReplay(request.Messages)
+	}
 	if err != nil {
 		return reply{}, "", err
 	}
@@ -204,7 +223,7 @@ func (h *handler) plan(ctx context.Context, request messagesRequest) (reply, str
 }
 
 // onlyStreamedMessages answers a request for anything but a streamed message.
-const onlyStreamedMessages = "The mock model implements only streamed POST /v1/messages."
+const onlyStreamedMessages = "The mock model accepts streamed Messages, Responses and Chat Completions calls."
 
 // errorBody is an Anthropic error answer.
 type errorBody struct {
@@ -279,4 +298,281 @@ func StartCredentialProbeForTest(ctx context.Context, logger *slog.Logger, key s
 	probe.SetKeyForTest(key)
 	url, stop, err := startHandler(ctx, &handler{logger: logger, probe: probe})
 	return url, probe, stop, err
+}
+
+// serveOpenAI drives the same ordered scripts through the real compatible adapter.
+func (h *handler) serveOpenAI(w http.ResponseWriter, r *http.Request) {
+	if r.Header.Get("Authorization") != "Bearer "+APIKey {
+		writeOpenAIError(w, http.StatusUnauthorized, authenticationError, "Only the mock placeholder key is accepted.")
+		return
+	}
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maximumRequestBytes))
+	if err != nil {
+		writeOpenAIError(w, http.StatusRequestEntityTooLarge, requestTooLarge, "Request exceeds the mock limit.")
+		return
+	}
+	request, err := parseOpenAIRequest(body, r.URL.Path == openaicompat.ResponsesPath)
+	if err != nil {
+		writeOpenAIError(w, http.StatusBadRequest, invalidRequestError, "Invalid compatible request.")
+		return
+	}
+	request.WireProvider, err = mockWirePolicy(r.Header.Get(openaicompat.MockProviderHeader), request.WireMode, body)
+	if err != nil {
+		writeOpenAIError(w, http.StatusBadRequest, invalidRequestError, "Invalid compatible policy.")
+		return
+	}
+	answer, id, err := h.plan(r.Context(), request)
+	if err != nil {
+		writeOpenAIError(w, http.StatusBadRequest, invalidRequestError, err.Error())
+		return
+	}
+	switch h.wireFault {
+	case WireFaultCreditExhausted:
+		writeOpenAIError(w, http.StatusTooManyRequests, rateLimitError, "Synthetic provider credit message must be discarded.", "insufficient_quota")
+		return
+	case WireFaultContextRejected:
+		writeOpenAIError(w, http.StatusBadRequest, invalidRequestError, "Synthetic provider context message must be discarded.", "context_length_exceeded")
+		return
+	case WireFaultHTTP401:
+		writeOpenAIError(w, http.StatusUnauthorized, authenticationError, "Synthetic model authentication refusal.")
+		return
+	case WireFaultHTTP429:
+		w.Header().Set("Retry-After", "1")
+		writeOpenAIError(w, http.StatusTooManyRequests, rateLimitError, "Synthetic model rate limit.")
+		return
+	case WireFaultHTTP503:
+		writeOpenAIError(w, http.StatusServiceUnavailable, overloadedError, "Synthetic model overload.")
+		return
+	}
+	if answer.failure != nil {
+		writeOpenAIError(w, answer.failure.Status, answer.failure.Type, answer.failure.Message, answer.failure.ErrorCode)
+		return
+	}
+	if answer.progress != nil {
+		w.Header().Set(modelprovider.MockProgressHeader, string(comm.Must(json.Marshal(answer.progress))))
+	}
+	// Cancellation is owned by the real HTTP request, just as on Messages.
+	if err := writeOpenAIStream(r.Context(), w, id, request.Model, answer, request.WireMode, request.WireProvider, h.wireFault, request.WireTools); err != nil {
+		h.logger.InfoContext(r.Context(), "the mock compatible stream stopped", "message", id)
+	}
+}
+
+// mockWirePolicy checks the real encoder's reviewed controls before the shared
+// scenario runs. Unknown providers or a protocol mismatch never pick a fallback.
+func mockWirePolicy(id string, mode conversation.APIStyle, body []byte) (conversation.Provider, error) {
+	var provider conversation.Provider
+	for _, candidate := range []conversation.Provider{conversation.ProviderOpenAI, conversation.ProviderXAI, conversation.ProviderGemini, conversation.ProviderKimi, conversation.ProviderQwen, conversation.ProviderGLM} {
+		if candidate.String() == id {
+			provider = candidate
+			break
+		}
+	}
+	if provider.String() == "" || provider.APIStyle() != mode {
+		return provider, errors.New("mock provider and wire mode differ")
+	}
+	var controls struct {
+		Include  []string `json:"include"`
+		Thinking *struct {
+			Type string `json:"type"`
+		} `json:"thinking"`
+		EnableThinking   *bool `json:"enable_thinking"`
+		PreserveThinking *bool `json:"preserve_thinking"`
+	}
+	if json.Unmarshal(body, &controls) != nil {
+		return provider, errors.New("invalid mock controls")
+	}
+	switch provider {
+	case conversation.ProviderOpenAI, conversation.ProviderXAI:
+		if len(controls.Include) != 1 || controls.Include[0] != "reasoning.encrypted_content" {
+			return provider, errors.New("missing encrypted Responses control")
+		}
+	case conversation.ProviderKimi, conversation.ProviderGLM:
+		if controls.Thinking == nil || controls.Thinking.Type != "disabled" {
+			return provider, errors.New("thinking is not explicitly disabled")
+		}
+	case conversation.ProviderQwen:
+		if controls.EnableThinking == nil || *controls.EnableThinking || controls.PreserveThinking == nil || *controls.PreserveThinking {
+			return provider, errors.New("Qwen thinking and preservation are not disabled")
+		}
+	case conversation.ProviderGemini:
+		if controls.Thinking != nil || controls.EnableThinking != nil || controls.PreserveThinking != nil {
+			return provider, errors.New("unexpected Gemini thinking control")
+		}
+	}
+	return provider, nil
+}
+
+func parseOpenAIRequest(body []byte, responses bool) (messagesRequest, error) {
+	var wire struct {
+		Model    string            `json:"model"`
+		Stream   bool              `json:"stream"`
+		Store    *bool             `json:"store"`
+		Previous json.RawMessage   `json:"previous_response_id"`
+		Input    []json.RawMessage `json:"input"`
+		Messages []json.RawMessage `json:"messages"`
+		Tools    []struct {
+			Name     string `json:"name"`
+			Function struct {
+				Name string `json:"name"`
+			} `json:"function"`
+		} `json:"tools"`
+		Choice string `json:"tool_choice"`
+	}
+	if json.Unmarshal(body, &wire) != nil || wire.Model != mockModel || !wire.Stream || len(wire.Previous) > 0 {
+		return messagesRequest{}, errors.New("invalid mock compatible request")
+	}
+	request := messagesRequest{Model: wire.Model, Stream: true, WireMode: conversation.OpenAIChatCompletions}
+	var echo struct {
+		Tools []json.RawMessage `json:"tools"`
+	}
+	if err := json.Unmarshal(body, &echo); err != nil {
+		return request, errors.New("invalid mock tool definitions")
+	}
+	request.WireTools = echo.Tools
+	if responses {
+		request.WireMode = conversation.OpenAIResponses
+		if wire.Store == nil || *wire.Store {
+			return request, errors.New("Responses must be stateless")
+		}
+	}
+	if wire.Choice == toolChoiceNone {
+		request.ToolChoice = &requestToolChoice{Type: toolChoiceNone}
+	}
+	for _, tool := range wire.Tools {
+		name := tool.Function.Name
+		if responses {
+			name = tool.Name
+		}
+		request.Tools = append(request.Tools, requestTool{Name: name})
+	}
+	items := wire.Messages
+	if responses {
+		items = wire.Input
+	}
+	appendBlock := func(role string, block json.RawMessage) {
+		last := len(request.Messages) - 1
+		if last < 0 || request.Messages[last].Role != role {
+			request.Messages = append(request.Messages, requestMessage{Role: role, Content: []json.RawMessage{block}})
+		} else {
+			request.Messages[last].Content = append(request.Messages[last].Content, block)
+		}
+	}
+	for index, raw := range items {
+		var item struct {
+			Type       string          `json:"type"`
+			Role       string          `json:"role"`
+			Content    json.RawMessage `json:"content"`
+			CallID     string          `json:"call_id"`
+			ToolCallID string          `json:"tool_call_id"`
+			Name       string          `json:"name"`
+			Arguments  string          `json:"arguments"`
+			Output     string          `json:"output"`
+			Calls      []struct {
+				Extra struct {
+					Google struct {
+						Signature string `json:"thought_signature"`
+					} `json:"google"`
+				} `json:"extra_content"`
+				ID       string `json:"id"`
+				Function struct {
+					Name      string `json:"name"`
+					Arguments string `json:"arguments"`
+				} `json:"function"`
+			} `json:"tool_calls"`
+		}
+		if json.Unmarshal(raw, &item) != nil {
+			return request, errors.New("invalid wire item")
+		}
+		switch item.Type {
+		case openaicompat.ItemReasoning.String():
+			appendBlock("assistant", raw)
+			continue
+		case openaicompat.ItemFunctionCall.String():
+			appendBlock("assistant", comm.Must(json.Marshal(map[string]any{"type": conversation.BlockTypeToolUse.String(), "id": item.CallID, "name": item.Name, "input": json.RawMessage(item.Arguments)})))
+			continue
+		case openaicompat.ItemFunctionOutput.String():
+			var output openaicompat.ToolOutput
+			if json.Unmarshal([]byte(item.Output), &output) != nil {
+				return request, errors.New("invalid compatible tool output")
+			}
+			appendBlock("user", conversation.ToolResultBlock(conversation.CallID(item.CallID), output.Content, output.IsError))
+			continue
+		}
+		if item.Role == "system" && index == 0 && !responses {
+			continue
+		}
+		if item.Role == "tool" {
+			var text string
+			if json.Unmarshal(item.Content, &text) != nil {
+				return request, errors.New("invalid tool content")
+			}
+			var output openaicompat.ToolOutput
+			if json.Unmarshal([]byte(text), &output) != nil {
+				return request, errors.New("invalid compatible tool output")
+			}
+			appendBlock("user", conversation.ToolResultBlock(conversation.CallID(item.ToolCallID), output.Content, output.IsError))
+			continue
+		}
+		var parts []struct {
+			Type     string          `json:"type"`
+			Text     string          `json:"text"`
+			ImageURL json.RawMessage `json:"image_url"`
+		}
+		if string(item.Content) != "null" && json.Unmarshal(item.Content, &parts) != nil {
+			return request, errors.New("invalid message content")
+		}
+		for _, part := range parts {
+			if part.Type != "text" && part.Type != openaicompat.ItemInputText.String() && part.Type != openaicompat.ItemOutputText.String() {
+				var imageURL string
+				if part.Type == openaicompat.ItemInputImage.String() {
+					if json.Unmarshal(part.ImageURL, &imageURL) != nil {
+						return request, errors.New("invalid mock image URL")
+					}
+				} else if part.Type == openaicompat.ItemImageURL.String() {
+					var image struct {
+						URL string `json:"url"`
+					}
+					if json.Unmarshal(part.ImageURL, &image) != nil {
+						return request, errors.New("invalid mock image URL")
+					}
+					imageURL = image.URL
+				} else {
+					return request, errors.New("unsupported mock content")
+				}
+				media, data, found := strings.Cut(strings.TrimPrefix(imageURL, "data:"), ";base64,")
+				if !strings.HasPrefix(imageURL, "data:") || !found {
+					return request, errors.New("mock images require inline data")
+				}
+				source := comm.Must(json.Marshal(map[string]string{"type": "base64", "media_type": media, "data": data}))
+				if !validImageSource(source) {
+					return request, errors.New("invalid mock inline image")
+				}
+				appendBlock(item.Role, comm.Must(json.Marshal(map[string]any{"type": conversation.BlockTypeImage.String(), "source": source})))
+				continue
+			}
+			appendBlock(item.Role, comm.Must(json.Marshal(map[string]string{"type": conversation.BlockTypeText.String(), "text": part.Text})))
+		}
+		for _, call := range item.Calls {
+			if call.Extra.Google.Signature != "" {
+				appendBlock("assistant", comm.Must(json.Marshal(map[string]string{"type": "mock_signature", "callID": call.ID, "signature": call.Extra.Google.Signature})))
+			}
+			appendBlock("assistant", comm.Must(json.Marshal(map[string]any{"type": conversation.BlockTypeToolUse.String(), "id": call.ID, "name": call.Function.Name, "input": json.RawMessage(call.Function.Arguments)})))
+		}
+	}
+	if len(request.Messages) == 0 {
+		return request, errors.New("empty mock messages")
+	}
+	return request, nil
+}
+
+// writeOpenAIError preserves the shared engine's failure in compatible error shape.
+func writeOpenAIError(w http.ResponseWriter, status int, kind errorType, message string, codes ...string) {
+	code := ""
+	if len(codes) > 0 {
+		code = codes[0]
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("x-request-id", requestID)
+	w.WriteHeader(status)
+	_, _ = w.Write(comm.Must(json.Marshal(map[string]any{"error": map[string]any{"type": kind, "message": message, "param": nil, "code": code}})))
 }

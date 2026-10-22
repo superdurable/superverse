@@ -280,7 +280,7 @@ func (flow *SessionAgentFlow) recordPlatformModelResult(ctx dex.Context, input p
 	if !acceptsUserCommand(ctx) || !modelAdmissionMatches(ctx, input.Admission) {
 		return platformModelRecord{discard: true}
 	}
-	if comm.Must(contextSegmentAttribute.Get(ctx)).Model != conversation.ModelMock {
+	if !comm.Must(contextSegmentAttribute.Get(ctx)).Model.IsMock() {
 		info := dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, modelcredential.Anthropic.String()))
 		if !info.Active() || info.Revision != input.CredentialRevision {
 			input.Reply = nil
@@ -308,6 +308,7 @@ func (flow *SessionAgentFlow) recordPlatformModelResult(ctx dex.Context, input p
 		if compaction.Reason == agentloop.SegmentReasonRollover {
 			model = comm.Must(sessionModelAttribute.Get(ctx)).Model
 		}
+		purgeClosedModelReplay(ctx, closedModelReplayRange(ctx))
 		opened := flow.openSegment(ctx, compaction.Reason, model, input.Summary, loadedEntry)
 		writeActivity(ctx, conversation.AgentEvent{Kind: conversation.EventKindCompacted, Message: agentloop.SegmentMarker(compaction.Reason) + ".", MessageSequence: &opened.FirstSequence})
 		return platformModelRecord{next: agentloop.ContinueCallModel}
@@ -453,7 +454,7 @@ func (flow *SessionAgentFlow) planModelCall(ctx dex.Context, next agentloop.Cont
 
 func modelRequestLoad(state agentloop.AgentState, segment agentloop.ContextSegment, withPendingRequest bool) *dex.StepOptions {
 	options := segmentLoad(state, segment, withPendingRequest)
-	if segment.Model != conversation.ModelMock {
+	if !segment.Model.IsMock() {
 		options.ExecuteLoadAttributeMapInstances = append(options.ExecuteLoadAttributeMapInstances, modelKeysAttribute.Load(modelcredential.Anthropic.String()))
 	}
 	return options
@@ -491,7 +492,11 @@ func (flow *SessionAgentFlow) segmentRequest(ctx dex.Context, kind agentloop.Mod
 	read := retainedEntries(ctx, state)
 	entries := make([]conversation.SequencedEntry, 0, int(state.LastSequence-segment.FirstSequence+1)+len(transient))
 	for sequence := segment.FirstSequence; sequence <= state.LastSequence; sequence++ {
-		entries = append(entries, conversation.SequencedEntry{Sequence: sequence, Entry: read(sequence)})
+		entry := read(sequence)
+		if kind == agentloop.ModelCallKindCompaction && modelprovider.ProfileOf(segment.Model).Capabilities.Replay == conversation.ReplayEncryptedOpaque || sequence < segment.ProtocolStartSequence {
+			entry = entry.WithoutProtocolHistory()
+		}
+		entries = append(entries, conversation.SequencedEntry{Sequence: sequence, Entry: entry})
 	}
 	for index, entry := range transient {
 		entries = append(entries, conversation.SequencedEntry{Sequence: state.LastSequence + conversation.Sequence(index) + 1, Entry: entry})
@@ -584,7 +589,7 @@ var (
 		hint: "The reply stopped for a reason the Session does not handle and was discarded. Check what the turn already did before you continue."}
 	// modelUnavailable ends a turn or a compaction whose model call exhausted
 	// its retries.
-	modelUnavailable = modelFailureCode{name: "model_unavailable",
+	modelUnavailable = modelFailureCode{name: conversation.ModelUnavailable.Rejected().Code,
 		hint: "The model API did not answer before the retries ran out."}
 	// summaryUnavailable rejects a compaction reply without a summary.
 	summaryUnavailable = modelFailureCode{name: "summary_unavailable",
@@ -713,6 +718,7 @@ func (flow *SessionAgentFlow) compactionFailed(ctx dex.Context, input contextCom
 		if isRollover {
 			model = comm.Must(sessionModelAttribute.Get(ctx)).Model
 		}
+		purgeClosedModelReplay(ctx, closedModelReplayRange(ctx))
 		opened := flow.openSegment(ctx, agentloop.SegmentReasonUnsummarized, model, conversation.UnsummarizedContext, loadedEntry)
 		writeActivity(ctx, conversation.AgentEvent{Kind: conversation.EventKindCompactionFailed, Message: compactionFailure(failure, "the earlier context was not summarized"), MessageSequence: &opened.FirstSequence})
 		return agentloop.ContinueCallModel
@@ -913,7 +919,7 @@ func setExecutorRPC(ctx dex.Context, input remoteexec.SetRequest) (*dex.RPCResul
 	if interruption == nil {
 		result := &dex.RPCResult[remoteexec.SetResult]{Output: output}
 		if output.Changed && output.Executor.Mode == remoteexec.ModeRemote && dexflow.ValueOrZero(workspaceAttribute.Get(ctx)).RepositoryContext == "" {
-			result.NextSteps = []dex.StepMovement{dex.MovementOf(RequestSessionWorkspace{}, workspaceDemand{ResumeAt: agentloop.ContinueAwaitRemote})}
+			result.NextSteps = append(result.NextSteps, dex.MovementOf(RequestSessionWorkspace{}, workspaceDemand{ResumeAt: agentloop.ContinueAwaitRemote}))
 		}
 		return result, nil
 	}
@@ -931,7 +937,7 @@ func setExecutorRPC(ctx dex.Context, input remoteexec.SetRequest) (*dex.RPCResul
 
 // sessionModelCredential exact-loads only the selected provider and rejects mismatched revisions.
 func sessionModelCredential(ctx dex.Context, model conversation.Model) (modelcredential.Envelope, error) {
-	if model == conversation.ModelMock {
+	if model.IsMock() {
 		return modelcredential.Envelope{}, nil
 	}
 	info, err := modelKeyInfoAttribute.Get(ctx, modelcredential.Anthropic.String())

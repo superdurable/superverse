@@ -67,7 +67,21 @@ var profiles = map[conversation.Model]ModelProfile{
 
 func init() {
 	populateCandidateProfiles()
-	for _, model := range conversation.Models() {
+	for _, model := range []conversation.Model{conversation.ModelMockResponses, conversation.ModelMockChat} {
+		profile := profiles[conversation.ModelGPT6Astra]
+		if model == conversation.ModelMockChat {
+			profile = profiles[conversation.ModelGemini4Argon]
+		}
+		profile.model, profile.Availability = model, ModelAvailability{state: AvailabilityAvailable}
+		profile.Capabilities.SupportsParallelTools = true
+		if model == conversation.ModelMockResponses {
+			profile.Effort, profile.MaxEffort, profile.systemMessages = true, conversation.EffortXHigh, true
+			profile.Capabilities.StrictSchema = strictEnabled
+			profile.Capabilities.Effort = effortReasoning
+		}
+		profiles[model] = profile
+	}
+	for _, model := range conversation.ExecutionModels() {
 		profile, found := profiles[model]
 		if !found {
 			panic(fmt.Sprintf("no model profile for %q", model))
@@ -93,7 +107,7 @@ func init() {
 			}
 			profile.SourceURL = "https://platform.claude.com/docs/en/about-claude/models/overview"
 			profile.CheckedOn = "2026-10-21"
-			profile.Capabilities = ModelCapabilities{Replay: ReplayClaudeSigned, Thinking: thinkingFixed, Effort: effortDisabled, StrictSchema: strictEnabled, PromptCache: cacheAnthropic, Fallback: fallbackDisabled, MidSystem: midSystemReminder, Stream: streamMessages, SupportsImages: true, SupportsParallelTools: true}
+			profile.Capabilities = ModelCapabilities{Replay: conversation.ReplayClaudeSigned, Thinking: thinkingFixed, Effort: effortDisabled, StrictSchema: strictEnabled, PromptCache: cacheAnthropic, Fallback: fallbackDisabled, MidSystem: midSystemReminder, Stream: streamMessages, SupportsImages: true, SupportsParallelTools: true}
 			if profile.Effort {
 				profile.Capabilities.Effort = effortOutputConfig
 			}
@@ -107,7 +121,7 @@ func init() {
 				profile.Capabilities.MidSystem = midSystemNative
 			}
 		}
-		if profile.ContextWindow <= 0 || profile.maxTokens <= 0 || profile.HardLimit <= profile.maxTokens || profile.HardLimit > profile.ContextWindow || profile.compactionCeiling >= profile.HardLimit || profile.SourceURL == "" || profile.CheckedOn == "" || profile.Capabilities.Replay.id == "" {
+		if profile.ContextWindow <= 0 || profile.maxTokens <= 0 || profile.HardLimit <= profile.maxTokens || profile.HardLimit > profile.ContextWindow || profile.compactionCeiling >= profile.HardLimit || profile.SourceURL == "" || profile.CheckedOn == "" || profile.Capabilities.Replay.String() == "" {
 			panic(fmt.Sprintf("incomplete model profile for %q", model))
 		}
 		if profile.Availability.state != AvailabilityAvailable && profile.Availability.reason == "" {
@@ -115,7 +129,7 @@ func init() {
 		}
 		profiles[model] = profile
 	}
-	if len(profiles) != len(conversation.Models()) {
+	if len(profiles) != len(conversation.ExecutionModels()) {
 		panic("model profile catalog contains undeclared identities")
 	}
 }

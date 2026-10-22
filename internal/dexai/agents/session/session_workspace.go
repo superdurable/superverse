@@ -537,6 +537,7 @@ func (flow *SessionAgentFlow) openExecutorSegment(ctx dex.Context, executor remo
 	}
 	model := comm.Must(sessionModelAttribute.Get(ctx)).Model
 	segment := agentloop.NewSegment(previous, first, agentloop.SegmentReasonExecutor, model, flow.settings, bytes).OpenedWithAttachments(shown, nil)
+	segment.ProtocolStartSequence = last
 	segment.Summary = comm.TruncateUTF8(summary, 8<<10)
 	comm.MustDo(contextSegmentAttribute.Set(ctx, segment))
 	comm.MustDo(contextSegmentPromptsAttribute.Set(ctx, segment.PromptsKey(), agentloop.SessionPromptFor(model).Prompts))
@@ -849,4 +850,16 @@ func updatePreviewAutoDeploy(ctx dex.Context, input agentloop.PreviewAutoDeployR
 		}
 	}
 	return rpcAccepted(true), nil
+}
+
+// renewSessionWorkspace updates a READY workspace lease under the command locks.
+func renewSessionWorkspace(ctx dex.Context) bool {
+	ws := dexflow.ValueOrZero(workspaceAttribute.Get(ctx))
+	if !acceptsUserCommand(ctx) || ws.State != agentloop.WorkspaceReady {
+		return false
+	}
+	if ws.ExtendDeadline(time.Now(), agentloop.KeepRunningHold) {
+		comm.MustDo(workspaceAttribute.Set(ctx, ws))
+	}
+	return true
 }

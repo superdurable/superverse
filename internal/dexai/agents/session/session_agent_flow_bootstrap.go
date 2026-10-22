@@ -34,7 +34,7 @@ type SessionAgentConfig struct {
 	Claude modelprovider.ClaudeClientConfig
 	// Mock is the client of the in-process mock model; nil when the server
 	// configuration does not offer it.
-	Mock *modelprovider.ClaudeClientConfig
+	Mock *modelprovider.MockClientConfig
 	// Settings are the base effort, the compaction threshold, the
 	// thinking prefix-mismatch behavior and the attachment budget of every
 	// segment.

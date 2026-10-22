@@ -162,7 +162,7 @@ func (s *ModelCredentialFlowService) startSubagent(ctx context.Context, start ag
 	if err := s.Subagents.Start(ctx, start); err != nil {
 		return err
 	}
-	if start.Model == conversation.ModelMock {
+	if start.Model.IsMock() {
 		return nil
 	}
 	revision, running, err := s.Subagents.CredentialTarget(ctx, start.Identity)

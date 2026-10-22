@@ -28,6 +28,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/flowdesign"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/agents/toolfailure"
 )
 
@@ -534,6 +535,88 @@ func finalizeModelCredential(ctx dex.Context, input modelcredential.Mutation) (*
 	return &dex.RPCResult[modelcredential.Info]{Output: info}, nil
 }
 
+// closedReplayRange captures the closed segment's inclusive history range.
+// Cleanup changes payloads only; message identity and business history stay owned by their maps.
+type closedReplayRange struct {
+	First conversation.Sequence `json:"first"`
+	Last  conversation.Sequence `json:"last"`
+}
+
+func closedModelReplayRange(ctx dex.Context) closedReplayRange {
+	segment := dexflow.OptionalValue(contextSegmentAttribute.Get(ctx))
+	if segment == nil || modelprovider.ProfileOf(segment.Model).Capabilities.Replay != conversation.ReplayEncryptedOpaque {
+		return closedReplayRange{}
+	}
+	return closedReplayRange{First: segment.FirstSequence, Last: comm.Must(agentStateAttribute.Get(ctx)).LastSequence}
+}
+
+// closedReplayOptions includes even currently unarchived chunks: a queued cleanup
+// may run after the window moves. It never requests the whole ArchivedMessages map.
+func closedReplayOptions(scope closedReplayRange) *dex.StepOptions {
+	options := conversationStepOptions(messageMaps)
+	options.ExecuteRetry = shortStepRetry
+	if scope.First <= 0 {
+		return options
+	}
+	size := conversation.Sequence(agentloop.ArchiveMessageChunkSize)
+	for first := agentloop.ArchiveChunkFirst(scope.First); first <= scope.Last; first += size {
+		options.ExecuteLoadAttributeMapInstances = append(options.ExecuteLoadAttributeMapInstances, archivedMessagesAttribute.Load(agentloop.SequenceKey(first)))
+	}
+	return options
+}
+
+// projectCompletionOptions retains lifecycle durability and its status fence
+// while adding the message lock and exact replay loads.
+func projectCompletionOptions(scope closedReplayRange) *dex.StepOptions {
+	options := closedReplayOptions(scope)
+	lifecycle := lifecycleStepOptions(nil)
+	options.ExecuteDurability = lifecycle.ExecuteDurability
+	options.ExecuteMethodTimeout = lifecycle.ExecuteMethodTimeout
+	options.ExecuteLockAttributes = append(lifecycle.ExecuteLockAttributes, options.ExecuteLockAttributes...)
+	return options
+}
+
+func purgeClosedModelReplay(ctx dex.Context, scope closedReplayRange) {
+	if scope.First <= 0 {
+		return
+	}
+	state := comm.Must(agentStateAttribute.Get(ctx))
+	agentloop.PurgeModelReplay(state, scope.First, scope.Last, agentloop.ModelReplayHistory{
+		ReadCurrent:  func(key string) conversation.Entry { return comm.Must(currentMessagesAttribute.Get(ctx, key)) },
+		WriteCurrent: func(key string, entry conversation.Entry) { comm.MustDo(currentMessagesAttribute.Set(ctx, key, entry)) },
+		ReadArchive: func(key string) conversation.ArchivedEntryChunk {
+			return comm.Must(archivedMessagesAttribute.Get(ctx, key))
+		},
+		WriteArchive: func(key string, chunk conversation.ArchivedEntryChunk) {
+			comm.MustDo(archivedMessagesAttribute.Set(ctx, key, chunk))
+		},
+	})
+}
+
+func completeProjectSession(ctx dex.Context) (agentloop.SessionCleanupReceipt, error) {
+	status, reason := comm.Must(sessionStatusAttribute.Get(ctx)), comm.Must(closeReasonAttribute.Get(ctx))
+	if status != agentloop.SessionStatusArchived || reason != agentloop.CloseReasonProjectCleanupComplete.String() {
+		return agentloop.SessionCleanupReceipt{}, dex.ErrorWithStack(fmt.Errorf("project cleanup admission missing: Session is %s with reason %q", status, reason))
+	}
+	purgeClosedModelReplay(ctx, closedModelReplayRange(ctx))
+	return agentloop.SessionCleanupReceipt{ProjectID: readSessionIdentity(ctx).ProjectID, Reason: reason}, nil
+}
+
+func sessionSummary(ctx dex.Context, head string) *dex.RPCResult[agentloop.SessionSummary] {
+	status := comm.Must(sessionStatusAttribute.Get(ctx))
+	summary := agentloop.SessionSummary{
+		Identity: agentloop.SessionIdentity{ProjectID: comm.Must(projectIDAttribute.Get(ctx)), Profile: comm.Must(sessionProfileAttribute.Get(ctx)),
+			HeadCommit: head},
+		Status: status, CloseReason: comm.Must(closeReasonAttribute.Get(ctx)), Revision: comm.Must(sessionRevisionAttribute.Get(ctx)),
+		CreatedAt: comm.Must(sessionCreatedAtAttribute.Get(ctx)), UpdatedAt: comm.Must(sessionUpdatedAtAttribute.Get(ctx)),
+		Workspace: dexflow.ValueOrZero(workspaceAttribute.Get(ctx)).Summary(),
+	}
+	// WorkspaceUse is missing until InitializeSessionAgent commits; only a value read proves a drained wave.
+	use, err := workspaceUseAttribute.Get(ctx)
+	summary.WorkspaceUse, summary.WorkspaceUseKnown = dexflow.ValueOrZero(use, err), err == nil
+	return &dex.RPCResult[agentloop.SessionSummary]{Output: summary}
+}
+
 // UpdateSessionModel selects the Session's model at an exact revision at any time.
 // The next turn rolls the context over to it; history, pending input and workspace stay.
 func updateSessionModel(ctx dex.Context, input agentloop.UpdateSessionModelRequest) (*dex.RPCResult[modelSelection], error) {
@@ -553,7 +636,7 @@ func updateSessionModel(ctx dex.Context, input agentloop.UpdateSessionModelReque
 
 // modelCredentialReady reads the non-secret admission fence; model Steps also verify the envelope.
 func modelCredentialReady(ctx dex.Context, model conversation.Model) bool {
-	if model == conversation.ModelMock || currentExecutor(ctx).Mode == remoteexec.ModeRemote {
+	if model.IsMock() || currentExecutor(ctx).Mode == remoteexec.ModeRemote {
 		return true
 	}
 	return dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, modelcredential.Anthropic.String())).Active()
@@ -567,7 +650,7 @@ func credentialAdmissionRPC(options *dex.RPCOptions) *dex.RPCOptions {
 // prepareSubagentCredential commits a bounded holder before a child can receive a key.
 func (flow *SessionAgentFlow) prepareSubagentCredential(ctx dex.Context, input toolInvocation) (*dex.StepDecision, error) {
 	input.CredentialPrepared = true
-	if comm.Must(sessionModelAttribute.Get(ctx)).Model != conversation.ModelMock {
+	if !comm.Must(sessionModelAttribute.Get(ctx)).Model.IsMock() {
 		info := dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, modelcredential.Anthropic.String()))
 		if !info.Active() {
 			return rejectCredentialStart(ctx, input.Call)
@@ -615,7 +698,7 @@ func preparedSubagentCredential(ctx dex.Context, agentID string, model conversat
 	if err != nil {
 		return modelcredential.Envelope{}, err
 	}
-	if model != conversation.ModelMock {
+	if !model.IsMock() {
 		info := comm.Must(modelKeyInfoAttribute.Get(ctx, modelcredential.Anthropic.String()))
 		var admitted bool
 		for _, holder := range info.Holders {
