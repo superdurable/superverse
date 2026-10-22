@@ -98,7 +98,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, notFoundError, onlyStreamedMessages)
 		return
 	}
-	accepted := r.Header.Get("X-Api-Key") == APIKey
+	accepted := r.Header.Get("X-Api-Key") == APIKey || r.Header.Get("Authorization") == "Bearer "+APIKey
 	if h.probe != nil {
 		accepted = h.probe.accept(r.Header.Get("X-Api-Key"))
 	}
@@ -136,6 +136,9 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if answer.failure != nil {
+		if answer.failure.Status == http.StatusTooManyRequests || answer.failure.Status == http.StatusServiceUnavailable {
+			w.Header().Set("Retry-After", "1")
+		}
 		writeErrorWithCode(w, answer.failure.Status, answer.failure.Type, answer.failure.Message, answer.failure.ErrorCode)
 		return
 	}
@@ -154,13 +157,15 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // returned, and returns the reply with its message ID. A compaction request is
 // answered with the mock summary, or with the error the step before it declares.
 func (h *handler) plan(ctx context.Context, request messagesRequest) (reply, string, error) {
+	model := request.catalogModel()
 	var selected selection
 	var err error
 	if request.WireMode == conversation.OpenAIResponses || request.WireMode == conversation.OpenAIChatCompletions {
 		selected, err = followWireReplay(request.Messages, request.WireMode, request.WireProvider)
 	} else {
-		selected, err = followReplay(request.Messages)
+		selected, err = followMessagesReplay(request.Messages, model, isCompaction(request.Messages))
 	}
+
 	if err != nil {
 		return reply{}, "", err
 	}
@@ -180,7 +185,7 @@ func (h *handler) plan(ctx context.Context, request messagesRequest) (reply, str
 		if failure != nil {
 			return failure.reply(), id + "_compaction", nil
 		}
-		return textReply(selected.compactionSummary()), id + "_compaction", nil
+		return messagesReply(textReply(selected.compactionSummary()), model), id + "_compaction", nil
 	}
 	if missing := selected.missingNotification(request.Messages); missing != "" {
 		return reply{}, "", errors.New(missing)
@@ -218,6 +223,7 @@ func (h *handler) plan(ctx context.Context, request messagesRequest) (reply, str
 	}
 	h.logger.InfoContext(ctx, "the mock model answers", "scenario", name, "at", at.String(), "model", request.Model, "stop_reason", answer.stopReason,
 		"rejected", selected.rejected != "", "failure", answer.failure != nil)
+	answer = messagesReply(answer, model)
 	answer.progress = selected.progress()
 	return answer, id, nil
 }

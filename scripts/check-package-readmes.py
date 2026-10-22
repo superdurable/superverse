@@ -36,7 +36,7 @@ repository = Path(__file__).resolve().parents[1]
 # client of the remote API it names; a "library" runs in process and is not listed. A major
 # version suffix (/vN) is ignored, so a new module fails until someone classifies it.
 EXTERNAL = {
-    "github.com/anthropics/anthropic-sdk-go": ("api", "Claude Messages API"),
+    "github.com/anthropics/anthropic-sdk-go": ("api", "Claude and compatible Messages APIs"),
     "github.com/aws/aws-sdk-go-v2": ("library", "AWS SDK core"),
     "github.com/aws/aws-sdk-go-v2/config": ("library", "AWS SDK configuration"),
     "github.com/aws/aws-sdk-go-v2/credentials": ("library", "AWS SDK credentials"),

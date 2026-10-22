@@ -383,6 +383,16 @@ var (
 	// start it.
 	MockModelUnavailable = ServerRejection{code: "mock_model_unavailable",
 		hint: "This environment does not offer the mock model. Select another model for the Session, then continue."}
+	// NoProviderKey refuses a compatible model without this Project's key.
+	NoProviderKey = ServerRejection{code: "provider_key_missing",
+		hint: "Set the selected model provider's key for this Project, then continue."}
+	// InvalidProviderKey refuses a key that cannot be sent as an HTTP credential.
+	InvalidProviderKey = ServerRejection{code: "provider_key_invalid",
+		hint: "Correct the selected model provider's key for this Project, then continue."}
+	// ProviderProtocolRejected refuses unsupported compatible protocol responses or replay.
+	ProviderProtocolRejected = ModelRejectionReason{code: "provider_protocol_rejected",
+		hint:     "The model returned an unsupported protocol response. Select another model before continuing.",
+		userText: "The model returned an unsupported protocol response. Select another model before continuing."}
 	// NoClaudeKey refuses a Claude model without this Project’s active key.
 	NoClaudeKey = ServerRejection{code: "no_claude_key",
 		hint: "Set your Anthropic key for this Project or connect your local agent, then continue."}

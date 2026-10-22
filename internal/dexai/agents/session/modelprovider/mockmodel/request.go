@@ -181,8 +181,13 @@ func parseRequest(r *http.Request, body []byte, acceptedModels ...string) (messa
 	if err := json.Unmarshal(body, &request); err != nil {
 		return request, fmt.Errorf("the request body is not valid JSON: %w", err)
 	}
-	if request.Model != mockModel && !slices.Contains(acceptedModels, request.Model) {
+	if request.Model != mockModel && !slices.Contains(acceptedModels, request.Model) && request.catalogModel() == "" {
 		return request, fmt.Errorf("model %q is not the mock model %q", request.Model, mockModel)
+	}
+	if request.Model != mockModel && !slices.Contains(acceptedModels, request.Model) {
+		if err := request.validateMessagesProfile(r, body); err != nil {
+			return request, err
+		}
 	}
 	for _, header := range r.Header.Values("anthropic-beta") {
 		for _, beta := range strings.Split(header, ",") {

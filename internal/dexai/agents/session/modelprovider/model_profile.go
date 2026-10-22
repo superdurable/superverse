@@ -166,3 +166,6 @@ func (profile ModelProfile) CompactionThreshold(configured int64) int64 {
 func (profile ModelProfile) RequestShape() conversation.RequestShape {
 	return conversation.RequestShape{SystemMessages: profile.systemMessages}
 }
+
+// MaximumOutputTokens is the reviewed per-reply request budget.
+func (profile ModelProfile) MaximumOutputTokens() int64 { return profile.maxTokens }

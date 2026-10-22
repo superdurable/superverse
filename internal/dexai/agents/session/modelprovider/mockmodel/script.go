@@ -148,6 +148,7 @@ func (in input) kind() InputKind {
 
 // step is one model reply, or one rejected request when Error is set.
 type step struct {
+	ProtocolFault protocolFault `json:"protocol_fault"`
 	// Remote declares exact externally reported blocks, never a provider reply.
 	Remote bool `json:"remote"`
 	// ExpectHandoff asserts the canonical notice at this scripted user boundary.
@@ -535,7 +536,10 @@ func (s *script) validateInput(index int, in input) error {
 }
 
 func (s *script) validateStep(step step, files rootFiles) error {
-	if step.Remote && (s.isSubagent() || step.Thinking != "" || step.Error != nil || step.Usage != nil || step.ChunkDelayMS != 0 || step.CompactionError != nil || step.ExpectHandoff || step.Repeat > 1 || step.StopReason != "" || len(step.ToolUses) > 4 || len(step.Text) > 64<<10 || len(step.ExpectSegmentStart) > 0 || len(step.ExpectSegmentStartLacks) > 0 || step.ExpectRepositoryContextNotice || step.ExpectSenderEnvelope || step.ExpectPendingRequestBudget || len(step.ExpectAttachments) > 0) {
+	if !slices.Contains(protocolFaults, step.ProtocolFault) {
+		return errors.New("unknown protocol fault")
+	}
+	if step.Remote && (step.ProtocolFault != faultNone || s.isSubagent() || step.Thinking != "" || step.Error != nil || step.Usage != nil || step.ChunkDelayMS != 0 || step.CompactionError != nil || step.ExpectHandoff || step.Repeat > 1 || step.StopReason != "" || len(step.ToolUses) > 4 || len(step.Text) > 64<<10 || len(step.ExpectSegmentStart) > 0 || len(step.ExpectSegmentStartLacks) > 0 || step.ExpectRepositoryContextNotice || step.ExpectSenderEnvelope || step.ExpectPendingRequestBudget || len(step.ExpectAttachments) > 0) {
 		return errors.New("a remote step has only exact public text/tool uses and never provider thinking, timing, failure, compaction or handoff expectations")
 	}
 	for _, use := range step.ToolUses {

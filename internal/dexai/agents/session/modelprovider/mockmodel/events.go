@@ -48,6 +48,9 @@ type blockDelta struct {
 // BetaMessage.Accumulate read, with a ping after the first block as the API
 // sends one. It returns when the reply ends or the client is gone.
 func writeStream(ctx context.Context, w http.ResponseWriter, id, model string, answer reply) error {
+	if answer.protocolFault == faultWrongModel {
+		model += "-unexpected"
+	}
 	flusher, _ := w.(http.Flusher)
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
@@ -83,6 +86,9 @@ func writeStream(ctx context.Context, w http.ResponseWriter, id, model string, a
 	if err := send("message_delta", map[string]any{"delta": delta, "usage": withOutput(usage, answer.outputTokens)}); err != nil {
 		return err
 	}
+	if answer.protocolFault == faultTruncated {
+		return nil
+	}
 	return send("message_stop", map[string]any{})
 }
 
@@ -101,6 +107,8 @@ func writeBlock(ctx context.Context, send func(string, map[string]any) error, in
 	empty := map[string]any{typeField: b.kind.String()}
 	var deltas []blockDelta
 	switch b.kind {
+	case conversation.BlockTypeRedactedThinking:
+		empty["data"] = b.signature
 	case conversation.BlockTypeThinking:
 		empty["thinking"], empty["signature"] = "", ""
 		for _, piece := range chunks(b.text, deltaRunes) {

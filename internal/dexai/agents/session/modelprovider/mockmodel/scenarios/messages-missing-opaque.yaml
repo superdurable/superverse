@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+name: messages-missing-opaque
+title: "Messages protocol missing-opaque"
+description: "A test-only malformed Messages reply is rejected before tool execution."
+category: platform_error
+test_action: "Run the compatible Messages protocol check."
+inputs:
+  - label: "Check protocol rejection"
+    message: "Check the Messages protocol rejection."
+    replies:
+      - protocol_fault: missing_opaque
+        text: "Protocol fault test."
+        tool_uses:
+          - name: read
+            input: {path: dex-app.yaml}

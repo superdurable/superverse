@@ -24,7 +24,8 @@ import (
 // uses the in-process mock Claude API. A segment stays on one selected model.
 type ModelRouter struct {
 	// claude uses the key of each admitted Session request.
-	claude *claudeClient
+	claude   *claudeClient
+	messages *messagesClient
 	// mock is nil when the server configuration does not offer the mock model.
 	mock map[conversation.APIStyle]conversation.ModelClient
 }
@@ -39,7 +40,7 @@ type MockClientConfig struct {
 // NewModelRouter builds the clients the server offers over one owned HTTP
 // client: official Claude with per-request authentication, and the configured mock.
 func NewModelRouter(httpClient *http.Client, claude ClaudeClientConfig, mock *MockClientConfig, logger *slog.Logger) (*ModelRouter, error) {
-	router := &ModelRouter{}
+	router := &ModelRouter{messages: newMessagesClient(httpClient, logger)}
 	var err error
 	if router.claude, err = newClaudeClient(httpClient, ClaudeClientConfig{BaseURL: claude.BaseURL}, logger); err != nil {
 		return nil, err
@@ -110,7 +111,8 @@ func (router *ModelRouter) Complete(ctx context.Context, request conversation.Mo
 		if request.Model.Details().Provider == conversation.ProviderAnthropic && router.claude != nil {
 			return router.claude.Complete(ctx, request)
 		}
-		return conversation.ModelReply{}, conversation.NoClaudeKey.Rejected()
+		// BYOK will supply a request-local key here; no platform key is borrowed.
+		return router.messages.completeWithKey(ctx, request, "")
 	case conversation.OpenAIResponses, conversation.OpenAIChatCompletions:
 		// There is no credential path for these providers before BYOK.
 		return conversation.ModelReply{}, conversation.ModelUnavailable.Rejected()

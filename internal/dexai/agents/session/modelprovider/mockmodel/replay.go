@@ -9,13 +9,18 @@
 package mockmodel
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
 	"reflect"
 	"strings"
 
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/openaicompat"
 )
 
@@ -27,10 +32,24 @@ import (
 // API rejects a thinking block that no longer matches its conversation. It
 // returns the selection in force after the last message.
 func followReplay(messages []requestMessage) (selection, error) {
+	return followMessagesReplay(messages, conversation.ModelMock, false)
+}
+
+func followMessagesReplay(messages []requestMessage, model conversation.Model, compaction bool) (selection, error) {
 	return walk(messages, func(message requestMessage, sel selection) error {
 		expected, err := sel.nextReply()
 		if err != nil {
 			return err
+		}
+		expected = messagesReply(expected, model)
+		if compaction && model != conversation.ModelMock {
+			blocks := []block{}
+			for _, item := range expected.blocks {
+				if item.kind != conversation.BlockTypeRedactedThinking {
+					blocks = append(blocks, item)
+				}
+			}
+			expected.blocks = blocks
 		}
 		if expected.failure != nil || !sameBlocks(message.Content, expected.blocks) {
 			return fmt.Errorf("mock replay mismatch at %s", sel.at)
@@ -169,3 +188,139 @@ func mockReasoning(b block, index int) json.RawMessage {
 func mockCallSignature(id string) json.RawMessage {
 	return comm.Must(json.Marshal(map[string]string{"type": "mock_signature", "callID": id, "signature": "mock-encrypted-" + id}))
 }
+
+// messagesReply uses the same scenario engine for compatible wire profiles.
+// Its encrypted carrier is synthetic and proves no live provider compatibility.
+func messagesReply(answer reply, model conversation.Model) reply {
+	if model == "" || model == conversation.ModelMock {
+		return answer
+	}
+	replay := modelprovider.ProfileOf(model).Capabilities.Replay
+	kept := []block{}
+	for _, item := range answer.blocks {
+		if item.kind != conversation.BlockTypeThinking {
+			kept = append(kept, item)
+		}
+	}
+	if replay == conversation.ReplayEncryptedOpaque && answer.failure == nil {
+		encoded := []json.RawMessage{}
+		for _, item := range kept {
+			encoded = append(encoded, item.json())
+		}
+		sum := sha256.Sum256(comm.Must(json.Marshal(encoded)))
+		kept = append([]block{{kind: conversation.BlockTypeRedactedThinking, signature: base64.StdEncoding.EncodeToString(sum[:])}}, kept...)
+	}
+	switch answer.protocolFault {
+	case faultPlaintext:
+		kept = append([]block{{kind: conversation.BlockTypeThinking, text: "synthetic private reasoning must never escape", signature: "synthetic"}}, kept...)
+	case faultMissingOpaque:
+		without := []block{}
+		for _, item := range kept {
+			if item.kind != conversation.BlockTypeRedactedThinking {
+				without = append(without, item)
+			}
+		}
+		kept = without
+	case faultDuplicateOpaque:
+		if len(kept) > 0 && kept[0].kind == conversation.BlockTypeRedactedThinking {
+			kept = append([]block{kept[0]}, kept...)
+		}
+	case faultOversizeOpaque:
+		kept = append([]block{{kind: conversation.BlockTypeRedactedThinking, signature: strings.Repeat("x", 256<<10)}}, kept...)
+	}
+	answer.blocks = kept
+	return answer
+}
+
+func (request messagesRequest) catalogModel() conversation.Model {
+	for _, model := range []conversation.Model{conversation.ModelMock, conversation.ModelDeepSeekFlash, conversation.ModelMiniMaxM3, conversation.ModelMuseWonder10} {
+		if request.Model == model.ProviderModel() {
+			return model
+		}
+	}
+	return ""
+}
+
+// validateMessagesProfile checks the actual adapter wire request rather than
+// inferring compatibility from a model label or a decoded ModelReply.
+func (request messagesRequest) validateMessagesProfile(r *http.Request, body []byte) error {
+	if r.Header.Get("anthropic-beta") != "" {
+		return errors.New("compatible requests must not carry Claude betas")
+	}
+	model := request.catalogModel()
+	if model == conversation.ModelMuseWonder10 {
+		if r.Header.Get("Authorization") != "Bearer "+APIKey || r.Header.Get("X-Api-Key") != "" {
+			return errors.New("Meta requires only bearer authentication")
+		}
+	} else if r.Header.Get("X-Api-Key") != APIKey || r.Header.Get("Authorization") != "" {
+		return errors.New("compatible SDK request requires only API-key authentication")
+	}
+	var fields map[string]json.RawMessage
+	if json.Unmarshal(body, &fields) != nil {
+		return errors.New("compatible request is not an object")
+	}
+	allowed := map[string]bool{"model": true, "max_tokens": true, "system": true, "messages": true, "tools": true, "tool_choice": true, "stream": true}
+	control, want := "thinking", `{"type":"disabled"}`
+	if model == conversation.ModelMuseWonder10 {
+		want = `{"type":"adaptive","display":"omitted"}`
+	}
+	var maxTokens int64
+	if json.Unmarshal(fields["max_tokens"], &maxTokens) != nil || maxTokens != modelprovider.ProfileOf(model).MaximumOutputTokens() {
+		return errors.New("compatible request has the wrong output budget")
+	}
+	allowed[control] = true
+	for key := range fields {
+		if !allowed[key] {
+			return errors.New("compatible request has an undocumented top-level field")
+		}
+	}
+	var gotValue, wantValue any
+	if json.Unmarshal(fields[control], &gotValue) != nil || json.Unmarshal([]byte(want), &wantValue) != nil || !reflect.DeepEqual(gotValue, wantValue) {
+		return errors.New("compatible request has the wrong reasoning control")
+	}
+	var system []map[string]json.RawMessage
+	if json.Unmarshal(fields["system"], &system) != nil || len(system) != 1 || len(system[0]) != 2 {
+		return errors.New("compatible system prompt must not carry cache policy")
+	}
+	var tools []map[string]json.RawMessage
+	if json.Unmarshal(fields["tools"], &tools) != nil {
+		return errors.New("compatible tools must be an array")
+	}
+	for _, tool := range tools {
+		for field := range tool {
+			if field != "name" && field != "description" && field != "input_schema" {
+				return errors.New("compatible tool carries a Claude-only option")
+			}
+		}
+	}
+	for _, message := range request.Messages {
+		if message.Role != string(conversation.EntryRoleUser) && message.Role != string(conversation.EntryRoleAssistant) {
+			return errors.New("compatible requests cannot send mid-conversation system messages")
+		}
+		for _, block := range message.Content {
+			var content map[string]json.RawMessage
+			if json.Unmarshal(block, &content) != nil {
+				return errors.New("invalid compatible block")
+			}
+			if _, exists := content["cache_control"]; exists {
+				return errors.New("compatible content must not carry cache policy")
+			}
+		}
+	}
+	return nil
+}
+
+// protocolFault belongs only to the mock model's scenario engine.
+type protocolFault string
+
+const (
+	faultNone            protocolFault = ""
+	faultPlaintext       protocolFault = "plaintext_reasoning"
+	faultMissingOpaque   protocolFault = "missing_opaque"
+	faultDuplicateOpaque protocolFault = "duplicate_opaque"
+	faultOversizeOpaque  protocolFault = "oversize_opaque"
+	faultTruncated       protocolFault = "truncated_stream"
+	faultWrongModel      protocolFault = "wrong_model"
+)
+
+var protocolFaults = []protocolFault{faultNone, faultPlaintext, faultMissingOpaque, faultDuplicateOpaque, faultOversizeOpaque, faultTruncated, faultWrongModel}

@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+name: messages-credit-error
+title: "Messages HTTP 402 invalid_request_error"
+description: "A test-only provider error exercises safe HTTP classification."
+category: platform_error
+test_action: "Run the compatible Messages protocol check."
+inputs:
+  - label: "Check provider error"
+    message: "Check the Messages provider error."
+    replies:
+      - error: {status: 402, type: invalid_request_error, message: "synthetic-private-body-must-not-escape"}

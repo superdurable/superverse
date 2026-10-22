@@ -34,12 +34,13 @@ type block struct {
 // reply is everything a call answers with: the blocks, the usage and stop
 // reason they report, how fast they stream and where they leave the scenario.
 type reply struct {
-	blocks       []block
-	inputTokens  int64
-	outputTokens int64
-	stopReason   conversation.StopReason
-	chunkDelay   time.Duration
-	failure      *stepError
+	protocolFault protocolFault
+	blocks        []block
+	inputTokens   int64
+	outputTokens  int64
+	stopReason    conversation.StopReason
+	chunkDelay    time.Duration
+	failure       *stepError
 	// progress is reported with the reply; nil outside a scenario.
 	progress *conversation.MockProgress
 }
@@ -76,7 +77,7 @@ func (s *script) replyAt(at position, arguments map[string]string, run string) (
 		}
 		blocks = append(blocks, block{kind: conversation.BlockTypeToolUse, id: id, name: string(use.Name), input: input})
 	}
-	result := reply{blocks: blocks, inputTokens: 1000, stopReason: step.stopReason(), chunkDelay: time.Duration(step.ChunkDelayMS) * time.Millisecond}
+	result := reply{protocolFault: step.ProtocolFault, blocks: blocks, inputTokens: 1000, stopReason: step.stopReason(), chunkDelay: time.Duration(step.ChunkDelayMS) * time.Millisecond}
 	result.outputTokens = outputEstimate(blocks)
 	if step.Usage != nil {
 		result.inputTokens, result.outputTokens = step.Usage.InputTokens, step.Usage.OutputTokens
@@ -124,6 +125,8 @@ type textJSON struct {
 // json is the block as a request replays it.
 func (b block) json() []byte {
 	switch b.kind {
+	case conversation.BlockTypeRedactedThinking:
+		return comm.Must(json.Marshal(map[string]any{typeField: b.kind.String(), "data": b.signature}))
 	case conversation.BlockTypeThinking:
 		return comm.Must(json.Marshal(map[string]any{typeField: b.kind.String(), "thinking": b.text, "signature": b.signature}))
 	case conversation.BlockTypeText:

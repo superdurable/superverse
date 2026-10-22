@@ -1,11 +1,11 @@
 # Model provider
 
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
-Purpose: Routes catalog-selected model calls and owns Claude Messages requests, capability profiles, private replay, streaming and failure classification.
+Purpose: Routes catalog-selected model calls and validates requests, private replay and streamed replies over Claude and compatible APIs.
 
 Callers: `cmd/superverse-server/config`, `cmd/tools/check-proto-enums`, `internal/dexai/agents`, `internal/dexai/agents/session`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/modelprovider/mockmodel`, `internal/dexai/agents/session/subagent`, `internal/dexai/api` and `internal/dexai/bootstrap` import this package.
 
-Dependencies: it imports `internal/comm`, `internal/dexai/agents/session/conversation` and `internal/dexai/agents/session/modelprovider/openaicompat` and calls the Claude Messages API.
+Dependencies: it imports `internal/comm`, `internal/dexai/agents/session/conversation` and `internal/dexai/agents/session/modelprovider/openaicompat` and calls the Claude and compatible Messages APIs and Dex Flow APIs.
 
 ```mermaid
 flowchart LR
@@ -22,7 +22,8 @@ flowchart LR
   self --> d0["internal/comm"]
   self --> d1["internal/dexai/agents/session/conversation"]
   self --> d2["internal/dexai/agents/session/modelprovider/openaicompat"]
-  self --> e0(["Claude Messages API"])
+  self --> e0(["Claude and compatible Messages APIs"])
+  self --> e1(["Dex Flow API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 
@@ -49,6 +50,8 @@ and timeout flag. Provider bodies, request URLs and headers are never formatted.
 | `openaicompat/` | Responses and Chat Completions encoding, bounded stream aggregation and private encrypted replay; currently callable only through the mock transport. |
 | `model_catalog.go` | Closed replay/availability policy and dated unavailable candidate profiles; no new adapter. |
 | `model_profile.go` | `ModelProfile`: what differs between Opus 5.5, Sonnet 5.5, Haiku 4.5 and the mock model, which takes Sonnet 5.5's request shape (thinking, effort, system messages, fallbacks, compaction ceiling, hard limit). |
+| `messages_client.go` | Common Messages request encoding, catalog endpoints, per-request key injection and sanitized compatible-provider error classification. |
+| `messages_stream.go` | Strict compatible event ordering and carrier validation, encrypted replay bounds and complete-stream admission. |
 | `model_router.go` | `ModelRouter`: the client of each call's model, Claude or the mock model. |
 | `claude_client.go` | The request: frozen tools and system prompt, the replayed blocks byte for byte, thinking, effort, betas and the three one-hour cache breakpoints; error classification into retryable errors and `ModelRejectedError`. |
 | `strict_schema.go` | `StrictInputSchema`: the input schema of a strict tool as the API takes it (the SDK's transformation: lengths, ranges and defaults move into the description of their parameter), written with sorted keys so the frozen prompt's digest and the request bytes of the tools are the same in every server process. |
@@ -129,3 +132,57 @@ Studio's Record mappings require every enum and preserve picker filtering. No RP
 primitive is added. SessionModel's revision CAS, segment rollover, subagent frozen selection,
 Flow identities, Step graph, Maps, Channels and Streams are unchanged. There is no database
 migration, new resource, pool, per-request control-plane operation or additional tenant scan.
+
+## Compatible Messages adapter
+
+`messagesClient` is the credential-free adapter for the reviewed DeepSeek Flash,
+MiniMax M3 and Meta Muse Wonder profiles. Its request-local key argument accepts a key only for
+one HTTP request and selects the base URL from `conversation.Provider`; it has no
+secret store, environment credential fallback or user-controlled endpoint. The router still rejects every unavailable catalog model before making an HTTP call. MiniMax M3.1
+Flash remains rejected because its required readable reasoning cannot be persisted.
+
+| Profile | Request control | Replay |
+| --- | --- | --- |
+| DeepSeek Flash | `thinking.type=disabled` | Text and tools only; unexpected thinking is a protocol rejection. |
+| MiniMax M3 | `thinking.type=disabled` | Text and tools only; unexpected thinking is a protocol rejection. |
+| Meta Muse Wonder | `thinking.type=adaptive`, `display=omitted`; bearer authentication | Wire `redacted_thinking.data` becomes canonical `OpaqueReplay` with provider, mode and original block position, at most 256 KiB encoded across a complete reply. Missing or unexpected readable reasoning is rejected. Wonder live verification remains outstanding. |
+
+The catalog owns the Messages thinking control; the encoder selects it from the profile. DeepSeek and MiniMax M3 use explicit disabled thinking, while Meta uses adaptive thinking with omitted display. DeepSeek documents `reasoning.effort` only for Responses, so it is not sent on Messages.
+
+Only common system, message, tool and tool-choice fields are encoded. No Claude beta,
+cache breakpoint, fallback, strict-tool flag, eager streaming or mid-conversation
+system field is inferred from compatibility. Existing Claude signed replay is unchanged.
+Each existing Session/Subagent bootstrap owns its router and HTTP pool.
+The pool refuses redirects and bounds connections per host; each Messages client
+admits at most 64 calls concurrently and refuses overflow immediately with a retryable capacity error; no waiting queue or extra goroutine is created. A key creates no pool or cache entry. Each bootstrap owns disposable pool and admission slots; neither is authoritative business state.
+
+The compatible stream decoder requires a complete `message_stop` before returning a
+reply. Its per-response SSE event budget is 16 MiB; only declared tool names and distinct
+nonempty call IDs may reach provisional tool activity. The served model must match the
+requested catalog ID, stop reasons must be declared, and non-thinking replies may not report
+positive thinking usage. Compatible metrics discard undocumented transformation/refusal
+strings and retain only reviewed identities and numeric usage. Cancelled or interrupted streams return no tool proposals for execution.
+Deterministic 4xx responses use the central `ProviderRequestRejected` reason;
+HTTP 402 uses `ProviderCreditExhausted`, and the SDK's allowlisted `billing_error`
+uses `ProviderBillingProblem`. Key and protocol rejections also use central typed
+reasons with hints. HTTP 408, 429 and 5xx remain retryable under the existing Dex
+Step policy. A valid provider Retry-After on 429/503 returns `dex.RetryAfter` with
+a 30-second minimum; no HTTP slot sleeps. Rejections produce one bounded Warn log
+with call identity, provider, model, code and status. Raw provider bodies, request
+URLs and request IDs are never included in errors or logs. Model calls can still incur
+billing after cancellation; no billing idempotency is claimed.
+
+Official feature controls were rechecked on 2026-10-21 against
+[DeepSeek Messages](https://api-docs.deepseek.com/guides/anthropic_api/),
+[DeepSeek thinking](https://api-docs.deepseek.com/guides/thinking_mode/),
+[MiniMax Messages](https://platform.minimax.io/docs/api-reference/text-anthropic-api), and
+[Meta Messages](https://dev.meta.ai/docs/protocols/messages). These sources describe
+protocol support; mock-wire checks do not establish live-provider acceptance.
+
+`TestCompatibleMessagesProtocolDexIntegration`,
+`TestCompatibleMessagesProtocolFailuresDexIntegration`,
+`TestCompatibleMessagesCompactionDexIntegration` and
+`TestCompatibleMessagesStreamCancellationDexIntegration` send the real encoder's requests to the
+existing mock model's HTTP Messages endpoint. That endpoint checks profile controls,
+authentication and omitted Claude-only fields, and replays synthetic opaque blocks
+exactly. The requests and replies cross real Dex Steps and persistence on an owned test Worker. These tests cover adapter serialization and HTTP behavior, not full Session/Sandbox or live-provider acceptance.
