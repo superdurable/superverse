@@ -1,4 +1,4 @@
-.PHONY: generate generate-proto generate-go generate-web generate-app-template generate-package-readmes \
+.PHONY: resolve-generated generate generate-proto generate-go generate-web generate-app-template generate-package-readmes \
 	generate-studio-readmes build build-web vet compile-tests check check-go check-go-rules check-go-proto \
 	check-web check-web-source check-web-build check-generated check-generated-web \
 	check-app-template check-app-template-source check-app-template-embedded \
@@ -39,6 +39,10 @@ ACTIONLINT_VERSION := v1.7.12
 BUF_VERSION := v1.72.0
 BUF_BINARY ?= $(TOOL_CACHE)/buf-$(BUF_VERSION)
 BUF := "$(BUF_BINARY)"
+
+# Resolve generated conflicts/drift after merging handwritten sources; pass CONTINUE=1 to resume a rebase.
+resolve-generated:
+	@python3 scripts/resolve-generated-conflicts.py $(if $(filter 1,$(CONTINUE)),--continue)
 
 # Generated sources.
 generate: generate-proto generate-go generate-web
