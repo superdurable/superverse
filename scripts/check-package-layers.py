@@ -143,6 +143,7 @@ LEVELS = {
     "internal/dexai/agents/session/subagent": 7,
     "internal/dexai/agents/session/contribution": 7,
     "internal/dexai/agents/session/modelprovider/mockmodel": 7,
+    "internal/dexai/agents/session/modelprovider/mockmodel/summarymodel": 1,
     "internal/dexai/agents": 8,
     "internal/dexai/api/boundary": 9,
     "internal/dexai/agents/remoteagent": 9,

@@ -790,3 +790,18 @@ existing tool concurrency and subagent limit. No cloud control-plane call or ten
 per gate. Existing Sandbox, Flow, Git and storage quotas and the 10,000-Project / 100,000-deployment
 capacity target are unchanged; their limits and dated sources remain in the owning architecture
 documents.
+
+## Local application model verification
+
+Local Native and Local Kind enable `connections.mockLLM` for the template summary
+connection. The platform serves deterministic Responses API answers on its existing
+credential listener and injects `SUPERVERSE_LOCAL_MOCK_LLM_URL` into workload grants.
+The shared template connection opening passes a guarded `llm.WithHTTPClient` only
+when that reserved setting is present; hosted connection opening remains unchanged.
+The target must be the platform credential broker's own mock route and the bearer
+credential must be the fixed non-secret synthetic value. No real provider credential
+is forwarded and no provider fallback exists. No connector mock package enters
+production source. The E2E cases exercise the real connector, application, Dex,
+Sandbox, Git host and storage, with the model as the sole substituted dependency.
+See the [local verification seam](../../../app-template/README.md#local-verification-model-transport)
+and [runbook](../../runbooks/local-native.md#actual-acceptance) for the approved real-LLM opt-in.

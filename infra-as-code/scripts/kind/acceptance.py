@@ -72,7 +72,8 @@ def e2e(_args):
                 "coverage would include; delete the server Pod, run sv2 kind deploy again and restart sv2 kind ports")
         results = run_browser_cases(KIND_ACCEPTANCE_DIRECTORY, fence, browser_node, check_environment_identity, lane="Kind",
                                     studio=f"http://localhost:{FORWARDS['studio'].local_port}", git=GIT, local_git_url=git_host.HOST_URL,
-                                    repository_host=git_host.repository_host(value["deploymentInputs"]["config"]["input"]))
+                                    repository_host=git_host.repository_host(value["deploymentInputs"]["config"]["input"]),
+                                    mock_llm=bool(value["deploymentInputs"]["config"]["input"].get("connections", {}).get("mockLLM")))
         current = state()
         require(current.get("deployedImages") == deployed_images and current.get("images") == deployed_images and
                 current.get("runtimeIdentity") == runtime_identity and build_inputs.kind_behavior_fingerprint() == fingerprint and
@@ -85,7 +86,7 @@ def e2e(_args):
         receipt = {"schema": 2, "runtimeIdentity": runtime_identity, "environment": "local-kind", "cluster": CLUSTER, "sourceFingerprint": fingerprint,
                    "commonSourceFingerprint": value["commonSourceFingerprint"], "images": deployed_images, "deploymentInputs": value["deploymentInputs"],
                    "serverConfiguration": value["deploymentInputs"]["config"]["profile"],
-                   "mockModel": bool(value["deploymentInputs"].get("mockModel")), "agentModel": value["deploymentInputs"].get("agentModel"), "modelTarget": target,
+                   "mockModel": bool(value["deploymentInputs"].get("mockModel")), "agentModel": value["deploymentInputs"].get("agentModel"), "modelTarget": target, "applicationModel": "mock" if value["deploymentInputs"]["config"]["input"].get("connections", {}).get("mockLLM") else "real",
                    "cases": results, "passedAt": int(time.time()), "browserNode": browser_node}
         write_private_json(RECEIPT, receipt)
         # Only normal completion of every case and final proof removes the fence.

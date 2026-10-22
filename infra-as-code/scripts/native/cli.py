@@ -420,6 +420,7 @@ def acceptance(instance, topology, record, directory, browser_node, args):
         coverage.mkdir(parents=True, mode=0o700)
         results = run_browser_cases(directory / "e2e", fence, browser_node, check_environment_identity, lane="Native", studio=topology.studio_origin, git=instance.git,
                                     local_git_url=topology.local_git_url, repository_host=repository_host(record["configuration"]["document"]),
+                                    mock_llm=bool(record["configuration"]["document"].get("connections", {}).get("mockLLM")),
                                     coverage_directory=coverage, runId=record["runId"])
         current = require_run(instance, args, running=True)
         require_studio_unchanged(record, directory)
@@ -432,6 +433,7 @@ def acceptance(instance, topology, record, directory, browser_node, args):
                    "serverConfiguration": {key: record["configuration"][key] for key in ("profile", "sha256", "layers")},
                    "mockModel": bool(document.get("agent", {}).get("mockModel")), "agentModel": document.get("agent", {}).get("model"),
                    "repositoryHost": repository_host(document),
+                   "applicationModel": "mock" if document.get("connections", {}).get("mockLLM") else "real",
                    "timings": {"startupSeconds": round(record["readyAt"] - record["startedAt"]), "casesSeconds": round(time.time() - started)},
                    "cases": results, "passedAt": time.time(), "browserNode": browser_node}
         write_private_json(instance.receipt, receipt)

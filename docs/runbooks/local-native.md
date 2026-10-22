@@ -394,21 +394,27 @@ long-running `sv2 kind ports` ends with it, and `sv2 kind builder` keeps the nod
 
 ## Actual acceptance
 
-Application connectors (the template's summary model) are separate from the Agent's model and
-also follow the mock verification default. Currently `create-project.spec.ts` and
-`template-approval.spec.ts` require a real OpenAI connection through `SUPERVERSE_E2E_OPENAI_FILE`,
-even when the Agent uses mock. Until the mock LLM follow-up lands, these cases require the
-approved strong-reason exception or are skipped with the owner's waiver; skipped cases are not
-acceptance.
+Application connectors follow the same mock default as the Agent. `connections.mockLLM`
+is enabled by the local profiles and the platform injects its reserved mock endpoint into
+Preview and Live. The template opens the released LLM connector with a guarded local HTTP
+transport; it accepts only the fixed synthetic key, calls the platform's deterministic
+Responses endpoint, and refuses every real provider request. Hosted connection opening
+is unchanged. No OpenAI key or private key file is required or read by the default cases.
 
-With an owner started with `--studio build` and ready, the three real browser cases run on the local Git host and the
-mock model; a Session switched to Claude needs its Project key. Real-model acceptance uses the test support credential helper to submit the developer key through `ModelCredentialService` outside browser tracing, then resumes the initial request; it requires an explicitly requested real-model run. `create-project.spec.ts` and `template-approval.spec.ts` also
-need `SUPERVERSE_E2E_OPENAI_FILE` for the template's OpenAI connection
-([E2E contract](../../web/studio/tests/e2e/README.md)).
+With an owner started with `--studio build` and ready, run all three browser cases:
 
 ```sh
-SUPERVERSE_E2E_OPENAI_FILE=<private file> ./infra-as-code/sv2 native e2e --run-id <run-id>
+env -u SUPERVERSE_E2E_OPENAI_FILE ./infra-as-code/sv2 native e2e --run-id <run-id>
 ```
+
+The cases still configure the summary connection through Setup, execute Preview and Live
+summaries, and assert the returned model, deterministic text and positive token counts.
+A real LLM variant needs the platform developer's explicit approval before running:
+start a separate run with a local configuration layer `connections.mockLLM: false`,
+set `SUPERVERSE_E2E_LLM=real` and `SUPERVERSE_E2E_REAL_LLM_APPROVAL` to the recorded
+approval reason, then supply the private OpenAI key file. The same approval rule applies
+to real Agent models; a Session switched to Claude needs its Project key. Neither
+opt-in grants approval by itself.
 
 For credential-bearing runs, set `SUPERVERSE_E2E_CAPTURE=off` to disable browser traces and screenshots and
 `PLAYWRIGHT_NO_COPY_PROMPT=1` to suppress Playwright's failure-page snapshot. Assertions, JSON results and

@@ -34,5 +34,5 @@ confirmation says Live keeps running its version, `CancelReleaseBuild` is sent f
 bar stops at Build and reads "Publishing cancelled", Live's pointer is unchanged, the build ends
 CANCELLED with who cancelled it and no deployment, and Live's history lists the cancelled publish.
 
-Both require the mock model offered and `SUPERVERSE_E2E_OPENAI_FILE`, and stop Live and delete the
+Both require the mock model offered and the local platform mock LLM (no OpenAI key file), and stop Live and delete the
 Project at the end. The helpers they build the fixture from are in `tests/e2e/support/configuration/`.

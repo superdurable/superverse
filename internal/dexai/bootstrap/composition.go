@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/superdurable/dex/blob-cache-go/blobcache"
@@ -37,6 +38,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/contribution"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/mockmodel"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/mockmodel/summarymodel"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/subagent"
 	"github.com/superdurable/superversev2/internal/dexai/api"
 	"github.com/superdurable/superversev2/internal/dexai/api/boundary"
@@ -46,6 +48,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/delivery/releases"
 	"github.com/superdurable/superversev2/internal/dexai/projects"
 	projectconfig "github.com/superdurable/superversev2/internal/dexai/projects/config"
+	"github.com/superdurable/superversev2/internal/dexai/projects/infra"
 	"github.com/superdurable/superversev2/internal/dexai/projects/projectdao"
 	"github.com/superdurable/superversev2/internal/dexai/projects/repobinding"
 	"github.com/superdurable/superversev2/internal/dexai/projects/setup"
@@ -182,6 +185,14 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	contributions := contribution.NewConnectorContributionFlowBootstrap(sessionService, config.connectors, config.connectors, config.connectors, projectDiagnostics)
 	// A Session's background command is watched by a SubFlow on the same pooled Sandbox resolver.
 	backgroundCommands := backgroundcommand.NewBackgroundCommandFlowBootstrap(sessionAgent.Workspace())
+	if config.mockLLM {
+		endpoint, parseErr := url.Parse(config.credentialReadURL)
+		if parseErr != nil {
+			return nil, parseErr
+		}
+		endpoint.Path = summarymodel.Path
+		providers.grants = localModelGrants{Grants: providers.grants, endpoint: endpoint.String()}
+	}
 	previewConfiguration := preview.NewPreviewConfiguration(projectClient, config.host, config.objects, configuration, providers.storage, providers.grants, providers.cleanup)
 	issues := platformissue.NewPlatformIssueFlowBootstrap(config.issues, config.environment, logger)
 	workspaces := sessionworkspace.NewSessionWorkspaceFlowBootstrap(sessionAgent.Instances(), sessionAgent.Workspace(), sessionService)
@@ -310,8 +321,26 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	credentials := http.NewServeMux()
 	credentials.Handle(connections.CredentialReadPath, connections.NewReadEndpoint(credentialReader))
 	credentials.HandleFunc(slackrelay.RegistrationPath, slack.ServeRegistration)
+	if config.mockLLM {
+		credentials.Handle(summarymodel.Path, summarymodel.New(logger))
+	}
 	remoteEndpoint := remoteagent.NewEndpoint(remoteService, config.remoteAgent.DownloadsDir, logger, config.remoteAgent.MaxLongPolls, config.remoteAgent.MaxConcurrentReads, config.remoteAgent.MaxConcurrentReports)
 	owned.add(func() error { remoteEndpoint.Close(); return nil })
 	return &composition{dex: client, worker: worker, business: business, routes: providers.routes, credentials: credentials, slack: slack,
 		remoteAgent: remoteEndpoint}, nil
+}
+
+// localModelGrants injects a reserved platform setting, outside application configuration.
+type localModelGrants struct {
+	infra.Grants
+	endpoint string
+}
+
+func (g localModelGrants) GrantEnvironment(ctx context.Context, workload infra.Workload) (map[string]string, error) {
+	environment, err := g.Grants.GrantEnvironment(ctx, workload)
+	if err != nil {
+		return nil, err
+	}
+	environment["SUPERVERSE_LOCAL_MOCK_LLM_URL"] = g.endpoint
+	return environment, nil
 }

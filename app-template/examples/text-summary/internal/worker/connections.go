@@ -19,7 +19,15 @@ type Connections struct {
 // OpenConnections opens every declared connection with its connector's
 // generated NewProjectConnection. Add one field and one line per connection.
 func OpenConnections(configuration connectorconfiguration.Configuration) (Connections, error) {
-	summaryModel, err := llm.NewProjectConnection(configuration.Project(), process.TextSummaryConnectionName)
+	httpClient, err := configuration.LocalModelHTTPClient()
+	if err != nil {
+		return Connections{}, err
+	}
+	var options []llm.Option
+	if httpClient != nil {
+		options = append(options, llm.WithHTTPClient(httpClient))
+	}
+	summaryModel, err := llm.NewProjectConnection(configuration.Project(), process.TextSummaryConnectionName, options...)
 	if err != nil {
 		return Connections{}, fmt.Errorf("configure %s connection: %w", process.TextSummaryConnectionName, err)
 	}

@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,6 +24,7 @@ import (
 	serverconfig "github.com/superdurable/superversev2/cmd/superverse-server/config"
 	"github.com/superdurable/superversev2/internal/comm/dexflow/dexflowtest"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/mockmodel/summarymodel"
 	"github.com/superdurable/superversev2/internal/dexai/tenancy/teamspaces"
 )
 
@@ -175,5 +177,44 @@ func TestPlatformPushWorkerCompositionIntegration(t *testing.T) {
 	if renamed.Name != "Real composed Worker renamed" || renamed.Revision != 2 {
 		t.Fatal("composed handler did not persist its authoritative TeamSpace update")
 	}
+	requireLocalSummaryEndpoint(t, ctx, settings)
 	t.Logf("FlowID=%s invoked the actual production assembly through an isolated push target and reached revision %d", flowid.TeamSpaceFlowID(id), renamed.Revision)
+}
+
+// The endpoint is the actual Native server's listener, alongside the real Dex composition above.
+func requireLocalSummaryEndpoint(t *testing.T, ctx context.Context, settings serverconfig.Config) {
+	t.Helper()
+	if !settings.Connections.MockLLM {
+		t.Fatal("the local integration lane must enable its application model mock")
+	}
+	endpoint := "http://" + settings.Connections.ReadListen + summarymodel.Path
+	client := &http.Client{Timeout: 10 * time.Second}
+	for _, key := range []string{"synthetic-rejected-key", summarymodel.APIKeyForTest} {
+		payload := fmt.Sprintf(`{"model":%q,"stream":true,"input":[{"role":"user","content":"Durable application state survives restarts."}]}`, summarymodel.ModelForTest)
+		request, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(payload))
+		if err != nil {
+			t.Fatal(err)
+		}
+		request.Header.Set("Authorization", "Bearer "+key)
+		request.Header.Set("Content-Type", "application/json")
+		response, err := client.Do(request)
+		if err != nil {
+			t.Fatal("read the actual Native mock LLM endpoint:", err)
+		}
+		body, err := io.ReadAll(io.LimitReader(response.Body, 64<<10))
+		closeErr := response.Body.Close()
+		if err != nil || closeErr != nil {
+			t.Fatal("read and close the mock response")
+		}
+		if key != summarymodel.APIKeyForTest {
+			if response.StatusCode != http.StatusUnauthorized {
+				t.Fatal("the model endpoint accepted another credential")
+			}
+			continue
+		}
+		if response.StatusCode != http.StatusOK || !strings.Contains(string(body), `"type":"response.completed"`) || !strings.Contains(string(body), summarymodel.ModelForTest) || !strings.Contains(string(body), "Local mock summary: Durable application state survives restarts.") {
+			t.Fatal("the model endpoint did not return its deterministic streamed summary")
+		}
+	}
+	t.Log("Actual local model endpoint refused a different synthetic credential and served its deterministic streamed summary")
 }

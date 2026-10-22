@@ -25,6 +25,6 @@ value in Setup's Preview column. Setup on the Live tab must show its banner with
 nothing waiting; the summary connection and `SUMMARY_GREETING` are Live's own; a new greeting of Live's own
 waits for a publish, with the blue dot naming what Live runs, and following Preview again leaves nothing
 waiting; "Same as Preview" makes the connection follow Preview's with `followPreview`. It needs the mock
-model, the private OpenAI key file `SUPERVERSE_E2E_OPENAI_FILE` names for the summary connection, and removes
+model, the local platform mock LLM (no OpenAI key file) for the summary connection, and removes
 Live and the Project when it ends. The helpers it builds the fixture from are in
 `tests/e2e/support/configuration/`.

@@ -352,6 +352,9 @@ func (c Config) validateConnections() []error {
 	var problems []error
 	fail := func(format string, args ...any) { problems = append(problems, fmt.Errorf(format, args...)) }
 	settings := c.Connections
+	if settings.MockLLM && (!c.LocalKind || !c.Agent.MockModel) {
+		fail("connections.mockLLM requires a local lane with agent.mockModel")
+	}
 	if _, port, err := net.SplitHostPort(settings.ReadListen); err != nil || !validPort(port) {
 		fail("connections.readListen must be a host:port address")
 	} else if c.Runtime == RuntimeKubernetes && port != strconv.Itoa(infra.CredentialReadPort) {

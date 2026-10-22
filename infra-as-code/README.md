@@ -190,7 +190,7 @@ registry.
 ```sh
 ./infra-as-code/sv2 native start [--studio build]
 ./infra-as-code/sv2 native restart-server --run-id <run-id>   # the Worker restart tests
-SUPERVERSE_E2E_OPENAI_FILE=<private file> ./infra-as-code/sv2 native e2e --run-id <run-id>
+env -u SUPERVERSE_E2E_OPENAI_FILE ./infra-as-code/sv2 native e2e --run-id <run-id>
 ./infra-as-code/sv2 native stop --run-id <run-id>             # or recover after a crash
 ```
 

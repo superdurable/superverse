@@ -306,6 +306,8 @@ func (m PostgresSSLMode) Validate() error {
 // where the platform's provider calls may connect, and the OAuth clients the
 // platform registered (docs/architecture/teamspace/connections.md).
 type ConnectionsConfig struct {
+	// MockLLM serves deterministic application model responses in the local lanes only.
+	MockLLM bool `yaml:"mockLLM"`
 	// ReadListen is the address the credential read endpoint binds, apart
 	// from every other listener.
 	ReadListen string `yaml:"readListen"`

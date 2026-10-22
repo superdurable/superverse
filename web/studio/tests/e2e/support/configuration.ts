@@ -133,6 +133,18 @@ async function requireSelectionSaved(response: Response) {
   );
 }
 
+export const MOCK_SUMMARY_MODEL = "superverse-mock-summary";
+const MOCK_SUMMARY_KEY = "superverse-local-mock-llm-not-a-secret";
+
+/** Real connector verification requires explicit approval and a separately configured local profile. */
+export function usesMockSummaryModel(): boolean {
+  const mode = process.env.SUPERVERSE_E2E_LLM ?? "mock";
+  if (mode !== "mock" && mode !== "real") throw new Error("SUPERVERSE_E2E_LLM must be mock or real");
+  if (mode === "real" && !process.env.SUPERVERSE_E2E_REAL_LLM_APPROVAL?.trim())
+    throw new Error("Real LLM verification requires the platform developer's recorded approval reason");
+  return mode === "mock";
+}
+
 // The private file holds {"apiKey":"sk-..."}; missing configuration fails the case.
 async function readPrivateOpenAIKey(): Promise<string> {
   const keyFile = process.env.SUPERVERSE_E2E_OPENAI_FILE;
@@ -224,7 +236,10 @@ async function fillSetupConnection(
   await expect(trigger).toBeEnabled({ timeout: 30_000 });
   await trigger.click();
   const listbox = page.getByRole("listbox");
-  if ((await listbox.getByRole("option", { selected: true }).count()) > 0) {
+  const mock = usesMockSummaryModel();
+  const connectionLabel = mock ? "Local mock LLM" : "OpenAI";
+  const selected = listbox.getByRole("option", { selected: true });
+  if ((await selected.count()) > 0 && (!mock || (await selected.innerText()).includes(connectionLabel))) {
     await page.keyboard.press("Escape");
     await expect(listbox).toHaveCount(0);
     return;
@@ -234,16 +249,17 @@ async function fillSetupConnection(
     .filter({ hasNotText: NEW_CONNECTION })
     .filter({ hasNotText: "Same as Preview" });
   const saved = page.waitForResponse(selectionSaved);
-  if ((await choices.count()) > 0) await choices.first().click();
+  const eligible = mock ? choices.filter({ hasText: connectionLabel }) : choices;
+  if ((await eligible.count()) > 0) await eligible.first().click();
   else {
     await listbox.getByRole("option", { name: NEW_CONNECTION, exact: true }).click();
     const editor = checklist.getByTestId("new-connection-inline").getByTestId("team-space-connection-editor");
-    await editor.getByLabel("Connection name", { exact: true }).fill(`OpenAI ${Date.now().toString(36)}`);
+    await editor.getByLabel("Connection name", { exact: true }).fill(`${connectionLabel} ${Date.now().toString(36)}`);
     await chooseOption(editor.getByRole("button", { name: /^Provider/ }), "openai");
     // The model is an optional setting, folded until opened.
     const model = editor.getByLabel(/^Model/);
     if (!(await model.isVisible())) await editor.getByRole("button", { name: /^Optional settings/ }).click();
-    await model.fill("gpt-5-mini");
+    await model.fill(mock ? MOCK_SUMMARY_MODEL : "gpt-5-mini");
     await safeFill(editor.getByLabel(/^API key/), key);
     await editor.getByRole("button", { name: "Save", exact: true }).click();
   }
@@ -256,5 +272,7 @@ async function fillSetupConnection(
 
 // The application template declares one llm connection for TextSummaryFlow.
 export const fillTemplateSummaryConnection: SetupFill = async (page, side = setupSideOf(page)) => {
-  await fillOpenAIConnection(page, await readPrivateOpenAIKey(), "summary-model", side);
+  // The default path never reads the private file or any provider credential.
+  const key = usesMockSummaryModel() ? MOCK_SUMMARY_KEY : await readPrivateOpenAIKey();
+  await fillOpenAIConnection(page, key, "summary-model", side);
 };

@@ -21,8 +21,8 @@ interface ExampleDesignImport {
 
 /** Every example's design, by example ID; the default example's is app-template.json. */
 export const EXAMPLE_DESIGNS: Readonly<Record<string, ExampleDesignImport>> = {
-  "text-summary": { tree: "02a36d5749d8a068337418d9fe91f93433480f59", definitions: () => import("./app-template.json") },
-  "github-releases-newsletter": { tree: "7046ab9ba1d0209069945de52810e545f4ee89dd", definitions: () => import("./examples/github-releases-newsletter.json") },
-  "slack-thread-approval": { tree: "3be318950fffc699c8c86dbbab6974034f4c777e", definitions: () => import("./examples/slack-thread-approval.json") },
-  "summary-approval": { tree: "0ba3c5821d5a7b7fc30b4e4e689d4401ee9e97be", definitions: () => import("./examples/summary-approval.json") },
+  "text-summary": { tree: "a8a3c36c6ed30e41d353fd24bf8eb99fdd53330c", definitions: () => import("./app-template.json") },
+  "github-releases-newsletter": { tree: "3fe970987b1f16dcbb5c30ecc622aa0d9bae3b79", definitions: () => import("./examples/github-releases-newsletter.json") },
+  "slack-thread-approval": { tree: "7f6efd5abc3e4011c9f1aee18ba2b5303b9c78f3", definitions: () => import("./examples/slack-thread-approval.json") },
+  "summary-approval": { tree: "84b89a872c541735af624359177f6726ab47ecb4", definitions: () => import("./examples/summary-approval.json") },
 };

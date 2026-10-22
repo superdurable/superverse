@@ -766,7 +766,6 @@
     "files": {
       "adds": [
         "AGENTS.md",
-        "README.md",
         "dex-app.yaml",
         "internal/api/handler.go",
         "internal/apptest/newsletter_test.go",
@@ -779,6 +778,7 @@
         "web/src/styles.css"
       ],
       "replaces": [
+        "README.md",
         "cmd/server/main.go",
         "go.mod",
         "go.sum",

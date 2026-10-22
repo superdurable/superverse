@@ -70,7 +70,7 @@ Preview has nothing left to apply. In the Next publish column the
 variable follows Preview, becomes Live's own through "Different on Live…", written to the next-publish
 layer under the one "Saving…", and follows Preview again with `followPreview`, as the layer's items report.
 It requires the lane's Studio, server, Dex and local Git host with the mock model offered, and
-`SUPERVERSE_E2E_OPENAI_FILE` for the connection. It deletes the Project at the end.
+the local platform mock LLM (no OpenAI key file) for the connection. It deletes the Project at the end.
 
 `timeline/environment-timeline.spec.ts` creates a template Project on the mock model and lets its first push reach
 the Preview, which refuses it. The History under the Interface's Preview must list that start as one row: the Agent

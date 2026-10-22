@@ -59,6 +59,7 @@ postgres:
 # the server Service's credential-read port; provider calls may use plain http
 # to the chart's local OAuth server.
 connections:
+  mockLLM: true
   readURL: http://superverse-v2-server.superverse-v2-system.svc.cluster.local:8086/internal/connection-credentials/read
   allowInsecureOAuthEndpoints: true
 

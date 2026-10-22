@@ -19,6 +19,14 @@ type Connections struct {
 }
 
 func OpenConnections(configuration connectorconfiguration.Configuration) (Connections, error) {
+	httpClient, err := configuration.LocalModelHTTPClient()
+	if err != nil {
+		return Connections{}, err
+	}
+	var options []llm.Option
+	if httpClient != nil {
+		options = append(options, llm.WithHTTPClient(httpClient))
+	}
 	githubConnection, err := github.NewProjectConnection(configuration.Project(), process.GitHubConnectionName)
 	if err != nil {
 		return Connections{}, fmt.Errorf("configure GitHub connection: %w", err)
@@ -27,7 +35,7 @@ func OpenConnections(configuration connectorconfiguration.Configuration) (Connec
 	if err != nil {
 		return Connections{}, fmt.Errorf("configure Slack connection: %w", err)
 	}
-	openAIConnection, err := llm.NewProjectConnection(configuration.Project(), process.LLMConnectionName)
+	openAIConnection, err := llm.NewProjectConnection(configuration.Project(), process.LLMConnectionName, options...)
 	if err != nil {
 		return Connections{}, fmt.Errorf("configure OpenAI connection: %w", err)
 	}

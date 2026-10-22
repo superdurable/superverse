@@ -124,6 +124,7 @@ type serverConfig struct {
 	// plain http to loopback and private addresses, in the local lanes only;
 	// platformClients are the platform's OAuth applications.
 	credentialRead, credentialReadURL string
+	mockLLM                           bool
 	remoteAgent                       serverconfig.RemoteAgentConfig
 	privateProviderHTTP               bool
 	platformClients                   connections.PlatformClients
@@ -243,6 +244,7 @@ func loadConfig(ctx context.Context, logger *slog.Logger, settings serverconfig.
 		return c, err
 	}
 	c.credentialRead, c.credentialReadURL = settings.Connections.ReadListen, settings.Connections.ReadURL
+	c.mockLLM = settings.Connections.MockLLM
 	c.remoteAgent = settings.RemoteAgent
 	c.privateProviderHTTP = settings.Connections.AllowInsecureOAuthEndpoints
 	if c.platformClients, err = platformOAuthClients(settings.Connections.PlatformClients); err != nil {

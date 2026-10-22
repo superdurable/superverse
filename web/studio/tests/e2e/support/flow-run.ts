@@ -9,19 +9,24 @@
 import { expect, test, type Page, type Request } from "@playwright/test";
 import type { FlowV2Action, FlowV2Definition } from "@/lib/api/flow/flow-definition";
 import type { FlowDisplay, FlowRuntimeCatalog } from "@/lib/api/flow/flow-types";
+import { MOCK_SUMMARY_MODEL, usesMockSummaryModel } from "./configuration";
 import { readProject, readSession } from "./project";
 
 const summaryText =
   "Dex keeps application state in durable Flows. Build prepares and deploys the current pushed Sandbox commit as Preview. Publishing builds an immutable Release and deploys Live. Preview and Live keep their own configuration and credentials.";
 
 // The template's public form calls its own API, which starts TextSummaryFlow and
-// polls the read-only snapshot. This is a real provider call; nothing is faked.
+// polls the read-only snapshot through the real connector and the selected model endpoint.
 export async function exerciseTextSummaryInApplication(app: Page) {
   await app.getByLabel("Text to summarize", { exact: true }).fill(summaryText);
   await app.getByRole("button", { name: "Summarize", exact: true }).click();
   const result = app.locator("dl");
   await expect(result.getByText("completed", { exact: true })).toBeVisible({ timeout: 5 * 60_000 });
   await expect(app.locator(".summary")).not.toBeEmpty();
+  if (usesMockSummaryModel()) {
+    await expect(app.locator(".summary")).toContainText("Local mock summary:");
+    await expect(result).toContainText(MOCK_SUMMARY_MODEL);
+  }
   await expect(result).not.toContainText("Not reported");
 }
 
@@ -131,6 +136,10 @@ async function expectSummaryCompleted(
   const completed = await run.read();
   expect(String(completed.display["summary-text"]).length).toBeGreaterThan(0);
   expect(String(completed.display["summary-model"]).length).toBeGreaterThan(0);
+  if (usesMockSummaryModel()) {
+    expect(completed.display["summary-model"]).toBe(MOCK_SUMMARY_MODEL);
+    expect(completed.display["summary-text"]).toContain("Local mock summary:");
+  }
   expect(Number(completed.display["total-tokens"])).toBeGreaterThan(0);
   expect(completed.eligibleActions).toEqual([]);
   await page.reload();

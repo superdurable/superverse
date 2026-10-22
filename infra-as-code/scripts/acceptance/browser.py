@@ -72,7 +72,7 @@ def acceptance_signals():
 
 
 def run_browser_cases(cases_root, fence, browser_node, check_environment_identity, *, lane, studio, git, local_git_url, repository_host,
-                      coverage_directory=None, **admission_extra):
+                      mock_llm, coverage_directory=None, **admission_extra):
     """Admit every real case under a new private directory of `cases_root` and run them in order.
 
     The specs read the Session's model from its Snapshot and drive a mock Session through the mock composer.
@@ -82,11 +82,16 @@ def run_browser_cases(cases_root, fence, browser_node, check_environment_identit
     build with browser source maps. Only normal completion of all cases yields results. The caller owns the final proof, its
     receipt and removing the fence; any failure leaves the fence for explicit reconciliation.
     """
+    llm_mode = os.environ.get("SUPERVERSE_E2E_LLM", "mock")
+    require(llm_mode in {"mock", "real"}, "SUPERVERSE_E2E_LLM must be mock or real")
+    require(mock_llm == (llm_mode == "mock"), "Application LLM mode must match connections.mockLLM in the deployed local profile")
+    if llm_mode == "real":
+        require(bool(os.environ.get("SUPERVERSE_E2E_REAL_LLM_APPROVAL", "").strip()), "Real LLM verification requires the platform developer's recorded approval reason")
     require(all((ROOT / "web/studio/tests/e2e" / case).is_file() for case in CASES), "All three real browser specs must exist; no partial receipt")
     directory = cases_root / str(time.time_ns())
     directory.mkdir(parents=True, mode=0o700)
     admission = {"schema": 1, **admission_extra, "ownerProcess": process_identity(os.getpid()), "browserNode": browser_node,
-                 "directory": str(directory), "startedAt": time.time(), "phase": "ADMITTED"}
+                 "directory": str(directory), "applicationModel": llm_mode, "startedAt": time.time(), "phase": "ADMITTED"}
     write_private_json(fence, admission)
     results = []
     for case in CASES:

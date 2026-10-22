@@ -76,6 +76,7 @@ remoteAgent:
 # the applications' containers reach it through host.docker.internal; provider
 # calls may use plain http to the local OAuth server.
 connections:
+  mockLLM: true
   readListen: 127.0.0.1:26087
   readURL: http://host.docker.internal:26087/internal/connection-credentials/read
   # The Slack event relay's events listener; only tests post to it locally.
