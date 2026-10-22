@@ -23,12 +23,16 @@ import (
 
 	pb "github.com/superdurable/superversev2/gen/superverse/v2"
 	"github.com/superdurable/superversev2/internal/comm"
+	"github.com/superdurable/superversev2/internal/comm/dexflow/dexflowtest"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/app/apptemplate"
 	"github.com/superdurable/superversev2/internal/dexai/projects/projecttest"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 // The real-model comparison of the closest-example start. It calls Claude
@@ -139,7 +143,7 @@ func TestLiveExampleComparison(t *testing.T) {
 		t.Fatalf("TestLiveExampleComparison calls the real model: run it with make test-example-comparison-live, which sets %s=%s", exampleComparisonSwitch, exampleComparisonSwitchOn)
 	}
 	if strings.TrimSpace(os.Getenv("ANTHROPIC_API_KEY")) == "" {
-		t.Fatal("ANTHROPIC_API_KEY is required: the lane's server reads the same key from the main checkout's .env, which the make target passes")
+		t.Fatal("ANTHROPIC_API_KEY is required: the comparison submits the developer key through ModelCredentialService")
 	}
 	codingImage := os.Getenv(exampleComparisonCodingImage)
 	if !strings.Contains(codingImage, "@sha256:") {
@@ -187,7 +191,50 @@ func runComparison(ctx context.Context, t *testing.T, lane closestExampleLane, s
 	if run.revision != revision {
 		t.Fatalf("run %d (%s) starts Project %s from %q, not %s", run.number, run.arm(), run.projectID, run.revision, revision)
 	}
+	activateComparisonCredential(deadline, t, lane, run.projectID)
 	observeComparisonRun(deadline, t, lane, run)
+}
+
+// activateComparisonCredential enters the developer key through the actual lane API,
+// then explicitly resumes the original request after its keyless first turn.
+func activateComparisonCredential(ctx context.Context, t *testing.T, lane closestExampleLane, project string) {
+	t.Helper()
+	connection, err := grpc.NewClient(dexflowtest.Setting(t, "SUPERVERSE_TEST_API_ADDRESS"), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatal("connect to comparison credential API")
+	}
+	defer connection.Close()
+	// registerCaller uses the email's random nonce as this synthetic account's password.
+	email := lane.creator.GetCanonicalEmail()
+	password := strings.TrimPrefix(strings.TrimSuffix(email, "@example.com"), "read-model-")
+	accounts := pb.NewAccountServiceClient(connection)
+	response, err := accounts.Login(ctx, &pb.LoginRequest{Email: email, Password: password})
+	if err != nil {
+		t.Fatalf("sign in comparison creator (%s)", status.Code(err))
+	}
+	login := response.GetLogin()
+	if login.GetAccount().GetAccountId() != lane.creator.GetAccountId() {
+		t.Fatal("comparison login returned another creator")
+	}
+	caller := &pb.CallerContext{AccountId: login.GetAccount().GetAccountId(), CanonicalEmail: login.GetAccount().GetEmail(), SessionToken: login.GetSessionToken()}
+	defer func() {
+		cleanup, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if _, err := accounts.Logout(cleanup, &pb.LogoutRequest{Caller: caller}); err != nil {
+			t.Errorf("revoke comparison credential login (%s)", status.Code(err))
+		}
+	}()
+	id := agentloop.SessionFlowID(project)
+	awaitSessionSnapshot(ctx, t, lane.sessions, id, "the keyless initial turn to finish", func(agent agentloop.AgentSnapshot) bool {
+		return agent.Description.Status == agentloop.AgentStatusWaitingForMessage && agent.Description.Turn > 0
+	})
+	revision := uint64(0)
+	if _, err = pb.NewModelCredentialServiceClient(connection).SetModelCredential(ctx, &pb.SetModelCredentialRequest{ProjectId: project, Provider: pb.ModelProvider_MODEL_PROVIDER_ANTHROPIC, RequestId: flowid.RandomID(24), ExpectedRevision: &revision, ApiKey: strings.TrimSpace(os.Getenv("ANTHROPIC_API_KEY")), Caller: caller}); err != nil {
+		t.Fatalf("set comparison Project credential (%s)", status.Code(err))
+	}
+	if _, err = pb.NewAgentServiceClient(connection).SendMessage(ctx, &pb.SendMessageRequest{ProjectId: project, MessageId: flowid.RandomID(24), Text: "Continue with the original request now that this Project's model key is set.", Caller: caller}); err != nil {
+		t.Fatalf("resume comparison request (%s)", status.Code(err))
+	}
 }
 
 // requireLabelledComparisonRequest fails unless the comparison's request is

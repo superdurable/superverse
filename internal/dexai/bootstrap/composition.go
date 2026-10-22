@@ -244,7 +244,9 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	sessionService.Provisions = provisioning.Client(client, dexpb.NewFlowServiceClient(executions))
 	sessionService.Workspaces = workspaces.Client(client, dexpb.NewFlowServiceClient(executions))
 	sessionAgentClient := sessionAgent.Client(client, dexpb.NewFlowServiceClient(executions))
-	sessionService.Agent, sessionService.Subagents, sessionService.Issues, sessionService.Contributions = sessionAgentClient, subagents.Client(client), issues.Client(client), contributions.Client(client)
+	sessionService.Agent, sessionService.Subagents, sessionService.Issues, sessionService.Contributions = sessionAgentClient, subagents.Client(client, dexpb.NewFlowServiceClient(executions)), issues.Client(client), contributions.Client(client)
+	sessionService.ModelCredentials = &agents.ModelCredentialFlowService{Sessions: sessionAgentClient, Subagents: sessionService.Subagents, HTTP: modelprovider.NewProviderHTTPClient(), Logger: logger, ValidationBaseURL: config.agent.Claude.BaseURL}
+	owned.add(sessionService.ModelCredentials.Close)
 	sessionService.BackgroundCommands = backgroundCommands.Client(client)
 	worker, err := dex.NewWorker(registry, cache, config.dexWorker)
 	if err != nil {
@@ -290,8 +292,8 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 		Releases: releaseClient, Deployments: deploymentClient, Publishing: publishingService, RecentEvents: slack,
 		Attachments: attachmentClient, Renditions: renditions, AttachmentAdmission: attachments.NewAttachmentFlowService(attachmentClient, projectClient, config.attachmentsPerMessage),
 		Connections: tenancy.Connections{Connections: shared.Connections, Access: connectionDAO, StudioOrigin: config.oauthCallbackOrigin, Unrouted: slack},
-		// The Claude models need the key; the mock model needs agent.mockModel.
-		SessionModels:      api.SessionModels{Claude: config.agent.Claude.APIKey != "", Mock: config.mockModel, Local: config.localKind},
+		// Claude credentials belong to each Project; mock availability is configured.
+		SessionModels:      api.SessionModels{Claude: true, Mock: config.mockModel, Local: config.localKind},
 		ClosestExamplePick: config.closestExamplePick,
 		RemoteAgents:       remoteService,
 	})

@@ -14,7 +14,7 @@ import { mockAccount } from "@/mock/store/accounts";
 import { advanceMockPublishes } from "@/mock/store/delivery/publish-runs";
 import { getStudioMockStore, type MockStore } from "@/mock/store/store";
 import { accountService } from "./account-service";
-import { agentService, attachmentService, remoteAgentService } from "./agent-service";
+import { agentService, attachmentService, remoteAgentService, modelCredentialService } from "./agent-service";
 import { deploymentService } from "./deployment-service";
 import { previewService } from "./preview-service";
 import { projectService } from "./project-service";
@@ -51,6 +51,7 @@ const SERVICES: Partial<Record<Method, Handler>> = {
   ...projectService,
   ...sessionService,
   ...agentService,
+  ...modelCredentialService,
   ...remoteAgentService,
   ...previewService,
   ...releaseService,

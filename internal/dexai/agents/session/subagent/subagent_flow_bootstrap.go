@@ -14,6 +14,7 @@ import (
 	"net/http"
 
 	"github.com/superdurable/dex/sdk-go/dex"
+	"github.com/superdurable/dex/sdk-go/gen/dexpb"
 
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
@@ -68,8 +69,8 @@ func NewSubagentFlowBootstrap(config SubagentFlowConfig, dependency SubagentFlow
 func (bootstrap *SubagentFlowBootstrap) Flow() *SubagentFlow { return bootstrap.flow }
 
 // Client binds the Flow client to the shared Dex client.
-func (bootstrap *SubagentFlowBootstrap) Client(sdk *dex.Client) *SubagentFlowClient {
-	return newSubagentFlowClient(sdk, bootstrap.flow)
+func (bootstrap *SubagentFlowBootstrap) Client(sdk *dex.Client, execution dexpb.FlowServiceClient) *SubagentFlowClient {
+	return newSubagentFlowClient(sdk, bootstrap.flow, execution)
 }
 
 // Close releases the model transport; the workspace capabilities belong to

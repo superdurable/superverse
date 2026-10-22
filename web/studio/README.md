@@ -188,6 +188,7 @@ the current contract.
 | [`lib/server/rpc`](lib/server/rpc/README.md) | Serves `/api/rpc/<Method>` for the six browser services through a fail-closed allowlist and a strict descriptor-driven request decoder. |
 | [`lib/session`](lib/session/README.md) | The page-owned Session: `SessionProvider`, its owner hook with the single Watch and the Agent commands, the reducer, the Agent protobuf projection, message merging and the mock scenarios. |
 | [`lib/session/attachments`](lib/session/attachments/README.md) | The composer's attachments: the accepted formats and limits, image normalization and hashing, the upload through a presigned PUT, the chip state machine, its tray hook and the history download links. |
+| [`lib/session/credentials`](lib/session/credentials/README.md) | Owns the Project page’s non-secret credential status and focus refresh. |
 | [`lib/session/design`](lib/session/design/README.md) | Reads which Flow design the Flow tab draws from the Session Snapshot, reads its body once per digest, remembers which card version it showed, and whether its Brief shows. |
 | [`lib/session/draft`](lib/session/draft/README.md) | The requirements card the agent is still writing, as the Session Watch streams it, and when the Snapshot says its card call is over. |
 | [`lib/session/model`](lib/session/model/README.md) | Maps every catalog AgentModel enum explicitly to its Studio literal and back, preserving historical values and recognizing unavailable identities. |
@@ -211,6 +212,7 @@ the current contract.
 | [`tests/e2e`](tests/e2e/README.md) | The three required acceptance specs of the local lanes: registration, a Project edited and released through Studio, and an Agent-added Flow approval. |
 | [`tests/e2e/integration`](tests/e2e/integration/README.md) | Focused Studio scenarios that run against an existing environment and private fixtures; they are run one at a time and are not acceptance. |
 | [`tests/e2e/integration/catalog`](tests/e2e/integration/catalog/README.md) | Exercises catalog admission, existing model mappings, persisted Claude selection and mock continuation through the real Studio, BFF, gRPC, Dex and Sandbox. |
+| [`tests/e2e/integration/modelcredential`](tests/e2e/integration/modelcredential/README.md) | Verifies Project credential entry and composer admission through real dependencies. |
 | [`tests/e2e/integration/publishing`](tests/e2e/integration/publishing/README.md) | The Publish popover and cancellation on a local lane: the Preview validation or a skip reason, the stated consequences, Live's waiting settings, and a cancelled build. |
 | [`tests/e2e/integration/remoteagent`](tests/e2e/integration/remoteagent/README.md) | Exercises real Studio pairing, public remote replies, and epoch-fenced takeover through the lane's existing BFF, gRPC, remote HTTP listener, SQL and Dex. |
 | [`tests/e2e/integration/remoteagent/help`](tests/e2e/integration/remoteagent/help/README.md) | Exercises the local agent help route, copyable setup commands, troubleshooting, permissions and narrow-screen layout against a real Studio server. |
@@ -222,6 +224,7 @@ the current contract.
 | [`tests/e2e/support/attachments`](tests/e2e/support/attachments/README.md) | The E2E files a first message attaches on the start page, uploaded through presigned PUTs, and the checks of their delivery, downloads and chips once the Session shows them. |
 | [`tests/e2e/support/configuration`](tests/e2e/support/configuration/README.md) | Opt-in configuration helpers: the Native read-fault recovery case and the pieces of a two-version Live fixture for Setup's Live tab specs. |
 | [`tests/e2e/support/coverage`](tests/e2e/support/coverage/README.md) | Records, for each passing E2E spec, the Studio source files whose code ran in its browser pages, for the committed coverage map. |
+| [`tests/e2e/support/credentials`](tests/e2e/support/credentials/README.md) | Sets real acceptance credentials through the business API without recording keys. |
 | [`tests/e2e/support/mock`](tests/e2e/support/mock/README.md) | Drives the mock model's composer: whether the lane offers it and the Session runs it, the first input chosen on the creation page, and each later input in order. |
 | [`tests/e2e/support/preview`](tests/e2e/support/preview/README.md) | The specs' Preview steps: starting it from the Interface, awaiting a push's automatic deployment or its configuration notice, and previewing the template's heading edit. |
 | [`tests/e2e/support/teamspace`](tests/e2e/support/teamspace/README.md) | E2E steps of a Teamspace's people: create or open a Teamspace, add a member in People, give a Project role in Permissions and open a Project as an operator. |

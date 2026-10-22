@@ -338,8 +338,7 @@ notice names the ignored keys, never their values. The deploy refuses a file tha
 
 **Local Native.** `sv2 native start` passes the host server its secrets in the environment: the generated and
 retained values of the lane's state directory (the platform MinIO credentials, the cookie signing key, the build
-token file, the local Git signing key and the server's database password) and `ANTHROPIC_API_KEY` from the main checkout's `.env` whenever it holds
-the key. It takes no env file. Before the server it runs `superverse-server migrate` with only the owner's password.
+token file, the local Git signing key and the server’s database password). It takes no env file. Before the server it runs `superverse-server migrate` with only the owner's password.
 
 | Variable | Meaning | Source in Local Kind |
 | --- | --- | --- |
@@ -352,10 +351,11 @@ the key. It takes no env file. Before the server it runs `superverse-server migr
 | `SUPERVERSE_POSTGRES_OWNER_PASSWORD` | Password of the schema owner `superverse_owner`; only `superverse-server migrate` reads it | the same file; `kind up` puts it in the `superverse-v2-postgres` Secret, which only the server Pod's migration init container reads |
 | `SUPERVERSE_CONNECTOR_OAUTH_CLIENT_SECRETS` | A JSON object from each `connections.platformClients` key to its client secret; a configured client without a secret, or a secret without a client, refuses the start | the main checkout's `.env` for a developer's manual test ([Slack relay manual test](../../../docs/runbooks/slack-relay-manual-test.md)); otherwise none: the local lanes configure no platform OAuth application |
 | `SUPERVERSE_SLACK_SIGNING_SECRET` | The platform Slack application's Signing Secret; the Slack events listener serves only with it, and a `connections.platformClients` key of `slack/...` without it refuses the start | generated and retained by the deploy as `slack-signing-secret` of the Kind state directory (Native: of the instance's state directory), which the relay tests sign events with; the main checkout's `.env` replaces it for a developer's manual test |
-| `ANTHROPIC_API_KEY` | Claude API key. Required when `agent.model` is a Claude model; without it the server offers only the mock model and refuses a Claude model with FAILED_PRECONDITION. The mock model's client sends a fixed placeholder | the main checkout's ignored `.env` whenever it holds the key; the deploy refuses an env file that carries it |
+Project model credentials are entered through the Agent picker and `ModelCredentialService`.
+The server does not read `ANTHROPIC_API_KEY` for Sessions; mock requests use a fixed placeholder.
 
 **Hosted environments** (the pre-provisioned `<product>-server` Secret; Terraform neither reads nor writes it):
-`SUPERVERSE_COOKIE_SIGNING_KEY`, `ANTHROPIC_API_KEY`, one form of the GitHub App private key (hosted environments
+`SUPERVERSE_COOKIE_SIGNING_KEY`, one form of the GitHub App private key (hosted environments
 always use `repohost: github`),
 `SUPERVERSE_POSTGRES_PASSWORD`, the password of `superverse_server`, and, once the environment configures
 `connections.platformClients`, `SUPERVERSE_CONNECTOR_OAUTH_CLIENT_SECRETS`, and `SUPERVERSE_SLACK_SIGNING_SECRET`: without it the server

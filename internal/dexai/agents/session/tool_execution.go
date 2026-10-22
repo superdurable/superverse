@@ -22,6 +22,7 @@ import (
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
+	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteexec"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/git"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/sandboxd"
@@ -44,10 +45,11 @@ type parallelToolExecutionInput struct {
 }
 
 type toolInvocation struct {
-	Index     int                   `json:"index"`
-	Call      conversation.ToolCall `json:"call"`
-	Admission remoteexec.Fence      `json:"admission"`
-	Turn      int64                 `json:"turn"`
+	CredentialPrepared bool                  `json:"credential_prepared,omitempty"`
+	Index              int                   `json:"index"`
+	Call               conversation.ToolCall `json:"call"`
+	Admission          remoteexec.Fence      `json:"admission"`
+	Turn               int64                 `json:"turn"`
 }
 
 type parallelToolResult struct {
@@ -205,6 +207,8 @@ func serialToolStepOptions(call conversation.ToolCall) *dex.StepOptions {
 	case call.Name == conversation.ToolStartAgent:
 		// The new worktree keeps the worktrees of the unfinished subagents.
 		options.ExecuteLoadAttributeMaps = taskMessageMaps
+		options.ExecuteLoadAttributeMapInstances = []dex.AttributeMapLoad{modelKeyInfoAttribute.Load(modelcredential.Anthropic.String()), modelKeysAttribute.Load(modelcredential.Anthropic.String())}
+		options.ExecuteLockAttributes = append(options.ExecuteLockAttributes, credentialInfoLock)
 	case isSubagent:
 		options.ExecuteLoadAttributeMapInstances = []dex.AttributeMapLoad{subagentsAttribute.Load(agentID)}
 	}
@@ -749,19 +753,8 @@ func (flow *SessionAgentFlow) executeSubagentTool(ctx dex.Context, execution con
 	}
 }
 
-// startSubagent runs an admitted start_agent call: it creates the subagent's
-// worktree, keeping the worktrees of the Session's other unfinished
-// subagents, and starts its SubagentFlow through the Session Service with the
-// call, the snapshot, the Session's model and HEAD and the admitted lease.
-// Both effects are idempotent, so a retry repeats neither. A worktree the
-// Sandbox refuses (snapshot_too_large, workspace_disk_low) is the call's
-// failure: a refusal proves that no attempt created the worktree, so no
-// attempt started the subagent, and the record is deleted and the start no
-// longer counts. Any other failure, and a lost Sandbox after the first
-// attempt, may follow an attempt that started the subagent: it is retried,
-// not rerouted, and exhausted retries fail the start in RecordToolFailure,
-// which keeps the record of a subagent that runs. A record that a Stop ended
-// before starts nothing.
+// startSubagent creates the admitted worktree and starts the child with the frozen
+// model and lease. Credentials stay transient; the owning subagent contract describes recovery.
 func (flow *SessionAgentFlow) startSubagent(ctx dex.Context, execution context.Context, call conversation.ToolCall) (agentloop.ToolExecutionResult, error) {
 	agentID, records := flowid.AgentTaskID(ctx.FlowID(), string(call.ID)), loadedSubagents(ctx)
 	record, isRecorded := records[agentID]
@@ -770,6 +763,9 @@ func (flow *SessionAgentFlow) startSubagent(ctx dex.Context, execution context.C
 		panic(fmt.Sprintf("start_agent call %s runs without the record its route admitted", call.ID))
 	case record.Status.Finished():
 		return subagentToolResult(subagentStarted{TaskID: record.TaskID(), Status: record.Status.String()}), nil
+	}
+	if _, err := preparedSubagentCredential(ctx, agentID, comm.Must(sessionModelAttribute.Get(ctx)).Model); err != nil {
+		return credentialStartFailure(ctx, call, agentID, err)
 	}
 	keep := make([]string, 0, len(records))
 	for _, unfinished := range agenttasks.UnfinishedSubagents(records, time.Now()) {
@@ -802,8 +798,8 @@ func (flow *SessionAgentFlow) startSubagent(ctx dex.Context, execution context.C
 	}
 	start := agenttasks.SubagentStart{Identity: subagentIdentity(ctx, agentID), Call: comm.Must(agentloop.RequestedSubagent(call)), Fingerprint: record.Fingerprint,
 		BaseCommit: started.BaseCommit, Branch: started.Branch, Model: comm.Must(sessionModelAttribute.Get(ctx)).Model, HeadCommit: comm.Must(headCommitAttribute.Get(ctx)), Lease: *sandboxCall.Lease}
-	if err := flow.dependency.StartSubagent(execution, start); err != nil {
-		return agentloop.ToolExecutionResult{}, fmt.Errorf("start subagent %s: %w", agentID, err)
+	if err := flow.startCredentialSubagent(ctx, execution, start); err != nil {
+		return credentialStartFailure(ctx, call, agentID, err)
 	}
 	return subagentToolResult(started), nil
 }

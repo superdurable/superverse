@@ -10,7 +10,6 @@ package bootstrap
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -493,21 +492,15 @@ func gitHubApp(appID, installationID int64) (*githubapp.App, error) {
 	return &githubapp.App{AppID: appID, InstallationID: installationID, PrivateKey: privateKey}, nil
 }
 
-// agentConfig assembles the Session Agent's model settings and its Sandbox
-// holds. The Claude API key comes only from ANTHROPIC_API_KEY. Without it the
-// server offers no Claude model, which only a server whose new Sessions start
-// on the mock model accepts; composition gives the mock model's client its
-// fixed placeholder, never a real key.
+// agentConfig assembles model settings and Sandbox holds. Sessions obtain
+// Anthropic credentials from their own hard-delete Attributes, never the environment.
 func agentConfig(settings serverconfig.AgentConfig, sandbox serverconfig.SandboxConfig, attached serverconfig.AttachmentsConfig) (sessionagent.SessionAgentConfig, error) {
 	config := sessionagent.SessionAgentConfig{
 		Model:          settings.Model,
-		Claude:         modelprovider.ClaudeClientConfig{APIKey: strings.TrimSpace(anthropicAPIKey())},
+		Claude:         modelprovider.ClaudeClientConfig{},
 		AutomaticTurns: agentloop.AutomaticTurnBounds{Task: settings.TaskTurns, Platform: settings.PlatformTurns},
 		SandboxHold:    sandbox.Hold,
 		PreviewHold:    sandbox.PreviewHold,
-	}
-	if config.Claude.APIKey == "" && settings.Model != conversation.ModelMock {
-		return config, errors.New("ANTHROPIC_API_KEY is required: agent.model is a Claude model")
 	}
 	config.Settings.Effort = settings.Effort
 	config.Settings.CompactionTokens = int64(settings.CompactionTokens)

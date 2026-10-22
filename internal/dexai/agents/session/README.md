@@ -5,7 +5,7 @@ Purpose: Owns SessionAgentFlow, the durable coding Agent of a Project's one Sess
 
 Callers: `internal/dexai/agents`, `internal/dexai/agents/remoteagent`, `internal/dexai/api`, `internal/dexai/api/boundary` and `internal/dexai/bootstrap` import this package.
 
-Dependencies: it imports `internal/comm`, `internal/comm/dexflow`, `internal/comm/flowid`, `internal/dexai/agents/remoteexec`, `internal/dexai/agents/sandbox`, `internal/dexai/agents/sandbox/provision`, `internal/dexai/agents/sandbox/workspace`, `internal/dexai/agents/sandbox/workspace/git`, `internal/dexai/agents/sandbox/workspace/sandboxd`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/agenttasks`, `internal/dexai/agents/session/backgroundcommand`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/session/flowdesign`, `internal/dexai/agents/session/modelprovider`, `internal/dexai/agents/session/sandboxtools`, `internal/dexai/agents/session/toolinput`, `internal/dexai/agents/session/toolinput/generated`, `internal/dexai/agents/toolfailure` and `internal/dexai/app/apptemplate` and calls the Dex Flow API.
+Dependencies: it imports `internal/comm`, `internal/comm/dexflow`, `internal/comm/flowid`, `internal/dexai/agents/modelcredential`, `internal/dexai/agents/remoteexec`, `internal/dexai/agents/sandbox`, `internal/dexai/agents/sandbox/provision`, `internal/dexai/agents/sandbox/workspace`, `internal/dexai/agents/sandbox/workspace/git`, `internal/dexai/agents/sandbox/workspace/sandboxd`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/agenttasks`, `internal/dexai/agents/session/backgroundcommand`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/session/flowdesign`, `internal/dexai/agents/session/modelprovider`, `internal/dexai/agents/session/sandboxtools`, `internal/dexai/agents/session/toolinput`, `internal/dexai/agents/session/toolinput/generated`, `internal/dexai/agents/toolfailure` and `internal/dexai/app/apptemplate` and calls the Dex Flow API.
 
 ```mermaid
 flowchart LR
@@ -18,23 +18,24 @@ flowchart LR
   self --> d0["internal/comm"]
   self --> d1["internal/comm/dexflow"]
   self --> d2["internal/comm/flowid"]
-  self --> d3["internal/dexai/agents/remoteexec"]
-  self --> d4["internal/dexai/agents/sandbox"]
-  self --> d5["internal/dexai/agents/sandbox/provision"]
-  self --> d6["internal/dexai/agents/sandbox/workspace"]
-  self --> d7["internal/dexai/agents/sandbox/workspace/git"]
-  self --> d8["internal/dexai/agents/sandbox/workspace/sandboxd"]
-  self --> d9["internal/dexai/agents/session/agentloop"]
-  self --> d10["internal/dexai/agents/session/agenttasks"]
-  self --> d11["internal/dexai/agents/session/backgroundcommand"]
-  self --> d12["internal/dexai/agents/session/conversation"]
-  self --> d13["internal/dexai/agents/session/flowdesign"]
-  self --> d14["internal/dexai/agents/session/modelprovider"]
-  self --> d15["internal/dexai/agents/session/sandboxtools"]
-  self --> d16["internal/dexai/agents/session/toolinput"]
-  self --> d17["internal/dexai/agents/session/toolinput/generated"]
-  self --> d18["internal/dexai/agents/toolfailure"]
-  self --> d19["internal/dexai/app/apptemplate"]
+  self --> d3["internal/dexai/agents/modelcredential"]
+  self --> d4["internal/dexai/agents/remoteexec"]
+  self --> d5["internal/dexai/agents/sandbox"]
+  self --> d6["internal/dexai/agents/sandbox/provision"]
+  self --> d7["internal/dexai/agents/sandbox/workspace"]
+  self --> d8["internal/dexai/agents/sandbox/workspace/git"]
+  self --> d9["internal/dexai/agents/sandbox/workspace/sandboxd"]
+  self --> d10["internal/dexai/agents/session/agentloop"]
+  self --> d11["internal/dexai/agents/session/agenttasks"]
+  self --> d12["internal/dexai/agents/session/backgroundcommand"]
+  self --> d13["internal/dexai/agents/session/conversation"]
+  self --> d14["internal/dexai/agents/session/flowdesign"]
+  self --> d15["internal/dexai/agents/session/modelprovider"]
+  self --> d16["internal/dexai/agents/session/sandboxtools"]
+  self --> d17["internal/dexai/agents/session/toolinput"]
+  self --> d18["internal/dexai/agents/session/toolinput/generated"]
+  self --> d19["internal/dexai/agents/toolfailure"]
+  self --> d20["internal/dexai/app/apptemplate"]
   self --> e0(["Dex Flow API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
@@ -392,6 +393,15 @@ retention follows the existing Project cleanup owner. HTTP per-replica hydration
 and long-poll limits are owned by the remote endpoint and its typed config;
 source defaults and measured encoded/decode memory require integration/load
 verification before claiming deployment capacity.
+
+## Subagent start recovery
+
+A worktree creation refusal proves no worktree was created, so `startSubagent`
+deletes the admitted task record. Other failures retry under the existing Step
+policy. `RecordToolFailure` preserves a running subagent's record so recovery
+never forgets a child whose start might have taken effect. Credential-specific
+stale admission and confirmed stopped-copy results follow the owning
+[credential contract](../../../../docs/architecture/agent-harness-design/session.md#project-model-credentials).
 
 ## Attachments
 

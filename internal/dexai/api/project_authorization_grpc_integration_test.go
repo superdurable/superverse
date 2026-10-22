@@ -147,6 +147,19 @@ func TestProjectAuthorizationMatrixDexIntegration(t *testing.T) {
 		callers["operator"].GetAccountId() + ":" + projects.RoleOperator, callers["removed"].GetAccountId() + ":" + projects.RoleBuilder}
 	slices.Sort(rows)
 	awaitRows(ctx, t, db, projectID, rows)
+	// Exercise role changes through the authenticated boundary, not only initial membership.
+	for _, role := range []pb.ProjectRole{pb.ProjectRole_PROJECT_ROLE_OPERATOR, pb.ProjectRole_PROJECT_ROLE_BUILDER} {
+		changed, err := projectMemberAPI.SetProjectMemberRole(ctx, &pb.SetProjectMemberRoleRequest{ProjectId: projectID, AccountId: callers["builder"].GetAccountId(), Role: role, Caller: callers["owner"]})
+		if err != nil {
+			t.Fatalf("the owner changes the builder's role: %v", err)
+		}
+		if !slices.ContainsFunc(changed.GetMembers(), func(member *pb.ProjectMemberSnapshot) bool {
+			return member.GetAccountId() == callers["builder"].GetAccountId() && member.GetRole() == role
+		}) {
+			t.Fatal("the role change did not acknowledge the accepted role")
+		}
+	}
+	awaitRows(ctx, t, db, projectID, rows)
 	if _, err = memberAPI.RemoveTeamSpaceMember(ctx, &pb.RemoveTeamSpaceMemberRequest{TeamSpaceId: teamSpaceID, AccountId: callers["removed"].GetAccountId(), Caller: callers["admin"]}); err != nil {
 		t.Fatalf("remove the builder from the TeamSpace: %v", err)
 	}

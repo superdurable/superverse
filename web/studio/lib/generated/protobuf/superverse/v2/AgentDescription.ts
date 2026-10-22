@@ -76,6 +76,7 @@ export interface AgentDescription {
   'previewAutoDeployChangedBy'?: (_superverse_v2_Actor | null);
   'executor'?: (_superverse_v2_SessionExecutor | null);
   'startingExample'?: (_superverse_v2_AgentStartingExample | null);
+  'modelCredentialVersion'?: (string);
 }
 
 export interface AgentDescription__Output {
@@ -104,4 +105,5 @@ export interface AgentDescription__Output {
   'previewAutoDeployChangedBy': (_superverse_v2_Actor__Output | null);
   'executor': (_superverse_v2_SessionExecutor__Output | null);
   'startingExample': (_superverse_v2_AgentStartingExample__Output | null);
+  'modelCredentialVersion': (string);
 }

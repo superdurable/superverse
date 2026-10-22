@@ -18,6 +18,7 @@ import { lstat, mkdir } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 import type { RpcInput, RpcOutput, UnaryMethod } from "@/lib/shared/rpc-methods";
 import { requireCondition, string } from "./json-assert";
+import { READ_POLICY, readRetryDelay } from "@/lib/api/transport/read-policy";
 
 // Generic real-Studio helpers shared by the journeys. Never record credentials,
 // OAuth codes, inbox contents or private URLs.
@@ -37,26 +38,22 @@ export function rpc<M extends UnaryMethod>(
   return context.post(`/api/rpc/${method}`, { headers: { origin: studioOrigin() }, data: input, ...options });
 }
 
-/** How long rpcResult asks again while the server answers that it is temporarily unavailable. */
-const UNAVAILABLE_RETRY_MS = 60_000;
-
-/**
- * The decoded response of one RPC that must succeed. A 503 is the server's temporary unavailability, such as a Dex
- * read deadline under host load, and is asked again after its Retry-After for up to a minute; every caller sends a
- * read or an idempotent command. Any other failure carries only its HTTP status, never the body.
- */
+/** Reads mirror production readUnary under transient load; commands fail on their first error. */
 export async function rpcResult<M extends UnaryMethod>(
   context: APIRequestContext,
   method: M,
   input: RpcInput<M>,
 ): Promise<RpcOutput<M>> {
-  const deadline = Date.now() + UNAVAILABLE_RETRY_MS;
-  for (;;) {
-    const response = await rpc(context, method, input);
-    if (response.status() === 503 && Date.now() < deadline) {
-      const seconds = Number(response.headers()["retry-after"]);
-      await new Promise((resolve) => setTimeout(resolve, 1000 * (seconds >= 1 && seconds <= 5 ? seconds : 1)));
-      continue;
+  const isRead = method.startsWith("Get") || method.startsWith("List");
+  const deadline = Date.now() + READ_POLICY.budgetMilliseconds;
+  for (let attempt = 0; ; attempt++) {
+    const response = await rpc(context, method, input, isRead ? { timeout: Math.max(1, deadline - Date.now()) } : {});
+    if (isRead && READ_POLICY.retryStatuses.includes(response.status()) && attempt < READ_POLICY.maxRetries) {
+      const delay = readRetryDelay(attempt);
+      if (Date.now() + delay < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
     }
     if (!response.ok())
       throw Object.assign(new Error(`${method} returned HTTP ${response.status()}`), { status: response.status() });

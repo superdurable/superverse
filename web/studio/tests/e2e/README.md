@@ -524,11 +524,11 @@ effective at the next turn) is covered by Go Dex integration tests and the real
 `integration/catalog/model-catalog.spec.ts` picker/BFF/gRPC case, which also checks
 unavailable catalog admission and a stored Claude value followed by a mock turn. The Go live Claude tests (`make test-claude-live`, which reads
 `ANTHROPIC_API_KEY` from the main checkout's `.env` unless it is exported) check real streaming, compaction and cross-model
-provider-context behavior. No result from these checks substitutes for
+provider-context behavior. They first store the developer key through the credential RPC on a real local lane. Real-model browser support submits the key outside Playwright tracing and sends one bounded continuation of the original request after its keyless initial turn. No result from these checks substitutes for
 Preview/Live business acceptance.
 
 The release-newsletter journey chooses the coding model under test on the creation page and
 asserts it: the `SUPERVERSE_E2E_MODEL_TARGET` the developer sets, for example the test
 environment's `anthropic/claude-sonnet-5-5`; the journey has no default and skips explicitly on
 `mock` ([Mock model](#mock-model)). It does not alter any application connector model or
-permit additional Agent prompts.
+permit additional application requirements; credential setup uses only the bounded continuation above.

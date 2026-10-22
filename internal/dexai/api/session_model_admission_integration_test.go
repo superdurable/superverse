@@ -19,11 +19,15 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/dexflow/dexflowtest"
 	"github.com/superdurable/superversev2/internal/comm/platform/postgres/postgrestest"
 	"github.com/superdurable/superversev2/internal/dexai/agents"
+	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/preview"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/sessionworkspace"
 	sessionagent "github.com/superdurable/superversev2/internal/dexai/agents/session"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/mockmodel"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/subagent"
 	"github.com/superdurable/superversev2/internal/dexai/api/boundary"
 	"github.com/superdurable/superversev2/internal/dexai/projects"
 	"github.com/superdurable/superversev2/internal/dexai/projects/projectdao"
@@ -41,7 +45,7 @@ import (
 // administrator account and the owner of a throwaway READY Project, an ordinary
 // account, without a login. In the hosted settings (test and staging) only the
 // administrator may select the mock model; in Local any account may; prod and a
-// server without a Claude key offer what they have and refuse the rest. The
+// server without the Claude catalog offer what they have and refuse the rest. The
 // owner then switches the Project's Session between the mock model and a
 // Claude model through Local admission and the actual UpdateSessionModel; no
 // turn runs, so no model is called and no segment opens.
@@ -94,8 +98,8 @@ func TestSessionModelAdmissionDexIntegration(t *testing.T) {
 		{"hosted, an ordinary account selects Opus", hosted, owner, conversation.ModelOpus55, codes.OK},
 		{"Local, an ordinary account selects mock", local, owner, conversation.ModelMock, codes.OK},
 		{"Local, an ordinary account selects Sonnet", local, owner, conversation.ModelSonnet55, codes.OK},
-		{"no Claude key, an ordinary account selects Opus", keyless, owner, conversation.ModelOpus55, codes.FailedPrecondition},
-		{"no Claude key, an ordinary account selects mock", keyless, owner, conversation.ModelMock, codes.OK},
+		{"no Claude catalog, an ordinary account selects Opus", keyless, owner, conversation.ModelOpus55, codes.FailedPrecondition},
+		{"no Claude catalog, an ordinary account selects mock", keyless, owner, conversation.ModelMock, codes.OK},
 		{"prod, the administrator selects mock", prod, admin.AccountID, conversation.ModelMock, codes.FailedPrecondition},
 	} {
 		if got := admissionCode(t, admitModel(ctx, decision.server.Boundary, decision.server.models, decision.account, decision.model)); got != decision.want {
@@ -148,6 +152,24 @@ func TestSessionModelAdmissionDexIntegration(t *testing.T) {
 	if started := description(); started.Model != conversation.ModelMock || started.ModelRevision != 0 {
 		t.Fatalf("a Session of a mock-default server starts on %q at revision %d", started.Model, started.ModelRevision)
 	}
+	key := "synthetic-byok-model-admission-1234"
+	endpoint, _, stop, err := mockmodel.StartCredentialProbeForTest(ctx, slog.New(slog.DiscardHandler), key)
+	if err != nil {
+		t.Fatal("start credential validation model endpoint")
+	}
+	defer stop()
+	credentials := &agents.ModelCredentialFlowService{Sessions: client, Subagents: subagent.NewSubagentFlowClientForTest(sdk, &subagent.SubagentFlow{}, reader), HTTP: modelprovider.NewProviderHTTPClient(), Logger: slog.New(slog.DiscardHandler), ValidationBaseURL: endpoint}
+	defer credentials.Close()
+	if _, err = credentials.Mutate(ctx, id, modelcredential.Mutation{Provider: modelcredential.Anthropic, OperationID: "model-admission-set", ExpectedRevision: 0, Last4: "1234", Actor: conversation.Actor{AccountID: owner}}, key); err != nil {
+		t.Fatalf("set Session credential for model admission (%T)", err)
+	}
+	t.Cleanup(func() {
+		cleanup, done := context.WithTimeout(context.Background(), time.Minute)
+		defer done()
+		if _, err := credentials.Mutate(cleanup, id, modelcredential.Mutation{Provider: modelcredential.Anthropic, OperationID: "model-admission-delete", ExpectedRevision: 1, Delete: true, Actor: conversation.Actor{AccountID: owner}}, ""); err != nil {
+			t.Errorf("delete model-admission credential (%T)", err)
+		}
+	})
 	for revision, model := range []conversation.Model{conversation.ModelOpus55, conversation.ModelMock} {
 		if err = admitModel(ctx, local.Boundary, local.models, owner, model); err != nil {
 			t.Fatalf("Local admission refused %s for the owner: %v", model, err)

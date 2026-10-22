@@ -17,6 +17,7 @@ import (
 
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
+	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteexec"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
@@ -28,6 +29,8 @@ import (
 )
 
 var (
+	modelKeysAttribute    = dex.DefineAttributeMap[modelcredential.Envelope]("ModelKeys", dex.HardDeleteOnNull())
+	modelKeyInfoAttribute = dex.DefineAttributeMap[modelcredential.Info]("ModelKeyInfo")
 	// The Session resource: identity and lifecycle.
 	// dex:indexed-attribute attribute-key:ProjectID index-key:keyword2 index-type:keyword value-type:string description:"Owning project"
 	projectIDAttribute            = dex.DefineAttribute[string]("ProjectID", dex.Indexed(dex.AttributeIndex{Type: dex.IndexKeyword, IndexKey: "keyword2"}))
@@ -134,14 +137,17 @@ func (flow *SessionAgentFlow) GetSteps() []dex.StepDef {
 func (flow *SessionAgentFlow) GetRPCs() []dex.RPCDef {
 	queue := []dex.ChannelDef{queuedUserMessagesChannel}
 	return []dex.RPCDef{
-		dex.DefineRPC(flow.SendMessage, loadDesigns(userCommandRPC(false, nil, inputLock, requirementsLock), flowdesign.SlotPending)),
+		dex.DefineRPC(flow.ReadModelCredentialInfo, &dex.RPCOptions{Timeout: readRPCTimeout}),
+		dex.DefineRPC(flow.ReserveModelCredential, dexflow.ShortRPC(statusLock, credentialInfoLock)),
+		dex.DefineRPC(flow.FinalizeModelCredential, dexflow.ShortRPC(statusLock, credentialInfoLock)),
+		dex.DefineRPC(flow.SendMessage, loadDesigns(credentialAdmissionRPC(userCommandRPC(false, nil, inputLock, requirementsLock)), flowdesign.SlotPending)),
 		dex.DefineRPC(flow.SteerMessage, userCommandRPC(true, queue)),
 		dex.DefineRPC(flow.DeleteQueuedMessage, userCommandRPC(true, queue)),
 		dex.DefineRPC(flow.AnswerQuestions, userCommandRPC(false, nil, inputLock)),
 		dex.DefineRPC(flow.ApproveTool, userCommandRPC(true, nil, approvalLock)),
 		// A model selection writes only SessionModel, so it never waits for a
 		// model call; the next turn's rollover applies it.
-		dex.DefineRPC(flow.UpdateSessionModel, &dex.RPCOptions{Timeout: commandRPCTimeout, LockAttributes: []dex.AttributeLock{statusLock, dex.LockAttribute(sessionModelAttribute)}}),
+		dex.DefineRPC(flow.UpdateSessionModel, &dex.RPCOptions{Timeout: commandRPCTimeout, LockAttributes: []dex.AttributeLock{statusLock, dex.LockAttribute(sessionModelAttribute)}, LoadAttributeMapInstances: []dex.AttributeMapLoad{modelKeyInfoAttribute.Load(modelcredential.Anthropic.String())}}),
 		dex.DefineRPC(flow.UpdatePreviewAutoDeploy, &dex.RPCOptions{Timeout: commandRPCTimeout, LockAttributes: []dex.AttributeLock{statusLock, dex.LockAttribute(previewAutoDeployAttribute), dex.LockAttribute(previewAutoDeployChangedByAttribute)}}),
 		// A Stop decides on AgentState without its writers' MessageWindowLock,
 		// which a running model call holds.
@@ -152,7 +158,7 @@ func (flow *SessionAgentFlow) GetRPCs() []dex.RPCDef {
 		// Every write of a STARTING record whose subagent may have started holds
 		// the AgentInterrupt lock.
 		dex.DefineRPC(flow.AdmitSubagent, dexflow.ShortRPC(statusLock, interruptLock)),
-		dex.DefineRPC(flow.GetSnapshot, &dex.RPCOptions{Timeout: readRPCTimeout, LoadAttributeMaps: []dex.AttributeDef{currentMessagesAttribute, backgroundCommandsAttribute, subagentsAttribute, connectorContributionsAttribute},
+		dex.DefineRPC(flow.GetSnapshot, &dex.RPCOptions{Timeout: readRPCTimeout, LoadAttributeMapInstances: []dex.AttributeMapLoad{modelKeyInfoAttribute.Load(modelcredential.Anthropic.String())}, LoadAttributeMaps: []dex.AttributeDef{currentMessagesAttribute, backgroundCommandsAttribute, subagentsAttribute, connectorContributionsAttribute},
 			LoadChannels: []dex.ChannelDef{queuedUserMessagesChannel, steeredUserMessagesChannel}}),
 		dex.DefineRPC(flow.GetArchivedMessages, &dex.RPCOptions{Timeout: commandRPCTimeout}),
 		dex.DefineRPC(flow.GetFlowDesign, loadDesigns(&dex.RPCOptions{Timeout: readRPCTimeout}, flowdesign.Slots...)),
@@ -173,7 +179,7 @@ func (flow *SessionAgentFlow) GetRPCs() []dex.RPCDef {
 // GetPersistenceSchema registers every durable value and best-effort Stream.
 func (*SessionAgentFlow) GetPersistenceSchema() dex.PersistenceSchema {
 	return dex.PersistenceSchema{
-		Attributes: []dex.AttributeDef{
+		Attributes: []dex.AttributeDef{modelKeysAttribute, modelKeyInfoAttribute,
 			projectIDAttribute, sessionProfileAttribute, sessionStartIdentityAttribute, headCommitAttribute,
 			sessionStatusAttribute, closeReasonAttribute, sessionRevisionAttribute, sessionCreatedAtAttribute, sessionUpdatedAtAttribute,
 			sessionModelAttribute, executorAttribute, agentStateAttribute, messageWindowLockAttribute, waitingInputRoundAttribute,
@@ -191,19 +197,20 @@ func (*SessionAgentFlow) GetPersistenceSchema() dex.PersistenceSchema {
 }
 
 // Conversation Steps lock MessageWindowLock and the interactions they settle; Steps that admit
-// tool use add Workspace. Tool Steps lock nothing: locks span retries and fail RPCs fast.
+// tool use add Workspace. Only start_agent locks its exact credential metadata during copying.
 var (
-	messageMaps      = []dex.AttributeDef{currentMessagesAttribute}
-	statusLock       = dex.LockAttribute(sessionStatusAttribute)
-	executorLock     = dex.LockAttribute(executorAttribute)
-	inputLock        = dex.LockAttribute(pendingUserInputAttribute)
-	requirementsLock = dex.LockAttribute(confirmedRequirementsAttribute)
-	approvalLock     = dex.LockAttribute(pendingApprovalAttribute)
-	workspaceLock    = dex.LockAttribute(workspaceAttribute)
-	interruptLock    = dex.LockAttribute(agentInterruptAttribute)
-	receiptsLock     = dex.LockAttribute(notificationReceiptsAttribute)
-	taskMaps         = []dex.AttributeDef{backgroundCommandsAttribute, subagentsAttribute, connectorContributionsAttribute, taskWorktreesAttribute}
-	shortStepRetry   = dexflow.StepRetry(2 * time.Minute)
+	messageMaps        = []dex.AttributeDef{currentMessagesAttribute}
+	statusLock         = dex.LockAttribute(sessionStatusAttribute)
+	executorLock       = dex.LockAttribute(executorAttribute)
+	inputLock          = dex.LockAttribute(pendingUserInputAttribute)
+	requirementsLock   = dex.LockAttribute(confirmedRequirementsAttribute)
+	approvalLock       = dex.LockAttribute(pendingApprovalAttribute)
+	workspaceLock      = dex.LockAttribute(workspaceAttribute)
+	interruptLock      = dex.LockAttribute(agentInterruptAttribute)
+	receiptsLock       = dex.LockAttribute(notificationReceiptsAttribute)
+	credentialInfoLock = dex.LockAttributeMap(modelKeyInfoAttribute, modelcredential.Anthropic.String())
+	taskMaps           = []dex.AttributeDef{backgroundCommandsAttribute, subagentsAttribute, connectorContributionsAttribute, taskWorktreesAttribute}
+	shortStepRetry     = dexflow.StepRetry(2 * time.Minute)
 	// Steps that admit, stop, fail or forget a subagent's start load its records; a STARTING
 	// record whose subagent may have started is written only under the AgentInterrupt lock.
 	taskMessageMaps = []dex.AttributeDef{currentMessagesAttribute, subagentsAttribute, backgroundCommandsAttribute, connectorContributionsAttribute, taskWorktreesAttribute}
@@ -248,41 +255,12 @@ func (*SessionAgentFlow) DeleteQueuedMessage(ctx dex.Context, input conversation
 
 // AnswerQuestions answers the pending question batch in one commit.
 func (*SessionAgentFlow) AnswerQuestions(ctx dex.Context, input agentloop.AnswerQuestionsRequest) (*dex.RPCResult[bool], error) {
-	pending := dexflow.OptionalValue(pendingUserInputAttribute.Get(ctx))
-	if !acceptsUserCommand(ctx) || pending == nil || pending.CallID != input.CallID {
-		return rpcAccepted(false), nil
-	}
-	answer, isValid := agentloop.AnswerPendingInput(*pending, input)
-	if !isValid {
-		return rpcAccepted(false), nil
-	}
-	comm.MustDo(pendingUserInputAttribute.Delete(ctx))
-	comm.MustDo(answeredUserInputsChannel.Publish(ctx, agentloop.AnsweredUserInput{CallID: pending.CallID, Message: answer.Message, Description: answer.Description}))
-	return rpcAccepted(true), nil
+	return answerQuestions(ctx, input)
 }
 
 // ApproveTool decides the approval of the pending call with this exact ID.
 func (*SessionAgentFlow) ApproveTool(ctx dex.Context, input agentloop.ToolApprovalRequest) (*dex.RPCResult[bool], error) {
-	if pending := dexflow.OptionalValue(pendingApprovalAttribute.Get(ctx)); !acceptsUserCommand(ctx) || pending == nil || pending.CallID != input.CallID {
-		return rpcAccepted(false), nil
-	}
-	comm.MustDo(pendingApprovalAttribute.Delete(ctx))
-	comm.MustDo(toolApprovalsChannel.Publish(ctx, string(input.CallID), agentloop.ToolApproval{Approved: input.Approved}))
-	return rpcAccepted(true), nil
-}
-
-// UpdateSessionModel selects the Session's model at an exact revision at any time.
-// The next turn rolls the context over to it; history, pending input and workspace stay.
-func (*SessionAgentFlow) UpdateSessionModel(ctx dex.Context, input agentloop.UpdateSessionModelRequest) (*dex.RPCResult[modelSelection], error) {
-	if !acceptsUserCommand(ctx) {
-		return &dex.RPCResult[modelSelection]{}, nil
-	}
-	current := comm.Must(sessionModelAttribute.Get(ctx))
-	selected, isAccepted := agentloop.ChangeSessionModel(current, input)
-	if selected != current {
-		comm.MustDo(sessionModelAttribute.Set(ctx, selected))
-	}
-	return &dex.RPCResult[modelSelection]{Output: modelSelection{Accepted: isAccepted, Stale: !isAccepted}}, nil
+	return approveTool(ctx, input)
 }
 
 // UpdatePreviewAutoDeploy turns the Preview's deployment of each pushed commit on or off
@@ -294,6 +272,9 @@ func (*SessionAgentFlow) UpdatePreviewAutoDeploy(ctx dex.Context, input agentloo
 // InterruptAgent is the Stop button for the turn the user saw (admitInterrupt): its Steps
 // stop the tasks; the turn ends at once if its work is cancellable, else at CheckSteered's next boundary.
 func (*SessionAgentFlow) InterruptAgent(ctx dex.Context, input agentloop.InterruptAgentRequest) (*dex.RPCResult[bool], error) {
+	if input.PlatformOnly && currentExecutor(ctx).Mode == remoteexec.ModeRemote {
+		return rpcAccepted(acceptsUserCommand(ctx)), nil
+	}
 	interruption, plan, err := interruptAgent(ctx, input)
 	if err != nil {
 		return nil, err
@@ -745,7 +726,7 @@ func (step RecordPlatformModelResult) Execute(ctx dex.Context, input platformMod
 	case record.discard:
 		return dex.DeadEnd(), nil
 	case record.compaction != nil:
-		return dex.GoTo(CompactContext{}, *record.compaction, dex.WithStepOptions(segmentLoad(comm.Must(agentStateAttribute.Get(ctx)), comm.Must(contextSegmentAttribute.Get(ctx)), true))), nil
+		return dex.GoTo(CompactContext{}, *record.compaction, dex.WithStepOptions(modelRequestLoad(comm.Must(agentStateAttribute.Get(ctx)), comm.Must(contextSegmentAttribute.Get(ctx)), true))), nil
 	case record.incident != nil:
 		return dex.GoToMany(dex.MovementOf(CheckSteered{}, record.next), dex.MovementOf(ReportPlatformIssue{}, *record.incident)), nil
 	default:
@@ -988,6 +969,9 @@ func (step ExecuteTool) Execute(ctx dex.Context, input toolInvocation) (*dex.Ste
 			comm.MustDo(pendingSubagentWorktreeCleanupAttribute.Delete(ctx))
 			return dex.GoTo(CheckSteered{}, agentloop.ContinueExecuteTool), nil
 		}
+	}
+	if call.Name == conversation.ToolStartAgent && !input.CredentialPrepared {
+		return step.flow.prepareSubagentCredential(ctx, input)
 	}
 	result, err := step.flow.executeTool(ctx, call)
 	if errors.Is(err, sandboxtools.ErrWorkspaceUnavailable) {
@@ -1595,4 +1579,21 @@ func (step AwaitRemoteAgent) Execute(ctx dex.Context, _ dex.None) (*dex.StepDeci
 // dex:invocation-load attribute-map:ArchivedMessages
 func (*SessionAgentFlow) ReadRemote(ctx dex.Context, input remoteexec.ReadRequest) (*dex.RPCResult[RemoteRead], error) {
 	return readRemote(ctx, input)
+}
+
+func (*SessionAgentFlow) ReadModelCredentialInfo(ctx dex.Context, provider modelcredential.Provider) (*dex.RPCResult[modelcredential.Info], error) {
+	return readModelCredentialInfo(ctx, provider)
+}
+
+func (*SessionAgentFlow) ReserveModelCredential(ctx dex.Context, input modelcredential.Mutation) (*dex.RPCResult[modelcredential.Admission], error) {
+	return reserveModelCredential(ctx, input)
+}
+
+func (*SessionAgentFlow) FinalizeModelCredential(ctx dex.Context, input modelcredential.Mutation) (*dex.RPCResult[modelcredential.Info], error) {
+	return finalizeModelCredential(ctx, input)
+}
+
+// UpdateSessionModel delegates the Session admission/state transition.
+func (*SessionAgentFlow) UpdateSessionModel(ctx dex.Context, input agentloop.UpdateSessionModelRequest) (*dex.RPCResult[modelSelection], error) {
+	return updateSessionModel(ctx, input)
 }

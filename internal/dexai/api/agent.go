@@ -22,6 +22,7 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/flowid"
 	"github.com/superdurable/superversev2/internal/dexai/agents"
 	"github.com/superdurable/superversev2/internal/dexai/agents/attachments"
+	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteexec"
 	sessionagent "github.com/superdurable/superversev2/internal/dexai/agents/session"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
@@ -51,7 +52,7 @@ type agentServer struct {
 
 // SessionModels is which Session models the server offers and to whom.
 type SessionModels struct {
-	// Claude offers the Claude models; false when the server has no Claude key.
+	// Claude offers the Claude catalog; each Session admits its own credential.
 	Claude bool
 	// Mock offers the mock model (agent.mockModel).
 	Mock bool
@@ -95,6 +96,9 @@ func admitCommand[R any](ctx context.Context, s *agentServer, in agentCommandReq
 		return nil, boundary.NotAdmitted(invalid)
 	}
 	err = admit(id)
+	if errors.Is(err, modelcredential.ErrUnavailable) {
+		return nil, boundary.NotAdmitted(status.Error(codes.FailedPrecondition, "set your key or connect your local agent"))
+	}
 	if errors.Is(err, sessionagent.ErrQueuedMessageNotAuthor) {
 		return nil, boundary.NotAdmitted(status.Error(codes.PermissionDenied, "only the author or an owner may delete a queued message"))
 	}
@@ -244,8 +248,8 @@ func (s *agentServer) UpdateSessionModel(ctx context.Context, in *pb.UpdateSessi
 }
 
 // admitModel decides whether the account may select model here, for
-// UpdateSessionModel and CreateProject. A Claude model needs the server's
-// Claude key; the mock model needs a server that offers it and, outside Local
+// UpdateSessionModel and CreateProject. Claude is a catalog capability; the
+// Session checks its own credential. The mock model needs an offer and, outside Local
 // Kind and Native, the administrator.
 func admitModel(ctx context.Context, b *boundary.Boundary, models SessionModels, accountID string, model conversation.Model) error {
 	if availability := modelprovider.ProfileOf(model).Availability; !availability.Selectable() {
@@ -253,7 +257,7 @@ func admitModel(ctx context.Context, b *boundary.Boundary, models SessionModels,
 	}
 	if model != conversation.ModelMock {
 		if !models.Claude {
-			return &commandRefusalError{status.Error(codes.FailedPrecondition, "this environment has no Claude key")}
+			return &commandRefusalError{status.Error(codes.FailedPrecondition, "this environment does not offer Claude models")}
 		}
 		return nil
 	}
@@ -479,7 +483,7 @@ func agentMessage(value conversation.SequencedMessage) *pb.AgentSequencedMessage
 
 // agentDescription maps all durable pending states and the progress list.
 func agentDescription(value agentloop.AgentDescription) *pb.AgentDescription {
-	out := &pb.AgentDescription{Executor: sessionExecutor(value.Executor), Status: boundary.Enum[pb.AgentDescription_Status](value.Status), WaitingInputRound: int64(value.WaitingInputRound), Model: agentModel(value.Model), ModelRevision: value.ModelRevision, ContextModel: agentModel(value.ContextModel), Effort: string(value.Effort), FirstRetainedSequence: int64(value.FirstRetainedSequence), LastSequence: int64(value.LastSequence), PendingQueuedMessageCount: int64(value.PendingQueuedMessageCount), PendingSteeredMessageCount: int64(value.PendingSteeredMessageCount), Turn: value.Turn,
+	out := &pb.AgentDescription{ModelCredentialVersion: value.ModelCredentialVersion, Executor: sessionExecutor(value.Executor), Status: boundary.Enum[pb.AgentDescription_Status](value.Status), WaitingInputRound: int64(value.WaitingInputRound), Model: agentModel(value.Model), ModelRevision: value.ModelRevision, ContextModel: agentModel(value.ContextModel), Effort: string(value.Effort), FirstRetainedSequence: int64(value.FirstRetainedSequence), LastSequence: int64(value.LastSequence), PendingQueuedMessageCount: int64(value.PendingQueuedMessageCount), PendingSteeredMessageCount: int64(value.PendingSteeredMessageCount), Turn: value.Turn,
 		IsPreviewAutoDeployEnabled: value.IsPreviewAutoDeployEnabled, ModelChangedBy: agentActor(value.ModelChangedBy), PreviewAutoDeployChangedBy: agentActor(value.PreviewAutoDeployChangedBy)}
 	for _, tool := range value.AvailableTools {
 		out.AvailableTools = append(out.AvailableTools, string(tool))

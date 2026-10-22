@@ -38,6 +38,7 @@ ROUTES = {
     "ProjectService": RPC_ROUTE,
     "SessionService": RPC_ROUTE,
     "AgentService": RPC_ROUTE,
+    "ModelCredentialService": RPC_ROUTE,
     "RemoteAgentService": RPC_ROUTE,
     "PreviewService": RPC_ROUTE,
     "ReleaseService": RPC_ROUTE,

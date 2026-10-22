@@ -239,6 +239,8 @@ type SegmentPrompts struct {
 
 // ModelRequest is one stateless model call.
 type ModelRequest struct {
+	// APIKey is transient request authentication and must never be serialized.
+	APIKey  string `json:"-"`
 	Model   Model
 	Effort  Effort
 	Prompts SegmentPrompts
@@ -360,9 +362,9 @@ var (
 	// start it.
 	MockModelUnavailable = ServerRejection{code: "mock_model_unavailable",
 		hint: "This environment does not offer the mock model. Select another model for the Session, then continue."}
-	// NoClaudeKey refuses a Claude model where the server has no Claude key.
+	// NoClaudeKey refuses a Claude model without this Project’s active key.
 	NoClaudeKey = ServerRejection{code: "no_claude_key",
-		hint: "This environment has no Claude key. Select the mock model, or ask the operator to configure the key, then continue."}
+		hint: "Set your Anthropic key for this Project or connect your local agent, then continue."}
 )
 
 // Rejected is the rejection as the error a model call returns.

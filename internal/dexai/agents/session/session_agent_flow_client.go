@@ -10,20 +10,24 @@ package session
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/superdurable/dex/sdk-go/dex"
 	"github.com/superdurable/dex/sdk-go/gen/dexpb"
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
+	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteexec"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/flowdesign"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // eventPollTimeout bounds one long poll of a best-effort Stream, on this
@@ -132,6 +136,8 @@ func (client *SessionAgentFlowClient) SendPendingMessage(ctx context.Context, fl
 	switch {
 	case err != nil:
 		return client.ended(ctx, flowID, err)
+	case admission.CredentialMissing:
+		return modelcredential.ErrUnavailable
 	case admission.AttachmentsRefused:
 		return ErrAttachmentsNeedPlatformAgent
 	case !admission.Accepted:
@@ -147,6 +153,8 @@ func (client *SessionAgentFlowClient) UpdateSessionModel(ctx context.Context, fl
 	switch {
 	case err != nil:
 		return client.ended(ctx, flowID, err)
+	case selection.CredentialMissing:
+		return modelcredential.ErrUnavailable
 	case selection.Stale:
 		return ErrModelRevisionChanged
 	case !selection.Accepted:
@@ -774,4 +782,134 @@ func (client *SessionAgentFlowClient) ReadRemoteHead(ctx context.Context, projec
 		return 0, result.Refusal
 	}
 	return result.Delivery.LastSequence, nil
+}
+
+// ReadModelCredentialInfo never loads the secret AttributeMap.
+func (client *SessionAgentFlowClient) ReadModelCredentialInfo(ctx context.Context, flowID agentloop.FlowID, provider modelcredential.Provider) (modelcredential.Info, error) {
+	ctx, cancel := context.WithTimeout(ctx, readRPCTimeout)
+	defer cancel()
+	var info modelcredential.Info
+	err := dexflow.InvokeRetainedRead(ctx, client.sdk, string(flowID), client.flow.ReadModelCredentialInfo, provider, &info, modelKeyInfoAttribute.Load(provider.String()))
+	return info, err
+}
+
+// ReserveModelCredential is the single writer admission for direct secret mutations.
+func (client *SessionAgentFlowClient) ReserveModelCredential(ctx context.Context, flowID agentloop.FlowID, input modelcredential.Mutation) (modelcredential.Admission, error) {
+	options := dex.RPCInvokeOptions{LoadAttributeMapInstances: []dex.AttributeMapLoad{modelKeyInfoAttribute.Load(input.Provider.String())}}
+	result, err := dexflow.InvokeLockedWith[modelcredential.Admission](ctx, client.sdk, commandRPCTimeout, string(flowID), client.flow.ReserveModelCredential, input, options)
+	if err == nil && !result.Admitted {
+		err = modelcredential.ErrRevision
+	}
+	return result, err
+}
+
+// FinalizeModelCredential follows exact readback and cross-Flow cleanup by the Service.
+func (client *SessionAgentFlowClient) FinalizeModelCredential(ctx context.Context, flowID agentloop.FlowID, input modelcredential.Mutation) (modelcredential.Info, error) {
+	return dexflow.InvokeLockedWith[modelcredential.Info](ctx, client.sdk, commandRPCTimeout, string(flowID), client.flow.FinalizeModelCredential, input, dex.RPCInvokeOptions{LoadAttributeMapInstances: []dex.AttributeMapLoad{modelKeyInfoAttribute.Load(input.Provider.String())}})
+}
+
+// ReadModelCredential loads one hard-delete instance for private in-memory use only.
+func (client *SessionAgentFlowClient) ReadModelCredential(ctx context.Context, flowID agentloop.FlowID, provider modelcredential.Provider) (*modelcredential.Envelope, error) {
+	ctx, cancel := context.WithTimeout(ctx, readRPCTimeout)
+	defer cancel()
+	key := credentialAttributeKey(provider)
+	response, err := client.execution.GetAttributes(ctx, &dexpb.GetAttributesRequest{FlowId: string(flowID), Keys: []string{key}})
+	if err != nil {
+		return nil, err
+	}
+	for _, attribute := range response.GetAttributes() {
+		if attribute.GetKey() != key {
+			continue
+		}
+		value := attribute.GetValue()
+		if _, null := value.GetKind().(*dexpb.Value_NullValue); null {
+			return nil, nil
+		}
+		object := value.GetObjValue()
+		if object == nil || object.GetEncoding() != "json" {
+			return nil, errors.New("invalid model credential encoding")
+		}
+		var envelope modelcredential.Envelope
+		if err := json.Unmarshal(object.GetPayload(), &envelope); err != nil {
+			return nil, errors.New("invalid model credential envelope")
+		}
+		return &envelope, nil
+	}
+	return nil, nil
+}
+
+// WriteModelCredential executes exactly once after fresh writer admission. An uncertain
+// result must be queried, never blindly retried against Dex's fixed hard-delete object.
+func (client *SessionAgentFlowClient) WriteModelCredential(ctx context.Context, flowID agentloop.FlowID, input modelcredential.Mutation, envelope *modelcredential.Envelope) error {
+	ctx, cancel := context.WithTimeout(ctx, commandRPCTimeout)
+	defer cancel()
+	server, err := client.execution.GetServerInfo(ctx, &emptypb.Empty{})
+	if err != nil {
+		return err
+	}
+	if server.GetCurrentProtocolVersion() < 3 {
+		return errors.New("model credentials require Dex protocol 3")
+	}
+	info, err := client.ReadModelCredentialInfo(ctx, flowID, input.Provider)
+	if err != nil {
+		return err
+	}
+	if info.Status != modelcredential.StatusPending || info.OperationID != input.OperationID || info.OperationRevision != input.ExpectedRevision || info.WriteAttempt != input.WriteAttempt || info.Delete != input.Delete {
+		return modelcredential.ErrRevision
+	}
+	value := &dexpb.Value{Kind: &dexpb.Value_NullValue{}}
+	if envelope != nil {
+		if envelope.Revision != info.Revision {
+			return modelcredential.ErrRevision
+		}
+		payload, err := json.Marshal(envelope)
+		if err != nil {
+			return errors.New("encode model credential")
+		}
+		value = &dexpb.Value{Kind: &dexpb.Value_ObjValue{ObjValue: &dexpb.EncodedObject{Encoding: "json", Payload: payload}}}
+	}
+	_, err = client.execution.SetAttributes(ctx, &dexpb.SetAttributesRequest{FlowId: string(flowID), RequestId: credentialWriteRequestID(input), Attributes: []*dexpb.AttributeWrite{{Key: credentialAttributeKey(input.Provider), Value: value, IsHardDeleteOnNull: true}}})
+	return err
+}
+
+func credentialWriteRequestID(input modelcredential.Mutation) string {
+	if input.WriteAttempt == 0 {
+		return input.OperationID
+	}
+	return fmt.Sprintf("%s/retry-%d", input.OperationID, input.WriteAttempt)
+}
+
+// DeleteStoppedModelCredential permits only null writes after abnormal engine completion.
+// A rejected closed-Flow signal is reconciled by exact readback of the hard-delete object.
+func (client *SessionAgentFlowClient) DeleteStoppedModelCredential(ctx context.Context, flowID agentloop.FlowID, operation string) error {
+	ctx, cancel := context.WithTimeout(ctx, commandRPCTimeout)
+	defer cancel()
+	key, err := client.ReadModelCredential(ctx, flowID, modelcredential.Anthropic)
+	if err != nil || key == nil {
+		return err
+	}
+	stopped, err := client.HasAbnormalProjectSessionTermination(ctx, flowID)
+	if err != nil {
+		return err
+	}
+	if !stopped {
+		return ErrCommandRejected
+	}
+	_, writeErr := client.execution.SetAttributes(ctx, &dexpb.SetAttributesRequest{FlowId: string(flowID), RequestId: operation,
+		Attributes: []*dexpb.AttributeWrite{{Key: credentialAttributeKey(modelcredential.Anthropic), IsHardDeleteOnNull: true, Value: &dexpb.Value{Kind: &dexpb.Value_NullValue{}}}}})
+	remaining, err := client.ReadModelCredential(ctx, flowID, modelcredential.Anthropic)
+	if err != nil {
+		return err
+	}
+	if remaining != nil {
+		if writeErr != nil {
+			return writeErr
+		}
+		return modelcredential.ErrPending
+	}
+	return nil
+}
+
+func credentialAttributeKey(provider modelcredential.Provider) string {
+	return modelKeysAttribute.AttributeName() + "/" + url.PathEscape(provider.String())
 }

@@ -10,24 +10,39 @@
 
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useSessionOwner } from "./use-session-owner";
+import { useModelCredential } from "./credentials/use-model-credential";
 
-type SessionContextValue = ReturnType<typeof useSessionOwner>;
+type SessionContextValue = ReturnType<typeof useSessionOwner> & { credential: ReturnType<typeof useModelCredential> };
 type SessionResourceValue = Pick<
   SessionContextValue,
-  "projectId" | "resource" | "status" | "loading" | "error" | "streamState" | "refresh" | "requirementsDraft"
+  | "projectId"
+  | "resource"
+  | "status"
+  | "loading"
+  | "error"
+  | "streamState"
+  | "refresh"
+  | "requirementsDraft"
+  | "credential"
 >;
 const SessionContext = createContext<SessionContextValue | null>(null);
 const SessionResourceContext = createContext<SessionResourceValue | null>(null);
 
 function SessionOwner({ projectId, children }: { projectId: string; children: ReactNode }) {
-  const session = useSessionOwner(projectId);
+  const owned = useSessionOwner(projectId);
+  const credential = useModelCredential(
+    projectId,
+    owned.status === "SESSION_STATUS_ACTIVE",
+    owned.resource?.agent?.description?.modelCredentialVersion,
+  );
+  const session = { ...owned, credential };
   const { resource, status, loading, error, streamState, refresh, requirementsDraft } = session;
   // Streamed text changes only the conversation context. Resource views and
   // indicators read this stable selection of the same owner, with the card's
   // draft, which changes at most once a second while the agent writes it.
   const selected = useMemo(
-    () => ({ projectId, resource, status, loading, error, streamState, refresh, requirementsDraft }),
-    [projectId, resource, status, loading, error, streamState, refresh, requirementsDraft],
+    () => ({ projectId, resource, status, loading, error, streamState, refresh, requirementsDraft, credential }),
+    [projectId, resource, status, loading, error, streamState, refresh, requirementsDraft, credential],
   );
   return (
     <SessionResourceContext.Provider value={selected}>

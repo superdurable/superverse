@@ -78,9 +78,6 @@ func platformOAuthClients(configured map[string]serverconfig.PlatformOAuthClient
 // with it.
 func slackSigningSecret() []byte { return []byte(os.Getenv("SUPERVERSE_SLACK_SIGNING_SECRET")) }
 
-// anthropicAPIKey is the Claude API key; without it only the mock model runs.
-func anthropicAPIKey() string { return os.Getenv("ANTHROPIC_API_KEY") }
-
 // localBuildToken is the shared token of the Local Kind build service,
 // preferably read from its file; it is empty when none is configured.
 func localBuildToken() (string, error) {

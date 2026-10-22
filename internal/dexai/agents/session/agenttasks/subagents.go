@@ -20,6 +20,7 @@ import (
 
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
+	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/git"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
@@ -184,13 +185,13 @@ func (status *SubagentStatus) UnmarshalText(text []byte) error {
 	return comm.UnmarshalName(text, status, SubagentStatus.String, subagentStatuses...)
 }
 
-// The bounds of the Session's subagents. At most maximumRunningSubagents run
+// The bounds of the Session's subagents. At most MaximumRunningSubagents run
 // at once and at most maximumSubagentsWithoutUser start between two messages of
 // the user. A record that is still unfinished subagentLostGrace after its
 // kind's duration counts as lost: it no longer holds the Sandbox or a running
 // place, and a late report still updates it.
 const (
-	maximumRunningSubagents     = 3
+	MaximumRunningSubagents     = 3
 	maximumSubagentsWithoutUser = 6
 	retainedFinishedSubagents   = 50
 	subagentLostGrace           = time.Hour
@@ -387,7 +388,7 @@ func ExpiredSubagents(records map[string]SubagentRecord) []string {
 
 // AdmitSubagentStart decides whether the subagent of call may start: fewer
 // than maximumSubagentsWithoutUser may have started since the user last
-// wrote, fewer than maximumRunningSubagents may run, lost ones not counted,
+// wrote, fewer than MaximumRunningSubagents may run, lost ones not counted,
 // and a connector_develop call must pass admitConnectorTarget. The budget is
 // checked first: once it is spent, waiting for a subagent does not help. A
 // refusal is the call's failure, with no effect: its code and what it found.
@@ -395,7 +396,7 @@ func AdmitSubagentStart(records map[string]SubagentRecord, call SubagentCall, st
 	switch running := len(UnfinishedSubagents(records, now)); {
 	case startedWithoutUser >= maximumSubagentsWithoutUser:
 		return toolfailure.SubagentBudgetReached, fmt.Sprintf("%d subagents were started since the user's last message", startedWithoutUser), false
-	case running >= maximumRunningSubagents:
+	case running >= MaximumRunningSubagents:
 		return toolfailure.SubagentLimitReached, fmt.Sprintf("%d subagents run, the most that may run at once", running), false
 	case call.Connector != nil:
 		return admitConnectorTarget(records, slugs, *call.Connector, now)
@@ -444,13 +445,14 @@ func (call SubagentCall) Fingerprint(sessionFlowID, agentID string) string {
 // its fingerprint, the snapshot its worktree starts from, and the Session's
 // model, HEAD and accepted lease at that moment, which the subagent keeps.
 type SubagentStart struct {
-	Identity    SubagentIdentity   `json:"identity"`
-	Call        SubagentCall       `json:"call"`
-	Fingerprint string             `json:"fingerprint"`
-	BaseCommit  string             `json:"base_commit"`
-	Model       conversation.Model `json:"model"`
-	HeadCommit  string             `json:"head_commit,omitempty"`
-	Lease       workspace.Lease    `json:"lease"`
+	CredentialRevision uint64             `json:"credential_revision,omitempty"`
+	Identity           SubagentIdentity   `json:"identity"`
+	Call               SubagentCall       `json:"call"`
+	Fingerprint        string             `json:"fingerprint"`
+	BaseCommit         string             `json:"base_commit"`
+	Model              conversation.Model `json:"model"`
+	HeadCommit         string             `json:"head_commit,omitempty"`
+	Lease              workspace.Lease    `json:"lease"`
 	// Branch is the library branch of a connector_develop subagent, whose
 	// BaseCommit is the branch's head it started from.
 	Branch string `json:"branch,omitempty"`
@@ -488,7 +490,8 @@ type SubagentAdmissionAnswer struct {
 type AgentTaskLauncher interface {
 	// StartSubagent idempotently starts the SubagentFlow of an admitted
 	// record; a repeated start joins its execution, also a closed one.
-	StartSubagent(ctx context.Context, start SubagentStart) error
+	StartSubagent(ctx context.Context, start SubagentStart, key modelcredential.Envelope, attempt int32) error
+	ReconcileSubagentCredentials(ctx context.Context, project string, holders []modelcredential.Holder, operation string) ([]string, error)
 	// StopSubagent asks the subagent to stop, which saves its changes and
 	// reports, and answers whether it has ended: also when it never started
 	// or its execution stopped. A repeated stop is harmless.

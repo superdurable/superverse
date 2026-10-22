@@ -2224,6 +2224,8 @@ message AgentDescription {
   // The example the Session's Project started from and how it was chosen; unset for a Project
   // created from a description that started from the default example.
   AgentStartingExample starting_example = 32;
+  // Read-only credential metadata version; changes invalidate the key-status read only.
+  string model_credential_version = 33;
 }
 
 // The example a Session's Project started from. A picked example's card is the Session's version 1;
@@ -3643,4 +3645,76 @@ message FlowSearchFilter {
 message FlowBlobReference {
   string id = 1;
   string kind = 2;
+}
+
+enum ModelProvider {
+  MODEL_PROVIDER_UNSPECIFIED = 0;
+  MODEL_PROVIDER_ANTHROPIC = 1;
+  MODEL_PROVIDER_OPENAI = 2;
+  MODEL_PROVIDER_DEEPSEEK = 3;
+  MODEL_PROVIDER_XAI = 4;
+  MODEL_PROVIDER_META = 5;
+  MODEL_PROVIDER_GEMINI = 6;
+  MODEL_PROVIDER_KIMI = 7;
+  MODEL_PROVIDER_GLM = 8;
+  MODEL_PROVIDER_QWEN = 9;
+  MODEL_PROVIDER_MINIMAX = 10;
+}
+
+enum ModelCredentialStatus {
+  MODEL_CREDENTIAL_STATUS_UNSPECIFIED = 0;
+  MODEL_CREDENTIAL_STATUS_ACTIVE = 1;
+  MODEL_CREDENTIAL_STATUS_PENDING = 2;
+  MODEL_CREDENTIAL_STATUS_REVOKED = 3;
+}
+
+message ModelCredentialInfo {
+  uint64 revision = 1;
+  ModelCredentialStatus status = 2;
+  string last4 = 3;
+  Actor set_by = 4;
+  string set_at = 5;
+  // The admitted operation is metadata; a Builder can finish it after a reload.
+  string pending_operation = 7;
+  uint64 pending_revision = 8;
+  bool pending_delete = 9;
+  ModelProvider provider = 10;
+}
+
+// Project-owned model authentication; secret fields must never be logged or traced.
+service ModelCredentialService {
+  rpc GetModelCredentialInfo(GetModelCredentialInfoRequest) returns (GetModelCredentialInfoResponse);
+  rpc SetModelCredential(SetModelCredentialRequest) returns (SetModelCredentialResponse);
+  rpc DeleteModelCredential(DeleteModelCredentialRequest) returns (DeleteModelCredentialResponse);
+}
+
+message GetModelCredentialInfoRequest {
+  string project_id = 1;
+  ModelProvider provider = 2;
+  CallerContext caller = 100;
+}
+message GetModelCredentialInfoResponse {
+  ModelCredentialInfo credential = 1;
+}
+message SetModelCredentialRequest {
+  string project_id = 1;
+  ModelProvider provider = 2;
+  string request_id = 3;
+  optional uint64 expected_revision = 4;
+  // Sensitive: transient authentication material, never recorded in a Flow RPC.
+  string api_key = 5 [debug_redact = true];
+  CallerContext caller = 100;
+}
+message SetModelCredentialResponse {
+  ModelCredentialInfo credential = 1;
+}
+message DeleteModelCredentialRequest {
+  string project_id = 1;
+  ModelProvider provider = 2;
+  string request_id = 3;
+  optional uint64 expected_revision = 4;
+  CallerContext caller = 100;
+}
+message DeleteModelCredentialResponse {
+  ModelCredentialInfo credential = 1;
 }

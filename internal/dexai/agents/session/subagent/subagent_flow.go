@@ -18,6 +18,7 @@ import (
 
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
+	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
@@ -26,6 +27,9 @@ import (
 )
 
 var (
+	modelKeyAttribute           = dex.DefineAttribute[modelcredential.Envelope]("ModelKey", dex.HardDeleteOnNull())
+	credentialRevisionAttribute = dex.DefineAttribute[uint64]("ModelCredentialRevision")
+	credentialStopAttribute     = dex.DefineAttribute[bool]("ModelCredentialChanged")
 	// The subagent: identity and admitted call (installed with the start), Project, status (which
 	// StopSubagent locks), frozen configuration, an early Stop, its lease copy and how it ended.
 	identityAttribute = dex.DefineAttribute[agenttasks.SubagentIdentity]("Identity")
@@ -105,7 +109,7 @@ const readRPCTimeout = 5 * time.Second
 func (*SubagentFlow) GetPersistenceSchema() dex.PersistenceSchema {
 	return dex.PersistenceSchema{
 		Attributes: []dex.AttributeDef{
-			identityAttribute, startAttribute, projectIDAttribute, statusAttribute, configAttribute, stopRequestAttribute, connectorCheckFailuresAttribute, workspaceAttribute, outcomeAttribute,
+			modelKeyAttribute, credentialRevisionAttribute, credentialStopAttribute, identityAttribute, startAttribute, projectIDAttribute, statusAttribute, configAttribute, stopRequestAttribute, connectorCheckFailuresAttribute, workspaceAttribute, outcomeAttribute,
 			agentStateAttribute, messageWindowLockAttribute, contextSegmentAttribute, contextSegmentPromptsAttribute, currentMessagesAttribute, archivedMessagesAttribute,
 		},
 		Channels: []dex.ChannelDef{parallelToolResultsChannel},
@@ -135,7 +139,10 @@ var (
 
 // StopSubagent stops a running subagent (worktree saved, loop and timer cancelled) or records the Stop of
 // an initializing one for its admission; any other subagent is ending or ended and a repeat changes nothing.
-func (*SubagentFlow) StopSubagent(ctx dex.Context, _ dex.None) (*dex.RPCResult[stopAnswer], error) {
+func (*SubagentFlow) StopSubagent(ctx dex.Context, changed *bool) (*dex.RPCResult[stopAnswer], error) {
+	if changed != nil && *changed {
+		comm.MustDo(credentialStopAttribute.Set(ctx, true))
+	}
 	switch status := statusOf(comm.Must(statusAttribute.Get(ctx))); status {
 	case StatusInitializing:
 		comm.MustDo(stopRequestAttribute.Set(ctx, true))
@@ -350,6 +357,12 @@ func (step CallSubagentModel) Execute(ctx dex.Context, _ dex.None) (*dex.StepDec
 	request.WriteReasoning = func(chunk string) error { dexflow.StreamWritten(ctx, reasoning.Write(chunk)); return nil }
 	request.WriteActivity = progress.writeActivity
 	defer dexflow.KeepAlive(ctx, agentloop.ModelHeartbeat{Phase: agentloop.HeartbeatPhaseModelCall})()
+	key, keyErr := subagentModelCredential(ctx, request.Model)
+	if keyErr != nil {
+		return nil, dex.ErrorWithStack(keyErr)
+	}
+	request.APIKey = key
+	defer func() { request.APIKey = "" }()
 	reply, err := step.flow.modelClient.Complete(ctx, request)
 	if _, isRejected := errors.AsType[*conversation.ModelRejectedError](err); isRejected {
 		return dex.GoTo(BeginSubagentFinish{}, subagentFinish{Status: agenttasks.SubagentFailed, Failure: modelFailure(err)}), nil
@@ -426,6 +439,11 @@ func (RecordSubagentFailure) GetStepOptions() *dex.StepOptions { return loopStep
 
 func (RecordSubagentFailure) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, error) {
 	failure := "its model call did not finish before the retries ran out"
+	if model := dexflow.ValueOrZero(configAttribute.Get(ctx)).Model; model != conversation.ModelMock {
+		if _, err := subagentModelCredential(ctx, model); err != nil {
+			failure = modelcredential.UnavailableCode.String() + ": " + modelcredential.ErrUnavailable.Error()
+		}
+	}
 	if dexflow.RecoveryStep(ctx) == dex.GetFinalStepType(RefreshSubagentWorkspace{}) {
 		failure = "its Session lent it no reachable workspace within the wait limit"
 	}
@@ -814,6 +832,10 @@ func (RecordSubagentOutcome) GetStepOptions() *dex.StepOptions {
 // Execute records the outcome under the status lock, also when exhausted retries left the worktree
 // unsaved, and drains the results of a wave a Stop or the deadline cancelled.
 func (RecordSubagentOutcome) Execute(ctx dex.Context, finish subagentFinish) (*dex.StepDecision, error) {
+	comm.MustDo(modelKeyAttribute.Delete(ctx))
+	if dexflow.ValueOrZero(credentialStopAttribute.Get(ctx)) {
+		finish.CredentialChangeReason, finish.Failure = modelcredential.ChangedReason, modelcredential.ChangedReason.String()
+	}
 	if detail := dexflow.RecoveryDetail(ctx); detail != "" {
 		finish.Unsaved = "its worktree could not be saved: " + detail
 	}
@@ -823,7 +845,7 @@ func (RecordSubagentOutcome) Execute(ctx dex.Context, finish subagentFinish) (*d
 		}
 	}
 	status := endStatus(finish.Status)
-	comm.MustDo(outcomeAttribute.Set(ctx, Outcome{Status: status, Report: describeEnd(finish), Changes: finish.Changes, Failure: finish.Failure, Unsaved: finish.Unsaved,
+	comm.MustDo(outcomeAttribute.Set(ctx, Outcome{CredentialChangeReason: finish.CredentialChangeReason, Status: status, Report: describeEnd(finish), Changes: finish.Changes, Failure: finish.Failure, Unsaved: finish.Unsaved,
 		FinishedAt: time.Now().UTC(), Contribution: finish.Contribution, Refused: finish.Refused}))
 	comm.MustDo(statusAttribute.Set(ctx, status.String()))
 	return dex.GoTo(ReportSubagentOutcome{}, nil), nil
@@ -851,6 +873,9 @@ func (step ReportSubagentOutcome) Execute(ctx dex.Context, _ dex.None) (*dex.Ste
 	identity, start, outcome := comm.Must(identityAttribute.Get(ctx)), comm.Must(startAttribute.Get(ctx)), comm.Must(outcomeAttribute.Get(ctx))
 	notification := agenttasks.SubagentNotification(identity, outcome.Status.outcome(), start.Call.Description, outcome.Report, outcome.Changes, outcome.Unsaved != "", outcome.FinishedAt,
 		outcome.Contribution)
+	if outcome.CredentialChangeReason == modelcredential.ChangedReason {
+		notification.Summary += " Reason: " + outcome.CredentialChangeReason.String() + "."
+	}
 	answer := ReportBusy
 	err := dexflow.PollUntil(ctx, 10*time.Second, 10*time.Second, func(round context.Context) (bool, error) {
 		reported, err := step.flow.dependency.ReportSubagentOutcome(round, identity, notification)

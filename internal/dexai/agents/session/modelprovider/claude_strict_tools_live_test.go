@@ -34,7 +34,10 @@ func TestLiveClaudeStrictToolSet(t *testing.T) {
 	if key == "" {
 		t.Fatal("ANTHROPIC_API_KEY is required for the live Claude API tests")
 	}
-	client, err := modelprovider.NewClaudeClientForTest(modelprovider.NewProviderHTTPClient(), modelprovider.ClaudeClientConfig{APIKey: key}, slog.Default())
+	key = modelprovider.PersistLiveCredentialForTest(t, key)
+	transport := modelprovider.NewProviderHTTPClient()
+	t.Cleanup(transport.CloseIdleConnections)
+	client, err := modelprovider.NewClaudeClientForTest(transport, modelprovider.ClaudeClientConfig{APIKey: key}, slog.Default())
 	if err != nil {
 		t.Fatal(err)
 	}

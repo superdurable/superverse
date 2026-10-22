@@ -22,6 +22,7 @@ import (
 
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
+	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteexec"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
@@ -115,6 +116,13 @@ func (flow *SessionAgentFlow) completeModelCall(ctx dex.Context, segment agentlo
 	if err := flow.renderAttachments(ctx, &request); err != nil {
 		return outcome, dex.ErrorWithStack(fmt.Errorf("render the attachments of the request to %s: %w", segment.Model, err))
 	}
+	credential, credentialErr := sessionModelCredential(ctx, request.Model)
+	if credentialErr != nil {
+		return boundedModelOutcome(platformModelOutcome{Admission: admission, Failure: conversation.NoClaudeKey.Rejected()}), nil
+	}
+	request.APIKey = credential.Key
+	outcome.CredentialRevision = credential.Revision
+	defer func() { request.APIKey = "" }()
 	reply, err := flow.modelClient.Complete(ctx, request)
 	if rejected, ok := errors.AsType[*conversation.ModelRejectedError](err); ok {
 		outcome.Failure = publicModelRejection(rejected)
@@ -133,13 +141,14 @@ func (flow *SessionAgentFlow) completeModelCall(ctx dex.Context, segment agentlo
 // The outcome is a durable Dex movement payload, not an Attribute. Reply
 // blocks retain only the provider replay material the existing model path stored.
 type platformModelOutcome struct {
-	Admission  modelAdmission                   `json:"admission"`
-	StartedAt  time.Time                        `json:"started_at"`
-	Reply      *conversation.ModelReply         `json:"reply,omitempty"`
-	Compaction *contextCompaction               `json:"compaction,omitempty"`
-	Summary    string                           `json:"summary,omitempty"`
-	Correction bool                             `json:"correction,omitempty"`
-	Failure    *conversation.ModelRejectedError `json:"failure,omitempty"`
+	Admission          modelAdmission                   `json:"admission"`
+	StartedAt          time.Time                        `json:"started_at"`
+	Reply              *conversation.ModelReply         `json:"reply,omitempty"`
+	Compaction         *contextCompaction               `json:"compaction,omitempty"`
+	Summary            string                           `json:"summary,omitempty"`
+	Correction         bool                             `json:"correction,omitempty"`
+	CredentialRevision uint64                           `json:"credential_revision,omitempty"`
+	Failure            *conversation.ModelRejectedError `json:"failure,omitempty"`
 }
 
 const platformModelOutcomeLimit = 16 << 20
@@ -271,6 +280,15 @@ func (flow *SessionAgentFlow) recordPlatformModelResult(ctx dex.Context, input p
 	if !acceptsUserCommand(ctx) || !modelAdmissionMatches(ctx, input.Admission) {
 		return platformModelRecord{discard: true}
 	}
+	if comm.Must(contextSegmentAttribute.Get(ctx)).Model != conversation.ModelMock {
+		info := dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, modelcredential.Anthropic.String()))
+		if !info.Active() || info.Revision != input.CredentialRevision {
+			input.Reply = nil
+			input.Summary = ""
+			input.Correction = false
+			input.Failure = conversation.NoClaudeKey.Rejected()
+		}
+	}
 	setRunningWork(ctx, nil)
 	if input.Compaction != nil {
 		compaction := *input.Compaction
@@ -351,7 +369,7 @@ var (
 	modelStepOptions = &dex.StepOptions{ExecuteMethodTimeout: 20 * time.Minute, HeartbeatTimeout: time.Minute, ExecuteDurability: dex.StepDurabilitySync,
 		ExecuteLoadAttributeMaps: messageMaps,
 		ExecuteRetry:             dexflow.CappedStepRetry(3, time.Hour)}
-	modelFailureStepOptions = &dex.StepOptions{ExecuteMethodTimeout: time.Minute, ExecuteRetry: shortStepRetry, ExecuteLoadAttributeMaps: messageMaps,
+	modelFailureStepOptions = &dex.StepOptions{ExecuteLoadAttributeMapInstances: []dex.AttributeMapLoad{modelKeyInfoAttribute.Load(modelcredential.Anthropic.String())}, ExecuteMethodTimeout: time.Minute, ExecuteRetry: shortStepRetry, ExecuteLoadAttributeMaps: messageMaps,
 		ExecuteLockAttributes: []dex.AttributeLock{dex.LockAttribute(messageWindowLockAttribute), executorLock, interruptLock}}
 )
 
@@ -410,7 +428,7 @@ func (flow *SessionAgentFlow) planModelCall(ctx dex.Context, next agentloop.Cont
 		}
 		segment := flow.openExecutorSegment(ctx, executor)
 		setRunningWork(ctx, &agentloop.RunningWork{Kind: agentloop.RunningModel})
-		return modelCallPlan{next: nextCallModel, load: segmentLoad(comm.Must(agentStateAttribute.Get(ctx)), segment, false)}
+		return modelCallPlan{next: nextCallModel, load: modelRequestLoad(comm.Must(agentStateAttribute.Get(ctx)), segment, false)}
 	}
 	segment, call := dexflow.OptionalValue(contextSegmentAttribute.Get(ctx)), nextCallModel
 	if segment == nil {
@@ -427,10 +445,18 @@ func (flow *SessionAgentFlow) planModelCall(ctx dex.Context, next agentloop.Cont
 	if next != agentloop.ContinueCallModel {
 		selected := comm.Must(sessionModelAttribute.Get(ctx)).Model
 		if reason := agentloop.SegmentChange(*segment, selected, flow.settings, state.Turn, next == agentloop.ContinueStartTurn); reason != "" {
-			return modelCallPlan{next: nextCompactContext, compaction: contextCompaction{Reason: reason}, load: segmentLoad(state, *segment, true)}
+			return modelCallPlan{next: nextCompactContext, compaction: contextCompaction{Reason: reason}, load: modelRequestLoad(state, *segment, true)}
 		}
 	}
-	return modelCallPlan{next: call, load: segmentLoad(state, *segment, false)}
+	return modelCallPlan{next: call, load: modelRequestLoad(state, *segment, false)}
+}
+
+func modelRequestLoad(state agentloop.AgentState, segment agentloop.ContextSegment, withPendingRequest bool) *dex.StepOptions {
+	options := segmentLoad(state, segment, withPendingRequest)
+	if segment.Model != conversation.ModelMock {
+		options.ExecuteLoadAttributeMapInstances = append(options.ExecuteLoadAttributeMapInstances, modelKeysAttribute.Load(modelcredential.Anthropic.String()))
+	}
+	return options
 }
 
 // segmentLoad selects the archive chunks that hold the segment's entries and
@@ -447,7 +473,7 @@ func segmentLoad(state agentloop.AgentState, segment agentloop.ContextSegment, w
 			first = min(first, sequence)
 		}
 	}
-	loads := []dex.AttributeMapLoad{contextSegmentPromptsAttribute.Load(segment.PromptsKey())}
+	loads := []dex.AttributeMapLoad{contextSegmentPromptsAttribute.Load(segment.PromptsKey()), modelKeyInfoAttribute.Load(modelcredential.Anthropic.String())}
 	for _, key := range agentloop.ArchiveChunksFrom(state, first) {
 		loads = append(loads, archivedMessagesAttribute.Load(key))
 	}
@@ -647,8 +673,14 @@ func (flow *SessionAgentFlow) completeCompaction(ctx dex.Context, input contextC
 	if err := flow.renderAttachments(ctx, &request); err != nil {
 		return nil, nil, dex.ErrorWithStack(fmt.Errorf("render the attachments of context segment %d: %w", segment.Number, err))
 	}
+	credential, credentialErr := sessionModelCredential(ctx, request.Model)
+	if credentialErr != nil {
+		return &platformModelOutcome{Admission: input.Admission, Compaction: &input, Failure: conversation.NoClaudeKey.Rejected()}, nil, nil
+	}
+	request.APIKey = credential.Key
+	defer func() { request.APIKey = "" }()
 	reply, err := flow.modelClient.Complete(ctx, request)
-	outcome := platformModelOutcome{Admission: input.Admission, Compaction: &input, StartedAt: ctx.FirstAttemptAt().UTC()}
+	outcome := platformModelOutcome{CredentialRevision: credential.Revision, Admission: input.Admission, Compaction: &input, StartedAt: ctx.FirstAttemptAt().UTC()}
 	if rejected, ok := errors.AsType[*conversation.ModelRejectedError](err); ok {
 		outcome.Failure = publicModelRejection(rejected)
 	} else if err != nil {
@@ -895,4 +927,25 @@ func setExecutorRPC(ctx dex.Context, input remoteexec.SetRequest) (*dex.RPCResul
 			RecoverParallelToolExecution{}, AwaitParallelToolResults{}, RecordToolFailure{}, SettleForegroundCommand{}, AwaitAgentTimer{}, AwaitToolApproval{}, AwaitRemoteAgent{}), nil
 	}
 	return &dex.RPCResult[remoteexec.SetResult]{Output: output, NextSteps: append(workspaceSteps, dex.MovementOf(InterruptAgent{}, *interruption, dex.WithStepOptions(interruptMovementOptions(*interruption))))}, nil
+}
+
+// sessionModelCredential exact-loads only the selected provider and rejects mismatched revisions.
+func sessionModelCredential(ctx dex.Context, model conversation.Model) (modelcredential.Envelope, error) {
+	if model == conversation.ModelMock {
+		return modelcredential.Envelope{}, nil
+	}
+	info, err := modelKeyInfoAttribute.Get(ctx, modelcredential.Anthropic.String())
+	if dexflow.IsAttributeMapNotLoaded(err) || dexflow.IsAttributeNotFound(err) {
+		return modelcredential.Envelope{}, modelcredential.ErrUnavailable
+	}
+	comm.MustDo(err)
+	envelope, err := modelKeysAttribute.Get(ctx, modelcredential.Anthropic.String())
+	if dexflow.IsAttributeMapNotLoaded(err) || dexflow.IsAttributeNotFound(err) {
+		return modelcredential.Envelope{}, modelcredential.ErrUnavailable
+	}
+	comm.MustDo(err)
+	if !info.Active() || envelope.Revision != info.Revision || envelope.Key == "" {
+		return modelcredential.Envelope{}, modelcredential.ErrUnavailable
+	}
+	return envelope, nil
 }

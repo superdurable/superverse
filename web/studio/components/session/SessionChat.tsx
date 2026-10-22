@@ -34,6 +34,8 @@ import { PendingActionDock } from "./PendingActionDock";
 import {
   EXAMPLE_GREETING_SEQUENCE,
   composerDisabledReason,
+  credentialDisabledReason,
+  firstMessageDisabledReason,
   composerPlaceholder,
   lifecycleMessage,
   mapPendingMessages,
@@ -51,8 +53,6 @@ import { useComposerText } from "./start/use-first-turn-composer";
 import { useLocalCreation } from "./start/use-local-creation";
 import { LocalCreationNotice } from "./start/LocalCreationNotice";
 import { useSessionAttachments } from "./use-session-attachments";
-
-const FIRST_MESSAGE_WAITS = "Your description waits for the agent…";
 
 /**
  * The Project's conversation, pending actions and composer. A local creation keeps its editable
@@ -180,11 +180,7 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
     sessionStatus,
     viewingLive: live !== undefined,
   });
-  // Until the agent takes the first message, which the Session started with, the composers wait for it.
-  const firstMessageWaits =
-    description !== null && description.lastSequence === 0 && (state.snapshot?.queued.length ?? 0) > 0
-      ? FIRST_MESSAGE_WAITS
-      : null;
+  const firstMessageWaits = firstMessageDisabledReason(description, state.snapshot?.queued.length ?? 0);
   const disabledReason =
     composerDisabledReason({
       productInteractive,
@@ -193,7 +189,9 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
       snapshotCurrent: state.snapshotCurrent,
       blockedByPending,
       placeholder,
-    }) ?? firstMessageWaits;
+    }) ??
+    firstMessageWaits ??
+    credentialDisabledReason(remotelyExecuted, description?.model, state.credential.info?.status);
   // A Session on the mock model takes its scenarios' inputs, answers included, from the mock composer.
   const runsMock = !remotelyExecuted && !localCreation.pending && description?.model === "mock";
   const modelMenu = localCreation.waitingForConnection ? (

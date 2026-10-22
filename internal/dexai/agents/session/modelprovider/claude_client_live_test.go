@@ -38,7 +38,10 @@ func liveClient(t *testing.T, key string) *claudeClient {
 	if key == "" {
 		t.Fatal("ANTHROPIC_API_KEY is required for the live Claude API tests")
 	}
-	client, err := newClaudeClient(NewProviderHTTPClient(), ClaudeClientConfig{APIKey: key}, slog.Default())
+	key = PersistLiveCredentialForTest(t, key)
+	transport := NewProviderHTTPClient()
+	t.Cleanup(transport.CloseIdleConnections)
+	client, err := newClaudeClient(transport, ClaudeClientConfig{APIKey: key}, slog.Default())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -264,8 +267,8 @@ func TestLiveClaudeRejections(t *testing.T) {
 	if !errors.As(err, &rejected) || rejected.Status != 404 {
 		t.Fatalf("an unknown model is not a 404 rejection: %v", err)
 	}
-	unauthorized := liveClient(t, "sk-ant-invalid-key")
-	if _, err = unauthorized.Complete(ctx, request); !errors.As(err, &rejected) || rejected.Code != "authentication_error" || rejected.Status != 401 {
+	request.APIKey = "sk-ant-invalid-key"
+	if _, err = client.Complete(ctx, request); !errors.As(err, &rejected) || rejected.Code != "authentication_error" || rejected.Status != 401 {
 		t.Fatalf("an invalid key is not a 401 rejection: %v", err)
 	}
 }

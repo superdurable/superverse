@@ -19,6 +19,7 @@ import (
 
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
+	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
@@ -233,6 +234,12 @@ func recordReply(ctx dex.Context, reply conversation.ModelReply, startedAt time.
 // request; a reply that calls a tool is asked again with tool_choice none, and
 // a reply without a summary is a rejection a retry cannot change.
 func (flow *SubagentFlow) summarize(ctx dex.Context, request conversation.ModelRequest) (string, error) {
+	key, keyErr := subagentModelCredential(ctx, request.Model)
+	if keyErr != nil {
+		return "", keyErr
+	}
+	request.APIKey = key
+	defer func() { request.APIKey = "" }()
 	reply, err := flow.modelClient.Complete(ctx, request)
 	if err == nil && (len(reply.ToolCalls) > 0 || reply.StopReason == conversation.StopReasonToolUse) {
 		request.ToolChoiceNone = true
@@ -306,4 +313,17 @@ func (progress modelProgress) write(event conversation.AgentEvent) {
 func (progress modelProgress) writeActivity(event conversation.AgentEvent) error {
 	progress.write(event)
 	return nil
+}
+
+// subagentModelCredential fails closed until the direct copy of the frozen revision exists.
+func subagentModelCredential(ctx dex.Context, model conversation.Model) (string, error) {
+	if model == conversation.ModelMock {
+		return "", nil
+	}
+	revision := dexflow.ValueOrZero(credentialRevisionAttribute.Get(ctx))
+	envelope := dexflow.ValueOrZero(modelKeyAttribute.Get(ctx))
+	if revision == 0 || envelope.Revision != revision || envelope.Key == "" || dexflow.ValueOrZero(credentialStopAttribute.Get(ctx)) {
+		return "", modelcredential.ErrUnavailable
+	}
+	return envelope.Key, nil
 }

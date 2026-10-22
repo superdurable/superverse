@@ -29,8 +29,8 @@ import (
 type SessionAgentConfig struct {
 	// Model is the model a new Session starts with.
 	Model conversation.Model
-	// Claude is the Claude API client; without a key the server offers no
-	// Claude model.
+	// Claude selects the official adapter configuration; Session requests
+	// provide their own active credential.
 	Claude modelprovider.ClaudeClientConfig
 	// Mock is the client of the in-process mock model; nil when the server
 	// configuration does not offer it.

@@ -31,8 +31,8 @@ import (
 
 // ClaudeClientConfig is the process configuration of the Claude adapter.
 type ClaudeClientConfig struct {
-	// APIKey is an immutable process credential; it never enters a Flow
-	// payload, an activity event or a log field.
+	// APIKey is fixed authentication for the mock endpoint and adapter tests.
+	// Session routing instead requires transient request authentication.
 	APIKey string
 	// BaseURL replaces the default Claude API origin; empty means the default.
 	// Only the mock test model sets it.
@@ -77,6 +77,7 @@ func NewProviderHTTPClient() *http.Client {
 			ForceAttemptHTTP2:     true,
 			MaxIdleConns:          100,
 			MaxIdleConnsPerHost:   20,
+			MaxConnsPerHost:       64,
 			IdleConnTimeout:       90 * time.Second,
 			TLSHandshakeTimeout:   10 * time.Second,
 			ResponseHeaderTimeout: 2 * time.Minute,
@@ -97,7 +98,11 @@ func (client *claudeClient) Complete(ctx context.Context, request conversation.M
 func (client *claudeClient) complete(ctx context.Context, params anthropic.BetaMessageNewParams, request conversation.ModelRequest) (conversation.ModelReply, error) {
 	startedAt := time.Now()
 	var response *http.Response
-	stream := client.client.Beta.Messages.NewStreaming(ctx, params, option.WithResponseInto(&response))
+	options := []option.RequestOption{option.WithResponseInto(&response)}
+	if request.APIKey != "" {
+		options = append(options, option.WithAPIKey(request.APIKey))
+	}
+	stream := client.client.Beta.Messages.NewStreaming(ctx, params, options...)
 	defer func() { _ = stream.Close() }()
 	reply, err := readStream(stream, request, startedAt)
 	if err == nil && client.readsMockProgress {
@@ -213,9 +218,6 @@ func withCacheControl(block json.RawMessage) json.RawMessage {
 	return comm.Must(json.Marshal(fields))
 }
 
-// maximumRejectionDetailBytes bounds the API's explanation of a rejection.
-const maximumRejectionDetailBytes = 1 << 10
-
 // classifyError keeps a retryable failure an error for Dex to retry and turns
 // a rejection a retry cannot change into a ModelRejectedError. The error type is read first: an error event in the
 // middle of a stream has HTTP status 200.
@@ -223,50 +225,48 @@ func classifyError(err error) error {
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return err
 	}
+	diagnostic := safeProviderCause(err)
 	var apiErr *anthropic.Error
 	if !errors.As(err, &apiErr) {
-		return fmt.Errorf("claude API transport: %w", err)
+		return fmt.Errorf("claude API transport failed: %w", diagnostic)
+	}
+	reject := func(rejection *conversation.ModelRejectedError) error {
+		rejection.Detail = diagnostic.Error()
+		return fmt.Errorf("%w: %w", rejection, diagnostic)
 	}
 	status, errorType := apiErr.StatusCode, apiErr.Type()
 	providerMessage, providerCode := providerErrorFields(apiErr)
 	// The enforced monthly cap has a structured code even though its outer
 	// error type is the same rate_limit_error used for temporary throttling.
 	if errorType == shared.ErrorTypeRateLimitError && providerCode == "enforced_spend_limit_reached" {
-		return conversation.ProviderSpendLimitReached.Rejected(status)
+		return reject(conversation.ProviderSpendLimitReached.Rejected(status))
 	}
 	// Anthropic exposes exhausted prepaid credit as invalid_request_error,
 	// shared with unrelated request errors. Its documented message is the only
 	// discriminator; never retain the provider's response text.
 	if errorType == shared.ErrorTypeInvalidRequestError && status == http.StatusBadRequest &&
 		strings.HasPrefix(providerMessage, "Your credit balance is too low to access the Anthropic API.") {
-		return conversation.ProviderCreditExhausted.Rejected(status)
+		return reject(conversation.ProviderCreditExhausted.Rejected(status))
 	}
 	if errorType == shared.ErrorTypeInvalidRequestError && status == http.StatusBadRequest &&
 		(strings.HasPrefix(providerMessage, "You have reached your specified API usage limits") ||
 			strings.HasPrefix(providerMessage, "You have reached your specified workspace API usage limits")) {
-		return conversation.ProviderSpendLimitReached.Rejected(status)
+		return reject(conversation.ProviderSpendLimitReached.Rejected(status))
 	}
 	if errorType == shared.ErrorTypeBillingError {
-		return conversation.ProviderBillingProblem.Rejected(status)
+		return reject(conversation.ProviderBillingProblem.Rejected(status))
 	}
 	switch errorType {
 	case shared.ErrorTypeRateLimitError, shared.ErrorTypeOverloadedError, shared.ErrorTypeAPIError, shared.ErrorTypeTimeoutError:
-		return fmt.Errorf("claude API %s (HTTP %d, request %s)", errorType, status, apiErr.RequestID)
+		return fmt.Errorf("claude API temporarily unavailable: %w", diagnostic)
 	case shared.ErrorTypeInvalidRequestError, shared.ErrorTypeAuthenticationError, shared.ErrorTypePermissionError,
 		shared.ErrorTypeNotFoundError:
-		return &conversation.ModelRejectedError{Code: string(errorType), Status: status, Detail: rejectionDetail(apiErr)}
+		return reject(&conversation.ModelRejectedError{Code: string(errorType), Status: status})
 	}
 	if status >= 400 && status < 500 && status != http.StatusRequestTimeout && status != http.StatusTooManyRequests {
-		return &conversation.ModelRejectedError{Code: fmt.Sprintf("http_%d", status), Status: status, Detail: rejectionDetail(apiErr)}
+		return reject(&conversation.ModelRejectedError{Code: fmt.Sprintf("http_%d", status), Status: status})
 	}
-	return fmt.Errorf("claude API error %q (HTTP %d, request %s)", errorType, status, apiErr.RequestID)
-}
-
-// rejectionDetail stays in server diagnostics; publicModelRejection removes it
-// before a model rejection enters Flow state.
-func rejectionDetail(apiErr *anthropic.Error) string {
-	message, _ := providerErrorFields(apiErr)
-	return comm.TruncateUTF8(strings.TrimSpace(message+" (request "+apiErr.RequestID+")"), maximumRejectionDetailBytes)
+	return fmt.Errorf("claude API failed: %w", diagnostic)
 }
 
 // providerErrorFields reads the fields needed for narrow budget classifications
@@ -283,4 +283,55 @@ func providerErrorFields(apiErr *anthropic.Error) (string, string) {
 	}
 	_ = json.Unmarshal([]byte(apiErr.RawJSON()), &body)
 	return strings.TrimSpace(body.Error.Message), body.Error.Details.ErrorCode
+}
+
+// ValidateCredential performs a bounded one-token official endpoint request before activation.
+func ValidateCredential(ctx context.Context, httpClient *http.Client, key string, model conversation.Model, baseURL string, logger *slog.Logger) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	client, err := newClaudeClient(httpClient, ClaudeClientConfig{BaseURL: baseURL}, logger)
+	if err != nil {
+		return err
+	}
+	_, err = client.client.Beta.Messages.New(ctx, anthropic.BetaMessageNewParams{Model: anthropic.Model(model.ProviderModel()), MaxTokens: 1, Messages: []anthropic.BetaMessageParam{{Role: anthropic.BetaMessageParamRoleUser, Content: []anthropic.BetaContentBlockParamUnion{anthropic.NewBetaTextBlock("Hello")}}}}, option.WithAPIKey(key))
+	if err != nil {
+		return classifyError(err)
+	}
+	return nil
+}
+
+// providerCallCause keeps errors.Is/As while its text exposes only an allowlist.
+// Raw SDK bodies, request URLs and authentication headers are never formatted.
+type providerCallCause struct {
+	cause     error
+	status    int
+	kind      string
+	requestID string
+	timeout   bool
+}
+
+func (e *providerCallCause) Error() string {
+	return fmt.Sprintf("%T (HTTP %d, type=%s, request_id=%s, timeout=%t)", e.cause, e.status, e.kind, e.requestID, e.timeout)
+}
+func (e *providerCallCause) Unwrap() error { return e.cause }
+
+func safeProviderCause(err error) *providerCallCause {
+	result := &providerCallCause{cause: err, kind: "transport"}
+	if timed, ok := errors.AsType[net.Error](err); ok {
+		result.timeout = timed.Timeout()
+	}
+	if api, ok := errors.AsType[*anthropic.Error](err); ok {
+		result.status, result.kind = api.StatusCode, "unknown"
+		switch api.Type() {
+		case shared.ErrorTypeRateLimitError, shared.ErrorTypeOverloadedError, shared.ErrorTypeAPIError, shared.ErrorTypeTimeoutError,
+			shared.ErrorTypeInvalidRequestError, shared.ErrorTypeAuthenticationError, shared.ErrorTypePermissionError, shared.ErrorTypeNotFoundError, shared.ErrorTypeBillingError:
+			result.kind = string(api.Type())
+		}
+		if strings.HasPrefix(api.RequestID, "req_") && len(api.RequestID) <= 128 && strings.IndexFunc(api.RequestID, func(r rune) bool {
+			return !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '_' || r == '-')
+		}) < 0 {
+			result.requestID = api.RequestID
+		}
+	}
+	return result
 }

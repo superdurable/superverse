@@ -14,9 +14,12 @@ import { readProject, readSession } from "@/tests/e2e/support/project";
 import { rpc, rpcAnswered, rpcResult } from "@/tests/e2e/support/studio-api";
 import { sendMockInput, waitForFirstMockInput } from "@/tests/e2e/support/mock/mock-composer";
 
-// Every command crosses the real Studio BFF, gRPC and Dex. Only the eventual model reply is mock.
+// Every command crosses the real Studio BFF, gRPC and Dex. Only the model endpoint is mock.
+test.use({ trace: "off", screenshot: "off", video: "off" });
 test("catalog mappings preserve a stored Claude selection and refuse unavailable providers", async ({ page }) => {
   test.setTimeout(20 * 60_000);
+  if (process.env.SUPERVERSE_E2E_BYOK_FIXTURE !== "true")
+    throw new Error("This spec requires TestProjectAnthropicCredentialDexIntegration's real Native server fixture");
   await register(page);
   const teamSpaceId = await createTeamSpace(page);
   const created = await rpcResult(page.request, "CreateProject", {
@@ -44,9 +47,16 @@ test("catalog mappings preserve a stored Claude selection and refuse unavailable
         },
       )
       .toBe("STATUS_WAITING_FOR_MESSAGE");
+    await rpcResult(page.request, "SetModelCredential", {
+      projectId,
+      provider: "MODEL_PROVIDER_ANTHROPIC",
+      requestId: randomUUID(),
+      expectedRevision: "0",
+      apiKey: "synthetic-byok-studio-1234",
+    });
     const initial = (await readSession(page, projectId)).agent!.description!;
     const revision = initial.modelRevision;
-    // New enum values decode correctly but cannot become selected, even on a key-bearing server.
+    // New enum values decode correctly but cannot become selected, even with an active Project key.
     const refused = await rpc(page.request, "UpdateSessionModel", {
       projectId,
       model: "AGENT_MODEL_GPT_6_ASTRA",

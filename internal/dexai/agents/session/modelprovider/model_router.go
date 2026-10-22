@@ -19,25 +19,22 @@ import (
 )
 
 // ModelRouter is the Flow's model client: it sends each request to the
-// client of its model, the mock model's to the in-process mock Claude API and
-// every other one to the Claude API. One Session may switch between them; a
-// segment stays on one model, so a reply never mixes the two.
+// reviewed adapter for its admitted model. Claude uses the Project key and mock
+// uses the in-process mock Claude API. A segment stays on one selected model.
 type ModelRouter struct {
-	// claude is nil when the server has no Claude key.
+	// claude uses the key of each admitted Session request.
 	claude *claudeClient
 	// mock is nil when the server configuration does not offer the mock model.
 	mock *claudeClient
 }
 
 // NewModelRouter builds the clients the server offers over one owned HTTP
-// client: Claude when claude has a key, the mock model when mock is set.
+// client: official Claude with per-request authentication, and the configured mock.
 func NewModelRouter(httpClient *http.Client, claude ClaudeClientConfig, mock *ClaudeClientConfig, logger *slog.Logger) (*ModelRouter, error) {
 	router := &ModelRouter{}
 	var err error
-	if claude.APIKey != "" {
-		if router.claude, err = newClaudeClient(httpClient, claude, logger); err != nil {
-			return nil, err
-		}
+	if router.claude, err = newClaudeClient(httpClient, ClaudeClientConfig{BaseURL: claude.BaseURL}, logger); err != nil {
+		return nil, err
 	}
 	if mock != nil {
 		if router.mock, err = newClaudeClient(httpClient, *mock, logger); err != nil {
@@ -66,12 +63,14 @@ func mockProgress(response *http.Response) *conversation.MockProgress {
 }
 
 // Complete streams the reply of the request's model from its client. The API
-// admits only the models the server offers; a Session that selected one before
-// the server stopped offering it, such as a Claude model before the key was
-// taken out, gets a rejection that ends its turn.
+// admits only available catalog models. A stored unavailable model or a Claude
+// request without its Project key gets a rejection that ends its turn.
 func (router *ModelRouter) Complete(ctx context.Context, request conversation.ModelRequest) (conversation.ModelReply, error) {
 	if availability := ProfileOf(request.Model).Availability; !availability.Selectable() {
 		return conversation.ModelReply{}, (&conversation.ModelRejectedError{Code: "model_unavailable", Hint: availability.Reason()})
+	}
+	if request.Model != conversation.ModelMock && request.APIKey == "" {
+		return conversation.ModelReply{}, conversation.NoClaudeKey.Rejected()
 	}
 	client := router.claude
 	if request.Model == conversation.ModelMock {

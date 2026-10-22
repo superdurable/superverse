@@ -317,7 +317,7 @@ func startCleanupProbeOn(t *testing.T, ctx context.Context, model conversation.M
 		provisions: provision.NewSandboxProvisionFlowClientForTest(sdk, provisionFlow, reader, names),
 		workspaces: sessionworkspace.NewSessionWorkspaceFlowClientForTest(sdk, workspaceFlow, reader),
 		previews:   &preview.PreviewFlowClient{Dex: sdk, Flow: previewFlow, Execution: reader},
-		subagents:  subagent.NewSubagentFlowClientForTest(sdk, subagentFlow)}
+		subagents:  subagent.NewSubagentFlowClientForTest(sdk, subagentFlow, reader)}
 	project := projecttest.CreateForTest(ctx, t, probe.projects, t.Name())
 	probe.identity = agentloop.SessionIdentity{ProjectID: project.ProjectID, Profile: agentloop.ProfileSessionV1, HeadCommit: project.AppManifest.SourceCommit}
 	probe.id, probe.boundary = agentloop.SessionFlowID(project.ProjectID), names.SessionNamespace(project.ProjectID)

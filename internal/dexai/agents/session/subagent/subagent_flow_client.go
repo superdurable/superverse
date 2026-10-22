@@ -10,14 +10,19 @@ package subagent
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 	"time"
 
 	"github.com/superdurable/dex/sdk-go/dex"
+	"github.com/superdurable/dex/sdk-go/gen/dexpb"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
+	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 )
@@ -27,13 +32,14 @@ import (
 // Project's subagents for its cleanup and the best-effort activity of one
 // subagent.
 type SubagentFlowClient struct {
-	sdk  *dex.Client
-	flow *SubagentFlow
+	execution dexpb.FlowServiceClient
+	sdk       *dex.Client
+	flow      *SubagentFlow
 }
 
 // newSubagentFlowClient binds the client to the shared Dex client.
-func newSubagentFlowClient(sdk *dex.Client, flow *SubagentFlow) *SubagentFlowClient {
-	return &SubagentFlowClient{sdk: sdk, flow: flow}
+func newSubagentFlowClient(sdk *dex.Client, flow *SubagentFlow, execution dexpb.FlowServiceClient) *SubagentFlowClient {
+	return &SubagentFlowClient{sdk: sdk, flow: flow, execution: execution}
 }
 
 // Start idempotently starts the subagent of start under its own FlowID, which
@@ -145,6 +151,106 @@ func (c *SubagentFlowClient) LatestActivityToken(ctx context.Context, id agentta
 }
 
 // NewSubagentFlowClientForTest is newSubagentFlowClient for the tests.
-func NewSubagentFlowClientForTest(sdk *dex.Client, flow *SubagentFlow) *SubagentFlowClient {
-	return newSubagentFlowClient(sdk, flow)
+func NewSubagentFlowClientForTest(sdk *dex.Client, flow *SubagentFlow, execution dexpb.FlowServiceClient) *SubagentFlowClient {
+	return newSubagentFlowClient(sdk, flow, execution)
+}
+
+// StopForCredentialChange cancels model execution and records the reason in its outcome.
+func (c *SubagentFlowClient) StopForCredentialChange(ctx context.Context, id agenttasks.SubagentIdentity) error {
+	changed := true
+	_, err := dexflow.InvokeLocked[stopAnswer](ctx, c.sdk, stopLockWait, id.FlowID(), c.flow.StopSubagent, &changed)
+	var inactive *dex.FlowNotActiveOrNotFoundError
+	if errors.As(err, &inactive) {
+		return nil
+	}
+	return err
+}
+
+// ReadModelCredential is a private exact read; callers must never log its value.
+func (c *SubagentFlowClient) ReadModelCredential(ctx context.Context, id agenttasks.SubagentIdentity) (*modelcredential.Envelope, error) {
+	ctx, cancel := context.WithTimeout(ctx, readRPCTimeout)
+	defer cancel()
+	response, err := c.execution.GetAttributes(ctx, &dexpb.GetAttributesRequest{FlowId: id.FlowID(), Keys: []string{modelKeyAttribute.AttributeName()}})
+	if status.Code(err) == codes.NotFound {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	for _, kv := range response.GetAttributes() {
+		if kv.GetKey() != modelKeyAttribute.AttributeName() {
+			continue
+		}
+		if _, null := kv.GetValue().GetKind().(*dexpb.Value_NullValue); null {
+			return nil, nil
+		}
+		object := kv.GetValue().GetObjValue()
+		if object == nil || object.GetEncoding() != "json" {
+			return nil, errors.New("invalid subagent credential encoding")
+		}
+		var envelope modelcredential.Envelope
+		if json.Unmarshal(object.GetPayload(), &envelope) != nil {
+			return nil, errors.New("invalid subagent credential envelope")
+		}
+		return &envelope, nil
+	}
+	return nil, nil
+}
+
+// WriteModelCredential is called only while the Session provider writer is reserved.
+func (c *SubagentFlowClient) WriteModelCredential(ctx context.Context, id agenttasks.SubagentIdentity, operation string, envelope *modelcredential.Envelope) error {
+	ctx, cancel := context.WithTimeout(ctx, stopLockWait)
+	defer cancel()
+	value := &dexpb.Value{Kind: &dexpb.Value_NullValue{}}
+	if envelope != nil {
+		payload, err := json.Marshal(envelope)
+		if err != nil {
+			return errors.New("encode subagent credential")
+		}
+		value = &dexpb.Value{Kind: &dexpb.Value_ObjValue{ObjValue: &dexpb.EncodedObject{Encoding: "json", Payload: payload}}}
+	}
+	_, err := c.execution.SetAttributes(ctx, &dexpb.SetAttributesRequest{FlowId: id.FlowID(), RequestId: operation, Attributes: []*dexpb.AttributeWrite{{Key: modelKeyAttribute.AttributeName(), Value: value, IsHardDeleteOnNull: true}}})
+	return err
+}
+
+// CredentialTarget confirms the started execution's frozen revision and live lifecycle before copying.
+func (c *SubagentFlowClient) CredentialTarget(ctx context.Context, id agenttasks.SubagentIdentity) (uint64, bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, readRPCTimeout)
+	defer cancel()
+	response, err := c.execution.GetAttributes(ctx, &dexpb.GetAttributesRequest{FlowId: id.FlowID(), Keys: []string{credentialRevisionAttribute.AttributeName(), statusAttribute.AttributeName()}})
+	if err != nil {
+		return 0, false, err
+	}
+	var revision uint64
+	var status FlowStatus
+	for _, kv := range response.GetAttributes() {
+		switch kv.GetKey() {
+		case credentialRevisionAttribute.AttributeName():
+			revision = uint64(kv.GetValue().GetIntValue())
+		case statusAttribute.AttributeName():
+			status = statusOf(kv.GetValue().GetStringValue())
+		}
+	}
+	if status.definition == nil {
+		return 0, false, errors.New("missing subagent credential target lifecycle")
+	}
+	return revision, !status.ended() && status != StatusFinishing, nil
+}
+
+// CredentialHolderRunning checks both business lifecycle and engine completion.
+func (c *SubagentFlowClient) CredentialHolderRunning(ctx context.Context, id agenttasks.SubagentIdentity) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, readRPCTimeout)
+	defer cancel()
+	summary, err := c.execution.GetFlowSummary(ctx, &dexpb.GetFlowSummaryRequest{FlowId: id.FlowID()})
+	if status.Code(err) == codes.NotFound {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if summary.GetFlowStatus() != dexpb.FlowStatus_FLOW_STATUS_RUNNING {
+		return false, nil
+	}
+	_, running, err := c.CredentialTarget(ctx, id)
+	return running, err
 }

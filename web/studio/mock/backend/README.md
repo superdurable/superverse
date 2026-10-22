@@ -5,23 +5,24 @@ Purpose: Provides explicit development business-service fixtures through generat
 
 Importers: `app` imports this directory.
 
-Imports: it imports `lib/generated/protobuf`, `lib/server`, `lib/shared`, `mock/fixture`, `mock/store`, `mock/store/attachments`, `mock/store/delivery`, `mock/store/scenarios`, `mock/store/setup`, `mock/store/tasks` and `mock/store/tenancy`.
+Imports: it imports `lib/api`, `lib/generated/protobuf`, `lib/server`, `lib/shared`, `mock/fixture`, `mock/store`, `mock/store/attachments`, `mock/store/delivery`, `mock/store/scenarios`, `mock/store/setup`, `mock/store/tasks` and `mock/store/tenancy`.
 
 ```mermaid
 flowchart LR
   self["mock/backend"]
   c0["app"] --> self
-  self --> d0["lib/generated/protobuf"]
-  self --> d1["lib/server"]
-  self --> d2["lib/shared"]
-  self --> d3["mock/fixture"]
-  self --> d4["mock/store"]
-  self --> d5["mock/store/attachments"]
-  self --> d6["mock/store/delivery"]
-  self --> d7["mock/store/scenarios"]
-  self --> d8["mock/store/setup"]
-  self --> d9["mock/store/tasks"]
-  self --> d10["mock/store/tenancy"]
+  self --> d0["lib/api"]
+  self --> d1["lib/generated/protobuf"]
+  self --> d2["lib/server"]
+  self --> d3["lib/shared"]
+  self --> d4["mock/fixture"]
+  self --> d5["mock/store"]
+  self --> d6["mock/store/attachments"]
+  self --> d7["mock/store/delivery"]
+  self --> d8["mock/store/scenarios"]
+  self --> d9["mock/store/setup"]
+  self --> d10["mock/store/tasks"]
+  self --> d11["mock/store/tenancy"]
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 

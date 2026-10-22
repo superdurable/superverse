@@ -584,3 +584,52 @@ work. The three 10 MiB Streams retain their existing shared Flow-type budget
 and are best effort. Each call uses the existing model and Sandbox data paths:
 no cloud control-plane call or tenant-wide scan occurs per call, poll or event.
 
+
+## Project credential execution copy
+
+All existing Flow identity, business task identity, RequestID, duplicate start,
+reuse, admission, deadline, Steps, locks, message maps, Channels and shared
+best-effort Streams remain unchanged. `SubagentStart.CredentialRevision` is a
+non-secret frozen source revision, installed as `ModelCredentialRevision<uint64>`.
+The new ordinary `ModelKey<Envelope{Revision uint64, Key string}>` Attribute uses
+`HardDeleteOnNull()`; it is not an AttributeMap and has no instance key.
+`ModelCredentialChanged<bool>` records a credential-driven Stop reason. None of
+these Attributes is indexed or SQL-synced. The Session remains the credential
+owner; the child holds only a bounded execution copy to avoid a cross-Flow read
+on every model call.
+
+The Session ExecuteTool serializes Start+copy through its exact provider metadata lock,
+starts without a key, checks the child's frozen revision/lifecycle, and copies
+through the typed Subagent Flow client's direct hard-delete write. It checks the
+child lifecycle again and clears copies of terminal/finishing children. A repeated
+Start never writes key bytes through initial Attributes or RPC input. A mismatched
+old execution is stopped, and a terminal execution receives no new copy. If a replay
+finds the admitted copy absent or mismatched, it stops that child with the credential-change
+reason and exact-clears its copy. The uncertain copy is not repeated; parent metadata
+remains Active throughout, while the child fails closed. A missing or superseded
+prepared holder is a typed tool rejection before any child starts, without
+retry exhaustion. A child stopped during revision/copy reconciliation also
+answers `model_credential_unavailable`, rather than claiming a working task;
+its retained record delivers the credential-change task notification. A metadata-only holder is
+committed by the existing ExecuteTool before the copy; its CallID makes admission
+idempotent. This adds no Step type and passes no key through a Step payload or RPC.
+`CallSubagentModel` and compaction fail closed with the typed retryable
+`UnavailableError` until the envelope matches the frozen revision. Existing bounded
+model Step retries apply; exhaustion reports `model_credential_not_available`. An
+existing child without the new frozen revision has revision zero and fails closed
+through this same bounded typed failure; it never adopts a platform or Project key.
+
+No credential Channel, confirmation RPC, or waiting Step is added. The original
+model Step's retry and explicit failure outcome are sufficient for the short
+Start+copy interval, avoiding a second admission/notification lifecycle. Replacement/deletion also exact-clears finished, timed-out and abnormally ended
+children retained in holder metadata or the bounded task records. An engine-ended
+child cannot be assumed to have run its terminal hard-delete Step. On
+replacement or deletion the existing Stop RPC accepts a non-secret reason flag,
+cancels the model/tool Steps and records the closed typed `ChangedReason` in
+`Outcome.CredentialChangeReason`; summary rendering uses that value rather than
+branching on arbitrary failure text.
+The Service exact-deletes the copy before reporting the mutation successful.
+Terminal `RecordSubagentOutcome` explicitly deletes the copy as well; Flow
+completion is not automatic hard deletion. Abnormal termination retains the
+usual operator/retention limitation. The [Session credential contract](session.md#project-model-credentials)
+owns mutation recovery, secret boundaries, authorization and resource bounds.

@@ -5,7 +5,7 @@ Purpose: The page-owned Session: `SessionProvider`, its owner hook with the sing
 
 Importers: `components/agent/attachments`, `components/agent/conversation`, `components/agent/interaction`, `components/build`, `components/flow/scope`, `components/project`, `components/publishing`, `components/session`, `components/session/composer`, `components/session/executor`, `components/session/mock`, `components/session/start` and `lib/session/design` import this directory.
 
-Imports: it imports `lib/api`, `lib/api/transport`, `lib/generated/protobuf`, `lib/session/attachments`, `lib/session/draft`, `lib/session/model`, `lib/shared`, `lib/shared/problem` and `lib/shared/version` and calls the `SessionService` API.
+Imports: it imports `lib/api`, `lib/api/transport`, `lib/generated/protobuf`, `lib/session/attachments`, `lib/session/credentials`, `lib/session/draft`, `lib/session/model`, `lib/shared`, `lib/shared/problem` and `lib/shared/version` and calls the `SessionService` API.
 
 ```mermaid
 flowchart LR
@@ -27,11 +27,12 @@ flowchart LR
   self --> d1["lib/api/transport"]
   self --> d2["lib/generated/protobuf"]
   self --> d3["lib/session/attachments"]
-  self --> d4["lib/session/draft"]
-  self --> d5["lib/session/model"]
-  self --> d6["lib/shared"]
-  self --> d7["lib/shared/problem"]
-  self --> d8["lib/shared/version"]
+  self --> d4["lib/session/credentials"]
+  self --> d5["lib/session/draft"]
+  self --> d6["lib/session/model"]
+  self --> d7["lib/shared"]
+  self --> d8["lib/shared/problem"]
+  self --> d9["lib/shared/version"]
   self --> e0(["SessionService API"])
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->

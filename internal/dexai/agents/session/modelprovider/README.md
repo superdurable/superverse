@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Implements the Session Agent's model client over the Claude Messages API: model profiles, byte-exact replay of stored blocks, streamed summaries and tool activity, fallback cleanup and error classification.
 
-Callers: `cmd/superverse-server/config`, `cmd/tools/check-proto-enums`, `internal/dexai/agents/session`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/modelprovider/mockmodel`, `internal/dexai/agents/session/subagent`, `internal/dexai/api` and `internal/dexai/bootstrap` import this package.
+Callers: `cmd/superverse-server/config`, `cmd/tools/check-proto-enums`, `internal/dexai/agents`, `internal/dexai/agents/session`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/modelprovider/mockmodel`, `internal/dexai/agents/session/subagent`, `internal/dexai/api` and `internal/dexai/bootstrap` import this package.
 
 Dependencies: it imports `internal/comm` and `internal/dexai/agents/session/conversation` and calls the Claude Messages API.
 
@@ -12,12 +12,13 @@ flowchart LR
   self["internal/dexai/agents/session/modelprovider"]
   c0["cmd/superverse-server/config"] --> self
   c1["cmd/tools/check-proto-enums"] --> self
-  c2["internal/dexai/agents/session"] --> self
-  c3["internal/dexai/agents/session/agentloop"] --> self
-  c4["internal/dexai/agents/session/modelprovider/mockmodel"] --> self
-  c5["internal/dexai/agents/session/subagent"] --> self
-  c6["internal/dexai/api"] --> self
-  c7["internal/dexai/bootstrap"] --> self
+  c2["internal/dexai/agents"] --> self
+  c3["internal/dexai/agents/session"] --> self
+  c4["internal/dexai/agents/session/agentloop"] --> self
+  c5["internal/dexai/agents/session/modelprovider/mockmodel"] --> self
+  c6["internal/dexai/agents/session/subagent"] --> self
+  c7["internal/dexai/api"] --> self
+  c8["internal/dexai/bootstrap"] --> self
   self --> d0["internal/comm"]
   self --> d1["internal/dexai/agents/session/conversation"]
   self --> e0(["Claude Messages API"])
@@ -27,16 +28,20 @@ flowchart LR
 `claudeClient` implements `conversation.ModelClient` over the Claude Messages API
 (`client.Beta.Messages.NewStreaming`). The SDK reads no credential or base URL from
 the environment and never retries; Dex retries the Step. A request uses exactly the
-configured `ANTHROPIC_API_KEY` over an explicitly owned HTTP client that refuses
+Project’s transient `ModelRequest.APIKey` over an explicitly owned HTTP client that refuses
 redirects. `ClaudeClientConfig.BaseURL` replaces the API origin and is set only for the
 [mock model](mockmodel/README.md), which `agent.mockModel: true` starts in the server process;
 `RequestBetas` lists the beta headers a request can carry, which that model accepts.
 
 `ModelRouter` is the Flow's `conversation.ModelClient`: it sends the calls of a Session on the
 model `mock` to a second `claudeClient` pointed at the in-process mock model with its placeholder
-key, and admitted Claude calls to the Claude API. Unavailable catalog models are rejected before client selection. Without a Claude key the server builds no Claude
-client and a Claude model's call is rejected (`no_claude_key`); the API already refuses to select
-one there. A segment stays on one model, so one reply never mixes the two.
+key. Unavailable catalog models are rejected before client selection. Admitted Claude calls go to the official Claude API with the Project’s active credential.
+A request without a key is rejected (`no_claude_key`); Session admission checks
+its metadata and model Steps require equal active metadata/envelope revisions.
+The server constructs no per-key transport or pool. A segment stays on one model. Error classification preserves the typed SDK or
+transport cause for `errors.Is`/`errors.As`, while formatted diagnostics contain
+only HTTP status, an allowlisted error type, validated request ID, cause type
+and timeout flag. Provider bodies, request URLs and headers are never formatted.
 
 | File | Owns |
 | --- | --- |
@@ -51,8 +56,8 @@ The adapter classifies Anthropic's documented low-credit HTTP 400
 `invalid_request_error` by its specific message prefix, because the structured error
 type is shared with unrelated invalid requests. The message is inspected only for
 classification; its text never enters the resulting credit or spend-limit
-error. Other rejected requests retain a bounded API explanation in server
-warning and error diagnostics, which is removed before Flow state.
+error. Other rejected requests retain only fixed error categories in diagnostics; raw
+provider bodies and request IDs are discarded so they cannot echo a credential.
 There is no OpenAI-compatible model adapter in this package.
 The monthly enforced spend cap is identified by Anthropic's structured
 `error.details.error_code`; user-set spending caps have only documented
@@ -64,7 +69,7 @@ spending-limit guidance instead of the prepaid-credit guidance.
 
 `claude_client_live_test.go` (build tag `live`, `make test-claude-live`) calls the real
 Claude API with `ANTHROPIC_API_KEY` (the Make target reads it from the main
-checkout's `.env` unless it is exported); a missing key fails the test. It sends one
+checkout's `.env` unless it is exported); a missing key fails the test. The live tests also require a ready local lane and its real dependency settings: each creates a Project, sets the developer's key through `ModelCredentialService`, exact-reads its envelope for adapter requests, and deletes it before Project cleanup. Key validation adds one bounded one-token request per test. Run them only when the platform developer requests real-model verification. It sends one
 request per model profile, a multi-turn append-only tool loop with
 `prefix_mismatch_behavior: error` and its `count_tokens` replay, a compaction, a
 continuation after `max_tokens` and the classification of rejected requests.

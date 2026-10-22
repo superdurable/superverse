@@ -18,6 +18,7 @@ import (
 
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
+	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/git"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
@@ -176,13 +177,14 @@ const maximumReportBytes = conversation.MaximumSubagentReportBytes
 // changes unsaved in the worktree on the volume, and whether its report
 // reached the Session.
 type Outcome struct {
-	Status     FlowStatus                `json:"status"`
-	Report     string                    `json:"report,omitempty"`
-	Changes    *conversation.TaskChanges `json:"changes,omitempty"`
-	Failure    string                    `json:"failure,omitempty"`
-	Unsaved    string                    `json:"unsaved,omitempty"`
-	FinishedAt time.Time                 `json:"finished_at"`
-	Delivery   reportDelivery            `json:"delivery,omitzero"`
+	CredentialChangeReason modelcredential.ChangeReason `json:"credential_change_reason"`
+	Status                 FlowStatus                   `json:"status"`
+	Report                 string                       `json:"report,omitempty"`
+	Changes                *conversation.TaskChanges    `json:"changes,omitempty"`
+	Failure                string                       `json:"failure,omitempty"`
+	Unsaved                string                       `json:"unsaved,omitempty"`
+	FinishedAt             time.Time                    `json:"finished_at"`
+	Delivery               reportDelivery               `json:"delivery,omitzero"`
 	// Contribution is what a completed connector_develop subagent contributed,
 	// and Refused why it contributed nothing.
 	Contribution *conversation.ConnectorContribution `json:"contribution,omitempty"`
@@ -194,12 +196,13 @@ type Outcome struct {
 // the worktree, its changes or why they stay unsaved; Refreshes counts the
 // leases the finish took from the Session after its copy proved unreachable.
 type subagentFinish struct {
-	Status    agenttasks.SubagentStatus `json:"status"`
-	Report    string                    `json:"report,omitempty"`
-	Failure   string                    `json:"failure,omitempty"`
-	Changes   *conversation.TaskChanges `json:"changes,omitempty"`
-	Unsaved   string                    `json:"unsaved,omitempty"`
-	Refreshes int                       `json:"refreshes,omitempty"`
+	CredentialChangeReason modelcredential.ChangeReason `json:"credential_change_reason"`
+	Status                 agenttasks.SubagentStatus    `json:"status"`
+	Report                 string                       `json:"report,omitempty"`
+	Failure                string                       `json:"failure,omitempty"`
+	Changes                *conversation.TaskChanges    `json:"changes,omitempty"`
+	Unsaved                string                       `json:"unsaved,omitempty"`
+	Refreshes              int                          `json:"refreshes,omitempty"`
 	// Contribution and Refused are a develop subagent's, once saved.
 	Contribution *conversation.ConnectorContribution `json:"contribution,omitempty"`
 	Refused      string                              `json:"refused,omitempty"`
@@ -223,6 +226,9 @@ func describeEnd(finish subagentFinish) string {
 	switch finish.Status {
 	case agenttasks.SubagentStopped:
 		reason = "The subagent was stopped before it finished" + saved + "."
+		if finish.Failure != "" {
+			reason += " Reason: " + finish.Failure + "."
+		}
 	case agenttasks.SubagentTimedOut:
 		reason = "The subagent reached its time limit before it finished" + saved + "."
 	case agenttasks.SubagentFailed:
@@ -270,6 +276,7 @@ type receipt struct {
 // a deleting Project, its status and its copy of the lease in its worktree.
 func startAttributes(start agenttasks.SubagentStart) []dex.InitialAttributeDef {
 	attributes := &dexflow.InitialAttributes{}
+	dexflow.Add(attributes, credentialRevisionAttribute, start.CredentialRevision)
 	dexflow.Add(attributes, identityAttribute, start.Identity)
 	dexflow.Add(attributes, startAttribute, startRecord{Call: start.Call, Fingerprint: start.Fingerprint, BaseCommit: start.BaseCommit, Model: start.Model, HeadCommit: start.HeadCommit,
 		Branch: start.Branch})

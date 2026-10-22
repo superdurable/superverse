@@ -64,10 +64,12 @@ commits.
 - `option.WithoutEnvironmentDefaults()`: no credential or base URL is read from the
   environment. Only the server's own wiring sets a base URL, for the
   [mock model](#mock-model-for-tests).
-- The API key (`ANTHROPIC_API_KEY`) is validated once at startup and captured by the
-  process-owned client. There is no per-Flow credential, no mutable credential map and
-  no credential-management API. A key never enters Dex configuration, model messages,
-  activity events or log fields.
+- The Project key is validated through `ModelCredentialService`, stored only in the
+  Session’s exact hard-delete `ModelKeys/anthropic` instance, and passed as transient
+  per-request authentication. The process environment supplies no Session key.
+  [Session credentials](session.md#project-model-credentials) own revision admission,
+  metadata, replacement/deletion and subagent copies. Keys never enter model messages,
+  ordinary Step/RPC payloads, events or logs.
 - The client owns its HTTP transport: bounded dial, TLS and response-header timeouts,
   redirects refused so a credential never reaches another origin, response bodies
   closed and the caller's context honoured.
@@ -663,7 +665,7 @@ The `agent` keys of the server configuration, each defaulted and range-checked i
 | Setting | Default | Values and effect |
 | --- | --- | --- |
 | `agent.model` | required | Default model of new Sessions: `anthropic/claude-opus-5-5`, `anthropic/claude-sonnet-5-5` or `anthropic/claude-haiku-4-5`; `mock` only with `agent.mockModel` in Local Kind and Native. Any other value fails startup. |
-| `ANTHROPIC_API_KEY` | required when new Sessions start on a Claude model | The Claude API key, an environment secret of the server, never a configuration key. Locally it comes from the ignored `.env` at the root of the main checkout, shared by every worktree. Without it the server offers only the [mock model](#mock-model-for-tests) and refuses a Claude model with `FAILED_PRECONDITION`. |
+| Project Anthropic credential | unset for every new Session | Set through `ModelCredentialService`; a real platform model requires this Project’s active key. The mock model requires no key. |
 | `agent.effort` | `medium` | Main agent base effort, `low` to `max`. |
 | `agent.subagentInvestigateEffort` | `low` | Base effort of `investigate` subagents, `low` to `max`, clamped to the ceiling of the model. |
 | `agent.subagentChangeEffort` | `medium` | Base effort of `change` subagents, `low` to `max`, clamped to the ceiling of the model; the subagent may raise it with `set_effort`. |
@@ -706,8 +708,8 @@ is the reference for scenarios, markers and checks.
   scenario catalog with each scenario's ordered inputs.
 - `sv2 kind deploy --config <profile>` chooses the server configuration profile (default
   `local-kind.yaml`); the private server env file carries secrets only. The deployment passes
-  the Claude key from the main checkout's `.env` whenever it is there, so a Local Session may
-  switch to a Claude model; without it the server offers only the mock model.
+  no platform Claude key to Session calls. A Builder enters the Project’s own key before
+  selecting a Claude model; the mock remains available without one.
 - Scenarios are embedded with `go:embed` and validated when the server starts, against the
   tool catalog and the embedded app-template; a broken scenario stops the server. There is
   no separate Deployment; Kind and AWS use the same server binary.

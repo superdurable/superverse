@@ -1,0 +1,55 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# Credential-copy admission is exercised with concurrent real subagents.
+name: byok-copy
+title: "Project-key subagents"
+description: "Concurrent investigators keep the parent usable; another start races credential deletion."
+category: agent_feature
+inputs:
+  - label: "Start concurrent investigators"
+    message: "Investigate the build with three background agents."
+    replies:
+      - text: "Starting the investigators."
+        tool_uses:
+          - name: start_agent
+            input: {description: "First key-copy investigation", kind: investigate, prompt: "Run the slow check. [[subagent:byok-copy/slow]]"}
+          - name: start_agent
+            input: {description: "Second key-copy investigation", kind: investigate, prompt: "Run the slow check. [[subagent:byok-copy/slow]]"}
+          - name: start_agent
+            input: {description: "Third key-copy investigation", kind: investigate, prompt: "Run the slow check. [[subagent:byok-copy/slow]]"}
+        expect_result_contains:
+          - '"task_id":"agent-'
+      - text: "The investigators run in the background."
+  - label: "Continue with investigators running"
+    message: "Keep the investigators running."
+    replies:
+      - text: "The parent remains available while the investigators run."
+  - label: "Start during credential deletion"
+    message: "Start one more investigator."
+    replies:
+      - text: "Starting another investigator."
+        tool_uses:
+          - name: start_agent
+            input: {description: "Racing key-copy investigation", kind: investigate, prompt: "Run the slow check. [[subagent:byok-copy/slow]]"}
+      - text: "The additional investigator started."
+      - text: "An investigator reported its outcome."
+        notification: task
+  - label: "Continue after key replacement"
+    message: "Keep working with the new Project key."
+    replies:
+      - text: "The parent continues with the new Project credential."
+subagents:
+  slow:
+    kind: investigate
+    replies:
+      - text: "Running the slow build check."
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 300", description: "Run the slow build check", timeout_seconds: 600}
+      - text: "The slow check finished."

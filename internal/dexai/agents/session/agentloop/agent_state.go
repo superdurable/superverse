@@ -417,6 +417,7 @@ const (
 
 // AgentDescription is the durable application state needed to render a conversation.
 type AgentDescription struct {
+	ModelCredentialVersion     string              `json:"model_credential_version"`
 	Executor                   remoteexec.Executor `json:"executor"`
 	ModelChangedBy             *conversation.Actor `json:"model_changed_by,omitempty"`
 	PreviewAutoDeployChangedBy *conversation.Actor `json:"preview_auto_deploy_changed_by,omitempty"`

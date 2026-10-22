@@ -190,6 +190,8 @@ type AgentInterrupt struct {
 type InterruptAgentRequest struct {
 	Actor *conversation.Actor `json:"actor,omitempty"`
 	Turn  int64               `json:"turn"`
+	// PlatformOnly keeps a credential change from interrupting a remote executor.
+	PlatformOnly bool `json:"platform_only,omitempty"`
 }
 
 // turnRuns reports whether a turn runs: the Agent is not waiting for the user.

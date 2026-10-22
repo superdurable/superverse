@@ -10,13 +10,10 @@ import { delay } from "@/lib/shared/async";
 import type { RpcInput, RpcOutput, UnaryMethod } from "@/lib/shared/rpc-methods";
 import { ApiError } from "./api-error";
 import { unary } from "./unary";
+import { READ_POLICY, readRetryDelay } from "./read-policy";
 
 /** Only the generated Get/List business RPCs may use automatic read retries. */
 type ReadMethod = Extract<UnaryMethod, `Get${string}` | `List${string}`>;
-
-const MAX_RETRIES = 3;
-const BACKOFF_MILLISECONDS = 500;
-const READ_BUDGET_MILLISECONDS = 60_000;
 
 /** One read, with three transient retries inside a shared deadline, canceled by its caller. */
 export async function readUnary<M extends ReadMethod>(
@@ -27,7 +24,7 @@ export async function readUnary<M extends ReadMethod>(
   const deadline = new AbortController();
   const timer = setTimeout(
     () => deadline.abort(new DOMException("Read request timed out", "TimeoutError")),
-    READ_BUDGET_MILLISECONDS,
+    READ_POLICY.budgetMilliseconds,
   );
   const requestSignal = AbortSignal.any([signal, deadline.signal]);
   let lastFailure: unknown;
@@ -42,11 +39,15 @@ export async function readUnary<M extends ReadMethod>(
       } catch (reason) {
         signal.throwIfAborted();
         if (deadline.signal.aborted) throw lastFailure ?? reason;
-        if (!(reason instanceof ApiError) || ![503, 504].includes(reason.status) || attempt === MAX_RETRIES)
+        if (
+          !(reason instanceof ApiError) ||
+          !READ_POLICY.retryStatuses.includes(reason.status) ||
+          attempt === READ_POLICY.maxRetries
+        )
           throw reason;
         lastFailure = reason;
         // Jitter keeps mounted readers from retrying together after a shared outage.
-        await delay(BACKOFF_MILLISECONDS * 2 ** attempt * (0.75 + Math.random() * 0.5), requestSignal);
+        await delay(readRetryDelay(attempt), requestSignal);
       }
     }
   } finally {

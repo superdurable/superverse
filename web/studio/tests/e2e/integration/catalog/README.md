@@ -17,4 +17,6 @@ flowchart LR
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
-`model-catalog.spec.ts` creates its own account, TeamSpace and disposable Project, selects Sonnet without calling it, reloads, then runs the explain scenario on mock. New provider selections must be refused without changing the revision.
+The spec runs inside `TestProjectAnthropicCredentialDexIntegration` with `SUPERVERSE_E2E_BYOK_FIXTURE=true`. The production-composed server uses real Native dependencies and only the existing mock model endpoint for credential validation. Capture is disabled.
+
+`model-catalog.spec.ts` creates its own account, TeamSpace and disposable Project, sets its own synthetic key through `SetModelCredential`, selects Sonnet without calling it, reloads, then runs the explain scenario on mock. New provider selections must be refused without changing the revision.

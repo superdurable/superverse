@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { Glyph } from "@/components/ui/Glyph";
 import { PopoverCard, POPOVER_ITEM, usePopover } from "@/components/ui/Popover";
 import { RemoteAgentDialog } from "@/components/session/remoteagent/RemoteAgentDialog";
+import { ModelCredentialEntry } from "./ModelCredentialEntry";
 import { setSessionExecutor } from "@/lib/api/agent";
 import { useSingleFlight } from "@/lib/browser/use-single-flight";
 import { agentModelLabel, AGENT_MODEL_OPTIONS, type AgentModel } from "@/lib/session/agent-types";
@@ -29,7 +30,7 @@ type PickerProps = {
 
 /**
  * One quiet control on the composer's row, named by the model alone (or the local agent), chooses the agent
- * first and then the Superverse model; its accessible name and hint say the whole of it.
+ * first and then the Platform model; its accessible name and hint say the whole of it.
  */
 export function SessionAgentPicker(props: PickerProps) {
   const state = useRemoteAgentStatus();
@@ -156,6 +157,7 @@ function AgentPickerMenu({
           className="w-80 max-w-[90vw] p-2"
         >
           <div className="grid gap-1 text-[12px]">
+            <ModelCredentialEntry canManage={switchable} />
             {remote && (
               <div
                 className="rounded-md bg-accent-wash px-2.25 py-1.75"

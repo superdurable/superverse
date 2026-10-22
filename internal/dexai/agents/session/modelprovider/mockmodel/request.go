@@ -173,12 +173,12 @@ var mockModel = conversation.ModelMock.ProviderModel()
 
 // parseRequest decodes and checks a request: a streamed call of the mock model
 // with well-formed messages.
-func parseRequest(r *http.Request, body []byte) (messagesRequest, error) {
+func parseRequest(r *http.Request, body []byte, acceptedModels ...string) (messagesRequest, error) {
 	var request messagesRequest
 	if err := json.Unmarshal(body, &request); err != nil {
 		return request, fmt.Errorf("the request body is not valid JSON: %w", err)
 	}
-	if request.Model != mockModel {
+	if request.Model != mockModel && !slices.Contains(acceptedModels, request.Model) {
 		return request, fmt.Errorf("model %q is not the mock model %q", request.Model, mockModel)
 	}
 	for _, header := range r.Header.Values("anthropic-beta") {

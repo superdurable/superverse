@@ -39,16 +39,20 @@ const maximumRequestBytes = 64 << 20
 // runs when ctx ends. Requests are served over real HTTP, so the Claude client
 // runs unchanged.
 func Start(ctx context.Context, logger *slog.Logger) (baseURL string, stop func(), err error) {
+	return startHandler(ctx, &handler{logger: logger})
+}
+
+func startHandler(ctx context.Context, h *handler) (baseURL string, stop func(), err error) {
 	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", "127.0.0.1:0")
 	if err != nil {
 		return "", nil, fmt.Errorf("listen for the mock model: %w", err)
 	}
-	server := &http.Server{Handler: &handler{logger: logger}, ReadHeaderTimeout: 10 * time.Second}
+	server := &http.Server{Handler: h, ReadHeaderTimeout: 10 * time.Second}
 	served := make(chan struct{})
 	go func() {
 		defer close(served)
 		if err := server.Serve(listener); !errors.Is(err, http.ErrServerClosed) {
-			logger.ErrorContext(ctx, "the mock model stopped serving", "error", err)
+			h.logger.ErrorContext(ctx, "the mock model stopped serving", "error", err)
 		}
 	}()
 	var once sync.Once
@@ -71,14 +75,21 @@ func Start(ctx context.Context, logger *slog.Logger) (baseURL string, stop func(
 
 // handler implements POST /v1/messages with stream: true. It keeps no state:
 // the reply depends only on the request.
-type handler struct{ logger *slog.Logger }
+type handler struct {
+	logger *slog.Logger
+	probe  *CredentialProbeForTest
+}
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost || r.URL.Path != "/v1/messages" {
 		writeError(w, http.StatusNotFound, notFoundError, onlyStreamedMessages)
 		return
 	}
-	if r.Header.Get("X-Api-Key") != APIKey {
+	accepted := r.Header.Get("X-Api-Key") == APIKey
+	if h.probe != nil {
+		accepted = h.probe.accept(r.Header.Get("X-Api-Key"))
+	}
+	if !accepted {
 		writeError(w, http.StatusUnauthorized, authenticationError, "The mock model accepts only its own placeholder key.")
 		return
 	}
@@ -87,9 +98,18 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusRequestEntityTooLarge, requestTooLarge, "The request body could not be read within the limit.")
 		return
 	}
-	request, err := parseRequest(r, body)
+	var acceptedModels []string
+	if h.probe != nil {
+		acceptedModels = []string{conversation.ModelOpus55.ProviderModel(), conversation.ModelSonnet55.ProviderModel(), conversation.ModelHaiku45.ProviderModel()}
+	}
+	request, err := parseRequest(r, body, acceptedModels...)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, invalidRequestError, err.Error())
+		return
+	}
+	if !request.Stream && h.probe != nil {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"id": "msg_credential_probe", "type": "message", "role": "assistant", "model": request.Model, "content": []map[string]string{{"type": "text", "text": "ok"}}, "stop_reason": "end_turn", "usage": map[string]int{"input_tokens": 1, "output_tokens": 1}})
 		return
 	}
 	if !request.Stream {
@@ -217,4 +237,46 @@ func writeErrorWithCode(w http.ResponseWriter, status int, class errorType, mess
 	w.Header().Set("request-id", requestID)
 	w.WriteHeader(status)
 	_, _ = w.Write(comm.Must(json.Marshal(body)))
+}
+
+// CredentialProbeRequestIDForTest names the existing model endpoint's synthetic request identity.
+const CredentialProbeRequestIDForTest = requestID
+
+// CredentialProbeForTest is a test-only counter for synthetic credentials at the existing model endpoint.
+// It never stores request headers, request bodies, history or an unbounded list.
+type CredentialProbeForTest struct {
+	mu       sync.Mutex
+	key      string
+	requests int
+}
+
+func (p *CredentialProbeForTest) SetKeyForTest(key string) {
+	if !strings.HasPrefix(key, "synthetic-byok-") {
+		panic("credential probe accepts only synthetic test keys")
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.key = key
+}
+func (p *CredentialProbeForTest) RequestsForTest() int {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.requests
+}
+func (p *CredentialProbeForTest) accept(key string) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if key != p.key {
+		return false
+	}
+	p.requests++
+	return true
+}
+
+// StartCredentialProbeForTest serves the same adapter protocol and scenarios, accepting one synthetic key.
+func StartCredentialProbeForTest(ctx context.Context, logger *slog.Logger, key string) (string, *CredentialProbeForTest, func(), error) {
+	probe := &CredentialProbeForTest{}
+	probe.SetKeyForTest(key)
+	url, stop, err := startHandler(ctx, &handler{logger: logger, probe: probe})
+	return url, probe, stop, err
 }

@@ -62,8 +62,8 @@ It is the lane of every change that touches no Kind path; `make required-lanes` 
 The server's environment holds only secrets, all generated and retained in the lane's state directory: the
 platform MinIO credentials, the cookie signing key, the build token file and the local Git signing key, plus
 `ANTHROPIC_API_KEY` from the main checkout's `.env` whenever it is there. `native.yaml` offers the mock model and
-starts new Sessions on it ([mock model](../../internal/dexai/agents/README.md)); with the key a Session may switch to a
-Claude model. Studio receives the lane's own browser signing key, its public origin and the server's address.
+starts new Sessions on it ([mock model](../../internal/dexai/agents/README.md)). To use a Claude model, set the
+Project’s Anthropic key through the Agent picker; no Session uses a platform environment key. Studio receives the lane's own browser signing key, its public origin and the server's address.
 
 | Boundary | Address |
 | --- | --- |
@@ -404,7 +404,7 @@ approved strong-reason exception or are skipped with the owner's waiver; skipped
 acceptance.
 
 With an owner started with `--studio build` and ready, the three real browser cases run on the local Git host and the
-mock model; a Session switched to Claude needs the key. `create-project.spec.ts` and `template-approval.spec.ts` also
+mock model; a Session switched to Claude needs its Project key. Real-model acceptance uses the test support credential helper to submit the developer key through `ModelCredentialService` outside browser tracing, then resumes the initial request; it requires an explicitly requested real-model run. `create-project.spec.ts` and `template-approval.spec.ts` also
 need `SUPERVERSE_E2E_OPENAI_FILE` for the template's OpenAI connection
 ([E2E contract](../../web/studio/tests/e2e/README.md)).
 

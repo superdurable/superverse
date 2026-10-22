@@ -5,7 +5,7 @@ Purpose: Runs a Session's subagents: each SubagentFlow execution works on one bo
 
 Callers: `internal/dexai/agents`, `internal/dexai/api` and `internal/dexai/bootstrap` import this package.
 
-Dependencies: it imports `internal/comm`, `internal/comm/dexflow`, `internal/comm/flowid`, `internal/comm/platform/connectorlibrary`, `internal/dexai/agents/sandbox/workspace`, `internal/dexai/agents/sandbox/workspace/git`, `internal/dexai/agents/sandbox/workspace/sandboxd`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/agenttasks`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/session/modelprovider`, `internal/dexai/agents/session/sandboxtools` and `internal/dexai/agents/toolfailure` and calls the Dex Flow API.
+Dependencies: it imports `internal/comm`, `internal/comm/dexflow`, `internal/comm/flowid`, `internal/comm/platform/connectorlibrary`, `internal/dexai/agents/modelcredential`, `internal/dexai/agents/sandbox/workspace`, `internal/dexai/agents/sandbox/workspace/git`, `internal/dexai/agents/sandbox/workspace/sandboxd`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/agenttasks`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/session/modelprovider`, `internal/dexai/agents/session/sandboxtools` and `internal/dexai/agents/toolfailure` and calls the Dex Flow API.
 
 ```mermaid
 flowchart LR
@@ -17,15 +17,16 @@ flowchart LR
   self --> d1["internal/comm/dexflow"]
   self --> d2["internal/comm/flowid"]
   self --> d3["internal/comm/platform/connectorlibrary"]
-  self --> d4["internal/dexai/agents/sandbox/workspace"]
-  self --> d5["internal/dexai/agents/sandbox/workspace/git"]
-  self --> d6["internal/dexai/agents/sandbox/workspace/sandboxd"]
-  self --> d7["internal/dexai/agents/session/agentloop"]
-  self --> d8["internal/dexai/agents/session/agenttasks"]
-  self --> d9["internal/dexai/agents/session/conversation"]
-  self --> d10["internal/dexai/agents/session/modelprovider"]
-  self --> d11["internal/dexai/agents/session/sandboxtools"]
-  self --> d12["internal/dexai/agents/toolfailure"]
+  self --> d4["internal/dexai/agents/modelcredential"]
+  self --> d5["internal/dexai/agents/sandbox/workspace"]
+  self --> d6["internal/dexai/agents/sandbox/workspace/git"]
+  self --> d7["internal/dexai/agents/sandbox/workspace/sandboxd"]
+  self --> d8["internal/dexai/agents/session/agentloop"]
+  self --> d9["internal/dexai/agents/session/agenttasks"]
+  self --> d10["internal/dexai/agents/session/conversation"]
+  self --> d11["internal/dexai/agents/session/modelprovider"]
+  self --> d12["internal/dexai/agents/session/sandboxtools"]
+  self --> d13["internal/dexai/agents/toolfailure"]
   self --> e0(["Dex Flow API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
@@ -235,3 +236,13 @@ one Session per Project the FlowID becomes `subagent-<projectID>-<agentID>`, der
 
 None. The subagent's state is this Flow's; the worktree, the refs, the merge plans and
 receipts are files and git objects on the Session's volume.
+
+## Model credential copy
+
+The [owning credential contract](../../../../../docs/architecture/agent-harness-design/subagents.md#project-credential-execution-copy)
+adds only a hard-delete `ModelKey`, frozen `ModelCredentialRevision`, and
+`ModelCredentialChanged` Stop reason. Start carries the revision, never a key;
+the Service copies directly after Start under the Session writer gate. The first
+model Step fails closed and uses its existing bounded retry while a copy arrives.
+There is no credential Channel, confirmation RPC or waiting Step because these
+would duplicate that short readiness boundary. Terminal outcomes delete the copy.

@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Defines the values SessionAgentFlow exchanges with its model: the append-only entry log and its public view, request assembly, requests and replies, tool calls, activity events and prompts.
 
-Callers: `cmd/**` (5) and `internal/dexai/**` (23) import this package.
+Callers: `cmd/**` (5) and `internal/dexai/**` (25) import this package.
 
 Dependencies: it imports `internal/comm`, `internal/comm/dexflow`, `internal/comm/platform/connectorlibrary`, `internal/comm/platform/repohost` and `internal/dexai/agents/toolfailure`.
 
@@ -11,7 +11,7 @@ Dependencies: it imports `internal/comm`, `internal/comm/dexflow`, `internal/com
 flowchart LR
   self["internal/dexai/agents/session/conversation"]
   c0["cmd/** (5)"] --> self
-  c1["internal/dexai/** (23)"] --> self
+  c1["internal/dexai/** (25)"] --> self
   self --> d0["internal/comm"]
   self --> d1["internal/comm/dexflow"]
   self --> d2["internal/comm/platform/connectorlibrary"]

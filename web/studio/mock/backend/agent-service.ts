@@ -7,6 +7,7 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 // Development-only Agent commands, attachment uploads and typed connection-dialog fixtures; never acceptance evidence.
+import { ModelCredentialStatus, type CredentialInfo } from "@/lib/api/model-credential";
 import { randomBytes } from "node:crypto";
 import type { AgentModel__Output } from "@/lib/generated/protobuf/superverse/v2/AgentModel";
 import type { AgentAttachment } from "@/lib/generated/protobuf/superverse/v2/AgentAttachment";
@@ -276,5 +277,66 @@ export const attachmentService: MockService<"AttachmentService"> = {
       throw httpError(400, "name 1 to 20 attachments");
     const inline = request.disposition === "ATTACHMENT_DISPOSITION_INLINE";
     return { downloads: mockDownloads(store, request.projectId, request.attachmentIds, inline) };
+  },
+};
+
+const credentialMetadata = new WeakMap<MockStore, Map<string, CredentialInfo>>();
+function metadataFor(store: MockStore) {
+  let rows = credentialMetadata.get(store);
+  if (!rows) {
+    rows = new Map();
+    credentialMetadata.set(store, rows);
+  }
+  for (const key of rows.keys()) if (store.projects.get(key)?.state !== "ACTIVE") rows.delete(key);
+  return rows;
+}
+/** Development fixtures keep metadata only; supplied passwords are discarded. */
+function credentialFixture(store: MockStore, project: string): CredentialInfo {
+  projectSession(store, project);
+  return (
+    metadataFor(store).get(project) ?? {
+      revision: "0",
+      status: ModelCredentialStatus.MODEL_CREDENTIAL_STATUS_UNSPECIFIED,
+      last4: "",
+      setBy: { accountId: "", email: "" },
+      setAt: "",
+      pendingOperation: "",
+      pendingRevision: "",
+      pendingDelete: false,
+      provider: "MODEL_PROVIDER_ANTHROPIC",
+    }
+  );
+}
+export const modelCredentialService: MockService<"ModelCredentialService"> = {
+  GetModelCredentialInfo: (request, { store }) => ({
+    credential: credentialFixture(store, request.projectId),
+  }),
+  SetModelCredential: (request, { store }) => {
+    remoteConnections(store, request.projectId, request.caller);
+    const current = credentialFixture(store, request.projectId);
+    if (current.revision !== request.expectedRevision) throw httpError(409, "model credential revision changed");
+    const next = {
+      ...current,
+      revision: String(BigInt(current.revision) + BigInt(1)),
+      status: ModelCredentialStatus.MODEL_CREDENTIAL_STATUS_ACTIVE,
+      last4: request.apiKey.slice(-4),
+      setBy: { accountId: "", email: request.caller?.canonicalEmail ?? "" },
+      setAt: new Date().toISOString(),
+    };
+    metadataFor(store).set(request.projectId, next);
+    return { credential: next };
+  },
+  DeleteModelCredential: (request, { store }) => {
+    remoteConnections(store, request.projectId, request.caller);
+    const current = credentialFixture(store, request.projectId);
+    if (current.revision !== request.expectedRevision) throw httpError(409, "model credential revision changed");
+    const next = {
+      ...current,
+      revision: String(BigInt(current.revision) + BigInt(1)),
+      status: ModelCredentialStatus.MODEL_CREDENTIAL_STATUS_REVOKED,
+      last4: "",
+    };
+    metadataFor(store).set(request.projectId, next);
+    return { credential: next };
   },
 };

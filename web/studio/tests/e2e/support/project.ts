@@ -17,6 +17,7 @@ import type { SessionStatus__Output } from "@/lib/generated/protobuf/superverse/
 import { delay } from "@/lib/shared/async";
 import { timestampToISO } from "@/lib/shared/protobuf";
 import type { RpcInput, RpcOutput } from "@/lib/shared/rpc-methods";
+import { activateAcceptanceCredential } from "./credentials/project-model-credential";
 import { branchHead } from "./repository-host";
 import { chooseOption, rpc, rpcAnswered, rpcResult } from "./studio-api";
 
@@ -241,6 +242,18 @@ export async function createProject(
   expect((await rpc(page.request, "CreateProject", { ...request, name: `${name} conflict` })).status()).toBe(409);
   const changedMessage = { ...request, initialMessage: `${request.initialMessage ?? ""} changed` };
   expect((await rpc(page.request, "CreateProject", changedMessage)).status()).toBe(409);
+  if (request.model !== "AGENT_MODEL_MOCK")
+    await activateAcceptanceCredential(
+      page,
+      projectId,
+      () => readSession(page, projectId),
+      () =>
+        rpcResult(page.request, "SendMessage", {
+          projectId,
+          messageId: randomBytes(16).toString("hex"),
+          text: "Continue with the original request now that this Project’s model key is set.",
+        }),
+    );
   await testInfo.attach("resource-identities", {
     body: JSON.stringify({ projectId, name, studio: process.env.SUPERVERSE_E2E_BASE_URL }),
     contentType: "application/json",

@@ -9,8 +9,7 @@
     "/superverse.v2.AccountService/Login": [
       "api-integration",
       "kind-e2e",
-      "native-e2e",
-      "native-integration"
+      "native-e2e"
     ],
     "/superverse.v2.AccountService/Logout": [
       "api-integration",
@@ -95,7 +94,9 @@
       "kind-e2e",
       "native-e2e"
     ],
-    "/superverse.v2.DeploymentService/CancelDeployment": [],
+    "/superverse.v2.DeploymentService/CancelDeployment": [
+      "native-integration"
+    ],
     "/superverse.v2.DeploymentService/GetDeployment": [
       "kind-e2e",
       "native-e2e"
@@ -166,6 +167,16 @@
       "native-e2e"
     ],
     "/superverse.v2.FlowRunService/UpdateFlowDisplayField": [],
+    "/superverse.v2.ModelCredentialService/DeleteModelCredential": [
+      "native-integration"
+    ],
+    "/superverse.v2.ModelCredentialService/GetModelCredentialInfo": [
+      "native-e2e",
+      "native-integration"
+    ],
+    "/superverse.v2.ModelCredentialService/SetModelCredential": [
+      "native-integration"
+    ],
     "/superverse.v2.PreviewService/GetPreview": [
       "api-integration"
     ],
@@ -230,7 +241,8 @@
     "/superverse.v2.ProjectService/ListEnvironmentEvents": [
       "api-integration",
       "kind-e2e",
-      "native-e2e"
+      "native-e2e",
+      "native-integration"
     ],
     "/superverse.v2.ProjectService/ListProjects": [
       "api-integration",
@@ -241,7 +253,8 @@
     "/superverse.v2.ProjectService/ListRecentTriggerEvents": [
       "api-integration",
       "kind-e2e",
-      "native-e2e"
+      "native-e2e",
+      "native-integration"
     ],
     "/superverse.v2.ProjectService/RemoveLive": [
       "api-integration",
@@ -255,7 +268,9 @@
       "native-e2e",
       "native-integration"
     ],
-    "/superverse.v2.ReleaseService/CancelReleaseBuild": [],
+    "/superverse.v2.ReleaseService/CancelReleaseBuild": [
+      "native-integration"
+    ],
     "/superverse.v2.ReleaseService/DeriveLiveConfiguration": [
       "kind-e2e",
       "native-e2e"
@@ -263,9 +278,12 @@
     "/superverse.v2.ReleaseService/GetRelease": [
       "api-integration",
       "kind-e2e",
-      "native-e2e"
+      "native-e2e",
+      "native-integration"
     ],
-    "/superverse.v2.ReleaseService/GetReleaseBuildLog": [],
+    "/superverse.v2.ReleaseService/GetReleaseBuildLog": [
+      "native-integration"
+    ],
     "/superverse.v2.ReleaseService/ListReleaseCandidates": [
       "kind-e2e",
       "native-e2e",
@@ -291,20 +309,17 @@
       "native-e2e"
     ],
     "/superverse.v2.RemoteAgentService/CreateRemoteAgentPairing": [
-      "native-e2e",
       "native-integration"
     ],
     "/superverse.v2.RemoteAgentService/ListRemoteAgentConnections": [
       "kind-e2e",
       "kind-integration",
-      "native-e2e",
-      "native-integration"
+      "native-e2e"
     ],
     "/superverse.v2.RemoteAgentService/RevokeRemoteAgentConnection": [
       "native-integration"
     ],
     "/superverse.v2.RemoteAgentService/SetSessionExecutor": [
-      "native-e2e",
       "native-integration"
     ],
     "/superverse.v2.SessionService/GetSession": [
@@ -353,15 +368,16 @@
     "/superverse.v2.TeamSpaceMemberService/AddTeamSpaceMember": [
       "api-integration",
       "kind-e2e",
-      "native-e2e"
-    ],
-    "/superverse.v2.TeamSpaceMemberService/ListTeamSpaceMembers": [
-      "kind-e2e",
       "native-e2e",
       "native-integration"
     ],
+    "/superverse.v2.TeamSpaceMemberService/ListTeamSpaceMembers": [
+      "kind-e2e",
+      "native-e2e"
+    ],
     "/superverse.v2.TeamSpaceMemberService/RemoveTeamSpaceMember": [
-      "api-integration"
+      "api-integration",
+      "native-integration"
     ],
     "/superverse.v2.TeamSpaceMemberService/SetTeamSpaceMemberRole": [],
     "/superverse.v2.TeamSpaceService/CreateTeamSpace": [

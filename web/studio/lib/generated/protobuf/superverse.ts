@@ -106,6 +106,8 @@ import type { DeleteAttachmentRequest as _superverse_v2_DeleteAttachmentRequest,
 import type { DeleteAttachmentResponse as _superverse_v2_DeleteAttachmentResponse, DeleteAttachmentResponse__Output as _superverse_v2_DeleteAttachmentResponse__Output } from './superverse/v2/DeleteAttachmentResponse';
 import type { DeleteFlowChannelMessageRequest as _superverse_v2_DeleteFlowChannelMessageRequest, DeleteFlowChannelMessageRequest__Output as _superverse_v2_DeleteFlowChannelMessageRequest__Output } from './superverse/v2/DeleteFlowChannelMessageRequest';
 import type { DeleteFlowChannelMessageResponse as _superverse_v2_DeleteFlowChannelMessageResponse, DeleteFlowChannelMessageResponse__Output as _superverse_v2_DeleteFlowChannelMessageResponse__Output } from './superverse/v2/DeleteFlowChannelMessageResponse';
+import type { DeleteModelCredentialRequest as _superverse_v2_DeleteModelCredentialRequest, DeleteModelCredentialRequest__Output as _superverse_v2_DeleteModelCredentialRequest__Output } from './superverse/v2/DeleteModelCredentialRequest';
+import type { DeleteModelCredentialResponse as _superverse_v2_DeleteModelCredentialResponse, DeleteModelCredentialResponse__Output as _superverse_v2_DeleteModelCredentialResponse__Output } from './superverse/v2/DeleteModelCredentialResponse';
 import type { DeleteProjectRequest as _superverse_v2_DeleteProjectRequest, DeleteProjectRequest__Output as _superverse_v2_DeleteProjectRequest__Output } from './superverse/v2/DeleteProjectRequest';
 import type { DeleteProjectResponse as _superverse_v2_DeleteProjectResponse, DeleteProjectResponse__Output as _superverse_v2_DeleteProjectResponse__Output } from './superverse/v2/DeleteProjectResponse';
 import type { DeleteQueuedMessageRequest as _superverse_v2_DeleteQueuedMessageRequest, DeleteQueuedMessageRequest__Output as _superverse_v2_DeleteQueuedMessageRequest__Output } from './superverse/v2/DeleteQueuedMessageRequest';
@@ -151,6 +153,8 @@ import type { GetFlowStateRequest as _superverse_v2_GetFlowStateRequest, GetFlow
 import type { GetFlowStateResponse as _superverse_v2_GetFlowStateResponse, GetFlowStateResponse__Output as _superverse_v2_GetFlowStateResponse__Output } from './superverse/v2/GetFlowStateResponse';
 import type { GetFlowSummaryRequest as _superverse_v2_GetFlowSummaryRequest, GetFlowSummaryRequest__Output as _superverse_v2_GetFlowSummaryRequest__Output } from './superverse/v2/GetFlowSummaryRequest';
 import type { GetFlowSummaryResponse as _superverse_v2_GetFlowSummaryResponse, GetFlowSummaryResponse__Output as _superverse_v2_GetFlowSummaryResponse__Output } from './superverse/v2/GetFlowSummaryResponse';
+import type { GetModelCredentialInfoRequest as _superverse_v2_GetModelCredentialInfoRequest, GetModelCredentialInfoRequest__Output as _superverse_v2_GetModelCredentialInfoRequest__Output } from './superverse/v2/GetModelCredentialInfoRequest';
+import type { GetModelCredentialInfoResponse as _superverse_v2_GetModelCredentialInfoResponse, GetModelCredentialInfoResponse__Output as _superverse_v2_GetModelCredentialInfoResponse__Output } from './superverse/v2/GetModelCredentialInfoResponse';
 import type { GetPreviewDefinitionsRequest as _superverse_v2_GetPreviewDefinitionsRequest, GetPreviewDefinitionsRequest__Output as _superverse_v2_GetPreviewDefinitionsRequest__Output } from './superverse/v2/GetPreviewDefinitionsRequest';
 import type { GetPreviewDefinitionsResponse as _superverse_v2_GetPreviewDefinitionsResponse, GetPreviewDefinitionsResponse__Output as _superverse_v2_GetPreviewDefinitionsResponse__Output } from './superverse/v2/GetPreviewDefinitionsResponse';
 import type { GetPreviewRequest as _superverse_v2_GetPreviewRequest, GetPreviewRequest__Output as _superverse_v2_GetPreviewRequest__Output } from './superverse/v2/GetPreviewRequest';
@@ -216,6 +220,8 @@ import type { LoginResponse as _superverse_v2_LoginResponse, LoginResponse__Outp
 import type { LogoutRequest as _superverse_v2_LogoutRequest, LogoutRequest__Output as _superverse_v2_LogoutRequest__Output } from './superverse/v2/LogoutRequest';
 import type { LogoutResponse as _superverse_v2_LogoutResponse, LogoutResponse__Output as _superverse_v2_LogoutResponse__Output } from './superverse/v2/LogoutResponse';
 import type { ManagedRepositorySource as _superverse_v2_ManagedRepositorySource, ManagedRepositorySource__Output as _superverse_v2_ManagedRepositorySource__Output } from './superverse/v2/ManagedRepositorySource';
+import type { ModelCredentialInfo as _superverse_v2_ModelCredentialInfo, ModelCredentialInfo__Output as _superverse_v2_ModelCredentialInfo__Output } from './superverse/v2/ModelCredentialInfo';
+import type { ModelCredentialServiceClient as _superverse_v2_ModelCredentialServiceClient, ModelCredentialServiceDefinition as _superverse_v2_ModelCredentialServiceDefinition } from './superverse/v2/ModelCredentialService';
 import type { NewTeamSpaceConnection as _superverse_v2_NewTeamSpaceConnection, NewTeamSpaceConnection__Output as _superverse_v2_NewTeamSpaceConnection__Output } from './superverse/v2/NewTeamSpaceConnection';
 import type { ObjectReference as _superverse_v2_ObjectReference, ObjectReference__Output as _superverse_v2_ObjectReference__Output } from './superverse/v2/ObjectReference';
 import type { PhaseTiming as _superverse_v2_PhaseTiming, PhaseTiming__Output as _superverse_v2_PhaseTiming__Output } from './superverse/v2/PhaseTiming';
@@ -291,6 +297,8 @@ import type { SessionProgress as _superverse_v2_SessionProgress, SessionProgress
 import type { SessionServiceClient as _superverse_v2_SessionServiceClient, SessionServiceDefinition as _superverse_v2_SessionServiceDefinition } from './superverse/v2/SessionService';
 import type { SessionSnapshot as _superverse_v2_SessionSnapshot, SessionSnapshot__Output as _superverse_v2_SessionSnapshot__Output } from './superverse/v2/SessionSnapshot';
 import type { SessionWorkspaceSnapshot as _superverse_v2_SessionWorkspaceSnapshot, SessionWorkspaceSnapshot__Output as _superverse_v2_SessionWorkspaceSnapshot__Output } from './superverse/v2/SessionWorkspaceSnapshot';
+import type { SetModelCredentialRequest as _superverse_v2_SetModelCredentialRequest, SetModelCredentialRequest__Output as _superverse_v2_SetModelCredentialRequest__Output } from './superverse/v2/SetModelCredentialRequest';
+import type { SetModelCredentialResponse as _superverse_v2_SetModelCredentialResponse, SetModelCredentialResponse__Output as _superverse_v2_SetModelCredentialResponse__Output } from './superverse/v2/SetModelCredentialResponse';
 import type { SetProjectMemberRoleRequest as _superverse_v2_SetProjectMemberRoleRequest, SetProjectMemberRoleRequest__Output as _superverse_v2_SetProjectMemberRoleRequest__Output } from './superverse/v2/SetProjectMemberRoleRequest';
 import type { SetProjectMemberRoleResponse as _superverse_v2_SetProjectMemberRoleResponse, SetProjectMemberRoleResponse__Output as _superverse_v2_SetProjectMemberRoleResponse__Output } from './superverse/v2/SetProjectMemberRoleResponse';
 import type { SetSessionExecutorRequest as _superverse_v2_SetSessionExecutorRequest, SetSessionExecutorRequest__Output as _superverse_v2_SetSessionExecutorRequest__Output } from './superverse/v2/SetSessionExecutorRequest';
@@ -479,6 +487,8 @@ export interface ProtoGrpcType {
       DeleteAttachmentResponse: MessageTypeDefinition<_superverse_v2_DeleteAttachmentResponse, _superverse_v2_DeleteAttachmentResponse__Output>
       DeleteFlowChannelMessageRequest: MessageTypeDefinition<_superverse_v2_DeleteFlowChannelMessageRequest, _superverse_v2_DeleteFlowChannelMessageRequest__Output>
       DeleteFlowChannelMessageResponse: MessageTypeDefinition<_superverse_v2_DeleteFlowChannelMessageResponse, _superverse_v2_DeleteFlowChannelMessageResponse__Output>
+      DeleteModelCredentialRequest: MessageTypeDefinition<_superverse_v2_DeleteModelCredentialRequest, _superverse_v2_DeleteModelCredentialRequest__Output>
+      DeleteModelCredentialResponse: MessageTypeDefinition<_superverse_v2_DeleteModelCredentialResponse, _superverse_v2_DeleteModelCredentialResponse__Output>
       DeleteProjectRequest: MessageTypeDefinition<_superverse_v2_DeleteProjectRequest, _superverse_v2_DeleteProjectRequest__Output>
       DeleteProjectResponse: MessageTypeDefinition<_superverse_v2_DeleteProjectResponse, _superverse_v2_DeleteProjectResponse__Output>
       DeleteQueuedMessageRequest: MessageTypeDefinition<_superverse_v2_DeleteQueuedMessageRequest, _superverse_v2_DeleteQueuedMessageRequest__Output>
@@ -527,6 +537,8 @@ export interface ProtoGrpcType {
       GetFlowStateResponse: MessageTypeDefinition<_superverse_v2_GetFlowStateResponse, _superverse_v2_GetFlowStateResponse__Output>
       GetFlowSummaryRequest: MessageTypeDefinition<_superverse_v2_GetFlowSummaryRequest, _superverse_v2_GetFlowSummaryRequest__Output>
       GetFlowSummaryResponse: MessageTypeDefinition<_superverse_v2_GetFlowSummaryResponse, _superverse_v2_GetFlowSummaryResponse__Output>
+      GetModelCredentialInfoRequest: MessageTypeDefinition<_superverse_v2_GetModelCredentialInfoRequest, _superverse_v2_GetModelCredentialInfoRequest__Output>
+      GetModelCredentialInfoResponse: MessageTypeDefinition<_superverse_v2_GetModelCredentialInfoResponse, _superverse_v2_GetModelCredentialInfoResponse__Output>
       GetPreviewDefinitionsRequest: MessageTypeDefinition<_superverse_v2_GetPreviewDefinitionsRequest, _superverse_v2_GetPreviewDefinitionsRequest__Output>
       GetPreviewDefinitionsResponse: MessageTypeDefinition<_superverse_v2_GetPreviewDefinitionsResponse, _superverse_v2_GetPreviewDefinitionsResponse__Output>
       GetPreviewRequest: MessageTypeDefinition<_superverse_v2_GetPreviewRequest, _superverse_v2_GetPreviewRequest__Output>
@@ -592,6 +604,10 @@ export interface ProtoGrpcType {
       LogoutRequest: MessageTypeDefinition<_superverse_v2_LogoutRequest, _superverse_v2_LogoutRequest__Output>
       LogoutResponse: MessageTypeDefinition<_superverse_v2_LogoutResponse, _superverse_v2_LogoutResponse__Output>
       ManagedRepositorySource: MessageTypeDefinition<_superverse_v2_ManagedRepositorySource, _superverse_v2_ManagedRepositorySource__Output>
+      ModelCredentialInfo: MessageTypeDefinition<_superverse_v2_ModelCredentialInfo, _superverse_v2_ModelCredentialInfo__Output>
+      ModelCredentialService: SubtypeConstructor<typeof grpc.Client, _superverse_v2_ModelCredentialServiceClient> & { service: _superverse_v2_ModelCredentialServiceDefinition }
+      ModelCredentialStatus: EnumTypeDefinition
+      ModelProvider: EnumTypeDefinition
       NewTeamSpaceConnection: MessageTypeDefinition<_superverse_v2_NewTeamSpaceConnection, _superverse_v2_NewTeamSpaceConnection__Output>
       ObjectReference: MessageTypeDefinition<_superverse_v2_ObjectReference, _superverse_v2_ObjectReference__Output>
       PhaseTiming: MessageTypeDefinition<_superverse_v2_PhaseTiming, _superverse_v2_PhaseTiming__Output>
@@ -677,6 +693,8 @@ export interface ProtoGrpcType {
       SessionSnapshot: MessageTypeDefinition<_superverse_v2_SessionSnapshot, _superverse_v2_SessionSnapshot__Output>
       SessionStatus: EnumTypeDefinition
       SessionWorkspaceSnapshot: MessageTypeDefinition<_superverse_v2_SessionWorkspaceSnapshot, _superverse_v2_SessionWorkspaceSnapshot__Output>
+      SetModelCredentialRequest: MessageTypeDefinition<_superverse_v2_SetModelCredentialRequest, _superverse_v2_SetModelCredentialRequest__Output>
+      SetModelCredentialResponse: MessageTypeDefinition<_superverse_v2_SetModelCredentialResponse, _superverse_v2_SetModelCredentialResponse__Output>
       SetProjectMemberRoleRequest: MessageTypeDefinition<_superverse_v2_SetProjectMemberRoleRequest, _superverse_v2_SetProjectMemberRoleRequest__Output>
       SetProjectMemberRoleResponse: MessageTypeDefinition<_superverse_v2_SetProjectMemberRoleResponse, _superverse_v2_SetProjectMemberRoleResponse__Output>
       SetSessionExecutorRequest: MessageTypeDefinition<_superverse_v2_SetSessionExecutorRequest, _superverse_v2_SetSessionExecutorRequest__Output>

@@ -9,7 +9,9 @@
 package session
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -19,11 +21,14 @@ import (
 
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
+	"github.com/superdurable/superversev2/internal/comm/flowid"
+	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteexec"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/flowdesign"
+	"github.com/superdurable/superversev2/internal/dexai/agents/toolfailure"
 )
 
 // sessionStartAttributes are the identity and lifecycle a Session starts with,
@@ -69,7 +74,7 @@ func rpcAccepted(isAccepted bool) *dex.RPCResult[bool] {
 // modelSelection answers UpdateSessionModel: whether the Session accepted the
 // selection, and whether it refused it because the caller's revision no longer
 // holds, which the caller answers by rereading.
-type modelSelection struct{ Accepted, Stale bool }
+type modelSelection struct{ Accepted, Stale, CredentialMissing bool }
 
 // queuedMessageDeletion distinguishes authorization refusal from a stale queue identity.
 type queuedMessageDeletion struct{ Deleted, NotAuthor bool }
@@ -77,7 +82,7 @@ type queuedMessageDeletion struct{ Deleted, NotAuthor bool }
 // messageAdmission answers SendMessage: whether the Session took the message,
 // and whether it refused it because it carries attachments while a local
 // agent executes the Session, which receives text only.
-type messageAdmission struct{ Accepted, AttachmentsRefused bool }
+type messageAdmission struct{ Accepted, AttachmentsRefused, CredentialMissing bool }
 
 // setSessionStatus records a lifecycle transition at the next revision.
 func setSessionStatus(ctx dex.Context, status agentloop.SessionStatus, reason string) {
@@ -140,7 +145,9 @@ func agentSnapshot(ctx dex.Context, state agentloop.AgentState, read func(conver
 // agentDescription reads the durable interaction state a conversation view renders.
 func agentDescription(ctx dex.Context, state agentloop.AgentState, queuedCount, steeredCount int) agentloop.AgentDescription {
 	selected := comm.Must(sessionModelAttribute.Get(ctx))
+	info := dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, modelcredential.Anthropic.String()))
 	description := agentloop.AgentDescription{
+		ModelCredentialVersion:     fmt.Sprintf("%d/%s/%d", info.Revision, info.Status.String(), info.HighWaterRevision),
 		Executor:                   currentExecutor(ctx),
 		Status:                     state.Status,
 		WaitingInputRound:          comm.Must(waitingInputRoundAttribute.Get(ctx)),
@@ -461,4 +468,176 @@ func getFlowDesign(ctx dex.Context, slot flowdesign.Slot) (*dex.RPCResult[flowDe
 		return &dex.RPCResult[flowDesignRPCOutput]{}, nil
 	}
 	return &dex.RPCResult[flowDesignRPCOutput]{Output: flowDesignRPCOutput{Design: comm.Must(design, err), Found: true}}, nil
+}
+
+// ReadModelCredentialInfo reads only the provider's exact non-secret instance.
+func readModelCredentialInfo(ctx dex.Context, provider modelcredential.Provider) (*dex.RPCResult[modelcredential.Info], error) {
+	info, err := modelKeyInfoAttribute.Get(ctx, provider.String())
+	if dexflow.IsAttributeNotFound(err) {
+		err = nil
+	}
+	return &dex.RPCResult[modelcredential.Info]{Output: info}, err
+}
+
+// ReserveModelCredential serializes one writer across replicas without recording a secret.
+func reserveModelCredential(ctx dex.Context, input modelcredential.Mutation) (*dex.RPCResult[modelcredential.Admission], error) {
+	if !acceptsUserCommand(ctx) {
+		return nil, ErrCommandRejected
+	}
+	info := dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, input.Provider.String()))
+	result := modelcredential.Admission{Info: info}
+	if info.OperationID == input.OperationID && info.OperationRevision == input.ExpectedRevision && info.Delete == input.Delete {
+		if input.RetryDelete && input.Delete && info.Status == modelcredential.StatusPending {
+			info.WriteAttempt++
+			comm.MustDo(modelKeyInfoAttribute.Set(ctx, input.Provider.String(), info))
+		}
+		result.Info, result.Admitted = info, true
+	} else if info.Revision == input.ExpectedRevision && info.Status != modelcredential.StatusPending {
+		if input.Reason == (modelcredential.ChangeReason{}) {
+			input.Reason = modelcredential.ChangedReason
+		}
+		previous := info
+		previous.Previous = nil
+		revision := max(info.Revision, info.HighWaterRevision) + 1
+		info = modelcredential.Info{ChangeReason: input.Reason, Holders: info.Holders, Previous: &previous, HighWaterRevision: revision, OperationRevision: input.ExpectedRevision, Revision: revision, Status: modelcredential.StatusPending, OperationID: input.OperationID, Delete: input.Delete, SetBy: input.Actor, SetAt: time.Now().UTC(), Last4: input.Last4}
+		comm.MustDo(modelKeyInfoAttribute.Set(ctx, input.Provider.String(), info))
+		result = modelcredential.Admission{Info: info, Admitted: true, Fresh: true}
+	}
+	return &dex.RPCResult[modelcredential.Admission]{Output: result}, nil
+}
+
+// FinalizeModelCredential publishes metadata only after exact secret readback and copy cleanup.
+func finalizeModelCredential(ctx dex.Context, input modelcredential.Mutation) (*dex.RPCResult[modelcredential.Info], error) {
+	info := comm.Must(modelKeyInfoAttribute.Get(ctx, input.Provider.String()))
+	if info.OperationID != input.OperationID || info.OperationRevision != input.ExpectedRevision || info.Delete != input.Delete {
+		return nil, modelcredential.ErrRevision
+	}
+	if info.Status == modelcredential.StatusPending {
+		if input.Cancel {
+			previous := modelcredential.Info{}
+			if info.Previous != nil {
+				previous = *info.Previous
+			}
+			previous.HighWaterRevision = max(info.HighWaterRevision, info.Revision)
+			comm.MustDo(modelKeyInfoAttribute.Set(ctx, input.Provider.String(), previous))
+			return &dex.RPCResult[modelcredential.Info]{Output: previous}, nil
+		}
+		info.Previous = nil
+		info.Holders = nil
+		info.Status = modelcredential.StatusActive
+		if input.Delete {
+			info.Status = modelcredential.StatusRevoked
+			info.Last4 = ""
+		}
+		comm.MustDo(modelKeyInfoAttribute.Set(ctx, input.Provider.String(), info))
+	}
+	return &dex.RPCResult[modelcredential.Info]{Output: info}, nil
+}
+
+// UpdateSessionModel selects the Session's model at an exact revision at any time.
+// The next turn rolls the context over to it; history, pending input and workspace stay.
+func updateSessionModel(ctx dex.Context, input agentloop.UpdateSessionModelRequest) (*dex.RPCResult[modelSelection], error) {
+	if !acceptsUserCommand(ctx) {
+		return &dex.RPCResult[modelSelection]{}, nil
+	}
+	if !modelCredentialReady(ctx, input.Model) {
+		return &dex.RPCResult[modelSelection]{Output: modelSelection{CredentialMissing: true}}, nil
+	}
+	current := comm.Must(sessionModelAttribute.Get(ctx))
+	selected, isAccepted := agentloop.ChangeSessionModel(current, input)
+	if selected != current {
+		comm.MustDo(sessionModelAttribute.Set(ctx, selected))
+	}
+	return &dex.RPCResult[modelSelection]{Output: modelSelection{Accepted: isAccepted, Stale: !isAccepted}}, nil
+}
+
+// modelCredentialReady reads the non-secret admission fence; model Steps also verify the envelope.
+func modelCredentialReady(ctx dex.Context, model conversation.Model) bool {
+	if model == conversation.ModelMock || currentExecutor(ctx).Mode == remoteexec.ModeRemote {
+		return true
+	}
+	return dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, modelcredential.Anthropic.String())).Active()
+}
+
+func credentialAdmissionRPC(options *dex.RPCOptions) *dex.RPCOptions {
+	options.LoadAttributeMapInstances = append(options.LoadAttributeMapInstances, modelKeyInfoAttribute.Load(modelcredential.Anthropic.String()))
+	return options
+}
+
+// prepareSubagentCredential commits a bounded holder before a child can receive a key.
+func (flow *SessionAgentFlow) prepareSubagentCredential(ctx dex.Context, input toolInvocation) (*dex.StepDecision, error) {
+	input.CredentialPrepared = true
+	if comm.Must(sessionModelAttribute.Get(ctx)).Model != conversation.ModelMock {
+		info := dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, modelcredential.Anthropic.String()))
+		if !info.Active() {
+			return rejectCredentialStart(ctx, input.Call)
+		}
+		agentID := flowid.AgentTaskID(ctx.FlowID(), string(input.Call.ID))
+		for _, holder := range info.Holders {
+			if holder.AgentID == agentID && holder.CallID == string(input.Call.ID) {
+				return dex.GoTo(ExecuteTool{}, input, dex.WithStepOptions(serialToolStepOptions(input.Call))), nil
+			}
+		}
+		if len(info.Holders) >= agenttasks.MaximumRunningSubagents {
+			cleared, err := flow.dependency.ReconcileSubagentCredentials(ctx, readSessionIdentity(ctx).ProjectID, info.Holders, fmt.Sprintf("%s/attempt-%d", input.Call.ID, ctx.Attempt()))
+			if err != nil {
+				return nil, dex.ErrorWithStack(err)
+			}
+			info.Holders = slices.DeleteFunc(info.Holders, func(h modelcredential.Holder) bool { return slices.Contains(cleared, h.AgentID) })
+		}
+		if len(info.Holders) >= agenttasks.MaximumRunningSubagents {
+			return rejectCredentialStart(ctx, input.Call)
+		}
+		info.Holders = append(info.Holders, modelcredential.Holder{AgentID: agentID, CallID: string(input.Call.ID), Revision: info.Revision})
+		comm.MustDo(modelKeyInfoAttribute.Set(ctx, modelcredential.Anthropic.String(), info))
+	}
+	return dex.GoTo(ExecuteTool{}, input, dex.WithStepOptions(serialToolStepOptions(input.Call))), nil
+}
+
+func rejectCredentialStart(ctx dex.Context, call conversation.ToolCall) (*dex.StepDecision, error) {
+	appendSessionFailure(ctx, call, toolfailure.ModelCredentialUnavailable, "The Project key is unavailable or its previous subagents still hold it. Finish or stop the previous tasks, or replace the Project key.")
+	forgetSubagentStart(ctx, flowid.AgentTaskID(ctx.FlowID(), string(call.ID)))
+	return dex.GoTo(CheckSteered{}, advancePendingTools(ctx, 1)), nil
+}
+
+// startCredentialSubagent passes the transient key only to the in-process cross-child Service.
+func (flow *SessionAgentFlow) startCredentialSubagent(ctx dex.Context, execution context.Context, start agenttasks.SubagentStart) error {
+	key, err := preparedSubagentCredential(ctx, start.Identity.AgentID, start.Model)
+	if err != nil {
+		return err
+	}
+	start.CredentialRevision = key.Revision
+	return flow.dependency.StartSubagent(execution, start, key, ctx.Attempt())
+}
+
+func preparedSubagentCredential(ctx dex.Context, agentID string, model conversation.Model) (modelcredential.Envelope, error) {
+	key, err := sessionModelCredential(ctx, model)
+	if err != nil {
+		return modelcredential.Envelope{}, err
+	}
+	if model != conversation.ModelMock {
+		info := comm.Must(modelKeyInfoAttribute.Get(ctx, modelcredential.Anthropic.String()))
+		var admitted bool
+		for _, holder := range info.Holders {
+			if holder.AgentID == agentID && holder.Revision == key.Revision {
+				admitted = true
+				break
+			}
+		}
+		if !admitted {
+			return modelcredential.Envelope{}, modelcredential.ErrUnavailable
+		}
+	}
+	return key, nil
+}
+
+func credentialStartFailure(ctx dex.Context, call conversation.ToolCall, agentID string, err error) (agentloop.ToolExecutionResult, error) {
+	if errors.Is(err, modelcredential.ErrUnavailable) {
+		forgetSubagentStart(ctx, agentID)
+		return agentloop.SessionFailureResult(toolfailure.ModelCredentialUnavailable, "The model credential changed; this subagent was not started."), nil
+	}
+	if errors.Is(err, modelcredential.ErrCopyStopped) {
+		return agentloop.FailureResult(conversation.ToolFailure{Code: toolfailure.ModelCredentialUnavailable, Effect: toolfailure.EffectPartial, Message: "The model credential changed; this subagent was stopped. Its task notification follows."}), nil
+	}
+	return agentloop.ToolExecutionResult{}, fmt.Errorf("start subagent %s: %w", agentID, err)
 }

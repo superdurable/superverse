@@ -5,7 +5,7 @@ Purpose: Serves the business gRPC services that the Studio BFF calls, one file p
 
 Callers: `internal/dexai/bootstrap` imports this package.
 
-Dependencies: it imports `gen/superverse/v2`, `internal/comm/**` (5) and `internal/dexai/**` (38).
+Dependencies: it imports `gen/superverse/v2`, `internal/comm/**` (5) and `internal/dexai/**` (40).
 
 ```mermaid
 flowchart LR
@@ -13,7 +13,7 @@ flowchart LR
   c0["internal/dexai/bootstrap"] --> self
   self --> d0["gen/superverse/v2"]
   self --> d1["internal/comm/** (5)"]
-  self --> d2["internal/dexai/** (38)"]
+  self --> d2["internal/dexai/** (40)"]
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 
@@ -118,3 +118,5 @@ and `make test-integration` skips it, as every name of the Makefile's `DEVELOPER
 refusals. CallerContext is set by the BFF; Bridge HTTP requests never pass this
 business boundary. Current executor metadata comes from Session's typed read,
 independent of PAIRED rows. See [remote agent connections](../../../docs/api/remote-agent.md).
+
+The real-model comparison provisions each Project key through the running lane’s `ModelCredentialService`, then explicitly resumes its original request. Its timings include this credential setup; the key is never a Session environment fallback.

@@ -27,7 +27,7 @@ is logged the same way and ends that Watch with the same Internal status.
 
 <!-- BEGIN GENERATED SERVICE TABLE (make generate-proto) -->
 
-17 services, 106 RPCs. A field is a string unless a type is given. Every request
+18 services, 109 RPCs. A field is a string unless a type is given. Every request
 except RegisterAccount and Login also carries `CallerContext caller 100`, which the table omits.
 
 | Service | RPCs | Reached through |
@@ -49,6 +49,7 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 | FlowDiagnosticsService | 9 | `/dex/...` |
 | ConnectorService | 7 | `/dex/...` |
 | ApplicationEnvironmentService | 2 | `/dex/...` |
+| ModelCredentialService | 3 | `/api/rpc/<Method>` |
 
 **AccountService**
 
@@ -240,6 +241,14 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 | --- | --- | --- |
 | GetApplicationEnvironment | `FlowApiContext context 1` | `FlowApiDocument document 1` |
 | SaveApplicationEnvironment | `FlowApiContext context 1, map<string, string> values 2, map<string, string> secrets 3, repeated remove 4, repeated follow_preview 5` | `FlowApiDocument document 1` |
+
+**ModelCredentialService**
+
+| RPC | Request | Response |
+| --- | --- | --- |
+| GetModelCredentialInfo | `project_id 1, ModelProvider provider 2` | `ModelCredentialInfo credential 1` |
+| SetModelCredential | `project_id 1, ModelProvider provider 2, request_id 3, optional uint64 expected_revision 4, api_key 5` | `ModelCredentialInfo credential 1` |
+| DeleteModelCredential | `project_id 1, ModelProvider provider 2, request_id 3, optional uint64 expected_revision 4` | `ModelCredentialInfo credential 1` |
 
 <!-- END GENERATED SERVICE TABLE -->
 

@@ -26,6 +26,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/subagent"
 	attachmentsapi "github.com/superdurable/superversev2/internal/dexai/api/attachments"
 	"github.com/superdurable/superversev2/internal/dexai/api/boundary"
+	credentialapi "github.com/superdurable/superversev2/internal/dexai/api/modelcredential"
 	remoteapi "github.com/superdurable/superversev2/internal/dexai/api/remoteagent"
 	"github.com/superdurable/superversev2/internal/dexai/api/tenancy"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/deployments"
@@ -100,6 +101,7 @@ func NewGRPCServer(s *Server) *grpc.Server {
 	pb.RegisterSessionServiceServer(server, &sessionServer{Boundary: b, sessions: s.Sessions, sessionAgents: s.SessionAgents, subagents: s.Subagents})
 	pb.RegisterAgentServiceServer(server, &agentServer{Boundary: b, sessions: s.Sessions, sessionAgents: s.SessionAgents, attachments: s.AttachmentAdmission, models: s.SessionModels})
 	remoteapi.Register(server, b, s.RemoteAgents)
+	credentialapi.Register(server, b, s.Sessions)
 	pb.RegisterPreviewServiceServer(server, &previewServer{Boundary: b, sessions: s.Sessions})
 	pb.RegisterReleaseServiceServer(server, &releaseServer{Boundary: b, projects: s.Projects, host: s.Host, releases: s.Releases, configuration: s.Configuration, publishing: s.Publishing})
 	pb.RegisterDeploymentServiceServer(server, &deploymentServer{Boundary: b, projects: s.Projects, deployments: s.Deployments})

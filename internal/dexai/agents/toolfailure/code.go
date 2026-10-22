@@ -157,6 +157,7 @@ var (
 
 // Delegation to subagents that the call asks for too often or too early.
 var (
+	ModelCredentialUnavailable = callCode("model_credential_unavailable", "The Project key is missing or retained by unfinished tasks. Ask the user to set their key or stop those tasks before starting another subagent.")
 	SubagentLimitReached     = callCode("subagent_limit_reached", "Three subagents already run. Wait for a task notification before you start another, or stop one with stop_task.")
 	TaskWorktreeLimitReached = callCode("task_worktree_limit_reached", "Three task worktrees are open, or sixteen names are currently retained. Merge or discard an open worktree, or continue with an existing name.")
 	SubagentBudgetReached    = callCode("subagent_budget_reached", "Six subagents were started since the user's last message. Continue with the subagents you have, or ask the user before you start more.")

@@ -857,6 +857,9 @@ func currentParallelBatch(ctx dex.Context, batch agentloop.ToolBatchState) bool 
 // Agent shows it, and takes the message as the card's reply, which AwaitUser
 // consumes; remove that branch once no Session holds such a card.
 func sendMessage(ctx dex.Context, input conversation.PendingUserMessage) (*dex.RPCResult[messageAdmission], error) {
+	if !modelCredentialReady(ctx, comm.Must(sessionModelAttribute.Get(ctx)).Model) {
+		return &dex.RPCResult[messageAdmission]{Output: messageAdmission{CredentialMissing: true}}, nil
+	}
 	if !acceptsUserCommand(ctx) {
 		return &dex.RPCResult[messageAdmission]{}, nil
 	}
@@ -967,4 +970,27 @@ func prepareSessionNotification(ctx dex.Context, notification conversation.Sessi
 		return fmt.Errorf("invalid notification %q: %w", notification.ID, err)
 	}
 	return recordSubagentEnd(ctx, notification)
+}
+
+func answerQuestions(ctx dex.Context, input agentloop.AnswerQuestionsRequest) (*dex.RPCResult[bool], error) {
+	pending := dexflow.OptionalValue(pendingUserInputAttribute.Get(ctx))
+	if !acceptsUserCommand(ctx) || pending == nil || pending.CallID != input.CallID {
+		return rpcAccepted(false), nil
+	}
+	answer, isValid := agentloop.AnswerPendingInput(*pending, input)
+	if !isValid {
+		return rpcAccepted(false), nil
+	}
+	comm.MustDo(pendingUserInputAttribute.Delete(ctx))
+	comm.MustDo(answeredUserInputsChannel.Publish(ctx, agentloop.AnsweredUserInput{CallID: pending.CallID, Message: answer.Message, Description: answer.Description}))
+	return rpcAccepted(true), nil
+}
+
+func approveTool(ctx dex.Context, input agentloop.ToolApprovalRequest) (*dex.RPCResult[bool], error) {
+	if pending := dexflow.OptionalValue(pendingApprovalAttribute.Get(ctx)); !acceptsUserCommand(ctx) || pending == nil || pending.CallID != input.CallID {
+		return rpcAccepted(false), nil
+	}
+	comm.MustDo(pendingApprovalAttribute.Delete(ctx))
+	comm.MustDo(toolApprovalsChannel.Publish(ctx, string(input.CallID), agentloop.ToolApproval{Approved: input.Approved}))
+	return rpcAccepted(true), nil
 }

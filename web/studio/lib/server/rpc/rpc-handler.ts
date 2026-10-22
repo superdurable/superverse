@@ -46,6 +46,7 @@ const BROWSER_SERVICES = {
   ProjectService: true,
   SessionService: true,
   AgentService: true,
+  ModelCredentialService: true,
   RemoteAgentService: true,
   PreviewService: true,
   ReleaseService: true,

@@ -5,7 +5,7 @@ Purpose: Holds the task records of the Session Agent's background commands and s
 
 Callers: `cmd/tools/check-mock-scenarios`, `internal/dexai/agents`, `internal/dexai/agents/session`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/backgroundcommand`, `internal/dexai/agents/session/modelprovider/mockmodel`, `internal/dexai/agents/session/subagent`, `internal/dexai/api` and `internal/dexai/bootstrap` import this package.
 
-Dependencies: it imports `internal/comm`, `internal/comm/flowid`, `internal/dexai/agents/sandbox/workspace`, `internal/dexai/agents/sandbox/workspace/git`, `internal/dexai/agents/sandbox/workspace/sandboxd`, `internal/dexai/agents/session/conversation` and `internal/dexai/agents/toolfailure`.
+Dependencies: it imports `internal/comm`, `internal/comm/flowid`, `internal/dexai/agents/modelcredential`, `internal/dexai/agents/sandbox/workspace`, `internal/dexai/agents/sandbox/workspace/git`, `internal/dexai/agents/sandbox/workspace/sandboxd`, `internal/dexai/agents/session/conversation` and `internal/dexai/agents/toolfailure`.
 
 ```mermaid
 flowchart LR
@@ -21,11 +21,12 @@ flowchart LR
   c8["internal/dexai/bootstrap"] --> self
   self --> d0["internal/comm"]
   self --> d1["internal/comm/flowid"]
-  self --> d2["internal/dexai/agents/sandbox/workspace"]
-  self --> d3["internal/dexai/agents/sandbox/workspace/git"]
-  self --> d4["internal/dexai/agents/sandbox/workspace/sandboxd"]
-  self --> d5["internal/dexai/agents/session/conversation"]
-  self --> d6["internal/dexai/agents/toolfailure"]
+  self --> d2["internal/dexai/agents/modelcredential"]
+  self --> d3["internal/dexai/agents/sandbox/workspace"]
+  self --> d4["internal/dexai/agents/sandbox/workspace/git"]
+  self --> d5["internal/dexai/agents/sandbox/workspace/sandboxd"]
+  self --> d6["internal/dexai/agents/session/conversation"]
+  self --> d7["internal/dexai/agents/toolfailure"]
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 

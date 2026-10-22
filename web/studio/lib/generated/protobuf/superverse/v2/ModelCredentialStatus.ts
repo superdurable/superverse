@@ -1,0 +1,20 @@
+// Original file: api/superverse/v2/superverse.proto
+
+export const ModelCredentialStatus = {
+  MODEL_CREDENTIAL_STATUS_UNSPECIFIED: 'MODEL_CREDENTIAL_STATUS_UNSPECIFIED',
+  MODEL_CREDENTIAL_STATUS_ACTIVE: 'MODEL_CREDENTIAL_STATUS_ACTIVE',
+  MODEL_CREDENTIAL_STATUS_PENDING: 'MODEL_CREDENTIAL_STATUS_PENDING',
+  MODEL_CREDENTIAL_STATUS_REVOKED: 'MODEL_CREDENTIAL_STATUS_REVOKED',
+} as const;
+
+export type ModelCredentialStatus =
+  | 'MODEL_CREDENTIAL_STATUS_UNSPECIFIED'
+  | 0
+  | 'MODEL_CREDENTIAL_STATUS_ACTIVE'
+  | 1
+  | 'MODEL_CREDENTIAL_STATUS_PENDING'
+  | 2
+  | 'MODEL_CREDENTIAL_STATUS_REVOKED'
+  | 3
+
+export type ModelCredentialStatus__Output = typeof ModelCredentialStatus[keyof typeof ModelCredentialStatus]

@@ -143,7 +143,7 @@ func newSessionOf(t *testing.T, ctx context.Context, model conversation.Model, c
 		id: agentloop.SessionFlowID(project.ProjectID), identity: agentloop.SessionIdentity{ProjectID: project.ProjectID, Profile: agentloop.ProfileSessionV1, HeadCommit: row.SetupSourceCommit.V},
 		provisions: provision.NewSandboxProvisionFlowClientForTest(sdk, provisionFlow, reader, deploymentnames.MustFor(deploymentnames.EnvironmentTest)),
 		workspaces: sessionworkspace.NewSessionWorkspaceFlowClientForTest(sdk, workspaceFlow, reader),
-		previews:   &preview.PreviewFlowClient{Dex: sdk, Flow: previewFlow, Execution: reader}, subagents: subagent.NewSubagentFlowClientForTest(sdk, subagentFlow),
+		previews:   &preview.PreviewFlowClient{Dex: sdk, Flow: previewFlow, Execution: reader}, subagents: subagent.NewSubagentFlowClientForTest(sdk, subagentFlow, reader),
 		issues:        platformissue.NewPlatformIssueFlowClientForTest(sdk, issueFlow, deploymentnames.EnvironmentTest),
 		contributions: contribution.NewConnectorContributionFlowClientForTest(sdk, contributionFlow)}
 	started := s.awaitStarted(ctx)

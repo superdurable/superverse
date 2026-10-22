@@ -38,6 +38,7 @@ export type BrowserService =
   | "ProjectService"
   | "SessionService"
   | "AgentService"
+  | "ModelCredentialService"
   | "RemoteAgentService"
   | "PreviewService"
   | "ReleaseService"

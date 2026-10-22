@@ -43,6 +43,7 @@ import (
 // Flows reach through the interfaces their own packages declare. It works on
 // the Flow clients of the Flows it coordinates.
 type SessionFlowService struct {
+	ModelCredentials  *ModelCredentialFlowService
 	RemoteConnections *remoteagentdao.DAO
 	Projects          *projects.ProjectFlowClient
 	Provisions        *provision.SandboxProvisionFlowClient

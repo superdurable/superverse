@@ -88,6 +88,9 @@ func (s *SessionFlowService) CleanupProjectSession(ctx context.Context, projectI
 			return false, fmt.Errorf("read the engine status of the Session of Project %s: %w", projectID, err)
 		}
 		archived := session.Status == agentloop.SessionStatusArchived && session.CloseReason == agentloop.CloseReasonProjectCleanupComplete.String()
+		if err = s.ModelCredentials.cleanupProjectCredential(ctx, projectID, abnormal || archived); err != nil {
+			return false, fmt.Errorf("delete Project model credential: %w", err)
+		}
 		if !abnormal && !archived {
 			if err = s.Agent.CompleteProjectSession(ctx, projectID, projectCleanupLockWait); err != nil {
 				return false, fmt.Errorf("complete the Session of Project %s: %w", projectID, err)

@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	sessionagent "github.com/superdurable/superversev2/internal/dexai/agents/session"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
@@ -49,9 +50,9 @@ func (s *SessionFlowService) logNotification(ctx context.Context, projectID stri
 
 // StartSubagent idempotently starts the SubagentFlow of a subagent the
 // Session admitted; a repeated start joins its execution, also a closed one.
-func (s *SessionFlowService) StartSubagent(ctx context.Context, start agenttasks.SubagentStart) error {
+func (s *SessionFlowService) StartSubagent(ctx context.Context, start agenttasks.SubagentStart, key modelcredential.Envelope, attempt int32) error {
 	s.logSubagent(ctx, "start", start.Identity)
-	return s.Subagents.Start(ctx, start)
+	return s.ModelCredentials.startSubagent(ctx, start, key, attempt)
 }
 
 // StopSubagent asks a subagent to stop and answers whether it has ended.
@@ -148,4 +149,24 @@ func (s *SessionFlowService) logSubagent(ctx context.Context, operation string, 
 // calls it once the close published the stop of the watch.
 func (s *SessionFlowService) StopBackgroundCommandWatch(ctx context.Context, flowID string) error {
 	return s.BackgroundCommands.Stop(ctx, flowID)
+}
+
+// ReconcileSubagentCredentials releases only exact-confirmed absent copies of ended children.
+func (s *SessionFlowService) ReconcileSubagentCredentials(ctx context.Context, project string, holders []modelcredential.Holder, operation string) ([]string, error) {
+	var cleared []string
+	for _, holder := range holders {
+		id := agenttasks.SubagentIdentity{ProjectID: project, AgentID: holder.AgentID}
+		running, err := s.Subagents.CredentialHolderRunning(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		if running {
+			continue
+		}
+		if err := s.ModelCredentials.clearSubagentCredential(ctx, id, operation+"/reconcile-holder/"+holder.CallID); err != nil {
+			return nil, err
+		}
+		cleared = append(cleared, holder.AgentID)
+	}
+	return cleared, nil
 }

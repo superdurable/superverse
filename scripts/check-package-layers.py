@@ -104,6 +104,7 @@ LEVELS = {
     "internal/dexai/tenancy/accounts": 2,
     "internal/dexai/tenancy/connections": 2,
     "internal/dexai/agents/attachments": 3,
+    "internal/dexai/agents/modelcredential": 3,
     "internal/dexai/agents/sandbox/workspace/git": 3,
     "internal/dexai/projects/infra/kube/connect": 3,
     "internal/dexai/projects/infra/kube/hosted/identity": 3,
@@ -149,6 +150,7 @@ LEVELS = {
     "internal/dexai/api/tenancy": 10,
     "internal/dexai/api/attachments": 10,
     "internal/dexai/api/remoteagent": 10,
+    "internal/dexai/api/modelcredential": 10,
     "internal/dexai/api": 11,
     "internal/dexai/bootstrap": 12,
 }

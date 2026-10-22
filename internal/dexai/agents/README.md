@@ -3,9 +3,9 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Coordinates each Project's one Session across its Project, Session Agent, provisioning and Preview Flows for the API and those Flows: start, reads, workspace cold path, Preview commands, cleanup.
 
-Callers: `internal/dexai/agents/remoteagent`, `internal/dexai/api`, `internal/dexai/api/boundary`, `internal/dexai/bootstrap` and `internal/dexai/studio/runs` import this package.
+Callers: `internal/dexai/agents/remoteagent`, `internal/dexai/api`, `internal/dexai/api/boundary`, `internal/dexai/api/modelcredential`, `internal/dexai/bootstrap` and `internal/dexai/studio/runs` import this package.
 
-Dependencies: it imports `gen/superverse/v2`, `internal/comm/**` (2) and `internal/dexai/**` (20) and calls the Dex Flow API.
+Dependencies: it imports `gen/superverse/v2`, `internal/comm/**` (2) and `internal/dexai/**` (22) and calls the Dex Flow API.
 
 ```mermaid
 flowchart LR
@@ -13,11 +13,12 @@ flowchart LR
   c0["internal/dexai/agents/remoteagent"] --> self
   c1["internal/dexai/api"] --> self
   c2["internal/dexai/api/boundary"] --> self
-  c3["internal/dexai/bootstrap"] --> self
-  c4["internal/dexai/studio/runs"] --> self
+  c3["internal/dexai/api/modelcredential"] --> self
+  c4["internal/dexai/bootstrap"] --> self
+  c5["internal/dexai/studio/runs"] --> self
   self --> d0["gen/superverse/v2"]
   self --> d1["internal/comm/** (2)"]
-  self --> d2["internal/dexai/** (20)"]
+  self --> d2["internal/dexai/** (22)"]
   self --> e0(["Dex Flow API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
