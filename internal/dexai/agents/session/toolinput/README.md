@@ -44,3 +44,13 @@ Regenerate with `make generate-go check-generated` from the repository root.
 Built-in domain mapping belongs to Agent; byte, NUL and path checks a schema cannot
 express belong to sandboxtools. The [tool orchestration design](../../../../../docs/architecture/agent-harness-design/tool-orchestration.md#strict-schemas)
 owns execution and compatibility.
+
+## Subagent input bounds
+
+`start_agent.json` owns the prompt limit of 32768 characters, the description limit
+of 80 characters and the connector slug pattern `^[a-z][a-z0-9-]{1,62}$`.
+The generated ogen validator counts characters, rather than UTF-8 bytes.
+`agentloop.RequestedSubagent` decodes through that validator in RouteTool's
+`admitSubagentCall`, before creating any subagent record, worktree or Flow.
+`TestSessionMockSubagentInvalidStartDexIntegration` drives all three refusals
+through the real Session and checks `invalid_arguments` and the absence of effects.

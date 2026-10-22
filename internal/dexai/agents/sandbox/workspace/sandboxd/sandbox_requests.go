@@ -82,7 +82,7 @@ type processEvent struct {
 type ReadFileRequest struct {
 	Path   WorkspacePath
 	offset int64
-	Limit  int // 1 to maximumReadBytes
+	Limit  int // The platform caller selects the byte budget for this read.
 }
 
 type ReadFileResult struct {

@@ -3667,8 +3667,8 @@ type StartAgent struct {
 	// What the subagent works on, in at most 80 characters; the user sees it in the tasks panel. For
 	// connector_develop it also titles the commit and the pull request: connector(slug): description.
 	Description string `json:"description"`
-	// The complete brief, at most 32 KiB: the goal, the relevant paths, the constraints and what the
-	// report must contain. The subagent sees nothing else of the conversation.
+	// The complete brief, at most 32768 characters: the goal, the relevant paths, the constraints and what
+	// the report must contain. The subagent sees nothing else of the conversation.
 	Prompt string `json:"prompt"`
 	// Investigate answers a question about the code or its dependencies; change makes a bounded change and
 	// checks it; connector_select chooses the connectors for the requirements; connector_develop builds or

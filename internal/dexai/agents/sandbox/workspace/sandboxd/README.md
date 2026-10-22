@@ -53,6 +53,27 @@ helpers). A stream whose `StartRequest.Timeout` passes kills the process group
 with the cause `errProcessTimeout`; `TimedOut` reports that the kill was
 confirmed, and a kill that could not be confirmed wraps `errProcessStopFailed`.
 
+## File API trust and bounds
+
+`WorkspacePath` is a platform-selected workspace-relative path, not a parser for
+model input. `ReadFile` callers use `dex-app.yaml` (1 MiB), the template manifest
+(64 KiB), or local connector candidate assets (16 MiB each). The contribution
+helper accepts only confined regular assets; it opens directory handles and files
+without following symlinks and returns their relative paths, sizes and SHA-256.
+The platform validates the exact candidate path and the bytes before publication
+(`TestConnectorCandidateAssetsActualSandbox`). `ReadFile` bounds the response to
+the caller's limit and rejects an oversized or inconsistent response.
+`WriteFile` currently delivers the generated Preview storage profile; it accepts
+no model write arguments. There is no generic sandboxd read/write maximum
+separate from those callers.
+
+Model file paths instead go to `superverse-files`, which confines them to the
+agent root and permitted read-only roots, rejects `.git` and escaping symlinks,
+and bounds a read answer to 64 KiB and write content to 4 MiB.
+`TestFileHelperActualSandbox` exercises its path confinement and operations.
+The file tools also validate their schemas and UTF-8 byte/NUL bounds before
+invoking that helper; their owning package is `session/sandboxtools`.
+
 ## Typed failures
 
 `ToolFailure` is a failure whose outcome is known and safe to return to the

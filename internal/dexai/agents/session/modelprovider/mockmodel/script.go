@@ -625,8 +625,8 @@ func (s *script) validateStep(step step, files rootFiles) error {
 	for _, use := range step.ToolUses {
 		if step.InvalidToolArguments {
 			input, err := s.renderInput(use.Input, s.Arguments)
-			if err != nil || !step.ExpectFailure || use.Name != conversation.ToolStartTimer || toolinput.DecodeInput(use.Name, string(input)) == nil {
-				return errors.New("invalid_tool_arguments needs an invalid start_timer input and expect_failure")
+			if err != nil || !step.ExpectFailure || (use.Name != conversation.ToolStartTimer && use.Name != conversation.ToolStartAgent) || toolinput.DecodeInput(use.Name, string(input)) == nil {
+				return errors.New("invalid_tool_arguments needs an invalid start_timer or start_agent input and expect_failure")
 			}
 			continue
 		}
@@ -703,7 +703,7 @@ func (s *script) validateSubagents() error {
 	for _, in := range s.Inputs {
 		for _, reply := range in.Replies {
 			for _, use := range reply.ToolUses {
-				if use.Name != conversation.ToolStartAgent {
+				if use.Name != conversation.ToolStartAgent || reply.InvalidToolArguments {
 					continue
 				}
 				var call subagentPrompt

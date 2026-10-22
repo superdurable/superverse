@@ -9,5 +9,5 @@
 package sandboxd
 
 // WorkspacePath is a clean slash-separated path relative to the workspace
-// root that cannot escape it.
+// root selected by platform callers. Model file paths go through superverse-files.
 type WorkspacePath string

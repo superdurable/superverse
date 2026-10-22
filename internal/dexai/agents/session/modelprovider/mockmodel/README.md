@@ -162,7 +162,7 @@ report and calls no tool. A call's prompt names its script with `[[subagent:<sce
 and the subagent's conversation, whose first user message is that prompt, gets the script's
 replies in order, with the same replay check; a compaction summary of it carries
 `[[subagent:<scenario>/<name>]] [[scenario-step:<k>]]`. The subagent scripts are no scenarios of
-the catalog. At startup every `start_agent` call must name a declared script of the call's kind,
+the catalog. At startup every schema-valid `start_agent` call must name a declared script of the call's kind,
 every declared script must be started, and each script's tools must be its kind's tool set
 (`agentloop.SubagentTools`, whose `bash` has no `run_in_background`). A reply marked
 A `connector_develop` subagent's root is a worktree of the connectors
@@ -377,6 +377,7 @@ or subagent kind ships with its scenario and the test that runs it.
 | `preview-broken-checkpoint` | `user_error` | message, message | A Flow source that does not compile, pushed as a blocked checkpoint, which hands nothing off, with three replies to the handoff continuations; then the source restored, `make bootstrap` and `commit_and_push` through the real commit gate, which the Preview deploys by itself: `TestPreviewRefusedDeploymentKeepsServingProcessesDexIntegration`, which then deploys the checkpoint itself, and `TestLiveSourceFailureNotifiesDexIntegration`, whose Release of the checkpoint fails its source preparation |
 | `preview-start-failure` | `user_error` | message | The same startup check of `WELCOME_TEXT`, pushed as a blocked checkpoint, which hands nothing off, with three replies to the handoff continuations; a test prepares and starts the commit twice, each start fails `PREVIEW_FAILED` and leaves the Preview `STOPPED` with the reason, and each delivery notification opens an automatic turn, a reply that declares `notification: delivery`: `TestPreviewStartFailureDexIntegration` |
 | `tool-failure` | `agent_error` | message | A blank `bash` command that fails with `invalid_arguments`, then a real command |
+| `subagent-invalid-start` | `agent_error` | message | Three schema-invalid `start_agent` calls (81-character description, `NewsAPI` slug and 32769-character prompt), each expecting `invalid_arguments` before any record, worktree or Flow: `TestSessionMockSubagentInvalidStartDexIntegration` |
 | `subagent-investigate` | `agent_feature` | message | `start_agent` of an `investigate` subagent that greps in its worktree after a 20-second pause, during which the test checks its admission, and reports; its notification opens an automatic turn: `TestSessionMockSubagentInvestigateDexIntegration` |
 | `remote-task-worktree-platform-keep` | `agent_feature` | message | A platform `investigate` subagent opens its real worktree after remote takeover, while the test checks the open Codex task checkout remains: `TestSessionRemoteTaskWorktreePlatformKeepHTTPDexIntegration` |
 | `subagent-change-merge` | `agent_feature` | message | `start_agent` of a `change` subagent that edits the page heading and checks it with a 30-second command that counts its runs in the Sandbox (`check run 1`); its notification opens a turn that merges a path the subagent did not change (`nothing_to_merge`, listed under `unknown`, the change left mergeable), then every file (`merged`), reads the merged heading and answers three handoff continuations: `TestSessionMockSubagentChangeMergeDexIntegration`, which replaces the Worker during the check |
@@ -558,6 +559,7 @@ the adapter's transient not-executed text projection on automatic continuation a
 the next turn. The compatible-invalid-arguments scenario deliberately emits an
 out-of-range start_timer argument and expects the real tool boundary's correctable
 error result. Its explicit invalid_tool_arguments switch requires a schema-invalid
-timer input and expect_failure; ordinary scenario input validation stays strict.
+start_timer or start_agent input and expect_failure; ordinary scenario input validation stays strict.
+An invalid start_agent names no subagent script, since it must fail before admission.
 Compatible fault fixtures cover HTTP credit/context rejection, Responses failed and
 error events, Chat errors, null error fields and streamed refusal delta/done frames.

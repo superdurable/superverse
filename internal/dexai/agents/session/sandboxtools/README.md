@@ -196,3 +196,16 @@ goroutine.
 
 See the [tool orchestration design](../../../../../docs/architecture/agent-harness-design/tool-orchestration.md#where-tools-run) for
 lease fencing, output budgets and cleanup.
+
+## File tool bounds
+
+The model's file paths are sent to `superverse-files`, not converted to
+`sandboxd.WorkspacePath`. The helper confines them to the agent root and allowed
+read-only roots and refuses escaping symlinks and `.git` paths. The tool input
+schemas limit a path to 4096 characters and write content to 4194304 characters;
+`validateText` additionally rejects NUL and caps path bytes at 16 KiB and write
+content at 4 MiB. These are distinct character and UTF-8 byte limits.
+The helper independently caps write content at 4 MiB and read answers at 64 KiB;
+the read schema also limits each call to 2000 lines.
+`TestFileToolsActualSandbox`, `TestFileToolBudgetsActualSandbox` and
+`TestFileToolReadOnlyRootsActualSandbox` exercise the real helper and tool path.

@@ -15,7 +15,7 @@
     },
     "prompt": {
       "type": "string",
-      "description": "The complete brief, at most 32 KiB: the goal, the relevant paths, the constraints and what the report must contain. The subagent sees nothing else of the conversation.",
+      "description": "The complete brief, at most 32768 characters: the goal, the relevant paths, the constraints and what the report must contain. The subagent sees nothing else of the conversation.",
       "minLength": 1,
       "maxLength": 32768
     },
