@@ -1538,6 +1538,8 @@ message RevokeRemoteAgentConnectionResponse {}
 message SetSessionExecutorRequest {
   string project_id = 1;
   uint64 basis_epoch = 2;
+  // Empty selects Platform; a connection ID resumes the suspended local executor.
+  string connection_id = 3;
   CallerContext caller = 100;
 }
 
@@ -1555,6 +1557,7 @@ message SessionExecutor {
   uint64 epoch = 2;
   uint64 generation = 3;
   RemoteSessionExecutor remote = 4;
+  RemoteSessionExecutor suspended = 5;
 }
 
 message RemoteSessionExecutor {
@@ -2237,6 +2240,8 @@ message AgentMessage {
   bool imported = 15;
   // Set on user messages: one per attached file, in the order the person attached them.
   repeated AgentAttachment attachments = 16;
+  // Visible executor boundary; starts a new display turn without becoming model input.
+  bool executor_changed = 17;
 }
 
 // What a message shows of one attached file: never its content, an object key or a URL

@@ -51,6 +51,7 @@ export interface AgentMessage {
   'via'?: (string);
   'imported'?: (boolean);
   'attachments'?: (_superverse_v2_AgentAttachment)[];
+  'executorChanged'?: (boolean);
   '_toolCallId'?: "toolCallId";
   '_toolName'?: "toolName";
   '_answeredInputCallId'?: "answeredInputCallId";
@@ -75,6 +76,7 @@ export interface AgentMessage__Output {
   'via'?: (string);
   'imported': (boolean);
   'attachments': (_superverse_v2_AgentAttachment__Output)[];
+  'executorChanged': (boolean);
   '_toolCallId'?: "toolCallId";
   '_toolName'?: "toolName";
   '_answeredInputCallId'?: "answeredInputCallId";

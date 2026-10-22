@@ -37,6 +37,13 @@ func (request messagesRequest) checkLongRemoteHandoff(selected selection) error 
 	if selected.script == nil || selected.script.Name != "remote-long-continuation" || selected.at.reply != 0 {
 		return nil
 	}
+	// The wire prefix is exact quoted history. Inspect its verified original
+	// units for chronological/canonical-byte accounting, never native wire calls.
+	var err error
+	request.Messages, err = projectedHandoffReplay(request.Messages)
+	if err != nil {
+		return err
+	}
 	if selected.arguments["bytecase"] == "1" {
 		return request.checkLongRemoteByteHandoff(selected)
 	}

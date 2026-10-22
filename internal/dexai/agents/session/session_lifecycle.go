@@ -462,6 +462,13 @@ func readRemote(ctx dex.Context, input remoteexec.ReadRequest) (*dex.RPCResult[R
 		result.Output.Refusal = &remoteexec.ReportRefusal{Code: remoteexec.RefusalExecutorChanged, Message: "executor changed", Epoch: executor.Epoch, Generation: executor.Generation}
 		return result, nil
 	}
+	if executor.Mode == remoteexec.ModePlatform {
+		result.Output.Delivery.Through = input.After
+		return result, nil
+	}
+	if executor.Remote.ActivationSequence != nil {
+		input.HistoryThrough = *executor.Remote.ActivationSequence
+	}
 	state := comm.Must(agentStateAttribute.Get(ctx))
 	if input.After < 0 || input.After > state.LastSequence || len(input.ArchiveKeys) > 1 || len(input.CurrentKeys) > 16 {
 		result.Output.Refusal = &remoteexec.ReportRefusal{Code: remoteexec.RefusalMalformed, Message: "invalid remote cursor or archive selection"}

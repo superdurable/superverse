@@ -261,8 +261,12 @@ func (s *SessionFlowService) readSnapshot(ctx context.Context, project string) (
 	snapshot := Snapshot{Session: state.Session, Agent: state.Agent, Workspace: workspaceState, PreviewState: previewState, ExecutionFailure: state.ExecutionFailure}
 	if state.Agent != nil {
 		executor := state.Agent.Description.Executor
-		if executor.Mode == remoteexec.ModeRemote && executor.Remote != nil && s.RemoteConnections != nil {
-			if snapshot.RemoteLastSeenAt, err = s.RemoteConnections.LastSeen(ctx, project, executor.Remote.ConnectionID); err != nil {
+		connection := executor.Remote
+		if executor.Mode == remoteexec.ModePlatform {
+			connection = executor.Suspended
+		}
+		if connection != nil && s.RemoteConnections != nil {
+			if snapshot.RemoteLastSeenAt, err = s.RemoteConnections.LastSeen(ctx, project, connection.ConnectionID); err != nil {
 				s.logSessionReadFailure(ctx, "read_remote_last_seen", started, err)
 				return Snapshot{}, err
 			}

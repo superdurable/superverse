@@ -51,3 +51,11 @@ or an explicit Session refresh displays its next model revision. A synchronous
 component guard also rejects a second click before React renders. The existing
 command owner admits the one request and reports failures; the picker never
 replays a failed mutation. Executor switching retains its existing epoch fence.
+
+When Platform is current and the canonical Executor has a suspended identity,
+the picker offers Use the local agent with that exact ID, owner/host and SQL
+liveness. It sends the observed decimal epoch and connectionId through the
+existing single-flight command, refreshes canonical state on completion or
+refusal, and never treats another saved PAIRED row as an automatic target. No
+new polling or browser authority is introduced. Without a suspended target the
+existing pairing dialog is unchanged.

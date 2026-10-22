@@ -260,10 +260,13 @@ func sessionSnapshot(v agents.Snapshot) *pb.SessionSnapshot {
 	out := &pb.SessionSnapshot{ProjectId: v.Session.Identity.ProjectID, Status: boundary.Enum[pb.SessionStatus](v.Session.Status), Revision: v.Session.Revision, HeadCommit: v.Session.Identity.HeadCommit, CreatedAt: boundary.OptionalTimestamp(v.Session.CreatedAt), Preview: previewSnapshot(v.Preview())}
 	if v.Agent != nil {
 		out.Agent = agentSnapshot(*v.Agent)
-		if remote := out.Agent.GetDescription().GetExecutor().GetRemote(); remote != nil {
-			if v.RemoteLastSeenAt != nil {
-				remote.LastSeenAt = boundary.OptionalTimestamp(*v.RemoteLastSeenAt)
-			}
+		executor := out.Agent.GetDescription().GetExecutor()
+		remote := executor.GetRemote()
+		if remote == nil {
+			remote = executor.GetSuspended()
+		}
+		if remote != nil && v.RemoteLastSeenAt != nil {
+			remote.LastSeenAt = boundary.OptionalTimestamp(*v.RemoteLastSeenAt)
 		}
 	}
 	for _, contribution := range v.Contributions {

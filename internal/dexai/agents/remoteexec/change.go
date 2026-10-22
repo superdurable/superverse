@@ -22,13 +22,15 @@ const maximumBindingBytes = 8 << 10
 // SetRequest is authenticated by the injected Session service. BasisEpoch
 // comes from the connection's pairing record or the browser's exact snapshot.
 type SetRequest struct {
-	ProjectID    string             `json:"project_id"`
-	BasisEpoch   uint64             `json:"basis_epoch"`
-	Mode         Mode               `json:"mode"`
-	ConnectionID string             `json:"connection_id,omitempty"`
-	Owner        conversation.Actor `json:"owner"`
-	Binding      Binding            `json:"binding"`
-	Reason       HandoffReason      `json:"reason,omitempty"`
+	RequestedBy  *conversation.Actor `json:"requested_by,omitempty"`
+	Resume       bool                `json:"resume,omitempty"`
+	ProjectID    string              `json:"project_id"`
+	BasisEpoch   uint64              `json:"basis_epoch"`
+	Mode         Mode                `json:"mode"`
+	ConnectionID string              `json:"connection_id,omitempty"`
+	Owner        conversation.Actor  `json:"owner"`
+	Binding      Binding             `json:"binding"`
+	Reason       HandoffReason       `json:"reason,omitempty"`
 }
 
 // SetResult preserves an explicit CAS refusal through the Dex transport.
@@ -69,10 +71,18 @@ func (executor Executor) Change(request SetRequest, now time.Time) SetResult {
 		result.Accepted = true
 		return result
 	}
+	if request.Resume && (executor.Mode != ModePlatform || executor.Suspended == nil || executor.Suspended.ConnectionID != request.ConnectionID) {
+		return result
+	}
 	if request.BasisEpoch != executor.Epoch || executor.Epoch == ^uint64(0) || executor.Generation == ^uint64(0) {
 		return result
 	}
 	result.Accepted = true
+	if executor.Mode == ModePlatform && request.Mode == ModePlatform && request.Reason == HandoffConnectionRemoved && executor.Suspended != nil && executor.Suspended.ConnectionID == request.ConnectionID {
+		executor.Suspended = nil
+		result.Executor, result.Changed = executor, true
+		return result
+	}
 	if executor.Mode == request.Mode && request.Mode == ModePlatform {
 		return result
 	}
@@ -80,6 +90,7 @@ func (executor Executor) Change(request SetRequest, now time.Time) SetResult {
 	executor.Generation++
 	if request.Mode == ModeRemote {
 		executor.Mode = ModeRemote
+		executor.Suspended = nil
 		executor.Remote = &RemoteExecutor{ConnectionID: request.ConnectionID, Owner: request.Owner, Binding: request.Binding, ActivatedAt: now.UTC()}
 	} else {
 		handoff := PlatformHandoff{Epoch: executor.Epoch, From: now.UTC(), To: now.UTC(), Reason: request.Reason}
@@ -95,6 +106,11 @@ func (executor Executor) Change(request SetRequest, now time.Time) SetResult {
 			}
 		}
 		handoff.Owners = handoff.Owners[max(0, len(handoff.Owners)-maximumHandoffOwners):]
+		if request.Reason == HandoffSwitched && executor.Remote != nil {
+			executor.Suspended = executor.Remote
+		} else if request.Reason == HandoffConnectionRemoved {
+			executor.Suspended = nil
+		}
 		executor.Mode, executor.Remote, executor.Handoff = ModePlatform, nil, &handoff
 	}
 	result.Executor, result.Changed = executor, true

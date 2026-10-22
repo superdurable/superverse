@@ -155,7 +155,17 @@ func (s *Connections) authenticate(ctx context.Context, token string) (remoteage
 // disconnect revokes only the authenticated connection, without changing the
 // Session executor or cancelling work it already admitted.
 func (s *Connections) disconnect(ctx context.Context, access remoteagentdao.Access) error {
-	return s.DAO.Revoke(ctx, access.ProjectID, access.ConnectionID, remoteagentdao.RevokeDisconnected)
+	if err := s.DAO.Revoke(ctx, access.ProjectID, access.ConnectionID, remoteagentdao.RevokeDisconnected); err != nil {
+		return err
+	}
+	current, err := s.Sessions.Agent.ReadExecutor(ctx, access.ProjectID)
+	if err != nil {
+		return err
+	}
+	if current.Mode == remoteexec.ModePlatform && current.Suspended != nil && current.Suspended.ConnectionID == access.ConnectionID {
+		return s.compensateRemoval(ctx, access.ProjectID, access.ConnectionID, accessActor(access))
+	}
+	return nil
 }
 
 // List returns credential records and the independently authoritative executor.

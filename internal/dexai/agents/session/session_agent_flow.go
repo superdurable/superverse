@@ -165,7 +165,7 @@ func (flow *SessionAgentFlow) GetRPCs() []dex.RPCDef {
 		dex.DefineRPC(flow.GetSessionSummary, &dex.RPCOptions{Timeout: readRPCTimeout}),
 		dex.DefineRPC(flow.ReadExecutor, &dex.RPCOptions{Timeout: readRPCTimeout}),
 		dex.DefineRPC(flow.ReadRemote, &dex.RPCOptions{Timeout: readRPCTimeout}),
-		dex.DefineRPC(flow.SetExecutor, &dex.RPCOptions{Timeout: commandRPCTimeout, LockAttributes: []dex.AttributeLock{statusLock, executorLock, interruptLock}, LoadAttributeMaps: taskMaps, LoadChannels: []dex.ChannelDef{remoteInboxChannel}}),
+		dex.DefineRPC(flow.SetExecutor, &dex.RPCOptions{Timeout: commandRPCTimeout, LockAttributes: []dex.AttributeLock{statusLock, executorLock, interruptLock, dex.LockAttribute(messageWindowLockAttribute)}, LoadAttributeMaps: append(append([]dex.AttributeDef{}, taskMaps...), currentMessagesAttribute), LoadChannels: []dex.ChannelDef{remoteInboxChannel}}),
 		dex.DefineRPC(flow.ReportRemote, &dex.RPCOptions{Timeout: commandRPCTimeout, LockAttributes: []dex.AttributeLock{statusLock, executorLock}, LoadChannels: []dex.ChannelDef{remoteInboxChannel}}),
 		dex.DefineRPC(flow.GetDexSummary, &dex.RPCOptions{Timeout: readRPCTimeout}),
 		dex.DefineRPC(flow.GetDexDisplay, &dex.RPCOptions{Timeout: readRPCTimeout}),

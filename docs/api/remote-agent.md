@@ -137,9 +137,22 @@ Connection rows authenticate credentials; they never confer executor authority.
 
 `SetSessionExecutor` is a Builder-authorized BFF command with the exact observed
 protobuf decimal `basisEpoch`; it returns execution to the platform, and a stale
-CAS is refused. After a committed switch, `UsePlatform` revokes only the SQL
-credential that exact switch replaced. Its next HTTP request therefore returns
-401 `unauthorized`. A still-valid credential replaced by another remote activation
+CAS is refused. After a committed switch, `UsePlatform` preserves the paired credential and parks
+its bounded identity in `Executor.Suspended`. Authenticated idle sync returns
+`idle: true`, current epoch/generation and unchanged examined cursor, with no entries
+or agent context. Idle reports return 409 `executor_changed`. An idle `activate`
+returns `idle: true` and cannot take back execution.
+
+`SetSessionExecutor.connection_id` optionally resumes exactly that suspended connection;
+empty retains Platform selection. The server authorizes the choosing Builder and rereads
+the original connection's PAIRED/login/account/auth_epoch/Project capability before and
+after admission, compensating removal races with an exact epoch CAS. A saved Bridge build
+below the configured minimum returns `REMOTE_AGENT_BRIDGE_OUTDATED`; a missing historical
+build is also refused. Resume retains the owner and binding, raises epoch/generation,
+resets report watermarks and saves the activation head. Active sync exposes that head as
+`activationSequence`; the same current connection can discover a new epoch while an old
+report remains refused. The Bridge treats entries through the head as bounded historical
+context, including public assistant text only, and only later entries as new inputs. A still-valid credential replaced by another remote activation
 remains authenticated but receives 409 `executor_changed` from executor admission.
 Revocation or Bridge disconnect is credential removal, not an implicit fallback.
 
@@ -270,3 +283,24 @@ fails, local recovery state remains and the terminal names the incomplete step.
 This adds no wire field, database schema or Flow primitive. New messages use the
 neutral `Project message (JSON): ` envelope; legacy stored envelopes remain
 readable. MCP names are local provider configuration, not wire resource identity.
+### Paired idle lifetime and recovery
+
+Idle has no renewed lease: its issuing login expires seven days after original login,
+so only the remaining interval is usable. Logout, auth_epoch/account/role changes,
+explicit removal/disconnect, foreground exit, takeover and Project deletion end it
+sooner. SQL remains the authentication owner and Executor the execution owner.
+No new schema, periodic Flow write or cloud resource is added. The existing six-row
+Project cap and HTTP/SQL/Dex gates apply to idle connections too.
+
+Activation requests include optional `bridgeVersion`, captured in the Session-owned
+binding for server-side resume-version admission. Matching updated dexai/server builds
+are required because Bridge response decoding is strict. Idle adds `idle` to activation/
+sync responses; active sync adds `activationSequence`. The historical projection permits
+public assistant `model_reply` text only through that head; no hidden blocks or tool
+arguments are exposed. Each response remains under the existing entry/byte limits.
+
+A successful mode change adds a visible system history marker in the same
+commit. Its optional `AgentMessage.executor_changed` field identifies a display
+turn boundary, so a resumed local reply excludes the preceding idle gap from
+its displayed duration. This field neither changes report admission nor
+introduces a model input. Idempotent selection adds no duplicate marker.

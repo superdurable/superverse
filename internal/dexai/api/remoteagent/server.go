@@ -89,6 +89,9 @@ func (s *server) ListRemoteAgentConnections(ctx context.Context, request *pb.Lis
 			}
 			item.Binding = binding(metadata)
 		}
+		if executor.Suspended != nil && row.ConnectionID == executor.Suspended.ConnectionID {
+			item.Binding = binding(executor.Suspended.Binding)
+		}
 		if executor.Remote != nil && row.ConnectionID == currentID {
 			item.Binding = binding(executor.Remote.Binding)
 		}
@@ -135,7 +138,12 @@ func (s *server) SetSessionExecutor(ctx context.Context, request *pb.SetSessionE
 	if err != nil {
 		return nil, err
 	}
-	if err = s.connections.UsePlatform(ctx, account, request.GetProjectId(), request.GetBasisEpoch()); err != nil {
+	if request.GetConnectionId() != "" {
+		err = s.connections.Resume(ctx, account, request.GetProjectId(), request.GetConnectionId(), request.GetBasisEpoch())
+	} else {
+		err = s.connections.UsePlatform(ctx, account, request.GetProjectId(), request.GetBasisEpoch())
+	}
+	if err != nil {
 		return nil, rpcStatus(err)
 	}
 	return &pb.SetSessionExecutorResponse{}, nil

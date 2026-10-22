@@ -67,6 +67,7 @@ test("Real last-seen expiry keeps remote authority; reconnect delivers the ordin
       )
       .toBeGreaterThan(90_000);
     await expect(page.locator("[data-remote-offline]")).toBeVisible({ timeout: 20_000 });
+    await expect(menu).toContainText("Local agent · offline");
     await expect(menu).toHaveAttribute("data-session-executor", "remote");
     await expect(page.getByRole("button", { name: "Chat options", exact: true })).toHaveCount(0);
     const text = `Offline ordinary input ${randomUUID()}`;

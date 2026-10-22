@@ -55,15 +55,19 @@ func (e *Endpoint) readDeliveryOnce(ctx context.Context, token string, request b
 		if err != nil {
 			return bridgeapi.SyncResponse{}, err
 		}
-		if err = e.service.currentAccess(ctx, access); err != nil {
-			return bridgeapi.SyncResponse{}, err
-		}
 		read, err := e.service.Sessions.Agent.ReadRemote(ctx, remoteexec.ReadRequest{ProjectID: access.ProjectID, ConnectionID: access.ConnectionID,
 			Epoch: request.Epoch, After: cursor, RepositoryContext: request.Context})
 		if err != nil {
 			return bridgeapi.SyncResponse{}, err
 		}
-		if combined.Executor.Mode != "" && combined.Delivery.FirstRetainedSequence != read.Delivery.FirstRetainedSequence {
+		if read.Executor.Mode == remoteexec.ModePlatform {
+			if _, err := e.service.authenticate(ctx, token); err != nil {
+				return bridgeapi.SyncResponse{}, err
+			}
+			response, err := syncResponse(read, request)
+			return response, err
+		}
+		if combined.Executor.Mode != "" && (combined.Executor.Epoch != read.Executor.Epoch || combined.Executor.Mode != read.Executor.Mode || combined.Delivery.FirstRetainedSequence != read.Delivery.FirstRetainedSequence) {
 			return bridgeapi.SyncResponse{}, errDeliveryRetentionMoved
 		}
 		combined = read

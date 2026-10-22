@@ -8,9 +8,12 @@
 
 # Remote replies are external fixture behavior, never a mock provider response.
 # One remote step matches one rendered assistant group with its exact stable ID.
+# At expect_handoff, older replies must match their exact public text projection:
+# thinking omitted, tool uses/results quoted as Recorded tool history (JSON).
+# Replies after that boundary still require their complete signed blocks.
 name: remote-handoff
 title: "Remote executor handoff"
-description: "A real remote file write followed by strict platform replay and one canonical handoff."
+description: "A real remote file write followed by exact projected historical replay and one canonical handoff."
 category: agent_feature
 test_action: "Pair and drive the remote endpoint between inputs 1 and 3."
 arguments:

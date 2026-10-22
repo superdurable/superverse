@@ -17,9 +17,11 @@ import (
 	"net/http"
 	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/superdurable/superversev2/internal/comm"
+	"github.com/superdurable/superversev2/internal/dexai/agents/remoteexec"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/openaicompat"
@@ -37,10 +39,41 @@ func followReplay(messages []requestMessage) (selection, error) {
 }
 
 func followMessagesReplay(messages []requestMessage, model conversation.Model, compaction bool) (selection, error) {
+	var err error
+	messages, err = projectedHandoffReplay(messages)
+	if err != nil {
+		return selection{}, err
+	}
 	return walk(messages, func(message requestMessage, sel selection) error {
 		expected, err := sel.nextReply()
 		if err != nil {
 			return err
+		}
+		if message.projectedHistory && sel.scriptStep() != nil && !sel.scriptStep().Remote {
+			// A user-first retained suffix can change the grouping that originally
+			// derived a mock run. Its quoted platform IDs retain that original run,
+			// as in custom-endpoint replay, while step/tool identities stay exact.
+			var sourceRun string
+			for _, raw := range message.Content {
+				var use struct {
+					Type string `json:"type"`
+					ID   string `json:"id"`
+				}
+				if json.Unmarshal(raw, &use) != nil || use.Type != conversation.BlockTypeToolUse.String() {
+					continue
+				}
+				source := quotedCustomRun.FindStringSubmatch(use.ID)
+				if len(source) != 2 || sourceRun != "" && sourceRun != source[1] {
+					return errors.New("projected platform tools lack one original scenario run")
+				}
+				sourceRun = source[1]
+			}
+			if sourceRun != "" {
+				expected, err = sel.script.replyAt(sel.at, sel.arguments, sourceRun)
+				if err != nil {
+					return err
+				}
+			}
 		}
 		expected = messagesReply(expected, model)
 		if compaction && model != conversation.ModelMock {
@@ -52,11 +85,108 @@ func followMessagesReplay(messages []requestMessage, model conversation.Model, c
 			}
 			expected.blocks = blocks
 		}
+		if message.projectedHistory {
+			// The prefix validator already proved the text-only wire shape.
+			// Compare every public tool field after unquoting, retaining the
+			// existing sameBlocks rule that JSON key order is immaterial.
+			blocks := []block{}
+			for _, item := range expected.blocks {
+				if item.kind == conversation.BlockTypeText || item.kind == conversation.BlockTypeToolUse {
+					blocks = append(blocks, item)
+				}
+			}
+			if len(blocks) == 0 {
+				blocks = append(blocks, block{kind: conversation.BlockTypeText, text: "(No visible message content.)"})
+			}
+			expected.blocks = blocks
+		}
 		if expected.failure != nil || !sameBlocks(message.Content, expected.blocks) {
 			return fmt.Errorf("mock replay mismatch at %s", sel.at)
 		}
 		return nil
 	})
+}
+
+// projectedHandoffReplay verifies the actual public-only prefix, then unwraps
+// quoted tool blocks solely for the scenario walk's ID/result/order checks.
+// The assistant comparator requires every field of the exact projected script,
+// allowing only JSON key-order/whitespace differences. A canonical handoff at its declared script boundary is
+// mandatory; a wire flag, arbitrary notice or quoted block cannot enable this.
+func projectedHandoffReplay(messages []requestMessage) ([]requestMessage, error) {
+	boundary := -1
+	for index, message := range messages {
+		for _, text := range message.texts() {
+			if strings.HasPrefix(text, remoteexec.HandoffNoticePrefix) {
+				if message.Role != string(conversation.EntryRoleUser) {
+					return nil, errors.New("canonical handoff must be a user boundary")
+				}
+				if _, err := remoteexec.ParseHandoffNotice(text); err != nil {
+					return nil, err
+				}
+				boundary = index
+			}
+		}
+	}
+	if boundary < 0 {
+		return messages, nil
+	}
+	projected := slices.Clone(messages)
+	pending, seen := map[string]bool{}, map[string]bool{}
+	for index := 0; index <= boundary; index++ {
+		message := &projected[index]
+		if message.Role == string(conversation.EntryRoleAssistant) && len(pending) != 0 {
+			return nil, errors.New("projected handoff contains an incomplete preceding tool unit")
+		}
+		message.projectedHistory = message.Role == string(conversation.EntryRoleAssistant)
+		message.Content = slices.Clone(message.Content)
+		for position, raw := range message.Content {
+			_, kind, err := interactiveFields(raw, message.Role == string(conversation.EntryRoleUser))
+			if err != nil {
+				return nil, err
+			}
+			if kind != conversation.BlockTypeText.String() && kind != conversation.BlockTypeImage.String() {
+				return nil, errors.New("handoff prefix contains native protocol history")
+			}
+			var text textJSON
+			if kind != conversation.BlockTypeText.String() || json.Unmarshal(raw, &text) != nil || !strings.HasPrefix(text.Text, conversation.RecordedToolHistoryPrefix) {
+				continue
+			}
+			quoted := json.RawMessage(strings.TrimPrefix(text.Text, conversation.RecordedToolHistoryPrefix))
+			fields, quotedKind, err := interactiveFields(quoted, message.Role == string(conversation.EntryRoleUser))
+			if err != nil {
+				return nil, err
+			}
+			if quotedKind == conversation.BlockTypeToolUse.String() && message.Role == string(conversation.EntryRoleAssistant) ||
+				quotedKind == conversation.BlockTypeToolResult.String() && message.Role == string(conversation.EntryRoleUser) {
+				var id string
+				key := "id"
+				if quotedKind == conversation.BlockTypeToolResult.String() {
+					key = "tool_use_id"
+				}
+				if json.Unmarshal(fields[key], &id) != nil || id == "" {
+					return nil, errors.New("projected tool history lacks its stable identity")
+				}
+				if quotedKind == conversation.BlockTypeToolUse.String() {
+					if seen[id] {
+						return nil, errors.New("projected handoff repeats a tool identity")
+					}
+					pending[id], seen[id] = true, true
+				} else {
+					if !pending[id] {
+						return nil, errors.New("projected result does not answer one pending tool")
+					}
+					delete(pending, id)
+				}
+				message.Content[position] = quoted
+			} else {
+				return nil, errors.New("quoted handoff history has an invalid tool role or kind")
+			}
+		}
+	}
+	if len(pending) != 0 {
+		return nil, errors.New("projected handoff ends with an incomplete tool unit")
+	}
+	return projected, nil
 }
 
 // sameBlocks compares replayed blocks with the blocks a step produces.

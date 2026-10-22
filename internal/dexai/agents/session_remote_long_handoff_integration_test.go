@@ -81,7 +81,7 @@ func TestSessionRemoteLongHandoffHTTPDexIntegration(t *testing.T) {
 			}
 			// Align a real tool_use at 10n and its result at 10n+1. Later
 			// retention deletes the call's entire chunk but preserves its result.
-			last := before.Agent.Description.LastSequence
+			last := conversation.Sequence(active.LastSequence)
 			callSequence := ((last+1)/10 + 1) * 10
 			padding := make([]bridgeapi.Event, int(callSequence-last-1))
 			for index := range padding {
@@ -152,8 +152,8 @@ func TestSessionRemoteLongHandoffHTTPDexIntegration(t *testing.T) {
 				t.Fatal(err)
 			}
 			switched, err := session.client.GetSnapshot(ctx, session.id)
-			if err != nil || switched.Agent.Description.Executor.Handoff == nil || switched.Session.Identity.HeadCommit != head || switched.Agent.Description.LastSequence != retained.Description.LastSequence {
-				t.Fatal("switch changed HEAD/history or omitted its deferred handoff")
+			if err != nil || switched.Agent.Description.Executor.Handoff == nil || switched.Session.Identity.HeadCommit != head || switched.Agent.Description.LastSequence != retained.Description.LastSequence+1 {
+				t.Fatal("switch changed HEAD, omitted its one visible marker or omitted its deferred handoff")
 			}
 			handoff := switched.Agent.Description.Executor.Handoff
 			if len(handoff.Owners) != 1 || handoff.Owners[0].Email != caller.GetCanonicalEmail() || handoff.From.Before(started) || handoff.To.Before(handoff.From) || handoff.To.After(time.Now().UTC()) || handoff.Reason != remoteexec.HandoffSwitched {
@@ -191,7 +191,7 @@ func TestSessionRemoteLongHandoffHTTPDexIntegration(t *testing.T) {
 			}
 			_, messages = session.history(ctx)
 			longHandoffRequireUnits(t, messages, orphan, false)
-			if markers(messages, remoteexec.HandoffNoticeLabel) != 1 {
+			if longHandoffNotices(messages) != 1 {
 				t.Fatal("long continuation duplicated its canonical handoff")
 			}
 			if current := session.summary(ctx); current.Identity.HeadCommit != head {
@@ -319,7 +319,7 @@ func testLongRemoteHandoffByteBudget(t *testing.T) {
 	}
 	// Align a real tool_use at 10n and its result at 10n+1. Later
 	// retention deletes the call's entire chunk but preserves its result.
-	last := before.Agent.Description.LastSequence
+	last := conversation.Sequence(active.LastSequence)
 	callSequence := ((last+1)/10 + 2) * 10
 	padding := make([]bridgeapi.Event, int(callSequence-last-1))
 	for index := range padding {
@@ -407,8 +407,8 @@ func testLongRemoteHandoffByteBudget(t *testing.T) {
 		t.Fatal(err)
 	}
 	switched, err := session.client.GetSnapshot(ctx, session.id)
-	if err != nil || switched.Agent.Description.Executor.Handoff == nil || switched.Session.Identity.HeadCommit != head || switched.Agent.Description.LastSequence != retained.Description.LastSequence {
-		t.Fatal("switch changed HEAD/history or omitted its deferred handoff")
+	if err != nil || switched.Agent.Description.Executor.Handoff == nil || switched.Session.Identity.HeadCommit != head || switched.Agent.Description.LastSequence != retained.Description.LastSequence+1 {
+		t.Fatal("switch changed HEAD, omitted its one visible marker or omitted its deferred handoff")
 	}
 	handoff := switched.Agent.Description.Executor.Handoff
 	if len(handoff.Owners) != 1 || handoff.Owners[0].Email != caller.GetCanonicalEmail() || handoff.From.Before(started) || handoff.To.Before(handoff.From) || handoff.To.After(time.Now().UTC()) || handoff.Reason != remoteexec.HandoffSwitched {
@@ -442,7 +442,7 @@ func testLongRemoteHandoffByteBudget(t *testing.T) {
 	if segment.Reason != agentloop.SegmentReasonExecutor || segment.Number != previous.Number+1 || segment.FirstSequence <= orphanSequence+1 || segment.FirstSequence <= retained.Description.FirstRetainedSequence || segment.FirstSequence > orphanSequence+993 || segment.Summary != previous.Summary || segment.BaseBytes > 400000+int64(remoteexec.MaximumHandoffBytes)+promptBytes || finished.Description.Executor.Handoff != nil {
 		t.Fatal("executor segment reassembled the dropped tool unit, lost summary, exceeded its bound or retained the consumed handoff")
 	}
-	currentEntries := longHandoffCanonicalEntries(ctx, t, session, retained.Description.LastSequence+1, retained.Description.LastSequence+1)
+	currentEntries := longHandoffCanonicalEntries(ctx, t, session, retained.Description.LastSequence+2, retained.Description.LastSequence+2)
 	current := currentEntries[0].Entry
 	expectedCurrent := (conversation.UserMessage{Content: content}).Entry() // Matches mockSession.send exactly.
 	if len(current.Blocks) != 1 || string(current.Blocks[0]) != string(expectedCurrent.Blocks[0]) || current.Meta.Actor != nil || current.Meta.Via != nil {
@@ -460,7 +460,7 @@ func testLongRemoteHandoffByteBudget(t *testing.T) {
 	}
 	_, messages = session.history(ctx)
 	longHandoffRequireUnits(t, messages, orphan, false)
-	if markers(messages, remoteexec.HandoffNoticeLabel) != 1 {
+	if longHandoffNotices(messages) != 1 {
 		t.Fatal("long continuation duplicated its canonical handoff")
 	}
 	if current := session.summary(ctx); current.Identity.HeadCommit != head {
@@ -554,4 +554,16 @@ func longHandoffBlockDigest(blocks []json.RawMessage) string {
 		digest.Write([]byte{'\n'})
 	}
 	return hex.EncodeToString(digest.Sum(nil))
+}
+
+// The immediate executor marker and the later canonical model-context handoff
+// share a visible label; only the latter supplies handoff metadata.
+func longHandoffNotices(messages []conversation.SequencedMessage) int {
+	count := 0
+	for _, item := range messages {
+		if item.Message.Content == remoteexec.HandoffNoticeLabel && !item.Message.ExecutorChanged {
+			count++
+		}
+	}
+	return count
 }

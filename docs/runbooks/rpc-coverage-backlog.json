@@ -22,7 +22,6 @@
     "/superverse.v2.TeamSpaceConnectionService/StartTeamSpaceConnectionOAuth",
     "/superverse.v2.TeamSpaceConnectionService/UpdateTeamSpaceConnection",
     "/superverse.v2.TeamSpaceMemberService/SetTeamSpaceMemberRole",
-    "/superverse.v2.TeamSpaceService/DeleteTeamSpace",
     "/superverse.v2.TeamSpaceService/RenameTeamSpace"
   ]
 }

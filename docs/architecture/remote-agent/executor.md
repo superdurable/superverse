@@ -15,7 +15,8 @@ and stays in [agent harness: session](../agent-harness-design/session.md).
 
 A new Session starts in `platform` mode. Only an explicit act changes the mode: a Builder
 activating their Bridge ([connection](connection.md#activation-and-takeover)), or a Builder
-choosing "Use the Platform agent" in Studio. Losing the Bridge's connection never changes it:
+choosing "Use the Platform agent" in Studio. The latter parks that paired local connection;
+Studio can select it again without a new pairing. The parked connection is not an executor. Losing the Bridge's connection never changes it:
 the Session stays in remote mode, queues work, and Studio shows the agent as offline.
 
 ## The remote branch of a turn
@@ -364,9 +365,9 @@ returns that epoch's stored head without creating a Run or advancing the cursor.
 
 | Name | Type | Contents | Locking, growth, retention |
 |---|---|---|---|
-| `Executor` (new) | `remoteexec.Executor` (ordinary struct) | `Mode` (`platform`/`remote`, a typed closed set), `Epoch uint64` (starts at 0, +1 on every change), `Generation uint64` (0 until the first activation, then at least 1, +1 on every change and every remote Stop; never reset), `Remote *remoteexec.RemoteExecutor`, `Handoff *remoteexec.PlatformHandoff` (the pending switch back, below) | New `executorLock`. Fixed size. Kept for the Session's life; not indexed; no secrets. |
+| `Executor` (new) | `remoteexec.Executor` (ordinary struct) | `Mode` (`platform`/`remote`, a typed closed set), `Epoch uint64` (starts at 0, +1 on every change), `Generation uint64` (0 until the first activation, then at least 1, +1 on every change and every remote Stop; never reset), `Remote *remoteexec.RemoteExecutor`, `Handoff *remoteexec.PlatformHandoff` (the pending switch back, below), `Suspended *remoteexec.RemoteExecutor` (the sole resumable local identity while Platform executes) | New `executorLock`. Fixed size. Kept for the Session's life; not indexed; no secrets. |
 | | `remoteexec.PlatformHandoff` | `Epoch uint64` (the platform epoch it belongs to), `From time.Time`, `To time.Time`, `Owners []conversation.Actor` (the latest four remote connections' owners, oldest first, so the newest owner is always kept), `Reason` (a typed closed set: `switched`, `connection_removed`) | Written by `SetExecutor` in the commit that switches to `platform`, consumed (deleted) by the Step that opens the `executor` segment; see [Leaving](#entering-and-leaving-remote-mode). |
-| | `remoteexec.RemoteExecutor` | `ConnectionID`, `Owner conversation.Actor` (the connecting Builder), `Binding` (local agent version, provider thread ID and host label, for display), `Reported uint64` (highest admitted report sequence), `Consumed uint64` (highest admitted report sequence the Session consumed; `settledThrough` is derived from it, see below), `ActivatedAt time.Time` (the commit time of the activation), `ActivationSequence *conversation.Sequence` (the last canonical entry at remote admission; a non-nil pointer distinguishes a real zero head from a historical epoch with no stored head) | Cleared on a switch to `platform`; replaced on takeover, so the head and both watermarks are fixed-size per epoch and stay O(1). `SetExecutor` reads `AgentState.LastSequence` and writes `ActivationSequence` with `Executor` under `executorLock`; conversation append Steps also take `executorLock`, so the head is serialized with admission. `Reported` is written only by `SetExecutor`, `ReportRemote` and `InterruptAgent`; `Consumed` only by the consuming AwaitUser or AwaitRemoteAgent commit, all under `executorLock`; never by a read. |
+| | `remoteexec.RemoteExecutor` | `ConnectionID`, `Owner conversation.Actor` (the connecting Builder), `Binding` (local agent version, provider thread ID and host label, for display), `Reported uint64` (highest admitted report sequence), `Consumed uint64` (highest admitted report sequence the Session consumed; `settledThrough` is derived from it, see below), `ActivatedAt time.Time` (the commit time of the activation), `ActivationSequence *conversation.Sequence` (the last canonical entry at remote admission; a non-nil pointer distinguishes a real zero head from a historical epoch with no stored head) | Moved into the optional `Executor.Suspended` on an explicit switch to `platform`; cleared on resume/removal or replaced on takeover, so the head and both watermarks are fixed-size per epoch and stay O(1). `SetExecutor` reads `AgentState.LastSequence` and writes `ActivationSequence` with `Executor` under `executorLock`; conversation append Steps also take `executorLock`, so the head is serialized with admission. `Reported` is written only by `SetExecutor`, `ReportRemote` and `InterruptAgent`; `Consumed` only by the consuming AwaitUser or AwaitRemoteAgent commit, all under `executorLock`; never by a read. |
 
 Every other Attribute is unchanged; [collaboration](collaboration.md#dex-flow-changes) adds the
 actor fields.
@@ -762,9 +763,13 @@ The remote agent's decisions come from the test, the way an E2E test drives Stud
   `remote` steps, one per rendered assistant message, that the test submits through the real
   endpoint, and marks the platform step after the handoff with `expect_handoff`, which requires the
   canonical handoff entry right before it. The mock checks every message of the fresh segment
-  exactly: remote steps by text, tool, input and their exact `remote-<epoch>-<sequence>` IDs,
-  platform replies with their signed blocks as always. No marker, input kind or request field
-  relaxes the check.
+  exactly: history before the canonical handoff uses the public text projection defined in
+  [context management](../agent-harness-design/context-management.md): private replay is omitted
+  and tool uses/results are exact quoted JSON, including their original IDs and arguments.
+  The validator unwraps those quotes only to verify chronological complete tool/result units;
+  it compares each historical assistant against its exact expected projection and rejects native
+  calls or private blocks in that prefix. Replies after the boundary still require their full
+  signed blocks. No marker, input kind or request field bypasses validation.
 - Questions: the Session records a typed waiting result for `request_user_input`, which `sync` marks with its status, and the Bridge keeps the MCP call open until the answer entry arrives; an answered `request_user_input` returns as the MCP result; an unanswered one after
   the timeout arrives later as input.
 - The turn-limit question and "Stop and report" in remote mode. Known limitation: the explicit
@@ -856,3 +861,51 @@ Session, never tenants. The tools make no IAM, EKS, Temporal Cloud, load-balance
 certificate control-plane call per request, poll or event. At 10,000 Projects and 100,000
 deployments, resource count remains one existing workspace per live Session and no
 resource per deployment generation; volume cleanup follows Project deletion.
+
+### Paired idle connection transitions
+
+`Executor.Suspended` is one optional ordinary `RemoteExecutor` value in the existing
+Attribute, protected by `executorLock`, not an AttributeMap, credential or second lifecycle.
+It records the previous connection's owner/bounded binding (including Bridge build),
+activation head and watermarks while `Mode=platform` and `Remote=nil`. There is at most
+one retained value, cleared/replaced by resume, takeover or connection removal; SQL
+login expiry invalidates it without an extra timer. Absence in older executions means
+no suspended target. FlowID, Start RequestID/reuse, Flow/Step identities, completion,
+Maps, Channels, Streams and their budgets remain unchanged.
+
+`SetExecutor` still changes epoch and generation atomically with interruption and the
+coalesced `RemoteInbox` control wake. Explicit Studio resume additionally requires the
+observed epoch and suspended ConnectionID, recreates `Remote` with watermarks zero and
+captures `AgentState.LastSequence`. Duplicate commands can join only that same current
+remote connection. `RequestedBy` records the selecting Builder for interruption while
+`Owner` remains the original connection Builder. Idle connections cannot publish any
+report. Admitted old reports and tools retain their existing consumption/execution
+fences and settlement paths; resuming the same ID never revives an old epoch.
+
+`ReadRemote` admits authenticated suspended metadata-only reads, and permits the current
+same connection to discover a resumed epoch. Reports remain strictly fenced. The public
+history projection includes only text blocks of public assistant replies through the
+activation head, alongside existing input/results; thinking and opaque tool arguments
+remain excluded. Assembly retries when epoch or retention changes during exact hydration.
+The Bridge owns delivery and handles that earlier interval as historical context with
+proof-before-cursor advancement. Platform model admission and pending-tool fences stay
+unchanged, including during rapid remote/Platform/remote cycles.
+
+Every accepted mode change appends one canonical visible system marker:
+`Switched to the Platform agent` or `Switched to the local agent`.
+`SetExecutor` additionally takes `MessageWindowLock` and loads `CurrentMessages`
+for the existing bounded append/archive operation. The marker's optional
+`EntryMeta.ExecutorChanged bool` projects as `AgentMessage.executor_changed`;
+it has no model blocks, carries no authority and follows existing conversation
+retention. Duplicate selection and idle-descriptor removal append no marker.
+Remote activation captures the head after this marker in the same commit.
+Studio starts a display turn at the typed marker so resumed replies do not
+count the preceding idle interval as work. Stream loss recovers these markers
+from canonical history. The composer shows the paired idle connection while
+Platform executes; an active offline connection is visibly labelled offline
+in both chip and composer, using the existing 90-second liveness threshold.
+
+The `remote-switchback` mock scenario expects the canonical remote-to-Platform
+handoff before its single text-only Platform reply. The real endpoint idle
+admission test and Native dexai case use it; the earlier `remote-handoff`
+prelude intentionally expects no handoff and cannot substitute for this case.

@@ -86,6 +86,7 @@ function agentMessageView(value: AgentMessage__Output) {
     attachments: value.attachments.map(agentAttachmentView),
     ...(value.via ? { via: value.via } : {}),
     ...(value.imported ? { imported: value.imported } : {}),
+    ...(value.executorChanged ? { executorChanged: value.executorChanged } : {}),
     toolCalls: value.toolCalls.map((call) => ({ id: call.id, name: call.name, target: call.target })),
     toolCallId: value.toolCallId ?? null,
     toolName: value.toolName ?? null,

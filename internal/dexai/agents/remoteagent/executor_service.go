@@ -14,6 +14,8 @@ import (
 	"errors"
 	"math"
 
+	"golang.org/x/mod/semver"
+
 	"github.com/superdurable/superversev2/internal/comm/platform/postgres"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteagent/bridgeapi"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteagentdao"
@@ -27,10 +29,20 @@ import (
 // ErrExecutorChanged is a failed browser basis-epoch CAS; it carries no state.
 var ErrExecutorChanged = errors.New("executor changed")
 
+// ErrBridgeOutdated refuses resumption by a build below the configured minimum.
+var ErrBridgeOutdated = errors.New("update dexai and pair again before resuming")
+
 // activate uses only the SQL pairing's immutable basis and authenticated owner.
 func (s *Connections) activate(ctx context.Context, access remoteagentdao.Access, request bridgeapi.ActivateRequest) (bridgeapi.ActivateResponse, error) {
+	current, err := s.Sessions.Agent.ReadExecutor(ctx, access.ProjectID)
+	if err != nil {
+		return bridgeapi.ActivateResponse{}, err
+	}
+	if current.Mode == remoteexec.ModePlatform && current.Suspended != nil && current.Suspended.ConnectionID == access.ConnectionID {
+		return bridgeapi.ActivateResponse{Idle: true, Epoch: current.Epoch, Generation: current.Generation}, nil
+	}
 	selection := remoteexec.SetRequest{ProjectID: access.ProjectID, BasisEpoch: uint64(access.BasisEpoch), Mode: remoteexec.ModeRemote,
-		ConnectionID: access.ConnectionID, Owner: accessActor(access), Binding: remoteexec.Binding{CodexVersion: request.Binding.CodexVersion, ProviderThreadID: request.Binding.ProviderThreadID, HostLabel: request.Binding.HostLabel}}
+		ConnectionID: access.ConnectionID, Owner: accessActor(access), Binding: remoteexec.Binding{BridgeVersion: request.BridgeVersion, CodexVersion: request.Binding.CodexVersion, ProviderThreadID: request.Binding.ProviderThreadID, HostLabel: request.Binding.HostLabel}}
 	if access.BasisEpoch < 0 || selection.Validate() != nil {
 		return bridgeapi.ActivateResponse{}, refusal(bridgeapi.ErrorMalformed)
 	}
@@ -84,14 +96,9 @@ func executorRefusal(executor remoteexec.Executor) error {
 	return &remoteexec.ReportRefusal{Code: remoteexec.RefusalExecutorChanged, Message: "executor changed", Epoch: executor.Epoch, Generation: executor.Generation}
 }
 
-// UsePlatform authorizes the actual Builder and uses its observed epoch. Only
-// the connection this committed switch replaced is revoked afterwards.
+// UsePlatform changes execution authority without revoking the paired connection.
 func (s *Connections) UsePlatform(ctx context.Context, account accounts.AccountSummary, projectID string, basis uint64) error {
 	caller, err := s.Sessions.AuthorizeSession(ctx, account, projectID)
-	if err != nil {
-		return err
-	}
-	current, err := s.Sessions.Agent.ReadExecutor(ctx, projectID)
 	if err != nil {
 		return err
 	}
@@ -103,10 +110,53 @@ func (s *Connections) UsePlatform(ctx context.Context, account accounts.AccountS
 	if !result.Accepted {
 		return ErrExecutorChanged
 	}
-	if current.Mode == remoteexec.ModeRemote && current.Remote != nil && current.Epoch == basis {
-		err = s.DAO.Revoke(ctx, projectID, current.Remote.ConnectionID, remoteagentdao.RevokePlatform)
-		if errors.Is(err, postgres.ErrNotFound) {
-			return nil
+	return nil
+}
+
+// Resume reauthorizes both Builders; only the Session can admit the suspended ID.
+func (s *Connections) Resume(ctx context.Context, account accounts.AccountSummary, projectID, connectionID string, basis uint64) error {
+	caller, err := s.Sessions.AuthorizeSession(ctx, account, projectID)
+	if err != nil {
+		return err
+	}
+	access, err := s.DAO.ReadPairedAccess(ctx, projectID, connectionID, s.PlatformAdminEmails, accountdao.StatusActive)
+	if err != nil {
+		return err
+	}
+	if err := authorizeAccess(access); err != nil {
+		return err
+	}
+	current, err := s.Sessions.Agent.ReadExecutor(ctx, projectID)
+	if err != nil {
+		return err
+	}
+	target := current.Suspended
+	if current.Mode == remoteexec.ModeRemote {
+		target = current.Remote
+	}
+	if target == nil || target.ConnectionID != connectionID {
+		return ErrExecutorChanged
+	}
+	version := target.Binding.BridgeVersion
+	if !(s.AcceptDevBridge && version == bridgeapi.DevBridgeVersion) &&
+		(!semver.IsValid("v"+version) || semver.Compare("v"+version, "v"+s.MinimumBridgeVersion) < 0) {
+		return ErrBridgeOutdated
+	}
+	result, err := s.Sessions.Agent.SetExecutor(ctx, remoteexec.SetRequest{ProjectID: projectID, BasisEpoch: basis,
+		Mode: remoteexec.ModeRemote, ConnectionID: connectionID, Resume: true, RequestedBy: &caller.Actor, Owner: accessActor(access), Binding: target.Binding})
+	if err != nil {
+		return err
+	}
+	if !result.Accepted {
+		return ErrExecutorChanged
+	}
+	fresh, err := s.DAO.ReadPairedAccess(ctx, projectID, connectionID, s.PlatformAdminEmails, accountdao.StatusActive)
+	if err == nil {
+		err = authorizeAccess(fresh)
+	}
+	if err != nil {
+		if compensation := s.compensateRemoval(ctx, projectID, connectionID, accessActor(access)); compensation != nil {
+			return compensation
 		}
 		return err
 	}
@@ -118,11 +168,12 @@ func (s *Connections) compensateRemoval(ctx context.Context, project, connection
 	if err != nil {
 		return err
 	}
-	if current.Mode != remoteexec.ModeRemote || current.Remote == nil || current.Remote.ConnectionID != connection {
+	if !(current.Mode == remoteexec.ModeRemote && current.Remote != nil && current.Remote.ConnectionID == connection) &&
+		!(current.Mode == remoteexec.ModePlatform && current.Suspended != nil && current.Suspended.ConnectionID == connection) {
 		return nil
 	}
 	_, err = s.Sessions.Agent.SetExecutor(ctx, remoteexec.SetRequest{ProjectID: project, BasisEpoch: current.Epoch,
-		Mode: remoteexec.ModePlatform, Owner: owner, Reason: remoteexec.HandoffConnectionRemoved})
+		Mode: remoteexec.ModePlatform, ConnectionID: connection, Owner: owner, Reason: remoteexec.HandoffConnectionRemoved})
 	return err // a newer executor's CAS refusal is harmless
 }
 

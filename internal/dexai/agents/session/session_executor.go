@@ -783,20 +783,29 @@ func setExecutor(ctx dex.Context, input remoteexec.SetRequest) (remoteexec.SetRe
 	if !result.Changed {
 		return result, nil, nil
 	}
+	if result.Executor.Epoch == executor.Epoch {
+		comm.MustDo(executorAttribute.Set(ctx, result.Executor))
+		return result, nil, nil
+	}
+	appendEntry(ctx, conversation.ExecutorChangeEntry(result.Executor.Mode == remoteexec.ModeRemote))
 	state := comm.Must(agentStateAttribute.Get(ctx))
 	if result.Executor.Mode == remoteexec.ModeRemote {
 		sequence := state.LastSequence
 		result.Executor.Remote.ActivationSequence = &sequence
+	}
+	actor := input.Owner
+	if input.RequestedBy != nil {
+		actor = *input.RequestedBy
 	}
 	pending := dexflow.OptionalValue(agentInterruptAttribute.Get(ctx))
 	var interruption *agentInterruption
 	if pending == nil && (state.Status != agentloop.AgentStatusWaitingForMessage && state.Status != agentloop.AgentStatusInitializing) {
 		plan := agentloop.PlanInterrupt(state, agentloop.InterruptAgentRequest{Turn: state.Turn}, false, nil)
 		at := time.Now().UTC()
-		captured := captureForegroundStop(ctx, agentInterruption{Turn: state.Turn, RequestedAt: at, Actor: &input.Owner, EndsTurn: plan.EndsTurn,
+		captured := captureForegroundStop(ctx, agentInterruption{Turn: state.Turn, RequestedAt: at, Actor: &actor, EndsTurn: plan.EndsTurn,
 			Running: state.Running, PreserveBackground: true})
 		interruption = &captured
-		comm.MustDo(agentInterruptAttribute.Set(ctx, agentloop.AgentInterrupt{Turn: state.Turn, RequestedAt: at, Actor: &input.Owner, EndsTurn: plan.EndsTurn, PreserveBackground: true}))
+		comm.MustDo(agentInterruptAttribute.Set(ctx, agentloop.AgentInterrupt{Turn: state.Turn, RequestedAt: at, Actor: &actor, EndsTurn: plan.EndsTurn, PreserveBackground: true}))
 	}
 	if !executorWakePending(ctx) {
 		comm.MustDo(remoteInboxChannel.Publish(ctx, remoteexec.InboxItem{Control: &remoteexec.ExecutorChanged{Epoch: result.Executor.Epoch, Generation: result.Executor.Generation}}))

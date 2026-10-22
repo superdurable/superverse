@@ -15,8 +15,9 @@ export function useRemoteAgentStatus() {
   const session = useSessionResource();
   const executor = session?.resource?.agent?.description?.executor;
   const remote = executor?.mode === "SESSION_EXECUTOR_MODE_REMOTE" ? executor.remote : null;
-  const seen = timestampToISO(remote?.lastSeenAt);
-  const connection = remote?.connectionId;
+  const paired = remote ?? executor?.suspended;
+  const seen = timestampToISO(paired?.lastSeenAt);
+  const connection = paired?.connectionId;
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!connection) return;

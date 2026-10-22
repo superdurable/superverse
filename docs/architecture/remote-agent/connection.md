@@ -83,8 +83,15 @@ Consequences:
 Taking over needs no consent from the current connection: any Builder may activate their own Bridge,
 and Studio's connect dialog names who is connected now and says their agent will stop. "Use the
 Platform agent" (`RemoteAgentService.SetSessionExecutor`, mode `platform`, with the epoch Studio showed as
-the basis) calls `SetExecutor` and then revokes the replaced connection's row; revoking a row by its
-own ID can never affect a newer executor.
+the basis) calls `SetExecutor` and suspends the current local connection without revoking
+its credential. `Executor.Suspended` retains exactly that connection's bounded identity;
+`Executor.Mode` remains the sole execution authority. Studio can resume that exact
+connection through `SetSessionExecutor.connection_id` with its observed epoch, without
+pairing again. Resume increments epoch/generation, resets report watermarks and captures
+its activation head. The server reauthorizes both the selecting Builder and the connection's
+original Builder/login, and refuses a saved Bridge build below the configured minimum.
+A reconnecting `activate` only discovers suspended idle state; it cannot resume itself.
+A different connection's activation clears suspension permanently.
 
 ## Authentication of each request
 
@@ -95,8 +102,10 @@ A Bridge request carries `Authorization: Bearer <token>`. The handler:
    `ProjectFlowClient.Authorize` uses);
 2. requires the row `PAIRED` and unexpired, the account ACTIVE, the login session unexpired with
    its current auth epoch, and `CapabilityBuild` on the Project;
-3. for `sync` and `report`, passes the connection ID to the Session RPC, which refuses a connection
-   that is not the current executor with `executor_changed`.
+3. for `sync`, admits only the current or explicitly suspended connection; suspended sync
+   returns fence/idle metadata, no work, and keeps the Bridge cursor unchanged. For `report`,
+   admits only current remote mode, connection, epoch and generation. All idle reports and
+   replaced-connection reads/reports are refused with `executor_changed`.
 
 The token never outlives the login session it was paired under: logging out, a password change,
 the login session expiring, losing the Builder role or the Project's deletion all make the next
@@ -206,8 +215,12 @@ has 16 services.
 - A request updates `last_seen_at` when it is older than 60 seconds. Studio shows the connection
   online while `last_seen_at` is within 90 seconds; `SessionFlowService.Snapshot` reads it with the
   executor's connection ID.
-- Rows become `REVOKED` on "Use the Platform agent" (the replaced connection), on the Bridge's
-  disconnect (a replaced Bridge disconnects itself), and on a Builder's "Remove" in Studio.
+- Rows stay `PAIRED` on "Use the Platform agent". The Bridge remains authenticated and idle,
+  and only Studio can resume it. Idle access lasts no longer than the remaining lifetime
+  of its original seven-day issuing login; switching never renews that lifetime.
+- Rows become `REVOKED` on the Bridge's disconnect (a replaced Bridge disconnects itself)
+  and on a Builder's "Remove" in Studio. Logout, expiry, auth-epoch change, role loss,
+  revocation, dexai exit and Project deletion still terminate access.
 - **A fixed cap of six rows per Project**, enforced in the transaction that creates a pairing. A row
   lock cannot serialize this (an empty Project has no row to lock, and existing rows do not stop an
   insert), so the transaction first takes a transaction-scoped advisory lock on the Project,
@@ -358,3 +371,20 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON remote_agent_connections TO superverse_s
   fixed cap of 16, separate from the report and sync gates so that traffic there can never starve
   them. Each gate is a non-blocking slot held by its request and released when it ends; a full gate
   answers 429 at once and no gate spawns a waiting goroutine.
+
+### Switching back to a paired local agent
+
+A resumed Bridge keeps its token, provider thread, history-import marker and delivery cursor.
+It first reconciles an attempted provider submission from public history. Entries through
+the captured resume head, including public Platform assistant text without thinking or tool
+arguments, are delivered once as bounded historical context, never as new commands. Only
+entries above that head are new inputs. The cursor advances through the historical interval
+only with positive context-delivery proof; uncertainty retains the obligation and blocks
+new delivery. The context is at most 128 KiB with shortened text and explicit retention/
+truncation disclosure. Idle reads use the existing bounded long poll and no message-map
+loads; they never invoke a model or extend the Sandbox deadline.
+
+Studio starts a display turn at each delivered user message, notification or typed executor
+boundary. Notification timing uses the canonical entry's consumption timestamp, rather than
+the producer's occurrence time or the preceding turn's end. A notification that starts remote
+work on the same connection therefore does not count the intervening idle time as work.

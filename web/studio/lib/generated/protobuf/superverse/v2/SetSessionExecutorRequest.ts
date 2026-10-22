@@ -6,11 +6,13 @@ import type { Long } from '@grpc/proto-loader';
 export interface SetSessionExecutorRequest {
   'projectId'?: (string);
   'basisEpoch'?: (number | string | Long);
+  'connectionId'?: (string);
   'caller'?: (_superverse_v2_CallerContext | null);
 }
 
 export interface SetSessionExecutorRequest__Output {
   'projectId': (string);
   'basisEpoch': (string);
+  'connectionId': (string);
   'caller': (_superverse_v2_CallerContext__Output | null);
 }

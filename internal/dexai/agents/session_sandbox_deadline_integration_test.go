@@ -13,6 +13,7 @@ import (
 	"errors"
 	"slices"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -360,6 +361,9 @@ func (s *mockSession) finishedTurnAfter(ctx context.Context, sequence conversati
 	s.await(ctx, "the next turn", func() bool {
 		agent = s.finishedTurn(ctx)
 		for _, message := range agent.History.Messages {
+			if message.Sequence > sequence && message.Message.Role == conversation.MessageRoleSystem && strings.HasPrefix(message.Message.Content, "Model call failed") {
+				s.t.Fatal("the awaited turn recorded a failed model call")
+			}
 			if message.Sequence > sequence && message.Message.Role == conversation.MessageRoleAssistant && len(message.Message.ToolCalls) == 0 {
 				return true
 			}

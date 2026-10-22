@@ -16,7 +16,7 @@ export function wireInteger(value: unknown, label: string): number {
   return value;
 }
 
-/** External user behavior only: every request reaches the real remote listener, once. */
+/** External user behavior only: every request reaches the real listener; only transient reads retry. */
 export class RemoteClient {
   #token = "";
   readonly #origin: URL;
@@ -36,29 +36,54 @@ export class RemoteClient {
   }
 
   async post(path: "pair" | "activate" | "sync" | "report" | "disconnect", input: unknown, expected = 200) {
-    let response: globalThis.Response;
-    try {
-      response = await fetch(new URL(`/remote-agent/v1/${path}`, this.#origin), {
-        method: "POST",
-        redirect: "error",
-        signal: AbortSignal.timeout(30_000),
-        headers: {
-          "Content-Type": "application/json",
-          ...(this.#token ? { Authorization: `Bearer ${this.#token}` } : {}),
-        },
-        body: JSON.stringify(input),
-      });
-    } catch {
-      throw new Error(`Remote ${path} transport failed; outcome is unknown`);
-    }
-    if (response.status !== expected) {
-      await response.body?.cancel();
-      throw new Error(`Remote ${path} returned HTTP ${response.status}`);
-    }
-    try {
-      return object(await response.json(), `Remote ${path} response`);
-    } catch {
-      throw new Error(`Remote ${path} returned an invalid JSON object`);
+    const retryRead = path === "sync" && expected === 200;
+    const attemptTimeout = retryRead ? 40_000 : 30_000;
+    const deadline = Date.now() + (retryRead ? 120_000 : attemptTimeout);
+    let backoff = 100;
+    for (;;) {
+      let response: globalThis.Response;
+      try {
+        response = await fetch(new URL(`/remote-agent/v1/${path}`, this.#origin), {
+          method: "POST",
+          redirect: "error",
+          signal: AbortSignal.timeout(Math.min(attemptTimeout, Math.max(1, deadline - Date.now()))),
+          headers: {
+            "Content-Type": "application/json",
+            ...(this.#token ? { Authorization: `Bearer ${this.#token}` } : {}),
+          },
+          body: JSON.stringify(input),
+        });
+      } catch {
+        if (retryRead && Date.now() + backoff < deadline) {
+          await new Promise((resolve) => setTimeout(resolve, backoff));
+          backoff = Math.min(1000, backoff * 2);
+          continue;
+        }
+        throw new Error(
+          `Remote ${path} transport failed; ${retryRead ? "read retry deadline exhausted" : "outcome is unknown"}`,
+        );
+      }
+      // Sync is read-only. Match dexai's bounded backoff without ever
+      // replaying an activation/report with an uncertain external outcome.
+      if (retryRead && [429, 503].includes(response.status)) {
+        const retryAfter = Number(response.headers.get("retry-after"));
+        const delay = Math.max(backoff, Number.isFinite(retryAfter) ? retryAfter * 1000 : 0);
+        if (Date.now() + delay < deadline) {
+          await response.body?.cancel();
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          backoff = Math.min(1000, backoff * 2);
+          continue;
+        }
+      }
+      if (response.status !== expected) {
+        await response.body?.cancel();
+        throw new Error(`Remote ${path} returned HTTP ${response.status}`);
+      }
+      try {
+        return object(await response.json(), `Remote ${path} response`);
+      } catch {
+        throw new Error(`Remote ${path} returned an invalid JSON object`);
+      }
     }
   }
 
@@ -75,6 +100,7 @@ export class RemoteClient {
 
   async activateWithCursor(label: string) {
     const response = await this.post("activate", {
+      bridgeVersion: "0.0.0-dev",
       binding: {
         codexVersion: "integration",
         providerThreadId: label,
@@ -99,8 +125,11 @@ export class RemoteClient {
 export function inputText(entry: unknown): string | null {
   const value = object(entry, "Remote entry");
   if (value.role !== "user" || value.kind !== "user_message" || typeof value.text !== "string") return null;
-  const prefix = "Superverse message (JSON): ";
-  if (!value.text.startsWith(prefix)) throw new Error("Attributed user entry lacks its canonical sender envelope");
-  const body = object(JSON.parse(value.text.slice(prefix.length)), "Sender envelope");
+  const text = value.text;
+  const prefix = ["Project message (JSON): ", "Superverse message (JSON): "].find((candidate) =>
+    text.startsWith(candidate),
+  );
+  if (!prefix) throw new Error("Attributed user entry lacks its canonical sender envelope");
+  const body = object(JSON.parse(text.slice(prefix.length)), "Sender envelope");
   return string(body.text, "Public input text");
 }

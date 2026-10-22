@@ -93,6 +93,8 @@ type selection struct {
 type requestMessage struct {
 	Role    string            `json:"role"`
 	Content []json.RawMessage `json:"content"`
+	// Derived only from a validated canonical handoff, never from HTTP input.
+	projectedHistory bool
 }
 
 // texts returns the text of every top-level text block of a message.

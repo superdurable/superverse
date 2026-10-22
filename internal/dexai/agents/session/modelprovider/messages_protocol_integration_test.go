@@ -21,10 +21,124 @@ import (
 	"time"
 
 	"github.com/superdurable/dex/sdk-go/dex"
+	"github.com/superdurable/superversev2/internal/dexai/agents/remoteexec"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/mockmodel"
 )
+
+// This is model-wire evidence through real Dex; the Session/HTTP handoff case
+// separately proves that the application produces this exact projected prefix.
+func TestRemoteHandoffProjectionMessagesDexIntegration(t *testing.T) {
+	baseURL, stop, err := mockmodel.StartForTest(t.Context(), slog.Default())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer stop()
+	router, err := modelprovider.NewModelRouter(modelprovider.ClaudeClientConfig{}, &modelprovider.MockClientConfig{ClaudeClientConfig: modelprovider.ClaudeClientConfig{APIKey: mockmodel.APIKeyForTest, BaseURL: baseURL}}, slog.Default(), compatibleRuntime(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	harness := newMessagesWireHarness(t, nil, baseURL, router)
+	request := messagesRequest(t, conversation.ModelMock, "remote-handoff")
+	prelude, err := harness.complete(t, t.Context(), request, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	encode := func(value any) json.RawMessage {
+		t.Helper()
+		raw, err := json.Marshal(value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return raw
+	}
+	quote := func(raw json.RawMessage) json.RawMessage {
+		return encode(map[string]string{"type": "text", "text": conversation.RecordedToolHistoryPrefix + string(raw)})
+	}
+	call := mockmodel.RemoteReplyForTest("remote-handoff", 2, 1).ToolCalls[0]
+	// Use the real producer's struct encoding; JSON member order differs from
+	// the mock's map encoding but every identity and argument must match.
+	nativeUse := remoteexec.ToolEntry([]conversation.ToolCall{call}, nil, "wire-fixture", time.Now()).Blocks[0]
+	nativeResult := conversation.ToolResultBlock(call.ID, "Created raexec-handoff.txt", false)
+	head := strings.Repeat("a", 40)
+	now := time.Now().UTC()
+	notice := (remoteexec.PlatformHandoff{From: now.Add(-time.Minute), To: now, Owners: []conversation.Actor{{Email: "fixture@example.test"}}, Reason: remoteexec.HandoffSwitched}).Notice(head)
+	request.Messages = append(request.Messages,
+		conversation.RequestMessage{Role: conversation.EntryRoleAssistant, Blocks: conversation.ModelReplyEntry(prelude, nil, now).WithoutProtocolHistory().Blocks, CacheAnchor: -1},
+		conversation.RequestMessage{Role: conversation.EntryRoleUser, Blocks: conversation.UserMessageEntry(mockInput(t, "remote-handoff", 2).Content, nil).Blocks, CacheAnchor: -1},
+		conversation.RequestMessage{Role: conversation.EntryRoleAssistant, Blocks: []json.RawMessage{quote(nativeUse)}, CacheAnchor: -1},
+		conversation.RequestMessage{Role: conversation.EntryRoleUser, Blocks: []json.RawMessage{
+			quote(nativeResult),
+			conversation.UserMessageEntry(mockInput(t, "remote-handoff", 3).Content+" "+mockmodel.ArgumentMarkerForTest("head", head), nil).Blocks[0],
+			conversation.NoticeEntry(conversation.EntryRoleUser, notice, "").Blocks[0],
+		}, CacheAnchor: -1},
+	)
+	reply, err := harness.complete(t, t.Context(), request, false)
+	if err != nil || len(reply.ToolCalls) != 1 || reply.ToolCalls[0].Name != conversation.ToolRead {
+		t.Fatalf("exact projected handoff rejected: %v", err)
+	}
+	t.Run("prior-platform-tool-unit", func(t *testing.T) {
+		earlier := messagesRequest(t, conversation.ModelMock, "inspect-basic")
+		original, err := harness.complete(t, t.Context(), earlier, false)
+		if err != nil || len(original.ToolCalls) == 0 {
+			t.Fatalf("original platform tool reply missing: %v", err)
+		}
+		results := []json.RawMessage{}
+		for _, call := range original.ToolCalls {
+			results = append(results, quote(conversation.ToolResultBlock(call.ID, "protocol result", false)))
+		}
+		prefix := append(conversation.UserMessageEntry("Retained public executor context.", nil).Blocks, earlier.Messages[0].Blocks...)
+		changed := request
+		changed.Messages = append([]conversation.RequestMessage{
+			{Role: conversation.EntryRoleUser, Blocks: prefix, CacheAnchor: -1},
+			{Role: conversation.EntryRoleAssistant, Blocks: conversation.ModelReplyEntry(original, nil, now).WithoutProtocolHistory().Blocks, CacheAnchor: -1},
+			{Role: conversation.EntryRoleUser, Blocks: results, CacheAnchor: -1},
+		}, request.Messages...)
+		if _, err := harness.complete(t, t.Context(), changed, false); err != nil {
+			t.Fatalf("original projected platform IDs changed with message grouping: %v", err)
+		}
+	})
+	for name, mutate := range map[string]func(*conversation.ModelRequest){
+		"missing-boundary": func(r *conversation.ModelRequest) { r.Messages[4].Blocks = r.Messages[4].Blocks[:2] },
+		"private-history": func(r *conversation.ModelRequest) {
+			r.Messages[1].Blocks = append(r.Messages[1].Blocks, prelude.Blocks[0])
+		},
+		"native-history": func(r *conversation.ModelRequest) { r.Messages[3].Blocks[0] = nativeUse },
+		"changed-tool": func(r *conversation.ModelRequest) {
+			r.Messages[3].Blocks[0] = quote(encode(map[string]any{"type": "tool_use", "id": call.ID, "name": call.Name, "input": map[string]string{"path": "raexec-handoff.txt", "content": "corrupted"}}))
+		},
+		"duplicate-result": func(r *conversation.ModelRequest) {
+			r.Messages[4].Blocks = append([]json.RawMessage{quote(nativeResult)}, r.Messages[4].Blocks...)
+		},
+		"missing-result": func(r *conversation.ModelRequest) { r.Messages[4].Blocks = r.Messages[4].Blocks[1:] },
+	} {
+		t.Run(name, func(t *testing.T) {
+			changed := request
+			changed.Messages = append([]conversation.RequestMessage(nil), request.Messages...)
+			for index := range changed.Messages {
+				changed.Messages[index].Blocks = append([]json.RawMessage(nil), changed.Messages[index].Blocks...)
+			}
+			mutate(&changed)
+			_, err := harness.complete(t, t.Context(), changed, false)
+			if rejected, ok := errors.AsType[*conversation.ModelRejectedError](err); !ok || rejected.Status != http.StatusBadRequest {
+				t.Fatalf("corrupt projected handoff admitted: %v", err)
+			}
+		})
+	}
+	// The projection boundary cannot excuse a modified current signed reply.
+	request.Messages = append(request.Messages,
+		conversation.RequestMessage{Role: conversation.EntryRoleAssistant, Blocks: conversation.ModelReplyEntry(reply, nil, now).WithoutProtocolHistory().Blocks, CacheAnchor: -1},
+		conversation.RequestMessage{Role: conversation.EntryRoleUser, Blocks: []json.RawMessage{conversation.ToolResultBlock(reply.ToolCalls[0].ID, "Remote handoff proof", false)}, CacheAnchor: -1},
+	)
+	if _, err := harness.complete(t, t.Context(), request, false); err != nil {
+		if rejected, ok := errors.AsType[*conversation.ModelRejectedError](err); !ok || rejected.Status != http.StatusBadRequest {
+			t.Fatalf("current replay corruption did not receive the exact rejection: %v", err)
+		}
+	} else {
+		t.Fatal("current signed reply gained a handoff replay exemption")
+	}
+}
 
 // Only the model is substituted. These are wire-protocol checks over its
 // actual HTTP endpoint from a real Dex Worker. They do not claim Session/Sandbox or live-provider acceptance.

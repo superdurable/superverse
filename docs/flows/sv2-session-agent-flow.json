@@ -7997,7 +7997,7 @@
         "endColumn": 43
       },
       "metadata": {
-        "function": "setExecutor",
+        "function": "appendEntry",
         "phase": "rpc",
         "via": "helper"
       }
@@ -9943,13 +9943,13 @@
       "to": "rpc:SetExecutor",
       "label": "Get",
       "span": {
-        "startLine": 1472,
-        "startColumn": 12,
-        "endLine": 1472,
-        "endColumn": 39
+        "startLine": 1470,
+        "startColumn": 17,
+        "endLine": 1470,
+        "endColumn": 43
       },
       "metadata": {
-        "function": "closedModelReplayRange",
+        "function": "appendEntry",
         "phase": "rpc",
         "via": "helper"
       }
@@ -10420,6 +10420,24 @@
       "id": "edge:0313",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
+      "to": "rpc:SetExecutor",
+      "label": "Get",
+      "span": {
+        "startLine": 1470,
+        "startColumn": 17,
+        "endLine": 1470,
+        "endColumn": 43
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0314",
+      "kind": "resource_read",
+      "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:AnsweredInput",
       "label": "Get",
       "span": {
@@ -10435,7 +10453,7 @@
       }
     },
     {
-      "id": "edge:0314",
+      "id": "edge:0315",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:ApplySessionWorkspace",
@@ -10453,7 +10471,7 @@
       }
     },
     {
-      "id": "edge:0315",
+      "id": "edge:0316",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:AwaitAgentTimer",
@@ -10471,7 +10489,7 @@
       }
     },
     {
-      "id": "edge:0316",
+      "id": "edge:0317",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:AwaitParallelToolResults",
@@ -10489,7 +10507,7 @@
       }
     },
     {
-      "id": "edge:0317",
+      "id": "edge:0318",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:AwaitRemoteAgent",
@@ -10507,7 +10525,7 @@
       }
     },
     {
-      "id": "edge:0318",
+      "id": "edge:0319",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:AwaitToolApproval",
@@ -10525,7 +10543,7 @@
       }
     },
     {
-      "id": "edge:0319",
+      "id": "edge:0320",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:AwaitUser",
@@ -10543,7 +10561,7 @@
       }
     },
     {
-      "id": "edge:0320",
+      "id": "edge:0321",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:CallModel",
@@ -10561,7 +10579,7 @@
       }
     },
     {
-      "id": "edge:0321",
+      "id": "edge:0322",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:CheckSteered",
@@ -10579,7 +10597,7 @@
       }
     },
     {
-      "id": "edge:0322",
+      "id": "edge:0323",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:CompactContext",
@@ -10597,7 +10615,7 @@
       }
     },
     {
-      "id": "edge:0323",
+      "id": "edge:0324",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:CompleteProjectSession",
@@ -10615,7 +10633,7 @@
       }
     },
     {
-      "id": "edge:0324",
+      "id": "edge:0325",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:ExecuteTool",
@@ -10633,7 +10651,7 @@
       }
     },
     {
-      "id": "edge:0325",
+      "id": "edge:0326",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:FinishInterrupt",
@@ -10651,7 +10669,7 @@
       }
     },
     {
-      "id": "edge:0326",
+      "id": "edge:0327",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:InitializeSessionAgent",
@@ -10669,7 +10687,7 @@
       }
     },
     {
-      "id": "edge:0327",
+      "id": "edge:0328",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:PurgeClosedModelReplay",
@@ -10687,7 +10705,7 @@
       }
     },
     {
-      "id": "edge:0328",
+      "id": "edge:0329",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:RecordCompactionFailure",
@@ -10705,7 +10723,7 @@
       }
     },
     {
-      "id": "edge:0329",
+      "id": "edge:0330",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:RecordModelFailure",
@@ -10723,7 +10741,7 @@
       }
     },
     {
-      "id": "edge:0330",
+      "id": "edge:0331",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:RecordPlatformModelResult",
@@ -10741,7 +10759,7 @@
       }
     },
     {
-      "id": "edge:0331",
+      "id": "edge:0332",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:RecordToolFailure",
@@ -10759,7 +10777,7 @@
       }
     },
     {
-      "id": "edge:0332",
+      "id": "edge:0333",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:RecordWorkspaceFailure",
@@ -10777,7 +10795,7 @@
       }
     },
     {
-      "id": "edge:0333",
+      "id": "edge:0334",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:RequestSessionWorkspace",
@@ -10795,7 +10813,7 @@
       }
     },
     {
-      "id": "edge:0334",
+      "id": "edge:0335",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:RouteTool",
@@ -10813,7 +10831,7 @@
       }
     },
     {
-      "id": "edge:0335",
+      "id": "edge:0336",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:SettleForegroundCommand",
@@ -10831,7 +10849,7 @@
       }
     },
     {
-      "id": "edge:0336",
+      "id": "edge:0337",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "rpc:AdmitSubagent",
@@ -10849,7 +10867,7 @@
       }
     },
     {
-      "id": "edge:0337",
+      "id": "edge:0338",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "rpc:GetSnapshot",
@@ -10867,7 +10885,7 @@
       }
     },
     {
-      "id": "edge:0338",
+      "id": "edge:0339",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "rpc:InterruptAgent",
@@ -10885,7 +10903,7 @@
       }
     },
     {
-      "id": "edge:0339",
+      "id": "edge:0340",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "rpc:ReadExecutor",
@@ -10903,7 +10921,7 @@
       }
     },
     {
-      "id": "edge:0340",
+      "id": "edge:0341",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "rpc:ReadRemote",
@@ -10921,7 +10939,7 @@
       }
     },
     {
-      "id": "edge:0341",
+      "id": "edge:0342",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "rpc:ReportRemote",
@@ -10939,7 +10957,7 @@
       }
     },
     {
-      "id": "edge:0342",
+      "id": "edge:0343",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "rpc:SendMessage",
@@ -10957,7 +10975,7 @@
       }
     },
     {
-      "id": "edge:0343",
+      "id": "edge:0344",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "rpc:SetExecutor",
@@ -10975,7 +10993,7 @@
       }
     },
     {
-      "id": "edge:0344",
+      "id": "edge:0345",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "rpc:UpdateSessionModel",
@@ -10993,7 +11011,7 @@
       }
     },
     {
-      "id": "edge:0345",
+      "id": "edge:0346",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:AnsweredInput",
@@ -11011,7 +11029,7 @@
       }
     },
     {
-      "id": "edge:0346",
+      "id": "edge:0347",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:ApplySessionWorkspace",
@@ -11029,7 +11047,7 @@
       }
     },
     {
-      "id": "edge:0347",
+      "id": "edge:0348",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:AwaitAgentTimer",
@@ -11047,7 +11065,7 @@
       }
     },
     {
-      "id": "edge:0348",
+      "id": "edge:0349",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:AwaitParallelToolResults",
@@ -11065,7 +11083,7 @@
       }
     },
     {
-      "id": "edge:0349",
+      "id": "edge:0350",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:AwaitRemoteAgent",
@@ -11083,7 +11101,7 @@
       }
     },
     {
-      "id": "edge:0350",
+      "id": "edge:0351",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:AwaitRemoteAgent",
@@ -11101,7 +11119,7 @@
       }
     },
     {
-      "id": "edge:0351",
+      "id": "edge:0352",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:AwaitToolApproval",
@@ -11119,7 +11137,7 @@
       }
     },
     {
-      "id": "edge:0352",
+      "id": "edge:0353",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:AwaitUser",
@@ -11137,7 +11155,7 @@
       }
     },
     {
-      "id": "edge:0353",
+      "id": "edge:0354",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:AwaitUser",
@@ -11155,7 +11173,7 @@
       }
     },
     {
-      "id": "edge:0354",
+      "id": "edge:0355",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:CallModel",
@@ -11173,7 +11191,7 @@
       }
     },
     {
-      "id": "edge:0355",
+      "id": "edge:0356",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:CheckSteered",
@@ -11191,7 +11209,7 @@
       }
     },
     {
-      "id": "edge:0356",
+      "id": "edge:0357",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:CompactContext",
@@ -11209,7 +11227,7 @@
       }
     },
     {
-      "id": "edge:0357",
+      "id": "edge:0358",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:ExecuteParallelTool",
@@ -11227,7 +11245,7 @@
       }
     },
     {
-      "id": "edge:0358",
+      "id": "edge:0359",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:ExecuteTool",
@@ -11245,7 +11263,7 @@
       }
     },
     {
-      "id": "edge:0359",
+      "id": "edge:0360",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:FinishInterrupt",
@@ -11263,7 +11281,7 @@
       }
     },
     {
-      "id": "edge:0360",
+      "id": "edge:0361",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:InitializeSessionAgent",
@@ -11281,7 +11299,7 @@
       }
     },
     {
-      "id": "edge:0361",
+      "id": "edge:0362",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:RecordCompactionFailure",
@@ -11299,7 +11317,7 @@
       }
     },
     {
-      "id": "edge:0362",
+      "id": "edge:0363",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:RecordModelFailure",
@@ -11317,7 +11335,7 @@
       }
     },
     {
-      "id": "edge:0363",
+      "id": "edge:0364",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:RecordPlatformModelResult",
@@ -11335,7 +11353,7 @@
       }
     },
     {
-      "id": "edge:0364",
+      "id": "edge:0365",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:RecordToolFailure",
@@ -11353,7 +11371,7 @@
       }
     },
     {
-      "id": "edge:0365",
+      "id": "edge:0366",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:RecordWorkspaceFailure",
@@ -11371,7 +11389,7 @@
       }
     },
     {
-      "id": "edge:0366",
+      "id": "edge:0367",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:RequestSessionWorkspace",
@@ -11389,7 +11407,7 @@
       }
     },
     {
-      "id": "edge:0367",
+      "id": "edge:0368",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:RouteTool",
@@ -11407,7 +11425,7 @@
       }
     },
     {
-      "id": "edge:0368",
+      "id": "edge:0369",
       "kind": "resource_read",
       "from": "resource:attribute:executorAttribute",
       "to": "step:SettleForegroundCommand",
@@ -11425,7 +11443,7 @@
       }
     },
     {
-      "id": "edge:0369",
+      "id": "edge:0370",
       "kind": "resource_read",
       "from": "resource:attribute:flowDesignsAttribute",
       "to": "rpc:GetFlowDesign",
@@ -11443,7 +11461,7 @@
       }
     },
     {
-      "id": "edge:0370",
+      "id": "edge:0371",
       "kind": "resource_read",
       "from": "resource:attribute:flowDesignsAttribute",
       "to": "rpc:SendMessage",
@@ -11461,7 +11479,7 @@
       }
     },
     {
-      "id": "edge:0371",
+      "id": "edge:0372",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "rpc:GetDexSummary",
@@ -11477,7 +11495,7 @@
       }
     },
     {
-      "id": "edge:0372",
+      "id": "edge:0373",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "rpc:GetSessionSummary",
@@ -11493,7 +11511,7 @@
       }
     },
     {
-      "id": "edge:0373",
+      "id": "edge:0374",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "rpc:GetSnapshot",
@@ -11511,7 +11529,7 @@
       }
     },
     {
-      "id": "edge:0374",
+      "id": "edge:0375",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "rpc:ReadRemote",
@@ -11529,7 +11547,7 @@
       }
     },
     {
-      "id": "edge:0375",
+      "id": "edge:0376",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "step:AnsweredInput",
@@ -11547,7 +11565,7 @@
       }
     },
     {
-      "id": "edge:0376",
+      "id": "edge:0377",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "step:ApplySessionWorkspace",
@@ -11565,7 +11583,7 @@
       }
     },
     {
-      "id": "edge:0377",
+      "id": "edge:0378",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "step:AwaitParallelToolResults",
@@ -11583,7 +11601,7 @@
       }
     },
     {
-      "id": "edge:0378",
+      "id": "edge:0379",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "step:AwaitRemoteAgent",
@@ -11601,7 +11619,7 @@
       }
     },
     {
-      "id": "edge:0379",
+      "id": "edge:0380",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "step:AwaitSessionWorkspace",
@@ -11619,7 +11637,7 @@
       }
     },
     {
-      "id": "edge:0380",
+      "id": "edge:0381",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "step:AwaitUser",
@@ -11637,7 +11655,7 @@
       }
     },
     {
-      "id": "edge:0381",
+      "id": "edge:0382",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "step:CheckSteered",
@@ -11655,7 +11673,7 @@
       }
     },
     {
-      "id": "edge:0382",
+      "id": "edge:0383",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "step:CompleteProjectSession",
@@ -11673,7 +11691,7 @@
       }
     },
     {
-      "id": "edge:0383",
+      "id": "edge:0384",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "step:DeployPreviewHandoff",
@@ -11691,7 +11709,7 @@
       }
     },
     {
-      "id": "edge:0384",
+      "id": "edge:0385",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "step:ExecuteParallelTool",
@@ -11709,7 +11727,7 @@
       }
     },
     {
-      "id": "edge:0385",
+      "id": "edge:0386",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "step:ExecuteTool",
@@ -11727,7 +11745,7 @@
       }
     },
     {
-      "id": "edge:0386",
+      "id": "edge:0387",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "step:InitializeSessionAgent",
@@ -11745,7 +11763,7 @@
       }
     },
     {
-      "id": "edge:0387",
+      "id": "edge:0388",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "step:InterruptAgent",
@@ -11763,7 +11781,7 @@
       }
     },
     {
-      "id": "edge:0388",
+      "id": "edge:0389",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "step:RecordToolFailure",
@@ -11781,7 +11799,7 @@
       }
     },
     {
-      "id": "edge:0389",
+      "id": "edge:0390",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "step:RecordWorkspaceFailure",
@@ -11799,7 +11817,7 @@
       }
     },
     {
-      "id": "edge:0390",
+      "id": "edge:0391",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "step:ReportPlatformIssue",
@@ -11817,7 +11835,7 @@
       }
     },
     {
-      "id": "edge:0391",
+      "id": "edge:0392",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "step:RequestSessionWorkspace",
@@ -11835,7 +11853,7 @@
       }
     },
     {
-      "id": "edge:0392",
+      "id": "edge:0393",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "step:SendWorkspaceCommand",
@@ -11853,7 +11871,7 @@
       }
     },
     {
-      "id": "edge:0393",
+      "id": "edge:0394",
       "kind": "resource_read",
       "from": "resource:attribute:headCommitAttribute",
       "to": "step:SettleForegroundCommand",
@@ -11871,7 +11889,7 @@
       }
     },
     {
-      "id": "edge:0394",
+      "id": "edge:0395",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeyInfoAttribute",
       "to": "rpc:FinalizeModelCredential",
@@ -11889,7 +11907,7 @@
       }
     },
     {
-      "id": "edge:0395",
+      "id": "edge:0396",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeyInfoAttribute",
       "to": "rpc:GetSnapshot",
@@ -11907,7 +11925,7 @@
       }
     },
     {
-      "id": "edge:0396",
+      "id": "edge:0397",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeyInfoAttribute",
       "to": "rpc:ReadModelCredentialInfo",
@@ -11925,7 +11943,7 @@
       }
     },
     {
-      "id": "edge:0397",
+      "id": "edge:0398",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeyInfoAttribute",
       "to": "rpc:ReserveModelCredential",
@@ -11943,7 +11961,7 @@
       }
     },
     {
-      "id": "edge:0398",
+      "id": "edge:0399",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeyInfoAttribute",
       "to": "rpc:SendMessage",
@@ -11961,7 +11979,7 @@
       }
     },
     {
-      "id": "edge:0399",
+      "id": "edge:0400",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeyInfoAttribute",
       "to": "rpc:UpdateSessionModel",
@@ -11979,7 +11997,7 @@
       }
     },
     {
-      "id": "edge:0400",
+      "id": "edge:0401",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeyInfoAttribute",
       "to": "step:AnsweredInput",
@@ -11997,7 +12015,7 @@
       }
     },
     {
-      "id": "edge:0401",
+      "id": "edge:0402",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeyInfoAttribute",
       "to": "step:ApplySessionWorkspace",
@@ -12015,7 +12033,7 @@
       }
     },
     {
-      "id": "edge:0402",
+      "id": "edge:0403",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeyInfoAttribute",
       "to": "step:CallModel",
@@ -12033,7 +12051,7 @@
       }
     },
     {
-      "id": "edge:0403",
+      "id": "edge:0404",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeyInfoAttribute",
       "to": "step:CheckSteered",
@@ -12051,7 +12069,7 @@
       }
     },
     {
-      "id": "edge:0404",
+      "id": "edge:0405",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeyInfoAttribute",
       "to": "step:CompactContext",
@@ -12069,7 +12087,7 @@
       }
     },
     {
-      "id": "edge:0405",
+      "id": "edge:0406",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeyInfoAttribute",
       "to": "step:ExecuteTool",
@@ -12087,7 +12105,7 @@
       }
     },
     {
-      "id": "edge:0406",
+      "id": "edge:0407",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeyInfoAttribute",
       "to": "step:RecordCompactionFailure",
@@ -12105,7 +12123,7 @@
       }
     },
     {
-      "id": "edge:0407",
+      "id": "edge:0408",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeyInfoAttribute",
       "to": "step:RecordPlatformModelResult",
@@ -12123,7 +12141,7 @@
       }
     },
     {
-      "id": "edge:0408",
+      "id": "edge:0409",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeyInfoAttribute",
       "to": "step:RecordWorkspaceFailure",
@@ -12141,7 +12159,7 @@
       }
     },
     {
-      "id": "edge:0409",
+      "id": "edge:0410",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeyInfoAttribute",
       "to": "step:RequestSessionWorkspace",
@@ -12159,7 +12177,7 @@
       }
     },
     {
-      "id": "edge:0410",
+      "id": "edge:0411",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeysAttribute",
       "to": "step:CallModel",
@@ -12177,7 +12195,7 @@
       }
     },
     {
-      "id": "edge:0411",
+      "id": "edge:0412",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeysAttribute",
       "to": "step:CompactContext",
@@ -12195,7 +12213,7 @@
       }
     },
     {
-      "id": "edge:0412",
+      "id": "edge:0413",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeysAttribute",
       "to": "step:ExecuteTool",
@@ -12213,7 +12231,7 @@
       }
     },
     {
-      "id": "edge:0413",
+      "id": "edge:0414",
       "kind": "resource_read",
       "from": "resource:attribute:notificationReceiptsAttribute",
       "to": "rpc:ReportSessionNotification",
@@ -12229,7 +12247,7 @@
       }
     },
     {
-      "id": "edge:0414",
+      "id": "edge:0415",
       "kind": "resource_read",
       "from": "resource:attribute:notificationReceiptsAttribute",
       "to": "rpc:ReportWorkspaceOutcome",
@@ -12247,7 +12265,7 @@
       }
     },
     {
-      "id": "edge:0415",
+      "id": "edge:0416",
       "kind": "resource_read",
       "from": "resource:attribute:notificationReceiptsAttribute",
       "to": "step:AwaitBackgroundCommand",
@@ -12263,7 +12281,7 @@
       }
     },
     {
-      "id": "edge:0416",
+      "id": "edge:0417",
       "kind": "resource_read",
       "from": "resource:attribute:pendingApprovalAttribute",
       "to": "rpc:ApproveTool",
@@ -12281,7 +12299,7 @@
       }
     },
     {
-      "id": "edge:0417",
+      "id": "edge:0418",
       "kind": "resource_read",
       "from": "resource:attribute:pendingApprovalAttribute",
       "to": "rpc:GetSnapshot",
@@ -12299,7 +12317,7 @@
       }
     },
     {
-      "id": "edge:0418",
+      "id": "edge:0419",
       "kind": "resource_read",
       "from": "resource:attribute:pendingApprovalAttribute",
       "to": "step:AwaitAgentTimer",
@@ -12317,7 +12335,7 @@
       }
     },
     {
-      "id": "edge:0419",
+      "id": "edge:0420",
       "kind": "resource_read",
       "from": "resource:attribute:pendingApprovalAttribute",
       "to": "step:AwaitRemoteAgent",
@@ -12335,7 +12353,7 @@
       }
     },
     {
-      "id": "edge:0420",
+      "id": "edge:0421",
       "kind": "resource_read",
       "from": "resource:attribute:pendingApprovalAttribute",
       "to": "step:AwaitToolApproval",
@@ -12353,7 +12371,7 @@
       }
     },
     {
-      "id": "edge:0421",
+      "id": "edge:0422",
       "kind": "resource_read",
       "from": "resource:attribute:pendingApprovalAttribute",
       "to": "step:AwaitUser",
@@ -12371,7 +12389,7 @@
       }
     },
     {
-      "id": "edge:0422",
+      "id": "edge:0423",
       "kind": "resource_read",
       "from": "resource:attribute:pendingApprovalAttribute",
       "to": "step:CheckSteered",
@@ -12389,7 +12407,7 @@
       }
     },
     {
-      "id": "edge:0423",
+      "id": "edge:0424",
       "kind": "resource_read",
       "from": "resource:attribute:pendingSubagentWorktreeCleanupAttribute",
       "to": "step:ExecuteTool",
@@ -12405,7 +12423,7 @@
       }
     },
     {
-      "id": "edge:0424",
+      "id": "edge:0425",
       "kind": "resource_read",
       "from": "resource:attribute:pendingSubagentWorktreeCleanupAttribute",
       "to": "step:RecordToolFailure",
@@ -12423,7 +12441,7 @@
       }
     },
     {
-      "id": "edge:0425",
+      "id": "edge:0426",
       "kind": "resource_read",
       "from": "resource:attribute:pendingSubagentWorktreeCleanupAttribute",
       "to": "step:RouteTool",
@@ -12441,7 +12459,7 @@
       }
     },
     {
-      "id": "edge:0426",
+      "id": "edge:0427",
       "kind": "resource_read",
       "from": "resource:attribute:pendingTimerAttribute",
       "to": "rpc:GetSnapshot",
@@ -12459,7 +12477,7 @@
       }
     },
     {
-      "id": "edge:0427",
+      "id": "edge:0428",
       "kind": "resource_read",
       "from": "resource:attribute:pendingTimerAttribute",
       "to": "step:AwaitAgentTimer",
@@ -12475,7 +12493,7 @@
       }
     },
     {
-      "id": "edge:0428",
+      "id": "edge:0429",
       "kind": "resource_read",
       "from": "resource:attribute:pendingTimerAttribute",
       "to": "step:AwaitAgentTimer",
@@ -12491,7 +12509,7 @@
       }
     },
     {
-      "id": "edge:0429",
+      "id": "edge:0430",
       "kind": "resource_read",
       "from": "resource:attribute:pendingUserInputAttribute",
       "to": "rpc:AnswerQuestions",
@@ -12509,7 +12527,7 @@
       }
     },
     {
-      "id": "edge:0430",
+      "id": "edge:0431",
       "kind": "resource_read",
       "from": "resource:attribute:pendingUserInputAttribute",
       "to": "rpc:GetSnapshot",
@@ -12527,7 +12545,7 @@
       }
     },
     {
-      "id": "edge:0431",
+      "id": "edge:0432",
       "kind": "resource_read",
       "from": "resource:attribute:pendingUserInputAttribute",
       "to": "rpc:ReadRemote",
@@ -12545,7 +12563,7 @@
       }
     },
     {
-      "id": "edge:0432",
+      "id": "edge:0433",
       "kind": "resource_read",
       "from": "resource:attribute:pendingUserInputAttribute",
       "to": "rpc:SendMessage",
@@ -12563,7 +12581,7 @@
       }
     },
     {
-      "id": "edge:0433",
+      "id": "edge:0434",
       "kind": "resource_read",
       "from": "resource:attribute:pendingUserInputAttribute",
       "to": "step:AwaitAgentTimer",
@@ -12581,7 +12599,7 @@
       }
     },
     {
-      "id": "edge:0434",
+      "id": "edge:0435",
       "kind": "resource_read",
       "from": "resource:attribute:pendingUserInputAttribute",
       "to": "step:AwaitRemoteAgent",
@@ -12599,7 +12617,7 @@
       }
     },
     {
-      "id": "edge:0435",
+      "id": "edge:0436",
       "kind": "resource_read",
       "from": "resource:attribute:pendingUserInputAttribute",
       "to": "step:AwaitToolApproval",
@@ -12617,7 +12635,7 @@
       }
     },
     {
-      "id": "edge:0436",
+      "id": "edge:0437",
       "kind": "resource_read",
       "from": "resource:attribute:pendingUserInputAttribute",
       "to": "step:AwaitUser",
@@ -12635,7 +12653,7 @@
       }
     },
     {
-      "id": "edge:0437",
+      "id": "edge:0438",
       "kind": "resource_read",
       "from": "resource:attribute:pendingUserInputAttribute",
       "to": "step:AwaitUser",
@@ -12651,7 +12669,7 @@
       }
     },
     {
-      "id": "edge:0438",
+      "id": "edge:0439",
       "kind": "resource_read",
       "from": "resource:attribute:pendingUserInputAttribute",
       "to": "step:CheckSteered",
@@ -12669,7 +12687,7 @@
       }
     },
     {
-      "id": "edge:0439",
+      "id": "edge:0440",
       "kind": "resource_read",
       "from": "resource:attribute:pendingUserInputAttribute",
       "to": "step:RouteTool",
@@ -12687,7 +12705,7 @@
       }
     },
     {
-      "id": "edge:0440",
+      "id": "edge:0441",
       "kind": "resource_read",
       "from": "resource:attribute:previewAutoDeployAttribute",
       "to": "rpc:GetSnapshot",
@@ -12705,7 +12723,7 @@
       }
     },
     {
-      "id": "edge:0441",
+      "id": "edge:0442",
       "kind": "resource_read",
       "from": "resource:attribute:previewAutoDeployAttribute",
       "to": "rpc:UpdatePreviewAutoDeploy",
@@ -12723,7 +12741,7 @@
       }
     },
     {
-      "id": "edge:0442",
+      "id": "edge:0443",
       "kind": "resource_read",
       "from": "resource:attribute:previewAutoDeployAttribute",
       "to": "step:ExecuteTool",
@@ -12741,7 +12759,7 @@
       }
     },
     {
-      "id": "edge:0443",
+      "id": "edge:0444",
       "kind": "resource_read",
       "from": "resource:attribute:previewAutoDeployChangedByAttribute",
       "to": "rpc:GetSnapshot",
@@ -12759,7 +12777,7 @@
       }
     },
     {
-      "id": "edge:0444",
+      "id": "edge:0445",
       "kind": "resource_read",
       "from": "resource:attribute:previewHandoffAttribute",
       "to": "rpc:ReadRemote",
@@ -12777,7 +12795,7 @@
       }
     },
     {
-      "id": "edge:0445",
+      "id": "edge:0446",
       "kind": "resource_read",
       "from": "resource:attribute:previewHandoffAttribute",
       "to": "step:AnsweredInput",
@@ -12795,7 +12813,7 @@
       }
     },
     {
-      "id": "edge:0446",
+      "id": "edge:0447",
       "kind": "resource_read",
       "from": "resource:attribute:previewHandoffAttribute",
       "to": "step:ApplySessionWorkspace",
@@ -12813,7 +12831,7 @@
       }
     },
     {
-      "id": "edge:0447",
+      "id": "edge:0448",
       "kind": "resource_read",
       "from": "resource:attribute:previewHandoffAttribute",
       "to": "step:AwaitParallelToolResults",
@@ -12831,7 +12849,7 @@
       }
     },
     {
-      "id": "edge:0448",
+      "id": "edge:0449",
       "kind": "resource_read",
       "from": "resource:attribute:previewHandoffAttribute",
       "to": "step:CheckSteered",
@@ -12849,7 +12867,7 @@
       }
     },
     {
-      "id": "edge:0449",
+      "id": "edge:0450",
       "kind": "resource_read",
       "from": "resource:attribute:previewHandoffAttribute",
       "to": "step:ExecuteTool",
@@ -12865,7 +12883,7 @@
       }
     },
     {
-      "id": "edge:0450",
+      "id": "edge:0451",
       "kind": "resource_read",
       "from": "resource:attribute:previewHandoffAttribute",
       "to": "step:RecordCompactionFailure",
@@ -12883,7 +12901,7 @@
       }
     },
     {
-      "id": "edge:0451",
+      "id": "edge:0452",
       "kind": "resource_read",
       "from": "resource:attribute:previewHandoffAttribute",
       "to": "step:RecordPlatformModelResult",
@@ -12901,7 +12919,7 @@
       }
     },
     {
-      "id": "edge:0452",
+      "id": "edge:0453",
       "kind": "resource_read",
       "from": "resource:attribute:previewHandoffAttribute",
       "to": "step:RecordToolFailure",
@@ -12919,7 +12937,7 @@
       }
     },
     {
-      "id": "edge:0453",
+      "id": "edge:0454",
       "kind": "resource_read",
       "from": "resource:attribute:previewHandoffAttribute",
       "to": "step:RecordWorkspaceFailure",
@@ -12937,7 +12955,7 @@
       }
     },
     {
-      "id": "edge:0454",
+      "id": "edge:0455",
       "kind": "resource_read",
       "from": "resource:attribute:previewHandoffAttribute",
       "to": "step:RequestSessionWorkspace",
@@ -12955,7 +12973,7 @@
       }
     },
     {
-      "id": "edge:0455",
+      "id": "edge:0456",
       "kind": "resource_read",
       "from": "resource:attribute:previewHandoffAttribute",
       "to": "step:SettleForegroundCommand",
@@ -12973,7 +12991,7 @@
       }
     },
     {
-      "id": "edge:0456",
+      "id": "edge:0457",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "rpc:CompleteProjectSession",
@@ -12989,7 +13007,7 @@
       }
     },
     {
-      "id": "edge:0457",
+      "id": "edge:0458",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "rpc:GetDexDisplay",
@@ -13005,7 +13023,7 @@
       }
     },
     {
-      "id": "edge:0458",
+      "id": "edge:0459",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "rpc:GetSessionSummary",
@@ -13023,7 +13041,7 @@
       }
     },
     {
-      "id": "edge:0459",
+      "id": "edge:0460",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "rpc:GetSnapshot",
@@ -13041,7 +13059,7 @@
       }
     },
     {
-      "id": "edge:0460",
+      "id": "edge:0461",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "rpc:ReadExecutor",
@@ -13059,7 +13077,7 @@
       }
     },
     {
-      "id": "edge:0461",
+      "id": "edge:0462",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "rpc:ReadRemote",
@@ -13077,7 +13095,7 @@
       }
     },
     {
-      "id": "edge:0462",
+      "id": "edge:0463",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "rpc:ReportRemote",
@@ -13095,7 +13113,7 @@
       }
     },
     {
-      "id": "edge:0463",
+      "id": "edge:0464",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "rpc:SetExecutor",
@@ -13113,7 +13131,7 @@
       }
     },
     {
-      "id": "edge:0464",
+      "id": "edge:0465",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "step:ApplySessionWorkspace",
@@ -13131,7 +13149,7 @@
       }
     },
     {
-      "id": "edge:0465",
+      "id": "edge:0466",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "step:AwaitSessionWorkspace",
@@ -13149,7 +13167,7 @@
       }
     },
     {
-      "id": "edge:0466",
+      "id": "edge:0467",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "step:CallModel",
@@ -13167,7 +13185,7 @@
       }
     },
     {
-      "id": "edge:0467",
+      "id": "edge:0468",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "step:CompactContext",
@@ -13185,7 +13203,7 @@
       }
     },
     {
-      "id": "edge:0468",
+      "id": "edge:0469",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "step:CompleteProjectSession",
@@ -13203,7 +13221,7 @@
       }
     },
     {
-      "id": "edge:0469",
+      "id": "edge:0470",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "step:DeployPreviewHandoff",
@@ -13221,7 +13239,7 @@
       }
     },
     {
-      "id": "edge:0470",
+      "id": "edge:0471",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "step:ExecuteParallelTool",
@@ -13239,7 +13257,7 @@
       }
     },
     {
-      "id": "edge:0471",
+      "id": "edge:0472",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "step:ExecuteTool",
@@ -13257,7 +13275,7 @@
       }
     },
     {
-      "id": "edge:0472",
+      "id": "edge:0473",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "step:InitializeSessionAgent",
@@ -13275,7 +13293,7 @@
       }
     },
     {
-      "id": "edge:0473",
+      "id": "edge:0474",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "step:InterruptAgent",
@@ -13293,7 +13311,7 @@
       }
     },
     {
-      "id": "edge:0474",
+      "id": "edge:0475",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "step:RecordWorkspaceFailure",
@@ -13311,7 +13329,7 @@
       }
     },
     {
-      "id": "edge:0475",
+      "id": "edge:0476",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "step:ReportPlatformIssue",
@@ -13329,7 +13347,7 @@
       }
     },
     {
-      "id": "edge:0476",
+      "id": "edge:0477",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "step:SendWorkspaceCommand",
@@ -13347,7 +13365,7 @@
       }
     },
     {
-      "id": "edge:0477",
+      "id": "edge:0478",
       "kind": "resource_read",
       "from": "resource:attribute:sessionCreatedAtAttribute",
       "to": "rpc:GetSessionSummary",
@@ -13365,7 +13383,7 @@
       }
     },
     {
-      "id": "edge:0478",
+      "id": "edge:0479",
       "kind": "resource_read",
       "from": "resource:attribute:sessionCreatedAtAttribute",
       "to": "rpc:GetSnapshot",
@@ -13383,7 +13401,7 @@
       }
     },
     {
-      "id": "edge:0479",
+      "id": "edge:0480",
       "kind": "resource_read",
       "from": "resource:attribute:sessionCreatedAtAttribute",
       "to": "step:InitializeSessionAgent",
@@ -13401,7 +13419,7 @@
       }
     },
     {
-      "id": "edge:0480",
+      "id": "edge:0481",
       "kind": "resource_read",
       "from": "resource:attribute:sessionModelAttribute",
       "to": "rpc:GetSnapshot",
@@ -13419,7 +13437,7 @@
       }
     },
     {
-      "id": "edge:0481",
+      "id": "edge:0482",
       "kind": "resource_read",
       "from": "resource:attribute:sessionModelAttribute",
       "to": "rpc:SendMessage",
@@ -13437,7 +13455,7 @@
       }
     },
     {
-      "id": "edge:0482",
+      "id": "edge:0483",
       "kind": "resource_read",
       "from": "resource:attribute:sessionModelAttribute",
       "to": "rpc:UpdateSessionModel",
@@ -13455,7 +13473,7 @@
       }
     },
     {
-      "id": "edge:0483",
+      "id": "edge:0484",
       "kind": "resource_read",
       "from": "resource:attribute:sessionModelAttribute",
       "to": "step:AnsweredInput",
@@ -13473,7 +13491,7 @@
       }
     },
     {
-      "id": "edge:0484",
+      "id": "edge:0485",
       "kind": "resource_read",
       "from": "resource:attribute:sessionModelAttribute",
       "to": "step:ApplySessionWorkspace",
@@ -13491,7 +13509,7 @@
       }
     },
     {
-      "id": "edge:0485",
+      "id": "edge:0486",
       "kind": "resource_read",
       "from": "resource:attribute:sessionModelAttribute",
       "to": "step:CheckSteered",
@@ -13509,7 +13527,7 @@
       }
     },
     {
-      "id": "edge:0486",
+      "id": "edge:0487",
       "kind": "resource_read",
       "from": "resource:attribute:sessionModelAttribute",
       "to": "step:ExecuteTool",
@@ -13527,7 +13545,7 @@
       }
     },
     {
-      "id": "edge:0487",
+      "id": "edge:0488",
       "kind": "resource_read",
       "from": "resource:attribute:sessionModelAttribute",
       "to": "step:RecordCompactionFailure",
@@ -13545,7 +13563,7 @@
       }
     },
     {
-      "id": "edge:0488",
+      "id": "edge:0489",
       "kind": "resource_read",
       "from": "resource:attribute:sessionModelAttribute",
       "to": "step:RecordPlatformModelResult",
@@ -13563,7 +13581,7 @@
       }
     },
     {
-      "id": "edge:0489",
+      "id": "edge:0490",
       "kind": "resource_read",
       "from": "resource:attribute:sessionModelAttribute",
       "to": "step:RecordWorkspaceFailure",
@@ -13581,7 +13599,7 @@
       }
     },
     {
-      "id": "edge:0490",
+      "id": "edge:0491",
       "kind": "resource_read",
       "from": "resource:attribute:sessionModelAttribute",
       "to": "step:RequestSessionWorkspace",
@@ -13599,7 +13617,7 @@
       }
     },
     {
-      "id": "edge:0491",
+      "id": "edge:0492",
       "kind": "resource_read",
       "from": "resource:attribute:sessionModelAttribute",
       "to": "step:RouteTool",
@@ -13617,7 +13635,7 @@
       }
     },
     {
-      "id": "edge:0492",
+      "id": "edge:0493",
       "kind": "resource_read",
       "from": "resource:attribute:sessionProfileAttribute",
       "to": "rpc:GetDexDisplay",
@@ -13633,7 +13651,7 @@
       }
     },
     {
-      "id": "edge:0493",
+      "id": "edge:0494",
       "kind": "resource_read",
       "from": "resource:attribute:sessionProfileAttribute",
       "to": "rpc:GetSessionSummary",
@@ -13651,7 +13669,7 @@
       }
     },
     {
-      "id": "edge:0494",
+      "id": "edge:0495",
       "kind": "resource_read",
       "from": "resource:attribute:sessionProfileAttribute",
       "to": "rpc:GetSnapshot",
@@ -13669,7 +13687,7 @@
       }
     },
     {
-      "id": "edge:0495",
+      "id": "edge:0496",
       "kind": "resource_read",
       "from": "resource:attribute:sessionProfileAttribute",
       "to": "step:ApplySessionWorkspace",
@@ -13687,7 +13705,7 @@
       }
     },
     {
-      "id": "edge:0496",
+      "id": "edge:0497",
       "kind": "resource_read",
       "from": "resource:attribute:sessionProfileAttribute",
       "to": "step:AwaitSessionWorkspace",
@@ -13705,7 +13723,7 @@
       }
     },
     {
-      "id": "edge:0497",
+      "id": "edge:0498",
       "kind": "resource_read",
       "from": "resource:attribute:sessionProfileAttribute",
       "to": "step:CompleteProjectSession",
@@ -13723,7 +13741,7 @@
       }
     },
     {
-      "id": "edge:0498",
+      "id": "edge:0499",
       "kind": "resource_read",
       "from": "resource:attribute:sessionProfileAttribute",
       "to": "step:DeployPreviewHandoff",
@@ -13741,7 +13759,7 @@
       }
     },
     {
-      "id": "edge:0499",
+      "id": "edge:0500",
       "kind": "resource_read",
       "from": "resource:attribute:sessionProfileAttribute",
       "to": "step:ExecuteParallelTool",
@@ -13759,7 +13777,7 @@
       }
     },
     {
-      "id": "edge:0500",
+      "id": "edge:0501",
       "kind": "resource_read",
       "from": "resource:attribute:sessionProfileAttribute",
       "to": "step:ExecuteTool",
@@ -13777,7 +13795,7 @@
       }
     },
     {
-      "id": "edge:0501",
+      "id": "edge:0502",
       "kind": "resource_read",
       "from": "resource:attribute:sessionProfileAttribute",
       "to": "step:InitializeSessionAgent",
@@ -13795,7 +13813,7 @@
       }
     },
     {
-      "id": "edge:0502",
+      "id": "edge:0503",
       "kind": "resource_read",
       "from": "resource:attribute:sessionProfileAttribute",
       "to": "step:RecordWorkspaceFailure",
@@ -13813,7 +13831,7 @@
       }
     },
     {
-      "id": "edge:0503",
+      "id": "edge:0504",
       "kind": "resource_read",
       "from": "resource:attribute:sessionProfileAttribute",
       "to": "step:ReportPlatformIssue",
@@ -13831,7 +13849,7 @@
       }
     },
     {
-      "id": "edge:0504",
+      "id": "edge:0505",
       "kind": "resource_read",
       "from": "resource:attribute:sessionProfileAttribute",
       "to": "step:SendWorkspaceCommand",
@@ -13849,7 +13867,7 @@
       }
     },
     {
-      "id": "edge:0505",
+      "id": "edge:0506",
       "kind": "resource_read",
       "from": "resource:attribute:sessionRevisionAttribute",
       "to": "rpc:CompleteProjectSession",
@@ -13867,7 +13885,7 @@
       }
     },
     {
-      "id": "edge:0506",
+      "id": "edge:0507",
       "kind": "resource_read",
       "from": "resource:attribute:sessionRevisionAttribute",
       "to": "rpc:GetSessionSummary",
@@ -13885,7 +13903,7 @@
       }
     },
     {
-      "id": "edge:0507",
+      "id": "edge:0508",
       "kind": "resource_read",
       "from": "resource:attribute:sessionRevisionAttribute",
       "to": "rpc:GetSnapshot",
@@ -13903,7 +13921,7 @@
       }
     },
     {
-      "id": "edge:0508",
+      "id": "edge:0509",
       "kind": "resource_read",
       "from": "resource:attribute:sessionRevisionAttribute",
       "to": "step:InitializeSessionAgent",
@@ -13921,7 +13939,7 @@
       }
     },
     {
-      "id": "edge:0509",
+      "id": "edge:0510",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStartIdentityAttribute",
       "to": "rpc:GetSessionSummary",
@@ -13937,7 +13955,7 @@
       }
     },
     {
-      "id": "edge:0510",
+      "id": "edge:0511",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStartIdentityAttribute",
       "to": "rpc:GetSnapshot",
@@ -13955,7 +13973,7 @@
       }
     },
     {
-      "id": "edge:0511",
+      "id": "edge:0512",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStartIdentityAttribute",
       "to": "step:InitializeSessionAgent",
@@ -13973,7 +13991,7 @@
       }
     },
     {
-      "id": "edge:0512",
+      "id": "edge:0513",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:AdmitSubagent",
@@ -13991,7 +14009,7 @@
       }
     },
     {
-      "id": "edge:0513",
+      "id": "edge:0514",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:AnswerQuestions",
@@ -14009,7 +14027,7 @@
       }
     },
     {
-      "id": "edge:0514",
+      "id": "edge:0515",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:ApproveTool",
@@ -14027,7 +14045,7 @@
       }
     },
     {
-      "id": "edge:0515",
+      "id": "edge:0516",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:CompleteProjectSession",
@@ -14043,7 +14061,7 @@
       }
     },
     {
-      "id": "edge:0516",
+      "id": "edge:0517",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:DeleteQueuedMessage",
@@ -14061,7 +14079,7 @@
       }
     },
     {
-      "id": "edge:0517",
+      "id": "edge:0518",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:GetSessionSummary",
@@ -14079,7 +14097,7 @@
       }
     },
     {
-      "id": "edge:0518",
+      "id": "edge:0519",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:GetSnapshot",
@@ -14097,7 +14115,7 @@
       }
     },
     {
-      "id": "edge:0519",
+      "id": "edge:0520",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:InterruptAgent",
@@ -14115,7 +14133,7 @@
       }
     },
     {
-      "id": "edge:0520",
+      "id": "edge:0521",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:ReadExecutor",
@@ -14133,7 +14151,7 @@
       }
     },
     {
-      "id": "edge:0521",
+      "id": "edge:0522",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:ReadRemote",
@@ -14151,7 +14169,7 @@
       }
     },
     {
-      "id": "edge:0522",
+      "id": "edge:0523",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:RenewSessionWorkspace",
@@ -14169,7 +14187,7 @@
       }
     },
     {
-      "id": "edge:0523",
+      "id": "edge:0524",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:ReportRemote",
@@ -14187,7 +14205,7 @@
       }
     },
     {
-      "id": "edge:0524",
+      "id": "edge:0525",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:ReportSessionNotification",
@@ -14205,7 +14223,7 @@
       }
     },
     {
-      "id": "edge:0525",
+      "id": "edge:0526",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:ReportWorkspaceOutcome",
@@ -14223,7 +14241,7 @@
       }
     },
     {
-      "id": "edge:0526",
+      "id": "edge:0527",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:RequestSessionWorkspace",
@@ -14241,7 +14259,7 @@
       }
     },
     {
-      "id": "edge:0527",
+      "id": "edge:0528",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:ReserveModelCredential",
@@ -14259,7 +14277,7 @@
       }
     },
     {
-      "id": "edge:0528",
+      "id": "edge:0529",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:SendMessage",
@@ -14277,7 +14295,7 @@
       }
     },
     {
-      "id": "edge:0529",
+      "id": "edge:0530",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:SetExecutor",
@@ -14295,7 +14313,7 @@
       }
     },
     {
-      "id": "edge:0530",
+      "id": "edge:0531",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:SteerMessage",
@@ -14313,7 +14331,7 @@
       }
     },
     {
-      "id": "edge:0531",
+      "id": "edge:0532",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:UpdatePreviewAutoDeploy",
@@ -14331,7 +14349,7 @@
       }
     },
     {
-      "id": "edge:0532",
+      "id": "edge:0533",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "rpc:UpdateSessionModel",
@@ -14349,7 +14367,7 @@
       }
     },
     {
-      "id": "edge:0533",
+      "id": "edge:0534",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "step:ActivateSession",
@@ -14367,7 +14385,7 @@
       }
     },
     {
-      "id": "edge:0534",
+      "id": "edge:0535",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "step:AwaitBackgroundCommand",
@@ -14385,7 +14403,7 @@
       }
     },
     {
-      "id": "edge:0535",
+      "id": "edge:0536",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "step:CompleteProjectSession",
@@ -14403,7 +14421,7 @@
       }
     },
     {
-      "id": "edge:0536",
+      "id": "edge:0537",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "step:InitializeSessionAgent",
@@ -14421,7 +14439,7 @@
       }
     },
     {
-      "id": "edge:0537",
+      "id": "edge:0538",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "step:RecordCompactionFailure",
@@ -14439,7 +14457,7 @@
       }
     },
     {
-      "id": "edge:0538",
+      "id": "edge:0539",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "step:RecordModelFailure",
@@ -14457,7 +14475,7 @@
       }
     },
     {
-      "id": "edge:0539",
+      "id": "edge:0540",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "step:RecordPlatformModelResult",
@@ -14475,7 +14493,7 @@
       }
     },
     {
-      "id": "edge:0540",
+      "id": "edge:0541",
       "kind": "resource_read",
       "from": "resource:attribute:sessionStatusAttribute",
       "to": "step:RequestSessionWorkspace",
@@ -14493,7 +14511,7 @@
       }
     },
     {
-      "id": "edge:0541",
+      "id": "edge:0542",
       "kind": "resource_read",
       "from": "resource:attribute:sessionUpdatedAtAttribute",
       "to": "rpc:GetSessionSummary",
@@ -14511,7 +14529,7 @@
       }
     },
     {
-      "id": "edge:0542",
+      "id": "edge:0543",
       "kind": "resource_read",
       "from": "resource:attribute:sessionUpdatedAtAttribute",
       "to": "rpc:GetSnapshot",
@@ -14529,7 +14547,7 @@
       }
     },
     {
-      "id": "edge:0543",
+      "id": "edge:0544",
       "kind": "resource_read",
       "from": "resource:attribute:sessionUpdatedAtAttribute",
       "to": "step:InitializeSessionAgent",
@@ -14547,7 +14565,7 @@
       }
     },
     {
-      "id": "edge:0544",
+      "id": "edge:0545",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
       "to": "rpc:AdmitSubagent",
@@ -14565,29 +14583,11 @@
       }
     },
     {
-      "id": "edge:0545",
-      "kind": "resource_read",
-      "from": "resource:attribute:subagentsAttribute",
-      "to": "rpc:GetSnapshot",
-      "label": "AllInstanceKeys",
-      "span": {
-        "startLine": 325,
-        "startColumn": 9,
-        "endLine": 325,
-        "endColumn": 37
-      },
-      "metadata": {
-        "function": "loadedSubagents",
-        "phase": "rpc",
-        "via": "helper"
-      }
-    },
-    {
       "id": "edge:0546",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
       "to": "rpc:GetSnapshot",
-      "label": "Get",
+      "label": "AllInstanceKeys",
       "span": {
         "startLine": 325,
         "startColumn": 9,
@@ -14604,6 +14604,24 @@
       "id": "edge:0547",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
+      "to": "rpc:GetSnapshot",
+      "label": "Get",
+      "span": {
+        "startLine": 325,
+        "startColumn": 9,
+        "endLine": 325,
+        "endColumn": 37
+      },
+      "metadata": {
+        "function": "loadedSubagents",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0548",
+      "kind": "resource_read",
+      "from": "resource:attribute:subagentsAttribute",
       "to": "rpc:InterruptAgent",
       "label": "AllInstanceKeys",
       "span": {
@@ -14619,7 +14637,7 @@
       }
     },
     {
-      "id": "edge:0548",
+      "id": "edge:0549",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
       "to": "rpc:InterruptAgent",
@@ -14637,7 +14655,7 @@
       }
     },
     {
-      "id": "edge:0549",
+      "id": "edge:0550",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
       "to": "rpc:ReportSessionNotification",
@@ -14655,7 +14673,7 @@
       }
     },
     {
-      "id": "edge:0550",
+      "id": "edge:0551",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
       "to": "rpc:RequestSessionWorkspace",
@@ -14673,7 +14691,7 @@
       }
     },
     {
-      "id": "edge:0551",
+      "id": "edge:0552",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
       "to": "step:ApplySessionWorkspace",
@@ -14691,29 +14709,11 @@
       }
     },
     {
-      "id": "edge:0552",
-      "kind": "resource_read",
-      "from": "resource:attribute:subagentsAttribute",
-      "to": "step:AwaitRemoteAgent",
-      "label": "AllInstanceKeys",
-      "span": {
-        "startLine": 1501,
-        "startColumn": 10,
-        "endLine": 1501,
-        "endColumn": 38
-      },
-      "metadata": {
-        "function": "loadedSubagents",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
       "id": "edge:0553",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
       "to": "step:AwaitRemoteAgent",
-      "label": "Get",
+      "label": "AllInstanceKeys",
       "span": {
         "startLine": 1501,
         "startColumn": 10,
@@ -14730,13 +14730,13 @@
       "id": "edge:0554",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
-      "to": "step:AwaitSandboxDeadline",
-      "label": "AllInstanceKeys",
+      "to": "step:AwaitRemoteAgent",
+      "label": "Get",
       "span": {
-        "startLine": 1417,
-        "startColumn": 26,
-        "endLine": 1417,
-        "endColumn": 76
+        "startLine": 1501,
+        "startColumn": 10,
+        "endLine": 1501,
+        "endColumn": 38
       },
       "metadata": {
         "function": "loadedSubagents",
@@ -14749,7 +14749,7 @@
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
       "to": "step:AwaitSandboxDeadline",
-      "label": "Get",
+      "label": "AllInstanceKeys",
       "span": {
         "startLine": 1417,
         "startColumn": 26,
@@ -14766,6 +14766,24 @@
       "id": "edge:0556",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
+      "to": "step:AwaitSandboxDeadline",
+      "label": "Get",
+      "span": {
+        "startLine": 1417,
+        "startColumn": 26,
+        "endLine": 1417,
+        "endColumn": 76
+      },
+      "metadata": {
+        "function": "loadedSubagents",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0557",
+      "kind": "resource_read",
+      "from": "resource:attribute:subagentsAttribute",
       "to": "step:CheckSteered",
       "label": "AllInstanceKeys",
       "span": {
@@ -14781,7 +14799,7 @@
       }
     },
     {
-      "id": "edge:0557",
+      "id": "edge:0558",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
       "to": "step:CheckSteered",
@@ -14799,7 +14817,7 @@
       }
     },
     {
-      "id": "edge:0558",
+      "id": "edge:0559",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
       "to": "step:ExecuteTool",
@@ -14817,7 +14835,7 @@
       }
     },
     {
-      "id": "edge:0559",
+      "id": "edge:0560",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
       "to": "step:ExecuteTool",
@@ -14835,29 +14853,11 @@
       }
     },
     {
-      "id": "edge:0560",
-      "kind": "resource_read",
-      "from": "resource:attribute:subagentsAttribute",
-      "to": "step:FinishInterrupt",
-      "label": "AllInstanceKeys",
-      "span": {
-        "startLine": 1216,
-        "startColumn": 3,
-        "endLine": 1216,
-        "endColumn": 47
-      },
-      "metadata": {
-        "function": "loadedSubagents",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
       "id": "edge:0561",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
       "to": "step:FinishInterrupt",
-      "label": "Get",
+      "label": "AllInstanceKeys",
       "span": {
         "startLine": 1216,
         "startColumn": 3,
@@ -14874,6 +14874,24 @@
       "id": "edge:0562",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
+      "to": "step:FinishInterrupt",
+      "label": "Get",
+      "span": {
+        "startLine": 1216,
+        "startColumn": 3,
+        "endLine": 1216,
+        "endColumn": 47
+      },
+      "metadata": {
+        "function": "loadedSubagents",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0563",
+      "kind": "resource_read",
+      "from": "resource:attribute:subagentsAttribute",
       "to": "step:InterruptAgent",
       "label": "AllInstanceKeys",
       "span": {
@@ -14889,7 +14907,7 @@
       }
     },
     {
-      "id": "edge:0563",
+      "id": "edge:0564",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
       "to": "step:InterruptAgent",
@@ -14907,7 +14925,7 @@
       }
     },
     {
-      "id": "edge:0564",
+      "id": "edge:0565",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
       "to": "step:RecordToolFailure",
@@ -14925,7 +14943,7 @@
       }
     },
     {
-      "id": "edge:0565",
+      "id": "edge:0566",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
       "to": "step:RecordWorkspaceFailure",
@@ -14943,7 +14961,7 @@
       }
     },
     {
-      "id": "edge:0566",
+      "id": "edge:0567",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
       "to": "step:RequestSessionWorkspace",
@@ -14961,29 +14979,11 @@
       }
     },
     {
-      "id": "edge:0567",
-      "kind": "resource_read",
-      "from": "resource:attribute:subagentsAttribute",
-      "to": "step:RouteTool",
-      "label": "AllInstanceKeys",
-      "span": {
-        "startLine": 799,
-        "startColumn": 3,
-        "endLine": 799,
-        "endColumn": 38
-      },
-      "metadata": {
-        "function": "loadedSubagents",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
       "id": "edge:0568",
       "kind": "resource_read",
       "from": "resource:attribute:subagentsAttribute",
       "to": "step:RouteTool",
-      "label": "Get",
+      "label": "AllInstanceKeys",
       "span": {
         "startLine": 799,
         "startColumn": 3,
@@ -14999,17 +14999,17 @@
     {
       "id": "edge:0569",
       "kind": "resource_read",
-      "from": "resource:attribute:taskWorktreesAttribute",
-      "to": "step:ExecuteParallelTool",
-      "label": "AllInstanceKeys",
+      "from": "resource:attribute:subagentsAttribute",
+      "to": "step:RouteTool",
+      "label": "Get",
       "span": {
-        "startLine": 980,
-        "startColumn": 17,
-        "endLine": 980,
-        "endColumn": 52
+        "startLine": 799,
+        "startColumn": 3,
+        "endLine": 799,
+        "endColumn": 38
       },
       "metadata": {
-        "function": "taskWorktreePathRoot",
+        "function": "loadedSubagents",
         "phase": "execute",
         "via": "helper"
       }
@@ -15019,7 +15019,7 @@
       "kind": "resource_read",
       "from": "resource:attribute:taskWorktreesAttribute",
       "to": "step:ExecuteParallelTool",
-      "label": "Get",
+      "label": "AllInstanceKeys",
       "span": {
         "startLine": 980,
         "startColumn": 17,
@@ -15036,13 +15036,13 @@
       "id": "edge:0571",
       "kind": "resource_read",
       "from": "resource:attribute:taskWorktreesAttribute",
-      "to": "step:ExecuteTool",
-      "label": "AllInstanceKeys",
+      "to": "step:ExecuteParallelTool",
+      "label": "Get",
       "span": {
-        "startLine": 919,
-        "startColumn": 11,
-        "endLine": 919,
-        "endColumn": 68
+        "startLine": 980,
+        "startColumn": 17,
+        "endLine": 980,
+        "endColumn": 52
       },
       "metadata": {
         "function": "taskWorktreePathRoot",
@@ -15055,7 +15055,7 @@
       "kind": "resource_read",
       "from": "resource:attribute:taskWorktreesAttribute",
       "to": "step:ExecuteTool",
-      "label": "Get",
+      "label": "AllInstanceKeys",
       "span": {
         "startLine": 919,
         "startColumn": 11,
@@ -15072,6 +15072,24 @@
       "id": "edge:0573",
       "kind": "resource_read",
       "from": "resource:attribute:taskWorktreesAttribute",
+      "to": "step:ExecuteTool",
+      "label": "Get",
+      "span": {
+        "startLine": 919,
+        "startColumn": 11,
+        "endLine": 919,
+        "endColumn": 68
+      },
+      "metadata": {
+        "function": "taskWorktreePathRoot",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0574",
+      "kind": "resource_read",
+      "from": "resource:attribute:taskWorktreesAttribute",
       "to": "step:RouteTool",
       "label": "AllInstanceKeys",
       "span": {
@@ -15087,7 +15105,7 @@
       }
     },
     {
-      "id": "edge:0574",
+      "id": "edge:0575",
       "kind": "resource_read",
       "from": "resource:attribute:taskWorktreesAttribute",
       "to": "step:RouteTool",
@@ -15105,7 +15123,7 @@
       }
     },
     {
-      "id": "edge:0575",
+      "id": "edge:0576",
       "kind": "resource_read",
       "from": "resource:attribute:todoListAttribute",
       "to": "rpc:GetSnapshot",
@@ -15123,7 +15141,7 @@
       }
     },
     {
-      "id": "edge:0576",
+      "id": "edge:0577",
       "kind": "resource_read",
       "from": "resource:attribute:todoListAttribute",
       "to": "rpc:ReadRemote",
@@ -15141,7 +15159,7 @@
       }
     },
     {
-      "id": "edge:0577",
+      "id": "edge:0578",
       "kind": "resource_read",
       "from": "resource:attribute:todoListAttribute",
       "to": "step:AnsweredInput",
@@ -15159,7 +15177,7 @@
       }
     },
     {
-      "id": "edge:0578",
+      "id": "edge:0579",
       "kind": "resource_read",
       "from": "resource:attribute:todoListAttribute",
       "to": "step:ApplySessionWorkspace",
@@ -15177,7 +15195,7 @@
       }
     },
     {
-      "id": "edge:0579",
+      "id": "edge:0580",
       "kind": "resource_read",
       "from": "resource:attribute:todoListAttribute",
       "to": "step:CheckSteered",
@@ -15195,7 +15213,7 @@
       }
     },
     {
-      "id": "edge:0580",
+      "id": "edge:0581",
       "kind": "resource_read",
       "from": "resource:attribute:todoListAttribute",
       "to": "step:RecordCompactionFailure",
@@ -15213,7 +15231,7 @@
       }
     },
     {
-      "id": "edge:0581",
+      "id": "edge:0582",
       "kind": "resource_read",
       "from": "resource:attribute:todoListAttribute",
       "to": "step:RecordPlatformModelResult",
@@ -15231,7 +15249,7 @@
       }
     },
     {
-      "id": "edge:0582",
+      "id": "edge:0583",
       "kind": "resource_read",
       "from": "resource:attribute:todoListAttribute",
       "to": "step:RecordWorkspaceFailure",
@@ -15249,7 +15267,7 @@
       }
     },
     {
-      "id": "edge:0583",
+      "id": "edge:0584",
       "kind": "resource_read",
       "from": "resource:attribute:todoListAttribute",
       "to": "step:RequestSessionWorkspace",
@@ -15267,7 +15285,7 @@
       }
     },
     {
-      "id": "edge:0584",
+      "id": "edge:0585",
       "kind": "resource_read",
       "from": "resource:attribute:todoListAttribute",
       "to": "step:RouteTool",
@@ -15285,7 +15303,7 @@
       }
     },
     {
-      "id": "edge:0585",
+      "id": "edge:0586",
       "kind": "resource_read",
       "from": "resource:attribute:waitingInputRoundAttribute",
       "to": "rpc:GetSnapshot",
@@ -15303,7 +15321,7 @@
       }
     },
     {
-      "id": "edge:0586",
+      "id": "edge:0587",
       "kind": "resource_read",
       "from": "resource:attribute:waitingInputRoundAttribute",
       "to": "step:AwaitUser",
@@ -15321,7 +15339,7 @@
       }
     },
     {
-      "id": "edge:0587",
+      "id": "edge:0588",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "rpc:GetSessionSummary",
@@ -15339,7 +15357,7 @@
       }
     },
     {
-      "id": "edge:0588",
+      "id": "edge:0589",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "rpc:GetSnapshot",
@@ -15357,7 +15375,7 @@
       }
     },
     {
-      "id": "edge:0589",
+      "id": "edge:0590",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "rpc:InterruptAgent",
@@ -15375,7 +15393,7 @@
       }
     },
     {
-      "id": "edge:0590",
+      "id": "edge:0591",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "rpc:ReadRemote",
@@ -15393,7 +15411,7 @@
       }
     },
     {
-      "id": "edge:0591",
+      "id": "edge:0592",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "rpc:RenewSessionWorkspace",
@@ -15411,7 +15429,7 @@
       }
     },
     {
-      "id": "edge:0592",
+      "id": "edge:0593",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "rpc:ReportSessionNotification",
@@ -15429,7 +15447,7 @@
       }
     },
     {
-      "id": "edge:0593",
+      "id": "edge:0594",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "rpc:ReportWorkspaceOutcome",
@@ -15447,7 +15465,7 @@
       }
     },
     {
-      "id": "edge:0594",
+      "id": "edge:0595",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "rpc:RequestSessionWorkspace",
@@ -15463,7 +15481,7 @@
       }
     },
     {
-      "id": "edge:0595",
+      "id": "edge:0596",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "rpc:SetExecutor",
@@ -15481,7 +15499,7 @@
       }
     },
     {
-      "id": "edge:0596",
+      "id": "edge:0597",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:AnsweredInput",
@@ -15499,7 +15517,7 @@
       }
     },
     {
-      "id": "edge:0597",
+      "id": "edge:0598",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:ApplySessionWorkspace",
@@ -15515,7 +15533,7 @@
       }
     },
     {
-      "id": "edge:0598",
+      "id": "edge:0599",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:AwaitRemoteAgent",
@@ -15533,7 +15551,7 @@
       }
     },
     {
-      "id": "edge:0599",
+      "id": "edge:0600",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:AwaitSandboxDeadline",
@@ -15551,7 +15569,7 @@
       }
     },
     {
-      "id": "edge:0600",
+      "id": "edge:0601",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:AwaitSandboxDeadline",
@@ -15567,7 +15585,7 @@
       }
     },
     {
-      "id": "edge:0601",
+      "id": "edge:0602",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:AwaitUser",
@@ -15585,7 +15603,7 @@
       }
     },
     {
-      "id": "edge:0602",
+      "id": "edge:0603",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:CheckSteered",
@@ -15603,7 +15621,7 @@
       }
     },
     {
-      "id": "edge:0603",
+      "id": "edge:0604",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:DeployPreviewHandoff",
@@ -15619,7 +15637,7 @@
       }
     },
     {
-      "id": "edge:0604",
+      "id": "edge:0605",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:ExecuteParallelTool",
@@ -15637,7 +15655,7 @@
       }
     },
     {
-      "id": "edge:0605",
+      "id": "edge:0606",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:ExecuteTool",
@@ -15655,7 +15673,7 @@
       }
     },
     {
-      "id": "edge:0606",
+      "id": "edge:0607",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:InitializeSessionAgent",
@@ -15673,7 +15691,7 @@
       }
     },
     {
-      "id": "edge:0607",
+      "id": "edge:0608",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:InterruptAgent",
@@ -15691,7 +15709,7 @@
       }
     },
     {
-      "id": "edge:0608",
+      "id": "edge:0609",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:RecordCompactionFailure",
@@ -15709,7 +15727,7 @@
       }
     },
     {
-      "id": "edge:0609",
+      "id": "edge:0610",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:RecordPlatformModelResult",
@@ -15727,7 +15745,7 @@
       }
     },
     {
-      "id": "edge:0610",
+      "id": "edge:0611",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:RecordWorkspaceFailure",
@@ -15743,7 +15761,7 @@
       }
     },
     {
-      "id": "edge:0611",
+      "id": "edge:0612",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:RequestSessionWorkspace",
@@ -15761,7 +15779,7 @@
       }
     },
     {
-      "id": "edge:0612",
+      "id": "edge:0613",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:RouteTool",
@@ -15779,7 +15797,7 @@
       }
     },
     {
-      "id": "edge:0613",
+      "id": "edge:0614",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:SendWorkspaceCommand",
@@ -15795,7 +15813,7 @@
       }
     },
     {
-      "id": "edge:0614",
+      "id": "edge:0615",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:SettleForegroundCommand",
@@ -15813,7 +15831,7 @@
       }
     },
     {
-      "id": "edge:0615",
+      "id": "edge:0616",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceUseAttribute",
       "to": "rpc:GetSessionSummary",
@@ -15831,7 +15849,7 @@
       }
     },
     {
-      "id": "edge:0616",
+      "id": "edge:0617",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceUseAttribute",
       "to": "rpc:GetSnapshot",
@@ -15849,7 +15867,7 @@
       }
     },
     {
-      "id": "edge:0617",
+      "id": "edge:0618",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceUseAttribute",
       "to": "rpc:InterruptAgent",
@@ -15867,7 +15885,7 @@
       }
     },
     {
-      "id": "edge:0618",
+      "id": "edge:0619",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceUseAttribute",
       "to": "rpc:SetExecutor",
@@ -15885,7 +15903,7 @@
       }
     },
     {
-      "id": "edge:0619",
+      "id": "edge:0620",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceUseAttribute",
       "to": "step:ApplySessionWorkspace",
@@ -15903,7 +15921,7 @@
       }
     },
     {
-      "id": "edge:0620",
+      "id": "edge:0621",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceUseAttribute",
       "to": "step:AwaitParallelToolResults",
@@ -15921,7 +15939,7 @@
       }
     },
     {
-      "id": "edge:0621",
+      "id": "edge:0622",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceUseAttribute",
       "to": "step:AwaitRemoteAgent",
@@ -15939,7 +15957,7 @@
       }
     },
     {
-      "id": "edge:0622",
+      "id": "edge:0623",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceUseAttribute",
       "to": "step:AwaitSandboxDeadline",
@@ -15957,7 +15975,7 @@
       }
     },
     {
-      "id": "edge:0623",
+      "id": "edge:0624",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceUseAttribute",
       "to": "step:CheckSteered",
@@ -15975,7 +15993,7 @@
       }
     },
     {
-      "id": "edge:0624",
+      "id": "edge:0625",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceUseAttribute",
       "to": "step:ExecuteParallelTool",
@@ -15993,7 +16011,7 @@
       }
     },
     {
-      "id": "edge:0625",
+      "id": "edge:0626",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceUseAttribute",
       "to": "step:ExecuteTool",
@@ -16011,7 +16029,7 @@
       }
     },
     {
-      "id": "edge:0626",
+      "id": "edge:0627",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceUseAttribute",
       "to": "step:FinishInterrupt",
@@ -16029,7 +16047,7 @@
       }
     },
     {
-      "id": "edge:0627",
+      "id": "edge:0628",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceUseAttribute",
       "to": "step:InitializeSessionAgent",
@@ -16047,7 +16065,7 @@
       }
     },
     {
-      "id": "edge:0628",
+      "id": "edge:0629",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceUseAttribute",
       "to": "step:InterruptAgent",
@@ -16065,7 +16083,7 @@
       }
     },
     {
-      "id": "edge:0629",
+      "id": "edge:0630",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceUseAttribute",
       "to": "step:RecordToolFailure",
@@ -16083,7 +16101,7 @@
       }
     },
     {
-      "id": "edge:0630",
+      "id": "edge:0631",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceUseAttribute",
       "to": "step:RecordWorkspaceFailure",
@@ -16101,7 +16119,7 @@
       }
     },
     {
-      "id": "edge:0631",
+      "id": "edge:0632",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceUseAttribute",
       "to": "step:RequestSessionWorkspace",
@@ -16119,7 +16137,7 @@
       }
     },
     {
-      "id": "edge:0632",
+      "id": "edge:0633",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceUseAttribute",
       "to": "step:RouteTool",
@@ -16137,7 +16155,7 @@
       }
     },
     {
-      "id": "edge:0633",
+      "id": "edge:0634",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceUseAttribute",
       "to": "step:SettleForegroundCommand",
@@ -16155,7 +16173,7 @@
       }
     },
     {
-      "id": "edge:0634",
+      "id": "edge:0635",
       "kind": "resource_read",
       "from": "resource:attribute:writtenDesignStepsAttribute",
       "to": "rpc:GetSnapshot",
@@ -16173,7 +16191,7 @@
       }
     },
     {
-      "id": "edge:0635",
+      "id": "edge:0636",
       "kind": "resource_read",
       "from": "resource:attribute:writtenDesignStepsAttribute",
       "to": "rpc:SendMessage",
@@ -16191,7 +16209,7 @@
       }
     },
     {
-      "id": "edge:0636",
+      "id": "edge:0637",
       "kind": "resource_read",
       "from": "resource:attribute:writtenDesignStepsAttribute",
       "to": "step:ApplySessionWorkspace",
@@ -16209,7 +16227,7 @@
       }
     },
     {
-      "id": "edge:0637",
+      "id": "edge:0638",
       "kind": "resource_read",
       "from": "resource:attribute:writtenDesignStepsAttribute",
       "to": "step:AwaitParallelToolResults",
@@ -16227,7 +16245,7 @@
       }
     },
     {
-      "id": "edge:0638",
+      "id": "edge:0639",
       "kind": "resource_read",
       "from": "resource:attribute:writtenDesignStepsAttribute",
       "to": "step:ExecuteTool",
@@ -16245,7 +16263,7 @@
       }
     },
     {
-      "id": "edge:0639",
+      "id": "edge:0640",
       "kind": "resource_read",
       "from": "resource:attribute:writtenDesignStepsAttribute",
       "to": "step:InitializeSessionAgent",
@@ -16263,7 +16281,7 @@
       }
     },
     {
-      "id": "edge:0640",
+      "id": "edge:0641",
       "kind": "resource_read",
       "from": "resource:attribute:writtenDesignStepsAttribute",
       "to": "step:RecordToolFailure",
@@ -16281,7 +16299,7 @@
       }
     },
     {
-      "id": "edge:0641",
+      "id": "edge:0642",
       "kind": "resource_read",
       "from": "resource:attribute:writtenDesignStepsAttribute",
       "to": "step:RecordWorkspaceFailure",
@@ -16299,7 +16317,7 @@
       }
     },
     {
-      "id": "edge:0642",
+      "id": "edge:0643",
       "kind": "resource_read",
       "from": "resource:attribute:writtenDesignStepsAttribute",
       "to": "step:RequestSessionWorkspace",
@@ -16317,7 +16335,7 @@
       }
     },
     {
-      "id": "edge:0643",
+      "id": "edge:0644",
       "kind": "resource_read",
       "from": "resource:attribute:writtenDesignStepsAttribute",
       "to": "step:RouteTool",
@@ -16335,7 +16353,7 @@
       }
     },
     {
-      "id": "edge:0644",
+      "id": "edge:0645",
       "kind": "resource_read",
       "from": "resource:attribute:writtenDesignStepsAttribute",
       "to": "step:SettleForegroundCommand",
@@ -16353,7 +16371,7 @@
       }
     },
     {
-      "id": "edge:0645",
+      "id": "edge:0646",
       "kind": "resource_read",
       "from": "resource:channel:answeredUserInputsChannel",
       "to": "step:AwaitUser",
@@ -16369,7 +16387,7 @@
       }
     },
     {
-      "id": "edge:0646",
+      "id": "edge:0647",
       "kind": "resource_read",
       "from": "resource:channel:answeredUserInputsChannel",
       "to": "step:AwaitUser",
@@ -16385,7 +16403,7 @@
       }
     },
     {
-      "id": "edge:0647",
+      "id": "edge:0648",
       "kind": "wait_condition",
       "from": "resource:channel:answeredUserInputsChannel",
       "to": "wait:AwaitUser:475:11",
@@ -16401,7 +16419,7 @@
       }
     },
     {
-      "id": "edge:0648",
+      "id": "edge:0649",
       "kind": "wait_condition",
       "from": "resource:channel:answeredUserInputsChannel",
       "to": "wait:AwaitUser:480:10",
@@ -16417,7 +16435,7 @@
       }
     },
     {
-      "id": "edge:0649",
+      "id": "edge:0650",
       "kind": "wait_condition",
       "from": "resource:channel:answeredUserInputsChannel",
       "to": "wait:AwaitUser:484:10",
@@ -16433,7 +16451,7 @@
       }
     },
     {
-      "id": "edge:0650",
+      "id": "edge:0651",
       "kind": "resource_read",
       "from": "resource:channel:backgroundCommandStopsChannel",
       "to": "step:AwaitBackgroundCommand",
@@ -16451,7 +16469,7 @@
       }
     },
     {
-      "id": "edge:0651",
+      "id": "edge:0652",
       "kind": "wait_condition",
       "from": "resource:channel:backgroundCommandStopsChannel",
       "to": "wait:AwaitBackgroundCommand:1141:9",
@@ -16467,7 +16485,7 @@
       }
     },
     {
-      "id": "edge:0652",
+      "id": "edge:0653",
       "kind": "resource_read",
       "from": "resource:channel:parallelToolResultsChannel",
       "to": "step:AwaitParallelToolResults",
@@ -16483,7 +16501,7 @@
       }
     },
     {
-      "id": "edge:0653",
+      "id": "edge:0654",
       "kind": "resource_read",
       "from": "resource:channel:parallelToolResultsChannel",
       "to": "step:FinishInterrupt",
@@ -16501,7 +16519,7 @@
       }
     },
     {
-      "id": "edge:0654",
+      "id": "edge:0655",
       "kind": "wait_condition",
       "from": "resource:channel:parallelToolResultsChannel",
       "to": "wait:AwaitParallelToolResults:997:9",
@@ -16517,7 +16535,7 @@
       }
     },
     {
-      "id": "edge:0655",
+      "id": "edge:0656",
       "kind": "resource_read",
       "from": "resource:channel:queuedUserMessagesChannel",
       "to": "rpc:DeleteQueuedMessage",
@@ -16535,7 +16553,7 @@
       }
     },
     {
-      "id": "edge:0656",
+      "id": "edge:0657",
       "kind": "resource_read",
       "from": "resource:channel:queuedUserMessagesChannel",
       "to": "rpc:GetSnapshot",
@@ -16553,7 +16571,7 @@
       }
     },
     {
-      "id": "edge:0657",
+      "id": "edge:0658",
       "kind": "resource_read",
       "from": "resource:channel:queuedUserMessagesChannel",
       "to": "rpc:SteerMessage",
@@ -16571,7 +16589,7 @@
       }
     },
     {
-      "id": "edge:0658",
+      "id": "edge:0659",
       "kind": "resource_read",
       "from": "resource:channel:queuedUserMessagesChannel",
       "to": "step:AwaitUser",
@@ -16587,7 +16605,7 @@
       }
     },
     {
-      "id": "edge:0659",
+      "id": "edge:0660",
       "kind": "resource_read",
       "from": "resource:channel:queuedUserMessagesChannel",
       "to": "step:AwaitUser",
@@ -16603,7 +16621,7 @@
       }
     },
     {
-      "id": "edge:0660",
+      "id": "edge:0661",
       "kind": "wait_condition",
       "from": "resource:channel:queuedUserMessagesChannel",
       "to": "wait:AwaitUser:477:10",
@@ -16619,7 +16637,7 @@
       }
     },
     {
-      "id": "edge:0661",
+      "id": "edge:0662",
       "kind": "wait_condition",
       "from": "resource:channel:queuedUserMessagesChannel",
       "to": "wait:AwaitUser:489:9",
@@ -16635,7 +16653,7 @@
       }
     },
     {
-      "id": "edge:0662",
+      "id": "edge:0663",
       "kind": "resource_read",
       "from": "resource:channel:remoteInboxChannel",
       "to": "rpc:ReportRemote",
@@ -16653,7 +16671,7 @@
       }
     },
     {
-      "id": "edge:0663",
+      "id": "edge:0664",
       "kind": "resource_read",
       "from": "resource:channel:remoteInboxChannel",
       "to": "rpc:SetExecutor",
@@ -16671,7 +16689,7 @@
       }
     },
     {
-      "id": "edge:0664",
+      "id": "edge:0665",
       "kind": "resource_read",
       "from": "resource:channel:remoteInboxChannel",
       "to": "step:AwaitRemoteAgent",
@@ -16689,7 +16707,7 @@
       }
     },
     {
-      "id": "edge:0665",
+      "id": "edge:0666",
       "kind": "resource_read",
       "from": "resource:channel:remoteInboxChannel",
       "to": "step:AwaitRemoteAgent",
@@ -16707,7 +16725,7 @@
       }
     },
     {
-      "id": "edge:0666",
+      "id": "edge:0667",
       "kind": "resource_read",
       "from": "resource:channel:remoteInboxChannel",
       "to": "step:AwaitRemoteAgent",
@@ -16725,7 +16743,7 @@
       }
     },
     {
-      "id": "edge:0667",
+      "id": "edge:0668",
       "kind": "resource_read",
       "from": "resource:channel:remoteInboxChannel",
       "to": "step:AwaitUser",
@@ -16741,7 +16759,7 @@
       }
     },
     {
-      "id": "edge:0668",
+      "id": "edge:0669",
       "kind": "resource_read",
       "from": "resource:channel:remoteInboxChannel",
       "to": "step:AwaitUser",
@@ -16759,7 +16777,7 @@
       }
     },
     {
-      "id": "edge:0669",
+      "id": "edge:0670",
       "kind": "resource_read",
       "from": "resource:channel:remoteInboxChannel",
       "to": "step:AwaitUser",
@@ -16777,7 +16795,7 @@
       }
     },
     {
-      "id": "edge:0670",
+      "id": "edge:0671",
       "kind": "wait_condition",
       "from": "resource:channel:remoteInboxChannel",
       "to": "wait:AwaitRemoteAgent:1497:9",
@@ -16793,7 +16811,7 @@
       }
     },
     {
-      "id": "edge:0671",
+      "id": "edge:0672",
       "kind": "wait_condition",
       "from": "resource:channel:remoteInboxChannel",
       "to": "wait:AwaitUser:477:10",
@@ -16809,7 +16827,7 @@
       }
     },
     {
-      "id": "edge:0672",
+      "id": "edge:0673",
       "kind": "wait_condition",
       "from": "resource:channel:remoteInboxChannel",
       "to": "wait:AwaitUser:484:10",
@@ -16825,7 +16843,7 @@
       }
     },
     {
-      "id": "edge:0673",
+      "id": "edge:0674",
       "kind": "wait_condition",
       "from": "resource:channel:remoteInboxChannel",
       "to": "wait:AwaitUser:489:9",
@@ -16841,7 +16859,7 @@
       }
     },
     {
-      "id": "edge:0674",
+      "id": "edge:0675",
       "kind": "resource_read",
       "from": "resource:channel:sessionNotificationsChannel",
       "to": "rpc:ReportSessionNotification",
@@ -16859,7 +16877,7 @@
       }
     },
     {
-      "id": "edge:0675",
+      "id": "edge:0676",
       "kind": "resource_read",
       "from": "resource:channel:sessionNotificationsChannel",
       "to": "step:AwaitBackgroundCommand",
@@ -16877,7 +16895,7 @@
       }
     },
     {
-      "id": "edge:0676",
+      "id": "edge:0677",
       "kind": "resource_read",
       "from": "resource:channel:sessionNotificationsChannel",
       "to": "step:AwaitRemoteAgent",
@@ -16895,7 +16913,7 @@
       }
     },
     {
-      "id": "edge:0677",
+      "id": "edge:0678",
       "kind": "resource_read",
       "from": "resource:channel:sessionNotificationsChannel",
       "to": "step:AwaitUser",
@@ -16911,7 +16929,7 @@
       }
     },
     {
-      "id": "edge:0678",
+      "id": "edge:0679",
       "kind": "resource_read",
       "from": "resource:channel:sessionNotificationsChannel",
       "to": "step:AwaitUser",
@@ -16927,7 +16945,7 @@
       }
     },
     {
-      "id": "edge:0679",
+      "id": "edge:0680",
       "kind": "resource_read",
       "from": "resource:channel:sessionNotificationsChannel",
       "to": "step:CheckSteered",
@@ -16943,7 +16961,7 @@
       }
     },
     {
-      "id": "edge:0680",
+      "id": "edge:0681",
       "kind": "wait_condition",
       "from": "resource:channel:sessionNotificationsChannel",
       "to": "wait:AwaitRemoteAgent:1497:9",
@@ -16959,7 +16977,7 @@
       }
     },
     {
-      "id": "edge:0681",
+      "id": "edge:0682",
       "kind": "wait_condition",
       "from": "resource:channel:sessionNotificationsChannel",
       "to": "wait:AwaitUser:477:10",
@@ -16975,7 +16993,7 @@
       }
     },
     {
-      "id": "edge:0682",
+      "id": "edge:0683",
       "kind": "wait_condition",
       "from": "resource:channel:sessionNotificationsChannel",
       "to": "wait:AwaitUser:489:9",
@@ -16991,7 +17009,7 @@
       }
     },
     {
-      "id": "edge:0683",
+      "id": "edge:0684",
       "kind": "wait_condition",
       "from": "resource:channel:sessionNotificationsChannel",
       "to": "wait:CheckSteered:569:10",
@@ -17007,7 +17025,7 @@
       }
     },
     {
-      "id": "edge:0684",
+      "id": "edge:0685",
       "kind": "resource_read",
       "from": "resource:channel:steeredUserMessagesChannel",
       "to": "rpc:GetSnapshot",
@@ -17025,7 +17043,7 @@
       }
     },
     {
-      "id": "edge:0685",
+      "id": "edge:0686",
       "kind": "resource_read",
       "from": "resource:channel:steeredUserMessagesChannel",
       "to": "step:AwaitAgentTimer",
@@ -17041,7 +17059,7 @@
       }
     },
     {
-      "id": "edge:0686",
+      "id": "edge:0687",
       "kind": "resource_read",
       "from": "resource:channel:steeredUserMessagesChannel",
       "to": "step:AwaitRemoteAgent",
@@ -17059,7 +17077,7 @@
       }
     },
     {
-      "id": "edge:0687",
+      "id": "edge:0688",
       "kind": "resource_read",
       "from": "resource:channel:steeredUserMessagesChannel",
       "to": "step:AwaitToolApproval",
@@ -17075,7 +17093,7 @@
       }
     },
     {
-      "id": "edge:0688",
+      "id": "edge:0689",
       "kind": "resource_read",
       "from": "resource:channel:steeredUserMessagesChannel",
       "to": "step:AwaitUser",
@@ -17091,7 +17109,7 @@
       }
     },
     {
-      "id": "edge:0689",
+      "id": "edge:0690",
       "kind": "resource_read",
       "from": "resource:channel:steeredUserMessagesChannel",
       "to": "step:AwaitUser",
@@ -17107,7 +17125,7 @@
       }
     },
     {
-      "id": "edge:0690",
+      "id": "edge:0691",
       "kind": "resource_read",
       "from": "resource:channel:steeredUserMessagesChannel",
       "to": "step:CheckSteered",
@@ -17123,7 +17141,7 @@
       }
     },
     {
-      "id": "edge:0691",
+      "id": "edge:0692",
       "kind": "resource_read",
       "from": "resource:channel:steeredUserMessagesChannel",
       "to": "step:CheckSteered",
@@ -17139,7 +17157,7 @@
       }
     },
     {
-      "id": "edge:0692",
+      "id": "edge:0693",
       "kind": "wait_condition",
       "from": "resource:channel:steeredUserMessagesChannel",
       "to": "wait:AwaitAgentTimer:644:9",
@@ -17155,7 +17173,7 @@
       }
     },
     {
-      "id": "edge:0693",
+      "id": "edge:0694",
       "kind": "wait_condition",
       "from": "resource:channel:steeredUserMessagesChannel",
       "to": "wait:AwaitRemoteAgent:1495:10",
@@ -17171,7 +17189,7 @@
       }
     },
     {
-      "id": "edge:0694",
+      "id": "edge:0695",
       "kind": "wait_condition",
       "from": "resource:channel:steeredUserMessagesChannel",
       "to": "wait:AwaitRemoteAgent:1497:9",
@@ -17187,7 +17205,7 @@
       }
     },
     {
-      "id": "edge:0695",
+      "id": "edge:0696",
       "kind": "wait_condition",
       "from": "resource:channel:steeredUserMessagesChannel",
       "to": "wait:AwaitToolApproval:862:9",
@@ -17203,7 +17221,7 @@
       }
     },
     {
-      "id": "edge:0696",
+      "id": "edge:0697",
       "kind": "wait_condition",
       "from": "resource:channel:steeredUserMessagesChannel",
       "to": "wait:AwaitUser:477:10",
@@ -17219,7 +17237,7 @@
       }
     },
     {
-      "id": "edge:0697",
+      "id": "edge:0698",
       "kind": "wait_condition",
       "from": "resource:channel:steeredUserMessagesChannel",
       "to": "wait:AwaitUser:489:9",
@@ -17235,7 +17253,7 @@
       }
     },
     {
-      "id": "edge:0698",
+      "id": "edge:0699",
       "kind": "resource_read",
       "from": "resource:channel:toolApprovalsChannel",
       "to": "step:AwaitToolApproval",
@@ -17251,7 +17269,7 @@
       }
     },
     {
-      "id": "edge:0699",
+      "id": "edge:0700",
       "kind": "wait_condition",
       "from": "resource:channel:toolApprovalsChannel",
       "to": "wait:AwaitToolApproval:862:9",
@@ -17267,7 +17285,7 @@
       }
     },
     {
-      "id": "edge:0700",
+      "id": "edge:0701",
       "kind": "resource_read",
       "from": "resource:channel:workspaceOutcomesChannel",
       "to": "step:AwaitSessionWorkspace",
@@ -17283,7 +17301,7 @@
       }
     },
     {
-      "id": "edge:0701",
+      "id": "edge:0702",
       "kind": "wait_condition",
       "from": "resource:channel:workspaceOutcomesChannel",
       "to": "wait:AwaitSessionWorkspace:1310:9",
@@ -17299,7 +17317,7 @@
       }
     },
     {
-      "id": "edge:0702",
+      "id": "edge:0703",
       "kind": "resource_write",
       "from": "rpc:AdmitSubagent",
       "to": "resource:attribute:subagentsAttribute",
@@ -17317,7 +17335,7 @@
       }
     },
     {
-      "id": "edge:0703",
+      "id": "edge:0704",
       "kind": "resource_write",
       "from": "rpc:AnswerQuestions",
       "to": "resource:attribute:pendingUserInputAttribute",
@@ -17335,7 +17353,7 @@
       }
     },
     {
-      "id": "edge:0704",
+      "id": "edge:0705",
       "kind": "resource_publish",
       "from": "rpc:AnswerQuestions",
       "to": "resource:channel:answeredUserInputsChannel",
@@ -17353,7 +17371,7 @@
       }
     },
     {
-      "id": "edge:0705",
+      "id": "edge:0706",
       "kind": "resource_write",
       "from": "rpc:ApproveTool",
       "to": "resource:attribute:pendingApprovalAttribute",
@@ -17371,7 +17389,7 @@
       }
     },
     {
-      "id": "edge:0706",
+      "id": "edge:0707",
       "kind": "resource_publish",
       "from": "rpc:ApproveTool",
       "to": "resource:channel:toolApprovalsChannel",
@@ -17389,7 +17407,7 @@
       }
     },
     {
-      "id": "edge:0707",
+      "id": "edge:0708",
       "kind": "resource_write",
       "from": "rpc:CompleteProjectSession",
       "to": "resource:attribute:closeReasonAttribute",
@@ -17407,7 +17425,7 @@
       }
     },
     {
-      "id": "edge:0708",
+      "id": "edge:0709",
       "kind": "resource_write",
       "from": "rpc:CompleteProjectSession",
       "to": "resource:attribute:sessionRevisionAttribute",
@@ -17425,7 +17443,7 @@
       }
     },
     {
-      "id": "edge:0709",
+      "id": "edge:0710",
       "kind": "resource_write",
       "from": "rpc:CompleteProjectSession",
       "to": "resource:attribute:sessionStatusAttribute",
@@ -17443,7 +17461,7 @@
       }
     },
     {
-      "id": "edge:0710",
+      "id": "edge:0711",
       "kind": "resource_write",
       "from": "rpc:CompleteProjectSession",
       "to": "resource:attribute:sessionUpdatedAtAttribute",
@@ -17461,7 +17479,7 @@
       }
     },
     {
-      "id": "edge:0711",
+      "id": "edge:0712",
       "kind": "resource_publish",
       "from": "rpc:CompleteProjectSession",
       "to": "resource:channel:backgroundCommandStopsChannel",
@@ -17479,7 +17497,7 @@
       }
     },
     {
-      "id": "edge:0712",
+      "id": "edge:0713",
       "kind": "resource_write",
       "from": "rpc:DeleteQueuedMessage",
       "to": "resource:channel:queuedUserMessagesChannel",
@@ -17497,7 +17515,7 @@
       }
     },
     {
-      "id": "edge:0713",
+      "id": "edge:0714",
       "kind": "resource_write",
       "from": "rpc:FinalizeModelCredential",
       "to": "resource:attribute:modelKeyInfoAttribute",
@@ -17515,7 +17533,7 @@
       }
     },
     {
-      "id": "edge:0714",
+      "id": "edge:0715",
       "kind": "resource_write",
       "from": "rpc:InterruptAgent",
       "to": "resource:attribute:agentInterruptAttribute",
@@ -17533,7 +17551,7 @@
       }
     },
     {
-      "id": "edge:0715",
+      "id": "edge:0716",
       "kind": "resource_write",
       "from": "rpc:InterruptAgent",
       "to": "resource:attribute:executorAttribute",
@@ -17551,7 +17569,7 @@
       }
     },
     {
-      "id": "edge:0716",
+      "id": "edge:0717",
       "kind": "resource_write",
       "from": "rpc:RenewSessionWorkspace",
       "to": "resource:attribute:workspaceAttribute",
@@ -17569,7 +17587,7 @@
       }
     },
     {
-      "id": "edge:0717",
+      "id": "edge:0718",
       "kind": "resource_write",
       "from": "rpc:ReportRemote",
       "to": "resource:attribute:executorAttribute",
@@ -17587,7 +17605,7 @@
       }
     },
     {
-      "id": "edge:0718",
+      "id": "edge:0719",
       "kind": "resource_publish",
       "from": "rpc:ReportRemote",
       "to": "resource:channel:remoteInboxChannel",
@@ -17605,7 +17623,7 @@
       }
     },
     {
-      "id": "edge:0719",
+      "id": "edge:0720",
       "kind": "resource_write",
       "from": "rpc:ReportSessionNotification",
       "to": "resource:attribute:notificationReceiptsAttribute",
@@ -17623,7 +17641,7 @@
       }
     },
     {
-      "id": "edge:0720",
+      "id": "edge:0721",
       "kind": "resource_write",
       "from": "rpc:ReportSessionNotification",
       "to": "resource:attribute:subagentsAttribute",
@@ -17641,7 +17659,7 @@
       }
     },
     {
-      "id": "edge:0721",
+      "id": "edge:0722",
       "kind": "resource_write",
       "from": "rpc:ReportSessionNotification",
       "to": "resource:attribute:workspaceAttribute",
@@ -17659,7 +17677,7 @@
       }
     },
     {
-      "id": "edge:0722",
+      "id": "edge:0723",
       "kind": "resource_publish",
       "from": "rpc:ReportSessionNotification",
       "to": "resource:channel:sessionNotificationsChannel",
@@ -17677,7 +17695,7 @@
       }
     },
     {
-      "id": "edge:0723",
+      "id": "edge:0724",
       "kind": "resource_write",
       "from": "rpc:ReportWorkspaceOutcome",
       "to": "resource:attribute:notificationReceiptsAttribute",
@@ -17695,7 +17713,7 @@
       }
     },
     {
-      "id": "edge:0724",
+      "id": "edge:0725",
       "kind": "resource_write",
       "from": "rpc:ReportWorkspaceOutcome",
       "to": "resource:attribute:workspaceAttribute",
@@ -17713,7 +17731,7 @@
       }
     },
     {
-      "id": "edge:0725",
+      "id": "edge:0726",
       "kind": "resource_publish",
       "from": "rpc:ReportWorkspaceOutcome",
       "to": "resource:channel:workspaceOutcomesChannel",
@@ -17731,7 +17749,7 @@
       }
     },
     {
-      "id": "edge:0726",
+      "id": "edge:0727",
       "kind": "resource_write",
       "from": "rpc:RequestSessionWorkspace",
       "to": "resource:attribute:workspaceAttribute",
@@ -17747,7 +17765,7 @@
       }
     },
     {
-      "id": "edge:0727",
+      "id": "edge:0728",
       "kind": "resource_write",
       "from": "rpc:ReserveModelCredential",
       "to": "resource:attribute:modelKeyInfoAttribute",
@@ -17765,7 +17783,7 @@
       }
     },
     {
-      "id": "edge:0728",
+      "id": "edge:0729",
       "kind": "resource_write",
       "from": "rpc:SendMessage",
       "to": "resource:attribute:confirmedRequirementsAttribute",
@@ -17783,7 +17801,7 @@
       }
     },
     {
-      "id": "edge:0729",
+      "id": "edge:0730",
       "kind": "resource_write",
       "from": "rpc:SendMessage",
       "to": "resource:attribute:flowDesignsAttribute",
@@ -17801,7 +17819,7 @@
       }
     },
     {
-      "id": "edge:0730",
+      "id": "edge:0731",
       "kind": "resource_write",
       "from": "rpc:SendMessage",
       "to": "resource:attribute:flowDesignsAttribute",
@@ -17819,7 +17837,7 @@
       }
     },
     {
-      "id": "edge:0731",
+      "id": "edge:0732",
       "kind": "resource_write",
       "from": "rpc:SendMessage",
       "to": "resource:attribute:pendingUserInputAttribute",
@@ -17837,7 +17855,7 @@
       }
     },
     {
-      "id": "edge:0732",
+      "id": "edge:0733",
       "kind": "resource_write",
       "from": "rpc:SendMessage",
       "to": "resource:attribute:writtenDesignStepsAttribute",
@@ -17855,7 +17873,7 @@
       }
     },
     {
-      "id": "edge:0733",
+      "id": "edge:0734",
       "kind": "resource_write",
       "from": "rpc:SendMessage",
       "to": "resource:attribute:writtenDesignStepsAttribute",
@@ -17873,7 +17891,7 @@
       }
     },
     {
-      "id": "edge:0734",
+      "id": "edge:0735",
       "kind": "resource_publish",
       "from": "rpc:SendMessage",
       "to": "resource:channel:answeredUserInputsChannel",
@@ -17891,7 +17909,7 @@
       }
     },
     {
-      "id": "edge:0735",
+      "id": "edge:0736",
       "kind": "resource_publish",
       "from": "rpc:SendMessage",
       "to": "resource:channel:queuedUserMessagesChannel",
@@ -17909,7 +17927,7 @@
       }
     },
     {
-      "id": "edge:0736",
+      "id": "edge:0737",
       "kind": "resource_write",
       "from": "rpc:SetExecutor",
       "to": "resource:attribute:agentInterruptAttribute",
@@ -17927,7 +17945,115 @@
       }
     },
     {
-      "id": "edge:0737",
+      "id": "edge:0738",
+      "kind": "resource_write",
+      "from": "rpc:SetExecutor",
+      "to": "resource:attribute:agentStateAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 1470,
+        "startColumn": 17,
+        "endLine": 1470,
+        "endColumn": 43
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0739",
+      "kind": "resource_write",
+      "from": "rpc:SetExecutor",
+      "to": "resource:attribute:archivedMessagesAttribute",
+      "label": "Delete",
+      "span": {
+        "startLine": 1470,
+        "startColumn": 17,
+        "endLine": 1470,
+        "endColumn": 43
+      },
+      "metadata": {
+        "function": "trimRetainedEntries",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0740",
+      "kind": "resource_write",
+      "from": "rpc:SetExecutor",
+      "to": "resource:attribute:archivedMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 1470,
+        "startColumn": 17,
+        "endLine": 1470,
+        "endColumn": 43
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0741",
+      "kind": "resource_write",
+      "from": "rpc:SetExecutor",
+      "to": "resource:attribute:contextSegmentAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 1470,
+        "startColumn": 17,
+        "endLine": 1470,
+        "endColumn": 43
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0742",
+      "kind": "resource_write",
+      "from": "rpc:SetExecutor",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Delete",
+      "span": {
+        "startLine": 1470,
+        "startColumn": 17,
+        "endLine": 1470,
+        "endColumn": 43
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0743",
+      "kind": "resource_write",
+      "from": "rpc:SetExecutor",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 1470,
+        "startColumn": 17,
+        "endLine": 1470,
+        "endColumn": 43
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0744",
       "kind": "resource_write",
       "from": "rpc:SetExecutor",
       "to": "resource:attribute:executorAttribute",
@@ -17945,7 +18071,7 @@
       }
     },
     {
-      "id": "edge:0738",
+      "id": "edge:0745",
       "kind": "resource_publish",
       "from": "rpc:SetExecutor",
       "to": "resource:channel:remoteInboxChannel",
@@ -17963,7 +18089,7 @@
       }
     },
     {
-      "id": "edge:0739",
+      "id": "edge:0746",
       "kind": "resource_write",
       "from": "rpc:SteerMessage",
       "to": "resource:channel:queuedUserMessagesChannel",
@@ -17981,7 +18107,7 @@
       }
     },
     {
-      "id": "edge:0740",
+      "id": "edge:0747",
       "kind": "resource_publish",
       "from": "rpc:SteerMessage",
       "to": "resource:channel:steeredUserMessagesChannel",
@@ -17999,7 +18125,7 @@
       }
     },
     {
-      "id": "edge:0741",
+      "id": "edge:0748",
       "kind": "resource_write",
       "from": "rpc:UpdatePreviewAutoDeploy",
       "to": "resource:attribute:previewAutoDeployAttribute",
@@ -18017,7 +18143,7 @@
       }
     },
     {
-      "id": "edge:0742",
+      "id": "edge:0749",
       "kind": "resource_write",
       "from": "rpc:UpdatePreviewAutoDeploy",
       "to": "resource:attribute:previewAutoDeployChangedByAttribute",
@@ -18035,7 +18161,7 @@
       }
     },
     {
-      "id": "edge:0743",
+      "id": "edge:0750",
       "kind": "resource_write",
       "from": "rpc:UpdatePreviewAutoDeploy",
       "to": "resource:attribute:previewAutoDeployChangedByAttribute",
@@ -18053,7 +18179,7 @@
       }
     },
     {
-      "id": "edge:0744",
+      "id": "edge:0751",
       "kind": "resource_write",
       "from": "rpc:UpdateSessionModel",
       "to": "resource:attribute:sessionModelAttribute",
@@ -18071,7 +18197,7 @@
       }
     },
     {
-      "id": "edge:0745",
+      "id": "edge:0752",
       "kind": "resource_write",
       "from": "step:AbandonBackgroundCommand",
       "to": "resource:attribute:backgroundCommandsAttribute",
@@ -18087,7 +18213,7 @@
       }
     },
     {
-      "id": "edge:0746",
+      "id": "edge:0753",
       "kind": "resource_write",
       "from": "step:AbandonBackgroundCommand",
       "to": "resource:stream:agentActivityStream",
@@ -18108,7 +18234,7 @@
       }
     },
     {
-      "id": "edge:0747",
+      "id": "edge:0754",
       "kind": "resource_write",
       "from": "step:ActivateSession",
       "to": "resource:attribute:agentStateAttribute",
@@ -18124,7 +18250,7 @@
       }
     },
     {
-      "id": "edge:0748",
+      "id": "edge:0755",
       "kind": "resource_write",
       "from": "step:AnsweredInput",
       "to": "resource:attribute:agentStateAttribute",
@@ -18142,7 +18268,7 @@
       }
     },
     {
-      "id": "edge:0749",
+      "id": "edge:0756",
       "kind": "resource_write",
       "from": "step:AnsweredInput",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -18160,7 +18286,7 @@
       }
     },
     {
-      "id": "edge:0750",
+      "id": "edge:0757",
       "kind": "resource_write",
       "from": "step:AnsweredInput",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -18178,7 +18304,7 @@
       }
     },
     {
-      "id": "edge:0751",
+      "id": "edge:0758",
       "kind": "resource_write",
       "from": "step:AnsweredInput",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -18196,7 +18322,7 @@
       }
     },
     {
-      "id": "edge:0752",
+      "id": "edge:0759",
       "kind": "resource_write",
       "from": "step:AnsweredInput",
       "to": "resource:attribute:contextSegmentPromptsAttribute",
@@ -18214,7 +18340,7 @@
       }
     },
     {
-      "id": "edge:0753",
+      "id": "edge:0760",
       "kind": "resource_write",
       "from": "step:AnsweredInput",
       "to": "resource:attribute:contextSegmentPromptsAttribute",
@@ -18232,7 +18358,7 @@
       }
     },
     {
-      "id": "edge:0754",
+      "id": "edge:0761",
       "kind": "resource_write",
       "from": "step:AnsweredInput",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -18250,7 +18376,7 @@
       }
     },
     {
-      "id": "edge:0755",
+      "id": "edge:0762",
       "kind": "resource_write",
       "from": "step:AnsweredInput",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -18268,7 +18394,7 @@
       }
     },
     {
-      "id": "edge:0756",
+      "id": "edge:0763",
       "kind": "resource_write",
       "from": "step:AnsweredInput",
       "to": "resource:attribute:executorAttribute",
@@ -18286,7 +18412,7 @@
       }
     },
     {
-      "id": "edge:0757",
+      "id": "edge:0764",
       "kind": "resource_write",
       "from": "step:ApplySessionWorkspace",
       "to": "resource:attribute:agentStateAttribute",
@@ -18304,7 +18430,7 @@
       }
     },
     {
-      "id": "edge:0758",
+      "id": "edge:0765",
       "kind": "resource_write",
       "from": "step:ApplySessionWorkspace",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -18322,7 +18448,7 @@
       }
     },
     {
-      "id": "edge:0759",
+      "id": "edge:0766",
       "kind": "resource_write",
       "from": "step:ApplySessionWorkspace",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -18340,7 +18466,7 @@
       }
     },
     {
-      "id": "edge:0760",
+      "id": "edge:0767",
       "kind": "resource_write",
       "from": "step:ApplySessionWorkspace",
       "to": "resource:attribute:builtFlowDesignAttribute",
@@ -18358,7 +18484,7 @@
       }
     },
     {
-      "id": "edge:0761",
+      "id": "edge:0768",
       "kind": "resource_write",
       "from": "step:ApplySessionWorkspace",
       "to": "resource:attribute:builtFlowDesignCommitAttribute",
@@ -18376,7 +18502,7 @@
       }
     },
     {
-      "id": "edge:0762",
+      "id": "edge:0769",
       "kind": "resource_write",
       "from": "step:ApplySessionWorkspace",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -18394,7 +18520,7 @@
       }
     },
     {
-      "id": "edge:0763",
+      "id": "edge:0770",
       "kind": "resource_write",
       "from": "step:ApplySessionWorkspace",
       "to": "resource:attribute:contextSegmentPromptsAttribute",
@@ -18412,7 +18538,7 @@
       }
     },
     {
-      "id": "edge:0764",
+      "id": "edge:0771",
       "kind": "resource_write",
       "from": "step:ApplySessionWorkspace",
       "to": "resource:attribute:contextSegmentPromptsAttribute",
@@ -18430,7 +18556,7 @@
       }
     },
     {
-      "id": "edge:0765",
+      "id": "edge:0772",
       "kind": "resource_write",
       "from": "step:ApplySessionWorkspace",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -18448,7 +18574,7 @@
       }
     },
     {
-      "id": "edge:0766",
+      "id": "edge:0773",
       "kind": "resource_write",
       "from": "step:ApplySessionWorkspace",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -18466,7 +18592,7 @@
       }
     },
     {
-      "id": "edge:0767",
+      "id": "edge:0774",
       "kind": "resource_write",
       "from": "step:ApplySessionWorkspace",
       "to": "resource:attribute:headCommitAttribute",
@@ -18484,7 +18610,7 @@
       }
     },
     {
-      "id": "edge:0768",
+      "id": "edge:0775",
       "kind": "resource_write",
       "from": "step:ApplySessionWorkspace",
       "to": "resource:attribute:previewHandoffAttribute",
@@ -18502,7 +18628,7 @@
       }
     },
     {
-      "id": "edge:0769",
+      "id": "edge:0776",
       "kind": "resource_write",
       "from": "step:ApplySessionWorkspace",
       "to": "resource:attribute:sessionUpdatedAtAttribute",
@@ -18520,7 +18646,7 @@
       }
     },
     {
-      "id": "edge:0770",
+      "id": "edge:0777",
       "kind": "resource_write",
       "from": "step:ApplySessionWorkspace",
       "to": "resource:attribute:subagentsAttribute",
@@ -18538,7 +18664,7 @@
       }
     },
     {
-      "id": "edge:0771",
+      "id": "edge:0778",
       "kind": "resource_write",
       "from": "step:ApplySessionWorkspace",
       "to": "resource:attribute:workspaceAttribute",
@@ -18556,7 +18682,7 @@
       }
     },
     {
-      "id": "edge:0772",
+      "id": "edge:0779",
       "kind": "resource_write",
       "from": "step:ApplySessionWorkspace",
       "to": "resource:attribute:workspaceUseAttribute",
@@ -18574,7 +18700,7 @@
       }
     },
     {
-      "id": "edge:0773",
+      "id": "edge:0780",
       "kind": "resource_write",
       "from": "step:ApplySessionWorkspace",
       "to": "resource:attribute:writtenDesignStepsAttribute",
@@ -18592,7 +18718,7 @@
       }
     },
     {
-      "id": "edge:0774",
+      "id": "edge:0781",
       "kind": "resource_write",
       "from": "step:ApplySessionWorkspace",
       "to": "resource:stream:agentActivityStream",
@@ -18613,7 +18739,7 @@
       }
     },
     {
-      "id": "edge:0775",
+      "id": "edge:0782",
       "kind": "resource_write",
       "from": "step:AwaitAgentTimer",
       "to": "resource:attribute:agentStateAttribute",
@@ -18631,7 +18757,7 @@
       }
     },
     {
-      "id": "edge:0776",
+      "id": "edge:0783",
       "kind": "resource_write",
       "from": "step:AwaitAgentTimer",
       "to": "resource:attribute:agentStateAttribute",
@@ -18649,7 +18775,7 @@
       }
     },
     {
-      "id": "edge:0777",
+      "id": "edge:0784",
       "kind": "resource_write",
       "from": "step:AwaitAgentTimer",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -18667,7 +18793,7 @@
       }
     },
     {
-      "id": "edge:0778",
+      "id": "edge:0785",
       "kind": "resource_write",
       "from": "step:AwaitAgentTimer",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -18685,7 +18811,7 @@
       }
     },
     {
-      "id": "edge:0779",
+      "id": "edge:0786",
       "kind": "resource_write",
       "from": "step:AwaitAgentTimer",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -18703,7 +18829,7 @@
       }
     },
     {
-      "id": "edge:0780",
+      "id": "edge:0787",
       "kind": "resource_write",
       "from": "step:AwaitAgentTimer",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -18721,7 +18847,7 @@
       }
     },
     {
-      "id": "edge:0781",
+      "id": "edge:0788",
       "kind": "resource_write",
       "from": "step:AwaitAgentTimer",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -18739,7 +18865,7 @@
       }
     },
     {
-      "id": "edge:0782",
+      "id": "edge:0789",
       "kind": "resource_write",
       "from": "step:AwaitAgentTimer",
       "to": "resource:attribute:pendingApprovalAttribute",
@@ -18757,7 +18883,7 @@
       }
     },
     {
-      "id": "edge:0783",
+      "id": "edge:0790",
       "kind": "resource_write",
       "from": "step:AwaitAgentTimer",
       "to": "resource:attribute:pendingTimerAttribute",
@@ -18773,7 +18899,7 @@
       }
     },
     {
-      "id": "edge:0784",
+      "id": "edge:0791",
       "kind": "resource_write",
       "from": "step:AwaitAgentTimer",
       "to": "resource:attribute:pendingUserInputAttribute",
@@ -18791,7 +18917,7 @@
       }
     },
     {
-      "id": "edge:0785",
+      "id": "edge:0792",
       "kind": "resource_write",
       "from": "step:AwaitAgentTimer",
       "to": "resource:stream:agentActivityStream",
@@ -18812,7 +18938,7 @@
       }
     },
     {
-      "id": "edge:0786",
+      "id": "edge:0793",
       "kind": "resource_write",
       "from": "step:AwaitAgentTimer",
       "to": "resource:stream:agentActivityStream",
@@ -18833,7 +18959,7 @@
       }
     },
     {
-      "id": "edge:0787",
+      "id": "edge:0794",
       "kind": "resource_write",
       "from": "step:AwaitBackgroundCommand",
       "to": "resource:attribute:backgroundCommandsAttribute",
@@ -18849,7 +18975,7 @@
       }
     },
     {
-      "id": "edge:0788",
+      "id": "edge:0795",
       "kind": "resource_write",
       "from": "step:AwaitBackgroundCommand",
       "to": "resource:attribute:notificationReceiptsAttribute",
@@ -18867,7 +18993,7 @@
       }
     },
     {
-      "id": "edge:0789",
+      "id": "edge:0796",
       "kind": "resource_publish",
       "from": "step:AwaitBackgroundCommand",
       "to": "resource:channel:sessionNotificationsChannel",
@@ -18885,7 +19011,7 @@
       }
     },
     {
-      "id": "edge:0790",
+      "id": "edge:0797",
       "kind": "resource_write",
       "from": "step:AwaitBackgroundCommand",
       "to": "resource:stream:agentActivityStream",
@@ -18906,7 +19032,7 @@
       }
     },
     {
-      "id": "edge:0791",
+      "id": "edge:0798",
       "kind": "failure_transition",
       "from": "step:AwaitBackgroundCommand",
       "to": "step:AbandonBackgroundCommand",
@@ -18922,7 +19048,7 @@
       }
     },
     {
-      "id": "edge:0792",
+      "id": "edge:0799",
       "kind": "resource_write",
       "from": "step:AwaitParallelToolResults",
       "to": "resource:attribute:agentStateAttribute",
@@ -18940,7 +19066,7 @@
       }
     },
     {
-      "id": "edge:0793",
+      "id": "edge:0800",
       "kind": "resource_write",
       "from": "step:AwaitParallelToolResults",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -18958,7 +19084,7 @@
       }
     },
     {
-      "id": "edge:0794",
+      "id": "edge:0801",
       "kind": "resource_write",
       "from": "step:AwaitParallelToolResults",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -18976,7 +19102,7 @@
       }
     },
     {
-      "id": "edge:0795",
+      "id": "edge:0802",
       "kind": "resource_write",
       "from": "step:AwaitParallelToolResults",
       "to": "resource:attribute:builtFlowDesignAttribute",
@@ -18994,7 +19120,7 @@
       }
     },
     {
-      "id": "edge:0796",
+      "id": "edge:0803",
       "kind": "resource_write",
       "from": "step:AwaitParallelToolResults",
       "to": "resource:attribute:builtFlowDesignCommitAttribute",
@@ -19012,7 +19138,7 @@
       }
     },
     {
-      "id": "edge:0797",
+      "id": "edge:0804",
       "kind": "resource_write",
       "from": "step:AwaitParallelToolResults",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -19030,7 +19156,7 @@
       }
     },
     {
-      "id": "edge:0798",
+      "id": "edge:0805",
       "kind": "resource_write",
       "from": "step:AwaitParallelToolResults",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -19048,7 +19174,7 @@
       }
     },
     {
-      "id": "edge:0799",
+      "id": "edge:0806",
       "kind": "resource_write",
       "from": "step:AwaitParallelToolResults",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -19066,7 +19192,7 @@
       }
     },
     {
-      "id": "edge:0800",
+      "id": "edge:0807",
       "kind": "resource_write",
       "from": "step:AwaitParallelToolResults",
       "to": "resource:attribute:headCommitAttribute",
@@ -19084,7 +19210,7 @@
       }
     },
     {
-      "id": "edge:0801",
+      "id": "edge:0808",
       "kind": "resource_write",
       "from": "step:AwaitParallelToolResults",
       "to": "resource:attribute:previewHandoffAttribute",
@@ -19102,7 +19228,7 @@
       }
     },
     {
-      "id": "edge:0802",
+      "id": "edge:0809",
       "kind": "resource_write",
       "from": "step:AwaitParallelToolResults",
       "to": "resource:attribute:sessionUpdatedAtAttribute",
@@ -19120,7 +19246,7 @@
       }
     },
     {
-      "id": "edge:0803",
+      "id": "edge:0810",
       "kind": "resource_write",
       "from": "step:AwaitParallelToolResults",
       "to": "resource:attribute:workspaceUseAttribute",
@@ -19138,7 +19264,7 @@
       }
     },
     {
-      "id": "edge:0804",
+      "id": "edge:0811",
       "kind": "resource_write",
       "from": "step:AwaitParallelToolResults",
       "to": "resource:attribute:writtenDesignStepsAttribute",
@@ -19156,7 +19282,7 @@
       }
     },
     {
-      "id": "edge:0805",
+      "id": "edge:0812",
       "kind": "resource_write",
       "from": "step:AwaitParallelToolResults",
       "to": "resource:stream:agentActivityStream",
@@ -19177,7 +19303,7 @@
       }
     },
     {
-      "id": "edge:0806",
+      "id": "edge:0813",
       "kind": "resource_write",
       "from": "step:AwaitRemoteAgent",
       "to": "resource:attribute:agentInterruptAttribute",
@@ -19195,7 +19321,7 @@
       }
     },
     {
-      "id": "edge:0807",
+      "id": "edge:0814",
       "kind": "resource_write",
       "from": "step:AwaitRemoteAgent",
       "to": "resource:attribute:agentInterruptAttribute",
@@ -19213,7 +19339,7 @@
       }
     },
     {
-      "id": "edge:0808",
+      "id": "edge:0815",
       "kind": "resource_write",
       "from": "step:AwaitRemoteAgent",
       "to": "resource:attribute:agentStateAttribute",
@@ -19231,7 +19357,7 @@
       }
     },
     {
-      "id": "edge:0809",
+      "id": "edge:0816",
       "kind": "resource_write",
       "from": "step:AwaitRemoteAgent",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -19249,7 +19375,7 @@
       }
     },
     {
-      "id": "edge:0810",
+      "id": "edge:0817",
       "kind": "resource_write",
       "from": "step:AwaitRemoteAgent",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -19267,7 +19393,7 @@
       }
     },
     {
-      "id": "edge:0811",
+      "id": "edge:0818",
       "kind": "resource_write",
       "from": "step:AwaitRemoteAgent",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -19285,7 +19411,7 @@
       }
     },
     {
-      "id": "edge:0812",
+      "id": "edge:0819",
       "kind": "resource_write",
       "from": "step:AwaitRemoteAgent",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -19303,7 +19429,7 @@
       }
     },
     {
-      "id": "edge:0813",
+      "id": "edge:0820",
       "kind": "resource_write",
       "from": "step:AwaitRemoteAgent",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -19321,7 +19447,7 @@
       }
     },
     {
-      "id": "edge:0814",
+      "id": "edge:0821",
       "kind": "resource_write",
       "from": "step:AwaitRemoteAgent",
       "to": "resource:attribute:executorAttribute",
@@ -19339,7 +19465,7 @@
       }
     },
     {
-      "id": "edge:0815",
+      "id": "edge:0822",
       "kind": "resource_write",
       "from": "step:AwaitRemoteAgent",
       "to": "resource:attribute:pendingApprovalAttribute",
@@ -19357,7 +19483,7 @@
       }
     },
     {
-      "id": "edge:0816",
+      "id": "edge:0823",
       "kind": "resource_write",
       "from": "step:AwaitRemoteAgent",
       "to": "resource:attribute:pendingTimerAttribute",
@@ -19375,7 +19501,7 @@
       }
     },
     {
-      "id": "edge:0817",
+      "id": "edge:0824",
       "kind": "resource_write",
       "from": "step:AwaitRemoteAgent",
       "to": "resource:attribute:pendingUserInputAttribute",
@@ -19393,7 +19519,7 @@
       }
     },
     {
-      "id": "edge:0818",
+      "id": "edge:0825",
       "kind": "resource_write",
       "from": "step:AwaitRemoteAgent",
       "to": "resource:attribute:subagentsAttribute",
@@ -19411,7 +19537,7 @@
       }
     },
     {
-      "id": "edge:0819",
+      "id": "edge:0826",
       "kind": "resource_write",
       "from": "step:AwaitRemoteAgent",
       "to": "resource:attribute:workspaceAttribute",
@@ -19429,7 +19555,7 @@
       }
     },
     {
-      "id": "edge:0820",
+      "id": "edge:0827",
       "kind": "resource_write",
       "from": "step:AwaitRemoteAgent",
       "to": "resource:attribute:workspaceUseAttribute",
@@ -19447,7 +19573,7 @@
       }
     },
     {
-      "id": "edge:0821",
+      "id": "edge:0828",
       "kind": "resource_write",
       "from": "step:AwaitRemoteAgent",
       "to": "resource:stream:agentActivityStream",
@@ -19468,7 +19594,7 @@
       }
     },
     {
-      "id": "edge:0822",
+      "id": "edge:0829",
       "kind": "resource_write",
       "from": "step:AwaitSandboxDeadline",
       "to": "resource:attribute:workspaceAttribute",
@@ -19486,7 +19612,7 @@
       }
     },
     {
-      "id": "edge:0823",
+      "id": "edge:0830",
       "kind": "failure_transition",
       "from": "step:AwaitSessionWorkspace",
       "to": "step:RecordWorkspaceFailure",
@@ -19502,7 +19628,7 @@
       }
     },
     {
-      "id": "edge:0824",
+      "id": "edge:0831",
       "kind": "resource_write",
       "from": "step:AwaitToolApproval",
       "to": "resource:attribute:agentStateAttribute",
@@ -19520,7 +19646,7 @@
       }
     },
     {
-      "id": "edge:0825",
+      "id": "edge:0832",
       "kind": "resource_write",
       "from": "step:AwaitToolApproval",
       "to": "resource:attribute:agentStateAttribute",
@@ -19538,7 +19664,7 @@
       }
     },
     {
-      "id": "edge:0826",
+      "id": "edge:0833",
       "kind": "resource_write",
       "from": "step:AwaitToolApproval",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -19556,7 +19682,7 @@
       }
     },
     {
-      "id": "edge:0827",
+      "id": "edge:0834",
       "kind": "resource_write",
       "from": "step:AwaitToolApproval",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -19574,7 +19700,7 @@
       }
     },
     {
-      "id": "edge:0828",
+      "id": "edge:0835",
       "kind": "resource_write",
       "from": "step:AwaitToolApproval",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -19592,7 +19718,7 @@
       }
     },
     {
-      "id": "edge:0829",
+      "id": "edge:0836",
       "kind": "resource_write",
       "from": "step:AwaitToolApproval",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -19610,7 +19736,7 @@
       }
     },
     {
-      "id": "edge:0830",
+      "id": "edge:0837",
       "kind": "resource_write",
       "from": "step:AwaitToolApproval",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -19628,7 +19754,7 @@
       }
     },
     {
-      "id": "edge:0831",
+      "id": "edge:0838",
       "kind": "resource_write",
       "from": "step:AwaitToolApproval",
       "to": "resource:attribute:pendingApprovalAttribute",
@@ -19646,7 +19772,7 @@
       }
     },
     {
-      "id": "edge:0832",
+      "id": "edge:0839",
       "kind": "resource_write",
       "from": "step:AwaitToolApproval",
       "to": "resource:attribute:pendingTimerAttribute",
@@ -19664,7 +19790,7 @@
       }
     },
     {
-      "id": "edge:0833",
+      "id": "edge:0840",
       "kind": "resource_write",
       "from": "step:AwaitToolApproval",
       "to": "resource:attribute:pendingUserInputAttribute",
@@ -19682,7 +19808,7 @@
       }
     },
     {
-      "id": "edge:0834",
+      "id": "edge:0841",
       "kind": "resource_write",
       "from": "step:AwaitToolApproval",
       "to": "resource:stream:agentActivityStream",
@@ -19703,7 +19829,7 @@
       }
     },
     {
-      "id": "edge:0835",
+      "id": "edge:0842",
       "kind": "resource_write",
       "from": "step:AwaitToolApproval",
       "to": "resource:stream:agentActivityStream",
@@ -19724,7 +19850,7 @@
       }
     },
     {
-      "id": "edge:0836",
+      "id": "edge:0843",
       "kind": "resource_write",
       "from": "step:AwaitUser",
       "to": "resource:attribute:agentInterruptAttribute",
@@ -19742,7 +19868,7 @@
       }
     },
     {
-      "id": "edge:0837",
+      "id": "edge:0844",
       "kind": "resource_write",
       "from": "step:AwaitUser",
       "to": "resource:attribute:agentInterruptAttribute",
@@ -19760,7 +19886,7 @@
       }
     },
     {
-      "id": "edge:0838",
+      "id": "edge:0845",
       "kind": "resource_write",
       "from": "step:AwaitUser",
       "to": "resource:attribute:agentStateAttribute",
@@ -19778,7 +19904,7 @@
       }
     },
     {
-      "id": "edge:0839",
+      "id": "edge:0846",
       "kind": "resource_write",
       "from": "step:AwaitUser",
       "to": "resource:attribute:agentStateAttribute",
@@ -19796,7 +19922,7 @@
       }
     },
     {
-      "id": "edge:0840",
+      "id": "edge:0847",
       "kind": "resource_write",
       "from": "step:AwaitUser",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -19814,7 +19940,7 @@
       }
     },
     {
-      "id": "edge:0841",
+      "id": "edge:0848",
       "kind": "resource_write",
       "from": "step:AwaitUser",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -19832,7 +19958,7 @@
       }
     },
     {
-      "id": "edge:0842",
+      "id": "edge:0849",
       "kind": "resource_write",
       "from": "step:AwaitUser",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -19850,7 +19976,7 @@
       }
     },
     {
-      "id": "edge:0843",
+      "id": "edge:0850",
       "kind": "resource_write",
       "from": "step:AwaitUser",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -19868,7 +19994,7 @@
       }
     },
     {
-      "id": "edge:0844",
+      "id": "edge:0851",
       "kind": "resource_write",
       "from": "step:AwaitUser",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -19886,7 +20012,7 @@
       }
     },
     {
-      "id": "edge:0845",
+      "id": "edge:0852",
       "kind": "resource_write",
       "from": "step:AwaitUser",
       "to": "resource:attribute:executorAttribute",
@@ -19904,7 +20030,7 @@
       }
     },
     {
-      "id": "edge:0846",
+      "id": "edge:0853",
       "kind": "resource_write",
       "from": "step:AwaitUser",
       "to": "resource:attribute:pendingApprovalAttribute",
@@ -19922,7 +20048,7 @@
       }
     },
     {
-      "id": "edge:0847",
+      "id": "edge:0854",
       "kind": "resource_write",
       "from": "step:AwaitUser",
       "to": "resource:attribute:pendingTimerAttribute",
@@ -19940,7 +20066,7 @@
       }
     },
     {
-      "id": "edge:0848",
+      "id": "edge:0855",
       "kind": "resource_write",
       "from": "step:AwaitUser",
       "to": "resource:attribute:pendingUserInputAttribute",
@@ -19958,7 +20084,7 @@
       }
     },
     {
-      "id": "edge:0849",
+      "id": "edge:0856",
       "kind": "resource_write",
       "from": "step:AwaitUser",
       "to": "resource:attribute:waitingInputRoundAttribute",
@@ -19976,7 +20102,7 @@
       }
     },
     {
-      "id": "edge:0850",
+      "id": "edge:0857",
       "kind": "resource_write",
       "from": "step:AwaitUser",
       "to": "resource:attribute:workspaceAttribute",
@@ -19994,7 +20120,7 @@
       }
     },
     {
-      "id": "edge:0851",
+      "id": "edge:0858",
       "kind": "resource_write",
       "from": "step:AwaitUser",
       "to": "resource:stream:agentActivityStream",
@@ -20015,7 +20141,7 @@
       }
     },
     {
-      "id": "edge:0852",
+      "id": "edge:0859",
       "kind": "resource_write",
       "from": "step:CallModel",
       "to": "resource:stream:agentActivityStream",
@@ -20036,7 +20162,7 @@
       }
     },
     {
-      "id": "edge:0853",
+      "id": "edge:0860",
       "kind": "resource_write",
       "from": "step:CallModel",
       "to": "resource:stream:assistantTextStream",
@@ -20055,7 +20181,7 @@
       }
     },
     {
-      "id": "edge:0854",
+      "id": "edge:0861",
       "kind": "resource_write",
       "from": "step:CallModel",
       "to": "resource:stream:reasoningSummaryStream",
@@ -20074,7 +20200,7 @@
       }
     },
     {
-      "id": "edge:0855",
+      "id": "edge:0862",
       "kind": "resource_write",
       "from": "step:CallModel",
       "to": "resource:stream:requirementsDraftStream",
@@ -20093,7 +20219,7 @@
       }
     },
     {
-      "id": "edge:0856",
+      "id": "edge:0863",
       "kind": "failure_transition",
       "from": "step:CallModel",
       "to": "step:RecordModelFailure",
@@ -20109,7 +20235,7 @@
       }
     },
     {
-      "id": "edge:0857",
+      "id": "edge:0864",
       "kind": "resource_write",
       "from": "step:CheckSteered",
       "to": "resource:attribute:agentInterruptAttribute",
@@ -20125,7 +20251,7 @@
       }
     },
     {
-      "id": "edge:0858",
+      "id": "edge:0865",
       "kind": "resource_write",
       "from": "step:CheckSteered",
       "to": "resource:attribute:agentInterruptAttribute",
@@ -20143,7 +20269,7 @@
       }
     },
     {
-      "id": "edge:0859",
+      "id": "edge:0866",
       "kind": "resource_write",
       "from": "step:CheckSteered",
       "to": "resource:attribute:agentStateAttribute",
@@ -20161,7 +20287,7 @@
       }
     },
     {
-      "id": "edge:0860",
+      "id": "edge:0867",
       "kind": "resource_write",
       "from": "step:CheckSteered",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -20179,7 +20305,7 @@
       }
     },
     {
-      "id": "edge:0861",
+      "id": "edge:0868",
       "kind": "resource_write",
       "from": "step:CheckSteered",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -20197,7 +20323,7 @@
       }
     },
     {
-      "id": "edge:0862",
+      "id": "edge:0869",
       "kind": "resource_write",
       "from": "step:CheckSteered",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -20215,7 +20341,7 @@
       }
     },
     {
-      "id": "edge:0863",
+      "id": "edge:0870",
       "kind": "resource_write",
       "from": "step:CheckSteered",
       "to": "resource:attribute:contextSegmentPromptsAttribute",
@@ -20233,7 +20359,7 @@
       }
     },
     {
-      "id": "edge:0864",
+      "id": "edge:0871",
       "kind": "resource_write",
       "from": "step:CheckSteered",
       "to": "resource:attribute:contextSegmentPromptsAttribute",
@@ -20251,7 +20377,7 @@
       }
     },
     {
-      "id": "edge:0865",
+      "id": "edge:0872",
       "kind": "resource_write",
       "from": "step:CheckSteered",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -20269,7 +20395,7 @@
       }
     },
     {
-      "id": "edge:0866",
+      "id": "edge:0873",
       "kind": "resource_write",
       "from": "step:CheckSteered",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -20287,7 +20413,7 @@
       }
     },
     {
-      "id": "edge:0867",
+      "id": "edge:0874",
       "kind": "resource_write",
       "from": "step:CheckSteered",
       "to": "resource:attribute:executorAttribute",
@@ -20305,7 +20431,7 @@
       }
     },
     {
-      "id": "edge:0868",
+      "id": "edge:0875",
       "kind": "resource_write",
       "from": "step:CheckSteered",
       "to": "resource:attribute:pendingApprovalAttribute",
@@ -20323,7 +20449,7 @@
       }
     },
     {
-      "id": "edge:0869",
+      "id": "edge:0876",
       "kind": "resource_write",
       "from": "step:CheckSteered",
       "to": "resource:attribute:pendingTimerAttribute",
@@ -20341,7 +20467,7 @@
       }
     },
     {
-      "id": "edge:0870",
+      "id": "edge:0877",
       "kind": "resource_write",
       "from": "step:CheckSteered",
       "to": "resource:attribute:pendingUserInputAttribute",
@@ -20359,7 +20485,7 @@
       }
     },
     {
-      "id": "edge:0871",
+      "id": "edge:0878",
       "kind": "resource_write",
       "from": "step:CheckSteered",
       "to": "resource:attribute:subagentsAttribute",
@@ -20377,7 +20503,7 @@
       }
     },
     {
-      "id": "edge:0872",
+      "id": "edge:0879",
       "kind": "resource_write",
       "from": "step:CheckSteered",
       "to": "resource:attribute:subagentsAttribute",
@@ -20395,7 +20521,7 @@
       }
     },
     {
-      "id": "edge:0873",
+      "id": "edge:0880",
       "kind": "resource_write",
       "from": "step:CheckSteered",
       "to": "resource:attribute:workspaceAttribute",
@@ -20413,7 +20539,7 @@
       }
     },
     {
-      "id": "edge:0874",
+      "id": "edge:0881",
       "kind": "resource_write",
       "from": "step:CheckSteered",
       "to": "resource:attribute:workspaceUseAttribute",
@@ -20431,7 +20557,7 @@
       }
     },
     {
-      "id": "edge:0875",
+      "id": "edge:0882",
       "kind": "resource_write",
       "from": "step:CheckSteered",
       "to": "resource:stream:agentActivityStream",
@@ -20452,7 +20578,7 @@
       }
     },
     {
-      "id": "edge:0876",
+      "id": "edge:0883",
       "kind": "failure_transition",
       "from": "step:CompactContext",
       "to": "step:RecordCompactionFailure",
@@ -20468,7 +20594,7 @@
       }
     },
     {
-      "id": "edge:0877",
+      "id": "edge:0884",
       "kind": "resource_write",
       "from": "step:CompleteProjectSession",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -20486,7 +20612,7 @@
       }
     },
     {
-      "id": "edge:0878",
+      "id": "edge:0885",
       "kind": "resource_write",
       "from": "step:CompleteProjectSession",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -20504,7 +20630,7 @@
       }
     },
     {
-      "id": "edge:0879",
+      "id": "edge:0886",
       "kind": "failure_transition",
       "from": "step:DeployPreviewHandoff",
       "to": "step:AbandonPreviewHandoff",
@@ -20520,7 +20646,7 @@
       }
     },
     {
-      "id": "edge:0880",
+      "id": "edge:0887",
       "kind": "resource_publish",
       "from": "step:ExecuteParallelTool",
       "to": "resource:channel:parallelToolResultsChannel",
@@ -20536,7 +20662,7 @@
       }
     },
     {
-      "id": "edge:0881",
+      "id": "edge:0888",
       "kind": "resource_write",
       "from": "step:ExecuteParallelTool",
       "to": "resource:stream:agentActivityStream",
@@ -20557,7 +20683,7 @@
       }
     },
     {
-      "id": "edge:0882",
+      "id": "edge:0889",
       "kind": "failure_transition",
       "from": "step:ExecuteParallelTool",
       "to": "step:RecoverParallelToolExecution",
@@ -20573,7 +20699,7 @@
       }
     },
     {
-      "id": "edge:0883",
+      "id": "edge:0890",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:agentStateAttribute",
@@ -20591,7 +20717,7 @@
       }
     },
     {
-      "id": "edge:0884",
+      "id": "edge:0891",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -20609,7 +20735,7 @@
       }
     },
     {
-      "id": "edge:0885",
+      "id": "edge:0892",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -20627,7 +20753,7 @@
       }
     },
     {
-      "id": "edge:0886",
+      "id": "edge:0893",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:backgroundCommandsAttribute",
@@ -20645,7 +20771,7 @@
       }
     },
     {
-      "id": "edge:0887",
+      "id": "edge:0894",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:backgroundCommandsAttribute",
@@ -20663,7 +20789,7 @@
       }
     },
     {
-      "id": "edge:0888",
+      "id": "edge:0895",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:builtFlowDesignAttribute",
@@ -20681,7 +20807,7 @@
       }
     },
     {
-      "id": "edge:0889",
+      "id": "edge:0896",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:builtFlowDesignCommitAttribute",
@@ -20699,7 +20825,7 @@
       }
     },
     {
-      "id": "edge:0890",
+      "id": "edge:0897",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:connectorContributionsAttribute",
@@ -20717,7 +20843,7 @@
       }
     },
     {
-      "id": "edge:0891",
+      "id": "edge:0898",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -20735,7 +20861,7 @@
       }
     },
     {
-      "id": "edge:0892",
+      "id": "edge:0899",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -20753,7 +20879,7 @@
       }
     },
     {
-      "id": "edge:0893",
+      "id": "edge:0900",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -20771,7 +20897,7 @@
       }
     },
     {
-      "id": "edge:0894",
+      "id": "edge:0901",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:headCommitAttribute",
@@ -20789,7 +20915,7 @@
       }
     },
     {
-      "id": "edge:0895",
+      "id": "edge:0902",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:modelKeyInfoAttribute",
@@ -20807,7 +20933,7 @@
       }
     },
     {
-      "id": "edge:0896",
+      "id": "edge:0903",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:pendingSubagentWorktreeCleanupAttribute",
@@ -20823,7 +20949,7 @@
       }
     },
     {
-      "id": "edge:0897",
+      "id": "edge:0904",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:previewHandoffAttribute",
@@ -20841,7 +20967,7 @@
       }
     },
     {
-      "id": "edge:0898",
+      "id": "edge:0905",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:sessionUpdatedAtAttribute",
@@ -20859,7 +20985,7 @@
       }
     },
     {
-      "id": "edge:0899",
+      "id": "edge:0906",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:subagentsAttribute",
@@ -20877,7 +21003,7 @@
       }
     },
     {
-      "id": "edge:0900",
+      "id": "edge:0907",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:subagentsAttribute",
@@ -20895,7 +21021,7 @@
       }
     },
     {
-      "id": "edge:0901",
+      "id": "edge:0908",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:taskWorktreesAttribute",
@@ -20913,7 +21039,7 @@
       }
     },
     {
-      "id": "edge:0902",
+      "id": "edge:0909",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:taskWorktreesAttribute",
@@ -20931,7 +21057,7 @@
       }
     },
     {
-      "id": "edge:0903",
+      "id": "edge:0910",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:workspaceUseAttribute",
@@ -20949,7 +21075,7 @@
       }
     },
     {
-      "id": "edge:0904",
+      "id": "edge:0911",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:attribute:writtenDesignStepsAttribute",
@@ -20967,7 +21093,7 @@
       }
     },
     {
-      "id": "edge:0905",
+      "id": "edge:0912",
       "kind": "resource_write",
       "from": "step:ExecuteTool",
       "to": "resource:stream:agentActivityStream",
@@ -20988,7 +21114,7 @@
       }
     },
     {
-      "id": "edge:0906",
+      "id": "edge:0913",
       "kind": "failure_transition",
       "from": "step:ExecuteTool",
       "to": "step:RecordToolFailure",
@@ -21004,7 +21130,7 @@
       }
     },
     {
-      "id": "edge:0907",
+      "id": "edge:0914",
       "kind": "failure_transition",
       "from": "step:ExecuteTool",
       "to": "step:SettleForegroundCommand",
@@ -21020,7 +21146,7 @@
       }
     },
     {
-      "id": "edge:0908",
+      "id": "edge:0915",
       "kind": "resource_write",
       "from": "step:FinishInterrupt",
       "to": "resource:attribute:agentInterruptAttribute",
@@ -21036,7 +21162,7 @@
       }
     },
     {
-      "id": "edge:0909",
+      "id": "edge:0916",
       "kind": "resource_write",
       "from": "step:FinishInterrupt",
       "to": "resource:attribute:agentInterruptAttribute",
@@ -21054,7 +21180,7 @@
       }
     },
     {
-      "id": "edge:0910",
+      "id": "edge:0917",
       "kind": "resource_write",
       "from": "step:FinishInterrupt",
       "to": "resource:attribute:agentStateAttribute",
@@ -21072,7 +21198,7 @@
       }
     },
     {
-      "id": "edge:0911",
+      "id": "edge:0918",
       "kind": "resource_write",
       "from": "step:FinishInterrupt",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -21090,7 +21216,7 @@
       }
     },
     {
-      "id": "edge:0912",
+      "id": "edge:0919",
       "kind": "resource_write",
       "from": "step:FinishInterrupt",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -21108,7 +21234,7 @@
       }
     },
     {
-      "id": "edge:0913",
+      "id": "edge:0920",
       "kind": "resource_write",
       "from": "step:FinishInterrupt",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -21126,7 +21252,7 @@
       }
     },
     {
-      "id": "edge:0914",
+      "id": "edge:0921",
       "kind": "resource_write",
       "from": "step:FinishInterrupt",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -21144,7 +21270,7 @@
       }
     },
     {
-      "id": "edge:0915",
+      "id": "edge:0922",
       "kind": "resource_write",
       "from": "step:FinishInterrupt",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -21162,7 +21288,7 @@
       }
     },
     {
-      "id": "edge:0916",
+      "id": "edge:0923",
       "kind": "resource_write",
       "from": "step:FinishInterrupt",
       "to": "resource:attribute:pendingApprovalAttribute",
@@ -21180,7 +21306,7 @@
       }
     },
     {
-      "id": "edge:0917",
+      "id": "edge:0924",
       "kind": "resource_write",
       "from": "step:FinishInterrupt",
       "to": "resource:attribute:pendingTimerAttribute",
@@ -21198,7 +21324,7 @@
       }
     },
     {
-      "id": "edge:0918",
+      "id": "edge:0925",
       "kind": "resource_write",
       "from": "step:FinishInterrupt",
       "to": "resource:attribute:pendingUserInputAttribute",
@@ -21216,7 +21342,7 @@
       }
     },
     {
-      "id": "edge:0919",
+      "id": "edge:0926",
       "kind": "resource_write",
       "from": "step:FinishInterrupt",
       "to": "resource:attribute:subagentsAttribute",
@@ -21234,7 +21360,7 @@
       }
     },
     {
-      "id": "edge:0920",
+      "id": "edge:0927",
       "kind": "resource_write",
       "from": "step:FinishInterrupt",
       "to": "resource:attribute:workspaceUseAttribute",
@@ -21252,7 +21378,7 @@
       }
     },
     {
-      "id": "edge:0921",
+      "id": "edge:0928",
       "kind": "resource_write",
       "from": "step:FinishInterrupt",
       "to": "resource:channel:parallelToolResultsChannel",
@@ -21270,7 +21396,7 @@
       }
     },
     {
-      "id": "edge:0922",
+      "id": "edge:0929",
       "kind": "resource_write",
       "from": "step:FinishInterrupt",
       "to": "resource:stream:agentActivityStream",
@@ -21291,7 +21417,7 @@
       }
     },
     {
-      "id": "edge:0923",
+      "id": "edge:0930",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:agentStateAttribute",
@@ -21307,7 +21433,7 @@
       }
     },
     {
-      "id": "edge:0924",
+      "id": "edge:0931",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -21325,7 +21451,7 @@
       }
     },
     {
-      "id": "edge:0925",
+      "id": "edge:0932",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -21343,7 +21469,7 @@
       }
     },
     {
-      "id": "edge:0926",
+      "id": "edge:0933",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:builtFlowDesignAttribute",
@@ -21361,7 +21487,7 @@
       }
     },
     {
-      "id": "edge:0927",
+      "id": "edge:0934",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:builtFlowDesignCommitAttribute",
@@ -21379,7 +21505,7 @@
       }
     },
     {
-      "id": "edge:0928",
+      "id": "edge:0935",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:closeReasonAttribute",
@@ -21397,7 +21523,7 @@
       }
     },
     {
-      "id": "edge:0929",
+      "id": "edge:0936",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:confirmedRequirementsAttribute",
@@ -21415,7 +21541,7 @@
       }
     },
     {
-      "id": "edge:0930",
+      "id": "edge:0937",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -21433,7 +21559,7 @@
       }
     },
     {
-      "id": "edge:0931",
+      "id": "edge:0938",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -21451,7 +21577,7 @@
       }
     },
     {
-      "id": "edge:0932",
+      "id": "edge:0939",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -21469,7 +21595,7 @@
       }
     },
     {
-      "id": "edge:0933",
+      "id": "edge:0940",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:flowDesignsAttribute",
@@ -21487,7 +21613,7 @@
       }
     },
     {
-      "id": "edge:0934",
+      "id": "edge:0941",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:flowDesignsAttribute",
@@ -21505,7 +21631,7 @@
       }
     },
     {
-      "id": "edge:0935",
+      "id": "edge:0942",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:messageWindowLockAttribute",
@@ -21521,7 +21647,7 @@
       }
     },
     {
-      "id": "edge:0936",
+      "id": "edge:0943",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:previewAutoDeployAttribute",
@@ -21537,7 +21663,7 @@
       }
     },
     {
-      "id": "edge:0937",
+      "id": "edge:0944",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:sessionRevisionAttribute",
@@ -21555,7 +21681,7 @@
       }
     },
     {
-      "id": "edge:0938",
+      "id": "edge:0945",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:sessionStatusAttribute",
@@ -21573,7 +21699,7 @@
       }
     },
     {
-      "id": "edge:0939",
+      "id": "edge:0946",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:sessionUpdatedAtAttribute",
@@ -21591,7 +21717,7 @@
       }
     },
     {
-      "id": "edge:0940",
+      "id": "edge:0947",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:waitingInputRoundAttribute",
@@ -21607,7 +21733,7 @@
       }
     },
     {
-      "id": "edge:0941",
+      "id": "edge:0948",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:workspaceAttribute",
@@ -21623,7 +21749,7 @@
       }
     },
     {
-      "id": "edge:0942",
+      "id": "edge:0949",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:workspaceUseAttribute",
@@ -21639,7 +21765,7 @@
       }
     },
     {
-      "id": "edge:0943",
+      "id": "edge:0950",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:writtenDesignStepsAttribute",
@@ -21657,7 +21783,7 @@
       }
     },
     {
-      "id": "edge:0944",
+      "id": "edge:0951",
       "kind": "resource_write",
       "from": "step:InitializeSessionAgent",
       "to": "resource:attribute:writtenDesignStepsAttribute",
@@ -21675,7 +21801,7 @@
       }
     },
     {
-      "id": "edge:0945",
+      "id": "edge:0952",
       "kind": "resource_publish",
       "from": "step:InitializeSessionAgent",
       "to": "resource:channel:queuedUserMessagesChannel",
@@ -21693,7 +21819,7 @@
       }
     },
     {
-      "id": "edge:0946",
+      "id": "edge:0953",
       "kind": "failure_transition",
       "from": "step:InterruptAgent",
       "to": "step:FinishInterrupt",
@@ -21709,7 +21835,7 @@
       }
     },
     {
-      "id": "edge:0947",
+      "id": "edge:0954",
       "kind": "resource_write",
       "from": "step:PurgeClosedModelReplay",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -21727,7 +21853,7 @@
       }
     },
     {
-      "id": "edge:0948",
+      "id": "edge:0955",
       "kind": "resource_write",
       "from": "step:PurgeClosedModelReplay",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -21745,7 +21871,7 @@
       }
     },
     {
-      "id": "edge:0949",
+      "id": "edge:0956",
       "kind": "resource_write",
       "from": "step:RecordCompactionFailure",
       "to": "resource:attribute:agentStateAttribute",
@@ -21763,7 +21889,7 @@
       }
     },
     {
-      "id": "edge:0950",
+      "id": "edge:0957",
       "kind": "resource_write",
       "from": "step:RecordCompactionFailure",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -21781,7 +21907,7 @@
       }
     },
     {
-      "id": "edge:0951",
+      "id": "edge:0958",
       "kind": "resource_write",
       "from": "step:RecordCompactionFailure",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -21799,7 +21925,7 @@
       }
     },
     {
-      "id": "edge:0952",
+      "id": "edge:0959",
       "kind": "resource_write",
       "from": "step:RecordCompactionFailure",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -21817,7 +21943,7 @@
       }
     },
     {
-      "id": "edge:0953",
+      "id": "edge:0960",
       "kind": "resource_write",
       "from": "step:RecordCompactionFailure",
       "to": "resource:attribute:contextSegmentPromptsAttribute",
@@ -21835,7 +21961,7 @@
       }
     },
     {
-      "id": "edge:0954",
+      "id": "edge:0961",
       "kind": "resource_write",
       "from": "step:RecordCompactionFailure",
       "to": "resource:attribute:contextSegmentPromptsAttribute",
@@ -21853,7 +21979,7 @@
       }
     },
     {
-      "id": "edge:0955",
+      "id": "edge:0962",
       "kind": "resource_write",
       "from": "step:RecordCompactionFailure",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -21871,7 +21997,7 @@
       }
     },
     {
-      "id": "edge:0956",
+      "id": "edge:0963",
       "kind": "resource_write",
       "from": "step:RecordCompactionFailure",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -21889,7 +22015,7 @@
       }
     },
     {
-      "id": "edge:0957",
+      "id": "edge:0964",
       "kind": "resource_write",
       "from": "step:RecordCompactionFailure",
       "to": "resource:stream:agentActivityStream",
@@ -21910,7 +22036,7 @@
       }
     },
     {
-      "id": "edge:0958",
+      "id": "edge:0965",
       "kind": "resource_write",
       "from": "step:RecordModelFailure",
       "to": "resource:attribute:agentStateAttribute",
@@ -21928,7 +22054,7 @@
       }
     },
     {
-      "id": "edge:0959",
+      "id": "edge:0966",
       "kind": "resource_write",
       "from": "step:RecordModelFailure",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -21946,7 +22072,7 @@
       }
     },
     {
-      "id": "edge:0960",
+      "id": "edge:0967",
       "kind": "resource_write",
       "from": "step:RecordModelFailure",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -21964,7 +22090,7 @@
       }
     },
     {
-      "id": "edge:0961",
+      "id": "edge:0968",
       "kind": "resource_write",
       "from": "step:RecordModelFailure",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -21982,7 +22108,7 @@
       }
     },
     {
-      "id": "edge:0962",
+      "id": "edge:0969",
       "kind": "resource_write",
       "from": "step:RecordModelFailure",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -22000,7 +22126,7 @@
       }
     },
     {
-      "id": "edge:0963",
+      "id": "edge:0970",
       "kind": "resource_write",
       "from": "step:RecordModelFailure",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -22018,7 +22144,7 @@
       }
     },
     {
-      "id": "edge:0964",
+      "id": "edge:0971",
       "kind": "resource_write",
       "from": "step:RecordModelFailure",
       "to": "resource:stream:agentActivityStream",
@@ -22039,7 +22165,7 @@
       }
     },
     {
-      "id": "edge:0965",
+      "id": "edge:0972",
       "kind": "resource_write",
       "from": "step:RecordPlatformModelResult",
       "to": "resource:attribute:agentStateAttribute",
@@ -22057,7 +22183,7 @@
       }
     },
     {
-      "id": "edge:0966",
+      "id": "edge:0973",
       "kind": "resource_write",
       "from": "step:RecordPlatformModelResult",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -22075,7 +22201,7 @@
       }
     },
     {
-      "id": "edge:0967",
+      "id": "edge:0974",
       "kind": "resource_write",
       "from": "step:RecordPlatformModelResult",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -22093,7 +22219,7 @@
       }
     },
     {
-      "id": "edge:0968",
+      "id": "edge:0975",
       "kind": "resource_write",
       "from": "step:RecordPlatformModelResult",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -22111,7 +22237,7 @@
       }
     },
     {
-      "id": "edge:0969",
+      "id": "edge:0976",
       "kind": "resource_write",
       "from": "step:RecordPlatformModelResult",
       "to": "resource:attribute:contextSegmentPromptsAttribute",
@@ -22129,7 +22255,7 @@
       }
     },
     {
-      "id": "edge:0970",
+      "id": "edge:0977",
       "kind": "resource_write",
       "from": "step:RecordPlatformModelResult",
       "to": "resource:attribute:contextSegmentPromptsAttribute",
@@ -22147,7 +22273,7 @@
       }
     },
     {
-      "id": "edge:0971",
+      "id": "edge:0978",
       "kind": "resource_write",
       "from": "step:RecordPlatformModelResult",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -22165,7 +22291,7 @@
       }
     },
     {
-      "id": "edge:0972",
+      "id": "edge:0979",
       "kind": "resource_write",
       "from": "step:RecordPlatformModelResult",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -22183,7 +22309,7 @@
       }
     },
     {
-      "id": "edge:0973",
+      "id": "edge:0980",
       "kind": "resource_write",
       "from": "step:RecordPlatformModelResult",
       "to": "resource:stream:agentActivityStream",
@@ -22204,136 +22330,10 @@
       }
     },
     {
-      "id": "edge:0974",
-      "kind": "resource_write",
-      "from": "step:RecordToolFailure",
-      "to": "resource:attribute:agentStateAttribute",
-      "label": "Set",
-      "span": {
-        "startLine": 1046,
-        "startColumn": 42,
-        "endLine": 1046,
-        "endColumn": 70
-      },
-      "metadata": {
-        "function": "appendEntry",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0975",
-      "kind": "resource_write",
-      "from": "step:RecordToolFailure",
-      "to": "resource:attribute:archivedMessagesAttribute",
-      "label": "Delete",
-      "span": {
-        "startLine": 1046,
-        "startColumn": 42,
-        "endLine": 1046,
-        "endColumn": 70
-      },
-      "metadata": {
-        "function": "trimRetainedEntries",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0976",
-      "kind": "resource_write",
-      "from": "step:RecordToolFailure",
-      "to": "resource:attribute:archivedMessagesAttribute",
-      "label": "Set",
-      "span": {
-        "startLine": 1046,
-        "startColumn": 42,
-        "endLine": 1046,
-        "endColumn": 70
-      },
-      "metadata": {
-        "function": "archiveEntryChunk",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0977",
-      "kind": "resource_write",
-      "from": "step:RecordToolFailure",
-      "to": "resource:attribute:builtFlowDesignAttribute",
-      "label": "Set",
-      "span": {
-        "startLine": 1055,
-        "startColumn": 10,
-        "endLine": 1055,
-        "endColumn": 79
-      },
-      "metadata": {
-        "function": "recordDesignProgress",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0978",
-      "kind": "resource_write",
-      "from": "step:RecordToolFailure",
-      "to": "resource:attribute:builtFlowDesignCommitAttribute",
-      "label": "Set",
-      "span": {
-        "startLine": 1055,
-        "startColumn": 10,
-        "endLine": 1055,
-        "endColumn": 79
-      },
-      "metadata": {
-        "function": "recordDesignProgress",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0979",
-      "kind": "resource_write",
-      "from": "step:RecordToolFailure",
-      "to": "resource:attribute:contextSegmentAttribute",
-      "label": "Set",
-      "span": {
-        "startLine": 1046,
-        "startColumn": 42,
-        "endLine": 1046,
-        "endColumn": 70
-      },
-      "metadata": {
-        "function": "appendEntry",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0980",
-      "kind": "resource_write",
-      "from": "step:RecordToolFailure",
-      "to": "resource:attribute:currentMessagesAttribute",
-      "label": "Delete",
-      "span": {
-        "startLine": 1046,
-        "startColumn": 42,
-        "endLine": 1046,
-        "endColumn": 70
-      },
-      "metadata": {
-        "function": "archiveEntryChunk",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
       "id": "edge:0981",
       "kind": "resource_write",
       "from": "step:RecordToolFailure",
-      "to": "resource:attribute:currentMessagesAttribute",
+      "to": "resource:attribute:agentStateAttribute",
       "label": "Set",
       "span": {
         "startLine": 1046,
@@ -22351,6 +22351,132 @@
       "id": "edge:0982",
       "kind": "resource_write",
       "from": "step:RecordToolFailure",
+      "to": "resource:attribute:archivedMessagesAttribute",
+      "label": "Delete",
+      "span": {
+        "startLine": 1046,
+        "startColumn": 42,
+        "endLine": 1046,
+        "endColumn": 70
+      },
+      "metadata": {
+        "function": "trimRetainedEntries",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0983",
+      "kind": "resource_write",
+      "from": "step:RecordToolFailure",
+      "to": "resource:attribute:archivedMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 1046,
+        "startColumn": 42,
+        "endLine": 1046,
+        "endColumn": 70
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0984",
+      "kind": "resource_write",
+      "from": "step:RecordToolFailure",
+      "to": "resource:attribute:builtFlowDesignAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 1055,
+        "startColumn": 10,
+        "endLine": 1055,
+        "endColumn": 79
+      },
+      "metadata": {
+        "function": "recordDesignProgress",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0985",
+      "kind": "resource_write",
+      "from": "step:RecordToolFailure",
+      "to": "resource:attribute:builtFlowDesignCommitAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 1055,
+        "startColumn": 10,
+        "endLine": 1055,
+        "endColumn": 79
+      },
+      "metadata": {
+        "function": "recordDesignProgress",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0986",
+      "kind": "resource_write",
+      "from": "step:RecordToolFailure",
+      "to": "resource:attribute:contextSegmentAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 1046,
+        "startColumn": 42,
+        "endLine": 1046,
+        "endColumn": 70
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0987",
+      "kind": "resource_write",
+      "from": "step:RecordToolFailure",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Delete",
+      "span": {
+        "startLine": 1046,
+        "startColumn": 42,
+        "endLine": 1046,
+        "endColumn": 70
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0988",
+      "kind": "resource_write",
+      "from": "step:RecordToolFailure",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 1046,
+        "startColumn": 42,
+        "endLine": 1046,
+        "endColumn": 70
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0989",
+      "kind": "resource_write",
+      "from": "step:RecordToolFailure",
       "to": "resource:attribute:headCommitAttribute",
       "label": "Set",
       "span": {
@@ -22366,7 +22492,7 @@
       }
     },
     {
-      "id": "edge:0983",
+      "id": "edge:0990",
       "kind": "resource_write",
       "from": "step:RecordToolFailure",
       "to": "resource:attribute:previewHandoffAttribute",
@@ -22384,7 +22510,7 @@
       }
     },
     {
-      "id": "edge:0984",
+      "id": "edge:0991",
       "kind": "resource_write",
       "from": "step:RecordToolFailure",
       "to": "resource:attribute:sessionUpdatedAtAttribute",
@@ -22402,7 +22528,7 @@
       }
     },
     {
-      "id": "edge:0985",
+      "id": "edge:0992",
       "kind": "resource_write",
       "from": "step:RecordToolFailure",
       "to": "resource:attribute:subagentsAttribute",
@@ -22420,7 +22546,7 @@
       }
     },
     {
-      "id": "edge:0986",
+      "id": "edge:0993",
       "kind": "resource_write",
       "from": "step:RecordToolFailure",
       "to": "resource:attribute:subagentsAttribute",
@@ -22438,7 +22564,7 @@
       }
     },
     {
-      "id": "edge:0987",
+      "id": "edge:0994",
       "kind": "resource_write",
       "from": "step:RecordToolFailure",
       "to": "resource:attribute:workspaceUseAttribute",
@@ -22456,7 +22582,7 @@
       }
     },
     {
-      "id": "edge:0988",
+      "id": "edge:0995",
       "kind": "resource_write",
       "from": "step:RecordToolFailure",
       "to": "resource:attribute:writtenDesignStepsAttribute",
@@ -22474,7 +22600,7 @@
       }
     },
     {
-      "id": "edge:0989",
+      "id": "edge:0996",
       "kind": "resource_write",
       "from": "step:RecordToolFailure",
       "to": "resource:stream:agentActivityStream",
@@ -22495,7 +22621,7 @@
       }
     },
     {
-      "id": "edge:0990",
+      "id": "edge:0997",
       "kind": "resource_write",
       "from": "step:RecordWorkspaceFailure",
       "to": "resource:attribute:agentStateAttribute",
@@ -22513,7 +22639,7 @@
       }
     },
     {
-      "id": "edge:0991",
+      "id": "edge:0998",
       "kind": "resource_write",
       "from": "step:RecordWorkspaceFailure",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -22531,7 +22657,7 @@
       }
     },
     {
-      "id": "edge:0992",
+      "id": "edge:0999",
       "kind": "resource_write",
       "from": "step:RecordWorkspaceFailure",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -22549,7 +22675,7 @@
       }
     },
     {
-      "id": "edge:0993",
+      "id": "edge:1000",
       "kind": "resource_write",
       "from": "step:RecordWorkspaceFailure",
       "to": "resource:attribute:builtFlowDesignAttribute",
@@ -22567,7 +22693,7 @@
       }
     },
     {
-      "id": "edge:0994",
+      "id": "edge:1001",
       "kind": "resource_write",
       "from": "step:RecordWorkspaceFailure",
       "to": "resource:attribute:builtFlowDesignCommitAttribute",
@@ -22585,7 +22711,7 @@
       }
     },
     {
-      "id": "edge:0995",
+      "id": "edge:1002",
       "kind": "resource_write",
       "from": "step:RecordWorkspaceFailure",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -22603,7 +22729,7 @@
       }
     },
     {
-      "id": "edge:0996",
+      "id": "edge:1003",
       "kind": "resource_write",
       "from": "step:RecordWorkspaceFailure",
       "to": "resource:attribute:contextSegmentPromptsAttribute",
@@ -22621,7 +22747,7 @@
       }
     },
     {
-      "id": "edge:0997",
+      "id": "edge:1004",
       "kind": "resource_write",
       "from": "step:RecordWorkspaceFailure",
       "to": "resource:attribute:contextSegmentPromptsAttribute",
@@ -22639,7 +22765,7 @@
       }
     },
     {
-      "id": "edge:0998",
+      "id": "edge:1005",
       "kind": "resource_write",
       "from": "step:RecordWorkspaceFailure",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -22657,7 +22783,7 @@
       }
     },
     {
-      "id": "edge:0999",
+      "id": "edge:1006",
       "kind": "resource_write",
       "from": "step:RecordWorkspaceFailure",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -22675,7 +22801,7 @@
       }
     },
     {
-      "id": "edge:1000",
+      "id": "edge:1007",
       "kind": "resource_write",
       "from": "step:RecordWorkspaceFailure",
       "to": "resource:attribute:headCommitAttribute",
@@ -22693,7 +22819,7 @@
       }
     },
     {
-      "id": "edge:1001",
+      "id": "edge:1008",
       "kind": "resource_write",
       "from": "step:RecordWorkspaceFailure",
       "to": "resource:attribute:previewHandoffAttribute",
@@ -22711,7 +22837,7 @@
       }
     },
     {
-      "id": "edge:1002",
+      "id": "edge:1009",
       "kind": "resource_write",
       "from": "step:RecordWorkspaceFailure",
       "to": "resource:attribute:sessionUpdatedAtAttribute",
@@ -22729,7 +22855,7 @@
       }
     },
     {
-      "id": "edge:1003",
+      "id": "edge:1010",
       "kind": "resource_write",
       "from": "step:RecordWorkspaceFailure",
       "to": "resource:attribute:subagentsAttribute",
@@ -22747,7 +22873,7 @@
       }
     },
     {
-      "id": "edge:1004",
+      "id": "edge:1011",
       "kind": "resource_write",
       "from": "step:RecordWorkspaceFailure",
       "to": "resource:attribute:workspaceAttribute",
@@ -22765,7 +22891,7 @@
       }
     },
     {
-      "id": "edge:1005",
+      "id": "edge:1012",
       "kind": "resource_write",
       "from": "step:RecordWorkspaceFailure",
       "to": "resource:attribute:workspaceUseAttribute",
@@ -22783,7 +22909,7 @@
       }
     },
     {
-      "id": "edge:1006",
+      "id": "edge:1013",
       "kind": "resource_write",
       "from": "step:RecordWorkspaceFailure",
       "to": "resource:attribute:writtenDesignStepsAttribute",
@@ -22801,7 +22927,7 @@
       }
     },
     {
-      "id": "edge:1007",
+      "id": "edge:1014",
       "kind": "resource_write",
       "from": "step:RecordWorkspaceFailure",
       "to": "resource:stream:agentActivityStream",
@@ -22822,7 +22948,7 @@
       }
     },
     {
-      "id": "edge:1008",
+      "id": "edge:1015",
       "kind": "resource_publish",
       "from": "step:RecoverParallelToolExecution",
       "to": "resource:channel:parallelToolResultsChannel",
@@ -22838,7 +22964,7 @@
       }
     },
     {
-      "id": "edge:1009",
+      "id": "edge:1016",
       "kind": "failure_transition",
       "from": "step:ReportPlatformIssue",
       "to": "step:AbandonPlatformIssue",
@@ -22854,7 +22980,7 @@
       }
     },
     {
-      "id": "edge:1010",
+      "id": "edge:1017",
       "kind": "resource_write",
       "from": "step:RequestSessionWorkspace",
       "to": "resource:attribute:agentStateAttribute",
@@ -22872,7 +22998,7 @@
       }
     },
     {
-      "id": "edge:1011",
+      "id": "edge:1018",
       "kind": "resource_write",
       "from": "step:RequestSessionWorkspace",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -22890,7 +23016,7 @@
       }
     },
     {
-      "id": "edge:1012",
+      "id": "edge:1019",
       "kind": "resource_write",
       "from": "step:RequestSessionWorkspace",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -22908,7 +23034,7 @@
       }
     },
     {
-      "id": "edge:1013",
+      "id": "edge:1020",
       "kind": "resource_write",
       "from": "step:RequestSessionWorkspace",
       "to": "resource:attribute:builtFlowDesignAttribute",
@@ -22926,7 +23052,7 @@
       }
     },
     {
-      "id": "edge:1014",
+      "id": "edge:1021",
       "kind": "resource_write",
       "from": "step:RequestSessionWorkspace",
       "to": "resource:attribute:builtFlowDesignCommitAttribute",
@@ -22944,7 +23070,7 @@
       }
     },
     {
-      "id": "edge:1015",
+      "id": "edge:1022",
       "kind": "resource_write",
       "from": "step:RequestSessionWorkspace",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -22962,7 +23088,7 @@
       }
     },
     {
-      "id": "edge:1016",
+      "id": "edge:1023",
       "kind": "resource_write",
       "from": "step:RequestSessionWorkspace",
       "to": "resource:attribute:contextSegmentPromptsAttribute",
@@ -22980,7 +23106,7 @@
       }
     },
     {
-      "id": "edge:1017",
+      "id": "edge:1024",
       "kind": "resource_write",
       "from": "step:RequestSessionWorkspace",
       "to": "resource:attribute:contextSegmentPromptsAttribute",
@@ -22998,7 +23124,7 @@
       }
     },
     {
-      "id": "edge:1018",
+      "id": "edge:1025",
       "kind": "resource_write",
       "from": "step:RequestSessionWorkspace",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -23016,7 +23142,7 @@
       }
     },
     {
-      "id": "edge:1019",
+      "id": "edge:1026",
       "kind": "resource_write",
       "from": "step:RequestSessionWorkspace",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -23034,7 +23160,7 @@
       }
     },
     {
-      "id": "edge:1020",
+      "id": "edge:1027",
       "kind": "resource_write",
       "from": "step:RequestSessionWorkspace",
       "to": "resource:attribute:headCommitAttribute",
@@ -23052,7 +23178,7 @@
       }
     },
     {
-      "id": "edge:1021",
+      "id": "edge:1028",
       "kind": "resource_write",
       "from": "step:RequestSessionWorkspace",
       "to": "resource:attribute:previewHandoffAttribute",
@@ -23070,7 +23196,7 @@
       }
     },
     {
-      "id": "edge:1022",
+      "id": "edge:1029",
       "kind": "resource_write",
       "from": "step:RequestSessionWorkspace",
       "to": "resource:attribute:sessionUpdatedAtAttribute",
@@ -23088,7 +23214,7 @@
       }
     },
     {
-      "id": "edge:1023",
+      "id": "edge:1030",
       "kind": "resource_write",
       "from": "step:RequestSessionWorkspace",
       "to": "resource:attribute:subagentsAttribute",
@@ -23106,7 +23232,7 @@
       }
     },
     {
-      "id": "edge:1024",
+      "id": "edge:1031",
       "kind": "resource_write",
       "from": "step:RequestSessionWorkspace",
       "to": "resource:attribute:workspaceAttribute",
@@ -23124,7 +23250,7 @@
       }
     },
     {
-      "id": "edge:1025",
+      "id": "edge:1032",
       "kind": "resource_write",
       "from": "step:RequestSessionWorkspace",
       "to": "resource:attribute:workspaceUseAttribute",
@@ -23142,7 +23268,7 @@
       }
     },
     {
-      "id": "edge:1026",
+      "id": "edge:1033",
       "kind": "resource_write",
       "from": "step:RequestSessionWorkspace",
       "to": "resource:attribute:writtenDesignStepsAttribute",
@@ -23160,7 +23286,7 @@
       }
     },
     {
-      "id": "edge:1027",
+      "id": "edge:1034",
       "kind": "resource_write",
       "from": "step:RequestSessionWorkspace",
       "to": "resource:stream:agentActivityStream",
@@ -23181,7 +23307,7 @@
       }
     },
     {
-      "id": "edge:1028",
+      "id": "edge:1035",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:attribute:agentInterruptAttribute",
@@ -23197,7 +23323,7 @@
       }
     },
     {
-      "id": "edge:1029",
+      "id": "edge:1036",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:attribute:agentInterruptAttribute",
@@ -23215,136 +23341,10 @@
       }
     },
     {
-      "id": "edge:1030",
-      "kind": "resource_write",
-      "from": "step:RouteTool",
-      "to": "resource:attribute:agentStateAttribute",
-      "label": "Set",
-      "span": {
-        "startLine": 798,
-        "startColumn": 18,
-        "endLine": 798,
-        "endColumn": 48
-      },
-      "metadata": {
-        "function": "appendEntry",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:1031",
-      "kind": "resource_write",
-      "from": "step:RouteTool",
-      "to": "resource:attribute:archivedMessagesAttribute",
-      "label": "Delete",
-      "span": {
-        "startLine": 798,
-        "startColumn": 18,
-        "endLine": 798,
-        "endColumn": 48
-      },
-      "metadata": {
-        "function": "trimRetainedEntries",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:1032",
-      "kind": "resource_write",
-      "from": "step:RouteTool",
-      "to": "resource:attribute:archivedMessagesAttribute",
-      "label": "Set",
-      "span": {
-        "startLine": 798,
-        "startColumn": 18,
-        "endLine": 798,
-        "endColumn": 48
-      },
-      "metadata": {
-        "function": "archiveEntryChunk",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:1033",
-      "kind": "resource_write",
-      "from": "step:RouteTool",
-      "to": "resource:attribute:confirmedRequirementsAttribute",
-      "label": "Set",
-      "span": {
-        "startLine": 818,
-        "startColumn": 35,
-        "endLine": 818,
-        "endColumn": 76
-      },
-      "metadata": {
-        "function": "confirmRequirements",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:1034",
-      "kind": "resource_write",
-      "from": "step:RouteTool",
-      "to": "resource:attribute:connectorContributionsAttribute",
-      "label": "Set",
-      "span": {
-        "startLine": 823,
-        "startColumn": 66,
-        "endLine": 823,
-        "endColumn": 103
-      },
-      "metadata": {
-        "function": "admitConnectorContribution",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:1035",
-      "kind": "resource_write",
-      "from": "step:RouteTool",
-      "to": "resource:attribute:contextSegmentAttribute",
-      "label": "Set",
-      "span": {
-        "startLine": 798,
-        "startColumn": 18,
-        "endLine": 798,
-        "endColumn": 48
-      },
-      "metadata": {
-        "function": "appendEntry",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:1036",
-      "kind": "resource_write",
-      "from": "step:RouteTool",
-      "to": "resource:attribute:currentMessagesAttribute",
-      "label": "Delete",
-      "span": {
-        "startLine": 798,
-        "startColumn": 18,
-        "endLine": 798,
-        "endColumn": 48
-      },
-      "metadata": {
-        "function": "archiveEntryChunk",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
       "id": "edge:1037",
       "kind": "resource_write",
       "from": "step:RouteTool",
-      "to": "resource:attribute:currentMessagesAttribute",
+      "to": "resource:attribute:agentStateAttribute",
       "label": "Set",
       "span": {
         "startLine": 798,
@@ -23362,6 +23362,132 @@
       "id": "edge:1038",
       "kind": "resource_write",
       "from": "step:RouteTool",
+      "to": "resource:attribute:archivedMessagesAttribute",
+      "label": "Delete",
+      "span": {
+        "startLine": 798,
+        "startColumn": 18,
+        "endLine": 798,
+        "endColumn": 48
+      },
+      "metadata": {
+        "function": "trimRetainedEntries",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:1039",
+      "kind": "resource_write",
+      "from": "step:RouteTool",
+      "to": "resource:attribute:archivedMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 798,
+        "startColumn": 18,
+        "endLine": 798,
+        "endColumn": 48
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:1040",
+      "kind": "resource_write",
+      "from": "step:RouteTool",
+      "to": "resource:attribute:confirmedRequirementsAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 818,
+        "startColumn": 35,
+        "endLine": 818,
+        "endColumn": 76
+      },
+      "metadata": {
+        "function": "confirmRequirements",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:1041",
+      "kind": "resource_write",
+      "from": "step:RouteTool",
+      "to": "resource:attribute:connectorContributionsAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 823,
+        "startColumn": 66,
+        "endLine": 823,
+        "endColumn": 103
+      },
+      "metadata": {
+        "function": "admitConnectorContribution",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:1042",
+      "kind": "resource_write",
+      "from": "step:RouteTool",
+      "to": "resource:attribute:contextSegmentAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 798,
+        "startColumn": 18,
+        "endLine": 798,
+        "endColumn": 48
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:1043",
+      "kind": "resource_write",
+      "from": "step:RouteTool",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Delete",
+      "span": {
+        "startLine": 798,
+        "startColumn": 18,
+        "endLine": 798,
+        "endColumn": 48
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:1044",
+      "kind": "resource_write",
+      "from": "step:RouteTool",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 798,
+        "startColumn": 18,
+        "endLine": 798,
+        "endColumn": 48
+      },
+      "metadata": {
+        "function": "appendEntry",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:1045",
+      "kind": "resource_write",
+      "from": "step:RouteTool",
       "to": "resource:attribute:flowDesignsAttribute",
       "label": "Delete",
       "span": {
@@ -23377,7 +23503,7 @@
       }
     },
     {
-      "id": "edge:1039",
+      "id": "edge:1046",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:attribute:flowDesignsAttribute",
@@ -23395,7 +23521,7 @@
       }
     },
     {
-      "id": "edge:1040",
+      "id": "edge:1047",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:attribute:pendingApprovalAttribute",
@@ -23413,7 +23539,7 @@
       }
     },
     {
-      "id": "edge:1041",
+      "id": "edge:1048",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:attribute:pendingApprovalAttribute",
@@ -23429,7 +23555,7 @@
       }
     },
     {
-      "id": "edge:1042",
+      "id": "edge:1049",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:attribute:pendingSubagentWorktreeCleanupAttribute",
@@ -23447,7 +23573,7 @@
       }
     },
     {
-      "id": "edge:1043",
+      "id": "edge:1050",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:attribute:pendingTimerAttribute",
@@ -23465,7 +23591,7 @@
       }
     },
     {
-      "id": "edge:1044",
+      "id": "edge:1051",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:attribute:pendingTimerAttribute",
@@ -23483,7 +23609,7 @@
       }
     },
     {
-      "id": "edge:1045",
+      "id": "edge:1052",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:attribute:pendingUserInputAttribute",
@@ -23501,7 +23627,7 @@
       }
     },
     {
-      "id": "edge:1046",
+      "id": "edge:1053",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:attribute:pendingUserInputAttribute",
@@ -23519,7 +23645,7 @@
       }
     },
     {
-      "id": "edge:1047",
+      "id": "edge:1054",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:attribute:subagentsAttribute",
@@ -23537,7 +23663,7 @@
       }
     },
     {
-      "id": "edge:1048",
+      "id": "edge:1055",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:attribute:subagentsAttribute",
@@ -23555,7 +23681,7 @@
       }
     },
     {
-      "id": "edge:1049",
+      "id": "edge:1056",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:attribute:taskWorktreesAttribute",
@@ -23573,7 +23699,7 @@
       }
     },
     {
-      "id": "edge:1050",
+      "id": "edge:1057",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:attribute:taskWorktreesAttribute",
@@ -23591,7 +23717,7 @@
       }
     },
     {
-      "id": "edge:1051",
+      "id": "edge:1058",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:attribute:todoListAttribute",
@@ -23609,7 +23735,7 @@
       }
     },
     {
-      "id": "edge:1052",
+      "id": "edge:1059",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:attribute:workspaceAttribute",
@@ -23627,7 +23753,7 @@
       }
     },
     {
-      "id": "edge:1053",
+      "id": "edge:1060",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:attribute:workspaceUseAttribute",
@@ -23645,7 +23771,7 @@
       }
     },
     {
-      "id": "edge:1054",
+      "id": "edge:1061",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:attribute:writtenDesignStepsAttribute",
@@ -23663,7 +23789,7 @@
       }
     },
     {
-      "id": "edge:1055",
+      "id": "edge:1062",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:attribute:writtenDesignStepsAttribute",
@@ -23681,7 +23807,7 @@
       }
     },
     {
-      "id": "edge:1056",
+      "id": "edge:1063",
       "kind": "resource_write",
       "from": "step:RouteTool",
       "to": "resource:stream:agentActivityStream",
@@ -23702,7 +23828,7 @@
       }
     },
     {
-      "id": "edge:1057",
+      "id": "edge:1064",
       "kind": "failure_transition",
       "from": "step:SendWorkspaceCommand",
       "to": "step:RecordWorkspaceFailure",
@@ -23718,7 +23844,7 @@
       }
     },
     {
-      "id": "edge:1058",
+      "id": "edge:1065",
       "kind": "resource_write",
       "from": "step:SettleForegroundCommand",
       "to": "resource:attribute:agentStateAttribute",
@@ -23736,7 +23862,7 @@
       }
     },
     {
-      "id": "edge:1059",
+      "id": "edge:1066",
       "kind": "resource_write",
       "from": "step:SettleForegroundCommand",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -23754,7 +23880,7 @@
       }
     },
     {
-      "id": "edge:1060",
+      "id": "edge:1067",
       "kind": "resource_write",
       "from": "step:SettleForegroundCommand",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -23772,7 +23898,7 @@
       }
     },
     {
-      "id": "edge:1061",
+      "id": "edge:1068",
       "kind": "resource_write",
       "from": "step:SettleForegroundCommand",
       "to": "resource:attribute:backgroundCommandsAttribute",
@@ -23790,7 +23916,7 @@
       }
     },
     {
-      "id": "edge:1062",
+      "id": "edge:1069",
       "kind": "resource_write",
       "from": "step:SettleForegroundCommand",
       "to": "resource:attribute:backgroundCommandsAttribute",
@@ -23808,7 +23934,7 @@
       }
     },
     {
-      "id": "edge:1063",
+      "id": "edge:1070",
       "kind": "resource_write",
       "from": "step:SettleForegroundCommand",
       "to": "resource:attribute:builtFlowDesignAttribute",
@@ -23826,7 +23952,7 @@
       }
     },
     {
-      "id": "edge:1064",
+      "id": "edge:1071",
       "kind": "resource_write",
       "from": "step:SettleForegroundCommand",
       "to": "resource:attribute:builtFlowDesignCommitAttribute",
@@ -23844,7 +23970,7 @@
       }
     },
     {
-      "id": "edge:1065",
+      "id": "edge:1072",
       "kind": "resource_write",
       "from": "step:SettleForegroundCommand",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -23862,7 +23988,7 @@
       }
     },
     {
-      "id": "edge:1066",
+      "id": "edge:1073",
       "kind": "resource_write",
       "from": "step:SettleForegroundCommand",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -23880,7 +24006,7 @@
       }
     },
     {
-      "id": "edge:1067",
+      "id": "edge:1074",
       "kind": "resource_write",
       "from": "step:SettleForegroundCommand",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -23898,7 +24024,7 @@
       }
     },
     {
-      "id": "edge:1068",
+      "id": "edge:1075",
       "kind": "resource_write",
       "from": "step:SettleForegroundCommand",
       "to": "resource:attribute:headCommitAttribute",
@@ -23916,7 +24042,7 @@
       }
     },
     {
-      "id": "edge:1069",
+      "id": "edge:1076",
       "kind": "resource_write",
       "from": "step:SettleForegroundCommand",
       "to": "resource:attribute:previewHandoffAttribute",
@@ -23934,7 +24060,7 @@
       }
     },
     {
-      "id": "edge:1070",
+      "id": "edge:1077",
       "kind": "resource_write",
       "from": "step:SettleForegroundCommand",
       "to": "resource:attribute:sessionUpdatedAtAttribute",
@@ -23952,7 +24078,7 @@
       }
     },
     {
-      "id": "edge:1071",
+      "id": "edge:1078",
       "kind": "resource_write",
       "from": "step:SettleForegroundCommand",
       "to": "resource:attribute:workspaceUseAttribute",
@@ -23970,7 +24096,7 @@
       }
     },
     {
-      "id": "edge:1072",
+      "id": "edge:1079",
       "kind": "resource_write",
       "from": "step:SettleForegroundCommand",
       "to": "resource:attribute:writtenDesignStepsAttribute",
@@ -23988,7 +24114,7 @@
       }
     },
     {
-      "id": "edge:1073",
+      "id": "edge:1080",
       "kind": "resource_write",
       "from": "step:SettleForegroundCommand",
       "to": "resource:stream:agentActivityStream",
@@ -24009,7 +24135,7 @@
       }
     },
     {
-      "id": "edge:1074",
+      "id": "edge:1081",
       "kind": "failure_transition",
       "from": "step:SettleForegroundCommand",
       "to": "step:RecordToolFailure",

@@ -93,3 +93,9 @@ func scanAccess(scan func(...any) error) (Access, error) {
 	err := scan(destinations...)
 	return access, postgres.RowError("authenticate remote connection", err)
 }
+
+// ReadPairedAccess rechecks the original Builder without exposing its bearer credential.
+func (d *DAO) ReadPairedAccess(ctx context.Context, projectID, connectionID string, adminEmails []string, activeStatus string) (Access, error) {
+	return scanAccess(d.db.QueryRowContext(ctx, `SELECT `+accessColumns+accessJoins+
+		` WHERE c.connection_id = $1 AND c.project_id = $4 AND c.status = 'PAIRED'`, connectionID, adminEmails, activeStatus, projectID).Scan)
+}

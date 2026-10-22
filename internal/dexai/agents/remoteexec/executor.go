@@ -24,6 +24,7 @@ const (
 
 // Binding is public executor metadata, independent of the Bridge transport.
 type Binding struct {
+	BridgeVersion    string `json:"bridgeVersion,omitempty"`
 	CodexVersion     string `json:"codexVersion"`
 	ProviderThreadID string `json:"providerThreadId"`
 	HostLabel        string `json:"hostLabel"`
@@ -36,6 +37,7 @@ type Executor struct {
 	Epoch      uint64           `json:"epoch"`
 	Generation uint64           `json:"generation"`
 	Remote     *RemoteExecutor  `json:"remote,omitempty"`
+	Suspended  *RemoteExecutor  `json:"suspended,omitempty"`
 	Handoff    *PlatformHandoff `json:"handoff,omitempty"`
 }
 

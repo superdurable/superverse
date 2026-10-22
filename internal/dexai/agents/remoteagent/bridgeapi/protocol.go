@@ -61,7 +61,8 @@ type PairResponse struct {
 // ActivateRequest makes the connection the Session's executor. A repeat by the
 // current executor is idempotent and returns the current state and tool set.
 type ActivateRequest struct {
-	Binding Binding `json:"binding"`
+	Binding       Binding `json:"binding"`
+	BridgeVersion string  `json:"bridgeVersion,omitempty"`
 }
 
 // Binding identifies the local agent conversation for display only.
@@ -74,6 +75,7 @@ type Binding struct {
 // ActivateResponse is the executor state after activation. LastSequence is
 // the conversation head at remote admission, Reported the highest admitted report.
 type ActivateResponse struct {
+	Idle          bool   `json:"idle,omitempty"`
 	Epoch         uint64 `json:"epoch"`
 	Generation    uint64 `json:"generation"`
 	LastSequence  uint64 `json:"lastSequence"`
@@ -122,19 +124,21 @@ const (
 // with a "[truncated: open Studio for the full <field>]" marker, passed on as
 // is, but the JSON is never cut.
 type SyncResponse struct {
-	Epoch           uint64           `json:"epoch"`
-	Generation      uint64           `json:"generation"`
-	LastSequence    uint64           `json:"lastSequence"`
-	ExaminedThrough uint64           `json:"examinedThrough"`
-	Entries         []Entry          `json:"entries"`
-	Dropped         *DroppedRange    `json:"dropped,omitempty"`
-	Interrupt       *Interrupt       `json:"interrupt,omitempty"`
-	StateDigest     string           `json:"stateDigest"`
-	PendingQuestion *PendingQuestion `json:"pendingQuestion,omitempty"`
-	Requirements    string           `json:"requirements,omitempty"`
-	Todos           []Todo           `json:"todos,omitempty"`
-	Head            *Head            `json:"head,omitempty"`
-	ToolSetDigest   string           `json:"toolSetDigest"`
+	Idle               bool             `json:"idle,omitempty"`
+	ActivationSequence uint64           `json:"activationSequence,omitempty"`
+	Epoch              uint64           `json:"epoch"`
+	Generation         uint64           `json:"generation"`
+	LastSequence       uint64           `json:"lastSequence"`
+	ExaminedThrough    uint64           `json:"examinedThrough"`
+	Entries            []Entry          `json:"entries"`
+	Dropped            *DroppedRange    `json:"dropped,omitempty"`
+	Interrupt          *Interrupt       `json:"interrupt,omitempty"`
+	StateDigest        string           `json:"stateDigest"`
+	PendingQuestion    *PendingQuestion `json:"pendingQuestion,omitempty"`
+	Requirements       string           `json:"requirements,omitempty"`
+	Todos              []Todo           `json:"todos,omitempty"`
+	Head               *Head            `json:"head,omitempty"`
+	ToolSetDigest      string           `json:"toolSetDigest"`
 	// SettledThrough is the highest report sequence of this connection and
 	// epoch whose outcome the Session durably recorded: the report consumed
 	// and, for a tool call, its tool_result appended. It never decreases
@@ -168,14 +172,13 @@ const (
 	MaxSyncResponseBytes = 16 << 20
 )
 
-// Entry is one conversation entry of the projection sync returns: only the
-// user-role input entries that this connection did not report itself, and the
-// tool_result entries of this connection's remote calls (CallID
-// remote-<epoch>-<sequence>); never assistant entries, thinking, system
-// markers or platform tool arguments. Text is the entry's text blocks joined
-// by a blank line, exactly what the model reads: an input entry's canonical
-// sender envelope, which carries the actor. Via names the connection that
-// reported an entry.
+// Entry is one entry in sync's public conversation projection. It includes
+// user-role inputs not reported by this connection, the tool_result entries
+// of its remote calls (CallID remote-<epoch>-<sequence>), and public assistant
+// text through the activation head. It excludes thinking, system markers and
+// platform tool arguments. Text joins the entry's text blocks with a blank
+// line; an input's canonical sender envelope carries the actor. Via names the
+// connection that reported an entry.
 type Entry struct {
 	Sequence            uint64       `json:"sequence"`
 	Role                EntryRole    `json:"role"`

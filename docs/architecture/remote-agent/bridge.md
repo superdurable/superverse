@@ -197,3 +197,22 @@ Timing traces are bounded to three 4 MiB files per state directory. Ambiguous
 delivery adds at most one bounded history proof read, never a control-plane call
 or tenant-wide scan per poll or event. Platform connection-row bounds remain in
 [connection](connection.md#resource-scalability).
+
+## Platform switches and local resumption
+
+A Platform switch preserves the foreground and pairing. The relay cancels and joins
+its work loops, proves the provider turn stopped, reconciles any attempted one-write
+submission from public history and waits on authenticated bounded idle sync. No MCP
+call, provider delivery or event report is admitted while idle. Status explains that
+Platform is active and Studio can resume this connection.
+
+On explicit Studio resume the same connection adopts the new epoch/generation and
+provider event boundary. Old queued reports are never relabelled into the new epoch.
+The durable `Progress.Resume` value contains one captured head and bounded historical
+context delivery; it does not mirror server authority. Platform-era input and public
+assistant text through that head are context, not fresh commands. Positive delivery
+proof clears that record and advances the Bridge-owned cursor atomically; only later
+entries enter normal input delivery. An unresolved earlier Sending proof blocks this
+advance. Pairing token, thread and one-time history-import marker remain unchanged.
+Real takeover/revocation/disconnect still removes the binding; already-revoked cleanup
+uses the idempotent revoke path without a redundant warning.

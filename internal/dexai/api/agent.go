@@ -484,7 +484,7 @@ func agentHistoryPage(page conversation.HistoryPage) *pb.AgentHistoryPage {
 // agentMessage maps the public view of one entry with its timestamps and optional message identities.
 func agentMessage(value conversation.SequencedMessage) *pb.AgentSequencedMessage {
 	m := value.Message
-	message := &pb.AgentMessage{Actor: agentActor(m.Actor), SteeredBy: agentActor(m.SteeredBy), Via: m.Via, Imported: m.Imported, Role: boundary.Enum[pb.AgentMessage_Role](m.Role), Content: m.Content, ToolCallId: agentStringPointer(m.ToolCallID), ToolName: agentStringPointer(m.ToolName), AnsweredInputCallId: agentStringPointer(m.AnsweredInputCallID), CreatedAt: m.CreatedAt.Format(time.RFC3339Nano), StartedAt: agentDatePointer(m.StartedAt)}
+	message := &pb.AgentMessage{ExecutorChanged: m.ExecutorChanged, Actor: agentActor(m.Actor), SteeredBy: agentActor(m.SteeredBy), Via: m.Via, Imported: m.Imported, Role: boundary.Enum[pb.AgentMessage_Role](m.Role), Content: m.Content, ToolCallId: agentStringPointer(m.ToolCallID), ToolName: agentStringPointer(m.ToolName), AnsweredInputCallId: agentStringPointer(m.AnsweredInputCallID), CreatedAt: m.CreatedAt.Format(time.RFC3339Nano), StartedAt: agentDatePointer(m.StartedAt)}
 	if metrics := m.ModelCall; metrics != nil {
 		message.ModelCall = &pb.AgentModelCallMetrics{Model: metrics.Model, ServedModel: metrics.ServedModel, Effort: string(metrics.Effort),
 			DurationMs: metrics.DurationMS, FirstEventMs: metrics.FirstEventMS, InputTokens: metrics.InputTokens,
@@ -754,6 +754,10 @@ func sessionExecutor(value remoteexec.Executor) *pb.SessionExecutor {
 	out := &pb.SessionExecutor{Mode: boundary.Enum[pb.SessionExecutorMode](value.Mode), Epoch: value.Epoch, Generation: value.Generation}
 	if remote := value.Remote; remote != nil {
 		out.Remote = &pb.RemoteSessionExecutor{ConnectionId: remote.ConnectionID, Owner: agentActor(&remote.Owner), Reported: remote.Reported,
+			ActivatedAt: timestamppb.New(remote.ActivatedAt), Binding: &pb.RemoteAgentBinding{CodexVersion: remote.Binding.CodexVersion, ProviderThreadId: remote.Binding.ProviderThreadID, HostLabel: remote.Binding.HostLabel}}
+	}
+	if remote := value.Suspended; remote != nil {
+		out.Suspended = &pb.RemoteSessionExecutor{ConnectionId: remote.ConnectionID, Owner: agentActor(&remote.Owner),
 			ActivatedAt: timestamppb.New(remote.ActivatedAt), Binding: &pb.RemoteAgentBinding{CodexVersion: remote.Binding.CodexVersion, ProviderThreadId: remote.Binding.ProviderThreadID, HostLabel: remote.Binding.HostLabel}}
 	}
 	return out

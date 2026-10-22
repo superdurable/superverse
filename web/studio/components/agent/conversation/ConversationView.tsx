@@ -82,7 +82,7 @@ function QuestionCard({ item }: { item: ConversationQuestionItem }) {
 
 /** Whether a message is a system marker, which its turn's work log shows instead of the conversation. */
 function isMarker(entry: SequencedMessage): boolean {
-  return entry.message.role === "system" && entry.message.content !== "";
+  return entry.message.role === "system" && !entry.message.executorChanged && entry.message.content !== "";
 }
 
 function hasUnfinishedTools(messages: readonly SequencedMessage[]): boolean {

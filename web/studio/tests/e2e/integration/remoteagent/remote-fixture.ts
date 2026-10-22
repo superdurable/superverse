@@ -207,5 +207,11 @@ export async function runRemoteCase(page: Page, work: (scope: RemoteFixture) => 
     failures.push(error);
   }
   if (failures.length === 1) throw failures[0];
-  if (failures.length > 1) throw new AggregateError(failures, "Remote test failed first; cleanup also failed");
+  if (failures.length > 1) {
+    const first = failures[0];
+    throw new AggregateError(
+      failures,
+      `Remote test failed first: ${first instanceof Error ? first.message : "unknown error"}; cleanup also failed`,
+    );
+  }
 }

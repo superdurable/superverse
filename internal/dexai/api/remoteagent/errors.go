@@ -27,6 +27,7 @@ type refusalReason struct {
 }
 
 var (
+	reasonBridgeOutdated  = refusalReason{"REMOTE_AGENT_BRIDGE_OUTDATED", "Update dexai and pair again before resuming", codes.FailedPrecondition}
 	reasonConnectionsFull = refusalReason{"REMOTE_AGENT_CONNECTIONS_FULL", "Remove an unused connection before pairing another", codes.ResourceExhausted}
 	reasonExecutorChanged = refusalReason{"REMOTE_AGENT_EXECUTOR_CHANGED", "The executor changed; refresh the Session before choosing again", codes.Aborted}
 	reasonCurrentExecutor = refusalReason{"REMOTE_AGENT_CURRENT_EXECUTOR", "Use the Platform agent before removing its current connection", codes.FailedPrecondition}
@@ -34,6 +35,8 @@ var (
 
 func rpcStatus(err error) error {
 	switch {
+	case errors.Is(err, connections.ErrBridgeOutdated):
+		return reasonBridgeOutdated.status()
 	case errors.Is(err, remoteagentdao.ErrConnectionsFull):
 		return reasonConnectionsFull.status()
 	case errors.Is(err, connections.ErrExecutorChanged):

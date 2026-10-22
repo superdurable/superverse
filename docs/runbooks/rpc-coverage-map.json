@@ -336,6 +336,7 @@
       "native-integration"
     ],
     "/superverse.v2.RemoteAgentService/SetSessionExecutor": [
+      "native-e2e",
       "native-integration"
     ],
     "/superverse.v2.SessionService/GetSession": [
@@ -402,7 +403,9 @@
       "native-e2e",
       "native-integration"
     ],
-    "/superverse.v2.TeamSpaceService/DeleteTeamSpace": [],
+    "/superverse.v2.TeamSpaceService/DeleteTeamSpace": [
+      "native-e2e"
+    ],
     "/superverse.v2.TeamSpaceService/GetTeamSpace": [
       "api-integration",
       "kind-e2e",

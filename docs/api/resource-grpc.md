@@ -136,7 +136,7 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 | CreateRemoteAgentPairing | `project_id 1` | `connection_id 1, code 2, Timestamp expires_at 3, endpoint 4, uint64 basis_epoch 5, current_connection_id 6, Actor current_owner 7` |
 | ListRemoteAgentConnections | `project_id 1` | `repeated RemoteAgentConnection connections 1, uint64 epoch 2, current_connection_id 3, Actor current_owner 4, endpoint 5` |
 | RevokeRemoteAgentConnection | `project_id 1, connection_id 2` | `{}` |
-| SetSessionExecutor | `project_id 1, uint64 basis_epoch 2` | `{}` |
+| SetSessionExecutor | `project_id 1, uint64 basis_epoch 2, connection_id 3` | `{}` |
 
 **AttachmentService**
 

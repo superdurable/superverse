@@ -72,7 +72,7 @@ function AgentPickerMenu({
   const card = useRef<HTMLDivElement>(null);
   const popover = usePopover(anchor);
   const [connect, setConnect] = useState(false);
-  const action = useSingleFlight<"platform">();
+  const action = useSingleFlight<"platform" | "local">();
   const choice = useModelChoice(modelRevision, onSelect, () => session?.refresh(undefined, true) ?? Promise.resolve());
   const wasOpen = useRef(false);
   const wasConnecting = useRef(false);
@@ -115,7 +115,26 @@ function AgentPickerMenu({
     action.run("platform", async (signal) => {
       if (!remote || !executor) return;
       try {
-        await setSessionExecutor({ projectId: session.projectId, basisEpoch: executor.epoch }, signal);
+        await setSessionExecutor(
+          { projectId: session.projectId, basisEpoch: executor.epoch, connectionId: "" },
+          signal,
+        );
+      } catch (reason) {
+        await session.refresh(signal);
+        throw reason;
+      }
+      signal.throwIfAborted();
+      await session.refresh(signal, true);
+      close();
+    });
+  const resumeLocal = () =>
+    action.run("local", async (signal) => {
+      if (!executor?.suspended) return;
+      try {
+        await setSessionExecutor(
+          { projectId: session.projectId, basisEpoch: executor.epoch, connectionId: executor.suspended.connectionId },
+          signal,
+        );
       } catch (reason) {
         await session.refresh(signal);
         throw reason;
@@ -145,7 +164,9 @@ function AgentPickerMenu({
         )}
         {remote && <LivenessDot online={online} />}
         <span className="truncate">
-          {remote ? LOCAL_AGENT : model === null ? "Choose a model" : agentModelLabel(model)}
+          {remote
+            ? `${LOCAL_AGENT}${online ? "" : " · offline"}`
+            : `${model === null ? "Choose a model" : agentModelLabel(model)}${executor?.suspended ? (online ? " · local idle" : " · local offline") : ""}`}
         </span>
         <Glyph name="chevronDown" className="size-3.5 shrink-0" />
       </button>
@@ -218,6 +239,22 @@ function AgentPickerMenu({
             {switchable && (
               <>
                 <hr className="my-1 border-line-faint" />
+                {!remote && executor?.suspended && (
+                  <>
+                    <button
+                      type="button"
+                      className={POPOVER_ITEM}
+                      disabled={action.busy !== null}
+                      onClick={() => void resumeLocal()}
+                    >
+                      {action.busy === "local" ? "Switching…" : "Use the local agent"}
+                    </button>
+                    <p className="px-2.25 text-xs text-ink-faint">
+                      {online ? "Connected · idle while the Platform agent is active" : "Paired · offline"} ·{" "}
+                      {executor.suspended.binding?.hostLabel || executor.suspended.owner?.email || "Local agent"}
+                    </p>
+                  </>
+                )}
                 <button
                   type="button"
                   className={POPOVER_ITEM}
@@ -248,8 +285,21 @@ function AgentPickerMenu({
 
 /** Offline keeps the remote executor and the ordinary queue, steer and Stop controls. */
 export function RemoteAgentOfflineNotice() {
-  const { remote, online, session } = useRemoteAgentStatus();
-  if (!remote || online || session?.status !== "SESSION_STATUS_ACTIVE") return null;
+  const { remote, executor, online, session } = useRemoteAgentStatus();
+  if (session?.status !== "SESSION_STATUS_ACTIVE") return null;
+  if (!remote && executor?.suspended) {
+    return (
+      <p
+        className="rounded-md border border-line-soft bg-panel p-3 text-[12px] text-ink-dim"
+        role="status"
+        data-remote-idle
+      >
+        The Platform agent is active. Your local agent is {online ? "connected and idle" : "offline"}; choose “Use the
+        local agent” in the agent picker to resume this connection.
+      </p>
+    );
+  }
+  if (!remote || online) return null;
   return (
     <p
       className="rounded-md border border-line-soft bg-panel p-3 text-[12px] text-ink-dim"

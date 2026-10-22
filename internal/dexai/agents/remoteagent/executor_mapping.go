@@ -83,6 +83,12 @@ func syncResponse(read session.RemoteRead, request bridgeapi.SyncRequest) (bridg
 	response := bridgeapi.SyncResponse{Epoch: read.Executor.Epoch, Generation: read.Executor.Generation,
 		LastSequence: uint64(read.Delivery.LastSequence), ExaminedThrough: uint64(read.Delivery.Through), SettledThrough: read.SettledThrough,
 		Entries: make([]bridgeapi.Entry, 0, len(read.Delivery.Entries)), ToolSetDigest: agentloop.RemoteToolDigest(), Requirements: read.Requirements}
+	if read.Executor.Mode == remoteexec.ModePlatform {
+		response.Idle = true
+		response.ToolSetDigest = ""
+	} else if read.Executor.Remote.ActivationSequence != nil {
+		response.ActivationSequence = uint64(*read.Executor.Remote.ActivationSequence)
+	}
 	switch {
 	case read.RepositoryContextAvailable:
 		response.AgentContextState = bridgeapi.AgentContextReady
@@ -120,7 +126,7 @@ func syncResponse(read session.RemoteRead, request bridgeapi.SyncRequest) (bridg
 	if response.StateDigest == request.StateDigest {
 		response.PendingQuestion, response.Requirements, response.Todos = nil, "", nil
 	}
-	if request.Context {
+	if request.Context && !response.Idle {
 		response.AgentContext = agentloop.RemoteAgentContext(read.RepositoryContext, read.StartingExample, read.NoCardDesign)
 	}
 	for _, item := range read.Delivery.Entries {
@@ -149,8 +155,10 @@ func syncEntry(item conversation.SequencedEntry) (bridgeapi.Entry, error) {
 	if len(item.Entry.AttachmentReferences()) > 0 {
 		panic("remote projection returned an attachment reference")
 	}
-	entry := bridgeapi.Entry{Sequence: uint64(item.Sequence), Role: bridgeapi.EntryRoleUser}
+	entry := bridgeapi.Entry{Sequence: uint64(item.Sequence), Role: bridgeapi.EntryRole(item.Entry.Role)}
 	switch item.Entry.Kind {
+	case conversation.EntryKindModelReply:
+		entry.Kind = bridgeapi.EntryKindModelReply
 	case conversation.EntryKindUserMessage:
 		entry.Kind = bridgeapi.EntryKindUserMessage
 	case conversation.EntryKindNotice:

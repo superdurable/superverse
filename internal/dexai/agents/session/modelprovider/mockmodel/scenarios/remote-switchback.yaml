@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+name: remote-switchback
+title: "Work while the local agent waits"
+description: "A mock Platform turn after a real remote handoff, before the same connection resumes."
+category: agent_feature
+test_action: "Pair, activate and park the real remote endpoint before input 1; then resume the same connection."
+arguments:
+  head: unset
+inputs:
+  - label: "Complete the Platform turn"
+    message: "Complete the Platform work while my local agent waits."
+    replies:
+      - expect_handoff: true
+        text: "The Platform switchback turn is complete."

@@ -67,6 +67,9 @@ func AssembleRequest(entries []SequencedEntry, anchor Sequence, shape RequestSha
 	var gap []SequencedEntry
 	var toolUses []CallID
 	for _, entry := range entries {
+		if entry.Entry.Meta.ExecutorChanged {
+			continue
+		}
 		if entry.Entry.Role != EntryRoleAssistant {
 			gap = append(gap, entry)
 			continue

@@ -119,6 +119,8 @@ type Entry struct {
 
 // EntryMeta is what the UI and metrics read of an entry; the model never sees it.
 type EntryMeta struct {
+	// ExecutorChanged marks a visible executor boundary, never a model input.
+	ExecutorChanged bool `json:"executor_changed,omitempty"`
 	// ModelStopReason records only output limits for safe compatible history projection.
 	ModelStopReason StopReason `json:"model_stop_reason,omitempty"`
 	Actor           *Actor     `json:"actor,omitempty"`
@@ -282,6 +284,16 @@ func NoticeEntry(role EntryRole, text, marker string) Entry {
 	return Entry{Role: role, Kind: EntryKindNotice, Display: display, Blocks: []json.RawMessage{textBlock(text)}, Meta: EntryMeta{Marker: marker}}
 }
 
+// ExecutorChangeEntry records a presentation boundary without adding model instructions.
+func ExecutorChangeEntry(remote bool) Entry {
+	text := "Switched to the Platform agent"
+	if remote {
+		text = "Switched to the local agent"
+	}
+	return Entry{Role: EntryRoleSystem, Kind: EntryKindNotice, Display: EntryDisplayMarker,
+		Blocks: []json.RawMessage{}, Meta: EntryMeta{Marker: text, ExecutorChanged: true}}
+}
+
 // DeliveryNoticeEntry is a platform-authored visible record that a remote
 // agent did not definitely receive an already-recorded user message. It uses
 // the ordinary public text projection without claiming it was a model call.
@@ -344,7 +356,7 @@ func readBlock(block json.RawMessage) blockHeader {
 // summary; never thinking, tool arguments, tool results, attachment objects or
 // a notification's report.
 func (entry Entry) PublicMessage() (AgentMessage, bool) {
-	message := AgentMessage{Actor: entry.Meta.Actor, Via: entry.Meta.Via, Imported: entry.Meta.Imported, SteeredBy: entry.Meta.SteeredBy, CreatedAt: entry.CreatedAt, StartedAt: entry.StartedAt, ToolCalls: []ToolCallSummary{}}
+	message := AgentMessage{ExecutorChanged: entry.Meta.ExecutorChanged, Actor: entry.Meta.Actor, Via: entry.Meta.Via, Imported: entry.Meta.Imported, SteeredBy: entry.Meta.SteeredBy, CreatedAt: entry.CreatedAt, StartedAt: entry.StartedAt, ToolCalls: []ToolCallSummary{}}
 	switch {
 	case entry.Display == EntryDisplayHidden:
 		return AgentMessage{}, false

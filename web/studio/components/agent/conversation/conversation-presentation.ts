@@ -227,7 +227,14 @@ function groupDurableTurns(messages: readonly SequencedMessage[]) {
   const sequenceToTurn = new Map<number, ConversationTurn>();
   let current: ConversationTurn | null = null;
   for (const entry of messages) {
-    if (entry.message.role === "user" || current === null) {
+    // Notifications are delivered inputs too. Their canonical creation time is
+    // consumption time, so an automatic turn does not inherit the prior idle gap.
+    if (
+      entry.message.role === "user" ||
+      entry.message.role === "notification" ||
+      entry.message.executorChanged ||
+      current === null
+    ) {
       current = {
         key: `turn-${String(entry.sequence)}`,
         messages: [],

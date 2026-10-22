@@ -26,12 +26,13 @@ const (
 // ReadRequest names a connection-bound cursor held by the Bridge. ArchiveKeys
 // are only the previous typed read's server-derived selection, never HTTP input.
 type ReadRequest struct {
-	ProjectID    string                `json:"project_id"`
-	ConnectionID string                `json:"connection_id"`
-	Epoch        uint64                `json:"epoch"`
-	After        conversation.Sequence `json:"after"`
-	CurrentKeys  []string              `json:"current_keys,omitempty"`
-	ArchiveKeys  []string              `json:"archive_keys,omitempty"`
+	ProjectID      string                `json:"project_id"`
+	ConnectionID   string                `json:"connection_id"`
+	HistoryThrough conversation.Sequence `json:"history_through,omitempty"`
+	Epoch          uint64                `json:"epoch"`
+	After          conversation.Sequence `json:"after"`
+	CurrentKeys    []string              `json:"current_keys,omitempty"`
+	ArchiveKeys    []string              `json:"archive_keys,omitempty"`
 	// RepositoryContext asks for the Session's repository context, which only
 	// the read that builds a remote agent's context needs.
 	RepositoryContext bool `json:"repository_context,omitempty"`
@@ -49,7 +50,10 @@ type Delivery struct {
 }
 
 func (executor Executor) CheckReader(request ReadRequest) error {
-	if executor.Mode != ModeRemote || executor.Remote == nil || executor.Remote.ConnectionID != request.ConnectionID || executor.Epoch != request.Epoch {
+	if executor.Mode == ModePlatform && executor.Suspended != nil && executor.Suspended.ConnectionID == request.ConnectionID {
+		return nil
+	}
+	if executor.Mode != ModeRemote || executor.Remote == nil || executor.Remote.ConnectionID != request.ConnectionID {
 		return &executorChangedError{}
 	}
 	return nil
@@ -71,13 +75,32 @@ func callSequence(epoch uint64, id conversation.CallID) (uint64, bool) {
 	return number, err == nil && number > 0 && strconv.FormatUint(number, 10) == sequence
 }
 
-// projectEntry keeps canonical user input and this connection's results. It
-// cannot expose assistant blocks, thinking, system text or opaque tool input.
+// isRemoteCallID validates an own result from any admitted epoch of this connection.
+func isRemoteCallID(id conversation.CallID) bool {
+	prefix, rest, ok := strings.Cut(strings.TrimPrefix(string(id), "remote-"), "-")
+	if !ok || rest == "" {
+		return false
+	}
+	epoch, err := strconv.ParseUint(prefix, 10, 64)
+	return err == nil && epoch > 0 && strconv.FormatUint(epoch, 10) == prefix && IsCallID(epoch, id)
+}
+
+// projectEntry keeps public input, own results and historical assistant text.
+// It cannot expose thinking, system text or opaque tool input.
 // User input is text only: a message queued with attachments before the
 // switch to the local agent is delivered with one line naming the attachments
 // it left out.
 func projectEntry(request ReadRequest, item conversation.SequencedEntry) (conversation.SequencedEntry, bool, error) {
 	entry := item.Entry
+	if item.Sequence <= request.HistoryThrough && entry.Role == conversation.EntryRoleAssistant && entry.Kind == conversation.EntryKindModelReply && entry.Display == conversation.EntryDisplayPublic {
+		text := entry.Text()
+		if text == "" {
+			return item, false, nil
+		}
+		item.Entry = conversation.NoticeEntry(conversation.EntryRoleAssistant, text, "")
+		item.Entry.Kind = conversation.EntryKindModelReply
+		return item, true, nil
+	}
 	if entry.Role != conversation.EntryRoleUser {
 		return item, false, nil
 	}
@@ -101,7 +124,7 @@ func projectEntry(request ReadRequest, item conversation.SequencedEntry) (conver
 			entry.Meta.AnsweredInputCallID = id
 		}
 	case conversation.EntryKindToolResult:
-		if via != request.ConnectionID || entry.Meta.ToolCall == nil || !IsCallID(request.Epoch, entry.Meta.ToolCall.ID) {
+		if via != request.ConnectionID || entry.Meta.ToolCall == nil || !isRemoteCallID(entry.Meta.ToolCall.ID) {
 			return item, false, nil
 		}
 		var blocks []json.RawMessage

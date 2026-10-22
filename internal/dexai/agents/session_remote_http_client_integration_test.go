@@ -75,6 +75,14 @@ func (remote *remoteHTTPClient) awaitToolResult(ctx context.Context, epoch uint6
 		}
 		remote.after, remote.digest = response.ExaminedThrough, response.StateDigest
 		for _, entry := range response.Entries {
+			if entry.Role == bridgeapi.EntryRoleAssistant && entry.Kind == bridgeapi.EntryKindModelReply && entry.Sequence <= response.ActivationSequence && entry.Via == "" && len(entry.ToolResults) == 0 {
+				// A new epoch may read public assistant history through its fixed
+				// activation head; it is context, never a delivered fresh command.
+				if entry.Delivered("") {
+					remote.t.Fatal("historical assistant reply became a command")
+				}
+				continue
+			}
 			if entry.Kind == bridgeapi.EntryKindModelReply || entry.Kind == bridgeapi.EntryKindSegmentStart || entry.Role != bridgeapi.EntryRoleUser {
 				remote.t.Fatal("sync exposed model-only context")
 			}

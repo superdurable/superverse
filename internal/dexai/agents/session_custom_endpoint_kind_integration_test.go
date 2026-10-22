@@ -171,9 +171,9 @@ func verifyKindCustomHistoryBoundaries(t *testing.T, ctx context.Context, sessio
 	session.send(ctx, mockInput(t, "custom-endpoint-continuation", 1).Content+strings.Repeat(" retained context", 100))
 	snapshot = await(snapshot.Description.LastSequence)
 	listed, err := remoteAPI.ListRemoteAgentConnections(ctx, &pb.ListRemoteAgentConnectionsRequest{ProjectId: session.identity.ProjectID, Caller: caller})
-	// UsePlatform revokes the replaced connection before returning; the public list excludes revoked rows.
-	if err != nil || len(listed.GetConnections()) != 0 {
-		t.Fatalf("Kind switched connection remains listed: code=%s count=%d, want OK and zero", status.Code(err), len(listed.GetConnections()))
+	// Platform switching preserves the paired credential while suspending execution.
+	if err != nil || len(listed.GetConnections()) != 1 || listed.GetConnections()[0].GetStatus() != pb.RemoteAgentConnectionStatus_REMOTE_AGENT_CONNECTION_STATUS_PAIRED {
+		t.Fatalf("Kind switched connection lost pairing: code=%s count=%d, want OK and one paired connection", status.Code(err), len(listed.GetConnections()))
 	}
 	return snapshot
 }

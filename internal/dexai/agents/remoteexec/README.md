@@ -26,7 +26,7 @@ does not write them. RAEXEC owns mode changes, generation/report fences, the
 remote branch and handoff consumption. `Binding` is public display metadata;
 the HTTP boundary maps the separately owned Bridge protocol explicitly.
 
-`Binding` retains only `CodexVersion` (the existing wire name for either local
+`Binding` retains `BridgeVersion` for resume compatibility admission and `CodexVersion` (the existing wire name for either local
 agent's version), `ProviderThreadID` and `HostLabel`. Removed display members
 are ignored by the pinned SDK's ordinary JSON payload decoder. The `Executor`
 primitive key, its retained JSON members and every execution fence and watermark
@@ -36,7 +36,8 @@ reconnecting. The SQL credential table needs no migration.
 
 `Mode` is the closed set `platform` and `remote`. `Executor` holds its mode,
 monotonic epoch and generation, optional `RemoteExecutor`, and optional
-`PlatformHandoff`. A remote executor carries its connection ID, immutable
+`PlatformHandoff`, plus one optional `Suspended` remote identity while Platform executes.
+A remote executor carries its connection ID, immutable
 authenticated owner, binding, admitted-report watermark (`Reported`), consumed-report
 watermark (`Consumed`) and activation time. A `RemoteExecutor` persisted before `Consumed`
 existed reads 0; such pre-launch open remote executions are reset, not reconciled (Session README).
@@ -103,8 +104,10 @@ the wire status `waiting_for_user`: the remote call stays open until its answer 
 status.
 
 `projectEntry` and `BoundedDelivery` produce a transient public projection,
-without assistant/hidden blocks or opaque tool input. They preserve whole
-canonical inputs and exact-epoch own tool results. Through advances across
+without hidden blocks or opaque tool input. Through the activation head they
+also project only the text blocks of public assistant replies as historical
+context. They preserve whole canonical inputs and own canonical tool results,
+including late results admitted under earlier epochs of the same connection. Through advances across
 examined filtered entries, while a budget-excluded eligible entry remains for
 the next read. The first eligible entry stays whole even above the1MiB soft
 budget; the HTTP boundary measures the full16MiB response and state digest.
@@ -122,3 +125,14 @@ format, its existing HandoffReason set and bounded owners/time/HEAD validation.
 The Session appends optional context sections within `MaximumHandoffBytes`;
 mock provider assertions parse that same format without discarding any request
 content. These transient values add no persisted Attribute or public wire DTO.
+
+## Paired idle authority
+
+A remote-to-Platform switch moves the bounded Remote value to Suspended in the
+same existing Executor Attribute. Only an explicit Builder-authorized resume
+with matching epoch/ID recreates Remote, raises epoch/generation and resets its
+watermarks. Repeated activation while suspended cannot select itself. Another
+connection's takeover clears that eligibility. Removing a suspended identity
+changes metadata only: it neither advances the Platform fence nor interrupts
+Platform work. SQL validity is always rechecked outside this domain. No timer,
+map, projection or second lifecycle is added; missing Suspended is compatible.

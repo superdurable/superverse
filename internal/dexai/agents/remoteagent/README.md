@@ -59,8 +59,13 @@ The existing endpoint now also implements activate, sync and report. Activation
 uses the SQL pairing basis and authenticated owner, then rechecks SQL after the
 Session CAS to close removal races with exact-epoch compensation. Builder removal
 rechecks after SQL revoke; UsePlatform authorizes the Builder, commits its observed
-basis and revokes only the replaced connection. Explicit Bridge disconnect still
-only revokes its own credential and leaves remote mode offline.
+basis and suspends the paired identity without revoking its credential. Resume
+reauthorizes the choosing Builder and original credential owner/login through a
+scoped SQL read, checks the stored Bridge build against the configured minimum,
+then admits exactly the suspended ID at the observed epoch. A postcheck closes
+removal races without undoing a newer executor. Explicit Bridge disconnect still
+leaves active remote mode offline; disconnecting an idle connection clears only
+its suspended identity, preserving Platform epoch/generation and work.
 
 Pairing keeps a separate fixed 16-slot gate. Activate/disconnect share another
 fixed 16-slot gate. Reports have their configured nonqueued pre-body/pre-auth gate
@@ -88,3 +93,12 @@ bootstrap, durable projection, executor table or per-connection goroutine exists
 This source is uncompiled and unrun; pinned SDK payload transport, end-to-end tool
 result wait values, legacy tool-input identity, full external-effect/restart/load
 acceptance and Studio dialog integration remain review/gated work.
+
+Idle sync retains existing admission/deadline bounds and authenticates on every
+read; it returns no messages/context and never moves the Bridge cursor. A resumed
+same connection may discover its new epoch through sync, while every report
+requires exact current remote authority. Public assistant text through the
+activation head is projected only as historical context; own canonical tool
+results from earlier epochs remain recoverable by their unique call IDs. Response
+assembly retries on a changed epoch or retention floor. No schema or new Flow
+primitive is introduced; the original login expiry bounds idle access.

@@ -9,6 +9,7 @@ export interface SessionExecutor {
   'epoch'?: (number | string | Long);
   'generation'?: (number | string | Long);
   'remote'?: (_superverse_v2_RemoteSessionExecutor | null);
+  'suspended'?: (_superverse_v2_RemoteSessionExecutor | null);
 }
 
 export interface SessionExecutor__Output {
@@ -16,4 +17,5 @@ export interface SessionExecutor__Output {
   'epoch': (string);
   'generation': (string);
   'remote': (_superverse_v2_RemoteSessionExecutor__Output | null);
+  'suspended': (_superverse_v2_RemoteSessionExecutor__Output | null);
 }

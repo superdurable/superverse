@@ -258,6 +258,12 @@ export function ConversationMessage({
   notificationLinks?: NotificationLinks;
 }) {
   const { role, content, createdAt, notification, answeredInputCallId } = entry.message;
+  if (entry.message.executorChanged)
+    return (
+      <p role="status" className="border-t border-line-soft pt-3 text-caption text-ink-dim" data-executor-changed>
+        {content}
+      </p>
+    );
   if (role === "notification")
     return notification ? (
       <NotificationNotice entry={entry} notification={notification} links={notificationLinks?.(notification) ?? []} />
