@@ -9,6 +9,7 @@
 
 """Check the committed business RPC coverage map or merge methods observed by a real local lane."""
 import argparse
+import coverage_fragments as fragments
 import json
 from pathlib import Path
 import re
@@ -21,6 +22,7 @@ OPERATIONS = ROOT / "web/studio/lib/server/flow/flow-api-operations.ts"
 MAP = ROOT / "docs/runbooks/rpc-coverage-map.json"
 BACKLOG = ROOT / "docs/runbooks/rpc-coverage-backlog.json"
 INITIAL_BACKLOG = ROOT / "docs/runbooks/rpc-coverage-initial-backlog.json"
+FRAGMENTS = ROOT / "docs/runbooks/rpc-coverage-fragments"
 SOURCES = ("api-integration", "kind-e2e", "kind-integration", "native-e2e", "native-integration")
 
 
@@ -50,9 +52,29 @@ def save(path, key, value):
     path.write_text(json.dumps({key: value}, indent=2) + "\n")
 
 
+def assembled():
+    methods, _ = declared()
+    coverage = {method: [] for method in sorted(methods)}
+    for key, observation in fragments.newest(FRAGMENTS).items():
+        method, source = key.rsplit("|", 1)
+        if source not in SOURCES or type(observation["covered"]) is not bool:
+            raise ValueError(f"Invalid RPC coverage observation: {key}")
+        if method in coverage and observation["covered"]:
+            coverage[method].append(source)
+    return {method: sorted(sources) for method, sources in coverage.items()}
+
+
+def write_assembled():
+    coverage = assembled()
+    save(MAP, "methods", coverage)
+    save(BACKLOG, "methods", [method for method, sources in coverage.items() if not sources])
+
+
 def check():
     declared_methods, flow_methods = declared()
     coverage = read(MAP, "methods")
+    if coverage != assembled():
+        sys.exit("RPC coverage fragments changed; run make generate-fragments")
     backlog = read(BACKLOG, "methods")
     if set(coverage) != declared_methods:
         sys.exit(f"RPC map differs from proto: missing={sorted(declared_methods-set(coverage))}, removed={sorted(set(coverage)-declared_methods)}")
@@ -84,17 +106,16 @@ def merge(source, path):
     observed = set(read(path, "methods"))
     if not observed or observed - declared_methods:
         sys.exit(f"invalid or empty RPC observation: {sorted(observed-declared_methods)}")
-    coverage = read(MAP, "methods") if MAP.exists() else {method: [] for method in declared_methods}
-    if set(coverage) != declared_methods:
-        sys.exit("RPC map differs from proto; add new RPCs with empty sources before merging")
+    coverage = assembled()
     previously_covered = {method for method, sources in coverage.items() if sources}
+    affected = observed | {method for method, sources in coverage.items() if source in sources}
     for method in coverage:
         coverage[method] = sorted((set(coverage[method]) - {source}) | ({source} if method in observed else set()))
     lost = sorted(method for method in previously_covered if not coverage[method])
     if lost:
         sys.exit(f"RPC coverage regressed in {source}: {lost}")
-    save(MAP, "methods", dict(sorted(coverage.items())))
-    save(BACKLOG, "methods", sorted(method for method, sources in coverage.items() if not sources))
+    fragments.record(FRAGMENTS, {f"{method}|{source}": {"covered": method in observed} for method in affected})
+    write_assembled()
     print(f"RPC coverage: {source} observed {len(observed)} methods; backlog {len(read(BACKLOG, 'methods'))}")
 
 

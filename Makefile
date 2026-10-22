@@ -1,4 +1,4 @@
-.PHONY: resolve-generated generate generate-proto generate-go generate-web generate-app-template generate-package-readmes \
+.PHONY: generate-fragments check-fragments compact-coverage-fragments resolve-generated generate generate-proto generate-go generate-web generate-app-template generate-package-readmes \
 	generate-studio-readmes build build-web vet compile-tests check check-go check-go-rules check-go-proto \
 	check-web check-web-source check-web-build check-generated check-generated-web \
 	check-app-template check-app-template-source check-app-template-embedded \
@@ -43,6 +43,16 @@ BUF := "$(BUF_BINARY)"
 # Resolve generated conflicts/drift after merging handwritten sources; pass CONTINUE=1 to resume a rebase.
 resolve-generated:
 	@python3 scripts/resolve-generated-conflicts.py $(if $(filter 1,$(CONTINUE)),--continue)
+
+# Shared append-only inputs have deterministic assembled views; compact landed observations after rebasing.
+generate-fragments:
+	@python3 scripts/generated-fragments.py generate
+
+check-fragments:
+	@python3 scripts/generated-fragments.py check
+
+compact-coverage-fragments:
+	@python3 scripts/generated-fragments.py compact
 
 # Generated sources.
 generate: generate-proto generate-go generate-web
@@ -197,7 +207,7 @@ check-studio-server-boundary:
 check-mock-scenarios:
 	@go run ./cmd/tools/check-mock-scenarios
 
-check-rpc-coverage:
+check-rpc-coverage: check-fragments
 	@python3 scripts/rpc-coverage-map.py check
 
 # The Dex SDK registry of every server Flow, built as the server bootstrap builds it.

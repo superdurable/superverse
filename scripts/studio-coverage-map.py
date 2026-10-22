@@ -14,13 +14,15 @@ that run the files a change touches.
 written by web/studio/tests/e2e/support/coverage when SUPERVERSE_E2E_COVERAGE_DIR names it) and keeps the others,
 so a run of some specs refreshes only theirs; it keeps only existing specs and existing Studio sources, the files
 the check asks about. `native e2e` merges the
-coverage of its three cases itself. The map, web/studio/tests/e2e/coverage-map.json, is committed.
+coverage of its three cases itself. The branch owns one timestamped coverage fragment; newest observations assemble the committed
+web/studio/tests/e2e/coverage-map.json. Run `make generate-fragments` after rebasing.
 
 `affected` lists, for each Studio source file the change touches, the specs of the map that run it. Each such file
 needs one of them in the pull request's `Specs:` field (scripts/check-local-full-evidence.py); a file no spec of the
 map runs, such as server-side code, a style sheet, type declarations or code no spec reaches, needs none.
 """
 import argparse
+import coverage_fragments as fragments
 import importlib.util
 import json
 from pathlib import Path
@@ -30,6 +32,7 @@ ROOT = Path(__file__).resolve().parents[1]
 STUDIO = "web/studio/"
 SPECS = ROOT / STUDIO / "tests/e2e"
 MAP = SPECS / "coverage-map.json"
+FRAGMENTS = SPECS / "coverage-fragments"
 SOURCE_SUFFIXES = (".ts", ".tsx", ".mjs", ".js", ".css")
 NOT_SOURCE = ("tests/", "mock/", "lib/generated/", "scripts/", "proto/", "public/", "node_modules/", ".next/")
 
@@ -40,12 +43,20 @@ _spec.loader.exec_module(required_lanes_module)
 
 def load():
     """The map: spec path, relative to web/studio/tests/e2e -> the Studio source files whose code it runs."""
-    return json.loads(MAP.read_text())["specs"] if MAP.exists() else {}
+    result = json.loads(MAP.read_text())["specs"] if MAP.exists() else {}
+    if result != assembled():
+        sys.exit("Studio coverage fragments changed; run make generate-fragments")
+    return result
 
 
 def save(specs):
     document = {"specs": {spec: sorted(set(files)) for spec, files in sorted(specs.items())}}
     MAP.write_text(json.dumps(document, indent=2) + "\n")
+
+
+def assembled():
+    return {spec: studio_sources(STUDIO + file for file in value["files"])
+            for spec, value in sorted(fragments.newest(FRAGMENTS).items()) if spec_exists(spec)}
 
 
 def spec_exists(name):
@@ -72,7 +83,7 @@ def covering(files, specs):
 
 
 def merge(directory):
-    specs = load()
+    observations = {}
     records = sorted(Path(directory).glob("*.json"))
     if not records:
         sys.exit(f"{directory} holds no spec coverage; run the specs with SUPERVERSE_E2E_COVERAGE_DIR set")
@@ -81,9 +92,10 @@ def merge(directory):
         if document["scripts"] and not document["files"]:
             sys.exit(f"{document['spec']} ran {document['scripts']} scripts but none maps to a Studio source file; "
                      "the Studio build lacks browser source maps (SUPERVERSE_STUDIO_SOURCE_MAPS=true, as Native --studio build sets)")
-        specs[document["spec"]] = document["files"]
+        observations[document["spec"]] = {"files": sorted(set(document["files"]))}
     # The map keeps only what the check can ask about: existing specs and existing Studio sources.
-    specs = {spec: studio_sources(STUDIO + file for file in files) for spec, files in specs.items() if spec_exists(spec)}
+    fragments.record(FRAGMENTS, observations)
+    specs = assembled()
     for record in records:
         spec = json.loads(record.read_text())["spec"]
         print(f"{spec}: {len(specs.get(spec, []))} Studio files")
