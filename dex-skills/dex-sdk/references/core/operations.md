@@ -45,14 +45,16 @@ sandbox has no browser or Temporal Web UI, so inspect Flows there with
 
 ## Indexed Attribute capacity
 
-The Sandbox's Preview engine and the Local Kind Live engines run Temporal's development server with SQLite visibility; hosted Live engines use Temporal Cloud. SQLite allocates a fixed number of custom Search Attribute slots per namespace and type. In a fresh SQLite namespace, Dex uses three of those slots for system indexes, leaving this initial capacity for application Indexed Attributes:
+The Sandbox's Preview engine and the Local Kind Live engines provide a fixed Indexed Attribute pool per namespace. Hosted Live engines provide the same generic slots from a cluster-wide pool that Superverse pre-registers for every environment. A Project namespace uses this existing pool without per-namespace registration. Dex reserves three indexes for system use, leaving this capacity for application Indexed Attributes:
 
-| Dex index type | SQLite slots | Dex system indexes | Application slots initially left |
+| Dex index type | Total slots | Dex system indexes | Application slots initially left |
 | --- | ---: | --- | ---: |
 | **KEYWORD** | 10 | **FlowType**, **DexParentFlowID** | 8 |
 | **KEYWORD_ARRAY** | 3 | **ActiveStepTypes** | 2 |
 | **FULL_TEXT** | 3 | None | 3 |
 | **BOOL**, **DATETIME**, **DOUBLE**, **INT** | 3 each | None | 3 each |
+
+The application pool is **keyword1** through **keyword8**, **keywordList1** and **keywordList2**, and **text1** through **text3**, **int1** through **int3**, **bool1** through **bool3**, **double1** through **double3**, and **datetime1** through **datetime3**.
 
 Index keys are shared across Flow types. Reusing one key with the same type does not consume another slot. Keys registered earlier in the same namespace remain and reduce the current remainder. Worker startup fails while synchronizing indexes if a new key exceeds the remaining capacity.
 
@@ -60,7 +62,7 @@ Plan one namespace-wide pool before implementation. All application index keys m
 
 Changing an index key, type, or enabled state does not remove the old Search Attribute registration or backfill existing Flow executions. Allocate a new slot rather than retyping a used one.
 
-The SQLite pool limits the Preview and Local Kind engines, not the application schema; do not remove production query fields merely to fit it. Temporal Cloud has its own per-namespace limits; see [Temporal's current Search Attribute limits](https://docs.temporal.io/search-attribute#custom-search-attribute-limits).
+Use this common pool so an index that works in Preview also works in hosted Live. Hosted registration is owned by Superverse, shared across Project namespaces, and fixed in size per environment; creating a Project does not allocate more slots. Existing registrations stay after an upgrade, and changing a Flow definition does not reclaim a slot. Request a platform capacity change before using slots outside this pool.
 
 ## FDG 2.0 management metadata
 
