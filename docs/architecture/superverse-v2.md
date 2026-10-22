@@ -2185,10 +2185,12 @@ inventory alone does not assert that hosted provisioning is complete.
 
 ### Platform Dex operator ingress
 
-Hosted test and staging expose `dex-server.<environment>.dexai.dev` (TLS/gRPC to
-platform Dex port 8801) and `dex-web.<environment>.dexai.dev` (HTTPS to platform
-Dex Web port 8802). This is the explicitly authorized public operator boundary:
-there is no login or operator IP allowlist. Product management remains in Studio/Go;
+Hosted test and staging expose `dex-web.<environment>.<platform-domain>` over HTTPS
+with browser HTTP Basic Auth. An operator-owned Kubernetes Secret supplies a
+bcrypt or apr1 htpasswd file; Helm values and Terraform contain only its name.
+Only exact `/readyz` is anonymous and returns proxy health without business data.
+The platform Dex gRPC endpoint is private: operators use an authenticated Kubernetes
+API port-forward bound to loopback. Product management remains in Studio/Go;
 project Live Dex and the Sandbox's Preview Dex remain API-only and production
 has no debug surface.
 Flow/Step identities, primitives and persisted payloads do not change.
@@ -2210,20 +2212,22 @@ The debug surfaces share the environment's one platform ALB with Studio (Ingress
 reaches that ALB through one wildcard rule, last in the group, to the in-cluster Envoy
 Gateway (the shared project Gateway); no per-Project object joins the group, so
 no Project's route can block it.
-NetworkPolicy admits those subnet CIDRs to gRPC 8801 and a stateless same-Pod Web
+NetworkPolicy admits those subnet CIDRs only to a stateless same-Pod Web
 proxy on 8083; Web Service 8802 targets that proxy. The actual Dex Web 8802 listener
 has no external admission. The digest-pinned official NGINX unprivileged proxy
 replaces browser-provided forwarded/embedding metadata with fixed root, HTTPS and
 environment-host values, sets `embedded=false`, and strips embedded CSRF/OAuth
-metadata.
+metadata and the Basic Authorization header. The Secret directory mount is read-only
+without subPath so credential rotation refreshes without a proxy restart. Missing
+credentials fail closed. The operator owns creation, rotation and deletion when the
+hosted Web surface is retired; one small Secret per environment adds no tenant resources.
 ALB's partial `X-Forwarded-Proto` is never trusted directly. No Flow, schema,
 business image or Project listener changes. Bounded proxy resources and temporary
 storage own no durable facts. NetworkPolicy independently preserves
 private-client gRPC access to 8801. Cloud owns exact DNS write permissions; External
 DNS owns the matching A/AAAA/CNAME and TXT records without taking V1 ownership.
-The pinned CLI has no TLS dial option, so `cmd/dex-debug-tunnel` provides a
-localhost-only verified TLS/H2 proxy with the fixed upstream authority. Existing
-certificate, storage, Secret and Temporal identities remain unchanged. The formal
+The former public gRPC Ingress and its TLS tunnel helper are removed. Existing
+certificate, storage, Dex configuration Secret and Temporal identities remain unchanged. The formal
 Kind release gate is unchanged; AWS-first operational recovery authorization and
 observed results belong in the AWS receipt. See the linked IaC debug runbook.
 

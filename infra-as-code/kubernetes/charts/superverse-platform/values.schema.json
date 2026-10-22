@@ -85,6 +85,44 @@
           "pattern": "^$|^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$"
         }
       }
+    },
+    "dex": {
+      "type": "object",
+      "properties": {
+        "debugIngress": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "webAuthSecretName": {
+              "type": "string",
+              "maxLength": 253,
+              "pattern": "^$|^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$"
+            }
+          },
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            },
+            "required": [
+              "enabled"
+            ]
+          },
+          "then": {
+            "required": [
+              "webAuthSecretName"
+            ],
+            "properties": {
+              "webAuthSecretName": {
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

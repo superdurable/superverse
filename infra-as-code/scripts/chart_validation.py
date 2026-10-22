@@ -175,7 +175,7 @@ def environment_values(environment):
     values["studio"]["config"] = {"SUPERVERSE_STUDIO_PUBLIC_ORIGIN": "https://" + domain}
     if environment in ("test", "staging"):
         values["dex"]["internalClientCIDRs"] = ["10.0.0.0/20"]
-        values["dex"]["debugIngress"] = {"enabled": True, "certificateArn": CERTIFICATE, "subnetIDs": ["subnet-00000000000000000"], "targetCIDRs": ["198.51.100.0/24"]}
+        values["dex"]["debugIngress"] = {"enabled": True, "webAuthSecretName": "dex-web-auth", "certificateArn": CERTIFICATE, "subnetIDs": ["subnet-00000000000000000"], "targetCIDRs": ["198.51.100.0/24"]}
     return values
 
 
@@ -220,6 +220,9 @@ def check_debug_variants(directory, environment, values):
     ]
     for keys, value in invalid:
         expect_render_rejected(directory, environment, values, keys, value, "platform Dex")
+    for value in ("", "Invalid_name", "a" * 254):
+        expect_render_rejected(directory, environment, values, ("dex", "debugIngress", "webAuthSecretName"), value, "platform Dex Web")
+        expect_render_rejected(directory, environment, values, ("dex", "debugIngress", "webAuthSecretName"), value, "webAuthSecretName", skip_schema=False)
     print(f"Static debug guards passed: {environment}; disabled API-only and {len(invalid)} rejections")
 
 
@@ -407,14 +410,29 @@ class Render:
         dex = containers[0]
         ports = [{"name": "grpc", "containerPort": 8801}] + ([{"name": "web", "containerPort": 8802}] if self.web else [])
         self.fail_if(dex.get("args") != ["--services", "api,interpreter,web" if self.web else "api,interpreter"] or dex.get("ports") != ports, "unexpected platform Dex components/ports")
+        pod = self.get("Deployment", self.product + "-dex")["spec"]["template"]["spec"]
+        auth_volumes = [v for v in pod["volumes"] if v["name"] == "web-proxy-auth"]
         if not self.debug:
+            self.fail_if(auth_volumes or ("ConfigMap", self.namespace, self.product + "-dex-web-proxy") in self.resources,
+                         "disabled hosted Web must not mount auth or render a proxy")
             return
         proxy = containers[1]
         self.fail_if(proxy["image"] != DEBUG_PROXY_IMAGE or proxy["ports"] != [{"name": "web-proxy", "containerPort": 8083}], "unexpected debug proxy image or port")
         security = proxy["securityContext"]
         self.fail_if(not security["runAsNonRoot"] or not security["readOnlyRootFilesystem"] or security["allowPrivilegeEscalation"] or security["capabilities"] != {"drop": ["ALL"]},
                      "debug proxy must remain unprivileged and read-only")
+        self.fail_if(auth_volumes != [{"name": "web-proxy-auth", "secret": {"secretName": "dex-web-auth", "defaultMode": 0o440,
+                     "items": [{"key": "htpasswd", "path": "htpasswd"}]}}] or
+                     {"name": "web-proxy-auth", "mountPath": "/etc/nginx/auth", "readOnly": True} not in proxy["volumeMounts"],
+                     "Web auth must mount the operator Secret directory read-only without subPath so rotations refresh")
+        self.fail_if(("Secret", self.namespace, "dex-web-auth") in self.resources, "Helm must never own the auth Secret or hash")
+        self.fail_if(proxy["readinessProbe"]["httpGet"] != {"path": "/readyz", "port": "web-proxy"}, "proxy readiness must use the unauthenticated exact health path")
         config = self.get("ConfigMap", self.product + "-dex-web-proxy")["data"]["nginx.conf"]
+        self.fail_if('    auth_basic "Platform Dex Web";\n    auth_basic_user_file /etc/nginx/auth/htpasswd;\n' not in config or
+                     '    location = /readyz {\n      auth_basic off;\n      return 200;\n    }\n' not in config or
+                     config.count("auth_basic off;") != 1 or config.count("location ") != 2 or
+                     'proxy_set_header Authorization "";' not in config,
+                     "all Web paths except exact /readyz must require Basic Auth without forwarding the credentials")
         host = "dex-web." + self.domain
         canonical = {"Host": host, "X-Forwarded-Prefix": "/", "X-Forwarded-Proto": "https", "X-Forwarded-Host": host, "X-Dex-Web-Embedded": "false",
                      "X-Dex-Web-CSRF-Token": '""', "X-Dex-Connector-OAuth-Redirect-URI": '""', "X-Dex-Work-Queue-Permissions": '""', "X-Dex-Project-Actor": '""', "Forwarded": '""'}
@@ -485,17 +503,16 @@ class Render:
             self.fail_if(len(values) > 1, f"the platform ALB group's Ingresses disagree on {key}: {sorted(values)}")
 
     def check_ingresses(self):
-        """Hosted Studio and, in test/staging, the two debug surfaces are the only Ingresses, each on its fixed host."""
+        """Hosted Studio and, in test/staging, the authenticated Web debug surface are the only Ingresses, each on its fixed host."""
         if self.hosted:
             self.ingresses[self.product + "-studio"] = (self.studio_hostname, self.product + "-studio", 3000, None)
         if self.debug:
-            self.ingresses[self.product + "-platform-dex-server"] = ("dex-server." + self.domain, self.product + "-dex", 8801, "GRPC")
             self.ingresses[self.product + "-platform-dex-web"] = ("dex-web." + self.domain, self.product + "-dex", 8802, "HTTP1")
             self.fail_if(self.get("NetworkPolicy", self.product + "-platform-dex-debug")["spec"] != {
                 "podSelector": {"matchLabels": {"app": self.product + "-dex"}}, "policyTypes": ["Ingress"],
                 "ingress": [
                     {"from": [{"ipBlock": {"cidr": "10.0.0.0/20"}}], "ports": [{"port": 8801, "protocol": "TCP"}]},
-                    {"from": [{"ipBlock": {"cidr": "198.51.100.0/24"}}], "ports": [{"port": 8801, "protocol": "TCP"}, {"port": 8083, "protocol": "TCP"}]},
+                    {"from": [{"ipBlock": {"cidr": "198.51.100.0/24"}}], "ports": [{"port": 8083, "protocol": "TCP"}]},
                 ]}, "internal gRPC and ALB admission must remain separate")
         slack_events = self.product + "-slack-events"
         expected = set(self.ingresses) | ({slack_events} if self.hosted else set())

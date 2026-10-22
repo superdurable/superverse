@@ -44,6 +44,8 @@ dex:
   debugIngress:
     enabled: false
     className: alb
+    # Operator-owned Secret containing only the htpasswd key; never put passwords or hashes in values.
+    webAuthSecretName: ""
     certificateArn: ""
     subnetIDs: []
     targetCIDRs: []

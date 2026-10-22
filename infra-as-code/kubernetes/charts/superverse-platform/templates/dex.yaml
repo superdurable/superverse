@@ -82,12 +82,18 @@ spec:
             limits: {cpu: 500m, memory: 128Mi}
           volumeMounts:
             - {name: web-proxy-config, mountPath: /etc/nginx/nginx.conf, subPath: nginx.conf, readOnly: true}
+            - {name: web-proxy-auth, mountPath: /etc/nginx/auth, readOnly: true}
             - {name: web-proxy-tmp, mountPath: /tmp}
         {{- end }}
       volumes:
         {{- if .Values.dex.debugIngress.enabled }}
         - name: web-proxy-config
           configMap: {name: {{ include "v2.product" $ }}-dex-web-proxy}
+        - name: web-proxy-auth
+          secret:
+            secretName: {{ .Values.dex.debugIngress.webAuthSecretName | quote }}
+            defaultMode: 0440
+            items: [{key: htpasswd, path: htpasswd}]
         - name: web-proxy-tmp
           emptyDir: {sizeLimit: 32Mi}
         {{- end }}

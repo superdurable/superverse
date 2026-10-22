@@ -25,6 +25,8 @@
 {{- end -}}
 {{- if .Values.dex.debugIngress.enabled -}}
 {{- if or .Values.localKind (not (has .Values.environment (list "test" "staging"))) }}{{ fail "platform Dex debug ingress is only available in hosted test/staging" }}{{ end -}}
+{{- $authSecret := required "platform Dex Web auth Secret name is required" .Values.dex.debugIngress.webAuthSecretName -}}
+{{- if or (gt (len $authSecret) 253) (not (regexMatch "^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$" $authSecret)) }}{{ fail "platform Dex Web auth Secret name must be a DNS subdomain" }}{{ end -}}
 {{- required "platform Dex debug TLS certificate is required" .Values.dex.debugIngress.certificateArn | trunc 0 -}}
 {{- if or (empty .Values.dex.debugIngress.subnetIDs) (empty .Values.dex.debugIngress.targetCIDRs) (empty .Values.dex.internalClientCIDRs) }}{{ fail "platform Dex debug ingress requires Cloud-owned ALB and internal-client subnets" }}{{ end -}}
 {{- if ne (len .Values.dex.debugIngress.subnetIDs) (len .Values.dex.debugIngress.targetCIDRs) }}{{ fail "platform Dex debug ALB subnet identities and CIDRs must match" }}{{ end -}}
