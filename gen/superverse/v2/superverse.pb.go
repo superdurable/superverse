@@ -14681,8 +14681,8 @@ func (*AnswerQuestionsResponse) Descriptor() ([]byte, []int) {
 
 // Selects the Session's model; the next turn starts on it. expected_revision is
 // AgentDescription.model_revision; it is optional on the wire only so that an omission is
-// detected and rejected. A Claude model needs the server's Claude key (FAILED_PRECONDITION
-// without it). AGENT_MODEL_MOCK needs a server that offers the mock model (FAILED_PRECONDITION
+// detected and rejected. A real platform model needs its provider's active Project key
+// (FAILED_PRECONDITION without it). AGENT_MODEL_MOCK needs a server that offers the mock model (FAILED_PRECONDITION
 // otherwise, always in prod) and, outside Local Kind and Native, the administrator
 // (PERMISSION_DENIED for any other account).
 type UpdateSessionModelRequest struct {

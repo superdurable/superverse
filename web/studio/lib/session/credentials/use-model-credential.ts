@@ -7,21 +7,49 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getModelCredential, type CredentialInfo } from "@/lib/api/model-credential";
+import { getModelCredential, type ModelProvider, type CredentialInfo } from "@/lib/api/model-credential";
 import { isAbortError } from "@/lib/shared/async";
 
 /** The page owns one non-secret key status; credentials never enter Session history or browser storage. */
-export function useModelCredential(projectId: string, active: boolean, credentialVersion: string | undefined) {
-  const [info, setInfo] = useState<CredentialInfo | null>(null);
-  const [pending, setPending] = useState<{ kind: "save" | "delete"; revision: string; requestId: string } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+export function useModelCredential(
+  projectId: string,
+  provider: ModelProvider,
+  active: boolean,
+  credentialVersion: string | undefined,
+) {
+  const key = `${projectId}/${provider}`;
+  const [rows, setRows] = useState<Record<string, CredentialInfo | null>>({});
+  const info = rows[key] ?? null;
+  const setInfo = useCallback(
+    (value: CredentialInfo) => {
+      setRows((current) => ({ ...current, [key]: value }));
+    },
+    [key],
+  );
+  type Pending = { kind: "save" | "delete"; revision: string; requestId: string };
+  const [operations, setOperations] = useState<Record<string, Pending | null>>({});
+  const pending = operations[key] ?? null;
+  const setPending = useCallback(
+    (value: Pending | null) => {
+      setOperations((current) => ({ ...current, [key]: value }));
+    },
+    [key],
+  );
+  const [errors, setErrors] = useState<Record<string, string | null>>({});
+  const error = errors[key] ?? null;
+  const setError = useCallback(
+    (value: string | null) => {
+      setErrors((current) => ({ ...current, [key]: value }));
+    },
+    [key],
+  );
   const request = useRef<AbortController | null>(null);
   const seenVersion = useRef(credentialVersion);
   const refresh = useCallback(() => {
     request.current?.abort();
     const controller = new AbortController();
     request.current = controller;
-    return getModelCredential(projectId, controller.signal).then(
+    return getModelCredential(projectId, provider, controller.signal).then(
       (next) => {
         if (controller.signal.aborted) return;
         setInfo(next);
@@ -38,10 +66,11 @@ export function useModelCredential(projectId: string, active: boolean, credentia
         return next;
       },
       (reason: unknown) => {
-        if (!isAbortError(reason)) setError("Could not read your Anthropic key status.");
+        if (!isAbortError(reason) && !controller.signal.aborted)
+          setError("Could not read the selected provider key status.");
       },
     );
-  }, [projectId]);
+  }, [projectId, provider, setError, setInfo, setPending]);
   useEffect(() => {
     if (!active) return;
     void refresh();
@@ -57,5 +86,8 @@ export function useModelCredential(projectId: string, active: boolean, credentia
     seenVersion.current = credentialVersion;
     void refresh();
   }, [active, credentialVersion, refresh]);
-  return useMemo(() => ({ info, error, refresh, setInfo, pending, setPending }), [info, error, refresh, pending]);
+  return useMemo(
+    () => ({ provider, info, error, refresh, setInfo, pending, setPending }),
+    [provider, info, error, refresh, setInfo, pending, setPending],
+  );
 }

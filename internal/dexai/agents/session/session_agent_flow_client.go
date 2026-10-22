@@ -874,17 +874,17 @@ func (client *SessionAgentFlowClient) WriteModelCredential(ctx context.Context, 
 
 func credentialWriteRequestID(input modelcredential.Mutation) string {
 	if input.WriteAttempt == 0 {
-		return input.OperationID
+		return input.Provider.String() + "/" + input.OperationID
 	}
-	return fmt.Sprintf("%s/retry-%d", input.OperationID, input.WriteAttempt)
+	return fmt.Sprintf("%s/%s/retry-%d", input.Provider.String(), input.OperationID, input.WriteAttempt)
 }
 
 // DeleteStoppedModelCredential permits only null writes after abnormal engine completion.
 // A rejected closed-Flow signal is reconciled by exact readback of the hard-delete object.
-func (client *SessionAgentFlowClient) DeleteStoppedModelCredential(ctx context.Context, flowID agentloop.FlowID, operation string) error {
+func (client *SessionAgentFlowClient) DeleteStoppedModelCredential(ctx context.Context, flowID agentloop.FlowID, provider modelcredential.Provider, operation string) error {
 	ctx, cancel := context.WithTimeout(ctx, commandRPCTimeout)
 	defer cancel()
-	key, err := client.ReadModelCredential(ctx, flowID, modelcredential.Anthropic)
+	key, err := client.ReadModelCredential(ctx, flowID, provider)
 	if err != nil || key == nil {
 		return err
 	}
@@ -896,8 +896,8 @@ func (client *SessionAgentFlowClient) DeleteStoppedModelCredential(ctx context.C
 		return ErrCommandRejected
 	}
 	_, writeErr := client.execution.SetAttributes(ctx, &dexpb.SetAttributesRequest{FlowId: string(flowID), RequestId: operation,
-		Attributes: []*dexpb.AttributeWrite{{Key: credentialAttributeKey(modelcredential.Anthropic), IsHardDeleteOnNull: true, Value: &dexpb.Value{Kind: &dexpb.Value_NullValue{}}}}})
-	remaining, err := client.ReadModelCredential(ctx, flowID, modelcredential.Anthropic)
+		Attributes: []*dexpb.AttributeWrite{{Key: credentialAttributeKey(provider), IsHardDeleteOnNull: true, Value: &dexpb.Value{Kind: &dexpb.Value_NullValue{}}}}})
+	remaining, err := client.ReadModelCredential(ctx, flowID, provider)
 	if err != nil {
 		return err
 	}

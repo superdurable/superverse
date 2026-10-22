@@ -13,7 +13,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/openaicompat"
 	"io"
 	"log/slog"
 	"net"
@@ -25,6 +24,7 @@ import (
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/openaicompat"
 )
 
 // APIKey is the fixed non-secret key of every mock model protocol.
@@ -127,6 +127,9 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if !request.Stream {
 		writeError(w, http.StatusNotFound, notFoundError, onlyStreamedMessages)
+		return
+	}
+	if h.probe != nil && !h.probe.await(r.Context()) {
 		return
 	}
 	answer, id, err := h.plan(r.Context(), request)
@@ -273,6 +276,7 @@ type CredentialProbeForTest struct {
 	mu       sync.Mutex
 	key      string
 	requests int
+	gate     *credentialGate
 }
 
 func (p *CredentialProbeForTest) SetKeyForTest(key string) {
@@ -296,6 +300,42 @@ func (p *CredentialProbeForTest) accept(key string) bool {
 	}
 	p.requests++
 	return true
+}
+
+type credentialGate struct {
+	entered chan struct{}
+	release chan struct{}
+}
+
+// HoldNextForTest pauses one actual streaming request until its owner releases it.
+func (p *CredentialProbeForTest) HoldNextForTest() (<-chan struct{}, func()) {
+	gate := &credentialGate{entered: make(chan struct{}), release: make(chan struct{})}
+	p.mu.Lock()
+	if p.gate != nil {
+		p.mu.Unlock()
+		panic("credential request gate already owned")
+	}
+	p.gate = gate
+	p.mu.Unlock()
+	var once sync.Once
+	return gate.entered, func() { once.Do(func() { close(gate.release) }) }
+}
+
+func (p *CredentialProbeForTest) await(ctx context.Context) bool {
+	p.mu.Lock()
+	gate := p.gate
+	p.gate = nil
+	p.mu.Unlock()
+	if gate == nil {
+		return true
+	}
+	close(gate.entered)
+	select {
+	case <-gate.release:
+		return true
+	case <-ctx.Done():
+		return false
+	}
 }
 
 // StartCredentialProbeForTest serves the same adapter protocol and scenarios, accepting one synthetic key.

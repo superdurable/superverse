@@ -10,8 +10,11 @@ package modelcredential
 
 import (
 	"errors"
+	"slices"
+	"strings"
 	"time"
 
+	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 )
 
@@ -20,17 +23,46 @@ type Provider struct{ catalog conversation.Provider }
 
 var Anthropic = Provider{catalog: conversation.ProviderAnthropic}
 
+var declaredProviders = credentialProviders()
+
+// Providers returns a copy of the bounded, catalog-derived credential namespaces.
+func Providers() []Provider { return slices.Clone(declaredProviders) }
+
+func credentialProviders() []Provider {
+	var providers []Provider
+	for _, model := range conversation.Models() {
+		if model.IsMock() {
+			continue
+		}
+		provider := Provider{catalog: model.Details().Provider}
+		if !slices.Contains(providers, provider) {
+			providers = append(providers, provider)
+		}
+	}
+	slices.SortFunc(providers, func(a, b Provider) int { return strings.Compare(a.String(), b.String()) })
+	return providers
+}
+
+// ForModel resolves a real model to its canonical credential namespace.
+func ForModel(model conversation.Model) Provider {
+	if model.IsMock() {
+		panic("mock models have no credential namespace")
+	}
+	return Provider{catalog: model.Details().Provider}
+}
+
+// Catalog exposes the canonical provider for typed boundary mapping.
+func (p Provider) Catalog() conversation.Provider { return p.catalog }
+
 func (p Provider) String() string               { return p.catalog.String() }
 func (p Provider) MarshalText() ([]byte, error) { return []byte(p.String()), nil }
 func (p *Provider) UnmarshalText(value []byte) error {
-	if string(value) != Anthropic.String() {
-		return errProvider
+	if len(value) == 0 {
+		return errors.New("model credential provider is required")
 	}
-	*p = Anthropic
-	return nil
+	return comm.UnmarshalName(value, p, Provider.String, Providers()...)
 }
 
-var errProvider = errors.New("unsupported model credential provider")
 var ErrRevision = errors.New("model credential revision changed")
 var ErrPending = errors.New("model credential operation needs reconciliation")
 var ErrCopyStopped = errors.New("subagent stopped because the model credential changed")

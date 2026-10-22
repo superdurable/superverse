@@ -10,6 +10,7 @@
 
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useSessionOwner } from "./use-session-owner";
+import { agentModelProvider } from "./model/agent-model";
 import { useModelCredential } from "./credentials/use-model-credential";
 
 type SessionContextValue = ReturnType<typeof useSessionOwner> & { credential: ReturnType<typeof useModelCredential> };
@@ -32,6 +33,7 @@ function SessionOwner({ projectId, children }: { projectId: string; children: Re
   const owned = useSessionOwner(projectId);
   const credential = useModelCredential(
     projectId,
+    agentModelProvider(owned.resource?.agent?.description?.model),
     owned.status === "SESSION_STATUS_ACTIVE",
     owned.resource?.agent?.description?.modelCredentialVersion,
   );

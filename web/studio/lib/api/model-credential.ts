@@ -13,17 +13,18 @@ import { ModelProvider } from "@/lib/generated/protobuf/superverse/v2/ModelProvi
 import type { ModelCredentialInfo__Output } from "@/lib/generated/protobuf/superverse/v2/ModelCredentialInfo";
 export { ModelCredentialStatus } from "@/lib/generated/protobuf/superverse/v2/ModelCredentialStatus";
 export type CredentialInfo = ModelCredentialInfo__Output;
-const ANTHROPIC_PROVIDER = ModelProvider.MODEL_PROVIDER_ANTHROPIC;
+export { ModelProvider };
 function info(value: CredentialInfo | null): CredentialInfo {
   if (!value) throw new Error("Missing credential metadata");
   return value;
 }
-export async function getModelCredential(projectId: string, signal: AbortSignal) {
-  const response = await readUnary("GetModelCredentialInfo", { projectId, provider: ANTHROPIC_PROVIDER }, { signal });
+export async function getModelCredential(projectId: string, provider: ModelProvider, signal: AbortSignal) {
+  const response = await readUnary("GetModelCredentialInfo", { projectId, provider }, { signal });
   return info(response.credential);
 }
 export async function saveModelCredential(
   projectId: string,
+  provider: ModelProvider,
   revision: string,
   requestId: string,
   apiKey: string,
@@ -31,20 +32,21 @@ export async function saveModelCredential(
 ) {
   const response = await unary(
     "SetModelCredential",
-    { projectId, provider: ANTHROPIC_PROVIDER, expectedRevision: revision, requestId, apiKey },
+    { projectId, provider, expectedRevision: revision, requestId, apiKey },
     { signal },
   );
   return info(response.credential);
 }
 export async function deleteModelCredential(
   projectId: string,
+  provider: ModelProvider,
   revision: string,
   requestId: string,
   signal: AbortSignal,
 ) {
   const response = await unary(
     "DeleteModelCredential",
-    { projectId, provider: ANTHROPIC_PROVIDER, expectedRevision: revision, requestId },
+    { projectId, provider, expectedRevision: revision, requestId },
     { signal },
   );
   return info(response.credential);

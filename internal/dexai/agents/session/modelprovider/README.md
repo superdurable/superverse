@@ -38,7 +38,7 @@ redirects. `ClaudeClientConfig.BaseURL` replaces the API origin and is set only 
 `ModelRouter` is the Flow's `conversation.ModelClient`: it sends the calls of a Session on the
 model `mock` to a second `claudeClient` pointed at the in-process mock model with its placeholder
 key. Unavailable catalog models are rejected before client selection. Admitted Claude calls go to the official Claude API with the Project’s active credential.
-A request without a key is rejected (`no_claude_key`); Session admission checks
+A request without a key is rejected (`provider_key_missing`); Session admission checks
 its metadata and model Steps require equal active metadata/envelope revisions.
 The server constructs no per-key transport or pool. A segment stays on one model. Error classification preserves the typed SDK or
 transport cause for `errors.Is`/`errors.As`, while formatted diagnostics contain

@@ -146,9 +146,8 @@ func agentSnapshot(ctx dex.Context, state agentloop.AgentState, read func(conver
 // agentDescription reads the durable interaction state a conversation view renders.
 func agentDescription(ctx dex.Context, state agentloop.AgentState, queuedCount, steeredCount int) agentloop.AgentDescription {
 	selected := comm.Must(sessionModelAttribute.Get(ctx))
-	info := dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, modelcredential.Anthropic.String()))
 	description := agentloop.AgentDescription{
-		ModelCredentialVersion:     fmt.Sprintf("%d/%s/%d", info.Revision, info.Status.String(), info.HighWaterRevision),
+		ModelCredentialVersion:     modelCredentialVersion(ctx, selected.Model),
 		Executor:                   currentExecutor(ctx),
 		Status:                     state.Status,
 		WaitingInputRound:          comm.Must(waitingInputRoundAttribute.Get(ctx)),
@@ -639,26 +638,34 @@ func modelCredentialReady(ctx dex.Context, model conversation.Model) bool {
 	if model.IsMock() || currentExecutor(ctx).Mode == remoteexec.ModeRemote {
 		return true
 	}
-	return dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, modelcredential.Anthropic.String())).Active()
+	return dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, modelcredential.ForModel(model).String())).Active()
 }
 
 func credentialAdmissionRPC(options *dex.RPCOptions) *dex.RPCOptions {
-	options.LoadAttributeMapInstances = append(options.LoadAttributeMapInstances, modelKeyInfoAttribute.Load(modelcredential.Anthropic.String()))
+	options.LoadAttributeMapInstances = append(options.LoadAttributeMapInstances, credentialInfoLoads()...)
 	return options
 }
 
 // prepareSubagentCredential commits a bounded holder before a child can receive a key.
 func (flow *SessionAgentFlow) prepareSubagentCredential(ctx dex.Context, input toolInvocation) (*dex.StepDecision, error) {
 	input.CredentialPrepared = true
-	if !comm.Must(sessionModelAttribute.Get(ctx)).Model.IsMock() {
-		info := dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, modelcredential.Anthropic.String()))
+	id := flowid.AgentTaskID(ctx.FlowID(), string(input.Call.ID))
+	record := comm.Must(subagentsAttribute.Get(ctx, id))
+	if record.Model == "" {
+		record.Model = comm.Must(sessionModelAttribute.Get(ctx)).Model
+		comm.MustDo(subagentsAttribute.Set(ctx, id, record))
+	}
+	model := subagentCredentialModel(ctx, input.Call)
+	if !model.IsMock() {
+		provider := modelcredential.ForModel(model)
+		info := dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, provider.String()))
 		if !info.Active() {
 			return rejectCredentialStart(ctx, input.Call)
 		}
 		agentID := flowid.AgentTaskID(ctx.FlowID(), string(input.Call.ID))
 		for _, holder := range info.Holders {
 			if holder.AgentID == agentID && holder.CallID == string(input.Call.ID) {
-				return dex.GoTo(ExecuteTool{}, input, dex.WithStepOptions(serialToolStepOptions(input.Call))), nil
+				return dex.GoTo(ExecuteTool{}, input, dex.WithStepOptions(serialToolStepOptions(ctx, input.Call))), nil
 			}
 		}
 		if len(info.Holders) >= agenttasks.MaximumRunningSubagents {
@@ -672,9 +679,9 @@ func (flow *SessionAgentFlow) prepareSubagentCredential(ctx dex.Context, input t
 			return rejectCredentialStart(ctx, input.Call)
 		}
 		info.Holders = append(info.Holders, modelcredential.Holder{AgentID: agentID, CallID: string(input.Call.ID), Revision: info.Revision})
-		comm.MustDo(modelKeyInfoAttribute.Set(ctx, modelcredential.Anthropic.String(), info))
+		comm.MustDo(modelKeyInfoAttribute.Set(ctx, provider.String(), info))
 	}
-	return dex.GoTo(ExecuteTool{}, input, dex.WithStepOptions(serialToolStepOptions(input.Call))), nil
+	return dex.GoTo(ExecuteTool{}, input, dex.WithStepOptions(serialToolStepOptions(ctx, input.Call))), nil
 }
 
 func rejectCredentialStart(ctx dex.Context, call conversation.ToolCall) (*dex.StepDecision, error) {
@@ -699,7 +706,7 @@ func preparedSubagentCredential(ctx dex.Context, agentID string, model conversat
 		return modelcredential.Envelope{}, err
 	}
 	if !model.IsMock() {
-		info := comm.Must(modelKeyInfoAttribute.Get(ctx, modelcredential.Anthropic.String()))
+		info := comm.Must(modelKeyInfoAttribute.Get(ctx, modelcredential.ForModel(model).String()))
 		var admitted bool
 		for _, holder := range info.Holders {
 			if holder.AgentID == agentID && holder.Revision == key.Revision {
@@ -723,4 +730,41 @@ func credentialStartFailure(ctx dex.Context, call conversation.ToolCall, agentID
 		return agentloop.FailureResult(conversation.ToolFailure{Code: toolfailure.ModelCredentialUnavailable, Effect: toolfailure.EffectPartial, Message: "The model credential changed; this subagent was stopped. Its task notification follows."}), nil
 	}
 	return agentloop.ToolExecutionResult{}, fmt.Errorf("start subagent %s: %w", agentID, err)
+}
+
+// credentialInfoLoads covers the closed provider set without loading any secret.
+func credentialInfoLoads() []dex.AttributeMapLoad {
+	loads := make([]dex.AttributeMapLoad, 0, len(modelcredential.Providers()))
+	for _, provider := range modelcredential.Providers() {
+		loads = append(loads, modelKeyInfoAttribute.Load(provider.String()))
+	}
+	return loads
+}
+
+func credentialInfoLocks() []dex.AttributeLock {
+	locks := make([]dex.AttributeLock, 0, len(modelcredential.Providers()))
+	for _, provider := range modelcredential.Providers() {
+		locks = append(locks, dex.LockAttributeMap(modelKeyInfoAttribute, provider.String()))
+	}
+	return locks
+}
+
+func modelCredentialVersion(ctx dex.Context, selected conversation.Model) string {
+	var version strings.Builder
+	version.WriteString(string(selected))
+	for _, provider := range modelcredential.Providers() {
+		info := dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, provider.String()))
+		fmt.Fprintf(&version, ";%s/%d/%s/%d", provider.String(), info.Revision, info.Status.String(), info.HighWaterRevision)
+	}
+	return version.String()
+}
+
+// subagentCredentialModel freezes old STARTING records before their first copy.
+func subagentCredentialModel(ctx dex.Context, call conversation.ToolCall) conversation.Model {
+	id := flowid.AgentTaskID(ctx.FlowID(), string(call.ID))
+	record := comm.Must(subagentsAttribute.Get(ctx, id))
+	if record.Model != "" {
+		return record.Model
+	}
+	return comm.Must(sessionModelAttribute.Get(ctx)).Model
 }

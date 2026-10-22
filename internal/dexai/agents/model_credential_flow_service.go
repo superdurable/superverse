@@ -45,6 +45,9 @@ func (s *ModelCredentialFlowService) Mutate(ctx context.Context, flowID agentloo
 		return current, modelcredential.ErrRevision
 	}
 	if !input.Delete && current.OperationID != input.OperationID {
+		if input.Provider != modelcredential.Anthropic {
+			return current, conversation.ModelUnavailable.Rejected()
+		}
 		if err := modelprovider.ValidateCredential(ctx, s.HTTP, key, conversation.ModelHaiku45, s.ValidationBaseURL, s.Logger); err != nil {
 			return current, err
 		}
@@ -126,6 +129,9 @@ func (s *ModelCredentialFlowService) Mutate(ctx context.Context, flowID agentloo
 	holders := append([]modelcredential.Holder{}, admission.Info.Holders...)
 	if snapshot.Agent != nil {
 		for _, record := range snapshot.Agent.Description.Subagents {
+			if !credentialRecordBelongsTo(record, input.Provider) {
+				continue
+			}
 			if !record.Status.Finished() {
 				id := agenttasks.SubagentIdentity{ProjectID: snapshot.Session.Identity.ProjectID, AgentID: record.AgentID}
 				if err = s.Subagents.StopForCredentialChange(ctx, id); err != nil {
@@ -141,7 +147,7 @@ func (s *ModelCredentialFlowService) Mutate(ctx context.Context, flowID agentloo
 			return admission.Info, err
 		}
 	}
-	if snapshot.Agent != nil && snapshot.Agent.Description.Status != agentloop.AgentStatusWaitingForMessage && snapshot.Agent.Description.Status != agentloop.AgentStatusInitializing {
+	if snapshot.Agent != nil && !snapshot.Agent.Description.ContextModel.IsMock() && snapshot.Agent.Description.ContextModel != "" && modelcredential.ForModel(snapshot.Agent.Description.ContextModel) == input.Provider && snapshot.Agent.Description.Status != agentloop.AgentStatusWaitingForMessage && snapshot.Agent.Description.Status != agentloop.AgentStatusInitializing {
 		if err = s.Sessions.InterruptAgent(ctx, flowID, agentloop.InterruptAgentRequest{Actor: &input.Actor, Turn: snapshot.Agent.Description.Turn, PlatformOnly: true}); err != nil {
 			return admission.Info, err
 		}
@@ -223,25 +229,60 @@ func (s *ModelCredentialFlowService) Close() error { s.HTTP.CloseIdleConnections
 // cleanupProjectCredential deletes the current key before the Session completes.
 // An unresolved earlier writer remains disabled and keeps Project cleanup retryable.
 func (s *ModelCredentialFlowService) cleanupProjectCredential(ctx context.Context, project string, abnormal bool) error {
+	var records []agenttasks.SubagentRecord
+	loadedSnapshot := false
+	for _, provider := range modelcredential.Providers() {
+		info, err := s.Sessions.ReadModelCredentialInfo(ctx, agentloop.SessionFlowID(project), provider)
+		if err != nil {
+			return err
+		}
+		if info.Revision == 0 && info.HighWaterRevision == 0 && len(info.Holders) == 0 && info.OperationID == "" && info.Status != modelcredential.StatusPending {
+			continue
+		}
+		if abnormal {
+			if !loadedSnapshot {
+				snapshot, err := s.Sessions.GetSnapshot(ctx, agentloop.SessionFlowID(project))
+				if err != nil {
+					return err
+				}
+				if snapshot.Agent != nil {
+					records = snapshot.Agent.Description.Subagents
+				}
+				loadedSnapshot = true
+			}
+			if err := s.cleanupStoppedProjectCredential(ctx, project, provider, info, records); err != nil {
+				return err
+			}
+		} else if err := s.cleanupProviderCredential(ctx, project, provider, info); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *ModelCredentialFlowService) cleanupProviderCredential(ctx context.Context, project string, provider modelcredential.Provider, info modelcredential.Info) error {
 	flowID := agentloop.SessionFlowID(project)
-	info, err := s.Sessions.ReadModelCredentialInfo(ctx, flowID, modelcredential.Anthropic)
-	if err != nil {
-		return err
-	}
-	if abnormal {
-		return s.cleanupStoppedProjectCredential(ctx, project, info)
-	}
+	var err error
+
 	if info.Status == modelcredential.StatusPending {
-		info, err = s.Mutate(ctx, flowID, modelcredential.Mutation{Provider: modelcredential.Anthropic, OperationID: info.OperationID, ExpectedRevision: info.OperationRevision, Delete: info.Delete, Actor: info.SetBy}, "")
+		info, err = s.Mutate(ctx, flowID, modelcredential.Mutation{Provider: provider, OperationID: info.OperationID, ExpectedRevision: info.OperationRevision, Delete: info.Delete, Actor: info.SetBy}, "")
 		if err != nil && !errors.Is(err, modelcredential.ErrCanceled) {
 			return err
 		}
 	}
-
-	if info.OperationID == projectCredentialCleanupID(project) && info.Status == modelcredential.StatusRevoked {
-		return s.cleanupStoppedProjectCredential(ctx, project, info)
+	operation := projectCredentialCleanupID(project, provider)
+	if info.OperationID == operation && info.Status == modelcredential.StatusRevoked {
+		snapshot, err := s.Sessions.GetSnapshot(ctx, flowID)
+		if err != nil {
+			return err
+		}
+		var records []agenttasks.SubagentRecord
+		if snapshot.Agent != nil {
+			records = snapshot.Agent.Description.Subagents
+		}
+		return s.cleanupStoppedProjectCredential(ctx, project, provider, info, records)
 	}
-	_, err = s.Mutate(ctx, flowID, modelcredential.Mutation{Provider: modelcredential.Anthropic, OperationID: projectCredentialCleanupID(project), ExpectedRevision: info.Revision, Delete: true, Actor: conversation.Actor{}, Reason: modelcredential.ProjectDeletionReason}, "")
+	_, err = s.Mutate(ctx, flowID, modelcredential.Mutation{Provider: provider, OperationID: operation, ExpectedRevision: info.Revision, Delete: true, Reason: modelcredential.ProjectDeletionReason}, "")
 	return err
 }
 
@@ -268,28 +309,35 @@ func (s *ModelCredentialFlowService) clearSubagentCredential(ctx context.Context
 }
 
 // cleanupStoppedProjectCredential is exact deletion after the engine can no longer run a writer.
-func (s *ModelCredentialFlowService) cleanupStoppedProjectCredential(ctx context.Context, project string, info modelcredential.Info) error {
+func (s *ModelCredentialFlowService) cleanupStoppedProjectCredential(ctx context.Context, project string, provider modelcredential.Provider, info modelcredential.Info, records []agenttasks.SubagentRecord) error {
 	flowID := agentloop.SessionFlowID(project)
-	snapshot, err := s.Sessions.GetSnapshot(ctx, flowID)
-	if err != nil {
-		return err
-	}
 	holders := append([]modelcredential.Holder{}, info.Holders...)
-	if snapshot.Agent != nil {
-		for _, record := range snapshot.Agent.Description.Subagents {
-			holders = append(holders, modelcredential.Holder{AgentID: record.AgentID})
+	for _, record := range records {
+		if !credentialRecordBelongsTo(record, provider) {
+			continue
 		}
+		holders = append(holders, modelcredential.Holder{AgentID: record.AgentID})
 	}
 	for _, holder := range holders {
 		id := agenttasks.SubagentIdentity{ProjectID: project, AgentID: holder.AgentID}
-		if err = s.Subagents.StopForCredentialChange(ctx, id); err != nil {
+		if err := s.Subagents.StopForCredentialChange(ctx, id); err != nil {
 			return err
 		}
-		if err = s.clearSubagentCredential(ctx, id, fmt.Sprintf("%s/%s/%d", projectCredentialCleanupID(project), holder.AgentID, info.HighWaterRevision)); err != nil {
+		if err := s.clearSubagentCredential(ctx, id, fmt.Sprintf("%s/%s/%d", projectCredentialCleanupID(project, provider), holder.AgentID, info.HighWaterRevision)); err != nil {
 			return err
 		}
 	}
-	return s.Sessions.DeleteStoppedModelCredential(ctx, flowID, projectCredentialCleanupID(project))
+	return s.Sessions.DeleteStoppedModelCredential(ctx, flowID, provider, projectCredentialCleanupID(project, provider))
 }
 
-func projectCredentialCleanupID(project string) string { return "project-cleanup-" + project }
+func projectCredentialCleanupID(project string, provider modelcredential.Provider) string {
+	return "project-cleanup-" + project + "/" + provider.String()
+}
+
+func credentialRecordBelongsTo(record agenttasks.SubagentRecord, provider modelcredential.Provider) bool {
+	// Before provider generalization only Anthropic could own a real child key.
+	if record.Model == "" {
+		return provider == modelcredential.Anthropic
+	}
+	return !record.Model.IsMock() && modelcredential.ForModel(record.Model) == provider
+}

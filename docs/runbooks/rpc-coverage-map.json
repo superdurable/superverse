@@ -176,7 +176,6 @@
       "native-integration"
     ],
     "/superverse.v2.ModelCredentialService/SetModelCredential": [
-      "native-e2e",
       "native-integration"
     ],
     "/superverse.v2.PreviewService/GetPreview": [
@@ -312,7 +311,6 @@
       "native-e2e"
     ],
     "/superverse.v2.RemoteAgentService/CreateRemoteAgentPairing": [
-      "native-e2e",
       "native-integration"
     ],
     "/superverse.v2.RemoteAgentService/ListRemoteAgentConnections": [

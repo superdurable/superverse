@@ -12,6 +12,7 @@ import (
 	"context"
 	"errors"
 	pb "github.com/superdurable/superversev2/gen/superverse/v2"
+	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/dexai/agents"
 	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
@@ -44,7 +45,9 @@ func (s *server) authorize(ctx context.Context, caller *pb.CallerContext, projec
 	if err != nil {
 		return scope, boundary.RPCStatus(err)
 	}
-	if provider != pb.ModelProvider_MODEL_PROVIDER_ANTHROPIC {
+	value, err := boundary.DomainValue(provider)
+	var selected modelcredential.Provider
+	if err != nil || selected.UnmarshalText([]byte(strings.ToLower(value))) != nil {
 		return scope, status.Error(codes.InvalidArgument, "unsupported model credential provider")
 	}
 	return scope, nil
@@ -55,11 +58,11 @@ func (s *server) GetModelCredentialInfo(ctx context.Context, request *pb.GetMode
 	if err != nil {
 		return nil, err
 	}
-	info, err := s.sessions.Agent.ReadModelCredentialInfo(ctx, caller.FlowID, modelcredential.Anthropic)
+	info, err := s.sessions.Agent.ReadModelCredentialInfo(ctx, caller.FlowID, credentialProvider(request.GetProvider()))
 	if err != nil {
 		return nil, boundary.RPCStatus(err)
 	}
-	return &pb.GetModelCredentialInfoResponse{Credential: credentialDocument(info)}, nil
+	return &pb.GetModelCredentialInfoResponse{Credential: credentialDocument(info, credentialProvider(request.GetProvider()))}, nil
 }
 
 func (s *server) SetModelCredential(ctx context.Context, request *pb.SetModelCredentialRequest) (*pb.SetModelCredentialResponse, error) {
@@ -70,7 +73,7 @@ func (s *server) SetModelCredential(ctx context.Context, request *pb.SetModelCre
 	key := strings.TrimSpace(request.GetApiKey())
 	request.ApiKey = ""
 	if key == "" {
-		info, readErr := s.sessions.Agent.ReadModelCredentialInfo(ctx, caller.FlowID, modelcredential.Anthropic)
+		info, readErr := s.sessions.Agent.ReadModelCredentialInfo(ctx, caller.FlowID, credentialProvider(request.GetProvider()))
 		if readErr != nil {
 			return nil, credentialError(readErr)
 		}
@@ -85,7 +88,7 @@ func (s *server) SetModelCredential(ctx context.Context, request *pb.SetModelCre
 			return nil, status.Error(codes.InvalidArgument, "the API key must contain printable ASCII characters without spaces")
 		}
 	}
-	input, err := mutation(request.GetRequestId(), request.ExpectedRevision, false, caller.Actor)
+	input, err := mutation(request.GetRequestId(), request.ExpectedRevision, false, caller.Actor, credentialProvider(request.GetProvider()))
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +100,7 @@ func (s *server) SetModelCredential(ctx context.Context, request *pb.SetModelCre
 	if err != nil {
 		return nil, credentialError(err)
 	}
-	return &pb.SetModelCredentialResponse{Credential: credentialDocument(info)}, nil
+	return &pb.SetModelCredentialResponse{Credential: credentialDocument(info, credentialProvider(request.GetProvider()))}, nil
 }
 
 func (s *server) DeleteModelCredential(ctx context.Context, request *pb.DeleteModelCredentialRequest) (*pb.DeleteModelCredentialResponse, error) {
@@ -105,7 +108,7 @@ func (s *server) DeleteModelCredential(ctx context.Context, request *pb.DeleteMo
 	if err != nil {
 		return nil, err
 	}
-	input, err := mutation(request.GetRequestId(), request.ExpectedRevision, true, caller.Actor)
+	input, err := mutation(request.GetRequestId(), request.ExpectedRevision, true, caller.Actor, credentialProvider(request.GetProvider()))
 	if err != nil {
 		return nil, err
 	}
@@ -113,21 +116,21 @@ func (s *server) DeleteModelCredential(ctx context.Context, request *pb.DeleteMo
 	if err != nil {
 		return nil, credentialError(err)
 	}
-	return &pb.DeleteModelCredentialResponse{Credential: credentialDocument(info)}, nil
+	return &pb.DeleteModelCredentialResponse{Credential: credentialDocument(info, credentialProvider(request.GetProvider()))}, nil
 }
 
-func mutation(operation string, revision *uint64, remove bool, actor conversation.Actor) (modelcredential.Mutation, error) {
+func mutation(operation string, revision *uint64, remove bool, actor conversation.Actor, provider modelcredential.Provider) (modelcredential.Mutation, error) {
 	if operation == "" || len(operation) > 128 || revision == nil || *revision == math.MaxUint64 {
 		return modelcredential.Mutation{}, status.Error(codes.InvalidArgument, "request ID and observed credential revision are required")
 	}
-	return modelcredential.Mutation{Provider: modelcredential.Anthropic, OperationID: operation, ExpectedRevision: *revision, Delete: remove, Actor: actor}, nil
+	return modelcredential.Mutation{Provider: provider, OperationID: operation, ExpectedRevision: *revision, Delete: remove, Actor: actor}, nil
 }
 
 // credentialDocument has a deliberate metadata allowlist; no secret or writer internals reach Studio.
-func credentialDocument(info modelcredential.Info) *pb.ModelCredentialInfo {
+func credentialDocument(info modelcredential.Info, provider modelcredential.Provider) *pb.ModelCredentialInfo {
 	value := &pb.ModelCredentialInfo{Revision: info.Revision, Status: boundary.Enum[pb.ModelCredentialStatus](info.Status.String()),
 		Last4: info.Last4, SetBy: &pb.Actor{AccountId: info.SetBy.AccountID, Email: info.SetBy.Email},
-		Provider: boundary.Enum[pb.ModelProvider](conversation.ProviderAnthropic.String())}
+		Provider: boundary.Enum[pb.ModelProvider](provider.Catalog().String())}
 	if !info.SetAt.IsZero() {
 		value.SetAt = info.SetAt.Format(time.RFC3339Nano)
 	}
@@ -154,4 +157,11 @@ func credentialError(err error) error {
 		return status.Error(codes.DeadlineExceeded, "model credential operation timed out; refresh its status")
 	}
 	return status.Error(codes.Unavailable, "model credential operation did not complete; refresh its status")
+}
+
+func credentialProvider(value pb.ModelProvider) modelcredential.Provider {
+	var provider modelcredential.Provider
+	domain := comm.Must(boundary.DomainValue(value))
+	comm.MustDo(provider.UnmarshalText([]byte(strings.ToLower(domain))))
+	return provider
 }

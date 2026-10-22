@@ -203,6 +203,7 @@ const (
 // what the user sees of the subagent and what the main agent may merge. It
 // holds no prompt text and no report: the subagent keeps both.
 type SubagentRecord struct {
+	Model   conversation.Model  `json:"model,omitempty"`
 	AgentID string              `json:"agent_id"`
 	CallID  conversation.CallID `json:"call_id"`
 	Kind    SubagentKind        `json:"kind"`

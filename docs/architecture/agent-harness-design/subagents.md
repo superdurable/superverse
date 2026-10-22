@@ -633,3 +633,11 @@ Terminal `RecordSubagentOutcome` explicitly deletes the copy as well; Flow
 completion is not automatic hard deletion. Abnormal termination retains the
 usual operator/retention limitation. The [Session credential contract](session.md#project-model-credentials)
 owns mutation recovery, secret boundaries, authorization and resource bounds.
+
+
+Credential holders are scoped to the frozen provider. Session admission records
+the child model before the copy movement so changing the Session selection
+cannot copy a different provider's key. Replacement/deletion stops and clears
+only children of that provider, while Project deletion clears every provider.
+Old retained records lacking a model field belong to the former Anthropic-only
+credential boundary; source and child physical secret keys remain unchanged.

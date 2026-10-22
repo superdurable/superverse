@@ -118,7 +118,7 @@ func (flow *SessionAgentFlow) completeModelCall(ctx dex.Context, segment agentlo
 	}
 	credential, credentialErr := sessionModelCredential(ctx, request.Model)
 	if credentialErr != nil {
-		return boundedModelOutcome(platformModelOutcome{Admission: admission, Failure: conversation.NoClaudeKey.Rejected()}), nil
+		return boundedModelOutcome(platformModelOutcome{Admission: admission, Failure: conversation.NoProviderKey.Rejected()}), nil
 	}
 	request.APIKey = credential.Key
 	outcome.CredentialRevision = credential.Revision
@@ -281,12 +281,12 @@ func (flow *SessionAgentFlow) recordPlatformModelResult(ctx dex.Context, input p
 		return platformModelRecord{discard: true}
 	}
 	if !comm.Must(contextSegmentAttribute.Get(ctx)).Model.IsMock() {
-		info := dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, modelcredential.Anthropic.String()))
+		info := dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, modelcredential.ForModel(comm.Must(contextSegmentAttribute.Get(ctx)).Model).String()))
 		if !info.Active() || info.Revision != input.CredentialRevision {
 			input.Reply = nil
 			input.Summary = ""
 			input.Correction = false
-			input.Failure = conversation.NoClaudeKey.Rejected()
+			input.Failure = conversation.NoProviderKey.Rejected()
 		}
 	}
 	setRunningWork(ctx, nil)
@@ -370,7 +370,7 @@ var (
 	modelStepOptions = &dex.StepOptions{ExecuteMethodTimeout: 20 * time.Minute, HeartbeatTimeout: time.Minute, ExecuteDurability: dex.StepDurabilitySync,
 		ExecuteLoadAttributeMaps: messageMaps,
 		ExecuteRetry:             dexflow.CappedStepRetry(3, time.Hour)}
-	modelFailureStepOptions = &dex.StepOptions{ExecuteLoadAttributeMapInstances: []dex.AttributeMapLoad{modelKeyInfoAttribute.Load(modelcredential.Anthropic.String())}, ExecuteMethodTimeout: time.Minute, ExecuteRetry: shortStepRetry, ExecuteLoadAttributeMaps: messageMaps,
+	modelFailureStepOptions = &dex.StepOptions{ExecuteLoadAttributeMapInstances: credentialInfoLoads(), ExecuteMethodTimeout: time.Minute, ExecuteRetry: shortStepRetry, ExecuteLoadAttributeMaps: messageMaps,
 		ExecuteLockAttributes: []dex.AttributeLock{dex.LockAttribute(messageWindowLockAttribute), executorLock, interruptLock}}
 )
 
@@ -455,7 +455,7 @@ func (flow *SessionAgentFlow) planModelCall(ctx dex.Context, next agentloop.Cont
 func modelRequestLoad(state agentloop.AgentState, segment agentloop.ContextSegment, withPendingRequest bool) *dex.StepOptions {
 	options := segmentLoad(state, segment, withPendingRequest)
 	if !segment.Model.IsMock() {
-		options.ExecuteLoadAttributeMapInstances = append(options.ExecuteLoadAttributeMapInstances, modelKeysAttribute.Load(modelcredential.Anthropic.String()))
+		options.ExecuteLoadAttributeMapInstances = append(options.ExecuteLoadAttributeMapInstances, modelKeysAttribute.Load(modelcredential.ForModel(segment.Model).String()))
 	}
 	return options
 }
@@ -474,7 +474,10 @@ func segmentLoad(state agentloop.AgentState, segment agentloop.ContextSegment, w
 			first = min(first, sequence)
 		}
 	}
-	loads := []dex.AttributeMapLoad{contextSegmentPromptsAttribute.Load(segment.PromptsKey()), modelKeyInfoAttribute.Load(modelcredential.Anthropic.String())}
+	loads := []dex.AttributeMapLoad{contextSegmentPromptsAttribute.Load(segment.PromptsKey())}
+	if !segment.Model.IsMock() {
+		loads = append(loads, modelKeyInfoAttribute.Load(modelcredential.ForModel(segment.Model).String()))
+	}
 	for _, key := range agentloop.ArchiveChunksFrom(state, first) {
 		loads = append(loads, archivedMessagesAttribute.Load(key))
 	}
@@ -680,7 +683,7 @@ func (flow *SessionAgentFlow) completeCompaction(ctx dex.Context, input contextC
 	}
 	credential, credentialErr := sessionModelCredential(ctx, request.Model)
 	if credentialErr != nil {
-		return &platformModelOutcome{Admission: input.Admission, Compaction: &input, Failure: conversation.NoClaudeKey.Rejected()}, nil, nil
+		return &platformModelOutcome{Admission: input.Admission, Compaction: &input, Failure: conversation.NoProviderKey.Rejected()}, nil, nil
 	}
 	request.APIKey = credential.Key
 	defer func() { request.APIKey = "" }()
@@ -940,12 +943,12 @@ func sessionModelCredential(ctx dex.Context, model conversation.Model) (modelcre
 	if model.IsMock() {
 		return modelcredential.Envelope{}, nil
 	}
-	info, err := modelKeyInfoAttribute.Get(ctx, modelcredential.Anthropic.String())
+	info, err := modelKeyInfoAttribute.Get(ctx, modelcredential.ForModel(model).String())
 	if dexflow.IsAttributeMapNotLoaded(err) || dexflow.IsAttributeNotFound(err) {
 		return modelcredential.Envelope{}, modelcredential.ErrUnavailable
 	}
 	comm.MustDo(err)
-	envelope, err := modelKeysAttribute.Get(ctx, modelcredential.Anthropic.String())
+	envelope, err := modelKeysAttribute.Get(ctx, modelcredential.ForModel(model).String())
 	if dexflow.IsAttributeMapNotLoaded(err) || dexflow.IsAttributeNotFound(err) {
 		return modelcredential.Envelope{}, modelcredential.ErrUnavailable
 	}

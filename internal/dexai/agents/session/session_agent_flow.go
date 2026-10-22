@@ -138,8 +138,8 @@ func (flow *SessionAgentFlow) GetRPCs() []dex.RPCDef {
 	queue := []dex.ChannelDef{queuedUserMessagesChannel}
 	return []dex.RPCDef{
 		dex.DefineRPC(flow.ReadModelCredentialInfo, &dex.RPCOptions{Timeout: readRPCTimeout}),
-		dex.DefineRPC(flow.ReserveModelCredential, dexflow.ShortRPC(statusLock, credentialInfoLock)),
-		dex.DefineRPC(flow.FinalizeModelCredential, dexflow.ShortRPC(statusLock, credentialInfoLock)),
+		dex.DefineRPC(flow.ReserveModelCredential, dexflow.ShortRPC(append([]dex.AttributeLock{statusLock}, credentialInfoLocks()...)...)),
+		dex.DefineRPC(flow.FinalizeModelCredential, dexflow.ShortRPC(append([]dex.AttributeLock{statusLock}, credentialInfoLocks()...)...)),
 		dex.DefineRPC(flow.SendMessage, loadDesigns(credentialAdmissionRPC(userCommandRPC(false, nil, inputLock, requirementsLock)), flowdesign.SlotPending)),
 		dex.DefineRPC(flow.SteerMessage, userCommandRPC(true, queue)),
 		dex.DefineRPC(flow.DeleteQueuedMessage, userCommandRPC(true, queue)),
@@ -147,7 +147,7 @@ func (flow *SessionAgentFlow) GetRPCs() []dex.RPCDef {
 		dex.DefineRPC(flow.ApproveTool, userCommandRPC(true, nil, approvalLock)),
 		// A model selection writes only SessionModel, so it never waits for a
 		// model call; the next turn's rollover applies it.
-		dex.DefineRPC(flow.UpdateSessionModel, &dex.RPCOptions{Timeout: commandRPCTimeout, LockAttributes: []dex.AttributeLock{statusLock, dex.LockAttribute(sessionModelAttribute)}, LoadAttributeMapInstances: []dex.AttributeMapLoad{modelKeyInfoAttribute.Load(modelcredential.Anthropic.String())}}),
+		dex.DefineRPC(flow.UpdateSessionModel, &dex.RPCOptions{Timeout: commandRPCTimeout, LockAttributes: []dex.AttributeLock{statusLock, dex.LockAttribute(sessionModelAttribute)}, LoadAttributeMapInstances: credentialInfoLoads()}),
 		dex.DefineRPC(flow.UpdatePreviewAutoDeploy, &dex.RPCOptions{Timeout: commandRPCTimeout, LockAttributes: []dex.AttributeLock{statusLock, dex.LockAttribute(previewAutoDeployAttribute), dex.LockAttribute(previewAutoDeployChangedByAttribute)}}),
 		// A Stop decides on AgentState without its writers' MessageWindowLock,
 		// which a running model call holds.
@@ -158,7 +158,7 @@ func (flow *SessionAgentFlow) GetRPCs() []dex.RPCDef {
 		// Every write of a STARTING record whose subagent may have started holds
 		// the AgentInterrupt lock.
 		dex.DefineRPC(flow.AdmitSubagent, dexflow.ShortRPC(statusLock, interruptLock)),
-		dex.DefineRPC(flow.GetSnapshot, &dex.RPCOptions{Timeout: readRPCTimeout, LoadAttributeMapInstances: []dex.AttributeMapLoad{modelKeyInfoAttribute.Load(modelcredential.Anthropic.String())}, LoadAttributeMaps: []dex.AttributeDef{currentMessagesAttribute, backgroundCommandsAttribute, subagentsAttribute, connectorContributionsAttribute},
+		dex.DefineRPC(flow.GetSnapshot, &dex.RPCOptions{Timeout: readRPCTimeout, LoadAttributeMapInstances: credentialInfoLoads(), LoadAttributeMaps: []dex.AttributeDef{currentMessagesAttribute, backgroundCommandsAttribute, subagentsAttribute, connectorContributionsAttribute},
 			LoadChannels: []dex.ChannelDef{queuedUserMessagesChannel, steeredUserMessagesChannel}}),
 		dex.DefineRPC(flow.GetArchivedMessages, &dex.RPCOptions{Timeout: commandRPCTimeout}),
 		dex.DefineRPC(flow.GetFlowDesign, loadDesigns(&dex.RPCOptions{Timeout: readRPCTimeout}, flowdesign.Slots...)),
@@ -199,18 +199,17 @@ func (*SessionAgentFlow) GetPersistenceSchema() dex.PersistenceSchema {
 // Conversation Steps lock MessageWindowLock and the interactions they settle; Steps that admit
 // tool use add Workspace. Only start_agent locks its exact credential metadata during copying.
 var (
-	messageMaps        = []dex.AttributeDef{currentMessagesAttribute}
-	statusLock         = dex.LockAttribute(sessionStatusAttribute)
-	executorLock       = dex.LockAttribute(executorAttribute)
-	inputLock          = dex.LockAttribute(pendingUserInputAttribute)
-	requirementsLock   = dex.LockAttribute(confirmedRequirementsAttribute)
-	approvalLock       = dex.LockAttribute(pendingApprovalAttribute)
-	workspaceLock      = dex.LockAttribute(workspaceAttribute)
-	interruptLock      = dex.LockAttribute(agentInterruptAttribute)
-	receiptsLock       = dex.LockAttribute(notificationReceiptsAttribute)
-	credentialInfoLock = dex.LockAttributeMap(modelKeyInfoAttribute, modelcredential.Anthropic.String())
-	taskMaps           = []dex.AttributeDef{backgroundCommandsAttribute, subagentsAttribute, connectorContributionsAttribute, taskWorktreesAttribute}
-	shortStepRetry     = dexflow.StepRetry(2 * time.Minute)
+	messageMaps      = []dex.AttributeDef{currentMessagesAttribute}
+	statusLock       = dex.LockAttribute(sessionStatusAttribute)
+	executorLock     = dex.LockAttribute(executorAttribute)
+	inputLock        = dex.LockAttribute(pendingUserInputAttribute)
+	requirementsLock = dex.LockAttribute(confirmedRequirementsAttribute)
+	approvalLock     = dex.LockAttribute(pendingApprovalAttribute)
+	workspaceLock    = dex.LockAttribute(workspaceAttribute)
+	interruptLock    = dex.LockAttribute(agentInterruptAttribute)
+	receiptsLock     = dex.LockAttribute(notificationReceiptsAttribute)
+	taskMaps         = []dex.AttributeDef{backgroundCommandsAttribute, subagentsAttribute, connectorContributionsAttribute, taskWorktreesAttribute}
+	shortStepRetry   = dexflow.StepRetry(2 * time.Minute)
 	// Steps that admit, stop, fail or forget a subagent's start load its records; a STARTING
 	// record whose subagent may have started is written only under the AgentInterrupt lock.
 	taskMessageMaps = []dex.AttributeDef{currentMessagesAttribute, subagentsAttribute, backgroundCommandsAttribute, connectorContributionsAttribute, taskWorktreesAttribute}
@@ -631,7 +630,7 @@ func (step CheckSteered) Execute(ctx dex.Context, next agentloop.Continuation) (
 		setAgentStatus(ctx, agentloop.AgentStatusExecutingTool)
 		setRunningWork(ctx, &agentloop.RunningWork{Kind: agentloop.RunningTool, ToolName: call.Name})
 		state := comm.Must(agentStateAttribute.Get(ctx))
-		return dex.GoToMany(dex.MovementOf(ExecuteTool{}, toolInvocation{Index: state.PendingToolIndex, Call: call, Admission: state.PendingToolsAdmission, Turn: state.Turn}, dex.WithStepOptions(serialToolStepOptions(call)))), nil
+		return dex.GoToMany(dex.MovementOf(ExecuteTool{}, toolInvocation{Index: state.PendingToolIndex, Call: call, Admission: state.PendingToolsAdmission, Turn: state.Turn}, dex.WithStepOptions(serialToolStepOptions(ctx, call)))), nil
 	}
 	panic(fmt.Sprintf("unknown Agent continuation %q", next))
 }

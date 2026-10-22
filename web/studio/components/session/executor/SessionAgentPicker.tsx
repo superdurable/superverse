@@ -157,7 +157,7 @@ function AgentPickerMenu({
           className="w-80 max-w-[90vw] p-2"
         >
           <div className="grid gap-1 text-[12px]">
-            <ModelCredentialEntry canManage={switchable} />
+            <ModelCredentialEntry key={session.credential.provider} canManage={switchable} />
             {remote && (
               <div
                 className="rounded-md bg-accent-wash px-2.25 py-1.75"

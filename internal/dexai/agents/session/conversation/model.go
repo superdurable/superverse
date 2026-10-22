@@ -393,9 +393,6 @@ var (
 	ProviderProtocolRejected = ModelRejectionReason{code: "provider_protocol_rejected",
 		hint:     "The model returned an unsupported protocol response. Select another model before continuing.",
 		userText: "The model returned an unsupported protocol response. Select another model before continuing."}
-	// NoClaudeKey refuses a Claude model without this Project’s active key.
-	NoClaudeKey = ServerRejection{code: "no_claude_key",
-		hint: "Set your Anthropic key for this Project or connect your local agent, then continue."}
 )
 
 // Rejected is the rejection as the error a model call returns.

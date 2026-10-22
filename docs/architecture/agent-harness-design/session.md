@@ -1297,9 +1297,10 @@ scheduled model Step whose persisted load list predates these maps rejects with
 the typed missing-credential result, rather than panicking on an unloaded map.
 
 `SessionAgentFlow` owns two new AttributeMaps. `ModelKeys<Envelope{Revision
-uint64, Key string}>` uses `dex.HardDeleteOnNull()`. Its only supported instance is
-the typed provider `anthropic`, physical key `ModelKeys/anthropic`; the source is
-the server's closed provider catalog. `ModelKeyInfo<Info>` has the same instance
+uint64, Key string}>` uses `dex.HardDeleteOnNull()`. Its instances are the ten typed providers derived from the server's closed catalog,
+for example `anthropic` and `openai`, with physical keys `ModelKeys/anthropic` and
+`ModelKeys/openai`. Mock has no credential instance. New provider execution remains
+unavailable; only the existing Anthropic models accept a newly submitted key. `ModelKeyInfo<Info>` has the same instance
 key and owns revision, active/pending/revoked status, last four characters,
 setting actor/time, the current operation ID, and whether the operation deletes
 a key. The admitted writer records its UTC clock once on a fresh reservation;
@@ -1311,9 +1312,10 @@ still present. These are Dex AttributeMaps, not ordinary Go maps. Neither is
 indexed or SQL-synced. The metadata is the current configuration and writer
 admission, not an independent credential lifecycle.
 
-Only exact instances are loaded: model Steps load the selected provider's key
-and metadata; result recording and failure recovery load metadata without the
-secret envelope. Admission and metadata reads load only metadata. Snapshot, Watch,
+Only exact instances are loaded: model Steps load only the frozen segment provider's secret. Static admission,
+Snapshot, result and failure readers load the bounded exact metadata instances of
+the declared set, without any secret envelope; private metadata reads load one
+requested instance. Snapshot, Watch,
 messages, display and SQL never include key material. `ModelRequest.APIKey` is
 transient (`json:"-"`) and supplies the adapter's per-request authentication.
 A real model call requires an active metadata record and equal envelope and
@@ -1333,8 +1335,9 @@ to 4–4096 printable ASCII characters without spaces.
 Three non-secret Session Flow RPCs are necessary: `ReadModelCredentialInfo`
 provides exact metadata reads; `ReserveModelCredential` checks the observed
 revision and reserves the writer across replicas; `FinalizeModelCredential`
-publishes the confirmed result. Reservation/finalization hold the existing
-Session status lock. Secret writes use only the typed Session Flow client's
+publishes the confirmed result. Reservation/finalization hold the existing Session status lock and the sorted
+exact metadata locks of the complete declared provider set. The set is bounded;
+no process-local mutex owns admission. Secret writes use only the typed Session Flow client's
 protocol-3 direct hard-delete Attribute path, never a Flow RPC or Start payload.
 The stable mutation identity is `{SessionFlowID, provider, operationID,
 expectedRevision}`. A fresh reservation writes at most once. A repeated or
@@ -1342,9 +1345,10 @@ uncertain request reads the exact envelope before finalization and never blindly
 replays the write. A pending writer prevents another operation from entering.
 A subagent copy leaves status Active and does not reserve a user mutation.
 The existing ExecuteTool first commits a holder identified by the admitted
-tool CallID, then performs one extra Execute pass under the exact
-`ModelKeyInfo/anthropic` instance lock shared by reserve/finalize mutations.
-It reads its own matching envelope and passes it transiently to the in-process
+tool CallID, then performs one extra Execute pass under the same static metadata lock set
+shared by reserve/finalize mutations. The admitted Subagents record freezes its
+model before credential copy; the per-call StepOptions load only that provider's
+secret. It reads its own matching envelope and passes it transiently to the in-process
 Service, which only starts, copies and stops the child; the Step makes no
 credential self-RPC. The hard-delete child `ModelKey` Attribute alone persists
 its copy. Holder count is tied to `agenttasks.MaximumRunningSubagents`; at the
@@ -1353,26 +1357,32 @@ holder is never evicted; unreleasable capacity gives the tool a typed rejection.
 Source model calls and SendMessage remain admitted during copy. Metadata
 locking serializes concurrent starts with replacements/deletions across replicas.
 
-Replace/delete disable new provider calls, interrupt the current platform turn through the
-existing Stop path with its atomic platform-only guard (remote turns and generations stay unchanged), stop each active subagent with the reason `model credential
+Replace/delete disable new calls of the affected provider, interrupt a current
+platform turn using that provider through the
+existing Stop path with its atomic platform-only guard (remote turns and generations stay unchanged), stop each affected provider's active subagent with the reason `model credential
 changed`, and delete its copy. An in-flight provider reply is fenced again at the
 fresh result-recording Step; changed/revoked revisions discard the reply and its
 tools. A previously transmitted provider request may already have incurred a
 charge. Delete succeeds only after exact reads show the Session key and all
-all retained child copies absent, including finished/timed-out records and the
+retained copies of that provider absent, including finished/timed-out records and the
 bounded admitted holders. A holder is released only after exact absence; a
 user mutation clears the holder list only at confirmed finalization. Project
-cleanup explicitly deletes credentials
+cleanup iterates all declared providers and explicitly deletes their credentials
 before completing the Session; a pending/unreconciled writer remains a retryable
 cleanup failure. For an abnormally completed engine, cleanup confirms that it
-cannot run a writer, deletes the source and every retained child copy through
+cannot run a writer, deletes every provider source and retained child copy through
 the same private hard-delete clients, and exact-reads every absence before
 Project deletion can complete. Closed-Flow writes can reject their lifecycle
 signal after deleting the fixed object; only exact absence reconciles that
 result. An unreadable/missing owner or remaining object is a cleanup failure.
 A late external writer after abnormal completion remains subject to the
 fixed-object limitation below; no closed Flow is restarted to clean a key.
-Normal Session retention alone is not immediate key deletion.
+Normal Session retention alone is not immediate key deletion. Each turn end keeps
+active Session keys. Source writes and cleanup operation IDs include the provider,
+so identical user operation IDs in different instances do not collide. Legacy
+retained child records without a model field belong to Anthropic, the only real
+provider executable before this schema extension. An old STARTING record freezes
+its selected model in the holder-admission commit before copying.
 
 Project cleanup records an empty `conversation.Actor` with the closed
 `ProjectDeletionReason`. The worker owns that change; the former key setter
@@ -1409,8 +1419,11 @@ characters and the setting actor/time. It clears the input on submission and
 never receives a saved key. Replace and delete show the count of active
 subagents they will stop, read from the existing Session Snapshot. GetModelCredentialInfo
 reads credential metadata only, without a second Snapshot RPC. Snapshot projects
-a non-secret credential version from revision/status/high-water revision; the
-key-status hook refreshes only when that version changes, on focus/reconnect,
+a non-secret credential version containing the selected model and each declared
+provider's revision/status/high-water revision; the
+key-status hook owns bounded metadata/pending state keyed by Project plus provider
+and rejects stale responses after a provider switch. It refreshes when that
+version changes, on focus/reconnect,
 or after an explicit key action. The existing five-second Watch reconciliation notices credential changes;
 reconnect reads the canonical Snapshot and metadata again. Credential RPCs
 write no Step-only Stream and introduce no notification Step or Channel. Model deltas and unrelated Session

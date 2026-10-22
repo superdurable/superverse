@@ -106,7 +106,7 @@ func (router *ModelRouter) Complete(ctx context.Context, request conversation.Mo
 	switch style {
 	case conversation.AnthropicMessages:
 		if request.APIKey == "" {
-			return conversation.ModelReply{}, conversation.NoClaudeKey.Rejected()
+			return conversation.ModelReply{}, conversation.NoProviderKey.Rejected()
 		}
 		if request.Model.Details().Provider == conversation.ProviderAnthropic && router.claude != nil {
 			return router.claude.Complete(ctx, request)

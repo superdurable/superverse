@@ -287,14 +287,14 @@ function metadataFor(store: MockStore) {
     rows = new Map();
     credentialMetadata.set(store, rows);
   }
-  for (const key of rows.keys()) if (store.projects.get(key)?.state !== "ACTIVE") rows.delete(key);
+  for (const key of rows.keys()) if (store.projects.get(key.split("/")[0])?.state !== "ACTIVE") rows.delete(key);
   return rows;
 }
 /** Development fixtures keep metadata only; supplied passwords are discarded. */
-function credentialFixture(store: MockStore, project: string): CredentialInfo {
+function credentialFixture(store: MockStore, project: string, provider: CredentialInfo["provider"]): CredentialInfo {
   projectSession(store, project);
   return (
-    metadataFor(store).get(project) ?? {
+    metadataFor(store).get(`${project}/${provider}`) ?? {
       revision: "0",
       status: ModelCredentialStatus.MODEL_CREDENTIAL_STATUS_UNSPECIFIED,
       last4: "",
@@ -303,17 +303,17 @@ function credentialFixture(store: MockStore, project: string): CredentialInfo {
       pendingOperation: "",
       pendingRevision: "",
       pendingDelete: false,
-      provider: "MODEL_PROVIDER_ANTHROPIC",
+      provider,
     }
   );
 }
 export const modelCredentialService: MockService<"ModelCredentialService"> = {
   GetModelCredentialInfo: (request, { store }) => ({
-    credential: credentialFixture(store, request.projectId),
+    credential: credentialFixture(store, request.projectId, request.provider),
   }),
   SetModelCredential: (request, { store }) => {
     remoteConnections(store, request.projectId, request.caller);
-    const current = credentialFixture(store, request.projectId);
+    const current = credentialFixture(store, request.projectId, request.provider);
     if (current.revision !== request.expectedRevision) throw httpError(409, "model credential revision changed");
     const next = {
       ...current,
@@ -323,12 +323,12 @@ export const modelCredentialService: MockService<"ModelCredentialService"> = {
       setBy: { accountId: "", email: request.caller?.canonicalEmail ?? "" },
       setAt: new Date().toISOString(),
     };
-    metadataFor(store).set(request.projectId, next);
+    metadataFor(store).set(`${request.projectId}/${request.provider}`, next);
     return { credential: next };
   },
   DeleteModelCredential: (request, { store }) => {
     remoteConnections(store, request.projectId, request.caller);
-    const current = credentialFixture(store, request.projectId);
+    const current = credentialFixture(store, request.projectId, request.provider);
     if (current.revision !== request.expectedRevision) throw httpError(409, "model credential revision changed");
     const next = {
       ...current,
@@ -336,7 +336,7 @@ export const modelCredentialService: MockService<"ModelCredentialService"> = {
       status: ModelCredentialStatus.MODEL_CREDENTIAL_STATUS_REVOKED,
       last4: "",
     };
-    metadataFor(store).set(request.projectId, next);
+    metadataFor(store).set(`${request.projectId}/${request.provider}`, next);
     return { credential: next };
   },
 };

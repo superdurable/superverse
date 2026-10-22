@@ -41,6 +41,7 @@ export function ModelCredentialEntry({ canManage }: { canManage: boolean }) {
       try {
         const next = await saveModelCredential(
           session.projectId,
+          credential.provider,
           operation.revision,
           operation.requestId,
           retry ? "" : key,
@@ -66,7 +67,13 @@ export function ModelCredentialEntry({ canManage }: { canManage: boolean }) {
     setConfirm(null);
     void action.run("delete", async (signal) => {
       try {
-        const next = await deleteModelCredential(session.projectId, operation.revision, operation.requestId, signal);
+        const next = await deleteModelCredential(
+          session.projectId,
+          credential.provider,
+          operation.revision,
+          operation.requestId,
+          signal,
+        );
         credential.setInfo(next);
         credential.setPending(null);
         setEditing(false);

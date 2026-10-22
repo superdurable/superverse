@@ -159,7 +159,7 @@ func TestProjectAnthropicCredentialDexIntegration(t *testing.T) {
 		}
 		credential = response.GetCredential()
 		projected, snapshotErr := sessions.GetSnapshot(ctx, id)
-		if snapshotErr != nil || projected.Agent != nil && !strings.HasPrefix(projected.Agent.Description.ModelCredentialVersion, fmt.Sprintf("%d/", credential.Revision)) {
+		if snapshotErr != nil || projected.Agent != nil && !strings.Contains(projected.Agent.Description.ModelCredentialVersion, fmt.Sprintf(";anthropic/%d/", credential.Revision)) {
 			t.Fatal("Snapshot has no matching credential version")
 		}
 		encoded, marshalErr := proto.Marshal(response)
@@ -620,6 +620,7 @@ func TestProjectAnthropicCredentialDexIntegration(t *testing.T) {
 	if err = set(firstKey, "key-before-abnormal-cleanup", 11); err != nil {
 		t.Fatal("set key before abnormal cleanup")
 	}
+	seedBYOKProviders(t, ctx, sessions, credentials, id, project.ProjectID, caller, firstKey)
 	if err = server.dex.StopFlow(ctx, string(id), dex.StopOptions{Type: dex.TerminateFlow, Reason: "credential integration: stopped source cleanup"}); err != nil {
 		t.Fatal("stop the owned test Session")
 	}
@@ -627,6 +628,7 @@ func TestProjectAnthropicCredentialDexIntegration(t *testing.T) {
 	if remaining, err := sessions.ReadModelCredential(ctx, id, modelcredential.Anthropic); err != nil || remaining != nil {
 		t.Fatal("abnormal Project cleanup retained its source credential")
 	}
+	assertBYOKProvidersAbsent(t, ctx, sessions, id)
 	assertBYOKHistory(t, ctx, reader, string(id), firstKey, secondKey)
 	// A normal Project deletion is a system action, not the former setter's action.
 	normal := projecttest.CreateForTest(ctx, t, projectClient, t.Name()+"-cleanup-actor")
@@ -635,12 +637,24 @@ func TestProjectAnthropicCredentialDexIntegration(t *testing.T) {
 	if _, err = credentials.SetModelCredential(ctx, &pb.SetModelCredentialRequest{ProjectId: normal.ProjectID, Provider: pb.ModelProvider_MODEL_PROVIDER_ANTHROPIC, RequestId: "normal-cleanup-key", ExpectedRevision: &zero, ApiKey: firstKey, Caller: normalCaller}); err != nil {
 		t.Fatalf("set normal-cleanup credential (%s)", status.Code(err))
 	}
+	seedBYOKProviders(t, ctx, sessions, credentials, agentloop.SessionFlowID(normal.ProjectID), normal.ProjectID, normalCaller, firstKey)
+	retainedChild := exerciseBYOKChildIsolation(t, ctx, config, &owned, reader, sessions, children, credentials, agent, normal.ProjectID, normalCaller, firstKey, probe, wait)
 	projecttest.DeleteForTest(ctx, t, projectClient, normal.ProjectID)
+	assertBYOKChildAbsent(t, ctx, sessions, children, agentloop.SessionFlowID(normal.ProjectID), retainedChild, modelcredential.ForModel(conversation.ModelGPT6Astra))
+	assertBYOKProvidersAbsent(t, ctx, sessions, agentloop.SessionFlowID(normal.ProjectID))
 	cleanedInfo, err := sessions.ReadModelCredentialInfo(ctx, agentloop.SessionFlowID(normal.ProjectID), modelcredential.Anthropic)
 	if err != nil || cleanedInfo.Status != modelcredential.StatusRevoked || cleanedInfo.SetBy != (conversation.Actor{}) || cleanedInfo.ChangeReason != modelcredential.ProjectDeletionReason {
 		t.Fatal("Project cleanup did not record its system actor and typed reason")
 	}
 	paired.Token = ""
+	empty := projecttest.CreateForTest(ctx, t, projectClient, t.Name()+"-unused-credentials")
+	projecttest.DeleteForTest(ctx, t, projectClient, empty.ProjectID)
+	for _, provider := range modelcredential.Providers() {
+		info, err := sessions.ReadModelCredentialInfo(ctx, agentloop.SessionFlowID(empty.ProjectID), provider)
+		if err != nil || info.Revision != 0 || info.Status != (modelcredential.Status{}) {
+			t.Fatal("deleting an unused provider created a credential tombstone")
+		}
+	}
 	t.Log("Actual Bridge pairing/activation: key set/delete preserve the active remote epoch, generation and turn")
 	t.Logf("FlowID=%s: set, model request header, concurrent replace, subagent copy, delete and history redaction passed", id)
 	if directory := os.Getenv("SUPERVERSE_TEST_BYOK_STUDIO_DIR"); directory != "" {

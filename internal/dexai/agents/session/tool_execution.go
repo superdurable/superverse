@@ -195,7 +195,7 @@ func waitForUser(ctx dex.Context, call conversation.ToolCall, input agentloop.Pe
 // movement. A call whose retries are exhausted is recorded as a platform
 // failure the model reads; a bash call has the polling options of its own
 // timeout and is settled from the command ledger.
-func serialToolStepOptions(call conversation.ToolCall) *dex.StepOptions {
+func serialToolStepOptions(ctx dex.Context, call conversation.ToolCall) *dex.StepOptions {
 	if call.Name == conversation.ToolBash {
 		return commandStepOptions(call)
 	}
@@ -207,8 +207,12 @@ func serialToolStepOptions(call conversation.ToolCall) *dex.StepOptions {
 	case call.Name == conversation.ToolStartAgent:
 		// The new worktree keeps the worktrees of the unfinished subagents.
 		options.ExecuteLoadAttributeMaps = taskMessageMaps
-		options.ExecuteLoadAttributeMapInstances = []dex.AttributeMapLoad{modelKeyInfoAttribute.Load(modelcredential.Anthropic.String()), modelKeysAttribute.Load(modelcredential.Anthropic.String())}
-		options.ExecuteLockAttributes = append(options.ExecuteLockAttributes, credentialInfoLock)
+		options.ExecuteLoadAttributeMapInstances = credentialInfoLoads()
+		model := subagentCredentialModel(ctx, call)
+		if !model.IsMock() {
+			options.ExecuteLoadAttributeMapInstances = append(options.ExecuteLoadAttributeMapInstances, modelKeysAttribute.Load(modelcredential.ForModel(model).String()))
+		}
+		options.ExecuteLockAttributes = append(options.ExecuteLockAttributes, credentialInfoLocks()...)
 	case isSubagent:
 		options.ExecuteLoadAttributeMapInstances = []dex.AttributeMapLoad{subagentsAttribute.Load(agentID)}
 	}
@@ -730,7 +734,9 @@ func admitSubagentCall(ctx dex.Context, call conversation.ToolCall) bool {
 			comm.MustDo(subagentsAttribute.Delete(ctx, expired[0]))
 		}
 	}
-	comm.MustDo(subagentsAttribute.Set(ctx, agentID, agenttasks.NewSubagentRecord(agentID, call.ID, requested, requested.Fingerprint(ctx.FlowID(), agentID), now)))
+	record := agenttasks.NewSubagentRecord(agentID, call.ID, requested, requested.Fingerprint(ctx.FlowID(), agentID), now)
+	record.Model = comm.Must(sessionModelAttribute.Get(ctx)).Model
+	comm.MustDo(subagentsAttribute.Set(ctx, agentID, record))
 	state.SubagentsStartedWithoutUser, state.ConnectorSlugs = state.SubagentsStartedWithoutUser+1, agenttasks.ConnectorSlugsWith(state.ConnectorSlugs, requested)
 	comm.MustDo(agentStateAttribute.Set(ctx, state))
 	writeSnapshotRequired(ctx)
@@ -764,7 +770,7 @@ func (flow *SessionAgentFlow) startSubagent(ctx dex.Context, execution context.C
 	case record.Status.Finished():
 		return subagentToolResult(subagentStarted{TaskID: record.TaskID(), Status: record.Status.String()}), nil
 	}
-	if _, err := preparedSubagentCredential(ctx, agentID, comm.Must(sessionModelAttribute.Get(ctx)).Model); err != nil {
+	if _, err := preparedSubagentCredential(ctx, agentID, subagentCredentialModel(ctx, call)); err != nil {
 		return credentialStartFailure(ctx, call, agentID, err)
 	}
 	keep := make([]string, 0, len(records))
@@ -797,7 +803,7 @@ func (flow *SessionAgentFlow) startSubagent(ctx dex.Context, execution context.C
 		started.BaseCommit = created.Worktree.Base
 	}
 	start := agenttasks.SubagentStart{Identity: subagentIdentity(ctx, agentID), Call: comm.Must(agentloop.RequestedSubagent(call)), Fingerprint: record.Fingerprint,
-		BaseCommit: started.BaseCommit, Branch: started.Branch, Model: comm.Must(sessionModelAttribute.Get(ctx)).Model, HeadCommit: comm.Must(headCommitAttribute.Get(ctx)), Lease: *sandboxCall.Lease}
+		BaseCommit: started.BaseCommit, Branch: started.Branch, Model: subagentCredentialModel(ctx, call), HeadCommit: comm.Must(headCommitAttribute.Get(ctx)), Lease: *sandboxCall.Lease}
 	if err := flow.startCredentialSubagent(ctx, execution, start); err != nil {
 		return credentialStartFailure(ctx, call, agentID, err)
 	}

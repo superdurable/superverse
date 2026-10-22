@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Holds the domain-free helpers every package shares: `Must`/`MustDo` for bug-only errors, UTF-8-safe text cuts, strict JSON decoding and long poll windows on the local clock.
 
-Callers: `cmd/**` (6), `internal/comm/**` (11) and `internal/dexai/**` (55) import this package.
+Callers: `cmd/**` (6), `internal/comm/**` (11) and `internal/dexai/**` (57) import this package.
 
 Dependencies: it imports no other package of this module and calls no remote API.
 
@@ -12,7 +12,7 @@ flowchart LR
   self["internal/comm"]
   c0["cmd/** (6)"] --> self
   c1["internal/comm/** (11)"] --> self
-  c2["internal/dexai/** (55)"] --> self
+  c2["internal/dexai/** (57)"] --> self
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 

@@ -6,6 +6,8 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
+import { ModelProvider } from "@/lib/generated/protobuf/superverse/v2/ModelProvider";
+
 import type { AgentModel__Output } from "@/lib/generated/protobuf/superverse/v2/AgentModel";
 
 /** The Agent UI literal of each selectable model; the Record type makes a new enum value a compile error here. */
@@ -39,4 +41,28 @@ export function agentModelView(value: AgentModel__Output): AgentModelLiteral | n
 /** The UpdateSessionModel enum value of a model literal. */
 export function agentModelInput(model: AgentModelLiteral): AgentModelName {
   return (Object.keys(AGENT_MODEL_LITERALS) as AgentModelName[]).find((name) => AGENT_MODEL_LITERALS[name] === model)!;
+}
+
+const modelProviders = {
+  AGENT_MODEL_OPUS_5_5: ModelProvider.MODEL_PROVIDER_ANTHROPIC,
+  AGENT_MODEL_SONNET_5_5: ModelProvider.MODEL_PROVIDER_ANTHROPIC,
+  AGENT_MODEL_HAIKU_4_5: ModelProvider.MODEL_PROVIDER_ANTHROPIC,
+  AGENT_MODEL_MOCK: ModelProvider.MODEL_PROVIDER_ANTHROPIC,
+  AGENT_MODEL_GPT_6_ASTRA: ModelProvider.MODEL_PROVIDER_OPENAI,
+  AGENT_MODEL_DEEPSEEK_FLASH: ModelProvider.MODEL_PROVIDER_DEEPSEEK,
+  AGENT_MODEL_GROK_4_7: ModelProvider.MODEL_PROVIDER_XAI,
+  AGENT_MODEL_MUSE_WONDER_1_0: ModelProvider.MODEL_PROVIDER_META,
+  AGENT_MODEL_GEMINI_4_ARGON: ModelProvider.MODEL_PROVIDER_GEMINI,
+  AGENT_MODEL_KIMI_K3: ModelProvider.MODEL_PROVIDER_KIMI,
+  AGENT_MODEL_GLM_5_3: ModelProvider.MODEL_PROVIDER_GLM,
+  AGENT_MODEL_QWEN_3_8_MAX: ModelProvider.MODEL_PROVIDER_QWEN,
+  AGENT_MODEL_MINIMAX_M3_1_FLASH: ModelProvider.MODEL_PROVIDER_MINIMAX,
+  AGENT_MODEL_KIMI_K2_6: ModelProvider.MODEL_PROVIDER_KIMI,
+  AGENT_MODEL_GLM_5_2: ModelProvider.MODEL_PROVIDER_GLM,
+  AGENT_MODEL_MINIMAX_M3: ModelProvider.MODEL_PROVIDER_MINIMAX,
+} as const satisfies Record<AgentModelName, ModelProvider>;
+
+/** The explicit credential namespace of a selected catalog model; mock keeps the existing key form. */
+export function agentModelProvider(model: AgentModel__Output | undefined) {
+  return model && model !== "AGENT_MODEL_UNSPECIFIED" ? modelProviders[model] : ModelProvider.MODEL_PROVIDER_ANTHROPIC;
 }
