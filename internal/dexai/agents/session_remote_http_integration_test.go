@@ -63,7 +63,7 @@ func TestSessionRemoteHTTPAdmissionDexIntegration(t *testing.T) {
 	remote.post(ctx, bridgeapi.PathPair, bridgeapi.PairRequest{Code: pair.GetCode(), Bridge: bridgeapi.BridgeInfo{Version: bridgeapi.DevBridgeVersion, OS: "darwin", Arch: "arm64"}}, &paired, http.StatusOK)
 	remote.token = paired.Token
 	var active bridgeapi.ActivateResponse
-	binding := bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "http-proof", ProviderThreadID: "http-proof", HostLabel: "integration host"}}
+	binding := bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "http-proof", HostLabel: "integration host"}}
 	remote.post(ctx, bridgeapi.PathActivate, binding, &active, http.StatusOK)
 	if active.Epoch == 0 || active.Generation == 0 {
 		t.Fatalf("activation has zero fence: epoch=%d generation=%d", active.Epoch, active.Generation)
@@ -272,7 +272,7 @@ func TestSessionRemoteHTTPAdmissionDexIntegration(t *testing.T) {
 	}
 	reentrant := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
 	var reactivated bridgeapi.ActivateResponse
-	reentrant.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "http-proof-return", ProviderThreadID: "http-proof-return", HostLabel: "integration host"}}, &reactivated, http.StatusOK)
+	reentrant.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "http-proof-return", HostLabel: "integration host"}}, &reactivated, http.StatusOK)
 	if reactivated.Epoch <= active.Epoch {
 		t.Fatal("remote reactivation did not advance executor epoch")
 	}

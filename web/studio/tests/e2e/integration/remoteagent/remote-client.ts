@@ -76,9 +76,7 @@ export class RemoteClient {
   async activateWithCursor(label: string) {
     const response = await this.post("activate", {
       binding: {
-        orcaVersion: "integration",
         codexVersion: "integration",
-        orcaSessionId: label,
         providerThreadId: label,
         hostLabel: label,
       },

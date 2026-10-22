@@ -56,7 +56,7 @@ func TestSessionRemoteConcurrentActivationHTTPDexIntegration(t *testing.T) {
 	defer cancel()
 	session, api, caller := remoteSessionAPI(ctx, t)
 	clients := []remoteHTTPClient{pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID), pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)}
-	binding := bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "activation-race", ProviderThreadID: "activation-race", HostLabel: "integration host"}}
+	binding := bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "activation-race", HostLabel: "integration host"}}
 	type activation struct {
 		index, status int
 		body          []byte

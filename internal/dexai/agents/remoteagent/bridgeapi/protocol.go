@@ -64,11 +64,9 @@ type ActivateRequest struct {
 	Binding Binding `json:"binding"`
 }
 
-// Binding is the Orca conversation a connection drives, for display only.
+// Binding identifies the local agent conversation for display only.
 type Binding struct {
-	OrcaVersion      string `json:"orcaVersion"`
 	CodexVersion     string `json:"codexVersion"`
-	OrcaSessionID    string `json:"orcaSessionId"`
 	ProviderThreadID string `json:"providerThreadId"`
 	HostLabel        string `json:"hostLabel"`
 }

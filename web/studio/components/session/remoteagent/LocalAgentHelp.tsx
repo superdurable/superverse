@@ -108,9 +108,6 @@ export function LocalAgentHelp() {
             ))}
           </div>
         </section>
-        <p className="mt-6 text-sm text-ink-faint">
-          Legacy Orca users can still use dexai-connect until it is retired.
-        </p>
       </div>
     </main>
   );

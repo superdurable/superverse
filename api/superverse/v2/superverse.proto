@@ -1576,9 +1576,7 @@ enum RemoteAgentConnectionStatus {
 }
 
 message RemoteAgentBinding {
-  string orca_version = 1;
   string codex_version = 2;
-  string orca_session_id = 3;
   string provider_thread_id = 4;
   string host_label = 5;
 }

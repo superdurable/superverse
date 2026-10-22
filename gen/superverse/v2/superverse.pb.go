@@ -13375,9 +13375,7 @@ func (x *RemoteSessionExecutor) GetLastSeenAt() *timestamppb.Timestamp {
 
 type RemoteAgentBinding struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
-	OrcaVersion      string                 `protobuf:"bytes,1,opt,name=orca_version,json=orcaVersion,proto3" json:"orca_version,omitempty"`
 	CodexVersion     string                 `protobuf:"bytes,2,opt,name=codex_version,json=codexVersion,proto3" json:"codex_version,omitempty"`
-	OrcaSessionId    string                 `protobuf:"bytes,3,opt,name=orca_session_id,json=orcaSessionId,proto3" json:"orca_session_id,omitempty"`
 	ProviderThreadId string                 `protobuf:"bytes,4,opt,name=provider_thread_id,json=providerThreadId,proto3" json:"provider_thread_id,omitempty"`
 	HostLabel        string                 `protobuf:"bytes,5,opt,name=host_label,json=hostLabel,proto3" json:"host_label,omitempty"`
 	unknownFields    protoimpl.UnknownFields
@@ -13414,23 +13412,9 @@ func (*RemoteAgentBinding) Descriptor() ([]byte, []int) {
 	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{135}
 }
 
-func (x *RemoteAgentBinding) GetOrcaVersion() string {
-	if x != nil {
-		return x.OrcaVersion
-	}
-	return ""
-}
-
 func (x *RemoteAgentBinding) GetCodexVersion() string {
 	if x != nil {
 		return x.CodexVersion
-	}
-	return ""
-}
-
-func (x *RemoteAgentBinding) GetOrcaSessionId() string {
-	if x != nil {
-		return x.OrcaSessionId
 	}
 	return ""
 }
@@ -28220,11 +28204,9 @@ const file_superverse_v2_superverse_proto_rawDesc = "" +
 	"\breported\x18\x04 \x01(\x04R\breported\x12=\n" +
 	"\factivated_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\vactivatedAt\x12<\n" +
 	"\flast_seen_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"lastSeenAt\"\xd1\x01\n" +
-	"\x12RemoteAgentBinding\x12!\n" +
-	"\forca_version\x18\x01 \x01(\tR\vorcaVersion\x12#\n" +
-	"\rcodex_version\x18\x02 \x01(\tR\fcodexVersion\x12&\n" +
-	"\x0forca_session_id\x18\x03 \x01(\tR\rorcaSessionId\x12,\n" +
+	"lastSeenAt\"\x86\x01\n" +
+	"\x12RemoteAgentBinding\x12#\n" +
+	"\rcodex_version\x18\x02 \x01(\tR\fcodexVersion\x12,\n" +
 	"\x12provider_thread_id\x18\x04 \x01(\tR\x10providerThreadId\x12\x1d\n" +
 	"\n" +
 	"host_label\x18\x05 \x01(\tR\thostLabel\"\xe2\x02\n" +

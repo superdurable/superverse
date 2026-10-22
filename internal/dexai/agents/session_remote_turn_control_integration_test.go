@@ -72,7 +72,7 @@ type remoteTurnControlDriver struct {
 func newRemoteTurnControlDriver(ctx context.Context, t *testing.T, remote remoteHTTPClient, bindingID string) *remoteTurnControlDriver {
 	t.Helper()
 	driver := &remoteTurnControlDriver{t: t, remote: remote}
-	driver.remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: bindingID, ProviderThreadID: bindingID, HostLabel: "integration host"}}, &driver.active, http.StatusOK)
+	driver.remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: bindingID, HostLabel: "integration host"}}, &driver.active, http.StatusOK)
 	return driver
 }
 

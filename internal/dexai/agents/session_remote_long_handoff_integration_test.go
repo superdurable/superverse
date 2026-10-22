@@ -64,7 +64,7 @@ func TestSessionRemoteLongHandoffHTTPDexIntegration(t *testing.T) {
 			started := time.Now().UTC()
 			remote := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
 			var active bridgeapi.ActivateResponse
-			remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "long-handoff", ProviderThreadID: "long-handoff", HostLabel: "integration host"}}, &active, http.StatusOK)
+			remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "long-handoff", HostLabel: "integration host"}}, &active, http.StatusOK)
 			if active.Epoch != 1 || active.Generation != 1 {
 				t.Fatal("long fixture requires exact fresh remote epoch/generation")
 			}
@@ -298,7 +298,7 @@ func testLongRemoteHandoffByteBudget(t *testing.T) {
 	started := time.Now().UTC()
 	remote := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
 	var active bridgeapi.ActivateResponse
-	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "long-handoff", ProviderThreadID: "long-handoff", HostLabel: "integration host"}}, &active, http.StatusOK)
+	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "long-handoff", HostLabel: "integration host"}}, &active, http.StatusOK)
 	if active.Epoch != 1 || active.Generation != 1 {
 		t.Fatal("long fixture requires exact fresh remote epoch/generation")
 	}

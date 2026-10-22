@@ -36,7 +36,7 @@ func TestSessionRemoteInitialHeadBeforeWorkspaceHTTPDexIntegration(t *testing.T)
 	head := before.Session.Identity.HeadCommit
 	remote := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
 	var active bridgeapi.ActivateResponse
-	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "initial-head", ProviderThreadID: "initial-head", HostLabel: "integration host"}}, &active, http.StatusOK)
+	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "initial-head", HostLabel: "integration host"}}, &active, http.StatusOK)
 	var prepared string
 	session.await(ctx, "the activation's workspace request", func() bool {
 		prepared = session.summary(ctx).Workspace.RequestID

@@ -48,7 +48,7 @@ func TestSessionRemoteShortHandoffHTTPDexIntegration(t *testing.T) {
 		t.Fatalf("the real API did not list the paired but inactive remote connection: %v", err)
 	}
 	var active bridgeapi.ActivateResponse
-	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "short-handoff", ProviderThreadID: "short-handoff", HostLabel: "integration host"}}, &active, http.StatusOK)
+	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "short-handoff", HostLabel: "integration host"}}, &active, http.StatusOK)
 	if active.Epoch != 1 || active.Generation != 1 {
 		t.Fatal("fresh private fixture does not have the exact scripted remote identity")
 	}

@@ -60,16 +60,15 @@ The Bridge appends each shared `bridgeapi.Path...` route to this origin.
 | Exact route | Method | Contract |
 | --- | --- | --- |
 | `/remote-agent/v1/pair` | POST | No bearer; strict `{code,bridge:{version,os,arch}}`, at most 4 KiB. Returns `{connectionId,token,projectId,projectName}` once. |
-| `/remote-agent/v1/activate` | POST | Authenticated `{binding}`; atomically selects this connection using its immutable pairing basis. Returns `{epoch,generation,lastSequence,reported,tools,toolSetDigest}`. `lastSequence` is the conversation head captured by `SetExecutor` in the activation commit, including zero; a repeat by the current executor returns the same activation head and current fence/tool catalog even after new messages. For an epoch activated before this field was stored, a repeat reads the current head; the existing Bridge retains its initialized cursor on reconnect. |
+| `/remote-agent/v1/activate` | POST | Authenticated `{binding:{codexVersion,providerThreadId,hostLabel}}`; `codexVersion` retains the existing wire name for the local agent version, including Claude Code. Atomically selects this connection using its immutable pairing basis. Returns `{epoch,generation,lastSequence,reported,tools,toolSetDigest}`. `lastSequence` is the conversation head captured by `SetExecutor` in the activation commit, including zero; a repeat by the current executor returns the same activation head and current fence/tool catalog even after new messages. For an epoch activated before this field was stored, a repeat reads the current head; the existing Bridge retains its initialized cursor on reconnect. |
 | `/remote-agent/v1/sync` | POST | Authenticated `{epoch,after,stateDigest,context?}`; reads canonical public Session entries and current typed state, then waits for activity when unchanged. `context: true` asks for `agentContext` and is answered at once, never held as a long poll: everything the platform tells the remote agent, built by `agentloop.RemoteAgentContext` from the same sources as the platform agent's prompt (the remote agent prompt with the message envelope, member and Dex skill rules, the platform tools the remote catalog lacks, the Session system prompt, the Session's `<repository_context>`, which names the Dex skill manifest and carries AGENTS.md, and after it, for a Project that started from an example, its `<starting_example>` section: a matched example's until the Session's first build, a picked example's while the Session awaits the person's first message, then its `<card_design>` section once the agent's cards carry no Flow design: for a Project that started from an example or holds a pushed, unblocked `commit_and_push` of the agent's), at most 80 KiB; it is outside the state digest. `agentContextState` is `pending` while the workspace request is in flight, `ready` when repository context was read, and `unavailable` after preparation or context reading failed. A Bridge waits at most three minutes for a pending brief, then sends it and later delivers one platform-provided `<repository_context>` section if the state becomes ready. MCP `instructions` are read once at startup. The state includes `settledThrough`: the highest report sequence of this connection and epoch whose outcome the Session durably recorded (the report consumed and, for a tool call, its canonical `tool_result` appended; a parallel wave settles at its join). It never decreases within an epoch, restarts at 0 in a new epoch and is part of the state digest. `reported` proves only admission; a Bridge reads an absent `settledThrough` (an older server) as 0. A projected tool result may carry `status`; its closed set is `waiting_for_user`, which the server sets only on `request_user_input`'s placeholder result (classified from the Session's typed result payload, `agentloop.ToolResultStatusWaitingForUser`): the question is open and its answer arrives as an input entry whose `answeredInputCallId` is the call, which is the call's actual result. `confirm_requirements`' result carries no status: it is the ordinary result `{"status":"recorded","version":N}` of a card the Session recorded, and the turn goes on. |
 | `/remote-agent/v1/report` | POST | Authenticated epoch/generation/sequence-fenced public events, one tool call or turn completion. Admission is not tool completion. For the current connection and epoch, a sequence at or below `reported` answers `duplicate` before the generation is checked: an admitted number stays admitted after Stop, so `stale_generation` proves the report was never admitted and its sequence is free. |
 | `/remote-agent/v1/disconnect` | POST | One canonical `Authorization: Bearer <token>` header, strict `{}` of at most 1 KiB; revokes exactly that credential. It does not switch executors. |
 | `/remote-agent/v1/downloads/manifest` | GET | Public environment manifest; missing local builds produce an empty artifact list. |
 | `/remote-agent/v1/downloads/<fixed-artifact>` | GET | Only a manifest-listed fixed build filename within the configured distribution root; no arbitrary filesystem access. |
 
-The four allowed Bridge names remain `superverse-bridge-{darwin,linux}-{arm64,amd64}` for the existing download protocol;
-the fifth allowed name is `superverse-orca-plugin.tgz`. `manifest.json` uses
-`bridgeapi.DownloadsManifest` directly, is capped at 64 KiB and five artifacts,
+The four allowed Bridge names remain `superverse-bridge-{darwin,linux}-{arm64,amd64}` for the existing download protocol. `manifest.json` uses
+`bridgeapi.DownloadsManifest` directly, is capped at 64 KiB and four artifacts,
 and declares each artifact's version, OS/architecture, SHA-256 and fixed path.
 The response uses the configured minimum version. Invalid manifests and escaping
 symlinks are unavailable; missing artifacts are 404. Artifacts are regular files
@@ -154,7 +153,7 @@ by another existing pass. All other Flow primitives remain unchanged.
 
 Studio's Connect dialog belongs to the Session orchestration layer; the shared
 Agent UI remains transport-free. Builders acknowledge the approved warning:
-connected Codex runs with the connecting Builder's local Orca permissions, and
+the connected local agent runs with the connecting Builder's configured permissions, and
 any Builder's message or application failure text can reach it and ask it to run
 something locally. The dialog shows endpoint, current owner when available,
 one-time code/countdown/copy and safe saved connection metadata/removal. PAIRED
@@ -166,7 +165,7 @@ code labels and owner-specific removal labels remain accessible. Codes are
 hidden and their local timer stops at expiry. A countdown is local;
 there is no periodic Flow-backed list polling. The Project's Builder permission controls actions in the Agent picker; server authorization
 remains authoritative. The Agent picker's local level opens this single dialog and exposes
-Use the Superverse agent only in remote mode. Switching is single-flight,
+Use the Platform agent only in remote mode. Switching is single-flight,
 preserves the decimal epoch, and refreshes canonical Session state on admission
 or refusal without retrying an uncertain command. Project, permission, Session
 status or executor-fence changes cancel old switching work. Offline is a local

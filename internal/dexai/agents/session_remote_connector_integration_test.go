@@ -34,7 +34,7 @@ func newRemoteConnectorDriver(ctx context.Context, t *testing.T) (remoteConnecto
 	remote := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
 	var active bridgeapi.ActivateResponse
 	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{
-		OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "connector", ProviderThreadID: "connector", HostLabel: "integration host",
+		CodexVersion: "integration", ProviderThreadID: "connector", HostLabel: "integration host",
 	}}, &active, http.StatusOK)
 	offered := map[string]bool{}
 	for _, tool := range active.Tools {

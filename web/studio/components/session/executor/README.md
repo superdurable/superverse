@@ -36,7 +36,7 @@ models only while platform execution is current; remote mode offers the
 epoch-fenced switch back. The local level shows liveness and opens the
 Project-keyed RAPAIR dialog. Escape and outside press close the picker;
 its nested levels retain keyboard focus. The remote composer accepts ordinary
-Orca input and hides the mock composer. Shared Agent conversation UI receives
+local agent input and hides the mock composer. Shared Agent conversation UI receives
 only the existing public message projection and labels remote assistant replies.
 
 An absent executor on a present agent description renders the legacy

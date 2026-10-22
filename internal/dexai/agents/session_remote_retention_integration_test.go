@@ -27,7 +27,7 @@ func TestSessionRemoteRetentionHTTPDexIntegration(t *testing.T) {
 	session, api, caller := remoteSessionAPI(ctx, t)
 	remote := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
 	var active bridgeapi.ActivateResponse
-	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "retained-delivery", ProviderThreadID: "retained-delivery", HostLabel: "integration host"}}, &active, http.StatusOK)
+	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "retained-delivery", HostLabel: "integration host"}}, &active, http.StatusOK)
 	var accepted bridgeapi.ReportResponse
 	for report := 1; report <= 34; report++ {
 		events := make([]bridgeapi.Event, 32)
@@ -46,7 +46,7 @@ func TestSessionRemoteRetentionHTTPDexIntegration(t *testing.T) {
 	// A newly connected Bridge must recover the former connection's canonical
 	// imported user entries; its own echoes are deliberately filtered by sync.
 	remote = pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
-	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "retained-reconnect", ProviderThreadID: "retained-reconnect", HostLabel: "integration host"}}, &active, http.StatusOK)
+	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "retained-reconnect", HostLabel: "integration host"}}, &active, http.StatusOK)
 	snapshot, err := session.client.GetSnapshot(ctx, session.id)
 	if err != nil {
 		t.Fatal(err)

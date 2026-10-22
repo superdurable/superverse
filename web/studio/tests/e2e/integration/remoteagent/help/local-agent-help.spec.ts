@@ -37,9 +37,7 @@ test("Local agent help explains setup, recovery and local permissions", async ({
   await page.getByText("What does ‘message may not have reached the agent’ mean?", { exact: true }).click();
   await expect(page.getByText(/send the message again from the composer/)).toBeVisible();
   await expect(page.getByText(/Sending again may duplicate a message/)).toBeVisible();
-  await expect(
-    page.getByText("Legacy Orca users can still use dexai-connect until it is retired.", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText(/Orca|dexai-connect/)).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Back to Studio", exact: true })).toHaveAttribute("href", "/");
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.locator("main").evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);

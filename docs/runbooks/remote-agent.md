@@ -22,10 +22,9 @@ Use the existing deployment procedure, never an ad hoc cloud change.
 
 After the platform has been rebuilt/deployed from reviewed source, open the Agent picker beside the composer,
 choose My local agent, then Connect on a READY Project with Builder capability. Read and acknowledge the
-local-machine warning. Copy the one-time ten-minute code into either the Orca
-Bridge's interactive `dexai-connect connect` flow or the direct macOS command
-`dexai connect --endpoint <Studio origin>`. The direct command then asks which
-agent to use; Codex is available and Claude Code is shown as not available yet.
+local-machine warning. Run `dexai connect --endpoint <Studio origin>` on macOS,
+then choose Codex or Claude Code, complete any confirmed setup, and enter the
+one-time ten-minute code interactively.
 Use the dialog's displayed origin as `--endpoint`. The Bridge appends the exact
 `/remote-agent/v1/...` route paths; do not append that prefix to the endpoint. Neither code
 nor token belongs in command arguments, shell history, screenshots, traces,
@@ -43,7 +42,7 @@ before sending the original text manually; do not assume a retry is safe.
 
 Refresh connections explicitly to observe a PAIRED credential. Remove an unused
 connection through Studio; disconnect revokes only the Bridge's authenticated
-credential. Switch to the Superverse executor before removing the current
+credential. Switch to the platform executor before removing the current
 connection. That switch revokes only its replaced credential: subsequent requests
 with that token return 401. A still-valid credential replaced by another remote
 activation returns 409 `executor_changed`; reread authority rather than retrying
@@ -62,8 +61,8 @@ the public error body remains generic.
 ## Environment downloads
 
 The default distribution root is `/opt/superverse/bridge`, configurable by
-`remoteAgent.downloadsDir`. Publish only the five fixed filenames and one
-`manifest.json` using `bridgeapi.DownloadsManifest`, with at most five artifacts
+`remoteAgent.downloadsDir`. Publish only the four fixed filenames and one
+`manifest.json` using `bridgeapi.DownloadsManifest`, with at most four artifacts
 and a 64 KiB manifest. Build/distribution is owned by the Bridge layer. Minimum
 version is configured by the server, default `0.1.0`. Local Native/Kind explicitly
 allow the exact `0.0.0-dev` version; hosted environments reject that exemption.
@@ -73,79 +72,65 @@ missing artifact. A malformed manifest or escaping symlink is 503, not successfu
 coverage. Artifact paths cannot expose arbitrary files. Diagnose distribution
 content privately and verify SHA-256; never place credentials under this root.
 
-The local command is `dexai-connect`. Its default state directory and environment
-variable are `dexai-connect` under the user's configuration directory and
-`DEXAI_CONNECT_STATE_DIR`. Existing pre-launch state is not migrated automatically;
-use `--state-dir` with the old directory if a binding must be kept, or pair again.
-The fixed server download artifact names remain `superverse-bridge-*` for the
-existing wire contract.
-
-Orca must be at least 1.4.0 and Codex at least 0.162.0; 1.4.225 and 0.163.0
-are the newest verified versions. A newer local version connects with a
-compatibility warning at startup and in `dexai-connect status`.
-
-The direct `dexai` command has a separate default state directory (`dexai` under
+The `dexai` command has a separate default state directory (`dexai` under
 the user configuration directory, or `DEXAI_STATE_DIR`). Build its local macOS
 binary with `make build-dexai-local`. It offers the agent before the pairing
-code and marks Codex/Claude Code installed or missing using the user's login
-shell PATH. Missing agents offer the documented vendor install command with
-explicit `Y/n` confirmation; declining prints the command and exits. Logged-out
-agents offer interactive login, then recheck it. These actions default to No
-without a TTY, even with piped confirmation. The CLI README records the vendor
-commands, official sources and verification date. Only after setup, supported
-versions, login and the Codex daemon check does it ask for the Studio code.
-Claude Code must be at least 2.1.41 for its documented `auth status` and `auth login` commands. It receives only the platform MCP tools; its built-in tools are disabled.
+code and marks agents installed or missing using the login shell PATH. Missing
+agents offer their documented vendor install command with explicit confirmation;
+logged-out agents offer interactive login and recheck it. Both default to No
+without a TTY. Version, login and daemon checks finish before the code prompt.
+Claude Code must be at least 2.1.41 for its documented authentication commands;
+its built-in tools are disabled, leaving only platform MCP tools.
 The Builder's installed Codex CLI and
 shared daemon must both be at least 0.162.0; 0.163.0 is the newest verified
 version and newer versions connect with a compatibility warning. `dexai`
 starts the daemon with `codex app-server daemon start` when it is absent. If
-startup fails, its error includes the Codex message; try that command directly. It
-never updates, downgrades or restarts an existing daemon. Installation of a missing
-CLI requires the separate confirmation above. The first brief is submitted
+startup fails, its error includes the Codex message; try that command directly.
+It never updates, downgrades or restarts an existing daemon. Installation of a
+missing CLI needs the separate confirmation above. The first brief is submitted
 before the Codex TUI opens. Each `dexai connect` owns a fresh private connection
 directory, so run it again in another terminal to connect another Project or
 endpoint; no separate `--state-dir` is needed. Codex opens a separate thread/TUI,
 and Claude Code runs a separate headless child. Exit the TUI or press Ctrl+C to
 stop and revoke only that connection; the others keep relaying. The Project stays
 in remote mode, offline: reconnect with a new pairing code or switch to the
-platform agent in Studio. `dexai status` lists every endpoint, Project and
+Platform agent in Studio. `dexai status` lists every endpoint, Project and
 connection ID; `dexai disconnect --connection <id>` stops a selected connection.
-If a domain moved, `dexai disconnect` forgets a binding after a definite uncoded
-404, missing DNS name or TLS hostname mismatch. It states that platform access
-was not revoked; switch to the platform agent in Studio, or pair again to take
-over. Transient-looking errors ask before local removal and default to retaining
-the binding without a TTY. `dexai disconnect --local` explicitly skips revocation.
-A definite missing API holds the relay with a clear status problem instead of
-retrying forever. No token is printed.
+If the endpoint no longer serves its API (an uncoded 404, missing DNS name or
+TLS hostname mismatch), disconnect may remove local state and explicitly states
+that platform access was not revoked. Switch to the platform agent in Studio or
+pair again to take over. Transient-looking errors ask before local removal and
+retain the binding without a TTY. `dexai disconnect --local` skips revocation
+explicitly. A definite missing endpoint holds the relay visibly instead of
+retrying forever; no token is printed.
 
 Normal exit deletes its private directory after revocation; failed cleanup keeps
 an offline record for disconnect to finish. At most eight connections share a
 state root, including retained records. `dexai serve` resumes only legacy flat
 bindings; new foreground connections do not resume after exit.
 For Claude Code on macOS, dexai checks installation and sign-in first and offers
-setup when needed (version 2.1.41 or newer). It runs headless while Studio remains
-the conversation surface. The pairing dialog and
-creation card link to `/help/local-agent` for prerequisites, installation,
-provider selection, recovery and local permission guidance.
+setup when needed. It runs headless while Studio remains the conversation
+surface. The pairing dialog and creation card link to `/help/local-agent` for
+prerequisites, installation, provider selection, recovery and permissions.
 The Project source remains in the Sandbox. The default local Codex directory
 is a private scratch directory; `--cwd` selects an existing local directory.
 If Studio reports `delivery_uncertain`, check the thread's public history before
 asking the Builder to send a new message; dexai never repeats an uncertain
 write automatically.
 
-After the public mirror is published, the CLI release is built locally for four
-platforms, with checked SHA-256 digests and a Homebrew formula proposed to
+After the public mirror is published, the CLI release is built locally for macOS arm64 and amd64, with checked SHA-256 digests and a Homebrew formula proposed to
 `superdurable/homebrew-tap`. No platform deployment or GitHub Actions job
 publishes this CLI.
 
 ## Verification and cleanup
 
-Run required-lanes on the frozen integrated source: Native and Kind are both
-required because their port/configuration tooling and the chart paths changed.
+Run `make required-lanes` on the frozen integrated source and complete every
+reported lane.
 Compile/static checks do not replace real PostgreSQL, Dex, Sandbox, Git, storage,
-BFF/HTTP and the three journeys. Verification defaults to the mock model; any real model or real LLM API requires a
-strong, stated reason approved by the platform developer before the run and recorded with the model
-in the release record or PR Tests section; RAPAIR connection tests themselves issue no model call. Preserve
+BFF/HTTP and the three journeys. Verification defaults to the mock model. Any
+real model or LLM API requires a strong, stated reason approved by the platform
+developer before the run and recorded with its model in the release record or
+PR Tests section. RAPAIR connection tests themselves issue no model call. Preserve
 exact source/run/image/command outcomes and failures in private records until
 behavior validation permits a receipt. Missing fixtures/services fail coverage.
 

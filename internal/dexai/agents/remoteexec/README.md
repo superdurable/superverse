@@ -26,6 +26,14 @@ does not write them. RAEXEC owns mode changes, generation/report fences, the
 remote branch and handoff consumption. `Binding` is public display metadata;
 the HTTP boundary maps the separately owned Bridge protocol explicitly.
 
+`Binding` retains only `CodexVersion` (the existing wire name for either local
+agent's version), `ProviderThreadID` and `HostLabel`. Removed display members
+are ignored by the pinned SDK's ordinary JSON payload decoder. The `Executor`
+primitive key, its retained JSON members and every execution fence and watermark
+stay unchanged, so existing open Sessions need no reset or new Run. New
+activation requests use the reduced strict DTO; upgrade the local client before
+reconnecting. The SQL credential table needs no migration.
+
 `Mode` is the closed set `platform` and `remote`. `Executor` holds its mode,
 monotonic epoch and generation, optional `RemoteExecutor`, and optional
 `PlatformHandoff`. A remote executor carries its connection ID, immutable

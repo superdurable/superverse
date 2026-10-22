@@ -24,9 +24,7 @@ const (
 
 // Binding is public executor metadata, independent of the Bridge transport.
 type Binding struct {
-	OrcaVersion      string `json:"orcaVersion"`
 	CodexVersion     string `json:"codexVersion"`
-	OrcaSessionID    string `json:"orcaSessionId"`
 	ProviderThreadID string `json:"providerThreadId"`
 	HostLabel        string `json:"hostLabel"`
 }

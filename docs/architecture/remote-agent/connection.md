@@ -12,7 +12,7 @@ takeover, liveness and revocation. The Session's side of a takeover (the epoch f
 | Who may connect (account, login, Project role) | PostgreSQL: `accounts`, `login_sessions`, the Project and member read model |
 | The connection credential, its status and liveness | PostgreSQL: `remote_agent_connections` (server-written, this design) |
 | Which connection may act now, and its epoch | `SessionAgentFlow` `Executor` |
-| Codex's thread, history and private reasoning | Orca on the Builder's machine |
+| Codex's thread, history and private reasoning | The local provider on the Builder's machine |
 
 Every request is authenticated through SQL, as AGENTS.md requires for authentication; the Flow
 is read or written only by the RPCs that the request needs anyway, and those check the epoch.
@@ -24,15 +24,15 @@ is read or written only by the RPCs that the request needs anyway, and those che
    Session's current executor and epoch (an admission read before a write, which reads the Flow
    like every Agent command), and inserts a `PAIRING` row with the hash of a new pairing code and
    that epoch as `basis_epoch`. Studio shows the code (10 characters of Crockford base32, 50 bits),
-   who is connected now, the endpoint URL and the warning of the [accepted risk](README.md#decisions).
-2. The Builder gives the code to the Bridge: in the Orca plugin's "Connect" form, or interactively
-   to `dexai-connect connect` (never as a command-line argument, never logged).
+   who is connected now, the endpoint URL and the warning of the [accepted risk](README.md#current-behavior).
+2. The Builder gives the code interactively
+   to `dexai connect` (never as a command-line argument, never logged).
 3. The Bridge calls `POST /remote-agent/v1/pair` with the code. The server finds the row by the
    code's hash, requires it unexpired (10 minutes) and unused, and in one transaction clears the
    code hash, stores the hash of a new connection token and sets `PAIRED`. The token (32 random
    bytes, base64url) is returned once and stored by the Bridge in a 0600 file under its state
    directory.
-4. The Bridge binds an Orca session and installs its MCP server ([bridge](bridge.md#binding)),
+4. The client creates a local agent session and supplies its scoped MCP server ([bridge](bridge.md#binding)),
    then activates.
 
 ## Activation and takeover
@@ -45,7 +45,7 @@ can never undo a newer activation.
 
 1. Authenticate the token (below); the row must be `PAIRED`.
 2. `SessionFlowService.ActivateRemoteAgent` calls the Session RPC `SetExecutor` with the connection
-   ID, the owner `Actor`, the Orca binding and `BasisEpoch = basis_epoch` of the row. The Session
+   ID, the owner `Actor`, the local agent binding and `BasisEpoch = basis_epoch` of the row. The Session
    admits it only when its epoch still equals that basis, that is when nobody connected or switched
    since this pairing was created, or as an idempotent repeat when this connection is already the
    executor. It then increases the epoch and interrupts a running turn
@@ -82,7 +82,7 @@ Consequences:
 
 Taking over needs no consent from the current connection: any Builder may activate their own Bridge,
 and Studio's connect dialog names who is connected now and says their agent will stop. "Use the
-Superverse agent" (`RemoteAgentService.SetSessionExecutor`, mode `platform`, with the epoch Studio showed as
+Platform agent" (`RemoteAgentService.SetSessionExecutor`, mode `platform`, with the epoch Studio showed as
 the basis) calls `SetExecutor` and then revokes the replaced connection's row; revoking a row by its
 own ID can never affect a newer executor.
 
@@ -119,7 +119,7 @@ All requests are `POST` with a JSON body, unknown fields refused, and a body lim
 | Path | Body limit | Purpose |
 |---|---|---|
 | `/remote-agent/v1/pair` | 4 KiB | Redeem a pairing code: `{code, bridge: {version, os, arch}}` → `{connectionId, token, projectId, projectName}`. No bearer. |
-| `/remote-agent/v1/activate` | 8 KiB | `{binding: {orcaVersion, codexVersion, orcaSessionId, providerThreadId, hostLabel}}` → `{epoch, generation, lastSequence, tools}` (the remote tool set with its schemas) |
+| `/remote-agent/v1/activate` | 8 KiB | `{binding: {codexVersion, providerThreadId, hostLabel}}` → `{epoch, generation, lastSequence, tools}` (the remote tool set with its schemas) |
 | `/remote-agent/v1/sync` | 4 KiB | Long poll, at most 25 s: `{epoch, after}` → the Session's `ReadRemote` answer (generation, entries after `after`, interrupt, pending question, tool set digest). `after` is the Bridge's own cursor; a sync never writes the Flow. |
 | `/remote-agent/v1/report` | 512 KiB | One report `{epoch, generation, sequence, providerTurn, events | toolCall | turnCompleted}` → `{epoch, generation, reported, duplicate}`; a stale epoch or generation is 409 |
 | `/remote-agent/v1/disconnect` | 1 KiB | Revoke this connection's row. The Session stays in remote mode and shows the agent offline. |
@@ -195,7 +195,7 @@ requires `CapabilityBuild`), holds the browser's side of connections:
 | `CreateRemoteAgentPairing` | Create a pairing code (above); refused `connections_full` at the cap. |
 | `ListRemoteAgentConnections` | The Project's connections for the dialog: owner, Bridge host and versions, status, created, last seen, whether it is the current executor. |
 | `RevokeRemoteAgentConnection` | Remove a connection that is not the current executor. |
-| `SetSessionExecutor` | "Use the Superverse agent" with the epoch Studio showed as the basis. |
+| `SetSessionExecutor` | "Use the Platform agent" with the epoch Studio showed as the basis. |
 
 A separate service keeps the full `AgentService` (8 RPCs) for the Session's conversation commands
 and gives the remote agent its own route, BFF allowlist entry and mock. The business protocol then
@@ -206,7 +206,7 @@ has 16 services.
 - A request updates `last_seen_at` when it is older than 60 seconds. Studio shows the connection
   online while `last_seen_at` is within 90 seconds; `SessionFlowService.Snapshot` reads it with the
   executor's connection ID.
-- Rows become `REVOKED` on "Use the Superverse agent" (the replaced connection), on the Bridge's
+- Rows become `REVOKED` on "Use the Platform agent" (the replaced connection), on the Bridge's
   disconnect (a replaced Bridge disconnects itself), and on a Builder's "Remove" in Studio.
 - **A fixed cap of six rows per Project**, enforced in the transaction that creates a pairing. A row
   lock cannot serialize this (an empty Project has no row to lock, and existing rows do not stop an
@@ -219,7 +219,7 @@ has 16 services.
   stale read can never remove a connection that is activating. Studio's connect dialog then lists
   the Project's connections (owner, Bridge host, created, last seen, whether it is the current
   executor) with "Remove" on each one that is not the executor; removing the executor's connection
-  is "Use the Superverse agent" first.
+  is "Use the Platform agent" first.
 - **"Remove" racing an activation.** `RevokeRemoteAgentConnection` reads the Session's executor and
   refuses the current one, but that read cannot stop the same connection's `activate` from
   committing right after it. The order makes the race harmless: the handler revokes the row first
@@ -228,13 +228,13 @@ has 16 services.
   the basis, which a newer activation would refuse, so it never undoes a different connection.
   Without that second step the outcome would still be safe: a revoked token fails authentication at
   every endpoint, so the connection can neither act nor report, and Studio shows the executor
-  offline with "Use the Superverse agent". An `activate` that authenticated before the revocation
+  offline with "Use the Platform agent". An `activate` that authenticated before the revocation
   and commits after both of the handler's reads is closed from the other side: after `SetExecutor`
   commits, `activate` reads its own row again and, when it is `REVOKED` or gone (a pairing's cleanup deletes revoked rows), calls `SetExecutor` with
   mode `platform` and the epoch it just received as the basis, then answers 401. Only a crash or a failed call between
   those two steps leaves the offline residual described above (the handler then answers 401 without
   claiming the switch happened), and a Builder clears it with "Use the
-  Superverse agent". Revocation is a credential fact, not a fence: it refuses new requests and does
+  Platform agent". Revocation is a credential fact, not a fence: it refuses new requests and does
   not cancel work the Session already admitted. Each switch to `platform` increases the epoch and the
   generation, so later reports are refused, and a running remote turn ends by the
   [Stop fences](executor.md#stop-and-takeover). RAPAIR revokes only; RAEXEC, which adds
@@ -275,7 +275,7 @@ CREATE TABLE remote_agent_connections (
   pairing_expires_at TIMESTAMPTZ NOT NULL,
   token_hash TEXT UNIQUE,                         -- set at redemption
   basis_epoch BIGINT NOT NULL,                    -- the Session epoch when the pairing was created
-  binding JSONB,                                  -- Orca and Codex versions and IDs; no secrets
+  binding JSONB,                                  -- Local agent version and provider thread ID; no secrets
   last_seen_at TIMESTAMPTZ,
   revoke_reason TEXT CHECK (revoke_reason IN ('platform', 'disconnected', 'removed')),
   created_at TIMESTAMPTZ NOT NULL,
@@ -296,9 +296,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON remote_agent_connections TO superverse_s
 
 - **Connect dialog**: who is connected now (if anyone) and that their agent will stop; the
   accepted-risk warning; the code with a countdown and copy button; "Waiting for your Bridge…",
-  then "Connected: Codex 0.162.1 in Orca 1.4.225 on '<machine>'".
+  then the connected local agent and host label.
 - **Agent picker**: beside the composer, its local-agent level shows connection
-  status, Connect and, while remote owns the Session, Use the Superverse agent.
+  status, Connect and, while remote owns the Session, Use the Platform agent.
   The Connect dialog retains one-time code handling and saved connections.
 - **Project creation**: a local-agent creation opens the Project as soon as creation is accepted without
   waiting for pairing. Until its first local connection, the chat shows inline

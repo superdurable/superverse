@@ -126,8 +126,8 @@ func actor(owner conversation.Actor) *pb.Actor {
 }
 
 func binding(value remoteexec.Binding) *pb.RemoteAgentBinding {
-	return &pb.RemoteAgentBinding{OrcaVersion: value.OrcaVersion, CodexVersion: value.CodexVersion,
-		OrcaSessionId: value.OrcaSessionID, ProviderThreadId: value.ProviderThreadID, HostLabel: value.HostLabel}
+	return &pb.RemoteAgentBinding{CodexVersion: value.CodexVersion,
+		ProviderThreadId: value.ProviderThreadID, HostLabel: value.HostLabel}
 }
 
 func (s *server) SetSessionExecutor(ctx context.Context, request *pb.SetSessionExecutorRequest) (*pb.SetSessionExecutorResponse, error) {

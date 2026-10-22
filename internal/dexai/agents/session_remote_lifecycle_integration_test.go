@@ -51,7 +51,7 @@ func TestSessionRemoteOfflineSandboxReclaimHTTPDexIntegration(t *testing.T) {
 	session, api, caller := remoteSessionAPI(ctx, t)
 	remote := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
 	var active bridgeapi.ActivateResponse
-	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "offline-hold", ProviderThreadID: "offline-hold", HostLabel: "integration host"}}, &active, http.StatusOK)
+	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "offline-hold", HostLabel: "integration host"}}, &active, http.StatusOK)
 	var accepted bridgeapi.ReportResponse
 	remote.post(ctx, bridgeapi.PathReport, bridgeapi.Report{Epoch: active.Epoch, Generation: active.Generation, Sequence: 1, ToolCall: &bridgeapi.ToolCall{Name: string(conversation.ToolWrite), Arguments: json.RawMessage(`{"path":"raexec-offline.txt","content":"Kept across offline reclamation\n"}`)}}, &accepted, http.StatusOK)
 	remote.awaitResult(ctx, active.Epoch, conversation.CallID(fmt.Sprintf("remote-%d-1", active.Epoch)), "Created raexec-offline.txt")
@@ -87,7 +87,7 @@ func TestSessionRemoteWorkerRestartHTTPDexIntegration(t *testing.T) {
 	session, api, caller := remoteSessionAPI(ctx, t)
 	remote := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
 	var active bridgeapi.ActivateResponse
-	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "worker-restart", ProviderThreadID: "worker-restart", HostLabel: "integration host"}}, &active, http.StatusOK)
+	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "worker-restart", HostLabel: "integration host"}}, &active, http.StatusOK)
 	var accepted bridgeapi.ReportResponse
 	remote.post(ctx, bridgeapi.PathReport, bridgeapi.Report{Epoch: active.Epoch, Generation: active.Generation, Sequence: 1, ToolCall: &bridgeapi.ToolCall{Name: string(conversation.ToolWrite), Arguments: json.RawMessage(`{"path":"raexec-foreground.txt","content":""}`)}}, &accepted, http.StatusOK)
 	remote.awaitResult(ctx, active.Epoch, conversation.CallID(fmt.Sprintf("remote-%d-1", active.Epoch)), "")

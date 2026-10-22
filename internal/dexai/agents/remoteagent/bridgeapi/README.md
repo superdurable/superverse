@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Declares the remote agent endpoint's paths, body limits, JSON requests, responses, reports and error codes, shared by the endpoint and the Bridge.
 
-Callers: `cmd/dexai-cli`, `cmd/dexai-connect`, `cmd/dexai-connect/mcpserver`, `cmd/dexai-connect/platform`, `cmd/dexai-connect/relay`, `cmd/dexai-connect/state` and `internal/dexai/agents/remoteagent` import this package.
+Callers: `cmd/dexai-cli`, `cmd/dexai-cli/mcpserver`, `cmd/dexai-cli/platform`, `cmd/dexai-cli/relay`, `cmd/dexai-cli/state` and `internal/dexai/agents/remoteagent` import this package.
 
 Dependencies: it imports no other package of this module and calls no remote API.
 
@@ -11,17 +11,22 @@ Dependencies: it imports no other package of this module and calls no remote API
 flowchart LR
   self["internal/dexai/agents/remoteagent/bridgeapi"]
   c0["cmd/dexai-cli"] --> self
-  c1["cmd/dexai-connect"] --> self
-  c2["cmd/dexai-connect/mcpserver"] --> self
-  c3["cmd/dexai-connect/platform"] --> self
-  c4["cmd/dexai-connect/relay"] --> self
-  c5["cmd/dexai-connect/state"] --> self
-  c6["internal/dexai/agents/remoteagent"] --> self
+  c1["cmd/dexai-cli/mcpserver"] --> self
+  c2["cmd/dexai-cli/platform"] --> self
+  c3["cmd/dexai-cli/relay"] --> self
+  c4["cmd/dexai-cli/state"] --> self
+  c5["internal/dexai/agents/remoteagent"] --> self
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 
+`Binding` carries only `codexVersion`, `providerThreadId` and `hostLabel` for
+safe display. `codexVersion` retains its wire spelling for both supported local
+agents. Executor authority comes from the authenticated connection and Session
+fences, never these display fields. The matching business proto removes obsolete
+pre-launch fields without reserving or renumbering retained field numbers.
+
 The [remote agent endpoint](../../../../../docs/api/remote-agent.md)
-and `cmd/dexai-connect/platform` both build on these types, so the two sides cannot drift. The
+and the private dexai platform client both build on these types, so the two sides cannot drift. The
 package imports nothing from `internal/`.
 
 - Every request but the downloads manifest is a `POST` with a JSON body; both sides refuse unknown

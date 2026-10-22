@@ -1,5 +1,5 @@
 .PHONY: generate generate-proto generate-go generate-web generate-app-template generate-package-readmes \
-	generate-studio-readmes build build-dexai-connect-local build-web vet compile-tests check check-go check-go-rules check-go-proto \
+	generate-studio-readmes build build-web vet compile-tests check check-go check-go-rules check-go-proto \
 	check-web check-web-source check-web-build check-generated check-generated-web \
 	check-app-template check-app-template-source check-app-template-embedded \
 	check-deployment-names check-package-layers check-package-limits check-package-readmes check-go-file-length license-headers check-license-headers \
@@ -69,12 +69,6 @@ generate-studio-readmes:
 # Build and static checks. None of these is integration or end-to-end acceptance.
 build:
 	go build $(GO_PACKAGES)
-
-# The connector for this machine, in ./bin/. DEXAI_CONNECT_VERSION is the semantic version it reports at
-# pairing; a local build is a dev build, which only a local profile's server accepts.
-DEXAI_CONNECT_VERSION ?= 0.0.0-dev
-build-dexai-connect-local:
-	go build -ldflags "-X main.version=$(DEXAI_CONNECT_VERSION)" -o bin/dexai-connect ./cmd/dexai-connect
 
 # Direct-agent command; only local profiles accept the development version.
 DEXAI_VERSION ?= 0.0.0-dev

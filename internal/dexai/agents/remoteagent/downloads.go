@@ -43,10 +43,10 @@ func (d *downloads) load(root *os.Root) (bridgeapi.DownloadsManifest, error) {
 	}
 	decoder := json.NewDecoder(strings.NewReader(string(raw)))
 	decoder.DisallowUnknownFields()
-	if err = decoder.Decode(&manifest); err != nil || decoder.Decode(new(any)) != io.EOF || len(manifest.Artifacts) > 5 {
+	if err = decoder.Decode(&manifest); err != nil || decoder.Decode(new(any)) != io.EOF || len(manifest.Artifacts) > 4 {
 		return manifest, errors.New("invalid download manifest")
 	}
-	seen := make(map[string]bool, 5)
+	seen := make(map[string]bool, 4)
 	for _, artifact := range manifest.Artifacts {
 		digest, err := hex.DecodeString(artifact.SHA256)
 		if artifact.Validate() != nil || !downloadPath(artifact.Path) || seen[artifact.Path] || err != nil || len(digest) != 32 {
@@ -122,7 +122,7 @@ func (e *Endpoint) serveDownload(w http.ResponseWriter, r *http.Request) {
 
 func downloadPath(name string) bool {
 	switch name {
-	case "superverse-bridge-darwin-arm64", "superverse-bridge-darwin-amd64", "superverse-bridge-linux-arm64", "superverse-bridge-linux-amd64", "superverse-orca-plugin.tgz":
+	case "superverse-bridge-darwin-arm64", "superverse-bridge-darwin-amd64", "superverse-bridge-linux-arm64", "superverse-bridge-linux-amd64":
 		return true
 	default:
 		return false

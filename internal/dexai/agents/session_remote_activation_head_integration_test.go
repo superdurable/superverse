@@ -28,8 +28,8 @@ func TestSessionRemoteActivationHeadHTTPDexIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 	remote := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
-	binding := bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration",
-		OrcaSessionID: "activation-head", ProviderThreadID: "activation-head", HostLabel: "integration host"}}
+	binding := bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration",
+		ProviderThreadID: "activation-head", HostLabel: "integration host"}}
 	var active bridgeapi.ActivateResponse
 	remote.post(ctx, bridgeapi.PathActivate, binding, &active, http.StatusOK)
 	if active.LastSequence != uint64(before.Agent.Description.LastSequence) {

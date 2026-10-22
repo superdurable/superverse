@@ -28,7 +28,7 @@ func TestSessionRemoteBatchCatalogHTTPDexIntegration(t *testing.T) {
 	session, api, caller := remoteSessionAPI(ctx, t)
 	remote := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
 	var active bridgeapi.ActivateResponse
-	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "batch-catalog", ProviderThreadID: "batch-catalog", HostLabel: "integration host"}}, &active, http.StatusOK)
+	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "batch-catalog", HostLabel: "integration host"}}, &active, http.StatusOK)
 	var admitted bridgeapi.ReportResponse
 	reportTool := func(sequence uint64, name conversation.ToolName, arguments string) {
 		t.Helper()

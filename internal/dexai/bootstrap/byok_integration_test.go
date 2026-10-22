@@ -519,7 +519,7 @@ func TestProjectAnthropicCredentialDexIntegration(t *testing.T) {
 	var paired bridgeapi.PairResponse
 	post(bridgeapi.PathPair, "", bridgeapi.PairRequest{Code: pairing.GetCode(), Bridge: bridgeapi.BridgeInfo{Version: config.remoteAgent.MinimumBridgeVersion, OS: runtime.GOOS, Arch: runtime.GOARCH}}, &paired)
 	var active bridgeapi.ActivateResponse
-	post(bridgeapi.PathActivate, paired.Token, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "byok", ProviderThreadID: "byok", HostLabel: "integration host"}}, &active)
+	post(bridgeapi.PathActivate, paired.Token, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "byok", HostLabel: "integration host"}}, &active)
 	send("Continue through the connected local agent")
 	wait("active remote turn", func() bool {
 		snapshot, err := sessions.GetSnapshot(ctx, id)

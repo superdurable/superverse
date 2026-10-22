@@ -365,7 +365,7 @@ func TestSessionRemoteAttachmentRefusalDexIntegration(t *testing.T) {
 	remote.post(ctx, bridgeapi.PathPair, bridgeapi.PairRequest{Code: pair.GetCode(), Bridge: bridgeapi.BridgeInfo{Version: bridgeapi.DevBridgeVersion, OS: "darwin", Arch: "arm64"}}, &paired, http.StatusOK)
 	remote.token = paired.Token
 	var active bridgeapi.ActivateResponse
-	binding := bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "attachment-refusal", ProviderThreadID: "attachment-refusal", HostLabel: "integration host"}}
+	binding := bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "attachment-refusal", HostLabel: "integration host"}}
 	remote.post(ctx, bridgeapi.PathActivate, binding, &active, http.StatusOK)
 	session.waitForSnapshot(ctx, "the local agent's executor", func(agent agentloop.AgentSnapshot) bool {
 		return agent.Description.Executor.Mode == remoteexec.ModeRemote && agent.Description.Executor.Epoch == active.Epoch

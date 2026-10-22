@@ -721,8 +721,7 @@ func sessionExecutor(value remoteexec.Executor) *pb.SessionExecutor {
 	out := &pb.SessionExecutor{Mode: boundary.Enum[pb.SessionExecutorMode](value.Mode), Epoch: value.Epoch, Generation: value.Generation}
 	if remote := value.Remote; remote != nil {
 		out.Remote = &pb.RemoteSessionExecutor{ConnectionId: remote.ConnectionID, Owner: agentActor(&remote.Owner), Reported: remote.Reported,
-			ActivatedAt: timestamppb.New(remote.ActivatedAt), Binding: &pb.RemoteAgentBinding{OrcaVersion: remote.Binding.OrcaVersion,
-				CodexVersion: remote.Binding.CodexVersion, OrcaSessionId: remote.Binding.OrcaSessionID, ProviderThreadId: remote.Binding.ProviderThreadID, HostLabel: remote.Binding.HostLabel}}
+			ActivatedAt: timestamppb.New(remote.ActivatedAt), Binding: &pb.RemoteAgentBinding{CodexVersion: remote.Binding.CodexVersion, ProviderThreadId: remote.Binding.ProviderThreadID, HostLabel: remote.Binding.HostLabel}}
 	}
 	return out
 }

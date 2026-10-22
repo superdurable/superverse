@@ -241,7 +241,7 @@ function ProjectConnectionDialog({ projectId, onClose }: { projectId: string; on
                 </p>
                 {item.binding && (
                   <p className="text-xs text-ink-faint">
-                    Agent version {item.binding.codexVersion} · Connection version {item.binding.orcaVersion}
+                    Local agent {item.binding.codexVersion}
                     {item.binding.hostLabel ? ` on ${item.binding.hostLabel}` : ""}
                   </p>
                 )}

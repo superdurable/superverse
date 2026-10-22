@@ -31,7 +31,7 @@ func TestSessionRemoteInteractiveHandoffHTTPDexIntegration(t *testing.T) {
 	session, api, caller := remoteSessionAPI(ctx, t)
 	remote := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
 	var active bridgeapi.ActivateResponse
-	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "interactive-handoff", ProviderThreadID: "interactive-handoff", HostLabel: "integration host"}}, &active, http.StatusOK)
+	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "interactive-handoff", HostLabel: "integration host"}}, &active, http.StatusOK)
 	var accepted bridgeapi.ReportResponse
 	remote.post(ctx, bridgeapi.PathReport, bridgeapi.Report{Epoch: active.Epoch, Generation: active.Generation, Sequence: 1, Events: []bridgeapi.Event{{Kind: bridgeapi.EventKindUserMessage, Text: "Write the unscripted remote proof."}}}, &accepted, http.StatusOK)
 	remote.post(ctx, bridgeapi.PathReport, bridgeapi.Report{Epoch: active.Epoch, Generation: active.Generation, Sequence: 2, Events: []bridgeapi.Event{{Kind: bridgeapi.EventKindAssistantMessage, Text: "Writing the real proof through the remote endpoint."}}}, &accepted, http.StatusOK)

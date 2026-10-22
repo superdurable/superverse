@@ -46,7 +46,7 @@ func TestSessionRemoteForegroundTakeoverHTTPDexIntegration(t *testing.T) {
 	defer cancel()
 	session, api, caller := remoteSessionAPI(ctx, t)
 	remote := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
-	binding := bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "foreground-takeover", ProviderThreadID: "foreground-takeover", HostLabel: "integration host"}}
+	binding := bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "foreground-takeover", HostLabel: "integration host"}}
 	var active bridgeapi.ActivateResponse
 	remote.post(ctx, bridgeapi.PathActivate, binding, &active, http.StatusOK)
 	next := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)

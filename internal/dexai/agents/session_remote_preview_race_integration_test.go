@@ -129,7 +129,7 @@ func newRemotePreviewRace(ctx context.Context, t *testing.T) (*mockSession, *rem
 	session.preparePreview(ctx)
 	session.configurePreview(ctx)
 	driver := &remotePreviewDriver{t: t, remote: pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)}
-	driver.remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "held-preview-race", ProviderThreadID: "held-preview-race", HostLabel: "integration host"}}, &driver.active, http.StatusOK)
+	driver.remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "held-preview-race", HostLabel: "integration host"}}, &driver.active, http.StatusOK)
 	return session, driver
 }
 

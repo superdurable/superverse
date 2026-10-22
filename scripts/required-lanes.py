@@ -24,8 +24,6 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 KIND_LIST = ROOT / "scripts/kind-required-paths.txt"
 NATIVE_LIST = ROOT / "scripts/native-required-paths.txt"
-BRIDGE_RACE_LIST = ROOT / "scripts/bridge-race-required-paths.txt"
-BRIDGE_RACE_TEST = "TestRelayAnswerAfterTurnCompleted"
 
 
 def patterns(path):
@@ -64,10 +62,6 @@ def required_lanes(paths):
     return "native, kind" if kind and native else "kind" if kind else "native", kind, native
 
 
-def bridge_race_required(paths):
-    return touched(paths, BRIDGE_RACE_LIST)
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", default="origin/main", help="the branch the change merges into (default origin/main)")
@@ -83,11 +77,7 @@ def main():
     if kind:
         for path, pattern in native:
             print(f"  native: {path} ({pattern})")
-    bridge = bridge_race_required(paths)
-    if bridge:
-        print(f"Required Orca bridge check: go test -count=1 ./cmd/dexai-connect/relay -run '^{BRIDGE_RACE_TEST}$'")
-        for path, pattern in bridge:
-            print(f"  bridge: {path} ({pattern})")
+
 
 
 if __name__ == "__main__":

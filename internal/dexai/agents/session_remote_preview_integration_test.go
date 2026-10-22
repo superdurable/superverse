@@ -34,7 +34,7 @@ func TestSessionRemoteImmediatePreviewHTTPDexIntegration(t *testing.T) {
 	session.configurePreview(ctx)
 	remote := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
 	var active bridgeapi.ActivateResponse
-	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "immediate-preview", ProviderThreadID: "immediate-preview", HostLabel: "integration host"}}, &active, http.StatusOK)
+	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "immediate-preview", HostLabel: "integration host"}}, &active, http.StatusOK)
 	sequence := uint64(0)
 	call := func(name conversation.ToolName, arguments any, duplicate bool) conversation.CallID {
 		t.Helper()

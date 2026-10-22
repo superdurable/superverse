@@ -35,21 +35,23 @@ the account and Project authorization; `api` imports `remoteagent` for the pairi
 which `internal/dexai/studio/runs` implements and `bootstrap` injects, because `studio/runs` sits above
 `preview`.
 
-## The Bridge and the plugin
+## The dexai client
+
+All client implementation packages under `cmd/dexai-cli` are private.
 
 | Path | Owns |
 |---|---|
-| `cmd/dexai-connect` | `main`: the commands `serve`, `mcp`, `connect`, `status`, `disconnect` |
-| `cmd/dexai-connect/orca` | The Orca runtime client: transport (local and paired remote), the `agentSession` methods used, the version allow-list, the owner token read from `orca-runtime.json` and the method allow-list |
-| `cmd/dexai-connect/mcpserver` | The stdio MCP server Codex starts: the tool set the server sent, zero tools for an unbound session, forwarding to `serve` over the local socket |
-| `cmd/dexai-connect/platform` | The remote agent endpoint client (`bridgeapi`): pair, activate, sync, report, disconnect, backoff |
-| `cmd/dexai-connect/relay` | The delivery, tool call and event loops of one binding; echo suppression; history import; the brief |
-| `cmd/dexai-connect/state` | The 0600 state directory, the single-instance lock, the unacknowledged report store |
-| `integrations/orca-plugin` | The Orca plugin (TypeScript): Connect form, status, starting `serve` |
+| `cmd/dexai-cli` | Foreground connect, legacy serve, MCP, status and targeted disconnect |
+| `cmd/dexai-cli/codexdaemon` | Direct Codex daemon requests, per-thread MCP, TUI and public history |
+| `cmd/dexai-cli/claudeheadless` | Claude stream-json child, per-process MCP and public transcript |
+| `cmd/dexai-cli/mcpserver` | Credential-free stdio MCP and the private local socket |
+| `cmd/dexai-cli/platform` | Remote endpoint requests, strict shared types and bounded backoff |
+| `cmd/dexai-cli/relay` | One-write delivery, report sequencing, event resume and echo suppression |
+| `cmd/dexai-cli/state` | Private per-connection state, locks and bounded report store |
+| `cmd/dexai-cli/trace` | Bounded, content-free local timing diagnostics |
 
-The Bridge packages follow the same limits and README rules as `internal/` packages, although the
-checks scan only `internal/`. The plugin follows Orca's plugin layout and is formatted with the
-repository's pinned Prettier.
+The public server-side `bridgeapi` package remains the single wire owner.
+Client packages keep the same package/file bounds as the internal source tree.
 
 ## Studio
 
@@ -72,8 +74,8 @@ repository's pinned Prettier.
   certificate.
 - **Native**: a loopback port in `native.yaml` from the [Native instance port layout](../../runbooks/local-native.md).
 - **Distribution**: the endpoint serves only fixed, manifest-listed artifacts provisioned in
-  `remoteAgent.downloadsDir`. The separate local `dexai-connect` release script cross-compiles
-  macOS and Linux, arm64 and amd64 archives for a GitHub release after public mirror publication.
+  `remoteAgent.downloadsDir`. The separate local `dexai` release script cross-compiles
+  macOS arm64 and amd64 archives for a GitHub release after public mirror publication.
   Neither path adds a GitHub Actions build.
 
 ## Dex Flow Changes

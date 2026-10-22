@@ -66,7 +66,7 @@ func TestSessionRemoteStartingExampleDexIntegration(t *testing.T) {
 	remote.post(ctx, bridgeapi.PathPair, bridgeapi.PairRequest{Code: pair.GetCode(), Bridge: bridgeapi.BridgeInfo{Version: bridgeapi.DevBridgeVersion, OS: "darwin", Arch: "arm64"}}, &paired, http.StatusOK)
 	remote.token = paired.Token
 	var active bridgeapi.ActivateResponse
-	binding := bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "starting-example", ProviderThreadID: "starting-example", HostLabel: "integration host"}}
+	binding := bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "starting-example", HostLabel: "integration host"}}
 	remote.post(ctx, bridgeapi.PathActivate, binding, &active, http.StatusOK)
 	var synced bridgeapi.SyncResponse
 	for {

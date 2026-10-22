@@ -31,7 +31,7 @@ func TestSessionRemoteQuestionTakeoverHTTPDexIntegration(t *testing.T) {
 			defer cancel()
 			session, api, caller := remoteSessionAPI(ctx, t)
 			remote := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
-			binding := bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "question-takeover", ProviderThreadID: "question-takeover", HostLabel: "integration host"}}
+			binding := bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "question-takeover", HostLabel: "integration host"}}
 			var active bridgeapi.ActivateResponse
 			remote.post(ctx, bridgeapi.PathActivate, binding, &active, http.StatusOK)
 			arguments := json.RawMessage(`{"questions":[{"id":"audience","header":"Audience","question":"Which audience should this serve?","options":[{"label":"Customers","description":"Serve external customers."},{"label":"Staff","description":"Serve internal staff."}]}]}`)
@@ -100,8 +100,8 @@ func TestSessionRemoteQuestionAfterTurnCompletedHTTPDexIntegration(t *testing.T)
 	defer cancel()
 	session, api, caller := remoteSessionAPI(ctx, t)
 	remote := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
-	binding := bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration",
-		OrcaSessionID: "completed-question", ProviderThreadID: "completed-question", HostLabel: "integration host"}}
+	binding := bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration",
+		ProviderThreadID: "completed-question", HostLabel: "integration host"}}
 	var active bridgeapi.ActivateResponse
 	remote.post(ctx, bridgeapi.PathActivate, binding, &active, http.StatusOK)
 	arguments := json.RawMessage(`{"questions":[{"id":"github","header":"GitHub signals","question":"Monitor GitHub now?","options":[{"label":"No","description":"Defer GitHub collection."},{"label":"Yes","description":"Monitor selected accounts."}]}]}`)

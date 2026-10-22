@@ -193,7 +193,7 @@ func TestSessionRemoteTaskWorktreePlatformKeepHTTPDexIntegration(t *testing.T) {
 	remote := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
 	var active bridgeapi.ActivateResponse
 	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{
-		OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "task-keep", ProviderThreadID: "task-keep", HostLabel: "integration host",
+		CodexVersion: "integration", ProviderThreadID: "task-keep", HostLabel: "integration host",
 	}}, &active, http.StatusOK)
 	driver := remoteConnectorDriver{remote: remote, epoch: active.Epoch, generation: active.Generation}
 	tree, _ := taskTreeOpen(ctx, t, &driver, "codex-task")

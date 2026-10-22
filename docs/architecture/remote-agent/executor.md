@@ -15,7 +15,7 @@ and stays in [agent harness: session](../agent-harness-design/session.md).
 
 A new Session starts in `platform` mode. Only an explicit act changes the mode: a Builder
 activating their Bridge ([connection](connection.md#activation-and-takeover)), or a Builder
-choosing "Use the Superverse agent" in Studio. Losing the Bridge's connection never changes it:
+choosing "Use the Platform agent" in Studio. Losing the Bridge's connection never changes it:
 the Session stays in remote mode, queues work, and Studio shows the agent as offline.
 
 ## The remote branch of a turn
@@ -81,7 +81,7 @@ turn needs the next model step.
 - `AwaitRemoteAgent` waits for the `RemoteInbox` Channel, steering and (within the existing
   rule `agentloop.TakesNotifications`) notifications, and handles what arrived in sequence
   order:
-  - **Public events** (an assistant message, a user message typed directly in Orca, imported
+  - **Public events** (an assistant message, a user message typed directly in the local agent, imported
     history) are appended as conversation entries. Activity without a durable meaning (Codex
     progress, its own subagents starting and finishing) is written to the `AgentActivity`
     Stream only.
@@ -104,7 +104,7 @@ turn needs the next model step.
   - **Steering** is applied by `beginSteeredTurn`, which appends the entries the Bridge then
     delivers to Codex as a steer of its running turn.
 - `AwaitUser` additionally waits for `RemoteInbox` in either mode: in remote mode, work Codex starts
-  on its own (the connecting Builder typing in Orca) opens a turn, like an automatic turn; in either
+  on its own (the connecting Builder typing in the local agent) opens a turn, like an automatic turn; in either
   mode, a takeover's control item wakes it, because a wait created in platform mode must wake after
   an activation.
 - **RASTOPADMIT — event-only admission.** A current-epoch, current-generation public
@@ -151,7 +151,7 @@ A remote tool call goes through `RouteTool`, so a tool that requires approval wa
 ([collaboration](collaboration.md#actors)). No catalog tool requires approval today. The MCP call
 returns when the decision is recorded (a rejection is the `RejectedByUser` failure). A takeover or
 Stop while the approval waits cancels `AwaitToolApproval`, which `InterruptAgent` already cancels,
-and the call is answered as interrupted; approvals in Orca's own prompts concern only Codex's local
+and the call is answered as interrupted; local agent approval prompts concern only Codex's local
 tools, which the platform does not see.
 
 ### Stop and takeover
@@ -160,7 +160,7 @@ tools, which the platform does not see.
   kind `agentloop.RunningRemote`, which is cancellable, so Stop ends the turn at once;
   `AwaitRemoteAgent` joins the Steps that `InterruptAgent` cancels (`CancelSteps`). The Bridge sees
   the Session's `AgentInterrupt` in its next read and cancels the Codex turn
-  (`agentSession.cancel`).
+  (the provider cancellation API).
 - **The work generation.** `Executor.Generation` is a counter the platform owns. It is never reset
   and never 0 once the Session has entered remote mode: the first activation sets it to 1, and every
   later activation, switch, Stop and takeover increases it. A report stamped 0 (a turn the Bridge
@@ -171,16 +171,15 @@ tools, which the platform does not see.
   - a turn the Bridge starts (a delivery) is bound to the generation recorded with that delivery in
     the Bridge's state, before the send;
   - when the Bridge adopts a new generation from `sync`, it cancels the session's running turn, waits
-    until Orca reports no turn running, and records Orca's event position at that moment as the
+    until the provider proves no turn running, and records its ordered event position at that moment as the
     generation's boundary; a turn whose start event comes before the boundary belongs to an older
     generation, whenever its events reach the Bridge, and one that starts after it (for example the
-    Builder typing in Orca) belongs to the new one;
+    Builder typing in the local agent) belongs to the new one;
   - after a restart without state, or for a turn whose start the Bridge cannot place, it stamps the
     oldest possible generation, 0, which the platform refuses; only turns that start after the
     Bridge's first boundary are reported.
 
-  That Orca's subscription and history give each event a position in one order is a capability gate
-  in ORCACHECK. The platform never needs to remember stopped provider turn IDs.
+  Each provider must give subscription and public-history events a comparable, resumable order. The platform never needs to remember stopped provider turn IDs.
 - **Three fences keep stopped work from running**, so no report produced before a Stop can act
   after it, whether or not it was already admitted, consumed or bound to a turn:
   1. *Admission*: `ReportRemote` refuses a report whose generation is not the current one (or whose
@@ -340,6 +339,17 @@ existing Session; this design keeps only what the existing primitives cannot do.
 
 ### SessionAgentFlow
 
+DEPRECATECONNECT removes only the unused `orcaVersion` and `orcaSessionId`
+display members from the ordinary `Executor.Remote.Binding` value. `Executor`
+keeps its primitive key, Flow and Step identities, mode, epoch, generation,
+activation head and report watermarks. The JSON payload decoder ignores removed
+members in existing Attributes and SQL binding metadata; retained members keep
+their wire spelling. No execution is reset, stopped or recreated. Old clients
+must be replaced before using the strict new activation request; a fresh dexai
+pairing supplies the current display metadata. No schema migration or new
+primitive is required, and there are no Channels, ChannelMaps or Streams added.
+
+
 **Identity and execution lifecycle.** Unchanged: Flow type `SessionAgentFlow`, FlowID
 `session-<projectID>` (for example `session-a7k2`), Start RequestID
 `flowid.Fingerprint(struct{ProjectID string})`, `IDReuseDisallow`, started once by ProjectFlow and
@@ -356,7 +366,7 @@ returns that epoch's stored head without creating a Run or advancing the cursor.
 |---|---|---|---|
 | `Executor` (new) | `remoteexec.Executor` (ordinary struct) | `Mode` (`platform`/`remote`, a typed closed set), `Epoch uint64` (starts at 0, +1 on every change), `Generation uint64` (0 until the first activation, then at least 1, +1 on every change and every remote Stop; never reset), `Remote *remoteexec.RemoteExecutor`, `Handoff *remoteexec.PlatformHandoff` (the pending switch back, below) | New `executorLock`. Fixed size. Kept for the Session's life; not indexed; no secrets. |
 | | `remoteexec.PlatformHandoff` | `Epoch uint64` (the platform epoch it belongs to), `From time.Time`, `To time.Time`, `Owners []conversation.Actor` (the latest four remote connections' owners, oldest first, so the newest owner is always kept), `Reason` (a typed closed set: `switched`, `connection_removed`) | Written by `SetExecutor` in the commit that switches to `platform`, consumed (deleted) by the Step that opens the `executor` segment; see [Leaving](#entering-and-leaving-remote-mode). |
-| | `remoteexec.RemoteExecutor` | `ConnectionID`, `Owner conversation.Actor` (the connecting Builder), `Binding` (Orca and Codex versions, Orca session ID and provider thread ID, for display), `Reported uint64` (highest admitted report sequence), `Consumed uint64` (highest admitted report sequence the Session consumed; `settledThrough` is derived from it, see below), `ActivatedAt time.Time` (the commit time of the activation), `ActivationSequence *conversation.Sequence` (the last canonical entry at remote admission; a non-nil pointer distinguishes a real zero head from a historical epoch with no stored head) | Cleared on a switch to `platform`; replaced on takeover, so the head and both watermarks are fixed-size per epoch and stay O(1). `SetExecutor` reads `AgentState.LastSequence` and writes `ActivationSequence` with `Executor` under `executorLock`; conversation append Steps also take `executorLock`, so the head is serialized with admission. `Reported` is written only by `SetExecutor`, `ReportRemote` and `InterruptAgent`; `Consumed` only by the consuming AwaitUser or AwaitRemoteAgent commit, all under `executorLock`; never by a read. |
+| | `remoteexec.RemoteExecutor` | `ConnectionID`, `Owner conversation.Actor` (the connecting Builder), `Binding` (local agent version, provider thread ID and host label, for display), `Reported uint64` (highest admitted report sequence), `Consumed uint64` (highest admitted report sequence the Session consumed; `settledThrough` is derived from it, see below), `ActivatedAt time.Time` (the commit time of the activation), `ActivationSequence *conversation.Sequence` (the last canonical entry at remote admission; a non-nil pointer distinguishes a real zero head from a historical epoch with no stored head) | Cleared on a switch to `platform`; replaced on takeover, so the head and both watermarks are fixed-size per epoch and stay O(1). `SetExecutor` reads `AgentState.LastSequence` and writes `ActivationSequence` with `Executor` under `executorLock`; conversation append Steps also take `executorLock`, so the head is serialized with admission. `Reported` is written only by `SetExecutor`, `ReportRemote` and `InterruptAgent`; `Consumed` only by the consuming AwaitUser or AwaitRemoteAgent commit, all under `executorLock`; never by a read. |
 
 Every other Attribute is unchanged; [collaboration](collaboration.md#dex-flow-changes) adds the
 actor fields.
@@ -378,8 +388,8 @@ tool call does.
 **Streams.** No new Stream. `AwaitRemoteAgent` writes Codex's text to `AssistantText` as each
 complete item arrives and Codex activity to `AgentActivity` with one new event kind,
 `remote_activity` (a short public summary: Codex subagent started or finished, local tool used,
-or waiting for approval in Orca). `ReasoningSummary` is never written in remote mode; hidden
-reasoning never leaves Orca. The 10 MiB budgets stay shared per Flow type and Stream name
+or waiting for local approval). `ReasoningSummary` is never written in remote mode; hidden
+reasoning never leaves the local provider. The 10 MiB budgets stay shared per Flow type and Stream name
 (pinned SDK); Studio and the Bridge recover from the Snapshot and the conversation entries.
 
 **Steps.**
@@ -395,7 +405,7 @@ reasoning never leaves Orca. The 10 MiB budgets stay shared per Flow type and St
 
 `AwaitRemoteAgent` has no timer: it waits until a report, steering, a notification, Stop or a
 takeover arrives. An offline Bridge leaves the turn waiting; Studio shows that and offers Stop and
-"Use the Superverse agent". A waiting turn does not keep the Sandbox: the
+"Use the Platform agent". A waiting turn does not keep the Sandbox: the
 [Sandbox deadline](../agent-harness-design/session.md#sandbox-deadline) moves only when a tool with
 workspace access is dispatched, and `AwaitSandboxDeadline` runs beside the turn as it does today, so
 the Pod is reclaimed on schedule and the next remote tool call re-provisions it on the same volume.
@@ -411,7 +421,7 @@ the Pod is reclaimed on schedule and the next remote tool call re-provisions it 
 **Recovery and external effects.** Tool effects keep their identity, ledger and query-before-
 mutate recovery. A lost `ReportRemote` response is retried by the Bridge with the same sequence
 (duplicate, same answer). A lost `SetExecutor` response is retried with the same connection
-(idempotent). No new external effect happens in a Step: the Bridge, not the Flow, talks to Orca.
+(idempotent). No new external effect happens in a Step: the Bridge, not the Flow, talks to the local provider.
 `ActivateRemoteAgent` uses the saved head from the `SetExecutor` result; a message
 appended after activation is therefore above the Bridge's initial cursor. For an
 open execution whose current remote epoch was activated before the field existed,
@@ -676,7 +686,7 @@ RASUBWT adds no SQL table, column, migration, projection or second worktree owne
 - While a remote turn runs, the composer works as today: messages queue or steer, Stop stops.
   Remote assistant replies render as assistant messages with a small "Codex" label; tool calls
   render in the work log like the platform agent's.
-- "Connect" and "Use the Superverse agent" are in the Agent picker; both say what
+- "Connect" and "Use the Platform agent" are in the Agent picker; both say what
   happens to a running turn ("the current work stops").
 - Offline: a banner "Codex is offline; messages are kept until it reconnects" with the two
   actions above. Nothing switches automatically.
@@ -718,7 +728,7 @@ record while discard closes it and permits cleanup and reopening.
 `TestSessionRemoteTaskWorktreePlatformKeepHTTPDexIntegration` switches to platform mode,
 starts a real platform subagent through the mock model and checks that its worktree creation
 keeps the still-open Codex checkout. The existing three E2E cases and the
-Native lane cover the end-to-end application path. No scripted Orca is used;
+Native lane cover the end-to-end application path. No scripted provider substitute is used;
 the platform-switch test uses the approved mock model.
 The remote agent's decisions come from the test, the way an E2E test drives Studio:
 

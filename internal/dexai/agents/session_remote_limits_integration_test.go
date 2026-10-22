@@ -28,7 +28,7 @@ func TestSessionRemoteReportBoundsHTTPDexIntegration(t *testing.T) {
 	session, api, caller := remoteSessionAPI(ctx, t)
 	remote := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
 	var active bridgeapi.ActivateResponse
-	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "report-bounds", ProviderThreadID: "report-bounds", HostLabel: "integration host"}}, &active, http.StatusOK)
+	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "report-bounds", HostLabel: "integration host"}}, &active, http.StatusOK)
 	var cursorRefusal bridgeapi.ErrorBody
 	remote.post(ctx, bridgeapi.PathSync, bridgeapi.SyncRequest{Epoch: active.Epoch, After: active.LastSequence + 1_000_000}, &cursorRefusal, http.StatusBadRequest)
 	if cursorRefusal.Code != bridgeapi.ErrorMalformed {
@@ -83,7 +83,7 @@ func TestSessionRemoteReportBoundsHTTPDexIntegration(t *testing.T) {
 }
 
 // A Bridge reports this through the actual remote-agent HTTP endpoint after
-// Orca definitively rejects a delivery. The Session persists a visible notice
+// The local provider definitively rejects a delivery. The Session persists a visible notice
 // beside the original conversation without starting a platform-model turn.
 func TestSessionRemoteDeliveryFailureNoticeHTTPDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
@@ -91,7 +91,7 @@ func TestSessionRemoteDeliveryFailureNoticeHTTPDexIntegration(t *testing.T) {
 	session, api, caller := remoteSessionAPI(ctx, t)
 	remote := pairRemoteHTTP(ctx, t, api, caller, session.identity.ProjectID)
 	var active bridgeapi.ActivateResponse
-	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{OrcaVersion: "integration", CodexVersion: "integration", OrcaSessionID: "delivery-notice", ProviderThreadID: "delivery-notice", HostLabel: "integration host"}}, &active, http.StatusOK)
+	remote.post(ctx, bridgeapi.PathActivate, bridgeapi.ActivateRequest{Binding: bridgeapi.Binding{CodexVersion: "integration", ProviderThreadID: "delivery-notice", HostLabel: "integration host"}}, &active, http.StatusOK)
 	var accepted bridgeapi.ReportResponse
 	remote.post(ctx, bridgeapi.PathReport, bridgeapi.Report{Epoch: active.Epoch, Generation: active.Generation, Sequence: 1,
 		Events: []bridgeapi.Event{{Kind: bridgeapi.EventKindDeliveryFailed, EntrySequence: 7}}}, &accepted, http.StatusOK)

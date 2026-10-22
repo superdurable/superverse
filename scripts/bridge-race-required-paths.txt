@@ -1,4 +1,0 @@
-# The completed-turn answer delivery check covers these bridge boundaries.
-cmd/dexai-connect/**
-internal/dexai/agents/remoteagent/**
-internal/dexai/agents/remoteexec/**

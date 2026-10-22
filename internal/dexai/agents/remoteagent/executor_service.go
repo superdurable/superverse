@@ -30,8 +30,7 @@ var ErrExecutorChanged = errors.New("executor changed")
 // activate uses only the SQL pairing's immutable basis and authenticated owner.
 func (s *Connections) activate(ctx context.Context, access remoteagentdao.Access, request bridgeapi.ActivateRequest) (bridgeapi.ActivateResponse, error) {
 	selection := remoteexec.SetRequest{ProjectID: access.ProjectID, BasisEpoch: uint64(access.BasisEpoch), Mode: remoteexec.ModeRemote,
-		ConnectionID: access.ConnectionID, Owner: accessActor(access), Binding: remoteexec.Binding{OrcaVersion: request.Binding.OrcaVersion,
-			CodexVersion: request.Binding.CodexVersion, OrcaSessionID: request.Binding.OrcaSessionID, ProviderThreadID: request.Binding.ProviderThreadID, HostLabel: request.Binding.HostLabel}}
+		ConnectionID: access.ConnectionID, Owner: accessActor(access), Binding: remoteexec.Binding{CodexVersion: request.Binding.CodexVersion, ProviderThreadID: request.Binding.ProviderThreadID, HostLabel: request.Binding.HostLabel}}
 	if access.BasisEpoch < 0 || selection.Validate() != nil {
 		return bridgeapi.ActivateResponse{}, refusal(bridgeapi.ErrorMalformed)
 	}

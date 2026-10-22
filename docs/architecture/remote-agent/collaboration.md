@@ -23,7 +23,7 @@ browser or a Bridge cannot claim one. `SessionFlowService.AuthorizeSession` retu
 | `UpdatePreviewAutoDeploy` | new Attribute `PreviewAutoDeployChangedBy`, written by the RPC that writes `PreviewAutoDeploy`, under the same lock, only when the value changes |
 | `StartPreview`, `StopPreview`, `PreparePreviewSource` | already recorded on main: `preview.Command.ActorAccountID`, kept in the start records and shown in the environment timeline; ACTOR adds nothing here |
 | `SetExecutor` (connect, take over, switch) | `Executor` keeps the connection owner; the switch marker entry names who switched |
-| A message the owner typed in Orca, or imported history | `Meta.Actor` = the connection owner, `Meta.Via` = the connection ID |
+| A message the owner typed in the local agent, or imported history | `Meta.Actor` = the connection owner, `Meta.Via` = the connection ID |
 
 Facts the Session produces itself (notifications, continuation notices, automatic turns, Preview
 auto-deploy, reclamation, subagent task messages) carry no actor. Entries recorded before this
@@ -163,8 +163,8 @@ None.
 
 ## UI/UX
 
-- Each message shows its author: "You" for the viewer, otherwise the email; a message typed in Orca
-  shows "sam@example.com via Codex"; imported history shows "imported from Orca".
+- Each message shows its author: "You" for the viewer, otherwise the email; a message typed in the local agent
+  shows "sam@example.com via Codex"; imported history shows "imported from the local agent".
 - Records: "Answered by", "Confirmed by", "Steered by", "Stopped by", "Model changed by", "Auto-deploy
   turned on by", and the Preview's existing "Started by".
 - Edit and Delete appear on the viewer's own queued messages, and on every queued message for an

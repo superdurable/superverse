@@ -120,8 +120,6 @@ def main():
     graph = PackageGraph()
     paths = required_lanes_module.changed_paths(args.base)
     coverage = graph.covering(touched_packages(paths))
-    if required_lanes_module.bridge_race_required(paths):
-        print(f"Required Orca bridge check: go test -count=1 ./cmd/dexai-connect/relay -run '^{required_lanes_module.BRIDGE_RACE_TEST}$'")
     if not coverage:
         print("The change touches no Go package of the root module; `Tests:` may stay empty.")
         return
