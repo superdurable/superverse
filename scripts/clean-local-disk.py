@@ -23,8 +23,16 @@ Every rule names what it removes, the condition and the protection; there is no 
 6. The Go build caches (the default one and the Makefile's `/tmp/superverse-v2-go-cache`) above their size limit: files
    unused for 24 hours, then the whole cache when no `go` command runs; the npm cache above its size limit.
 7. Docker: `sv2 local prune` (images no lane records, old build cache) and dangling images.
-
-Native instances are never stopped or deleted: they hold users' demo data. They are only listed, with their age.
+8. Native instances, always through `sv2 native delete`, which refuses an instance whose owner lock is held or that
+   retains a run: a registered instance whose state directory and Docker resources are gone, when the registry has
+   not changed for an hour (it only frees the topology slot); and a stopped instance other than `default` with no
+   running container whose state has not changed for 3 days (this deletes its demo data). The other instances are
+   listed with their age. The low-disk threshold never shortens these limits.
+9. Browsers that Playwright launched and lost: every Chrome or Chromium process whose command line names a Playwright
+   temporary profile (`playwright_chromiumdev_profile-*`, which a user's own Chrome never uses), when no ancestor is a
+   Playwright process
+   and it has run for an hour: SIGTERM, then SIGKILL after 5 seconds. Then the Playwright temporary profiles and
+   artifact directories that no process uses and that have not changed for an hour.
 Below the low-disk threshold the age limits shrink to one hour and the Go caches and module cache are cleared whole.
 
 Usage: scripts/clean-local-disk.py [--dry-run]
@@ -63,6 +71,16 @@ REGENERABLE_IDLE_HOURS = 48
 SCRATCH_HOURS = 72
 KIND_E2E_HOURS = 72
 LOW_DISK_AGE_HOURS = 1
+# Native instances hold users' demo data, so their limits are fixed and the low-disk threshold never shortens them.
+NATIVE_IDLE_DAYS = 3
+NATIVE_REGISTRY_SETTLED_HOURS = 1
+NATIVE_LABEL = "superdurable.io/native-instance"
+# Playwright launches every browser with a temporary profile of this name and removes it when the browser closes.
+PLAYWRIGHT_PROFILE = "playwright_chromiumdev_profile-"
+PLAYWRIGHT_TEMPORARY = re.compile(r"^(playwright_chromiumdev_profile|playwright-artifacts)-\w+$")
+PLAYWRIGHT_ORPHAN_HOURS = 1
+# The executable of a Playwright browser process: Chrome, its helpers, Chromium or the headless shell.
+BROWSER_EXECUTABLE = re.compile(r"(Chrom(e|ium)[^/]*|chrome-headless-shell)$")
 
 REGENERABLE_DIRECTORIES = ("web/studio/node_modules", "web/studio/.next")
 SCRATCH_ROOT = Path(tempfile.gettempdir()) / f"claude-{os.getuid()}"
@@ -98,6 +116,11 @@ def run(command, cwd=None, timeout=900):
         return subprocess.run(command, cwd=cwd, capture_output=True, text=True, timeout=timeout)
     except (OSError, subprocess.TimeoutExpired) as error:
         return subprocess.CompletedProcess(command, 127, "", str(error))
+
+
+def sv2_python():
+    """A Python with the infra-as-code requirements that runs `infra-as-code/sv2`, or None."""
+    return next((str(candidate) for candidate in SV2_PYTHON_CANDIDATES if candidate.exists() and run([str(candidate), "-c", "import yaml"]).returncode == 0), None)
 
 
 def free_bytes():
@@ -323,8 +346,8 @@ class Cleaner:
         if run(["docker", "info"], timeout=30).returncode != 0:
             print("docker is not reachable; skipped")
             return
-        python = next((str(candidate) for candidate in SV2_PYTHON_CANDIDATES if candidate.exists()), None)
-        if python and run([python, "-c", "import yaml"]).returncode == 0:
+        python = sv2_python()
+        if python:
             flags = ["--dry-run"] if self.dry_run else []
             result = run([python, str(REPOSITORY / "infra-as-code" / "sv2"), "local", "prune", *flags], cwd=REPOSITORY, timeout=1800)
             print("sv2 local prune: " + (result.stdout or result.stderr).strip().splitlines()[-1] if (result.stdout or result.stderr).strip() else "sv2 local prune: no output")
@@ -332,18 +355,83 @@ class Cleaner:
             print("sv2 local prune skipped: no Python environment with the infra-as-code requirements")
         self.command("docker image prune -f (dangling images)", ["docker", "image", "prune", "-f"], timeout=600)
 
-    # -- report ----------------------------------------------------------------------------------------------------
+    # -- Native instances ------------------------------------------------------------------------------------------
 
-    def list_native_instances(self):
+    def sweep_native_instances(self):
         try:
             instances = json.loads(NATIVE_INSTANCES.read_text())
         except (OSError, ValueError):
             return
-        running = run(["docker", "ps", "--format", '{{.Label "superdurable.io/native-instance"}}'], timeout=30).stdout.split()
+        python = sv2_python()
+        docker = run(["docker", "ps", "--all", "--format", "{{.State}} {{.Label \"" + NATIVE_LABEL + "\"}}"], timeout=30)
+        if docker.returncode != 0 or not python:
+            print("native instances skipped: docker or the infra-as-code Python environment is unavailable")
+            return
+        states = [line.split(" ", 1) for line in docker.stdout.splitlines() if " " in line]
+        running = {name for state, name in states if state == "running"}
+        registry_settled = modified_seconds_ago(NATIVE_INSTANCES) > NATIVE_REGISTRY_SETTLED_HOURS * HOUR
         for name in sorted(instances):
             root = REPOSITORY / ".local" / "superverse-v2" / ("native" if name == "default" else f"native-{name}")
-            idle_days = modified_seconds_ago(root) / 86400
-            print(f"native instance {name}: {'running' if name in running else 'stopped'}, {idle_days:.1f} days since the last change (never removed here)")
+            if name != "default" and not root.exists() and registry_settled and not self.has_native_resources(name):
+                self.delete_native_instance(python, name, "its state and Docker resources are gone; frees its topology slot")
+            elif name != "default" and root.exists() and name not in running and modified_seconds_ago(root) > NATIVE_IDLE_DAYS * 86400:
+                self.delete_native_instance(python, name, f"stopped and unchanged for {modified_seconds_ago(root) / 86400:.1f} days")
+            else:
+                age = f"{modified_seconds_ago(root) / 86400:.1f} days since the last change" if root.exists() else "no state directory"
+                print(f"native instance {name}: {'running' if name in running else 'stopped'}, {age} (kept)")
+
+    def has_native_resources(self, name):
+        listings = (["docker", "ps", "--all"], ["docker", "volume", "ls"], ["docker", "network", "ls"])
+        return any(run([*listing, "--quiet", "--filter", f"label={NATIVE_LABEL}={name}"], timeout=60).stdout.strip() for listing in listings)
+
+    def delete_native_instance(self, python, name, reason):
+        self.freed.append(("Native instance", name, 0))
+        print(f"{'would delete' if self.dry_run else 'delete'} native instance {name}: {reason}")
+        if self.dry_run:
+            return
+        result = run([python, str(REPOSITORY / "infra-as-code" / "sv2"), "native", "delete", "--instance", name, "--confirm", name], cwd=REPOSITORY, timeout=1800)
+        print("  " + ((result.stdout or result.stderr).strip().splitlines() or ["no output"])[-1])
+
+
+    # -- Playwright browsers ---------------------------------------------------------------------------------------
+
+    def sweep_playwright_browsers(self):
+        table = {}
+        for line in run(["ps", "-axo", "pid=,ppid=,etime=,args="], timeout=60).stdout.splitlines():
+            fields = line.split(None, 3)
+            if len(fields) == 4:
+                table[int(fields[0])] = (int(fields[1]), elapsed_seconds(fields[2]), fields[3])
+        executables = dict(line.strip().split(" ", 1) for line in run(["ps", "-axo", "pid=,comm="], timeout=60).stdout.splitlines() if " " in line.strip())
+
+        def launched_by_playwright(pid):
+            parent, seen = table[pid][0], set()
+            while parent in table and parent not in seen and parent > 1:
+                seen.add(parent)
+                if "playwright" in table[parent][2] and PLAYWRIGHT_PROFILE not in table[parent][2]:
+                    return True
+                parent = table[parent][0]
+            return False
+        orphans = [pid for pid, (_, seconds, args) in table.items()
+                   if PLAYWRIGHT_PROFILE in args and BROWSER_EXECUTABLE.search(executables.get(str(pid), "")) and seconds > PLAYWRIGHT_ORPHAN_HOURS * HOUR and not launched_by_playwright(pid)]
+        if orphans:
+            self.freed.append(("orphaned Playwright browser processes", str(len(orphans)), 0))
+            print(f"{'would stop' if self.dry_run else 'stop'} {len(orphans)} Playwright browser processes whose test runner is gone")
+            if not self.dry_run:
+                run(["kill", "-TERM", *map(str, orphans)], timeout=30)
+                time.sleep(5)
+                run(["kill", "-KILL", *map(str, orphans)], timeout=30)
+        for path in TEMPORARY_ROOT.iterdir() if TEMPORARY_ROOT.is_dir() else ():
+            if PLAYWRIGHT_TEMPORARY.match(path.name) and modified_seconds_ago(path) > PLAYWRIGHT_ORPHAN_HOURS * HOUR and not self.processes.uses(path):
+                self.remove(path, "Playwright temporary directory no process uses")
+
+
+def elapsed_seconds(text):
+    """Seconds of a ps elapsed time, [[dd-]hh:]mm:ss."""
+    days, _, clock = text.rpartition("-")
+    seconds = 0
+    for part in clock.split(":"):
+        seconds = seconds * 60 + int(part)
+    return seconds + int(days or 0) * 86400
 
 
 def main():
@@ -365,7 +453,8 @@ def main():
         cleaner.sweep_kind_e2e()
         cleaner.sweep_caches()
         cleaner.sweep_docker()
-        cleaner.list_native_instances()
+        cleaner.sweep_native_instances()
+        cleaner.sweep_playwright_browsers()
         after = free_bytes()
         print(f"free {gib(before)} -> {gib(after)}; {len(cleaner.freed)} removals{' (dry run, nothing removed)' if args.dry_run else ''}")
     return 0
