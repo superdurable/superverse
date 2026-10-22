@@ -11,16 +11,23 @@ package agents
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"testing"
+	"time"
 
+	"github.com/superdurable/superversev2/internal/comm/flowid"
+	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	sessionagent "github.com/superdurable/superversev2/internal/dexai/agents/session"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/mockmodel"
 )
 
 // This creates a throwaway READY Project, whose Session starts on the
 // server's start model, and selects the Session's model through the real
-// UpdateSessionModel RPC. It sends no message, so no model is called and no
+// UpdateSessionModel RPC after validating a synthetic Project key at the mock
+// endpoint. It sends no message, so no inference is called and no
 // workspace is requested: the selection only records SessionModel, which the
 // next turn's rollover applies. An exact retry is acknowledged without another
 // revision, and a stale revision is refused as a changed revision.
@@ -31,6 +38,8 @@ func TestSessionModelSelectionDexIntegration(t *testing.T) {
 	if started := session.awaitStarted(ctx); started.Model == "" || started.ModelRevision != 0 || started.ContextModel != "" {
 		t.Fatalf("a new Session runs %q at revision %d with context model %q", started.Model, started.ModelRevision, started.ContextModel)
 	}
+	installSyntheticProjectKey(t, ctx, session, "model-selection")
+
 	selectModel := func(model conversation.Model, expected uint64) error {
 		return session.client.UpdateSessionModel(ctx, session.id, agentloop.UpdateSessionModelRequest{Model: model, ExpectedRevision: expected})
 	}
@@ -51,4 +60,40 @@ func TestSessionModelSelectionDexIntegration(t *testing.T) {
 		t.Fatalf("the Session selects %q at revision %d with context model %q", selected.Model, selected.ModelRevision, selected.ContextModel)
 	}
 	t.Logf("FlowID=%s selected Sonnet then Haiku; retry acknowledged, stale revision refused", session.id)
+}
+
+// installSyntheticProjectKey satisfies admission through the existing model API
+// and real credential owner, with cleanup before the throwaway Project closes.
+func installSyntheticProjectKey(t *testing.T, ctx context.Context, session *mockSession, label string) {
+	t.Helper()
+	key := "synthetic-byok-" + label + "-" + flowid.RandomID(20)
+	logger := slog.New(slog.DiscardHandler)
+	endpoint, probe, stop, err := mockmodel.StartCredentialProbeForTest(ctx, logger, key)
+	if err != nil {
+		t.Fatalf("start %s credential probe (%T)", label, err)
+	}
+	t.Cleanup(stop)
+	credentials := &ModelCredentialFlowService{Sessions: session.client, Subagents: session.subagents,
+		HTTP: modelprovider.NewProviderHTTPClient(), Logger: logger, ValidationBaseURL: endpoint}
+	t.Cleanup(func() {
+		if err := credentials.Close(); err != nil {
+			t.Errorf("close synthetic credential service (%T)", err)
+		}
+	})
+	actor := conversation.Actor{AccountID: session.account}
+	if _, err := credentials.Mutate(ctx, session.id, modelcredential.Mutation{Provider: modelcredential.Anthropic,
+		OperationID: label + "-set", ExpectedRevision: 0, Last4: key[len(key)-4:], Actor: actor}, key); err != nil {
+		t.Fatalf("admit %s synthetic Project key (%T)", label, err)
+	}
+	t.Cleanup(func() {
+		cleanup, done := context.WithTimeout(context.Background(), time.Minute)
+		defer done()
+		if _, err := credentials.Mutate(cleanup, session.id, modelcredential.Mutation{Provider: modelcredential.Anthropic,
+			OperationID: label + "-delete", ExpectedRevision: 1, Delete: true, Actor: actor}, ""); err != nil {
+			t.Errorf("delete %s synthetic Project key (%T)", label, err)
+		}
+	})
+	if probe.RequestsForTest() != 1 {
+		t.Fatal("the synthetic credential was not validated exactly once at the local probe")
+	}
 }

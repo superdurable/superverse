@@ -231,7 +231,12 @@ func TestSessionMockModelSwitchDexIntegration(t *testing.T) {
 	if historical.Model != conversation.ModelOpus55 || historical.Revision != 0 {
 		t.Fatal("historical SessionModel changed meaning")
 	}
-	session := newSession(t, ctx, historical.Model, "")
+	session := newSession(t, ctx, conversation.ModelMock, "")
+	installSyntheticProjectKey(t, ctx, session, "model-switch")
+	initial := session.awaitStarted(ctx)
+	if err := session.client.UpdateSessionModel(ctx, session.id, agentloop.UpdateSessionModelRequest{Model: historical.Model, ExpectedRevision: initial.ModelRevision}); err != nil {
+		t.Fatalf("select the historical model without a provider call (%T)", err)
+	}
 	started := session.waitForSnapshot(ctx, "the empty Session on Opus", func(agent agentloop.AgentSnapshot) bool {
 		return agent.Description.Status == agentloop.AgentStatusWaitingForMessage && agent.Description.Model == conversation.ModelOpus55
 	})
