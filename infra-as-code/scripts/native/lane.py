@@ -85,12 +85,12 @@ def instance_index(name):
         if name not in values:
             used = set(values.values())
             document = config_files.read_layer(CONFIG)
-            kind = set(kind_host_ports().values())
+            taken = set(kind_host_ports().values()).union(*(instance_ports(document, value).values() for value in used))
 
             def servable(index):
-                # Topology would refuse such an index on every start, so it is never assigned.
+                # Topology would refuse such an index on every start, or it would share a port with a registered instance.
                 ports = instance_ports(document, index).values()
-                return kind.isdisjoint(ports) and max(ports) < DYNAMIC_PORTS
+                return taken.isdisjoint(ports) and max(ports) < DYNAMIC_PORTS
             available = next((value for value in range(1, MAX_INSTANCE_INDEX + 1) if value not in used and servable(value)), None)
             require(available is not None, "All Local Native instance topology slots are allocated; stop using a stale instance name before adding another")
             values[name] = available
