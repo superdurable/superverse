@@ -17,6 +17,9 @@ import (
 	"unicode/utf8"
 )
 
+// HandoffNoticeLabel is the visible label of the notice that a return to the platform agent records.
+const HandoffNoticeLabel = "Switched to the Platform agent"
+
 // HandoffNoticePrefix identifies public context, never executor authority.
 const HandoffNoticePrefix = "Switched to the Superverse agent. Remote executor owners: "
 

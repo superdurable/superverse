@@ -64,7 +64,7 @@ func TestSessionRemoteInteractiveHandoffHTTPDexIntegration(t *testing.T) {
 	markers, calls, results := 0, 0, 0
 	for _, item := range finished.History.Messages {
 		message := item.Message
-		if message.Content == "Switched to the Superverse agent" {
+		if message.Content == remoteexec.HandoffNoticeLabel {
 			markers++
 		}
 		for _, call := range message.ToolCalls {

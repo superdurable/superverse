@@ -18,6 +18,7 @@ import (
 
 	pb "github.com/superdurable/superversev2/gen/superverse/v2"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteagent/bridgeapi"
+	"github.com/superdurable/superversev2/internal/dexai/agents/remoteexec"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/mockmodel"
@@ -97,7 +98,7 @@ func TestSessionRemoteShortHandoffHTTPDexIntegration(t *testing.T) {
 	handoffs, remoteCalls, remoteResults := 0, 0, 0
 	for _, item := range finished.History.Messages {
 		message := item.Message
-		if message.Content == "Switched to the Superverse agent" {
+		if message.Content == remoteexec.HandoffNoticeLabel {
 			handoffs++
 		}
 		for _, call := range message.ToolCalls {

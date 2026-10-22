@@ -191,7 +191,7 @@ func TestSessionRemoteLongHandoffHTTPDexIntegration(t *testing.T) {
 			}
 			_, messages = session.history(ctx)
 			longHandoffRequireUnits(t, messages, orphan, false)
-			if markers(messages, "Switched to the Superverse agent") != 1 {
+			if markers(messages, remoteexec.HandoffNoticeLabel) != 1 {
 				t.Fatal("long continuation duplicated its canonical handoff")
 			}
 			if current := session.summary(ctx); current.Identity.HeadCommit != head {
@@ -460,7 +460,7 @@ func testLongRemoteHandoffByteBudget(t *testing.T) {
 	}
 	_, messages = session.history(ctx)
 	longHandoffRequireUnits(t, messages, orphan, false)
-	if markers(messages, "Switched to the Superverse agent") != 1 {
+	if markers(messages, remoteexec.HandoffNoticeLabel) != 1 {
 		t.Fatal("long continuation duplicated its canonical handoff")
 	}
 	if current := session.summary(ctx); current.Identity.HeadCommit != head {
