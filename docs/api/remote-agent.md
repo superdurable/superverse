@@ -171,7 +171,7 @@ or refusal without retrying an uncertain command. Project, permission, Session
 status or executor-fence changes cancel old switching work. Offline is a local
 ninety-second last-seen display; it leaves remote authority and ordinary
 send/steer/answer/Stop controls intact. Remote mode keeps the Agent picker
-visible. Its Superverse level offers an epoch-fenced switch back before model
+visible. Its platform level offers an epoch-fenced switch back before model
 selection; the mock composer stays hidden. Public remote replies retain the
 existing typed projection.
 
@@ -244,3 +244,29 @@ bound: stored payload/copy audit and measurement remain an acceptance gate.
 The connection layer creates no long poll. These application limits are approved contract limits, not cloud
 quota claims. The shared Service port/Ingress path adds no tenant/cloud resource,
 LB, listener or certificate; distributions are fixed environment files.
+
+### Local Project tool readiness
+
+Codex threads use a binding-scoped `dexai` MCP server. The local listener opens
+before thread creation; the binding relay starts once the thread ID is known.
+Before starting or steering any turn, including after daemon reconnect,
+`dexai` requires the thread's MCP server to report connected and include
+`read_delivery_status`, waiting at most 30 seconds. The initial context turn
+calls that read-only Project tool once before waiting for work. Project MCP
+tools are pre-approved through that server's scoped
+`default_tools_approval_mode = "approve"`; Codex local shell and file permissions
+continue to use the Builder's own settings. Server authorization and application
+approval rules still apply. A successful
+empty catalog during startup does not authorize a turn. The bound MCP server
+also waits at most 30 seconds for its first nonempty catalog, returning an error
+instead of caching empty success; its Codex startup budget is 40 seconds.
+
+A readiness failure prevents turn admission and prints a reconnect diagnostic.
+The existing public assistant-message report carries the same durable notice
+into the conversation; the Bridge waits for the Session's settled watermark
+before normal credential revocation and local cleanup. Studio therefore shows
+the connection disconnected. If recording the notice or revoking the credential
+fails, local recovery state remains and the terminal names the incomplete step.
+This adds no wire field, database schema or Flow primitive. New messages use the
+neutral `Project message (JSON): ` envelope; legacy stored envelopes remain
+readable. MCP names are local provider configuration, not wire resource identity.

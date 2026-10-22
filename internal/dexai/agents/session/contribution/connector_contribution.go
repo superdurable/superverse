@@ -169,7 +169,7 @@ func (record Record) update(submission Submission, publishes bool, now time.Time
 // requires, with the subagent's report and what the platform states about
 // verification as its body.
 func (record Record) draft(slug string) connectorlibrary.PullRequestDraft {
-	body := fmt.Sprintf("Contributed by a Superverse connector_develop subagent: a %s contribution to `%s`.\n\n"+
+	body := fmt.Sprintf("Contributed by a platform connector_develop subagent: a %s contribution to `%s`.\n\n"+
 		"A maintainer reviews this pull request; checks that need real provider credentials were not run and are listed as unverified in the report.\n\n## Report\n\n%s\n",
 		record.Kind, record.Module, record.Report)
 	return connectorlibrary.PullRequestDraft{Branch: record.Branch, Title: git.ContributionSubject(slug, record.Description), Body: body}

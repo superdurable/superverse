@@ -21,7 +21,9 @@ import (
 const HandoffNoticeLabel = "Switched to the Platform agent"
 
 // HandoffNoticePrefix identifies public context, never executor authority.
-const HandoffNoticePrefix = "Switched to the Superverse agent. Remote executor owners: "
+const HandoffNoticePrefix = "Switched to the platform agent. Remote executor owners: "
+
+const legacyHandoffNoticePrefix = "Switched to the Superverse agent. Remote executor owners: "
 
 // MaximumHandoffBytes bounds the whole notice, including its optional sections.
 const MaximumHandoffBytes = 16 << 10
@@ -66,6 +68,9 @@ func ParseHandoffNotice(text string) (HandoffNotice, error) {
 		return notice, errors.New("executor handoff lacks its canonical older-work notice")
 	}
 	line, found := strings.CutPrefix(line, HandoffNoticePrefix)
+	if !found {
+		line, found = strings.CutPrefix(line, legacyHandoffNoticePrefix)
+	}
 	if !found {
 		return notice, errors.New("executor handoff lacks its canonical prefix")
 	}

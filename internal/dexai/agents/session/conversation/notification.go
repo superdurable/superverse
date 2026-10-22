@@ -338,7 +338,7 @@ const (
 
 // NotificationPreamble tells the model that the entry is an automated report;
 // the mock model knows a notification by it.
-const NotificationPreamble = "Superverse notification (automated report, not written by the user):\n"
+const NotificationPreamble = "Project notification (automated report, not written by the user):\n"
 
 // Text is what the model reads: the preamble and the notification as JSON.
 func (notification SessionNotification) Text() string {

@@ -192,7 +192,7 @@ Each notification is one entry: role `user`, kind `notification`, display public
 ([context management](context-management.md#entry-log)). Its single text block is:
 
 ```text
-Superverse notification (automated report, not written by the user):
+Project notification (automated report, not written by the user):
 <the SessionNotification as JSON>
 ```
 

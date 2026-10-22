@@ -17,7 +17,7 @@ this". The user entry the Session appends holds two reference blocks before the 
 entry 41  user  user_message
   block 0  {"type":"superverse_attachment","id":"a7f2c9xq4m1p",...,"kind":"image",...}
   block 1  {"type":"superverse_attachment","id":"c3m8w1pd5k0r",...,"kind":"document","variant":"full",...}
-  block 2  {"type":"text","text":"Superverse message (JSON): {\"sender\":\"ana@example.com\",\"via\":null,\"text\":\"Build this\",\"attachments\":[{\"id\":\"a7f2c9xq4m1p\",\"name\":\"order-process.png\",\"kind\":\"image\"},{\"id\":\"c3m8w1pd5k0r\",\"name\":\"order-handling.docx\",\"kind\":\"document\"}]}"}
+  block 2  {"type":"text","text":"Project message (JSON): {\"sender\":\"ana@example.com\",\"via\":null,\"text\":\"Build this\",\"attachments\":[{\"id\":\"a7f2c9xq4m1p\",\"name\":\"order-process.png\",\"kind\":\"image\"},{\"id\":\"c3m8w1pd5k0r\",\"name\":\"order-handling.docx\",\"kind\":\"document\"}]}"}
 ```
 
 What Claude receives for that entry, on this call and every later one of the segment:
@@ -25,7 +25,7 @@ What Claude receives for that entry, on this call and every later one of the seg
 ```text
   {"type":"image","source":{"type":"base64","media_type":"image/png","data":"iVBORw0KGgo..."}}
   {"type":"text","text":"<attachment id=\"c3m8w1pd5k0r\" name=\"order-handling.docx\" kind=\"document\">\n..."}
-  {"type":"text","text":"Superverse message (JSON): {...}"}
+  {"type":"text","text":"Project message (JSON): {...}"}
 ```
 
 Images and documents come before the request text, as the vision guidance recommends.

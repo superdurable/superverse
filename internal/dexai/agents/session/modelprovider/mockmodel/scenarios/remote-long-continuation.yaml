@@ -25,7 +25,7 @@ arguments:
   predecessors_count: "unset"
 inputs:
   - label: "Continue after the long remote interval"
-    message: "Read the long remote handoff proof with the Superverse agent."
+    message: "Read the long remote handoff proof with the platform agent."
     replies:
       - expect_handoff: true
         text: "Reading the retained remote proof on the platform."

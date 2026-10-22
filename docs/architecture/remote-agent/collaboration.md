@@ -66,7 +66,7 @@ its boundary). All three hold `MessageWindowLock` and `interruptLock`, and the e
 One framing, for the platform model and for Codex alike:
 
 - A message with an actor is sent to the model as **one** text block whose whole content is
-  `Superverse message (JSON): ` followed by a JSON object
+  `Project message (JSON): ` followed by a JSON object
   `{"sender": "<email>", "via": "<connection or null>", "text": "<the message>"}`. The server builds it
   with a JSON encoder that does not escape HTML characters (so code reaches the model as written)
   when the entry is appended (blocks are immutable and `Meta` never reaches the
@@ -81,7 +81,7 @@ One framing, for the platform model and for Codex alike:
   and quotes, so a forged envelope can only appear escaped inside `text`, never as its own line.
   Later turns of the segment get the top-level block. A person's literal `</pending_request>` stays
   visible inside their quoted line (HTML characters are not escaped), but it cannot start a line or
-  name a sender; the rule's "a line beginning `Superverse message (JSON): `" keeps it inert.
+  name a sender; the rule's "a line beginning `Project message (JSON): `" keeps it inert.
   The quote is bounded by `MaximumUserMessageContentBytes`: it keeps the turn's first message and
   the newest whole messages that fit, replaces the rest with one `[N pending request entries omitted]`
   line, and an oversized first message is re-encoded canonically with its text cut and ` [truncated]`

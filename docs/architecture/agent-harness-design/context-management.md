@@ -71,7 +71,7 @@ default preserves existing segment decoding; Flow/Step identities remain stable.
   canonical text/tool history remains append-only; closing a segment removes its
   private opaque replay payload as described above.
 - **Authenticated sender framing.** At append time, an attributed user message becomes one text
-  block containing `Superverse message (JSON): ` and encoded `{sender, via, text}`. The outer sender
+  block containing `Project message (JSON): ` and encoded `{sender, via, text}`. The outer sender
   is the frozen account email, and body text cannot add keys. `EntryMeta.Actor`, `Via`, `SteeredBy`
   are application metadata; the public projection decodes raw text from the stored envelope.
   Missing actors keep historical blocks unchanged. Tool-use/result assembly and cache anchors do

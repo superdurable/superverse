@@ -244,7 +244,7 @@ its actor through cancellation or boundary consumption and records it on the Sto
 Automatic platform messages have no invented author; missing historical fields stay absent.
 Preview commands retain their existing `ActorAccountID` ownership without another requester field.
 
-Each attributed user entry stores one immutable text block: `Superverse message (JSON): ` plus
+Each attributed user entry stores one immutable text block: `Project message (JSON): ` plus
 JSON encoding of `{sender, via, text}`. Only the outer `sender` names the author; `via` is null for
 Studio. A full apparent envelope in the body remains escaped text. `Entry.PublicMessage` decodes the outer
 text field for the raw public projection and returns the actor, never the envelope. Authorless legacy

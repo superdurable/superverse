@@ -248,7 +248,10 @@ func (message UserMessage) Entry() Entry {
 }
 
 // SenderEnvelopePrefix introduces the single JSON object of an attributed user text block.
-const SenderEnvelopePrefix = "Superverse message (JSON): "
+const SenderEnvelopePrefix = "Project message (JSON): "
+
+// legacySenderEnvelopePrefix keeps persisted attributed messages readable.
+const legacySenderEnvelopePrefix = "Superverse message (JSON): "
 
 // senderEnvelope is the attributed text of a user message; it lists the
 // message's attachments, which come before it, only when there are any, so
@@ -356,7 +359,7 @@ func (entry Entry) PublicMessage() (AgentMessage, bool) {
 			var envelope struct {
 				Text string `json:"text"`
 			}
-			encoded, found := strings.CutPrefix(message.Content, SenderEnvelopePrefix)
+			encoded, found := cutSenderEnvelope(message.Content)
 			if !found {
 				panic("an attributed user entry requires its sender envelope")
 			}
@@ -587,7 +590,7 @@ func FramedAttachmentName(text string) (string, bool) {
 // EnvelopeAttachments are the attachments an attributed text block lists in
 // its sender envelope; nil for any other text.
 func EnvelopeAttachments(text string) []AttachmentLabel {
-	encoded, found := strings.CutPrefix(text, SenderEnvelopePrefix)
+	encoded, found := cutSenderEnvelope(text)
 	var envelope senderEnvelope
 	if !found || json.Unmarshal([]byte(encoded), &envelope) != nil {
 		return nil
@@ -748,3 +751,11 @@ func (entry Entry) WithoutProtocolHistory() Entry {
 
 // RecordedToolHistoryPrefix labels tool JSON as quoted context rather than a native call.
 const RecordedToolHistoryPrefix = "Recorded tool history (JSON):\n"
+
+// cutSenderEnvelope accepts both retained history and the current envelope.
+func cutSenderEnvelope(text string) (string, bool) {
+	if body, ok := strings.CutPrefix(text, SenderEnvelopePrefix); ok {
+		return body, true
+	}
+	return strings.CutPrefix(text, legacySenderEnvelopePrefix)
+}

@@ -30,7 +30,7 @@ inputs:
             name: write
             input: {path: "raexec-handoff.txt", content: "Remote handoff proof\n"}
         expect_result_contains: ["Created raexec-handoff.txt"]
-  - label: "Return to the Superverse agent"
+  - label: "Return to the platform agent"
     message: "Read the remote handoff proof after switching back."
     replies:
       - expect_handoff: true
