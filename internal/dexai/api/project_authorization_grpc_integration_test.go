@@ -228,6 +228,11 @@ func TestProjectAuthorizationMatrixDexIntegration(t *testing.T) {
 			_, err := projectMemberAPI.RemoveProjectMember(ctx, &pb.RemoveProjectMemberRequest{ProjectId: projectID, AccountId: "absent-" + id, Caller: c})
 			return err
 		}},
+		{"SetProjectMemberRole of an absent account", []string{"owner"}, codes.NotFound, func(c *pb.CallerContext) error {
+			_, err := projectMemberAPI.SetProjectMemberRole(ctx, &pb.SetProjectMemberRoleRequest{ProjectId: projectID, AccountId: "absent-" + id,
+				Role: pb.ProjectRole_PROJECT_ROLE_OPERATOR, Caller: c})
+			return err
+		}},
 		{"DeleteProject at a stale revision", []string{"owner", "admin"}, codes.Aborted, func(c *pb.CallerContext) error {
 			_, err := projectAPI.DeleteProject(ctx, &pb.DeleteProjectRequest{ProjectId: projectID, RequestId: "stale-" + flowid.RandomID(12), ExpectedRevision: 1 << 40, Caller: c})
 			return err
