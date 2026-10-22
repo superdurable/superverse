@@ -8,7 +8,7 @@
 
 "use client";
 
-import Link from "next/link";
+import { StudioLink as Link } from "@/lib/browser/StudioLink";
 import type { ProjectTool } from "@/lib/shared/studio-routes";
 import { cx } from "@/components/ui/cx";
 import { Glyph, type GlyphName } from "@/components/ui/Glyph";

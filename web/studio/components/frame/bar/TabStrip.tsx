@@ -6,7 +6,7 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-import Link from "next/link";
+import { StudioLink as Link } from "@/lib/browser/StudioLink";
 import type { ReactNode, RefObject } from "react";
 import type { ProjectSurface } from "@/lib/shared/studio-routes";
 import { cx } from "@/components/ui/cx";

@@ -10,6 +10,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
+import { beginNavigation, queryUpdateTarget, useNavigationCommit } from "./StudioLink";
 import { withQueryChanges, type QueryChange } from "@/lib/shared/studio-routes";
 
 /**
@@ -21,9 +22,18 @@ export function useQueryUpdate() {
   const pathname = usePathname();
   const router = useRouter();
   const search = useSearchParams();
+  useNavigationCommit();
   return useMemo(() => {
     const queryHref = (change: QueryChange) => withQueryChanges(pathname, search, change);
-    const replaceQuery = (change: QueryChange) => router.replace(queryHref(change), { scroll: false });
+    const replaceQuery = (change: QueryChange) => {
+      const target = queryUpdateTarget(pathname);
+      if (!target) return;
+      const { url, mode } = target;
+      const href = withQueryChanges(url.pathname, url.searchParams, change) + url.hash;
+      if (href === url.pathname + url.search + url.hash) return;
+      beginNavigation(href, mode);
+      router[mode](href, { scroll: false });
+    };
     return { queryHref, replaceQuery };
   }, [pathname, router, search]);
 }

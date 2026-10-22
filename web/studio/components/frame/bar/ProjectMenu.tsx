@@ -8,7 +8,7 @@
 
 "use client";
 
-import Link from "next/link";
+import { StudioLink as Link } from "@/lib/browser/StudioLink";
 import { useRef, type RefObject } from "react";
 import { useProjectList } from "@/lib/project/use-project-list";
 import { studioRoutes } from "@/lib/shared/studio-routes";

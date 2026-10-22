@@ -6,7 +6,7 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-import { expect, type BrowserContext, type Page } from "@playwright/test";
+import { expect, type BrowserContext, type Page, type Route } from "@playwright/test";
 import type { AgentNotification__Output } from "@/lib/generated/protobuf/superverse/v2/AgentNotification";
 import type { RpcOutput } from "@/lib/shared/rpc-methods";
 import { configure, fillTemplateSummaryConnection } from "@/tests/e2e/support/configuration";
@@ -238,10 +238,62 @@ export async function previewTemplateEdit(
  * Interface frames the Preview.
  */
 export async function expectSurfacesFollowVersion(page: Page, projectId: string, liveURL: string) {
-  await page.goto(`/p/${projectId}/flow`);
+  // Hold real Preview definitions until Live is clicked, and keep Live's original navigation
+  // pending until Preview's default selection has run. No dependency response is substituted.
+  let releaseDefinitions!: () => void;
+  const definitionsGate = new Promise<void>((resolve) => (releaseDefinitions = resolve));
+  let releaseLive!: () => void;
+  const liveGate = new Promise<void>((resolve) => (releaseLive = resolve));
+  let definitionsSeen = false;
+  let liveSeen = false;
+  const definitionsPath = `/dex/projects/${projectId}/source/api/flow-definitions`;
+  const previewDefinitions = (url: URL) => url.pathname === definitionsPath;
+  const delayDefinitions = async (route: Route) => {
+    definitionsSeen = true;
+    await definitionsGate;
+    await route.continue();
+  };
+  const pendingLive = (url: URL) =>
+    url.pathname === `/p/${projectId}/flow` &&
+    url.searchParams.get("v") === "live" &&
+    !url.searchParams.has("flowType") &&
+    url.searchParams.has("_rsc");
+  const delayLive = async (route: Route) => {
+    liveSeen = true;
+    await liveGate;
+    await route.continue();
+  };
+  await page.route(previewDefinitions, delayDefinitions);
+  await page.route(pendingLive, delayLive);
   const live = page.getByTestId("environment-live");
-  await live.click();
-  await expect(page).toHaveURL(/[?&]v=live(&|$)/);
+  try {
+    await page.goto(`/p/${projectId}/flow`);
+    await expect.poll(() => definitionsSeen).toBe(true);
+    expect(new URL(page.url()).searchParams.has("flowType")).toBe(false);
+    await live.click();
+    await expect.poll(() => liveSeen).toBe(true);
+    releaseDefinitions();
+    await expect(page).toHaveURL(
+      (url) => url.searchParams.get("v") === "live" && url.searchParams.get("flowType") === "TextSummaryFlow",
+    );
+  } finally {
+    releaseDefinitions();
+    releaseLive();
+    await page.unroute(previewDefinitions, delayDefinitions);
+    await page.unroute(pendingLive, delayLive);
+  }
+  // The automatic replacement completes the pending click as one history entry.
+  await page.goBack();
+  await expect(page).toHaveURL(
+    (url) =>
+      url.pathname === `/p/${projectId}/flow` &&
+      !url.searchParams.has("v") &&
+      url.searchParams.get("flowType") === "TextSummaryFlow",
+  );
+  await page.goForward();
+  await expect(page).toHaveURL(
+    (url) => url.searchParams.get("v") === "live" && url.searchParams.get("flowType") === "TextSummaryFlow",
+  );
   await expect(live).toHaveAttribute("aria-current", "page");
   await expect(page.getByText(/read only here/).first()).toBeVisible({ timeout: 60_000 });
   await expect(page.getByTestId("live-note")).toBeVisible();

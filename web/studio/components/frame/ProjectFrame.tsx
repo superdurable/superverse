@@ -9,6 +9,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { beginNavigation, useNavigationCommit } from "@/lib/browser/StudioLink";
 import { useRef, type ComponentProps, type ReactNode } from "react";
 import type { ProjectEnvironment, ProjectSurface, ProjectTool } from "@/lib/shared/studio-routes";
 import { canBuild, type ProjectRole } from "@/lib/teamspace/project-roles";
@@ -111,15 +112,22 @@ export function ProjectFrame({
   const links = useFrameLinks(projectId, surface, persistentQuery);
   const builds = canBuild(role);
   const router = useRouter();
+  useNavigationCommit();
   const pins = usePinnedTools();
   const tabs = surfacesFor(role).filter((id) => !surfaces || surfaces.has(id));
   const pinTool = (next: ProjectTool) => {
     pins.pin(next);
-    router.push(links.pinnedToolHref(next));
+    const href = links.pinnedToolHref(next);
+    beginNavigation(href);
+    router.push(href);
   };
   const unpinTool = (next: ProjectTool) => {
     pins.unpin(next);
-    if (pinnedView && next === tool) router.push(links.toolHref(next));
+    if (pinnedView && next === tool) {
+      const href = links.toolHref(next);
+      beginNavigation(href);
+      router.push(href);
+    }
   };
   // Without a Live deployment there is only Preview to show, whatever the link asked for, except to a role that
   // works on Live only.

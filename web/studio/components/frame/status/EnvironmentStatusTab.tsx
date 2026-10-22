@@ -6,7 +6,7 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-import Link from "next/link";
+import { StudioLink as Link } from "@/lib/browser/StudioLink";
 import type { ReactNode } from "react";
 import { focusAnchor } from "@/lib/browser/hash-focus";
 import type { EnvironmentStatus, StatusFix, StatusTone } from "@/lib/project/setup/environment-status";

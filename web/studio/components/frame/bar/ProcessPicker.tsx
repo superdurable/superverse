@@ -8,7 +8,7 @@
 
 "use client";
 
-import Link from "next/link";
+import { StudioLink as Link } from "@/lib/browser/StudioLink";
 import { useRef } from "react";
 import { processName } from "@/lib/shared/format";
 import { Glyph } from "@/components/ui/Glyph";

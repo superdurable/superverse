@@ -220,7 +220,7 @@ the current contract.
 | [`tests/e2e/integration/remoteagent`](tests/e2e/integration/remoteagent/README.md) | Exercises real Studio pairing, public remote replies, and epoch-fenced takeover through the lane's existing BFF, gRPC, remote HTTP listener, SQL and Dex. |
 | [`tests/e2e/integration/remoteagent/help`](tests/e2e/integration/remoteagent/help/README.md) | Exercises the local agent help route, copyable setup commands, troubleshooting, permissions and narrow-screen layout against a real Studio server. |
 | [`tests/e2e/integration/setup`](tests/e2e/integration/setup/README.md) | Focused Tools, Setup scenarios on a local lane: the Live tab's banner and Next publish controls over two versions the mock model pushes. |
-| [`tests/e2e/integration/timeline`](tests/e2e/integration/timeline/README.md) | The environment timeline spec: the Interface's Preview History lists a refused push with its version and no commit hash. |
+| [`tests/e2e/integration/timeline`](tests/e2e/integration/timeline/README.md) | Exercises Preview history and Process navigation, including refused-push versions and query preservation across the shipped newsletter's two real Flows. |
 | [`tests/e2e/journey`](tests/e2e/journey/README.md) | Retained end-to-end journeys through the real Studio, model, GitHub, Sandbox and application APIs that keep the resources they create. |
 | [`tests/e2e/manual`](tests/e2e/manual/README.md) | Holds opt-in provider E2E cases that require private credentials and operator consent outside the required local lanes. |
 | [`tests/e2e/support`](tests/e2e/support/README.md) | Modules the specs share: Studio BFF calls, accounts, Projects, configuration, publishing, Flow runs, Session transport, repository host reads, private fixtures and JSON assertions. |
