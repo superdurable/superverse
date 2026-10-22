@@ -15,9 +15,15 @@ lanes run at the same time.
 """
 from contextlib import contextmanager
 import json
+import getpass
+import os
+import subprocess
+import time
+
+from acceptance.processes import process_identity
 
 from operator_errors import require
-from paths import MAIN_CHECKOUT, STATE
+from paths import MAIN_CHECKOUT, ROOT, STATE
 from private_files import private_lock, write_private_json
 
 # A checkout from before the lanes ran in parallel kept one mode for both: its launcher takes this OS lock shared for
@@ -71,3 +77,54 @@ def owner_lock(instance):
                     "A checkout from before parallel lanes retains a Native run in " + str(LEGACY_MODE) +
                     "; stop or recover it with that checkout's launcher first")
             yield
+
+
+def lane_owner():
+    """A session owns capacity across branches; the worker and branch identify its caller."""
+    session = (os.environ.get("SUPERVERSE_LANE_OWNER") or os.environ.get("ORCA_AGENT_SESSION_ID")
+               or os.environ.get("CODEX_SESSION_ID") or "user:" + getpass.getuser())
+    worker = os.environ.get("SUPERVERSE_LANE_WORKER") or os.environ.get("ORCA_TERMINAL_HANDLE") or "shell"
+    branch = subprocess.run(["git", "-C", str(ROOT), "branch", "--show-current"], check=True, capture_output=True, text=True).stdout.strip()
+    return {"session": session, "worker": worker, "branch": branch or "detached"}
+
+
+def instance_name(path):
+    return "default" if path.parent.name == "native" else path.parent.name.removeprefix("native-")
+
+
+def native_records():
+    """Retained fences count even after a crash; only stop/recover releases capacity."""
+    for path in sorted(STATE.glob("native*/owner.json")):
+        value = json.loads(path.read_text())
+        if value.get("runId"):
+            yield path, value
+
+
+@contextmanager
+def native_admission(instance):
+    """Serialize the per-session check through recording the new run's fence."""
+    owner = lane_owner()
+    with private_lock(STATE / "native-cap.lock", message="Another Native start is reserving owner capacity; retry"):
+        occupied = [instance_name(path) for path, value in native_records() if value.get("laneOwner", {}).get("session") == owner["session"]]
+        require(not occupied, "Native owner " + owner["session"] + " already retains its one instance: " + ", ".join(occupied) +
+                "; stop or recover it before starting " + instance.name)
+        yield owner
+
+
+def idle(args):
+    """Report inactivity observed in operator commands and logs; never infer business idleness."""
+    require(args.hours > 0, "--hours must be positive")
+    now = time.time()
+    entries = []
+    for path, record in native_records():
+        directory = path.parent / "runs" / record["runId"]
+        logs = list(directory.glob("*.log"))
+        marker = directory / "activity"
+        if marker.exists():
+            logs.append(marker)
+        activity = max([record.get("readyAt", record["startedAt"]), *[log.stat().st_mtime for log in logs]])
+        if now - activity >= args.hours * 3600:
+            entries.append({"instance": instance_name(path), "runId": record["runId"],
+                            "owner": record.get("laneOwner", "legacy/unattributed"), "idleHours": round((now - activity) / 3600, 2),
+                            "ownerRunning": process_identity(record["ownerProcess"]["pid"]) == record["ownerProcess"]})
+    print(json.dumps({"thresholdHours": args.hours, "instances": entries}, indent=2))

@@ -14,6 +14,7 @@ acceptance keeps its fence, which blocks later mutations until it is reconciled.
 """
 from contextlib import contextmanager
 
+from kind.queue import admission
 from operator_errors import require
 from paths import STATE
 from private_files import private_lock
@@ -27,11 +28,12 @@ def require_no_kind_acceptance():
 
 
 @contextmanager
-def kind_action_lock(action):
+def kind_action_lock(action, ticket=None):
     """Serialize Kind mutations and E2E; the long-lived ports and builder take no lock and can serve acceptance."""
     if action in ("ports", "builder"):
         yield
         return
     with private_lock(STATE / "kind-action.lock", message="A Kind mutation or acceptance already owns its action lock"):
-        require_no_kind_acceptance()
-        yield
+        with admission(ticket):
+            require_no_kind_acceptance()
+            yield

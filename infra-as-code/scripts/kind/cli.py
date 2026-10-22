@@ -21,6 +21,7 @@ from kind.builder import builder
 from kind.cluster import CLUSTER, FORWARDS, NAMESPACE, PORTS, STATE_FILE, kind_nodes, kubectl, port_forward_argv, require_kind_version, verify_owner
 from kind.images import build
 from kind.locks import kind_action_lock
+from kind.queue import queue
 from kind import server_config
 from local_prune import after_run
 from kind.platform import deploy, up
@@ -82,8 +83,9 @@ def monitoring(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=[*COMMANDS, "monitoring"])
-    parser.add_argument("monitoring_action", nargs="?", choices=["up", "down", "check"])
+    parser.add_argument("command", choices=[*COMMANDS, "monitoring", "queue"])
+    parser.add_argument("action", nargs="?", choices=["up", "down", "check", "join", "status", "leave"])
+    parser.add_argument("--ticket", help="Kind queue ticket (or SUPERVERSE_KIND_TICKET)")
     parser.add_argument("--component", choices=["all", *build_inputs.COMPONENTS], default="all")
     parser.add_argument("--secret-env-file", help="deploy: private env file with the server secrets; it may hold other keys, which are ignored "
                                                   "because the configuration profile is the only source of every setting")
@@ -95,20 +97,28 @@ def main():
     parser.add_argument("--confirm")
     parser.add_argument("--dependencies-only", action="store_true")
     args = parser.parse_args()
+    if args.command == "queue":
+        require(args.action in ("join", "status", "leave"), "Choose queue join, status or leave")
+        args.queue_action = args.action
+        queue(args)
+        return
+    args.monitoring_action = args.action
     if args.command == "monitoring":
-        require(args.monitoring_action is not None, "Choose monitoring up, down or check")
+        require(args.monitoring_action in ("up", "down", "check"), "Choose monitoring up, down or check")
         require_kind_version()
-        with kind_action_lock("monitoring-" + args.monitoring_action):
+        with kind_action_lock("monitoring-" + args.monitoring_action, args.ticket):
             monitoring(args)
         return
     if args.command == "status":
         status(args)
         return
     require_kind_version()
+    admitted = False
     try:
-        with kind_action_lock(args.command):
+        with kind_action_lock(args.command, args.ticket):
+            admitted = True
             COMMANDS[args.command](args)
     finally:
         # A finished acceptance run reclaims the lanes' unused images and build cache; outside the lock, so the Kind node is pruned too.
-        if args.command == "e2e":
+        if admitted and args.command == "e2e":
             after_run("Kind e2e")

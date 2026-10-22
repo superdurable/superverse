@@ -41,11 +41,11 @@ from native.discard import delete
 from native.callback import callback_readiness
 from native.lane import (CONFIG, Topology, build_token, cookie_signing_key, native_instance, platform_credentials, postgres_credentials, run_layer,
                          slack_signing_secret)
-from native.owner import owner_lock, owner_state, release, retain, retained
+from native.owner import idle, native_admission, owner_lock, owner_state, release, retain, retained
 from native.studio import MODES as STUDIO_MODES, prepare_studio, require_studio_unchanged
 from operator_errors import require
 from paths import ROOT, project_env_value
-from private_files import write_private_json
+from private_files import write_private, write_private_json
 from release_builder import builder_command
 
 RUN_HEADER = "X-Superverse-Native-Run-ID"
@@ -80,6 +80,7 @@ def require_run(instance, args, *, running=False):
     if running:
         require(value.get("phase") == "ready" and process_identity(value["ownerProcess"]["pid"]) == value["ownerProcess"],
                 "Native owner is not running and ready; explicit recovery is required")
+        write_private(run_directory(instance, value) / "activity", str(time.time()))
     return value
 
 
@@ -152,17 +153,19 @@ def start(args):
     instance = native_instance(args.instance)
     topology = Topology(instance)
     with owner_lock(instance):
-        require(not retained(instance), "A Native run is retained for this instance; stop it (native stop) or recover it (native recover --run-id) first")
-        missing = [tool for tool in ("docker", "helm", "go", "aws") if not shutil.which(tool)]
-        require(not missing, "Native requires these tools on PATH: " + ", ".join(missing))
-        ensure_ports_free(topology)
-        if os.getpgrp() != os.getpid():
-            os.setsid()
-        require(os.getpgrp() == os.getpid(), "Native requires a dedicated process group")
-        record = {"schema": 4, "phase": "preparing", "runId": str(uuid.uuid4()), "ownerProcess": process_identity(os.getpid()),
-                  "children": [], "startedAt": time.time(), "serverRestarts": 0}
-        run_directory(instance, record).mkdir(parents=True, mode=0o700)
-        save_run(instance, record)  # The crash fence exists before any subprocess or container.
+        with native_admission(instance) as owner:
+            require(not retained(instance), "A Native run is retained for this instance; stop it (native stop) or recover it (native recover --run-id) first")
+            missing = [tool for tool in ("docker", "helm", "go", "aws") if not shutil.which(tool)]
+            require(not missing, "Native requires these tools on PATH: " + ", ".join(missing))
+            ensure_ports_free(topology)
+            if os.getpgrp() != os.getpid():
+                os.setsid()
+            require(os.getpgrp() == os.getpid(), "Native requires a dedicated process group")
+            record = {"schema": 4, "phase": "preparing", "runId": str(uuid.uuid4()), "ownerProcess": process_identity(os.getpid()),
+                      "children": [], "startedAt": time.time(), "serverRestarts": 0}
+            record["laneOwner"] = owner
+            run_directory(instance, record).mkdir(parents=True, mode=0o700)
+            save_run(instance, record)  # The crash fence reserves capacity before any subprocess or container.
 
         def stop_signal(_signal, _frame):
             global STOP
@@ -445,13 +448,14 @@ def acceptance(instance, topology, record, directory, browser_node, args):
         print(run(["python3", ROOT / "scripts/rpc-coverage-map.py", "merge", "native-e2e", directory / "rpc-coverage.json"], capture=True))
 
 
-COMMANDS = {"start": start, "stop": stop, "recover": recover, "restart-server": restart_server, "status": status, "e2e": e2e, "delete": delete}
+COMMANDS = {"start": start, "stop": stop, "recover": recover, "restart-server": restart_server, "status": status, "e2e": e2e, "delete": delete, "idle": idle}
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=COMMANDS)
     parser.add_argument("--run-id")
+    parser.add_argument("--hours", type=float, default=2, help="idle: report observed inactivity of at least this many hours")
     parser.add_argument("--studio", choices=STUDIO_MODES, default="dev",
                         help="start only: dev serves next dev with hot reload; build serves the production build and admits native e2e")
     parser.add_argument("--config", help="start only: a server configuration profile layered over native.yaml, for a test that needs a "
