@@ -11,6 +11,11 @@ import { LocalAgentInstructions } from "./LocalAgentInstructions";
 
 const QUESTIONS = [
   {
+    question: "Why does Codex ask me to trust a folder?",
+    answer:
+      "dexai 0.1.4 and later automatically trust the private workspace they create for each connection by recording that exact workspace in the Codex configuration. dexai removes its trust entry when the connection is cleaned up; the remote Codex TUI needs this recorded decision. With an older dexai, choose ‘Trust and continue’ once to open the conversation, or run brew upgrade dexai and reconnect. If you select your own directory with --cwd, Codex keeps its normal trust prompt for you to decide.",
+  },
+  {
     question: "What happens after I enter the pairing code?",
     answer:
       "Choose Codex or Claude Code in Terminal. The connection receives a first brief with the Project context and instructions. Codex then opens its TUI; Claude Code runs headless and you use Studio to talk to it. Keep the relay terminal running. Project code stays in the Project Sandbox and the agent uses platform tools to work on it.",

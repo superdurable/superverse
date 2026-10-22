@@ -29,6 +29,12 @@ test("Local agent help explains setup, recovery and local permissions", async ({
   await daemon.focus();
   await daemon.press("Enter");
   await expect(page.getByText(/dexai starts an absent Codex app-server daemon automatically/)).toBeVisible();
+  await page.getByText("Why does Codex ask me to trust a folder?", { exact: true }).click();
+  await expect(page.getByText(/dexai 0.1.4 and later automatically trust/)).toBeVisible();
+  await expect(page.getByText(/recording that exact workspace in the Codex configuration/)).toBeVisible();
+  await expect(page.getByText(/removes its trust entry when the connection is cleaned up/)).toBeVisible();
+  await expect(page.getByText(/Trust and continue/)).toBeVisible();
+  await expect(page.getByText(/Codex keeps its normal trust prompt for you to decide/)).toBeVisible();
   await page.getByText("What can Claude Code access?", { exact: true }).click();
   await expect(page.getByText(/only the platform MCP tools allowed/)).toBeVisible();
   await page.getByText("Where does dexai keep local state?", { exact: true }).click();
