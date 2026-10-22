@@ -13,14 +13,14 @@ import { createRemoteAgentPairing } from "@/lib/api/agent";
 import type { RpcOutput } from "@/lib/shared/rpc-methods";
 import { timestampToISO } from "@/lib/shared/protobuf";
 import { Button } from "@/components/ui/Button";
-
-const BRIDGE_COMMAND = "dexai-connect";
+import { LocalAgentInstructions } from "@/components/session/remoteagent/LocalAgentInstructions";
 
 /** Inline pairing is scoped to this creation and regenerates a code when its ten-minute TTL ends. */
 export function ProjectCreationPairing({ projectId }: { projectId: string }) {
   const [accepted, setAccepted] = useState(false);
   const [pairing, setPairing] = useState<RpcOutput<"CreateRemoteAgentPairing"> | null>(null);
   const [error, setError] = useState("");
+  const [copyNotice, setCopyNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const controller = useRef<AbortController | null>(null);
@@ -54,6 +54,7 @@ export function ProjectCreationPairing({ projectId }: { projectId: string }) {
         (result) => {
           if (!request.signal.aborted && current === version.current) {
             setPairing(result);
+            setCopyNotice("");
             setNow(Date.now());
           }
         },
@@ -75,8 +76,8 @@ export function ProjectCreationPairing({ projectId }: { projectId: string }) {
       <h2 className="text-title font-medium">Connect your local agent</h2>
       <p className="mt-2 text-reading text-ink-dim">Your first message is waiting here until your agent connects.</p>
       <p id="local-agent-risk" className="mt-3 rounded-lg border border-line-soft bg-raised p-3 text-sm text-ink-dim">
-        The connected Codex runs on your computer with the permissions you gave it in Orca. Project messages and
-        application failure text reach it.
+        The local agent (Codex or Claude Code started by dexai) runs on your computer with that agent&apos;s own
+        permissions. dexai limits Claude Code to platform tools. Project messages and application failure text reach it.
       </p>
       <label className="mt-3 flex items-start gap-2 text-sm">
         <input
@@ -114,16 +115,30 @@ export function ProjectCreationPairing({ projectId }: { projectId: string }) {
           <code aria-label="Pairing code" className="text-xl font-semibold tracking-widest select-all">
             {pairing.code}
           </code>
-          <p className="text-sm text-ink-dim">Run this command on your computer, then enter the code when asked:</p>
-          <code className="block overflow-x-auto rounded-md bg-well p-3 text-sm select-all">
-            {BRIDGE_COMMAND} connect --endpoint {pairing.endpoint}
-          </code>
+          <Button
+            size="sm"
+            className="justify-self-start"
+            onClick={() => {
+              void navigator.clipboard.writeText(pairing.code).then(
+                () => setCopyNotice("Pairing code copied."),
+                () => setCopyNotice("Copy failed. Select and copy the code manually."),
+              );
+            }}
+          >
+            Copy code
+          </Button>
+          {copyNotice && (
+            <p className="text-xs text-ink-dim" role="status">
+              {copyNotice}
+            </p>
+          )}
           <p className="text-sm text-ink-dim" role="status">
             Waiting for your agent to connect… Code expires in {Math.floor(seconds / 60)}:
             {String(seconds % 60).padStart(2, "0")}.
           </p>
         </div>
       )}
+      <LocalAgentInstructions endpoint={pairing?.endpoint ?? null} />
     </section>
   );
 }

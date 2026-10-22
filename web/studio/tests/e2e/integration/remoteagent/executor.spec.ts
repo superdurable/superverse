@@ -27,7 +27,7 @@ test("Studio pairs a remote executor, renders its reply and takes over with the 
     const reply = `A remote reply from the actual HTTP listener (${randomUUID()}).`;
     await expect(executor).toHaveAttribute("data-session-executor", "remote");
     await expect(executor.getByRole("button", { name: /^Agent:/ })).toHaveAccessibleName(
-      /^Agent: Local Codex · online · connected by /,
+      /^Agent: Local agent · online · connected by /,
     );
     await client.post("report", {
       ...current,
@@ -36,7 +36,7 @@ test("Studio pairs a remote executor, renders its reply and takes over with the 
     });
     const replyArticle = page.locator("article").filter({ hasText: reply });
     await expect(replyArticle.getByText(reply, { exact: true })).toBeVisible();
-    await expect(replyArticle.getByText("Codex · Remote reply", { exact: true })).toBeVisible();
+    await expect(replyArticle.getByText("Local agent · Remote reply", { exact: true })).toBeVisible();
     const authority = (await readSession(page, projectId)).agent?.description?.executor;
     if (authority?.remote?.connectionId !== client.connectionId) throw new Error("Reported remote lost authority");
     const menu = await openExecutorMenu(page);

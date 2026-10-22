@@ -97,7 +97,8 @@ Claude Code must be at least 2.1.41 for its documented `auth status` and `auth l
 The Builder's installed Codex CLI and
 shared daemon must both be at least 0.162.0; 0.163.0 is the newest verified
 version and newer versions connect with a compatibility warning. `dexai`
-starts the daemon with `codex app-server daemon start` when it is absent; it
+starts the daemon with `codex app-server daemon start` when it is absent. If
+startup fails, its error includes the Codex message; try that command directly. It
 never updates, downgrades or restarts an existing daemon. Installation of a missing
 CLI requires the separate confirmation above. The first brief is submitted
 before the Codex TUI opens. Each `dexai connect` owns a fresh private connection
@@ -120,6 +121,11 @@ Normal exit deletes its private directory after revocation; failed cleanup keeps
 an offline record for disconnect to finish. At most eight connections share a
 state root, including retained records. `dexai serve` resumes only legacy flat
 bindings; new foreground connections do not resume after exit.
+For Claude Code on macOS, dexai checks installation and sign-in first and offers
+setup when needed (version 2.1.41 or newer). It runs headless while Studio remains
+the conversation surface. The pairing dialog and
+creation card link to `/help/local-agent` for prerequisites, installation,
+provider selection, recovery and local permission guidance.
 The Project source remains in the Sandbox. The default local Codex directory
 is a private scratch directory; `--cwd` selects an existing local directory.
 If Studio reports `delivery_uncertain`, check the thread's public history before

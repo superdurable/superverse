@@ -71,7 +71,7 @@ async function answerQuestionsAndBuildByHand(page: Page, projectId: string) {
   await openPreviewConfiguration(page, projectId);
 }
 
-// The agent picker's "Connect a local agent…" opens Connect my agent, which lists the Session's remote agent
+// The agent picker's "Connect a local agent…" opens Connect your local agent, which lists the Session's remote agent
 // connections: a new Project has none.
 async function expectNoAgentConnections(page: Page, projectId: string) {
   await page.goto(`/p/${projectId}/flow`);
@@ -85,8 +85,8 @@ async function expectNoAgentConnections(page: Page, projectId: string) {
     .getByRole("button", { name: "Connect a local agent…", exact: true })
     .click();
   expect((await listed).ok()).toBe(true);
-  const dialog = page.getByRole("dialog", { name: "Connect my agent" });
-  await expect(dialog.getByText("No remote agent is currently running this Session.")).toBeVisible();
+  const dialog = page.getByRole("dialog", { name: "Connect your local agent" });
+  await expect(dialog.getByText("No local agent is connected to this Session.")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
 }

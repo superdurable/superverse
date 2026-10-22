@@ -293,7 +293,7 @@ export function ConversationMessage({
           <div className="text-[13px]">
             {remoteReply && (
               <span className="text-[11px] text-ink-faint">
-                Codex · Remote reply{entry.message.imported ? " · Imported" : ""}
+                Local agent · Remote reply{entry.message.imported ? " · Imported" : ""}
               </span>
             )}
             {content && <MarkdownContent value={content} />}

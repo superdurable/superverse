@@ -3,14 +3,16 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: Shows Builder connection risk acknowledgement, one-time pairing and safe connection metadata through Studio's typed business API.
 
-Importers: `components/session/executor` imports this directory.
+Importers: `app`, `components/project/creation` and `components/session/executor` import this directory.
 
 Imports: it imports `components/ui`, `lib/api` and `lib/shared`.
 
 ```mermaid
 flowchart LR
   self["components/session/remoteagent"]
-  c0["components/session/executor"] --> self
+  c0["app"] --> self
+  c1["components/project/creation"] --> self
+  c2["components/session/executor"] --> self
   self --> d0["components/ui"]
   self --> d1["lib/api"]
   self --> d2["lib/shared"]

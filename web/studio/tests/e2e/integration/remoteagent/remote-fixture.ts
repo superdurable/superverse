@@ -98,7 +98,7 @@ class RemoteFixture {
     await page.goto(studioRoutes.projectSurface(this.fixture.projectId, "flow"));
     const menu = await openExecutorMenu(page);
     await menu.getByRole("button", { name: /^Connect (a|another) local agent/ }).click();
-    const dialog = page.getByRole("dialog", { name: "Connect my agent" });
+    const dialog = page.getByRole("dialog", { name: "Connect your local agent" });
     await dialog.getByRole("checkbox", { name: "I understand these local-machine permissions." }).check();
     this.attemptPairing(page);
     const created = page.waitForResponse(rpcAnswered("CreateRemoteAgentPairing"));

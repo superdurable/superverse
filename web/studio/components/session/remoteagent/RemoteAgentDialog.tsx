@@ -11,11 +11,10 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
+import { LocalAgentInstructions } from "./LocalAgentInstructions";
 import { createRemoteAgentPairing, listRemoteAgentConnections, revokeRemoteAgentConnection } from "@/lib/api/agent";
 import { timestampToISO } from "@/lib/shared/protobuf";
 import type { RpcOutput } from "@/lib/shared/rpc-methods";
-
-const connectorName = "dexai-connect";
 
 /** Studio owns transport; the shared Agent conversation stays transport-free. */
 export function RemoteAgentDialog({ projectId, onClose }: { projectId: string; onClose: () => void }) {
@@ -145,140 +144,143 @@ function ProjectConnectionDialog({ projectId, onClose }: { projectId: string; on
       (item) => item.connectionId === pairing.connectionId && item.status === "REMOTE_AGENT_CONNECTION_STATUS_PAIRED",
     );
   return (
-    <Dialog onDismiss={onClose} aria-labelledby={title} className="p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
+    <Dialog onDismiss={onClose} aria-labelledby={title} className="p-0">
+      <div className="sticky top-0 z-10 mb-4 flex items-center justify-between gap-3 border-b border-line-soft bg-panel px-5 py-4">
         <h2 id={title} className="text-base font-semibold">
-          Connect my agent
+          Connect your local agent
         </h2>
         <Button variant="quiet" size="sm" onClick={onClose}>
           Close
         </Button>
       </div>
-      <p className="mb-3 text-sm text-ink-dim">
-        {!connections && !pairing
-          ? "Current agent information is not available yet."
-          : currentID
-            ? `Current agent connected by ${currentOwner?.email ?? "another Builder"}. Activating your ${connectorName} stops their current work.`
-            : "No remote agent is currently running this Session."}
-      </p>
-      <p id={risk} className="mb-3 rounded-lg border border-line-soft bg-raised p-3 text-sm text-ink-dim">
-        The connected Codex runs on the connecting Builder&apos;s machine with the permissions that Builder gave it in
-        Orca, and any Builder&apos;s message, and the failure text of an application Run, reaches it. A message could
-        ask it to run something on that machine.
-      </p>
-      <label className="mb-4 flex items-start gap-2 text-sm">
-        <input
-          type="checkbox"
-          checked={accepted}
-          onChange={(event) => setAccepted(event.target.checked)}
-          aria-describedby={risk}
-        />
-        I understand these local-machine permissions.
-      </label>
-      {endpoint && (
-        <p className="mb-3 text-xs break-all text-ink-faint">
-          Endpoint: <code>{endpoint}</code>
+      <div className="px-5 pb-5">
+        <p className="mb-3 text-sm text-ink-dim">
+          {!connections && !pairing
+            ? "Current agent information is not available yet."
+            : currentID
+              ? `Current agent connected by ${currentOwner?.email ?? "another Builder"}. Activating your agent stops their current work.`
+              : "No local agent is connected to this Session."}
         </p>
-      )}
-      <Button
-        variant="primary"
-        disabled={!accepted || pending || !connections || Boolean(pairing && seconds > 0)}
-        onClick={() => void pair()}
-      >
-        Create pairing code
-      </Button>
-      {pairing && (
-        <div className="mt-4 rounded-lg border border-line-soft p-3">
-          {seconds > 0 && !paired && (
-            <code aria-label="Pairing code" className="mb-2 block text-xl font-semibold tracking-widest select-all">
-              {pairing.code}
-            </code>
-          )}
-          <p className="text-sm text-ink-dim">
-            {paired
-              ? "Paired. Pairing alone does not activate the agent."
-              : seconds > 0
-                ? `Waiting for your ${connectorName}… Press Refresh connections after pairing.`
-                : "Pairing code expired. Create a new code."}
+        <p id={risk} className="mb-3 rounded-lg border border-line-soft bg-raised p-3 text-sm text-ink-dim">
+          The local agent (Codex or Claude Code started by dexai) runs on your computer with that agent&apos;s own
+          permissions. dexai limits Claude Code to platform tools. Project messages and application failure text reach
+          it.
+        </p>
+        <label className="mb-4 flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={accepted}
+            onChange={(event) => setAccepted(event.target.checked)}
+            aria-describedby={risk}
+          />
+          I understand these local-machine permissions.
+        </label>
+        {endpoint && (
+          <p className="mb-3 text-xs break-all text-ink-faint">
+            Endpoint: <code>{endpoint}</code>
           </p>
-          {!paired && (
-            <p className="mt-1 text-xs text-ink-faint">
-              Expires in {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}
+        )}
+        <Button
+          variant="primary"
+          disabled={!accepted || pending || !connections || Boolean(pairing && seconds > 0)}
+          onClick={() => void pair()}
+        >
+          Create pairing code
+        </Button>
+        {pairing && (
+          <div className="mt-4 rounded-lg border border-line-soft p-3">
+            {seconds > 0 && !paired && (
+              <code aria-label="Pairing code" className="mb-2 block text-xl font-semibold tracking-widest select-all">
+                {pairing.code}
+              </code>
+            )}
+            <p className="text-sm text-ink-dim">
+              {paired
+                ? "Paired. Pairing alone does not activate the agent."
+                : seconds > 0
+                  ? "Waiting for your local agent… Press Refresh connections after pairing."
+                  : "Pairing code expired. Create a new code."}
             </p>
-          )}
-          <Button
-            className="mt-2"
-            size="sm"
-            disabled={seconds === 0 || paired === true}
-            onClick={() => void copyCode()}
-          >
-            Copy code
+            {!paired && (
+              <p className="mt-1 text-xs text-ink-faint">
+                Expires in {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}
+              </p>
+            )}
+            <Button
+              className="mt-2"
+              size="sm"
+              disabled={seconds === 0 || paired === true}
+              onClick={() => void copyCode()}
+            >
+              Copy code
+            </Button>
+          </div>
+        )}
+        <LocalAgentInstructions endpoint={endpoint || null} />
+        <div className="mt-5 flex items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold">Project connections</h3>
+          <Button size="sm" disabled={pending} onClick={() => void refresh()}>
+            Refresh connections
           </Button>
         </div>
-      )}
-      <div className="mt-5 flex items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold">Project connections</h3>
-        <Button size="sm" disabled={pending} onClick={() => void refresh()}>
-          Refresh connections
-        </Button>
-      </div>
-      {connections?.connections.length === 0 && <p className="mt-2 text-sm text-ink-faint">No saved connections.</p>}
-      <ul className="mt-2 space-y-2">
-        {connections?.connections.map((item) => (
-          <li
-            key={item.connectionId}
-            className="flex items-start justify-between gap-3 rounded-lg border border-line-soft p-3 text-sm"
-          >
-            <div className="min-w-0">
-              <p className="break-all">{item.owner?.email ?? "Unknown owner"}</p>
-              <p className="text-xs text-ink-faint">
-                {item.connectionId === currentID
-                  ? "Current agent"
-                  : item.status === "REMOTE_AGENT_CONNECTION_STATUS_PAIRED"
-                    ? "Paired"
-                    : "Awaiting pairing"}
-              </p>
-              {item.binding && (
-                <p className="text-xs text-ink-faint">
-                  Codex {item.binding.codexVersion} in Orca {item.binding.orcaVersion}
-                  {item.binding.hostLabel ? ` on ${item.binding.hostLabel}` : ""}
-                </p>
-              )}
-              <p className="text-xs text-ink-faint">
-                Created {readableTime(timestampToISO(item.createdAt))}
-                {item.lastSeenAt ? ` · Last seen ${readableTime(timestampToISO(item.lastSeenAt))}` : ""}
-              </p>
-            </div>
-            <Button
-              variant="danger"
-              aria-label={`Remove connection of ${item.owner?.email ?? "unknown owner"}`}
-              size="sm"
-              disabled={pending || item.connectionId === currentID}
-              onClick={() => void remove(item.connectionId)}
+        {connections?.connections.length === 0 && <p className="mt-2 text-sm text-ink-faint">No saved connections.</p>}
+        <ul className="mt-2 space-y-2">
+          {connections?.connections.map((item) => (
+            <li
+              key={item.connectionId}
+              className="flex items-start justify-between gap-3 rounded-lg border border-line-soft p-3 text-sm"
             >
-              Remove
-            </Button>
-          </li>
-        ))}
-      </ul>
-      {currentID && (
-        <p className="mt-2 text-xs text-ink-faint">Use the Platform agent before removing the current connection.</p>
-      )}
-      {pending && (
-        <p className="mt-3 text-sm text-ink-faint" role="status">
-          Loading…
-        </p>
-      )}
-      {notice && (
-        <p className="mt-3 text-sm text-ink-dim" role="status">
-          {notice}
-        </p>
-      )}
-      {error && (
-        <p className="mt-3 text-sm text-fail" role="alert">
-          {error}
-        </p>
-      )}
+              <div className="min-w-0">
+                <p className="break-all">{item.owner?.email ?? "Unknown owner"}</p>
+                <p className="text-xs text-ink-faint">
+                  {item.connectionId === currentID
+                    ? "Current agent"
+                    : item.status === "REMOTE_AGENT_CONNECTION_STATUS_PAIRED"
+                      ? "Paired"
+                      : "Awaiting pairing"}
+                </p>
+                {item.binding && (
+                  <p className="text-xs text-ink-faint">
+                    Agent version {item.binding.codexVersion} · Connection version {item.binding.orcaVersion}
+                    {item.binding.hostLabel ? ` on ${item.binding.hostLabel}` : ""}
+                  </p>
+                )}
+                <p className="text-xs text-ink-faint">
+                  Created {readableTime(timestampToISO(item.createdAt))}
+                  {item.lastSeenAt ? ` · Last seen ${readableTime(timestampToISO(item.lastSeenAt))}` : ""}
+                </p>
+              </div>
+              <Button
+                variant="danger"
+                aria-label={`Remove connection of ${item.owner?.email ?? "unknown owner"}`}
+                size="sm"
+                disabled={pending || item.connectionId === currentID}
+                onClick={() => void remove(item.connectionId)}
+              >
+                Remove
+              </Button>
+            </li>
+          ))}
+        </ul>
+        {currentID && (
+          <p className="mt-2 text-xs text-ink-faint">Use the Platform agent before removing the current connection.</p>
+        )}
+        {pending && (
+          <p className="mt-3 text-sm text-ink-faint" role="status">
+            Loading…
+          </p>
+        )}
+        {notice && (
+          <p className="mt-3 text-sm text-ink-dim" role="status">
+            {notice}
+          </p>
+        )}
+        {error && (
+          <p className="mt-3 text-sm text-fail" role="alert">
+            {error}
+          </p>
+        )}
+      </div>
     </Dialog>
   );
 }

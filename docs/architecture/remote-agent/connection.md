@@ -19,7 +19,7 @@ is read or written only by the RPCs that the request needs anyway, and those che
 
 ## Pairing
 
-1. A Builder chooses "Connect my agent" in Studio. `RemoteAgentService.CreateRemoteAgentPairing`
+1. A Builder chooses "Connect your local agent" in Studio. `RemoteAgentService.CreateRemoteAgentPairing`
    (through the BFF, with `CallerContext`) requires `CapabilityBuild` on the Project, reads the
    Session's current executor and epoch (an admission read before a write, which reads the Flow
    like every Agent command), and inserts a `PAIRING` row with the hash of a new pairing code and

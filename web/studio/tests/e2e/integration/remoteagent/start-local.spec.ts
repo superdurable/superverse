@@ -19,7 +19,10 @@ import { RemoteClient, inputText, wireInteger } from "./remote-client";
 // The pairing code and Bridge bearer token remain in memory; recordings are disabled.
 test.use({ trace: "off", screenshot: "off", video: "off" });
 
-test("A locally chosen agent receives the creation message once, after remote activation", async ({ page }) => {
+test("A locally chosen agent receives the creation message once, after remote activation", async ({
+  page,
+  context,
+}) => {
   test.setTimeout(15 * 60_000);
   if (process.env.SUPERVERSE_STUDIO_MOCK === "true")
     throw new Error("Local-agent creation requires real lane dependencies");
@@ -76,8 +79,21 @@ test("A locally chosen agent receives the creation message once, after remote ac
     const paired = await pairingResponse;
     if (!paired.ok()) throw new Error(`Pairing returned HTTP ${paired.status()}`);
     const pairing: RpcOutput<"CreateRemoteAgentPairing"> = await paired.json();
-    await expect(page.getByLabel("Pairing code")).toHaveText(pairing.code);
-    await expect(page.getByText(`dexai-connect connect --endpoint ${pairing.endpoint}`)).toBeVisible();
+    await expect.poll(async () => (await page.getByLabel("Pairing code").textContent()) === pairing.code).toBe(true);
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.getByRole("button", { name: "Copy code", exact: true }).click();
+    expect((await page.evaluate(() => navigator.clipboard.readText())) === pairing.code).toBe(true);
+    await expect(page.getByText(/Use macOS with Homebrew/)).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: "Connect your local agent", exact: true }).getByText(/Orca|dexai-connect/),
+    ).toHaveCount(0);
+    await expect(page.getByText("brew install superdurable/tap/dexai", { exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Local agent help and troubleshooting/ })).toHaveAttribute(
+      "href",
+      "/help/local-agent",
+    );
+    await expect(page.getByText(/Codex opens its TUI after that brief/)).toBeVisible();
+    await expect(page.getByText(`dexai connect --endpoint ${pairing.endpoint}`)).toBeVisible();
     const client = new RemoteClient(pairing.connectionId, pairing.endpoint);
     await client.pair(pairing);
     const firstSent = page.waitForRequest(rpcPosted("SendMessage"));

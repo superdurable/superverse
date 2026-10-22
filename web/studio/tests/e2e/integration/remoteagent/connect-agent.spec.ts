@@ -28,11 +28,20 @@ test("Connect dialog pairs without activating and removes its exact connection",
     });
     const menu = await openExecutorMenu(page);
     await menu.getByRole("button", { name: /^Connect (a|another) local agent/ }).click();
-    const dialog = page.getByRole("dialog", { name: "Connect my agent" });
+    const dialog = page.getByRole("dialog", { name: "Connect your local agent" });
     await expect(dialog).toBeVisible();
+    await expect(dialog.getByText(/Open the Agent picker/)).toHaveCount(0);
+    await expect(dialog.getByText(/Use macOS with Homebrew/)).toBeVisible();
+    await expect(dialog.getByText(/offers to install it or sign in if needed/)).toBeVisible();
+    await expect(dialog.getByText(/Claude Code requires version 2.1.41 or newer/)).toBeVisible();
+    await expect(dialog.getByText("brew install superdurable/tap/dexai", { exact: true })).toBeVisible();
+    await expect(dialog.getByRole("link", { name: /Local agent help and troubleshooting/ })).toHaveAttribute(
+      "href",
+      "/help/local-agent",
+    );
     const create = dialog.getByRole("button", { name: "Create pairing code", exact: true });
     await expect(create).toBeDisabled();
-    await expect(dialog.getByText("No remote agent is currently running this Session.")).toBeVisible();
+    await expect(dialog.getByText("No local agent is connected to this Session.")).toBeVisible();
     await dialog.getByRole("checkbox", { name: "I understand these local-machine permissions." }).check();
     await expect(create).toBeEnabled();
     scope.attemptPairing(page);
@@ -45,11 +54,20 @@ test("Connect dialog pairs without activating and removes its exact connection",
     expect(/^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{10}$/.test(pairing.code)).toBe(true);
     expect(pairing.currentConnectionId === "").toBe(true);
     await expect(
-      dialog.getByText("Waiting for your dexai-connect… Press Refresh connections after pairing."),
+      dialog.getByText("Waiting for your local agent… Press Refresh connections after pairing."),
     ).toBeVisible();
     await expect(dialog.getByText(/^Expires in 9:/)).toBeVisible();
     await expect(create).toBeDisabled();
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    const command = `dexai connect --endpoint ${pairing.endpoint}`;
+    await expect(dialog.getByText(command, { exact: true })).toBeVisible();
+    await dialog.getByRole("button", { name: `Copy ${command}`, exact: true }).click();
+    expect((await page.evaluate(() => navigator.clipboard.readText())) === command).toBe(true);
+    await dialog.getByText("Stop and reconnect", { exact: true }).click();
+    for (const utility of ["dexai status", "dexai disconnect"]) {
+      await expect(dialog.getByRole("button", { name: `Copy ${utility}`, exact: true })).toBeVisible();
+    }
+    await expect(dialog.getByText(/Orca|dexai-connect/)).toHaveCount(0);
     await dialog.getByRole("button", { name: "Copy code", exact: true }).click();
     await expect(dialog.getByText("Pairing code copied.")).toBeVisible();
     const copied = await page.evaluate(() => navigator.clipboard.readText());

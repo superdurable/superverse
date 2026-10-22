@@ -101,7 +101,7 @@ test("Actual Builder downgrade aborts the pending browser switch; the real BFF i
     await gate.assertCancelled();
     await gate.dispose();
     await expect(builder.page.getByRole("button", { name: "Use the Platform agent", exact: true })).toHaveCount(0);
-    await expect(builder.page.getByRole("button", { name: "Connect my agent", exact: true })).toHaveCount(0);
+    await expect(builder.page.getByRole("button", { name: "Connect your local agent", exact: true })).toHaveCount(0);
     await expect(builder.page.getByRole("button", { name: "Switching…", exact: true })).toHaveCount(0);
     await expect(builder.page.locator("[data-session-executor]").getByRole("alert")).toHaveCount(0);
     // APIRequestContext reaches the actual BFF/server, outside the browser-only

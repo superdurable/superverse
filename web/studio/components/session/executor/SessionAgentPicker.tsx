@@ -60,8 +60,8 @@ export function SessionAgentPicker(props: PickerProps) {
   );
 }
 
-/** The remote executor's name. The Bridge reports only Codex today; its binding names no other agent. */
-const LOCAL_AGENT = "Local Codex";
+/** The binding does not distinguish every provider, so the display stays agent-neutral. */
+const LOCAL_AGENT = "Local agent";
 
 /** Green while the local agent was seen in the last 90 seconds, red otherwise. */
 function LivenessDot({ online }: { online: boolean }) {
@@ -276,8 +276,8 @@ export function RemoteAgentOfflineNotice() {
       role="status"
       data-remote-offline
     >
-      Codex is offline; messages are kept until it reconnects. Use the agent picker to reconnect or use the Platform
-      agent.
+      Your local agent is offline; messages are kept until it reconnects. Use the agent picker to reconnect or use the
+      Platform agent.
     </p>
   );
 }
