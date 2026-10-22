@@ -140,6 +140,10 @@ Gemini's own connector only for their provider-native operations
 | Named model, such as "use Claude Opus" | Leave `Model` empty and tell the user to choose provider `anthropic` and that model in Studio Configuration. Set `Model` in code only when the user requires a fixed model, and then use the exact provider model ID, never prefixed with the provider. |
 | Several providers in one application | One `llm` connection per provider, each with its own connection name. |
 
+Run each model call as its own `llm` Step, never from inside another Step's
+`Execute`: the Step's result carries the call's token usage, so the run's
+history shows what each run spent on models.
+
 Keep requests portable by leaving `Temperature` and `ReasoningEffort` unset and
 `MaxOutputTokens` zero or generous. Do not add a per-run model to start input
 unless the user asks, because anyone who can start the Flow could then choose,

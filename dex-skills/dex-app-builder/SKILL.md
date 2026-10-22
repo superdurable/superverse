@@ -87,6 +87,10 @@ external integration, text generation, Trigger ingress or hosted configuration.
 - Define each Flow's identity, lifecycle, Steps, typed RPCs, all primitives,
   selective loads, locks/CAS, retention, retries and uncertain-effect handling
   in the application before coding. Preserve open execution compatibility.
+- Make every run measurable from its own history: outcomes visible as Steps,
+  Actions or Attributes, comparison facts as scalar Attributes, decisions in
+  plain functions of recorded facts, and each model call its own `llm` Step
+  ([measurable runs](references/backend-implementation.md#runs-that-can-be-measured-and-improved)).
 - Keep credentials outside code, Flow state, logs and definitions; the user sets
   them in Studio Configuration. Keep the template's `internal/connectorconfiguration`
   loader: Preview and Live supply the trusted `DEX_PROJECT_*` scope and
