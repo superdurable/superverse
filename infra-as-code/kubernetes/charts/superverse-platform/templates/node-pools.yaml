@@ -6,9 +6,9 @@
 #
 # SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-{{/* A node pool's arm64 capacity: every general-purpose, memory or burstable instance with the caller's vCPU counts
-and at least 8 GiB, so one family's missing Spot capacity in a zone never blocks a launch, in the caller's capacity
-types (Karpenter launches Spot first when On-Demand is also allowed). */}}
+{{/* Broad ARM64 compute, general-purpose, memory and burstable families at the caller's vCPU counts and >=8 GiB.
+Karpenter prefers Spot before On-Demand across all discovered zones; diversity reduces fallback but cannot
+guarantee Spot inventory. A bound EBS volume still constrains its Pod to one zone. */}}
 {{- define "v2.karpenterRequirements" -}}
 - key: kubernetes.io/arch
   operator: In
@@ -21,7 +21,7 @@ types (Karpenter launches Spot first when On-Demand is also allowed). */}}
   values: {{ toJson .capacityTypes }}
 - key: karpenter.k8s.aws/instance-category
   operator: In
-  values: [m, r, t]
+  values: [c, m, r, t]
 - key: karpenter.k8s.aws/instance-cpu
   operator: In
   values: {{ toJson .cpus }}
@@ -58,8 +58,7 @@ blockDeviceMappings:
 {{- end -}}
 
 {{- if not .Values.localKind }}
-{{- if eq .Values.environment "prod" }}
-# In prod, Karpenter adds ordinary Spot capacity when the baseline node is full.
+# Karpenter prefers Spot and backs the managed Spot group with On-Demand in every hosted environment.
 apiVersion: karpenter.sh/v1
 kind: NodePool
 metadata:
@@ -75,7 +74,7 @@ spec:
         kind: EC2NodeClass
         name: {{ include "v2.product" $ }}-platform
       requirements:
-        {{- include "v2.karpenterRequirements" (dict "cpus" (list "2" "4") "capacityTypes" (list "spot")) | nindent 8 }}
+        {{- include "v2.karpenterRequirements" (dict "cpus" (list "2" "4" "8") "capacityTypes" (list "spot" "on-demand")) | nindent 8 }}
       expireAfter: 720h
   limits:
     {{- include "v2.karpenterLimits" .Values.nodePools.limits.platform | nindent 4 }}
@@ -90,7 +89,6 @@ metadata:
 spec:
   {{- include "v2.karpenterNodeClassBase" . | nindent 2 }}
 
-{{- end }}
 ---
 # Karpenter creates isolated runsc capacity on demand in any eligible AZ.
 apiVersion: karpenter.sh/v1
@@ -113,15 +111,15 @@ spec:
           value: runsc
           effect: NoSchedule
       requirements:
-        {{- /* 2 vCPU holds a coding Sandbox's 2 CPU / 4 GiB limits; a larger node mostly idles. A Sandbox's workspace
-        volume pins it to one zone, so On-Demand backs Spot there rather than leaving the Sandbox Pending. */}}
-        {{- include "v2.karpenterRequirements" (dict "cpus" (list "2") "capacityTypes" (list "spot" "on-demand")) | nindent 8 }}
+        {{- /* Allow several sizes and ARM families in all discovered zones before falling back to On-Demand. A workspace
+        volume pins its Sandbox to one zone; if that zone has no eligible Spot capacity, On-Demand backs it. */}}
+        {{- include "v2.karpenterRequirements" (dict "cpus" (list "2" "4" "8") "capacityTypes" (list "spot" "on-demand")) | nindent 8 }}
       expireAfter: 720h
   limits:
     {{- include "v2.karpenterLimits" .Values.nodePools.limits.runsc | nindent 4 }}
   disruption:
-    consolidationPolicy: WhenEmpty
-    consolidateAfter: 1m
+    consolidationPolicy: WhenEmptyOrUnderutilized
+    consolidateAfter: 5m
 ---
 apiVersion: karpenter.k8s.aws/v1
 kind: EC2NodeClass
@@ -174,7 +172,7 @@ spec:
 ---
 # Live application generations run on their own gVisor capacity, so a burst of Sessions never starves a running
 # application and Live growth never starves Sessions. The pool shares the runsc node class; Live Pods are
-# single-replica and serve traffic, so it takes On-Demand capacity in prod and never consolidates a running Pod.
+# single-replica; consolidation may restart them to replace On-Demand fallback with cheaper Spot capacity.
 apiVersion: karpenter.sh/v1
 kind: NodePool
 metadata:
@@ -196,12 +194,12 @@ spec:
           effect: NoSchedule
       requirements:
         {{- /* A Live Pod requests 100m / 128Mi, so a 4 vCPU node holds about 35 of them. */}}
-        {{- include "v2.karpenterRequirements" (dict "cpus" (list "2" "4") "capacityTypes" (ternary (list "on-demand") (list "spot" "on-demand") (eq .Values.environment "prod"))) | nindent 8 }}
+        {{- include "v2.karpenterRequirements" (dict "cpus" (list "2" "4" "8") "capacityTypes" (list "spot" "on-demand")) | nindent 8 }}
       expireAfter: 720h
   limits:
     {{- include "v2.karpenterLimits" .Values.nodePools.limits.live | nindent 4 }}
   disruption:
-    consolidationPolicy: WhenEmpty
+    consolidationPolicy: WhenEmptyOrUnderutilized
     consolidateAfter: 5m
 ---
 apiVersion: node.k8s.io/v1

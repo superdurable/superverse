@@ -264,6 +264,7 @@ class Render:
         return self.resources[key]
 
     def check(self):
+        self.check_node_capacity()
         self.check_platform_workloads()
         self.check_server_configuration()
         self.check_server_roles()
@@ -271,6 +272,23 @@ class Render:
         self.check_ingresses()
         self.check_coding_profile()
         self.check_credential_read()
+
+    def check_node_capacity(self):
+        """Every hosted pool prefers diversified Spot, can fall back, and can consolidate back."""
+        pools = {name: resource for (kind, _, name), resource in self.resources.items() if kind == "NodePool"}
+        expected = {self.product + "-" + pool for pool in ("platform", "runsc", "live")} if self.hosted else set()
+        self.fail_if(set(pools) != expected, "expected all three capacity pools only in hosted environments")
+        for name, pool in pools.items():
+            requirements = {item["key"]: item for item in pool["spec"]["template"]["spec"]["requirements"]}
+            for key, values in {"karpenter.sh/capacity-type": ["spot", "on-demand"], "kubernetes.io/arch": ["arm64"],
+                                "karpenter.k8s.aws/instance-category": ["c", "m", "r", "t"],
+                                "karpenter.k8s.aws/instance-cpu": ["2", "4", "8"]}.items():
+                self.fail_if(requirements[key] != {"key": key, "operator": "In", "values": values}, f"{name}: capacity diversity differs")
+            self.fail_if(requirements["karpenter.k8s.aws/instance-memory"] != {"key": "karpenter.k8s.aws/instance-memory", "operator": "Gt", "values": ["7999"]},
+                         f"{name}: every instance needs at least 8 GiB")
+            self.fail_if("topology.kubernetes.io/zone" in requirements, f"{name}: capacity must use all discovered cluster zones")
+            self.fail_if(pool["spec"]["disruption"] != {"consolidationPolicy": "WhenEmptyOrUnderutilized", "consolidateAfter": "5m"},
+                         f"{name}: fallback must be eligible for automatic cheaper Spot replacement")
 
     def check_platform_workloads(self):
         """Server, Studio and Dex run digest-pinned images behind their fixed Services and origins."""
