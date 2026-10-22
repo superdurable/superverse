@@ -179,12 +179,19 @@ func TestSessionRemoteHTTPAdmissionDexIntegration(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			before, err := session.client.GetSnapshot(ctx, session.id)
+			if err != nil {
+				t.Fatal(err)
+			}
 			next := bridgeapi.Report{Epoch: active.Epoch, Generation: current.Generation, Sequence: 5, Events: []bridgeapi.Event{{Kind: bridgeapi.EventKindUserMessage, Text: "Start the second remote turn"}}}
 			remote.post(ctx, bridgeapi.PathReport, next, &accepted, http.StatusOK)
 			session.await(ctx, "new remote turn", func() bool {
 				snap, err := session.client.GetSnapshot(ctx, session.id)
-				return err == nil && snap.Agent.Description.Status != agentloop.AgentStatusWaitingForMessage
+				return err == nil && snap.Agent.Description.Turn == before.Agent.Description.Turn+1 &&
+					snap.Agent.Description.Status != agentloop.AgentStatusWaitingForMessage &&
+					snap.Agent.Description.Executor.Remote.Consumed >= next.Sequence
 			})
+			session.awaitRemoteWait(ctx)
 		}
 		snapshot, err := session.client.GetSnapshot(ctx, session.id)
 		if err != nil {

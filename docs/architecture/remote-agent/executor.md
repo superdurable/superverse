@@ -107,6 +107,25 @@ turn needs the next model step.
   on its own (the connecting Builder typing in Orca) opens a turn, like an automatic turn; in either
   mode, a takeover's control item wakes it, because a wait created in platform mode must wake after
   an activation.
+- **RASTOPADMIT — event-only admission.** A current-epoch, current-generation public
+  report consumed by `AwaitUser` starts exactly one turn through `StartUserTurn`,
+  appends its entries and records user request sequences. Without a tool call or
+  `TurnCompleted`, `consumeRemote` returns `ContinueStartTurn` through `CheckSteered`;
+  `planModelCall` selects `AwaitRemoteAgent` and records `RunningRemote`. Further
+  public events keep that turn open without incrementing its number. A post-Stop
+  user event with the new generation follows this same path; a stale report or a
+  delivery/activity notice alone cannot open an idle turn. `TurnCompleted` still
+  returns to `AwaitUser`, and Stop still ends and fences the turn.
+  This changes only the continuation of the existing `SessionAgentFlow`
+  (`session-<projectID>`, for example `session-a7k2`); its creation trigger,
+  RequestID/reuse, Run and retention lifecycle, parent relationships, RPC
+  authorization, Step identities/options, locks, retries and recovery remain as
+  specified in [Dex Flow Changes](#dex-flow-changes). `Executor`, `AgentState`,
+  `CurrentMessages`/`ArchivedMessages` and `RemoteInbox` retain their existing
+  owners, types, keys, loads, bounds, duplicate rules and cleanup. No Attribute,
+  AttributeMap, Channel, ChannelMap, Stream, timer, external effect, database
+  schema or resource is added. Existing open executions retain their persisted
+  payloads; the next report consumption uses the corrected continuation.
 - A remote tool call's `CallID` is `remote-<epoch>-<sequence>`, for example `remote-7-42`. It is
   the Sandbox invocation identity (`sandboxd.InvocationIdentity{FlowID, CallID}`), so a retried
   report or a retried Step reaches the same command ledger entry and never runs a command twice.
@@ -679,6 +698,9 @@ RASUBWT adds no SQL table, column, migration, projection or second worktree owne
   endpoint and Dex Session: activation returns the preceding conversation head;
   a subsequent message has a greater sequence, sync returns that message, and a
   repeat activation after the append returns the original head.
+- `TestSessionRemoteHTTPAdmissionDexIntegration` checks that a current-generation
+  user event after Stop is consumed, advances the turn exactly once and reaches
+  the durable `AwaitRemoteAgent` wait before a second Stop fences that turn.
 Dex integration tests in `internal/dexai/agents` against the real lane (Dex, Sandbox, local Git host,
 PostgreSQL) drive the real remote agent endpoint over HTTP as a Bridge would. The remote
 HTTP admission case checks `pending` at the first context read, reports a real Sandbox read

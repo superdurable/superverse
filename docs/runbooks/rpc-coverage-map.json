@@ -291,6 +291,7 @@
       "native-e2e"
     ],
     "/superverse.v2.RemoteAgentService/CreateRemoteAgentPairing": [
+      "native-e2e",
       "native-integration"
     ],
     "/superverse.v2.RemoteAgentService/ListRemoteAgentConnections": [
@@ -303,6 +304,7 @@
       "native-integration"
     ],
     "/superverse.v2.RemoteAgentService/SetSessionExecutor": [
+      "native-e2e",
       "native-integration"
     ],
     "/superverse.v2.SessionService/GetSession": [

@@ -775,9 +775,11 @@ func (flow *SessionAgentFlow) consumeRemote(ctx dex.Context, items []remoteexec.
 		comm.MustDo(agentStateAttribute.Set(ctx, state))
 		return agentloop.ContinueRouteTool
 	}
-	// A remote executor never falls through to the platform model. Remote
-	// messages and delivery notices are durable conversation facts; only its
-	// authenticated tool calls enter the Session's ordinary tool path above.
+	// Public events keep an opened turn waiting on its remote executor;
+	// stale reports and delivery notices alone leave an idle Session idle.
+	if !idle {
+		return agentloop.ContinueStartTurn
+	}
 	return ""
 }
 
