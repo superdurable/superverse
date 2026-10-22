@@ -298,9 +298,7 @@ func (flow *SessionAgentFlow) ReportSessionNotification(ctx dex.Context, notific
 	if !acceptsUserCommand(ctx) {
 		return rpcAccepted(false), nil
 	}
-	if notification.IsPreviewReady() {
-		holdSandbox(ctx, notification.ResourceID, flow.readyPreviewHold(ctx))
-	}
+	flow.holdForReadyPreview(ctx, notification)
 	return rpcAccepted(publishNotification(ctx, notification, dexflow.ValueOrZero(notificationReceiptsAttribute.Get(ctx)))), nil
 }
 
@@ -388,11 +386,10 @@ func (flow *SessionAgentFlow) RequestSessionWorkspace(ctx dex.Context, input age
 		return &dex.RPCResult[workspaceDemandResult]{Output: workspaceDemandResult{Closed: true}}, nil
 	}
 	ws := dexflow.ValueOrZero(workspaceAttribute.Get(ctx))
-	plan := ws.PlanDemand(input)
-	if isExtended := plan.Lent && ws.ExtendDeadline(time.Now(), flow.sandboxHold); plan.Recorded || isExtended {
+	output, plan, changed := flow.lendWorkspace(&ws, input)
+	if changed {
 		comm.MustDo(workspaceAttribute.Set(ctx, ws))
 	}
-	output := workspaceDemandResult{Summary: ws.Summary(), Lent: plan.Lent, Lease: plan.Lease}
 	if !plan.Opens {
 		return &dex.RPCResult[workspaceDemandResult]{Output: output}, nil
 	}
@@ -425,9 +422,7 @@ func (step InitializeSessionAgent) Execute(ctx dex.Context, input agentloop.Sess
 		return nil, dex.ErrorWithStack(fmt.Errorf("admit the Session to Project %s: %w", identity.ProjectID, err))
 	}
 	if !admitted {
-		setSessionStatus(ctx, agentloop.SessionStatusArchived, agentloop.CloseReasonAdmissionDenied.String())
-		summary := comm.Must(step.flow.GetSessionSummary(ctx, nil)).Output
-		return dex.GracefulComplete(agentloop.SessionCleanupReceipt{ProjectID: identity.ProjectID, Reason: agentloop.CloseReasonAdmissionDenied.String(), Snapshot: &summary}), nil
+		return dex.GracefulComplete(step.flow.denySession(ctx, identity)), nil
 	}
 	// MessageWindowLock holds no information; this and the WaitingInputRound write are the direct uses the pinned Dex CLI requires.
 	comm.MustDo(messageWindowLockAttribute.Set(ctx, false))
@@ -590,9 +585,7 @@ func (step CheckSteered) Execute(ctx dex.Context, next agentloop.Continuation) (
 	}
 	step.flow.appendNotifications(ctx, comm.Must(sessionNotificationsChannel.GetConditionResults(ctx)))
 	if len(steered) > 0 {
-		abandonPendingSubagentStart(ctx)
-		beginSteeredTurn(ctx, steered)
-		next = agentloop.ContinueStartTurn
+		next = applySteering(ctx, steered)
 	}
 	if (next == agentloop.ContinueRouteTool || next == agentloop.ContinueExecuteTool) && rejectStaleToolBatch(ctx) {
 		return dex.GoTo(AwaitUser{}, nil), nil
@@ -657,14 +650,10 @@ func (AwaitAgentTimer) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, 
 	call := agentloop.PendingToolCall(state)
 	comm.MustDo(pendingTimerAttribute.Delete(ctx))
 	if steered := comm.Must(steeredUserMessagesChannel.GetConditionResults(ctx)); len(steered) > 0 {
-		writeActivity(ctx, agentloop.ToolActivity(conversation.EventKindTimerResolved, "Durable timer interrupted.", call))
-		appendToolResult(ctx, call, agentloop.CancelledToolResult(agentloop.CancelledBySteering), agentloop.ToolMessageTiming{})
-		interruptPendingTools(ctx, state.PendingToolIndex+1, agentloop.CancelledBySteering)
-		beginSteeredTurn(ctx, steered)
+		cancelTimerBySteering(ctx, state, call, steered)
 		return dex.GoTo(CheckSteered{}, agentloop.ContinueStartTurn), nil
 	}
-	writeActivity(ctx, agentloop.ToolActivity(conversation.EventKindTimerResolved, "Durable timer completed.", call))
-	appendSessionToolResult(ctx, call, agentloop.ToolResultPayload{Status: agentloop.ToolResultStatusCompleted, DurationSeconds: timer.DurationSeconds, Reason: timer.Reason})
+	completeTimer(ctx, call, timer)
 	return dex.GoTo(CheckSteered{}, advancePendingTools(ctx, 1)), nil
 }
 
@@ -676,9 +665,7 @@ type CompactContext struct {
 }
 
 func (CompactContext) GetStepOptions() *dex.StepOptions {
-	options := *modelStepOptions
-	options.ExecuteFailure = dex.ProceedToOnExecuteFailure(RecordCompactionFailure{}, modelFailureStepOptions)
-	return &options
+	return withExecuteFailure(modelStepOptions, dex.ProceedToOnExecuteFailure(RecordCompactionFailure{}, modelFailureStepOptions))
 }
 
 func (step CompactContext) Execute(ctx dex.Context, input contextCompaction) (*dex.StepDecision, error) {
@@ -743,9 +730,7 @@ type CallModel struct {
 }
 
 func (CallModel) GetStepOptions() *dex.StepOptions {
-	options := *modelStepOptions
-	options.ExecuteFailure = dex.ProceedToOnExecuteFailure(RecordModelFailure{}, modelFailureStepOptions)
-	return &options
+	return withExecuteFailure(modelStepOptions, dex.ProceedToOnExecuteFailure(RecordModelFailure{}, modelFailureStepOptions))
 }
 
 // Execute streams a reply and passes a bounded outcome to fresh fenced recording.
@@ -830,13 +815,7 @@ func (step RouteTool) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, e
 		return dex.GoTo(CheckSteered{}, advancePendingTools(ctx, 1)), nil
 	}
 	if definition.IsBuiltIn() {
-		// A timer waits, a question ends the turn like a reply does, and any
-		// other built-in call, a requirements card too, has its result.
-		next := routeBuiltInTool(ctx, call, state)
-		if next == "" {
-			next = advancePendingTools(ctx, 1)
-		}
-		return dex.GoTo(CheckSteered{}, next), nil
+		return dex.GoTo(CheckSteered{}, builtInToolContinuation(ctx, call, state)), nil
 	}
 	if call.Name == conversation.ToolStartAgent && !admitSubagentCall(ctx, call) {
 		return dex.GoTo(CheckSteered{}, advancePendingTools(ctx, 1)), nil
@@ -861,8 +840,7 @@ func (step RouteTool) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, e
 		return dex.GoToMany(movements...), nil
 	}
 	if definition.RequiresApproval {
-		startedAt := ctx.FirstAttemptAt().UTC()
-		comm.MustDo(pendingApprovalAttribute.Set(ctx, agentloop.PendingApproval{CallID: call.ID, ToolName: call.Name, Arguments: call.Arguments, StartedAt: &startedAt}))
+		comm.MustDo(pendingApprovalAttribute.Set(ctx, pendingToolApproval(ctx, call)))
 		writeActivity(ctx, agentloop.ToolActivity(conversation.EventKindToolApprovalRequested, "Tool approval requested.", call))
 		return dex.GoTo(CheckSteered{}, agentloop.ContinueAwaitToolApproval), nil
 	}
@@ -938,9 +916,7 @@ func (step ExecuteTool) Execute(ctx dex.Context, input toolInvocation) (*dex.Ste
 	}
 	if call.Name == conversation.ToolStartAgent {
 		if expired := dexflow.ValueOrZero(pendingSubagentWorktreeCleanupAttribute.Get(ctx)); expired != "" {
-			execution, end := beginToolAttempt(ctx, call)
-			defer end()
-			err := step.flow.sandbox.CleanupExpiredAgentWorktree(execution, newSandboxCall(ctx, call), expired)
+			err := step.flow.cleanupExpiredAgentWorktree(ctx, call, expired)
 			if errors.Is(err, sandboxtools.ErrWorkspaceUnavailable) {
 				return dex.GoTo(RequestSessionWorkspace{}, lostWorkspaceDemand(ctx, call.ID)), nil
 			}
@@ -1156,9 +1132,7 @@ type AwaitBackgroundCommand struct {
 }
 
 func (AwaitBackgroundCommand) GetStepOptions() *dex.StepOptions {
-	options := *backgroundExitStepOptions
-	options.ExecuteFailure = dex.ProceedToOnExecuteFailure(AbandonBackgroundCommand{}, abandonBackgroundCommandStepOptions)
-	return &options
+	return withExecuteFailure(backgroundExitStepOptions, dex.ProceedToOnExecuteFailure(AbandonBackgroundCommand{}, abandonBackgroundCommandStepOptions))
 }
 
 // WaitFor starts the SubFlow that polls the ledger and races it with the stop of its watch; waiting
@@ -1248,11 +1222,7 @@ func (FinishInterrupt) Execute(ctx dex.Context, interruption agentInterruption) 
 	}
 	if !interruption.EndsTurn {
 		stopStartingSubagentsOf(ctx, interruption)
-		state := comm.Must(agentStateAttribute.Get(ctx))
-		if state.Status == agentloop.AgentStatusWaitingForMessage {
-			writeStopMarker(ctx, pending)
-		}
-		writeActivity(ctx, interruptActivity(ctx, "Stopped the running tasks."))
+		finishTaskStop(ctx, comm.Must(agentStateAttribute.Get(ctx)), pending)
 		return dex.DeadEnd(), nil
 	}
 	endStoppedTurn(ctx, publishedWaveResults(ctx, interruption.Running), pending)
@@ -1343,13 +1313,9 @@ func (AwaitSessionWorkspace) WaitFor(_ dex.Context, demand workspaceDemand) (*de
 // Execute takes the reported outcome; once the wait ended without one it reads the outcome from the
 // workspace Flow, which owns it, and without one the request settles as WORKSPACE_TIMEOUT.
 func (step AwaitSessionWorkspace) Execute(ctx dex.Context, demand workspaceDemand) (*dex.StepDecision, error) {
-	var observed *agentloop.WorkspaceGrant
-	if reports := comm.Must(workspaceOutcomesChannel.GetConditionResults(ctx, demand.RequestID)); len(reports) > 0 {
-		observed = reports[0].Grant
-	} else if read, err := step.flow.dependency.ObserveWorkspace(ctx, readSessionIdentity(ctx), demand.RequestID); err != nil {
-		return nil, dex.ErrorWithStack(fmt.Errorf("read the outcome of the Session workspace %s: %w", demand.RequestID, err))
-	} else {
-		observed = read
+	observed, err := step.flow.observedWorkspace(ctx, demand.RequestID, comm.Must(workspaceOutcomesChannel.GetConditionResults(ctx, demand.RequestID)))
+	if err != nil {
+		return nil, err
 	}
 	if observed == nil {
 		demand.TimedOut, demand.Failure = true, fmt.Sprintf("the Session workspace reported no outcome of %s within %s", demand.RequestID, workspaceWaitBudget)
@@ -1470,15 +1436,11 @@ func (DeployPreviewHandoff) GetStepOptions() *dex.StepOptions {
 		ExecuteRetry: dexflow.StepRetry(3 * time.Minute), ExecuteFailure: dex.ProceedToOnExecuteFailure(AbandonPreviewHandoff{}, nil)}
 }
 
-// Execute uses the captured workspace, or reads it for legacy inputs only, and calls the Service.
-// Preview answers a retried sequence DUPLICATE; a lost answer never deploys twice. Nothing is recorded.
+// Execute uses the captured workspace, or reads it for legacy inputs only (legacyHandoffWorkspace), and calls the
+// Service. Preview answers a retried sequence DUPLICATE; a lost answer never deploys twice. Nothing is recorded.
 func (step DeployPreviewHandoff) Execute(ctx dex.Context, handoff agentloop.PreviewHandoff) (*dex.StepDecision, error) {
 	if handoff.Session == nil {
-		// Compatibility for platform branches accepted before immutable inputs.
-		if ws := dexflow.ValueOrZero(workspaceAttribute.Get(ctx)); ws.Lease.RequestID != "" {
-			identity := readSessionIdentity(ctx)
-			handoff.Session, handoff.WorkspaceRequestID = &identity, ws.Lease.RequestID
-		}
+		handoff = legacyHandoffWorkspace(ctx, handoff, dexflow.ValueOrZero(workspaceAttribute.Get(ctx)))
 	}
 	if handoff.Session != nil && handoff.WorkspaceRequestID != "" {
 		if err := step.flow.dependency.RequestPreviewDeployment(ctx, *handoff.Session, handoff.WorkspaceRequestID, handoff); err != nil {

@@ -22,7 +22,6 @@ import (
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
-	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteexec"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/git"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/sandboxd"
@@ -86,6 +85,22 @@ func newToolExecutionContext(
 // refuseToolCall answers, in RouteTool's commit, a tool the segment did not offer.
 func refuseToolCall(ctx dex.Context, call conversation.ToolCall) {
 	appendSessionFailure(ctx, call, toolfailure.UnknownOrDisabledTool, fmt.Sprintf("tool %q is unknown or not enabled", call.Name))
+}
+
+// pendingToolApproval is the approval the call at the cursor waits for, started at RouteTool's first attempt.
+func pendingToolApproval(ctx dex.Context, call conversation.ToolCall) agentloop.PendingApproval {
+	startedAt := ctx.FirstAttemptAt().UTC()
+	return agentloop.PendingApproval{CallID: call.ID, ToolName: call.Name, Arguments: call.Arguments, StartedAt: &startedAt}
+}
+
+// builtInToolContinuation runs the built-in call at the cursor in the commit of RouteTool and returns
+// the continuation: a timer waits, a question ends the turn like a reply does, and any other built-in
+// call, a requirements card too, has its result and advances the cursor.
+func builtInToolContinuation(ctx dex.Context, call conversation.ToolCall, state agentloop.AgentState) agentloop.Continuation {
+	if next := routeBuiltInTool(ctx, call, state); next != "" {
+		return next
+	}
+	return advancePendingTools(ctx, 1)
 }
 
 // routeBuiltInTool runs the built-in call at the cursor in the commit of
@@ -189,62 +204,6 @@ func waitForUser(ctx dex.Context, call conversation.ToolCall, input agentloop.Pe
 	interruptPendingTools(ctx, comm.Must(agentStateAttribute.Get(ctx)).PendingToolIndex+1, agentloop.CancelledByUserInput)
 	writeActivity(ctx, agentloop.ToolActivity(conversation.EventKindUserInputRequested, summary, call))
 	return agentloop.ContinueAwaitUser
-}
-
-// serialToolStepOptions is the execution policy of one serial ExecuteTool
-// movement. A call whose retries are exhausted is recorded as a platform
-// failure the model reads; a bash call has the polling options of its own
-// timeout and is settled from the command ledger.
-func serialToolStepOptions(ctx dex.Context, call conversation.ToolCall) *dex.StepOptions {
-	if call.Name == conversation.ToolBash {
-		return commandStepOptions(call)
-	}
-	options := parallelToolStepOptions(agentloop.CatalogTool(call.Name))
-	options.ExecuteLoadAttributeMaps = messageMaps
-	configureConnectorToolOptions(options, call)
-	configureTaskWorktreeToolOptions(options, call)
-	switch agentID, isSubagent := subagentOfCall(call); {
-	case call.Name == conversation.ToolStartAgent:
-		// The new worktree keeps the worktrees of the unfinished subagents.
-		options.ExecuteLoadAttributeMaps = taskMessageMaps
-		options.ExecuteLoadAttributeMapInstances = credentialInfoLoads()
-		model := subagentCredentialModel(ctx, call)
-		if !model.IsMock() {
-			options.ExecuteLoadAttributeMapInstances = append(options.ExecuteLoadAttributeMapInstances, modelKeysAttribute.Load(modelcredential.ForModel(model).String()))
-		}
-		options.ExecuteLockAttributes = append(options.ExecuteLockAttributes, credentialInfoLocks()...)
-	case isSubagent:
-		options.ExecuteLoadAttributeMapInstances = []dex.AttributeMapLoad{subagentsAttribute.Load(agentID)}
-	}
-	options.ExecuteFailure = ExecuteTool{}.GetStepOptions().ExecuteFailure
-	return options
-}
-
-// commandStepOptions is the policy of an ExecuteTool movement for bash: a
-// polling Step bounded by the call's own timeout, whose failure route settles
-// the command from the Sandbox's command ledger.
-func commandStepOptions(call conversation.ToolCall) *dex.StepOptions {
-	options := dexflow.PollingStepOptions(sandboxtools.CommandTimeout(call.Arguments.String()), ExecuteTool{command: true}.GetStepOptions().ExecuteFailure)
-	options.ExecuteLoadAttributeMaps = []dex.AttributeDef{currentMessagesAttribute, backgroundCommandsAttribute}
-	return options
-}
-
-// parallelToolStepOptions is the execution policy of one ExecuteParallelTool
-// branch. A branch whose retries are exhausted always publishes a result, so
-// that the join can resolve the batch.
-func parallelToolStepOptions(definition agentloop.ToolDefinition) *dex.StepOptions {
-	return &dex.StepOptions{
-		ExecuteMethodTimeout:     definition.AttemptTimeout,
-		ExecuteLoadAttributeMaps: remoteWorktreeFileMapLoads(definition.Name),
-		HeartbeatTimeout:         time.Minute,
-		ExecuteDurability:        toolExecuteDurability(definition),
-		ExecuteRetry: &dex.RetryPolicy{
-			InitialInterval: agentloop.ToolRetryInitialInterval, BackoffCoefficient: agentloop.ToolRetryBackoffCoefficient, MaximumInterval: agentloop.ToolRetryMaximumInterval,
-			// #nosec G115 -- the catalog init check bounds MaximumAttempts to int32.
-			MaximumAttempts: int32(definition.MaximumAttempts), TotalDuration: definition.RetryTotalDuration,
-		},
-		ExecuteFailure: ExecuteParallelTool{}.GetStepOptions().ExecuteFailure,
-	}
 }
 
 // executeTool runs the serial call at the cursor: a command through the
@@ -379,15 +338,6 @@ func (flow *SessionAgentFlow) settleCommand(ctx dex.Context, call conversation.T
 	return agentloop.SandboxToolResult(result), timing, err
 }
 
-// toolExecuteDurability starts a long-running call directly as a synchronous
-// activity; others use the default asynchronous local execution.
-func toolExecuteDurability(definition agentloop.ToolDefinition) dex.StepDurability {
-	if definition.LongRunning {
-		return dex.StepDurabilitySync
-	}
-	return dex.StepDurabilityDefault
-}
-
 // joinParallelToolResults records the branch results of a wave in its batch and
 // returns the lowest branch that found its workspace unreachable, if any, and
 // the incidents of the wave's platform failures (waveIncidents). Each branch
@@ -453,6 +403,21 @@ func interruptPendingTools(ctx dex.Context, from int, reason agentloop.CancelRea
 		appendToolResult(ctx, call, agentloop.CancelledToolResult(reason), agentloop.ToolMessageTiming{})
 	}
 	return interrupted
+}
+
+// cancelTimerBySteering answers the timer call at the cursor, and every call after it, cancelled by
+// steering and begins the turn of the steered messages.
+func cancelTimerBySteering(ctx dex.Context, state agentloop.AgentState, call conversation.ToolCall, steered []conversation.PendingUserMessage) {
+	writeActivity(ctx, agentloop.ToolActivity(conversation.EventKindTimerResolved, "Durable timer interrupted.", call))
+	appendToolResult(ctx, call, agentloop.CancelledToolResult(agentloop.CancelledBySteering), agentloop.ToolMessageTiming{})
+	interruptPendingTools(ctx, state.PendingToolIndex+1, agentloop.CancelledBySteering)
+	beginSteeredTurn(ctx, steered)
+}
+
+// completeTimer records the result of the timer call at the cursor once its duration passed.
+func completeTimer(ctx dex.Context, call conversation.ToolCall, timer agentloop.PendingTimer) {
+	writeActivity(ctx, agentloop.ToolActivity(conversation.EventKindTimerResolved, "Durable timer completed.", call))
+	appendSessionToolResult(ctx, call, agentloop.ToolResultPayload{Status: agentloop.ToolResultStatusCompleted, DurationSeconds: timer.DurationSeconds, Reason: timer.Reason})
 }
 
 // finishToolExecution records the result of the serial call at the cursor.
@@ -841,6 +806,14 @@ func (flow *SessionAgentFlow) stopSubagentTask(ctx dex.Context, execution contex
 		content = fmt.Sprintf("Task %s: ended. Its report arrives as a task notification.", record.TaskID())
 	}
 	return agentloop.ToolExecutionResult{Content: content, Outcome: conversation.ToolOutcomeSucceeded}, nil
+}
+
+// cleanupExpiredAgentWorktree removes, in its own tool attempt before a start_agent call runs, the
+// worktree of the expired subagent record that the call's admission evicted.
+func (flow *SessionAgentFlow) cleanupExpiredAgentWorktree(ctx dex.Context, call conversation.ToolCall, expired string) error {
+	execution, end := beginToolAttempt(ctx, call)
+	defer end()
+	return flow.sandbox.CleanupExpiredAgentWorktree(execution, newSandboxCall(ctx, call), expired)
 }
 
 // mergeSubagentChanges runs merge_agent_changes for the Session's subagent

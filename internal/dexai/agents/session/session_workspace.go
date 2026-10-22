@@ -143,6 +143,45 @@ func (flow *SessionAgentFlow) readyPreviewHold(ctx dex.Context) time.Duration {
 	return flow.previewHold
 }
 
+// holdForReadyPreview holds the Sandbox a READY Preview serves on for the hold of
+// readyPreviewHold; any other notification holds nothing.
+func (flow *SessionAgentFlow) holdForReadyPreview(ctx dex.Context, notification conversation.SessionNotification) {
+	if notification.IsPreviewReady() {
+		holdSandbox(ctx, notification.ResourceID, flow.readyPreviewHold(ctx))
+	}
+}
+
+// lendWorkspace admits a demand of RequestSessionWorkspace to ws (PlanDemand): a lent READY instance
+// extends its Sandbox deadline by the Sandbox hold. It returns the answer, the plan and whether ws changed.
+func (flow *SessionAgentFlow) lendWorkspace(ws *agentloop.SessionWorkspace, input agentloop.WorkspaceDemandRequest) (workspaceDemandResult, agentloop.WorkspaceDemandPlan, bool) {
+	plan := ws.PlanDemand(input)
+	isExtended := plan.Lent && ws.ExtendDeadline(time.Now(), flow.sandboxHold)
+	return workspaceDemandResult{Summary: ws.Summary(), Lent: plan.Lent, Lease: plan.Lease}, plan, plan.Recorded || isExtended
+}
+
+// observedWorkspace is the outcome of request that AwaitSessionWorkspace takes: the reported one
+// or, once the wait ended without a report, the one read from the SessionWorkspaceFlow, which owns it.
+func (flow *SessionAgentFlow) observedWorkspace(ctx dex.Context, request string, reports []agentloop.WorkspaceReport) (*agentloop.WorkspaceGrant, error) {
+	if len(reports) > 0 {
+		return reports[0].Grant, nil
+	}
+	observed, err := flow.dependency.ObserveWorkspace(ctx, readSessionIdentity(ctx), request)
+	if err != nil {
+		return nil, dex.ErrorWithStack(fmt.Errorf("read the outcome of the Session workspace %s: %w", request, err))
+	}
+	return observed, nil
+}
+
+// legacyHandoffWorkspace completes a handoff accepted before handoffs captured their workspace
+// (compatibility for platform branches accepted before immutable inputs) with the lease of ws.
+func legacyHandoffWorkspace(ctx dex.Context, handoff agentloop.PreviewHandoff, ws agentloop.SessionWorkspace) agentloop.PreviewHandoff {
+	if ws.Lease.RequestID != "" {
+		identity := readSessionIdentity(ctx)
+		handoff.Session, handoff.WorkspaceRequestID = &identity, ws.Lease.RequestID
+	}
+	return handoff
+}
+
 // newWorkspaceRequestID derives the instance identity from the Step execution
 // that records it, "<Step>-<n>". The execution counter never repeats within
 // the Flow.

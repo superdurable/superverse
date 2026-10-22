@@ -29,6 +29,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/flowdesign"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/sandboxtools"
 	"github.com/superdurable/superversev2/internal/dexai/agents/toolfailure"
 )
 
@@ -91,6 +92,14 @@ func setSessionStatus(ctx dex.Context, status agentloop.SessionStatus, reason st
 	comm.MustDo(closeReasonAttribute.Set(ctx, reason))
 	comm.MustDo(sessionRevisionAttribute.Set(ctx, comm.Must(sessionRevisionAttribute.Get(ctx))+1))
 	comm.MustDo(sessionUpdatedAtAttribute.Set(ctx, ctx.FirstAttemptAt().UTC()))
+}
+
+// denySession archives a Session its Project did not admit and returns the
+// cleanup receipt with which InitializeSessionAgent completes it.
+func (flow *SessionAgentFlow) denySession(ctx dex.Context, identity agentloop.SessionIdentity) agentloop.SessionCleanupReceipt {
+	setSessionStatus(ctx, agentloop.SessionStatusArchived, agentloop.CloseReasonAdmissionDenied.String())
+	summary := comm.Must(flow.GetSessionSummary(ctx, nil)).Output
+	return agentloop.SessionCleanupReceipt{ProjectID: identity.ProjectID, Reason: agentloop.CloseReasonAdmissionDenied.String(), Snapshot: &summary}
 }
 
 // incrementWaitingInputRound advances the watermark for a wait that starts
@@ -265,6 +274,118 @@ func lifecycleStepOptions(failure *dex.ExecuteFailure, locks ...dex.AttributeLoc
 		options.ExecuteLockAttributes = locks
 	}
 	return &options
+}
+
+// withExecuteFailure is a copy of options with the Execute failure route of a Step.
+func withExecuteFailure(options *dex.StepOptions, failure *dex.ExecuteFailure) *dex.StepOptions {
+	copied := *options
+	copied.ExecuteFailure = failure
+	return &copied
+}
+
+// interruptStepOptions are the options of one InterruptAgent: a few idempotent
+// Sandbox stops under a heartbeat, without a lock, and its failure route.
+func interruptStepOptions(failure *dex.ExecuteFailure) *dex.StepOptions {
+	return &dex.StepOptions{ExecuteMethodTimeout: 3 * time.Minute, HeartbeatTimeout: time.Minute, ExecuteDurability: dex.StepDurabilitySync,
+		ExecuteRetry: dexflow.StepRetry(6 * time.Minute), ExecuteLoadAttributeMaps: taskMaps, ExecuteFailure: failure}
+}
+
+// interruptMovementOptions are the options of the InterruptAgent of one Stop,
+// whose failure route to FinishInterrupt carries that Stop's loads.
+func interruptMovementOptions(interruption agentInterruption) *dex.StepOptions {
+	return interruptStepOptions(dex.ProceedToOnExecuteFailure(FinishInterrupt{}, finishInterruptOptions(interruption)))
+}
+
+// finishInterruptOptions load, for a Stop that ends a wave, the results its
+// branches published before the Stop; FinishInterrupt otherwise needs only its
+// registered options.
+func finishInterruptOptions(interruption agentInterruption) *dex.StepOptions {
+	running := interruption.Running
+	if !interruption.EndsTurn || running == nil || running.Kind != agentloop.RunningWave {
+		return nil
+	}
+	return &dex.StepOptions{ExecuteLoadChannelMapInstances: []dex.ChannelMapLoad{parallelToolResultsChannel.LoadMessages(running.BatchID)}}
+}
+
+func remoteIdleStepOptions() *dex.StepOptions {
+	options := *awaitUserStepOptions
+	options.WaitForLoadChannels = []dex.ChannelDef{remoteInboxChannel}
+	options.ExecuteLoadChannels = []dex.ChannelDef{remoteInboxChannel}
+	options.WaitForLockAttributes = []dex.AttributeLock{executorLock, interruptLock}
+	return &options
+}
+
+func remoteStepOptions() *dex.StepOptions {
+	options := *checkSteeredStepOptions
+	options.WaitForLoadChannels = []dex.ChannelDef{remoteInboxChannel}
+	options.ExecuteLoadChannels = []dex.ChannelDef{remoteInboxChannel}
+	options.WaitForLockAttributes = []dex.AttributeLock{executorLock, interruptLock}
+	return &options
+}
+
+// serialToolStepOptions is the execution policy of one serial ExecuteTool
+// movement. A call whose retries are exhausted is recorded as a platform
+// failure the model reads; a bash call has the polling options of its own
+// timeout and is settled from the command ledger.
+func serialToolStepOptions(ctx dex.Context, call conversation.ToolCall) *dex.StepOptions {
+	if call.Name == conversation.ToolBash {
+		return commandStepOptions(call)
+	}
+	options := parallelToolStepOptions(agentloop.CatalogTool(call.Name))
+	options.ExecuteLoadAttributeMaps = messageMaps
+	configureConnectorToolOptions(options, call)
+	configureTaskWorktreeToolOptions(options, call)
+	switch agentID, isSubagent := subagentOfCall(call); {
+	case call.Name == conversation.ToolStartAgent:
+		// The new worktree keeps the worktrees of the unfinished subagents.
+		options.ExecuteLoadAttributeMaps = taskMessageMaps
+		options.ExecuteLoadAttributeMapInstances = credentialInfoLoads()
+		model := subagentCredentialModel(ctx, call)
+		if !model.IsMock() {
+			options.ExecuteLoadAttributeMapInstances = append(options.ExecuteLoadAttributeMapInstances, modelKeysAttribute.Load(modelcredential.ForModel(model).String()))
+		}
+		options.ExecuteLockAttributes = append(options.ExecuteLockAttributes, credentialInfoLocks()...)
+	case isSubagent:
+		options.ExecuteLoadAttributeMapInstances = []dex.AttributeMapLoad{subagentsAttribute.Load(agentID)}
+	}
+	options.ExecuteFailure = ExecuteTool{}.GetStepOptions().ExecuteFailure
+	return options
+}
+
+// commandStepOptions is the policy of an ExecuteTool movement for bash: a
+// polling Step bounded by the call's own timeout, whose failure route settles
+// the command from the Sandbox's command ledger.
+func commandStepOptions(call conversation.ToolCall) *dex.StepOptions {
+	options := dexflow.PollingStepOptions(sandboxtools.CommandTimeout(call.Arguments.String()), ExecuteTool{command: true}.GetStepOptions().ExecuteFailure)
+	options.ExecuteLoadAttributeMaps = []dex.AttributeDef{currentMessagesAttribute, backgroundCommandsAttribute}
+	return options
+}
+
+// parallelToolStepOptions is the execution policy of one ExecuteParallelTool
+// branch. A branch whose retries are exhausted always publishes a result, so
+// that the join can resolve the batch.
+func parallelToolStepOptions(definition agentloop.ToolDefinition) *dex.StepOptions {
+	return &dex.StepOptions{
+		ExecuteMethodTimeout:     definition.AttemptTimeout,
+		ExecuteLoadAttributeMaps: remoteWorktreeFileMapLoads(definition.Name),
+		HeartbeatTimeout:         time.Minute,
+		ExecuteDurability:        toolExecuteDurability(definition),
+		ExecuteRetry: &dex.RetryPolicy{
+			InitialInterval: agentloop.ToolRetryInitialInterval, BackoffCoefficient: agentloop.ToolRetryBackoffCoefficient, MaximumInterval: agentloop.ToolRetryMaximumInterval,
+			// #nosec G115 -- the catalog init check bounds MaximumAttempts to int32.
+			MaximumAttempts: int32(definition.MaximumAttempts), TotalDuration: definition.RetryTotalDuration,
+		},
+		ExecuteFailure: ExecuteParallelTool{}.GetStepOptions().ExecuteFailure,
+	}
+}
+
+// toolExecuteDurability starts a long-running call directly as a synchronous
+// activity; others use the default asynchronous local execution.
+func toolExecuteDurability(definition agentloop.ToolDefinition) dex.StepDurability {
+	if definition.LongRunning {
+		return dex.StepDurabilitySync
+	}
+	return dex.StepDurabilityDefault
 }
 
 // userCommandRPC locks SessionStatus, which the Project's deletion fences, and

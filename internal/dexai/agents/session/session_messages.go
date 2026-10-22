@@ -91,6 +91,14 @@ func beginSteeredTurn(ctx dex.Context, messages []conversation.PendingUserMessag
 	writeActivity(ctx, agentloop.SteeringAppliedEvent(len(messages)))
 }
 
+// applySteering begins the turn of the steered messages CheckSteered took, which abandons
+// a pending subagent start, and returns the continuation that starts the turn.
+func applySteering(ctx dex.Context, steered []conversation.PendingUserMessage) agentloop.Continuation {
+	abandonPendingSubagentStart(ctx)
+	beginSteeredTurn(ctx, steered)
+	return agentloop.ContinueStartTurn
+}
+
 type archivedMessagesRPCOutput struct {
 	Page  conversation.HistoryPage `json:"page"`
 	Found bool                     `json:"found"`
@@ -630,28 +638,13 @@ func stopStartingSubagentsOf(ctx dex.Context, interruption agentInterruption) {
 	}
 }
 
-// interruptStepOptions are the options of one InterruptAgent: a few idempotent
-// Sandbox stops under a heartbeat, without a lock, and its failure route.
-func interruptStepOptions(failure *dex.ExecuteFailure) *dex.StepOptions {
-	return &dex.StepOptions{ExecuteMethodTimeout: 3 * time.Minute, HeartbeatTimeout: time.Minute, ExecuteDurability: dex.StepDurabilitySync,
-		ExecuteRetry: dexflow.StepRetry(6 * time.Minute), ExecuteLoadAttributeMaps: taskMaps, ExecuteFailure: failure}
-}
-
-// interruptMovementOptions are the options of the InterruptAgent of one Stop,
-// whose failure route to FinishInterrupt carries that Stop's loads.
-func interruptMovementOptions(interruption agentInterruption) *dex.StepOptions {
-	return interruptStepOptions(dex.ProceedToOnExecuteFailure(FinishInterrupt{}, finishInterruptOptions(interruption)))
-}
-
-// finishInterruptOptions load, for a Stop that ends a wave, the results its
-// branches published before the Stop; FinishInterrupt otherwise needs only its
-// registered options.
-func finishInterruptOptions(interruption agentInterruption) *dex.StepOptions {
-	running := interruption.Running
-	if !interruption.EndsTurn || running == nil || running.Kind != agentloop.RunningWave {
-		return nil
+// finishTaskStop settles a Stop that did not end the turn once its starting subagents are stopped: it leaves
+// the Stop's marker when the Agent (state) already waits for a message and reports the stopped tasks.
+func finishTaskStop(ctx dex.Context, state agentloop.AgentState, pending *agentloop.AgentInterrupt) {
+	if state.Status == agentloop.AgentStatusWaitingForMessage {
+		writeStopMarker(ctx, pending)
 	}
-	return &dex.StepOptions{ExecuteLoadChannelMapInstances: []dex.ChannelMapLoad{parallelToolResultsChannel.LoadMessages(running.BatchID)}}
+	writeActivity(ctx, interruptActivity(ctx, "Stopped the running tasks."))
 }
 
 // interruptActivity is the activity of a Stop; after InterruptAgent exhausted
@@ -661,22 +654,6 @@ func interruptActivity(ctx dex.Context, message string) conversation.AgentEvent 
 		message += " Stopping the running tasks failed: " + detail
 	}
 	return conversation.AgentEvent{Kind: conversation.EventKindAgentInterrupted, Message: message}
-}
-
-func remoteIdleStepOptions() *dex.StepOptions {
-	options := *awaitUserStepOptions
-	options.WaitForLoadChannels = []dex.ChannelDef{remoteInboxChannel}
-	options.ExecuteLoadChannels = []dex.ChannelDef{remoteInboxChannel}
-	options.WaitForLockAttributes = []dex.AttributeLock{executorLock, interruptLock}
-	return &options
-}
-
-func remoteStepOptions() *dex.StepOptions {
-	options := *checkSteeredStepOptions
-	options.WaitForLoadChannels = []dex.ChannelDef{remoteInboxChannel}
-	options.ExecuteLoadChannels = []dex.ChannelDef{remoteInboxChannel}
-	options.WaitForLockAttributes = []dex.AttributeLock{executorLock, interruptLock}
-	return &options
 }
 
 func remoteHeadCount(ctx dex.Context) int {
