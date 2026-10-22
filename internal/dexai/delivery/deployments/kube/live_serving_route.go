@@ -26,11 +26,8 @@ import (
 	infrakube "github.com/superdurable/superversev2/internal/dexai/projects/infra/kube"
 )
 
-// Activate moves the project's Live Worker endpoint and then its Live route to
-// the ready generation, makes its
-// published Flow Definitions the ones project Dex serves, and succeeds once
-// the public route answers the health path. Until then it reports
-// infra.ErrPending with the reason.
+// Activate writes the guarded active FDG before the HTTP route and observes
+// public health. An uncertain activation rechecks exact resource ownership.
 func (l *LiveServing) Activate(ctx context.Context, s deployments.Snapshot) (deployments.Activation, error) {
 	if _, err := l.VerifyReadiness(ctx, s); err != nil {
 		return deployments.Activation{}, err
@@ -43,13 +40,8 @@ func (l *LiveServing) Activate(ctx context.Context, s deployments.Snapshot) (dep
 	if err != nil {
 		return deployments.Activation{}, err
 	}
-	// The Worker endpoint moves first, so the generation the route serves
-	// already runs the open Flows.
-	worker, err := l.routeWorker(ctx, s)
+	worker, err := l.workerIdentity(ctx, s)
 	if err != nil {
-		return deployments.Activation{}, err
-	}
-	if err = l.routeLive(ctx, s); err != nil {
 		return deployments.Activation{}, err
 	}
 	// A delayed activation never overwrites the manifest of a newer route.
@@ -58,13 +50,16 @@ func (l *LiveServing) Activate(ctx context.Context, s deployments.Snapshot) (dep
 		if readErr != nil {
 			return readErr
 		}
-		if route == nil || !ownedByGeneration(route, s) {
+		if route == nil && s.ExpectedLiveRevision != 0 || route != nil && !ownedByGeneration(route, s) && kubeapi.String(kubeapi.Labels(route), kubeapi.GenerationLabel) != strconv.FormatUint(s.ExpectedLiveRevision, 10) {
 			return errors.New("the Live route moved to another generation before FDG activation")
 		}
 		return nil
 	})
 	if err != nil {
 		return deployments.Activation{}, fmt.Errorf("activate the Flow Definitions of %s: %w", s.BuildRevisionID, err)
+	}
+	if err = l.routeLive(ctx, s); err != nil {
+		return deployments.Activation{}, err
 	}
 	publicURL := l.Routes.URL(infra.ScopeLive, s.ProjectID)
 	// The Backend names where the route is probed, such as the Local Kind

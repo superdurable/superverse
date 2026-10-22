@@ -181,7 +181,7 @@ func (k *Infrastructure) ensureProjectDex(ctx context.Context, project, accepted
 	configMount["readOnly"] = true
 	mounts := []any{configMount, kubeapi.VolumeMount("tmp", "/tmp")}
 	volumes := []any{kubeapi.SecretVolume("config", configName), kubeapi.EmptyDirVolume("tmp", dex.TmpSizeLimit)}
-	deployment := k.InfrastructureDeployment(project, ComponentDex, k.DexImage, []string{"--services", "api,interpreter"}, infra.DexPort, env, mounts, volumes)
+	deployment := k.InfrastructureDeployment(project, ComponentDex, k.DexImage, []string{"--services", "api,interpreter,matching"}, infra.DexPort, env, mounts, volumes)
 	template := kubeapi.Child(kubeapi.Child(deployment, "spec"), "template")
 	annotations := kubeapi.Object{specDigestAnnotation: specDigest(config)}
 	kubeapi.Child(template, "metadata")["annotations"] = annotations

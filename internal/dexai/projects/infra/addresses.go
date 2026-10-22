@@ -14,24 +14,16 @@ import (
 	"strconv"
 
 	"github.com/superdurable/superversev2/internal/comm/platform/deploymentnames"
-	"github.com/superdurable/superversev2/internal/dexai/app/appmanifest"
 )
 
 // Fixed ports of project workloads. Services, network policies and Local Native
 // forwarding admit only these.
 const (
-	DexPort        = 8801
-	TemporalPort   = 7233
-	StoragePort    = 9000
-	LiveWorkerPort = appmanifest.WorkerPort
+	DexPort             = 8801
+	TemporalPort        = 7233
+	StoragePort         = 9000
+	WorkerReadinessPort = 8081
 )
-
-// LiveWorkerEndpoint names the one Worker endpoint of a project's Live scope,
-// which follows the current Live generation: a headless Service in the project
-// namespace, or a network alias on the project's Docker network. Every Live Flow
-// stores it as its Worker target, so a new generation takes over the open
-// Flows that an earlier one started.
-const LiveWorkerEndpoint = "live-worker"
 
 // CredentialReadPort is the platform server's port of the credential read
 // endpoint in the cluster: the chart's container and Service port and the

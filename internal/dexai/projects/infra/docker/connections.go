@@ -12,7 +12,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -21,7 +21,6 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/platform/deploymentnames"
 	"github.com/superdurable/superversev2/internal/dexai/projects/infra"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -32,13 +31,6 @@ const sandboxDexCheck = 10 * time.Second
 // SandboxAlias is the alias of a Sandbox container on its Session's network,
 // which a Sandbox Service names in Kubernetes.
 const SandboxAlias = "coding"
-
-// WorkerAddress is the address at which the project's Dex reaches the Worker
-// of the current Live generation: the Live Worker alias on the project
-// network, which only that generation's container holds.
-func (k *Infrastructure) WorkerAddress(string) string {
-	return net.JoinHostPort(infra.LiveWorkerEndpoint, strconv.Itoa(infra.LiveWorkerPort))
-}
 
 // DialProjectDex opens one private gRPC connection to the project's Live Dex
 // after verifying the accepted network and Dex service and that the Dex
@@ -72,29 +64,19 @@ func (k *Infrastructure) CheckWorker(ctx context.Context, t infra.WorkerTarget) 
 	if err != nil {
 		return err
 	}
-	return ProbeWorker(ctx, address)
-}
-
-// ProbeWorker reports whether the Worker at address, a loopback address that a
-// container publishes, accepts an HTTP/2 connection within two seconds.
-func ProbeWorker(ctx context.Context, address string) (err error) {
-	connection, closeConnection, err := dialPrivate(ctx, address)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://"+address+"/readyz", nil)
 	if err != nil {
 		return err
 	}
-	defer func() { err = errors.Join(err, closeConnection()) }()
-	probe, stop := context.WithTimeout(ctx, 2*time.Second)
-	defer stop()
-	connection.Connect()
-	for {
-		state := connection.GetState()
-		if state == connectivity.Ready {
-			return nil
-		}
-		if state == connectivity.Shutdown || !connection.WaitForStateChange(probe, state) {
-			return errors.New("current application Worker is not ready")
-		}
+	response, err := (&http.Client{Timeout: 2 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}).Do(request)
+	if err != nil {
+		return err
 	}
+	defer func() { _ = response.Body.Close() }()
+	if response.StatusCode != http.StatusOK {
+		return errors.New("application Worker is not registered")
+	}
+	return nil
 }
 
 // verifyWorker checks that the target names a Live generation's Worker: the
@@ -106,7 +88,7 @@ func (k *Infrastructure) verifyWorker(ctx context.Context, t infra.WorkerTarget)
 		return "", errors.New("application Worker target identity is incomplete")
 	}
 	network, name := k.ProjectNetwork(t.ProjectID), k.GenerationName(t.ProjectID, t.DeploymentID, t.Generation)
-	if t.Namespace.Name != network || t.Controller.Name != name || t.Controller.Boundary != network || t.Service.Name != name || t.Service.Boundary != network {
+	if t.Namespace.Name != network || t.Controller.Name != name+"-worker" || t.Controller.Boundary != network || t.Service.Name != name || t.Service.Boundary != network {
 		return "", errors.New("application Worker resource scope differs")
 	}
 	if _, err := k.CurrentNetwork(ctx, network, t.Namespace.UID, k.OwnerLabels(t.ProjectID, infra.ComponentInfrastructure)); err != nil {
@@ -116,18 +98,17 @@ func (k *Infrastructure) verifyWorker(ctx context.Context, t infra.WorkerTarget)
 	if _, err := k.CurrentNetwork(ctx, name, t.Service.UID, labels); err != nil {
 		return "", err
 	}
-	container, err := k.OwnedContainer(ctx, name, labels)
+	container, err := k.OwnedContainer(ctx, name+"-worker", labels)
 	if err != nil {
 		return "", err
 	}
 	if container == nil || container.ID != t.Controller.UID || !container.Joined(t.Service.UID) || !container.Joined(t.Namespace.UID) {
 		return "", errors.New("application Worker resource ownership changed")
 	}
-	// New Flows run on the Live Worker alias, which this generation must hold.
-	if !container.Attached(t.Namespace.UID, infra.LiveWorkerEndpoint) {
-		return "", errors.New("the Live Worker endpoint is not the generation's")
+	if !container.State.Running {
+		return "", errors.New("application Worker is not running")
 	}
-	return container.PublishedAddress(infra.LiveWorkerPort)
+	return container.PublishedAddress(infra.WorkerReadinessPort)
 }
 
 // GenerationLabels are the owner labels of a Live deployment generation's

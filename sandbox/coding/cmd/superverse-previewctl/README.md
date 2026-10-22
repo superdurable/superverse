@@ -60,8 +60,7 @@ candidate remain.
 
 The application inherits `begin`'s environment followed by these fixed values,
 which the caller cannot override: `PORT=3000`, `HOST=0.0.0.0`,
-`DEX_FLOW_SERVICE_ADDRESS=127.0.0.1:8801`, `DEX_WORKER_BIND_ADDRESS` and
-`DEX_WORKER_TARGET` `127.0.0.1:18811`, and
+`DEX_FLOW_SERVICE_ADDRESS=127.0.0.1:8801` and
 `DEX_BLOB_CACHE_DIR=/tmp/superverse-preview/app-blobs`.
 
 ## Application test engine
@@ -241,3 +240,7 @@ The Kind and hosted behavior of the profile (subPath ownership, the Service
 port, gVisor flock and SQLite on the volume, ReadWriteOncePod) needs the Kind
 scenarios of the Preview and the Session's reclamation and the AWS receipts of
 Part B.
+
+Preview writes one fixed `runtime.yaml` at `/tmp/superverse-app/runtime.yaml` and supervises separate `web` and `worker` process groups of the same binary. Both groups have durable owner identities for restart cleanup. Readiness requires web health and Worker readiness; execution stays push on `previewWorkerAddress` (`127.0.0.1:18811`). Stopping either failed generation reaps both groups before releasing the source tree.
+
+`make check-test-lanes` pins the supervisor's `previewWorkerAddress` to the platform's `PreviewWorkerAddress` and requires the runtime writer to use that address for both bind and target.

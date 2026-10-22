@@ -32,6 +32,7 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/platform/postgres/postgrestest"
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost/localgit"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/preview"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/mockmodel/summarymodel"
 	"github.com/superdurable/superversev2/internal/dexai/projects"
 	projectconfig "github.com/superdurable/superversev2/internal/dexai/projects/config"
 	"github.com/superdurable/superversev2/internal/dexai/projects/infra"
@@ -46,12 +47,11 @@ import (
 // A Project's Preview configuration is its own (infra.PreviewKeysOf), so a
 // connection the AppManifest declares is unconfigured on every Project a test
 // creates.
-// The browser cases configure the template's llm connection in Studio with
-// the OpenAI provider, the key of SUPERVERSE_E2E_OPENAI_FILE and this model.
+// Local verification uses the platform summary model by default. Real
+// provider verification requires the same explicit approval as browser cases.
 const (
-	llmConnector       = "llm"
-	openAIProvider     = "openai"
-	openAIPreviewModel = "gpt-5-mini"
+	llmConnector   = "llm"
+	openAIProvider = "openai"
 )
 
 // connectionList is the part of the configuration host's connection list that
@@ -105,8 +105,8 @@ func (s *mockSession) configurationRevision(ctx context.Context, configuration *
 // the API would have authenticated. It lists the connections of target's
 // source (ListConnections); creates in the Project's TeamSpace, as the
 // TeamSpace's Connections page does, a connection of every declared llm
-// connection with the OpenAI provider, the browser cases' model and the key of
-// SUPERVERSE_E2E_OPENAI_FILE, and of every connection of a connector that
+// connection with the browser cases' mock summary model by default, and of
+// every connection of a connector that
 // declares no authentication method, such as a public feed, with its defaults
 // and no credential, unless the test seeded the connection name's connection
 // itself (seeded); selects each one for its connection name
@@ -117,7 +117,7 @@ func (s *mockSession) configurationRevision(ctx context.Context, configuration *
 // the key or a configuration document.
 func (s *mockSession) configureConnections(ctx context.Context, configuration *projectconfig.Configuration, target *pb.FlowApiTarget) *pb.ProjectConfigurationSnapshot {
 	s.t.Helper()
-	key := openAIKey(s.t)
+	key := summaryKey(s.t)
 	list, revision := s.configurationRevision(ctx, configuration, target)
 	var err error
 	selected := 0
@@ -127,7 +127,7 @@ func (s *mockSession) configureConnections(ctx context.Context, configuration *p
 		switch {
 		case seeded:
 		case connection.ConnectorID == llmConnector:
-			settings = map[string]json.RawMessage{"provider": comm.Must(json.Marshal(openAIProvider)), "model": comm.Must(json.Marshal(openAIPreviewModel))}
+			settings = map[string]json.RawMessage{"provider": comm.Must(json.Marshal(openAIProvider)), "model": comm.Must(json.Marshal(summaryModel(s.t)))}
 			credentials = map[string]json.RawMessage{"api_key": comm.Must(json.Marshal(key))}
 		case connection.AuthMethodID == "":
 			settings, credentials = map[string]json.RawMessage{}, map[string]json.RawMessage{}
@@ -227,11 +227,36 @@ func (s *mockSession) invokeConfiguration(ctx context.Context, configuration *pr
 	}
 }
 
-// openAIKey is the key of the private file that SUPERVERSE_E2E_OPENAI_FILE
-// names, {"apiKey":"sk-..."}, which the browser cases read too. A failure
-// names the setting, never the file's content.
-func openAIKey(t *testing.T) string {
+func usesMockSummary(t *testing.T) bool {
 	t.Helper()
+	switch os.Getenv("SUPERVERSE_E2E_LLM") {
+	case "", "mock":
+		return true
+	case "real":
+		if strings.TrimSpace(os.Getenv("SUPERVERSE_E2E_REAL_LLM_APPROVAL")) == "" {
+			t.Fatal("real LLM verification requires the platform developer's recorded approval reason")
+		}
+		return false
+	default:
+		t.Fatal("SUPERVERSE_E2E_LLM must be mock or real")
+		return false
+	}
+}
+
+func summaryModel(t *testing.T) string {
+	t.Helper()
+	if usesMockSummary(t) {
+		return summarymodel.ModelForTest
+	}
+	return "gpt-5-mini"
+}
+
+// summaryKey never reads a provider key on the default mock path.
+func summaryKey(t *testing.T) string {
+	t.Helper()
+	if usesMockSummary(t) {
+		return summarymodel.APIKeyForTest
+	}
 	data, err := os.ReadFile(dexflowtest.Setting(t, "SUPERVERSE_E2E_OPENAI_FILE")) //nolint:gosec // the operator's private credential file
 	var file struct {
 		APIKey string `json:"apiKey"`

@@ -18,7 +18,8 @@ import (
 // Worker owns the Dex Worker, the Dex Client used by the API and the Slack
 // Trigger runner, and their blob cache.
 type Worker struct {
-	Client *dex.Client
+	lifecycle *lifecycle
+	Client    *dex.Client
 	// Triggers receives the relayed Slack events at slack.RelayedTriggerPath;
 	// run it with Run beside the Worker.
 	Triggers  *slack.MessageTriggerRunner
@@ -27,6 +28,10 @@ type Worker struct {
 }
 
 func New(logger *slog.Logger) (*Worker, error) {
+	lifecycle, err := loadRuntime()
+	if err != nil {
+		return nil, err
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 	configuration, err := connectorconfiguration.Load(ctx)
@@ -41,43 +46,48 @@ func New(logger *slog.Logger) (*Worker, error) {
 	if err != nil {
 		return nil, fmt.Errorf("register Flows: %w", err)
 	}
-	cache, err := blobcache.New(&blobcache.Config{Dir: environment("DEX_BLOB_CACHE_DIR", filepath.Join(os.TempDir(), "application-blobs")), MaxBytes: 256 << 20, Logger: logger})
+	cache, err := blobcache.New(&blobcache.Config{Dir: filepath.Join(environment("DEX_BLOB_CACHE_DIR", filepath.Join(os.TempDir(), "application-blobs")), string(lifecycle.mode)), MaxBytes: 256 << 20, Logger: logger})
 	if err != nil {
 		return nil, fmt.Errorf("create Dex blob cache: %w", err)
 	}
 	flowServiceAddress := environment("DEX_FLOW_SERVICE_ADDRESS", "127.0.0.1:8801")
-	// Live sets a headless target that Dex resolves itself, so the Flows follow
-	// it to each new version of the application.
-	workerTarget := dex.WorkerTarget{Address: environment("DEX_WORKER_TARGET", "127.0.0.1:8811"), Headless: os.Getenv("DEX_WORKER_HEADLESS") == "true"}
-	dexWorker, err := dex.NewWorker(registry, cache, dex.WorkerOptions{BindAddress: environment("DEX_WORKER_BIND_ADDRESS", "127.0.0.1:8811"), WorkerTarget: workerTarget, FlowServiceAddress: flowServiceAddress, Logger: logger})
+	options := lifecycle.options(flowServiceAddress)
+	options.Logger = logger
+	dexWorker, err := dex.NewWorker(registry, cache, options)
 	if err != nil {
 		_ = cache.Close()
 		return nil, fmt.Errorf("create Dex Worker: %w", err)
 	}
-	client, err := dex.NewClient(registry, cache, dex.ClientOptions{FlowServiceAddress: flowServiceAddress, WorkerTarget: &workerTarget, Logger: logger})
+	workerTarget := dexWorker.WorkerTarget()
+	client, err := dex.NewClient(registry, cache, dex.ClientOptions{FlowServiceAddress: flowServiceAddress, WorkerTarget: workerTarget, Logger: logger})
 	if err != nil {
 		_ = dexWorker.Stop(context.Background())
 		_ = cache.Close()
 		return nil, fmt.Errorf("create Dex Client: %w", err)
 	}
-	triggers, err := OpenTriggers(configuration, connections, client, logger)
-	if err != nil {
-		_ = client.Close()
-		_ = dexWorker.Stop(context.Background())
-		_ = cache.Close()
-		return nil, err
+	var triggers *slack.MessageTriggerRunner
+	if lifecycle.mode == modeWeb {
+		triggers, err = OpenTriggers(configuration, connections, client, logger)
+		if err != nil {
+			_ = client.Close()
+			_ = dexWorker.Stop(context.Background())
+			_ = cache.Close()
+			return nil, err
+		}
 	}
-	return &Worker{Client: client, Triggers: triggers, dexWorker: dexWorker, cache: cache}, nil
+	return &Worker{lifecycle: lifecycle, Client: client, Triggers: triggers, dexWorker: dexWorker, cache: cache}, nil
 }
 
 func (worker *Worker) Start() <-chan error {
-	result := make(chan error, 1)
-	go func() { result <- worker.dexWorker.Start() }()
-	return result
+	if worker.IsWorker() {
+		return worker.startDex()
+	}
+	return make(chan error)
 }
 
 func (worker *Worker) Close() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	worker.MarkStopping()
+	ctx, cancel := context.WithTimeout(context.Background(), 11*time.Minute)
 	defer cancel()
 	return errors.Join(worker.dexWorker.Stop(ctx), worker.Client.Close(), worker.cache.Close())
 }

@@ -24,9 +24,8 @@ type Authorization struct {
 	TargetRevision string
 	// WorkerTarget is the host:port of the serving Worker that new Flows run on.
 	WorkerTarget string
-	// WorkerHeadless makes Dex resolve WorkerTarget itself, as the Live Worker
-	// endpoint requires, so the Flows follow it to each new generation.
-	WorkerHeadless bool
+	// WorkerPull selects Live pull dispatch; Preview retains WorkerTarget.
+	WorkerPull bool
 }
 
 // FlowAPI serves the Studio Runs operations of one authorized serving target

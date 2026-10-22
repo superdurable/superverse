@@ -23,12 +23,6 @@ type Connections struct{ Infrastructure *kube.Infrastructure }
 
 var _ infra.Connections = (*Connections)(nil)
 
-// WorkerAddress is the address at which the project's Dex reaches the Worker
-// of the current Live generation.
-func (c *Connections) WorkerAddress(project string) string {
-	return c.Infrastructure.WorkerAddress(project)
-}
-
 // DialProjectDex opens one private gRPC connection to the project's Live Dex
 // after verifying the accepted namespace and Service UIDs and Dex readiness.
 // Authentication and business authorization stay with the caller. The

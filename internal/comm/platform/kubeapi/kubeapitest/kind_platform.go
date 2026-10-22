@@ -23,8 +23,8 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/platform/kubeapi"
 )
 
-// tokenDuration bounds the platform ServiceAccount token of one test.
-const tokenDuration = "15m"
+// tokenDuration bounds one test token, including the real twelve-minute stop recovery and provisioning.
+const tokenDuration = "30m"
 
 // KindClusterRoleBindingForTest is the kind of the cluster-wide binding with which a
 // test gives a probe ServiceAccount a ClusterRole. No provider manages one, so

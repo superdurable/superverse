@@ -14,6 +14,12 @@ started top-level Flows plus typed RPCs or Channels when the confirmed data
 lifecycle requires another owner. Implement a SubFlow only after the Core gate
 is satisfied and the user explicitly confirms it.
 
+### Live releases and compatible Worker overlap
+
+Live source preparation requires `github.com/superdurable/dex/sdk-go v1.13.0` or later after module replacements. A missing dependency, an older or unparseable version, or a local-path replacement rejects the release. Applications may upgrade beyond this floor; the SDK is application-owned.
+
+Live generations overlap while the old Worker drains. A shared Step may execute on either generation, including after the newer generation writes state. Never change or remove an existing field's meaning, and ensure new code reads older values. Put new data in a new Attribute (or a new Channel or RPC payload field). Add a field to an existing Attribute struct only when no older Step writes that Attribute: if N reads, edits and writes `Order`, N+1 stores shipping data in `OrderShipping`, which N never writes. Artifact validation cannot prove this source compatibility rule.
+
 ### Dex-first backend storage
 
 Use Dex Flow state as the default durable application store. Read the shared

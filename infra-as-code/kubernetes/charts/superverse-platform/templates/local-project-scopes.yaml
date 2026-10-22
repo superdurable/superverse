@@ -93,9 +93,11 @@ spec:
         variables.target.metadata.name in [
           'application', 'dex', 'temporal', 'storage', 'temporal-data', 'object-data', 'object-credentials', 'dex-config',
           'dex-server-config', 'default-deny', 'allow-application', 'allow-dex', 'allow-temporal', 'allow-storage', 'allow-dns',
-          'live', 'live-worker', '{{ include "v2.product" $ }}-project-runtime'] ||
+          'live', '{{ include "v2.product" $ }}-project-runtime'] ||
         variables.target.metadata.name.matches('^dex-server-config-[1-9][0-9]{0,19}$') ||
-        variables.target.metadata.name.matches('^app-[a-z0-9]([a-z0-9-]{0,34}[a-z0-9])?-[1-9][0-9]{0,19}(-storage|-environment)?$')
+        variables.target.metadata.name.matches('^app-[a-z0-9]([a-z0-9-]{0,34}[a-z0-9])?-[1-9][0-9]{0,19}(-storage|-environment)?$') ||
+        (request.resource.resource == 'deployments' &&
+         variables.target.metadata.name.matches('^app-[a-z0-9]([a-z0-9-]{0,34}[a-z0-9])?-[1-9][0-9]{0,19}-worker$'))
       message: Project provider may mutate only fixed infrastructure or generation resource names.
     - expression: >-
         request.resource.resource != 'services' ||

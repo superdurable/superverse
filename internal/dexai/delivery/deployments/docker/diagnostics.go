@@ -47,7 +47,7 @@ func (l *LiveServing) ReadApplication(ctx context.Context, deployment deployment
 // generated for the project, each when it is long enough to be redacted.
 func (a *liveApplication) Environment(context.Context) ([]string, error) {
 	fixed := map[string]bool{}
-	for _, setting := range deployments.ApplicationSettings(a.deployment, "", "") {
+	for _, setting := range deployments.ApplicationSettings(a.deployment, "") {
 		fixed[setting[0]] = true
 	}
 	var values []string

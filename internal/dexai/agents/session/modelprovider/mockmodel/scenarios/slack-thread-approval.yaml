@@ -610,38 +610,13 @@ inputs:
           - name: edit
             input:
               path: internal/worker/worker.go
-              old_string: |2-
-                // Worker owns the Dex Worker, the Dex Client used by the API, and their blob cache.
-                type Worker struct {
-                	Client    *dex.Client
-                	dexWorker *dex.Worker
-                	cache     *blobcache.Cache
-                }
-              new_string: |2-
-                // Worker owns the Dex Worker, the Dex Client used by the API and the Slack
-                // Trigger runner, and their blob cache.
-                type Worker struct {
-                	Client *dex.Client
-                	// Triggers receives the relayed Slack events at slack.RelayedTriggerPath;
-                	// run it with Run beside the Worker.
-                	Triggers  *slack.MessageTriggerRunner
-                	dexWorker *dex.Worker
-                	cache     *blobcache.Cache
-                }
+              old_string: "// Worker owns the Dex Worker, the Dex Client used by the API, and their blob cache.\ntype Worker struct {\n\tlifecycle *lifecycle\n\tClient    *dex.Client\n\tdexWorker *dex.Worker\n\tcache     *blobcache.Cache\n}"
+              new_string: "// Worker owns the Dex Worker, the Dex Client used by the API and the Slack\n// Trigger runner, and their blob cache.\ntype Worker struct {\n\tlifecycle *lifecycle\n\tClient    *dex.Client\n\t// Triggers receives the relayed Slack events at slack.RelayedTriggerPath;\n\t// run it with Run beside the Worker.\n\tTriggers  *slack.MessageTriggerRunner\n\tdexWorker *dex.Worker\n\tcache     *blobcache.Cache\n}"
           - name: edit
             input:
               path: internal/worker/worker.go
-              old_string: |2-
-                	return &Worker{Client: client, dexWorker: dexWorker, cache: cache}, nil
-              new_string: |2-
-                	triggers, err := OpenTriggers(configuration, connections, client, logger)
-                	if err != nil {
-                		_ = client.Close()
-                		_ = dexWorker.Stop(context.Background())
-                		_ = cache.Close()
-                		return nil, err
-                	}
-                	return &Worker{Client: client, Triggers: triggers, dexWorker: dexWorker, cache: cache}, nil
+              old_string: "\treturn &Worker{lifecycle: lifecycle, Client: client, dexWorker: dexWorker, cache: cache}, nil"
+              new_string: "\tvar triggers *slack.MessageTriggerRunner\n\tif lifecycle.mode == modeWeb {\n\t\ttriggers, err = OpenTriggers(configuration, connections, client, logger)\n\t\tif err != nil {\n\t\t\t_ = client.Close()\n\t\t\t_ = dexWorker.Stop(context.Background())\n\t\t\t_ = cache.Close()\n\t\t\treturn nil, err\n\t\t}\n\t}\n\treturn &Worker{lifecycle: lifecycle, Client: client, Triggers: triggers, dexWorker: dexWorker, cache: cache}, nil"
       - text: "Serving the relayed Slack events on the application's HTTP server and running the trigger runner beside the Worker."
         tool_uses:
           - name: edit

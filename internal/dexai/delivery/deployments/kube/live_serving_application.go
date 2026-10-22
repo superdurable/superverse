@@ -30,28 +30,28 @@ import (
 // configuration through the SDK; environment holds the grant's storage and
 // project references, which may be secret, so they reach the Pod only through
 // an immutable generation Secret.
-func (l *LiveServing) ApplyApplication(ctx context.Context, s deployments.Snapshot, environment map[string]string) (infra.ResourceRef, error) {
+func (l *LiveServing) ApplyApplication(ctx context.Context, s deployments.Snapshot, environment map[string]string) (deployments.ApplicationResources, error) {
 	name := infra.WorkloadName(s.DeploymentID, s.Lease.Generation)
 	if s.Resources.Storage.Boundary.UID == "" || s.Resources.Service.Name != name || s.Resources.Service.UID == "" {
-		return infra.ResourceRef{}, fmt.Errorf("the application infrastructure of %s has no admitted namespace and Service identity", name)
+		return deployments.ApplicationResources{}, fmt.Errorf("the application infrastructure of %s has no admitted namespace and Service identity", name)
 	}
 	if _, err := l.CurrentNamespace(ctx, s.ProjectID, s.Resources.Storage.Boundary.UID); err != nil {
-		return infra.ResourceRef{}, err
+		return deployments.ApplicationResources{}, err
 	}
 	if _, err := l.Ensure(ctx, l.applicationPolicy(s, name), s.ProjectID, infrakube.ComponentApplication); err != nil {
-		return infra.ResourceRef{}, err
+		return deployments.ApplicationResources{}, err
 	}
 	secretName := name + "-environment"
 	var env []any
-	for _, setting := range deployments.ApplicationSettings(s, l.WorkerAddress(s.ProjectID), l.Routes.URL(infra.ScopeLive, s.ProjectID)) {
+	for _, setting := range deployments.ApplicationSettings(s, l.Routes.URL(infra.ScopeLive, s.ProjectID)) {
 		env = append(env, kubeapi.EnvVar(setting[0], setting[1]))
 	}
-	secretData := kubeapi.Object{}
+	secretData := kubeapi.Object{"runtime.yaml": base64.StdEncoding.EncodeToString(deployments.ApplicationRuntime())}
 	for _, key := range slices.Sorted(maps.Keys(environment)) {
 		value := environment[key]
 		if strings.ContainsRune(value, '\x00') || len(value) > 32768 {
 			// The value may be a credential; only its name is reported.
-			return infra.ResourceRef{}, fmt.Errorf("application environment value %s holds a NUL byte or exceeds 32768 bytes", key)
+			return deployments.ApplicationResources{}, fmt.Errorf("application environment value %s holds a NUL byte or exceeds 32768 bytes", key)
 		}
 		secretData[key] = base64.StdEncoding.EncodeToString([]byte(value))
 		env = append(env, kubeapi.SecretEnvVar(key, secretName, key))
@@ -59,17 +59,26 @@ func (l *LiveServing) ApplyApplication(ctx context.Context, s deployments.Snapsh
 	secret := kubeapi.ImmutableSecret(l.generationMetadata(s, secretName, infrakube.ComponentApplication), secretData)
 	infrakube.MarkSpec(secret)
 	if _, err := l.Ensure(ctx, secret, s.ProjectID, infrakube.ComponentApplication); err != nil {
-		return infra.ResourceRef{}, err
+		return deployments.ApplicationResources{}, err
 	}
-	deployment := kubeapi.SinglePodDeployment(l.generationMetadata(s, name, infrakube.ComponentApplication), l.generationLabels(s, infrakube.ComponentApplication), l.applicationPod(s, env))
+	deployment := kubeapi.SinglePodDeployment(l.generationMetadata(s, name, infrakube.ComponentApplication), l.processLabels(s, deployments.WebMode), l.applicationPod(s, env, deployments.WebMode))
 	infrakube.MarkSpec(deployment)
 	found, err := l.Ensure(ctx, deployment, s.ProjectID, infrakube.ComponentApplication)
 	if err != nil {
-		return infra.ResourceRef{}, err
+		return deployments.ApplicationResources{}, err
+	}
+	workerName := name + "-worker"
+	workerDeployment := kubeapi.SinglePodDeployment(l.generationMetadata(s, workerName, infrakube.ComponentApplication), l.processLabels(s, deployments.WorkerMode), l.applicationPod(s, env, deployments.WorkerMode))
+	infrakube.MarkSpec(workerDeployment)
+	worker, err := l.Ensure(ctx, workerDeployment, s.ProjectID, infrakube.ComponentApplication)
+	if err != nil {
+		return deployments.ApplicationResources{}, err
 	}
 	ref := infrakube.ResourceReference(found)
 	ref.Generation = s.Lease.Generation
-	return ref, nil
+	workerRef := infrakube.ResourceReference(worker)
+	workerRef.Generation = s.Lease.Generation
+	return deployments.ApplicationResources{Web: ref, Worker: workerRef}, nil
 }
 
 // applicationPolicy admits traffic only to the generation's application port,
@@ -85,16 +94,22 @@ func (l *LiveServing) applicationPolicy(s deployments.Snapshot, name string) kub
 
 // applicationPod runs the image as an unprivileged, read-only container that
 // cannot obtain a service-account token, in the runtime class of the Backend.
-func (l *LiveServing) applicationPod(s deployments.Snapshot, env []any) kubeapi.Object {
+func (l *LiveServing) applicationPod(s deployments.Snapshot, env []any, mode deployments.ApplicationMode) kubeapi.Object {
 	security := kubeapi.Object{"allowPrivilegeEscalation": false, "readOnlyRootFilesystem": true, "capabilities": kubeapi.Object{"drop": []string{"ALL"}}, "runAsNonRoot": true, "runAsUser": 65532, "runAsGroup": 65532}
 	container := kubeapi.Object{"name": "application", "image": s.Inputs.ImageReference, "imagePullPolicy": "IfNotPresent", "env": env, "securityContext": security,
-		"ports":          []any{kubeapi.ContainerPort("http", s.Inputs.ApplicationPort), kubeapi.ContainerPort("worker", infra.LiveWorkerPort)},
-		"volumeMounts":   []any{kubeapi.VolumeMount("tmp", "/tmp")},
+		"args":           []string{mode.String()},
+		"ports":          []any{kubeapi.ContainerPort("http", s.Inputs.ApplicationPort)},
+		"volumeMounts":   []any{kubeapi.VolumeMount("tmp", "/tmp"), kubeapi.VolumeMount("runtime", deployments.ApplicationRuntimeDirectory)},
 		"readinessProbe": kubeapi.Object{"httpGet": kubeapi.Object{"path": s.Inputs.HealthPath, "port": s.Inputs.ApplicationPort}, "periodSeconds": 2, "failureThreshold": 30},
 		"resources":      kubeapi.Resources("100m", "128Mi", "2", "1Gi")}
 	pod := kubeapi.Object{"serviceAccountName": l.WorkloadServiceAccount(infra.Workload{ProjectID: s.ProjectID, WorkloadID: s.DeploymentID, Generation: s.Lease.Generation}), "automountServiceAccountToken": false,
 		"securityContext": kubeapi.Object{"runAsNonRoot": true, "runAsUser": 65532, "runAsGroup": 65532, "fsGroup": 65532, "seccompProfile": kubeapi.Object{"type": "RuntimeDefault"}},
-		"volumes":         []any{kubeapi.EmptyDirVolume("tmp", "1Gi")}, "containers": []any{container}}
+		"volumes":         []any{kubeapi.EmptyDirVolume("tmp", "1Gi"), kubeapi.SecretVolume("runtime", infra.WorkloadName(s.DeploymentID, s.Lease.Generation)+"-environment")}, "containers": []any{container}}
+	if mode == deployments.WorkerMode {
+		pod["terminationGracePeriodSeconds"] = int64(deployments.WorkerStopGrace / time.Second)
+		container["ports"] = []any{kubeapi.ContainerPort("readiness", deployments.WorkerReadinessPort)}
+		container["readinessProbe"] = kubeapi.Object{"httpGet": kubeapi.Object{"path": "/readyz", "port": deployments.WorkerReadinessPort}, "periodSeconds": 2, "failureThreshold": 30}
+	}
 	if class := l.Backend.ApplicationRuntimeClass(); class != "" {
 		pod["runtimeClassName"] = class
 	}
@@ -104,7 +119,7 @@ func (l *LiveServing) applicationPod(s deployments.Snapshot, env []any) kubeapi.
 // VerifyReadiness reports the generation ready when its published
 // definitions, its Deployment of the accepted image and its Service are the
 // accepted ones, the application answers its health path and its Worker
-// accepts connections. A Deployment
+// reports pull registration. A Deployment
 // still rolling out or an unhealthy application is infra.ErrPending with the
 // reason.
 func (l *LiveServing) VerifyReadiness(ctx context.Context, s deployments.Snapshot) (deployments.Readiness, error) {

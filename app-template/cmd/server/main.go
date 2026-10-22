@@ -31,6 +31,9 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	if worker.IsWorker() {
+		return runWorker(worker)
+	}
 	defer worker.Close()
 	apiHandler, err := api.NewHandler(worker.Client)
 	if err != nil {

@@ -200,7 +200,7 @@ phase, PhaseTimings) and the Project Live pointer recover lost progress.
 [the current contract](../../../../docs/architecture/studio-setup/flow-changes.md)
 owns the design. VerifyReleaseAndConfiguration records ReplacedLive, the Live
 generation the Project's pointer names at the lease's ExpectedLiveRevision,
-which the lease keeps until this deployment commits. After CommitCurrentLive,
+which the lease keeps until this deployment commits. After CommitCurrentLive and confirmed exit through StopReplacedWorker,
 RequestReplacedRetirement sends that deployment one `RequestLiveRetirement`
 while this deployment still holds the lease, so no newer generation commits in
 between; the RequestID `retire-<deploymentID>-g<generation>` makes a retry
@@ -209,9 +209,8 @@ repeat the same request.
 `RequestLiveRetirement(retirementRequest{RequestID, ReplacedBy})` is
 Revision-locked and makes no external read. A request without a newer
 ReplacedBy is INVALID_ARGUMENT. A generation that is RETIRING, RETIRED,
-REMOVED, cleaned up, or that never held the Live Worker endpoint
-(`DeploymentResources.Worker` empty: deployed before the endpoint existed, so
-its open Flows would be stranded) is answered unchanged, which the sender
+REMOVED, cleaned up, or without an accepted exact Worker reference
+(`DeploymentResources.Worker` empty) is answered unchanged, which the sender
 accepts. Any other status but READY is FAILED_PRECONDITION. A READY generation
 records Retirement with RequestedAt, sets RETIRING and the phase
 RetireReplacedGeneration, and publishes the RequestID on
@@ -223,17 +222,15 @@ DrainReplacedGeneration waits for a Dex timer that ends `live.retirementDrain`
 restart never extends it, or for a wakeup; Project cleanup moves to
 CleanupCancelledDeployment, another wakeup waits again for the rest.
 RetireReplacedGeneration polls without locks: it reads the Project and refuses
-to retire its current Live, then calls `RevokeWorkload` as it is and
-`CleanupDeployment`, which keeps the route and the Live Worker endpoint the
-successor holds and confirms the generation's objects gone. Its commit marks
+to retire its current Live, confirms the exact Worker is absent, then calls `RevokeWorkload` and
+`CleanupDeployment`, which preserves the successor's HTTP route and pull Worker and confirms the generation's objects gone. Its commit marks
 the grant revoked, records RetiredAt and RETIRED and completes. A failure
 passes RecordDeploymentFailure to FAILED with the phase, told to the Session;
 a StartDeployment of that deployment resumes the retirement without the lease,
 and Project cleanup removes it too. `RemoveForProjectCleanup` answers a RETIRED
 deployment as cleaned up. RequestLiveDeployment and the client's resume refuse
 RETIRING and RETIRED: a rollback deploys an earlier build under a new
-deployment ID and generation. An open execution of the earlier graph is READY
-without a Worker endpoint and stays.
+deployment ID and generation. Adoption clears execution data; no earlier push graph is migrated.
 
 ### Cancellation by a person
 
@@ -257,7 +254,7 @@ cancellation cleanup under a new RequestID is admitted again; Project deletion
 DEPLOYING, RECOVERING or FAILED, or a phase from CommitCurrentLive on, is
 refused (`ErrDeploymentNotCancellable`, reason `DEPLOYMENT_NOT_CANCELLABLE`),
 so a deployment that failed in CommitCurrentLive, which may hold the moved
-route and Worker endpoint (the current contract), is never cancelled. Admission
+route and Worker resource (the current contract), is never cancelled. Admission
 records the cancellation and CANCELLING. In StartLiveDex, ApplyApplication or
 VerifyReadiness, or when FAILED, it sets the phase to cleanup and returns
 `NextSteps` with CleanupCancelledDeployment (ReleaseProjectDeployment for a
@@ -293,7 +290,7 @@ objects or reissue its grant: a cancellation that preempted it
 until `preemptedRoundBound` (the heartbeat timeout plus one interval and one
 round, 1m43s) has passed since its admission. Cleanup never removes the
 current Live, its generation, route or
-Worker endpoint, the Live execution environment, the connection usages or the
+Worker resource, the Live execution environment, the connection usages or the
 published Flow Definitions. RequestLiveDeployment and the client's resume
 refuse a cancelled deployment; `start` releases the exact lease of a CANCELLED
 deployment that an acquire left after its cleanup's read. A cancelled
@@ -333,7 +330,7 @@ AdmitDeployment → AcquireProjectDeployment → VerifyReleaseAndConfiguration
       │                       │  RecordLivePreparationFailure, which publishes instead
       └→ AwaitLiveExecutionPreparation (ForN(key, 2))
   → StartLiveDex → ApplyApplication → VerifyReadiness → CommitCurrentLive
-  → RequestReplacedRetirement → ReleaseProjectDeployment → AwaitDeploymentRecovery
+  → StopReplacedWorker → RequestReplacedRetirement → ReleaseProjectDeployment → AwaitDeploymentRecovery
 
 A replaced READY generation: AwaitDeploymentRecovery (RETIRING)
   → DrainReplacedGeneration (timer or Project cleanup) → RetireReplacedGeneration
@@ -370,6 +367,9 @@ REMOVED. No SubFlow is declared.
 | RecordLivePreparationFailure | `ProviderStepOptions`, no failure route | none | Publishes the failed branch's result with its input: the redacted cause and, for a passed wait limit, the limit; a timed-out Temporal branch also gets the cause from one bounded `CheckTemporalDataPlane` query |
 | AwaitLiveExecutionPreparation | `StateStepOptions`, no failure route | none | Joins exactly one result per branch of the current round and merges them for CommitDeploymentPhase |
 | StartLiveDex | `PollingStepOptions(10m)`, failure → RecordDeploymentFailure | none | `StartProjectDex` on the Project's accepted Temporal, `RecordLiveExecution` of the Dex Service, until the Dex is ready |
+| StopFailedCandidateWorker | `PollingStepOptions(12m)`, failure → RecordCandidateStopFailure | none | Check the exact lease and CurrentLive, stop a failed candidate by owned generation/UID, then commit its original failure; never stop an already committed Live |
+| RecordCandidateStopFailure | `StateStepOptions`, no failure route | none | Same typed durable failure input as the stop; commit the stop failure while retaining the original provider phase and lease |
+| StopReplacedWorker | `PollingStepOptions(12m)`, failure → RecordDeploymentFailure | none | After Live commit, reconcile the replaced exact Worker, send SIGTERM and confirm exit; retain HTTP |
 | RequestReplacedRetirement | `ProviderStepOptions`, failure → RecordDeploymentFailure | none | While the lease is still held, one `RequestLiveRetirement` to the ReplacedLive deployment with RequestID `retire-<deploymentID>-g<generation>`; nothing for the first Live |
 | DrainReplacedGeneration | `StateStepOptions`; WaitFor the drain timer or `DeploymentRecoveryDecisions` | none | The business TTL `live.retirementDrain` from Retirement.RequestedAt; Project cleanup moves to CleanupCancelledDeployment |
 | RetireReplacedGeneration | `PollingStepOptions(30m)`, failure → RecordDeploymentFailure | none | Requires a Live pointer of another deployment, then `RevokeWorkload` and `CleanupDeployment` until the generation is gone |
@@ -625,7 +625,7 @@ start ends CANCELLED without its lease and refuses to serve again; one
 cancelled once it polls its provider (or, when the commit came first, READY
 and refused) ends CANCELLED once across a Worker restart, its generation gone
 and its grant revoked, while the current Live keeps its status, grant,
-generation and Live Worker endpoint; a READY deployment refuses; a published
+generation and pull Worker; a READY deployment refuses; a published
 build names its automatic deployment, whose cancellation the Live history
 lists as `PUBLISH_CANCELLED`; and the read model holds the `cancellation`
 column. The Project's deletion then acknowledges every CANCELLED deployment.
@@ -735,3 +735,15 @@ Root composition must set immutable `live.dexImage`, `live.temporalImage` and `l
 | `publishing_flow_service_build_log.go` | The replica's shared, rate-limited and redacted build log reads |
 | `serving.go` | `Serving`, `Activation`, `LiveApplication`, `ApplicationLog` and `ErrApplicationChanged` |
 | `live_serving_definitions.go` | FDG publication and its read, over `infra.Storage` |
+
+### Pull Worker activation
+
+Live uses separate web and pull Worker resources from the pinned image, with runtime YAML in the immutable generation environment Secret (Native: owned temporary volumes). Registration readiness and HTTP health are independent. The guarded FDG precedes HTTP routing and Project.CurrentLive commit under the existing lease. StopReplacedWorker uses PollingStepOptions(12m) and PollUntil to confirm exact Worker exit before RequestReplacedRetirement. Drain is ten minutes; resource grace is eleven minutes. RetireReplacedGeneration confirms Worker absence before grant/HTTP cleanup. No Attribute, Map, Channel, Stream or SQL schema is added; DeploymentResources.Worker now names the exact Worker resource. Adoption resets execution data, so no push reference or old deploy graph is migrated.
+
+### Pull candidate failure and post-commit recovery
+
+`ApplyApplication` records the exact web reference in `ProviderOperationRefs.Application` and the exact Worker reference in `DeploymentResources.Worker` before readiness. A failure in ApplyApplication, VerifyReadiness or CommitCurrentLive passes its original `phaseResult` as durable input to `StopFailedCandidateWorker`. That polling Step has a twelve-minute limit, uses the existing Project lease and owned generation/UID checks, and confirms Worker exit before committing the original failure. Its Execute failure routes to RecordCandidateStopFailure with the same typed input, as required by the pinned SDK. It queries `ProjectFlow.CurrentLive` first: an uncertain activation response must never stop an already committed Live candidate. Cancellation preempts this phase and its cleanup stops the Worker before revoking its grant. The web process remains for existing cleanup. No new Attribute, Map, Channel, Stream, resource or schema is added; only the bounded Step input carries the pending failure.
+
+If stopping the candidate fails, the recorded failure names `StopFailedCandidateWorker`, while the original provider phase and lease remain retained. An exact revision recovery resumes the stop, then reapplies the immutable image to recreate the stopped candidate before readiness. A readiness failure whose stop succeeded similarly retries through ApplyApplication. The original phase is not advanced by a failure.
+
+Post-commit failures keep the existing RequestReplacedRetirement/ReleaseProjectDeployment precedent: the deployment can be `FAILED` while it is still the current Live. `ProjectFlow.CurrentLive` is authoritative for serving, independently of deployment recovery status. Studio's **What is Live** section reads that Project pointer and continues to show its version as Live and serving. A StopReplacedWorker failure names the replaced deployment and generation, keeps N+1's pointer, HTTP route and active FDG unchanged, retains the lease, and waits for an exact revision retry. Retirement is not requested until the exact replaced Worker has exited. Failure notification remains best-effort through the existing Session feedback port. Tests must cover candidate registration followed by readiness failure and confirmed exit before FAILED, ownership conflicts, cancellation/grant order, and a Kind finalizer blocking replaced Worker deletion beyond twelve minutes followed by successful recovery.

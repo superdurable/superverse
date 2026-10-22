@@ -1,3 +1,4 @@
+// During Live Worker overlap, put new data in a new Attribute unless no older Step writes the existing Attribute.
 package process
 
 import (

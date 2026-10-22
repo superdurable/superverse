@@ -109,12 +109,11 @@ read that MinIO denies fails at once instead of waiting.
   which the chart's `<product>-credential-read` policy opens to project
   applications and Sandboxes, and in Local Kind the lane's Keycloak. `StartProjectDex` reads the
   accepted Temporal access without changing it and converges the project Dex
-  (`start --services api,interpreter`, gRPC on 8801 only). The Dex
+  (`start --services api,interpreter,matching`, gRPC on 8801 only). The Dex
   configuration Secret is immutable and named `dex-server-config`. Its spec digest
   controls replacement of the Pod when the configuration changes.
   Hosted Temporal uses generation zero and no credential Secret; its accepted reference
-  stores the Temporal namespace UUID under the retained `TemporalCredential` field name. The Dex Deployment and Service, the
-  `live-worker` Service and every `allow-<component>` policy are updated in place under their
+  stores the Temporal namespace UUID under the retained `TemporalCredential` field name. The Dex Deployment and Service and every `allow-<component>` policy are updated in place under their
   resourceVersion.
   ProjectSetupFlow calls only `EnsureStorage`. A Live deployment calls
   `EnsureTemporal` and `EnsureExecutionAccess` in parallel branches, then
@@ -252,3 +251,5 @@ deletion remain unverified.
 
 Cloud inputs and outputs are in `infra-as-code/terraform`. Verification
 evidence is in the implementation receipts.
+
+Project Dex matching limits are 512 streams per Worker ID per owner and 2048 total. Its Web starts default to pull; headless Worker DNS refresh and Worker-specific NetworkPolicy rules are absent.

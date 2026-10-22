@@ -5,7 +5,7 @@ Purpose: Dials a project's Live Dex or a Sandbox's Preview Dex and checks the Li
 
 Callers: `internal/dexai/bootstrap` imports this package.
 
-Dependencies: it imports `internal/comm/flowid`, `internal/comm/platform/kubeapi`, `internal/dexai/projects/infra` and `internal/dexai/projects/infra/kube` and calls the application Worker, Dex Flow and project Dex APIs.
+Dependencies: it imports `internal/comm/flowid`, `internal/comm/platform/kubeapi`, `internal/dexai/projects/infra` and `internal/dexai/projects/infra/kube` and calls the Dex Flow and project Dex APIs.
 
 ```mermaid
 flowchart LR
@@ -15,17 +15,16 @@ flowchart LR
   self --> d1["internal/comm/platform/kubeapi"]
   self --> d2["internal/dexai/projects/infra"]
   self --> d3["internal/dexai/projects/infra/kube"]
-  self --> e0(["application Worker API"])
-  self --> e1(["Dex Flow API"])
-  self --> e2(["project Dex API"])
+  self --> e0(["Dex Flow API"])
+  self --> e1(["project Dex API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 
 Private connections into a project's Live scope and into a Session's Sandbox.
-`DialProjectDex` and `CheckWorker` verify the accepted namespace, controller and
-Service identities, then dial the private cluster address (`infra.DexAddress`,
-`infra.LiveWorkerAddress`). `CheckWorker` bounds identity checks to 15 seconds
-and the HTTP/2 probe to two.
+`DialProjectDex` verifies accepted namespace and Dex Service identities before dialing.
+`CheckWorker` verifies the exact separate Worker Deployment plus namespace and HTTP
+Service, then reads registration-backed Pod readiness. Its whole check is bounded
+to 15 seconds; there is no inbound Worker connection.
 
 `DialSandboxDex` reaches the Preview Dex that runs inside a Sandbox instance on
 `infra.DexPort`. A `SandboxDexTarget` holds only the identities the instance's

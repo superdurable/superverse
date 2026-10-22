@@ -118,7 +118,9 @@ self-gRPC calls. The BFF calls the business gRPC API using generated clients.
 
 Every platform server replica runs a listener-free pull Worker on Dex Server and Go SDK 1.14.2.
 It opens outbound streams to `dex.serverAddress`; the Dex Client starts platform Flows with the
-Worker's pull target. Project Live application Workers retain their existing push transport.
+Worker's pull target. Project Live applications use separate web and pull Worker processes on their Project Dex.
+FDG, HTTP route and Live pointer activate before old Worker drain; HTTP stays for retirement.
+Preview retains Sandbox-local push.
 Readiness waits for all platform Worker queues to acknowledge registration, probes
 `PullRegistrationState().IsReady` and Dex health, and turns false before shutdown starts.
 A permanent rejection without a registered stream is fatal and identifies its queue and gRPC code.
@@ -1861,8 +1863,7 @@ and UID before dialing fixed port 8801: a Live scope's Dex Service, or for Previ
 the Sandbox's own Service (`connect.DialSandboxDex`), which also verifies the
 Sandbox and its instance label, or in Local Native the instance's container and
 the port it publishes; each request closes its connection. Preview Runs also requires the engine READY behind the same
-Sandbox and Service. Start additionally checks the owned Worker: the fixed Live
-8811 endpoint, or for Preview `superverse-previewctl status` over sandboxd, which
+Sandbox and Service. Start additionally checks the owned Worker: Live controller identity and pull-registration readiness, or for Preview `superverse-previewctl status` over sandboxd, which
 must report the served commit, configuration digest and grant generation with
 127.0.0.1:18811 accepting inside the Pod. There is no fallback to an older
 target.

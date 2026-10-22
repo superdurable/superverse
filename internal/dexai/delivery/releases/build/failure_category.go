@@ -27,26 +27,29 @@ const (
 	FailureResultPublication
 	FailureHostPreparation
 	FailureUnclassifiedPlatform
+	FailureUnsupportedDexSDK
 )
 
 type failureCategoryData struct {
 	name  string
 	class FailureClass
+	hint  string
 }
 
 var failureCategories = map[FailureCategory]failureCategoryData{
-	FailureUnsupportedBuildTools: {"unsupported-build-tools", FailureClassPlatform},
-	FailureInvalidFlowDefinition: {"invalid-flow-definition", FailureClassApplication},
-	FailureDependencyDownload:    {"dependency-download-failed", FailureClassPlatform},
-	FailureImageBuild:            {"image-build-failed", FailureClassApplication},
-	FailureResultPublication:     {"result-publication-failed", FailureClassPlatform},
-	FailureHostPreparation:       {"host-preparation-failed", FailureClassPlatform},
-	FailureUnclassifiedPlatform:  {"unclassified-platform-failure", FailureClassPlatform},
+	FailureUnsupportedBuildTools: {"unsupported-build-tools", FailureClassPlatform, ""},
+	FailureInvalidFlowDefinition: {"invalid-flow-definition", FailureClassApplication, ""},
+	FailureDependencyDownload:    {"dependency-download-failed", FailureClassPlatform, ""},
+	FailureImageBuild:            {"image-build-failed", FailureClassApplication, ""},
+	FailureResultPublication:     {"result-publication-failed", FailureClassPlatform, ""},
+	FailureHostPreparation:       {"host-preparation-failed", FailureClassPlatform, ""},
+	FailureUnclassifiedPlatform:  {"unclassified-platform-failure", FailureClassPlatform, ""},
+	FailureUnsupportedDexSDK:     {"unsupported-dex-sdk", FailureClassApplication, "Live requires github.com/superdurable/dex/sdk-go v1.13.0 or later; upgrade the dependency and use a versioned module replacement."},
 }
 
 func init() {
 	names := map[string]bool{}
-	for category := FailureUnsupportedBuildTools; category <= FailureUnclassifiedPlatform; category++ {
+	for category := FailureUnsupportedBuildTools; category <= FailureUnsupportedDexSDK; category++ {
 		data, ok := failureCategories[category]
 		if !ok || data.name == "" || names[data.name] || (data.class != FailureClassApplication && data.class != FailureClassPlatform) {
 			panic("invalid hosted failure category catalog")
@@ -59,6 +62,7 @@ func init() {
 }
 
 func (c FailureCategory) Name() string        { return failureCategories[c].name }
+func (c FailureCategory) Hint() string        { return failureCategories[c].hint }
 func (c FailureCategory) Class() FailureClass { return failureCategories[c].class }
 
 func ParseFailureCategory(name string) (FailureCategory, bool) {
@@ -81,6 +85,7 @@ func FailureCategoryNames() map[string]string {
 		"resultPublication":     FailureResultPublication.Name(),
 		"hostPreparation":       FailureHostPreparation.Name(),
 		"unclassifiedPlatform":  FailureUnclassifiedPlatform.Name(),
+		"unsupportedDexSDK":     FailureUnsupportedDexSDK.Name(),
 	}
 }
 

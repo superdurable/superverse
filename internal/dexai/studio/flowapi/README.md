@@ -81,3 +81,5 @@ document for the BFF to relay; a caller that left still gets 499. A message or e
 normally. Empty reads retain the caller's history event or Stream resume token.
 These are read windows only: no Flow identity, execution lifecycle, primitive,
 retention or database schema changes. Stream delivery stays best effort.
+
+Live Flow starts use an explicit pull WorkerTarget and validate the exact separate Worker resource with registration readiness. Preview keeps its address override and Sandbox authorization. The Start fingerprint includes target mode.

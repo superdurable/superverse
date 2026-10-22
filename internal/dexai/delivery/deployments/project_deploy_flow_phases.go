@@ -417,17 +417,17 @@ func (f *ProjectDeployFlow) recordLiveExecution(ctx context.Context, s Snapshot,
 
 // applyApplication runs the generation with the environment of its grant,
 // which it reissues only while the Project still leases the generation.
-func (f *ProjectDeployFlow) applyApplication(ctx context.Context, s Snapshot) (infra.ResourceRef, error) {
+func (f *ProjectDeployFlow) applyApplication(ctx context.Context, s Snapshot) (ApplicationResources, error) {
 	if _, err := f.ownedProject(ctx, s); err != nil {
-		return infra.ResourceRef{}, err
+		return ApplicationResources{}, err
 	}
 	environment, err := f.grants.GrantEnvironment(ctx, liveWorkload(s))
 	if err != nil {
-		return infra.ResourceRef{}, fmt.Errorf("reconcile the workload grant of generation %d: %w", s.Lease.Generation, err)
+		return ApplicationResources{}, fmt.Errorf("reconcile the workload grant of generation %d: %w", s.Lease.Generation, err)
 	}
 	application, err := f.serving.ApplyApplication(ctx, s, environment)
 	if err != nil {
-		return infra.ResourceRef{}, fmt.Errorf("apply the application of generation %d: %w", s.Lease.Generation, err)
+		return ApplicationResources{}, fmt.Errorf("apply the application of generation %d: %w", s.Lease.Generation, err)
 	}
 	return application, nil
 }
@@ -517,6 +517,9 @@ func (f *ProjectDeployFlow) cleanupCancelledDeployment(ctx context.Context, s Sn
 		}
 		return lease, nil
 	}
+	if err = f.serving.StopWorker(ctx, s); err != nil {
+		return nil, fmt.Errorf("stop candidate Worker of generation %d before revoking its grant: %w", s.Lease.Generation, err)
+	}
 	if err = f.grants.RevokeWorkload(ctx, liveWorkload(s)); err != nil {
 		return nil, fmt.Errorf("revoke the workload grant of generation %d: %w", s.Lease.Generation, err)
 	}
@@ -558,6 +561,9 @@ func (f *ProjectDeployFlow) retireGeneration(ctx context.Context, s Snapshot) er
 	}
 	if project.CurrentLive != nil && project.CurrentLive.DeploymentID == s.DeploymentID {
 		return fmt.Errorf("%w: deployment %s", errRetiringLive, s.DeploymentID)
+	}
+	if err := f.serving.StopWorker(ctx, s); err != nil {
+		return fmt.Errorf("confirm retired Worker exit: %w", err)
 	}
 	if err = f.grants.RevokeWorkload(ctx, liveWorkload(s)); err != nil {
 		return fmt.Errorf("revoke the workload grant of generation %d: %w", s.Lease.Generation, err)

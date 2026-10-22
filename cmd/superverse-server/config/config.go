@@ -29,7 +29,7 @@ import (
 )
 
 // PlatformDexWorkerStreamCap bounds retained streams per app Worker ID on each matching owner.
-const PlatformDexWorkerStreamCap int = 4224
+const PlatformDexWorkerStreamCap int = 512
 
 // Defaults of the settings that have one. A setting without a default is
 // required, or empty where its section says so.

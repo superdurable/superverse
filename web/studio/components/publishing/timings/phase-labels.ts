@@ -36,6 +36,8 @@ export const DEPLOYMENT_PHASE_LABELS: Readonly<Record<string, string>> = {
   ApplyApplication: "Apply application",
   VerifyReadiness: "Verify readiness",
   CommitCurrentLive: "Commit current Live",
+  StopFailedCandidateWorker: "Stop the failed candidate Worker",
+  StopReplacedWorker: "Stop the replaced Worker",
   RequestReplacedRetirement: "Retire the replaced Live",
   ReleaseProjectDeployment: "Release deployment lease",
   CleanupCancelledDeployment: "Clean up cancelled deployment",

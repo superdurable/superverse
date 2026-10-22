@@ -43,10 +43,9 @@ type servingTarget struct {
 	dexKey string
 	// checkWorker proves that the target's Worker serves.
 	checkWorker func(context.Context) error
-	// workerAddress is where Start runs new Flows; workerHeadless makes Dex
-	// resolve it itself, as the Live Worker endpoint requires.
-	workerAddress  string
-	workerHeadless bool
+	// workerAddress is the Preview target; workerPull selects Live dispatch.
+	workerAddress string
+	workerPull    bool
 	// targetRevision identifies the serving resource and its definitions,
 	// without the account, so a Start can name the target it observed.
 	targetRevision string
@@ -166,7 +165,7 @@ func (r *Runs) resolveLive(ctx context.Context, live deployments.LiveTarget, tar
 	refs := infra.ScopeRefs{Storage: live.Storage, Execution: live.Execution}
 	worker := infra.WorkerTarget{
 		ProjectID: deployment.ProjectID, Namespace: deployment.Resources.Storage.Boundary,
-		Controller: deployment.Providers.Application, Service: deployment.Resources.Service,
+		Controller: deployment.Resources.Worker, Service: deployment.Resources.Service,
 		DeploymentID: pointer.DeploymentID, Generation: pointer.Revision,
 	}
 	return servingTarget{
@@ -175,9 +174,8 @@ func (r *Runs) resolveLive(ctx context.Context, live deployments.LiveTarget, tar
 		},
 		dexKey: identityKey("live", deployment.ProjectID, refs.Storage.Boundary.Name, refs.Storage.Boundary.UID,
 			refs.Execution.DexService.Boundary, refs.Execution.DexService.Name, refs.Execution.DexService.UID, refs.Execution.TemporalNamespace),
-		checkWorker:    func(ctx context.Context) error { return r.Connections.CheckWorker(ctx, worker) },
-		workerAddress:  r.Connections.WorkerAddress(deployment.ProjectID),
-		workerHeadless: true,
+		checkWorker: func(ctx context.Context) error { return r.Connections.CheckWorker(ctx, worker) },
+		workerPull:  true,
 		targetRevision: flowid.Fingerprint([]string{"live", deployment.ProjectID, pointer.DeploymentID, strconv.FormatUint(pointer.Revision, 10),
 			pointer.ReleaseID, pointer.BuildRevisionID, bundle.Revision}),
 		bundle: bundle,

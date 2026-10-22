@@ -128,13 +128,27 @@ const (
 // call posts the request to one typed fixture endpoint that answers a build
 // result.
 func (b *Builder) call(ctx context.Context, action string, in build.BuildRequest, repositoryToken string) (build.BuildResult, error) {
-	var headers map[string]string
+	headers := map[string]string{"X-Superverse-SDK-Failure-Category": build.FailureUnsupportedDexSDK.Name()}
 	if repositoryToken != "" {
-		headers = map[string]string{repositoryCredentialHeader: repositoryToken}
+		headers[repositoryCredentialHeader] = repositoryToken
 	}
-	var result build.BuildResult
-	if err := b.post(ctx, action, in, headers, &result); err != nil {
+	var wire struct {
+		build.BuildResult
+		Category string `json:"failureCategory"`
+	}
+	if err := b.post(ctx, action, in, headers, &wire); err != nil {
 		return build.BuildResult{}, err
+	}
+	result := wire.BuildResult
+	if wire.Category != "" {
+		category, known := build.ParseFailureCategory(wire.Category)
+		if !known {
+			return build.BuildResult{}, fmt.Errorf("local builder returned an unknown failure category")
+		}
+		result.FailureCategory = category
+	}
+	if result.FailureCategory == build.FailureUnsupportedDexSDK {
+		result.Failure = result.FailureCategory.Hint()
 	}
 	switch result.State {
 	case build.BuildMissing, build.BuildRunning, build.BuildReady, build.BuildFailed, build.BuildUnknown:

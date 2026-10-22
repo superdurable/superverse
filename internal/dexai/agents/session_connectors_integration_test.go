@@ -331,7 +331,7 @@ func TestSessionMockConnectorReleaseCandidateDexIntegration(t *testing.T) {
 	if built.Status != releases.Ready {
 		// The Project's deletion removes the build's log, so the failure keeps its end.
 		page, err := live.releases.ReadBuildLog(ctx, releases.BuildSnapshot{Release: release, Build: built}, build.LogRead{Tail: true, MaximumBytes: 8192})
-		tail := comm.TailUTF8(strings.ReplaceAll(page.Text, openAIKey(t), "[REDACTED]"), 6000)
+		tail := comm.TailUTF8(strings.ReplaceAll(page.Text, summaryKey(t), "[REDACTED]"), 6000)
 		t.Fatalf("the build of %s on the release candidate failed: %+v; the end of its log (%v):\n%s", head, built.Failure, err, tail)
 	}
 	if deployment := live.deploy(ctx, head, built); deployment.Status != deployments.Ready {

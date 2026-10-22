@@ -5,3 +5,5 @@
 /web/src/api/generated/
 *.log
 .DS_Store
+
+/runtime.yaml

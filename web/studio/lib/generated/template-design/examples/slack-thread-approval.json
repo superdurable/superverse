@@ -1,11 +1,11 @@
 {
-  "templateRevision": "app-template/slack-thread-approval@7f6efd5abc3e4011c9f1aee18ba2b5303b9c78f3",
+  "templateRevision": "app-template/slack-thread-approval@5f3dbf3728b8e19dc39c802b5af27b330be278d6",
   "definitions": [
     {
       "flowType": "SlackThreadApprovalFlow",
       "sourcePath": "internal/process/slack_thread_approval_flow.go",
       "schemaVersion": "2.0",
-      "digest": "sha256:2d8c17348dcfdacc511707ae6d15e167501c077c79ed2a7f785a0cf248a9d0d8",
+      "digest": "sha256:736e48f8d413f98e6b07a7ef82c060a9ac0d8c7625718003684b7a4aed821e1f",
       "valid": true,
       "graph": {
         "schemaVersion": "2.0",
@@ -18,9 +18,9 @@
           "name": "SlackThreadApprovalFlow",
           "startStepId": "step:RecordThread",
           "span": {
-            "startLine": 108,
+            "startLine": 109,
             "startColumn": 1,
-            "endLine": 127,
+            "endLine": 128,
             "endColumn": 2
           }
         },
@@ -32,22 +32,22 @@
             "parentId": "rpc:ReceiveThreadReply",
             "phase": "rpc",
             "span": {
-              "startLine": 249,
+              "startLine": 250,
               "startColumn": 1,
-              "endLine": 283,
+              "endLine": 284,
               "endColumn": 2
             }
           },
           {
-            "id": "decision:rpc:GetDexDisplay:308:9",
+            "id": "decision:rpc:GetDexDisplay:309:9",
             "kind": "decision",
             "name": "rpcResult",
             "parentId": "rpc:GetDexDisplay",
             "phase": "rpc",
             "span": {
-              "startLine": 308,
+              "startLine": 309,
               "startColumn": 9,
-              "endLine": 311,
+              "endLine": 312,
               "endColumn": 4
             },
             "decision": {
@@ -55,15 +55,15 @@
             }
           },
           {
-            "id": "decision:rpc:GetDexSummary:293:9",
+            "id": "decision:rpc:GetDexSummary:294:9",
             "kind": "decision",
             "name": "rpcResult",
             "parentId": "rpc:GetDexSummary",
             "phase": "rpc",
             "span": {
-              "startLine": 293,
+              "startLine": 294,
               "startColumn": 9,
-              "endLine": 295,
+              "endLine": 296,
               "endColumn": 4
             },
             "decision": {
@@ -71,15 +71,15 @@
             }
           },
           {
-            "id": "decision:rpc:GetThreadApproval:321:9",
+            "id": "decision:rpc:GetThreadApproval:322:9",
             "kind": "decision",
             "name": "rpcResult",
             "parentId": "rpc:GetThreadApproval",
             "phase": "rpc",
             "span": {
-              "startLine": 321,
+              "startLine": 322,
               "startColumn": 9,
-              "endLine": 321,
+              "endLine": 322,
               "endColumn": 65
             },
             "decision": {
@@ -87,16 +87,16 @@
             }
           },
           {
-            "id": "decision:rpc:ReceiveThreadReply:261:10",
+            "id": "decision:rpc:ReceiveThreadReply:262:10",
             "kind": "decision",
             "name": "rpcResult",
             "parentId": "rpc:ReceiveThreadReply",
             "condition": " == acceptedEventID != \"\" && acceptedEventID == reply.EventID",
             "phase": "rpc",
             "span": {
-              "startLine": 261,
+              "startLine": 262,
               "startColumn": 10,
-              "endLine": 261,
+              "endLine": 262,
               "endColumn": 103
             },
             "decision": {
@@ -104,16 +104,16 @@
             }
           },
           {
-            "id": "decision:rpc:ReceiveThreadReply:265:10",
+            "id": "decision:rpc:ReceiveThreadReply:266:10",
             "kind": "decision",
             "name": "rpcResult",
             "parentId": "rpc:ReceiveThreadReply",
             "condition": " == status != ThreadStatusWaitingForReply",
             "phase": "rpc",
             "span": {
-              "startLine": 265,
+              "startLine": 266,
               "startColumn": 10,
-              "endLine": 265,
+              "endLine": 266,
               "endColumn": 86
             },
             "decision": {
@@ -121,16 +121,16 @@
             }
           },
           {
-            "id": "decision:rpc:ReceiveThreadReply:279:9",
+            "id": "decision:rpc:ReceiveThreadReply:280:9",
             "kind": "decision",
             "name": "rpcResult",
             "parentId": "rpc:ReceiveThreadReply",
             "condition": "otherwise",
             "phase": "rpc",
             "span": {
-              "startLine": 279,
+              "startLine": 280,
               "startColumn": 9,
-              "endLine": 282,
+              "endLine": 283,
               "endColumn": 3
             },
             "decision": {
@@ -138,15 +138,15 @@
             }
           },
           {
-            "id": "decision:step:CompleteThread:221:9",
+            "id": "decision:step:CompleteThread:222:9",
             "kind": "decision",
             "name": "gracefulComplete",
             "parentId": "step:CompleteThread",
             "phase": "execute",
             "span": {
-              "startLine": 221,
+              "startLine": 222,
               "startColumn": 9,
-              "endLine": 221,
+              "endLine": 222,
               "endColumn": 34
             },
             "decision": {
@@ -154,15 +154,15 @@
             }
           },
           {
-            "id": "decision:step:RecordReplyFailure:244:9",
+            "id": "decision:step:RecordReplyFailure:245:9",
             "kind": "decision",
             "name": "gracefulComplete",
             "parentId": "step:RecordReplyFailure",
             "phase": "execute",
             "span": {
-              "startLine": 244,
+              "startLine": 245,
               "startColumn": 9,
-              "endLine": 244,
+              "endLine": 245,
               "endColumn": 34
             },
             "decision": {
@@ -170,15 +170,15 @@
             }
           },
           {
-            "id": "decision:step:RecordThread:203:9",
+            "id": "decision:step:RecordThread:204:9",
             "kind": "decision",
             "name": "deadEnd",
             "parentId": "step:RecordThread",
             "phase": "execute",
             "span": {
-              "startLine": 203,
+              "startLine": 204,
               "startColumn": 9,
-              "endLine": 203,
+              "endLine": 204,
               "endColumn": 22
             },
             "decision": {
@@ -190,9 +190,9 @@
             "kind": "attribute",
             "name": "thread-notice",
             "span": {
-              "startLine": 79,
+              "startLine": 80,
               "startColumn": 2,
-              "endLine": 79,
+              "endLine": 80,
               "endColumn": 75
             },
             "resource": {
@@ -204,9 +204,9 @@
             "kind": "attribute",
             "name": "reply-event-id",
             "span": {
-              "startLine": 77,
+              "startLine": 78,
               "startColumn": 2,
-              "endLine": 77,
+              "endLine": 78,
               "endColumn": 76
             },
             "resource": {
@@ -218,9 +218,9 @@
             "kind": "attribute",
             "name": "reply-user-id",
             "span": {
-              "startLine": 78,
+              "startLine": 79,
               "startColumn": 2,
-              "endLine": 78,
+              "endLine": 79,
               "endColumn": 75
             },
             "resource": {
@@ -232,9 +232,9 @@
             "kind": "attribute",
             "name": "thread-status",
             "span": {
-              "startLine": 75,
+              "startLine": 76,
               "startColumn": 2,
-              "endLine": 75,
+              "endLine": 76,
               "endColumn": 154
             },
             "resource": {
@@ -246,9 +246,9 @@
             "kind": "attribute",
             "name": "thread",
             "span": {
-              "startLine": 76,
+              "startLine": 77,
               "startColumn": 2,
-              "endLine": 76,
+              "endLine": 77,
               "endColumn": 73
             },
             "resource": {
@@ -260,9 +260,9 @@
             "kind": "rpc",
             "name": "GetDexDisplay",
             "span": {
-              "startLine": 302,
+              "startLine": 303,
               "startColumn": 1,
-              "endLine": 312,
+              "endLine": 313,
               "endColumn": 2
             }
           },
@@ -271,9 +271,9 @@
             "kind": "rpc",
             "name": "GetDexSummary",
             "span": {
-              "startLine": 287,
+              "startLine": 288,
               "startColumn": 1,
-              "endLine": 296,
+              "endLine": 297,
               "endColumn": 2
             }
           },
@@ -282,9 +282,9 @@
             "kind": "rpc",
             "name": "GetThreadApproval",
             "span": {
-              "startLine": 315,
+              "startLine": 316,
               "startColumn": 1,
-              "endLine": 322,
+              "endLine": 323,
               "endColumn": 2
             }
           },
@@ -293,9 +293,9 @@
             "kind": "rpc",
             "name": "ReceiveThreadReply",
             "span": {
-              "startLine": 249,
+              "startLine": 250,
               "startColumn": 1,
-              "endLine": 283,
+              "endLine": 284,
               "endColumn": 2
             }
           },
@@ -305,9 +305,9 @@
             "name": "CompleteThread",
             "phase": "execute",
             "span": {
-              "startLine": 124,
+              "startLine": 125,
               "startColumn": 3,
-              "endLine": 124,
+              "endLine": 125,
               "endColumn": 35
             },
             "metadata": {
@@ -320,9 +320,9 @@
             "name": "PostCompletionReply",
             "phase": "execute",
             "span": {
-              "startLine": 111,
+              "startLine": 112,
               "startColumn": 3,
-              "endLine": 123,
+              "endLine": 124,
               "endColumn": 6
             },
             "metadata": {
@@ -349,9 +349,9 @@
             "name": "RecordReplyFailure",
             "phase": "execute",
             "span": {
-              "startLine": 125,
+              "startLine": 126,
               "startColumn": 3,
-              "endLine": 125,
+              "endLine": 126,
               "endColumn": 39
             },
             "metadata": {
@@ -365,9 +365,9 @@
             "phase": "execute",
             "start": true,
             "span": {
-              "startLine": 110,
+              "startLine": 111,
               "startColumn": 3,
-              "endLine": 110,
+              "endLine": 111,
               "endColumn": 38
             },
             "metadata": {
@@ -379,13 +379,13 @@
           {
             "id": "edge:0001",
             "kind": "transition",
-            "from": "decision:rpc:ReceiveThreadReply:279:9",
+            "from": "decision:rpc:ReceiveThreadReply:280:9",
             "to": "step:PostCompletionReply",
             "label": "fan-out",
             "span": {
-              "startLine": 281,
+              "startLine": 282,
               "startColumn": 33,
-              "endLine": 281,
+              "endLine": 282,
               "endColumn": 108
             }
           },
@@ -396,9 +396,9 @@
             "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 339,
+              "startLine": 340,
               "startColumn": 16,
-              "endLine": 339,
+              "endLine": 340,
               "endColumn": 34
             },
             "metadata": {
@@ -414,9 +414,9 @@
             "to": "rpc:GetDexSummary",
             "label": "Get",
             "span": {
-              "startLine": 339,
+              "startLine": 340,
               "startColumn": 16,
-              "endLine": 339,
+              "endLine": 340,
               "endColumn": 34
             },
             "metadata": {
@@ -432,9 +432,9 @@
             "to": "rpc:GetThreadApproval",
             "label": "Get",
             "span": {
-              "startLine": 339,
+              "startLine": 340,
               "startColumn": 16,
-              "endLine": 339,
+              "endLine": 340,
               "endColumn": 34
             },
             "metadata": {
@@ -450,9 +450,9 @@
             "to": "rpc:ReceiveThreadReply",
             "label": "Get",
             "span": {
-              "startLine": 339,
+              "startLine": 340,
               "startColumn": 16,
-              "endLine": 339,
+              "endLine": 340,
               "endColumn": 34
             },
             "metadata": {
@@ -468,9 +468,9 @@
             "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 339,
+              "startLine": 340,
               "startColumn": 16,
-              "endLine": 339,
+              "endLine": 340,
               "endColumn": 34
             },
             "metadata": {
@@ -486,9 +486,9 @@
             "to": "rpc:GetDexSummary",
             "label": "Get",
             "span": {
-              "startLine": 339,
+              "startLine": 340,
               "startColumn": 16,
-              "endLine": 339,
+              "endLine": 340,
               "endColumn": 34
             },
             "metadata": {
@@ -504,9 +504,9 @@
             "to": "rpc:GetThreadApproval",
             "label": "Get",
             "span": {
-              "startLine": 339,
+              "startLine": 340,
               "startColumn": 16,
-              "endLine": 339,
+              "endLine": 340,
               "endColumn": 34
             },
             "metadata": {
@@ -522,9 +522,9 @@
             "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 339,
+              "startLine": 340,
               "startColumn": 16,
-              "endLine": 339,
+              "endLine": 340,
               "endColumn": 34
             },
             "metadata": {
@@ -540,9 +540,9 @@
             "to": "rpc:GetDexSummary",
             "label": "Get",
             "span": {
-              "startLine": 339,
+              "startLine": 340,
               "startColumn": 16,
-              "endLine": 339,
+              "endLine": 340,
               "endColumn": 34
             },
             "metadata": {
@@ -558,9 +558,9 @@
             "to": "rpc:GetThreadApproval",
             "label": "Get",
             "span": {
-              "startLine": 339,
+              "startLine": 340,
               "startColumn": 16,
-              "endLine": 339,
+              "endLine": 340,
               "endColumn": 34
             },
             "metadata": {
@@ -576,9 +576,9 @@
             "to": "rpc:ReceiveThreadReply",
             "label": "Get",
             "span": {
-              "startLine": 339,
+              "startLine": 340,
               "startColumn": 16,
-              "endLine": 339,
+              "endLine": 340,
               "endColumn": 34
             },
             "metadata": {
@@ -594,9 +594,9 @@
             "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 339,
+              "startLine": 340,
               "startColumn": 16,
-              "endLine": 339,
+              "endLine": 340,
               "endColumn": 34
             },
             "metadata": {
@@ -612,9 +612,9 @@
             "to": "rpc:GetDexSummary",
             "label": "Get",
             "span": {
-              "startLine": 339,
+              "startLine": 340,
               "startColumn": 16,
-              "endLine": 339,
+              "endLine": 340,
               "endColumn": 34
             },
             "metadata": {
@@ -630,9 +630,9 @@
             "to": "rpc:GetThreadApproval",
             "label": "Get",
             "span": {
-              "startLine": 339,
+              "startLine": 340,
               "startColumn": 16,
-              "endLine": 339,
+              "endLine": 340,
               "endColumn": 34
             },
             "metadata": {
@@ -648,9 +648,9 @@
             "to": "rpc:ReceiveThreadReply",
             "label": "Get",
             "span": {
-              "startLine": 267,
+              "startLine": 268,
               "startColumn": 17,
-              "endLine": 267,
+              "endLine": 268,
               "endColumn": 46
             },
             "metadata": {
@@ -664,9 +664,9 @@
             "to": "resource:attribute:ThreadApprovalReplyEventID",
             "label": "Set",
             "span": {
-              "startLine": 273,
+              "startLine": 274,
               "startColumn": 3,
-              "endLine": 273,
+              "endLine": 274,
               "endColumn": 53
             },
             "metadata": {
@@ -680,9 +680,9 @@
             "to": "resource:attribute:ThreadApprovalReplyUserID",
             "label": "Set",
             "span": {
-              "startLine": 274,
+              "startLine": 275,
               "startColumn": 3,
-              "endLine": 274,
+              "endLine": 275,
               "endColumn": 51
             },
             "metadata": {
@@ -696,9 +696,9 @@
             "to": "resource:attribute:ThreadApprovalStatus",
             "label": "Set",
             "span": {
-              "startLine": 272,
+              "startLine": 273,
               "startColumn": 3,
-              "endLine": 272,
+              "endLine": 273,
               "endColumn": 58
             },
             "metadata": {
@@ -712,9 +712,9 @@
             "to": "resource:attribute:ThreadApprovalStatus",
             "label": "Set",
             "span": {
-              "startLine": 218,
+              "startLine": 219,
               "startColumn": 11,
-              "endLine": 218,
+              "endLine": 219,
               "endColumn": 63
             },
             "metadata": {
@@ -728,9 +728,9 @@
             "to": "step:CompleteThread",
             "label": "sent",
             "span": {
-              "startLine": 120,
+              "startLine": 121,
               "startColumn": 22,
-              "endLine": 120,
+              "endLine": 121,
               "endColumn": 50
             },
             "metadata": {
@@ -744,9 +744,9 @@
             "to": "step:RecordReplyFailure",
             "label": "defect",
             "span": {
-              "startLine": 121,
+              "startLine": 122,
               "startColumn": 64,
-              "endLine": 121,
+              "endLine": 122,
               "endColumn": 96
             },
             "metadata": {
@@ -760,9 +760,9 @@
             "to": "step:RecordReplyFailure",
             "label": "providerRejected",
             "span": {
-              "startLine": 121,
+              "startLine": 122,
               "startColumn": 22,
-              "endLine": 121,
+              "endLine": 122,
               "endColumn": 54
             },
             "metadata": {
@@ -776,9 +776,9 @@
             "to": "step:RecordReplyFailure",
             "label": "uncertain",
             "span": {
-              "startLine": 122,
+              "startLine": 123,
               "startColumn": 15,
-              "endLine": 122,
+              "endLine": 123,
               "endColumn": 47
             },
             "metadata": {
@@ -792,9 +792,9 @@
             "to": "resource:attribute:ThreadApprovalNotice",
             "label": "Set",
             "span": {
-              "startLine": 241,
+              "startLine": 242,
               "startColumn": 62,
-              "endLine": 241,
+              "endLine": 242,
               "endColumn": 99
             },
             "metadata": {
@@ -808,9 +808,9 @@
             "to": "resource:attribute:ThreadApprovalStatus",
             "label": "Set",
             "span": {
-              "startLine": 241,
+              "startLine": 242,
               "startColumn": 23,
-              "endLine": 241,
+              "endLine": 242,
               "endColumn": 60
             },
             "metadata": {
@@ -824,9 +824,9 @@
             "to": "resource:attribute:ThreadApprovalStatus",
             "label": "Set",
             "span": {
-              "startLine": 200,
+              "startLine": 201,
               "startColumn": 62,
-              "endLine": 200,
+              "endLine": 201,
               "endColumn": 120
             },
             "metadata": {
@@ -840,9 +840,9 @@
             "to": "resource:attribute:ThreadApprovalThread",
             "label": "Set",
             "span": {
-              "startLine": 200,
+              "startLine": 201,
               "startColumn": 23,
-              "endLine": 200,
+              "endLine": 201,
               "endColumn": 60
             },
             "metadata": {

@@ -100,23 +100,3 @@ func (c *Client) ListNetworks(ctx context.Context, filters Filters) ([]Network, 
 	_, err := c.call(ctx, http.MethodGet, "/networks", filters.query(), nil, &networks)
 	return networks, err
 }
-
-// ConnectNetwork attaches the container with ID container to the network with
-// ID network under aliases. A container already attached is a conflict.
-func (c *Client) ConnectNetwork(ctx context.Context, network, container string, aliases ...string) error {
-	body := struct {
-		Container      string
-		EndpointConfig struct{ Aliases []string }
-	}{Container: container}
-	body.EndpointConfig.Aliases = aliases
-	_, err := c.call(ctx, http.MethodPost, "/networks/"+segment(network)+"/connect", nil, body, nil)
-	return err
-}
-
-// DisconnectNetwork detaches the container with ID container from the
-// network with ID network; a container that is not attached is an error.
-func (c *Client) DisconnectNetwork(ctx context.Context, network, container string) error {
-	body := struct{ Container string }{Container: container}
-	_, err := c.call(ctx, http.MethodPost, "/networks/"+segment(network)+"/disconnect", nil, body, nil)
-	return err
-}

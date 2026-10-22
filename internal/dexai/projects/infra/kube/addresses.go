@@ -18,12 +18,6 @@ func DexAddress(execution infra.ExecutionRefs) string {
 	return kubeapi.ServiceAddress(execution.DexService.Boundary, execution.DexService.Name, infra.DexPort)
 }
 
-// WorkerAddress is the address of the project's Live Worker endpoint, the
-// headless Service that selects the current Live generation's Pod.
-func (k *Infrastructure) WorkerAddress(project string) string {
-	return kubeapi.ServiceAddress(k.ProjectNamespace(project), infra.LiveWorkerEndpoint, infra.LiveWorkerPort)
-}
-
 // routeGatewayName is the Gateway that every project route names as its
 // parent; the platform chart creates it in GatewayNamespace.
 const routeGatewayName = "projects"

@@ -61,13 +61,7 @@ func (l *LiveServing) removeGeneration(ctx context.Context, s deployments.Snapsh
 			return fmt.Errorf("%w: Live route generation changed", infra.ErrOwnershipConflict)
 		}
 	}
-	if live {
-		// Only the Live generation's removal ends the Worker endpoint; a
-		// replaced generation leaves the one its successor holds.
-		if err = l.removeWorker(ctx, s); err != nil {
-			return err
-		}
-	}
+
 	if err = l.cleanupGeneration(ctx, s); err != nil || !live {
 		return err
 	}
@@ -80,6 +74,9 @@ func (l *LiveServing) removeGeneration(ctx context.Context, s deployments.Snapsh
 // cleanupGeneration removes one generation's namespaced objects and confirms
 // that its Deployment is gone, not merely that the delete was accepted.
 func (l *LiveServing) cleanupGeneration(ctx context.Context, s deployments.Snapshot) error {
+	if err := l.StopWorker(ctx, s); err != nil {
+		return err
+	}
 	ns := l.ProjectNamespace(s.ProjectID)
 	name := infra.WorkloadName(s.DeploymentID, s.Lease.Generation)
 	deployments := "/apis/apps/v1/namespaces/" + ns + "/deployments"

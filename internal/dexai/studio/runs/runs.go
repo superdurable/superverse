@@ -158,7 +158,7 @@ func (r *Runs) Invoke(ctx context.Context, actor string, flowAPI *pb.FlowApiCont
 		return flowapi.Document{}, err
 	}
 	defer release()
-	authorization := flowapi.Authorization{ActorID: actor, TargetRevision: serving.targetRevision, WorkerTarget: serving.workerAddress, WorkerHeadless: serving.workerHeadless}
+	authorization := flowapi.Authorization{ActorID: actor, TargetRevision: serving.targetRevision, WorkerTarget: serving.workerAddress, WorkerPull: serving.workerPull}
 	flows := flowapi.New(dexpb.NewFlowServiceClient(connection), authorization, serving.bundle, serving.checkWorker)
 	return serve(ctx, flows), nil
 }

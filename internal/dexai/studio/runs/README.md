@@ -148,3 +148,5 @@ seconds after its verification, retires on LRU eviction, a failed transport or
 | `serving_definitions.go` | parsing the definitions the serving Worker loaded |
 | `definitions_cache.go` | the bounded LRU of parsed serving definitions |
 | `dex_connection_pool.go` | the bounded pool of verified Dex connections with leases |
+
+Live Flow starts use an explicit pull WorkerTarget and validate the exact separate Worker resource with registration readiness. Preview keeps its address override and Sandbox authorization. The Start fingerprint includes target mode.

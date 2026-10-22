@@ -92,6 +92,7 @@ func (a *applicationAttempt) reply() answer {
 type runningApplication struct {
 	identity  applicationIdentity
 	process   *child
+	worker    *child
 	tree      sourceTree
 	logOffset int64
 	redact    redactor
@@ -177,9 +178,10 @@ func (a *application) stop() answer {
 		a.running = nil
 		a.mu.Unlock()
 		if running != nil {
-			running.process.stop()
+			running.stop()
 			running.tree.release()
 			a.owner.set("application", nil)
+			a.owner.set("application-worker", nil)
 		}
 		a.mu.Lock()
 		a.stopping = false
@@ -203,12 +205,14 @@ func (a *application) shutdown() {
 // is held.
 func (a *application) observeExit() {
 	running := a.running
-	if running == nil || running.process.running() || (a.attempt != nil && a.attempt.answer.State == stateStarting) {
+	if running == nil || (running.process.running() && running.worker.running()) || (a.attempt != nil && a.attempt.answer.State == stateStarting) {
 		return
 	}
 	a.running = nil
+	running.stop()
 	running.tree.release()
 	a.owner.set("application", nil)
+	a.owner.set("application-worker", nil)
 	if a.attempt != nil && a.attempt.identity == running.identity && a.attempt.answer.State == stateRunning {
 		a.attempt.answer = answer{State: stateFailed, Reason: fmt.Sprintf("the application exited (%s): %s",
 			running.process.exitStatus(), running.redact.apply(tail(a.state.log("app.log"), running.logOffset)))}
@@ -232,7 +236,7 @@ func (a *application) start(ctx context.Context, attempt *applicationAttempt, pr
 		return
 	}
 	a.mu.Lock()
-	serving := a.running != nil && a.running.identity == attempt.identity && a.running.process.running()
+	serving := a.running != nil && a.running.identity == attempt.identity && a.running.process.running() && a.running.worker.running()
 	a.mu.Unlock()
 	if serving {
 		a.settle(attempt, answer{State: stateRunning})
@@ -312,8 +316,9 @@ func (a *application) swap(ctx context.Context, attempt *applicationAttempt, tre
 	a.running = nil
 	a.mu.Unlock()
 	if previous != nil {
-		previous.process.stop()
+		previous.stop()
 		a.owner.set("application", nil)
+		a.owner.set("application-worker", nil)
 	}
 	output, err := a.state.openLog("app.log")
 	if err != nil {
@@ -323,7 +328,26 @@ func (a *application) swap(ctx context.Context, attempt *applicationAttempt, tre
 	}
 	offset := logSize(output)
 	_, _ = fmt.Fprintf(output, "=== Preview application %s ===\n", attempt.identity.Commit)
-	process, err := startChild(tree.path, []string{filepath.Join(tree.path, applicationBinary)}, applicationEnvironment(environment), output)
+	// Both processes read one platform-owned YAML document from the exact source tree.
+	runtime := []byte(fmt.Sprintf("worker:\n  mode: push\n  bindAddress: %s\n  target: %s\n  readinessAddress: 127.0.0.1:8081\n  maxConcurrentTasks: 4\n  idleStreamsPerQueue: 1\n  stopDrainTimeout: 10s\n", previewWorkerAddress, previewWorkerAddress))
+	if err := writeApplicationRuntime(runtime); err != nil {
+		_ = output.Close()
+		tree.release()
+		a.settle(attempt, answer{State: stateError, Reason: fmt.Sprintf("write Preview runtime: %v", err)})
+		return
+	}
+	process, err := startChild(tree.path, []string{filepath.Join(tree.path, applicationBinary), "web"}, applicationEnvironment(environment), output)
+	var worker *child
+	if err == nil {
+		a.owner.set("application", process)
+		worker, err = startChild(tree.path, []string{filepath.Join(tree.path, applicationBinary), "worker"}, applicationEnvironment(environment), output)
+		if err != nil {
+			process.stop()
+			a.owner.set("application", nil)
+		} else {
+			a.owner.set("application-worker", worker)
+		}
+	}
 	_ = output.Close()
 	if err != nil {
 		tree.release()
@@ -332,11 +356,11 @@ func (a *application) swap(ctx context.Context, attempt *applicationAttempt, tre
 	}
 	a.owner.set("application", process)
 	a.mu.Lock()
-	a.running = &runningApplication{identity: attempt.identity, process: process, tree: tree, logOffset: offset, redact: redact}
+	a.running = &runningApplication{identity: attempt.identity, process: process, worker: worker, tree: tree, logOffset: offset, redact: redact}
 	attempt.answer = answer{State: stateStarting}
 	a.mu.Unlock()
 
-	err = waitHealthy(ctx, process)
+	err = waitHealthy(ctx, process, worker)
 	if err == nil {
 		a.settle(attempt, answer{State: stateRunning})
 		if previous != nil {
@@ -347,8 +371,10 @@ func (a *application) swap(ctx context.Context, attempt *applicationAttempt, tre
 		}
 		return
 	}
+	worker.stop()
 	process.stop()
 	a.owner.set("application", nil)
+	a.owner.set("application-worker", nil)
 	a.mu.Lock()
 	if a.running != nil && a.running.process == process {
 		a.running = nil
@@ -370,24 +396,24 @@ func applicationEnvironment(environment []string) []string {
 		fmt.Sprintf("PORT=%d", applicationPort),
 		"HOST=0.0.0.0",
 		"DEX_FLOW_SERVICE_ADDRESS="+dexAddress,
-		"DEX_WORKER_BIND_ADDRESS="+previewWorkerAddress,
-		"DEX_WORKER_TARGET="+previewWorkerAddress,
 		"DEX_BLOB_CACHE_DIR="+filepath.Join(runtimeDirectory, "app-blobs"),
 	)
 }
 
 // waitHealthy waits until the application passes its health probe, exits,
 // or the startup budget ends.
-func waitHealthy(ctx context.Context, process *child) error {
+func waitHealthy(ctx context.Context, process, worker *child) error {
 	ctx, cancel := context.WithTimeout(ctx, applicationStartupBudget)
 	defer cancel()
 	for {
-		if healthy(ctx) {
+		if healthy(ctx) && workerHealthy(ctx) {
 			return nil
 		}
 		select {
 		case <-process.exited:
-			return fmt.Errorf("the application exited during startup (%s)", process.exitStatus())
+			return fmt.Errorf("the web process exited during startup (%s)", process.exitStatus())
+		case <-worker.exited:
+			return fmt.Errorf("the Worker exited during startup (%s)", worker.exitStatus())
 		case <-ctx.Done():
 			return fmt.Errorf("the application did not pass GET /api/health within %s", applicationStartupBudget)
 		case <-time.After(time.Second):
@@ -481,4 +507,34 @@ func (r redactor) apply(text string) string {
 		text = strings.ReplaceAll(text, value, "[REDACTED]")
 	}
 	return text
+}
+
+// stop ends both owned process groups before their source tree is released.
+func (r *runningApplication) stop() {
+	r.worker.stop()
+	r.process.stop()
+}
+
+func workerHealthy(ctx context.Context) bool {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://127.0.0.1:8081/readyz", nil)
+	if err != nil {
+		return false
+	}
+	response, err := (&http.Client{Timeout: 2 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}).Do(request)
+	if err != nil {
+		return false
+	}
+	defer func() { _ = response.Body.Close() }()
+	return response.StatusCode == http.StatusOK
+}
+
+// writeApplicationRuntime replaces only the supervisor-owned runtime file.
+func writeApplicationRuntime(contents []byte) error {
+	directory := "/tmp/superverse-app"
+	if err := os.MkdirAll(directory, 0o700); err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(directory, "runtime.yaml"), contents, 0o600)
 }

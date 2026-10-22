@@ -72,7 +72,7 @@ def dex_config(credentials, postgres=None, stores=None):
                                                    "s3SecretKey": credentials["secret"],
                                                    "cleanupStrategy": {"cleanupStrategyType": "afterAllRunsDeleted", "cleanupFrequencyInDays": 1}}]},
               "streamStore": {"backend": "memory"},
-              "matching": {"maxConcurrentTasksCap": 4224, "maxStreams": 100000}}
+              "matching": {"maxConcurrentTasksCap": 512, "maxStreams": 100000}}
     if postgres is not None:
         config["attributeStore"] = attribute_store(postgres, stores)
     return config

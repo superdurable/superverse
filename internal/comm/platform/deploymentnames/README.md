@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Declares the deployment environments and owns their static, operator-selected names (prefixes, clusters, registries, IAM paths and domains) that Go, Terraform, Helm and the infra scripts share.
 
-Callers: `cmd/superverse-server/config`, `internal/comm/platform/connectorlibrary`, `internal/comm/platform/githubissues`, `internal/comm/platform/kubeapi`, `internal/comm/platform/repohost`, `internal/comm/platform/repohost/github`, `internal/comm/platform/repohost/localgit`, `internal/dexai/agents/platformissue`, `internal/dexai/agents/sandbox/docker`, `internal/dexai/agents/sandbox/preview`, `internal/dexai/agents/sandbox/provision`, `internal/dexai/bootstrap`, `internal/dexai/delivery/deployments/docker`, `internal/dexai/delivery/releases`, `internal/dexai/delivery/releases/build`, `internal/dexai/delivery/releases/build/hosted`, `internal/dexai/projects/infra`, `internal/dexai/projects/infra/docker`, `internal/dexai/projects/infra/docker/dockertest`, `internal/dexai/projects/infra/kube`, `internal/dexai/projects/infra/kube/hosted`, `internal/dexai/projects/infra/kube/kubetest` and `internal/dexai/studio/runs` import this package.
+Callers: `cmd/superverse-server/config`, `internal/comm/platform/connectorlibrary`, `internal/comm/platform/githubissues`, `internal/comm/platform/kubeapi`, `internal/comm/platform/repohost`, `internal/comm/platform/repohost/github`, `internal/comm/platform/repohost/localgit`, `internal/dexai/agents/platformissue`, `internal/dexai/agents/sandbox/docker`, `internal/dexai/agents/sandbox/preview`, `internal/dexai/agents/sandbox/provision`, `internal/dexai/bootstrap`, `internal/dexai/delivery/releases`, `internal/dexai/delivery/releases/build`, `internal/dexai/delivery/releases/build/hosted`, `internal/dexai/projects/infra`, `internal/dexai/projects/infra/docker`, `internal/dexai/projects/infra/docker/dockertest`, `internal/dexai/projects/infra/kube`, `internal/dexai/projects/infra/kube/hosted`, `internal/dexai/projects/infra/kube/kubetest` and `internal/dexai/studio/runs` import this package.
 
 Dependencies: it imports `internal/comm`.
 
@@ -22,17 +22,16 @@ flowchart LR
   c9["internal/dexai/agents/sandbox/preview"] --> self
   c10["internal/dexai/agents/sandbox/provision"] --> self
   c11["internal/dexai/bootstrap"] --> self
-  c12["internal/dexai/delivery/deployments/docker"] --> self
-  c13["internal/dexai/delivery/releases"] --> self
-  c14["internal/dexai/delivery/releases/build"] --> self
-  c15["internal/dexai/delivery/releases/build/hosted"] --> self
-  c16["internal/dexai/projects/infra"] --> self
-  c17["internal/dexai/projects/infra/docker"] --> self
-  c18["internal/dexai/projects/infra/docker/dockertest"] --> self
-  c19["internal/dexai/projects/infra/kube"] --> self
-  c20["internal/dexai/projects/infra/kube/hosted"] --> self
-  c21["internal/dexai/projects/infra/kube/kubetest"] --> self
-  c22["internal/dexai/studio/runs"] --> self
+  c12["internal/dexai/delivery/releases"] --> self
+  c13["internal/dexai/delivery/releases/build"] --> self
+  c14["internal/dexai/delivery/releases/build/hosted"] --> self
+  c15["internal/dexai/projects/infra"] --> self
+  c16["internal/dexai/projects/infra/docker"] --> self
+  c17["internal/dexai/projects/infra/docker/dockertest"] --> self
+  c18["internal/dexai/projects/infra/kube"] --> self
+  c19["internal/dexai/projects/infra/kube/hosted"] --> self
+  c20["internal/dexai/projects/infra/kube/kubetest"] --> self
+  c21["internal/dexai/studio/runs"] --> self
   self --> d0["internal/comm"]
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->

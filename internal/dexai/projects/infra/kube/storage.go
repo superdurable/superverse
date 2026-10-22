@@ -148,12 +148,11 @@ func (k *Infrastructure) componentTraffic(project string, component Component) (
 	switch component {
 	case ComponentApplication:
 		// The generation's HTTP admission is installed with the application.
-		ingress = append(ingress, ingressFrom(componentPods(ComponentDex), infra.LiveWorkerPort), ingressFrom(platformServer, infra.LiveWorkerPort))
 		egress = append(egress, EgressTo(componentPods(ComponentDex), infra.DexPort), EgressTo(componentPods(ComponentStorage), infra.StoragePort),
 			EgressTo(platformServer, infra.CredentialReadPort), publicEgress(443, privateRanges))
 	case ComponentDex:
 		ingress = append(ingress, ingressFrom(componentPods(ComponentApplication), infra.DexPort), ingressFrom(platform, infra.DexPort))
-		egress = append(egress, EgressTo(componentPods(ComponentApplication), infra.LiveWorkerPort), EgressTo(componentPods(ComponentTemporal), infra.TemporalPort), EgressTo(componentPods(ComponentStorage), infra.StoragePort), publicEgress(443, privateRanges))
+		egress = append(egress, EgressTo(componentPods(ComponentTemporal), infra.TemporalPort), EgressTo(componentPods(ComponentStorage), infra.StoragePort), publicEgress(443, privateRanges))
 	case ComponentTemporal:
 		ingress = append(ingress, ingressFrom(componentPods(ComponentDex), infra.TemporalPort), ingressFrom(platformServer, infra.TemporalPort))
 	case ComponentStorage:

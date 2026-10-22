@@ -76,9 +76,9 @@ Under `/opt/superverse/dex-skills/`:
 - Every Flow is strict FDG 2.0 with `GetDexSummary` and `GetDexDisplay`; every
   Step has one group and one explanation. A Flow or Step type is its Go type
   name and durable identity: do not rename a type with open runs.
-- Versions are not pinned: move to a newer stable SDK, connector or Dex CLI when
-  useful, after reading its "Breaking Changes"; keep `go.mod`, `go.sum` and
-  `dex-app.yaml` consistent; never patch modules.
+- Read "Breaking Changes" before upgrades; keep manifests consistent; never
+  patch modules. Live SDK >=1.13.0. Preserve runtime.yaml web/worker modes:
+  Live pull, Preview loopback push; web alone runs triggers.
 
 ## Tests
 

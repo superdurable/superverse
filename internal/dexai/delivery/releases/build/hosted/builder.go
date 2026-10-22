@@ -9,6 +9,7 @@
 package hosted
 
 import (
+	"cmp"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -562,7 +563,7 @@ func (b *Builder) observe(ctx context.Context, h *hostedHead, v cb.Build) (build
 				return build.BuildResult{}, categoryErr
 			}
 			h.FailureCategory = category
-			h.Failure = codeBuildFailure(v)
+			h.Failure = cmp.Or(category.Hint(), codeBuildFailure(v))
 			result.Failure = h.Failure
 			result.FailureCategory = category
 			result.Timings = h.CodeBuild.timings(nil)

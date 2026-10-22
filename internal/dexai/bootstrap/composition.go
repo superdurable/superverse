@@ -233,8 +233,8 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 		return nil, err
 	}
 	if pull := config.dexWorker.Pull; pull != nil {
-		// SDK 1.13 retains surplus idle streams after a queue's busy tasks finish.
-		streams := (len(flows) + 1) * (pull.IdleStreamsPerQueue + pull.MaxConcurrentTasks)
+		// SDK 1.14.1 retires surplus idle streams after busy tasks finish.
+		streams := pull.MaxConcurrentTasks + (len(flows)+1)*pull.IdleStreamsPerQueue
 		if streams > serverconfig.PlatformDexWorkerStreamCap {
 			return nil, fmt.Errorf("platform pull Worker needs up to %d streams for %d Flow types; matching cap is %d: review concurrency and matching capacity", streams, len(flows), serverconfig.PlatformDexWorkerStreamCap)
 		}

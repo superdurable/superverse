@@ -374,3 +374,6 @@ func keepsIdentities(references [][2]infra.ResourceRef, names [][2]string) bool 
 const (
 	StatusSetupFailedForTest = statusSetupFailed
 )
+
+// ResultForTest exposes the production RPC result to real-dependency Flow fixtures.
+type ResultForTest = projectResult

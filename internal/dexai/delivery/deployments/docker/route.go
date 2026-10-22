@@ -39,13 +39,8 @@ func ownedByGeneration(route infradocker.Route, s deployments.Snapshot) bool {
 	return route.Owner.Scope == infra.ScopeLive.String() && route.Owner.ProjectID == s.ProjectID && route.Owner.DeploymentID == s.DeploymentID && route.Generation == s.Lease.Generation
 }
 
-// Activate moves the project's Live Worker alias and then its Live route to the
-// ready generation, makes its
-// published Flow Definitions the ones the project Dex serves, and succeeds
-// once the gateway serves the route and the public route answers the health
-// path. Until then it reports infra.ErrPending with the reason. A route of
-// any generation other than this one or the Live generation it replaces
-// belongs to a concurrent activation and is not taken over.
+// Activate writes the guarded active FDG before the HTTP route and observes
+// public health. An uncertain activation rechecks exact resource ownership.
 func (l *LiveServing) Activate(ctx context.Context, s deployments.Snapshot) (deployments.Activation, error) {
 	if _, err := l.VerifyReadiness(ctx, s); err != nil {
 		return deployments.Activation{}, err
@@ -58,9 +53,7 @@ func (l *LiveServing) Activate(ctx context.Context, s deployments.Snapshot) (dep
 	if err != nil {
 		return deployments.Activation{}, err
 	}
-	// The Worker alias moves first, so the generation the route serves already
-	// runs the open Flows.
-	worker, err := l.routeWorker(ctx, s)
+	worker, err := l.workerIdentity(ctx, s)
 	if err != nil {
 		return deployments.Activation{}, err
 	}
@@ -68,22 +61,22 @@ func (l *LiveServing) Activate(ctx context.Context, s deployments.Snapshot) (dep
 	admit := func(current infradocker.Route) bool {
 		return current.Owner.Scope == route.Owner.Scope && (current.Generation == s.ExpectedLiveRevision || current.Generation == s.Lease.Generation)
 	}
-	if err = l.Routes().Publish(ctx, route, admit); err != nil {
-		return deployments.Activation{}, err
-	}
 	// A delayed activation never overwrites the manifest of a newer route.
 	manifest, err := objects.PutGuarded(ctx, appmanifest.ActiveFlowDefinitionManifestKey, comm.Must(json.Marshal(publication.Manifest)), false, func() error {
 		current, exists, readErr := l.Routes().Read(route.Host)
 		if readErr != nil {
 			return readErr
 		}
-		if !exists || !ownedByGeneration(current, s) {
+		if !exists && s.ExpectedLiveRevision != 0 || exists && !ownedByGeneration(current, s) && !admit(current) {
 			return errRouteMoved
 		}
 		return nil
 	})
 	if err != nil {
 		return deployments.Activation{}, fmt.Errorf("activate the Flow Definitions of %s: %w", s.BuildRevisionID, err)
+	}
+	if err = l.Routes().Publish(ctx, route, admit); err != nil {
+		return deployments.Activation{}, err
 	}
 	loaded, observed, err := l.Routes().Loaded(ctx, route)
 	if err != nil {
@@ -141,6 +134,9 @@ func (l *LiveServing) removeGeneration(ctx context.Context, s deployments.Snapsh
 	}
 	if remaining != nil && live {
 		return fmt.Errorf("%w: Live route generation changed", infra.ErrOwnershipConflict)
+	}
+	if err := l.StopWorker(ctx, s); err != nil {
+		return err
 	}
 	name, labels := l.generation(s)
 	gone, err := l.RemoveContainer(ctx, name, labels, generationStopGrace)

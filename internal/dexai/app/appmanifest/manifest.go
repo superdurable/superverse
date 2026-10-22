@@ -52,10 +52,6 @@ type Manifest struct {
 // connectorModuleRoot is the module path prefix of every published connector.
 const connectorModuleRoot = "github.com/superdurable/dex-connectors-library/connectors/"
 
-// WorkerPort is where the application's Dex Worker listens beside its HTTP
-// port, so the application may not declare it.
-const WorkerPort = 8811
-
 // ErrInvalidAppManifest marks a dex-app.yaml whose content the checks below
 // reject: the application's own source, which only a change of the source
 // repairs. It wraps the reason, which names the field.
@@ -97,8 +93,8 @@ func decodeManifest(contents []byte) (Manifest, error) {
 	case manifest.SchemaVersion != "superverse.dev/dex-app/v1" || len(manifest.FlowDefinitions) == 0 || manifest.Connectors == nil:
 		return Manifest{}, errors.New("manifest schema, flow definitions and connectors are required")
 	// The application runs unprivileged, so it cannot bind a port below 1024.
-	case application.Port < 1024 || application.Port > 65535 || application.Port == WorkerPort:
-		return Manifest{}, fmt.Errorf("application.port must be 1024 to 65535 and not the Worker port %d", WorkerPort)
+	case application.Port < 1024 || application.Port > 65535:
+		return Manifest{}, errors.New("application.port must be 1024 to 65535")
 	// The health path is appended to probe and route URLs and copied into an
 	// ingress annotation: a leading // would name a host, and a query,
 	// fragment or line break would change the request.

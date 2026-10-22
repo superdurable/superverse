@@ -1,6 +1,6 @@
 # Application Instructions
 
-This is a Dex `go-react-v1` application. `TextSummaryFlow` is a complete
+This is a Dex `go-react-v1` application. `TextSummaryFlow` is a
 reference: a browser form calls the API, the API starts a Dex Flow, a Step
 calls a real connector, and the API and Studio read the result. Studio also
 provides Configuration, Runs, Start Flow, Display, Actions and Inbox.
@@ -73,9 +73,9 @@ Under `/opt/superverse/dex-skills/`:
   Step has one group and one explanation. A Flow or Step type is its Go type
   name and durable identity: name it after its domain (`OrderFlow`) and do not
   rename a type with open runs.
-- Versions are not pinned: move to a newer stable SDK, connector or Dex CLI when
-  useful, after reading its "Breaking Changes"; keep `go.mod`, `go.sum` and
-  `dex-app.yaml` consistent; never patch modules.
+- Read "Breaking Changes" before upgrades; keep manifests consistent; never
+  patch modules. Live SDK >=1.13.0. Preserve runtime.yaml web/worker modes:
+  Live pull, Preview loopback push; web alone runs triggers.
 
 ## Tests
 

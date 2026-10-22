@@ -270,7 +270,7 @@ func newCancellationScenario(ctx context.Context, t *testing.T) *cancellationSce
 	session.seeded = map[string]string{}
 	for _, connection := range list.Connections {
 		if connection.ConnectorID == llmConnector {
-			settings := map[string]json.RawMessage{"provider": comm.Must(json.Marshal(openAIProvider)), "model": comm.Must(json.Marshal(openAIPreviewModel))}
+			settings := map[string]json.RawMessage{"provider": comm.Must(json.Marshal(openAIProvider)), "model": comm.Must(json.Marshal(summaryModel(t)))}
 			session.seeded[connection.ConnectionName] = session.createConnection(ctx, live.configuration, connection.ConnectionName, connection.ConnectorID, connection.ModulePath,
 				connection.ModuleVersion, connection.AuthMethodID, settings, map[string]json.RawMessage{"api_key": comm.Must(json.Marshal(head))})
 		}

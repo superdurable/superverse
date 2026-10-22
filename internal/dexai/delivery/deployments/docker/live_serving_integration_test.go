@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/superdurable/dex/sdk-go/gen/dexpb"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
 	"github.com/superdurable/superversev2/internal/dexai/app/appmanifest"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/deployments"
@@ -31,14 +32,16 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/projects/infra"
 	infradocker "github.com/superdurable/superversev2/internal/dexai/projects/infra/docker"
 	"github.com/superdurable/superversev2/internal/dexai/projects/infra/docker/dockertest"
+	commonpb "go.temporal.io/api/common/v1"
+	querypb "go.temporal.io/api/query/v1"
+	"go.temporal.io/api/workflowservice/v1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/proto"
 )
 
 // applicationPort is the port the test application listens on.
 const applicationPort = 3000
-
-// workerRefresh is longer than the interval at which the project Dex resolves
-// the Live Worker endpoint again.
-const workerRefresh = 5 * time.Second
 
 // Requires the local Docker Engine. Three versions of the generation
 // application (package generationapp) are pushed to a local registry as the
@@ -46,13 +49,13 @@ const workerRefresh = 5 * time.Second
 // generations of one project on its own Temporal and Live Dex, as the server
 // deploys them: the generation's network, the grant's environment, the
 // container of the pinned image, readiness through its published ports,
-// including its Worker, and activation of the Live Worker alias, the published
+// including its pull Worker, and activation of the published
 // Flow Definitions and the Live route. The diagnostics read the application's
 // log and environment and refuse another application. A Flow that generation 1
 // started runs its next Step on generation 2 as soon as generation 2 holds the
-// alias, while generation 1 still runs. Generation 3 no longer registers the
+// pull target, while generation 1 still runs. Generation 3 no longer registers the
 // Step a Flow waits in, which then takes its failure route within the Step's
-// retry budget. The removal of the Live generation takes the alias with it, and
+// retry budget. The removal of the Live generation removes its Worker, and
 // the project's deletion leaves nothing behind.
 func TestDockerLiveDeployment(t *testing.T) {
 	k := dockertest.InfrastructureForTest(t)
@@ -103,29 +106,76 @@ func TestDockerLiveDeployment(t *testing.T) {
 	first.call(ctx, http.MethodPost, "/probes/"+carried)
 	first.awaitProbe(ctx, carried, func(p probe) bool { return p.StartedBy == "1" && p.Outcome == "waiting" })
 
-	// Generation 2 takes the Worker alias while generation 1 still runs, so the
+	overlap := "overlap-" + flowid.RandomID(8)
+	first.call(ctx, http.MethodPost, "/overlap/"+overlap)
+	first.awaitOverlap(ctx, overlap, func(p overlapProbe) bool { return p.SharedFirstBy == "1" })
+
+	sticky := deployer.stickyQueue(ctx, overlap)
+	if sticky == "" {
+		t.Fatal("N did not hold the open Flow sticky queue")
+	}
+
+	// Generation 2 connects its pull Worker while generation 1 still runs, so the
 	// project Dex runs the waiting Flow's next Step on generation 2.
 	second := deployer.deploy(ctx, 2, "2", false, 1)
 	deployer.requireWorker(ctx, second, true)
+	deployer.requireWorker(ctx, first, true)
+	if current := deployer.stickyQueue(ctx, overlap); current != sticky {
+		t.Fatalf("new registry connection moved the sticky queue: %s -> %s", sticky, current)
+	}
+	second.call(ctx, http.MethodPost, "/overlap/"+overlap+"/shipping")
+	during := second.awaitOverlap(ctx, overlap, func(p overlapProbe) bool { return p.NewRPCBy == "2" && p.SharedBy == "2" })
+	if during.LongBy != "" || during.AddedBy != "2" || during.AddedAttempt != 1 || during.RPCAttempt != 0 {
+		t.Fatalf("N+1 did not overlap N's long Step without an RPC attempt: %+v", during)
+	}
+	// SIGTERM arrives while the old long Step is still active; Stop must drain its successful write.
+	dockertest.EventuallyForTest(ctx, t, "old Worker exit", func() error { return deployer.serving.StopWorker(ctx, first.snapshot) })
+	complete := second.awaitOverlap(ctx, overlap, func(p overlapProbe) bool { return p.SharedBy == "2" && p.LongBy == "1" })
+	if complete.LongBy != "1" || complete.AddedBy != "2" || complete.AddedAttempt != 1 || complete.Order.Name != "old-worker-finished" || complete.Shipping.Address != "new-address" {
+		t.Fatalf("pull handover or additive state failed: %+v", complete)
+	}
+	t.Logf("overlap Flow %s: long/shared N=1, new RPC/Step/shared N+1=2, first Step attempt and RPC attempt zero, shipping retained", overlap)
 	deployer.requireWorker(ctx, first, false)
 	if _, err = k.API().InspectContainer(ctx, first.snapshot.Providers.Application.UID); err != nil {
 		t.Fatalf("generation 1 is not running beside generation 2: %v", err)
 	}
-	time.Sleep(workerRefresh)
 	second.call(ctx, http.MethodPost, "/probes/"+carried+"/release")
 	second.awaitProbe(ctx, carried, func(p probe) bool { return p.Outcome == "completed" && p.ReleasedBy == "2" })
 
 	removed := "probe-" + flowid.RandomID(8)
 	second.call(ctx, http.MethodPost, "/probes/"+removed)
 	second.awaitProbe(ctx, removed, func(p probe) bool { return p.StartedBy == "2" && p.Outcome == "waiting" })
+	// A pull candidate registers before activation; readiness failure must not leave it polling.
+	candidate := deployer.prepare(ctx, 3, "candidate", false, 2, false)
+	deployer.requireWorker(ctx, candidate, true)
+	unhealthy := candidate.snapshot
+	unhealthy.Inputs.HealthPath = "/missing-health-path"
+	if _, err := deployer.serving.VerifyReadiness(ctx, unhealthy); !errors.Is(err, infra.ErrPending) {
+		t.Fatalf("candidate did not fail HTTP readiness after registering: %v", err)
+	}
+	dockertest.EventuallyForTest(ctx, t, "failed candidate Worker exit", func() error { return deployer.serving.StopWorker(ctx, candidate.snapshot) })
+	deployer.requireWorker(ctx, candidate, false)
+	if web, err := k.API().InspectContainer(ctx, candidate.snapshot.Providers.Application.UID); err != nil || web == nil || !web.State.Running {
+		t.Fatalf("candidate web was removed before existing cleanup: %v", err)
+	}
+	for range 4 {
+		id := "after-failure-" + flowid.RandomID(8)
+		second.call(ctx, http.MethodPost, "/probes/"+id)
+		observed := second.awaitProbe(ctx, id, func(p probe) bool { return p.Outcome == "waiting" })
+		if observed.StartedBy != "2" {
+			t.Fatalf("stopped candidate took another task: %+v", observed)
+		}
+		second.call(ctx, http.MethodPost, "/probes/"+id+"/release")
+		second.awaitProbe(ctx, id, func(p probe) bool { return p.Outcome == "completed" })
+	}
+	deployer.cleanup(ctx, candidate)
 	deployer.cleanup(ctx, first)
 
 	// Generation 3 no longer registers AwaitRelease: the waiting Flow fails
 	// that Step's attempts there and takes its failure route within the Step's
 	// 45-second retry budget, never retrying for good.
-	third := deployer.deploy(ctx, 3, "3", true, 2)
+	third := deployer.deploy(ctx, 4, "3", true, 2)
 	deployer.cleanup(ctx, second)
-	time.Sleep(workerRefresh)
 	released := time.Now()
 	third.call(ctx, http.MethodPost, "/probes/"+removed+"/release")
 	budget, stop := context.WithTimeout(ctx, 3*time.Minute)
@@ -133,7 +183,7 @@ func TestDockerLiveDeployment(t *testing.T) {
 	third.awaitProbe(budget, removed, func(p probe) bool { return p.Outcome == "failure-route:3" })
 	t.Logf("the Flow left the removed Step through its failure route %s after its release", time.Since(released).Round(time.Second))
 
-	live := projects.Project{ProjectID: project, Storage: storage, CurrentLive: &projects.LivePointer{DeploymentID: third.snapshot.DeploymentID, Revision: 3}}
+	live := projects.Project{ProjectID: project, Storage: storage, CurrentLive: &projects.LivePointer{DeploymentID: third.snapshot.DeploymentID, Revision: third.snapshot.Lease.Generation}}
 	dockertest.EventuallyForTest(ctx, t, "the Live removal", func() error {
 		err := deployer.serving.RemoveServing(ctx, live)
 		if errors.Is(err, projects.ErrCleanupPending) {
@@ -154,6 +204,7 @@ type generationDeployer struct {
 	k                 *infradocker.Infrastructure
 	serving           *deploymentsdocker.LiveServing
 	registry, project string
+	skipReadiness     bool
 	storage           infra.StorageRefs
 	execution         infra.ExecutionRefs
 }
@@ -169,6 +220,10 @@ type generation struct {
 // deploy builds version, deploys it as generation n replacing the Live
 // generation expected and activates it.
 func (d *generationDeployer) deploy(ctx context.Context, n uint64, version string, removeAwait bool, expected uint64) generation {
+	return d.prepare(ctx, n, version, removeAwait, expected, true)
+}
+
+func (d *generationDeployer) prepare(ctx context.Context, n uint64, version string, removeAwait bool, expected uint64, activate bool) generation {
 	t := d.t
 	t.Helper()
 	repository := "sv2-test-" + d.project + "-" + version
@@ -198,35 +253,67 @@ func (d *generationDeployer) deploy(ctx context.Context, n uint64, version strin
 	if err != nil {
 		t.Fatal(err)
 	}
-	application, err := d.serving.ApplyApplication(ctx, s, environment)
+	processes, err := d.serving.ApplyApplication(ctx, s, environment)
+	application := processes.Web
+	s.Resources.Worker = processes.Worker
 	if err != nil {
 		t.Fatalf("run the application: %v", err)
 	}
 	s.Providers.Application = application
+	defer func() {
+		if !t.Failed() {
+			return
+		}
+		probe, stop := context.WithTimeout(context.Background(), 10*time.Second)
+		defer stop()
+		worker, readErr := d.k.OwnedContainer(probe, application.Name+"-worker", d.k.GenerationLabels(s.ProjectID, s.DeploymentID, s.Lease.Generation))
+		if readErr != nil || worker == nil {
+			t.Logf("Worker diagnostic read: %v", readErr)
+			return
+		}
+		t.Logf("Worker running=%t restarting=%t exit=%d", worker.State.Running, worker.State.Restarting, worker.State.ExitCode)
+		tail, readErr := d.k.API().ContainerLogs(probe, worker.ID, 30, 8192)
+		if readErr != nil {
+			t.Logf("Worker logs read: %v", readErr)
+			return
+		}
+		for _, value := range environment {
+			if len(value) > 5 {
+				tail = strings.ReplaceAll(tail, value, "<redacted>")
+			}
+		}
+		t.Logf("Worker diagnostic log: %s", tail)
+	}()
+	if d.skipReadiness {
+		return generation{t: t, k: d.k, snapshot: s, environment: environment}
+	}
 	dockertest.EventuallyForTest(ctx, t, "the readiness of generation "+version, func() error {
 		_, err := d.serving.VerifyReadiness(ctx, s)
 		return err
 	})
+	if !activate {
+		return generation{t: t, k: d.k, snapshot: s, environment: environment}
+	}
 	var activation deployments.Activation
 	dockertest.EventuallyForTest(ctx, t, "the activation of generation "+version, func() (err error) {
 		activation, err = d.serving.Activate(ctx, s)
 		return err
 	})
 	if activation.URL != d.k.PublicRoutes().URL(infra.ScopeLive, d.project) || activation.Manifest.Version == "" ||
-		activation.Worker.Name != infra.LiveWorkerEndpoint || activation.Worker.UID != application.UID || activation.Worker.Generation != n {
+		activation.Worker.Name != application.Name+"-worker" || activation.Worker.UID == application.UID || activation.Worker.Generation != n {
 		t.Fatalf("unexpected activation %+v", activation)
 	}
 	s.Resources.Worker = activation.Worker
 	return generation{t: t, k: d.k, snapshot: s, environment: environment}
 }
 
-// requireWorker requires the generation to hold the Live Worker alias, or not.
+// requireWorker checks the exact generation Worker registration.
 func (d *generationDeployer) requireWorker(ctx context.Context, g generation, holds bool) {
 	d.t.Helper()
-	target := infra.WorkerTarget{ProjectID: d.project, Namespace: d.storage.Boundary, Controller: g.snapshot.Providers.Application, Service: g.snapshot.Resources.Service,
+	target := infra.WorkerTarget{ProjectID: d.project, Namespace: d.storage.Boundary, Controller: g.snapshot.Resources.Worker, Service: g.snapshot.Resources.Service,
 		DeploymentID: g.snapshot.DeploymentID, Generation: g.snapshot.Lease.Generation}
 	if err := d.k.CheckWorker(ctx, target); (err == nil) != holds {
-		d.t.Fatalf("generation %d holds the Live Worker alias: %t, want %t (%v)", g.snapshot.Lease.Generation, err == nil, holds, err)
+		d.t.Fatalf("generation %d has a registered pull Worker: %t, want %t (%v)", g.snapshot.Lease.Generation, err == nil, holds, err)
 	}
 }
 
@@ -324,4 +411,58 @@ func liveGrant(ctx context.Context, t *testing.T, k interface {
 	}
 	return infra.Workload{ProjectID: s.ProjectID, WorkloadID: s.DeploymentID, Scope: live, Generation: s.Lease.Generation, ConfigurationRevision: 1,
 		Storage: s.Resources.Storage, Configuration: head, GrantID: infra.WorkloadName(s.DeploymentID, s.Lease.Generation)}
+}
+
+// overlapProbe records application observations of both simultaneously registered generations.
+type overlapProbe struct {
+	Order                                                         struct{ Name string }
+	Shipping                                                      struct{ Address string }
+	StartedBy, LongBy, AddedBy, SharedFirstBy, SharedBy, NewRPCBy string
+	AddedAttempt, RPCAttempt                                      int32
+}
+
+func (g generation) awaitOverlap(ctx context.Context, id string, done func(overlapProbe) bool) overlapProbe {
+	var last overlapProbe
+	for {
+		body, status, err := g.request(ctx, http.MethodGet, "/overlap/"+id)
+		if err == nil && status == http.StatusOK && json.Unmarshal(body, &last) == nil && done(last) {
+			return last
+		}
+		select {
+		case <-ctx.Done():
+			g.t.Fatalf("overlap %s reads %+v (status %d): %v", id, last, status, ctx.Err())
+		case <-time.After(time.Second):
+		}
+	}
+}
+
+// stickyQueue reads Dex's actual interpreter query through the Project Temporal API.
+// The last committed shared Step ran on N, and nontransactional RPC dispatch does not replace its queue.
+func (d *generationDeployer) stickyQueue(ctx context.Context, id string) string {
+	d.t.Helper()
+	container, e := d.k.OwnedContainer(ctx, d.execution.TemporalCredential.Name, d.k.OwnerLabels(d.project, infra.ComponentTemporal))
+	if e != nil || container == nil {
+		d.t.Fatalf("read actual Temporal: %v", e)
+	}
+	address, e := container.PublishedAddress(infra.TemporalPort)
+	if e != nil {
+		d.t.Fatal(e)
+	}
+	connection, e := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if e != nil {
+		d.t.Fatal(e)
+	}
+	defer connection.Close()
+	result, e := workflowservice.NewWorkflowServiceClient(connection).QueryWorkflow(ctx, &workflowservice.QueryWorkflowRequest{Namespace: d.execution.TemporalNamespace, Execution: &commonpb.WorkflowExecution{WorkflowId: id}, Query: &querypb.WorkflowQuery{QueryType: "PrepareRpcQueryType", QueryArgs: &commonpb.Payloads{Payloads: []*commonpb.Payload{{Metadata: map[string][]byte{"encoding": []byte("json/plain")}, Data: []byte("{}")}}}}})
+	if e != nil {
+		d.t.Fatal(e)
+	}
+	var preparation dexpb.PrepareRpcQueryResponse
+	if result.QueryResult == nil || len(result.QueryResult.Payloads) != 1 {
+		d.t.Fatal("Temporal query returned no sticky state")
+	}
+	if e = proto.Unmarshal(result.QueryResult.Payloads[0].Data, &preparation); e != nil {
+		d.t.Fatal(e)
+	}
+	return preparation.GetDexTaskQueue()
 }

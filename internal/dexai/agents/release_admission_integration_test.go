@@ -169,8 +169,8 @@ func (s *appliedPreviewSession) newSummaryConnection(ctx context.Context) string
 	list, _ := s.configurationRevision(ctx, s.configuration, &pb.FlowApiTarget{ProjectId: s.identity.ProjectID, Scope: pb.ProjectScope_PROJECT_SCOPE_PREVIEW})
 	for _, declared := range list.Connections {
 		if declared.ConnectionName == summaryModelConnection {
-			settings := map[string]json.RawMessage{"provider": comm.Must(json.Marshal(openAIProvider)), "model": comm.Must(json.Marshal(openAIPreviewModel))}
-			credentials := map[string]json.RawMessage{"api_key": comm.Must(json.Marshal(openAIKey(s.t)))}
+			settings := map[string]json.RawMessage{"provider": comm.Must(json.Marshal(openAIProvider)), "model": comm.Must(json.Marshal(summaryModel(s.t)))}
+			credentials := map[string]json.RawMessage{"api_key": comm.Must(json.Marshal(summaryKey(s.t)))}
 			return s.createConnection(ctx, s.configuration, declared.ConnectionName, declared.ConnectorID, declared.ModulePath, declared.ModuleVersion, declared.AuthMethodID, settings, credentials)
 		}
 	}

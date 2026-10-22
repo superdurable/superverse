@@ -58,6 +58,8 @@ const (
 	phaseApply             = "ApplyApplication"
 	phaseReadiness         = "VerifyReadiness"
 	phaseCommitLive        = "CommitCurrentLive"
+	phaseStopWorker        = "StopReplacedWorker"
+	phaseStopCandidate     = "StopFailedCandidateWorker"
 	phaseRequestRetirement = "RequestReplacedRetirement"
 	phaseReleaseLease      = "ReleaseProjectDeployment"
 	phaseCleanup           = "CleanupCancelledDeployment"
@@ -77,7 +79,7 @@ const (
 // carry, each the name of the Step that runs it.
 var DeployPhasesForTest = []string{
 	phaseAdmit, phaseAcquire, phaseVerify, phasePublish, phasePrepare, branchTemporal, branchAccess, phaseStartDex, phaseApply,
-	phaseReadiness, phaseCommitLive, phaseRequestRetirement, phaseReleaseLease, phaseCleanup, phaseRetire,
+	phaseReadiness, phaseCommitLive, phaseStopCandidate, phaseStopWorker, phaseRequestRetirement, phaseReleaseLease, phaseCleanup, phaseRetire,
 }
 
 // PollingPhasesForTest are the phases whose polling a cancellation preempts.
@@ -103,7 +105,7 @@ const (
 var nextPhase = map[string]string{
 	phaseAdmit: phaseAcquire, phaseAcquire: phaseVerify, phaseVerify: phasePublish,
 	phasePublish: phasePrepare, phasePrepare: phaseStartDex, phaseStartDex: phaseApply,
-	phaseApply: phaseReadiness, phaseReadiness: phaseCommitLive, phaseCommitLive: phaseRequestRetirement,
+	phaseApply: phaseReadiness, phaseReadiness: phaseCommitLive, phaseCommitLive: phaseStopWorker, phaseStopWorker: phaseRequestRetirement,
 	phaseRequestRetirement: phaseReleaseLease,
 }
 
@@ -117,6 +119,7 @@ const (
 	startDexWaitLimit        = 10 * time.Minute
 	applicationWaitLimit     = 15 * time.Minute
 	readinessWaitLimit       = 10 * time.Minute
+	stopWorkerWaitLimit      = 12 * time.Minute
 	// cleanupWaitLimit matches the cleanup wait limit of the deleting Project,
 	// which admits cleanup again after a failure.
 	cleanupWaitLimit = 30 * time.Minute
@@ -437,3 +440,10 @@ type LivePreparationResult struct {
 	Cancelled bool
 	Failure   string
 }
+
+// MutationForTest and its result retain the production RPC wire types in integration fixtures.
+type MutationForTest = mutation
+type MutationResultForTest = mutationResult
+
+// RetirementRequestForTest is the production retirement request in integration fixtures.
+type RetirementRequestForTest = retirementRequest

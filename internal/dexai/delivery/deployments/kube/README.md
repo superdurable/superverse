@@ -38,23 +38,14 @@ host the chart's admission fixes to the Project's Live host.
 - **Application.** Runs the immutable image as an unprivileged, read-only container that
   cannot obtain a service-account token. The grant's storage and project references
   reach it only through the environment Secret.
-- **Readiness and activation.** Readiness requires the published definitions, the
-  Deployment of the accepted image with one ready replica and the accepted Service, an
-  application that answers its health path and a Worker that accepts an HTTP/2
-  connection on its Service. Activation first moves the project's Live Worker endpoint,
-  the headless Service `live-worker`, to the generation, then the `live` HTTPRoute, each
-  unless a concurrent activation owns it (only this generation or the Live generation
-  it replaces may hold them, and a lost update is pending), makes the published manifest
-  the active one only while the route still belongs to the generation, and succeeds once
-  the public route answers. Every Live Flow stores `live-worker` as its headless Worker
-  target (`DEX_WORKER_HEADLESS`), and the project Dex resolves it again every two
-  seconds, so from then on it dispatches every open Flow to the new generation
-  ([the current contract](../../../../../docs/architecture/studio-setup/flow-changes.md)).
-- **Cleanup.** Removes the generation's objects after checking their owner labels and
-  generation, and the Live route only when the generation owns it; Project deletion also
-  waits until the route is gone. Only the removal of the Live generation removes the
-  `live-worker` Service, when it selects that generation; a replaced generation leaves
-  the one its successor holds.
+- **Readiness and activation.** Separate web and Worker Deployments use the same
+  pinned image and mounted immutable generation runtime YAML. HTTP selects only web.
+  Worker registration readiness and web health are checked independently. Activation
+  writes the guarded FDG before the HTTPRoute; only the replaced/candidate route or
+  no route on first publication is admitted. Live Flow targets are pull.
+- **Cleanup.** StopWorker foreground-deletes the exact Worker Deployment with
+  eleven-minute grace and observes absence. Old HTTP remains until retirement.
+  Candidate cleanup and Project deletion remove both resources.
 - **Diagnostics.** `ReadApplication` reads the application Deployment once and refuses
   one whose UID is not the recorded one; from that Deployment, `Environment` reads the
   Secrets the application container takes its environment from, and `Log` the newest
@@ -65,7 +56,7 @@ host the chart's admission fixes to the Project's Live host.
 | `live_serving.go` | `LiveServing`, generation labels and the generation Service |
 | `live_serving_application.go` | Application workload and readiness |
 | `live_serving_route.go` | Activation and the Live route |
-| `live_serving_worker.go` | The Worker probe of readiness and the Live Worker endpoint |
+| `live_serving_worker.go` | Pull registration readiness and exact Worker stop |
 | `live_serving_cleanup.go` | Generation and serving cleanup |
 | `live_serving_diagnostics.go` | The application's Secret-backed environment and log for the Agent's diagnostics |
 
@@ -80,3 +71,5 @@ consecutive generations on a project's own Live Dex and proves that a Flow that
 generation 1 started runs its next Step on generation 2 while generation 1 still runs,
 and that a Step that generation 3 no longer registers takes its failure route within its
 retry budget. They live here because they use the Kubernetes API directly.
+
+The stop/failure integration cases seed only disposable Project/deployment admission through `deploymentPhaseProject` and `deploymentPhaseFlow` in test files. Their FlowTypes derive from those Go names. They call the production Project/deployment RPC handlers and run every later production Step and option against real Dex and provider APIs. No provider response, handler or timeout is substituted. Each uses a fresh Project and FlowID with reuse disallowed and leaves only the lane's disposable retained execution state after exact owned-resource cleanup. Persistence, Maps, Channels, Streams, RPC admission and recovery are exactly the owning Project/deployment inventory; only the creation trigger and first Step differ. They add no durable primitive or cloud resource and are phase integration evidence, not a complete publish journey.

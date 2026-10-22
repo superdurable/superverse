@@ -5,7 +5,7 @@ Purpose: Provisions, reaches and removes each project's Live network, MinIO, Tem
 
 Callers: `internal/dexai/agents/sandbox/docker`, `internal/dexai/bootstrap`, `internal/dexai/delivery/deployments/docker` and `internal/dexai/projects/infra/docker/dockertest` import this package.
 
-Dependencies: it imports `internal/comm`, `internal/comm/flowid`, `internal/comm/platform/deploymentnames`, `internal/comm/platform/dockerapi`, `internal/comm/platform/objectstore` and `internal/dexai/projects/infra` and calls the application Worker, Dex Flow, gateway, MinIO admin and project Dex APIs.
+Dependencies: it imports `internal/comm`, `internal/comm/flowid`, `internal/comm/platform/deploymentnames`, `internal/comm/platform/dockerapi`, `internal/comm/platform/objectstore` and `internal/dexai/projects/infra` and calls the application Worker readiness HTTP, Dex Flow, gateway, MinIO admin and project Dex APIs.
 
 ```mermaid
 flowchart LR
@@ -20,7 +20,7 @@ flowchart LR
   self --> d3["internal/comm/platform/dockerapi"]
   self --> d4["internal/comm/platform/objectstore"]
   self --> d5["internal/dexai/projects/infra"]
-  self --> e0(["application Worker API"])
+  self --> e0(["application Worker readiness HTTP"])
   self --> e1(["Dex Flow API"])
   self --> e2(["gateway API"])
   self --> e3(["MinIO admin API"])
@@ -197,3 +197,5 @@ credential file.
 | `credentials.go` | The credential files |
 | `routes.go` | Route files, the gateway's HTTP provider, the gateway API check and probe |
 | `cleanup.go` | `DestroyScope`, `DestroyPreviewConfiguration`, `DestroyPreviewGrants` |
+
+Live Worker checks verify the exact separate Worker container and its registration readiness HTTP endpoint. Project Dex starts matching with stream limits 512/2048 and defaults starts to pull. No stable Worker alias or push port remains.

@@ -15,11 +15,18 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"gopkg.in/yaml.v3"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"path/filepath"
+	"strings"
+	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/superdurable/dex/blob-cache-go/blobcache"
@@ -143,42 +150,106 @@ func main() {
 }
 
 func run(logger *slog.Logger) error {
-	registry, err := dex.NewRegistry([]dex.Flow{GenerationProbeFlow{}})
+	if len(os.Args) != 2 {
+		return errors.New("explicit process mode required")
+	}
+	flows := []dex.Flow{GenerationProbeFlow{}, OverlapProbeFlow{}}
+	if strings.HasPrefix(version, "drain-") || version == "rejected" {
+		flows = append(flows, DrainProbeFlow{})
+	}
+	registry, err := dex.NewRegistry(flows)
 	if err != nil {
 		return err
 	}
-	cache, err := blobcache.New(&blobcache.Config{Dir: os.Getenv("DEX_BLOB_CACHE_DIR"), MaxBytes: 64 << 20, Logger: logger})
+	cache, err := blobcache.New(&blobcache.Config{Dir: filepath.Join(os.Getenv("DEX_BLOB_CACHE_DIR"), os.Args[1]), MaxBytes: 64 << 20, Logger: logger})
 	if err != nil {
 		return err
 	}
 	defer func() { _ = cache.Close() }()
-	target := dex.WorkerTarget{Address: os.Getenv("DEX_WORKER_TARGET"), Headless: os.Getenv("DEX_WORKER_HEADLESS") == "true"}
-	address := os.Getenv("DEX_FLOW_SERVICE_ADDRESS")
-	worker, err := dex.NewWorker(registry, cache, dex.WorkerOptions{BindAddress: os.Getenv("DEX_WORKER_BIND_ADDRESS"), WorkerTarget: target, FlowServiceAddress: address, Logger: logger})
-	if err != nil {
-		return err
+	if len(os.Args) != 2 || (os.Args[1] != "web" && os.Args[1] != "worker") {
+		return errors.New("explicit web or worker mode required")
 	}
+	target := dex.WorkerTarget{Pull: true}
+	address := os.Getenv("DEX_FLOW_SERVICE_ADDRESS")
+
 	client, err := dex.NewClient(registry, cache, dex.ClientOptions{FlowServiceAddress: address, WorkerTarget: &target, Logger: logger})
 	if err != nil {
 		return err
 	}
 	defer func() { _ = client.Close() }()
-	workerResult := make(chan error, 1)
-	go func() { workerResult <- worker.Start() }()
-	server := &http.Server{Addr: ":" + os.Getenv("PORT"), Handler: handler(client), ReadHeaderTimeout: 5 * time.Second}
-	serverResult := make(chan error, 1)
-	go func() { serverResult <- server.ListenAndServe() }()
-	select {
-	case err = <-workerResult:
-	case err = <-serverResult:
+	if os.Args[1] == "web" {
+		server := &http.Server{Addr: ":" + os.Getenv("PORT"), Handler: handler(client), ReadHeaderTimeout: 5 * time.Second}
+		return server.ListenAndServe()
 	}
-	return err
+	var settings struct {
+		Worker struct {
+			Mode                string        `yaml:"mode"`
+			ReadinessAddress    string        `yaml:"readinessAddress"`
+			MaxConcurrentTasks  int           `yaml:"maxConcurrentTasks"`
+			IdleStreamsPerQueue int           `yaml:"idleStreamsPerQueue"`
+			StopDrainTimeout    time.Duration `yaml:"stopDrainTimeout"`
+		} `yaml:"worker"`
+	}
+	data, err := os.ReadFile("/tmp/superverse-app/runtime.yaml")
+	if err != nil {
+		return err
+	}
+	if err := yaml.Unmarshal(data, &settings); err != nil {
+		return err
+	}
+	if settings.Worker.Mode != "pull" {
+		return errors.New("fixture requires pull")
+	}
+	worker, err := dex.NewWorker(registry, cache, dex.WorkerOptions{FlowServiceAddress: address, Logger: logger,
+		Pull: &dex.PullWorkerOptions{MaxConcurrentTasks: settings.Worker.MaxConcurrentTasks, IdleStreamsPerQueue: settings.Worker.IdleStreamsPerQueue,
+			StopDrainTimeout: settings.Worker.StopDrainTimeout, StopOnPermanentStreamRejection: true}})
+	if err != nil {
+		return err
+	}
+	result := make(chan error, 2)
+	go func() { result <- worker.Start() }()
+	var ready atomic.Bool
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+		if err := worker.WaitPullRegistered(ctx); err != nil {
+			result <- err
+			return
+		}
+		ready.Store(true)
+	}()
+	server := &http.Server{Addr: settings.Worker.ReadinessAddress, ReadHeaderTimeout: 5 * time.Second,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			if !ready.Load() || !worker.PullRegistrationState().IsReady {
+				http.Error(w, "not ready", http.StatusServiceUnavailable)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+		})}
+	go func() { result <- server.ListenAndServe() }()
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer cancel()
+	select {
+	case <-ctx.Done():
+	case err = <-result:
+	}
+	ready.Store(false)
+	if version == "blocked-drain" {
+		// This real fixture intentionally ignores termination; the provider must enforce its eleven-minute grace.
+		select {}
+	}
+	shutdown, stop := context.WithTimeout(context.Background(), 11*time.Minute)
+	defer stop()
+	return errors.Join(err, worker.Stop(shutdown), server.Shutdown(shutdown))
+
 }
 
 // handler serves the health path and lets a test start, release and read a
 // probe Flow by its ID.
 func handler(client *dex.Client) http.Handler {
 	mux := http.NewServeMux()
+	overlapHandlers(mux, client)
+	drainHandlers(mux, client)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
 	mux.HandleFunc("POST /probes/{id}", func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")

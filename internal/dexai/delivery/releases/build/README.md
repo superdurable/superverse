@@ -82,3 +82,5 @@ to be reused on the second build so rerunning downloads cannot hide a failure.
 | `failure_category.go` | The typed hosted failure categories and their ownership, passed to the runner and retained by the provider |
 | `build_profile.go` | The embedded build profiles in `build-profiles/` |
 | `localbuilder/` | The Local Kind build fixture, a Python service that `local.Builder` calls; it keeps its directory because the Kind behavior fingerprint hashes its file names |
+
+Live source preparation resolves `github.com/superdurable/dex/sdk-go` with the isolated Go toolchain after replacements. The selected version must be at least `v1.13.0`; missing, local-path, malformed and older selections produce the typed application rejection `unsupported-dex-sdk` with an upgrade hint. Preliminary module metadata rejects invalid replacements before downloads; the offline selected module check follows dependency preparation. No selected version is retained in state, artifacts or logs.

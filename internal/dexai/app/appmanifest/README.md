@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Owns the application contracts a project's source declares, for Release, Preview and Studio: the dex-app.yaml manifest, its connector and environment requirements and strict Flow Definition Graphs.
 
-Callers: `cmd/tools/app-manifest`, `internal/dexai/agents`, `internal/dexai/agents/sandbox/preview`, `internal/dexai/agents/sandbox/workspace/git`, `internal/dexai/api`, `internal/dexai/api/boundary`, `internal/dexai/delivery/deployments`, `internal/dexai/delivery/deployments/docker`, `internal/dexai/delivery/deployments/kube`, `internal/dexai/delivery/releases`, `internal/dexai/projects`, `internal/dexai/projects/config`, `internal/dexai/projects/infra`, `internal/dexai/studio/confighost`, `internal/dexai/studio/confighost/configitems`, `internal/dexai/studio/flowapi/fdg` and `internal/dexai/studio/runs` import this package.
+Callers: `cmd/tools/app-manifest`, `internal/dexai/agents`, `internal/dexai/agents/sandbox/preview`, `internal/dexai/agents/sandbox/workspace/git`, `internal/dexai/api`, `internal/dexai/api/boundary`, `internal/dexai/delivery/deployments`, `internal/dexai/delivery/deployments/docker`, `internal/dexai/delivery/deployments/kube`, `internal/dexai/delivery/releases`, `internal/dexai/projects`, `internal/dexai/projects/config`, `internal/dexai/studio/confighost`, `internal/dexai/studio/confighost/configitems`, `internal/dexai/studio/flowapi/fdg` and `internal/dexai/studio/runs` import this package.
 
 Dependencies: it imports `gen/superverse/v2`, `internal/comm`, `internal/comm/flowid` and `internal/comm/platform/objectstore`.
 
@@ -22,11 +22,10 @@ flowchart LR
   c9["internal/dexai/delivery/releases"] --> self
   c10["internal/dexai/projects"] --> self
   c11["internal/dexai/projects/config"] --> self
-  c12["internal/dexai/projects/infra"] --> self
-  c13["internal/dexai/studio/confighost"] --> self
-  c14["internal/dexai/studio/confighost/configitems"] --> self
-  c15["internal/dexai/studio/flowapi/fdg"] --> self
-  c16["internal/dexai/studio/runs"] --> self
+  c12["internal/dexai/studio/confighost"] --> self
+  c13["internal/dexai/studio/confighost/configitems"] --> self
+  c14["internal/dexai/studio/flowapi/fdg"] --> self
+  c15["internal/dexai/studio/runs"] --> self
   self --> d0["gen/superverse/v2"]
   self --> d1["internal/comm"]
   self --> d2["internal/comm/flowid"]
@@ -36,8 +35,7 @@ flowchart LR
 
 `appmanifest` owns the formats that a project's source declares and the Release
 artifacts that carry them. `ExtractAppManifest` strictly decodes `dex-app.yaml`
-and admits how the application is served (an unprivileged port other than the
-Worker port `WorkerPort`, and an absolute health path without a host, query or
+and admits how the application is served (an unprivileged port, and an absolute health path without a host, query or
 line break), which Flow sources it declares and which connector releases it
 uses. It returns the canonical connector and environment requirements with
 their digests. The Flow Definition helpers validate strict FDG 2.0 bundles and

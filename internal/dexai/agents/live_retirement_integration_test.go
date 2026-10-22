@@ -140,7 +140,7 @@ func (r *retirementScenario) deploy(ctx context.Context, expected uint64) deploy
 		r.t.Fatalf("the deployment replacing generation %d was not admitted (%T)", expected, err)
 	}
 	deployment := r.awaitStatus(ctx, deploymentID, deployments.Ready)
-	if deployment.Resources.Worker.Name != infra.LiveWorkerEndpoint {
+	if deployment.Resources.Worker.UID == "" || deployment.Resources.Worker.UID == deployment.Providers.Application.UID {
 		r.t.Fatalf("deployment %s did not take the Live Worker endpoint: %+v", deploymentID, deployment.Resources.Worker)
 	}
 	return deployment
@@ -169,7 +169,7 @@ func (r *retirementScenario) awaitStatus(ctx context.Context, deploymentID strin
 func (r *retirementScenario) requireGeneration(ctx context.Context, s deployments.Snapshot, running bool) {
 	r.t.Helper()
 	present := generationPresent(ctx, r.t, s)
-	worker := laneConnections(r.t).CheckWorker(ctx, infra.WorkerTarget{ProjectID: s.ProjectID, Namespace: s.Resources.Storage.Boundary, Controller: s.Providers.Application,
+	worker := laneConnections(r.t).CheckWorker(ctx, infra.WorkerTarget{ProjectID: s.ProjectID, Namespace: s.Resources.Storage.Boundary, Controller: s.Resources.Worker,
 		Service: s.Resources.Service, DeploymentID: s.DeploymentID, Generation: s.Lease.Generation})
 	if present != running || (worker == nil) != running {
 		r.t.Fatalf("generation %d of deployment %s runs: %t, holds the Worker endpoint: %t (%v); want %t", s.Lease.Generation, s.DeploymentID, present, worker == nil, worker, running)

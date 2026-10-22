@@ -11,7 +11,7 @@ package infra
 import "maps"
 
 // ProjectDexConfig is the Dex server configuration of a project's Live Dex:
-// the API and the interpreter only, Flow blobs in the project's bucket and
+// the API, interpreter and matching, Flow blobs in the project's bucket and
 // Streams in memory. temporal is the interpreter's Temporal connection, whose
 // hostPort the runtime also gives the container as TEMPORAL_HOST_PORT, and
 // storage holds the provider fields of the blob storage a0. A zero
@@ -29,16 +29,10 @@ func ProjectDexConfig(temporal, storage map[string]any, historyRetentionDays int
 		"interpreter": map[string]any{"attributeIndexesManagedExternally": false, "temporal": temporal},
 		"blobStore":   blobStore,
 		"streamStore": map[string]any{"backend": "memory"},
-		// Live Flows target the headless Live Worker endpoint, which moves to
-		// each new generation; Dex follows it within this interval.
-		"worker": map[string]any{"headlessAddressRefreshInterval": liveWorkerRefreshInterval},
+		"matching":    map[string]any{"maxConcurrentTasksCap": 512, "maxStreams": 2048},
+		"web":         map[string]any{"startFlowWorkerTargetPull": true},
 	}
 }
-
-// liveWorkerRefreshInterval is how often a project Dex resolves the Live Worker
-// endpoint again, which bounds how long it keeps dispatching to a replaced
-// generation after the endpoint moved.
-const liveWorkerRefreshInterval = "2s"
 
 // LocalDexTemporal is the Temporal connection of a project Dex whose Temporal
 // start-dev runs in the project's scope.

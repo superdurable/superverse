@@ -28,7 +28,7 @@ rules:
   # application generation resources retain their existing permissions.
   - apiGroups: [""]
     resources: [services]
-    resourceNames: [dex, live-worker]
+    resourceNames: [dex]
     verbs: [update]
   - apiGroups: [apps]
     resources: [deployments]

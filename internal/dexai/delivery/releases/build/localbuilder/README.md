@@ -147,3 +147,5 @@ Hosted CodeBuild/ECR transport is implemented separately in `../hosted/README.md
 
 Builds use the application's own `go.mod` with `GOWORK=off` and the published
 `go-react-v1` recipe, `bp3` for a new local build ([the current contract](../../../../../../docs/architecture/superverse-v2.md)).
+
+Live source preparation resolves `github.com/superdurable/dex/sdk-go` with the isolated Go toolchain after replacements. The selected version must be at least `v1.13.0`; missing, local-path, malformed and older selections produce the typed application rejection `unsupported-dex-sdk` with an upgrade hint. Preliminary module metadata rejects invalid replacements before downloads; the offline selected module check follows dependency preparation. No selected version is retained in state, artifacts or logs.

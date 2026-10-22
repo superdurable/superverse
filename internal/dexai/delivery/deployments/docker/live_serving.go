@@ -25,14 +25,9 @@ import (
 	infradocker "github.com/superdurable/superversev2/internal/dexai/projects/infra/docker"
 )
 
-// LiveServing is the Docker implementation of deployments.Serving, which
-// Local Native runs. Each deployment generation is a network of its own, which
-// stands for the generation's Service and exists before its application, and
-// an application container of the Release image on that network and on the
-// project network under the generation's name as its alias. The Live
-// generation also holds the Live Worker alias there, where the project Dex
-// reaches its Worker. The project's Live route moves to a generation through
-// the gateway's route files.
+// LiveServing runs separate HTTP and Worker containers for each generation,
+// attached to the accepted generation and Project networks. Only the HTTP route
+// moves at activation; both processes use the pinned release image.
 type LiveServing struct {
 	*infradocker.Infrastructure
 }
@@ -75,45 +70,58 @@ func (l *LiveServing) EnsureGenerationService(ctx context.Context, s deployments
 // configuration through the SDK; environment holds the grant's storage and
 // project references, which may be secret, and reaches the container only as
 // its environment when it is created.
-func (l *LiveServing) ApplyApplication(ctx context.Context, s deployments.Snapshot, environment map[string]string) (infra.ResourceRef, error) {
+func (l *LiveServing) ApplyApplication(ctx context.Context, s deployments.Snapshot, environment map[string]string) (deployments.ApplicationResources, error) {
 	name, labels := l.generation(s)
 	if s.Resources.Storage.Boundary.UID == "" || s.Resources.Service.Name != name || s.Resources.Service.UID == "" {
-		return infra.ResourceRef{}, fmt.Errorf("the application infrastructure of %s has no admitted network identity", name)
+		return deployments.ApplicationResources{}, fmt.Errorf("the application infrastructure of %s has no admitted network identity", name)
 	}
 	if err := l.projectNetwork(ctx, s); err != nil {
-		return infra.ResourceRef{}, err
+		return deployments.ApplicationResources{}, err
 	}
 	if _, err := l.CurrentNetwork(ctx, name, s.Resources.Service.UID, labels); err != nil {
-		return infra.ResourceRef{}, err
+		return deployments.ApplicationResources{}, err
 	}
 	var env []string
-	for _, setting := range deployments.ApplicationSettings(s, l.WorkerAddress(s.ProjectID), l.PublicRoutes().URL(infra.ScopeLive, s.ProjectID)) {
+	for _, setting := range deployments.ApplicationSettings(s, l.PublicRoutes().URL(infra.ScopeLive, s.ProjectID)) {
 		env = append(env, setting[0]+"="+setting[1])
 	}
 	for _, key := range slices.Sorted(maps.Keys(environment)) {
 		value := environment[key]
 		if strings.ContainsRune(value, '\x00') || len(value) > 32768 {
 			// The value may be a credential; only its name is reported.
-			return infra.ResourceRef{}, fmt.Errorf("application environment value %s holds a NUL byte or exceeds 32768 bytes", key)
+			return deployments.ApplicationResources{}, fmt.Errorf("application environment value %s holds a NUL byte or exceeds 32768 bytes", key)
 		}
 		env = append(env, key+"="+value)
 	}
-	spec := dockerapi.ContainerSpec{Image: s.Inputs.ImageReference, Env: env, User: applicationUser, Labels: labels, HostConfig: dockerapi.HostConfig{
+	spec := dockerapi.ContainerSpec{Cmd: []string{deployments.WebMode.String()}, Image: s.Inputs.ImageReference, Env: env, User: applicationUser, Labels: labels, HostConfig: dockerapi.HostConfig{
 		ReadonlyRootfs: true, CapDrop: []string{"ALL"}, SecurityOpt: []string{"no-new-privileges:true"}, NanoCPUs: 2e9, Memory: 1 << 30,
 		// /tmp is an anonymous volume on disk, which the container's removal deletes.
 		Mounts: []dockerapi.Mount{dockerapi.VolumeMount("", "/tmp")}, RestartPolicy: dockerapi.RestartPolicy{Name: "unless-stopped"},
 	}}
 	spec.Attach(name)
 	spec.Attach(l.ProjectNetwork(s.ProjectID), infra.WorkloadName(s.DeploymentID, s.Lease.Generation))
-	spec.Publish(s.Inputs.ApplicationPort, infra.LiveWorkerPort)
-	container, err := l.EnsureContainer(ctx, name, spec, nil)
+	spec.Publish(s.Inputs.ApplicationPort)
+	prepare := func(ctx context.Context, id string) error {
+		return l.API().CopyToContainer(ctx, id, "/tmp", applicationRuntimeArchive())
+	}
+	container, err := l.EnsureContainer(ctx, name, spec, prepare)
 	if err != nil {
-		return infra.ResourceRef{}, err
+		return deployments.ApplicationResources{}, err
 	}
 	if container.Config.Image != s.Inputs.ImageReference {
-		return infra.ResourceRef{}, fmt.Errorf("application container %s runs %s, not the release image %s", name, container.Config.Image, s.Inputs.ImageReference)
+		return deployments.ApplicationResources{}, fmt.Errorf("application container %s runs %s, not the release image %s", name, container.Config.Image, s.Inputs.ImageReference)
 	}
-	return infra.ResourceRef{Boundary: l.ProjectNetwork(s.ProjectID), Name: name, UID: container.ID, Generation: s.Lease.Generation}, nil
+	spec.Cmd = []string{deployments.WorkerMode.String()}
+	spec.Attach(l.ProjectNetwork(s.ProjectID), infra.WorkloadName(s.DeploymentID, s.Lease.Generation)+"-worker")
+	spec.StopTimeout = int(deployments.WorkerStopGrace / time.Second)
+	spec.ExposedPorts = nil
+	spec.HostConfig.PortBindings = nil
+	spec.Publish(deployments.WorkerReadinessPort)
+	worker, err := l.EnsureContainer(ctx, name+"-worker", spec, prepare)
+	if err != nil {
+		return deployments.ApplicationResources{}, err
+	}
+	return deployments.ApplicationResources{Web: infra.ResourceRef{Boundary: l.ProjectNetwork(s.ProjectID), Name: name, UID: container.ID, Generation: s.Lease.Generation}, Worker: infra.ResourceRef{Boundary: l.ProjectNetwork(s.ProjectID), Name: name + "-worker", UID: worker.ID, Generation: s.Lease.Generation}}, nil
 }
 
 // application reads the generation's application container at the ID the
@@ -133,7 +141,7 @@ func (l *LiveServing) application(ctx context.Context, s deployments.Snapshot) (
 // VerifyReadiness reports the generation ready when its published
 // definitions, its container of the accepted image and its network are the
 // accepted ones, the application answers its health path and its Worker
-// accepts connections. A container that is not running yet, an unhealthy
+// reports pull registration. A container that is not running yet, an unhealthy
 // application or a Worker that does not answer yet is infra.ErrPending with
 // the reason.
 func (l *LiveServing) VerifyReadiness(ctx context.Context, s deployments.Snapshot) (deployments.Readiness, error) {
@@ -161,7 +169,7 @@ func (l *LiveServing) VerifyReadiness(ctx context.Context, s deployments.Snapsho
 	if err = probeHealth(ctx, "http://"+address+s.Inputs.HealthPath); err != nil {
 		return deployments.Readiness{}, fmt.Errorf("%w: application health probe of %s: %w", infra.ErrPending, name, err)
 	}
-	if err = l.probeWorker(ctx, container); err != nil {
+	if err = l.probeWorker(ctx, s); err != nil {
 		return deployments.Readiness{}, err
 	}
 	return deployments.Readiness{Ready: true, ImageDigest: s.Inputs.ImageDigest, BundleDigest: s.Inputs.BundleDigest}, nil

@@ -59,8 +59,8 @@ func ownedByGeneration(o kubeapi.Object, s deployments.Snapshot) bool {
 // identity.
 func (l *LiveServing) EnsureGenerationService(ctx context.Context, s deployments.Snapshot) (infra.ResourceRef, error) {
 	name := infra.WorkloadName(s.DeploymentID, s.Lease.Generation)
-	service := l.Service(s.ProjectID, name, infrakube.ComponentApplication, l.generationLabels(s, infrakube.ComponentApplication),
-		kubeapi.ServicePort("http", 8080, s.Inputs.ApplicationPort), kubeapi.ServicePort("worker", infra.LiveWorkerPort, infra.LiveWorkerPort))
+	service := l.Service(s.ProjectID, name, infrakube.ComponentApplication, l.processLabels(s, deployments.WebMode),
+		kubeapi.ServicePort("http", 8080, s.Inputs.ApplicationPort))
 	service["metadata"] = l.generationMetadata(s, name, infrakube.ComponentApplication)
 	found, err := l.Ensure(ctx, service, s.ProjectID, infrakube.ComponentApplication)
 	if err != nil {
@@ -69,4 +69,12 @@ func (l *LiveServing) EnsureGenerationService(ctx context.Context, s deployments
 	generation := infrakube.ResourceReference(found)
 	generation.Generation = s.Lease.Generation
 	return generation, nil
+}
+
+const applicationProcessLabel = "superdurable.io/application-process"
+
+func (l *LiveServing) processLabels(s deployments.Snapshot, mode deployments.ApplicationMode) kubeapi.Object {
+	labels := l.generationLabels(s, infrakube.ComponentApplication)
+	labels[applicationProcessLabel] = mode.String()
+	return labels
 }

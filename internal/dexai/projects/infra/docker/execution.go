@@ -132,7 +132,7 @@ func (k *Infrastructure) StartProjectDex(ctx context.Context, project string, st
 	}
 	access := infra.LocalTemporalAccess(accepted.TemporalNamespace)
 	config := comm.Must(json.Marshal(infra.ProjectDexConfig(infra.LocalDexTemporal(access), infra.LocalDexStorage(storage.StorageBucket, root.Access, root.Secret), 0)))
-	dex := component{component: infra.ComponentDex, image: k.config.DexImage, command: []string{"--services", "api,interpreter"}, port: infra.DexPort, replaceable: true,
+	dex := component{component: infra.ComponentDex, image: k.config.DexImage, command: []string{"--services", "api,interpreter,matching"}, port: infra.DexPort, replaceable: true,
 		revision: fmt.Sprintf("%x", sha256.Sum256(config)),
 		env:      []string{"CONFIG_TEMPLATE_PATH=" + dexConfigDirectory + "/config.yaml", "TEMPORAL_HOST_PORT=" + access.HostPort},
 		prepare: func(ctx context.Context, id string) error {

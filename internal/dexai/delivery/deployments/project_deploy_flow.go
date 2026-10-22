@@ -102,10 +102,10 @@ func (f *ProjectDeployFlow) GetSteps() []dex.StepDef {
 		dex.DefineStep(PrepareLiveAccess{flow: f}), dex.DefineStep(RecordLivePreparationFailure{flow: f}),
 		dex.DefineStep(AwaitLiveExecutionPreparation{flow: f}), dex.DefineStep(StartLiveDex{flow: f}),
 		dex.DefineStep(ApplyApplication{flow: f}), dex.DefineStep(VerifyReadiness{flow: f}),
-		dex.DefineStep(CommitCurrentLive{flow: f}), dex.DefineStep(RequestReplacedRetirement{flow: f}), dex.DefineStep(ReleaseProjectDeployment{flow: f}),
+		dex.DefineStep(CommitCurrentLive{flow: f}), dex.DefineStep(StopReplacedWorker{flow: f}), dex.DefineStep(RequestReplacedRetirement{flow: f}), dex.DefineStep(ReleaseProjectDeployment{flow: f}),
 		dex.DefineStep(DrainReplacedGeneration{flow: f}), dex.DefineStep(RetireReplacedGeneration{flow: f}),
 		dex.DefineStep(CleanupCancelledDeployment{flow: f}), dex.DefineStep(CommitDeploymentPhase{flow: f}),
-		dex.DefineStep(RecordDeploymentFailure{flow: f}), dex.DefineStep(AwaitDeploymentRecovery{flow: f}),
+		dex.DefineStep(StopFailedCandidateWorker{flow: f}), dex.DefineStep(RecordCandidateStopFailure{flow: f}), dex.DefineStep(RecordDeploymentFailure{flow: f}), dex.DefineStep(AwaitDeploymentRecovery{flow: f}),
 		dex.DefineStep(NotifyDeploymentFailure{flow: f}), dex.DefineStep(AbandonDeploymentFailureNotification{flow: f}),
 	}
 }
@@ -347,7 +347,7 @@ func (f *ProjectDeployFlow) RequestDeploymentCancellation(ctx dex.Context, in ca
 			next = dex.MovementOf(CleanupCancelledDeployment{flow: f}, nil)
 		}
 		result.NextSteps = []dex.StepMovement{next}
-		result.CancelSteps(StartLiveDex{}, ApplyApplication{}, VerifyReadiness{}, RecordDeploymentFailure{}, CommitDeploymentPhase{}, NotifyDeploymentFailure{},
+		result.CancelSteps(StartLiveDex{}, ApplyApplication{}, VerifyReadiness{}, StopFailedCandidateWorker{}, RecordDeploymentFailure{}, CommitDeploymentPhase{}, NotifyDeploymentFailure{},
 			AbandonDeploymentFailureNotification{}, AwaitDeploymentRecovery{})
 	}
 	bumpRevision(ctx)
@@ -635,7 +635,7 @@ func (s ApplyApplication) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecisio
 		return dex.GoTo(CommitDeploymentPhase{flow: s.flow}, phaseResult{Phase: resultCleanupRequested}), nil
 	}
 	dexflow.StreamWritten(ctx, DeploymentProgress.Write(ctx, dexflow.Progress(ctx, phaseApply, state.Revision)))
-	application, err := converge(ctx, func(call context.Context) (infra.ResourceRef, error) {
+	application, err := converge(ctx, func(call context.Context) (ApplicationResources, error) {
 		return s.flow.applyApplication(call, state)
 	}, func(reason string) {
 		dexflow.StreamWritten(ctx, DeploymentProgress.Write(ctx, dexflow.Progress(ctx, phaseApply, state.Revision).WithDetail(reason)))
@@ -646,7 +646,9 @@ func (s ApplyApplication) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecisio
 	if err != nil {
 		return nil, err
 	}
-	return dex.GoTo(CommitDeploymentPhase{flow: s.flow}, phaseResult{Phase: phaseApply, StartedAt: ctx.FirstAttemptAt().UTC(), Application: &application}), nil
+	resources := state.Resources
+	resources.Worker = application.Worker
+	return dex.GoTo(CommitDeploymentPhase{flow: s.flow}, phaseResult{Phase: phaseApply, StartedAt: ctx.FirstAttemptAt().UTC(), Application: &application.Web, Resources: &resources}), nil
 }
 
 // dex:group group-id:deployments group-label:"Live deployment"
@@ -705,6 +707,49 @@ func (s CommitCurrentLive) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecisi
 	resources := state.Resources
 	resources.Worker = activation.Worker
 	return dex.GoTo(CommitDeploymentPhase{flow: s.flow}, phaseResult{Phase: phaseCommitLive, StartedAt: ctx.FirstAttemptAt().UTC(), URL: activation.URL, Resources: &resources}), nil
+}
+
+// dex:group group-id:deployments group-label:"Live deployment"
+// dex:explanation text:"Stop the exact replaced Worker after activation, retaining its HTTP generation until retirement."
+type StopReplacedWorker struct {
+	dex.StepDefaultsNoWaitFor[dex.None]
+	flow *ProjectDeployFlow
+}
+
+func (s StopReplacedWorker) GetStepOptions() *dex.StepOptions {
+	return dexflow.PollingStepOptions(stopWorkerWaitLimit, dex.ProceedToOnExecuteFailure(RecordDeploymentFailure{flow: s.flow}, nil))
+}
+func (s StopReplacedWorker) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, error) {
+	state := readSnapshot(ctx)
+	if state.CleanupRequested {
+		return dex.GoTo(CommitDeploymentPhase{flow: s.flow}, phaseResult{Phase: resultCleanupRequested}), nil
+	}
+	dexflow.StreamWritten(ctx, DeploymentProgress.Write(ctx, dexflow.Progress(ctx, phaseStopWorker, state.Revision)))
+	if state.ReplacedLive != (ReplacedGeneration{}) {
+		_, err := converge(ctx, func(call context.Context) (struct{}, error) {
+			project, err := s.flow.ownedProject(call, state)
+			if err != nil {
+				return struct{}{}, err
+			}
+			if project.CurrentLive == nil || project.CurrentLive.DeploymentID != state.DeploymentID || project.CurrentLive.Revision != state.Lease.Generation {
+				return struct{}{}, fmt.Errorf("Live pointer changed before replaced Worker stop")
+			}
+			replaced, err := s.flow.deployments.readSnapshot(call, state.ProjectID, state.ReplacedLive.DeploymentID)
+			if err != nil {
+				return struct{}{}, err
+			}
+			if replaced.Lease.Generation != state.ReplacedLive.Generation || replaced.Resources.Worker.UID == "" {
+				return struct{}{}, fmt.Errorf("replaced Worker has no exact accepted generation identity")
+			}
+			return struct{}{}, s.flow.serving.StopWorker(call, replaced)
+		}, func(reason string) {
+			dexflow.StreamWritten(ctx, DeploymentProgress.Write(ctx, dexflow.Progress(ctx, phaseStopWorker, state.Revision).WithDetail(reason)))
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	return dex.GoTo(CommitDeploymentPhase{flow: s.flow}, phaseResult{Phase: phaseStopWorker, StartedAt: ctx.FirstAttemptAt().UTC()}), nil
 }
 
 // dex:group group-id:deployments group-label:"Live deployment"
@@ -950,6 +995,8 @@ func (s CommitDeploymentPhase) Execute(ctx dex.Context, in phaseResult) (*dex.St
 		return dex.GoTo(VerifyReadiness{flow: s.flow}, nil), nil
 	case phaseCommitLive:
 		return dex.GoTo(CommitCurrentLive{flow: s.flow}, nil), nil
+	case phaseStopWorker:
+		return dex.GoTo(StopReplacedWorker{flow: s.flow}, nil), nil
 	case phaseRequestRetirement:
 		return dex.GoTo(RequestReplacedRetirement{flow: s.flow}, nil), nil
 	case phaseReleaseLease:
@@ -971,7 +1018,7 @@ func (RecordDeploymentFailure) GetStepOptions() *dex.StepOptions { return dexflo
 
 func (s RecordDeploymentFailure) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, error) {
 	phase := comm.Must(ProviderOperationRefs.Get(ctx)).Phase
-	if step := dexflow.RecoveryStep(ctx); step == phaseCleanup || step == phaseReleaseLease {
+	if step := dexflow.RecoveryStep(ctx); step == phaseCleanup || step == phaseReleaseLease || step == phaseStopCandidate {
 		// Cleanup may run from a wakeup in the phase it was cancelled in.
 		phase = step
 	}
@@ -979,7 +1026,85 @@ func (s RecordDeploymentFailure) Execute(ctx dex.Context, _ dex.None) (*dex.Step
 	if dexflow.RecoveryTimedOut(ctx) {
 		reason = dexflow.FailureMessage(phase+" did not finish within its wait limit.", reason)
 	}
-	return dex.GoTo(CommitDeploymentPhase{flow: s.flow}, phaseResult{Phase: phase, Failure: deploymentFailure(phase, reason)}), nil
+	state := readSnapshot(ctx)
+	if phase == phaseStopCandidate {
+		reason = dexflow.FailureMessage(fmt.Sprintf("Candidate Worker of deployment %s generation %d has not exited; recovery retains its deployment lease.", state.DeploymentID, state.Lease.Generation), reason)
+	}
+	if phase == phaseStopWorker {
+		reason = dexflow.FailureMessage(fmt.Sprintf("Replaced Worker of deployment %s generation %d has not exited; the current Live remains serving.", state.ReplacedLive.DeploymentID, state.ReplacedLive.Generation), reason)
+	}
+	failure := phaseResult{Phase: phase, Failure: deploymentFailure(phase, reason)}
+	switch phase {
+	case phaseApply, phaseReadiness, phaseCommitLive:
+		return dex.GoTo(StopFailedCandidateWorker{flow: s.flow}, failedCandidateInput{Failure: failure}), nil
+	}
+	return dex.GoTo(CommitDeploymentPhase{flow: s.flow}, failure), nil
+}
+
+// failedCandidateInput keeps the original failure in durable Step input until exit is confirmed.
+type failedCandidateInput struct {
+	Failure phaseResult
+	Retry   bool
+}
+
+// dex:group group-id:deployments group-label:"Live deployment"
+// dex:explanation text:"Stop the exact failed candidate Worker before reporting a pre-activation failure; never stop a generation already committed as Live."
+type StopFailedCandidateWorker struct {
+	dex.StepDefaultsNoWaitFor[failedCandidateInput]
+	flow *ProjectDeployFlow
+}
+
+func (s StopFailedCandidateWorker) GetStepOptions() *dex.StepOptions {
+	return dexflow.PollingStepOptions(stopWorkerWaitLimit, dex.ProceedToOnExecuteFailure(RecordCandidateStopFailure{flow: s.flow}, nil))
+}
+
+func (s StopFailedCandidateWorker) Execute(ctx dex.Context, in failedCandidateInput) (*dex.StepDecision, error) {
+	state := readSnapshot(ctx)
+	if state.cancelling() {
+		return dex.GoTo(CleanupCancelledDeployment{flow: s.flow}, nil), nil
+	}
+	_, err := converge(ctx, func(call context.Context) (struct{}, error) {
+		project, err := s.flow.ownedProject(call, state)
+		if err != nil {
+			return struct{}{}, err
+		}
+		// CommitCurrentLive can have completed its effect before its response was lost.
+		if project.CurrentLive != nil && project.CurrentLive.DeploymentID == state.DeploymentID && project.CurrentLive.Revision == state.Lease.Generation {
+			return struct{}{}, nil
+		}
+		return struct{}{}, s.flow.serving.StopWorker(call, state)
+	}, func(reason string) {
+		dexflow.StreamWritten(ctx, DeploymentProgress.Write(ctx, dexflow.Progress(ctx, phaseStopCandidate, state.Revision).WithDetail(reason)))
+	})
+	if err != nil {
+		return nil, err
+	}
+	if in.Retry {
+		// The stopped process must be recreated before another readiness attempt.
+		return dex.GoTo(ApplyApplication{flow: s.flow}, nil), nil
+	}
+	return dex.GoTo(CommitDeploymentPhase{flow: s.flow}, in.Failure), nil
+}
+
+// dex:group group-id:deployments group-label:"Live deployment"
+// dex:explanation text:"Record a failed candidate stop with its exact identity while retaining the original provider phase and lease for retry."
+// RecordCandidateStopFailure preserves the same Step input required by the SDK's Execute failure contract.
+type RecordCandidateStopFailure struct {
+	dex.StepDefaultsNoWaitFor[failedCandidateInput]
+	flow *ProjectDeployFlow
+}
+
+func (RecordCandidateStopFailure) GetStepOptions() *dex.StepOptions {
+	return dexflow.StateStepOptions()
+}
+func (s RecordCandidateStopFailure) Execute(ctx dex.Context, _ failedCandidateInput) (*dex.StepDecision, error) {
+	state := readSnapshot(ctx)
+	reason := s.flow.redactor.Redact(state.ProjectID, dexflow.RecoveryDetail(ctx))
+	if dexflow.RecoveryTimedOut(ctx) {
+		reason = dexflow.FailureMessage(phaseStopCandidate+" did not finish within its wait limit.", reason)
+	}
+	reason = dexflow.FailureMessage(fmt.Sprintf("Candidate Worker of deployment %s generation %d has not exited; recovery retains its deployment lease.", state.DeploymentID, state.Lease.Generation), reason)
+	return dex.GoTo(CommitDeploymentPhase{flow: s.flow}, phaseResult{Phase: phaseStopCandidate, Failure: deploymentFailure(phaseStopCandidate, reason)}), nil
 }
 
 // dex:group group-id:deployments group-label:"Live deployment"
@@ -1045,6 +1170,9 @@ func (s AwaitDeploymentRecovery) Execute(ctx dex.Context, _ dex.None) (*dex.Step
 	case state.Status != Recovering:
 		return dex.GoTo(AwaitDeploymentRecovery{flow: s.flow}, nil), nil
 	}
+	if state.Failure != nil && state.Failure.Phase == phaseStopCandidate {
+		return dex.GoTo(StopFailedCandidateWorker{flow: s.flow}, failedCandidateInput{Retry: true}), nil
+	}
 	switch state.Providers.Phase {
 	case phaseAdmit:
 		return dex.GoTo(AdmitDeployment{flow: s.flow}, nil), nil
@@ -1062,9 +1190,11 @@ func (s AwaitDeploymentRecovery) Execute(ctx dex.Context, _ dex.None) (*dex.Step
 	case phaseApply:
 		return dex.GoTo(ApplyApplication{flow: s.flow}, nil), nil
 	case phaseReadiness:
-		return dex.GoTo(VerifyReadiness{flow: s.flow}, nil), nil
+		return dex.GoTo(ApplyApplication{flow: s.flow}, nil), nil
 	case phaseCommitLive:
 		return dex.GoTo(CommitCurrentLive{flow: s.flow}, nil), nil
+	case phaseStopWorker:
+		return dex.GoTo(StopReplacedWorker{flow: s.flow}, nil), nil
 	case phaseRequestRetirement:
 		return dex.GoTo(RequestReplacedRetirement{flow: s.flow}, nil), nil
 	case phaseReleaseLease:

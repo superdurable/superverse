@@ -5,21 +5,20 @@ Purpose: Serves each Live deployment generation as a Docker container of its Rel
 
 Callers: `internal/dexai/bootstrap` imports this package.
 
-Dependencies: it imports `internal/comm`, `internal/comm/platform/deploymentnames`, `internal/comm/platform/dockerapi`, `internal/dexai/app/appmanifest`, `internal/dexai/delivery/deployments`, `internal/dexai/projects`, `internal/dexai/projects/config`, `internal/dexai/projects/infra` and `internal/dexai/projects/infra/docker` and calls the Live application API.
+Dependencies: it imports `internal/comm`, `internal/comm/platform/dockerapi`, `internal/dexai/app/appmanifest`, `internal/dexai/delivery/deployments`, `internal/dexai/projects`, `internal/dexai/projects/config`, `internal/dexai/projects/infra` and `internal/dexai/projects/infra/docker` and calls the Live application API.
 
 ```mermaid
 flowchart LR
   self["internal/dexai/delivery/deployments/docker"]
   c0["internal/dexai/bootstrap"] --> self
   self --> d0["internal/comm"]
-  self --> d1["internal/comm/platform/deploymentnames"]
-  self --> d2["internal/comm/platform/dockerapi"]
-  self --> d3["internal/dexai/app/appmanifest"]
-  self --> d4["internal/dexai/delivery/deployments"]
-  self --> d5["internal/dexai/projects"]
-  self --> d6["internal/dexai/projects/config"]
-  self --> d7["internal/dexai/projects/infra"]
-  self --> d8["internal/dexai/projects/infra/docker"]
+  self --> d1["internal/comm/platform/dockerapi"]
+  self --> d2["internal/dexai/app/appmanifest"]
+  self --> d3["internal/dexai/delivery/deployments"]
+  self --> d4["internal/dexai/projects"]
+  self --> d5["internal/dexai/projects/config"]
+  self --> d6["internal/dexai/projects/infra"]
+  self --> d7["internal/dexai/projects/infra/docker"]
   self --> e0(["Live application API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
@@ -41,25 +40,17 @@ pushed to the lane's registry.
   every capability dropped, `no-new-privileges`, limits of two CPUs and 1 GiB, an
   anonymous volume for `/tmp` and restart `unless-stopped`. It joins the generation's
   network and the project network under the generation's name, and publishes the
-  application port and the Worker port on 127.0.0.1. Its environment is the fixed
+  web HTTP port; the separate Worker publishes only registration readiness on 127.0.0.1. Its environment is the fixed
   `deployments.ApplicationSettings`, as in Kubernetes, and the grant's, given when
   the container is created.
-- **Readiness.** `VerifyReadiness` requires the published Flow Definitions, the
-  accepted network and container of the accepted image, HTTP 200 from the health
-  path through the container's published port and a Worker that accepts an HTTP/2
-  connection on its published Worker port.
-- **Activation.** `Activate` first moves the Live Worker alias `live-worker`, where
-  the project Dex reaches the current generation's Worker
-  (`infra.Connections.WorkerAddress`), to the generation: the engine changes a
-  container's aliases only when it attaches it again, so the generation is attached
-  to the project network again under its own name and `live-worker`, and then the
-  replaced generation under its own name alone. Only the Live generation the
-  deployment replaces may hold the alias. It then publishes the project's Live route to the generation
-  through the gateway's route files, taking it over only from the Live generation the
-  deployment replaces or from itself, makes the generation's Flow Definitions the
-  active manifest under a guard that the route is still the generation's, and succeeds
-  once the gateway's API lists the route and the public host answers the health path
-  through the gateway.
+- **Readiness.** Exact web and Worker containers run the accepted image and read
+  fixed runtime YAML from their owned temporary volumes. Web HTTP health and Worker
+  registration readiness are independent. Only the readiness HTTP port is published
+  by the Worker, with no push listener.
+- **Activation.** Guarded FDG activation precedes HTTP routing. Only the replaced or
+  candidate route, or no route on first publication, is admitted. No alias moves or
+  network reconnections occur. DeploymentResources.Worker records the separate exact
+  Worker; StopWorker observes its exit with eleven-minute grace, retaining old HTTP.
 - **Removal.** `CleanupDeployment` and `RemoveServing` withdraw the route the
   generation holds and remove its container and network, each confirmed gone; the
   live generation must hold the route. A removal still converging is
@@ -79,13 +70,13 @@ It pushes a Release image to a local registry as the Native builder does, reads 
 digest back with a HEAD of its manifest, removes the local tag so the engine pulls it
 again by that digest from the same registry address, and deploys it as a Live
 generation: its network, the grant's environment, the application, readiness,
-activation of the Worker alias, the definitions and the route through the gateway, the
+activation of the definitions and the HTTP route through the gateway, the
 diagnostics' log and environment and a refusal to read another application. It deploys
 three versions of the [generation application](../generationapp/README.md) on the
 project's own Temporal and Live Dex: a Flow that generation 1 started runs its next
 Step on generation 2 while generation 1 still runs, and a Step that generation 3 no
 longer registers takes its failure route within its retry budget. The removal of the
-Live generation takes the alias with it, after which the project's deletion leaves
+Live generation removes its exact Worker, after which the project's deletion leaves
 nothing.
 
 ## Files
@@ -94,5 +85,7 @@ nothing.
 | --- | --- |
 | `live_serving.go` | `LiveServing`, the generation's network and application, readiness |
 | `route.go` | `Activate`, the Live route, `CleanupDeployment`, `RemoveServing` |
-| `live_serving_worker.go` | The Worker probe of readiness and the Live Worker alias |
+| `live_serving_worker.go` | Pull registration readiness and exact Worker stop |
 | `diagnostics.go` | The application read for the Agent's diagnostics: its environment and log |
+
+The stop/failure integration cases seed only disposable Project/deployment admission through `deploymentPhaseProject` and `deploymentPhaseFlow` in test files. Their FlowTypes derive from those Go names. They call the production Project/deployment RPC handlers and run every later production Step and option against real Dex and provider APIs. No provider response, handler or timeout is substituted. Each uses a fresh Project and FlowID with reuse disallowed and leaves only the lane's disposable retained execution state after exact owned-resource cleanup. Persistence, Maps, Channels, Streams, RPC admission and recovery are exactly the owning Project/deployment inventory; only the creation trigger and first Step differ. They add no durable primitive or cloud resource and are phase integration evidence, not a complete publish journey.

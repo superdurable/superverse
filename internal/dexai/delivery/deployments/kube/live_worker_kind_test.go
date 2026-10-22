@@ -35,18 +35,13 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/projects/infra/kube/connect"
 )
 
-// kindWorkerRefresh is longer than the interval at which the project Dex
-// resolves the Live Worker endpoint again.
-const kindWorkerRefresh = 5 * time.Second
-
 // Three versions of the generation application (package generationapp) run
 // as consecutive Live generations of one project on its own MinIO, Temporal
 // and Live Dex in Local Kind, as the server deploys them. Readiness requires
 // each generation's Worker to accept connections, and activation moves the
-// headless Live Worker Service to it before the route. A Flow that generation
-// 1 started runs its next Step on generation 2 as soon as the Service selects
-// generation 2, while generation 1 still runs: the project Dex follows the
-// endpoint, not an established connection. Generation 3 no longer registers
+// pull Worker registration to it before the route. A Flow that generation
+// 1 started runs its next Step on generation 2 as soon as generation 1 stops polling, while generation 1 still runs: the project Dex follows the
+// pull queue registry. Generation 3 no longer registers
 // the Step a Flow waits in, which then takes its failure route within the
 // Step's retry budget. Removing the Live generation removes the Service.
 func TestKindLiveWorkerFollowsGeneration(t *testing.T) {
@@ -66,13 +61,29 @@ func TestKindLiveWorkerFollowsGeneration(t *testing.T) {
 	fixture.callGeneration(ctx, first, http.MethodPost, "/probes/"+carried)
 	fixture.awaitProbe(ctx, first, carried, func(p kindProbe) bool { return p.StartedBy == "1" && p.Outcome == "waiting" })
 
+	overlap := "overlap-" + flowid.RandomID(8)
+	fixture.callGeneration(ctx, first, http.MethodPost, "/overlap/"+overlap)
+	fixture.awaitOverlap(ctx, first, overlap, func(p overlapProbe) bool { return p.SharedFirstBy == "1" })
+
 	second := fixture.deployGeneration(ctx, live, 2, "2", false, 1)
 	fixture.requireWorker(ctx, live, second, true)
+	fixture.requireWorker(ctx, live, first, true)
+	fixture.callGeneration(ctx, second, http.MethodPost, "/overlap/"+overlap+"/shipping")
+	during := fixture.awaitOverlap(ctx, second, overlap, func(p overlapProbe) bool { return p.NewRPCBy == "2" && p.SharedBy == "2" })
+	if during.LongBy != "" || during.AddedBy != "2" || during.AddedAttempt != 1 || during.RPCAttempt != 0 {
+		t.Fatalf("N+1 did not overlap N's long Step without an RPC attempt: %+v", during)
+	}
+	// SIGTERM arrives while the old long Step is still active; Stop must drain its successful write.
+	fixture.awaitReady(ctx, "old Worker exit", func() error { return fixture.k.StopWorker(ctx, first) })
+	complete := fixture.awaitOverlap(ctx, second, overlap, func(p overlapProbe) bool { return p.SharedBy == "2" && p.LongBy == "1" })
+	if complete.LongBy != "1" || complete.AddedBy != "2" || complete.AddedAttempt != 1 || complete.Order.Name != "old-worker-finished" || complete.Shipping.Address != "new-address" {
+		t.Fatalf("pull handover or additive state failed: %+v", complete)
+	}
+	t.Logf("overlap Flow %s: long/shared N=1, new RPC/Step/shared N+1=2, first Step attempt and RPC attempt zero, shipping retained", overlap)
 	fixture.requireWorker(ctx, live, first, false)
 	if _, ready, err := fixture.k.DeploymentReady(ctx, fixture.project, infra.WorkloadName(first.DeploymentID, 1), infrakube.ComponentApplication, first.Providers.Application.UID); err != nil || !ready {
 		t.Fatalf("generation 1 is not running beside generation 2: %v", err)
 	}
-	time.Sleep(kindWorkerRefresh)
 	fixture.callGeneration(ctx, second, http.MethodPost, "/probes/"+carried+"/release")
 	fixture.awaitProbe(ctx, second, carried, func(p kindProbe) bool { return p.Outcome == "completed" && p.ReleasedBy == "2" })
 
@@ -83,7 +94,6 @@ func TestKindLiveWorkerFollowsGeneration(t *testing.T) {
 
 	third := fixture.deployGeneration(ctx, live, 3, "3", true, 2)
 	fixture.cleanupGeneration(ctx, second)
-	time.Sleep(kindWorkerRefresh)
 	released := time.Now()
 	fixture.callGeneration(ctx, third, http.MethodPost, "/probes/"+removed+"/release")
 	budget, stop := context.WithTimeout(ctx, 3*time.Minute)
@@ -99,7 +109,7 @@ func TestKindLiveWorkerFollowsGeneration(t *testing.T) {
 		}
 		return err
 	})
-	endpoint, _, err := fixture.k.API.Call(ctx, http.MethodGet, fixture.k.workerEndpointPath(fixture.project), nil)
+	endpoint, _, err := fixture.k.API.Call(ctx, http.MethodGet, "/api/v1/namespaces/"+fixture.k.ProjectNamespace(fixture.project)+"/services/"+"live-worker", nil)
 	if err != nil || endpoint != nil && !kubeapi.Deleting(endpoint) {
 		t.Fatalf("the Live removal left the Live Worker Service: %v", err)
 	}
@@ -131,7 +141,10 @@ func (f *kindProjectFixture) deployGeneration(ctx context.Context, live *kindPro
 		t.Fatal(err)
 	}
 	f.awaitReady(ctx, "the generation application", func() (err error) {
-		s.Providers.Application, err = f.k.ApplyApplication(ctx, s, environment)
+		processes, applyErr := f.k.ApplyApplication(ctx, s, environment)
+		s.Providers.Application = processes.Web
+		s.Resources.Worker = processes.Worker
+		err = applyErr
 		return err
 	})
 	f.awaitReady(ctx, "the readiness of generation "+version, func() error {
@@ -143,7 +156,7 @@ func (f *kindProjectFixture) deployGeneration(ctx context.Context, live *kindPro
 		activation, err = f.k.Activate(ctx, s)
 		return err
 	})
-	if activation.Worker.Name != infra.LiveWorkerEndpoint || activation.Worker.UID == "" || activation.Manifest.Version == "" {
+	if activation.Worker.Name != infra.WorkloadName(s.DeploymentID, s.Lease.Generation)+"-worker" || activation.Worker.UID == "" || activation.Manifest.Version == "" {
 		t.Fatalf("unexpected activation %+v", activation)
 	}
 	s.Resources.Worker = activation.Worker
@@ -172,7 +185,7 @@ func (f *kindProjectFixture) liveGrant(ctx context.Context, s deployments.Snapsh
 func (f *kindProjectFixture) requireWorker(ctx context.Context, live *kindProjectScope, s deployments.Snapshot, selected bool) {
 	f.test.Helper()
 	connections := &connect.Connections{Infrastructure: f.k.Infrastructure}
-	err := connections.CheckWorker(ctx, infra.WorkerTarget{ProjectID: f.project, Namespace: live.storage.Boundary, Controller: s.Providers.Application, Service: s.Resources.Service, DeploymentID: s.DeploymentID, Generation: s.Lease.Generation})
+	err := connections.CheckWorker(ctx, infra.WorkerTarget{ProjectID: f.project, Namespace: live.storage.Boundary, Controller: s.Resources.Worker, Service: s.Resources.Service, DeploymentID: s.DeploymentID, Generation: s.Lease.Generation})
 	if (err == nil) != selected {
 		f.test.Fatalf("the Live Worker Service selects generation %d: %t, want %t (%v)", s.Lease.Generation, err == nil, selected, err)
 	}
@@ -270,4 +283,27 @@ func kindGenerationImage(ctx context.Context, t *testing.T, version string, remo
 	}
 	t.Cleanup(func() { _ = exec.CommandContext(context.WithoutCancel(ctx), "docker", "image", "rm", tag).Run() }) //nolint:gosec // the tag built above
 	return tag
+}
+
+// overlapProbe records application observations of both simultaneously registered generations.
+type overlapProbe struct {
+	Order                                                         struct{ Name string }
+	Shipping                                                      struct{ Address string }
+	StartedBy, LongBy, AddedBy, SharedFirstBy, SharedBy, NewRPCBy string
+	AddedAttempt, RPCAttempt                                      int32
+}
+
+func (f *kindProjectFixture) awaitOverlap(ctx context.Context, s deployments.Snapshot, id string, done func(overlapProbe) bool) overlapProbe {
+	var last overlapProbe
+	for {
+		body, status, err := f.requestGeneration(ctx, s, http.MethodGet, "/overlap/"+id)
+		if err == nil && status == http.StatusOK && json.Unmarshal(body, &last) == nil && done(last) {
+			return last
+		}
+		select {
+		case <-ctx.Done():
+			f.test.Fatalf("overlap %s reads %+v (status %d): %v", id, last, status, ctx.Err())
+		case <-time.After(time.Second):
+		}
+	}
 }

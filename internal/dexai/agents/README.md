@@ -706,9 +706,8 @@ configuration operations that Studio sends through the API (`ListConnections`,
 `SelectTeamSpaceConnection`, `ValidateProjectConfiguration`) to
 `projectconfig.Configuration` in the test's process, as the Session's owner:
 it creates in the Project's TeamSpace a connection of each declared llm
-connection with the OpenAI provider, the browser cases' model `gpt-5-mini` and
-the key of the private file `SUPERVERSE_E2E_OPENAI_FILE` names
-(`{"apiKey":"sk-..."}`), as the TeamSpace's Connections page does, selects it,
+connection with the OpenAI-compatible protocol and the platform mock summary model
+(`summarymodel.ModelForTest` and its non-secret `APIKeyForTest`), as the TeamSpace's Connections page does, selects it,
 validates the revision it wrote and returns the READY configuration. The
 connections live in the lane's PostgreSQL and platform bucket, and the
 configuration's credential broker names the lane's credential read URL
@@ -720,7 +719,11 @@ storage) on Native. It reads the AppManifest of the HEAD's prepared source
 from the platform's artifact bucket, as the server does: `SUPERVERSE_S3_ENDPOINT`
 and `SUPERVERSE_ARTIFACT_BUCKET`, with the platform MinIO's credentials in the
 AWS environment. No log or failure carries the key or a configuration
-document.
+document. The default mock path reads no provider credential. Real-provider
+verification requires `SUPERVERSE_E2E_LLM=real`, the platform developer's recorded
+reason in `SUPERVERSE_E2E_REAL_LLM_APPROVAL`, a separately configured local
+profile and the private `SUPERVERSE_E2E_OPENAI_FILE`. Unknown modes fail; no
+failed mock operation falls back to a real provider.
 
 ```sh
 SUPERVERSE_TEST_LANE=kind \

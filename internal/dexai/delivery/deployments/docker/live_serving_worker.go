@@ -9,103 +9,105 @@
 package docker
 
 import (
+	"archive/tar"
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
-	"slices"
-	"strconv"
+	"net/http"
+	"time"
 
-	"github.com/superdurable/superversev2/internal/comm/platform/deploymentnames"
+	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/platform/dockerapi"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/deployments"
 	"github.com/superdurable/superversev2/internal/dexai/projects/infra"
-	infradocker "github.com/superdurable/superversev2/internal/dexai/projects/infra/docker"
 )
 
-// probeWorker requires the generation's Worker to accept an HTTP/2 connection
-// on the port its container publishes, so the Live Worker alias moves only to
-// a Worker that answers.
-func (l *LiveServing) probeWorker(ctx context.Context, container *dockerapi.Container) error {
-	address, err := container.PublishedAddress(infra.LiveWorkerPort)
-	if err == nil {
-		err = infradocker.ProbeWorker(ctx, address)
+func applicationRuntimeArchive() []byte {
+	var contents bytes.Buffer
+	archive := tar.NewWriter(&contents)
+	runtime := deployments.ApplicationRuntime()
+	comm.MustDo(archive.WriteHeader(&tar.Header{Typeflag: tar.TypeDir, Name: "superverse-app/", Mode: 0755}))
+	comm.MustDo(archive.WriteHeader(&tar.Header{Typeflag: tar.TypeReg, Name: "superverse-app/runtime.yaml", Mode: 0444, Size: int64(len(runtime))}))
+	comm.Must(archive.Write(runtime))
+	comm.MustDo(archive.Close())
+	return contents.Bytes()
+}
+
+func (l *LiveServing) workerContainer(ctx context.Context, s deployments.Snapshot) (*dockerapi.Container, error) {
+	name, labels := l.generation(s)
+	worker, err := l.OwnedContainer(ctx, name+"-worker", labels)
+	if err != nil || worker == nil {
+		return worker, err
 	}
+	if s.Resources.Worker.UID != "" && s.Resources.Worker.UID != worker.ID {
+		return nil, fmt.Errorf("%w: Worker container identity changed", infra.ErrOwnershipConflict)
+	}
+	return worker, nil
+}
+
+func (l *LiveServing) probeWorker(ctx context.Context, s deployments.Snapshot) error {
+	worker, err := l.workerContainer(ctx, s)
 	if err != nil {
-		return fmt.Errorf("%w: the Worker of %s does not accept connections yet: %w", infra.ErrPending, container.Name, err)
+		return err
+	}
+	if worker == nil || !worker.State.Running || worker.State.Restarting {
+		return fmt.Errorf("%w: Worker container is not running", infra.ErrPending)
+	}
+	if worker.Config.Image != s.Inputs.ImageReference {
+		return fmt.Errorf("Worker container has another image")
+	}
+	address, err := worker.PublishedAddress(deployments.WorkerReadinessPort)
+	if err != nil {
+		return fmt.Errorf("%w: Worker readiness port is not published yet: %w", infra.ErrPending, err)
+	}
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://"+address+"/readyz", nil)
+	if err != nil {
+		return err
+	}
+	response, err := (&http.Client{Timeout: 3 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}).Do(request)
+	if err != nil {
+		return fmt.Errorf("%w: Worker readiness: %w", infra.ErrPending, err)
+	}
+	defer func() { _ = response.Body.Close() }()
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("%w: Worker registration readiness returned %d", infra.ErrPending, response.StatusCode)
 	}
 	return nil
 }
 
-// routeWorker moves the project's Live Worker alias to the application
-// container of the generation of s and returns the endpoint. The engine
-// changes a container's aliases only when it attaches the container again, so
-// the generation is attached again under its own and the Worker alias first,
-// and then every other generation that holds the alias under its own alone; a
-// round cut off between them is repeated by the next. Only this generation or
-// the Live generation it replaces may hold the alias; another belongs to a
-// concurrent activation and is not taken over.
-func (l *LiveServing) routeWorker(ctx context.Context, s deployments.Snapshot) (infra.ResourceRef, error) {
-	network := s.Resources.Storage.Boundary.UID
-	container, err := l.application(ctx, s)
+func (l *LiveServing) workerIdentity(ctx context.Context, s deployments.Snapshot) (infra.ResourceRef, error) {
+	if err := l.probeWorker(ctx, s); err != nil {
+		return infra.ResourceRef{}, err
+	}
+	worker, err := l.workerContainer(ctx, s)
 	if err != nil {
 		return infra.ResourceRef{}, err
 	}
-	containers, err := l.API().ListContainers(ctx, dockerapi.Labels(l.OwnerLabels(s.ProjectID, infra.ComponentApplication)))
-	if err != nil {
-		return infra.ResourceRef{}, err
+	if worker == nil {
+		return infra.ResourceRef{}, fmt.Errorf("%w: Worker disappeared", infra.ErrPending)
 	}
-	var holders []*dockerapi.Container
-	for _, summary := range containers {
-		if summary.ID == container.ID {
-			continue
-		}
-		other, inspectErr := l.API().InspectContainer(ctx, summary.ID)
-		if inspectErr != nil {
-			return infra.ResourceRef{}, inspectErr
-		}
-		if other == nil || !other.Attached(network, infra.LiveWorkerEndpoint) {
-			continue
-		}
-		if generation := other.Config.Labels[deploymentnames.GenerationLabel]; generation != strconv.FormatUint(s.ExpectedLiveRevision, 10) {
-			return infra.ResourceRef{}, fmt.Errorf("%w: the Live Worker alias is held by generation %s, not the replaced %d", infra.ErrOwnershipConflict, generation, s.ExpectedLiveRevision)
-		}
-		holders = append(holders, other)
-	}
-	if err = l.attach(ctx, network, container, infra.WorkloadName(s.DeploymentID, s.Lease.Generation), infra.LiveWorkerEndpoint); err != nil {
-		return infra.ResourceRef{}, err
-	}
-	for _, holder := range holders {
-		labels := holder.Config.Labels
-		generation, parseErr := strconv.ParseUint(labels[deploymentnames.GenerationLabel], 10, 64)
-		if parseErr != nil {
-			return infra.ResourceRef{}, fmt.Errorf("the Live Worker alias holder %s has no generation: %w", holder.Name, parseErr)
-		}
-		if err = infradocker.VerifyLabels(labels, l.GenerationLabels(s.ProjectID, labels[deploymentnames.WorkloadIDLabel], generation)); err != nil {
-			return infra.ResourceRef{}, err
-		}
-		if err = l.attach(ctx, network, holder, infra.WorkloadName(labels[deploymentnames.WorkloadIDLabel], generation)); err != nil {
-			return infra.ResourceRef{}, err
-		}
-	}
-	return infra.ResourceRef{Boundary: l.ProjectNetwork(s.ProjectID), Name: infra.LiveWorkerEndpoint, UID: container.ID, Generation: s.Lease.Generation}, nil
+	name, _ := l.generation(s)
+	return infra.ResourceRef{Boundary: l.ProjectNetwork(s.ProjectID), Name: name + "-worker", UID: worker.ID, Generation: s.Lease.Generation}, nil
 }
 
-// attach attaches container to the network with ID network under exactly
-// aliases, attaching it again when it holds others.
-func (l *LiveServing) attach(ctx context.Context, network string, container *dockerapi.Container, aliases ...string) error {
-	exact := container.Attached(network, infra.LiveWorkerEndpoint) == slices.Contains(aliases, infra.LiveWorkerEndpoint)
-	for _, alias := range aliases {
-		exact = exact && container.Attached(network, alias)
+// StopWorker reconciles exact ownership before every uncertain stop or removal.
+func (l *LiveServing) StopWorker(ctx context.Context, s deployments.Snapshot) error {
+	worker, err := l.workerContainer(ctx, s)
+	if err != nil || worker == nil {
+		return err
 	}
-	if exact {
-		return nil
-	}
-	if container.Joined(network) {
-		if err := l.API().DisconnectNetwork(ctx, network, container.ID); err != nil {
-			return fmt.Errorf("detach %s from the project network: %w", container.Name, err)
+	if worker.State.Running {
+		if err := l.API().StopContainer(ctx, worker.ID, deployments.WorkerStopGrace); err != nil {
+			if errors.Is(err, context.DeadlineExceeded) {
+				return fmt.Errorf("%w: Worker container is draining: %w", infra.ErrPending, err)
+			}
+			return err
 		}
+		return fmt.Errorf("%w: Worker exit needs confirmation", infra.ErrPending)
 	}
-	if err := l.API().ConnectNetwork(ctx, network, container.ID, aliases...); err != nil {
-		return fmt.Errorf("attach %s to the project network: %w", container.Name, err)
+	if err := l.API().RemoveContainer(ctx, worker.ID); err != nil {
+		return err
 	}
-	return nil
+	return fmt.Errorf("%w: Worker removal needs confirmation", infra.ErrPending)
 }

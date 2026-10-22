@@ -59,7 +59,7 @@ func (f *FlowAPI) Start(ctx context.Context, request StartRequest) Document {
 		FlowStartOptions: &dexpb.FlowStartOptions{
 			IdReusePolicy:             dexpb.IdReusePolicy_ID_REUSE_POLICY_DISALLOW_REUSE,
 			FlowAlreadyStartedOptions: &dexpb.FlowAlreadyStartedOptions{IgnoreAlreadyStartedError: true},
-			FlowConfigOverride:        &dexpb.FlowConfig{WorkerTarget: &dexpb.WorkerTarget{Address: f.authorization.WorkerTarget, IsHeadlessAddress: f.authorization.WorkerHeadless}},
+			FlowConfigOverride:        &dexpb.FlowConfig{WorkerTarget: &dexpb.WorkerTarget{Address: f.authorization.WorkerTarget, IsPullMode: f.authorization.WorkerPull}},
 		},
 	}); err != nil {
 		return grpcErrorDocument(err, "StartFlow")
@@ -127,7 +127,7 @@ func (f *FlowAPI) admitStart(request StartRequest) (startAdmission, Document, bo
 func (f *FlowAPI) startRequestID(request StartRequest, input any) string {
 	authorization := f.authorization
 	return boundStartRequestID(f.bundle.Revision, flowid.Fingerprint([]any{
-		"dex-web-hosted-start-v1", authorization.ActorID, authorization.TargetRevision, authorization.WorkerTarget,
+		"dex-web-hosted-start-v1", authorization.ActorID, authorization.TargetRevision, authorization.WorkerTarget, authorization.WorkerPull,
 		f.bundle.Revision, request.FlowType, request.FlowID, request.RequestID, input,
 	}))
 }

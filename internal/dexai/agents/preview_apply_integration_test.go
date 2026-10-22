@@ -84,8 +84,8 @@ func newAppliedPreviewSession(t *testing.T, ctx context.Context) (*appliedPrevie
 	if declared == nil {
 		t.Fatalf("the template declares no %s connection", summaryModelConnection)
 	}
-	settings := map[string]json.RawMessage{"provider": comm.Must(json.Marshal(openAIProvider)), "model": comm.Must(json.Marshal(openAIPreviewModel))}
-	credentials := map[string]json.RawMessage{"api_key": comm.Must(json.Marshal(openAIKey(t)))}
+	settings := map[string]json.RawMessage{"provider": comm.Must(json.Marshal(openAIProvider)), "model": comm.Must(json.Marshal(summaryModel(t)))}
+	credentials := map[string]json.RawMessage{"api_key": comm.Must(json.Marshal(summaryKey(t)))}
 	connectionID := session.createConnection(ctx, configuration, declared.ConnectionName, declared.ConnectorID, declared.ModulePath, declared.ModuleVersion, declared.AuthMethodID, settings, credentials)
 	session.seeded = map[string]string{summaryModelConnection: connectionID}
 	session.configureConnections(ctx, configuration, target)

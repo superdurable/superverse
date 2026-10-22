@@ -56,7 +56,13 @@ export const PUBLISH_STAGES = [
     id: "live",
     label: "Go live",
     of: "deployment",
-    phases: ["VerifyReadiness", "CommitCurrentLive", "RequestReplacedRetirement", "ReleaseProjectDeployment"],
+    phases: [
+      "VerifyReadiness",
+      "CommitCurrentLive",
+      "StopReplacedWorker",
+      "RequestReplacedRetirement",
+      "ReleaseProjectDeployment",
+    ],
   },
 ] as const satisfies readonly { id: string; label: string; of: "build" | "deployment"; phases: readonly string[] }[];
 

@@ -241,8 +241,8 @@ func (f *kindProjectFixture) verifyEngineOnlyListener(ctx context.Context, state
 	}
 	container, _ := containers[0].(map[string]any)
 	args, _ := container["args"].([]any)
-	if container["name"] != infrakube.ComponentDex.String() || container["image"] != f.k.DexImage || len(args) != 2 || args[0] != "--services" || args[1] != "api,interpreter" {
-		f.test.Fatal("actual Dex Pod must run the accepted image with only api,interpreter services")
+	if container["name"] != infrakube.ComponentDex.String() || container["image"] != f.k.DexImage || len(args) != 2 || args[0] != "--services" || args[1] != "api,interpreter,matching" {
+		f.test.Fatal("actual Dex Pod must run the accepted image with api,interpreter,matching services")
 	}
 	declaredPorts, _ := container["ports"].([]any)
 	if len(declaredPorts) != 1 {

@@ -378,8 +378,44 @@ def cancel_native_child(identity):
     raise ValueError("Native build child cleanup is incomplete")
 
 
+class CommandFailed(ValueError):
+    def __init__(self, status):
+        super().__init__("owned build command failed")
+        self.status = status
+
+
+def validate_live_sdk(metadata, *, resolved):
+    """Resolve only module metadata; never retain a dependency version."""
+    sdk = "github.com/superdurable/dex/sdk-go"
+    if resolved:
+        if metadata.get("Path") != sdk or metadata.get("Error"):
+            raise ValueError("Live requires Dex Go SDK v1.13.0 or later")
+        module = metadata.get("Replace", metadata)
+    else:
+        module = next((item for item in metadata.get("Require") or [] if item.get("Path") == sdk), None)
+        if module is None:
+            raise ValueError("Live requires Dex Go SDK v1.13.0 or later")
+        replacements = [item for item in metadata.get("Replace") or []
+                        if item.get("Old", {}).get("Path") == sdk
+                        and item["Old"].get("Version", "") in ("", module.get("Version"))]
+        exact = next((item for item in replacements if item["Old"].get("Version")), None)
+        if replacements:
+            module = (exact or replacements[-1])["New"]
+    version = module.get("Version", "")
+    match = re.fullmatch(r"v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?", version)
+    if match is None:
+        raise ValueError("Live requires a versioned Dex Go SDK v1.13.0 or later")
+    # Preliminary metadata rejects missing/local/unparseable replacements;
+    # the selected build list, after dependency preparation, enforces the floor.
+    if resolved and (tuple(map(int, match.groups()[:3])) < (1, 13, 0)
+                     or (match.groups()[:3] == ("1", "13", "0") and match.group(4))):
+        raise ValueError("Live requires Dex Go SDK v1.13.0 or later")
+
+
 class Job:
-    def __init__(self, request, credential, tool_image, app_manifest_tool, git_base_url, module_redirect, publisher):
+    def __init__(self, request, credential, tool_image, app_manifest_tool, git_base_url, module_redirect, publisher, sdk_failure_category):
+        self.sdk_failure_category = sdk_failure_category
+        self.sdk_rejected = False
         self.request = request
         self.credential = credential
         self.tool_image = tool_image
@@ -416,7 +452,7 @@ class Job:
         yield
         self.measure(code, started, clock)
 
-    def command(self, argv, *, cwd=None, environment=None, timeout=1800):
+    def command(self, argv, *, cwd=None, environment=None, timeout=1800, log_output=True):
         if self.cancelled.is_set():
             raise ValueError("build cancelled")
         if self.deadline is not None:
@@ -449,9 +485,12 @@ class Job:
                         self.cancel_unknown = True
                         raise
             output, errors = self.process.communicate(timeout=timeout)
-            append_job_log(self.request, output + errors)
-            if self.process.returncode or self.cancelled.is_set():
-                raise ValueError("owned build command failed or cancelled")
+            if log_output:
+                append_job_log(self.request, output + errors)
+            if self.cancelled.is_set():
+                raise ValueError("build cancelled")
+            if self.process.returncode:
+                raise CommandFailed(self.process.returncode)
             if container_name is not None:
                 with self.lock:
                     self.containers.discard(container_name)
@@ -515,6 +554,19 @@ class Job:
                 # running; reconcile the independently recorded container too.
                 self.cleanup_containers_locked()
 
+    def check_live_sdk(self, argv, *, resolved):
+        try:
+            metadata = self.command(argv, timeout=30, log_output=False)
+        except CommandFailed as error:
+            # Docker launch/transport failures are not source rejections.
+            self.sdk_rejected = error.status == 1
+            raise
+        try:
+            validate_live_sdk(json.loads(metadata), resolved=resolved)
+        except (ValueError, TypeError, KeyError):
+            self.sdk_rejected = True
+            raise
+
     def render(self, checkout):
         manifest_path = checkout / "dex-app.yaml"
         if manifest_path.is_symlink() or not manifest_path.is_file() or manifest_path.stat().st_size > 4 * 1024 * 1024:
@@ -552,10 +604,15 @@ class Job:
             # packages and can add unused checksums to go.sum. Prepare the
             # modules declared by each accepted lockfile without modifying the
             # read-only source; offline strict FDG analysis proves sufficiency.
+            self.check_live_sdk([*container, "--network", "none", "--entrypoint", "go", self.tool_image,
+                                 "mod", "edit", "-json"], resolved=False)
             with self.phase("DEPENDENCY_PREPARATION"):
                 for module in ("/workspace", "/workspace/tools/openapi"):
                     self.command([*container, "--network", "bridge", "--entrypoint", "go", self.tool_image,
                                   "-C", module, "mod", "download"], timeout=600)
+            self.check_live_sdk([*container, "--network", "none", "--entrypoint", "go", self.tool_image,
+                                 "list", "-m", "-json", "-e", "-mod=readonly", "github.com/superdurable/dex/sdk-go"],
+                                resolved=True)
             with self.phase("ANALYSIS"):
                 for index, entry in enumerate(manifest["flowDefinitions"]):
                     source = entry.get("sourcePath") if isinstance(entry, dict) else None
@@ -646,6 +703,7 @@ class Job:
             with self.lock:
                 unknown = self.cleanup_unknown or self.cancel_unknown
                 private_json(state, {"request": request, "state": "UNKNOWN" if unknown else "FAILED", "failure": "CANCEL_OUTCOME_UNKNOWN" if self.cleanup_unknown else "NATIVE_CANCEL_OUTCOME_UNKNOWN" if unknown else "CANCELLED" if self.cancelled.is_set() else "BUILD_FAILED",
+                                     "failureCategory": self.sdk_failure_category if self.sdk_rejected and not unknown and not self.cancelled.is_set() else "",
                                      "phaseTimings": phase_timings(self.timings)})
         finally:
             self.credential = ""
@@ -776,7 +834,7 @@ class Server(http.server.ThreadingHTTPServer):
         previous = state["request"]
         check_request_identity(previous, request)
         # The failure classification is bounded fixture text, never provider output.
-        result = {key: state[key] for key in ("state", "artifactReference", "imageId", "failure", "phaseTimings") if key in state}
+        result = {key: state[key] for key in ("state", "artifactReference", "imageId", "failure", "failureCategory", "phaseTimings") if key in state}
         result["operationId"] = request["requestId"] + "-" + str(previous["attempt"])
         result["attempt"] = previous["attempt"]
         if state["state"] == "RUNNING":
@@ -846,7 +904,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                         if request["attempt"] <= previous["attempt"]:
                             raise ValueError("explicit newer retry required")
                     private_json(Path(key), {"request": request, "state": "RUNNING"})
-                    job = Job(request, credential, self.server.tool_image, self.server.app_manifest_tool, self.server.git_base_url, self.server.module_redirect, self.server.publisher)
+                    job = Job(request, credential, self.server.tool_image, self.server.app_manifest_tool, self.server.git_base_url, self.server.module_redirect, self.server.publisher, self.headers.get("X-Superverse-SDK-Failure-Category", ""))
                     self.server.jobs[key] = job
                     job.thread.start()
                     result = {"state": "RUNNING", "operationId": request["requestId"] + "-" + str(request["attempt"])}

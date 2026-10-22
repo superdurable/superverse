@@ -64,3 +64,5 @@ alike, in microseconds, without a network call.
 | `example_match.go` | The closest-example decision: facets, negation, eligibility, the margin, and `ClosestExample` |
 | `git_object_id.go` | Git blob and tree object IDs |
 | `app-template.tar`, `examples/` | The generated archives, catalog, search index and match rules |
+
+Each release image has explicit `web` and `worker` modes. Both read the platform-owned `runtime.yaml` at `/tmp/superverse-app/runtime.yaml`. Live selects pull (four tasks, one idle stream, ten-minute drain); Preview selects push on loopback. Only web owns trigger ingress and trigger-driven starts. Worker readiness waits for registration and combines `PullRegistrationState().IsReady` with the stopping latch; SIGTERM clears readiness before `Worker.Stop`. The HTTP process has its own existing health endpoint.

@@ -107,7 +107,7 @@ type Connections interface {
 	// returned function closes the connection, and so does the end of ctx.
 	DialProjectDex(ctx context.Context, project string, refs ScopeRefs) (*grpc.ClientConn, func() error, error)
 	// CheckWorker proves the current ownership of a Live generation's
-	// application Worker and that its gRPC endpoint accepts a connection.
+	// separate Worker and its registration-backed readiness.
 	CheckWorker(ctx context.Context, target WorkerTarget) error
 	// DialSandboxDex opens one private gRPC connection to the Preview Dex of a
 	// Sandbox instance after verifying the recorded identities of the instance.
@@ -115,9 +115,6 @@ type Connections interface {
 	// ProbeSandboxDex runs the checks of DialSandboxDex without keeping the
 	// connection.
 	ProbeSandboxDex(ctx context.Context, target SandboxDexTarget) error
-	// WorkerAddress is the address at which the project's Dex reaches the Worker
-	// of the current Live generation: LiveWorkerEndpoint on the Worker port.
-	WorkerAddress(project string) string
 }
 
 // Redactor replaces the project's internal resource names in text shown

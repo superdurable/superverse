@@ -1806,7 +1806,7 @@ Live the scope's Dex Service, for Preview the Sandbox's own Service, whose Sandb
 label and READY engine must match the Session's accepted workspace; in Local Native the
 recorded network, container and its published port take their place. Each request closes its
 gRPC connection. Worker health independently verifies the
-accepted controller and Service, UID, generation and fixed Live 8811 endpoint; a Preview's
+accepted Worker controller UID, generation and pull-registration readiness; a Preview's
 Worker listens on 127.0.0.1:18811 inside the Pod, so the Preview supervisor, asked through
 sandboxd, must report the served commit, configuration digest and grant generation with
 that Worker listening. No fallback selects another target or an older Release. Engine and

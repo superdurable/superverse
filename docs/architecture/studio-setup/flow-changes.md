@@ -682,12 +682,13 @@ the Project.
 
 **Interactions with the current contract.**
 
-- `Activate`, inside `CommitCurrentLive`, moves the stable Live Worker endpoint and the public
-  route to the new generation before the Live pointer commits, and `CleanupDeployment` never moves
+- `Activate`, inside `CommitCurrentLive`, writes the guarded active FDG and then moves the public
+  HTTP route to the new generation before the Live pointer commits, and `CleanupDeployment` never moves
   them back; a candidate that failed in that phase keeps the lease until it resumes or the Project
   is deleted. So cancellation is refused from `CommitCurrentLive` on, a FAILED deployment in that
   phase included.
-- A cancelled deployment never sends `RequestLiveRetirement`, which follows the commit, so the
+- StopReplacedWorker follows the Live commit, confirms exact old Worker exit and preserves old HTTP.
+  A cancelled deployment never sends `RequestLiveRetirement`, which follows that stop, so the
   generation it would have replaced stays READY. The `ReplacedLive` it recorded stays as data.
 - RETIRING and RETIRED generations refuse cancellation: their lifecycle is retirement.
 - A cancelled deployment never activated, so its `DeploymentResources.Worker` is empty and a

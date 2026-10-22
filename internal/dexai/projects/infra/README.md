@@ -5,7 +5,7 @@ Purpose: Declares the roles through which the platform consumes a project's stor
 
 Callers: `cmd/superverse-server/config` and `internal/dexai/**` (28) import this package.
 
-Dependencies: it imports `gen/superverse/v2`, `internal/comm`, `internal/comm/flowid`, `internal/comm/platform`, `internal/comm/platform/deploymentnames`, `internal/comm/platform/objectstore` and `internal/dexai/app/appmanifest` and calls the AWS S3, MinIO admin and Temporal WorkflowService APIs.
+Dependencies: it imports `gen/superverse/v2`, `internal/comm`, `internal/comm/flowid`, `internal/comm/platform`, `internal/comm/platform/deploymentnames` and `internal/comm/platform/objectstore` and calls the AWS S3, MinIO admin and Temporal WorkflowService APIs.
 
 ```mermaid
 flowchart LR
@@ -18,7 +18,6 @@ flowchart LR
   self --> d3["internal/comm/platform"]
   self --> d4["internal/comm/platform/deploymentnames"]
   self --> d5["internal/comm/platform/objectstore"]
-  self --> d6["internal/dexai/app/appmanifest"]
   self --> e0(["AWS S3 API"])
   self --> e1(["MinIO admin API"])
   self --> e2(["Temporal WorkflowService API"])
@@ -116,3 +115,5 @@ runtime's tests are in [`kube`](kube/README.md).
 
 Cloud inputs and outputs are in `infra-as-code/terraform`. Verification
 evidence is in the implementation receipts.
+
+Live Connections.CheckWorker verifies the separate accepted Worker resource and registration readiness. Live has no advertised push Worker address; Preview retains its Sandbox-local push address.

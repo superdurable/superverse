@@ -11,8 +11,8 @@ package deployments
 import (
 	"context"
 	"errors"
-	"net"
 	"strconv"
+	"time"
 
 	"github.com/superdurable/superversev2/internal/comm/platform/objectstore"
 	"github.com/superdurable/superversev2/internal/dexai/projects"
@@ -37,17 +37,16 @@ type Serving interface {
 	// ApplyApplication runs the generation's application from its immutable
 	// image in the namespace the deployment accepted. environment holds the
 	// grant's storage and project references, which may be secret.
-	ApplyApplication(ctx context.Context, s Snapshot, environment map[string]string) (infra.ResourceRef, error)
+	ApplyApplication(ctx context.Context, s Snapshot, environment map[string]string) (ApplicationResources, error)
 	// VerifyReadiness reports the generation ready when its published
 	// definitions, its Deployment of the accepted image and its Service are the
 	// accepted ones, the application answers its health path and its Worker
-	// accepts connections.
+	// reports acknowledged registration.
 	VerifyReadiness(ctx context.Context, s Snapshot) (Readiness, error)
-	// Activate moves the project's Live Worker endpoint and then its Live route
-	// to the ready generation, makes its published Flow Definitions the ones the
-	// project Dex serves, and succeeds once the public route answers the health
-	// path. Every Live Flow targets the Worker endpoint, so the generation takes
-	// over the open Flows that earlier generations started.
+	// StopWorker confirms exit of the exact accepted generation Worker.
+	StopWorker(ctx context.Context, s Snapshot) error
+	// Activate writes the guarded active FDG before moving the HTTP route and
+	// succeeds after the public route health check. Live uses pull targets.
 	Activate(ctx context.Context, s Snapshot) (Activation, error)
 	// CleanupDeployment removes a generation that is not Project.CurrentLive,
 	// which its Deployment Flow has proved, and the Live route it may still own.
@@ -75,27 +74,26 @@ type LiveApplication interface {
 	Log(ctx context.Context, tailLines int) (ApplicationLog, error)
 }
 
-// ApplicationSettings are the fixed settings of a Live application
-// generation's process, in order, which every runtime sets before the grant's
-// environment: its HTTP port, its project Dex, the address its Worker binds
-// and the one the project Dex dials, which is the Live Worker endpoint that
-// Dex resolves itself (headless), so it follows the current generation, its
-// blob cache and its public URL.
-func ApplicationSettings(s Snapshot, workerTarget, publicURL string) [][2]string {
+// ApplicationSettings are the fixed HTTP, Dex, cache and public URL settings
+// shared by a generation's separate web and Worker processes.
+func ApplicationSettings(s Snapshot, publicURL string) [][2]string {
 	return [][2]string{
 		{"PORT", strconv.Itoa(s.Inputs.ApplicationPort)}, {"DEX_FLOW_SERVICE_ADDRESS", infra.ScopeAddress(infra.ComponentDex, infra.DexPort)},
-		{"DEX_WORKER_BIND_ADDRESS", net.JoinHostPort("0.0.0.0", strconv.Itoa(infra.LiveWorkerPort))}, {"DEX_WORKER_TARGET", workerTarget}, {"DEX_WORKER_HEADLESS", "true"},
 		{"DEX_BLOB_CACHE_DIR", "/tmp/dex-blobs"}, {"PUBLIC_BASE_URL", publicURL},
 	}
 }
 
-// Activation is the serving state that Activate committed: the public URL, the
-// exact active Flow Definition manifest version and the Live Worker endpoint.
+// ApplicationResources accepts both exact process identities before readiness.
+type ApplicationResources struct {
+	Web    infra.ResourceRef
+	Worker infra.ResourceRef
+}
+
+// Activation records HTTP routing, the active FDG and exact Worker identity.
 type Activation struct {
 	URL      string
 	Manifest objectstore.ObjectRef
-	// Worker is the project's Live Worker endpoint, which now selects the
-	// generation.
+	// Worker is the exact separate Worker Deployment or container.
 	Worker infra.ResourceRef
 }
 
@@ -112,3 +110,33 @@ type ApplicationLog struct {
 // ErrApplicationChanged: the Live application changed while it was read, so the
 // read answers about an object the deployment never recorded.
 var ErrApplicationChanged = errors.New("the Live application changed while it was read; read again")
+
+// ApplicationMode identifies one of the two processes in the immutable image.
+type ApplicationMode uint8
+
+const (
+	WebMode ApplicationMode = iota
+	WorkerMode
+)
+
+func (mode ApplicationMode) String() string {
+	switch mode {
+	case WebMode:
+		return "web"
+	case WorkerMode:
+		return "worker"
+	default:
+		panic("unknown application process mode")
+	}
+}
+
+const (
+	WorkerReadinessPort         = infra.WorkerReadinessPort
+	WorkerStopGrace             = 11 * time.Minute
+	ApplicationRuntimeDirectory = "/tmp/superverse-app"
+)
+
+// ApplicationRuntime is mounted read-only into each process of a Live generation.
+func ApplicationRuntime() []byte {
+	return []byte("worker:\n  mode: pull\n  readinessAddress: :8081\n  maxConcurrentTasks: 4\n  idleStreamsPerQueue: 1\n  stopDrainTimeout: 10m\n")
+}

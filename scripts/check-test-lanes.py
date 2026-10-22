@@ -66,6 +66,19 @@ def direct_clients():
                     yield f"{relative}:{number}: builds a Dex client or Worker itself; use dexflowtest.Client or dexflowtest.WorkerClient, which check SUPERVERSE_TEST_LANE"
 
 
+def preview_worker_address():
+    """The coding supervisor and platform agree on their fixed Preview endpoint."""
+    supervisor = ROOT / "sandbox/coding/cmd/superverse-previewctl/application.go"
+    platform = ROOT / "internal/dexai/agents/sandbox/workspace/preview.go"
+    coding = one(r'^\s*previewWorkerAddress\s*=\s*"([^\"]+)"', supervisor)
+    serving = one(r'^\s*PreviewWorkerAddress\s*=\s*"([^\"]+)"', platform)
+    if coding != serving:
+        yield "Preview Worker address differs between the coding supervisor and platform"
+    runtime = one(r'^\s*runtime := (.*)$', supervisor)
+    if runtime.count("previewWorkerAddress") != 2:
+        yield "Preview runtime bind and target must both use previewWorkerAddress"
+
+
 def main():
     problems = []
     declared, expected = kind_constants(), expected_kind_constants()
@@ -73,9 +86,10 @@ def main():
         if declared[name] != value:
             problems.append(f"{GUARD.relative_to(ROOT)}/lane_endpoints.go: {name} is {declared[name]!r}, but its owner says {value!r}")
     problems.extend(direct_clients())
+    problems.extend(preview_worker_address())
     if problems:
         sys.exit("\n".join(problems))
-    print("Test lanes: the Kind addresses of dexflowtest match their owners; every test Dex client goes through the guard")
+    print("Test lanes: the Kind addresses of dexflowtest match their owners; every test Dex client goes through the guard; Preview Worker addresses agree")
 
 
 main()

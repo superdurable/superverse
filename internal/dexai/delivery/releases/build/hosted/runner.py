@@ -63,7 +63,7 @@ def run(argv, *, cwd=None, timeout=1800, input_bytes=None):
         try:
             process.communicate(input=input_bytes, timeout=timeout)
             if process.returncode:
-                raise ValueError("trusted hosted build command failed")
+                raise CommandFailed(process.returncode)
         finally:
             # A Docker client exiting is not proof its workload stopped. Owners
             # below separately stop/wait/remove the exact container.
@@ -308,6 +308,55 @@ provenanceEnvDir = "/empty-provenance"
     archive.unlink()
 
 
+class CommandFailed(ValueError):
+    def __init__(self, status):
+        super().__init__("owned build command failed")
+        self.status = status
+
+
+def validate_live_sdk(metadata, *, resolved):
+    """Resolve only module metadata; never retain a dependency version."""
+    sdk = "github.com/superdurable/dex/sdk-go"
+    if resolved:
+        if metadata.get("Path") != sdk or metadata.get("Error"):
+            raise ValueError("Live requires Dex Go SDK v1.13.0 or later")
+        module = metadata.get("Replace", metadata)
+    else:
+        module = next((item for item in metadata.get("Require") or [] if item.get("Path") == sdk), None)
+        if module is None:
+            raise ValueError("Live requires Dex Go SDK v1.13.0 or later")
+        replacements = [item for item in metadata.get("Replace") or []
+                        if item.get("Old", {}).get("Path") == sdk
+                        and item["Old"].get("Version", "") in ("", module.get("Version"))]
+        exact = next((item for item in replacements if item["Old"].get("Version")), None)
+        if replacements:
+            module = (exact or replacements[-1])["New"]
+    version = module.get("Version", "")
+    match = re.fullmatch(r"v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?", version)
+    if match is None:
+        raise ValueError("Live requires a versioned Dex Go SDK v1.13.0 or later")
+    # Preliminary metadata rejects missing/local/unparseable replacements;
+    # the selected build list, after dependency preparation, enforces the floor.
+    if resolved and (tuple(map(int, match.groups()[:3])) < (1, 13, 0)
+                     or (match.groups()[:3] == ("1", "13", "0") and match.group(4))):
+        raise ValueError("Live requires Dex Go SDK v1.13.0 or later")
+
+
+def check_live_sdk(container, arguments, *, resolved):
+    global FAILURE_CATEGORY
+    try:
+        metadata = tool_command(container, arguments, timeout=30)
+    except CommandFailed as error:
+        if error.status == 1:
+            FAILURE_CATEGORY = "unsupportedDexSDK"
+        raise
+    try:
+        validate_live_sdk(json.loads(metadata), resolved=resolved)
+    except (ValueError, TypeError, KeyError):
+        FAILURE_CATEGORY = "unsupportedDexSDK"
+        raise
+
+
 def main():
     global SOURCE_DEADLINE, FAILURE_CATEGORY
     host = time.time(), time.monotonic_ns()
@@ -370,12 +419,16 @@ def main():
         # loading, downloading `all` can rewrite go.sum for dependency-only
         # packages; accepted source is read only. Offline strict FDG checks below
         # still reject missing dependencies or checksums.
+        check_live_sdk(container, ["--network", "none", "--entrypoint", "go", tool,
+                       "mod", "edit", "-json"], resolved=False)
         with measured(timings, "DEPENDENCY_PREPARATION"):
             FAILURE_CATEGORY = "dependencyDownload"
             for module in ("/workspace", "/workspace/tools/openapi"):
                 tool_command(container, ["--network", "bridge", "--dns", "1.1.1.1", "--dns", "8.8.8.8",
                      "--sysctl", "net.ipv6.conf.all.disable_ipv6=1", "--sysctl", "net.ipv6.conf.default.disable_ipv6=1", "--entrypoint", "go", tool,
                      "-C", module, "mod", "download"], timeout=600)
+        check_live_sdk(container, ["--network", "none", "--entrypoint", "go", tool,
+                       "list", "-m", "-json", "-e", "-mod=readonly", "github.com/superdurable/dex/sdk-go"], resolved=True)
         with measured(timings, "ANALYSIS"):
             FAILURE_CATEGORY = "invalidFlowDefinition"
             manifest_artifacts = json.loads(tool_command(container, ["--network", "none", "--entrypoint", "app-manifest", tool,
