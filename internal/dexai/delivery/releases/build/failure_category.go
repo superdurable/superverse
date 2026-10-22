@@ -8,8 +8,8 @@
 
 package build
 
-// FailureCategory is the closed set of trusted hosted-runner failure reasons.
-// Its zero value means a provider with no category (the local builder).
+// FailureCategory is the closed set of trusted provider failure reasons.
+// Its zero value means a provider failure without a category.
 type FailureCategory uint8
 
 type FailureClass string

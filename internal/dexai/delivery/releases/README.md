@@ -279,7 +279,9 @@ plus the 45-second work before and after it. Each attempt authorizes
 the actor, checks the commit on main and inspects the provider's source
 preparation, dispatching it only when inspection finds it missing (or failed
 under an older attempt), so a retry after a lost response joins the accepted
-work. It then polls Inspect every 2 seconds, each
+work. A newer explicit attempt first queries the previous attempt and, if it
+is still RUNNING or UNKNOWN, cancels and re-inspects it before dispatch; an
+unconfirmed cancellation cannot admit overlapping provider work. It then polls Inspect every 2 seconds, each
 round within 10 seconds, through `dexflow.PollUntil`, writes BuildProgress when
 the observed state changes, and validates, publishes and registers the rendered
 source; each step before and after the wait has a 45-second deadline, and
@@ -291,10 +293,13 @@ with the admitted binding, a commit off main, a provider result other than
 READY or an invalid manifest or FDG) moves straight to
 CommitReleasePublishingSource as the failure, with its reason; other errors are
 retried and, once exhausted or at the wait limit, reach RecordReleaseFailure,
-which forwards the recovery error, saying that source preparation did not
+which forwards the sanitized recovery error, saying only that source preparation did not
 finish within 5m30s when `dexflow.RecoveryTimedOut` reports the limit. Work the
 provider still runs then is not cancelled: the provider's own limit ends it,
-and an explicit source retry starts a newer attempt. CommitReleasePublishingSource commits either outcome under the
+and an explicit source retry reconciles it before starting a newer attempt. The
+bounded source request receipts remain authoritative for the provider attempt:
+the first request is attempt 1 and each newly admitted RequestID adds one;
+replaying either request adds none. CommitReleasePublishingSource commits either outcome under the
 Revision lock; a failure waits for an explicit retry.
 
 AwaitReleaseBuildRevision waits for the accepted provider build in one

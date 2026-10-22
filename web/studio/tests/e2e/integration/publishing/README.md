@@ -18,6 +18,13 @@ flowchart LR
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
+`publish-retry.spec.ts` cancels its own real local builder source job, checks that reopening the
+popover makes no preparation request, opens the popover through the chat remedy and explicitly
+retries to READY on provider attempt 2. It requires `SUPERVERSE_LOCAL_BUILD_URL` and the lane's
+private `SUPERVERSE_LOCAL_BUILD_TOKEN_FILE`; the token is read only by Node and excluded from browser traces.
+
+
+
 `publish-popover.spec.ts` builds its own fixture on the real Studio, BFF, server, Dex and local Git
 host: the `setup-live-versions` scenario pushes a version that never runs on Preview. The Publish
 popover marks it "not in the Preview record" and keeps Publish disabled until a reason of at most 500

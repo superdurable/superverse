@@ -82,7 +82,10 @@ Step and its Execute failure route moves it to the failure-record Step, which
 records the business failure: `RecoveryTimedOut` tells a passed wait limit
 from exhausted retries,
 `RecoveryStep` names the failed Step, and `RecoveryDetail` is the bounded
-cause. The failure-record Step chooses the failure code from those two; the
+business cause. Recovery deadlines become a business time-limit message;
+`RecoveryDetail` replaces engine diagnostics with a business failure, and
+`FailureMessage` omits an engine cause instead of appending it to an authored
+message. Execution history retains the diagnostics. The failure-record Step chooses the failure code from those two; the
 last observed state is in the Step's progress Stream and logs. A business
 condition that is not a fixed duration, such as a lease the Flow does not own,
 is a `check` that reports done, after which the Step decides its failure.

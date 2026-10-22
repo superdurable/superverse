@@ -67,7 +67,7 @@ func (b *Builder) Cancel(ctx context.Context, in build.BuildRequest) error {
 	case build.BuildRunning:
 		return fmt.Errorf("%w: the local build accepted its cancellation but still runs", build.ErrPending)
 	case build.BuildUnknown:
-		// A Native cancellation, or a lost job, leaves the outcome unknown for good.
+		// Inspection has not yet proved that the accepted job stopped.
 		return fmt.Errorf("%w: the local build to cancel is %s with no running job", build.ErrCancelUnconfirmed, cmp.Or(result.Failure, "UNKNOWN"))
 	default:
 		return nil

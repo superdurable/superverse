@@ -36,12 +36,13 @@ async function readRelease(projectId: string, commit: string, signal: AbortSigna
 }
 
 /**
- * The Release of `commit`, prepared when it has none: one PrepareRelease per commit and page, never
- * again for a Release whose preparation failed, whose failure is answered instead.
+ * The Release of `commit`, prepared when it has none: one PrepareRelease per commit and page,
+ * repeated only when a person explicitly retries a failed preparation.
  */
 function usePreparedRelease(projectId: string, commit: string | null) {
   const [read, setRead] = useState<{ key: string; preparation: Preparation } | null>(null);
   const requests = useRef(new Map<string, string>());
+  const [retry, setRetry] = useState<{ key: string; requestId: string } | null>(null);
   const key = commit ? `${projectId}:${commit}` : "";
   useEffect(() => {
     if (!commit) return;
@@ -51,18 +52,26 @@ function usePreparedRelease(projectId: string, commit: string | null) {
     void (async () => {
       try {
         let release = await readRelease(projectId, commit, controller.signal);
-        if (!release) {
+        let previousFailureRevision: string | null = null;
+        if (
+          !release ||
+          (retry?.key === `${projectId}:${commit}` && release.preparedSource?.status === "RELEASE_STATUS_FAILED")
+        ) {
           report({ state: "preparing" });
-          const requestId = requests.current.get(commit) ?? newRequestId();
-          requests.current.set(commit, requestId);
+          previousFailureRevision = release?.revision ?? null;
+          const requestId = requests.current.get(`${projectId}:${commit}`) ?? newRequestId();
+          requests.current.set(`${projectId}:${commit}`, requestId);
           await prepareRelease({ projectId, requestId, sourceCommit: commit }, controller.signal);
+          release = null;
         }
         const deadline = Date.now() + PREPARATION_WAIT_MILLISECONDS;
         for (;;) {
           release ??= await readRelease(projectId, commit, controller.signal);
           const status = release?.preparedSource?.status;
           if (release && status === "RELEASE_STATUS_READY") return report({ state: "ready", release });
-          if (status === "RELEASE_STATUS_FAILED")
+          // The SQL read model can briefly return the failure from before
+          // retry admission. Keep polling until that revision moves.
+          if (status === "RELEASE_STATUS_FAILED" && release?.revision !== previousFailureRevision)
             return report({ state: "failed", failure: release?.preparedSource?.failure ?? null, error: "" });
           if (Date.now() >= deadline)
             return report({
@@ -79,8 +88,15 @@ function usePreparedRelease(projectId: string, commit: string | null) {
       }
     })();
     return () => controller.abort();
-  }, [commit, projectId]);
-  return read?.key === key ? read.preparation : { state: "reading" as const };
+  }, [commit, projectId, retry]);
+  const retryPreparation = () => {
+    if (!commit) return;
+    const requestId = newRequestId();
+    requests.current.set(key, requestId);
+    setRead({ key, preparation: { state: "preparing" } });
+    setRetry({ key, requestId });
+  };
+  return { preparation: read?.key === key ? read.preparation : { state: "reading" as const }, retryPreparation };
 }
 
 /**
@@ -90,7 +106,7 @@ function usePreparedRelease(projectId: string, commit: string | null) {
  * that source. Nothing is read without a version.
  */
 export function usePublishCheck(projectId: string, commit: string | null, previewSource: string, version = "") {
-  const preparation = usePreparedRelease(projectId, commit);
+  const { preparation, retryPreparation } = usePreparedRelease(projectId, commit);
   const releaseId = preparation.state === "ready" && commit ? commit : commit && commit === previewSource ? "" : null;
   const read = useProjectConfiguration(
     releaseId === null ? null : { projectId, scope: "PROJECT_SCOPE_LIVE", releaseId, nextPublish: true },
@@ -103,6 +119,7 @@ export function usePublishCheck(projectId: string, commit: string | null, previe
     setLast({ commit, configuration: read.configuration });
   return {
     preparation,
+    retryPreparation,
     /** The prepared Release, whose revision a build is fenced on. */
     release: preparation.state === "ready" ? preparation.release : null,
     configuration: read.configuration ?? (last && last.commit === commit ? last.configuration : null),

@@ -31,10 +31,16 @@ func TruncateCause(cause string) string {
 }
 
 // RecoveryDetail is the final error that moved a Step to its failure-record
-// Step, ctx.RecoveryError().Detail bounded by TruncateCause, or empty when a
-// decision reached the Step.
+// Step, with engine diagnostics replaced by business text and other causes
+// bounded by TruncateCause; empty when a decision reached the Step.
 func RecoveryDetail(ctx dex.Context) string {
 	if failure := ctx.RecoveryError(); failure != nil {
+		if RecoveryTimedOut(ctx) {
+			return "The operation did not finish within its time limit."
+		}
+		if engineFailureDetail(failure.Detail) {
+			return "The operation could not be completed. Please try again."
+		}
 		return TruncateCause(failure.Detail)
 	}
 	return ""
@@ -78,11 +84,23 @@ func RecoveryStep(ctx dex.Context) string {
 	return step
 }
 
-// FailureMessage appends cause, bounded by TruncateCause, to the authored
-// message of a Failure.
+// FailureMessage appends a bounded business cause to the authored message,
+// omitting engine diagnostics that belong only in execution history.
 func FailureMessage(message, cause string) string {
-	if cause == "" {
+	if cause == "" || engineFailureDetail(cause) {
 		return message
 	}
 	return message + " Cause: " + TruncateCause(cause)
+}
+
+// Engine diagnostics belong in execution history, never in business failures.
+// Match case-insensitively because SDK and server wrappers differ in casing.
+func engineFailureDetail(detail string) bool {
+	detail = strings.ToLower(detail)
+	for _, marker := range []string{"temporal", "scheduletoclose", "starttoclose", "schedule-to-close", "start-to-close", "activity schedule", "activity error", "activity timeout", "workflow execution", "heartbeat timeout", "not enough time to schedule next retry"} {
+		if strings.Contains(detail, marker) {
+			return true
+		}
+	}
+	return false
 }

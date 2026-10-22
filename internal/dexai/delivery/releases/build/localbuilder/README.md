@@ -28,6 +28,23 @@ cleanup budget. Native process cancellation stops, then kills, the exact
 observed child tree of the running command and confirms the build `CANCELLED`
 once every observed child is gone; it retains UNKNOWN only when the tree cannot
 be established or stopped under the existing launcher ownership contract.
+Native child admission tolerates the spawn/exit observation race and validates
+the direct child's parent rather than assuming its process group. A failed
+command records a bounded exception class and trusted command kind in the job
+log, without exception text, arguments, environment or credentials. Container
+cleanup queries exact owned names even when `docker rm` times out; proven
+absence settles FAILED. Inspect reconciles UNKNOWN source jobs once the job
+has ended, the child is proven settled and every container of its exact
+attempt prefix is absent. Persisted child settlement survives builder restart;
+historical UNKNOWN jobs without that proof remain unresolved after restart.
+Failed source inspections also check that prefix: a Docker create can finish
+after its CLI was cancelled. For an ended job with settled-child proof,
+inspection continues its admitted cleanup, removing at most one exact observed
+container per call and rechecking absence before reporting FAILED. Explicit
+cancellation and Release cleanup also reconcile names of ended jobs, including
+after a builder restart; no newer attempt starts while their outcome is unknown.
+Each SDK metadata probe has up to 120 seconds for tool-container startup under
+load, within the same shared four-minute source deadline.
 A cancellation of a build revision that has no state yet records the attempt
 FAILED `CANCELLED`, so a Start of that attempt arriving later is refused.
 

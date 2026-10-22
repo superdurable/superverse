@@ -41,6 +41,7 @@ export type AgentNotification = NonNullable<AgentMessage["notification"]>;
 export interface NotificationLink {
   label: string;
   href: string;
+  onClick?: () => void;
   remedy?: Remedy;
 }
 /** A background command of the Agent, as the tasks panel shows it. */

@@ -116,6 +116,20 @@ func (f *ProjectReleaseFlow) startSource(ctx context.Context, s Snapshot) (sourc
 	if err != nil {
 		return sourcePreparation{}, fmt.Errorf("inspect source preparation: %w", err)
 	}
+	// An explicit retry owns a newer attempt, but must settle the previous
+	// external effect before starting it. Inspect may report an older UNKNOWN
+	// operation after a lost response or cancellation under load.
+	if observed.Attempt > 0 && observed.Attempt < request.Attempt && (observed.State == build.BuildUnknown || observed.State == build.BuildRunning) {
+		previous := request
+		previous.Attempt = observed.Attempt
+		if err = f.builder.Cancel(ctx, previous); err != nil {
+			return sourcePreparation{}, fmt.Errorf("reconcile previous source preparation: %w", err)
+		}
+		observed, err = f.builder.Inspect(ctx, request)
+		if err != nil {
+			return sourcePreparation{}, fmt.Errorf("inspect reconciled source preparation: %w", err)
+		}
+	}
 	if observed.State == build.BuildMissing || observed.State == build.BuildFailed && observed.Attempt < request.Attempt {
 		credential, err := f.host.RepositoryCredential(ctx, s.Repository.RepositoryID)
 		if err != nil {

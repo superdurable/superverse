@@ -210,6 +210,7 @@ export function PublishPopover({
               <ProblemPanel
                 className="mx-1 mt-2"
                 problem={publishProblem(new Error(check.preparation.error), commit, check.preparation.failure)}
+                actions={{ FAILURE_REMEDY_PUBLISH_AGAIN: { onClick: check.retryPreparation } }}
               />
             ) : check.error ? (
               <ProblemPanel

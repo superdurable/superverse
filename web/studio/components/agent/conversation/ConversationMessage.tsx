@@ -114,7 +114,9 @@ function DeliveryProblem({
     gaps: hidden > 0 ? [...notification.gaps, `and ${hidden} more`] : notification.gaps,
   });
   const actions: RemedyActions = Object.fromEntries(
-    links.flatMap((link) => (link.remedy ? [[link.remedy, { href: link.href }]] : [])),
+    links.flatMap((link) =>
+      link.remedy ? [[link.remedy, link.onClick ? { onClick: link.onClick } : { href: link.href }]] : [],
+    ),
   );
   return (
     <>

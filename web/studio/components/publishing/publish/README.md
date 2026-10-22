@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: The bar's Publish button and its popover: the version, what blocks it, what to check, what happens, the skip reason, and Publish.
 
-Importers: `components/project` and `components/publishing` import this directory.
+Importers: `components/project`, `components/publishing` and `components/session` import this directory.
 
 Imports: it imports `components/flow/scope`, `components/ui`, `components/ui/problem`, `components/ui/wait`, `lib/api`, `lib/api/flow/draft`, `lib/api/transport`, `lib/browser`, `lib/generated/protobuf`, `lib/project`, `lib/project/publishing`, `lib/project/setup`, `lib/shared`, `lib/shared/problem` and `lib/shared/version`.
 
@@ -12,6 +12,7 @@ flowchart LR
   self["components/publishing/publish"]
   c0["components/project"] --> self
   c1["components/publishing"] --> self
+  c2["components/session"] --> self
   self --> d0["components/flow/scope"]
   self --> d1["components/ui"]
   self --> d2["components/ui/problem"]
@@ -58,8 +59,11 @@ Next publish change publishes from either tab. While a publish runs (`usePublish
   (`REVISION_CHANGED`, `RELEASE_CONFIGURATION_STALE`) is read again and the popover says what changed.
   Once admitted the popover closes and Tools ▸ Publishing opens on the build (`?release=&build=`).
 
-The popover prepares a version's Release when it has none (`usePublishCheck`), never again for one whose
-preparation failed, and checks the Preview's own source meanwhile.
+The popover prepares a version's Release when it has none (`usePublishCheck`) and checks the Preview's
+own source meanwhile. Reopening a failed preparation only reads it. For a failure whose remedy is
+`publish_again`, the problem panel's **Publish again** sends `PrepareRelease` with a new RequestID,
+shows preparation in progress and resumes polling until READY or another failure. The Session chat's
+same remedy opens this popover on the failed commit.
 
 The bar's Publish is the one way in. On the Live tab it opens on Live's own version, which publishes it
 again with its waiting settings (the build records `LIVE_CODE`, no reason); with nothing waiting it offers

@@ -461,7 +461,7 @@ func (RecordReleaseFailure) GetStepOptions() *dex.StepOptions { return dexflow.S
 func (s RecordReleaseFailure) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, error) {
 	reason := dexflow.RecoveryDetail(ctx)
 	if dexflow.RecoveryStep(ctx) == "PrepareReleasePublishingSource" && dexflow.RecoveryTimedOut(ctx) {
-		reason = dexflow.FailureMessage(fmt.Sprintf("Source preparation did not finish within %s.", sourceWaitLimit), reason)
+		reason = fmt.Sprintf("Source preparation did not finish within %s.", sourceWaitLimit)
 	}
 	return dex.GoTo(CommitReleasePublishingSource{flow: s.flow}, failedSource(failureSourcePlatform, reason)), nil
 }

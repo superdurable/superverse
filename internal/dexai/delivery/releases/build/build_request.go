@@ -79,7 +79,7 @@ type BuildResult struct {
 	// provider message, never build output, which can carry source or
 	// credential material.
 	Failure string `json:"failure,omitempty"`
-	// FailureCategory is an admitted, bounded provider category; empty for local providers.
+	// FailureCategory is an admitted, bounded provider category; zero when uncategorized.
 	FailureCategory FailureCategory `json:"failureCategory,omitempty"`
 	Payloads        Payloads        `json:"releaseArtifactPayloads"`
 	// Timings are the phases of a finished build that the provider measured,

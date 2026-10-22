@@ -19,6 +19,7 @@ import type { KnownSessionStatus } from "@/lib/session/session-status";
 import { withoutMockMarkersInMessages } from "@/lib/session/mock-scenarios";
 import { ModelCredentialStatus } from "@/lib/api/model-credential";
 import { studioRoutes } from "@/lib/shared/studio-routes";
+import { openPublishPopover } from "@/components/publishing/publish/publish-opener";
 
 /** The initial queued description must be consumed before either composer admits another message. */
 export function firstMessageDisabledReason(description: AgentDescription | null, queued: number) {
@@ -144,7 +145,14 @@ export function notificationLinks(projectId: string): NotificationLinks {
               : link,
           ),
           ...(notification.remedy === "FAILURE_REMEDY_PUBLISH_AGAIN"
-            ? [{ label: "Publish again", href: release, remedy: "FAILURE_REMEDY_PUBLISH_AGAIN" as const }]
+            ? [
+                {
+                  label: "Publish again",
+                  href: release,
+                  onClick: () => openPublishPopover({ mode: "version", commit: notification.commit }),
+                  remedy: "FAILURE_REMEDY_PUBLISH_AGAIN" as const,
+                },
+              ]
             : []),
           { label: notification.source === "release" ? "Open the Release" : "Open the Deployment", href: release },
         ];
