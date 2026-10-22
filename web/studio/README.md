@@ -46,6 +46,9 @@ Authoritative references:
 
 ## Commands
 
+The project `.npmrc` disables npm audit and funding requests for local, CI and
+image dependency installation.
+
 ```sh
 cd web/studio
 npm ci

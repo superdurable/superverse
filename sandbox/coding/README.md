@@ -72,6 +72,15 @@ an example therefore rebuilds the image: the coding fingerprint names the
 catalog and the archive of each example it lists, which stand for every file of
 its composed tree.
 
+The coding toolchain owns npm install policy through `NPM_CONFIG_AUDIT=false`
+and `NPM_CONFIG_FUND=false`. Cache seeding, workspace bootstrap, Preview builds,
+connector contribution builds and the image smoke test inherit these settings,
+including applications created before this policy. Installs therefore do not
+depend on npm audit or funding services. The smoke test checks the effective npm
+configuration. Bootstrap keeps `--prefer-offline` and the existing cache seed.
+Release builds use immutable, versioned profiles outside this image; existing
+profiles retain their recorded npm settings.
+
 ### Seed budget
 
 `make bootstrap` copies both seeds into the Pod's `/tmp`, an `emptyDir` with a

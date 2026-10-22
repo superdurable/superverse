@@ -20,6 +20,9 @@ EMPTY :=
 SPACE := $(EMPTY) $(EMPTY)
 export GOCACHE ?= /tmp/superverse-v2-go-cache
 export PYTHONDONTWRITEBYTECODE := 1
+# Dependency restores, including composed template checks, must not wait on npm advisory services.
+export NPM_CONFIG_AUDIT := false
+export NPM_CONFIG_FUND := false
 # Go commands and the scripts make runs use go.mod alone, whether or not a go.work exists.
 export GOWORK := off
 

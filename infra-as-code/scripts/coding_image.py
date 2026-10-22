@@ -122,7 +122,8 @@ class CodingImage:
                  "go version && node --version && dexcli version && temporal --version && test -x /usr/local/bin/sandboxd && test -x /usr/local/bin/superverse-previewctl"
                  " && test -x /usr/local/bin/superverse-exec && test -x /usr/local/bin/superverse-files"
                  " && test -x /usr/local/libexec/superverse/dexcli && test -x /usr/local/libexec/superverse/temporal && /usr/bin/tini --version"
-                 " && test -d /var/lib/superverse/preview"],
+                 " && test -d /var/lib/superverse/preview"
+                 ' && test "$(npm config get audit)" = false && test "$(npm config get fund)" = false'],
                 timeout=180)
             run(["docker", "run", "--rm", "--name", "sv2-coding-verification-" + owner + "-template", "--label", label, "--entrypoint", "/bin/bash",
                  "--volume", str(template) + ":/opt/superverse-template-source:ro", self.tag, "-c", TEMPLATE_BUILD_CHECK],

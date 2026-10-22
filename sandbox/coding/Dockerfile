@@ -194,7 +194,9 @@ ENV HOME=/workspace \
     GOPROXY=file:///opt/superverse/go-module-proxy,https://proxy.golang.org,direct \
     GOCACHE=/tmp/go-build \
     GOTELEMETRY=off \
-    npm_config_cache=/tmp/npm-cache
+    npm_config_cache=/tmp/npm-cache \
+    NPM_CONFIG_AUDIT=false \
+    NPM_CONFIG_FUND=false
 
 WORKDIR /workspace
 USER 1000:1000

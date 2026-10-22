@@ -171,6 +171,7 @@
       "native-integration"
     ],
     "/superverse.v2.ModelCredentialService/GetModelCredentialInfo": [
+      "kind-e2e",
       "native-e2e",
       "native-integration"
     ],
