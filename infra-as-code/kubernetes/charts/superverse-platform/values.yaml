@@ -16,6 +16,8 @@ server:
   # into the <product>-server-config ConfigMap. Non-secret settings only; the chart fills the
   # addresses it owns and fixes environment, localKind and the sandbox profile.
   config: {}
+  # Project model credentials belong to Session Flows. The chart imports only the
+  # documented server Secret keys; no model key is a chart value or server input.
   # The limit holds 1 GiB for the file extractor child, which the server runs one at a time and which bounds its own
   # address space to 1 GiB beyond its start (internal/comm/fileextract).
   resources:

@@ -342,7 +342,8 @@ start unless it holds every secret below that is required, names a missing one a
 
 The env file may be shared with other layers and may hold any other keys too: the deploy takes only the secrets of the
 first four rows from it. Every other key is ignored, so it reaches neither the server Secret nor the configuration, and one
-notice names the ignored keys, never their values. The deploy refuses a file that carries `ANTHROPIC_API_KEY`.
+notice names the ignored keys, never their values. The deploy refuses a file that carries `ANTHROPIC_API_KEY`:
+model keys are Project-owned RPC inputs. Local launchers never read them for the server environment.
 
 **Local Native.** `sv2 native start` passes the host server its secrets in the environment: the generated and
 retained values of the lane's state directory (the platform MinIO credentials, the cookie signing key, the build
@@ -363,6 +364,9 @@ Project model credentials are entered through the Agent picker and `ModelCredent
 The server does not read `ANTHROPIC_API_KEY` for Sessions; mock requests use a fixed placeholder.
 
 **Hosted environments** (the pre-provisioned `<product>-server` Secret; Terraform neither reads nor writes it):
+the chart uses explicit references to the documented keys below, not a blanket Secret import. Legacy
+model key entries cannot enter the server environment; the next release removes them from existing
+Secrets as the deployment notes require.
 `SUPERVERSE_COOKIE_SIGNING_KEY`, one form of the GitHub App private key (hosted environments
 always use `repohost: github`),
 `SUPERVERSE_POSTGRES_PASSWORD`, the password of `superverse_server`, and, once the environment configures

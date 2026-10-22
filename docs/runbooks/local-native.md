@@ -60,8 +60,8 @@ It is the lane of every change that touches no Kind path; `make required-lanes` 
 7. proves that platform Dex reaches the Worker through an existing Flow (below) and records the run as ready.
 
 The server's environment holds only secrets, all generated and retained in the lane's state directory: the
-platform MinIO credentials, the cookie signing key, the build token file and the local Git signing key, plus
-`ANTHROPIC_API_KEY` from the main checkout's `.env` whenever it is there. `native.yaml` offers the mock model and
+platform MinIO credentials, the cookie signing key, the build token file and the local Git signing key. No `ANTHROPIC_API_KEY` is passed from
+the host environment or the main checkout's `.env`. `native.yaml` offers the mock model and
 starts new Sessions on it ([mock model](../../internal/dexai/agents/README.md)). To use a Claude model, set the
 Project’s Anthropic key through the Agent picker; no Session uses a platform environment key. Studio receives the lane's own browser signing key, its public origin and the server's address.
 

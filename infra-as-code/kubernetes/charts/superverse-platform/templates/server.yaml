@@ -69,11 +69,17 @@ spec:
           image: {{ include "v2.image" .Values.server.image | quote }}
           imagePullPolicy: {{ .Values.server.image.pullPolicy }}
           {{- include "v2.platformContainerSecurity" . | nindent 10 }}
-          envFrom:
-            # The server's secrets (cmd/superverse-server/config/README.md); never copied into Studio.
-            - secretRef: {name: {{ include "v2.product" $ }}-server}
           env:
             - {name: SUPERVERSE_CONFIG_FILE, value: /etc/superverse/server.yaml}
+            # Only the documented server secrets; legacy model keys never enter the Pod.
+            {{- range $key := list "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY" "GITHUB_APP_PRIVATE_KEY" "GITHUB_APP_PRIVATE_KEY_BASE64" "GITHUB_APP_PRIVATE_KEY_PATH" "SUPERVERSE_COOKIE_SIGNING_KEY" "SUPERVERSE_LOCAL_BUILD_TOKEN" "SUPERVERSE_LOCAL_BUILD_TOKEN_FILE" "SUPERVERSE_LOCAL_GIT_SIGNING_KEY" "SUPERVERSE_POSTGRES_PASSWORD" "SUPERVERSE_CONNECTOR_OAUTH_CLIENT_SECRETS" "SUPERVERSE_SLACK_SIGNING_SECRET" }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "v2.product" $ }}-server
+                  key: {{ $key }}
+                  optional: true
+            {{- end }}
           ports: [{name: grpc, containerPort: 8080}, {name: health, containerPort: 8082}, {name: credential-read, containerPort: {{ include "v2.credentialRead.port" . }}}, {name: slack-events, containerPort: {{ include "v2.slackEvents.port" . }}}, {name: remote-agent, containerPort: {{ include "v2.remoteAgent.port" . }}}{{ if .Values.localKind }}, {name: git-http, containerPort: {{ include "v2.localGit.port" . }}}{{ end }}]
           startupProbe: {tcpSocket: {port: health}, periodSeconds: 3, failureThreshold: 100}
           readinessProbe: {httpGet: {path: /readyz, port: health}, periodSeconds: 5}

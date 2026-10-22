@@ -144,14 +144,6 @@ def deploy(args):
     require((STATE / POSTGRES_CREDENTIALS).exists(), "Run `sv2 kind up` first: it creates the platform PostgreSQL and its roles")
     postgres = postgres_credentials(STATE)
     server["SUPERVERSE_POSTGRES_PASSWORD"] = postgres[POSTGRES_SERVER]
-    # The developer's Claude key lives in the main checkout's ignored .env, shared by every worktree. Every deploy passes it
-    # when it is there, so a Session may switch to a Claude model; without it only the mock model runs, which local-kind.yaml
-    # starts new Sessions on. A profile whose default model is a Claude model (local-kind-acceptance.yaml) requires it, whichever model its acceptance runs.
-    claude_key = project_env_value("ANTHROPIC_API_KEY")
-    if claude_key:
-        server["ANTHROPIC_API_KEY"] = claude_key
-    require(claude_key or document["agent"]["model"] == "mock",
-            "Put ANTHROPIC_API_KEY in the .env file at the root of the main checkout: agent.model of this profile is a Claude model")
     # The relay tests sign events with the retained test Signing Secret; a developer's manual test with a real Slack app sets its
     # Signing Secret and the platform client's secret in the same .env (docs/runbooks/slack-relay-manual-test.md).
     server["SUPERVERSE_SLACK_SIGNING_SECRET"] = project_env_value("SUPERVERSE_SLACK_SIGNING_SECRET") or slack_signing_secret()

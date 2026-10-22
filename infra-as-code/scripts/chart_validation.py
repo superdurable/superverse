@@ -26,6 +26,7 @@ import yaml
 from git_host import GITHUB, LOCAL_GIT
 from kind.cluster import FORWARDS, NODE_PATH as GIT_NODE_PATH
 from kind.server_config import BASE as LOCAL_KIND_PROFILE
+from kind.server_secrets import DEPLOYED_SECRET_KEYS
 from paths import CHART, LOCAL_KIND_VALUES, ROOT
 from local_platform import dex_config
 from pins import names_for
@@ -343,8 +344,14 @@ class Render:
         """The server reads one mounted file, its configuration carries no secret, and the chart fixes what it owns."""
         pod = self.get("Deployment", self.product + "-server")["spec"]["template"]
         container = pod["spec"]["containers"][0]
-        self.fail_if(container["env"] != [{"name": "SUPERVERSE_CONFIG_FILE", "value": "/etc/superverse/server.yaml"}],
-                     "the server container must set only its configuration file; every other setting is in the configuration document")
+        secret_keys = {item["valueFrom"]["secretKeyRef"]["key"] for item in container["env"]
+                       if "secretKeyRef" in item.get("valueFrom", {})}
+        self.fail_if(secret_keys != DEPLOYED_SECRET_KEYS or bool(container.get("envFrom")),
+                     f"server secret references differ: missing={sorted(DEPLOYED_SECRET_KEYS - secret_keys)}, "
+                     f"extra={sorted(secret_keys - DEPLOYED_SECRET_KEYS)}; envFrom is forbidden")
+        self.fail_if([item for item in container["env"] if "valueFrom" not in item] !=
+                     [{"name": "SUPERVERSE_CONFIG_FILE", "value": "/etc/superverse/server.yaml"}],
+                     "the server container must set only its configuration file and approved secret references; every other setting is in the configuration document")
         self.fail_if({"name": "server-config", "mountPath": "/etc/superverse", "readOnly": True} not in container["volumeMounts"] or
                      {"name": "server-config", "configMap": {"name": self.product + "-server-config", "items": [{"key": "server.yaml", "path": "server.yaml"}]}} not in pod["spec"]["volumes"],
                      "the server configuration must be mounted read-only from its ConfigMap")

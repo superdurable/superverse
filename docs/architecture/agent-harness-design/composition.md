@@ -368,7 +368,8 @@ sessionService.BackgroundCommands = backgroundCommands.Client(client)
   `ProjectDiagnosticsReader` of the Session and of subagents.
 - The API server receives `Sessions` (the Service), `SessionAgents` (the same Session client),
   `Subagents`, `Projects`, `Setups` and `SessionModels`, which says whether the server offers the Claude
-  models (a Claude key is present), the mock model and the local lanes' rules. The BFF reads subagent
+  models as catalog capabilities, the mock model and the local lanes' rules. Each Session admits
+  Claude calls only with its own active Project key. The BFF reads subagent
   status through the Session's task records and the subagent client only for the live activity line
   ([streaming and Studio](streaming-and-studio.md)).
 - Owned resources are closed in reverse construction order, so the subagent bootstrap closes before the
@@ -385,11 +386,11 @@ range and combination, and the package README is the reference for every key: it
   out-of-range value or a forbidden combination stops the server before any listener starts. Only
   `cmd/superverse-server`, `cmd/tools/check-config` and `internal/dexai/bootstrap` import the package, which
   `scripts/check-package-layers.py` enforces.
-- **Secrets stay in the environment.** The Claude API key, the GitHub App private key, the cookie signing
-  key, AWS credentials, the local builder token and the local Git signing key come from the server's
-  environment and never appear in a configuration file, so every profile can be checked in. In Kubernetes
-  that environment is the server Secret; in Local Native the launcher passes the generated values and
-  `ANTHROPIC_API_KEY` from the main checkout's `.env`.
+- **Server secrets stay in the environment.** The GitHub App private key, cookie signing key, AWS
+  credentials, local builder token and local Git signing key come from the server's environment and
+  never appear in configuration files. Kubernetes imports only the documented server Secret keys;
+  Local Native passes generated lane values. Neither imports `ANTHROPIC_API_KEY`. Project model keys
+  enter only through `ModelCredentialService` and remain in the Session's hard-delete Attribute.
 - **New settings** are added to the schema and the profiles, never as new environment variables.
 
 Profiles, checked in next to `config.go`:

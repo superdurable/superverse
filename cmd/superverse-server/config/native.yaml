@@ -31,9 +31,8 @@ studio:
   publicOrigin: http://localhost:21000
 
 agent:
-  # New Sessions run the mock model, which needs no Claude key; any account may
-  # switch a Session to a Claude model when the main checkout's .env holds
-  # ANTHROPIC_API_KEY.
+  # New Sessions run the mock model. Any account may select Claude after entering
+  # the Project's own key through ModelCredentialService; the launcher supplies no key.
   mockModel: true
   model: mock
   # A Project created from a first message starts from the closest example

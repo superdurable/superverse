@@ -224,11 +224,6 @@ def server_environment(instance, layers):
                        AWS_SECRET_ACCESS_KEY=credentials["secret"], SUPERVERSE_COOKIE_SIGNING_KEY=cookie_signing_key(instance),
                        SUPERVERSE_LOCAL_BUILD_TOKEN_FILE=str(instance.build_token), SUPERVERSE_LOCAL_GIT_SIGNING_KEY=instance.git.signing_key(),
                        SUPERVERSE_POSTGRES_PASSWORD=postgres_credentials(instance)[POSTGRES_SERVER])
-    # As kind deploy does, the developer's Claude key comes from the main checkout's ignored .env whenever it is there, so a
-    # Session may switch to a Claude model; without it only the mock model runs. It is never printed.
-    claude_key = project_env_value("ANTHROPIC_API_KEY")
-    if claude_key:
-        environment["ANTHROPIC_API_KEY"] = claude_key
     # A developer's manual test with a real Slack app passes its Signing Secret and the platform client's secret in the
     # launcher's environment or the main checkout's .env (docs/runbooks/slack-relay-manual-test.md); otherwise the lane's
     # retained test secret signs the relay tests' events. Neither is ever printed.

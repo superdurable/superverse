@@ -119,8 +119,8 @@ the result with the server's own loader and renders it through the chart into th
 that the Pod mounts. A change of the document rolls the server. `--secret-env-file` is required, and deploy
 takes only the secrets from it (`AWS_*`, the GitHub App private key forms, the cookie signing key and the build token). It
 ignores every other key, so one private file can serve every layer; one notice names the ignored keys, never their values, and the
-configuration profile stays the only source of every other setting. Deploy refuses a file that carries `ANTHROPIC_API_KEY`, which
-comes from the main checkout's `.env`. Because deploy replaces the server Secret as a whole, it also refuses,
+configuration profile stays the only source of every other setting. Deploy refuses a file that carries `ANTHROPIC_API_KEY`:
+Project keys enter through `ModelCredentialService`. Because deploy replaces the server Secret as a whole, it also refuses,
 before it applies or prunes anything, a Secret that lacks the cookie signing key, the build token or, for `repohost: github`,
 the GitHub App private key (a `repohost: localgit` deploy generates the signing key of the local Git host itself), and a
 profile that does not configure Local Kind (`native.yaml` is for `native start`). Deploy also removes keys from the live server Secret that it no longer
@@ -131,10 +131,13 @@ profile refuses to run without `SUPERVERSE_E2E_MODEL_TARGET` (`mock`, or a model
 `modelTarget` in the receipt. `release attest` accepts only a receipt deployed from the unchanged `local-kind-acceptance.yaml`, requires
 its `modelTarget` and copies it into the attestation, so the release record shows which model the accepted run used
 ([mock model](../internal/dexai/agents/README.md)).
-Every deployment takes `ANTHROPIC_API_KEY` from the ignored `.env` file at the root of the
-main checkout, which every worktree shares, whenever it is there, and a profile whose new Sessions
-start on a Claude model requires it; `make test-claude-live` and `make test-integration` read the same file unless
-the key is exported. Access denial never silently selects another model.
+Deployments and Native launchers never forward a platform model key, including profiles whose default model is Claude.
+Each Project sets its own key through the Agent picker or `ModelCredentialService`; a keyless Session stays readable and
+refuses platform Claude sends. Requested real-model acceptance and `make test-claude-live` read the developer key from the
+main checkout's ignored `.env` (or the test process environment) and set it through that RPC for their test Project.
+The hosted chart imports only documented server Secret keys, so a legacy model key entry is not injected. Terraform
+never reads or writes private server Secret values; release operators remove legacy entries from existing server Secrets.
+Access denial never silently selects another model.
 New Session context budgets follow the [model limits](../docs/architecture/agent-harness-design/context-management.md#models).
 `mock/` is rejected. Browser
 acceptance uses the repository host of the deployed profile, the model and the provider APIs; no simulated

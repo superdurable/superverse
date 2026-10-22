@@ -22,11 +22,9 @@ from operator_errors import require
 SERVER_SECRET_KEYS = frozenset({"AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "GITHUB_APP_PRIVATE_KEY", "GITHUB_APP_PRIVATE_KEY_BASE64",
                                 "GITHUB_APP_PRIVATE_KEY_PATH", "SUPERVERSE_COOKIE_SIGNING_KEY", "SUPERVERSE_LOCAL_BUILD_TOKEN",
                                 "SUPERVERSE_LOCAL_BUILD_TOKEN_FILE"})
-# What a deployed server Secret may carry: those, the Claude key, which comes from the main checkout's .env and never from the env
-# file, the signing key of the local Git host's credentials and the server's database password, which the deploy generates and
-# retains (kind/cluster.py, local_platform.py), and the Slack relay's Signing Secret and the platform OAuth client secrets, which a
-# manual test takes from the same .env (the Signing Secret is otherwise generated and retained).
-DEPLOYED_SECRET_KEYS = SERVER_SECRET_KEYS | {"ANTHROPIC_API_KEY", "SUPERVERSE_LOCAL_GIT_SIGNING_KEY", "SUPERVERSE_POSTGRES_PASSWORD",
+# Deployed server Secrets also carry generated/retained local Git and database credentials, the Slack Signing Secret
+# and platform OAuth client secrets. A manual Slack test reads the latter two from .env; otherwise its signing secret is retained.
+DEPLOYED_SECRET_KEYS = SERVER_SECRET_KEYS | {"SUPERVERSE_LOCAL_GIT_SIGNING_KEY", "SUPERVERSE_POSTGRES_PASSWORD",
                                              "SUPERVERSE_SLACK_SIGNING_SECRET", "SUPERVERSE_CONNECTOR_OAUTH_CLIENT_SECRETS"}
 # The secrets the server cannot work without whatever its repository host: any one key of each group is enough.
 COMMON_REQUIRED_SERVER_SECRETS = (("SUPERVERSE_COOKIE_SIGNING_KEY",), ("SUPERVERSE_LOCAL_BUILD_TOKEN", "SUPERVERSE_LOCAL_BUILD_TOKEN_FILE"))
@@ -42,8 +40,8 @@ def read_server_secrets(path):
     """The secrets of a private server env file: its SERVER_SECRET_KEYS lines, with every other key ignored.
 
     The ignored keys are named once, never their values. A line must be KEY=value with an environment variable name; a line
-    that is not is refused without being echoed, because it could be part of a secret. ANTHROPIC_API_KEY is refused: it comes from
-    the main checkout's .env.
+    that is not is refused without being echoed, because it could be part of a secret. ANTHROPIC_API_KEY is refused:
+    each Project supplies its own key through ModelCredentialService.
     """
     values, ignored = {}, set()
     for line in Path(path).read_text().splitlines():
@@ -52,7 +50,7 @@ def read_server_secrets(path):
         key, separator, value = line.partition("=")
         key = key.strip()
         require(separator and VARIABLE_NAME.fullmatch(key), "Server env file lines must be KEY=value with an environment variable name")
-        require(key != "ANTHROPIC_API_KEY", "ANTHROPIC_API_KEY comes from the .env file at the root of the main checkout, not from the server env file")
+        require(key != "ANTHROPIC_API_KEY", "Set each Project key through ModelCredentialService; ANTHROPIC_API_KEY is not a deployment secret")
         if key in SERVER_SECRET_KEYS:
             values[key] = value
         else:
