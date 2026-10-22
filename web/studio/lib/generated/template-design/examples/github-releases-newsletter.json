@@ -1,5 +1,5 @@
 {
-  "templateRevision": "app-template/github-releases-newsletter@66c7fdc5779b69f3b362872887a12c0d085f1cee",
+  "templateRevision": "app-template/github-releases-newsletter@77b282c8424eb87d00c2fb1af1779be7bae8b2ea",
   "definitions": [
     {
       "flowType": "NewsletterCampaignFlow",

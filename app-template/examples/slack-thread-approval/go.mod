@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/ogen-go/ogen v1.24.0
 	github.com/superdurable/dex-connectors-library/connectors/slack v1.0.0
-	github.com/superdurable/dex-connectors-library/sdkgo v0.28.1
+	github.com/superdurable/dex-connectors-library/sdkgo v0.29.2
 	github.com/superdurable/dex/blob-cache-go v0.1.1
 	github.com/superdurable/dex/sdk-go v1.14.1
 	go.opentelemetry.io/otel v1.46.0

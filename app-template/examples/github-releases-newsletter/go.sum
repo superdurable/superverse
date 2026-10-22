@@ -93,8 +93,8 @@ github.com/superdurable/dex-connectors-library/connectors/slack v1.0.0 h1:atWsOS
 github.com/superdurable/dex-connectors-library/connectors/slack v1.0.0/go.mod h1:PfDiHbrAnY33RK2ZxcJBDlyLpVl5AKSGju2N5qqLoaY=
 github.com/superdurable/dex-connectors-library/connectors/superdurable/llm v0.22.1 h1:og2f26npWF4sASAo9nmphIAXu3x7SYztyyXWh5g50os=
 github.com/superdurable/dex-connectors-library/connectors/superdurable/llm v0.22.1/go.mod h1:sOKw/S3cq1XvMVhDm0w0cVZZ4qqSfN2aUKj8TxPAKBI=
-github.com/superdurable/dex-connectors-library/sdkgo v0.29.1 h1:opv7OsOxwvnvfGAQvjf7vlwXF60gsirKBEvEw5/NdvI=
-github.com/superdurable/dex-connectors-library/sdkgo v0.29.1/go.mod h1:OtrqqFir3pwN0Jw0tLw0E+4DaJnkoHwALHaGDmgWqbo=
+github.com/superdurable/dex-connectors-library/sdkgo v0.29.2 h1:duHhE9PFSHvSub9LBiyRVXeKgtK6W550XwfW1Sc1Kts=
+github.com/superdurable/dex-connectors-library/sdkgo v0.29.2/go.mod h1:OtrqqFir3pwN0Jw0tLw0E+4DaJnkoHwALHaGDmgWqbo=
 github.com/superdurable/dex/blob-cache-go v0.1.1 h1:cswtUCelKqhYA+kuSKdk0u3us3QmDA2hTh1Fs3kLGJE=
 github.com/superdurable/dex/blob-cache-go v0.1.1/go.mod h1:Atepb7+sztvDCztVKmlvEKCSKFCkHKtDhoFYjaFmtEw=
 github.com/superdurable/dex/sdk-go v1.14.1 h1:Y4YgAdypIk2/up42BLNMcwCSMlz4lyOhYHJJXwLEDM0=

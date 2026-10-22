@@ -1,5 +1,5 @@
 {
-  "templateRevision": "app-template/summary-approval@42a007783109a06faa2c330684e6051b151eb87e",
+  "templateRevision": "app-template/summary-approval@2f73d1e8beca076129820815e05ab1675f84dd19",
   "definitions": [
     {
       "flowType": "TextSummaryFlow",

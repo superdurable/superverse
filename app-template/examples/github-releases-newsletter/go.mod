@@ -11,7 +11,7 @@ require (
 	github.com/superdurable/dex-connectors-library/connectors/google/gmail v0.23.0
 	github.com/superdurable/dex-connectors-library/connectors/slack v1.0.0
 	github.com/superdurable/dex-connectors-library/connectors/superdurable/llm v0.22.1
-	github.com/superdurable/dex-connectors-library/sdkgo v0.29.1
+	github.com/superdurable/dex-connectors-library/sdkgo v0.29.2
 	github.com/superdurable/dex/blob-cache-go v0.1.1
 	github.com/superdurable/dex/sdk-go v1.14.1
 	go.opentelemetry.io/otel v1.46.0
