@@ -115,10 +115,10 @@
       "native-e2e"
     ],
     "/superverse.v2.EvolveService/GetEvolve": [
-      "native-e2e"
+      "native-integration"
     ],
     "/superverse.v2.EvolveService/StartEvolveReview": [
-      "native-e2e"
+      "native-integration"
     ],
     "/superverse.v2.FlowDiagnosticsService/DeleteFlowChannelMessage": [],
     "/superverse.v2.FlowDiagnosticsService/GetFlowHistory": [
