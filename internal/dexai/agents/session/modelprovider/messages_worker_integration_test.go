@@ -81,7 +81,7 @@ func (step InvokeMessagesWire) Execute(ctx dex.Context, input messagesWireInput)
 	if input.Model == conversation.ModelMock {
 		output.Reply, err = step.flow.legacy.Complete(callContext, request)
 	} else {
-		output.Reply, err = modelprovider.CompleteMessagesForTest(callContext, step.flow.client, request, mockmodel.APIKey, step.flow.baseURL)
+		output.Reply, err = modelprovider.CompleteMessagesForTest(callContext, step.flow.client, request, mockmodel.APIKeyForTest, step.flow.baseURL)
 	}
 	if rejected, ok := errors.AsType[*conversation.ModelRejectedError](err); ok {
 		output.Rejected = rejected

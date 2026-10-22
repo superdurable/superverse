@@ -56,14 +56,14 @@ mode 0600 under the main checkout's ignored `.local/superverse-v2`; never upload
 ```sh
 ./infra-as-code/sv2 kind up
 ./infra-as-code/sv2 kind build
-# Separate terminal; starts the actual Docker release builder using the accepted coding image:
-./infra-as-code/sv2 kind builder
 # The private server env file (required) supplies the secrets: release-build.env's token and, for a profile with
 # repohost github, the GitHub App private key. It may hold other keys, which are ignored; every other server setting
 # is in the configuration profile (cmd/superverse-server/config/README.md).
 ./infra-as-code/sv2 kind deploy \
   --secret-env-file /private/path/v2-server.env \
   --published-dependencies infra-as-code/dependencies/published/dex-1.13.0-llm-0.2.0.json
+# Separate terminal; starts the actual Docker release builder using the accepted coding image:
+./infra-as-code/sv2 kind builder
 ./infra-as-code/sv2 kind ports
 # Separate terminal, with real provider prerequisites:
 ./infra-as-code/sv2 kind e2e
@@ -118,7 +118,7 @@ alias. No local registry, registry mirror, push or image publication is involved
 
 `builder` uses the accepted Docker **root descriptor ID** directly, so an absent Kind-only
 manifest alias or a mutable tool tag cannot silently change its toolchain. Restart
-an old builder after a coding-image change; the command does not kill an unrelated
+an old builder after a coding-image or deployed repository-host change; the command does not kill an unrelated
 process occupying port 29792. Include the generated private `release-build.env`
 when assembling the server env file; it holds only the token, because the builder's address is the
 `builds.localURL` setting. The entry also compiles the trusted one-shot

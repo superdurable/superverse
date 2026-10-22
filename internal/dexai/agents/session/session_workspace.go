@@ -21,6 +21,7 @@ import (
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
+	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	"github.com/superdurable/superversev2/internal/dexai/agents/remoteexec"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/provision"
@@ -29,6 +30,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/sandboxtools"
 	"github.com/superdurable/superversev2/internal/dexai/app/apptemplate"
 )
@@ -458,6 +460,10 @@ func (flow *SessionAgentFlow) openSegment(ctx dex.Context, reason agentloop.Segm
 	entry := conversation.SegmentStartEntry(start.Text(), agentloop.SegmentMarker(reason), shown...)
 	first := appendEntry(ctx, entry)
 	segment := agentloop.NewSegment(previous, first, reason, model, flow.settings, entry.Bytes()).OpenedWithAttachments(shown, pending)
+	if !model.IsMock() {
+		info := dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, modelcredential.ForModel(model).String()))
+		segment.Endpoint, segment.CredentialRevision = info.Endpoint, info.Revision
+	}
 	segment.Summary = comm.TruncateUTF8(summary, 8<<10)
 	segment.AwaitsRepositoryContext = start.RepositoryContext == ""
 	comm.MustDo(contextSegmentAttribute.Set(ctx, segment))
@@ -521,21 +527,34 @@ func executorContextLoads(ctx dex.Context) []dex.AttributeMapLoad {
 	return loads
 }
 
-func (flow *SessionAgentFlow) openExecutorSegment(ctx dex.Context, executor remoteexec.Executor) agentloop.ContextSegment {
+func (flow *SessionAgentFlow) openExecutorSegment(ctx dex.Context, executor remoteexec.Executor, credentialChange bool) agentloop.ContextSegment {
 	state := comm.Must(agentStateAttribute.Get(ctx))
 	read := retainedEntries(ctx, state)
 	entries := make([]conversation.SequencedEntry, 0, 1000)
 	for sequence := max(state.FirstRetainedSequence, state.LastSequence-999); sequence <= state.LastSequence; sequence++ {
 		entries = append(entries, conversation.SequencedEntry{Sequence: sequence, Entry: read(sequence)})
 	}
-	first := agentloop.ExecutorContextStart(entries, flow.settings.CompactionTokens, flow.settings.Attachments)
+	model := comm.Must(sessionModelAttribute.Get(ctx)).Model
+	profile := modelprovider.ProfileOf(model)
+	prompts := agentloop.SessionPromptFor(model).Prompts
+	promptBytes := int64(len(prompts.System))
+	for _, tool := range prompts.Tools {
+		promptBytes += int64(len(tool))
+	}
+	// Reserve output and wire framing before dividing the remaining input between notice and replay.
+	inputBytes := max(int64(0), (profile.HardLimit-profile.MaximumOutputTokens())*4-promptBytes-1024)
 	previous := dexflow.OptionalValue(contextSegmentAttribute.Get(ctx))
 	summary := ""
 	if previous != nil {
 		summary = previous.Summary
 	}
 	handoff := executor.Handoff
-	text := handoff.Notice(comm.Must(headCommitAttribute.Get(ctx)))
+	text, reason, label := "", agentloop.SegmentReasonExecutor, remoteexec.HandoffNoticeLabel
+	if credentialChange {
+		text, reason, label = conversation.CredentialContextNotice, agentloop.SegmentReasonRollover, conversation.CredentialContextNotice
+	} else {
+		text = handoff.Notice(comm.Must(headCommitAttribute.Get(ctx)))
+	}
 	section := func(label, value string, budget int) {
 		if value != "" {
 			text += "\n\n" + label + ":\n" + boundedHandoffText(value, budget)
@@ -562,7 +581,10 @@ func (flow *SessionAgentFlow) openExecutorSegment(ctx dex.Context, executor remo
 	if room := remoteexec.MaximumHandoffBytes - len(text) - len("\n\nStarting example:\n"); room >= minimumHandoffExampleBytes {
 		section("Starting example", startingExampleSection(ctx, false), room)
 	}
-	entry := conversation.NoticeEntry(conversation.EntryRoleUser, boundedHandoffText(text, remoteexec.MaximumHandoffBytes), remoteexec.HandoffNoticeLabel)
+	noticeBudget := int(min(int64(remoteexec.MaximumHandoffBytes), inputBytes/2))
+	entry := conversation.NoticeEntry(conversation.EntryRoleUser, boundedHandoffText(text, noticeBudget), label)
+	replayBytes := min(profile.CompactionThreshold(flow.settings.CompactionTokens)*2, max(int64(0), inputBytes-entry.Bytes()))
+	first := agentloop.ExecutorContextStart(entries, replayBytes, flow.settings.Attachments)
 	last := appendEntry(ctx, entry)
 	if first == 0 {
 		first = last
@@ -574,9 +596,12 @@ func (flow *SessionAgentFlow) openExecutorSegment(ctx dex.Context, executor remo
 			shown = append(shown, item.Entry.AttachmentReferences()...)
 		}
 	}
-	model := comm.Must(sessionModelAttribute.Get(ctx)).Model
-	segment := agentloop.NewSegment(previous, first, agentloop.SegmentReasonExecutor, model, flow.settings, bytes).OpenedWithAttachments(shown, nil)
+	segment := agentloop.NewSegment(previous, first, reason, model, flow.settings, bytes).OpenedWithAttachments(shown, nil)
 	segment.ProtocolStartSequence = last
+	if !model.IsMock() {
+		info := dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, modelcredential.ForModel(model).String()))
+		segment.Endpoint, segment.CredentialRevision = info.Endpoint, info.Revision
+	}
 	segment.Summary = comm.TruncateUTF8(summary, 8<<10)
 	comm.MustDo(contextSegmentAttribute.Set(ctx, segment))
 	comm.MustDo(contextSegmentPromptsAttribute.Set(ctx, segment.PromptsKey(), agentloop.SessionPromptFor(model).Prompts))
@@ -598,6 +623,9 @@ func boundedHandoffText(text string, budget int) string {
 		return text
 	}
 	const marker = "\n[earlier details omitted; open Studio for the full state]"
+	if budget < len(marker) {
+		return comm.TruncateUTF8(text, max(0, budget))
+	}
 	return comm.TruncateUTF8(text, budget-len(marker)) + marker
 }
 
@@ -859,13 +887,15 @@ var (
 	// The cold-path Steps that commit lock only Workspace, so RPCs and model calls never wait;
 	// they load messages and subagent records as settling a request may answer a start_agent call.
 	workspaceRequestStepOptions = &dex.StepOptions{ExecuteMethodTimeout: time.Minute, ExecuteDurability: dex.StepDurabilityAsync,
-		ExecuteLoadAttributeMaps: taskMessageMaps, ExecuteLockAttributes: []dex.AttributeLock{workspaceLock}}
-	workspaceApplyStepOptions = &dex.StepOptions{ExecuteMethodTimeout: 30 * time.Second, ExecuteDurability: dex.StepDurabilitySync,
+		ExecuteLoadAttributeMapInstances: credentialInfoLoads(),
+		ExecuteLoadAttributeMaps:         taskMessageMaps, ExecuteLockAttributes: []dex.AttributeLock{workspaceLock}}
+	workspaceApplyStepOptions = &dex.StepOptions{ExecuteMethodTimeout: 30 * time.Second, ExecuteDurability: dex.StepDurabilitySync, ExecuteLoadAttributeMapInstances: credentialInfoLoads(),
 		ExecuteLoadAttributeMaps: taskMessageMaps, ExecuteLockAttributes: []dex.AttributeLock{workspaceLock}, ExecuteRetry: shortStepRetry}
 	// AwaitSandboxDeadline waits on a business timer and decides under the Workspace lock,
 	// atomically with the dispatches that extend it: a running tool or task holds the Sandbox.
 	sandboxDeadlineStepOptions = &dex.StepOptions{ExecuteMethodTimeout: 30 * time.Second, ExecuteDurability: dex.StepDurabilitySync,
-		ExecuteLockAttributes: []dex.AttributeLock{workspaceLock}, ExecuteRetry: shortStepRetry, ExecuteLoadAttributeMaps: taskMaps}
+		ExecuteLoadAttributeMapInstances: credentialInfoLoads(),
+		ExecuteLockAttributes:            []dex.AttributeLock{workspaceLock}, ExecuteRetry: shortStepRetry, ExecuteLoadAttributeMaps: taskMaps}
 )
 
 // applyWorkspaceStepOptions attaches the workspace failure route to its settlement policy.

@@ -5511,9 +5511,10 @@ var ApplicationEnvironmentService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	ModelCredentialService_GetModelCredentialInfo_FullMethodName = "/superverse.v2.ModelCredentialService/GetModelCredentialInfo"
-	ModelCredentialService_SetModelCredential_FullMethodName     = "/superverse.v2.ModelCredentialService/SetModelCredential"
-	ModelCredentialService_DeleteModelCredential_FullMethodName  = "/superverse.v2.ModelCredentialService/DeleteModelCredential"
+	ModelCredentialService_GetModelCredentialInfo_FullMethodName    = "/superverse.v2.ModelCredentialService/GetModelCredentialInfo"
+	ModelCredentialService_SetModelCredential_FullMethodName        = "/superverse.v2.ModelCredentialService/SetModelCredential"
+	ModelCredentialService_DeleteModelCredential_FullMethodName     = "/superverse.v2.ModelCredentialService/DeleteModelCredential"
+	ModelCredentialService_ListModelCredentialModels_FullMethodName = "/superverse.v2.ModelCredentialService/ListModelCredentialModels"
 )
 
 // ModelCredentialServiceClient is the client API for ModelCredentialService service.
@@ -5525,6 +5526,7 @@ type ModelCredentialServiceClient interface {
 	GetModelCredentialInfo(ctx context.Context, in *GetModelCredentialInfoRequest, opts ...grpc.CallOption) (*GetModelCredentialInfoResponse, error)
 	SetModelCredential(ctx context.Context, in *SetModelCredentialRequest, opts ...grpc.CallOption) (*SetModelCredentialResponse, error)
 	DeleteModelCredential(ctx context.Context, in *DeleteModelCredentialRequest, opts ...grpc.CallOption) (*DeleteModelCredentialResponse, error)
+	ListModelCredentialModels(ctx context.Context, in *ListModelCredentialModelsRequest, opts ...grpc.CallOption) (*ListModelCredentialModelsResponse, error)
 }
 
 type modelCredentialServiceClient struct {
@@ -5565,6 +5567,16 @@ func (c *modelCredentialServiceClient) DeleteModelCredential(ctx context.Context
 	return out, nil
 }
 
+func (c *modelCredentialServiceClient) ListModelCredentialModels(ctx context.Context, in *ListModelCredentialModelsRequest, opts ...grpc.CallOption) (*ListModelCredentialModelsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListModelCredentialModelsResponse)
+	err := c.cc.Invoke(ctx, ModelCredentialService_ListModelCredentialModels_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ModelCredentialServiceServer is the server API for ModelCredentialService service.
 // All implementations must embed UnimplementedModelCredentialServiceServer
 // for forward compatibility.
@@ -5574,6 +5586,7 @@ type ModelCredentialServiceServer interface {
 	GetModelCredentialInfo(context.Context, *GetModelCredentialInfoRequest) (*GetModelCredentialInfoResponse, error)
 	SetModelCredential(context.Context, *SetModelCredentialRequest) (*SetModelCredentialResponse, error)
 	DeleteModelCredential(context.Context, *DeleteModelCredentialRequest) (*DeleteModelCredentialResponse, error)
+	ListModelCredentialModels(context.Context, *ListModelCredentialModelsRequest) (*ListModelCredentialModelsResponse, error)
 	mustEmbedUnimplementedModelCredentialServiceServer()
 }
 
@@ -5592,6 +5605,9 @@ func (UnimplementedModelCredentialServiceServer) SetModelCredential(context.Cont
 }
 func (UnimplementedModelCredentialServiceServer) DeleteModelCredential(context.Context, *DeleteModelCredentialRequest) (*DeleteModelCredentialResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteModelCredential not implemented")
+}
+func (UnimplementedModelCredentialServiceServer) ListModelCredentialModels(context.Context, *ListModelCredentialModelsRequest) (*ListModelCredentialModelsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListModelCredentialModels not implemented")
 }
 func (UnimplementedModelCredentialServiceServer) mustEmbedUnimplementedModelCredentialServiceServer() {
 }
@@ -5669,6 +5685,24 @@ func _ModelCredentialService_DeleteModelCredential_Handler(srv interface{}, ctx 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ModelCredentialService_ListModelCredentialModels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListModelCredentialModelsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelCredentialServiceServer).ListModelCredentialModels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModelCredentialService_ListModelCredentialModels_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelCredentialServiceServer).ListModelCredentialModels(ctx, req.(*ListModelCredentialModelsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ModelCredentialService_ServiceDesc is the grpc.ServiceDesc for ModelCredentialService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -5687,6 +5721,10 @@ var ModelCredentialService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteModelCredential",
 			Handler:    _ModelCredentialService_DeleteModelCredential_Handler,
+		},
+		{
+			MethodName: "ListModelCredentialModels",
+			Handler:    _ModelCredentialService_ListModelCredentialModels_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

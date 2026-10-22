@@ -13,13 +13,11 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"net/http"
 
 	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	sessionagent "github.com/superdurable/superversev2/internal/dexai/agents/session"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
-	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/subagent"
 )
@@ -29,10 +27,7 @@ type ModelCredentialFlowService struct {
 	Compatible *modelprovider.CompatibleProviders
 	Sessions   *sessionagent.SessionAgentFlowClient
 	Subagents  *subagent.SubagentFlowClient
-	HTTP       *http.Client
 	Logger     *slog.Logger
-	// ValidationBaseURL is empty in production; real-dependency tests use the mock model endpoint.
-	ValidationBaseURL string
 }
 
 // Mutate reserves a writer, changes the hard-delete value once and confirms exact readback.
@@ -47,8 +42,8 @@ func (s *ModelCredentialFlowService) Mutate(ctx context.Context, flowID agentloo
 	}
 	if !input.Delete && current.OperationID != input.OperationID {
 		var validationErr error
-		if input.Provider == modelcredential.Anthropic {
-			validationErr = modelprovider.ValidateCredential(ctx, s.HTTP, key, conversation.ModelHaiku45, s.ValidationBaseURL, s.Logger)
+		if input.Endpoint.BaseURL != "" {
+			validationErr = s.Compatible.ValidateCustom(ctx, input.Provider.Catalog(), input.Endpoint, key)
 		} else {
 			validationErr = s.Compatible.ValidateCredential(ctx, input.Provider.Catalog(), key)
 		}
@@ -226,9 +221,6 @@ func (s *ModelCredentialFlowService) startSubagent(ctx context.Context, start ag
 	}
 	return nil
 }
-
-// Close releases the provider transport; the bootstrap owns the Service.
-func (s *ModelCredentialFlowService) Close() error { s.HTTP.CloseIdleConnections(); return nil }
 
 // cleanupProjectCredential deletes the current key before the Session completes.
 // An unresolved earlier writer remains disabled and keeps Project cleanup retryable.

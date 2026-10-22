@@ -60,6 +60,28 @@ export const AgentStatus = {
   CALLING_MODEL: "calling_model",
 } as const satisfies Record<string, AgentDescription["status"]>;
 const AGENT_MODEL_DETAILS = {
+  "anthropic/custom": {
+    label: "Anthropic custom endpoint",
+    description: "Conservative text and tools profile",
+    selectable: false,
+  },
+  "openai/custom": {
+    label: "Openai custom endpoint",
+    description: "Conservative text and tools profile",
+    selectable: false,
+  },
+  "xai/custom": { label: "Xai custom endpoint", description: "Conservative text and tools profile", selectable: false },
+  "gemini/custom": {
+    label: "Gemini custom endpoint",
+    description: "Conservative text and tools profile",
+    selectable: false,
+  },
+  "qwen/custom": {
+    label: "Qwen custom endpoint",
+    description: "Conservative text and tools profile",
+    selectable: false,
+  },
+
   "opus-5.5": { label: "Claude Opus 5.5", description: "Strongest", selectable: true },
   "sonnet-5.5": { label: "Claude Sonnet 5.5", description: "Faster and cheaper", selectable: true },
   "haiku-4.5": { label: "Claude Haiku 4.5", description: "Cheapest, suited to testing", selectable: true },

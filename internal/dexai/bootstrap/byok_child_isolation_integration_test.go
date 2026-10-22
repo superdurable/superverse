@@ -50,7 +50,7 @@ func exerciseBYOKChildIsolation(t *testing.T, ctx context.Context, sessions *ses
 	saveB := func() {
 		t.Helper()
 		revision := info().Revision
-		if _, err := api.SetModelCredential(ctx, &pb.SetModelCredentialRequest{ProjectId: project, Provider: pb.ModelProvider_MODEL_PROVIDER_OPENAI, RequestId: flowid.RandomID(20), ExpectedRevision: &revision, ApiKey: mockmodel.APIKey, Caller: caller}); err != nil {
+		if _, err := api.SetModelCredential(ctx, &pb.SetModelCredentialRequest{ProjectId: project, Provider: pb.ModelProvider_MODEL_PROVIDER_OPENAI, RequestId: flowid.RandomID(20), ExpectedRevision: &revision, ApiKey: mockmodel.APIKeyForTest, Caller: caller}); err != nil {
 			t.Fatal("save B key through actual mock inference admission")
 		}
 	}
@@ -79,7 +79,7 @@ func exerciseBYOKChildIsolation(t *testing.T, ctx context.Context, sessions *ses
 				id := agenttasks.SubagentIdentity{ProjectID: project, AgentID: record.AgentID}
 				child, err := children.SnapshotForTest(ctx, id)
 				copy, copyErr := children.ReadModelCredential(ctx, id)
-				if err == nil && child.Config != nil && child.Config.Model == conversation.ModelGPT6Astra && child.LastSequence >= 3 && child.Outcome == nil && copyErr == nil && copy != nil && copy.Revision == info().Revision && copy.Key == mockmodel.APIKey {
+				if err == nil && child.Config != nil && child.Config.Model == conversation.ModelGPT6Astra && child.LastSequence >= 3 && child.Outcome == nil && copyErr == nil && copy != nil && copy.Revision == info().Revision && copy.Key == mockmodel.APIKeyForTest {
 					found = append(found, id)
 				}
 			}
@@ -112,7 +112,7 @@ func exerciseBYOKChildIsolation(t *testing.T, ctx context.Context, sessions *ses
 	}
 	for _, id := range first {
 		copy, err := children.ReadModelCredential(ctx, id)
-		if err != nil || copy == nil || copy.Key != mockmodel.APIKey || copy.Revision != before.Revision {
+		if err != nil || copy == nil || copy.Key != mockmodel.APIKeyForTest || copy.Revision != before.Revision {
 			t.Fatal("provider A mutation changed live B child copy")
 		}
 	}

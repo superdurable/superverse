@@ -22,14 +22,25 @@ import (
 	"time"
 
 	"github.com/superdurable/superversev2/internal/comm"
+	"github.com/superdurable/superversev2/internal/comm/modelendpoint"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/openaicompat"
 )
 
-// APIKey is the fixed non-secret key of every mock model protocol.
+// apiKey is the fixed non-secret key of every mock model protocol.
 // The server refuses any other, so a real key is never expected here.
-const APIKey = "mock-model-not-a-secret"
+const apiKey = "mock-model-not-a-secret"
+
+// APIKeyForTest is the fixed synthetic key for external protocol fixtures.
+const APIKeyForTest = apiKey
+
+const customHeader = "Superverse-Mock-Custom"
+const customDiscoveredModelID = "self-hosted-qwen"
+const customManualModelID = "custom-model"
+
+const CustomDiscoveredModelIDForTest = customDiscoveredModelID
+const CustomManualModelIDForTest = customManualModelID
 
 // maximumRequestBytes bounds one request body. A Session context stays far
 // below it.
@@ -39,19 +50,23 @@ const maximumRequestBytes = 64 << 20
 // base URL for the model adapters. The owner calls stop once; it also
 // runs when ctx ends. Requests are served over real HTTP, so the Claude client
 // runs unchanged.
-func Start(ctx context.Context, logger *slog.Logger, faults ...WireFault) (baseURL string, stop func(), err error) {
-	fault := WireFault{}
+func StartForTest(ctx context.Context, logger *slog.Logger, faults ...WireFaultForTest) (baseURL string, stop func(), err error) {
+	fault := WireFaultForTest{}
 	if len(faults) > 1 {
 		panic("mock model accepts at most one wire fault")
 	}
 	if len(faults) == 1 {
 		fault = faults[0]
 	}
-	return startHandler(ctx, &handler{logger: logger, wireFault: fault})
+	return startHandler(ctx, &handler{logger: logger, wireFault: fault}, "")
 }
 
-func startHandler(ctx context.Context, h *handler) (baseURL string, stop func(), err error) {
-	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", "127.0.0.1:0")
+func startHandler(ctx context.Context, h *handler, listen string) (baseURL string, stop func(), err error) {
+	address := "127.0.0.1:0"
+	if listen != "" {
+		address = listen
+	}
+	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", address)
 	if err != nil {
 		return "", nil, fmt.Errorf("listen for the mock model: %w", err)
 	}
@@ -84,12 +99,79 @@ func startHandler(ctx context.Context, h *handler) (baseURL string, stop func(),
 // handler serves the Messages and compatible streamed endpoints. It keeps no state:
 // the reply depends only on the request.
 type handler struct {
+	custom    bool
 	logger    *slog.Logger
 	probe     *CredentialProbeForTest
-	wireFault WireFault
+	wireFault WireFaultForTest
+}
+
+// StartBuiltin owns a mock listener and its exact-origin HTTP client. Hosted
+// administrators may use this built-in mock without granting the endpoint pool
+// a loopback exception. No caller-supplied URL enters this client.
+func StartBuiltin(ctx context.Context, logger *slog.Logger, custom bool, listen string) (*modelprovider.MockClientConfig, func(), error) {
+	base, stop, err := startConfigured(ctx, logger, custom, listen)
+	if err != nil {
+		return nil, nil, err
+	}
+	pool := modelendpoint.NewPool(modelendpoint.Config{AllowLocalLoopback: true})
+	client, err := pool.Client(ctx, base)
+	if err != nil {
+		stop()
+		_ = pool.Close()
+		return nil, nil, err
+	}
+	return &modelprovider.MockClientConfig{ClaudeClientConfig: modelprovider.ClaudeClientConfig{APIKey: apiKey, BaseURL: base}, HTTPClient: client}, func() { stop(); _ = pool.Close() }, nil
+}
+
+// startConfigured is used only after local provider configuration validation.
+func startConfigured(ctx context.Context, logger *slog.Logger, custom bool, listen string) (string, func(), error) {
+	return startHandler(ctx, &handler{logger: logger, custom: custom}, listen)
 }
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if probeID := r.Header.Get("Superverse-Mock-Probe"); h.custom && probeID != "" {
+		if len(probeID) <= 20 && strings.Trim(probeID, "0123456789") == "" {
+			h.logger.InfoContext(r.Context(), "mock credential probe received", "probe_id", probeID)
+			defer h.logger.InfoContext(r.Context(), "mock credential probe responded", "probe_id", probeID)
+		}
+	}
+	if strings.HasPrefix(r.URL.Path, "/custom/") {
+		if !h.custom {
+			http.NotFound(w, r)
+			return
+		}
+		parts := strings.SplitN(strings.TrimPrefix(r.URL.Path, "/custom/"), "/", 2)
+		if len(parts) != 2 {
+			http.NotFound(w, r)
+			return
+		}
+		if r.Method == http.MethodGet && parts[1] == "v1/models" {
+			h.discover(w, r, parts[0])
+			return
+		}
+		if parts[0] == "held-stream" && r.Header.Get("Authorization") == "Bearer "+apiKey {
+			w.Header().Set("Content-Type", "text/event-stream")
+			w.WriteHeader(http.StatusOK)
+			_ = http.NewResponseController(w).Flush()
+			<-r.Context().Done()
+			return
+		}
+		if parts[0] == "probe-timeout" {
+			// Let net/http observe client disconnects while the fixture waits.
+			_, _ = io.Copy(io.Discard, http.MaxBytesReader(w, r.Body, maximumRequestBytes))
+			<-r.Context().Done()
+			return
+		}
+		for _, code := range []int{401, 403, 404, 429, 500, 503} {
+			if parts[0] == fmt.Sprintf("probe-%d", code) {
+				w.WriteHeader(code)
+				return
+			}
+		}
+		r = r.Clone(r.Context())
+		r.URL.Path = "/" + parts[1]
+		r.Header.Set(customHeader, "true")
+	}
 	if r.Method == http.MethodPost && (r.URL.Path == openaicompat.ResponsesPath || r.URL.Path == openaicompat.ChatPath) {
 		h.serveOpenAI(w, r)
 		return
@@ -98,7 +180,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, notFoundError, onlyStreamedMessages)
 		return
 	}
-	accepted := r.Header.Get("X-Api-Key") == APIKey || r.Header.Get("Authorization") == "Bearer "+APIKey
+	accepted := r.Header.Get("X-Api-Key") == apiKey || r.Header.Get("Authorization") == "Bearer "+apiKey
 	if h.probe != nil {
 		accepted = h.probe.accept(r.Header.Get("X-Api-Key"))
 	}
@@ -111,16 +193,38 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusRequestEntityTooLarge, requestTooLarge, "The request body could not be read within the limit.")
 		return
 	}
+	if h.custom && r.Header.Get(customHeader) == "true" {
+		var probe struct {
+			Model     string `json:"model"`
+			Stream    bool   `json:"stream"`
+			MaxTokens int    `json:"max_tokens"`
+		}
+		if json.Unmarshal(body, &probe) == nil && !probe.Stream {
+			if probe.MaxTokens != 64 || (probe.Model != customDiscoveredModelID && probe.Model != customManualModelID) {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{"model": probe.Model, "content": []any{map[string]string{"type": "text", "text": "OK"}}})
+			return
+		}
+	}
 	var acceptedModels []string
 	if h.probe != nil {
 		acceptedModels = []string{conversation.ModelOpus55.ProviderModel(), conversation.ModelSonnet55.ProviderModel(), conversation.ModelHaiku45.ProviderModel()}
 	}
 	request, err := parseRequest(r, body, acceptedModels...)
+	request.RequestBytes = len(body)
+	request.Custom = h.custom && r.Header.Get(customHeader) == "true"
+	if (request.Model == customDiscoveredModelID || request.Model == customManualModelID) && !request.Custom {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 	if err != nil {
 		writeError(w, http.StatusBadRequest, invalidRequestError, err.Error())
 		return
 	}
-	if !request.Stream && h.probe != nil {
+	if !request.Stream && (h.probe != nil || request.Custom) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{"id": "msg_credential_probe", "type": "message", "role": "assistant", "model": request.Model, "content": []map[string]string{{"type": "text", "text": "ok"}}, "stop_reason": "end_turn", "usage": map[string]int{"input_tokens": 1, "output_tokens": 1}})
 		return
@@ -160,11 +264,16 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // returned, and returns the reply with its message ID. A compaction request is
 // answered with the mock summary, or with the error the step before it declares.
 func (h *handler) plan(ctx context.Context, request messagesRequest) (reply, string, error) {
+	if h.probe != nil && request.Custom {
+		h.probe.observeCustom(request)
+	}
 	model := request.catalogModel()
 	var selected selection
 	var err error
-	if request.WireMode == conversation.OpenAIResponses || request.WireMode == conversation.OpenAIChatCompletions {
-		selected, err = followWireReplay(request.Messages, request.WireMode, request.WireProvider)
+	if request.Custom {
+		selected, err = followCustomReplay(request.Messages)
+	} else if request.WireMode == conversation.OpenAIResponses || request.WireMode == conversation.OpenAIChatCompletions {
+		selected, err = followWireReplay(request.Messages, request.WireMode, request.WireProvider, request.Custom)
 	} else {
 		selected, err = followMessagesReplay(request.Messages, model, isCompaction(request.Messages))
 	}
@@ -226,6 +335,9 @@ func (h *handler) plan(ctx context.Context, request messagesRequest) (reply, str
 	}
 	h.logger.InfoContext(ctx, "the mock model answers", "scenario", name, "at", at.String(), "model", request.Model, "stop_reason", answer.stopReason,
 		"rejected", selected.rejected != "", "failure", answer.failure != nil)
+	if request.Custom && h.wireFault == WireFaultPlaintextForTest {
+		answer.protocolFault = faultPlaintext
+	}
 	answer = messagesReply(answer, model)
 	answer.progress = selected.progress()
 	return answer, id, nil
@@ -273,10 +385,13 @@ const CredentialProbeRequestIDForTest = requestID
 // CredentialProbeForTest is a test-only counter for synthetic credentials at the existing model endpoint.
 // It never stores request headers, request bodies, history or an unbounded list.
 type CredentialProbeForTest struct {
-	mu       sync.Mutex
-	key      string
-	requests int
-	gate     *credentialGate
+	mu                    sync.Mutex
+	key                   string
+	requests              int
+	firstCustomBytes      int
+	firstCustomCompaction bool
+	customCompactions     int
+	gate                  *credentialGate
 }
 
 func (p *CredentialProbeForTest) SetKeyForTest(key string) {
@@ -342,13 +457,13 @@ func (p *CredentialProbeForTest) await(ctx context.Context) bool {
 func StartCredentialProbeForTest(ctx context.Context, logger *slog.Logger, key string) (string, *CredentialProbeForTest, func(), error) {
 	probe := &CredentialProbeForTest{}
 	probe.SetKeyForTest(key)
-	url, stop, err := startHandler(ctx, &handler{logger: logger, probe: probe})
+	url, stop, err := startHandler(ctx, &handler{logger: logger, probe: probe}, "")
 	return url, probe, stop, err
 }
 
 // serveOpenAI drives the same ordered scripts through the real compatible adapter.
 func (h *handler) serveOpenAI(w http.ResponseWriter, r *http.Request) {
-	accepted := r.Header.Get("Authorization") == "Bearer "+APIKey
+	accepted := r.Header.Get("Authorization") == "Bearer "+apiKey
 	if h.probe != nil {
 		accepted = h.probe.accept(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
 	}
@@ -365,7 +480,7 @@ func (h *handler) serveOpenAI(w http.ResponseWriter, r *http.Request) {
 		Stream *bool `json:"stream"`
 	}
 	if json.Unmarshal(body, &admission) == nil && admission.Stream != nil && !*admission.Stream {
-		model, valid := credentialAdmission(body, r.URL.Path == openaicompat.ResponsesPath)
+		model, valid := credentialAdmission(body, r.URL.Path == openaicompat.ResponsesPath, h.custom && r.Header.Get(customHeader) == "true")
 		if !valid {
 			writeOpenAIError(w, http.StatusBadRequest, invalidRequestError, "Invalid credential admission request.")
 			return
@@ -376,12 +491,18 @@ func (h *handler) serveOpenAI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	request, err := parseOpenAIRequest(body, r.URL.Path == openaicompat.ResponsesPath)
+	request.RequestBytes = len(body)
+	request.Custom = h.custom && r.Header.Get(customHeader) == "true"
+	if (request.Model == customDiscoveredModelID || request.Model == customManualModelID) && !request.Custom {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 	if err != nil {
 		h.logger.WarnContext(r.Context(), "the mock compatible request was rejected", "reason", err.Error())
 		writeOpenAIError(w, http.StatusBadRequest, invalidRequestError, "Invalid compatible request.")
 		return
 	}
-	request.WireProvider, err = mockWirePolicy(r.Header.Get(openaicompat.MockProviderHeader), request.WireMode, body)
+	request.WireProvider, err = mockWirePolicy(r.Header.Get(openaicompat.MockProviderHeader), request.WireMode, body, request.Custom)
 	if err != nil {
 		h.logger.WarnContext(r.Context(), "the mock compatible policy was rejected", "reason", err.Error())
 		writeOpenAIError(w, http.StatusBadRequest, invalidRequestError, "Invalid compatible policy.")
@@ -397,20 +518,20 @@ func (h *handler) serveOpenAI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch h.wireFault {
-	case WireFaultCreditExhausted:
+	case WireFaultCreditExhaustedForTest:
 		writeOpenAIError(w, http.StatusTooManyRequests, rateLimitError, "Synthetic provider credit message must be discarded.", "insufficient_quota")
 		return
-	case WireFaultContextRejected:
+	case WireFaultContextRejectedForTest:
 		writeOpenAIError(w, http.StatusBadRequest, invalidRequestError, "Synthetic provider context message must be discarded.", "context_length_exceeded")
 		return
-	case WireFaultHTTP401:
+	case WireFaultHTTP401ForTest:
 		writeOpenAIError(w, http.StatusUnauthorized, authenticationError, "Synthetic model authentication refusal.")
 		return
-	case WireFaultHTTP429:
+	case WireFaultHTTP429ForTest:
 		w.Header().Set("Retry-After", "1")
 		writeOpenAIError(w, http.StatusTooManyRequests, rateLimitError, "Synthetic model rate limit.")
 		return
-	case WireFaultHTTP503:
+	case WireFaultHTTP503ForTest:
 		writeOpenAIError(w, http.StatusServiceUnavailable, overloadedError, "Synthetic model overload.")
 		return
 	}
@@ -429,7 +550,7 @@ func (h *handler) serveOpenAI(w http.ResponseWriter, r *http.Request) {
 
 // mockWirePolicy checks the real encoder's reviewed controls before the shared
 // scenario runs. Unknown providers or a protocol mismatch never pick a fallback.
-func mockWirePolicy(id string, mode conversation.APIStyle, body []byte) (conversation.Provider, error) {
+func mockWirePolicy(id string, mode conversation.APIStyle, body []byte, custom bool) (conversation.Provider, error) {
 	var provider conversation.Provider
 	for _, candidate := range []conversation.Provider{conversation.ProviderOpenAI, conversation.ProviderXAI, conversation.ProviderGemini, conversation.ProviderKimi, conversation.ProviderQwen, conversation.ProviderGLM} {
 		if candidate.String() == id {
@@ -450,6 +571,18 @@ func mockWirePolicy(id string, mode conversation.APIStyle, body []byte) (convers
 	}
 	if json.Unmarshal(body, &controls) != nil {
 		return provider, errors.New("invalid mock controls")
+	}
+	if custom {
+		var fields map[string]json.RawMessage
+		if json.Unmarshal(body, &fields) != nil {
+			return provider, errors.New("invalid custom fields")
+		}
+		for _, field := range []string{"reasoning", "include", "thinking", "enable_thinking", "preserve_thinking"} {
+			if _, found := fields[field]; found {
+				return provider, errors.New("unexpected custom reasoning control")
+			}
+		}
+		return provider, nil
 	}
 	switch provider {
 	case conversation.ProviderOpenAI, conversation.ProviderXAI:
@@ -475,7 +608,7 @@ func mockWirePolicy(id string, mode conversation.APIStyle, body []byte) (convers
 // compatibleMockModel admits reviewed wire fixtures with the matching protocol.
 // Protocol coverage does not make a profile selectable in the server catalog.
 func compatibleMockModel(apiModel string, responses bool) bool {
-	if apiModel == mockModel {
+	if apiModel == mockModel || apiModel == customDiscoveredModelID || apiModel == customManualModelID {
 		return true
 	}
 	for _, model := range append(modelprovider.CompatibleModels(), conversation.ModelKimiK26, conversation.ModelQwen38Max) {
@@ -662,7 +795,7 @@ func writeOpenAIError(w http.ResponseWriter, status int, kind errorType, message
 }
 
 // credentialAdmission verifies the exact bounded inference probe, including privacy controls.
-func credentialAdmission(body []byte, responses bool) (string, bool) {
+func credentialAdmission(body []byte, responses bool, custom bool) (string, bool) {
 	var request struct {
 		Model     string   `json:"model"`
 		Stream    *bool    `json:"stream"`
@@ -682,7 +815,96 @@ func credentialAdmission(body []byte, responses bool) (string, bool) {
 		return "", false
 	}
 	if responses {
+		if custom {
+			return request.Model, request.MaxOutput == 64 && request.MaxTokens == 0 && request.Store != nil && !*request.Store && len(request.Include) == 0 && request.Input == "Reply OK."
+		}
 		return request.Model, request.MaxOutput == 64 && request.MaxTokens == 0 && request.Store != nil && !*request.Store && len(request.Include) == 1 && request.Include[0] == "reasoning.encrypted_content" && request.Input == "Reply OK." && len(request.Messages) == 0
 	}
 	return request.Model, request.MaxTokens == 64 && request.MaxOutput == 0 && request.Store == nil && len(request.Include) == 0 && request.Input == "" && len(request.Messages) == 1 && request.Messages[0].Role == "user" && request.Messages[0].Content == "Reply OK."
+}
+
+// discover serves deterministic model-only fixtures on the model listener.
+func (h *handler) discover(w http.ResponseWriter, r *http.Request, fixture string) {
+	accepted := r.Header.Get("Authorization") == "Bearer "+apiKey
+	if h.probe != nil {
+		accepted = h.probe.accept(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
+	}
+	if !accepted {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	ids := []string{customDiscoveredModelID}
+	switch fixture {
+	case "empty":
+		ids = nil
+	case "many":
+		ids = []string{customDiscoveredModelID, customManualModelID}
+	case "unsupported":
+		w.WriteHeader(http.StatusNotFound)
+		return
+	case "count", "max-count":
+		count := 101
+		if fixture == "max-count" {
+			count = 100
+		}
+		ids = make([]string, count)
+		for i := range ids {
+			ids[i] = fmt.Sprintf("model-%d", i)
+		}
+	case "max-id":
+		ids = []string{strings.Repeat("x", 256)}
+	case "key":
+		ids = []string{apiKey}
+	case "pagination":
+	case "id":
+		ids = []string{strings.Repeat("x", 257)}
+	case "bytes":
+		ids = []string{strings.Repeat("x", (1<<20)+1)}
+	case "timeout":
+		<-r.Context().Done()
+		return
+	case "one":
+	default:
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	data := make([]map[string]string, 0, len(ids))
+	for _, id := range ids {
+		data = append(data, map[string]string{"id": id})
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{"data": data, "has_more": fixture == "pagination"})
+}
+
+// StartCustomEndpointProbeForTest exposes only model fixture counters, never credentials.
+func StartCustomEndpointProbeForTest(ctx context.Context, logger *slog.Logger, faults ...WireFaultForTest) (string, *CredentialProbeForTest, func(), error) {
+	fault := WireFaultForTest{}
+	if len(faults) > 1 {
+		panic("custom endpoint accepts at most one fixture fault")
+	}
+	if len(faults) == 1 {
+		fault = faults[0]
+	}
+	probe := &CredentialProbeForTest{key: apiKey}
+	base, stop, err := startHandler(ctx, &handler{logger: logger, probe: probe, custom: true, wireFault: fault}, "")
+	return base, probe, stop, err
+}
+
+func (p *CredentialProbeForTest) observeCustom(request messagesRequest) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	compact := isCompaction(request.Messages)
+	if p.firstCustomBytes == 0 {
+		p.firstCustomBytes, p.firstCustomCompaction = request.RequestBytes, compact
+	}
+	if compact {
+		p.customCompactions++
+	}
+}
+
+// CustomBudgetForTest returns bounded numeric wire measurements without payloads.
+func (p *CredentialProbeForTest) CustomBudgetForTest() (bytes int, firstWasCompaction bool, compactions int) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.firstCustomBytes, p.firstCustomCompaction, p.customCompactions
 }

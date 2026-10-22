@@ -67,6 +67,23 @@ var profiles = map[conversation.Model]ModelProfile{
 
 func init() {
 	populateCandidateProfiles()
+	for _, model := range conversation.Models() {
+		if !model.IsCustom() {
+			continue
+		}
+		source := ""
+		switch model.Details().Provider.APIStyle() {
+		case conversation.AnthropicMessages:
+			source = "https://platform.claude.com/docs/en/api/messages"
+		case conversation.OpenAIResponses:
+			source = "https://platform.openai.com/docs/api-reference/responses"
+		case conversation.OpenAIChatCompletions:
+			source = "https://platform.openai.com/docs/api-reference/chat"
+		}
+		profile := candidate(model, 32768, 4096, 22528, 24576, conversation.ReplayNonThinking, false, source, "This environment does not offer this custom endpoint provider.")
+		profile.Capabilities.chatThinking = conversation.ChatThinkingDefault
+		profiles[model] = profile
+	}
 	for _, model := range []conversation.Model{conversation.ModelMockResponses, conversation.ModelMockChat} {
 		profile := profiles[conversation.ModelGPT6Astra]
 		if model == conversation.ModelMockChat {

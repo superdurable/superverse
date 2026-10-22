@@ -10,7 +10,6 @@ package session
 
 import (
 	"log/slog"
-	"net/http"
 	"time"
 
 	"github.com/superdurable/dex/sdk-go/dex"
@@ -64,11 +63,10 @@ type SessionAgentConfig struct {
 // SessionWorkspaceFlow reclaims through. One owner constructs them for the
 // shared Dex registry and closes them. It holds no durable state and serves no request.
 type SessionAgentFlowBootstrap struct {
-	flow       *SessionAgentFlow
-	model      conversation.Model
-	workspace  *workspace.Capabilities
-	instances  sandbox.InstanceProvider
-	httpClient *http.Client
+	flow      *SessionAgentFlow
+	model     conversation.Model
+	workspace *workspace.Capabilities
+	instances sandbox.InstanceProvider
 }
 
 // NewSessionAgentFlowBootstrap assembles the Flow; instances builds the
@@ -77,8 +75,7 @@ type SessionAgentFlowBootstrap struct {
 func NewSessionAgentFlowBootstrap(config SessionAgentConfig, credentials *git.HostCredentials, dependency SessionAgentFlowDependency, diagnostics ProjectDiagnosticsReader,
 	catalog connectorCatalogMatcher, renditions attachmentRenditions, addresses workspace.SandboxAddresses, instances func(*workspace.Capabilities) sandbox.InstanceProvider, logger *slog.Logger,
 ) (*SessionAgentFlowBootstrap, error) {
-	httpClient := modelprovider.NewProviderHTTPClient()
-	model, err := modelprovider.NewModelRouter(httpClient, config.Claude, config.Mock, logger, config.Compatible)
+	model, err := modelprovider.NewModelRouter(config.Claude, config.Mock, logger, config.Compatible)
 	if err != nil {
 		return nil, err
 	}
@@ -86,11 +83,10 @@ func NewSessionAgentFlowBootstrap(config SessionAgentConfig, credentials *git.Ho
 	provider := instances(workspaces)
 	tools := sandboxtools.NewRunner(workspaces.SandboxResolver(), workspaces.Git())
 	return &SessionAgentFlowBootstrap{
-		flow:       newSessionAgentFlow(model, tools, diagnostics, dependency, workspaces, catalog, renditions, config.AutomaticTurns, config.SandboxHold, config.PreviewHold, config.Settings),
-		model:      config.Model,
-		workspace:  workspaces,
-		instances:  provider,
-		httpClient: httpClient,
+		flow:      newSessionAgentFlow(model, tools, diagnostics, dependency, workspaces, catalog, renditions, config.AutomaticTurns, config.SandboxHold, config.PreviewHold, config.Settings),
+		model:     config.Model,
+		workspace: workspaces,
+		instances: provider,
 	}, nil
 }
 
@@ -125,6 +121,5 @@ func (bootstrap *SessionAgentFlowBootstrap) Instances() sandbox.InstanceProvider
 }
 
 func (bootstrap *SessionAgentFlowBootstrap) Close() error {
-	bootstrap.httpClient.CloseIdleConnections()
 	return bootstrap.workspace.Close()
 }

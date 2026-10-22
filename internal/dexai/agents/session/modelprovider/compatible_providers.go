@@ -22,16 +22,27 @@ import (
 // CompatibleProviders is one replica-owned runtime shared by Session, child and
 // credential admission. It holds bounded connections and no keys or Flow state.
 type CompatibleProviders struct {
-	config  ProviderConfig
-	pool    *modelendpoint.Pool
-	clients map[conversation.Provider]*openaicompat.Client
+	messagesBase string
+	config       ProviderConfig
+	logger       *slog.Logger
+	messages     *messagesClient
+	pool         *modelendpoint.Pool
+	clients      map[conversation.Provider]*openaicompat.Client
 }
 
 // NewCompatibleProviders consumes validated server policy and the owned local
 // scenario endpoint. Every official or local origin uses the same DNS-safe pool.
-func NewCompatibleProviders(ctx context.Context, config ProviderConfig, endpoints modelendpoint.Config, mockURL string, logger *slog.Logger) (*CompatibleProviders, error) {
+func NewCompatibleProviders(ctx context.Context, config ProviderConfig, endpoints modelendpoint.Config, mockURL string, logger *slog.Logger, messagesBase string) (*CompatibleProviders, error) {
 	config.Enabled = slices.Clone(config.Enabled)
-	result := &CompatibleProviders{config: config, pool: modelendpoint.NewPool(endpoints), clients: make(map[conversation.Provider]*openaicompat.Client, len(config.Enabled))}
+	result := &CompatibleProviders{config: config, logger: logger, pool: modelendpoint.NewPool(endpoints), clients: make(map[conversation.Provider]*openaicompat.Client, len(config.Enabled))}
+	result.messages = newMessagesClient(nil, logger)
+	result.messagesBase = conversation.ProviderAnthropic.BaseURL()
+	if config.MockEndpoint {
+		result.messagesBase = mockURL
+	}
+	if messagesBase != "" {
+		result.messagesBase = messagesBase
+	}
 	for _, model := range CompatibleModels() {
 		if !config.Availability(model).Selectable() {
 			continue
@@ -65,6 +76,9 @@ func (providers *CompatibleProviders) availability(model conversation.Model) Mod
 // Complete uses the Session's transient key and frozen provider selection.
 func (providers *CompatibleProviders) Complete(ctx context.Context, request conversation.ModelRequest) (conversation.ModelReply, error) {
 	if providers.availability(request.Model).Selectable() {
+		if request.Model.IsCustom() {
+			return providers.completeCustom(ctx, request)
+		}
 		if client := providers.clients[request.Model.Details().Provider]; client != nil {
 			return client.Complete(ctx, request)
 		}
@@ -74,6 +88,13 @@ func (providers *CompatibleProviders) Complete(ctx context.Context, request conv
 
 // ValidateCredential admits a provider's reviewed default model before key storage.
 func (providers *CompatibleProviders) ValidateCredential(ctx context.Context, provider conversation.Provider, key string) error {
+	if provider == conversation.ProviderAnthropic {
+		client, err := providers.pool.Client(ctx, providers.messagesBase)
+		if err != nil {
+			return err
+		}
+		return validateCredential(ctx, client, key, conversation.ModelHaiku45, providers.messagesBase, providers.logger)
+	}
 	model, err := defaultModel(provider)
 	if err != nil {
 		return conversation.ModelUnavailable.Rejected()

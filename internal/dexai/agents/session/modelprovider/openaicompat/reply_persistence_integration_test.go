@@ -25,9 +25,9 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
 	"github.com/superdurable/superversev2/internal/comm/dexflow/dexflowtest"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
+	"github.com/superdurable/superversev2/internal/comm/modelendpoint"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
-	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/mockmodel"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/openaicompat"
 )
@@ -71,7 +71,7 @@ func (CallCompatibleProbe) GetStepOptions() *dex.StepOptions {
 }
 func (step CallCompatibleProbe) Execute(ctx dex.Context, input string) (*dex.StepDecision, error) {
 	entry := conversation.UserMessageEntry(input, nil)
-	request := conversation.ModelRequest{Model: compatibleProbeModel(step.flow.policy), APIKey: mockmodel.APIKey, Prompts: agentloop.SessionPromptFor(conversation.ModelMock).Prompts,
+	request := conversation.ModelRequest{Model: compatibleProbeModel(step.flow.policy), APIKey: mockmodel.APIKeyForTest, Prompts: agentloop.SessionPromptFor(conversation.ModelMock).Prompts,
 		Messages: []conversation.RequestMessage{{Role: entry.Role, Blocks: entry.Blocks, CacheAnchor: -1}}}
 	reasoningWrites := 0
 	callContext, cancel := context.WithCancel(ctx)
@@ -181,14 +181,12 @@ func TestCompatibleReplyPersistenceDexIntegration(t *testing.T) {
 		t.Run(policy.Provider.String(), func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(t.Context(), 3*time.Minute)
 			defer cancel()
-			base, stop, err := mockmodel.Start(ctx, slog.New(slog.NewTextHandler(io.Discard, nil)))
+			base, stop, err := mockmodel.StartForTest(ctx, slog.New(slog.NewTextHandler(io.Discard, nil)))
 			if err != nil {
 				t.Fatal("start existing model scenario engine:", err)
 			}
 			defer stop()
-			transport := modelprovider.NewProviderHTTPClient()
-			defer transport.CloseIdleConnections()
-			adapter, err := openaicompat.NewMock(transport, base, policy, slog.New(slog.NewTextHandler(io.Discard, nil)))
+			adapter, err := newMockAdapter(t, ctx, base, policy, slog.New(slog.NewTextHandler(io.Discard, nil)))
 			if err != nil {
 				t.Fatal("create compatible model adapter:", err)
 			}
@@ -285,34 +283,32 @@ func TestCompatibleProtocolFailuresDexIntegration(t *testing.T) {
 	} {
 		for _, test := range []struct {
 			name     string
-			fault    mockmodel.WireFault
+			fault    mockmodel.WireFaultForTest
 			rejected bool
 		}{
-			{"plaintext", mockmodel.WireFaultPlaintext, true},
-			{"missing-replay", mockmodel.WireFaultMissingReplay, true},
-			{"oversized-replay", mockmodel.WireFaultOversizedReplay, true},
-			{"multiline-oversized", mockmodel.WireFaultMultilineOversized, true},
-			{"credit-exhausted", mockmodel.WireFaultCreditExhausted, true},
-			{"context-rejected", mockmodel.WireFaultContextRejected, true},
-			{"stream-rejected", mockmodel.WireFaultStreamRejected, true},
-			{"error-event", mockmodel.WireFaultChatRejected, true},
-			{"authentication", mockmodel.WireFaultHTTP401, true},
-			{"refusal-with-tools", mockmodel.WireFaultRefusalWithTools, true},
-			{"truncated", mockmodel.WireFaultTruncated, false},
-			{"rate-limit", mockmodel.WireFaultHTTP429, false},
-			{"overload", mockmodel.WireFaultHTTP503, false},
+			{"plaintext", mockmodel.WireFaultPlaintextForTest, true},
+			{"missing-replay", mockmodel.WireFaultMissingReplayForTest, true},
+			{"oversized-replay", mockmodel.WireFaultOversizedReplayForTest, true},
+			{"multiline-oversized", mockmodel.WireFaultMultilineOversizedForTest, true},
+			{"credit-exhausted", mockmodel.WireFaultCreditExhaustedForTest, true},
+			{"context-rejected", mockmodel.WireFaultContextRejectedForTest, true},
+			{"stream-rejected", mockmodel.WireFaultStreamRejectedForTest, true},
+			{"error-event", mockmodel.WireFaultChatRejectedForTest, true},
+			{"authentication", mockmodel.WireFaultHTTP401ForTest, true},
+			{"refusal-with-tools", mockmodel.WireFaultRefusalWithToolsForTest, true},
+			{"truncated", mockmodel.WireFaultTruncatedForTest, false},
+			{"rate-limit", mockmodel.WireFaultHTTP429ForTest, false},
+			{"overload", mockmodel.WireFaultHTTP503ForTest, false},
 		} {
 			t.Run(policy.Provider.String()+"/"+test.name, func(t *testing.T) {
 				ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 				defer cancel()
-				base, stop, err := mockmodel.Start(ctx, slog.New(slog.NewTextHandler(io.Discard, nil)), test.fault)
+				base, stop, err := mockmodel.StartForTest(ctx, slog.New(slog.NewTextHandler(io.Discard, nil)), test.fault)
 				if err != nil {
 					t.Fatal("start approved model fixture:", err)
 				}
 				defer stop()
-				transport := modelprovider.NewProviderHTTPClient()
-				defer transport.CloseIdleConnections()
-				adapter, err := openaicompat.NewMock(transport, base, policy, slog.New(slog.NewTextHandler(io.Discard, nil)))
+				adapter, err := newMockAdapter(t, ctx, base, policy, slog.New(slog.NewTextHandler(io.Discard, nil)))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -344,13 +340,13 @@ func TestCompatibleProtocolFailuresDexIntegration(t *testing.T) {
 					if err := result.DecodeSingleOutput(&rejection); err != nil || rejection.Code == "" || rejection.ReasoningWrites != 0 {
 						t.Fatal("missing typed rejection outcome")
 					}
-					if test.fault == mockmodel.WireFaultCreditExhausted && rejection.Code != conversation.ProviderCreditExhausted.Rejected(429).Code {
+					if test.fault == mockmodel.WireFaultCreditExhaustedForTest && rejection.Code != conversation.ProviderCreditExhausted.Rejected(429).Code {
 						t.Fatal("quota failure was not classified as exhausted credit")
 					}
 					if flow.returnedFailures.Load() != 1 {
 						t.Fatal("deterministic rejection was retried")
 					}
-					if test.fault == mockmodel.WireFaultMultilineOversized && rejection.Code != "response_too_large" {
+					if test.fault == mockmodel.WireFaultMultilineOversizedForTest && rejection.Code != "response_too_large" {
 						t.Fatal("multiline event bypassed the aggregate event budget")
 					}
 				} else if result.Status != dex.FlowFailed {
@@ -392,4 +388,20 @@ func compatibleProbeModel(policy openaicompat.Policy) conversation.Model {
 	default:
 		panic("unsupported protocol fixture provider")
 	}
+}
+
+// newMockAdapter uses the same validated, authority-bound transport as the runtime.
+func newMockAdapter(t testing.TB, ctx context.Context, base string, policy openaicompat.Policy, logger *slog.Logger) (*openaicompat.Client, error) {
+	t.Helper()
+	config := modelendpoint.Config{AllowLocalLoopback: true}
+	if err := config.Validate(true); err != nil {
+		return nil, err
+	}
+	pool := modelendpoint.NewPool(config)
+	t.Cleanup(func() { pool.Close() })
+	client, err := pool.Client(ctx, base)
+	if err != nil {
+		return nil, err
+	}
+	return openaicompat.New(client, strings.TrimRight(base, "/")+"/v1", policy, true, logger)
 }

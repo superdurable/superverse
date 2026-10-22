@@ -18,10 +18,15 @@ import (
 type Model string
 
 const (
-	ModelOpus55   Model = "anthropic/claude-opus-5-5"
-	ModelSonnet55 Model = "anthropic/claude-sonnet-5-5"
-	ModelHaiku45  Model = "anthropic/claude-haiku-4-5"
-	ModelMock     Model = "mock"
+	ModelAnthropicCustom Model = "anthropic/custom"
+	ModelOpenAICustom    Model = "openai/custom"
+	ModelXAICustom       Model = "xai/custom"
+	ModelGeminiCustom    Model = "gemini/custom"
+	ModelQwenCustom      Model = "qwen/custom"
+	ModelOpus55          Model = "anthropic/claude-opus-5-5"
+	ModelSonnet55        Model = "anthropic/claude-sonnet-5-5"
+	ModelHaiku45         Model = "anthropic/claude-haiku-4-5"
+	ModelMock            Model = "mock"
 	// Internal fixture transports: never mapped to a public AgentModel.
 	ModelMockResponses   Model = "mock/openai-responses"
 	ModelMockChat        Model = "mock/openai-chat"
@@ -100,6 +105,11 @@ type ModelDetails struct {
 }
 
 var models = map[Model]ModelDetails{
+	ModelAnthropicCustom: {ProviderAnthropic, "custom", "Custom Messages endpoint"},
+	ModelOpenAICustom:    {ProviderOpenAI, "custom", "Custom Responses endpoint"},
+	ModelXAICustom:       {ProviderXAI, "custom", "Custom Responses endpoint"},
+	ModelGeminiCustom:    {ProviderGemini, "custom", "Custom Chat endpoint"},
+	ModelQwenCustom:      {ProviderQwen, "custom", "Custom Chat endpoint"},
 	ModelOpus55:          {ProviderAnthropic, "claude-opus-5-5", "Claude Opus 5.5"},
 	ModelSonnet55:        {ProviderAnthropic, "claude-sonnet-5-5", "Claude Sonnet 5.5"},
 	ModelHaiku45:         {ProviderAnthropic, "claude-haiku-4-5", "Claude Haiku 4.5"},
@@ -122,7 +132,7 @@ var models = map[Model]ModelDetails{
 
 // Models returns a copy of the catalog identities, in stable picker order.
 func Models() []Model {
-	return []Model{ModelOpus55, ModelSonnet55, ModelHaiku45, ModelMock, ModelGPT6Astra, ModelDeepSeekFlash, ModelGrok47, ModelMuseWonder10, ModelGemini4Argon, ModelKimiK3, ModelGLM53, ModelQwen38Max, ModelMiniMaxM31Flash, ModelKimiK26, ModelGLM52, ModelMiniMaxM3}
+	return []Model{ModelOpus55, ModelSonnet55, ModelHaiku45, ModelMock, ModelGPT6Astra, ModelDeepSeekFlash, ModelGrok47, ModelMuseWonder10, ModelGemini4Argon, ModelKimiK3, ModelGLM53, ModelQwen38Max, ModelMiniMaxM31Flash, ModelKimiK26, ModelGLM52, ModelMiniMaxM3, ModelAnthropicCustom, ModelOpenAICustom, ModelXAICustom, ModelGeminiCustom, ModelQwenCustom}
 }
 
 // ExecutionModels includes internal fixture transports as well as public catalog identities.
@@ -135,6 +145,36 @@ func (model Model) Details() ModelDetails {
 		panic(fmt.Sprintf("no catalog identity for %q", model))
 	}
 	return details
+}
+
+// IsCustom identifies an explicit conservative wire-family selection.
+func (model Model) IsCustom() bool {
+	switch model {
+	case ModelAnthropicCustom, ModelOpenAICustom, ModelXAICustom, ModelGeminiCustom, ModelQwenCustom:
+		return true
+	default:
+		return false
+	}
+}
+
+// CredentialContextNotice is the visible boundary of retired endpoint context.
+const CredentialContextNotice = "The model endpoint or key changed. Earlier context continues as text."
+
+// EndpointSelection is a frozen non-secret historical execution choice.
+// Current configuration belongs only to ModelKeyInfo/<provider>.
+type EndpointSelection struct {
+	BaseURL              string `json:"base_url,omitempty"`
+	CustomModelID        string `json:"custom_model_id,omitempty"`
+	EffectiveModelID     string `json:"effective_model_id,omitempty"`
+	CustomProfileVersion uint32 `json:"custom_profile_version,omitempty"`
+}
+
+// APIModelID returns a request-local ID without altering the catalog identity.
+func (request ModelRequest) APIModelID() string {
+	if request.Model.IsCustom() {
+		return request.Endpoint.EffectiveModelID
+	}
+	return request.Model.ProviderModel()
 }
 
 // IsMock identifies the approved scenario engine independently of its wire mode.
@@ -269,10 +309,11 @@ type SegmentPrompts struct {
 // ModelRequest is one stateless model call.
 type ModelRequest struct {
 	// APIKey is transient request authentication and must never be serialized.
-	APIKey  string `json:"-"`
-	Model   Model
-	Effort  Effort
-	Prompts SegmentPrompts
+	APIKey   string `json:"-"`
+	Endpoint EndpointSelection
+	Model    Model
+	Effort   Effort
+	Prompts  SegmentPrompts
 	// Messages are the assembled segment; see AssembleRequest.
 	Messages []RequestMessage
 	// ToolChoiceNone forbids tool calls; only a compaction retry sets it.
@@ -390,6 +431,9 @@ var (
 	// ModelUnavailable refuses a catalog model whose execution boundary is unavailable.
 	ModelUnavailable = ServerRejection{code: "model_unavailable",
 		hint: "This model is unavailable. Select another model for the Session, then continue."}
+	// ProviderModelNotFound refuses a model unavailable at the selected endpoint.
+	ProviderModelNotFound = ModelRejectionReason{code: "provider_model_not_found",
+		hint: "The endpoint does not offer this model. Select or enter another model ID."}
 	// ProviderRequestRejected describes deterministic provider request rejection.
 	ProviderRequestRejected = ModelRejectionReason{code: "provider_rejected",
 		hint: "The provider rejected the request. Correct the model configuration or request before continuing."}

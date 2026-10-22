@@ -58,8 +58,11 @@ func checkModelCatalog(byPath map[string]*packages.Package) []problem {
 		if sourceErr != nil || source.Scheme != "https" || source.Host == "" || dateErr != nil || profile.ContextWindow < profile.HardLimit {
 			problems = append(problems, problem{at, fmt.Sprintf("invalid dated profile source or context budget for %q", model)})
 		}
-		if config.Availability(model).Selectable() && (!capability.SupportsImages || !capability.SupportsParallelTools) {
+		if !model.IsCustom() && config.Availability(model).Selectable() && (!capability.SupportsImages || !capability.SupportsParallelTools) {
 			problems = append(problems, problem{at, fmt.Sprintf("selectable model capability regression for %q", model)})
+		}
+		if model.IsCustom() && (profile.ContextWindow != 32768 || profile.MaximumOutputTokens() != 4096 || profile.CompactionThreshold(200000) != 22528 || profile.HardLimit != 24576 || capability.SupportsImages || capability.SupportsParallelTools || capability.Replay != conversation.ReplayNonThinking || profile.Effort) {
+			problems = append(problems, problem{at, fmt.Sprintf("custom profile capability regression for %q", model)})
 		}
 		if capability.Effort.String() == "" || capability.Thinking.String() == "" || capability.StrictSchema.String() == "" || capability.PromptCache.String() == "" || capability.Fallback.String() == "" || capability.MidSystem.String() == "" || capability.Stream.String() == "" || capability.Replay.String() == "" || profile.Availability.State().String() == "" {
 			problems = append(problems, problem{at, fmt.Sprintf("incomplete capability policy for %q", model)})

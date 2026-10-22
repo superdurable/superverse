@@ -9,7 +9,10 @@
 package openaicompat
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
+	"net"
 	"net/http"
 
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
@@ -112,4 +115,44 @@ func providerFailure(raw json.RawMessage, status int) error {
 		return rejection
 	}
 	return &retryableError{status: status, code: code}
+}
+
+// CredentialProbeFailure classifies bounded status metadata without retaining provider bodies.
+func CredentialProbeFailure(status int) error {
+	switch status {
+	case http.StatusUnauthorized, http.StatusForbidden:
+		rejected := conversation.InvalidProviderKey.Rejected()
+		rejected.Status = status
+		return rejected
+	case http.StatusNotFound:
+		return conversation.ProviderModelNotFound.Rejected(status)
+	default:
+		failure := providerFailure(nil, status)
+		if _, retryable := failure.(*retryableError); retryable {
+			return &CredentialProbeError{Reason: "provider_http_retryable", Status: status}
+		}
+		return failure
+	}
+}
+
+// CredentialProbeError contains only a closed reason and bounded HTTP status.
+// It never retains the request, endpoint, credential or provider response text.
+type CredentialProbeError struct {
+	Reason string
+	Status int
+}
+
+func (failure *CredentialProbeError) Error() string { return failure.Reason }
+
+// CredentialProbeTransportFailure classifies an I/O failure without retaining it.
+func CredentialProbeTransportFailure(err error) error {
+	reason := "provider_transport_failed"
+	var timeout net.Error
+	if errors.Is(err, context.DeadlineExceeded) || errors.As(err, &timeout) && timeout.Timeout() {
+		reason = "provider_transport_timeout"
+	}
+	if errors.Is(err, context.Canceled) {
+		reason = "provider_request_canceled"
+	}
+	return &CredentialProbeError{Reason: reason}
 }

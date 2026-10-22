@@ -23,7 +23,6 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/flowid"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
-	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/mockmodel"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/openaicompat"
 )
@@ -115,7 +114,7 @@ func (step RejectCorruptReplay) Execute(ctx dex.Context, input string) (*dex.Ste
 	if step.flow.corruption == replayWrongRole {
 		role = conversation.EntryRoleUser
 	}
-	request := conversation.ModelRequest{Model: compatibleProbeModel(step.flow.policy), APIKey: mockmodel.APIKey, Prompts: agentloop.SessionPromptFor(conversation.ModelMock).Prompts,
+	request := conversation.ModelRequest{Model: compatibleProbeModel(step.flow.policy), APIKey: mockmodel.APIKeyForTest, Prompts: agentloop.SessionPromptFor(conversation.ModelMock).Prompts,
 		Messages: []conversation.RequestMessage{{Role: entry.Role, Blocks: entry.Blocks, CacheAnchor: -1}, {Role: role, Blocks: reply.Blocks, CacheAnchor: -1}}}
 	_, err = step.flow.client.Complete(ctx, request)
 	var rejected *conversation.ModelRejectedError
@@ -136,14 +135,12 @@ func TestCompatibleReplayBindingsDexIntegration(t *testing.T) {
 			t.Run(policy.Provider.String()+"/"+string(corruption), func(t *testing.T) {
 				ctx, cancel := context.WithTimeout(t.Context(), time.Minute)
 				defer cancel()
-				base, stop, err := mockmodel.Start(ctx, slog.New(slog.NewTextHandler(io.Discard, nil)))
+				base, stop, err := mockmodel.StartForTest(ctx, slog.New(slog.NewTextHandler(io.Discard, nil)))
 				if err != nil {
 					t.Fatal("start approved model:", err)
 				}
 				defer stop()
-				transport := modelprovider.NewProviderHTTPClient()
-				defer transport.CloseIdleConnections()
-				adapter, err := openaicompat.NewMock(transport, base, policy, slog.New(slog.NewTextHandler(io.Discard, nil)))
+				adapter, err := newMockAdapter(t, ctx, base, policy, slog.New(slog.NewTextHandler(io.Discard, nil)))
 				if err != nil {
 					t.Fatal("create adapter:", err)
 				}

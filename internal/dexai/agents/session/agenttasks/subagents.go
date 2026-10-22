@@ -446,14 +446,15 @@ func (call SubagentCall) Fingerprint(sessionFlowID, agentID string) string {
 // its fingerprint, the snapshot its worktree starts from, and the Session's
 // model, HEAD and accepted lease at that moment, which the subagent keeps.
 type SubagentStart struct {
-	CredentialRevision uint64             `json:"credential_revision,omitempty"`
-	Identity           SubagentIdentity   `json:"identity"`
-	Call               SubagentCall       `json:"call"`
-	Fingerprint        string             `json:"fingerprint"`
-	BaseCommit         string             `json:"base_commit"`
-	Model              conversation.Model `json:"model"`
-	HeadCommit         string             `json:"head_commit,omitempty"`
-	Lease              workspace.Lease    `json:"lease"`
+	Endpoint           conversation.EndpointSelection `json:"endpoint,omitempty"`
+	CredentialRevision uint64                         `json:"credential_revision,omitempty"`
+	Identity           SubagentIdentity               `json:"identity"`
+	Call               SubagentCall                   `json:"call"`
+	Fingerprint        string                         `json:"fingerprint"`
+	BaseCommit         string                         `json:"base_commit"`
+	Model              conversation.Model             `json:"model"`
+	HeadCommit         string                         `json:"head_commit,omitempty"`
+	Lease              workspace.Lease                `json:"lease"`
 	// Branch is the library branch of a connector_develop subagent, whose
 	// BaseCommit is the branch's head it started from.
 	Branch string `json:"branch,omitempty"`

@@ -28,6 +28,11 @@ const AGENT_MODEL_LITERALS = {
   AGENT_MODEL_KIMI_K2_6: "kimi-k2.6",
   AGENT_MODEL_GLM_5_2: "glm-5.2",
   AGENT_MODEL_MINIMAX_M3: "minimax-m3",
+  AGENT_MODEL_ANTHROPIC_CUSTOM: "anthropic/custom",
+  AGENT_MODEL_OPENAI_CUSTOM: "openai/custom",
+  AGENT_MODEL_XAI_CUSTOM: "xai/custom",
+  AGENT_MODEL_GEMINI_CUSTOM: "gemini/custom",
+  AGENT_MODEL_QWEN_CUSTOM: "qwen/custom",
 } as const satisfies Record<Exclude<AgentModel__Output, "AGENT_MODEL_UNSPECIFIED">, string>;
 
 type AgentModelName = keyof typeof AGENT_MODEL_LITERALS;
@@ -60,6 +65,11 @@ const modelProviders = {
   AGENT_MODEL_KIMI_K2_6: ModelProvider.MODEL_PROVIDER_KIMI,
   AGENT_MODEL_GLM_5_2: ModelProvider.MODEL_PROVIDER_GLM,
   AGENT_MODEL_MINIMAX_M3: ModelProvider.MODEL_PROVIDER_MINIMAX,
+  AGENT_MODEL_ANTHROPIC_CUSTOM: ModelProvider.MODEL_PROVIDER_ANTHROPIC,
+  AGENT_MODEL_OPENAI_CUSTOM: ModelProvider.MODEL_PROVIDER_OPENAI,
+  AGENT_MODEL_XAI_CUSTOM: ModelProvider.MODEL_PROVIDER_XAI,
+  AGENT_MODEL_GEMINI_CUSTOM: ModelProvider.MODEL_PROVIDER_GEMINI,
+  AGENT_MODEL_QWEN_CUSTOM: ModelProvider.MODEL_PROVIDER_QWEN,
 } as const satisfies Record<AgentModelName, ModelProvider>;
 
 /** The explicit credential namespace of a selected catalog model; mock keeps the existing key form. */

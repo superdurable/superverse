@@ -309,7 +309,7 @@ func (s *agentServer) ListAgentModels(ctx context.Context, in *pb.ListAgentModel
 			continue
 		}
 		details := model.Details()
-		out.Models = append(out.Models, &pb.AgentModelChoice{Model: agentModel(model), Provider: boundary.Enum[pb.ModelProvider](details.Provider.String()), Label: details.Label, ProviderName: details.Provider.DisplayName(), KeyHint: details.Provider.KeyHint(), MockEndpoint: s.models.Providers.MockEndpoint && details.Provider != conversation.ProviderAnthropic})
+		out.Models = append(out.Models, &pb.AgentModelChoice{Model: agentModel(model), Provider: boundary.Enum[pb.ModelProvider](details.Provider.String()), Label: details.Label, ProviderName: details.Provider.DisplayName(), KeyHint: details.Provider.KeyHint(), MockEndpoint: !model.IsCustom() && s.models.Providers.MockEndpoint && details.Provider != conversation.ProviderAnthropic})
 	}
 	return out, nil
 }
@@ -431,6 +431,11 @@ var sessionModels = map[pb.AgentModel]conversation.Model{
 	pb.AgentModel_AGENT_MODEL_KIMI_K2_6:          conversation.ModelKimiK26,
 	pb.AgentModel_AGENT_MODEL_GLM_5_2:            conversation.ModelGLM52,
 	pb.AgentModel_AGENT_MODEL_MINIMAX_M3:         conversation.ModelMiniMaxM3,
+	pb.AgentModel_AGENT_MODEL_ANTHROPIC_CUSTOM:   conversation.ModelAnthropicCustom,
+	pb.AgentModel_AGENT_MODEL_OPENAI_CUSTOM:      conversation.ModelOpenAICustom,
+	pb.AgentModel_AGENT_MODEL_XAI_CUSTOM:         conversation.ModelXAICustom,
+	pb.AgentModel_AGENT_MODEL_GEMINI_CUSTOM:      conversation.ModelGeminiCustom,
+	pb.AgentModel_AGENT_MODEL_QWEN_CUSTOM:        conversation.ModelQwenCustom,
 	pb.AgentModel_AGENT_MODEL_OPUS_5_5:           conversation.ModelOpus55,
 	pb.AgentModel_AGENT_MODEL_SONNET_5_5:         conversation.ModelSonnet55,
 	pb.AgentModel_AGENT_MODEL_HAIKU_4_5:          conversation.ModelHaiku45,

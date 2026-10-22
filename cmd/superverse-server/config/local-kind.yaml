@@ -30,8 +30,10 @@ studio:
 
 agent:
   providers:
-    enabled: [openai, xai, gemini]
+    enabled: [anthropic, openai, xai, gemini, qwen]
     mockEndpoint: true
+    customEndpoints: true
+    mockListen: 127.0.0.1:18083
   modelEndpoints:
     allowLocalLoopback: true
   # New Sessions run the mock model. Any account may select Claude after entering

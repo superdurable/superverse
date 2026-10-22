@@ -15,7 +15,9 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/superdurable/dex/sdk-go/dex"
@@ -89,6 +91,17 @@ func (client *messagesClient) complete(ctx context.Context, request conversation
 	} else {
 		options = append(options, option.WithAPIKey(key))
 	}
+	if request.Model.IsCustom() {
+		root, err := url.Parse(baseURL)
+		if err != nil {
+			return conversation.ModelReply{}, errors.New("invalid model endpoint")
+		}
+		options = append(options, option.WithMiddleware(func(call *http.Request, next option.MiddlewareNext) (*http.Response, error) {
+			call.URL.Path = strings.TrimRight(root.Path, "/") + "/messages"
+			call.URL.RawPath, call.URL.RawQuery = "", ""
+			return next(call)
+		}))
+	}
 	sdk := anthropic.NewClient(options...)
 	var response *http.Response
 	stream := sdk.Beta.Messages.NewStreaming(ctx, params, option.WithResponseInto(&response))
@@ -107,14 +120,21 @@ func (client *messagesClient) complete(ctx context.Context, request conversation
 // Frozen Claude tool schemas retain their JSON schema, without Claude flags.
 func compatibleMessageParams(profile ModelProfile, request conversation.ModelRequest) (anthropic.BetaMessageNewParams, error) {
 	body := map[string]any{
-		"model": request.Model.ProviderModel(), "max_tokens": profile.maxTokens,
+		"model": request.APIModelID(), "max_tokens": profile.maxTokens,
 		"system":   []any{map[string]any{"type": conversation.BlockTypeText.String(), "text": request.Prompts.System}},
 		"messages": []any{}, "tools": []any{}, "tool_choice": map[string]any{"type": "auto"},
+	}
+	if request.Model.IsCustom() {
+		body["tool_choice"] = map[string]any{"type": "auto", "disable_parallel_tool_use": true}
 	}
 	if request.ToolChoiceNone {
 		body["tool_choice"] = map[string]any{"type": "none"}
 	}
 	switch profile.Capabilities.messagesThinking {
+	case (protocolMode{}):
+		if !request.Model.IsCustom() {
+			return anthropic.BetaMessageNewParams{}, conversation.ModelUnavailable.Rejected()
+		}
 	case thinkingDisabled:
 		body["thinking"] = map[string]any{"type": "disabled"}
 	case thinkingAdaptive:

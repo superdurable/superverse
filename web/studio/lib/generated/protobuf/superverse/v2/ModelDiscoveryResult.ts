@@ -1,0 +1,20 @@
+// Original file: api/superverse/v2/superverse.proto
+
+export const ModelDiscoveryResult = {
+  MODEL_DISCOVERY_RESULT_UNSPECIFIED: 'MODEL_DISCOVERY_RESULT_UNSPECIFIED',
+  MODEL_DISCOVERY_RESULT_SUPPORTED: 'MODEL_DISCOVERY_RESULT_SUPPORTED',
+  MODEL_DISCOVERY_RESULT_UNSUPPORTED: 'MODEL_DISCOVERY_RESULT_UNSUPPORTED',
+  MODEL_DISCOVERY_RESULT_EMPTY: 'MODEL_DISCOVERY_RESULT_EMPTY',
+} as const;
+
+export type ModelDiscoveryResult =
+  | 'MODEL_DISCOVERY_RESULT_UNSPECIFIED'
+  | 0
+  | 'MODEL_DISCOVERY_RESULT_SUPPORTED'
+  | 1
+  | 'MODEL_DISCOVERY_RESULT_UNSUPPORTED'
+  | 2
+  | 'MODEL_DISCOVERY_RESULT_EMPTY'
+  | 3
+
+export type ModelDiscoveryResult__Output = typeof ModelDiscoveryResult[keyof typeof ModelDiscoveryResult]

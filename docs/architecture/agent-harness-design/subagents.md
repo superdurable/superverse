@@ -644,3 +644,9 @@ cannot copy a different provider's key. Replacement/deletion stops and clears
 only children of that provider, while Project deletion clears every provider.
 Old retained records lacking a model field belong to the former Anthropic-only
 credential boundary; source and child physical secret keys remain unchanged.
+
+Custom endpoint children freeze the source provider revision and non-secret
+endpoint/model/profile selection in Start and Config. Each child segment and
+compaction uses that frozen selection. The copied secret remains revision/key
+in the existing hard-delete Attribute. Replacing the source provider credential
+stops and clears its child copies through the existing provider-scoped cleanup.

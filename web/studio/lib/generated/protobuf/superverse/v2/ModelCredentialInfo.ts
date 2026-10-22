@@ -15,6 +15,10 @@ export interface ModelCredentialInfo {
   'pendingRevision'?: (number | string | Long);
   'pendingDelete'?: (boolean);
   'provider'?: (_superverse_v2_ModelProvider);
+  'baseUrl'?: (string);
+  'customModelId'?: (string);
+  'effectiveModelId'?: (string);
+  'customProfileVersion'?: (number);
 }
 
 export interface ModelCredentialInfo__Output {
@@ -27,4 +31,8 @@ export interface ModelCredentialInfo__Output {
   'pendingRevision': (string);
   'pendingDelete': (boolean);
   'provider': (_superverse_v2_ModelProvider__Output);
+  'baseUrl': (string);
+  'customModelId': (string);
+  'effectiveModelId': (string);
+  'customProfileVersion': (number);
 }

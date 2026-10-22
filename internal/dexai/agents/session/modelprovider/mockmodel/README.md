@@ -5,7 +5,7 @@ Purpose: Serves one ordered mock model scenario engine over Messages, Responses 
 
 Callers: `cmd/tools/check-mock-scenarios`, `internal/dexai/api` and `internal/dexai/bootstrap` import this package.
 
-Dependencies: it imports `internal/comm`, `internal/dexai/agents/remoteexec`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/agenttasks`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/session/modelprovider`, `internal/dexai/agents/session/modelprovider/openaicompat`, `internal/dexai/agents/session/toolinput` and `internal/dexai/app/apptemplate`.
+Dependencies: it imports `internal/comm`, `internal/comm/modelendpoint`, `internal/dexai/agents/remoteexec`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/agenttasks`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/session/modelprovider`, `internal/dexai/agents/session/modelprovider/openaicompat`, `internal/dexai/agents/session/toolinput` and `internal/dexai/app/apptemplate`.
 
 ```mermaid
 flowchart LR
@@ -14,14 +14,15 @@ flowchart LR
   c1["internal/dexai/api"] --> self
   c2["internal/dexai/bootstrap"] --> self
   self --> d0["internal/comm"]
-  self --> d1["internal/dexai/agents/remoteexec"]
-  self --> d2["internal/dexai/agents/session/agentloop"]
-  self --> d3["internal/dexai/agents/session/agenttasks"]
-  self --> d4["internal/dexai/agents/session/conversation"]
-  self --> d5["internal/dexai/agents/session/modelprovider"]
-  self --> d6["internal/dexai/agents/session/modelprovider/openaicompat"]
-  self --> d7["internal/dexai/agents/session/toolinput"]
-  self --> d8["internal/dexai/app/apptemplate"]
+  self --> d1["internal/comm/modelendpoint"]
+  self --> d2["internal/dexai/agents/remoteexec"]
+  self --> d3["internal/dexai/agents/session/agentloop"]
+  self --> d4["internal/dexai/agents/session/agenttasks"]
+  self --> d5["internal/dexai/agents/session/conversation"]
+  self --> d6["internal/dexai/agents/session/modelprovider"]
+  self --> d7["internal/dexai/agents/session/modelprovider/openaicompat"]
+  self --> d8["internal/dexai/agents/session/toolinput"]
+  self --> d9["internal/dexai/app/apptemplate"]
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 

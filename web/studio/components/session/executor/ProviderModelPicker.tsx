@@ -80,6 +80,7 @@ export function ProviderModelPicker({
           providerName={selected.providerName}
           keyHint={selected.keyHint}
           mockEndpoint={selected.mockEndpoint}
+          allowCustom={choices.some((choice) => choice.model.endsWith("_CUSTOM"))}
         />
       )}
       {choices.map((option) => {

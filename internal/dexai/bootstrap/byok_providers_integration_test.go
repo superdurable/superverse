@@ -106,7 +106,7 @@ func TestProviderDNSOutageStartupDexIntegration(t *testing.T) {
 	}
 	// Supply the configured model transport directly, without starting a local endpoint.
 	config.mockModel = false
-	config.agent.Mock = &modelprovider.MockClientConfig{ClaudeClientConfig: modelprovider.ClaudeClientConfig{APIKey: mockmodel.APIKey, BaseURL: "https://provider.invalid"}}
+	config.agent.Mock = &modelprovider.MockClientConfig{ClaudeClientConfig: modelprovider.ClaudeClientConfig{APIKey: mockmodel.APIKeyForTest, BaseURL: "https://provider.invalid"}}
 	config.providers = modelprovider.ProviderConfig{Enabled: []conversation.Provider{conversation.ProviderOpenAI}, MockEndpoint: true}
 	config.blobCache.Dir = t.TempDir()
 	config.rpcCoverageFile = ""
@@ -136,13 +136,13 @@ func TestProviderDNSOutageStartupDexIntegration(t *testing.T) {
 	if status.Code(err) != codes.Unauthenticated {
 		t.Fatal("composed server did not serve authenticated API:", err)
 	}
-	runtime, err := modelprovider.NewCompatibleProviders(ctx, config.providers, config.modelEndpoints, config.agent.Mock.BaseURL, logger)
+	runtime, err := modelprovider.NewCompatibleProviders(ctx, config.providers, config.modelEndpoints, config.agent.Mock.BaseURL, logger, "")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer runtime.Close()
 	var dns *net.DNSError
-	if err := runtime.ValidateCredential(ctx, conversation.ProviderOpenAI, mockmodel.APIKey); !errors.As(err, &dns) {
+	if err := runtime.ValidateCredential(ctx, conversation.ProviderOpenAI, mockmodel.APIKeyForTest); !errors.As(err, &dns) {
 		t.Fatal("provider call must fail closed at DNS dial:", err)
 	}
 }

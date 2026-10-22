@@ -128,10 +128,16 @@ Readiness waits for every queue's acknowledged registration. A permanent rejecti
 
 ### `agent.providers` and `agent.modelEndpoints`
 
+The server-owned built-in mock has an exact-origin client even for hosted
+administrator mock Sessions; this does not enable loopback for any user or
+catalog endpoint, and hosted `modelEndpoints.allowLocalLoopback` stays false.
+
 | Key | Meaning | Default | Rule |
 | --- | --- | --- | --- |
-| `providers.enabled` | Additional usable provider identities | `[]` | Unique values from `openai`, `xai`, `gemini`; each uses its reviewed flagship profile. Unsupported provider names are refused. |
+| `providers.enabled` | Additional usable provider identities | `[]` | Unique values from `anthropic`, `openai`, `xai`, `gemini`, `qwen`. Custom profiles follow this list; reviewed OpenAI/xAI/Gemini flagships retain their existing availability. Unsupported provider names are refused. |
 | `providers.mockEndpoint` | Use the owned scenario endpoint for those compatible profiles | `false` | Requires Local Native/Kind, `agent.mockModel` and `modelEndpoints.allowLocalLoopback`; the local profiles set it explicitly. |
+| `providers.customEndpoints` | Serve custom discovery/inference fixtures on the owned mock listener | `false` | Requires Local Native/Kind, `agent.mockModel` and `providers.mockEndpoint`. |
+| `providers.mockListen` | Bind the existing mock listener at a known address | empty (random loopback port) | Only a `127.0.0.1:<port>` address in local lanes with `agent.mockModel`; set only in the two Kind profiles. No additional listener is created. |
 | `modelEndpoints.allowLocalLoopback` | Permit loopback HTTP/HTTPS in the shared endpoint validator | `false` | `Validate` refuses it outside Local Native/Kind. It never permits arbitrary private, link-local or metadata targets. |
 
 Hosted profiles leave additional providers disabled. The authenticated model

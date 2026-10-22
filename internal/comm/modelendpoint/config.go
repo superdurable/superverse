@@ -11,7 +11,9 @@ package modelendpoint
 import (
 	"context"
 	"errors"
+	"net"
 	"net/http"
+	"strings"
 )
 
 // Config is non-secret endpoint policy; the server validates its local capability.
@@ -42,3 +44,28 @@ func (p *Pool) Client(ctx context.Context, baseURL string) (*http.Client, error)
 
 // Close releases idle connections; callers separately bound in-flight requests.
 func (p *Pool) Close() error { p.owned.http.CloseIdleConnections(); return nil }
+
+// CanonicalBaseURL validates user input without performing an outbound request.
+func (p *Pool) CanonicalBaseURL(raw string) (string, error) {
+	base, err := p.owned.policy.validate(raw)
+	if err != nil {
+		return "", err
+	}
+	base.Scheme = strings.ToLower(base.Scheme)
+	host := strings.ToLower(strings.TrimSuffix(base.Hostname(), "."))
+	port := base.Port()
+	if port == "443" && base.Scheme == "https" || port == "80" && base.Scheme == "http" {
+		port = ""
+	}
+	if port != "" {
+		base.Host = net.JoinHostPort(host, port)
+	} else if strings.Contains(host, ":") {
+		base.Host = "[" + host + "]"
+	} else {
+		base.Host = host
+	}
+	return strings.TrimRight(base.String(), "/"), nil
+}
+
+// OpenConnections is bounded per-replica transport occupancy, including idle connections.
+func (p *Pool) OpenConnections() int { return len(p.owned.slots) }

@@ -48,25 +48,6 @@ type Client struct {
 	localMock bool
 }
 
-// NewMock connects the real adapter to the existing loopback scenario engine.
-// Real providers stay unavailable until the separately reviewed BYOK boundary.
-func NewMock(client *http.Client, baseURL string, policy Policy, logger *slog.Logger) (*Client, error) {
-	if client == nil || policy.MaxTokens <= 0 {
-		return nil, errors.New("the adapter requires an owned HTTP client and a positive output budget")
-	}
-	parsed, err := url.Parse(baseURL)
-	if err != nil || parsed.Scheme != "http" || parsed.Hostname() != "127.0.0.1" || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" || parsed.Path != "" && parsed.Path != "/" {
-		return nil, errors.New("the mock provider endpoint must be loopback HTTP")
-	}
-	if policy.WireMode != conversation.OpenAIResponses && policy.WireMode != conversation.OpenAIChatCompletions {
-		return nil, errors.New("the adapter requires an explicit OpenAI wire mode")
-	}
-	if policy.Provider.APIStyle() != policy.WireMode {
-		return nil, errors.New("the mock policy must use the catalog wire mode")
-	}
-	return New(client, strings.TrimRight(baseURL, "/")+"/v1", policy, true, logger)
-}
-
 // New uses an origin-admitted shared HTTP client and the provider's complete API root.
 // localMock controls scenario metadata only; transport policy still admits every URL.
 func New(client *http.Client, baseURL string, policy Policy, localMock bool, logger *slog.Logger) (*Client, error) {

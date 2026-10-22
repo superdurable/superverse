@@ -66,29 +66,6 @@ func newClaudeClient(httpClient *http.Client, config ClaudeClientConfig, logger 
 	return &claudeClient{client: anthropic.NewClient(options...), logger: logger}, nil
 }
 
-// NewProviderHTTPClient is the model provider transport. Redirects are refused
-// so a credential never reaches another origin. It sets no overall timeout: a
-// streamed reply can run for many minutes, and the Step's context bounds it.
-func NewProviderHTTPClient() *http.Client {
-	return &http.Client{
-		Transport: &http.Transport{
-			Proxy:                 http.ProxyFromEnvironment,
-			DialContext:           (&net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
-			ForceAttemptHTTP2:     true,
-			MaxIdleConns:          100,
-			MaxIdleConnsPerHost:   20,
-			MaxConnsPerHost:       64,
-			IdleConnTimeout:       90 * time.Second,
-			TLSHandshakeTimeout:   10 * time.Second,
-			ResponseHeaderTimeout: 2 * time.Minute,
-			ExpectContinueTimeout: time.Second,
-		},
-		CheckRedirect: func(*http.Request, []*http.Request) error {
-			return errors.New("model provider redirects are disabled")
-		},
-	}
-}
-
 // Complete streams one reply of the request's model.
 func (client *claudeClient) Complete(ctx context.Context, request conversation.ModelRequest) (conversation.ModelReply, error) {
 	return client.complete(ctx, messageParams(ProfileOf(request.Model), request), request)
@@ -286,7 +263,7 @@ func providerErrorFields(apiErr *anthropic.Error) (string, string) {
 }
 
 // ValidateCredential performs a bounded one-token official endpoint request before activation.
-func ValidateCredential(ctx context.Context, httpClient *http.Client, key string, model conversation.Model, baseURL string, logger *slog.Logger) error {
+func validateCredential(ctx context.Context, httpClient *http.Client, key string, model conversation.Model, baseURL string, logger *slog.Logger) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	client, err := newClaudeClient(httpClient, ClaudeClientConfig{BaseURL: baseURL}, logger)
@@ -334,4 +311,9 @@ func safeProviderCause(err error) *providerCallCause {
 		}
 	}
 	return result
+}
+
+// ValidateCredentialForTest exposes the official bounded probe to integration diagnostics.
+func ValidateCredentialForTest(ctx context.Context, httpClient *http.Client, key string, model conversation.Model, baseURL string, logger *slog.Logger) error {
+	return validateCredential(ctx, httpClient, key, model, baseURL, logger)
 }

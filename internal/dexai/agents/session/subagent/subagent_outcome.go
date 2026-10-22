@@ -101,11 +101,12 @@ func init() {
 // retried start that carries a fresher lease joins the execution, which keeps
 // the first.
 type startRecord struct {
-	Call        agenttasks.SubagentCall `json:"call"`
-	Fingerprint string                  `json:"fingerprint"`
-	BaseCommit  string                  `json:"base_commit"`
-	Model       conversation.Model      `json:"model"`
-	HeadCommit  string                  `json:"head_commit,omitempty"`
+	Endpoint    conversation.EndpointSelection `json:"endpoint,omitempty"`
+	Call        agenttasks.SubagentCall        `json:"call"`
+	Fingerprint string                         `json:"fingerprint"`
+	BaseCommit  string                         `json:"base_commit"`
+	Model       conversation.Model             `json:"model"`
+	HeadCommit  string                         `json:"head_commit,omitempty"`
 	// Branch is the library branch of a connector_develop subagent.
 	Branch string `json:"branch,omitempty"`
 }
@@ -115,12 +116,13 @@ type startRecord struct {
 // and the Session's HEAD it reports platform reads for. The system prompt and
 // the tool set are frozen in the first segment's prompts.
 type Config struct {
-	Model      conversation.Model      `json:"model"`
-	Kind       agenttasks.SubagentKind `json:"kind"`
-	Effort     conversation.Effort     `json:"effort"`
-	StartedAt  time.Time               `json:"started_at"`
-	Deadline   time.Time               `json:"deadline"`
-	HeadCommit string                  `json:"head_commit,omitempty"`
+	Endpoint   conversation.EndpointSelection `json:"endpoint,omitempty"`
+	Model      conversation.Model             `json:"model"`
+	Kind       agenttasks.SubagentKind        `json:"kind"`
+	Effort     conversation.Effort            `json:"effort"`
+	StartedAt  time.Time                      `json:"started_at"`
+	Deadline   time.Time                      `json:"deadline"`
+	HeadCommit string                         `json:"head_commit,omitempty"`
 }
 
 // Workspace is the subagent's copy of the lease the Session accepted, its
@@ -278,7 +280,7 @@ func startAttributes(start agenttasks.SubagentStart) []dex.InitialAttributeDef {
 	attributes := &dexflow.InitialAttributes{}
 	dexflow.Add(attributes, credentialRevisionAttribute, start.CredentialRevision)
 	dexflow.Add(attributes, identityAttribute, start.Identity)
-	dexflow.Add(attributes, startAttribute, startRecord{Call: start.Call, Fingerprint: start.Fingerprint, BaseCommit: start.BaseCommit, Model: start.Model, HeadCommit: start.HeadCommit,
+	dexflow.Add(attributes, startAttribute, startRecord{Endpoint: start.Endpoint, Call: start.Call, Fingerprint: start.Fingerprint, BaseCommit: start.BaseCommit, Model: start.Model, HeadCommit: start.HeadCommit,
 		Branch: start.Branch})
 	dexflow.Add(attributes, projectIDAttribute, start.Identity.ProjectID)
 	dexflow.Add(attributes, statusAttribute, StatusInitializing.String())

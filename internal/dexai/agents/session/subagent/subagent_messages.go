@@ -118,7 +118,7 @@ func (flow *SubagentFlow) segmentRequest(ctx dex.Context, kind agentloop.ModelCa
 	}
 	profile := modelprovider.ProfileOf(segment.Model)
 	return conversation.ModelRequest{
-		Model: segment.Model, Effort: segment.EffectiveEffort(), Prompts: prompts,
+		Endpoint: segment.Endpoint, Model: segment.Model, Effort: segment.EffectiveEffort(), Prompts: prompts,
 		Messages:       conversation.AssembleRequest(entries, segment.CacheAnchor, profile.RequestShape()),
 		PrefixMismatch: flow.settings.PrefixMismatch, CallID: modelCallID(ctx, kind), ToolTarget: agentloop.ToolTarget,
 		WriteAssistant: discardText, WriteReasoning: discardText, WriteActivity: func(conversation.AgentEvent) error { return nil },
@@ -145,6 +145,7 @@ func openFirstSegment(ctx dex.Context, config Config, repositoryContext, task st
 	first := appendEntry(ctx, entry)
 	prompt := agentloop.SubagentPromptFor(config.Kind, config.Model)
 	segment := agentloop.NewSegmentFor(nil, first, agentloop.SegmentReasonSessionStart, config.Model, prompt, config.Effort, entry.Bytes())
+	segment.Endpoint = config.Endpoint
 	comm.MustDo(contextSegmentAttribute.Set(ctx, segment))
 	comm.MustDo(contextSegmentPromptsAttribute.Set(ctx, segment.PromptsKey(), prompt.Prompts))
 	appendEntry(ctx, conversation.UserMessageEntry(task, nil))
@@ -162,6 +163,7 @@ func openNextSegment(ctx dex.Context, summary, repositoryContext, task string) a
 	first := appendEntry(ctx, entry)
 	prompt := agentloop.SessionPrompt{Prompts: prompts, Digest: previous.PromptDigest, ToolNames: previous.ToolNames}
 	segment := agentloop.NewSegmentFor(&previous, first, agentloop.SegmentReasonCompaction, previous.Model, prompt, previous.Effort, entry.Bytes())
+	segment.Endpoint = comm.Must(configAttribute.Get(ctx)).Endpoint
 	comm.MustDo(contextSegmentAttribute.Set(ctx, segment))
 	comm.MustDo(contextSegmentPromptsAttribute.Set(ctx, segment.PromptsKey(), prompts))
 	comm.MustDo(contextSegmentPromptsAttribute.Delete(ctx, previous.PromptsKey()))

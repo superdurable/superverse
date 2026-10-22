@@ -186,6 +186,9 @@
       "native-e2e",
       "native-integration"
     ],
+    "/superverse.v2.ModelCredentialService/ListModelCredentialModels": [
+      "native-integration"
+    ],
     "/superverse.v2.ModelCredentialService/SetModelCredential": [
       "native-integration"
     ],

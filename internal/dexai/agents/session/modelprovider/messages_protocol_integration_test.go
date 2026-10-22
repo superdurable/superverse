@@ -30,12 +30,12 @@ import (
 // actual HTTP endpoint from a real Dex Worker. They do not claim Session/Sandbox or live-provider acceptance.
 func TestCompatibleMessagesProtocolDexIntegration(t *testing.T) {
 	requireMessagesKeyAdmission(t)
-	baseURL, stop, err := mockmodel.Start(t.Context(), slog.Default())
+	baseURL, stop, err := mockmodel.StartForTest(t.Context(), slog.Default())
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer stop()
-	httpClient := modelprovider.NewProviderHTTPClient()
+	httpClient := modelprovider.NewProviderHTTPClientForTest()
 	defer httpClient.CloseIdleConnections()
 	client := modelprovider.NewMessagesClientForTest(httpClient)
 	harness := newMessagesWireHarness(t, client, baseURL, nil)
@@ -154,7 +154,7 @@ func messagesRequestInput(t *testing.T, model conversation.Model, input string) 
 func joinBlocks(blocks []json.RawMessage) []byte { value, _ := json.Marshal(blocks); return value }
 
 func requireMessagesKeyAdmission(t *testing.T) {
-	httpClient := modelprovider.NewProviderHTTPClient()
+	httpClient := modelprovider.NewProviderHTTPClientForTest()
 	defer httpClient.CloseIdleConnections()
 	client := modelprovider.NewMessagesClientForTest(httpClient)
 	request := messagesRequest(t, conversation.ModelDeepSeekFlash, "inspect-basic")
@@ -165,12 +165,12 @@ func requireMessagesKeyAdmission(t *testing.T) {
 		}
 	}
 	request.Model = conversation.ModelMiniMaxM31Flash
-	_, err := modelprovider.CompleteMessagesKeyForTest(t.Context(), client, request, mockmodel.APIKey)
+	_, err := modelprovider.CompleteMessagesKeyForTest(t.Context(), client, request, mockmodel.APIKeyForTest)
 	if _, ok := errors.AsType[*conversation.ModelRejectedError](err); !ok {
 		t.Fatal("plaintext-required profile admitted")
 	}
 	// A missing mock key never falls back to the platform's Claude key.
-	router, err := modelprovider.NewModelRouter(httpClient, modelprovider.ClaudeClientConfig{}, nil, slog.Default(), compatibleRuntime(t))
+	router, err := modelprovider.NewModelRouter(modelprovider.ClaudeClientConfig{}, nil, slog.Default(), compatibleRuntime(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,12 +182,12 @@ func requireMessagesKeyAdmission(t *testing.T) {
 }
 
 func TestCompatibleMessagesStreamCancellationDexIntegration(t *testing.T) {
-	baseURL, stop, err := mockmodel.Start(t.Context(), slog.Default())
+	baseURL, stop, err := mockmodel.StartForTest(t.Context(), slog.Default())
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer stop()
-	httpClient := modelprovider.NewProviderHTTPClient()
+	httpClient := modelprovider.NewProviderHTTPClientForTest()
 	defer httpClient.CloseIdleConnections()
 	client := modelprovider.NewMessagesClientForTest(httpClient)
 	harness := newMessagesWireHarness(t, client, baseURL, nil)
@@ -201,12 +201,12 @@ func TestCompatibleMessagesStreamCancellationDexIntegration(t *testing.T) {
 }
 
 func TestCompatibleMessagesProtocolFailuresDexIntegration(t *testing.T) {
-	baseURL, stop, err := mockmodel.Start(t.Context(), slog.Default())
+	baseURL, stop, err := mockmodel.StartForTest(t.Context(), slog.Default())
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer stop()
-	httpClient := modelprovider.NewProviderHTTPClient()
+	httpClient := modelprovider.NewProviderHTTPClientForTest()
 	defer httpClient.CloseIdleConnections()
 	client := modelprovider.NewMessagesClientForTest(httpClient)
 	harness := newMessagesWireHarness(t, client, baseURL, nil)
@@ -263,12 +263,12 @@ func TestCompatibleMessagesProtocolFailuresDexIntegration(t *testing.T) {
 }
 
 func TestCompatibleMessagesCompactionDexIntegration(t *testing.T) {
-	baseURL, stop, err := mockmodel.Start(t.Context(), slog.Default())
+	baseURL, stop, err := mockmodel.StartForTest(t.Context(), slog.Default())
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer stop()
-	httpClient := modelprovider.NewProviderHTTPClient()
+	httpClient := modelprovider.NewProviderHTTPClientForTest()
 	defer httpClient.CloseIdleConnections()
 	client := modelprovider.NewMessagesClientForTest(httpClient)
 	harness := newMessagesWireHarness(t, client, baseURL, nil)
@@ -307,14 +307,14 @@ func TestCompatibleMessagesCompactionDexIntegration(t *testing.T) {
 }
 
 func TestMessagesLegacyClaudeReplayDexIntegration(t *testing.T) {
-	baseURL, stop, err := mockmodel.Start(t.Context(), slog.Default())
+	baseURL, stop, err := mockmodel.StartForTest(t.Context(), slog.Default())
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer stop()
-	httpClient := modelprovider.NewProviderHTTPClient()
+	httpClient := modelprovider.NewProviderHTTPClientForTest()
 	defer httpClient.CloseIdleConnections()
-	router, err := modelprovider.NewModelRouter(httpClient, modelprovider.ClaudeClientConfig{}, &modelprovider.MockClientConfig{ClaudeClientConfig: modelprovider.ClaudeClientConfig{APIKey: mockmodel.APIKey, BaseURL: baseURL}}, slog.Default(), compatibleRuntime(t))
+	router, err := modelprovider.NewModelRouter(modelprovider.ClaudeClientConfig{}, &modelprovider.MockClientConfig{ClaudeClientConfig: modelprovider.ClaudeClientConfig{APIKey: mockmodel.APIKeyForTest, BaseURL: baseURL}}, slog.Default(), compatibleRuntime(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -343,20 +343,20 @@ func TestMessagesLegacyClaudeReplayDexIntegration(t *testing.T) {
 
 // An unavailable DNS zone must not prevent constructing the server's shared runtime.
 func TestCompatibleProviderStartupDNSNetworkIntegration(t *testing.T) {
-	runtime, err := modelprovider.NewCompatibleProviders(t.Context(), modelprovider.ProviderConfig{Enabled: []conversation.Provider{conversation.ProviderOpenAI}, MockEndpoint: true}, modelendpoint.Config{}, "https://provider.invalid", slog.Default())
+	runtime, err := modelprovider.NewCompatibleProviders(t.Context(), modelprovider.ProviderConfig{Enabled: []conversation.Provider{conversation.ProviderOpenAI}, MockEndpoint: true}, modelendpoint.Config{}, "https://provider.invalid", slog.Default(), "")
 	if err != nil {
 		t.Fatal("startup must admit syntax without DNS:", err)
 	}
 	defer runtime.Close()
 	var dns *net.DNSError
-	if err := runtime.ValidateCredential(t.Context(), conversation.ProviderOpenAI, mockmodel.APIKey); !errors.As(err, &dns) {
+	if err := runtime.ValidateCredential(t.Context(), conversation.ProviderOpenAI, mockmodel.APIKeyForTest); !errors.As(err, &dns) {
 		t.Fatal("unresolvable provider call must fail at DNS dial:", err)
 	}
 }
 
 func compatibleRuntime(t *testing.T) *modelprovider.CompatibleProviders {
 	t.Helper()
-	runtime, err := modelprovider.NewCompatibleProviders(t.Context(), modelprovider.ProviderConfig{}, modelendpoint.Config{}, "", slog.Default())
+	runtime, err := modelprovider.NewCompatibleProviders(t.Context(), modelprovider.ProviderConfig{}, modelendpoint.Config{AllowLocalLoopback: true}, "", slog.Default(), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -366,7 +366,7 @@ func compatibleRuntime(t *testing.T) *modelprovider.CompatibleProviders {
 
 // Both inference protocols validate the actual admission shape at their HTTP endpoint.
 func TestCompatibleCredentialShapeNetworkIntegration(t *testing.T) {
-	base, stop, err := mockmodel.Start(t.Context(), slog.Default())
+	base, stop, err := mockmodel.StartForTest(t.Context(), slog.Default())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -375,13 +375,13 @@ func TestCompatibleCredentialShapeNetworkIntegration(t *testing.T) {
 	for _, model := range modelprovider.CompatibleModels() {
 		config.Enabled = append(config.Enabled, model.Details().Provider)
 	}
-	runtime, err := modelprovider.NewCompatibleProviders(t.Context(), config, modelendpoint.Config{AllowLocalLoopback: true}, base, slog.Default())
+	runtime, err := modelprovider.NewCompatibleProviders(t.Context(), config, modelendpoint.Config{AllowLocalLoopback: true}, base, slog.Default(), "")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer runtime.Close()
 	for _, model := range modelprovider.CompatibleModels() {
-		if err := runtime.ValidateCredential(t.Context(), model.Details().Provider, mockmodel.APIKey); err != nil {
+		if err := runtime.ValidateCredential(t.Context(), model.Details().Provider, mockmodel.APIKeyForTest); err != nil {
 			t.Fatal(model, err)
 		}
 	}
@@ -400,7 +400,7 @@ func TestCompatibleCredentialShapeNetworkIntegration(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		request.Header.Set("Authorization", "Bearer "+mockmodel.APIKey)
+		request.Header.Set("Authorization", "Bearer "+mockmodel.APIKeyForTest)
 		response, err := http.DefaultClient.Do(request)
 		if err != nil {
 			t.Fatal(err)
@@ -409,5 +409,39 @@ func TestCompatibleCredentialShapeNetworkIntegration(t *testing.T) {
 		if response.StatusCode != http.StatusBadRequest {
 			t.Fatal("malformed credential probe accepted", response.StatusCode)
 		}
+	}
+}
+
+// Hosted administrator mock routing grants no permission to custom endpoints.
+func TestHostedBuiltinMockDexIntegration(t *testing.T) {
+	mock, stop, err := mockmodel.StartBuiltin(t.Context(), slog.Default(), false, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer stop()
+	runtime, err := modelprovider.NewCompatibleProviders(t.Context(), modelprovider.ProviderConfig{}, modelendpoint.Config{AllowLocalLoopback: false}, "", slog.Default(), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer runtime.Close()
+	router, err := modelprovider.NewModelRouter(modelprovider.ClaudeClientConfig{}, mock, slog.Default(), runtime)
+	if err != nil {
+		t.Fatal("hosted-style mock startup:", err)
+	}
+	harness := newMessagesWireHarness(t, nil, mock.BaseURL, router)
+	if _, err := harness.complete(t, t.Context(), messagesRequest(t, conversation.ModelMock, "inspect-basic"), false); err != nil {
+		t.Fatal("built-in mock:", err)
+	}
+	if _, err := runtime.CanonicalEndpoint(mock.BaseURL); err == nil {
+		t.Fatal("custom URL inherited built-in loopback permission")
+	}
+	// The owned client is still authority-bound even when a request URL changes.
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://127.0.0.1:1/v1/models", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response, err := mock.HTTPClient.Do(request); err == nil {
+		response.Body.Close()
+		t.Fatal("built-in client admitted another origin")
 	}
 }

@@ -11,7 +11,9 @@ package modelprovider
 import (
 	"errors"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"net"
 	"slices"
+	"strconv"
 )
 
 // AvailabilityState separates a reviewed identity from a callable implementation.
@@ -148,21 +150,33 @@ func populateCandidateProfiles() {
 // ProviderConfig is operator admission for implemented compatible profiles.
 // Hosted profiles default to no additional providers; local profiles opt in.
 type ProviderConfig struct {
-	Enabled      []conversation.Provider `yaml:"enabled"`
-	MockEndpoint bool                    `yaml:"mockEndpoint"`
+	MockListen      string                  `yaml:"mockListen"`
+	Enabled         []conversation.Provider `yaml:"enabled"`
+	CustomEndpoints bool                    `yaml:"customEndpoints"`
+	MockEndpoint    bool                    `yaml:"mockEndpoint"`
 }
 
 // Validate rejects unsupported/duplicate providers and confines mock routing locally.
 func (config ProviderConfig) Validate(local, mock bool) error {
+	if config.MockListen != "" {
+		host, port, err := net.SplitHostPort(config.MockListen)
+		number, portErr := strconv.Atoi(port)
+		if !local || !mock || err != nil || host != "127.0.0.1" || portErr != nil || number < 1 || number > 65535 {
+			return errors.New("agent.providers.mockListen requires a local mock model and a 127.0.0.1 listener")
+		}
+	}
 	seen := make(map[conversation.Provider]bool, len(config.Enabled))
 	for _, provider := range config.Enabled {
-		if _, supported := compatibleFlagships[provider]; !supported {
+		if _, supported := compatibleFlagships[provider]; !supported && provider != conversation.ProviderAnthropic && provider != conversation.ProviderQwen {
 			return errors.New("agent.providers.enabled contains an unsupported provider")
 		}
 		if seen[provider] {
 			return errors.New("agent.providers.enabled contains a duplicate provider")
 		}
 		seen[provider] = true
+	}
+	if config.CustomEndpoints && (!local || !mock || !config.MockEndpoint) {
+		return errors.New("agent.providers.customEndpoints requires a local mock endpoint")
 	}
 	if config.MockEndpoint && (!local || !mock) {
 		return errors.New("agent.providers.mockEndpoint requires a local lane with agent.mockModel")
@@ -177,7 +191,7 @@ func (config ProviderConfig) Availability(model conversation.Model) ModelAvailab
 	if profile.Availability.Selectable() {
 		return profile.Availability
 	}
-	if compatibleFlagships[model.Details().Provider] == model {
+	if compatibleFlagships[model.Details().Provider] == model || model.IsCustom() {
 		if slices.Contains(config.Enabled, model.Details().Provider) {
 			return ModelAvailability{state: AvailabilityAvailable}
 		}

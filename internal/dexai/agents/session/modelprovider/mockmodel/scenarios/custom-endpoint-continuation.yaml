@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+name: custom-endpoint-continuation
+title: "Custom endpoint retained continuation"
+description: "A fresh continuation after bounded history replay at an executor or credential boundary."
+category: agent_feature
+inputs:
+  - label: "Continue the retained conversation"
+    message: "Continue after the executor or endpoint changed."
+    replies:
+      - text: "The custom endpoint replacement continues with earlier context as text."

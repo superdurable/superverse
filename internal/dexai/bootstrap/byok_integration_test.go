@@ -39,6 +39,7 @@ import (
 	pb "github.com/superdurable/superversev2/gen/superverse/v2"
 	"github.com/superdurable/superversev2/internal/comm/dexflow/dexflowtest"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
+	"github.com/superdurable/superversev2/internal/comm/modelendpoint"
 	"github.com/superdurable/superversev2/internal/comm/platform/postgres"
 	"github.com/superdurable/superversev2/internal/dexai/agents"
 	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
@@ -182,8 +183,13 @@ func TestProjectAnthropicCredentialDexIntegration(t *testing.T) {
 		return err
 	}
 	// Real adapter/HTTP error diagnostics retain the typed cause and safe request ID.
-	validationHTTP := modelprovider.NewProviderHTTPClient()
-	validationErr := modelprovider.ValidateCredential(ctx, validationHTTP, "synthetic-byok-invalid-0000", conversation.ModelHaiku45, modelURL, logger)
+	validationPool := modelendpoint.NewPool(modelendpoint.Config{AllowLocalLoopback: true})
+	defer validationPool.Close()
+	validationHTTP, err := validationPool.Client(ctx, modelURL)
+	if err != nil {
+		t.Fatal("admit credential validation endpoint")
+	}
+	validationErr := modelprovider.ValidateCredentialForTest(ctx, validationHTTP, "synthetic-byok-invalid-0000", conversation.ModelHaiku45, modelURL, logger)
 	validationHTTP.CloseIdleConnections()
 	if _, ok := errors.AsType[*anthropic.Error](validationErr); !ok {
 		t.Fatal("provider rejection lost its typed cause")
@@ -329,8 +335,7 @@ func TestProjectAnthropicCredentialDexIntegration(t *testing.T) {
 	if err = children.WriteModelCredential(ctx, start.Identity, "missing-copy-checkpoint", nil); err != nil {
 		t.Fatal("remove the interrupted child copy")
 	}
-	recovery := &agents.ModelCredentialFlowService{Sessions: sessions, Subagents: children, HTTP: modelprovider.NewProviderHTTPClient(), Logger: logger}
-	defer recovery.Close()
+	recovery := &agents.ModelCredentialFlowService{Sessions: sessions, Subagents: children, Logger: logger}
 	launcher := &agents.SessionFlowService{ModelCredentials: recovery, Logger: logger}
 	if err = launcher.StartSubagent(ctx, start, *parentKey, 2); !errors.Is(err, modelcredential.ErrCopyStopped) {
 		t.Fatalf("recover interrupted copy (%T)", err)
@@ -694,7 +699,7 @@ func assertBYOKHistory(t *testing.T, ctx context.Context, reader dexpb.FlowServi
 
 // runBYOKStudioSpec runs the production BFF against this production-composed server.
 // The only replacement remains the existing mock model HTTP endpoint.
-func runBYOKStudioSpec(t *testing.T, ctx context.Context, grpcAddress, directory string) {
+func runBYOKStudioSpec(t *testing.T, ctx context.Context, grpcAddress, directory string, customEndpoint ...string) {
 	t.Helper()
 	socket, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -757,7 +762,14 @@ func runBYOKStudioSpec(t *testing.T, ctx context.Context, grpcAddress, directory
 	if err != nil {
 		t.Fatal(err)
 	}
-	spec := exec.CommandContext(ctx, "node", filepath.Join(studioSource, "node_modules/@playwright/test/cli.js"), "test", "tests/e2e/integration/modelcredential/model-credential.spec.ts", "tests/e2e/integration/catalog/model-catalog.spec.ts", "--config", "playwright.e2e.config.ts")
+	specs := []string{"tests/e2e/integration/modelcredential/model-credential.spec.ts", "tests/e2e/integration/catalog/model-catalog.spec.ts"}
+	if len(customEndpoint) > 0 {
+		environment = append(environment, "SUPERVERSE_E2E_CUSTOM_ENDPOINT="+customEndpoint[0])
+		specs = []string{"tests/e2e/integration/modelcredential/custom-endpoint.spec.ts"}
+	}
+	arguments := append([]string{filepath.Join(studioSource, "node_modules/@playwright/test/cli.js"), "test"}, specs...)
+	arguments = append(arguments, "--config", "playwright.e2e.config.ts")
+	spec := exec.CommandContext(ctx, "node", arguments...)
 	spec.Dir = studioSource
 	spec.Env = append(environment, "SUPERVERSE_E2E_BASE_URL="+origin, "SUPERVERSE_E2E_CAPTURE=off", "SUPERVERSE_E2E_BYOK_FIXTURE=true", "SUPERVERSE_E2E_COVERAGE_DIR="+os.Getenv("SUPERVERSE_E2E_COVERAGE_DIR"))
 	browserLog := filepath.Join(logDirectory, "browser.log")
@@ -771,7 +783,7 @@ func runBYOKStudioSpec(t *testing.T, ctx context.Context, grpcAddress, directory
 	if err = spec.Run(); err != nil {
 		t.Fatalf("Model credential Studio spec failed (%T); log %s", err, browserLog)
 	}
-	t.Log("Studio model-credential.spec.ts and model-catalog.spec.ts passed through the real production BFF/gRPC/Dex path")
+	t.Logf("Studio specs %v passed through the real production BFF/gRPC/Dex path", specs)
 }
 
 func mockInput(t *testing.T, scenario string, number int) mockmodel.Input {

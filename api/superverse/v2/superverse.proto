@@ -2171,6 +2171,11 @@ enum AgentModel {
   AGENT_MODEL_KIMI_K2_6 = 14;
   AGENT_MODEL_GLM_5_2 = 15;
   AGENT_MODEL_MINIMAX_M3 = 16;
+  AGENT_MODEL_ANTHROPIC_CUSTOM = 17;
+  AGENT_MODEL_OPENAI_CUSTOM = 18;
+  AGENT_MODEL_XAI_CUSTOM = 19;
+  AGENT_MODEL_GEMINI_CUSTOM = 20;
+  AGENT_MODEL_QWEN_CUSTOM = 21;
 }
 
 // Agent DTOs are transport-independent contracts shared by gRPC and Studio. Their date strings
@@ -3896,6 +3901,10 @@ message ModelCredentialInfo {
   uint64 pending_revision = 8;
   bool pending_delete = 9;
   ModelProvider provider = 10;
+  string base_url = 11 [debug_redact = true];
+  string custom_model_id = 12 [debug_redact = true];
+  string effective_model_id = 13 [debug_redact = true];
+  uint32 custom_profile_version = 14;
 }
 
 // Project-owned model authentication; secret fields must never be logged or traced.
@@ -3903,6 +3912,7 @@ service ModelCredentialService {
   rpc GetModelCredentialInfo(GetModelCredentialInfoRequest) returns (GetModelCredentialInfoResponse);
   rpc SetModelCredential(SetModelCredentialRequest) returns (SetModelCredentialResponse);
   rpc DeleteModelCredential(DeleteModelCredentialRequest) returns (DeleteModelCredentialResponse);
+  rpc ListModelCredentialModels(ListModelCredentialModelsRequest) returns (ListModelCredentialModelsResponse);
 }
 
 message GetModelCredentialInfoRequest {
@@ -3920,6 +3930,8 @@ message SetModelCredentialRequest {
   optional uint64 expected_revision = 4;
   // Sensitive: transient authentication material, never recorded in a Flow RPC.
   string api_key = 5 [debug_redact = true];
+  string base_url = 6 [debug_redact = true];
+  string custom_model_id = 7 [debug_redact = true];
   CallerContext caller = 100;
 }
 message SetModelCredentialResponse {
@@ -3934,4 +3946,26 @@ message DeleteModelCredentialRequest {
 }
 message DeleteModelCredentialResponse {
   ModelCredentialInfo credential = 1;
+}
+
+// Discovery returns bounded identifiers only; provider bodies never reach clients.
+enum ModelDiscoveryResult {
+  MODEL_DISCOVERY_RESULT_UNSPECIFIED = 0;
+  MODEL_DISCOVERY_RESULT_SUPPORTED = 1;
+  MODEL_DISCOVERY_RESULT_UNSUPPORTED = 2;
+  MODEL_DISCOVERY_RESULT_EMPTY = 3;
+}
+
+message ListModelCredentialModelsRequest {
+  string project_id = 1;
+  ModelProvider provider = 2;
+  string api_key = 3 [debug_redact = true];
+  string base_url = 4 [debug_redact = true];
+  // Required when api_key is absent; the stored endpoint must also match.
+  optional uint64 expected_revision = 5;
+  CallerContext caller = 100;
+}
+message ListModelCredentialModelsResponse {
+  repeated string model_ids = 1 [debug_redact = true];
+  ModelDiscoveryResult result = 2;
 }

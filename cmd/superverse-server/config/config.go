@@ -587,6 +587,9 @@ type ModelPrice struct {
 	OutputPerMTok float64 `yaml:"outputPerMTok"`
 }
 
+// DefaultProviderMockListen retains the random loopback mock listener.
+const DefaultProviderMockListen = ""
+
 // Default is the configuration before any file: every default applied.
 func Default() Config {
 	return Config{
@@ -601,7 +604,8 @@ func Default() Config {
 		Dex:    DexConfig{ServerAddress: DefaultDexServerAddress, Pull: DexPullConfig{MaxConcurrentTasks: DefaultDexPullMaxConcurrentTasks, IdleStreamsPerQueue: DefaultDexPullIdleStreamsPerQueue, StopDrainTimeout: DefaultDexPullStopDrainTimeout}},
 		Studio: StudioConfig{RunsDexConnections: DefaultRunsDexConnections},
 		Agent: AgentConfig{
-			Effort: DefaultEffort, SubagentInvestigateEffort: DefaultSubagentInvestigate, SubagentChangeEffort: DefaultSubagentChange,
+			Providers: modelprovider.ProviderConfig{MockListen: DefaultProviderMockListen},
+			Effort:    DefaultEffort, SubagentInvestigateEffort: DefaultSubagentInvestigate, SubagentChangeEffort: DefaultSubagentChange,
 			SubagentConnectorDevelopEffort: DefaultSubagentConnectorDevelop,
 			CompactionTokens:               DefaultCompactionTokens, ThinkingPrefixMismatch: DefaultThinkingPrefixMismatch,
 			TaskTurns: DefaultTaskTurns, PlatformTurns: DefaultPlatformTurns, ClosestExamplePick: DefaultClosestExamplePick,

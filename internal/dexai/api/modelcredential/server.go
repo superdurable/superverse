@@ -13,6 +13,7 @@ import (
 	"errors"
 	pb "github.com/superdurable/superversev2/gen/superverse/v2"
 	"github.com/superdurable/superversev2/internal/comm"
+	"github.com/superdurable/superversev2/internal/comm/modelendpoint"
 	"github.com/superdurable/superversev2/internal/dexai/agents"
 	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
@@ -93,8 +94,27 @@ func (s *server) SetModelCredential(ctx context.Context, request *pb.SetModelCre
 	if err != nil {
 		return nil, err
 	}
+	current, err := s.sessions.Agent.ReadModelCredentialInfo(ctx, caller.FlowID, input.Provider)
+	if err != nil {
+		return nil, credentialError(err)
+	}
+	replay := current.OperationID == input.OperationID
+	if !replay && current.Revision != input.ExpectedRevision {
+		return nil, credentialError(modelcredential.ErrRevision)
+	}
+	if replay {
+		input.Endpoint = current.Endpoint
+	}
 	if key != "" {
 		input.Last4 = key[len(key)-4:]
+		if !replay && request.GetBaseUrl() != "" {
+			input.Endpoint, err = s.sessions.ModelCredentials.Compatible.ResolveCustom(ctx, input.Provider.Catalog(), request.GetBaseUrl(), request.GetCustomModelId(), key)
+			if err != nil {
+				return nil, status.Error(codes.FailedPrecondition, "custom endpoint validation failed; select or enter a valid model ID")
+			}
+		} else if !replay && request.GetCustomModelId() != "" {
+			return nil, status.Error(codes.InvalidArgument, "a custom endpoint is required for a custom model ID")
+		}
 	}
 	info, err := s.sessions.ModelCredentials.Mutate(ctx, caller.FlowID, input, key)
 	key = ""
@@ -131,7 +151,8 @@ func mutation(operation string, revision *uint64, remove bool, actor conversatio
 func credentialDocument(info modelcredential.Info, provider modelcredential.Provider) *pb.ModelCredentialInfo {
 	value := &pb.ModelCredentialInfo{Revision: info.Revision, Status: boundary.Enum[pb.ModelCredentialStatus](info.Status.String()),
 		Last4: info.Last4, SetBy: &pb.Actor{AccountId: info.SetBy.AccountID, Email: info.SetBy.Email},
-		Provider: boundary.Enum[pb.ModelProvider](provider.Catalog().String())}
+		Provider: boundary.Enum[pb.ModelProvider](provider.Catalog().String()), BaseUrl: info.Endpoint.BaseURL,
+		CustomModelId: info.Endpoint.CustomModelID, EffectiveModelId: info.Endpoint.EffectiveModelID, CustomProfileVersion: info.Endpoint.CustomProfileVersion}
 	if !info.SetAt.IsZero() {
 		value.SetAt = info.SetAt.Format(time.RFC3339Nano)
 	}
@@ -142,6 +163,16 @@ func credentialDocument(info modelcredential.Info, provider modelcredential.Prov
 }
 
 func credentialError(err error) error {
+	if probe, ok := errors.AsType[*openaicompat.CredentialProbeError](err); ok {
+		code := codes.Unavailable
+		if probe.Reason == "provider_transport_timeout" {
+			code = codes.DeadlineExceeded
+		}
+		if probe.Reason == "provider_request_canceled" {
+			code = codes.Canceled
+		}
+		return status.Errorf(code, "model credential probe: %s (HTTP %d)", probe.Reason, probe.Status)
+	}
 	if errors.Is(err, openaicompat.ErrModelCapacity) {
 		return status.Error(codes.ResourceExhausted, "model credential validation is busy; try again shortly")
 	}
@@ -168,4 +199,65 @@ func credentialProvider(value pb.ModelProvider) modelcredential.Provider {
 	domain := comm.Must(boundary.DomainValue(value))
 	comm.MustDo(provider.UnmarshalText([]byte(strings.ToLower(domain))))
 	return provider
+}
+
+// ListModelCredentialModels never writes a key, provider response or URL to Dex.
+func (s *server) ListModelCredentialModels(ctx context.Context, request *pb.ListModelCredentialModelsRequest) (*pb.ListModelCredentialModelsResponse, error) {
+	caller, err := s.authorize(ctx, request.GetCaller(), request.GetProjectId(), request.GetProvider())
+	if err != nil {
+		return nil, err
+	}
+	provider := credentialProvider(request.GetProvider())
+	key := strings.TrimSpace(request.GetApiKey())
+	request.ApiKey = ""
+	runtime := s.sessions.ModelCredentials.Compatible
+	base, err := runtime.CanonicalEndpoint(request.GetBaseUrl())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "model endpoint is not permitted")
+	}
+	if key == "" {
+		if request.ExpectedRevision == nil {
+			return nil, status.Error(codes.InvalidArgument, "the observed credential revision is required")
+		}
+		info, err := s.sessions.Agent.ReadModelCredentialInfo(ctx, caller.FlowID, provider)
+		if err != nil {
+			return nil, credentialError(err)
+		}
+		if !info.Active() || info.Revision != request.GetExpectedRevision() || info.Endpoint.BaseURL != base {
+			return nil, status.Error(codes.FailedPrecondition, "the current credential does not match this endpoint and revision")
+		}
+		envelope, err := s.sessions.Agent.ReadModelCredential(ctx, caller.FlowID, provider)
+		if err != nil {
+			return nil, credentialError(err)
+		}
+		if envelope == nil || envelope.Revision != info.Revision {
+			return nil, status.Error(codes.FailedPrecondition, "the current credential is unavailable")
+		}
+		latest, readErr := s.sessions.Agent.ReadModelCredentialInfo(ctx, caller.FlowID, provider)
+		if readErr != nil {
+			return nil, credentialError(readErr)
+		}
+		if !latest.Active() || latest.Revision != info.Revision || latest.Endpoint != info.Endpoint {
+			return nil, status.Error(codes.Aborted, "model credential revision changed")
+		}
+		key = envelope.Key
+	} else {
+		if len(key) < 4 || len(key) > 4096 {
+			return nil, status.Error(codes.InvalidArgument, "the API key must contain 4 to 4096 printable ASCII characters")
+		}
+		for _, c := range key {
+			if c < 0x21 || c > 0x7e {
+				return nil, status.Error(codes.InvalidArgument, "the API key must contain printable ASCII characters without spaces")
+			}
+		}
+	}
+	ids, result, err := runtime.Discover(ctx, provider.Catalog(), base, key)
+	key = ""
+	if err != nil {
+		if errors.Is(err, modelendpoint.ErrDiscoveryBounds) {
+			return nil, status.Error(codes.ResourceExhausted, "model discovery exceeded its limits")
+		}
+		return nil, status.Error(codes.Unavailable, "model discovery did not complete")
+	}
+	return &pb.ListModelCredentialModelsResponse{ModelIds: ids, Result: boundary.Enum[pb.ModelDiscoveryResult](result.String())}, nil
 }

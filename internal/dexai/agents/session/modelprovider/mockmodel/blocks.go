@@ -34,6 +34,7 @@ type block struct {
 // reply is everything a call answers with: the blocks, the usage and stop
 // reason they report, how fast they stream and where they leave the scenario.
 type reply struct {
+	custom        bool
 	protocolFault protocolFault
 	blocks        []block
 	inputTokens   int64

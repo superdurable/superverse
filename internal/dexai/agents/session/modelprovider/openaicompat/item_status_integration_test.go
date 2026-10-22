@@ -20,7 +20,6 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/dexflow/dexflowtest"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
-	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/mockmodel"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/openaicompat"
 )
@@ -31,34 +30,32 @@ func TestCompatibleResponsesItemStatusDexIntegration(t *testing.T) {
 	for _, provider := range []conversation.Provider{conversation.ProviderOpenAI, conversation.ProviderXAI} {
 		for _, test := range []struct {
 			name     string
-			fault    mockmodel.WireFault
+			fault    mockmodel.WireFaultForTest
 			accepted bool
 		}{
-			{"refusal", mockmodel.WireFaultRefusal, true},
-			{"refusal-at-output-limit", mockmodel.WireFaultOutputLimitRefusal, true},
-			{"text-at-output-limit", mockmodel.WireFaultOutputLimitText, true},
-			{"omitted", mockmodel.WireFaultOmittedItemStatus, true},
-			{"null", mockmodel.WireFaultNullItemStatus, true},
-			{"mixed-terminal-status", mockmodel.WireFaultMixedItemStatus, true},
-			{"incomplete", mockmodel.WireFaultIncompleteItemStatus, false},
-			{"in-progress", mockmodel.WireFaultInProgressItemStatus, false},
-			{"unknown", mockmodel.WireFaultUnknownItemStatus, false},
-			{"empty", mockmodel.WireFaultEmptyItemStatus, false},
-			{"missing-item-done", mockmodel.WireFaultOmittedWithoutDone, false},
-			{"incomplete-response", mockmodel.WireFaultOmittedIncompleteResponse, false},
+			{"refusal", mockmodel.WireFaultRefusalForTest, true},
+			{"refusal-at-output-limit", mockmodel.WireFaultOutputLimitRefusalForTest, true},
+			{"text-at-output-limit", mockmodel.WireFaultOutputLimitTextForTest, true},
+			{"omitted", mockmodel.WireFaultOmittedItemStatusForTest, true},
+			{"null", mockmodel.WireFaultNullItemStatusForTest, true},
+			{"mixed-terminal-status", mockmodel.WireFaultMixedItemStatusForTest, true},
+			{"incomplete", mockmodel.WireFaultIncompleteItemStatusForTest, false},
+			{"in-progress", mockmodel.WireFaultInProgressItemStatusForTest, false},
+			{"unknown", mockmodel.WireFaultUnknownItemStatusForTest, false},
+			{"empty", mockmodel.WireFaultEmptyItemStatusForTest, false},
+			{"missing-item-done", mockmodel.WireFaultOmittedWithoutDoneForTest, false},
+			{"incomplete-response", mockmodel.WireFaultOmittedIncompleteResponseForTest, false},
 		} {
 			t.Run(provider.String()+"/"+test.name, func(t *testing.T) {
 				ctx, cancel := context.WithTimeout(t.Context(), time.Minute)
 				defer cancel()
-				base, stop, err := mockmodel.Start(ctx, slog.New(slog.NewTextHandler(io.Discard, nil)), test.fault)
+				base, stop, err := mockmodel.StartForTest(ctx, slog.New(slog.NewTextHandler(io.Discard, nil)), test.fault)
 				if err != nil {
 					t.Fatal("start approved model:", err)
 				}
 				defer stop()
-				transport := modelprovider.NewProviderHTTPClient()
-				defer transport.CloseIdleConnections()
 				policy := openaicompat.Policy{Provider: provider, WireMode: conversation.OpenAIResponses, MaxTokens: 64000, Replay: conversation.ReplayEncryptedOpaque}
-				adapter, err := openaicompat.NewMock(transport, base, policy, slog.New(slog.NewTextHandler(io.Discard, nil)))
+				adapter, err := newMockAdapter(t, ctx, base, policy, slog.New(slog.NewTextHandler(io.Discard, nil)))
 				if err != nil {
 					t.Fatal("create Responses adapter:", err)
 				}
@@ -84,16 +81,16 @@ func TestCompatibleResponsesItemStatusDexIntegration(t *testing.T) {
 					// This RPC strictly decodes the persisted opaque block and requires its
 					// canonical completed status before returning the private digest/count.
 					want := 1
-					if test.fault == mockmodel.WireFaultRefusal || test.fault == mockmodel.WireFaultOutputLimitRefusal || test.fault == mockmodel.WireFaultOutputLimitText {
+					if test.fault == mockmodel.WireFaultRefusalForTest || test.fault == mockmodel.WireFaultOutputLimitRefusalForTest || test.fault == mockmodel.WireFaultOutputLimitTextForTest {
 						want = 0
 					}
 					if err := sdk.InvokeRPC(ctx, id, flow.ReadCompatibleReply, nil, &snapshot); err != nil || !snapshot.Present || snapshot.ReplayBlocks != want || len(snapshot.Public.ToolCalls) != want {
 						t.Fatal("terminal proofs did not persist canonical completed replay")
 					}
-					if (test.fault == mockmodel.WireFaultRefusal || test.fault == mockmodel.WireFaultOutputLimitRefusal) && snapshot.StopReason != conversation.StopReasonRefusal {
+					if (test.fault == mockmodel.WireFaultRefusalForTest || test.fault == mockmodel.WireFaultOutputLimitRefusalForTest) && snapshot.StopReason != conversation.StopReasonRefusal {
 						t.Fatal("completed refusal did not remain definitive at the output limit")
 					}
-					if test.fault == mockmodel.WireFaultOutputLimitText && snapshot.StopReason != conversation.StopReasonMaxTokens {
+					if test.fault == mockmodel.WireFaultOutputLimitTextForTest && snapshot.StopReason != conversation.StopReasonMaxTokens {
 						t.Fatal("ordinary completed text at the output limit did not continue")
 					}
 					var none dex.None

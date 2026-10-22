@@ -24,5 +24,13 @@ flowchart LR
 The provider namespace is derived from the canonical model catalog, sorted and
 deduplicated into ten credential instances. Mock has none. Metadata/writer
 operations and hard-delete storage support that closed set; execution and new
-key validation remain limited to available Anthropic profiles. No key is stored
+key validation follow the server-admitted provider profiles. No key is stored
 in the provider catalog, holder record, public snapshot or operation identity.
+
+`Info.Endpoint` owns the canonical custom API root, requested model ID (possibly
+empty), resolved effective model ID and conservative profile version. The
+secret `Envelope` remains exactly revision and key. Endpoint/key/model changes
+reserve one provider revision and follow the existing direct write, exact
+readback and finalization path; the bounded previous metadata record supports
+recovery. Frozen segment and child selections are historical execution choices,
+not additional owners of current configuration.

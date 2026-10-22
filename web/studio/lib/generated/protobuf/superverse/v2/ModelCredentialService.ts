@@ -6,6 +6,8 @@ import type { DeleteModelCredentialRequest as _superverse_v2_DeleteModelCredenti
 import type { DeleteModelCredentialResponse as _superverse_v2_DeleteModelCredentialResponse, DeleteModelCredentialResponse__Output as _superverse_v2_DeleteModelCredentialResponse__Output } from '../../superverse/v2/DeleteModelCredentialResponse';
 import type { GetModelCredentialInfoRequest as _superverse_v2_GetModelCredentialInfoRequest, GetModelCredentialInfoRequest__Output as _superverse_v2_GetModelCredentialInfoRequest__Output } from '../../superverse/v2/GetModelCredentialInfoRequest';
 import type { GetModelCredentialInfoResponse as _superverse_v2_GetModelCredentialInfoResponse, GetModelCredentialInfoResponse__Output as _superverse_v2_GetModelCredentialInfoResponse__Output } from '../../superverse/v2/GetModelCredentialInfoResponse';
+import type { ListModelCredentialModelsRequest as _superverse_v2_ListModelCredentialModelsRequest, ListModelCredentialModelsRequest__Output as _superverse_v2_ListModelCredentialModelsRequest__Output } from '../../superverse/v2/ListModelCredentialModelsRequest';
+import type { ListModelCredentialModelsResponse as _superverse_v2_ListModelCredentialModelsResponse, ListModelCredentialModelsResponse__Output as _superverse_v2_ListModelCredentialModelsResponse__Output } from '../../superverse/v2/ListModelCredentialModelsResponse';
 import type { SetModelCredentialRequest as _superverse_v2_SetModelCredentialRequest, SetModelCredentialRequest__Output as _superverse_v2_SetModelCredentialRequest__Output } from '../../superverse/v2/SetModelCredentialRequest';
 import type { SetModelCredentialResponse as _superverse_v2_SetModelCredentialResponse, SetModelCredentialResponse__Output as _superverse_v2_SetModelCredentialResponse__Output } from '../../superverse/v2/SetModelCredentialResponse';
 
@@ -28,6 +30,15 @@ export interface ModelCredentialServiceClient extends grpc.Client {
   getModelCredentialInfo(argument: _superverse_v2_GetModelCredentialInfoRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_GetModelCredentialInfoResponse__Output>): grpc.ClientUnaryCall;
   getModelCredentialInfo(argument: _superverse_v2_GetModelCredentialInfoRequest, callback: grpc.requestCallback<_superverse_v2_GetModelCredentialInfoResponse__Output>): grpc.ClientUnaryCall;
 
+  ListModelCredentialModels(argument: _superverse_v2_ListModelCredentialModelsRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_ListModelCredentialModelsResponse__Output>): grpc.ClientUnaryCall;
+  ListModelCredentialModels(argument: _superverse_v2_ListModelCredentialModelsRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_superverse_v2_ListModelCredentialModelsResponse__Output>): grpc.ClientUnaryCall;
+  ListModelCredentialModels(argument: _superverse_v2_ListModelCredentialModelsRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_ListModelCredentialModelsResponse__Output>): grpc.ClientUnaryCall;
+  ListModelCredentialModels(argument: _superverse_v2_ListModelCredentialModelsRequest, callback: grpc.requestCallback<_superverse_v2_ListModelCredentialModelsResponse__Output>): grpc.ClientUnaryCall;
+  listModelCredentialModels(argument: _superverse_v2_ListModelCredentialModelsRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_ListModelCredentialModelsResponse__Output>): grpc.ClientUnaryCall;
+  listModelCredentialModels(argument: _superverse_v2_ListModelCredentialModelsRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_superverse_v2_ListModelCredentialModelsResponse__Output>): grpc.ClientUnaryCall;
+  listModelCredentialModels(argument: _superverse_v2_ListModelCredentialModelsRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_ListModelCredentialModelsResponse__Output>): grpc.ClientUnaryCall;
+  listModelCredentialModels(argument: _superverse_v2_ListModelCredentialModelsRequest, callback: grpc.requestCallback<_superverse_v2_ListModelCredentialModelsResponse__Output>): grpc.ClientUnaryCall;
+
   SetModelCredential(argument: _superverse_v2_SetModelCredentialRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_SetModelCredentialResponse__Output>): grpc.ClientUnaryCall;
   SetModelCredential(argument: _superverse_v2_SetModelCredentialRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_superverse_v2_SetModelCredentialResponse__Output>): grpc.ClientUnaryCall;
   SetModelCredential(argument: _superverse_v2_SetModelCredentialRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_superverse_v2_SetModelCredentialResponse__Output>): grpc.ClientUnaryCall;
@@ -44,6 +55,8 @@ export interface ModelCredentialServiceHandlers extends grpc.UntypedServiceImple
 
   GetModelCredentialInfo: grpc.handleUnaryCall<_superverse_v2_GetModelCredentialInfoRequest__Output, _superverse_v2_GetModelCredentialInfoResponse>;
 
+  ListModelCredentialModels: grpc.handleUnaryCall<_superverse_v2_ListModelCredentialModelsRequest__Output, _superverse_v2_ListModelCredentialModelsResponse>;
+
   SetModelCredential: grpc.handleUnaryCall<_superverse_v2_SetModelCredentialRequest__Output, _superverse_v2_SetModelCredentialResponse>;
 
 }
@@ -51,5 +64,6 @@ export interface ModelCredentialServiceHandlers extends grpc.UntypedServiceImple
 export interface ModelCredentialServiceDefinition extends grpc.ServiceDefinition {
   DeleteModelCredential: MethodDefinition<_superverse_v2_DeleteModelCredentialRequest, _superverse_v2_DeleteModelCredentialResponse, _superverse_v2_DeleteModelCredentialRequest__Output, _superverse_v2_DeleteModelCredentialResponse__Output>
   GetModelCredentialInfo: MethodDefinition<_superverse_v2_GetModelCredentialInfoRequest, _superverse_v2_GetModelCredentialInfoResponse, _superverse_v2_GetModelCredentialInfoRequest__Output, _superverse_v2_GetModelCredentialInfoResponse__Output>
+  ListModelCredentialModels: MethodDefinition<_superverse_v2_ListModelCredentialModelsRequest, _superverse_v2_ListModelCredentialModelsResponse, _superverse_v2_ListModelCredentialModelsRequest__Output, _superverse_v2_ListModelCredentialModelsResponse__Output>
   SetModelCredential: MethodDefinition<_superverse_v2_SetModelCredentialRequest, _superverse_v2_SetModelCredentialResponse, _superverse_v2_SetModelCredentialRequest__Output, _superverse_v2_SetModelCredentialResponse__Output>
 }

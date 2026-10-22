@@ -29,10 +29,11 @@ export async function saveModelCredential(
   requestId: string,
   apiKey: string,
   signal: AbortSignal,
+  endpoint?: { baseUrl: string; customModelId: string },
 ) {
   const response = await unary(
     "SetModelCredential",
-    { projectId, provider, expectedRevision: revision, requestId, apiKey },
+    { projectId, provider, expectedRevision: revision, requestId, apiKey, ...endpoint },
     { signal },
   );
   return info(response.credential);
@@ -54,3 +55,15 @@ export async function deleteModelCredential(
 
 /** Fixed non-secret placeholder accepted by the local mock model endpoint. */
 export const MOCK_MODEL_API_KEY = "mock-model-not-a-secret";
+
+/** User-triggered authenticated discovery; passwords remain transient. */
+export function listModelCredentialModels(
+  projectId: string,
+  provider: ModelProvider,
+  baseUrl: string,
+  apiKey: string,
+  expectedRevision: string,
+  signal: AbortSignal,
+) {
+  return unary("ListModelCredentialModels", { projectId, provider, baseUrl, apiKey, expectedRevision }, { signal });
+}

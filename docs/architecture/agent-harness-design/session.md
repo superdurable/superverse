@@ -1324,7 +1324,7 @@ metadata revisions. Mock calls use the existing placeholder key; remote mode
 never calls the provider and requires no Project key.
 
 `ModelCredentialService` exposes `GetModelCredentialInfo`, `SetModelCredential`
-and `DeleteModelCredential`, each authorized against the authenticated account,
+, `DeleteModelCredential` and `ListModelCredentialModels`, each authorized against the authenticated account,
 Project scope/status and Builder capability (including the platform admin).
 The browser receives the typed `ModelCredentialInfo` protobuf message only;
 `ModelProvider` and `ModelCredentialStatus` are closed protobuf enums checked
@@ -1481,3 +1481,39 @@ pending metadata remain scoped by Project plus provider. The local endpoint flag
 explains its non-secret test key and lack of model charges. Only caller-selectable
 profiles appear. Every implemented profile has frozen Session and Subagent prompt
 entries, and a provider switch takes effect at the existing segment boundary.
+
+### Custom endpoint selection
+
+Five explicit catalog choices use conservative custom profiles: `anthropic/custom`
+(Messages), `openai/custom` and `xai/custom` (Responses), and `gemini/custom` and
+`qwen/custom` (Chat). They follow the validated provider enable list; hosted
+defaults expose none. Other provider namespaces retain their existing availability.
+Each version-1 profile has context 32,768, output 4,096, compaction 22,528 and hard
+limit 24,576. The fixed prompt estimates about 17.7K tokens, leaving about 4.8K
+tokens of conversation between compactions; context size is not user-configurable.
+A custom URL always uses its explicit custom identity; an official catalog
+identity cannot run against custom metadata.
+
+`ModelKeyInfo/<provider>.Endpoint` is the sole owner of the canonical API base
+URL, optional requested model ID, effective model ID and custom profile version.
+The secret map envelope still contains only revision/key. Any endpoint, key or
+model change uses one existing reservation/write/readback/finalization revision.
+A new segment freezes that revision and effective endpoint selection; child
+Start/Config freezes the same non-secret selection. An older execution without
+these optional fields retains its official catalog behavior.
+
+Model discovery returns IDs only. An omitted ID resolves only a single discovered
+model; multiple results require selection, and unsupported or empty listings
+require manual input. IDs are opaque JSON fields bounded to 256 bytes. The
+Builder-only credential service performs authenticated discovery with a transient
+key or exact provider/revision/current-endpoint checks before reading the stored
+key. It returns at most 100 IDs within 1 MiB and ten seconds, never response
+bodies, keys or endpoint paths in diagnostics. All calls share the endpoint
+validator and connection-time authority binding.
+
+After the frozen provider credential changes, the next safe boundary reuses the
+executor-handoff suffix selection and public-text projection, with the custom
+profile's compaction budget. One visible notice explains the change. Canonical
+history remains intact; retired endpoints receive no inference calls using the
+replacement key. All existing Flow identities, primitive keys, Channels, Streams,
+retention, writer recovery and child-copy cleanup remain unchanged.

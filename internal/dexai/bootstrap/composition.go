@@ -150,18 +150,19 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	// The mock model runs in this process on a loopback port; the Sessions on
 	// it send their ordinary Claude HTTP requests there with its placeholder key.
 	if config.mockModel {
-		baseURL, stop, startErr := mockmodel.Start(ctx, logger)
+		mock, stop, startErr := mockmodel.StartBuiltin(ctx, logger, config.providers.CustomEndpoints, config.providers.MockListen)
 		if startErr != nil {
 			return nil, startErr
 		}
 		owned.add(func() error { stop(); return nil })
-		config.agent.Mock = &modelprovider.MockClientConfig{ClaudeClientConfig: modelprovider.ClaudeClientConfig{APIKey: mockmodel.APIKey, BaseURL: baseURL}, CompatibleTransports: config.localKind}
+		mock.CompatibleTransports = config.localKind
+		config.agent.Mock = mock
 	}
 	mockURL := ""
 	if config.agent.Mock != nil {
 		mockURL = config.agent.Mock.BaseURL
 	}
-	compatible, err := modelprovider.NewCompatibleProviders(ctx, config.providers, config.modelEndpoints, mockURL, logger)
+	compatible, err := modelprovider.NewCompatibleProviders(ctx, config.providers, config.modelEndpoints, mockURL, logger, config.agent.Claude.BaseURL)
 	if err != nil {
 		return nil, err
 	}
@@ -285,8 +286,7 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	sessionService.Workspaces = workspaces.Client(client, dexpb.NewFlowServiceClient(executions))
 	sessionAgentClient := sessionAgent.Client(client, dexpb.NewFlowServiceClient(executions))
 	sessionService.Agent, sessionService.Subagents, sessionService.Issues, sessionService.Contributions = sessionAgentClient, subagents.Client(client, dexpb.NewFlowServiceClient(executions)), issues.Client(client), contributions.Client(client)
-	sessionService.ModelCredentials = &agents.ModelCredentialFlowService{Sessions: sessionAgentClient, Subagents: sessionService.Subagents, HTTP: modelprovider.NewProviderHTTPClient(), Compatible: config.agent.Compatible, Logger: logger, ValidationBaseURL: config.agent.Claude.BaseURL}
-	owned.add(sessionService.ModelCredentials.Close)
+	sessionService.ModelCredentials = &agents.ModelCredentialFlowService{Sessions: sessionAgentClient, Subagents: sessionService.Subagents, Compatible: config.agent.Compatible, Logger: logger}
 	sessionService.BackgroundCommands = backgroundCommands.Client(client)
 
 	flowRuns := &runs.Runs{

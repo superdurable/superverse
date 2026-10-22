@@ -226,7 +226,7 @@ package owns the following;
 | [`dexai/api/attachments`](../../internal/dexai/api/attachments/README.md) | Serves AttachmentService: the upload, completion and deletion of files attached to messages, and presigned downloads of a Project's copies. |
 | [`dexai/api/boundary`](../../internal/dexai/api/boundary/README.md) | Holds the trust boundary every business gRPC handler shares: caller authentication, panic recovery, request input checks, list paging and the mapping of errors to public statuses. |
 | [`dexai/api/evolve`](../../internal/dexai/api/evolve/README.md) | Serves EvolveService: a Project's goal measurement, with its goals, schedule and reviews, and a person's Review now. |
-| [`dexai/api/modelcredential`](../../internal/dexai/api/modelcredential/README.md) | Authorizes Project credential mutations and returns non-secret metadata. |
+| [`dexai/api/modelcredential`](../../internal/dexai/api/modelcredential/README.md) | Defines model credential envelopes, metadata and revision admission. |
 | [`dexai/api/remoteagent`](../../internal/dexai/api/remoteagent/README.md) | Authorizes Builder pairing, connection reads, removal and platform executor selection through the generated resource contract. |
 | [`dexai/api/tenancy`](../../internal/dexai/api/tenancy/README.md) | Serves AccountService, TeamSpaceService and TeamSpaceMemberService: accounts, TeamSpaces and their members, written through TeamSpaceFlow and read from the read model. |
 | [`dexai/api/watch`](../../internal/dexai/api/watch/README.md) | Serves a resource to API Watch RPCs as authoritative snapshots followed by best-effort Dex Stream progress, with signed resume cursors and realignment on loss. |

@@ -10,6 +10,8 @@ export interface SetModelCredentialRequest {
   'requestId'?: (string);
   'expectedRevision'?: (number | string | Long);
   'apiKey'?: (string);
+  'baseUrl'?: (string);
+  'customModelId'?: (string);
   'caller'?: (_superverse_v2_CallerContext | null);
   '_expectedRevision'?: "expectedRevision";
 }
@@ -20,6 +22,8 @@ export interface SetModelCredentialRequest__Output {
   'requestId': (string);
   'expectedRevision'?: (string);
   'apiKey': (string);
+  'baseUrl': (string);
+  'customModelId': (string);
   'caller': (_superverse_v2_CallerContext__Output | null);
   '_expectedRevision'?: "expectedRevision";
 }

@@ -287,7 +287,7 @@ func (step ApplySubagentAdmission) Execute(ctx dex.Context, answer agenttasks.Su
 // its kind's duration and the server's base effort of the kind, clamped to the model.
 func (flow *SubagentFlow) freeze(start startRecord, now time.Time) Config {
 	kind := start.Call.Kind
-	return Config{Model: start.Model, Kind: kind, Effort: modelprovider.ProfileOf(start.Model).BaseEffort(flow.efforts[kind]),
+	return Config{Endpoint: start.Endpoint, Model: start.Model, Kind: kind, Effort: modelprovider.ProfileOf(start.Model).BaseEffort(flow.efforts[kind]),
 		StartedAt: now, Deadline: now.Add(kind.Duration()), HeadCommit: start.HeadCommit}
 }
 

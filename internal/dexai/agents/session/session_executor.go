@@ -117,7 +117,7 @@ func (flow *SessionAgentFlow) completeModelCall(ctx dex.Context, segment agentlo
 		return outcome, dex.ErrorWithStack(fmt.Errorf("render the attachments of the request to %s: %w", segment.Model, err))
 	}
 	credential, credentialErr := sessionModelCredential(ctx, request.Model)
-	if credentialErr != nil {
+	if credentialErr != nil || (segment.CredentialRevision > 0 && credential.Revision != segment.CredentialRevision) {
 		return boundedModelOutcome(platformModelOutcome{Admission: admission, Failure: conversation.NoProviderKey.Rejected()}), nil
 	}
 	request.APIKey = credential.Key
@@ -425,9 +425,9 @@ func (flow *SessionAgentFlow) planModelCall(ctx dex.Context, next agentloop.Cont
 	executor := currentExecutor(ctx)
 	if executor.Handoff != nil && executor.Handoff.Epoch == executor.Epoch {
 		if loads := executorContextLoads(ctx); len(loads) > 0 {
-			return modelCallPlan{next: nextLoadExecutorContext, load: &dex.StepOptions{ExecuteLoadAttributeMapInstances: loads}}
+			return modelCallPlan{next: nextLoadExecutorContext, load: &dex.StepOptions{ExecuteLoadAttributeMapInstances: append(credentialInfoLoads(), loads...)}}
 		}
-		segment := flow.openExecutorSegment(ctx, executor)
+		segment := flow.openExecutorSegment(ctx, executor, false)
 		setRunningWork(ctx, &agentloop.RunningWork{Kind: agentloop.RunningModel})
 		return modelCallPlan{next: nextCallModel, load: modelRequestLoad(comm.Must(agentStateAttribute.Get(ctx)), segment, false)}
 	}
@@ -443,6 +443,13 @@ func (flow *SessionAgentFlow) planModelCall(ctx dex.Context, next agentloop.Cont
 	// The model call or compaction is the work in flight until its Step commits.
 	setRunningWork(ctx, &agentloop.RunningWork{Kind: agentloop.RunningModel})
 	state := comm.Must(agentStateAttribute.Get(ctx))
+	if credentialSegmentChanged(ctx, *segment) {
+		if loads := executorContextLoads(ctx); len(loads) > 0 {
+			return modelCallPlan{next: nextLoadExecutorContext, load: &dex.StepOptions{ExecuteLoadAttributeMapInstances: append(credentialInfoLoads(), loads...)}}
+		}
+		opened := flow.openExecutorSegment(ctx, executor, true)
+		return modelCallPlan{next: nextCallModel, load: modelRequestLoad(state, opened, false)}
+	}
 	if next != agentloop.ContinueCallModel {
 		selected := comm.Must(sessionModelAttribute.Get(ctx)).Model
 		if reason := agentloop.SegmentChange(*segment, selected, flow.settings, state.Turn, next == agentloop.ContinueStartTurn); reason != "" {
@@ -474,10 +481,7 @@ func segmentLoad(state agentloop.AgentState, segment agentloop.ContextSegment, w
 			first = min(first, sequence)
 		}
 	}
-	loads := []dex.AttributeMapLoad{contextSegmentPromptsAttribute.Load(segment.PromptsKey())}
-	if !segment.Model.IsMock() {
-		loads = append(loads, modelKeyInfoAttribute.Load(modelcredential.ForModel(segment.Model).String()))
-	}
+	loads := append(credentialInfoLoads(), contextSegmentPromptsAttribute.Load(segment.PromptsKey()))
 	for _, key := range agentloop.ArchiveChunksFrom(state, first) {
 		loads = append(loads, archivedMessagesAttribute.Load(key))
 	}
@@ -506,9 +510,9 @@ func (flow *SessionAgentFlow) segmentRequest(ctx dex.Context, kind agentloop.Mod
 	}
 	profile := modelprovider.ProfileOf(segment.Model)
 	shape := profile.RequestShape()
-	shape.ExecutorContext = segment.Reason == agentloop.SegmentReasonExecutor
+	shape.ExecutorContext = segment.ProtocolStartSequence > 0
 	return conversation.ModelRequest{
-		Model: segment.Model, Effort: segment.Effort, Prompts: prompts,
+		Endpoint: segment.Endpoint, Model: segment.Model, Effort: segment.Effort, Prompts: prompts,
 		Messages:       conversation.AssembleRequest(entries, segment.CacheAnchor, shape),
 		PrefixMismatch: flow.settings.PrefixMismatch, CallID: modelCallID(ctx, kind), ToolTarget: agentloop.ToolTarget,
 		WriteAssistant: discardText, WriteReasoning: discardText, WriteActivity: func(conversation.AgentEvent) error { return nil },
@@ -682,7 +686,7 @@ func (flow *SessionAgentFlow) completeCompaction(ctx dex.Context, input contextC
 		return nil, nil, dex.ErrorWithStack(fmt.Errorf("render the attachments of context segment %d: %w", segment.Number, err))
 	}
 	credential, credentialErr := sessionModelCredential(ctx, request.Model)
-	if credentialErr != nil {
+	if credentialErr != nil || (segment.CredentialRevision > 0 && credential.Revision != segment.CredentialRevision) {
 		return &platformModelOutcome{Admission: input.Admission, Compaction: &input, Failure: conversation.NoProviderKey.Rejected()}, nil, nil
 	}
 	request.APIKey = credential.Key
@@ -953,7 +957,7 @@ func sessionModelCredential(ctx dex.Context, model conversation.Model) (modelcre
 		return modelcredential.Envelope{}, modelcredential.ErrUnavailable
 	}
 	comm.MustDo(err)
-	if !info.Active() || envelope.Revision != info.Revision || envelope.Key == "" {
+	if !info.Active() || model.IsCustom() != (info.Endpoint.BaseURL != "") || envelope.Revision != info.Revision || envelope.Key == "" {
 		return modelcredential.Envelope{}, modelcredential.ErrUnavailable
 	}
 	return envelope, nil

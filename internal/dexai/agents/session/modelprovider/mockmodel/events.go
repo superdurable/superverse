@@ -161,12 +161,12 @@ func pause(ctx context.Context, delay time.Duration) error {
 
 // writeOpenAIStream encodes the original scenario reply in the selected wire protocol.
 // It never emits the scenario's readable thinking; Responses carries synthetic ciphertext.
-func writeOpenAIStream(ctx context.Context, w http.ResponseWriter, id, model string, answer reply, mode conversation.APIStyle, provider conversation.Provider, fault WireFault, echoTools []json.RawMessage) error {
-	if fault == WireFaultOutputLimitRefusal || fault == WireFaultOutputLimitText {
+func writeOpenAIStream(ctx context.Context, w http.ResponseWriter, id, model string, answer reply, mode conversation.APIStyle, provider conversation.Provider, fault WireFaultForTest, echoTools []json.RawMessage) error {
+	if fault == WireFaultOutputLimitRefusalForTest || fault == WireFaultOutputLimitTextForTest {
 		answer.stopReason = conversation.StopReasonMaxTokens
 	}
 	answer.blocks = compatibleReplyBlocks(answer, mode)
-	if fault == WireFaultOutputLimitText {
+	if fault == WireFaultOutputLimitTextForTest {
 		answer.blocks = []block{{kind: conversation.BlockTypeText, text: "Synthetic completed text at the output limit."}}
 	}
 	limited := answer.stopReason == conversation.StopReasonMaxTokens
@@ -178,14 +178,14 @@ func writeOpenAIStream(ctx context.Context, w http.ResponseWriter, id, model str
 			}
 		}
 	}
-	if fault == WireFaultRefusal || fault == WireFaultOutputLimitRefusal {
+	if fault == WireFaultRefusalForTest || fault == WireFaultOutputLimitRefusalForTest {
 		answer.blocks = []block{{kind: conversation.BlockTypeText}}
 	}
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.WriteHeader(http.StatusOK)
 	flusher, _ := w.(http.Flusher)
-	if fault == WireFaultMultilineOversized {
+	if fault == WireFaultMultilineOversizedForTest {
 		// Each data line fits the scanner; their one SSE event exceeds its budget.
 		_, err := fmt.Fprintf(w, "data: %s\ndata: %s\ndata: {}\n\n", strings.Repeat(" ", 600<<10), strings.Repeat(" ", 600<<10))
 		if flusher != nil {
@@ -211,17 +211,17 @@ func writeOpenAIStream(ctx context.Context, w http.ResponseWriter, id, model str
 		}
 		return nil
 	}
-	if fault == WireFaultStreamRejected || fault == WireFaultChatRejected {
+	if fault == WireFaultStreamRejectedForTest || fault == WireFaultChatRejectedForTest {
 		failure := map[string]any{"code": "invalid_prompt", "type": "invalid_request_error", "message": "Synthetic secret-bearing provider message must be discarded."}
 		if mode == conversation.OpenAIResponses {
-			if fault == WireFaultChatRejected {
+			if fault == WireFaultChatRejectedForTest {
 				return send(openaicompat.EventProviderError.String(), failure)
 			}
 			return send(openaicompat.EventResponseFailed.String(), map[string]any{"response": map[string]any{"error": failure}})
 		}
 		return send("", map[string]any{"error": failure})
 	}
-	if fault == WireFaultPlaintext {
+	if fault == WireFaultPlaintextForTest {
 		if mode == conversation.OpenAIResponses {
 			return send(openaicompat.EventResponseReasoningTextDelta.String(), map[string]any{"delta": "synthetic forbidden reasoning"})
 		}
@@ -243,7 +243,7 @@ func writeOpenAIStream(ctx context.Context, w http.ResponseWriter, id, model str
 				for index, piece := range chunks(string(b.input), deltaRunes) {
 					call := map[string]any{"index": toolIndex, openaicompat.ItemFunction.String(): map[string]string{"arguments": piece}}
 					if index == 0 {
-						if provider == conversation.ProviderGemini && toolIndex == 0 && fault != WireFaultMissingReplay && !limited {
+						if provider == conversation.ProviderGemini && !answer.custom && toolIndex == 0 && fault != WireFaultMissingReplayForTest && !limited {
 							call["extra_content"] = map[string]any{"google": map[string]string{"thought_signature": fixtureCiphertext("mock-encrypted-"+b.id, fault)}}
 						}
 						call["id"] = b.id
@@ -261,7 +261,7 @@ func writeOpenAIStream(ctx context.Context, w http.ResponseWriter, id, model str
 		if toolIndex > 0 {
 			finish = openaicompat.FinishToolCalls.String()
 		}
-		if fault == WireFaultRefusalWithTools || fault == WireFaultRefusal {
+		if fault == WireFaultRefusalWithToolsForTest || fault == WireFaultRefusalForTest {
 			finish = openaicompat.FinishContentFilter.String()
 		}
 		if limited {
@@ -273,7 +273,7 @@ func writeOpenAIStream(ctx context.Context, w http.ResponseWriter, id, model str
 		if err := send("", map[string]any{"model": model, "choices": []any{}, "usage": map[string]int64{"prompt_tokens": answer.inputTokens, "completion_tokens": answer.outputTokens}}); err != nil {
 			return err
 		}
-		if fault == WireFaultTruncated {
+		if fault == WireFaultTruncatedForTest {
 			return nil
 		}
 		_, err := fmt.Fprint(w, "data: [DONE]\n\n")
@@ -303,33 +303,33 @@ func writeOpenAIStream(ctx context.Context, w http.ResponseWriter, id, model str
 		}
 		if b.kind == conversation.BlockTypeThinking || b.kind == conversation.BlockTypeToolUse {
 			switch fault {
-			case WireFaultOmittedItemStatus, WireFaultOmittedWithoutDone, WireFaultOmittedIncompleteResponse, WireFaultMixedItemStatus:
+			case WireFaultOmittedItemStatusForTest, WireFaultOmittedWithoutDoneForTest, WireFaultOmittedIncompleteResponseForTest, WireFaultMixedItemStatusForTest:
 				delete(initial, "status")
 				delete(final, "status")
-			case WireFaultNullItemStatus:
+			case WireFaultNullItemStatusForTest:
 				initial["status"], final["status"] = nil, nil
-			case WireFaultIncompleteItemStatus:
+			case WireFaultIncompleteItemStatusForTest:
 				final["status"] = "incomplete"
-			case WireFaultInProgressItemStatus:
+			case WireFaultInProgressItemStatusForTest:
 				final["status"] = conversation.ProviderReplyInProgress
-			case WireFaultUnknownItemStatus:
+			case WireFaultUnknownItemStatusForTest:
 				final["status"] = "unknown"
-			case WireFaultEmptyItemStatus:
+			case WireFaultEmptyItemStatusForTest:
 				final["status"] = ""
 			}
 		}
-		if b.kind == conversation.BlockTypeText && (fault == WireFaultRefusalWithTools || fault == WireFaultRefusal || fault == WireFaultOutputLimitRefusal) {
+		if b.kind == conversation.BlockTypeText && (fault == WireFaultRefusalWithToolsForTest || fault == WireFaultRefusalForTest || fault == WireFaultOutputLimitRefusalForTest) {
 			final["content"] = []any{map[string]string{"type": openaicompat.ItemRefusal.String(), "refusal": "Synthetic provider refusal."}}
 		}
 		if err := send(openaicompat.EventResponseOutputItemAdded.String(), map[string]any{"output_index": index, "item": initial}); err != nil {
 			return err
 		}
 		kind, text := "", ""
-		if b.kind == conversation.BlockTypeText && (fault == WireFaultRefusalWithTools || fault == WireFaultRefusal || fault == WireFaultOutputLimitRefusal) {
+		if b.kind == conversation.BlockTypeText && (fault == WireFaultRefusalWithToolsForTest || fault == WireFaultRefusalForTest || fault == WireFaultOutputLimitRefusalForTest) {
 			kind = openaicompat.EventResponseRefusalDelta.String()
 			text = "Synthetic provider refusal."
 		}
-		if b.kind == conversation.BlockTypeText && fault != WireFaultRefusalWithTools && fault != WireFaultRefusal && fault != WireFaultOutputLimitRefusal {
+		if b.kind == conversation.BlockTypeText && fault != WireFaultRefusalWithToolsForTest && fault != WireFaultRefusalForTest && fault != WireFaultOutputLimitRefusalForTest {
 			kind = openaicompat.EventResponseOutputTextDelta.String()
 			text = b.text
 		}
@@ -352,23 +352,23 @@ func writeOpenAIStream(ctx context.Context, w http.ResponseWriter, id, model str
 		if limited && b.kind == conversation.BlockTypeToolUse {
 			final["status"] = conversation.ProviderReplyIncomplete
 		}
-		if (!limited || b.kind != conversation.BlockTypeToolUse) && (fault != WireFaultOmittedWithoutDone || b.kind == conversation.BlockTypeText) {
+		if (!limited || b.kind != conversation.BlockTypeToolUse) && (fault != WireFaultOmittedWithoutDoneForTest || b.kind == conversation.BlockTypeText) {
 			if err := send(openaicompat.EventResponseOutputItemDone.String(), map[string]any{"output_index": index, "item": final}); err != nil {
 				return err
 			}
 		}
-		if fault == WireFaultMixedItemStatus && b.kind != conversation.BlockTypeText {
+		if fault == WireFaultMixedItemStatusForTest && b.kind != conversation.BlockTypeText {
 			final["status"] = conversation.ProviderReplyCompleted
 		}
 		output = append(output, final)
 	}
-	if fault == WireFaultTruncated {
+	if fault == WireFaultTruncatedForTest {
 		return nil
 	}
 	if limited {
 		return send(openaicompat.EventResponseIncomplete.String(), map[string]any{"response": map[string]any{"status": conversation.ProviderReplyIncomplete, "model": model, "output": output, "incomplete_details": map[string]string{"reason": "max_output_tokens"}}})
 	}
-	if fault == WireFaultOmittedIncompleteResponse {
+	if fault == WireFaultOmittedIncompleteResponseForTest {
 		return send(openaicompat.EventResponseIncomplete.String(), map[string]any{"response": map[string]any{"status": "incomplete"}})
 	}
 	return send(openaicompat.EventResponseCompleted.String(), map[string]any{"response": map[string]any{"id": id, "status": conversation.ProviderReplyCompleted, "model": model, "output": output, "tools": echoTools, "reasoning": map[string]any{"effort": nil, "summary": nil}, "usage": map[string]int64{"input_tokens": answer.inputTokens, "output_tokens": answer.outputTokens}}})
@@ -378,43 +378,43 @@ func chatFrame(model string, delta map[string]any, finish any) map[string]any {
 	return map[string]any{"error": nil, "model": model, "choices": []any{map[string]any{"index": 0, "delta": delta, "finish_reason": finish}}}
 }
 
-// WireFault is a closed corruption of the model protocol, applied after the shared
+// WireFaultForTest is a closed corruption of the model protocol, applied after the shared
 // scenario engine has produced its reply. It is never an application dependency substitute.
-type WireFault struct{ id string }
+type WireFaultForTest struct{ id string }
 
 var (
-	WireFaultOutputLimitRefusal        = WireFault{"output_limit_refusal"}
-	WireFaultOutputLimitText           = WireFault{"output_limit_text"}
-	WireFaultCreditExhausted           = WireFault{"credit_exhausted"}
-	WireFaultContextRejected           = WireFault{"context_rejected"}
-	WireFaultStreamRejected            = WireFault{"stream_rejected"}
-	WireFaultChatRejected              = WireFault{"chat_rejected"}
-	WireFaultRefusal                   = WireFault{"refusal"}
-	WireFaultRefusalWithTools          = WireFault{"refusal_with_tools"}
-	WireFaultHTTP401                   = WireFault{"http_401"}
-	WireFaultHTTP429                   = WireFault{"http_429"}
-	WireFaultHTTP503                   = WireFault{"http_503"}
-	WireFaultTruncated                 = WireFault{"truncated"}
-	WireFaultPlaintext                 = WireFault{"plaintext"}
-	WireFaultMissingReplay             = WireFault{"missing_replay"}
-	WireFaultOversizedReplay           = WireFault{"oversized_replay"}
-	WireFaultMultilineOversized        = WireFault{"multiline_oversized"}
-	WireFaultOmittedItemStatus         = WireFault{"omitted_item_status"}
-	WireFaultNullItemStatus            = WireFault{"null_item_status"}
-	WireFaultIncompleteItemStatus      = WireFault{"incomplete_item_status"}
-	WireFaultInProgressItemStatus      = WireFault{"in_progress_item_status"}
-	WireFaultUnknownItemStatus         = WireFault{"unknown_item_status"}
-	WireFaultEmptyItemStatus           = WireFault{"empty_item_status"}
-	WireFaultOmittedWithoutDone        = WireFault{"omitted_status_without_item_done"}
-	WireFaultOmittedIncompleteResponse = WireFault{"omitted_status_incomplete_response"}
-	WireFaultMixedItemStatus           = WireFault{"mixed_item_status"}
+	WireFaultOutputLimitRefusalForTest        = WireFaultForTest{"output_limit_refusal"}
+	WireFaultOutputLimitTextForTest           = WireFaultForTest{"output_limit_text"}
+	WireFaultCreditExhaustedForTest           = WireFaultForTest{"credit_exhausted"}
+	WireFaultContextRejectedForTest           = WireFaultForTest{"context_rejected"}
+	WireFaultStreamRejectedForTest            = WireFaultForTest{"stream_rejected"}
+	WireFaultChatRejectedForTest              = WireFaultForTest{"chat_rejected"}
+	WireFaultRefusalForTest                   = WireFaultForTest{"refusal"}
+	WireFaultRefusalWithToolsForTest          = WireFaultForTest{"refusal_with_tools"}
+	WireFaultHTTP401ForTest                   = WireFaultForTest{"http_401"}
+	WireFaultHTTP429ForTest                   = WireFaultForTest{"http_429"}
+	WireFaultHTTP503ForTest                   = WireFaultForTest{"http_503"}
+	WireFaultTruncatedForTest                 = WireFaultForTest{"truncated"}
+	WireFaultPlaintextForTest                 = WireFaultForTest{"plaintext"}
+	WireFaultMissingReplayForTest             = WireFaultForTest{"missing_replay"}
+	WireFaultOversizedReplayForTest           = WireFaultForTest{"oversized_replay"}
+	WireFaultMultilineOversizedForTest        = WireFaultForTest{"multiline_oversized"}
+	WireFaultOmittedItemStatusForTest         = WireFaultForTest{"omitted_item_status"}
+	WireFaultNullItemStatusForTest            = WireFaultForTest{"null_item_status"}
+	WireFaultIncompleteItemStatusForTest      = WireFaultForTest{"incomplete_item_status"}
+	WireFaultInProgressItemStatusForTest      = WireFaultForTest{"in_progress_item_status"}
+	WireFaultUnknownItemStatusForTest         = WireFaultForTest{"unknown_item_status"}
+	WireFaultEmptyItemStatusForTest           = WireFaultForTest{"empty_item_status"}
+	WireFaultOmittedWithoutDoneForTest        = WireFaultForTest{"omitted_status_without_item_done"}
+	WireFaultOmittedIncompleteResponseForTest = WireFaultForTest{"omitted_status_incomplete_response"}
+	WireFaultMixedItemStatusForTest           = WireFaultForTest{"mixed_item_status"}
 )
 
-func fixtureCiphertext(value string, fault WireFault) string {
+func fixtureCiphertext(value string, fault WireFaultForTest) string {
 	switch fault {
-	case WireFaultMissingReplay:
+	case WireFaultMissingReplayForTest:
 		return ""
-	case WireFaultOversizedReplay:
+	case WireFaultOversizedReplayForTest:
 		return strings.Repeat("x", conversation.MaximumOpaqueReplayBytes+1)
 	default:
 		return value

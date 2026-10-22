@@ -137,6 +137,9 @@ func canonicalHandoffBlock(raw json.RawMessage) bool {
 	if json.Unmarshal(raw, &text) != nil || text.Type != conversation.BlockTypeText.String() {
 		return false
 	}
+	if first, _, _ := strings.Cut(text.Text, "\n"); first == conversation.CredentialContextNotice && len(text.Text) <= remoteexec.MaximumHandoffBytes {
+		return true
+	}
 	_, err := remoteexec.ParseHandoffNotice(text.Text)
 	return err == nil
 }

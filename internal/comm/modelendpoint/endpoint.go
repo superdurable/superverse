@@ -13,6 +13,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/netip"
@@ -23,8 +24,8 @@ import (
 	"time"
 )
 
-// policy is deliberately not yet exported: custom endpoint admission is a later slice.
-// Its local exception must come from the validated server configuration when wired.
+// policy enforces the shared endpoint boundary for inference, probes and discovery.
+// The loopback exception comes only from validated local server configuration.
 type policy struct {
 	allowLocalLoopback bool
 	resolver           *net.Resolver
@@ -162,6 +163,29 @@ func (p policy) resolve(ctx context.Context, host string) ([]netip.Addr, error) 
 }
 
 const maximumConnections = 128
+const maximumResponseBytes int64 = 16 << 20
+
+var errEndpointResponseBounds = errors.New("model endpoint response exceeded its limit")
+
+type boundedResponse struct {
+	io.ReadCloser
+	remaining int64
+}
+
+func (body *boundedResponse) Read(output []byte) (int, error) {
+	if body.remaining <= 0 {
+		return 0, errEndpointResponseBounds
+	}
+	if int64(len(output)) > body.remaining {
+		output = output[:body.remaining]
+	}
+	n, err := body.ReadCloser.Read(output)
+	body.remaining -= int64(n)
+	if body.remaining == 0 {
+		return n, errEndpointResponseBounds
+	}
+	return n, err
+}
 
 var errEndpointCapacity = errors.New("model endpoint connection capacity is exhausted")
 
@@ -206,10 +230,18 @@ func (t *transport) RoundTrip(request *http.Request) (*http.Response, error) {
 	if err := t.pool.policy.validateAuthority(request.URL); err != nil {
 		return nil, err
 	}
+	if request.Host != "" && endpointAuthority(&url.URL{Scheme: request.URL.Scheme, Host: request.Host}) != endpointAuthority(t.base) {
+		return nil, errEndpointDenied
+	}
 	if request.URL.Fragment != "" || request.URL.Scheme != t.base.Scheme || endpointAuthority(request.URL) != endpointAuthority(t.base) {
 		return nil, errEndpointDenied
 	}
-	return t.pool.http.RoundTrip(request)
+	response, err := t.pool.http.RoundTrip(request)
+	if err != nil {
+		return nil, err
+	}
+	response.Body = &boundedResponse{ReadCloser: response.Body, remaining: maximumResponseBytes + 1}
+	return response, nil
 }
 func (t *transport) CloseIdleConnections() { t.pool.http.CloseIdleConnections() }
 

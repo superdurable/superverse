@@ -11,6 +11,7 @@ package agents
 import (
 	"context"
 	"errors"
+	"github.com/superdurable/superversev2/internal/comm/modelendpoint"
 	"log/slog"
 	"testing"
 	"time"
@@ -73,13 +74,14 @@ func installSyntheticProjectKey(t *testing.T, ctx context.Context, session *mock
 		t.Fatalf("start %s credential probe (%T)", label, err)
 	}
 	t.Cleanup(stop)
+	runtime, runtimeErr := modelprovider.NewCompatibleProviders(ctx, modelprovider.ProviderConfig{MockEndpoint: true}, modelendpoint.Config{AllowLocalLoopback: true}, endpoint, slog.New(slog.DiscardHandler), "")
+	if runtimeErr != nil {
+		t.Fatal(runtimeErr)
+	}
+	t.Cleanup(func() { runtime.Close() })
 	credentials := &ModelCredentialFlowService{Sessions: session.client, Subagents: session.subagents,
-		HTTP: modelprovider.NewProviderHTTPClient(), Logger: logger, ValidationBaseURL: endpoint}
-	t.Cleanup(func() {
-		if err := credentials.Close(); err != nil {
-			t.Errorf("close synthetic credential service (%T)", err)
-		}
-	})
+		Compatible: runtime, Logger: logger}
+
 	actor := conversation.Actor{AccountID: session.account}
 	if _, err := credentials.Mutate(ctx, session.id, modelcredential.Mutation{Provider: modelcredential.Anthropic,
 		OperationID: label + "-set", ExpectedRevision: 0, Last4: key[len(key)-4:], Actor: actor}, key); err != nil {

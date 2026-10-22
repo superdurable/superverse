@@ -209,6 +209,8 @@ import type { ListEnvironmentEventsRequest as _superverse_v2_ListEnvironmentEven
 import type { ListEnvironmentEventsResponse as _superverse_v2_ListEnvironmentEventsResponse, ListEnvironmentEventsResponse__Output as _superverse_v2_ListEnvironmentEventsResponse__Output } from './superverse/v2/ListEnvironmentEventsResponse';
 import type { ListMockScenariosRequest as _superverse_v2_ListMockScenariosRequest, ListMockScenariosRequest__Output as _superverse_v2_ListMockScenariosRequest__Output } from './superverse/v2/ListMockScenariosRequest';
 import type { ListMockScenariosResponse as _superverse_v2_ListMockScenariosResponse, ListMockScenariosResponse__Output as _superverse_v2_ListMockScenariosResponse__Output } from './superverse/v2/ListMockScenariosResponse';
+import type { ListModelCredentialModelsRequest as _superverse_v2_ListModelCredentialModelsRequest, ListModelCredentialModelsRequest__Output as _superverse_v2_ListModelCredentialModelsRequest__Output } from './superverse/v2/ListModelCredentialModelsRequest';
+import type { ListModelCredentialModelsResponse as _superverse_v2_ListModelCredentialModelsResponse, ListModelCredentialModelsResponse__Output as _superverse_v2_ListModelCredentialModelsResponse__Output } from './superverse/v2/ListModelCredentialModelsResponse';
 import type { ListProjectMembersRequest as _superverse_v2_ListProjectMembersRequest, ListProjectMembersRequest__Output as _superverse_v2_ListProjectMembersRequest__Output } from './superverse/v2/ListProjectMembersRequest';
 import type { ListProjectMembersResponse as _superverse_v2_ListProjectMembersResponse, ListProjectMembersResponse__Output as _superverse_v2_ListProjectMembersResponse__Output } from './superverse/v2/ListProjectMembersResponse';
 import type { ListProjectsRequest as _superverse_v2_ListProjectsRequest, ListProjectsRequest__Output as _superverse_v2_ListProjectsRequest__Output } from './superverse/v2/ListProjectsRequest';
@@ -617,6 +619,8 @@ export interface ProtoGrpcType {
       ListEnvironmentEventsResponse: MessageTypeDefinition<_superverse_v2_ListEnvironmentEventsResponse, _superverse_v2_ListEnvironmentEventsResponse__Output>
       ListMockScenariosRequest: MessageTypeDefinition<_superverse_v2_ListMockScenariosRequest, _superverse_v2_ListMockScenariosRequest__Output>
       ListMockScenariosResponse: MessageTypeDefinition<_superverse_v2_ListMockScenariosResponse, _superverse_v2_ListMockScenariosResponse__Output>
+      ListModelCredentialModelsRequest: MessageTypeDefinition<_superverse_v2_ListModelCredentialModelsRequest, _superverse_v2_ListModelCredentialModelsRequest__Output>
+      ListModelCredentialModelsResponse: MessageTypeDefinition<_superverse_v2_ListModelCredentialModelsResponse, _superverse_v2_ListModelCredentialModelsResponse__Output>
       ListProjectMembersRequest: MessageTypeDefinition<_superverse_v2_ListProjectMembersRequest, _superverse_v2_ListProjectMembersRequest__Output>
       ListProjectMembersResponse: MessageTypeDefinition<_superverse_v2_ListProjectMembersResponse, _superverse_v2_ListProjectMembersResponse__Output>
       ListProjectsRequest: MessageTypeDefinition<_superverse_v2_ListProjectsRequest, _superverse_v2_ListProjectsRequest__Output>
@@ -645,6 +649,7 @@ export interface ProtoGrpcType {
       ModelCredentialInfo: MessageTypeDefinition<_superverse_v2_ModelCredentialInfo, _superverse_v2_ModelCredentialInfo__Output>
       ModelCredentialService: SubtypeConstructor<typeof grpc.Client, _superverse_v2_ModelCredentialServiceClient> & { service: _superverse_v2_ModelCredentialServiceDefinition }
       ModelCredentialStatus: EnumTypeDefinition
+      ModelDiscoveryResult: EnumTypeDefinition
       ModelProvider: EnumTypeDefinition
       NewTeamSpaceConnection: MessageTypeDefinition<_superverse_v2_NewTeamSpaceConnection, _superverse_v2_NewTeamSpaceConnection__Output>
       ObjectReference: MessageTypeDefinition<_superverse_v2_ObjectReference, _superverse_v2_ObjectReference__Output>

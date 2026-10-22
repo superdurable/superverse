@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
@@ -36,18 +37,36 @@ type ModelRouter struct {
 type MockClientConfig struct {
 	ClaudeClientConfig
 	CompatibleTransports bool
+	// HTTPClient is supplied only by the owner of the built-in mock listener.
+	// It is authority-bound to that listener and never serves custom models.
+	HTTPClient *http.Client `yaml:"-"`
 }
 
 // NewModelRouter builds the clients the server offers over one owned HTTP
 // client: official Claude with per-request authentication, and the configured mock.
-func NewModelRouter(httpClient *http.Client, claude ClaudeClientConfig, mock *MockClientConfig, logger *slog.Logger, compatible *CompatibleProviders) (*ModelRouter, error) {
-	router := &ModelRouter{messages: newMessagesClient(httpClient, logger), compatible: compatible}
-	var err error
+func NewModelRouter(claude ClaudeClientConfig, mock *MockClientConfig, logger *slog.Logger, compatible *CompatibleProviders) (*ModelRouter, error) {
+	router := &ModelRouter{compatible: compatible}
+	base := claude.BaseURL
+	if base == "" {
+		base = conversation.ProviderAnthropic.BaseURL()
+	}
+	httpClient, err := compatible.pool.Client(context.Background(), base)
+	if err != nil {
+		return nil, err
+	}
+	router.messages = newMessagesClient(httpClient, logger)
 	if router.claude, err = newClaudeClient(httpClient, ClaudeClientConfig{BaseURL: claude.BaseURL}, logger); err != nil {
 		return nil, err
 	}
 	if mock != nil {
-		messages, err := newClaudeClient(httpClient, mock.ClaudeClientConfig, logger)
+		mockHTTP := mock.HTTPClient
+		if mockHTTP == nil {
+			mockHTTP, err = compatible.pool.Client(context.Background(), mock.BaseURL)
+			if err != nil {
+				return nil, err
+			}
+		}
+		messages, err := newClaudeClient(mockHTTP, mock.ClaudeClientConfig, logger)
 		if err != nil {
 			return nil, err
 		}
@@ -61,7 +80,7 @@ func NewModelRouter(httpClient *http.Client, claude ClaudeClientConfig, mock *Mo
 			policy := openaicompat.Policy{Provider: model.Details().Provider, WireMode: model.Details().Provider.APIStyle(), MaxTokens: profile.maxTokens,
 				Images: profile.Capabilities.SupportsImages, Strict: profile.Capabilities.StrictSchema == strictEnabled,
 				Effort: profile.Effort, Replay: profile.Capabilities.Replay, ChatThinking: profile.Capabilities.chatThinking}
-			client, err := openaicompat.NewMock(httpClient, mock.BaseURL, policy, logger)
+			client, err := openaicompat.New(mockHTTP, strings.TrimRight(mock.BaseURL, "/")+"/v1", policy, true, logger)
 			if err != nil {
 				return nil, err
 			}
@@ -96,6 +115,9 @@ func (router *ModelRouter) Complete(ctx context.Context, request conversation.Mo
 		rejection := conversation.ModelUnavailable.Rejected()
 		rejection.Hint = availability.Reason()
 		return conversation.ModelReply{}, rejection
+	}
+	if request.Model.IsCustom() {
+		return router.compatible.Complete(ctx, request)
 	}
 	style := request.Model.Details().Provider.APIStyle()
 	if request.Model.IsMock() {

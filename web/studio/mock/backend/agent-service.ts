@@ -305,11 +305,19 @@ function credentialFixture(store: MockStore, project: string, provider: Credenti
       pendingOperation: "",
       pendingRevision: "",
       pendingDelete: false,
+      baseUrl: "",
+      customModelId: "",
+      effectiveModelId: "",
+      customProfileVersion: 0,
       provider,
     }
   );
 }
 export const modelCredentialService: MockService<"ModelCredentialService"> = {
+  ListModelCredentialModels: (request, { store }) => {
+    remoteConnections(store, request.projectId, request.caller);
+    return { modelIds: ["local-development-model"], result: "MODEL_DISCOVERY_RESULT_SUPPORTED" };
+  },
   GetModelCredentialInfo: (request, { store }) => ({
     credential: credentialFixture(store, request.projectId, request.provider),
   }),
@@ -322,6 +330,10 @@ export const modelCredentialService: MockService<"ModelCredentialService"> = {
       revision: String(BigInt(current.revision) + BigInt(1)),
       status: ModelCredentialStatus.MODEL_CREDENTIAL_STATUS_ACTIVE,
       last4: request.apiKey.slice(-4),
+      baseUrl: request.baseUrl,
+      customModelId: request.customModelId,
+      effectiveModelId: request.baseUrl ? request.customModelId || "local-development-model" : "",
+      customProfileVersion: request.baseUrl ? 1 : 0,
       setBy: { accountId: "", email: request.caller?.canonicalEmail ?? "" },
       setAt: new Date().toISOString(),
     };

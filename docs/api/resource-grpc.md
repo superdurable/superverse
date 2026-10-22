@@ -27,7 +27,7 @@ is logged the same way and ends that Watch with the same Internal status.
 
 <!-- BEGIN GENERATED SERVICE TABLE (make generate-proto) -->
 
-19 services, 112 RPCs. A field is a string unless a type is given. Every request
+19 services, 113 RPCs. A field is a string unless a type is given. Every request
 except RegisterAccount and Login also carries `CallerContext caller 100`, which the table omits.
 
 | Service | RPCs | Reached through |
@@ -50,7 +50,7 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 | FlowDiagnosticsService | 9 | `/dex/...` |
 | ConnectorService | 7 | `/dex/...` |
 | ApplicationEnvironmentService | 2 | `/dex/...` |
-| ModelCredentialService | 3 | `/api/rpc/<Method>` |
+| ModelCredentialService | 4 | `/api/rpc/<Method>` |
 
 **AccountService**
 
@@ -256,8 +256,9 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 | RPC | Request | Response |
 | --- | --- | --- |
 | GetModelCredentialInfo | `project_id 1, ModelProvider provider 2` | `ModelCredentialInfo credential 1` |
-| SetModelCredential | `project_id 1, ModelProvider provider 2, request_id 3, optional uint64 expected_revision 4, api_key 5` | `ModelCredentialInfo credential 1` |
+| SetModelCredential | `project_id 1, ModelProvider provider 2, request_id 3, optional uint64 expected_revision 4, api_key 5, base_url 6, custom_model_id 7` | `ModelCredentialInfo credential 1` |
 | DeleteModelCredential | `project_id 1, ModelProvider provider 2, request_id 3, optional uint64 expected_revision 4` | `ModelCredentialInfo credential 1` |
+| ListModelCredentialModels | `project_id 1, ModelProvider provider 2, api_key 3, base_url 4, optional uint64 expected_revision 5` | `repeated model_ids 1, ModelDiscoveryResult result 2` |
 
 <!-- END GENERATED SERVICE TABLE -->
 
@@ -1978,3 +1979,10 @@ automation is intentionally excluded. Agent runtime behavior is kept through the
 package and Studio, while obsolete standalone entry points, repository metadata, unused MCP
 and duplicate UI shells are removed. Implementation receipts record identities, commands,
 results and gaps.
+
+`ListModelCredentialModels` belongs to the credential service so transient key
+requests share its logging exclusion. It returns only bounded model IDs and a
+closed discovery result. With no transient key, `expected_revision` must match
+the active provider metadata and `base_url` must equal its canonical stored
+endpoint. An API key is never probed against a different URL. `SetModelCredential`
+updates custom endpoint/model metadata and the key as one provider revision.

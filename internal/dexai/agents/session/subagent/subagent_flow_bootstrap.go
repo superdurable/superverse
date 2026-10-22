@@ -11,7 +11,6 @@ package subagent
 import (
 	"fmt"
 	"log/slog"
-	"net/http"
 
 	"github.com/superdurable/dex/sdk-go/dex"
 	"github.com/superdurable/dex/sdk-go/gen/dexpb"
@@ -44,8 +43,7 @@ type SubagentFlowConfig struct {
 // the pooled workspace capabilities, which the Session's bootstrap owns and
 // closes. It holds no durable state and serves no request.
 type SubagentFlowBootstrap struct {
-	flow       *SubagentFlow
-	httpClient *http.Client
+	flow *SubagentFlow
 }
 
 // NewSubagentFlowBootstrap assembles the Flow; workspaces are the Session's
@@ -56,14 +54,13 @@ func NewSubagentFlowBootstrap(config SubagentFlowConfig, dependency SubagentFlow
 			panic(fmt.Sprintf("the subagent configuration names no effort of the kind %s", kind))
 		}
 	}
-	httpClient := modelprovider.NewProviderHTTPClient()
-	model, err := modelprovider.NewModelRouter(httpClient, config.Claude, config.Mock, logger, config.Compatible)
+	model, err := modelprovider.NewModelRouter(config.Claude, config.Mock, logger, config.Compatible)
 	if err != nil {
 		return nil, err
 	}
 	flow := &SubagentFlow{dependency: dependency, repository: workspaces, modelClient: model, diagnostics: diagnostics,
 		sandbox: sandboxtools.NewRunner(workspaces.SandboxResolver(), workspaces.Git()), settings: config.Settings, efforts: config.Efforts}
-	return &SubagentFlowBootstrap{flow: flow, httpClient: httpClient}, nil
+	return &SubagentFlowBootstrap{flow: flow}, nil
 }
 
 // Flow returns the shared definition registered by the server bootstrap.
@@ -77,6 +74,5 @@ func (bootstrap *SubagentFlowBootstrap) Client(sdk *dex.Client, execution dexpb.
 // Close releases the model transport; the workspace capabilities belong to
 // the Session's bootstrap.
 func (bootstrap *SubagentFlowBootstrap) Close() error {
-	bootstrap.httpClient.CloseIdleConnections()
 	return nil
 }

@@ -1,0 +1,92 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+name: custom-endpoint
+title: "Custom endpoint Session"
+description: "Serial repository tools, a child investigation, compaction and a next turn on a replaced endpoint."
+category: agent_feature
+compaction_summary: "The manifest was read and the child investigation is running."
+inputs:
+  - label: "Use the custom endpoint"
+    message: "Inspect the manifest and delegate one investigation."
+    replies:
+      - text: "Reading the manifest."
+        tool_uses:
+          - name: read
+            input: {path: dex-app.yaml, limit: 20}
+      - text: "Starting a child investigation."
+        tool_uses:
+          - name: start_agent
+            input: {description: "Custom endpoint investigation", kind: investigate, prompt: "Check the workspace. [[subagent:custom-endpoint/check]]"}
+        expect_result_contains:
+          - '"task_id":"agent-'
+      - text: "Reading before compaction."
+        tool_uses:
+          - name: read
+            input: {path: dex-app.yaml, limit: 20}
+        usage: {input_tokens: 23000, output_tokens: 100}
+      - text: "Custom endpoint tools and compaction complete."
+      - text: "The custom endpoint child completed its workspace check."
+        notification: task
+  - label: "Continue after replacement"
+    message: "Continue after changing the endpoint."
+    replies:
+      - text: "The custom endpoint replacement continues with earlier context as text."
+  - label: "Retained continuation 3"
+    message: "Continue the retained custom endpoint conversation (3)."
+    replies:
+      - text: "The custom endpoint replacement continues with earlier context as text."
+  - label: "Retained continuation 4"
+    message: "Continue the retained custom endpoint conversation (4)."
+    replies:
+      - text: "The custom endpoint replacement continues with earlier context as text."
+  - label: "Retained continuation 5"
+    message: "Continue the retained custom endpoint conversation (5)."
+    replies:
+      - text: "The custom endpoint replacement continues with earlier context as text."
+  - label: "Retained continuation 6"
+    message: "Continue the retained custom endpoint conversation (6)."
+    replies:
+      - text: "The custom endpoint replacement continues with earlier context as text."
+  - label: "Retained continuation 7"
+    message: "Continue the retained custom endpoint conversation (7)."
+    replies:
+      - text: "The custom endpoint replacement continues with earlier context as text."
+  - label: "Retained continuation 8"
+    message: "Continue the retained custom endpoint conversation (8)."
+    replies:
+      - text: "The custom endpoint replacement continues with earlier context as text."
+  - label: "Retained continuation 9"
+    message: "Continue the retained custom endpoint conversation (9)."
+    replies:
+      - text: "The custom endpoint replacement continues with earlier context as text."
+  - label: "Retained continuation 10"
+    message: "Continue the retained custom endpoint conversation (10)."
+    replies:
+      - text: "The custom endpoint replacement continues with earlier context as text."
+  - label: "Retained continuation 11"
+    message: "Continue the retained custom endpoint conversation (11)."
+    replies:
+      - text: "The custom endpoint replacement continues with earlier context as text."
+  - label: "Retained continuation 12"
+    message: "Continue the retained custom endpoint conversation (12)."
+    replies:
+      - text: "The custom endpoint replacement continues with earlier context as text."
+  - label: "Retained continuation 13"
+    message: "Continue the retained custom endpoint conversation (13)."
+    replies:
+      - text: "The custom endpoint replacement continues with earlier context as text."
+subagents:
+  check:
+    kind: investigate
+    replies:
+      - text: "Checking the workspace in the child."
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 20; git status --short", description: "Inspect the child workspace"}
+      - text: "The child workspace check completed."

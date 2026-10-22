@@ -80,14 +80,19 @@ func encodeRequest(request conversation.ModelRequest, policy Policy) ([]byte, er
 	if err != nil {
 		return nil, err
 	}
-	params := map[string]any{"model": request.Model.ProviderModel(), "stream": true, "tools": tools, "tool_choice": "auto"}
+	params := map[string]any{"model": request.APIModelID(), "stream": true, "tools": tools, "tool_choice": "auto"}
 	if request.ToolChoiceNone {
 		params["tool_choice"] = "none"
+	}
+	if request.Model.IsCustom() {
+		params["parallel_tool_calls"] = false
 	}
 	responses := policy.WireMode == conversation.OpenAIResponses
 	if responses {
 		params["store"] = false
-		params["include"] = []string{"reasoning.encrypted_content"}
+		if policy.Replay == conversation.ReplayEncryptedOpaque {
+			params["include"] = []string{"reasoning.encrypted_content"}
+		}
 		params["max_output_tokens"] = policy.MaxTokens
 		params["instructions"] = request.Prompts.System
 		if effort := requestEffort(request, policy); effort != "" {

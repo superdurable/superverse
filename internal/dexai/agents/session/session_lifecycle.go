@@ -198,7 +198,7 @@ const (
 // conversationStepOptions are the options of a short conversation Step: it
 // locks MessageWindowLock and the given Attributes and loads the given maps.
 func conversationStepOptions(maps []dex.AttributeDef, locks ...dex.AttributeLock) *dex.StepOptions {
-	return &dex.StepOptions{WaitForMethodTimeout: time.Minute, ExecuteMethodTimeout: time.Minute, ExecuteLoadAttributeMaps: maps,
+	return &dex.StepOptions{WaitForMethodTimeout: time.Minute, ExecuteMethodTimeout: time.Minute, ExecuteLoadAttributeMaps: maps, ExecuteLoadAttributeMapInstances: credentialInfoLoads(),
 		ExecuteLockAttributes: append([]dex.AttributeLock{dex.LockAttribute(messageWindowLockAttribute)}, locks...)}
 }
 
@@ -620,7 +620,7 @@ func reserveModelCredential(ctx dex.Context, input modelcredential.Mutation) (*d
 		previous := info
 		previous.Previous = nil
 		revision := max(info.Revision, info.HighWaterRevision) + 1
-		info = modelcredential.Info{ChangeReason: input.Reason, Holders: info.Holders, Previous: &previous, HighWaterRevision: revision, OperationRevision: input.ExpectedRevision, Revision: revision, Status: modelcredential.StatusPending, OperationID: input.OperationID, Delete: input.Delete, SetBy: input.Actor, SetAt: time.Now().UTC(), Last4: input.Last4}
+		info = modelcredential.Info{Endpoint: input.Endpoint, ChangeReason: input.Reason, Holders: info.Holders, Previous: &previous, HighWaterRevision: revision, OperationRevision: input.ExpectedRevision, Revision: revision, Status: modelcredential.StatusPending, OperationID: input.OperationID, Delete: input.Delete, SetBy: input.Actor, SetAt: time.Now().UTC(), Last4: input.Last4}
 		comm.MustDo(modelKeyInfoAttribute.Set(ctx, input.Provider.String(), info))
 		result = modelcredential.Admission{Info: info, Admitted: true, Fresh: true}
 	}
@@ -759,7 +759,8 @@ func modelCredentialReady(ctx dex.Context, model conversation.Model) bool {
 	if model.IsMock() || currentExecutor(ctx).Mode == remoteexec.ModeRemote {
 		return true
 	}
-	return dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, modelcredential.ForModel(model).String())).Active()
+	info := dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, modelcredential.ForModel(model).String()))
+	return info.Active() && (model.IsCustom() == (info.Endpoint.BaseURL != ""))
 }
 
 func credentialAdmissionRPC(options *dex.RPCOptions) *dex.RPCOptions {
@@ -818,6 +819,9 @@ func (flow *SessionAgentFlow) startCredentialSubagent(ctx dex.Context, execution
 		return err
 	}
 	start.CredentialRevision = key.Revision
+	if start.Model.IsCustom() {
+		start.Endpoint = comm.Must(modelKeyInfoAttribute.Get(ctx, modelcredential.ForModel(start.Model).String())).Endpoint
+	}
 	return flow.dependency.StartSubagent(execution, start, key, ctx.Attempt())
 }
 
@@ -888,4 +892,13 @@ func subagentCredentialModel(ctx dex.Context, call conversation.ToolCall) conver
 		return record.Model
 	}
 	return comm.Must(sessionModelAttribute.Get(ctx)).Model
+}
+
+// credentialSegmentChanged also fences official segments written before revision freezing existed.
+func credentialSegmentChanged(ctx dex.Context, segment agentloop.ContextSegment) bool {
+	if segment.Model.IsMock() {
+		return false
+	}
+	info := dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, modelcredential.ForModel(segment.Model).String()))
+	return segment.Endpoint != info.Endpoint || segment.CredentialRevision > 0 && segment.CredentialRevision != info.Revision
 }

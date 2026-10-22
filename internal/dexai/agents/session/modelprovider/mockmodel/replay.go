@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/superdurable/superversev2/internal/comm"
@@ -74,7 +75,7 @@ func sameBlocks(replayed []json.RawMessage, expected []block) bool {
 
 // followWireReplay uses the same scenario engine with protocol-specific replay.
 // Synthetic ciphertext is derived from the original scenario signature, never its thinking text.
-func followWireReplay(messages []requestMessage, mode conversation.APIStyle, provider conversation.Provider) (selection, error) {
+func followWireReplay(messages []requestMessage, mode conversation.APIStyle, provider conversation.Provider, custom ...bool) (selection, error) {
 	compaction := isCompaction(messages)
 	if compaction {
 		var err error
@@ -105,6 +106,9 @@ func followWireReplay(messages []requestMessage, mode conversation.APIStyle, pro
 			}
 			return nil
 		}
+		if len(custom) > 0 && custom[0] {
+			expected = messagesReply(expected, conversation.ModelOpenAICustom)
+		}
 		var want []json.RawMessage
 		firstCall := true
 		for index, b := range compatibleReplyBlocks(expected, mode) {
@@ -113,7 +117,7 @@ func followWireReplay(messages []requestMessage, mode conversation.APIStyle, pro
 					want = append(want, mockReasoning(b, index))
 				}
 			} else {
-				if !compaction && mode == conversation.OpenAIChatCompletions && provider == conversation.ProviderGemini && b.kind == conversation.BlockTypeToolUse && firstCall {
+				if !compaction && mode == conversation.OpenAIChatCompletions && provider == conversation.ProviderGemini && !expected.custom && b.kind == conversation.BlockTypeToolUse && firstCall {
 					firstCall = false
 					want = append(want, mockCallSignature(b.id))
 				}
@@ -136,7 +140,7 @@ func followWireReplay(messages []requestMessage, mode conversation.APIStyle, pro
 // Responses reasoning profiles always provide replay for tool proposals. Scenarios
 // without authored thinking get protocol-only synthetic ciphertext, never new text.
 func compatibleReplyBlocks(answer reply, mode conversation.APIStyle) []block {
-	if mode != conversation.OpenAIResponses || answer.stopReason == conversation.StopReasonMaxTokens {
+	if answer.custom || mode != conversation.OpenAIResponses || answer.stopReason == conversation.StopReasonMaxTokens {
 		return answer.blocks
 	}
 	var firstCall string
@@ -195,6 +199,7 @@ func messagesReply(answer reply, model conversation.Model) reply {
 	if model == "" || model == conversation.ModelMock {
 		return answer
 	}
+	answer.custom = model.IsCustom()
 	replay := modelprovider.ProfileOf(model).Capabilities.Replay
 	kept := []block{}
 	for _, item := range answer.blocks {
@@ -233,6 +238,15 @@ func messagesReply(answer reply, model conversation.Model) reply {
 }
 
 func (request messagesRequest) catalogModel() conversation.Model {
+	if request.Custom || request.Model == customDiscoveredModelID || request.Model == customManualModelID {
+		if request.WireMode == conversation.OpenAIResponses {
+			return conversation.ModelOpenAICustom
+		}
+		if request.WireMode == conversation.OpenAIChatCompletions {
+			return conversation.ModelQwenCustom
+		}
+		return conversation.ModelAnthropicCustom
+	}
 	for _, model := range []conversation.Model{conversation.ModelMock, conversation.ModelDeepSeekFlash, conversation.ModelMiniMaxM3, conversation.ModelMuseWonder10} {
 		if request.Model == model.ProviderModel() {
 			return model
@@ -249,10 +263,10 @@ func (request messagesRequest) validateMessagesProfile(r *http.Request, body []b
 	}
 	model := request.catalogModel()
 	if model == conversation.ModelMuseWonder10 {
-		if r.Header.Get("Authorization") != "Bearer "+APIKey || r.Header.Get("X-Api-Key") != "" {
+		if r.Header.Get("Authorization") != "Bearer "+apiKey || r.Header.Get("X-Api-Key") != "" {
 			return errors.New("Meta requires only bearer authentication")
 		}
-	} else if r.Header.Get("X-Api-Key") != APIKey || r.Header.Get("Authorization") != "" {
+	} else if r.Header.Get("X-Api-Key") != apiKey || r.Header.Get("Authorization") != "" {
 		return errors.New("compatible SDK request requires only API-key authentication")
 	}
 	var fields map[string]json.RawMessage
@@ -273,6 +287,12 @@ func (request messagesRequest) validateMessagesProfile(r *http.Request, body []b
 		if !allowed[key] {
 			return errors.New("compatible request has an undocumented top-level field")
 		}
+	}
+	if model.IsCustom() {
+		if _, exists := fields["thinking"]; exists {
+			return errors.New("custom request must not enable thinking")
+		}
+		return nil
 	}
 	var gotValue, wantValue any
 	if json.Unmarshal(fields[control], &gotValue) != nil || json.Unmarshal([]byte(want), &wantValue) != nil || !reflect.DeepEqual(gotValue, wantValue) {
@@ -324,3 +344,66 @@ const (
 )
 
 var protocolFaults = []protocolFault{faultNone, faultPlaintext, faultMissingOpaque, faultDuplicateOpaque, faultOversizeOpaque, faultTruncated, faultWrongModel}
+
+var quotedCustomRun = regexp.MustCompile(`^toolu_mock_([a-f0-9]{8}_[0-9]+)_[0-9]+_[0-9]+_[0-9]+$`)
+
+// followCustomReplay verifies native or exactly quoted historical tool proposals.
+func followCustomReplay(messages []requestMessage) (selection, error) {
+	return walk(messages, func(message requestMessage, sel selection) error {
+		expected, err := sel.nextReply()
+		if err != nil {
+			return err
+		}
+		expected = messagesReply(expected, conversation.ModelAnthropicCustom)
+		projected := requestMessage{Content: make([]json.RawMessage, len(message.Content))}
+		for i, raw := range message.Content {
+			var text struct {
+				Type string `json:"type"`
+				Text string `json:"text"`
+			}
+			if json.Unmarshal(raw, &text) == nil && text.Type == conversation.BlockTypeText.String() && strings.HasPrefix(text.Text, conversation.RecordedToolHistoryPrefix) {
+				quoted := strings.TrimPrefix(text.Text, conversation.RecordedToolHistoryPrefix)
+				var tool struct {
+					Type string `json:"type"`
+				}
+				if json.Unmarshal([]byte(quoted), &tool) != nil || tool.Type != conversation.BlockTypeToolUse.String() {
+					return errors.New("invalid quoted tool proposal")
+				}
+				var identity struct {
+					ID string `json:"id"`
+				}
+				if json.Unmarshal([]byte(quoted), &identity) != nil {
+					return errors.New("invalid historical tool identity")
+				}
+				source := quotedCustomRun.FindStringSubmatch(identity.ID)
+				if len(source) != 2 {
+					return errors.New("invalid historical scenario run")
+				}
+				// Text projection changes message grouping; preserve the original run encoded in the quoted ID.
+				expected, err = sel.script.replyAt(sel.at, sel.arguments, source[1])
+				if err != nil {
+					return err
+				}
+				expected = messagesReply(expected, conversation.ModelAnthropicCustom)
+				projected.Content[i] = json.RawMessage(quoted)
+			} else {
+				projected.Content[i] = raw
+			}
+		}
+		if expected.failure != nil || !sameBlocks(projected.Content, expected.blocks) {
+			detail := ""
+			for i, raw := range projected.Content {
+				if i >= len(expected.blocks) {
+					break
+				}
+				var got, want map[string]any
+				if json.Unmarshal(raw, &got) == nil && json.Unmarshal(expected.blocks[i].json(), &want) == nil && !reflect.DeepEqual(got, want) {
+					detail = fmt.Sprintf("block %d: type=%v/%v id=%v/%v", i, got["type"], want["type"], got["id"], want["id"])
+					break
+				}
+			}
+			return fmt.Errorf("custom replay mismatch at %s (observed %d blocks, expected %d; %s)", sel.at, len(projected.Content), len(expected.blocks), detail)
+		}
+		return nil
+	})
+}

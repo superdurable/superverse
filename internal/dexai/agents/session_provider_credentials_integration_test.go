@@ -10,6 +10,7 @@ package agents
 
 import (
 	"context"
+	"github.com/superdurable/superversev2/internal/comm/dexflow/dexflowtest"
 	"testing"
 
 	pb "github.com/superdurable/superversev2/gen/superverse/v2"
@@ -44,7 +45,7 @@ func newSelectableSession(t *testing.T, ctx context.Context, model conversation.
 		case pb.AgentModel_AGENT_MODEL_DEEPSEEK_FLASH, pb.AgentModel_AGENT_MODEL_MUSE_WONDER_1_0, pb.AgentModel_AGENT_MODEL_QWEN_3_8_MAX, pb.AgentModel_AGENT_MODEL_KIMI_K3, pb.AgentModel_AGENT_MODEL_GLM_5_3:
 			t.Fatal("the catalog exposed an unusable provider")
 		}
-		if choice.GetLabel() == model.Details().Label {
+		if choice.GetLabel() == model.Details().Label && choice.GetProviderName() == model.Details().Provider.DisplayName() {
 			selected = choice
 		}
 	}
@@ -58,7 +59,14 @@ func newSelectableSession(t *testing.T, ctx context.Context, model conversation.
 		t.Fatal("a provider switch without its key was admitted")
 	}
 	zero := uint64(0)
-	saved, err := credentials.SetModelCredential(ctx, &pb.SetModelCredentialRequest{ProjectId: session.identity.ProjectID, Provider: selected.Provider, RequestId: flowid.RandomID(20), ExpectedRevision: &zero, ApiKey: mockmodel.APIKey, Caller: caller})
+	request := &pb.SetModelCredentialRequest{ProjectId: session.identity.ProjectID, Provider: selected.Provider, RequestId: flowid.RandomID(20), ExpectedRevision: &zero, ApiKey: mockmodel.APIKeyForTest, Caller: caller}
+	if model.IsCustom() {
+		if dexflowtest.LocalLaneForTest(t) != dexflowtest.LaneKindForTest {
+			t.Fatal("the main Worker custom fixture requires the configured Kind loopback listener")
+		}
+		request.BaseUrl = kindCustomEndpoint
+	}
+	saved, err := credentials.SetModelCredential(ctx, request)
 	if err != nil || saved.GetCredential().GetRevision() != 1 {
 		t.Fatalf("admit provider Project key through mock endpoint (%s)", status.Code(err))
 	}
@@ -66,7 +74,7 @@ func newSelectableSession(t *testing.T, ctx context.Context, model conversation.
 		t.Fatalf("select keyed provider (%s)", status.Code(err))
 	}
 	envelope, err := session.client.ReadModelCredential(ctx, session.id, modelcredential.ForModel(model))
-	if err != nil || envelope == nil || envelope.Key != mockmodel.APIKey || envelope.Revision != 1 {
+	if err != nil || envelope == nil || envelope.Key != mockmodel.APIKeyForTest || envelope.Revision != 1 {
 		t.Fatal("provider key was not held in the exact Session namespace")
 	}
 	if content != "" {

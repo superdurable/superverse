@@ -483,6 +483,12 @@ opens, and never recomputed:
   command that reads it.
 - The executor segment after a remote handoff replays a retained suffix that
   `agentloop.ExecutorContextStart` also keeps within the attachment budget.
+  Credential rollover uses the same projection at every completed tool boundary,
+  including a direct next model call. Both archive retry plans retain exact
+  credential metadata loads. Missing metadata freezes an empty selection; the
+  existing model credential admission then rejects a keyless platform call.
+  Replay and the notice fit the selected profile’s hard limit after reserving
+  its frozen prompt, maximum output and wire framing.
 - `Entry.Bytes` counts a reference as four times its context tokens, the rate
   the compaction trigger divides by: a 1 MiB image's base64 bytes would read as
   about 350,000 tokens. Only the segment's attachment byte budget counts

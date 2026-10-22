@@ -85,8 +85,10 @@ names, descriptions and schemas so a Bridge can refresh its tool list.
 `watch_preview_run` is absent until its separate implementation supplies it.
 
 `ExecutorContextStart` selects a chronological retained suffix of complete
-assistant/tool-result units within half the compaction budget, estimated at four
-bytes per token. It stops at a missing or duplicate result, a broken unit or the
+assistant/tool-result units within an explicit byte budget. The caller caps it
+at half the compaction budget and the selected profile’s remaining input after
+reserving the frozen prompt, bounded notice, output and wire framing, estimated
+at four bytes per token. It stops at a missing or duplicate result, a broken unit or the
 byte budget and starts at a user entry, never at an orphan tool result.
 `ContextSegment.Summary` retains at most 8 KiB of the last platform summary;
 older segments read it as empty. An executor segment's explicit request shape

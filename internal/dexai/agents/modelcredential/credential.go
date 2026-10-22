@@ -118,35 +118,37 @@ type Holder struct {
 
 // Info owns non-secret configuration and one operation's admission/result.
 type Info struct {
-	ChangeReason      ChangeReason       `json:"change_reason"`
-	Holders           []Holder           `json:"holders,omitempty"`
-	Previous          *Info              `json:"previous,omitempty"`
-	HighWaterRevision uint64             `json:"high_water_revision,omitempty"`
-	OperationRevision uint64             `json:"operation_revision,omitempty"`
-	WriteAttempt      uint64             `json:"write_attempt,omitempty"`
-	Revision          uint64             `json:"revision"`
-	Status            Status             `json:"status"`
-	Last4             string             `json:"last4,omitempty"`
-	SetBy             conversation.Actor `json:"set_by"`
-	SetAt             time.Time          `json:"set_at"`
-	OperationID       string             `json:"operation_id,omitempty"`
-	Delete            bool               `json:"delete,omitempty"`
+	Endpoint          conversation.EndpointSelection `json:"endpoint,omitempty"`
+	ChangeReason      ChangeReason                   `json:"change_reason"`
+	Holders           []Holder                       `json:"holders,omitempty"`
+	Previous          *Info                          `json:"previous,omitempty"`
+	HighWaterRevision uint64                         `json:"high_water_revision,omitempty"`
+	OperationRevision uint64                         `json:"operation_revision,omitempty"`
+	WriteAttempt      uint64                         `json:"write_attempt,omitempty"`
+	Revision          uint64                         `json:"revision"`
+	Status            Status                         `json:"status"`
+	Last4             string                         `json:"last4,omitempty"`
+	SetBy             conversation.Actor             `json:"set_by"`
+	SetAt             time.Time                      `json:"set_at"`
+	OperationID       string                         `json:"operation_id,omitempty"`
+	Delete            bool                           `json:"delete,omitempty"`
 }
 
 func (info Info) Active() bool { return info.Status == StatusActive }
 
 // Mutation is safe in Dex RPC history: it never contains key material.
 type Mutation struct {
-	Reason           ChangeReason       `json:"reason"`
-	Cancel           bool               `json:"cancel,omitempty"`
-	RetryDelete      bool               `json:"retry_delete,omitempty"`
-	WriteAttempt     uint64             `json:"write_attempt,omitempty"`
-	Provider         Provider           `json:"provider"`
-	OperationID      string             `json:"operation_id"`
-	ExpectedRevision uint64             `json:"expected_revision"`
-	Delete           bool               `json:"delete"`
-	Actor            conversation.Actor `json:"actor"`
-	Last4            string             `json:"last4,omitempty"`
+	Endpoint         conversation.EndpointSelection `json:"endpoint,omitempty"`
+	Reason           ChangeReason                   `json:"reason"`
+	Cancel           bool                           `json:"cancel,omitempty"`
+	RetryDelete      bool                           `json:"retry_delete,omitempty"`
+	WriteAttempt     uint64                         `json:"write_attempt,omitempty"`
+	Provider         Provider                       `json:"provider"`
+	OperationID      string                         `json:"operation_id"`
+	ExpectedRevision uint64                         `json:"expected_revision"`
+	Delete           bool                           `json:"delete"`
+	Actor            conversation.Actor             `json:"actor"`
+	Last4            string                         `json:"last4,omitempty"`
 }
 
 // Admission distinguishes a newly reserved operation from a replay that must query first.

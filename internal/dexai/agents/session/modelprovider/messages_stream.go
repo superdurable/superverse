@@ -48,7 +48,7 @@ func readCompatibleStream(stream *ssestream.Stream[anthropic.BetaRawMessageStrea
 		}
 		switch event.Type {
 		case "message_start":
-			if started || len(event.Message.Content) != 0 || event.Message.Model != request.Model.ProviderModel() || string(event.Message.Role) != string(conversation.EntryRoleAssistant) {
+			if started || len(event.Message.Content) != 0 || event.Message.Model != request.APIModelID() || string(event.Message.Role) != string(conversation.EntryRoleAssistant) {
 				return conversation.ModelReply{}, conversation.ProviderProtocolRejected.Rejected(0)
 			}
 			started = true

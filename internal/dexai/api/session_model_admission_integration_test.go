@@ -11,6 +11,7 @@ package api
 import (
 	"context"
 	"errors"
+	"github.com/superdurable/superversev2/internal/comm/modelendpoint"
 	"log/slog"
 	"testing"
 	"time"
@@ -164,8 +165,12 @@ func TestSessionModelAdmissionDexIntegration(t *testing.T) {
 		t.Fatal("start credential validation model endpoint")
 	}
 	defer stop()
-	credentials := &agents.ModelCredentialFlowService{Sessions: client, Subagents: subagent.NewSubagentFlowClientForTest(sdk, &subagent.SubagentFlow{}, reader), HTTP: modelprovider.NewProviderHTTPClient(), Logger: slog.New(slog.DiscardHandler), ValidationBaseURL: endpoint}
-	defer credentials.Close()
+	runtime, runtimeErr := modelprovider.NewCompatibleProviders(ctx, modelprovider.ProviderConfig{MockEndpoint: true}, modelendpoint.Config{AllowLocalLoopback: true}, endpoint, slog.New(slog.DiscardHandler), "")
+	if runtimeErr != nil {
+		t.Fatal(runtimeErr)
+	}
+	t.Cleanup(func() { runtime.Close() })
+	credentials := &agents.ModelCredentialFlowService{Sessions: client, Subagents: subagent.NewSubagentFlowClientForTest(sdk, &subagent.SubagentFlow{}, reader), Compatible: runtime, Logger: slog.New(slog.DiscardHandler)}
 	if _, err = credentials.Mutate(ctx, id, modelcredential.Mutation{Provider: modelcredential.Anthropic, OperationID: "model-admission-set", ExpectedRevision: 0, Last4: "1234", Actor: conversation.Actor{AccountID: owner}}, key); err != nil {
 		t.Fatalf("set Session credential for model admission (%T)", err)
 	}

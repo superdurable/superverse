@@ -39,7 +39,7 @@ func liveClient(t *testing.T, key string) *claudeClient {
 		t.Fatal("ANTHROPIC_API_KEY is required for the live Claude API tests")
 	}
 	key = PersistLiveCredentialForTest(t, key)
-	transport := NewProviderHTTPClient()
+	transport := NewProviderHTTPClientForTest()
 	t.Cleanup(transport.CloseIdleConnections)
 	client, err := newClaudeClient(transport, ClaudeClientConfig{APIKey: key}, slog.Default())
 	if err != nil {

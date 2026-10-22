@@ -56,6 +56,8 @@ func (reason *SegmentReason) UnmarshalJSON(data []byte) error {
 
 // ContextSegment is the current segment and its token accounting.
 type ContextSegment struct {
+	Endpoint           conversation.EndpointSelection `json:"endpoint,omitempty"`
+	CredentialRevision uint64                         `json:"credential_revision,omitempty"`
 	// Summary is the bounded previous-platform summary retained through remote work.
 	Summary       string                `json:"summary,omitempty"`
 	Number        int64                 `json:"number"`
@@ -187,7 +189,7 @@ type SessionPrompt struct {
 }
 
 // promptModels are the models a prompt is built for.
-var promptModels = []conversation.Model{conversation.ModelOpus55, conversation.ModelSonnet55, conversation.ModelHaiku45, conversation.ModelMock, conversation.ModelMockResponses, conversation.ModelMockChat, conversation.ModelGPT6Astra, conversation.ModelGrok47, conversation.ModelGemini4Argon}
+var promptModels = []conversation.Model{conversation.ModelOpus55, conversation.ModelSonnet55, conversation.ModelHaiku45, conversation.ModelMock, conversation.ModelMockResponses, conversation.ModelMockChat, conversation.ModelGPT6Astra, conversation.ModelGrok47, conversation.ModelGemini4Argon, conversation.ModelAnthropicCustom, conversation.ModelOpenAICustom, conversation.ModelXAICustom, conversation.ModelGeminiCustom, conversation.ModelQwenCustom}
 
 // sessionPrompts holds the prompt of each model; the catalog and the prompts
 // are compiled in, so they are built once.
@@ -460,14 +462,14 @@ func RetainedFirstSequence(state AgentState, segmentFirst conversation.Sequence)
 }
 
 // ExecutorContextStart selects one chronological suffix of complete units
-// within half the compaction threshold and the attachment budget. It stops at
+// within the explicit replay byte budget and the attachment budget. It stops at
 // an incomplete assistant/tool-result unit and never replays a result without
 // its assistant call. The chosen suffix begins with user text.
-func ExecutorContextStart(entries []conversation.SequencedEntry, compactionTokens int64, attachments AttachmentBudget) conversation.Sequence {
+func ExecutorContextStart(entries []conversation.SequencedEntry, replayBytes int64, attachments AttachmentBudget) conversation.Sequence {
 	if len(entries) == 0 {
 		return 0
 	}
-	budget, used := max(int64(0), compactionTokens*2), int64(0)
+	budget, used := max(int64(0), replayBytes), int64(0)
 	shown := ContextSegment{AttachmentBudget: attachments}
 	first := conversation.Sequence(0)
 	for end := len(entries); end > 0; {

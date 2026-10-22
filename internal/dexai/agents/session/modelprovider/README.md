@@ -207,3 +207,38 @@ provider display/key hints. Its local mock-endpoint flag lets Studio explain the
 non-secret test key and avoid claiming a model charge. Frozen Session and child
 prompts include every implemented model, independently of runtime enablement;
 configuration never mutates prompt or capability facts.
+
+Custom selections use one version-1 conservative profile per fixed wire family,
+with a 32,768-token context, 4,096 output tokens, a 22,528 compaction threshold
+and a 24,576 hard limit. They offer text and serial tools; images, effort,
+parallel tools, strict schemas, prompt cache, thinking controls and reasoning
+replay are disabled. Unexpected reasoning or parallel tool proposals are refused.
+The frozen system/tool prompt is about 17.7K estimated tokens, leaving about
+4.8K tokens of conversation between compactions. Custom context sizes are fixed.
+
+The API root is supplied explicitly and validated by the shared endpoint pool.
+Only the effective model ID enters the inference JSON model field; it is never
+a URL segment or metric label. Authentication probes and authenticated model
+discovery use the same origin-bound policy. No per-key client or connection pool
+is retained. The locally validated `agent.providers.customEndpoints` setting
+enables discovery/inference fixtures on the existing mock listener only in local
+lanes with the mock model and mock endpoint policy. Custom URLs retain their
+explicit destination and never fall back to an official or mock origin.
+
+A workspace/region-matched Model Studio key and public HTTPS compatible API root
+can use `qwen/custom` with a bounded model ID. An endpoint whose models require
+readable reasoning is refused. Region/workspace mistakes remain provider
+authentication or model-admission errors; no default workspace or region is
+invented. These are protocol boundaries, without a live DashScope acceptance claim.
+
+Hosted administrator mock Sessions use the server-owned built-in listener
+client, bound to exactly that origin. The custom/official endpoint pool never
+receives this loopback capability. The built-in client owns one bounded pool
+per mock-enabled replica; its listener owner closes both together.
+
+Custom credential probes classify HTTP 401/403 as invalid keys and 404 as an
+unknown model. HTTP 429 and server failures remain retryable; provider response
+bodies and endpoint details never enter these errors. Every production router
+uses the shared validated endpoint pool, including its Messages adapter.
+
+Custom credential probes preserve closed timeout, transport and retryable HTTP reasons at the credential API. In mock mode only, numeric probe IDs, timestamps and bounded pool occupancy correlate client and mock-handler progress without endpoints or credentials.

@@ -9,6 +9,7 @@
 package modelendpoint
 
 import (
+	"bytes"
 	"context"
 	"crypto/x509"
 	"errors"
@@ -35,6 +36,9 @@ func TestEndpointTransportNetworkIntegration(t *testing.T) {
 
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "probe"), []byte("endpoint transport"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "oversized"), bytes.Repeat([]byte("x"), (16<<20)+2), 0600); err != nil {
 		t.Fatal(err)
 	}
 	files := http.FileServer(http.Dir(root))
@@ -67,6 +71,26 @@ func TestEndpointTransportNetworkIntegration(t *testing.T) {
 		response.Body.Close()
 		if err != nil || response.StatusCode != http.StatusOK || string(body) != "endpoint transport" {
 			t.Fatal("actual local response did not match")
+		}
+		oversized, err := local.Get(base + "/oversized")
+		if err != nil {
+			t.Fatal(err)
+		}
+		bounded, readErr := io.ReadAll(oversized.Body)
+		oversized.Body.Close()
+		if !errors.Is(readErr, errEndpointResponseBounds) || len(bounded) > (16<<20)+1 {
+			t.Fatal("actual oversized response escaped its transport bound")
+		}
+		hostOverride, err := http.NewRequestWithContext(ctx, http.MethodGet, base+"/probe", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		hostOverride.Host = "metadata.google.internal"
+		if result, err := local.Do(hostOverride); !errors.Is(err, errEndpointDenied) {
+			if result != nil {
+				result.Body.Close()
+			}
+			t.Fatal("request Host escaped admitted authority")
 		}
 		for _, foreign := range []string{strings.Replace(base, "//", "//user:secret@", 1), strings.Replace(base, "127.0.0.1", "localhost", 1)} {
 			forbidden, err := http.NewRequestWithContext(ctx, http.MethodGet, foreign+"/probe?beta=true", nil)
