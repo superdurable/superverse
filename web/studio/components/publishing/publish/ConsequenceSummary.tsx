@@ -121,7 +121,7 @@ export function ConsequenceSummary({
     settingsOnly
       ? `Live keeps running ${versionNumber(live?.version)}'s code; it rebuilds with ${waiting.length + added.length + gone.length > 0 ? "the new" : "the same"} settings.`
       : live
-        ? `Replaces ${versionNumber(live.version)}. Runs in flight finish on ${versionNumber(live.version)}; new runs start on this version.`
+        ? `Replaces ${versionNumber(live.version)}. Runs in flight move to this version when it goes live; new runs start on it.`
         : "Starts Live at its address for the first time.",
     changed.length > 0 &&
       `${joined(changed.map((process) => processName(process.flowType)))} change${changed.length === 1 ? "s" : ""} or start on Live.`,

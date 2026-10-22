@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Stores the immutable, versioned payloads that owning Flows reference by ObjectRef, content-addressed by SHA-256 and verified on every read.
 
-Callers: `cmd/superverse-server/config`, `internal/dexai/agents`, `internal/dexai/agents/attachments`, `internal/dexai/agents/sandbox/preview`, `internal/dexai/api/attachments`, `internal/dexai/app/appmanifest`, `internal/dexai/bootstrap`, `internal/dexai/delivery/deployments`, `internal/dexai/delivery/releases`, `internal/dexai/delivery/releases/build`, `internal/dexai/delivery/releases/build/hosted`, `internal/dexai/projects`, `internal/dexai/projects/config`, `internal/dexai/projects/infra`, `internal/dexai/projects/infra/docker`, `internal/dexai/projects/infra/kube`, `internal/dexai/projects/setup`, `internal/dexai/studio/confighost`, `internal/dexai/studio/runs`, `internal/dexai/tenancy/connections` and `internal/dexai/tenancy/teamspaces` import this package.
+Callers: `cmd/superverse-server/config`, `internal/dexai/agents`, `internal/dexai/agents/attachments`, `internal/dexai/agents/sandbox/preview`, `internal/dexai/api/attachments`, `internal/dexai/app/appmanifest`, `internal/dexai/bootstrap`, `internal/dexai/delivery/deployments`, `internal/dexai/delivery/evolve`, `internal/dexai/delivery/releases`, `internal/dexai/delivery/releases/build`, `internal/dexai/delivery/releases/build/hosted`, `internal/dexai/projects`, `internal/dexai/projects/config`, `internal/dexai/projects/infra`, `internal/dexai/projects/infra/docker`, `internal/dexai/projects/infra/kube`, `internal/dexai/projects/setup`, `internal/dexai/studio/confighost`, `internal/dexai/studio/runs`, `internal/dexai/tenancy/connections` and `internal/dexai/tenancy/teamspaces` import this package.
 
 Dependencies: it imports `internal/comm`, `internal/comm/flowid` and `internal/comm/platform` and calls the AWS S3 API.
 
@@ -18,19 +18,20 @@ flowchart LR
   c5["internal/dexai/app/appmanifest"] --> self
   c6["internal/dexai/bootstrap"] --> self
   c7["internal/dexai/delivery/deployments"] --> self
-  c8["internal/dexai/delivery/releases"] --> self
-  c9["internal/dexai/delivery/releases/build"] --> self
-  c10["internal/dexai/delivery/releases/build/hosted"] --> self
-  c11["internal/dexai/projects"] --> self
-  c12["internal/dexai/projects/config"] --> self
-  c13["internal/dexai/projects/infra"] --> self
-  c14["internal/dexai/projects/infra/docker"] --> self
-  c15["internal/dexai/projects/infra/kube"] --> self
-  c16["internal/dexai/projects/setup"] --> self
-  c17["internal/dexai/studio/confighost"] --> self
-  c18["internal/dexai/studio/runs"] --> self
-  c19["internal/dexai/tenancy/connections"] --> self
-  c20["internal/dexai/tenancy/teamspaces"] --> self
+  c8["internal/dexai/delivery/evolve"] --> self
+  c9["internal/dexai/delivery/releases"] --> self
+  c10["internal/dexai/delivery/releases/build"] --> self
+  c11["internal/dexai/delivery/releases/build/hosted"] --> self
+  c12["internal/dexai/projects"] --> self
+  c13["internal/dexai/projects/config"] --> self
+  c14["internal/dexai/projects/infra"] --> self
+  c15["internal/dexai/projects/infra/docker"] --> self
+  c16["internal/dexai/projects/infra/kube"] --> self
+  c17["internal/dexai/projects/setup"] --> self
+  c18["internal/dexai/studio/confighost"] --> self
+  c19["internal/dexai/studio/runs"] --> self
+  c20["internal/dexai/tenancy/connections"] --> self
+  c21["internal/dexai/tenancy/teamspaces"] --> self
   self --> d0["internal/comm"]
   self --> d1["internal/comm/flowid"]
   self --> d2["internal/comm/platform"]

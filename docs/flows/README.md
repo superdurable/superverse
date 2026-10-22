@@ -1,8 +1,8 @@
 # Platform Flow graphs
 
-The JSON files in this directory are generated FDG 2.0 for the fifteen platform
+The JSON files in this directory are generated FDG 2.0 for the sixteen platform
 Flows: RepositoryBinding, Project, ProjectSetup, SessionAgent, Subagent,
-PlatformIssue, ConnectorContribution, BackgroundCommand, SessionWorkspace, SandboxProvision, Preview, ProjectRelease, ProjectDeploy, TeamSpace and Attachment. Their detailed identities, primitives, Maps,
+PlatformIssue, ConnectorContribution, BackgroundCommand, SessionWorkspace, SandboxProvision, Preview, ProjectRelease, ProjectDeploy, TeamSpace, Attachment and Evolve. Their detailed identities, primitives, Maps,
 locks, channels, streams, Steps, RPCs, retries and cleanup contracts are in the
 [architecture specification](../architecture/superverse-v2.md#dex-flow-changes);
 the agent's Flows are described in the
@@ -21,16 +21,16 @@ Business owner source paths are recorded in the
 the unchanged-persistence review of the original package split is in the
 [business package ownership decision](../architecture/superverse-v2.md).
 Pass `--schema-version 2.0` explicitly: the pinned CLI defaults to 1.0.
-All fifteen checked-in graphs declare 2.0 and include the actual search,
+All sixteen checked-in graphs declare 2.0 and include the actual search,
 summary, display and start definitions. The root graph check also requires this
 version; CLI branding alone does not select it.
 
 Flow and Step names derive from the concrete Go type name without its package.
 There are no platform identity overrides. The pinned SDK registry and
-all fifteen graphs are compared directly; the identity decision
+all sixteen graphs are compared directly; the identity decision
 defines the pre-launch history boundary.
 
-`make check-flow-definition` regenerates all fifteen registered owners with the
+`make check-flow-definition` regenerates all sixteen registered owners with the
 pinned CLI, requires exact source/type identity and zero diagnostics, and compares
 the native JSON bytes against these files. It also checks the Session, Subagent, SessionWorkspace and
 Preview Channel wait edges, the Subagent's stop, read and cleanup index, Release build
@@ -40,7 +40,7 @@ refresh the checked-in graphs after an intentional Flow change, then rerun the
 check. This is static drift detection, not business integration acceptance.
 
 The CLI derives the graphs from the source and never builds the SDK registry.
-`make check-flow-registry` (part of `make check-go`) builds it from all fifteen
+`make check-flow-registry` (part of `make check-go`) builds it from all sixteen
 Flows as the server bootstrap does, so a Flow the SDK refuses at registration,
 or StepOptions that do not resolve, such as an Execute failure route that leads
 back to its own Step, fails the check rather than the server's start.

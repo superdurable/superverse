@@ -72,7 +72,8 @@ func TestKindReplacedWorkerStopRecovery(t *testing.T) {
 	projectClient := &projects.ProjectFlowClient{Flow: projectFlow.ProjectFlow, ProjectIDLength: 4}
 	deployClient := deployments.NewProjectDeployFlowClient(projectClient, f.k, f.k.Infrastructure)
 	feedback := &agents.SessionFlowService{Logger: slog.Default()}
-	deployFlow := &deploymentPhaseFlow{ProjectDeployFlow: deployments.NewProjectDeployFlow(projectClient, nil, deployClient, 0, nil, nil, nil, f.k, f.k.Infrastructure, f.k.Infrastructure, f.k.Infrastructure, f.k.Infrastructure, feedback)}
+	// No Live announcement port: the fixture starts at StopReplacedWorker, after CommitCurrentLive, so AnnounceLiveChange never runs.
+	deployFlow := &deploymentPhaseFlow{ProjectDeployFlow: deployments.NewProjectDeployFlow(projectClient, nil, deployClient, 0, nil, nil, nil, f.k, f.k.Infrastructure, f.k.Infrastructure, f.k.Infrastructure, f.k.Infrastructure, feedback, nil)}
 	address := dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS")
 	client := dexflowtest.WorkerClientForTest(ctx, t, address, dexflowtest.Setting(t, "SUPERVERSE_TEST_WORKER_HOST"), projectFlow, deployFlow)
 	sessionFlow := &sessionagent.SessionAgentFlow{}

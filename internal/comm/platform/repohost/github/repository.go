@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/superdurable/superversev2/internal/comm/flowid"
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost"
 )
 
@@ -111,6 +112,27 @@ func (c *Client) ValidateReleaseCommit(ctx context.Context, fullName, branch, co
 		return repohost.ErrCommitUnreachable
 	}
 	return nil
+}
+
+// IsAncestor compares ancestor as the base with descendant as the head:
+// GitHub answers identical for the same commit and ahead when the head has
+// the base in its history, with the base as their merge base, and behind or
+// diverged otherwise. A commit GitHub does not find is ErrNotFound; so are
+// two commits without a common history, for which GitHub has no comparison.
+func (c *Client) IsAncestor(ctx context.Context, fullName, ancestor, descendant string) (bool, error) {
+	if !flowid.IsCommitSHA(ancestor) || !flowid.IsCommitSHA(descendant) {
+		return false, fmt.Errorf("%w: ancestry compares exact commit SHAs", repohost.ErrRejected)
+	}
+	var result struct {
+		Status    string `json:"status"`
+		MergeBase struct {
+			SHA string `json:"sha"`
+		} `json:"merge_base_commit"`
+	}
+	if err := c.repositoryRequest(ctx, http.MethodGet, fullName, "/compare/"+ancestor+"..."+descendant+"?per_page=1", nil, &result); err != nil {
+		return false, fmt.Errorf("compare %s with %s in %s: %w", ancestor, descendant, fullName, err)
+	}
+	return result.MergeBase.SHA == ancestor && (result.Status == "identical" || result.Status == "ahead"), nil
 }
 
 // describeCommitQuery reads a commit's message and the size of its history,

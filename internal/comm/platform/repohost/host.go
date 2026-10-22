@@ -66,6 +66,10 @@ type Host interface {
 	// checked is on main: its number and its subject. A commit's answer never
 	// changes, so callers freeze it with their record.
 	DescribeCommit(ctx context.Context, fullName, commit string) (CommitVersion, error)
+	// IsAncestor reports whether the commit ancestor is an ancestor of the
+	// commit descendant in repository fullName, or the same commit. Both are
+	// exact commit SHAs; a commit the host cannot find is ErrNotFound.
+	IsAncestor(ctx context.Context, fullName, ancestor, descendant string) (bool, error)
 
 	// RepositoryCredential mints a credential restricted to the contents of one
 	// repository, for the Git processes and builds of that repository.

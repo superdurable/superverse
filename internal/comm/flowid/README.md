@@ -3,16 +3,16 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Derives the stable FlowIDs, server-assigned business IDs and Start RequestID fingerprints of the platform Flows, and checks the formats of identifiers that callers supply.
 
-Callers: `cmd/tools/app-manifest`, `internal/comm/**` (4) and `internal/dexai/**` (42) import this package.
+Callers: `cmd/**` (2), `internal/comm/**` (5) and `internal/dexai/**` (43) import this package.
 
 Dependencies: it imports `internal/comm`.
 
 ```mermaid
 flowchart LR
   self["internal/comm/flowid"]
-  c0["cmd/tools/app-manifest"] --> self
-  c1["internal/comm/** (4)"] --> self
-  c2["internal/dexai/** (42)"] --> self
+  c0["cmd/** (2)"] --> self
+  c1["internal/comm/** (5)"] --> self
+  c2["internal/dexai/** (43)"] --> self
   self --> d0["internal/comm"]
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->

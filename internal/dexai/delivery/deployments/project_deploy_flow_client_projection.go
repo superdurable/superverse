@@ -12,11 +12,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
+	"time"
 
 	"github.com/superdurable/dex/sdk-go/dex"
 	"github.com/superdurable/superversev2/internal/comm/platform/postgres"
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/deliverydao"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve"
 	"github.com/superdurable/superversev2/internal/dexai/projects"
 	"github.com/superdurable/superversev2/internal/dexai/projects/infra"
 )
@@ -45,6 +48,10 @@ type LiveTarget struct {
 	Execution     infra.ExecutionRefs
 	Deployment    Snapshot
 }
+
+// LiveRelease is the target's deployment as its Live announcement carries it,
+// so goal measurement can compare it with the Live it was told of.
+func (t LiveTarget) LiveRelease() evolve.LiveRelease { return liveChange(t.Deployment) }
 
 // ReadProjection returns the read model's deployment of a Project whose
 // access the caller checked. The row of a deployment started a moment ago is
@@ -107,6 +114,34 @@ func (c *ProjectDeployFlowClient) ReadLiveTarget(ctx context.Context, project st
 		return LiveTarget{}, fmt.Errorf("the Live target of project %s: %w", project, err)
 	}
 	return target, nil
+}
+
+// liveTimelinePages bounds the deployments a Live timeline reads, newest first.
+const liveTimelinePages = 10
+
+// LiveTimeline lists the Project's Live deployments that committed until
+// until, oldest first, from the read model: each one's lease generation,
+// Release and build commit, and the end of its CommitCurrentLive phase. It
+// reads at most the newest liveTimelinePages pages of deployments.
+func (c *ProjectDeployFlowClient) LiveTimeline(ctx context.Context, project string, until time.Time) ([]evolve.LiveRelease, error) {
+	var timeline []evolve.LiveRelease
+	var after *postgres.PageKey
+	for page := 0; page < liveTimelinePages; page++ {
+		projections, next, err := c.ListProjections(ctx, project, nil, after, 100)
+		if err != nil {
+			return nil, err
+		}
+		for _, projection := range projections {
+			if change := liveChange(projection.Deployment); !change.CommittedAt.IsZero() && !change.CommittedAt.After(until) {
+				timeline = append(timeline, change)
+			}
+		}
+		if after = next; next == nil {
+			break
+		}
+	}
+	slices.SortFunc(timeline, func(a, b evolve.LiveRelease) int { return a.CommittedAt.Compare(b.CommittedAt) })
+	return timeline, nil
 }
 
 // projectionOf decodes a deployments row with the version of its Release.

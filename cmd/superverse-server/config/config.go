@@ -24,6 +24,7 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/platform/eventqueue"
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve"
 	"github.com/superdurable/superversev2/internal/dexai/projects/infra"
 	"gopkg.in/yaml.v3"
 )
@@ -99,6 +100,13 @@ const (
 	DefaultAttachmentProjectLifetimeFiles  = 1000
 	DefaultAttachmentProjectLifetimeBytes  = 2 << 30
 	DefaultAttachmentRenditionCacheBytes   = 256 << 20
+	DefaultEvolveMaxRunsPerExport          = 5000
+	DefaultEvolveMaxHistoryEventsPerRun    = 2000
+	DefaultEvolveMaxReadsPerExport         = 40_000
+	DefaultEvolveMaxConcurrentExports      = 4
+	DefaultEvolveKeepExports               = 4
+	DefaultEvolveReviewAccess              = evolve.ReviewAccessListed
+	MaxEvolveReviewTeamSpaces              = 100
 )
 
 // SlackEventsPort is the server's port of the public Slack events listener
@@ -167,6 +175,7 @@ type Config struct {
 	ProjectCloud ProjectCloudConfig `yaml:"projectCloud"`
 	Routes       RoutesConfig       `yaml:"routes"`
 	Native       NativeConfig       `yaml:"native"`
+	Evolve       EvolveConfig       `yaml:"evolve"`
 }
 
 // AccountsConfig selects the ordinary account with platform-wide authority.
@@ -549,6 +558,31 @@ type NativeConfig struct {
 	RoutesListen string `yaml:"routesListen"`
 }
 
+// EvolveConfig bounds the run exports of goal measurement, prices its AI
+// usage and decides where agent reviews run.
+type EvolveConfig struct {
+	MaxRunsPerExport       int `yaml:"maxRunsPerExport"`
+	MaxHistoryEventsPerRun int `yaml:"maxHistoryEventsPerRun"`
+	MaxReadsPerExport      int `yaml:"maxReadsPerExport"`
+	// MaxConcurrentExports bounds the exports of one server replica; the rest wait.
+	MaxConcurrentExports int `yaml:"maxConcurrentExports"`
+	// KeepExports is how many of a Project's newest exports stay stored.
+	KeepExports int `yaml:"keepExports"`
+	// ModelPrices are list prices by the API model ID a model connector reports.
+	ModelPrices []ModelPrice `yaml:"modelPrices"`
+	// PriceTableAsOf dates ModelPrices, YYYY-MM-DD.
+	PriceTableAsOf   string              `yaml:"priceTableAsOf"`
+	ReviewAccess     evolve.ReviewAccess `yaml:"reviewAccess"`
+	ReviewTeamSpaces []string            `yaml:"reviewTeamSpaces"`
+}
+
+// ModelPrice is one model's list price per million tokens, in US dollars.
+type ModelPrice struct {
+	Model         string  `yaml:"model"`
+	InputPerMTok  float64 `yaml:"inputPerMTok"`
+	OutputPerMTok float64 `yaml:"outputPerMTok"`
+}
+
 // Default is the configuration before any file: every default applied.
 func Default() Config {
 	return Config{
@@ -594,6 +628,10 @@ func Default() Config {
 		}},
 		RemoteAgent: RemoteAgentConfig{Listen: DefaultRemoteAgentListen, MaxLongPolls: DefaultRemoteAgentMaxLongPolls, MaxConcurrentReads: DefaultRemoteAgentMaxConcurrentReads, MaxConcurrentReports: DefaultRemoteAgentMaxConcurrentReports,
 			MinimumBridgeVersion: DefaultMinimumBridgeVersion, DownloadsDir: DefaultBridgeDownloadsDir},
+		Evolve: EvolveConfig{
+			MaxRunsPerExport: DefaultEvolveMaxRunsPerExport, MaxHistoryEventsPerRun: DefaultEvolveMaxHistoryEventsPerRun, MaxReadsPerExport: DefaultEvolveMaxReadsPerExport,
+			MaxConcurrentExports: DefaultEvolveMaxConcurrentExports, KeepExports: DefaultEvolveKeepExports, ReviewAccess: DefaultEvolveReviewAccess,
+		},
 	}
 }
 

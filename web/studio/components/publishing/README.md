@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: Tools, Publishing: the publish in progress, what is Live with Stop Live, every version with its builds, rollback after its consequences, and Live's history.
 
-Importers: `components/project` imports this directory.
+Importers: `components/project` and `components/project/goals` import this directory.
 
 Imports: it imports `components/project/activity`, `components/publishing/progress`, `components/publishing/publish`, `components/ui`, `components/ui/problem`, `lib/api`, `lib/api/transport`, `lib/browser`, `lib/generated/protobuf`, `lib/project`, `lib/project/publishing`, `lib/project/setup`, `lib/session`, `lib/shared`, `lib/shared/problem` and `lib/shared/version`.
 
@@ -11,6 +11,7 @@ Imports: it imports `components/project/activity`, `components/publishing/progre
 flowchart LR
   self["components/publishing"]
   c0["components/project"] --> self
+  c1["components/project/goals"] --> self
   self --> d0["components/project/activity"]
   self --> d1["components/publishing/progress"]
   self --> d2["components/publishing/publish"]

@@ -114,6 +114,12 @@
       "kind-e2e",
       "native-e2e"
     ],
+    "/superverse.v2.EvolveService/GetEvolve": [
+      "native-e2e"
+    ],
+    "/superverse.v2.EvolveService/StartEvolveReview": [
+      "native-e2e"
+    ],
     "/superverse.v2.FlowDiagnosticsService/DeleteFlowChannelMessage": [],
     "/superverse.v2.FlowDiagnosticsService/GetFlowHistory": [
       "kind-e2e",

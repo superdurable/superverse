@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: The Project Builder's frame: the bar, the chat column with its rail, Tools' list, the links between surfaces and versions, and the surface registry.
 
-Importers: `components/project` and `mock/surface` import this directory.
+Importers: `components/project`, `components/project/goals` and `mock/surface` import this directory.
 
 Imports: it imports `components/frame/bar`, `components/ui`, `components/ui/pane`, `lib/browser`, `lib/project/setup`, `lib/shared` and `lib/teamspace`.
 
@@ -11,7 +11,8 @@ Imports: it imports `components/frame/bar`, `components/ui`, `components/ui/pane
 flowchart LR
   self["components/frame"]
   c0["components/project"] --> self
-  c1["mock/surface"] --> self
+  c1["components/project/goals"] --> self
+  c2["mock/surface"] --> self
   self --> d0["components/frame/bar"]
   self --> d1["components/ui"]
   self --> d2["components/ui/pane"]

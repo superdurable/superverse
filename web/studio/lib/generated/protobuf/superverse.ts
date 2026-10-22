@@ -121,6 +121,15 @@ import type { DeploymentSnapshot as _superverse_v2_DeploymentSnapshot, Deploymen
 import type { DeriveLiveConfigurationRequest as _superverse_v2_DeriveLiveConfigurationRequest, DeriveLiveConfigurationRequest__Output as _superverse_v2_DeriveLiveConfigurationRequest__Output } from './superverse/v2/DeriveLiveConfigurationRequest';
 import type { DeriveLiveConfigurationResponse as _superverse_v2_DeriveLiveConfigurationResponse, DeriveLiveConfigurationResponse__Output as _superverse_v2_DeriveLiveConfigurationResponse__Output } from './superverse/v2/DeriveLiveConfigurationResponse';
 import type { EnvironmentEvent as _superverse_v2_EnvironmentEvent, EnvironmentEvent__Output as _superverse_v2_EnvironmentEvent__Output } from './superverse/v2/EnvironmentEvent';
+import type { Evolve as _superverse_v2_Evolve, Evolve__Output as _superverse_v2_Evolve__Output } from './superverse/v2/Evolve';
+import type { EvolveExport as _superverse_v2_EvolveExport, EvolveExport__Output as _superverse_v2_EvolveExport__Output } from './superverse/v2/EvolveExport';
+import type { EvolveGoal as _superverse_v2_EvolveGoal, EvolveGoal__Output as _superverse_v2_EvolveGoal__Output } from './superverse/v2/EvolveGoal';
+import type { EvolveGoalValue as _superverse_v2_EvolveGoalValue, EvolveGoalValue__Output as _superverse_v2_EvolveGoalValue__Output } from './superverse/v2/EvolveGoalValue';
+import type { EvolveGoals as _superverse_v2_EvolveGoals, EvolveGoals__Output as _superverse_v2_EvolveGoals__Output } from './superverse/v2/EvolveGoals';
+import type { EvolveLive as _superverse_v2_EvolveLive, EvolveLive__Output as _superverse_v2_EvolveLive__Output } from './superverse/v2/EvolveLive';
+import type { EvolveReview as _superverse_v2_EvolveReview, EvolveReview__Output as _superverse_v2_EvolveReview__Output } from './superverse/v2/EvolveReview';
+import type { EvolveSchedule as _superverse_v2_EvolveSchedule, EvolveSchedule__Output as _superverse_v2_EvolveSchedule__Output } from './superverse/v2/EvolveSchedule';
+import type { EvolveServiceClient as _superverse_v2_EvolveServiceClient, EvolveServiceDefinition as _superverse_v2_EvolveServiceDefinition } from './superverse/v2/EvolveService';
 import type { ExampleReference as _superverse_v2_ExampleReference, ExampleReference__Output as _superverse_v2_ExampleReference__Output } from './superverse/v2/ExampleReference';
 import type { Failure as _superverse_v2_Failure, Failure__Output as _superverse_v2_Failure__Output } from './superverse/v2/Failure';
 import type { FlowApiContext as _superverse_v2_FlowApiContext, FlowApiContext__Output as _superverse_v2_FlowApiContext__Output } from './superverse/v2/FlowApiContext';
@@ -139,6 +148,8 @@ import type { GetCurrentAccountRequest as _superverse_v2_GetCurrentAccountReques
 import type { GetCurrentAccountResponse as _superverse_v2_GetCurrentAccountResponse, GetCurrentAccountResponse__Output as _superverse_v2_GetCurrentAccountResponse__Output } from './superverse/v2/GetCurrentAccountResponse';
 import type { GetDeploymentRequest as _superverse_v2_GetDeploymentRequest, GetDeploymentRequest__Output as _superverse_v2_GetDeploymentRequest__Output } from './superverse/v2/GetDeploymentRequest';
 import type { GetDeploymentResponse as _superverse_v2_GetDeploymentResponse, GetDeploymentResponse__Output as _superverse_v2_GetDeploymentResponse__Output } from './superverse/v2/GetDeploymentResponse';
+import type { GetEvolveRequest as _superverse_v2_GetEvolveRequest, GetEvolveRequest__Output as _superverse_v2_GetEvolveRequest__Output } from './superverse/v2/GetEvolveRequest';
+import type { GetEvolveResponse as _superverse_v2_GetEvolveResponse, GetEvolveResponse__Output as _superverse_v2_GetEvolveResponse__Output } from './superverse/v2/GetEvolveResponse';
 import type { GetFlowCatalogRequest as _superverse_v2_GetFlowCatalogRequest, GetFlowCatalogRequest__Output as _superverse_v2_GetFlowCatalogRequest__Output } from './superverse/v2/GetFlowCatalogRequest';
 import type { GetFlowCatalogResponse as _superverse_v2_GetFlowCatalogResponse, GetFlowCatalogResponse__Output as _superverse_v2_GetFlowCatalogResponse__Output } from './superverse/v2/GetFlowCatalogResponse';
 import type { GetFlowDefinitionsRequest as _superverse_v2_GetFlowDefinitionsRequest, GetFlowDefinitionsRequest__Output as _superverse_v2_GetFlowDefinitionsRequest__Output } from './superverse/v2/GetFlowDefinitionsRequest';
@@ -310,6 +321,8 @@ import type { StartConnectorUiSessionRequest as _superverse_v2_StartConnectorUiS
 import type { StartConnectorUiSessionResponse as _superverse_v2_StartConnectorUiSessionResponse, StartConnectorUiSessionResponse__Output as _superverse_v2_StartConnectorUiSessionResponse__Output } from './superverse/v2/StartConnectorUiSessionResponse';
 import type { StartDeploymentRequest as _superverse_v2_StartDeploymentRequest, StartDeploymentRequest__Output as _superverse_v2_StartDeploymentRequest__Output } from './superverse/v2/StartDeploymentRequest';
 import type { StartDeploymentResponse as _superverse_v2_StartDeploymentResponse, StartDeploymentResponse__Output as _superverse_v2_StartDeploymentResponse__Output } from './superverse/v2/StartDeploymentResponse';
+import type { StartEvolveReviewRequest as _superverse_v2_StartEvolveReviewRequest, StartEvolveReviewRequest__Output as _superverse_v2_StartEvolveReviewRequest__Output } from './superverse/v2/StartEvolveReviewRequest';
+import type { StartEvolveReviewResponse as _superverse_v2_StartEvolveReviewResponse, StartEvolveReviewResponse__Output as _superverse_v2_StartEvolveReviewResponse__Output } from './superverse/v2/StartEvolveReviewResponse';
 import type { StartFlowRequest as _superverse_v2_StartFlowRequest, StartFlowRequest__Output as _superverse_v2_StartFlowRequest__Output } from './superverse/v2/StartFlowRequest';
 import type { StartFlowResponse as _superverse_v2_StartFlowResponse, StartFlowResponse__Output as _superverse_v2_StartFlowResponse__Output } from './superverse/v2/StartFlowResponse';
 import type { StartPreviewRequest as _superverse_v2_StartPreviewRequest, StartPreviewRequest__Output as _superverse_v2_StartPreviewRequest__Output } from './superverse/v2/StartPreviewRequest';
@@ -503,6 +516,23 @@ export interface ProtoGrpcType {
       DeriveLiveConfigurationRequest: MessageTypeDefinition<_superverse_v2_DeriveLiveConfigurationRequest, _superverse_v2_DeriveLiveConfigurationRequest__Output>
       DeriveLiveConfigurationResponse: MessageTypeDefinition<_superverse_v2_DeriveLiveConfigurationResponse, _superverse_v2_DeriveLiveConfigurationResponse__Output>
       EnvironmentEvent: MessageTypeDefinition<_superverse_v2_EnvironmentEvent, _superverse_v2_EnvironmentEvent__Output>
+      Evolve: MessageTypeDefinition<_superverse_v2_Evolve, _superverse_v2_Evolve__Output>
+      EvolveExport: MessageTypeDefinition<_superverse_v2_EvolveExport, _superverse_v2_EvolveExport__Output>
+      EvolveGoal: MessageTypeDefinition<_superverse_v2_EvolveGoal, _superverse_v2_EvolveGoal__Output>
+      EvolveGoalDirection: EnumTypeDefinition
+      EvolveGoalKind: EnumTypeDefinition
+      EvolveGoalValue: MessageTypeDefinition<_superverse_v2_EvolveGoalValue, _superverse_v2_EvolveGoalValue__Output>
+      EvolveGoals: MessageTypeDefinition<_superverse_v2_EvolveGoals, _superverse_v2_EvolveGoals__Output>
+      EvolveGoalsStatus: EnumTypeDefinition
+      EvolveLive: MessageTypeDefinition<_superverse_v2_EvolveLive, _superverse_v2_EvolveLive__Output>
+      EvolveReview: MessageTypeDefinition<_superverse_v2_EvolveReview, _superverse_v2_EvolveReview__Output>
+      EvolveReviewPeriod: EnumTypeDefinition
+      EvolveReviewReason: EnumTypeDefinition
+      EvolveReviewRefusal: EnumTypeDefinition
+      EvolveReviewStatus: EnumTypeDefinition
+      EvolveReviewTrigger: EnumTypeDefinition
+      EvolveSchedule: MessageTypeDefinition<_superverse_v2_EvolveSchedule, _superverse_v2_EvolveSchedule__Output>
+      EvolveService: SubtypeConstructor<typeof grpc.Client, _superverse_v2_EvolveServiceClient> & { service: _superverse_v2_EvolveServiceDefinition }
       ExampleReference: MessageTypeDefinition<_superverse_v2_ExampleReference, _superverse_v2_ExampleReference__Output>
       Failure: MessageTypeDefinition<_superverse_v2_Failure, _superverse_v2_Failure__Output>
       FailureOwner: EnumTypeDefinition
@@ -523,6 +553,8 @@ export interface ProtoGrpcType {
       GetCurrentAccountResponse: MessageTypeDefinition<_superverse_v2_GetCurrentAccountResponse, _superverse_v2_GetCurrentAccountResponse__Output>
       GetDeploymentRequest: MessageTypeDefinition<_superverse_v2_GetDeploymentRequest, _superverse_v2_GetDeploymentRequest__Output>
       GetDeploymentResponse: MessageTypeDefinition<_superverse_v2_GetDeploymentResponse, _superverse_v2_GetDeploymentResponse__Output>
+      GetEvolveRequest: MessageTypeDefinition<_superverse_v2_GetEvolveRequest, _superverse_v2_GetEvolveRequest__Output>
+      GetEvolveResponse: MessageTypeDefinition<_superverse_v2_GetEvolveResponse, _superverse_v2_GetEvolveResponse__Output>
       GetFlowCatalogRequest: MessageTypeDefinition<_superverse_v2_GetFlowCatalogRequest, _superverse_v2_GetFlowCatalogRequest__Output>
       GetFlowCatalogResponse: MessageTypeDefinition<_superverse_v2_GetFlowCatalogResponse, _superverse_v2_GetFlowCatalogResponse__Output>
       GetFlowDefinitionsRequest: MessageTypeDefinition<_superverse_v2_GetFlowDefinitionsRequest, _superverse_v2_GetFlowDefinitionsRequest__Output>
@@ -707,6 +739,8 @@ export interface ProtoGrpcType {
       StartConnectorUiSessionResponse: MessageTypeDefinition<_superverse_v2_StartConnectorUiSessionResponse, _superverse_v2_StartConnectorUiSessionResponse__Output>
       StartDeploymentRequest: MessageTypeDefinition<_superverse_v2_StartDeploymentRequest, _superverse_v2_StartDeploymentRequest__Output>
       StartDeploymentResponse: MessageTypeDefinition<_superverse_v2_StartDeploymentResponse, _superverse_v2_StartDeploymentResponse__Output>
+      StartEvolveReviewRequest: MessageTypeDefinition<_superverse_v2_StartEvolveReviewRequest, _superverse_v2_StartEvolveReviewRequest__Output>
+      StartEvolveReviewResponse: MessageTypeDefinition<_superverse_v2_StartEvolveReviewResponse, _superverse_v2_StartEvolveReviewResponse__Output>
       StartFlowRequest: MessageTypeDefinition<_superverse_v2_StartFlowRequest, _superverse_v2_StartFlowRequest__Output>
       StartFlowResponse: MessageTypeDefinition<_superverse_v2_StartFlowResponse, _superverse_v2_StartFlowResponse__Output>
       StartOutcome: EnumTypeDefinition

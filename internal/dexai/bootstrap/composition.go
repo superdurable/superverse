@@ -45,6 +45,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/api/tenancy"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/deliverydao"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/deployments"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/releases"
 	"github.com/superdurable/superversev2/internal/dexai/projects"
 	projectconfig "github.com/superdurable/superversev2/internal/dexai/projects/config"
@@ -202,18 +203,21 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	previewClient := &preview.PreviewFlowClient{Flow: previewFlow}
 	sessionService.Previews, sessionService.Instances, sessionService.PreviewData = previewClient, sessionAgent.Instances(), previewConfiguration
 
+	// Goal measurement reads Live runs through the Project diagnostics, set below.
+	evolveFlows := evolve.NewEvolveFlowBootstrap(config.evolve, projectClient, config.host, config.objects, projectDiagnostics)
+	evolveClient := evolveFlows.Client()
 	deploymentClient := deployments.NewProjectDeployFlowClient(projectClient, providers.serving, providers.grants)
 	publishingService := deployments.NewPublishingFlowService(projectClient, deploymentClient, configuration, shared.Usages, deployments.BuildLogReads{Redactor: providers.redactor, PerSecond: config.buildLogReadsPerSecond})
 	// Both delivery Flows report their failures to the Project's Session.
 	releaseFlow := releases.NewProjectReleaseFlow(projectClient, config.host, config.builder, config.profiles, config.objects, config.environment, publishingService, sessionService)
 	releaseClient := releases.NewProjectReleaseFlowClient(releaseFlow, projectClient, config.profiles)
-	deploymentFlow := deployments.NewProjectDeployFlow(projectClient, releaseClient, deploymentClient, config.liveRetirementDrain, config.objects, configuration, shared.Usages, providers.serving, providers.storage, providers.execution, providers.grants, providers.redactor, sessionService)
+	deploymentFlow := deployments.NewProjectDeployFlow(projectClient, releaseClient, deploymentClient, config.liveRetirementDrain, config.objects, configuration, shared.Usages, providers.serving, providers.storage, providers.execution, providers.grants, providers.redactor, sessionService, evolveClient)
 
 	// Back references. Each field below refers to a component built later that
 	// itself depends on the field's owner, so it can only be set now.
 	teamSpaceFlow.Projects, teamSpaceFlow.Connections, teamSpaceFlow.Objects, teamSpaceFlow.Staging = projectClient, shared.Usages, config.objects, config.staging
-	*projectFlow = projects.ProjectFlow{Client: projectClient, TeamSpaces: teamSpaceClient, Setups: setupClient, Repositories: repositoryClient, Host: config.host, Sessions: sessionService, Releases: releaseClient, Deployments: deploymentClient, Objects: config.objects, Storage: providers.storage, Cleanup: providers.cleanup, Connections: shared.Usages,
-		Attachments: config.projectAttachments}
+	*projectFlow = projects.ProjectFlow{Client: projectClient, TeamSpaces: teamSpaceClient, Setups: setupClient, Repositories: repositoryClient, Host: config.host, Sessions: sessionService, Releases: releaseClient, Deployments: deploymentClient, Evolve: evolveClient, Objects: config.objects, Storage: providers.storage, Cleanup: providers.cleanup,
+		Connections: shared.Usages, Attachments: config.projectAttachments}
 	configuration.Preview = sessionService
 	configuration.Releases = releaseClient
 	deploymentClient.Releases = releaseClient
@@ -226,7 +230,7 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	flows := serverFlows{
 		teamSpace: teamSpaceFlow, project: projectFlow, setup: setupFlow, repository: repositoryFlow,
 		workspace: workspaces.Flow(), provision: provisioning.Flow(), preview: previewFlow, session: sessionAgent.Flow(), subagent: subagents.Flow(), background: backgroundCommands.Flow(), issue: issues.Flow(), contribution: contributions.Flow(), release: releaseFlow, deployment: deploymentFlow,
-		attachment: attachmentFlows.Flow(),
+		attachment: attachmentFlows.Flow(), evolve: evolveFlows.Flow(),
 	}.list()
 	registry, err := dex.NewRegistry(flows)
 	if err != nil {
@@ -260,6 +264,7 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	setupClient.Dex = client
 	repositoryClient.Dex = client
 	previewClient.Dex = client
+	evolveClient.Bind(client)
 	executions, err := grpc.NewClient(config.dexClient.FlowServiceAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
@@ -317,6 +322,8 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 		SessionModels:      api.SessionModels{Claude: true, Mock: config.mockModel, Local: config.localKind},
 		ClosestExamplePick: config.closestExamplePick,
 		RemoteAgents:       remoteService,
+		Evolve:             evolveClient,
+		EvolveSettings:     config.evolve,
 	})
 	credentials := http.NewServeMux()
 	credentials.Handle(connections.CredentialReadPath, connections.NewReadEndpoint(credentialReader))

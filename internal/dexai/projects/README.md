@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Owns Projects for the API, Sessions, Releases and Deployments: ProjectFlow keeps each Project's identity, repository, Live lease, commands and child membership, and starts its one Session.
 
-Callers: `internal/dexai/agents`, `internal/dexai/agents/attachments`, `internal/dexai/agents/diagnostics`, `internal/dexai/agents/remoteagent`, `internal/dexai/agents/sandbox/preview`, `internal/dexai/api`, `internal/dexai/api/attachments`, `internal/dexai/api/boundary`, `internal/dexai/api/tenancy`, `internal/dexai/bootstrap`, `internal/dexai/delivery/deployments`, `internal/dexai/delivery/deployments/docker`, `internal/dexai/delivery/deployments/kube`, `internal/dexai/delivery/releases`, `internal/dexai/projects/config`, `internal/dexai/projects/projecttest`, `internal/dexai/projects/setup` and `internal/dexai/studio/runs` import this package.
+Callers: `internal/dexai/agents`, `internal/dexai/agents/attachments`, `internal/dexai/agents/diagnostics`, `internal/dexai/agents/remoteagent`, `internal/dexai/agents/sandbox/preview`, `internal/dexai/api`, `internal/dexai/api/attachments`, `internal/dexai/api/boundary`, `internal/dexai/api/evolve`, `internal/dexai/api/tenancy`, `internal/dexai/bootstrap`, `internal/dexai/delivery/deployments`, `internal/dexai/delivery/deployments/docker`, `internal/dexai/delivery/deployments/kube`, `internal/dexai/delivery/evolve`, `internal/dexai/delivery/releases`, `internal/dexai/projects/config`, `internal/dexai/projects/projecttest`, `internal/dexai/projects/setup` and `internal/dexai/studio/runs` import this package.
 
 Dependencies: it imports `gen/superverse/v2`, `internal/comm`, `internal/comm/dexflow`, `internal/comm/flowid`, `internal/comm/platform`, `internal/comm/platform/objectstore`, `internal/comm/platform/postgres`, `internal/comm/platform/repohost`, `internal/dexai/app/appmanifest`, `internal/dexai/projects/infra`, `internal/dexai/projects/projectdao`, `internal/dexai/projects/repobinding`, `internal/dexai/tenancy/accountdao`, `internal/dexai/tenancy/memberdao` and `internal/dexai/tenancy/teamspaces` and calls the Dex Flow API.
 
@@ -18,16 +18,18 @@ flowchart LR
   c5["internal/dexai/api"] --> self
   c6["internal/dexai/api/attachments"] --> self
   c7["internal/dexai/api/boundary"] --> self
-  c8["internal/dexai/api/tenancy"] --> self
-  c9["internal/dexai/bootstrap"] --> self
-  c10["internal/dexai/delivery/deployments"] --> self
-  c11["internal/dexai/delivery/deployments/docker"] --> self
-  c12["internal/dexai/delivery/deployments/kube"] --> self
-  c13["internal/dexai/delivery/releases"] --> self
-  c14["internal/dexai/projects/config"] --> self
-  c15["internal/dexai/projects/projecttest"] --> self
-  c16["internal/dexai/projects/setup"] --> self
-  c17["internal/dexai/studio/runs"] --> self
+  c8["internal/dexai/api/evolve"] --> self
+  c9["internal/dexai/api/tenancy"] --> self
+  c10["internal/dexai/bootstrap"] --> self
+  c11["internal/dexai/delivery/deployments"] --> self
+  c12["internal/dexai/delivery/deployments/docker"] --> self
+  c13["internal/dexai/delivery/deployments/kube"] --> self
+  c14["internal/dexai/delivery/evolve"] --> self
+  c15["internal/dexai/delivery/releases"] --> self
+  c16["internal/dexai/projects/config"] --> self
+  c17["internal/dexai/projects/projecttest"] --> self
+  c18["internal/dexai/projects/setup"] --> self
+  c19["internal/dexai/studio/runs"] --> self
   self --> d0["gen/superverse/v2"]
   self --> d1["internal/comm"]
   self --> d2["internal/comm/dexflow"]
@@ -66,7 +68,7 @@ README states the behavior the package implements.
 | `project_flow_state.go` | Project snapshot, the `Status*` ProjectStatus values and other persisted values |
 | `project_flow_members.go` | The `Role` set (OWNER, BUILDER, OPERATOR), the `Members` value and the member write rules |
 | `project_commands.go` | Command admission and the command phase runner |
-| `project_flow_effects.go` | Child lifecycle ports (`SetupLifecycle`, `SessionLifecycle`) and the Live removal and deletion effects |
+| `project_flow_effects.go` | Child lifecycle ports (`SetupLifecycle`, `SessionLifecycle`, `EvolveCleanup`) and the Live removal and deletion effects |
 | `project_flow_failure.go` | Typed causes and the safe Failure they record |
 | `project_flow_client.go` | Reads, access, creation, child admission, commands, deployment lease, the members (their writes, and their list from the read model), and the deletion its TeamSpace asks for (`teamspaces.ProjectCleanup`) |
 | `project_flow_client_session.go` | Session child admission and the Session membership read |
@@ -198,14 +200,17 @@ deduplicate messages. The snapshot's `AttachmentTotals` reads
 the totals.
 
 **Children.** `ProjectFlowClient.AdmitChild` registers a Setup, Session,
-Release or Deployment in the `ChildFlows` AttributeMap
+Release, Deployment or EvolveFlow in the `ChildFlows` AttributeMap
 (`ChildFlowReference{FlowID, FlowType}`, keyed by the child FlowID) before the
 child's first effect. `RegisterChildFlow` is the authority on which FlowIDs
 belong to the Project and rejects every registration once the Project is
 DELETING; `AdmitChild` reports that, and a deleted or absent Project, as
 `ErrChildAdmissionClosed`. The Session, keyed `session-<projectID>`, is the
 only Session-scoped child; its Sandbox instances, Preview and subagents are never
-members.
+members. The Project's one EvolveFlow (`ChildEvolve`), keyed `evolve-<projectID>`,
+is admitted by its client before it starts; deletion ends it through
+`EvolveCleanup`, whose first pass cancels its Steps and a later pass finds it
+completed, and an admitted EvolveFlow that never started has nothing to end.
 
 **Commands.** One command at a time, identified by its ID: REMOVE_LIVE or
 DELETE_PROJECT. Admission checks the Project revision, sets DELETING for

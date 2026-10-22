@@ -112,6 +112,30 @@ func (h *Host) ValidateReleaseCommit(_ context.Context, fullName, branch, commit
 	})
 }
 
+// IsAncestor reports whether ancestor is descendant or one of its ancestors,
+// as git merge-base --is-ancestor does. Both must be exact commit SHAs; a
+// commit the repository does not have is ErrNotFound, as the GitHub host
+// answers.
+func (h *Host) IsAncestor(_ context.Context, fullName, ancestor, descendant string) (bool, error) {
+	if !flowid.IsCommitSHA(ancestor) || !flowid.IsCommitSHA(descendant) {
+		return false, fmt.Errorf("%w: ancestry compares exact commit SHAs", repohost.ErrRejected)
+	}
+	var reachable bool
+	err := h.withRepository(fullName, func(opened *git.Repository, found repository) error {
+		older, err := found.resolveCommit(opened, ancestor)
+		if err != nil {
+			return err
+		}
+		newer, err := found.resolveCommit(opened, descendant)
+		if err != nil {
+			return err
+		}
+		reachable, err = older.IsAncestor(newer)
+		return err
+	})
+	return reachable, err
+}
+
 // DescribeCommit returns the version of a commit: the number of its
 // ancestors, itself included, minus one, and its subject. Every ancestor is
 // counted once, as git rev-list --count does.

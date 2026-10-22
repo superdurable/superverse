@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Defines the Git host interface, its repository, commit and credential values and its typed errors, so every caller works with GitHub and the local Git host alike.
 
-Callers: `cmd/superverse-server/config`, `internal/comm/platform/connectorlibrary`, `internal/comm/platform/repohost/github`, `internal/comm/platform/repohost/localgit`, `internal/dexai/agents/sandbox/preview`, `internal/dexai/agents/sandbox/provision`, `internal/dexai/agents/sandbox/workspace/git`, `internal/dexai/agents/session/conversation`, `internal/dexai/api`, `internal/dexai/api/boundary`, `internal/dexai/app/apptemplate`, `internal/dexai/bootstrap`, `internal/dexai/delivery/deployments`, `internal/dexai/delivery/releases`, `internal/dexai/projects` and `internal/dexai/projects/setup` import this package.
+Callers: `cmd/superverse-server/config`, `internal/comm/platform/connectorlibrary`, `internal/comm/platform/repohost/github`, `internal/comm/platform/repohost/localgit`, `internal/dexai/agents/sandbox/preview`, `internal/dexai/agents/sandbox/provision`, `internal/dexai/agents/sandbox/workspace/git`, `internal/dexai/agents/session/conversation`, `internal/dexai/api`, `internal/dexai/api/boundary`, `internal/dexai/app/apptemplate`, `internal/dexai/bootstrap`, `internal/dexai/delivery/deployments`, `internal/dexai/delivery/evolve`, `internal/dexai/delivery/releases`, `internal/dexai/projects` and `internal/dexai/projects/setup` import this package.
 
 Dependencies: it imports `internal/comm/platform/deploymentnames`.
 
@@ -23,9 +23,10 @@ flowchart LR
   c10["internal/dexai/app/apptemplate"] --> self
   c11["internal/dexai/bootstrap"] --> self
   c12["internal/dexai/delivery/deployments"] --> self
-  c13["internal/dexai/delivery/releases"] --> self
-  c14["internal/dexai/projects"] --> self
-  c15["internal/dexai/projects/setup"] --> self
+  c13["internal/dexai/delivery/evolve"] --> self
+  c14["internal/dexai/delivery/releases"] --> self
+  c15["internal/dexai/projects"] --> self
+  c16["internal/dexai/projects/setup"] --> self
   self --> d0["internal/comm/platform/deploymentnames"]
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
@@ -34,7 +35,9 @@ Every Git repository operation of the platform goes through `Host`: the managed
 repository of a Project (create, find, archive, read, template initialization), file
 and commit reads, release commit validation, a commit's version (`DescribeCommit`: the
 number of its ancestors minus one, the root commit V0, with its subject cut at 72 code
-points; the local Git host walks the history and GitHub answers one GraphQL query) and the repository-scoped credential
+points; the local Git host walks the history and GitHub answers one GraphQL query), commit ancestry (`IsAncestor`:
+whether one exact commit is another or in its history; the local Git host walks the history and GitHub
+compares the two, answering `identical` or `ahead`) and the repository-scoped credential
 that a Sandbox or the builder clones and pushes with. ProjectSetupFlow, ProjectFlow,
 ProjectReleaseFlow, the Preview configuration, the release API and the Git
 credentials depend on this interface only.

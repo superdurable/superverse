@@ -79,8 +79,11 @@ little in the first version and are expensive to retrofit:
 - **Decisions are plain functions.** Routing, scoring, thresholds, lane choices
   and timer durations are computed by plain functions of the run's recorded facts
   and configuration, which the Step calls and records the inputs of. The same
-  function can then be run over past runs to see what a changed rule would have
-  done.
+  function can then be run over past Live runs, such as a goal review's export
+  of them, to see what a changed rule would have done. Preview runs on the
+  Sandbox engine and test runs are tests, never evidence: never replay
+  decisions over them to judge a rule, a goal or a proposal
+  ([goals](evolve.md#only-live-published-runs-count)).
 - **Model calls are their own Steps.** Each model call is an `llm` connector Step
   ([text generation](connector-architecture.md#text-generation)), so its result,
   with its token usage, is in the run's history.

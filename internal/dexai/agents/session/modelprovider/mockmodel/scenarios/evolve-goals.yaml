@@ -1,0 +1,112 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# The application's goals: the first input writes a valid .superverse/goals.md
+# for the template's TextSummaryFlow and pushes it through the real commit
+# gate, the second replaces it with a file that the goals parser refuses and
+# pushes that. Goal measurement reads the goals file of the Live build's
+# commit, so neither push changes what Live measures until a Live deployment
+# names its commit.
+name: evolve-goals
+title: "Write the application's goals"
+description: "Pushes a valid .superverse/goals.md for TextSummaryFlow, then one the goals parser refuses; goal measurement reads the file of the Live build's commit."
+category: project_feature
+inputs:
+  - label: "Push valid goals"
+    message: "Write the application's goals and push them."
+    replies:
+      - text: "Writing the goals file."
+        tool_uses:
+          - name: write
+            input:
+              path: .superverse/goals.md
+              content: |
+                # Goals
+
+                The application summarizes texts. Every request should end with a saved summary, quickly
+                and at a small model cost.
+
+                ```yaml goals
+                version: 1
+                review: weekly
+                flows: [TextSummaryFlow]
+                fields: [summary-status]
+                outcomes:
+                  started:
+                    step: PrepareSummary
+                  saved:
+                    step: SaveSummaryResult
+                goals:
+                  - id: requests
+                    kind: outcome
+                    statement: The application receives summary requests.
+                    metric: count(started)
+                    direction: up
+                  - id: saved-share
+                    kind: outcome
+                    statement: Most requests end with a saved summary.
+                    metric: rate(saved, of started)
+                    direction: up
+                  - id: duration
+                    kind: experience
+                    statement: A request ends within an hour.
+                    metric: p90(duration_h)
+                    guardrail:
+                      max: 1
+                  - id: model-calls
+                    kind: cost
+                    statement: A request calls the model once.
+                    metric: mean(ai.calls)
+                    direction: down
+                ```
+      - text: "Restoring the application's dependencies, as the template's instructions say."
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap", description: "Restore the application's dependencies", timeout_seconds: 600}
+      - text: "Running the source checks and pushing the goals."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Add the application's goals"
+              verification:
+                - ".superverse/goals.md holds one goals block for TextSummaryFlow"
+      - text: "The goals are pushed. Goal measurement reads them once a Live deployment serves this commit."
+  - label: "Push invalid goals"
+    message: "Replace the goals with a draft that is not finished and push it."
+    replies:
+      - text: "Writing the unfinished goals file."
+        tool_uses:
+          - name: write
+            input:
+              path: .superverse/goals.md
+              content: |
+                # Goals
+
+                ```yaml goals
+                version: 2
+                review: daily
+                flows: [TextSummaryFlow]
+                goals:
+                  - id: saved-share
+                    kind: outcome
+                    statement: Most requests end with a saved summary.
+                    metric: rate(saved, of started)
+                    direction: up
+                ```
+      - text: "Restoring the application's dependencies, as the template's instructions say."
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap", description: "Restore the application's dependencies", timeout_seconds: 600}
+      - text: "Running the source checks and pushing the draft."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Replace the goals with an unfinished draft"
+              verification:
+                - ".superverse/goals.md holds the unfinished goals draft"
+      - text: "The draft is pushed. Goal measurement reports its problems once a Live deployment serves this commit."

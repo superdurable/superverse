@@ -5,7 +5,7 @@ Purpose: Owns Live deployments for the API and Releases: ProjectDeployFlow deplo
 
 Callers: `internal/dexai/agents/diagnostics`, `internal/dexai/api`, `internal/dexai/api/boundary`, `internal/dexai/bootstrap`, `internal/dexai/delivery/deployments/docker`, `internal/dexai/delivery/deployments/kube` and `internal/dexai/studio/runs` import this package.
 
-Dependencies: it imports `internal/comm`, `internal/comm/dexflow`, `internal/comm/flowid`, `internal/comm/platform/objectstore`, `internal/comm/platform/postgres`, `internal/comm/platform/repohost`, `internal/dexai/agents/session/conversation`, `internal/dexai/app/appmanifest`, `internal/dexai/delivery/deliverydao`, `internal/dexai/delivery/releases`, `internal/dexai/delivery/releases/build`, `internal/dexai/projects`, `internal/dexai/projects/config`, `internal/dexai/projects/infra` and `internal/dexai/tenancy/connections` and calls the Dex Flow API.
+Dependencies: it imports `internal/comm`, `internal/comm/dexflow`, `internal/comm/flowid`, `internal/comm/platform/objectstore`, `internal/comm/platform/postgres`, `internal/comm/platform/repohost`, `internal/dexai/agents/session/conversation`, `internal/dexai/app/appmanifest`, `internal/dexai/delivery/deliverydao`, `internal/dexai/delivery/evolve`, `internal/dexai/delivery/releases`, `internal/dexai/delivery/releases/build`, `internal/dexai/projects`, `internal/dexai/projects/config`, `internal/dexai/projects/infra` and `internal/dexai/tenancy/connections` and calls the Dex Flow API.
 
 ```mermaid
 flowchart LR
@@ -26,12 +26,13 @@ flowchart LR
   self --> d6["internal/dexai/agents/session/conversation"]
   self --> d7["internal/dexai/app/appmanifest"]
   self --> d8["internal/dexai/delivery/deliverydao"]
-  self --> d9["internal/dexai/delivery/releases"]
-  self --> d10["internal/dexai/delivery/releases/build"]
-  self --> d11["internal/dexai/projects"]
-  self --> d12["internal/dexai/projects/config"]
-  self --> d13["internal/dexai/projects/infra"]
-  self --> d14["internal/dexai/tenancy/connections"]
+  self --> d9["internal/dexai/delivery/evolve"]
+  self --> d10["internal/dexai/delivery/releases"]
+  self --> d11["internal/dexai/delivery/releases/build"]
+  self --> d12["internal/dexai/projects"]
+  self --> d13["internal/dexai/projects/config"]
+  self --> d14["internal/dexai/projects/infra"]
+  self --> d15["internal/dexai/tenancy/connections"]
   self --> e0(["Dex Flow API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
@@ -330,6 +331,7 @@ AdmitDeployment → AcquireProjectDeployment → VerifyReleaseAndConfiguration
       │                       │  RecordLivePreparationFailure, which publishes instead
       └→ AwaitLiveExecutionPreparation (ForN(key, 2))
   → StartLiveDex → ApplyApplication → VerifyReadiness → CommitCurrentLive
+  → AnnounceLiveChange (failure → RecordLiveAnnouncementFailure)
   → StopReplacedWorker → RequestReplacedRetirement → ReleaseProjectDeployment → AwaitDeploymentRecovery
 
 A replaced READY generation: AwaitDeploymentRecovery (RETIRING)
@@ -369,6 +371,8 @@ REMOVED. No SubFlow is declared.
 | StartLiveDex | `PollingStepOptions(10m)`, failure → RecordDeploymentFailure | none | `StartProjectDex` on the Project's accepted Temporal, `RecordLiveExecution` of the Dex Service, until the Dex is ready |
 | StopFailedCandidateWorker | `PollingStepOptions(12m)`, failure → RecordCandidateStopFailure | none | Check the exact lease and CurrentLive, stop a failed candidate by owned generation/UID, then commit its original failure; never stop an already committed Live |
 | RecordCandidateStopFailure | `StateStepOptions`, no failure route | none | Same typed durable failure input as the stop; commit the stop failure while retaining the original provider phase and lease |
+| AnnounceLiveChange | `ProviderStepOptions` with 10 minutes of retries, failure → RecordLiveAnnouncementFailure | none | Entered only from the commit of the CommitCurrentLive result; outside cancellation, one `LiveChanged` through the `liveChangeObserver` port (the EvolveFlow client of [goal measurement](../evolve/README.md)) with the lease generation as the Live revision, the Release ID as the build commit and the end of the CommitCurrentLive timing as the Live time; then StopReplacedWorker. It is no phase: recovery never resumes it, so a deployment recovered past its commit does not announce and the next one does |
+| RecordLiveAnnouncementFailure | `StateStepOptions` | none | Writes the redacted cause into one DeploymentProgress frame and continues to StopReplacedWorker: the announcement never fails the deployment, but its retries can delay StopReplacedWorker, and so READY, by up to ten minutes while the replaced Worker keeps polling |
 | StopReplacedWorker | `PollingStepOptions(12m)`, failure → RecordDeploymentFailure | none | After Live commit, reconcile the replaced exact Worker, send SIGTERM and confirm exit; retain HTTP |
 | RequestReplacedRetirement | `ProviderStepOptions`, failure → RecordDeploymentFailure | none | While the lease is still held, one `RequestLiveRetirement` to the ReplacedLive deployment with RequestID `retire-<deploymentID>-g<generation>`; nothing for the first Live |
 | DrainReplacedGeneration | `StateStepOptions`; WaitFor the drain timer or `DeploymentRecoveryDecisions` | none | The business TTL `live.retirementDrain` from Retirement.RequestedAt; Project cleanup moves to CleanupCancelledDeployment |

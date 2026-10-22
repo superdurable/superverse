@@ -84,14 +84,15 @@ type ProjectDeployFlow struct {
 	grants        infra.Grants
 	redactor      infra.Redactor
 	feedback      releases.DeliveryFeedback
+	liveChanges   liveChangeObserver
 	// deployments asks a replaced generation to retire, which then drains for
 	// retirementDrain.
 	deployments     *ProjectDeployFlowClient
 	retirementDrain time.Duration
 }
 
-func NewProjectDeployFlow(projectClient *projects.ProjectFlowClient, releaseClient *releases.ProjectReleaseFlowClient, deploymentClient *ProjectDeployFlowClient, retirementDrain time.Duration, objects *objectstore.Store, configuration *projectconfig.Configuration, usages *connections.Usages, serving Serving, storage infra.Storage, execution infra.Execution, grants infra.Grants, redactor infra.Redactor, feedback releases.DeliveryFeedback) *ProjectDeployFlow {
-	return &ProjectDeployFlow{projects: projectClient, releases: releaseClient, deployments: deploymentClient, retirementDrain: retirementDrain, objects: objects, configuration: configuration, usages: usages, serving: serving, storage: storage, execution: execution, grants: grants, redactor: redactor, feedback: feedback}
+func NewProjectDeployFlow(projectClient *projects.ProjectFlowClient, releaseClient *releases.ProjectReleaseFlowClient, deploymentClient *ProjectDeployFlowClient, retirementDrain time.Duration, objects *objectstore.Store, configuration *projectconfig.Configuration, usages *connections.Usages, serving Serving, storage infra.Storage, execution infra.Execution, grants infra.Grants, redactor infra.Redactor, feedback releases.DeliveryFeedback, liveChanges liveChangeObserver) *ProjectDeployFlow {
+	return &ProjectDeployFlow{projects: projectClient, releases: releaseClient, deployments: deploymentClient, retirementDrain: retirementDrain, objects: objects, configuration: configuration, usages: usages, serving: serving, storage: storage, execution: execution, grants: grants, redactor: redactor, feedback: feedback, liveChanges: liveChanges}
 }
 
 func (f *ProjectDeployFlow) GetSteps() []dex.StepDef {
@@ -102,7 +103,8 @@ func (f *ProjectDeployFlow) GetSteps() []dex.StepDef {
 		dex.DefineStep(PrepareLiveAccess{flow: f}), dex.DefineStep(RecordLivePreparationFailure{flow: f}),
 		dex.DefineStep(AwaitLiveExecutionPreparation{flow: f}), dex.DefineStep(StartLiveDex{flow: f}),
 		dex.DefineStep(ApplyApplication{flow: f}), dex.DefineStep(VerifyReadiness{flow: f}),
-		dex.DefineStep(CommitCurrentLive{flow: f}), dex.DefineStep(StopReplacedWorker{flow: f}), dex.DefineStep(RequestReplacedRetirement{flow: f}), dex.DefineStep(ReleaseProjectDeployment{flow: f}),
+		dex.DefineStep(CommitCurrentLive{flow: f}), dex.DefineStep(AnnounceLiveChange{flow: f}), dex.DefineStep(RecordLiveAnnouncementFailure{flow: f}),
+		dex.DefineStep(StopReplacedWorker{flow: f}), dex.DefineStep(RequestReplacedRetirement{flow: f}), dex.DefineStep(ReleaseProjectDeployment{flow: f}),
 		dex.DefineStep(DrainReplacedGeneration{flow: f}), dex.DefineStep(RetireReplacedGeneration{flow: f}),
 		dex.DefineStep(CleanupCancelledDeployment{flow: f}), dex.DefineStep(CommitDeploymentPhase{flow: f}),
 		dex.DefineStep(StopFailedCandidateWorker{flow: f}), dex.DefineStep(RecordCandidateStopFailure{flow: f}), dex.DefineStep(RecordDeploymentFailure{flow: f}), dex.DefineStep(AwaitDeploymentRecovery{flow: f}),
@@ -710,6 +712,48 @@ func (s CommitCurrentLive) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecisi
 }
 
 // dex:group group-id:deployments group-label:"Live deployment"
+// dex:explanation text:"Tell the Project's goal measurement that this deployment is Live, with its revision, build commit and Live commit time."
+type AnnounceLiveChange struct {
+	dex.StepDefaultsNoWaitFor[dex.None]
+	flow *ProjectDeployFlow
+}
+
+// GetStepOptions: retries for ten minutes, then the failure is recorded and the deployment goes on.
+func (s AnnounceLiveChange) GetStepOptions() *dex.StepOptions {
+	o := dexflow.ProviderStepOptions(dex.ProceedToOnExecuteFailure(RecordLiveAnnouncementFailure{flow: s.flow}, nil))
+	o.ExecuteRetry = dexflow.StepRetry(liveAnnouncementLimit)
+	return o
+}
+
+func (s AnnounceLiveChange) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, error) {
+	state := readSnapshot(ctx)
+	if !state.cancelling() {
+		if err := s.flow.liveChanges.LiveChanged(ctx, state.ProjectID, liveChange(state)); err != nil {
+			return nil, dex.ErrorWithStack(fmt.Errorf("announce the Live deployment %s: %w", state.DeploymentID, err))
+		}
+	}
+	return dex.GoTo(StopReplacedWorker{flow: s.flow}, nil), nil
+}
+
+// dex:group group-id:deployments group-label:"Live deployment"
+// dex:explanation text:"Record in the deployment's progress that its Live announcement failed and go on; the next deployment announces again."
+type RecordLiveAnnouncementFailure struct {
+	dex.StepDefaultsNoWaitFor[dex.None]
+	flow *ProjectDeployFlow
+}
+
+func (RecordLiveAnnouncementFailure) GetStepOptions() *dex.StepOptions {
+	return dexflow.StateStepOptions()
+}
+
+func (s RecordLiveAnnouncementFailure) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, error) {
+	state := readSnapshot(ctx)
+	detail := s.flow.redactor.Redact(state.ProjectID, dexflow.FailureMessage("The Live announcement failed.", dexflow.RecoveryDetail(ctx)))
+	dexflow.StreamWritten(ctx, DeploymentProgress.Write(ctx, dexflow.Progress(ctx, stepAnnounceLive, state.Revision).WithDetail(detail)))
+	return dex.GoTo(StopReplacedWorker{flow: s.flow}, nil), nil
+}
+
+// dex:group group-id:deployments group-label:"Live deployment"
 // dex:explanation text:"Stop the exact replaced Worker after activation, retaining its HTTP generation until retirement."
 type StopReplacedWorker struct {
 	dex.StepDefaultsNoWaitFor[dex.None]
@@ -996,6 +1040,9 @@ func (s CommitDeploymentPhase) Execute(ctx dex.Context, in phaseResult) (*dex.St
 	case phaseCommitLive:
 		return dex.GoTo(CommitCurrentLive{flow: s.flow}, nil), nil
 	case phaseStopWorker:
+		if in.Phase == phaseCommitLive {
+			return dex.GoTo(AnnounceLiveChange{flow: s.flow}, nil), nil
+		}
 		return dex.GoTo(StopReplacedWorker{flow: s.flow}, nil), nil
 	case phaseRequestRetirement:
 		return dex.GoTo(RequestReplacedRetirement{flow: s.flow}, nil), nil

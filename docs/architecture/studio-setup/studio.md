@@ -248,7 +248,8 @@ Tools ▸ Publishing have no Publish of their own. On the Preview tab it shows:
 3. **Summary.** One line first: "Replaces V12 · 2 setting changes · about 3 min", "V12 again · 1
    setting change", or "First publish to Live", the time from the previous publish's durations.
    **Details**, folded under it, lists the rest from the item list and the Live pointer: "Replaces
-   V12. Runs in flight finish on V12; new runs start on this version", the processes that start on
+   V12. Runs in flight move to this version when it goes live; new runs start on it" (open runs
+   continue on the new generation once it activates, [the Live retirement contract](../../../internal/dexai/delivery/deployments/README.md#retirement-of-replaced-generations)), the processes that start on
    Live or change, each waiting setting, an address-bound connection sending events to Live's own
    address, the items no longer used, the connections Live uses with their channels, and the build
    and deploy times. It reuses `ConsequenceSummary`.
@@ -335,7 +336,7 @@ bottom:
 
 Stop Live (`RemoveLive`) and rollback (`StartDeployment` of an older build) each confirm first
 with their consequences: which version, connections and channels will run, that runs in flight
-finish on the version they started on, and for a rollback that Preview stays on its version, so
+move to the deployed version when its generation activates, and for a rollback that Preview stays on its version, so
 the next publish moves Live forward again and the layer's differences show as waiting; or that
 Live stops serving and its triggers stop; both wait while a publish runs. `lib/project/publishing/`
 holds `publish-stages.ts`, `use-publish-progress.ts` (the Release and Deployment Watches),

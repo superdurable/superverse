@@ -148,6 +148,12 @@ func PreviewFlowID(projectID string) string {
 	return "preview-" + projectID
 }
 
+// EvolveFlowID addresses the EvolveFlow of a Project, its one owner of goal
+// measurement and reviews, for example evolve-a7k2.
+func EvolveFlowID(projectID string) string {
+	return "evolve-" + projectID
+}
+
 // RepositoryBindingFlowID addresses the RepositoryBindingFlow of a GitHub
 // repository, for example repository-123456789.
 func RepositoryBindingFlowID(repositoryID int64) string {

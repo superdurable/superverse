@@ -12,7 +12,7 @@
 type Query = Record<string, string | null | undefined>;
 
 /** The surfaces of a Project's Builder, in tab order; each is the last segment of its URL. */
-const PROJECT_SURFACES = ["flow", "runs", "inbox", "interface", "tools"] as const;
+const PROJECT_SURFACES = ["flow", "runs", "inbox", "goals", "interface", "tools"] as const;
 export type ProjectSurface = (typeof PROJECT_SURFACES)[number];
 
 /** The tools that Tools lists, in list order; `?tool=` selects one. */

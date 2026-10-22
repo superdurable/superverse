@@ -22,6 +22,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/contribution"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/subagent"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/deployments"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/releases"
 	"github.com/superdurable/superversev2/internal/dexai/projects"
 	"github.com/superdurable/superversev2/internal/dexai/projects/repobinding"
@@ -50,11 +51,13 @@ type serverFlows struct {
 	deployment   *deployments.ProjectDeployFlow
 	// attachment is the Flow of one uploaded file of a TeamSpace.
 	attachment *attachments.AttachmentFlow
+	// evolve is the goal measurement of one Project.
+	evolve *evolve.EvolveFlow
 }
 
 // list is every server Flow; a Flow left out is nil, which the registry refuses.
 func (flows serverFlows) list() []dex.Flow {
-	return []dex.Flow{flows.teamSpace, flows.project, flows.setup, flows.repository, flows.workspace, flows.provision, flows.preview, flows.session, flows.subagent, flows.background, flows.issue, flows.contribution, flows.release, flows.deployment, flows.attachment}
+	return []dex.Flow{flows.teamSpace, flows.project, flows.setup, flows.repository, flows.workspace, flows.provision, flows.preview, flows.session, flows.subagent, flows.background, flows.issue, flows.contribution, flows.release, flows.deployment, flows.attachment, flows.evolve}
 }
 
 // CheckFlowRegistry builds the actual SDK registry of every server Flow, as
@@ -68,13 +71,13 @@ func CheckFlowRegistry() ([]string, error) {
 		teamSpace: &teamspaces.TeamSpaceFlow{}, project: &projects.ProjectFlow{}, setup: &setup.ProjectSetupFlow{},
 		repository: &repobinding.RepositoryBindingFlow{}, workspace: &sessionworkspace.SessionWorkspaceFlow{}, provision: &provision.SandboxProvisionFlow{}, preview: &preview.PreviewFlow{}, session: &sessionagent.SessionAgentFlow{},
 		subagent: &subagent.SubagentFlow{}, background: &backgroundcommand.BackgroundCommandFlow{}, issue: &platformissue.PlatformIssueFlow{}, contribution: &contribution.ConnectorContributionFlow{}, release: &releases.ProjectReleaseFlow{}, deployment: &deployments.ProjectDeployFlow{},
-		attachment: &attachments.AttachmentFlow{},
+		attachment: &attachments.AttachmentFlow{}, evolve: &evolve.EvolveFlow{},
 	}
 	flows := server.list()
 	if _, err := dex.NewRegistry(flows); err != nil {
 		return nil, err
 	}
-	children := map[projects.ChildFlow]dex.Flow{projects.ChildSetup: server.setup, projects.ChildSession: server.session, projects.ChildRelease: server.release, projects.ChildDeploy: server.deployment}
+	children := map[projects.ChildFlow]dex.Flow{projects.ChildSetup: server.setup, projects.ChildSession: server.session, projects.ChildRelease: server.release, projects.ChildDeploy: server.deployment, projects.ChildEvolve: server.evolve}
 	for child, flow := range children {
 		if child.FlowType() != dex.GetFinalFlowType(flow) {
 			return nil, fmt.Errorf("a Project admits the child Flow type %s, but Dex names the Flow %s", child.FlowType(), dex.GetFinalFlowType(flow))

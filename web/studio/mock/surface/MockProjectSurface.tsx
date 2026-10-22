@@ -12,6 +12,7 @@ import { canOpenSurface, surfacesFor } from "@/components/frame/surface-registry
 import { canBuild, type ProjectRole } from "@/lib/teamspace/project-roles";
 import { redirect } from "next/navigation";
 import { ProjectToolContent } from "@/components/project/ProjectToolContent";
+import { GoalsSurface } from "@/components/project/goals/GoalsSurface";
 import {
   environmentOf,
   studioRoutes,
@@ -38,6 +39,7 @@ import { RecentEventsProvider } from "@/components/project/activity/RecentEvents
 import { RecentEventsProblem } from "@/components/project/activity/RecentEventsProblem";
 import { PreviewStartButton } from "@/components/build/PreviewStart";
 import { resolveRole } from "./project-surfaces";
+import { seedGoalsFixture } from "@/mock/store/delivery/goal-measurement";
 import { getProject, getStudioMockStore } from "@/mock/store/store";
 import { seedPublishFixture } from "./publish-fixtures";
 import { NARROW_SETUP_FIXTURE, seedSetupFixture } from "./setup-fixtures";
@@ -58,7 +60,7 @@ type MockProjectContentProps = {
 
 function MockProjectContent(props: MockProjectContentProps) {
   const { surface, projectId, role, classification, loadFailed } = props;
-  // Tools and the Interface read the mock store, not the fixture definition.
+  // Tools, the Interface and Goals read the mock store, not the fixture definition.
   if (surface === "tools")
     return props.narrow ? (
       <div className="flex min-h-0 w-155 max-w-full flex-col border-r border-line-soft">
@@ -68,6 +70,7 @@ function MockProjectContent(props: MockProjectContentProps) {
       <ProjectToolContent projectId={projectId} tool={props.tool} environment={props.environment} />
     );
   if (surface === "interface") return <InterfaceSurface projectId={projectId} environment={props.environment} />;
+  if (surface === "goals") return <GoalsSurface projectId={projectId} environment={props.environment} />;
   if (loadFailed) {
     return (
       <NotReady kind="error" heading="This did not load" detail={`process ${projectId} · ${surface}`}>
@@ -197,6 +200,7 @@ export async function MockProjectSurface({
   }
   seedSetupFixture(getStudioMockStore(), projectId, query.setupFixture);
   seedPublishFixture(getStudioMockStore(), projectId, query.publishFixture);
+  seedGoalsFixture(getStudioMockStore(), projectId, query.goalsFixture);
   // Without a lens the page is a builder's; the frame shows the Project's own role.
   const role = resolveRole(query.role) ?? "builder";
   // A role lens that cannot open the surface lands on the first one it can.

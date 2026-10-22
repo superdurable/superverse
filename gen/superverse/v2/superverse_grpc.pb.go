@@ -2621,6 +2621,154 @@ var AttachmentService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
+	EvolveService_GetEvolve_FullMethodName         = "/superverse.v2.EvolveService/GetEvolve"
+	EvolveService_StartEvolveReview_FullMethodName = "/superverse.v2.EvolveService/StartEvolveReview"
+)
+
+// EvolveServiceClient is the client API for EvolveService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// Goal measurement of a Project (EvolveFlow, one per Project since its first Live deployment): the
+// goals of the Live build's .superverse/goals.md, the review schedule, and the reviews with the
+// goal values each one measured over the Project's Live runs.
+type EvolveServiceClient interface {
+	GetEvolve(ctx context.Context, in *GetEvolveRequest, opts ...grpc.CallOption) (*GetEvolveResponse, error)
+	StartEvolveReview(ctx context.Context, in *StartEvolveReviewRequest, opts ...grpc.CallOption) (*StartEvolveReviewResponse, error)
+}
+
+type evolveServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewEvolveServiceClient(cc grpc.ClientConnInterface) EvolveServiceClient {
+	return &evolveServiceClient{cc}
+}
+
+func (c *evolveServiceClient) GetEvolve(ctx context.Context, in *GetEvolveRequest, opts ...grpc.CallOption) (*GetEvolveResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetEvolveResponse)
+	err := c.cc.Invoke(ctx, EvolveService_GetEvolve_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *evolveServiceClient) StartEvolveReview(ctx context.Context, in *StartEvolveReviewRequest, opts ...grpc.CallOption) (*StartEvolveReviewResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StartEvolveReviewResponse)
+	err := c.cc.Invoke(ctx, EvolveService_StartEvolveReview_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// EvolveServiceServer is the server API for EvolveService service.
+// All implementations must embed UnimplementedEvolveServiceServer
+// for forward compatibility.
+//
+// Goal measurement of a Project (EvolveFlow, one per Project since its first Live deployment): the
+// goals of the Live build's .superverse/goals.md, the review schedule, and the reviews with the
+// goal values each one measured over the Project's Live runs.
+type EvolveServiceServer interface {
+	GetEvolve(context.Context, *GetEvolveRequest) (*GetEvolveResponse, error)
+	StartEvolveReview(context.Context, *StartEvolveReviewRequest) (*StartEvolveReviewResponse, error)
+	mustEmbedUnimplementedEvolveServiceServer()
+}
+
+// UnimplementedEvolveServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedEvolveServiceServer struct{}
+
+func (UnimplementedEvolveServiceServer) GetEvolve(context.Context, *GetEvolveRequest) (*GetEvolveResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEvolve not implemented")
+}
+func (UnimplementedEvolveServiceServer) StartEvolveReview(context.Context, *StartEvolveReviewRequest) (*StartEvolveReviewResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StartEvolveReview not implemented")
+}
+func (UnimplementedEvolveServiceServer) mustEmbedUnimplementedEvolveServiceServer() {}
+func (UnimplementedEvolveServiceServer) testEmbeddedByValue()                       {}
+
+// UnsafeEvolveServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to EvolveServiceServer will
+// result in compilation errors.
+type UnsafeEvolveServiceServer interface {
+	mustEmbedUnimplementedEvolveServiceServer()
+}
+
+func RegisterEvolveServiceServer(s grpc.ServiceRegistrar, srv EvolveServiceServer) {
+	// If the following call pancis, it indicates UnimplementedEvolveServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&EvolveService_ServiceDesc, srv)
+}
+
+func _EvolveService_GetEvolve_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEvolveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EvolveServiceServer).GetEvolve(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EvolveService_GetEvolve_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EvolveServiceServer).GetEvolve(ctx, req.(*GetEvolveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _EvolveService_StartEvolveReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StartEvolveReviewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EvolveServiceServer).StartEvolveReview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EvolveService_StartEvolveReview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EvolveServiceServer).StartEvolveReview(ctx, req.(*StartEvolveReviewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// EvolveService_ServiceDesc is the grpc.ServiceDesc for EvolveService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var EvolveService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "superverse.v2.EvolveService",
+	HandlerType: (*EvolveServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetEvolve",
+			Handler:    _EvolveService_GetEvolve_Handler,
+		},
+		{
+			MethodName: "StartEvolveReview",
+			Handler:    _EvolveService_StartEvolveReview_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "superverse/v2/superverse.proto",
+}
+
+const (
 	AgentService_SendMessage_FullMethodName         = "/superverse.v2.AgentService/SendMessage"
 	AgentService_AnswerQuestions_FullMethodName     = "/superverse.v2.AgentService/AnswerQuestions"
 	AgentService_UpdateSessionModel_FullMethodName  = "/superverse.v2.AgentService/UpdateSessionModel"

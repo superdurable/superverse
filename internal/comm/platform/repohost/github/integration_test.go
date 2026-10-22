@@ -149,6 +149,62 @@ func verifyApplicationTemplateGitHubTree(t *testing.T, ctx context.Context, clie
 	t.Logf("template=%s exact remote blobs=%d fresh-client replay=same-commit", template.Revision, len(actual))
 }
 
+// This opt-in test creates only a tagged V2 test repository with two commits on
+// main and archives it on completion: it compares them through the GitHub
+// compare API in both directions.
+func TestIsAncestorGitHubIntegration(t *testing.T) {
+	if os.Getenv("SUPERVERSE_TEST_GITHUB_EFFECTS") != "true" {
+		t.Fatal("requires explicit isolated V2 GitHub effects")
+	}
+	owner := os.Getenv("SUPERVERSE_TEST_GITHUB_OWNER")
+	if owner == "" {
+		t.Fatal("explicit GitHub owner is required")
+	}
+	client := newTestClient(t, owner, deploymentnames.EnvironmentTest)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+	projectID, setupID := flowid.RandomID(4), flowid.RandomID(8)
+	setup := repohost.SetupIdentity{ProjectID: projectID, ProjectName: "Ancestry", SetupID: setupID}
+	repository, err := client.ManagedRepository(ctx, setup)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("project=%s setup=%s repository=%s", projectID, setupID, repository.FullName)
+	defer func() {
+		cleanup, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+		if archiveErr := client.ArchiveManaged(cleanup, projectID, setupID, repository.FullName); archiveErr != nil {
+			t.Errorf("V2 repository archive incomplete: %v", archiveErr)
+		}
+	}()
+	parent, err := client.InitializeTemplate(ctx, repository, apptemplate.Current().Revision, apptemplate.Current())
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The contents API commits on main with the template commit as its parent.
+	var created struct {
+		Commit struct {
+			SHA string `json:"sha"`
+		} `json:"commit"`
+	}
+	child := map[string]any{"message": "Add a second commit", "branch": "main", "content": base64.StdEncoding.EncodeToString([]byte("second\n"))}
+	if err = client.repositoryRequest(ctx, http.MethodPut, repository.FullName, "/contents/ancestry.txt", child, &created); err != nil || !flowid.IsCommitSHA(created.Commit.SHA) {
+		t.Fatalf("the second commit was not created: %v %q", err, created.Commit.SHA)
+	}
+	for _, check := range []struct {
+		ancestor, descendant string
+		want                 bool
+	}{{parent, parent, true}, {parent, created.Commit.SHA, true}, {created.Commit.SHA, parent, false}} {
+		if got, ancestryErr := client.IsAncestor(ctx, repository.FullName, check.ancestor, check.descendant); ancestryErr != nil || got != check.want {
+			t.Fatalf("IsAncestor(%s, %s) = %t, %v; want %t", check.ancestor, check.descendant, got, ancestryErr, check.want)
+		}
+	}
+	if _, err = client.IsAncestor(ctx, repository.FullName, strings.Repeat("c", 40), parent); !errors.Is(err, repohost.ErrNotFound) {
+		t.Fatalf("an unknown commit must be ErrNotFound: %v", err)
+	}
+	t.Logf("parent=%s child=%s identical=true ahead=true behind=false unknown=not-found", parent, created.Commit.SHA)
+}
+
 // newTestClient acts as the GitHub App installation the test environment
 // configures. Missing or invalid credentials fail the test.
 func newTestClient(t *testing.T, owner string, environment deploymentnames.Environment) *Client {

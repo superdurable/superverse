@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Holds the trust boundary every business gRPC handler shares: caller authentication, panic recovery, request input checks, list paging and the mapping of errors to public statuses.
 
-Callers: `internal/dexai/api`, `internal/dexai/api/attachments`, `internal/dexai/api/modelcredential`, `internal/dexai/api/remoteagent`, `internal/dexai/api/tenancy` and `internal/dexai/bootstrap` import this package.
+Callers: `internal/dexai/api`, `internal/dexai/api/attachments`, `internal/dexai/api/evolve`, `internal/dexai/api/modelcredential`, `internal/dexai/api/remoteagent`, `internal/dexai/api/tenancy` and `internal/dexai/bootstrap` import this package.
 
 Dependencies: it imports `gen/superverse/v2`, `internal/comm/**` (5) and `internal/dexai/**` (16) and calls the Dex Flow API.
 
@@ -12,10 +12,11 @@ flowchart LR
   self["internal/dexai/api/boundary"]
   c0["internal/dexai/api"] --> self
   c1["internal/dexai/api/attachments"] --> self
-  c2["internal/dexai/api/modelcredential"] --> self
-  c3["internal/dexai/api/remoteagent"] --> self
-  c4["internal/dexai/api/tenancy"] --> self
-  c5["internal/dexai/bootstrap"] --> self
+  c2["internal/dexai/api/evolve"] --> self
+  c3["internal/dexai/api/modelcredential"] --> self
+  c4["internal/dexai/api/remoteagent"] --> self
+  c5["internal/dexai/api/tenancy"] --> self
+  c6["internal/dexai/bootstrap"] --> self
   self --> d0["gen/superverse/v2"]
   self --> d1["internal/comm/** (5)"]
   self --> d2["internal/dexai/** (16)"]

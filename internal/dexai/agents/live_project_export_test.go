@@ -45,8 +45,12 @@ type LiveProjectForTest struct {
 func NewLiveProjectForTest(t *testing.T, ctx context.Context) LiveProjectForTest {
 	t.Helper()
 	session := newMockSession(t, ctx, "")
-	live := newLiveDelivery(session)
-	head := session.identity.HeadCommit
+	return liveProjectOf(t, ctx, session, newLiveDelivery(session), session.identity.HeadCommit)
+}
+
+// liveProjectOf deploys head, the HEAD of the Session's Project, to Live.
+func liveProjectOf(t *testing.T, ctx context.Context, session *mockSession, live *liveDelivery, head string) LiveProjectForTest {
+	t.Helper()
 	if release := live.prepare(ctx, head, 1); release.PreparedSource.Status != releases.Ready {
 		t.Fatalf("the source of the Release of %s is %s", head, release.PreparedSource.Status)
 	}

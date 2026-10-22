@@ -5,7 +5,7 @@ Purpose: Serves the business gRPC services that the Studio BFF calls, one file p
 
 Callers: `internal/dexai/bootstrap` imports this package.
 
-Dependencies: it imports `gen/superverse/v2`, `internal/comm/**` (5) and `internal/dexai/**` (40).
+Dependencies: it imports `gen/superverse/v2`, `internal/comm/**` (5) and `internal/dexai/**` (42).
 
 ```mermaid
 flowchart LR
@@ -13,7 +13,7 @@ flowchart LR
   c0["internal/dexai/bootstrap"] --> self
   self --> d0["gen/superverse/v2"]
   self --> d1["internal/comm/** (5)"]
-  self --> d2["internal/dexai/** (40)"]
+  self --> d2["internal/dexai/** (42)"]
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 

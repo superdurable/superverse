@@ -49,7 +49,8 @@ export function NotReady({
   kind: NotReadyKind;
   heading: string;
   children: ReactNode;
-  action?: { label: string; href: string };
+  /** The one way forward: a link, or a button that runs `onClick`. */
+  action?: { label: string; href: string } | { label: string; onClick: () => void };
   /** Offers Try again, which reads the page again. */
   retry?: boolean;
   /* An identifier a person can quote when reporting. Errors carry one; the calm
@@ -74,11 +75,16 @@ export function NotReady({
         </div>
         <p className="mt-2 text-[15px] leading-relaxed text-ink-dim">{children}</p>
         {detail && <p className="mt-3 font-mono text-[13px] break-all text-ink-faint">{detail}</p>}
-        {action && (
-          <Link href={action.href} className={cx(buttonStyle("accent"), "mt-4")}>
-            {action.label}
-          </Link>
-        )}
+        {action &&
+          ("href" in action ? (
+            <Link href={action.href} className={cx(buttonStyle("accent"), "mt-4")}>
+              {action.label}
+            </Link>
+          ) : (
+            <button type="button" className={cx(buttonStyle("accent"), "mt-4")} onClick={action.onClick}>
+              {action.label}
+            </button>
+          ))}
         {retry && (
           <button
             type="button"

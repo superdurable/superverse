@@ -56,6 +56,7 @@ const BROWSER_SERVICES = {
   ProjectMemberService: true,
   TeamSpaceConnectionService: true,
   AttachmentService: true,
+  EvolveService: true,
 } satisfies Record<BrowserService, true>;
 
 /**

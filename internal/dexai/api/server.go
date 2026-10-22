@@ -26,10 +26,12 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/subagent"
 	attachmentsapi "github.com/superdurable/superversev2/internal/dexai/api/attachments"
 	"github.com/superdurable/superversev2/internal/dexai/api/boundary"
+	evolveapi "github.com/superdurable/superversev2/internal/dexai/api/evolve"
 	credentialapi "github.com/superdurable/superversev2/internal/dexai/api/modelcredential"
 	remoteapi "github.com/superdurable/superversev2/internal/dexai/api/remoteagent"
 	"github.com/superdurable/superversev2/internal/dexai/api/tenancy"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/deployments"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/releases"
 	"github.com/superdurable/superversev2/internal/dexai/projects"
 	projectconfig "github.com/superdurable/superversev2/internal/dexai/projects/config"
@@ -77,6 +79,9 @@ type Server struct {
 	Attachments         *attachments.AttachmentFlowClient
 	Renditions          *attachments.RenditionStore
 	AttachmentAdmission *attachments.AttachmentFlowService
+	// Evolve serves the goal measurement of Projects; EvolveSettings says where agent reviews run.
+	Evolve         *evolve.EvolveFlowClient
+	EvolveSettings evolve.Settings
 }
 
 // NewGRPCServer serves the business services behind panic recovery.
@@ -112,6 +117,7 @@ func NewGRPCServer(s *Server) *grpc.Server {
 	pb.RegisterConnectorServiceServer(server, &connectorServer{flowConfiguration: configuration, publishing: s.Publishing})
 	pb.RegisterApplicationEnvironmentServiceServer(server, &applicationEnvironmentServer{flowConfiguration: configuration})
 	attachmentsapi.Register(server, b, s.Attachments, s.Renditions, s.Members, s.Projects)
+	evolveapi.Register(server, b, s.Evolve, s.Projects, s.EvolveSettings)
 	return server
 }
 

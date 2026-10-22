@@ -234,7 +234,8 @@ func startDeploymentPhase(ctx context.Context, t *testing.T, d *generationDeploy
 	projectClient := &projects.ProjectFlowClient{Flow: projectFlow.ProjectFlow, ProjectIDLength: 4}
 	deployClient := deployments.NewProjectDeployFlowClient(projectClient, d.serving, d.k)
 	feedback := &agents.SessionFlowService{Logger: slog.Default()}
-	deployFlow := &deploymentPhaseFlow{ProjectDeployFlow: deployments.NewProjectDeployFlow(projectClient, nil, deployClient, 0, nil, nil, nil, d.serving, d.k, d.k, d.k, d.k, feedback)}
+	// No Live announcement port: each fixture starts after CommitCurrentLive or fails before it, so AnnounceLiveChange never runs.
+	deployFlow := &deploymentPhaseFlow{ProjectDeployFlow: deployments.NewProjectDeployFlow(projectClient, nil, deployClient, 0, nil, nil, nil, d.serving, d.k, d.k, d.k, d.k, feedback, nil)}
 	sessionFlow := &sessionagent.SessionAgentFlow{}
 	client := dexflowtest.WorkerClientForTest(ctx, t, dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS"), dexflowtest.Setting(t, "SUPERVERSE_TEST_WORKER_HOST"), projectFlow, deployFlow)
 	realClient := dexflowtest.ClientForTest(t, dexflowtest.Setting(t, "SUPERVERSE_TEST_DEX_ADDRESS"), nil, projectFlow.ProjectFlow, deployFlow.ProjectDeployFlow, sessionFlow)

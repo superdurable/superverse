@@ -1746,6 +1746,206 @@ message AttachmentFailure {
   string message = 2;
 }
 
+// Goal measurement of a Project (EvolveFlow, one per Project since its first Live deployment): the
+// goals of the Live build's .superverse/goals.md, the review schedule, and the reviews with the
+// goal values each one measured over the Project's Live runs.
+service EvolveService {
+  rpc GetEvolve(GetEvolveRequest) returns (GetEvolveResponse);
+  rpc StartEvolveReview(StartEvolveReviewRequest) returns (StartEvolveReviewResponse);
+}
+
+// What the goals file of the Live build holds.
+enum EvolveGoalsStatus {
+  EVOLVE_GOALS_STATUS_UNSPECIFIED = 0;
+  EVOLVE_GOALS_STATUS_NONE = 1;
+  EVOLVE_GOALS_STATUS_VALID = 2;
+  EVOLVE_GOALS_STATUS_INVALID = 3;
+}
+
+// How often a scheduled review runs; off schedules none.
+enum EvolveReviewPeriod {
+  EVOLVE_REVIEW_PERIOD_UNSPECIFIED = 0;
+  EVOLVE_REVIEW_PERIOD_WEEKLY = 1;
+  EVOLVE_REVIEW_PERIOD_BIWEEKLY = 2;
+  EVOLVE_REVIEW_PERIOD_OFF = 3;
+}
+
+// What a goal is about: an outcome to grow, an experience to protect, a cost to hold.
+enum EvolveGoalKind {
+  EVOLVE_GOAL_KIND_UNSPECIFIED = 0;
+  EVOLVE_GOAL_KIND_OUTCOME = 1;
+  EVOLVE_GOAL_KIND_EXPERIENCE = 2;
+  EVOLVE_GOAL_KIND_COST = 3;
+}
+
+// Which way a goal should move; a guardrail has none.
+enum EvolveGoalDirection {
+  EVOLVE_GOAL_DIRECTION_UNSPECIFIED = 0;
+  EVOLVE_GOAL_DIRECTION_UP = 1;
+  EVOLVE_GOAL_DIRECTION_DOWN = 2;
+}
+
+// What started a review: the schedule or a person's Review now.
+enum EvolveReviewTrigger {
+  EVOLVE_REVIEW_TRIGGER_UNSPECIFIED = 0;
+  EVOLVE_REVIEW_TRIGGER_SCHEDULE = 1;
+  EVOLVE_REVIEW_TRIGGER_MANUAL = 2;
+}
+
+// A review's lifecycle: exporting until it measured, was skipped or failed.
+enum EvolveReviewStatus {
+  EVOLVE_REVIEW_STATUS_UNSPECIFIED = 0;
+  EVOLVE_REVIEW_STATUS_EXPORTING = 1;
+  EVOLVE_REVIEW_STATUS_MEASURED = 2;
+  EVOLVE_REVIEW_STATUS_SKIPPED = 3;
+  EVOLVE_REVIEW_STATUS_FAILED = 4;
+}
+
+// Why a review was skipped (no Live deployment, no or invalid goals, a review still running) or
+// failed (the Live engine unreachable, an export too large or failed, a wait limit passed, the
+// metrics failed).
+enum EvolveReviewReason {
+  EVOLVE_REVIEW_REASON_UNSPECIFIED = 0;
+  EVOLVE_REVIEW_REASON_NO_LIVE = 1;
+  EVOLVE_REVIEW_REASON_NO_GOALS = 2;
+  EVOLVE_REVIEW_REASON_GOALS_INVALID = 3;
+  EVOLVE_REVIEW_REASON_PREVIOUS_REVIEW_RUNNING = 4;
+  EVOLVE_REVIEW_REASON_LIVE_UNREACHABLE = 5;
+  EVOLVE_REVIEW_REASON_EXPORT_TOO_LARGE = 6;
+  EVOLVE_REVIEW_REASON_EXPORT_FAILED = 7;
+  EVOLVE_REVIEW_REASON_TIMED_OUT = 8;
+  EVOLVE_REVIEW_REASON_METRICS_FAILED = 9;
+}
+
+// Why Review now started no review.
+enum EvolveReviewRefusal {
+  EVOLVE_REVIEW_REFUSAL_UNSPECIFIED = 0;
+  EVOLVE_REVIEW_REFUSAL_NO_GOALS = 1;
+  EVOLVE_REVIEW_REFUSAL_GOALS_INVALID = 2;
+  EVOLVE_REVIEW_REFUSAL_REVIEW_RUNNING = 3;
+  EVOLVE_REVIEW_REFUSAL_RATE_LIMITED = 4;
+}
+
+// Reads a Project's goal measurement for a caller who may operate its Live; NOT_FOUND before the
+// Project's first Live deployment.
+message GetEvolveRequest {
+  string project_id = 1;
+  CallerContext caller = 100;
+}
+
+message GetEvolveResponse {
+  Evolve evolve = 1;
+}
+
+message Evolve {
+  string project_id = 1;
+  // The newest Live deployment the measurement was told of.
+  EvolveLive live = 2;
+  EvolveGoals goals = 3;
+  EvolveSchedule schedule = 4;
+  // The review in progress, empty without one.
+  string active_review_id = 5;
+  // The kept reviews, newest first.
+  repeated EvolveReview reviews = 6;
+  // Whether an agent review follows the measurement for this Project.
+  bool agent_reviews = 7;
+  // When Review now is next admitted; absent when it is admitted now.
+  google.protobuf.Timestamp next_manual_review_at = 8;
+}
+
+message EvolveLive {
+  uint64 revision = 1;
+  string release_id = 2;
+  string build_commit = 3;
+  google.protobuf.Timestamp committed_at = 4;
+}
+
+// The goals of the Live build at commit: the goals when valid, the parser's errors when invalid.
+message EvolveGoals {
+  string commit = 1;
+  EvolveGoalsStatus status = 2;
+  repeated EvolveGoal goals = 3;
+  repeated string errors = 4;
+  google.protobuf.Timestamp read_at = 5;
+  // The Flow types the reviews read.
+  repeated string flow_types = 6;
+}
+
+message EvolveGoal {
+  string id = 1;
+  EvolveGoalKind kind = 2;
+  string statement = 3;
+  string metric = 4;
+  EvolveGoalDirection direction = 5;
+  optional double target = 6;
+  optional double guardrail_max = 7;
+  optional double guardrail_min = 8;
+}
+
+message EvolveSchedule {
+  EvolveReviewPeriod period = 1;
+  bool active = 2;
+  // The next scheduled review, absent while the schedule is inactive.
+  google.protobuf.Timestamp next_at = 3;
+}
+
+message EvolveReview {
+  string review_id = 1;
+  EvolveReviewTrigger trigger = 2;
+  // The account of a person's Review now.
+  string actor_account_id = 3;
+  google.protobuf.Timestamp requested_at = 4;
+  google.protobuf.Timestamp started_at = 5;
+  google.protobuf.Timestamp finished_at = 6;
+  // The runs the review read: open ones, and closed ones that closed since window_from.
+  google.protobuf.Timestamp window_from = 7;
+  google.protobuf.Timestamp window_to = 8;
+  string goals_commit = 9;
+  EvolveReviewStatus status = 10;
+  EvolveReviewReason reason = 11;
+  // The cause of a failed review, redacted and bounded.
+  string detail = 12;
+  EvolveExport export = 13;
+  // The runs the goal values rest on and the value of every goal.
+  uint32 runs = 14;
+  repeated EvolveGoalValue values = 15;
+}
+
+message EvolveExport {
+  uint32 parts = 1;
+  uint32 runs = 2;
+  int64 bytes = 3;
+  bool truncated = 4;
+  // A later review deleted the export.
+  bool deleted = 5;
+}
+
+message EvolveGoalValue {
+  string goal_id = 1;
+  // Absent when no run gave the goal a value.
+  optional double value = 2;
+  uint32 runs = 3;
+  // The value rests on fewer than 20 runs.
+  bool few_runs = 4;
+  // Whether a guardrail holds; absent for a goal without a guardrail or a value.
+  optional bool holds = 5;
+}
+
+// Starts a review now for a caller who may build the Project: one at a time and at most one a day.
+// A retry with the same request_id answers the review it started.
+message StartEvolveReviewRequest {
+  string project_id = 1;
+  // Studio's idempotency key of this Review now; a retry repeats it.
+  string request_id = 2;
+  CallerContext caller = 100;
+}
+
+message StartEvolveReviewResponse {
+  // The review started, empty when refused.
+  string review_id = 1;
+  EvolveReviewRefusal refusal = 2;
+}
+
 // Commands to the Session Agent, the mock model's scenarios and the read of a Flow design. Every
 // command request starts with the project_id of the Session, and every command response is empty:
 // success confirms admission, and the Session Watch owns the state that follows.

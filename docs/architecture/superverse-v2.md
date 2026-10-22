@@ -225,6 +225,7 @@ package owns the following;
 | [`dexai/api`](../../internal/dexai/api/README.md) | Serves the business gRPC services that the Studio BFF calls, one file per service domain, mapping each RPC onto its owning Flow client or Service. |
 | [`dexai/api/attachments`](../../internal/dexai/api/attachments/README.md) | Serves AttachmentService: the upload, completion and deletion of files attached to messages, and presigned downloads of a Project's copies. |
 | [`dexai/api/boundary`](../../internal/dexai/api/boundary/README.md) | Holds the trust boundary every business gRPC handler shares: caller authentication, panic recovery, request input checks, list paging and the mapping of errors to public statuses. |
+| [`dexai/api/evolve`](../../internal/dexai/api/evolve/README.md) | Serves EvolveService: a Project's goal measurement, with its goals, schedule and reviews, and a person's Review now. |
 | [`dexai/api/modelcredential`](../../internal/dexai/api/modelcredential/README.md) | Authorizes Project credential mutations and returns non-secret metadata. |
 | [`dexai/api/remoteagent`](../../internal/dexai/api/remoteagent/README.md) | Authorizes Builder pairing, connection reads, removal and platform executor selection through the generated resource contract. |
 | [`dexai/api/tenancy`](../../internal/dexai/api/tenancy/README.md) | Serves AccountService, TeamSpaceService and TeamSpaceMemberService: accounts, TeamSpaces and their members, written through TeamSpaceFlow and read from the read model. |
@@ -237,6 +238,9 @@ package owns the following;
 | [`dexai/delivery/deployments/docker`](../../internal/dexai/delivery/deployments/docker/README.md) | Serves each Live deployment generation as a Docker container of its Release image on its own network, moves the project's Live route to it and reads its log for diagnostics. |
 | [`dexai/delivery/deployments/generationapp`](../../internal/dexai/delivery/deployments/generationapp/README.md) | A Live application that the deployment integration tests build in several versions to observe which generation's Worker runs each Step of an open Flow. |
 | [`dexai/delivery/deployments/kube`](../../internal/dexai/delivery/deployments/kube/README.md) | Serves each Live deployment generation as an application Deployment and Service in the project namespace, activates its route and reads its environment and log, for `deployments.Serving`. |
+| [`dexai/delivery/evolve`](../../internal/dexai/delivery/evolve/README.md) | Measures a Live application against its goals file: EvolveFlow reads the goals of each Live build, schedules reviews, exports the Live runs and stores their goal metrics. |
+| [`dexai/delivery/evolve/goals`](../../internal/dexai/delivery/evolve/goals/README.md) | Parses an application's goals file, validates it with file line numbers, and evaluates each goal's metric over an export of its runs. |
+| [`dexai/delivery/evolve/runexport`](../../internal/dexai/delivery/evolve/runexport/README.md) | Declares the run record and manifest of an export of an application's runs, and reads and writes records as JSON Lines. |
 | [`dexai/delivery/releases`](../../internal/dexai/delivery/releases/README.md) | Owns Releases for the API and Live deployment: ProjectReleaseFlow prepares one main-branch commit's source, builds its immutable build revisions through the build port and cleans them up. |
 | [`dexai/delivery/releases/build`](../../internal/dexai/delivery/releases/build/README.md) | Declares the `Builder` port that builds Release images for ProjectReleaseFlow, its wire types and the embedded build profiles, which the `local` and `hosted` packages implement. |
 | [`dexai/delivery/releases/build/hosted`](../../internal/dexai/delivery/releases/build/hosted/README.md) | Builds Releases on CodeBuild, pushes the images to ECR and keeps its admission receipts in S3 outside Local Kind, behind the `build.Builder` port. |
@@ -420,6 +424,11 @@ messages, approvals and sequences are durable Flow state. Exact RunID addressing
   attachment ID that the uploader's request ID derives, so a replay joins its
   execution, also a completed one, and another file under the same request ID
   conflicts ([contract](attachments/upload-and-preparation.md#identity-and-execution-lifecycle)).
+- `EvolveFlow` starts with `dex.IDReuseDisallow` and a RequestID that
+  fingerprints its ProjectID, after its client admitted it as the Project's
+  `ChildEvolve`; a repeated start joins the execution, and its `LiveChanged`
+  RPC is idempotent by the Live revision
+  ([contract](../../internal/dexai/delivery/evolve/README.md#identity-and-lifecycle)).
 - `PlatformIssueFlow` starts with `dex.IDReuseAllowIfNotRunning` (plus
   same-request IgnoreError) under the FlowID `platform-issue-<env>-<sig16>` of a
   fault's signature: a report while the run is open joins it, and a report
@@ -493,6 +502,7 @@ Business IDs are readable contracts:
 | AttachmentFlow | `attachment-<teamSpaceID>-<attachmentID>`; `attachment-k3v9q2ma-a7f2c9xq4m1p` | `CreateAttachmentUpload`: one uploaded file of a TeamSpace; reserves its staging slot, verifies the presigned upload, prepares the blocks the model reads and keeps them staged ([contract](attachments/upload-and-preparation.md#attachmentflow)). Belongs to no Project. | READY for the staging retention; EXPIRED, DELETED or FAILED with its staging deleted and its slot released, then engine completion; never reused. |
 | ProjectReleaseFlow | `release-<projectID>-<commitSHA>`; `release-a7k2-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` | Prepare source and admit immutable build revisions for one commit draft. | READY builds remain available while later builds run; Project deletion closes the owner. |
 | ProjectDeployFlow | `deploy-<projectID>-<deploymentID>`; `deploy-a7k2-d6m4p7w2` | Deploy Live; applies exact Release/config, provisions/reuses resources, grants access, verifies and commits Live; retires its generation after a newer one replaced it. | READY/FAILED/REMOVED ends that business operation; RETIRED completes the execution; receipt retained until project deletion. |
+| EvolveFlow | `evolve-<projectID>`; `evolve-a7k2` | ProjectDeployFlow's announcement of the Project's first committed Live deployment; owns the goals of the Live build, the review schedule and each review's Live run export and goal metrics ([contract](../../internal/dexai/delivery/evolve/README.md)). | Only the Project's deletion completes it (CompleteProjectEvolve); never reused. |
 
 All project subordinate FlowIDs use `<type>-<projectID>-<typeID>`, excluding
 repository/project. Accounts have no Flow ([Accounts](#accounts)). Refreshing
@@ -797,7 +807,9 @@ listing projection, or start deduplication. Exact load for registration/removal;
 deletion may enumerate. Temporary children remove entries after acknowledged
 handoff; retained entities stay until project cleanup.
 
-Members are Setup, Session, Release and Deployment executions. The Session,
+Members are Setup, Session, Release, Deployment and EvolveFlow executions. The
+EvolveFlow, `evolve-<projectID>`, is admitted by its client before it starts and
+ended by the deletion's `EvolveCleanup`. The Session,
 `session-<projectID>`, is the only Session-scoped member: its admission calls
 `ProjectFlowClient.RegisterSessionChild(projectID)`, which registers
 `SessionAgentFlow` under that key only and clears a recorded
@@ -1471,6 +1483,7 @@ AdmitDeployment -> AcquireProjectDeployment -> VerifyReleaseAndConfiguration
   -> PublishDefinitions -> PrepareLiveExecution
      -> GoToMany(PrepareLiveTemporal, PrepareLiveAccess) -> AwaitLiveExecutionPreparation
   -> StartLiveDex -> ApplyApplication -> VerifyReadiness -> CommitCurrentLive
+  -> AnnounceLiveChange (failure: RecordLiveAnnouncementFailure) -> StopReplacedWorker
   -> RequestReplacedRetirement -> ReleaseProjectDeployment -> AwaitDeploymentRecovery
 replaced READY generation -> RETIRING -> DrainReplacedGeneration (live.retirementDrain)
   -> RetireReplacedGeneration -> CommitDeploymentPhase (RETIRED, completes)

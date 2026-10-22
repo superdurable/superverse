@@ -111,7 +111,7 @@ export function ReleaseDeployment({
               listened in then, not those of Live&apos;s next publish today. Connection credentials are the TeamSpace
               connections&apos; current ones.
             </li>
-            <li>Runs already started finish on the version they started on; new runs start on {target}.</li>
+            <li>Runs already started move to {target} when it goes live; new runs start on it.</li>
             <li>
               Preview stays on its version and Live&apos;s next publish keeps its settings, so the next publish moves
               Live forward again and its differences show as waiting.

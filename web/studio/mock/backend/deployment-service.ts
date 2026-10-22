@@ -6,9 +6,11 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-// The mock DeploymentService over the in-memory publishing fixtures; development only.
+// The mock DeploymentService over the in-memory publishing fixtures, and the mock EvolveService that measures
+// what is Live against example goals; development only.
 import { httpError } from "@/lib/server/request-body";
 import { mockAccount } from "@/mock/store/accounts";
+import { mockEvolve, startMockReview } from "@/mock/store/delivery/goal-measurement";
 import { advanceMockPublishes, cancelMockDeployment, mockRun } from "@/mock/store/delivery/publish-runs";
 import { deployMockLive } from "@/mock/store/publishing";
 import { mockDeploymentSnapshot, withStatuses } from "@/mock/store/resource-snapshots";
@@ -53,4 +55,10 @@ export const deploymentService: MockService<"DeploymentService"> = {
       const current = deployment(store, projectId, deploymentId);
       return current && mockDeploymentSnapshot(current);
     }),
+};
+
+export const evolveService: MockService<"EvolveService"> = {
+  GetEvolve: ({ projectId }, { store }) => ({ evolve: mockEvolve(store, projectId) }),
+  StartEvolveReview: ({ projectId, requestId, caller }, { store }) =>
+    startMockReview(store, projectId, requestId, mockAccount(caller).accountId),
 };

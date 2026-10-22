@@ -484,6 +484,19 @@ func TestLocalGitHostSmartHTTPIntegration(t *testing.T) {
 	if _, describeErr := host.DescribeCommit(ctx, repository.FullName, strings.Repeat("c", 40)); !errors.Is(describeErr, repohost.ErrNotFound) {
 		t.Fatalf("an unknown commit must be ErrNotFound: %v", describeErr)
 	}
+	// A commit is its own ancestor and an ancestor of every later commit on its
+	// branch, never of an earlier one or of a commit that diverged from it.
+	for _, check := range []struct {
+		ancestor, descendant string
+		want                 bool
+	}{{next, next, true}, {template, next, true}, {edited, next, true}, {next, template, false}, {sideCommit, next, false}, {next, sideCommit, false}} {
+		if got, ancestryErr := host.IsAncestor(ctx, repository.FullName, check.ancestor, check.descendant); ancestryErr != nil || got != check.want {
+			t.Fatalf("IsAncestor(%s, %s) = %t, %v; want %t", check.ancestor, check.descendant, got, ancestryErr, check.want)
+		}
+	}
+	if _, ancestryErr := host.IsAncestor(ctx, repository.FullName, strings.Repeat("c", 40), next); !errors.Is(ancestryErr, repohost.ErrNotFound) {
+		t.Fatalf("an unknown commit must be ErrNotFound: %v", ancestryErr)
+	}
 }
 
 // TestLocalGitHostLockWaitsIntegration checks that a slow push does not hold its

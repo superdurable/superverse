@@ -42,6 +42,7 @@ FLOWS = (
     ("deployments", "delivery/deployments/project_deploy_flow", "ProjectDeployFlow"),
     ("teamspace", "tenancy/teamspaces/team_space_flow", "TeamSpaceFlow"),
     ("attachment", "agents/attachments/attachment_flow", "AttachmentFlow"),
+    ("evolve", "delivery/evolve/evolve_flow", "EvolveFlow"),
 )
 AGENT_CHANNELS = (
     "answeredUserInputsChannel", "queuedUserMessagesChannel",

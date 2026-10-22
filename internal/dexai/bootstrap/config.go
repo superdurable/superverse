@@ -45,6 +45,8 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/api/watch"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve/runexport"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/releases/build"
 	buildhosted "github.com/superdurable/superversev2/internal/dexai/delivery/releases/build/hosted"
 	buildlocal "github.com/superdurable/superversev2/internal/dexai/delivery/releases/build/local"
@@ -116,6 +118,8 @@ type serverConfig struct {
 	liveRetirementDrain time.Duration
 	// buildLogReadsPerSecond bounds the build log reads of this replica.
 	buildLogReadsPerSecond float64
+	// evolve bounds the run exports of goal measurement and prices their AI usage.
+	evolve evolve.Settings
 
 	// postgres is the database of the accounts, as the server's role.
 	postgres postgres.Connection
@@ -221,6 +225,7 @@ func loadConfig(ctx context.Context, logger *slog.Logger, settings serverconfig.
 	c.liveDexImage = settings.Live.DexImage
 	c.liveRetirementDrain = settings.Live.RetirementDrain
 	c.buildLogReadsPerSecond = settings.Builds.LogReadsPerSecond
+	c.evolve = evolveSettings(settings.Evolve, settings.ProjectCloud.TemporalRetentionDays)
 	c.localImages = infralocal.Backend{S3Image: settings.Live.S3Image, TemporalImage: settings.Live.TemporalImage}
 
 	if err = c.repositoryHost(settings, logger); err != nil {
@@ -347,6 +352,20 @@ func s3Endpoint(endpoint string) func(*s3.Options) {
 			o.BaseEndpoint = aws.String(endpoint)
 			o.UsePathStyle = true
 		}
+	}
+}
+
+// evolveSettings are the evolve.* keys with the Live engines' retention of
+// closed runs, which bounds a review's window.
+func evolveSettings(settings serverconfig.EvolveConfig, retentionDays int32) evolve.Settings {
+	prices := make(map[string]runexport.Price, len(settings.ModelPrices))
+	for _, price := range settings.ModelPrices {
+		prices[price.Model] = runexport.Price{InputPerMTok: price.InputPerMTok, OutputPerMTok: price.OutputPerMTok}
+	}
+	return evolve.Settings{
+		MaxRunsPerExport: settings.MaxRunsPerExport, MaxHistoryEventsPerRun: settings.MaxHistoryEventsPerRun, MaxReadsPerExport: settings.MaxReadsPerExport,
+		MaxConcurrentExports: settings.MaxConcurrentExports, KeepExports: settings.KeepExports, ModelPrices: prices, PriceTableAsOf: settings.PriceTableAsOf,
+		ReviewAccess: settings.ReviewAccess, ReviewTeamSpaces: settings.ReviewTeamSpaces, RetentionDays: int(retentionDays),
 	}
 }
 

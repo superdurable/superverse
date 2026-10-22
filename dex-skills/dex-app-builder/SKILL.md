@@ -113,6 +113,7 @@ external integration, text generation, Trigger ingress or hosted configuration.
 | Flow, persistence, RPC, Connector or OpenAPI changes | [Backend implementation](references/backend-implementation.md), selecting the relevant headings; use the Dex SDK Core/Go routing rather than loading all references |
 | Verification, source handoff or deployment | [Verification and handoff](references/verification-handoff.md); distinguish source readiness from configured real execution |
 | API tests, connector mocks, a failed test stage | [API tests](references/api-tests.md) |
+| Setting, changing or fixing the application's goals (`.superverse/goals.md`), or how it does against them | [Goals and their measurement](references/evolve.md): the file and its metric language, how goals take effect when published, and the rule that only Live published runs count, never Preview or test runs |
 
 Keep the design proportional and in the application's owning documentation.
 Test every Flow through its API in `internal/apptest` with the connectors'

@@ -50,6 +50,14 @@ type ConnectionUsages interface {
 	ReleaseConnectionUsages(ctx context.Context, projectID string) error
 }
 
+// EvolveCleanup ends the goal measurement of a deleting Project; the evolve
+// package implements it.
+type EvolveCleanup interface {
+	// CleanupProjectEvolve performs one cleanup pass of the Project's
+	// EvolveFlow and reports whether it has ended.
+	CleanupProjectEvolve(ctx context.Context, projectID string) (bool, error)
+}
+
 type ReleaseCleanup interface {
 	RemoveForProjectCleanup(ctx context.Context, projectID, releaseID, requestID string) (bool, error)
 }
@@ -154,6 +162,8 @@ func (f *ProjectFlow) cleanUpChild(ctx context.Context, p Project, child ChildFl
 		return f.Releases.RemoveForProjectCleanup(ctx, p.ProjectID, registeredChildID(p.ProjectID, child), requestID)
 	case ChildDeploy:
 		return f.Deployments.RemoveForProjectCleanup(ctx, p.ProjectID, registeredChildID(p.ProjectID, child), requestID)
+	case ChildEvolve:
+		return f.Evolve.CleanupProjectEvolve(ctx, p.ProjectID)
 	}
 	// Registration admits only the child types above.
 	panic("registered child " + child.FlowID + " has unsupported type " + child.FlowType)

@@ -61,6 +61,8 @@ const (
 	MediaTypeJSON MediaType = comm.MediaTypeJSON
 	MediaTypeYAML MediaType = "application/yaml"
 	MediaTypeZip  MediaType = "application/zip"
+	// MediaTypeGzip is a gzip stream, such as the compressed JSON Lines of a run export part.
+	MediaTypeGzip MediaType = "application/gzip"
 	// MediaTypeRendition is a rendition: the exact JSON of one Claude content
 	// block, which a model request carries byte for byte.
 	MediaTypeRendition MediaType = "application/vnd.superverse.content-block+json"

@@ -30,6 +30,7 @@ import { NotReady } from "@/components/ui/NotReady";
 import { RecentEventsLog } from "./activity/RecentEvents";
 import { RecentEventsProvider } from "./activity/RecentEventsProvider";
 import { RecentEventsProblem } from "./activity/RecentEventsProblem";
+import { GoalsSurface } from "./goals/GoalsSurface";
 import { ProjectToolContent } from "./ProjectToolContent";
 
 /**
@@ -121,6 +122,8 @@ function SurfaceContent({
       return <FlowSurface projectId={projectId} environment={environment} />;
     case "interface":
       return <InterfaceSurface projectId={projectId} environment={environment} />;
+    case "goals":
+      return <GoalsSurface projectId={projectId} environment={environment} />;
     case "tools":
       return <ProjectToolContent projectId={projectId} tool={tool} environment={toolEnvironment} />;
     case "runs":

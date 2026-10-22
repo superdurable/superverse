@@ -9,6 +9,7 @@
 package deployments
 
 import (
+	"context"
 	"fmt"
 	"slices"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
 	"github.com/superdurable/superversev2/internal/comm/platform/objectstore"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/releases"
 	"github.com/superdurable/superversev2/internal/dexai/projects"
 	"github.com/superdurable/superversev2/internal/dexai/projects/infra"
@@ -68,6 +70,11 @@ const (
 	phaseRetire = "RetireReplacedGeneration"
 )
 
+// stepAnnounceLive announces a committed Live deployment between
+// phaseCommitLive and phaseStopWorker. It is no phase: recovery never resumes
+// it, and only its failure writes a progress frame.
+const stepAnnounceLive = "AnnounceLiveChange"
+
 // The branches of phasePrepare, which run in parallel. Each names the Step
 // that runs it.
 const (
@@ -79,7 +86,7 @@ const (
 // carry, each the name of the Step that runs it.
 var DeployPhasesForTest = []string{
 	phaseAdmit, phaseAcquire, phaseVerify, phasePublish, phasePrepare, branchTemporal, branchAccess, phaseStartDex, phaseApply,
-	phaseReadiness, phaseCommitLive, phaseStopCandidate, phaseStopWorker, phaseRequestRetirement, phaseReleaseLease, phaseCleanup, phaseRetire,
+	phaseReadiness, phaseCommitLive, stepAnnounceLive, phaseStopCandidate, phaseStopWorker, phaseRequestRetirement, phaseReleaseLease, phaseCleanup, phaseRetire,
 }
 
 // PollingPhasesForTest are the phases whose polling a cancellation preempts.
@@ -123,7 +130,29 @@ const (
 	// cleanupWaitLimit matches the cleanup wait limit of the deleting Project,
 	// which admits cleanup again after a failure.
 	cleanupWaitLimit = 30 * time.Minute
+	// liveAnnouncementLimit bounds the retries of the Live announcement, which
+	// never fails the deployment.
+	liveAnnouncementLimit = 10 * time.Minute
 )
+
+// liveChangeObserver is told of each committed Live deployment: the
+// EvolveFlow client, which the composition root injects.
+type liveChangeObserver interface {
+	LiveChanged(ctx context.Context, projectID string, change evolve.LiveRelease) error
+}
+
+// liveChange is the committed Live deployment s as its announcement carries
+// it: the lease generation orders it, the Release ID is its build commit and
+// the end of its CommitCurrentLive phase is its Live time.
+func liveChange(s Snapshot) evolve.LiveRelease {
+	change := evolve.LiveRelease{Revision: s.Lease.Generation, ReleaseID: s.ReleaseID, BuildCommit: s.ReleaseID}
+	for _, timing := range s.Timings {
+		if timing.Phase == phaseCommitLive {
+			change.CommittedAt = timing.StartedAt.Add(timing.Duration).UTC()
+		}
+	}
+	return change
+}
 
 // branchWaitLimit is the wait limit of each branch of phasePrepare.
 var branchWaitLimit = map[string]time.Duration{branchTemporal: prepareTemporalWaitLimit, branchAccess: prepareAccessWaitLimit}

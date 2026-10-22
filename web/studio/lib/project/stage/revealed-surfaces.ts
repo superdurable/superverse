@@ -61,12 +61,12 @@ function nextRecord(
 
 /**
  * The surfaces a builder's Builder has something to show on, past the first conversation: the Flow from
- * the switch; Runs and Tools once processes are built from the agent's own push; the Inbox once a run
+ * the switch; Runs, Goals and Tools once processes are built from the agent's own push; the Inbox once a run
  * waits for a person; the Interface once the Preview has served a page of the agent's push, or Live runs.
  */
 export function availableSurfaces(state: ProjectStageState, waiting: number): ProjectSurface[] {
   const surfaces: ProjectSurface[] = ["flow"];
-  if (state.hasOwnProcesses) surfaces.push("runs", "tools");
+  if (state.hasOwnProcesses) surfaces.push("runs", "goals", "tools");
   if (waiting > 0) surfaces.push("inbox");
   if (state.previewServed || state.hasPublished) surfaces.push("interface");
   return surfaces;

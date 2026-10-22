@@ -26,8 +26,10 @@ flowchart LR
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
-The typed `RemoteAgentService` fixture lives with Agent services to preserve the
-backend's ten-file limit. Builders may create ten-minute codes, list and remove
+The typed `RemoteAgentService` fixture lives with Agent services, and the
+`EvolveService` fixture with the deployment service (`deployment-service.ts`,
+over `mock/store/delivery/goal-measurement.ts`), to preserve the backend's
+ten-file limit. Builders may create ten-minute codes, list and remove
 up to six dialog records per Project; operator access is refused. A weak store
 key releases this state with the development store. Its endpoint is the reserved
 `http://remote-agent.invalid` origin: development mode implements no remote bearer

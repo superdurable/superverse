@@ -27,6 +27,7 @@ export const SURFACES = {
   flow: { label: "Flow", glyph: "flow", followsEnvironment: true, openTo: "operator" },
   runs: { label: "Runs", glyph: "runs", followsEnvironment: true, openTo: "operator" },
   inbox: { label: "Inbox", glyph: "inbox", followsEnvironment: true, openTo: "operator" },
+  goals: { label: "Goals", glyph: "target", followsEnvironment: true, openTo: "operator" },
   interface: { label: "Interface", glyph: "window", followsEnvironment: true, openTo: "operator" },
   tools: { label: "Tools", glyph: "tools", followsEnvironment: false, openTo: "builder" },
 } as const satisfies Record<ProjectSurface, SurfaceEntry>;

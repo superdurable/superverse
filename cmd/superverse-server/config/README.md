@@ -94,11 +94,11 @@ define the slug.
 | `pull.idleStreamsPerQueue` | Idle stream target per registered Flow type and process queue | `1` | `1` to `8` |
 | `pull.stopDrainTimeout` | Drain before cancelling active handler contexts | `60s` | `1s` to `60s`; fits the 120-second Pod grace with preStop and listener shutdown |
 
-The platform registers 15 Flow types. SDK 1.14.2 retires surplus idle streams after load subsides. Its steady-state stream bound is `maxConcurrentTasks + (F + 1) * idleStreamsPerQueue`: 272 at the defaults and 384 at the supported maxima. Bootstrap refuses a registry/options combination above `PlatformDexWorkerStreamCap` (512). Platform Dex must set `matching.maxConcurrentTasksCap: 512` and `matching.maxStreams: 100000`; these count registered streams, including idle streams. The 128-stream margin above the supported maximum accommodates transient bursts but is unmeasured. Budget every server replica and rollout overlap against one matching instance, plus other pull Workers; 195 Workers at the per-Worker cap consume 99,840 streams. Review both settings before increasing replicas or adding Flow types.
+The platform registers 16 Flow types. SDK 1.14.2 retires surplus idle streams after load subsides. Its steady-state stream bound is `maxConcurrentTasks + (F + 1) * idleStreamsPerQueue`: 273 at the defaults and 392 at the supported maxima. Bootstrap refuses a registry/options combination above `PlatformDexWorkerStreamCap` (512). Platform Dex must set `matching.maxConcurrentTasksCap: 512` and `matching.maxStreams: 100000`; these count registered streams, including idle streams. The 120-stream margin above the supported maximum accommodates transient bursts but is unmeasured. Budget every server replica and rollout overlap against one matching instance, plus other pull Workers; 195 Workers at the per-Worker cap consume 99,840 streams. Review both settings before increasing replicas or adding Flow types.
 
 The 256 slots are shared by Steps and RPCs, with no reserved RPC capacity. Size each replica for active Session handlers (up to four during parallel tools), background watches, subagents, provider/build/cleanup polling and RPC bursts. A workload of 32 Session handlers, 32 background watches, 32 subagent handlers, 64 pollers and 32 RPCs uses 192 slots; simultaneous four-way tool waves can exceed this envelope. A finite cap cannot match uncapped push under arbitrary load. Engine-side Timer, Channel and SubFlow waits release their handler after `WaitFor` returns; `PollUntil` holds one for its full attempt.
 
-Each open stream uses SDK goroutines, contexts, control channels and gRPC stream state; a busy stream adds a task goroutine and its loaded payload/state. The matching cap bounds registered streams during bursts, while the SDK retires surplus idle streams after load subsides. Two initial Go stacks alone cost at least 4 KiB per stream; 16–64 KiB per stream per endpoint is a planning estimate, not measured memory or a payload bound. Keep application payload limits and container memory limits in the capacity budget. Matching sends idle Ping/Pong traffic every 20 seconds by default; the default idle target of 16 streams produces about 0.8 exchanges per second per Worker after all tasks finish.
+Each open stream uses SDK goroutines, contexts, control channels and gRPC stream state; a busy stream adds a task goroutine and its loaded payload/state. The matching cap bounds registered streams during bursts, while the SDK retires surplus idle streams after load subsides. Two initial Go stacks alone cost at least 4 KiB per stream; 16–64 KiB per stream per endpoint is a planning estimate, not measured memory or a payload bound. Keep application payload limits and container memory limits in the capacity budget. Matching sends idle Ping/Pong traffic every 20 seconds by default; the default idle target of 17 streams produces about 0.85 exchanges per second per Worker after all tasks finish.
 
 The Worker opens outbound streams to `serverAddress`; it has no listener or advertised address.
 Readiness waits for every queue's acknowledged registration. A permanent rejection with no remaining registered stream on its queue stops the Worker; rejected surplus streams can log and retry. Initial readiness does not prove the server accepts the full stream envelope.
@@ -306,6 +306,23 @@ provider also checks each value against the catalog when it starts.
 | `permissionsBoundaryARN` | Permissions boundary of project roles | none | |
 | `temporalAddress` | Shared private Temporal frontend for hosted Project namespaces | `xtemporal-frontend.temporal.svc.cluster.local:7233` | must equal this in-cluster endpoint; plaintext, port `7233` |
 | `temporalRetentionDays` | Retention of project Temporal namespaces | `30` | `1` to `90` |
+
+### `evolve`
+
+Goal measurement: the bounds of the run export of each review, the list prices of its AI usage
+and where agent reviews run ([the package](../../../internal/dexai/delivery/evolve/README.md)).
+
+| Key | Meaning | Default | Range or rule |
+| --- | --- | --- | --- |
+| `maxRunsPerExport` | Most runs one review exports; the export is marked truncated beyond | `5000` | 1 to 20000 |
+| `maxHistoryEventsPerRun` | Most history events read per run; a longer run's record is marked truncated | `2000` | 100 to 10000 |
+| `maxReadsPerExport` | Most reads of the Live engine one export makes | `40000` | 100 to 200000 |
+| `maxConcurrentExports` | Exports one server replica runs at once; the others wait, heartbeating. Every running or waiting export Step holds one of the replica's `dex.pull.maxConcurrentTasks` slots | `4` | 1 to 8 |
+| `keepExports` | A Project's newest exports kept in storage; a review deletes older ones when it begins | `4` | 1 to 25 |
+| `modelPrices` | List prices `{model, inputPerMTok, outputPerMTok}` in dollars per million tokens, keyed by the API model ID a model connector reports; a model without a price shows tokens and no dollars | empty | each model once; 0 to 10000 |
+| `priceTableAsOf` | The date of `modelPrices`, which each export's manifest carries | empty | `YYYY-MM-DD`, required with `modelPrices` |
+| `reviewAccess` | Which Projects get agent reviews after measurement: `none`, `listed` (the TeamSpaces below) or `all`. Measurement runs for every Project with valid goals | `listed` | one of the three |
+| `reviewTeamSpaces` | TeamSpace IDs with agent reviews under `listed`, kept in private environment configuration | empty | at most 100 canonical TeamSpace IDs, each once |
 
 ### `native`
 

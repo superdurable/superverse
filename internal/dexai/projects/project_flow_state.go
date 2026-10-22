@@ -102,8 +102,9 @@ type ChildFlowReference struct {
 // ChildFlow is a type of Flow a Project owns as a child, declared once with
 // the kind its FlowID names. Its type is the Go type name that Dex gives the
 // Flow, which this package cannot import; the server's registry check
-// compares the two. The Session has no kind: the Project has one, whose
-// FlowID is flowid.SessionFlowID.
+// compares the two. The Session and the EvolveFlow have no kind: the Project
+// has one of each, whose FlowIDs are flowid.SessionFlowID and
+// flowid.EvolveFlowID.
 type ChildFlow struct{ flowType, kind string }
 
 var (
@@ -111,16 +112,21 @@ var (
 	ChildSession = ChildFlow{flowType: "SessionAgentFlow"}
 	ChildRelease = ChildFlow{flowType: "ProjectReleaseFlow", kind: "release"}
 	ChildDeploy  = ChildFlow{flowType: "ProjectDeployFlow", kind: "deploy"}
+	ChildEvolve  = ChildFlow{flowType: "EvolveFlow"}
 )
 
 // FlowType is the Dex Flow type of the child, which ChildFlowReference keeps.
 func (child ChildFlow) FlowType() string { return child.flowType }
 
 // belongs reports whether flowID is a FlowID of this child type of the
-// Project: its one Session's, or <kind>-<projectID>-<childID>.
+// Project: its one Session's, its one EvolveFlow's, or
+// <kind>-<projectID>-<childID>.
 func (child ChildFlow) belongs(projectID, flowID string) bool {
-	if child == ChildSession {
+	switch child {
+	case ChildSession:
 		return flowID == flowid.SessionFlowID(projectID)
+	case ChildEvolve:
+		return flowID == flowid.EvolveFlowID(projectID)
 	}
 	_, ok := flowid.ParseProjectChild(child.kind, projectID, flowID)
 	return ok
@@ -129,6 +135,7 @@ func (child ChildFlow) belongs(projectID, flowID string) bool {
 // childFlows are the child Flows a Project admits, by their Flow type.
 var childFlows = map[string]ChildFlow{
 	ChildSetup.flowType: ChildSetup, ChildSession.flowType: ChildSession, ChildRelease.flowType: ChildRelease, ChildDeploy.flowType: ChildDeploy,
+	ChildEvolve.flowType: ChildEvolve,
 }
 
 // DeploymentLease is the single admitted Live deployment of a Project.

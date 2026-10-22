@@ -226,6 +226,13 @@ const PATHS = {
       <path d="M15.5 5.8a3 3 0 0 1 0 5.4M17.5 14.4c1.5.7 2.6 2.2 3 4.6" />
     </>
   ),
+  target: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <circle cx="12" cy="12" r="4.5" />
+      <circle cx="12" cy="12" r="0.9" />
+    </>
+  ),
   stop: <rect x="6.5" y="6.5" width="11" height="11" rx="1.5" />,
   play: <path d="M8 5.5v13l10.5-6.5z" />,
 } satisfies Record<string, ReactElement>;

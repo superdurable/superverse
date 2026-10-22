@@ -5,7 +5,7 @@ Purpose: The Project pages: the start form, Project creation, Project details, t
 
 Importers: `app` and `mock/surface` import this directory.
 
-Imports: it imports `components/build`, `components/flow/scope`, `components/frame`, `components/project/**` (3), `components/publishing/**` (2), `components/session/**` (5), `components/shell/palette`, `components/teamspace`, `components/ui/**` (5), `lib/api/**` (3), `lib/browser`, `lib/flow`, `lib/generated/protobuf`, `lib/project/**` (3), `lib/session/**` (4), `lib/shared/**` (3) and `lib/teamspace`.
+Imports: it imports `components/build`, `components/flow/scope`, `components/frame`, `components/project/**` (4), `components/publishing/**` (2), `components/session/**` (5), `components/shell/palette`, `components/teamspace`, `components/ui/**` (5), `lib/api/**` (3), `lib/browser`, `lib/flow`, `lib/generated/protobuf`, `lib/project/**` (3), `lib/session/**` (4), `lib/shared/**` (3) and `lib/teamspace`.
 
 ```mermaid
 flowchart LR
@@ -15,7 +15,7 @@ flowchart LR
   self --> d0["components/build"]
   self --> d1["components/flow/scope"]
   self --> d2["components/frame"]
-  self --> d3["components/project/** (3)"]
+  self --> d3["components/project/** (4)"]
   self --> d4["components/publishing/** (2)"]
   self --> d5["components/session/** (5)"]
   self --> d6["components/shell/palette"]

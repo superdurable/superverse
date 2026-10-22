@@ -5,15 +5,16 @@ Purpose: Implements the repository host on GitHub for Project setup, Releases an
 
 Callers: `internal/dexai/bootstrap` imports this package.
 
-Dependencies: it imports `internal/comm/platform/deploymentnames`, `internal/comm/platform/githubapp` and `internal/comm/platform/repohost`.
+Dependencies: it imports `internal/comm/flowid`, `internal/comm/platform/deploymentnames`, `internal/comm/platform/githubapp` and `internal/comm/platform/repohost`.
 
 ```mermaid
 flowchart LR
   self["internal/comm/platform/repohost/github"]
   c0["internal/dexai/bootstrap"] --> self
-  self --> d0["internal/comm/platform/deploymentnames"]
-  self --> d1["internal/comm/platform/githubapp"]
-  self --> d2["internal/comm/platform/repohost"]
+  self --> d0["internal/comm/flowid"]
+  self --> d1["internal/comm/platform/deploymentnames"]
+  self --> d2["internal/comm/platform/githubapp"]
+  self --> d3["internal/comm/platform/repohost"]
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 

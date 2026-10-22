@@ -6,6 +6,10 @@ Flow files in `dex-app.yaml`; **Configuration** holds connector connections and
 credentials; **Preview** runs the prepared commit's application and Worker on
 the Preview engine inside the coding Sandbox; **Runs** and **Inbox** show
 Preview or Live;
+**Goals** shows the goals file of the Live build with the values that reviews
+measured from the runs of the Live, published version only; on Preview it
+shows no values and says goals are measured on Live runs, because Preview and
+test runs never count toward a goal ([goals](evolve.md));
 and **Publishing** builds and deploys Live from a committed main-branch source.
 There is no Dex Web, connection file or connector UI iframe. FDG 2.0 management
 metadata is Go-only: validate every Flow with the 2.0 analyzer and never fall

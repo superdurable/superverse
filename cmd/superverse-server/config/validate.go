@@ -27,6 +27,7 @@ import (
 	"golang.org/x/mod/semver"
 
 	"github.com/superdurable/superversev2/internal/comm/fileextract"
+	"github.com/superdurable/superversev2/internal/comm/flowid"
 	"github.com/superdurable/superversev2/internal/comm/platform/deploymentnames"
 	"github.com/superdurable/superversev2/internal/comm/platform/eventqueue"
 	"github.com/superdurable/superversev2/internal/comm/platform/objectstore"
@@ -131,6 +132,7 @@ func (c Config) Validate() error {
 	}
 	problems = append(problems, c.validateConnections()...)
 	problems = append(problems, c.validateRemoteAgent()...)
+	problems = append(problems, c.validateEvolve()...)
 
 	if modelErr := c.Agent.Model.Validate(); modelErr != nil {
 		fail("agent.model: %v", modelErr)
@@ -306,6 +308,55 @@ func (c Config) validateAttachments() []error {
 
 // validateRemoteAgent checks the separate Bridge listener against every
 // listener in the effective configuration; Native additionally requires loopback.
+// modelID admits an API model ID as model connectors report it.
+var modelID = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$`)
+
+// validateEvolve checks the export bounds, the price table and the review access.
+func (c Config) validateEvolve() []error {
+	var problems []error
+	fail := func(format string, args ...any) { problems = append(problems, fmt.Errorf(format, args...)) }
+	e := c.Evolve
+	for _, bound := range []struct {
+		name                  string
+		value, minimum, limit int
+	}{
+		{"maxRunsPerExport", e.MaxRunsPerExport, 1, 20_000}, {"maxHistoryEventsPerRun", e.MaxHistoryEventsPerRun, 100, 10_000},
+		{"maxReadsPerExport", e.MaxReadsPerExport, 100, 200_000}, {"maxConcurrentExports", e.MaxConcurrentExports, 1, 8},
+		{"keepExports", e.KeepExports, 1, 25},
+	} {
+		if !between(bound.value, bound.minimum, bound.limit) {
+			fail("evolve.%s must be an integer from %d to %d", bound.name, bound.minimum, bound.limit)
+		}
+	}
+	seen := map[string]bool{}
+	for _, price := range e.ModelPrices {
+		if !modelID.MatchString(price.Model) || seen[price.Model] {
+			fail("evolve.modelPrices must name each model once by its API model ID")
+		}
+		seen[price.Model] = true
+		if !between(price.InputPerMTok, 0, 10_000) || !between(price.OutputPerMTok, 0, 10_000) {
+			fail("evolve.modelPrices of %s must be dollars per million tokens from 0 to 10000", price.Model)
+		}
+	}
+	if _, err := time.Parse(time.DateOnly, e.PriceTableAsOf); len(e.ModelPrices) > 0 && err != nil {
+		fail("evolve.priceTableAsOf must date the price table as YYYY-MM-DD")
+	}
+	if err := e.ReviewAccess.Validate(); err != nil {
+		fail("evolve.reviewAccess: %v", err)
+	}
+	if len(e.ReviewTeamSpaces) > MaxEvolveReviewTeamSpaces {
+		fail("evolve.reviewTeamSpaces must contain at most %d TeamSpace IDs", MaxEvolveReviewTeamSpaces)
+	}
+	listed := map[string]bool{}
+	for _, teamSpace := range e.ReviewTeamSpaces {
+		if flowid.ValidateTeamSpaceID(teamSpace) != nil || listed[teamSpace] {
+			fail("evolve.reviewTeamSpaces must name each TeamSpace ID once")
+		}
+		listed[teamSpace] = true
+	}
+	return problems
+}
+
 func (c Config) validateRemoteAgent() []error {
 	var problems []error
 	fail := func(format string, args ...any) { problems = append(problems, fmt.Errorf(format, args...)) }

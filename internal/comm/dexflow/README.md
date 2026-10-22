@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Holds the Dex plumbing Flow packages share: persisted failure, progress and start identity shapes, failure causes, initial Attributes, option presets, polling, long-call heartbeats, lock-retrying RPCs and retained reads.
 
-Callers: `internal/dexai/agents/attachments`, `internal/dexai/agents/diagnostics`, `internal/dexai/agents/platformissue`, `internal/dexai/agents/sandbox/preview`, `internal/dexai/agents/sandbox/provision`, `internal/dexai/agents/sandbox/sessionworkspace`, `internal/dexai/agents/session`, `internal/dexai/agents/session/backgroundcommand`, `internal/dexai/agents/session/contribution`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/session/subagent`, `internal/dexai/api`, `internal/dexai/api/boundary`, `internal/dexai/api/tenancy`, `internal/dexai/delivery/deployments`, `internal/dexai/delivery/releases`, `internal/dexai/projects`, `internal/dexai/projects/projecttest`, `internal/dexai/projects/repobinding`, `internal/dexai/projects/setup`, `internal/dexai/studio/runs`, `internal/dexai/tenancy/connections`, `internal/dexai/tenancy/slackrelay` and `internal/dexai/tenancy/teamspaces` import this package.
+Callers: `internal/dexai/agents/attachments`, `internal/dexai/agents/diagnostics`, `internal/dexai/agents/platformissue`, `internal/dexai/agents/sandbox/preview`, `internal/dexai/agents/sandbox/provision`, `internal/dexai/agents/sandbox/sessionworkspace`, `internal/dexai/agents/session`, `internal/dexai/agents/session/backgroundcommand`, `internal/dexai/agents/session/contribution`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/session/subagent`, `internal/dexai/api`, `internal/dexai/api/boundary`, `internal/dexai/api/tenancy`, `internal/dexai/delivery/deployments`, `internal/dexai/delivery/evolve`, `internal/dexai/delivery/releases`, `internal/dexai/projects`, `internal/dexai/projects/projecttest`, `internal/dexai/projects/repobinding`, `internal/dexai/projects/setup`, `internal/dexai/studio/runs`, `internal/dexai/tenancy/connections`, `internal/dexai/tenancy/slackrelay` and `internal/dexai/tenancy/teamspaces` import this package.
 
 Dependencies: it imports `internal/comm` and calls the Dex Flow API.
 
@@ -25,15 +25,16 @@ flowchart LR
   c12["internal/dexai/api/boundary"] --> self
   c13["internal/dexai/api/tenancy"] --> self
   c14["internal/dexai/delivery/deployments"] --> self
-  c15["internal/dexai/delivery/releases"] --> self
-  c16["internal/dexai/projects"] --> self
-  c17["internal/dexai/projects/projecttest"] --> self
-  c18["internal/dexai/projects/repobinding"] --> self
-  c19["internal/dexai/projects/setup"] --> self
-  c20["internal/dexai/studio/runs"] --> self
-  c21["internal/dexai/tenancy/connections"] --> self
-  c22["internal/dexai/tenancy/slackrelay"] --> self
-  c23["internal/dexai/tenancy/teamspaces"] --> self
+  c15["internal/dexai/delivery/evolve"] --> self
+  c16["internal/dexai/delivery/releases"] --> self
+  c17["internal/dexai/projects"] --> self
+  c18["internal/dexai/projects/projecttest"] --> self
+  c19["internal/dexai/projects/repobinding"] --> self
+  c20["internal/dexai/projects/setup"] --> self
+  c21["internal/dexai/studio/runs"] --> self
+  c22["internal/dexai/tenancy/connections"] --> self
+  c23["internal/dexai/tenancy/slackrelay"] --> self
+  c24["internal/dexai/tenancy/teamspaces"] --> self
   self --> d0["internal/comm"]
   self --> e0(["Dex Flow API"])
 ```

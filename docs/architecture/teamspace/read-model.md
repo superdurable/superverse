@@ -74,6 +74,7 @@ it. The rest stay on their Flows; these are their reads from outside a Flow:
 | SandboxProvisionFlow, BackgroundCommandFlow, RepositoryBindingFlow, PlatformIssueFlow | None: only Flow Steps read them, `BackgroundCommandFlowClient` has only `Stop`, and `PlatformIssueFlowClient.Get` has no production caller | — | Nothing to serve; a repository claim must be atomic in its Flow |
 | ProjectFlow `ChildFlows` | None: `ReadChild` is called only from Flow Steps and dependencies | — | Admission trusts only an exact read of the map; Release and Deployment lists come from their own tables |
 | TeamSpaceFlow `Projects` | None: only the TeamSpace deletion reads it | — | `projects.team_space_id` already answers "which Projects", and a second copy would have two owners |
+| EvolveFlow | GetEvolve and StartEvolveReview of `EvolveService` | Browser, when a person opens the Goals surface or asks for Review now | One entity per Project read by FlowID; reviews and goal values exist only in the Flow and in the export's objects, and no list or join reads them |
 
 - **The trigger for projecting the Session** is the first cross-Project read of it,
   the current contract's "Needs you" list and dots. The Session would then sync a few small

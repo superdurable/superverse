@@ -81,6 +81,7 @@ type ProjectFlow struct {
 	Sessions     SessionLifecycle
 	Releases     ReleaseCleanup
 	Deployments  DeploymentCleanup
+	Evolve       EvolveCleanup
 	Objects      *objectstore.Store
 	Storage      infra.Storage
 	Cleanup      infra.Cleanup

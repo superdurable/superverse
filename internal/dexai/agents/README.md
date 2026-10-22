@@ -651,6 +651,19 @@ the operator's engine for the objects.
   `deployments` hold the rows back, a Live removal leaves a Runs read on the
   stale selection and refuses a Runs write after ProjectFlow's confirmation,
   and the read is refused once Dex writes the rows.
+- `TestEvolveMeasurementDexIntegration` and
+  `TestEvolveProjectDeletionDexIntegration`, in `agents_test` beside it, on the
+  mock model: `NewEvolveProjectForTest` deploys a throwaway Project's HEAD to
+  Live as `NewLiveProjectForTest` does and keeps its Session, which pushes the
+  `evolve-goals` scenario's valid and refused `.superverse/goals.md` through
+  the commit gate. The first Live deployment's announcement starts the
+  Project's EvolveFlow, which finds no goals; the pushed commits are announced
+  through the EvolveFlow client; Review now runs through `EvolveService` on the
+  lane's API, so the lane records both RPCs. The review exports Live
+  `TextSummaryFlow` runs started through Studio Runs, and the parts, manifest
+  and metrics are read back from the artifact bucket. The second test deletes
+  the Project while its review runs and finds EvolveFlow completed and the
+  export gone.
 - The Live failure feedback (on the mock model; each test that pushes turns
   the Preview's automatic deployment off first, and builds and deploys
   through the Release and Deployment Flow clients in the test's process,
