@@ -11,6 +11,7 @@ package git
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	_ "embed"
 	"encoding/json"
 	"errors"
@@ -215,7 +216,14 @@ func (operations *GitOperations) FinishContribution(ctx context.Context, client 
 // built for the local Git host, its assets by name, workspace-relative paths.
 type candidateAnswer struct {
 	connectorlibrary.ReleaseCandidate
-	Assets map[string]string `json:"assets"`
+	Assets map[string]candidateAsset `json:"assets"`
+}
+
+// candidateAsset binds the helper's confined file to the bytes it validated.
+type candidateAsset struct {
+	Path   string `json:"path"`
+	Size   int    `json:"size"`
+	SHA256 string `json:"sha256"`
 }
 
 // maximumCandidateAssetBytes bounds one asset, a release's metadata or Studio UI archive.
@@ -248,16 +256,9 @@ func (operations *GitOperations) prepareReleaseCandidate(ctx context.Context, cl
 	if !local {
 		return &candidate, "", nil
 	}
-	assets := make(map[string][]byte, len(answer.Assets))
-	for name, path := range answer.Assets {
-		read, readErr := client.ReadFile(ctx, sandboxd.ReadFileRequest{Path: sandboxd.WorkspacePath(path), Limit: maximumCandidateAssetBytes})
-		if readErr != nil {
-			return nil, "", fmt.Errorf("read the release candidate asset %s: %w", name, readErr)
-		}
-		if !read.EOF {
-			return nil, "", sandboxd.NewToolFailure(toolfailure.PlatformCommandUnavailable, fmt.Errorf("the release candidate asset %s exceeds %d bytes", name, maximumCandidateAssetBytes))
-		}
-		assets[name] = read.Data
+	assets, err := readCandidateAssets(ctx, client, target.AgentID, answer.Assets)
+	if err != nil {
+		return nil, "", err
 	}
 	if _, built := assets[connectorlibrary.ReleaseMetadataAsset]; !built {
 		return nil, "", sandboxd.NewToolFailure(toolfailure.PlatformCommandUnavailable, fmt.Errorf("the contribution helper built no %s for %s", connectorlibrary.ReleaseMetadataAsset, candidate.Tag))
@@ -272,6 +273,26 @@ func (operations *GitOperations) prepareReleaseCandidate(ctx context.Context, cl
 // of its pull request, the form the library requires.
 func ContributionSubject(slug, summary string) string {
 	return "connector(" + slug + "): " + summary
+}
+
+// readCandidateAssets verifies the helper's identity before returning bytes to publish.
+func readCandidateAssets(ctx context.Context, client *sandboxd.SandboxClient, agentID string, entries map[string]candidateAsset) (map[string][]byte, error) {
+	assets := make(map[string][]byte, len(entries))
+	for name, asset := range entries {
+		expected := path.Join(".git/superverse/connectors/candidates", agentID, name)
+		if path.Base(name) != name || name == "." || name == ".." || asset.Path != expected || asset.Size < 0 || asset.Size > maximumCandidateAssetBytes {
+			return nil, sandboxd.NewToolFailure(toolfailure.PlatformCommandUnavailable, fmt.Errorf("candidate asset %s has an invalid path or size", name))
+		}
+		read, err := client.ReadFile(ctx, sandboxd.ReadFileRequest{Path: sandboxd.WorkspacePath(asset.Path), Limit: maximumCandidateAssetBytes})
+		if err != nil {
+			return nil, fmt.Errorf("read the release candidate asset %s: %w", name, err)
+		}
+		if !read.EOF || len(read.Data) != asset.Size || fmt.Sprintf("%x", sha256.Sum256(read.Data)) != asset.SHA256 {
+			return nil, sandboxd.NewToolFailure(toolfailure.PlatformCommandUnavailable, fmt.Errorf("candidate asset %s changed after validation", name))
+		}
+		assets[name] = read.Data
+	}
+	return assets, nil
 }
 
 // contributionRefusals are the codes of the helper's refusals.

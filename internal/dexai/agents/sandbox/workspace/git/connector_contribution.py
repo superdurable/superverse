@@ -33,10 +33,12 @@ A remote token, when the caller has one, is only in this process's Git
 environment (an authorization header scoped to the remote's origin) and never
 in an answer.
 """
+import hashlib
 import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import time
@@ -547,7 +549,40 @@ def build_assets(contribution, request, answer):
     finally:
         contribution.remove_worktree(tooling)
         contribution.remove_worktree(source)
-    return {name: os.path.relpath(os.path.join(out, name), os.path.dirname(contribution.git_dir)) for name in sorted(os.listdir(out))}
+    return candidate_asset_paths(out, os.path.dirname(contribution.git_dir))
+
+
+def candidate_asset_paths(out, workspace):
+    """Reject unsafe build outputs before returning any path for publication."""
+    relative_out = os.path.relpath(out, workspace)
+    if os.path.isabs(relative_out) or ".." in relative_out.split(os.sep):
+        raise Refusal("release_candidate_refused", "candidate assets directory is outside the workspace")
+    directory = os.open(workspace, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        for component in relative_out.split(os.sep):
+            try:
+                child = os.open(component, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=directory)
+            except OSError as error:
+                raise Refusal("release_candidate_refused", "candidate assets directory entry %s is not a regular directory" % component) from error
+            os.close(directory)
+            directory = child
+        assets = {}
+        for name in sorted(os.listdir(directory)):
+            if not stat.S_ISREG(os.stat(name, dir_fd=directory, follow_symlinks=False).st_mode):
+                raise Refusal("release_candidate_refused", "candidate asset %s is not a regular file" % name)
+            descriptor = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory)
+            with os.fdopen(descriptor, "rb") as file:
+                metadata = os.fstat(file.fileno())
+                if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > 16 << 20:
+                    raise Refusal("release_candidate_refused", "candidate asset %s is not a regular file of at most 16 MiB" % name)
+                data = file.read((16 << 20) + 1)
+            if len(data) != metadata.st_size:
+                raise Refusal("release_candidate_refused", "candidate asset %s changed while reading" % name)
+            assets[name] = {"path": os.path.join(relative_out, name), "size": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+        return assets
+    finally:
+        os.close(directory)
+
 
 
 def remote_tags_of(contribution, url, pattern):

@@ -337,3 +337,19 @@ These tests call an owned, disposable real sandboxd (`SUPERVERSE_TEST_SANDBOX_GR
   `DefinedSteps`, compared as a set, is the catalog's Steps of that example.
   It is an external test package because it injects the workspace package's
   check; `export_test.go` exposes the gate to it.
+
+## Candidate asset confinement
+
+The local connector candidate helper rejects symlinked output directories and
+non-regular entries (including symlinks, directories and FIFOs) with
+`release_candidate_refused` before returning any asset paths. It opens each
+regular asset with `O_NOFOLLOW`, bounds it to 16 MiB, and returns its relative
+path, size and SHA-256. The platform accepts only paths under that agent's
+`.git/superverse/connectors/candidates/<agent ID>/` directory, then compares
+sandboxd's read with the recorded size and digest before publishing any assets.
+A size or digest mismatch produces `platform_command_unavailable` and no
+asset set to publish. Filesystem read failures retain their typed error. The filesystem API may still follow a swapped symlink
+while reading; integrity validation prevents publishing different bytes.
+`TestConnectorCandidateAssetsActualSandbox` exercises regular assets, symlinks,
+directories, FIFOs, output-directory symlinks and replacement after validation
+against a real coding Sandbox and its filesystem API.
