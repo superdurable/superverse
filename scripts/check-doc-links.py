@@ -45,6 +45,16 @@ INLINE_CODE = re.compile(r"(`+)[\s\S]*?\1")
 HEADING = re.compile(r"^\s{0,3}#{1,6}\s+(.*?)\s*#*\s*$")
 HTML_ANCHOR = re.compile(r"<a\s+(?:name|id)=\"([^\"]+)\"")
 
+# Deployment-note fragments are written relative to the assembled docs/runbooks/deployment-notes.md.
+FRAGMENT_DIRECTORY = ROOT / "docs/runbooks/deployment-notes"
+
+
+def link_base(path: Path) -> Path:
+    """The directory a document's relative links resolve from."""
+    if path.suffix == ".mdc":
+        return ROOT
+    return path.parent.parent if path.parent == FRAGMENT_DIRECTORY else path.parent
+
 
 def markdown_files() -> list[Path]:
     listed = subprocess.run(
@@ -105,7 +115,7 @@ def check(path: Path) -> list[str]:
                 continue
             name, _, anchor = target.partition("#")
             name = unquote(name.split("?", 1)[0])
-            base = ROOT if path.suffix == ".mdc" else path.parent
+            base = link_base(path)
             resolved = path if not name else (ROOT / name.lstrip("/") if name.startswith("/") else base / name)
             location = f"{path.relative_to(ROOT)}:{number}"
             if not resolved.exists():
@@ -168,7 +178,7 @@ def check_public_boundary(paths_yaml: Path) -> int:
                 name = unquote(target.split("#", 1)[0].split("?", 1)[0])
                 if not name:
                     continue
-                base = ROOT if document.suffix == ".mdc" else document.parent
+                base = link_base(document)
                 resolved = (ROOT / name.lstrip("/") if name.startswith("/") else base / name).resolve()
                 if not resolved.is_relative_to(ROOT):
                     continue
