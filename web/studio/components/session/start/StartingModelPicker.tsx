@@ -36,6 +36,8 @@ export function StartingModelPicker({
   onCredential: (credential: StartingCredential | null) => void;
   className?: string;
 }) {
+  const [locked, setLocked] = useState(false);
+  const [opened, setOpened] = useState(false);
   const [provider, setProvider] = useState<ModelProvider>(
     agentModelProvider(model ? agentModelInput(model) : undefined),
   );
@@ -51,13 +53,22 @@ export function StartingModelPicker({
         aria-haspopup="dialog"
         aria-expanded={popover.open}
         disabled={disabled}
-        onClick={popover.toggle}
+        onClick={() => {
+          setOpened(true);
+          popover.toggle();
+        }}
         className="text-ink-dim"
       >
         Model · {model ? agentModelLabel(model) : "Loading models…"}
       </button>
-      {popover.open && (
-        <PopoverCard anchorRef={anchor} cardRef={card} label="Choose model" autoFocus className="w-80 max-w-[90vw] p-2">
+      {(popover.open || opened) && (
+        <PopoverCard
+          anchorRef={anchor}
+          cardRef={card}
+          label="Choose model"
+          autoFocus={popover.open}
+          className={`w-80 max-w-[90vw] p-2 ${popover.open ? "" : "hidden"}`}
+        >
           <ProviderModelChoices
             choiceRole="option"
             model={model}
@@ -68,7 +79,8 @@ export function StartingModelPicker({
               onCredential(null);
             }}
             canManage
-            disabled={disabled}
+            disabled={disabled || locked}
+            credentialLocked={locked}
             onSelect={(value) => {
               onSelect(value);
               popover.close();
@@ -77,6 +89,7 @@ export function StartingModelPicker({
               <ModelCredentialEntry
                 key={selected.provider}
                 canManage
+                onLocked={setLocked}
                 credential={credential}
                 providerName={selected.providerName}
                 keyHint={selected.keyHint}

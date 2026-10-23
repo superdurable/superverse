@@ -11,7 +11,10 @@ package mockmodel
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"slices"
 	"strings"
+	"time"
 
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 )
@@ -111,4 +114,52 @@ func firstLine(text string) string {
 // script on, so it never claims work its tools did not finish.
 func stopText(scenario string, at position, tool, detail string) string {
 	return fmt.Sprintf("Mock scenario %s stopped at %s: %s failed: %s", scenario, at, tool, detail)
+}
+
+// Fixed fixture names bound all retry counters per model listener.
+var probeRetryFixtures = []string{"probe-429-once", "probe-429-twice", "probe-429-long", "probe-429-date", "models-429-once", "models-429-twice", "models-429-long", "models-429-date", "probe-401", "probe-403", "models-401", "models-403"}
+
+// ProbeAttemptsForTest exposes only a bounded fixture counter, never request data.
+func (p *CredentialProbeForTest) ProbeAttemptsForTest(fixture string) int {
+	index := slices.Index(probeRetryFixtures, fixture)
+	if index < 0 || p.retry == nil {
+		return 0
+	}
+	return int(p.retry[index].Load())
+}
+
+func (h *handler) probeRetryFixture(w http.ResponseWriter, r *http.Request, fixture string) bool {
+	index := slices.Index(probeRetryFixtures, fixture)
+	if index < 0 || strings.HasPrefix(fixture, "models-") != (r.Method == http.MethodGet) {
+		return false
+	}
+	count := h.retry[index].Add(1)
+	if strings.HasSuffix(fixture, "401") || strings.HasSuffix(fixture, "403") {
+		return false
+	}
+	if r.Header.Get("Authorization") != "Bearer "+apiKey {
+		w.WriteHeader(http.StatusUnauthorized)
+		return true
+	}
+	if strings.HasSuffix(fixture, "once") || strings.HasSuffix(fixture, "date") {
+		if count > 1 {
+			w.Header().Set("Content-Type", "application/json")
+			if r.Method == http.MethodGet {
+				_, _ = w.Write([]byte(`{"data":[{"id":"self-hosted-qwen"}]}`))
+			} else {
+				_, _ = w.Write([]byte(`{"ok":true}`))
+			}
+			return true
+		}
+	}
+	switch {
+	case strings.HasSuffix(fixture, "long"):
+		w.Header().Set("Retry-After", "30")
+	case strings.HasSuffix(fixture, "date"):
+		w.Header().Set("Retry-After", time.Now().Add(2*time.Second).UTC().Format(http.TimeFormat))
+	case strings.HasSuffix(fixture, "once"):
+		w.Header().Set("Retry-After", "0")
+	}
+	w.WriteHeader(http.StatusTooManyRequests)
+	return true
 }

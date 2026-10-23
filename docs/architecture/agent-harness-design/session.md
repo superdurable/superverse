@@ -1334,14 +1334,13 @@ never calls the provider and requires no Project key.
 `ModelCredentialService` exposes `GetModelCredentialInfo`, `SetModelCredential`
 , `DeleteModelCredential` and `ListModelCredentialModels`, each authorized against the authenticated account,
 Project scope/status and Builder capability (including the platform admin).
-The browser receives the typed `ModelCredentialInfo` protobuf message only;
+The browser receives allowlisted `ModelCredentialInfo` metadata and, for a save, a transient typed notice;
 `ModelProvider` and `ModelCredentialStatus` are closed protobuf enums checked
 against the domain catalog/status sets by `make check-proto-enums`. Set performs a
 bounded credential inference request before reserving a writer: one output token
 for the existing Anthropic check, at most 64 for an enabled compatible provider.
 The provider runtime uses the reviewed official API root or the explicit local
-mock routing, with the same shared endpoint validation. Custom user endpoints
-and discovery are not admitted. Keys are bounded
+mock routing, with the same shared endpoint validation. Custom user endpoints and bounded discovery follow the custom endpoint contract below. A custom save probe retries HTTP 429 once inside its existing ten-second deadline, using `Retry-After` seconds or an HTTP date (default two seconds). A delay over five seconds or outside the remaining deadline skips the retry; 401/403 are never retried. A repeated or over-budget HTTP 429 admits the configured key without claiming authentication succeeded: `SetModelCredentialResponse.notice` is `RATE_LIMITED_UNVERIFIED` and `notice_message` explains that the first model call checks it. This notice is transient and does not add a persisted verification lifecycle; active means configured and usable, not verified. HTTP 401/403 still reject the key before reservation. Other probe HTTP/transport failures return a specific endpoint-unreachable or timeout `FailedPrecondition`, with fixed safe wording rather than provider bodies. Keys are bounded
 to 4–4096 printable ASCII characters without spaces.
 
 Three non-secret Session Flow RPCs are necessary: `ReadModelCredentialInfo`
@@ -1427,8 +1426,7 @@ index, mirrored lifecycle or migration exists.
 ### UI/UX
 
 The Agent picker contains a password field, set/not-set status, last four
-characters and the setting actor/time. It clears the input on submission and
-never receives a saved key. Replace and delete explain that only running subagents using the affected
+characters and the setting actor/time. The entered key, endpoint, model and budgets remain in component memory until success or explicit discard; a failed save preserves the form and shows the specific server message. Saving does not unmount or clear its fields, and closing the popover preserves the draft while the page remains mounted. Provider and model switching are disabled while a credential action runs or the form is dirty, with a save/discard prompt. The input clears only after success or discard, and Studio never receives a saved key. Replace and delete explain that only running subagents using the affected
 provider stop; the Session Snapshot supplies active task presence. GetModelCredentialInfo
 reads credential metadata only, without a second Snapshot RPC. Snapshot projects
 a non-secret credential version containing the selected model and each declared
@@ -1479,6 +1477,7 @@ mutation performs constant exact reads/writes and scans at most three active
 subagents, never all tenants. Model calls perform exact instance loads and data
 plane HTTP only. Shared transports cap connections at 64 per host and do not
 cache keys or create per-key pools.
+Custom save probes retain the existing shared 32-slot bound per replica and ten-second deadline across both attempts. A 429 adds at most one data-plane request and at most five seconds of waiting within that deadline; it adds no resource per retry or tenant. The synthetic model listener uses sixteen fixed counters per listener for retry regression fixtures, never a per-request map.
 
 
 The Agent picker obtains its provider groups from authenticated `ListAgentModels`,

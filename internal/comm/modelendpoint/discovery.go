@@ -15,6 +15,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -112,6 +113,9 @@ func (p *Pool) DiscoverModelsWithStatus(ctx context.Context, base, key string, m
 	if response.StatusCode == http.StatusNotFound || response.StatusCode == http.StatusMethodNotAllowed || response.StatusCode == http.StatusNotImplemented {
 		return nil, DiscoveryUnsupported, httpStatus, nil
 	}
+	if response.StatusCode == http.StatusTooManyRequests {
+		return nil, "", httpStatus, &ProbeRateLimit{RetryAfter: ProbeRetryAfter(response.Header.Get("Retry-After"))}
+	}
 	if response.StatusCode != http.StatusOK {
 		return nil, "", httpStatus, errDiscovery
 	}
@@ -185,4 +189,22 @@ func discoveryContextHint(values ...json.RawMessage) int64 {
 		hint = value
 	}
 	return hint
+}
+
+// ProbeRateLimit retains only a bounded retry delay, never provider response text.
+type ProbeRateLimit struct{ RetryAfter time.Duration }
+
+func (*ProbeRateLimit) Error() string { return "model endpoint rate limited the request" }
+
+// ProbeRetryAfter parses seconds or an HTTP date; missing/invalid headers use two seconds.
+func ProbeRetryAfter(value string) time.Duration {
+	if len(value) <= 128 {
+		if seconds, err := strconv.ParseUint(value, 10, 32); err == nil {
+			return time.Duration(seconds) * time.Second
+		}
+		if date, err := http.ParseTime(value); err == nil {
+			return max(0, time.Until(date))
+		}
+	}
+	return 2 * time.Second
 }

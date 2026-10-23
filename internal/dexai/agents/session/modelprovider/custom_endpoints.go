@@ -149,10 +149,36 @@ func (p *CompatibleProviders) ValidateCustom(ctx context.Context, provider conve
 			p.logger.InfoContext(ctx, "model credential probe finished", "probe_id", probeID, "elapsed_ms", time.Since(started).Milliseconds(), "open_connections", p.pool.OpenConnections())
 		}
 	}()
+	err := p.validateCustomOnce(ctx, provider, endpoint, key, probeID)
+	if probe, ok := errors.AsType[*openaicompat.CredentialProbeError](err); ok && probe.Status == http.StatusTooManyRequests {
+		remaining, _ := ctx.Deadline()
+		wait := probe.RetryAfter
+		// Honor Retry-After rather than retrying early; no wait may exceed five seconds.
+		if wait <= 5*time.Second && wait < time.Until(remaining) {
+			timer := time.NewTimer(wait)
+			defer timer.Stop()
+			select {
+			case <-timer.C:
+				return p.validateCustomOnce(ctx, provider, endpoint, key, probeID)
+			case <-ctx.Done():
+				return openaicompat.CredentialProbeTransportFailure(ctx.Err())
+			}
+		}
+	}
+	return err
+}
+
+func (p *CompatibleProviders) validateCustomOnce(ctx context.Context, provider conversation.Provider, endpoint conversation.EndpointSelection, key, probeID string) error {
 	if provider.APIStyle() == conversation.OpenAIChatCompletions {
 		ids, result, status, err := p.pool.DiscoverWithStatus(ctx, endpoint.BaseURL, key, false)
 		if status != 0 && status != http.StatusOK && status != http.StatusNotFound && status != http.StatusMethodNotAllowed {
-			return openaicompat.CredentialProbeFailure(status)
+			failure := openaicompat.CredentialProbeFailure(status)
+			if limited, ok := errors.AsType[*modelendpoint.ProbeRateLimit](err); ok {
+				if probe, ok := errors.AsType[*openaicompat.CredentialProbeError](failure); ok {
+					probe.RetryAfter = limited.RetryAfter
+				}
+			}
+			return failure
 		}
 		if err != nil {
 			if errors.Is(err, modelendpoint.ErrDiscoveryBounds) {
@@ -214,7 +240,11 @@ func (p *CompatibleProviders) ValidateCustom(ctx context.Context, provider conve
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
-		return openaicompat.CredentialProbeFailure(response.StatusCode)
+		failure := openaicompat.CredentialProbeFailure(response.StatusCode)
+		if probe, ok := errors.AsType[*openaicompat.CredentialProbeError](failure); ok {
+			probe.RetryAfter = modelendpoint.ProbeRetryAfter(response.Header.Get("Retry-After"))
+		}
+		return failure
 	}
 	size, err := io.Copy(io.Discard, io.LimitReader(response.Body, (1<<20)+1))
 	if err != nil {

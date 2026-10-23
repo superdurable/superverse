@@ -146,7 +146,7 @@ test("Start form stages a custom endpoint and budgets before first-message admis
   await panel.getByLabel("Context window (tokens)", { exact: true }).fill("131072");
   await panel.getByLabel("Maximum output tokens", { exact: true }).fill("8192");
   await panel.getByRole("button", { name: "Discover models", exact: true }).click();
-  await expect(panel.getByRole("status")).toContainText("Create the Project to discover models");
+  await expect(panel.getByRole("status").filter({ hasText: "Create the Project to discover models" })).toBeVisible();
   await panel.getByRole("button", { name: "Use this key for the new Project", exact: true }).click();
   await panel.getByRole("option", { name: "Custom Chat endpoint", exact: true }).click();
   await page
@@ -177,6 +177,88 @@ test("Start form stages a custom endpoint and budgets before first-message admis
     await page.getByRole("button", { name: /^Agent:/ }).click();
     await page.getByRole("button", { name: "Qwen", exact: true }).click();
     await expect(page.getByText("Custom endpoint · self-hosted-qwen", { exact: true })).toBeVisible();
+  } finally {
+    await deleteProject(page, projectId);
+  }
+});
+
+test("Credential failure preserves the draft and locks model switching until saved or discarded", async ({ page }) => {
+  test.setTimeout(8 * 60_000);
+  const endpoint = process.env.SUPERVERSE_E2E_CUSTOM_ENDPOINT;
+  if (!endpoint || process.env.SUPERVERSE_E2E_BYOK_FIXTURE !== "true")
+    throw new Error("Requires the custom endpoint fixture");
+  await register(page);
+  const teamSpaceId = new URL(page.url()).pathname.split("/")[2];
+  const accepted = await rpcResult(page.request, "CreateProject", {
+    teamSpaceId,
+    requestId: randomUUID(),
+    name: "Credential draft recovery",
+    managedRepository: {},
+  });
+  const projectId = accepted.projectId;
+  try {
+    await expect
+      .poll(async () => (await readProject(page, projectId)).status, { timeout: 120_000 })
+      .toBe("PROJECT_STATUS_READY");
+    await page.goto(`/p/${projectId}/flow`);
+    const trigger = page.getByRole("button", { name: /^Agent:/ });
+    await trigger.click();
+    await page.getByRole("button", { name: "OpenAI", exact: true }).click();
+    await page.getByLabel("Use a custom endpoint", { exact: true }).check();
+    const key = page.getByLabel("Custom endpoint API key", { exact: true });
+    const base = page.getByLabel("Endpoint API base URL", { exact: true });
+    const model = page.getByLabel("Model ID (optional)", { exact: true });
+    const context = page.getByLabel("Context window (tokens)", { exact: true });
+    const output = page.getByLabel("Maximum output tokens", { exact: true });
+    await key.fill(MOCK_MODEL_API_KEY);
+    const failedEndpoint = endpoint.replace("/many/", "/probe-timeout/");
+    await base.fill(failedEndpoint);
+    await model.fill("custom-model");
+    await context.fill("65536");
+    await output.fill("8192");
+    await expect(page.getByRole("button", { name: "Anthropic", exact: true })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "GPT-6 Astra", exact: true })).toBeDisabled();
+    await expect(page.getByText(/Save or discard your key changes/)).toBeVisible();
+    const failed = page.waitForResponse(rpcAnswered("SetModelCredential"));
+    await page.getByRole("button", { name: "Save key", exact: true }).click();
+    await expect(key).toBeDisabled();
+    await expect(key).toHaveValue(MOCK_MODEL_API_KEY);
+    await expect(page.getByRole("button", { name: "GPT-6 Astra", exact: true })).toBeDisabled();
+    // A dismissal must not abort the pending save or destroy the in-memory fields.
+    await page.keyboard.press("Escape");
+    await trigger.click();
+    expect((await failed).ok()).toBe(false);
+    await expect(page.locator("[data-model-credential]").getByRole("alert")).toContainText("endpoint test timed out");
+    await expect(key).toHaveValue(MOCK_MODEL_API_KEY);
+    await expect(base).toHaveValue(failedEndpoint);
+    await expect(model).toHaveValue("custom-model");
+    await expect(context).toHaveValue("65536");
+    await expect(output).toHaveValue("8192");
+    await expect(page.getByRole("button", { name: "GPT-6 Astra", exact: true })).toBeDisabled();
+    await base.fill(endpoint.replace("/many/", "/probe-401/"));
+    const rejected = page.waitForResponse(rpcAnswered("SetModelCredential"));
+    await page.getByRole("button", { name: "Save key", exact: true }).click();
+    expect((await rejected).ok()).toBe(false);
+    await expect(page.locator("[data-model-credential]").getByRole("alert")).toContainText(
+      "provider rejected this credential (HTTP 401)",
+    );
+    await expect(key).toHaveValue(MOCK_MODEL_API_KEY);
+    await base.fill(endpoint.replace("/many/", "/probe-429/"));
+    const saved = page.waitForResponse(rpcAnswered("SetModelCredential"));
+    await page.getByRole("button", { name: "Save key", exact: true }).click();
+    const response = await saved;
+    expect(response.ok()).toBe(true);
+    expect((await response.json()).notice).toBe("MODEL_CREDENTIAL_SAVE_NOTICE_RATE_LIMITED_UNVERIFIED");
+    await expect(page.getByText(/key is saved but unverified/)).toBeVisible();
+    await expect(key).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "GPT-6 Astra", exact: true })).toBeEnabled();
+    await page.getByRole("button", { name: "Replace key", exact: true }).click();
+    await key.fill(MOCK_MODEL_API_KEY);
+    await page.getByRole("button", { name: "Discard changes", exact: true }).click();
+    await expect(page.getByRole("button", { name: "GPT-6 Astra", exact: true })).toBeEnabled();
+    expect(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).not.toContain(
+      MOCK_MODEL_API_KEY,
+    );
   } finally {
     await deleteProject(page, projectId);
   }

@@ -41,6 +41,14 @@ export function CustomEndpointFields({
 }) {
   return (
     <>
+      <p className="text-ink-faint">
+        Protocol:{" "}
+        {provider === "MODEL_PROVIDER_ANTHROPIC"
+          ? "Anthropic Messages"
+          : provider === "MODEL_PROVIDER_OPENAI" || provider === "MODEL_PROVIDER_XAI"
+            ? "OpenAI Responses"
+            : "OpenAI Chat Completions"}
+      </p>
       <label className="grid gap-1">
         Endpoint API base URL
         <input
@@ -138,4 +146,20 @@ export function CustomEndpointFields({
       {discoveryNote && <p role="status">{discoveryNote}</p>}
     </>
   );
+}
+
+/** Validate declared budgets before making any credential request. */
+export function customBudgetError(contextWindow: string, maxOutputTokens: string) {
+  const context = Number(contextWindow),
+    output = Number(maxOutputTokens);
+  if (!/^\d+$/.test(contextWindow) || !Number.isSafeInteger(context) || context < 32768 || context > 1000000)
+    return "Context window must contain 32768 to 1000000 tokens.";
+  if (
+    !/^\d+$/.test(maxOutputTokens) ||
+    !Number.isSafeInteger(output) ||
+    output < 1 ||
+    output > Math.min(65536, Math.floor(context / 8))
+  )
+    return "Maximum output tokens must be from 1 to the smaller of 65536 and one eighth of the context window.";
+  return "";
 }

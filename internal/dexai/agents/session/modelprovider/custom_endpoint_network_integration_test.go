@@ -335,3 +335,46 @@ func TestCustomEndpointAdmissionRecoveryNetworkIntegration(t *testing.T) {
 	}
 	t.Logf("160 mixed cycles, a held stream, cancellations and final probe passed; open connections=%d", pool.OpenConnections())
 }
+
+// The retry contract is exercised over the approved model's real HTTP listener.
+func TestCredentialProbeRetryNetworkIntegration(t *testing.T) {
+	base, probe, stop, err := mockmodel.StartCustomEndpointProbeForTest(t.Context(), slog.Default())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer stop()
+	config := modelprovider.ProviderConfig{Enabled: []conversation.Provider{conversation.ProviderOpenAI, conversation.ProviderQwen}, MockEndpoint: true, CustomEndpoints: true}
+	runtime, err := modelprovider.NewCompatibleProviders(t.Context(), config, modelendpoint.Config{AllowLocalLoopback: true}, base, slog.Default(), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer runtime.Close()
+	for _, provider := range []conversation.Provider{conversation.ProviderOpenAI, conversation.ProviderQwen} {
+		for _, test := range []struct {
+			suffix   string
+			attempts int
+			limited  bool
+		}{{"once", 2, false}, {"date", 2, false}, {"twice", 2, true}, {"long", 1, true}} {
+			fixture := "probe-429-" + test.suffix
+			if provider == conversation.ProviderQwen {
+				fixture = "models-429-" + test.suffix
+			}
+			endpoint, err := runtime.ResolveCustom(t.Context(), provider, base+"/custom/"+fixture+"/v1", mockmodel.CustomDiscoveredModelIDForTest, mockmodel.APIKeyForTest)
+			if err != nil {
+				t.Fatal(err)
+			}
+			started := time.Now()
+			err = runtime.ValidateCustom(t.Context(), provider, endpoint, mockmodel.APIKeyForTest)
+			limited, ok := errors.AsType[*openaicompat.CredentialProbeError](err)
+			if test.limited && (!ok || limited.Status != 429) || !test.limited && err != nil {
+				t.Fatalf("%s: unexpected probe result %v", fixture, err)
+			}
+			if got := probe.ProbeAttemptsForTest(fixture); got != test.attempts {
+				t.Fatalf("%s attempts=%d want=%d", fixture, got, test.attempts)
+			}
+			if test.suffix == "long" && time.Since(started) >= time.Second {
+				t.Fatal("over-budget Retry-After was awaited")
+			}
+		}
+	}
+}

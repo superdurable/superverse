@@ -2699,6 +2699,53 @@ func (ModelCredentialStatus) EnumDescriptor() ([]byte, []int) {
 	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{44}
 }
 
+// Transient save outcome, not a durable assertion that authentication succeeded.
+type ModelCredentialSaveNotice int32
+
+const (
+	ModelCredentialSaveNotice_MODEL_CREDENTIAL_SAVE_NOTICE_UNSPECIFIED             ModelCredentialSaveNotice = 0
+	ModelCredentialSaveNotice_MODEL_CREDENTIAL_SAVE_NOTICE_RATE_LIMITED_UNVERIFIED ModelCredentialSaveNotice = 1
+)
+
+// Enum value maps for ModelCredentialSaveNotice.
+var (
+	ModelCredentialSaveNotice_name = map[int32]string{
+		0: "MODEL_CREDENTIAL_SAVE_NOTICE_UNSPECIFIED",
+		1: "MODEL_CREDENTIAL_SAVE_NOTICE_RATE_LIMITED_UNVERIFIED",
+	}
+	ModelCredentialSaveNotice_value = map[string]int32{
+		"MODEL_CREDENTIAL_SAVE_NOTICE_UNSPECIFIED":             0,
+		"MODEL_CREDENTIAL_SAVE_NOTICE_RATE_LIMITED_UNVERIFIED": 1,
+	}
+)
+
+func (x ModelCredentialSaveNotice) Enum() *ModelCredentialSaveNotice {
+	p := new(ModelCredentialSaveNotice)
+	*p = x
+	return p
+}
+
+func (x ModelCredentialSaveNotice) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ModelCredentialSaveNotice) Descriptor() protoreflect.EnumDescriptor {
+	return file_superverse_v2_superverse_proto_enumTypes[45].Descriptor()
+}
+
+func (ModelCredentialSaveNotice) Type() protoreflect.EnumType {
+	return &file_superverse_v2_superverse_proto_enumTypes[45]
+}
+
+func (x ModelCredentialSaveNotice) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ModelCredentialSaveNotice.Descriptor instead.
+func (ModelCredentialSaveNotice) EnumDescriptor() ([]byte, []int) {
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{45}
+}
+
 // Discovery returns bounded identifiers only; provider bodies never reach clients.
 type ModelDiscoveryResult int32
 
@@ -2736,11 +2783,11 @@ func (x ModelDiscoveryResult) String() string {
 }
 
 func (ModelDiscoveryResult) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[45].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[46].Descriptor()
 }
 
 func (ModelDiscoveryResult) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[45]
+	return &file_superverse_v2_superverse_proto_enumTypes[46]
 }
 
 func (x ModelDiscoveryResult) Number() protoreflect.EnumNumber {
@@ -2749,7 +2796,7 @@ func (x ModelDiscoveryResult) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ModelDiscoveryResult.Descriptor instead.
 func (ModelDiscoveryResult) EnumDescriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{45}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{46}
 }
 
 // The event kinds, each derived from existing state.
@@ -2799,11 +2846,11 @@ func (x EnvironmentEvent_Kind) String() string {
 }
 
 func (EnvironmentEvent_Kind) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[46].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[47].Descriptor()
 }
 
 func (EnvironmentEvent_Kind) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[46]
+	return &file_superverse_v2_superverse_proto_enumTypes[47]
 }
 
 func (x EnvironmentEvent_Kind) Number() protoreflect.EnumNumber {
@@ -2867,11 +2914,11 @@ func (x RecentTriggerEvent_Fate) String() string {
 }
 
 func (RecentTriggerEvent_Fate) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[47].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[48].Descriptor()
 }
 
 func (RecentTriggerEvent_Fate) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[47]
+	return &file_superverse_v2_superverse_proto_enumTypes[48]
 }
 
 func (x RecentTriggerEvent_Fate) Number() protoreflect.EnumNumber {
@@ -2922,11 +2969,11 @@ func (x ConfigurationItemKey_Kind) String() string {
 }
 
 func (ConfigurationItemKey_Kind) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[48].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[49].Descriptor()
 }
 
 func (ConfigurationItemKey_Kind) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[48]
+	return &file_superverse_v2_superverse_proto_enumTypes[49]
 }
 
 func (x ConfigurationItemKey_Kind) Number() protoreflect.EnumNumber {
@@ -2986,11 +3033,11 @@ func (x ConfigurationItem_State) String() string {
 }
 
 func (ConfigurationItem_State) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[49].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[50].Descriptor()
 }
 
 func (ConfigurationItem_State) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[49]
+	return &file_superverse_v2_superverse_proto_enumTypes[50]
 }
 
 func (x ConfigurationItem_State) Number() protoreflect.EnumNumber {
@@ -3051,11 +3098,11 @@ func (x ConfigurationRequirementGap_Kind) String() string {
 }
 
 func (ConfigurationRequirementGap_Kind) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[50].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[51].Descriptor()
 }
 
 func (ConfigurationRequirementGap_Kind) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[50]
+	return &file_superverse_v2_superverse_proto_enumTypes[51]
 }
 
 func (x ConfigurationRequirementGap_Kind) Number() protoreflect.EnumNumber {
@@ -3104,11 +3151,11 @@ func (x ConnectorContribution_Kind) String() string {
 }
 
 func (ConnectorContribution_Kind) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[51].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[52].Descriptor()
 }
 
 func (ConnectorContribution_Kind) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[51]
+	return &file_superverse_v2_superverse_proto_enumTypes[52]
 }
 
 func (x ConnectorContribution_Kind) Number() protoreflect.EnumNumber {
@@ -3164,11 +3211,11 @@ func (x ConnectorContribution_Status) String() string {
 }
 
 func (ConnectorContribution_Status) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[52].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[53].Descriptor()
 }
 
 func (ConnectorContribution_Status) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[52]
+	return &file_superverse_v2_superverse_proto_enumTypes[53]
 }
 
 func (x ConnectorContribution_Status) Number() protoreflect.EnumNumber {
@@ -3217,11 +3264,11 @@ func (x ConnectorContribution_Location) String() string {
 }
 
 func (ConnectorContribution_Location) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[53].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[54].Descriptor()
 }
 
 func (ConnectorContribution_Location) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[53]
+	return &file_superverse_v2_superverse_proto_enumTypes[54]
 }
 
 func (x ConnectorContribution_Location) Number() protoreflect.EnumNumber {
@@ -3267,11 +3314,11 @@ func (x ConnectorContribution_ReleaseCandidateStatus) String() string {
 }
 
 func (ConnectorContribution_ReleaseCandidateStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[54].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[55].Descriptor()
 }
 
 func (ConnectorContribution_ReleaseCandidateStatus) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[54]
+	return &file_superverse_v2_superverse_proto_enumTypes[55]
 }
 
 func (x ConnectorContribution_ReleaseCandidateStatus) Number() protoreflect.EnumNumber {
@@ -3323,11 +3370,11 @@ func (x ConnectorContribution_ReleaseCandidateFailureReason) String() string {
 }
 
 func (ConnectorContribution_ReleaseCandidateFailureReason) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[55].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[56].Descriptor()
 }
 
 func (ConnectorContribution_ReleaseCandidateFailureReason) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[55]
+	return &file_superverse_v2_superverse_proto_enumTypes[56]
 }
 
 func (x ConnectorContribution_ReleaseCandidateFailureReason) Number() protoreflect.EnumNumber {
@@ -3388,11 +3435,11 @@ func (x AgentMockScenario_Category) String() string {
 }
 
 func (AgentMockScenario_Category) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[56].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[57].Descriptor()
 }
 
 func (AgentMockScenario_Category) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[56]
+	return &file_superverse_v2_superverse_proto_enumTypes[57]
 }
 
 func (x AgentMockScenario_Category) Number() protoreflect.EnumNumber {
@@ -3437,11 +3484,11 @@ func (x AgentMockScenarioInput_Kind) String() string {
 }
 
 func (AgentMockScenarioInput_Kind) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[57].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[58].Descriptor()
 }
 
 func (AgentMockScenarioInput_Kind) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[57]
+	return &file_superverse_v2_superverse_proto_enumTypes[58]
 }
 
 func (x AgentMockScenarioInput_Kind) Number() protoreflect.EnumNumber {
@@ -3495,11 +3542,11 @@ func (x AgentMessage_Role) String() string {
 }
 
 func (AgentMessage_Role) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[58].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[59].Descriptor()
 }
 
 func (AgentMessage_Role) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[58]
+	return &file_superverse_v2_superverse_proto_enumTypes[59]
 }
 
 func (x AgentMessage_Role) Number() protoreflect.EnumNumber {
@@ -3547,11 +3594,11 @@ func (x AgentNotification_Kind) String() string {
 }
 
 func (AgentNotification_Kind) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[59].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[60].Descriptor()
 }
 
 func (AgentNotification_Kind) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[59]
+	return &file_superverse_v2_superverse_proto_enumTypes[60]
 }
 
 func (x AgentNotification_Kind) Number() protoreflect.EnumNumber {
@@ -3612,11 +3659,11 @@ func (x AgentNotification_Source) String() string {
 }
 
 func (AgentNotification_Source) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[60].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[61].Descriptor()
 }
 
 func (AgentNotification_Source) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[60]
+	return &file_superverse_v2_superverse_proto_enumTypes[61]
 }
 
 func (x AgentNotification_Source) Number() protoreflect.EnumNumber {
@@ -3675,11 +3722,11 @@ func (x AgentNotification_TaskStatus) String() string {
 }
 
 func (AgentNotification_TaskStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[61].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[62].Descriptor()
 }
 
 func (AgentNotification_TaskStatus) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[61]
+	return &file_superverse_v2_superverse_proto_enumTypes[62]
 }
 
 func (x AgentNotification_TaskStatus) Number() protoreflect.EnumNumber {
@@ -3728,11 +3775,11 @@ func (x AgentNotification_Outcome) String() string {
 }
 
 func (AgentNotification_Outcome) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[62].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[63].Descriptor()
 }
 
 func (AgentNotification_Outcome) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[62]
+	return &file_superverse_v2_superverse_proto_enumTypes[63]
 }
 
 func (x AgentNotification_Outcome) Number() protoreflect.EnumNumber {
@@ -3782,11 +3829,11 @@ func (x AgentNotification_Owner) String() string {
 }
 
 func (AgentNotification_Owner) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[63].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[64].Descriptor()
 }
 
 func (AgentNotification_Owner) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[63]
+	return &file_superverse_v2_superverse_proto_enumTypes[64]
 }
 
 func (x AgentNotification_Owner) Number() protoreflect.EnumNumber {
@@ -3838,11 +3885,11 @@ func (x AgentNotification_ConnectorEvent) String() string {
 }
 
 func (AgentNotification_ConnectorEvent) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[64].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[65].Descriptor()
 }
 
 func (AgentNotification_ConnectorEvent) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[64]
+	return &file_superverse_v2_superverse_proto_enumTypes[65]
 }
 
 func (x AgentNotification_ConnectorEvent) Number() protoreflect.EnumNumber {
@@ -3889,11 +3936,11 @@ func (x AgentNotification_EvolvePhase) String() string {
 }
 
 func (AgentNotification_EvolvePhase) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[65].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[66].Descriptor()
 }
 
 func (AgentNotification_EvolvePhase) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[65]
+	return &file_superverse_v2_superverse_proto_enumTypes[66]
 }
 
 func (x AgentNotification_EvolvePhase) Number() protoreflect.EnumNumber {
@@ -3941,11 +3988,11 @@ func (x AgentToolExecutionMetrics_Outcome) String() string {
 }
 
 func (AgentToolExecutionMetrics_Outcome) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[66].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[67].Descriptor()
 }
 
 func (AgentToolExecutionMetrics_Outcome) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[66]
+	return &file_superverse_v2_superverse_proto_enumTypes[67]
 }
 
 func (x AgentToolExecutionMetrics_Outcome) Number() protoreflect.EnumNumber {
@@ -4008,11 +4055,11 @@ func (x AgentDescription_Status) String() string {
 }
 
 func (AgentDescription_Status) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[67].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[68].Descriptor()
 }
 
 func (AgentDescription_Status) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[67]
+	return &file_superverse_v2_superverse_proto_enumTypes[68]
 }
 
 func (x AgentDescription_Status) Number() protoreflect.EnumNumber {
@@ -4057,11 +4104,11 @@ func (x AgentStartingExample_Choice) String() string {
 }
 
 func (AgentStartingExample_Choice) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[68].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[69].Descriptor()
 }
 
 func (AgentStartingExample_Choice) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[68]
+	return &file_superverse_v2_superverse_proto_enumTypes[69]
 }
 
 func (x AgentStartingExample_Choice) Number() protoreflect.EnumNumber {
@@ -4112,11 +4159,11 @@ func (x AgentBackgroundCommand_Status) String() string {
 }
 
 func (AgentBackgroundCommand_Status) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[69].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[70].Descriptor()
 }
 
 func (AgentBackgroundCommand_Status) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[69]
+	return &file_superverse_v2_superverse_proto_enumTypes[70]
 }
 
 func (x AgentBackgroundCommand_Status) Number() protoreflect.EnumNumber {
@@ -4170,11 +4217,11 @@ func (x AgentBackgroundCommand_EndReason) String() string {
 }
 
 func (AgentBackgroundCommand_EndReason) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[70].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[71].Descriptor()
 }
 
 func (AgentBackgroundCommand_EndReason) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[70]
+	return &file_superverse_v2_superverse_proto_enumTypes[71]
 }
 
 func (x AgentBackgroundCommand_EndReason) Number() protoreflect.EnumNumber {
@@ -4225,11 +4272,11 @@ func (x AgentSubagent_Kind) String() string {
 }
 
 func (AgentSubagent_Kind) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[71].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[72].Descriptor()
 }
 
 func (AgentSubagent_Kind) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[71]
+	return &file_superverse_v2_superverse_proto_enumTypes[72]
 }
 
 func (x AgentSubagent_Kind) Number() protoreflect.EnumNumber {
@@ -4294,11 +4341,11 @@ func (x AgentSubagent_Status) String() string {
 }
 
 func (AgentSubagent_Status) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[72].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[73].Descriptor()
 }
 
 func (AgentSubagent_Status) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[72]
+	return &file_superverse_v2_superverse_proto_enumTypes[73]
 }
 
 func (x AgentSubagent_Status) Number() protoreflect.EnumNumber {
@@ -4343,11 +4390,11 @@ func (x AgentPendingUserInput_Kind) String() string {
 }
 
 func (AgentPendingUserInput_Kind) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[73].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[74].Descriptor()
 }
 
 func (AgentPendingUserInput_Kind) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[73]
+	return &file_superverse_v2_superverse_proto_enumTypes[74]
 }
 
 func (x AgentPendingUserInput_Kind) Number() protoreflect.EnumNumber {
@@ -4398,11 +4445,11 @@ func (x AgentFlowDesignWait_Kind) String() string {
 }
 
 func (AgentFlowDesignWait_Kind) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[74].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[75].Descriptor()
 }
 
 func (AgentFlowDesignWait_Kind) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[74]
+	return &file_superverse_v2_superverse_proto_enumTypes[75]
 }
 
 func (x AgentFlowDesignWait_Kind) Number() protoreflect.EnumNumber {
@@ -4447,11 +4494,11 @@ func (x AgentFlowDesignTransition_End) String() string {
 }
 
 func (AgentFlowDesignTransition_End) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[75].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[76].Descriptor()
 }
 
 func (AgentFlowDesignTransition_End) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[75]
+	return &file_superverse_v2_superverse_proto_enumTypes[76]
 }
 
 func (x AgentFlowDesignTransition_End) Number() protoreflect.EnumNumber {
@@ -4496,11 +4543,11 @@ func (x AgentRequirementConnection_Status) String() string {
 }
 
 func (AgentRequirementConnection_Status) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[76].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[77].Descriptor()
 }
 
 func (AgentRequirementConnection_Status) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[76]
+	return &file_superverse_v2_superverse_proto_enumTypes[77]
 }
 
 func (x AgentRequirementConnection_Status) Number() protoreflect.EnumNumber {
@@ -4548,11 +4595,11 @@ func (x AgentTodoItem_Status) String() string {
 }
 
 func (AgentTodoItem_Status) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[77].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[78].Descriptor()
 }
 
 func (AgentTodoItem_Status) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[77]
+	return &file_superverse_v2_superverse_proto_enumTypes[78]
 }
 
 func (x AgentTodoItem_Status) Number() protoreflect.EnumNumber {
@@ -4654,11 +4701,11 @@ func (x AgentEvent_Kind) String() string {
 }
 
 func (AgentEvent_Kind) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[78].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[79].Descriptor()
 }
 
 func (AgentEvent_Kind) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[78]
+	return &file_superverse_v2_superverse_proto_enumTypes[79]
 }
 
 func (x AgentEvent_Kind) Number() protoreflect.EnumNumber {
@@ -4706,11 +4753,11 @@ func (x PreviewValidation_Kind) String() string {
 }
 
 func (PreviewValidation_Kind) Descriptor() protoreflect.EnumDescriptor {
-	return file_superverse_v2_superverse_proto_enumTypes[79].Descriptor()
+	return file_superverse_v2_superverse_proto_enumTypes[80].Descriptor()
 }
 
 func (PreviewValidation_Kind) Type() protoreflect.EnumType {
-	return &file_superverse_v2_superverse_proto_enumTypes[79]
+	return &file_superverse_v2_superverse_proto_enumTypes[80]
 }
 
 func (x PreviewValidation_Kind) Number() protoreflect.EnumNumber {
@@ -29740,8 +29787,10 @@ func (x *SetModelCredentialRequest) GetCaller() *CallerContext {
 }
 
 type SetModelCredentialResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Credential    *ModelCredentialInfo   `protobuf:"bytes,1,opt,name=credential,proto3" json:"credential,omitempty"`
+	state         protoimpl.MessageState    `protogen:"open.v1"`
+	Credential    *ModelCredentialInfo      `protobuf:"bytes,1,opt,name=credential,proto3" json:"credential,omitempty"`
+	Notice        ModelCredentialSaveNotice `protobuf:"varint,2,opt,name=notice,proto3,enum=superverse.v2.ModelCredentialSaveNotice" json:"notice,omitempty"`
+	NoticeMessage string                    `protobuf:"bytes,3,opt,name=notice_message,json=noticeMessage,proto3" json:"notice_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -29781,6 +29830,20 @@ func (x *SetModelCredentialResponse) GetCredential() *ModelCredentialInfo {
 		return x.Credential
 	}
 	return nil
+}
+
+func (x *SetModelCredentialResponse) GetNotice() ModelCredentialSaveNotice {
+	if x != nil {
+		return x.Notice
+	}
+	return ModelCredentialSaveNotice_MODEL_CREDENTIAL_SAVE_NOTICE_UNSPECIFIED
+}
+
+func (x *SetModelCredentialResponse) GetNoticeMessage() string {
+	if x != nil {
+		return x.NoticeMessage
+	}
+	return ""
 }
 
 type DeleteModelCredentialRequest struct {
@@ -32559,11 +32622,13 @@ const file_superverse_v2_superverse_proto_rawDesc = "" +
 	"\x0econtext_window\x18\b \x01(\x03R\rcontextWindow\x12*\n" +
 	"\x11max_output_tokens\x18\t \x01(\x03R\x0fmaxOutputTokens\x124\n" +
 	"\x06caller\x18d \x01(\v2\x1c.superverse.v2.CallerContextR\x06callerB\x14\n" +
-	"\x12_expected_revision\"`\n" +
+	"\x12_expected_revision\"\xc9\x01\n" +
 	"\x1aSetModelCredentialResponse\x12B\n" +
 	"\n" +
 	"credential\x18\x01 \x01(\v2\".superverse.v2.ModelCredentialInfoR\n" +
-	"credential\"\x94\x02\n" +
+	"credential\x12@\n" +
+	"\x06notice\x18\x02 \x01(\x0e2(.superverse.v2.ModelCredentialSaveNoticeR\x06notice\x12%\n" +
+	"\x0enotice_message\x18\x03 \x01(\tR\rnoticeMessage\"\x94\x02\n" +
 	"\x1cDeleteModelCredentialRequest\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\tR\tprojectId\x128\n" +
@@ -32895,7 +32960,10 @@ const file_superverse_v2_superverse_proto_rawDesc = "" +
 	"#MODEL_CREDENTIAL_STATUS_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eMODEL_CREDENTIAL_STATUS_ACTIVE\x10\x01\x12#\n" +
 	"\x1fMODEL_CREDENTIAL_STATUS_PENDING\x10\x02\x12#\n" +
-	"\x1fMODEL_CREDENTIAL_STATUS_REVOKED\x10\x03*\xae\x01\n" +
+	"\x1fMODEL_CREDENTIAL_STATUS_REVOKED\x10\x03*\x83\x01\n" +
+	"\x19ModelCredentialSaveNotice\x12,\n" +
+	"(MODEL_CREDENTIAL_SAVE_NOTICE_UNSPECIFIED\x10\x00\x128\n" +
+	"4MODEL_CREDENTIAL_SAVE_NOTICE_RATE_LIMITED_UNVERIFIED\x10\x01*\xae\x01\n" +
 	"\x14ModelDiscoveryResult\x12&\n" +
 	"\"MODEL_DISCOVERY_RESULT_UNSPECIFIED\x10\x00\x12$\n" +
 	" MODEL_DISCOVERY_RESULT_SUPPORTED\x10\x01\x12&\n" +
@@ -33054,7 +33122,7 @@ func file_superverse_v2_superverse_proto_rawDescGZIP() []byte {
 	return file_superverse_v2_superverse_proto_rawDescData
 }
 
-var file_superverse_v2_superverse_proto_enumTypes = make([]protoimpl.EnumInfo, 80)
+var file_superverse_v2_superverse_proto_enumTypes = make([]protoimpl.EnumInfo, 81)
 var file_superverse_v2_superverse_proto_msgTypes = make([]protoimpl.MessageInfo, 362)
 var file_superverse_v2_superverse_proto_goTypes = []any{
 	(FailureRemedy)(0),                                       // 0: superverse.v2.FailureRemedy
@@ -33102,1197 +33170,1199 @@ var file_superverse_v2_superverse_proto_goTypes = []any{
 	(DeploymentStatus)(0),                                    // 42: superverse.v2.DeploymentStatus
 	(ModelProvider)(0),                                       // 43: superverse.v2.ModelProvider
 	(ModelCredentialStatus)(0),                               // 44: superverse.v2.ModelCredentialStatus
-	(ModelDiscoveryResult)(0),                                // 45: superverse.v2.ModelDiscoveryResult
-	(EnvironmentEvent_Kind)(0),                               // 46: superverse.v2.EnvironmentEvent.Kind
-	(RecentTriggerEvent_Fate)(0),                             // 47: superverse.v2.RecentTriggerEvent.Fate
-	(ConfigurationItemKey_Kind)(0),                           // 48: superverse.v2.ConfigurationItemKey.Kind
-	(ConfigurationItem_State)(0),                             // 49: superverse.v2.ConfigurationItem.State
-	(ConfigurationRequirementGap_Kind)(0),                    // 50: superverse.v2.ConfigurationRequirementGap.Kind
-	(ConnectorContribution_Kind)(0),                          // 51: superverse.v2.ConnectorContribution.Kind
-	(ConnectorContribution_Status)(0),                        // 52: superverse.v2.ConnectorContribution.Status
-	(ConnectorContribution_Location)(0),                      // 53: superverse.v2.ConnectorContribution.Location
-	(ConnectorContribution_ReleaseCandidateStatus)(0),        // 54: superverse.v2.ConnectorContribution.ReleaseCandidateStatus
-	(ConnectorContribution_ReleaseCandidateFailureReason)(0), // 55: superverse.v2.ConnectorContribution.ReleaseCandidateFailureReason
-	(AgentMockScenario_Category)(0),                          // 56: superverse.v2.AgentMockScenario.Category
-	(AgentMockScenarioInput_Kind)(0),                         // 57: superverse.v2.AgentMockScenarioInput.Kind
-	(AgentMessage_Role)(0),                                   // 58: superverse.v2.AgentMessage.Role
-	(AgentNotification_Kind)(0),                              // 59: superverse.v2.AgentNotification.Kind
-	(AgentNotification_Source)(0),                            // 60: superverse.v2.AgentNotification.Source
-	(AgentNotification_TaskStatus)(0),                        // 61: superverse.v2.AgentNotification.TaskStatus
-	(AgentNotification_Outcome)(0),                           // 62: superverse.v2.AgentNotification.Outcome
-	(AgentNotification_Owner)(0),                             // 63: superverse.v2.AgentNotification.Owner
-	(AgentNotification_ConnectorEvent)(0),                    // 64: superverse.v2.AgentNotification.ConnectorEvent
-	(AgentNotification_EvolvePhase)(0),                       // 65: superverse.v2.AgentNotification.EvolvePhase
-	(AgentToolExecutionMetrics_Outcome)(0),                   // 66: superverse.v2.AgentToolExecutionMetrics.Outcome
-	(AgentDescription_Status)(0),                             // 67: superverse.v2.AgentDescription.Status
-	(AgentStartingExample_Choice)(0),                         // 68: superverse.v2.AgentStartingExample.Choice
-	(AgentBackgroundCommand_Status)(0),                       // 69: superverse.v2.AgentBackgroundCommand.Status
-	(AgentBackgroundCommand_EndReason)(0),                    // 70: superverse.v2.AgentBackgroundCommand.EndReason
-	(AgentSubagent_Kind)(0),                                  // 71: superverse.v2.AgentSubagent.Kind
-	(AgentSubagent_Status)(0),                                // 72: superverse.v2.AgentSubagent.Status
-	(AgentPendingUserInput_Kind)(0),                          // 73: superverse.v2.AgentPendingUserInput.Kind
-	(AgentFlowDesignWait_Kind)(0),                            // 74: superverse.v2.AgentFlowDesignWait.Kind
-	(AgentFlowDesignTransition_End)(0),                       // 75: superverse.v2.AgentFlowDesignTransition.End
-	(AgentRequirementConnection_Status)(0),                   // 76: superverse.v2.AgentRequirementConnection.Status
-	(AgentTodoItem_Status)(0),                                // 77: superverse.v2.AgentTodoItem.Status
-	(AgentEvent_Kind)(0),                                     // 78: superverse.v2.AgentEvent.Kind
-	(PreviewValidation_Kind)(0),                              // 79: superverse.v2.PreviewValidation.Kind
-	(*CallerContext)(nil),                                    // 80: superverse.v2.CallerContext
-	(*CommitVersion)(nil),                                    // 81: superverse.v2.CommitVersion
-	(*Failure)(nil),                                          // 82: superverse.v2.Failure
-	(*ResourceProgress)(nil),                                 // 83: superverse.v2.ResourceProgress
-	(*PhaseTiming)(nil),                                      // 84: superverse.v2.PhaseTiming
-	(*FlowDefinition)(nil),                                   // 85: superverse.v2.FlowDefinition
-	(*AppManifestSnapshot)(nil),                              // 86: superverse.v2.AppManifestSnapshot
-	(*ObjectReference)(nil),                                  // 87: superverse.v2.ObjectReference
-	(*ConnectorRequirement)(nil),                             // 88: superverse.v2.ConnectorRequirement
-	(*ConnectorTriggerBinding)(nil),                          // 89: superverse.v2.ConnectorTriggerBinding
-	(*RegisterAccountRequest)(nil),                           // 90: superverse.v2.RegisterAccountRequest
-	(*RegisterAccountResponse)(nil),                          // 91: superverse.v2.RegisterAccountResponse
-	(*LoginRequest)(nil),                                     // 92: superverse.v2.LoginRequest
-	(*LoginResponse)(nil),                                    // 93: superverse.v2.LoginResponse
-	(*LogoutRequest)(nil),                                    // 94: superverse.v2.LogoutRequest
-	(*LogoutResponse)(nil),                                   // 95: superverse.v2.LogoutResponse
-	(*GetCurrentAccountRequest)(nil),                         // 96: superverse.v2.GetCurrentAccountRequest
-	(*GetCurrentAccountResponse)(nil),                        // 97: superverse.v2.GetCurrentAccountResponse
-	(*AccountSnapshot)(nil),                                  // 98: superverse.v2.AccountSnapshot
-	(*AccountLogin)(nil),                                     // 99: superverse.v2.AccountLogin
-	(*CreateTeamSpaceRequest)(nil),                           // 100: superverse.v2.CreateTeamSpaceRequest
-	(*CreateTeamSpaceResponse)(nil),                          // 101: superverse.v2.CreateTeamSpaceResponse
-	(*ListTeamSpacesRequest)(nil),                            // 102: superverse.v2.ListTeamSpacesRequest
-	(*ListTeamSpacesResponse)(nil),                           // 103: superverse.v2.ListTeamSpacesResponse
-	(*GetTeamSpaceRequest)(nil),                              // 104: superverse.v2.GetTeamSpaceRequest
-	(*GetTeamSpaceResponse)(nil),                             // 105: superverse.v2.GetTeamSpaceResponse
-	(*RenameTeamSpaceRequest)(nil),                           // 106: superverse.v2.RenameTeamSpaceRequest
-	(*RenameTeamSpaceResponse)(nil),                          // 107: superverse.v2.RenameTeamSpaceResponse
-	(*DeleteTeamSpaceRequest)(nil),                           // 108: superverse.v2.DeleteTeamSpaceRequest
-	(*DeleteTeamSpaceResponse)(nil),                          // 109: superverse.v2.DeleteTeamSpaceResponse
-	(*GetTeamSpaceOverviewRequest)(nil),                      // 110: superverse.v2.GetTeamSpaceOverviewRequest
-	(*GetTeamSpaceOverviewResponse)(nil),                     // 111: superverse.v2.GetTeamSpaceOverviewResponse
-	(*TeamSpaceSnapshot)(nil),                                // 112: superverse.v2.TeamSpaceSnapshot
-	(*TeamSpaceOverview)(nil),                                // 113: superverse.v2.TeamSpaceOverview
-	(*ListTeamSpaceMembersRequest)(nil),                      // 114: superverse.v2.ListTeamSpaceMembersRequest
-	(*ListTeamSpaceMembersResponse)(nil),                     // 115: superverse.v2.ListTeamSpaceMembersResponse
-	(*AddTeamSpaceMemberRequest)(nil),                        // 116: superverse.v2.AddTeamSpaceMemberRequest
-	(*AddTeamSpaceMemberResponse)(nil),                       // 117: superverse.v2.AddTeamSpaceMemberResponse
-	(*SetTeamSpaceMemberRoleRequest)(nil),                    // 118: superverse.v2.SetTeamSpaceMemberRoleRequest
-	(*SetTeamSpaceMemberRoleResponse)(nil),                   // 119: superverse.v2.SetTeamSpaceMemberRoleResponse
-	(*RemoveTeamSpaceMemberRequest)(nil),                     // 120: superverse.v2.RemoveTeamSpaceMemberRequest
-	(*RemoveTeamSpaceMemberResponse)(nil),                    // 121: superverse.v2.RemoveTeamSpaceMemberResponse
-	(*TeamSpaceMemberSnapshot)(nil),                          // 122: superverse.v2.TeamSpaceMemberSnapshot
-	(*ConnectorCatalogEntry)(nil),                            // 123: superverse.v2.ConnectorCatalogEntry
-	(*ListConnectorCatalogRequest)(nil),                      // 124: superverse.v2.ListConnectorCatalogRequest
-	(*ListConnectorCatalogResponse)(nil),                     // 125: superverse.v2.ListConnectorCatalogResponse
-	(*TeamSpaceConnectionUsage)(nil),                         // 126: superverse.v2.TeamSpaceConnectionUsage
-	(*TeamSpaceConnectionSnapshot)(nil),                      // 127: superverse.v2.TeamSpaceConnectionSnapshot
-	(*UnroutedEvents)(nil),                                   // 128: superverse.v2.UnroutedEvents
-	(*ListTeamSpaceConnectionsRequest)(nil),                  // 129: superverse.v2.ListTeamSpaceConnectionsRequest
-	(*ListTeamSpaceConnectionsResponse)(nil),                 // 130: superverse.v2.ListTeamSpaceConnectionsResponse
-	(*GetTeamSpaceConnectionRequest)(nil),                    // 131: superverse.v2.GetTeamSpaceConnectionRequest
-	(*GetTeamSpaceConnectionResponse)(nil),                   // 132: superverse.v2.GetTeamSpaceConnectionResponse
-	(*CreateTeamSpaceConnectionRequest)(nil),                 // 133: superverse.v2.CreateTeamSpaceConnectionRequest
-	(*CreateTeamSpaceConnectionResponse)(nil),                // 134: superverse.v2.CreateTeamSpaceConnectionResponse
-	(*UpdateTeamSpaceConnectionRequest)(nil),                 // 135: superverse.v2.UpdateTeamSpaceConnectionRequest
-	(*UpdateTeamSpaceConnectionResponse)(nil),                // 136: superverse.v2.UpdateTeamSpaceConnectionResponse
-	(*DeleteTeamSpaceConnectionRequest)(nil),                 // 137: superverse.v2.DeleteTeamSpaceConnectionRequest
-	(*DeleteTeamSpaceConnectionResponse)(nil),                // 138: superverse.v2.DeleteTeamSpaceConnectionResponse
-	(*StartTeamSpaceConnectionOAuthRequest)(nil),             // 139: superverse.v2.StartTeamSpaceConnectionOAuthRequest
-	(*NewTeamSpaceConnection)(nil),                           // 140: superverse.v2.NewTeamSpaceConnection
-	(*StartTeamSpaceConnectionOAuthResponse)(nil),            // 141: superverse.v2.StartTeamSpaceConnectionOAuthResponse
-	(*CompleteTeamSpaceConnectionOAuthRequest)(nil),          // 142: superverse.v2.CompleteTeamSpaceConnectionOAuthRequest
-	(*CompleteTeamSpaceConnectionOAuthResponse)(nil),         // 143: superverse.v2.CompleteTeamSpaceConnectionOAuthResponse
-	(*StartTeamSpaceConnectionUiSessionRequest)(nil),         // 144: superverse.v2.StartTeamSpaceConnectionUiSessionRequest
-	(*StartTeamSpaceConnectionUiSessionResponse)(nil),        // 145: superverse.v2.StartTeamSpaceConnectionUiSessionResponse
-	(*InvokeTeamSpaceConnectionCommandRequest)(nil),          // 146: superverse.v2.InvokeTeamSpaceConnectionCommandRequest
-	(*InvokeTeamSpaceConnectionCommandResponse)(nil),         // 147: superverse.v2.InvokeTeamSpaceConnectionCommandResponse
-	(*CreateProjectRequest)(nil),                             // 148: superverse.v2.CreateProjectRequest
-	(*CreateProjectResponse)(nil),                            // 149: superverse.v2.CreateProjectResponse
-	(*ListProjectsRequest)(nil),                              // 150: superverse.v2.ListProjectsRequest
-	(*ListProjectsResponse)(nil),                             // 151: superverse.v2.ListProjectsResponse
-	(*GetProjectRequest)(nil),                                // 152: superverse.v2.GetProjectRequest
-	(*GetProjectResponse)(nil),                               // 153: superverse.v2.GetProjectResponse
-	(*DeleteProjectRequest)(nil),                             // 154: superverse.v2.DeleteProjectRequest
-	(*DeleteProjectResponse)(nil),                            // 155: superverse.v2.DeleteProjectResponse
-	(*WatchProjectRequest)(nil),                              // 156: superverse.v2.WatchProjectRequest
-	(*WatchProjectResponse)(nil),                             // 157: superverse.v2.WatchProjectResponse
-	(*ListEnvironmentEventsRequest)(nil),                     // 158: superverse.v2.ListEnvironmentEventsRequest
-	(*ListEnvironmentEventsResponse)(nil),                    // 159: superverse.v2.ListEnvironmentEventsResponse
-	(*EnvironmentEvent)(nil),                                 // 160: superverse.v2.EnvironmentEvent
-	(*ListRecentTriggerEventsRequest)(nil),                   // 161: superverse.v2.ListRecentTriggerEventsRequest
-	(*ListRecentTriggerEventsResponse)(nil),                  // 162: superverse.v2.ListRecentTriggerEventsResponse
-	(*RecentTriggerEvent)(nil),                               // 163: superverse.v2.RecentTriggerEvent
-	(*GetProjectConfigurationRequest)(nil),                   // 164: superverse.v2.GetProjectConfigurationRequest
-	(*GetProjectConfigurationResponse)(nil),                  // 165: superverse.v2.GetProjectConfigurationResponse
-	(*ValidateProjectConfigurationRequest)(nil),              // 166: superverse.v2.ValidateProjectConfigurationRequest
-	(*ValidateProjectConfigurationResponse)(nil),             // 167: superverse.v2.ValidateProjectConfigurationResponse
-	(*RemoveLiveRequest)(nil),                                // 168: superverse.v2.RemoveLiveRequest
-	(*RemoveLiveResponse)(nil),                               // 169: superverse.v2.RemoveLiveResponse
-	(*ManagedRepositorySource)(nil),                          // 170: superverse.v2.ManagedRepositorySource
-	(*ExampleReference)(nil),                                 // 171: superverse.v2.ExampleReference
-	(*Repository)(nil),                                       // 172: superverse.v2.Repository
-	(*ProjectSnapshot)(nil),                                  // 173: superverse.v2.ProjectSnapshot
-	(*ProjectExample)(nil),                                   // 174: superverse.v2.ProjectExample
-	(*ProjectLive)(nil),                                      // 175: superverse.v2.ProjectLive
-	(*ActiveDeploymentReference)(nil),                        // 176: superverse.v2.ActiveDeploymentReference
-	(*SetupSnapshot)(nil),                                    // 177: superverse.v2.SetupSnapshot
-	(*ProjectConfigurationTarget)(nil),                       // 178: superverse.v2.ProjectConfigurationTarget
-	(*ProjectConfigurationSnapshot)(nil),                     // 179: superverse.v2.ProjectConfigurationSnapshot
-	(*ConfigurationItemKey)(nil),                             // 180: superverse.v2.ConfigurationItemKey
-	(*ConfigurationItem)(nil),                                // 181: superverse.v2.ConfigurationItem
-	(*ConfigurationRequirementGap)(nil),                      // 182: superverse.v2.ConfigurationRequirementGap
-	(*ProjectConfigurationValidation)(nil),                   // 183: superverse.v2.ProjectConfigurationValidation
-	(*ListProjectMembersRequest)(nil),                        // 184: superverse.v2.ListProjectMembersRequest
-	(*ListProjectMembersResponse)(nil),                       // 185: superverse.v2.ListProjectMembersResponse
-	(*AddProjectMemberRequest)(nil),                          // 186: superverse.v2.AddProjectMemberRequest
-	(*AddProjectMemberResponse)(nil),                         // 187: superverse.v2.AddProjectMemberResponse
-	(*SetProjectMemberRoleRequest)(nil),                      // 188: superverse.v2.SetProjectMemberRoleRequest
-	(*SetProjectMemberRoleResponse)(nil),                     // 189: superverse.v2.SetProjectMemberRoleResponse
-	(*RemoveProjectMemberRequest)(nil),                       // 190: superverse.v2.RemoveProjectMemberRequest
-	(*RemoveProjectMemberResponse)(nil),                      // 191: superverse.v2.RemoveProjectMemberResponse
-	(*ProjectMemberSnapshot)(nil),                            // 192: superverse.v2.ProjectMemberSnapshot
-	(*GetSessionRequest)(nil),                                // 193: superverse.v2.GetSessionRequest
-	(*GetSessionResponse)(nil),                               // 194: superverse.v2.GetSessionResponse
-	(*WatchSessionRequest)(nil),                              // 195: superverse.v2.WatchSessionRequest
-	(*WatchSessionResponse)(nil),                             // 196: superverse.v2.WatchSessionResponse
-	(*ListArchivedMessagesRequest)(nil),                      // 197: superverse.v2.ListArchivedMessagesRequest
-	(*RenewWorkspaceRequest)(nil),                            // 198: superverse.v2.RenewWorkspaceRequest
-	(*RenewWorkspaceResponse)(nil),                           // 199: superverse.v2.RenewWorkspaceResponse
-	(*ListArchivedMessagesResponse)(nil),                     // 200: superverse.v2.ListArchivedMessagesResponse
-	(*SessionSnapshot)(nil),                                  // 201: superverse.v2.SessionSnapshot
-	(*ConnectorContribution)(nil),                            // 202: superverse.v2.ConnectorContribution
-	(*SessionWorkspaceSnapshot)(nil),                         // 203: superverse.v2.SessionWorkspaceSnapshot
-	(*SessionProgress)(nil),                                  // 204: superverse.v2.SessionProgress
-	(*CreateRemoteAgentPairingRequest)(nil),                  // 205: superverse.v2.CreateRemoteAgentPairingRequest
-	(*CreateRemoteAgentPairingResponse)(nil),                 // 206: superverse.v2.CreateRemoteAgentPairingResponse
-	(*ListRemoteAgentConnectionsRequest)(nil),                // 207: superverse.v2.ListRemoteAgentConnectionsRequest
-	(*ListRemoteAgentConnectionsResponse)(nil),               // 208: superverse.v2.ListRemoteAgentConnectionsResponse
-	(*RevokeRemoteAgentConnectionRequest)(nil),               // 209: superverse.v2.RevokeRemoteAgentConnectionRequest
-	(*RevokeRemoteAgentConnectionResponse)(nil),              // 210: superverse.v2.RevokeRemoteAgentConnectionResponse
-	(*SetSessionExecutorRequest)(nil),                        // 211: superverse.v2.SetSessionExecutorRequest
-	(*SetSessionExecutorResponse)(nil),                       // 212: superverse.v2.SetSessionExecutorResponse
-	(*SessionExecutor)(nil),                                  // 213: superverse.v2.SessionExecutor
-	(*RemoteSessionExecutor)(nil),                            // 214: superverse.v2.RemoteSessionExecutor
-	(*RemoteAgentBinding)(nil),                               // 215: superverse.v2.RemoteAgentBinding
-	(*RemoteAgentConnection)(nil),                            // 216: superverse.v2.RemoteAgentConnection
-	(*CreateAttachmentUploadRequest)(nil),                    // 217: superverse.v2.CreateAttachmentUploadRequest
-	(*CreateAttachmentUploadResponse)(nil),                   // 218: superverse.v2.CreateAttachmentUploadResponse
-	(*AttachmentUploadTarget)(nil),                           // 219: superverse.v2.AttachmentUploadTarget
-	(*UploadHeader)(nil),                                     // 220: superverse.v2.UploadHeader
-	(*CompleteAttachmentUploadRequest)(nil),                  // 221: superverse.v2.CompleteAttachmentUploadRequest
-	(*CompleteAttachmentUploadResponse)(nil),                 // 222: superverse.v2.CompleteAttachmentUploadResponse
-	(*DeleteAttachmentRequest)(nil),                          // 223: superverse.v2.DeleteAttachmentRequest
-	(*DeleteAttachmentResponse)(nil),                         // 224: superverse.v2.DeleteAttachmentResponse
-	(*GetAttachmentDownloadsRequest)(nil),                    // 225: superverse.v2.GetAttachmentDownloadsRequest
-	(*GetAttachmentDownloadsResponse)(nil),                   // 226: superverse.v2.GetAttachmentDownloadsResponse
-	(*AttachmentDownload)(nil),                               // 227: superverse.v2.AttachmentDownload
-	(*Attachment)(nil),                                       // 228: superverse.v2.Attachment
-	(*AttachmentSummary)(nil),                                // 229: superverse.v2.AttachmentSummary
-	(*AttachmentFailure)(nil),                                // 230: superverse.v2.AttachmentFailure
-	(*GetEvolveRequest)(nil),                                 // 231: superverse.v2.GetEvolveRequest
-	(*GetEvolveResponse)(nil),                                // 232: superverse.v2.GetEvolveResponse
-	(*Evolve)(nil),                                           // 233: superverse.v2.Evolve
-	(*EvolveLive)(nil),                                       // 234: superverse.v2.EvolveLive
-	(*EvolveGoals)(nil),                                      // 235: superverse.v2.EvolveGoals
-	(*EvolveGoal)(nil),                                       // 236: superverse.v2.EvolveGoal
-	(*EvolveSchedule)(nil),                                   // 237: superverse.v2.EvolveSchedule
-	(*EvolveReview)(nil),                                     // 238: superverse.v2.EvolveReview
-	(*EvolveExport)(nil),                                     // 239: superverse.v2.EvolveExport
-	(*EvolveProposal)(nil),                                   // 240: superverse.v2.EvolveProposal
-	(*EvolveProposalDecisionRecord)(nil),                     // 241: superverse.v2.EvolveProposalDecisionRecord
-	(*EvolveGoalValue)(nil),                                  // 242: superverse.v2.EvolveGoalValue
-	(*StartEvolveReviewRequest)(nil),                         // 243: superverse.v2.StartEvolveReviewRequest
-	(*StartEvolveReviewResponse)(nil),                        // 244: superverse.v2.StartEvolveReviewResponse
-	(*DecideEvolveProposalRequest)(nil),                      // 245: superverse.v2.DecideEvolveProposalRequest
-	(*DecideEvolveProposalResponse)(nil),                     // 246: superverse.v2.DecideEvolveProposalResponse
-	(*GetEvolveProposalRequest)(nil),                         // 247: superverse.v2.GetEvolveProposalRequest
-	(*GetEvolveProposalResponse)(nil),                        // 248: superverse.v2.GetEvolveProposalResponse
-	(*SendMessageRequest)(nil),                               // 249: superverse.v2.SendMessageRequest
-	(*SendMessageResponse)(nil),                              // 250: superverse.v2.SendMessageResponse
-	(*AnswerQuestionsRequest)(nil),                           // 251: superverse.v2.AnswerQuestionsRequest
-	(*AnswerQuestionsResponse)(nil),                          // 252: superverse.v2.AnswerQuestionsResponse
-	(*UpdateSessionModelRequest)(nil),                        // 253: superverse.v2.UpdateSessionModelRequest
-	(*UpdateSessionModelResponse)(nil),                       // 254: superverse.v2.UpdateSessionModelResponse
-	(*DeleteQueuedMessageRequest)(nil),                       // 255: superverse.v2.DeleteQueuedMessageRequest
-	(*DeleteQueuedMessageResponse)(nil),                      // 256: superverse.v2.DeleteQueuedMessageResponse
-	(*SteerQueuedMessageRequest)(nil),                        // 257: superverse.v2.SteerQueuedMessageRequest
-	(*SteerQueuedMessageResponse)(nil),                       // 258: superverse.v2.SteerQueuedMessageResponse
-	(*ResolveToolApprovalRequest)(nil),                       // 259: superverse.v2.ResolveToolApprovalRequest
-	(*ResolveToolApprovalResponse)(nil),                      // 260: superverse.v2.ResolveToolApprovalResponse
-	(*InterruptAgentRequest)(nil),                            // 261: superverse.v2.InterruptAgentRequest
-	(*InterruptAgentResponse)(nil),                           // 262: superverse.v2.InterruptAgentResponse
-	(*GetFlowDesignRequest)(nil),                             // 263: superverse.v2.GetFlowDesignRequest
-	(*GetFlowDesignResponse)(nil),                            // 264: superverse.v2.GetFlowDesignResponse
-	(*ListMockScenariosRequest)(nil),                         // 265: superverse.v2.ListMockScenariosRequest
-	(*ListAgentModelsRequest)(nil),                           // 266: superverse.v2.ListAgentModelsRequest
-	(*ListAgentModelsResponse)(nil),                          // 267: superverse.v2.ListAgentModelsResponse
-	(*AgentModelChoice)(nil),                                 // 268: superverse.v2.AgentModelChoice
-	(*ListMockScenariosResponse)(nil),                        // 269: superverse.v2.ListMockScenariosResponse
-	(*AgentMockScenario)(nil),                                // 270: superverse.v2.AgentMockScenario
-	(*AgentMockScenarioArgument)(nil),                        // 271: superverse.v2.AgentMockScenarioArgument
-	(*AgentMockScenarioInput)(nil),                           // 272: superverse.v2.AgentMockScenarioInput
-	(*AgentSnapshot)(nil),                                    // 273: superverse.v2.AgentSnapshot
-	(*AgentHistoryPage)(nil),                                 // 274: superverse.v2.AgentHistoryPage
-	(*AgentSequencedMessage)(nil),                            // 275: superverse.v2.AgentSequencedMessage
-	(*Actor)(nil),                                            // 276: superverse.v2.Actor
-	(*AgentMessage)(nil),                                     // 277: superverse.v2.AgentMessage
-	(*AgentAttachment)(nil),                                  // 278: superverse.v2.AgentAttachment
-	(*AgentNotification)(nil),                                // 279: superverse.v2.AgentNotification
-	(*AgentModelCallMetrics)(nil),                            // 280: superverse.v2.AgentModelCallMetrics
-	(*AgentToolExecutionMetrics)(nil),                        // 281: superverse.v2.AgentToolExecutionMetrics
-	(*AgentToolCall)(nil),                                    // 282: superverse.v2.AgentToolCall
-	(*AgentPendingUserMessage)(nil),                          // 283: superverse.v2.AgentPendingUserMessage
-	(*AgentUserMessage)(nil),                                 // 284: superverse.v2.AgentUserMessage
-	(*AgentDescription)(nil),                                 // 285: superverse.v2.AgentDescription
-	(*AgentStartingExample)(nil),                             // 286: superverse.v2.AgentStartingExample
-	(*AgentStartingExampleBuild)(nil),                        // 287: superverse.v2.AgentStartingExampleBuild
-	(*AgentMockProgress)(nil),                                // 288: superverse.v2.AgentMockProgress
-	(*AgentBackgroundCommand)(nil),                           // 289: superverse.v2.AgentBackgroundCommand
-	(*AgentSubagent)(nil),                                    // 290: superverse.v2.AgentSubagent
-	(*AgentPendingApproval)(nil),                             // 291: superverse.v2.AgentPendingApproval
-	(*AgentPendingTimer)(nil),                                // 292: superverse.v2.AgentPendingTimer
-	(*AgentPendingUserInput)(nil),                            // 293: superverse.v2.AgentPendingUserInput
-	(*AgentRequirements)(nil),                                // 294: superverse.v2.AgentRequirements
-	(*AgentRequirementsDraft)(nil),                           // 295: superverse.v2.AgentRequirementsDraft
-	(*AgentRequirementsDraftConnection)(nil),                 // 296: superverse.v2.AgentRequirementsDraftConnection
-	(*AgentRequirementsDraftFlow)(nil),                       // 297: superverse.v2.AgentRequirementsDraftFlow
-	(*AgentFlowDesignReference)(nil),                         // 298: superverse.v2.AgentFlowDesignReference
-	(*AgentFlowDesign)(nil),                                  // 299: superverse.v2.AgentFlowDesign
-	(*AgentFlowDesignFlow)(nil),                              // 300: superverse.v2.AgentFlowDesignFlow
-	(*AgentFlowDesignStep)(nil),                              // 301: superverse.v2.AgentFlowDesignStep
-	(*AgentFlowDesignWait)(nil),                              // 302: superverse.v2.AgentFlowDesignWait
-	(*AgentFlowDesignTransition)(nil),                        // 303: superverse.v2.AgentFlowDesignTransition
-	(*AgentFlowDesignChannel)(nil),                           // 304: superverse.v2.AgentFlowDesignChannel
-	(*AgentFlowDesignAction)(nil),                            // 305: superverse.v2.AgentFlowDesignAction
-	(*AgentFlowDesignAttribute)(nil),                         // 306: superverse.v2.AgentFlowDesignAttribute
-	(*AgentRequirementFeature)(nil),                          // 307: superverse.v2.AgentRequirementFeature
-	(*AgentRequirementConnection)(nil),                       // 308: superverse.v2.AgentRequirementConnection
-	(*AgentConfirmedRequirements)(nil),                       // 309: superverse.v2.AgentConfirmedRequirements
-	(*AgentUserInputQuestion)(nil),                           // 310: superverse.v2.AgentUserInputQuestion
-	(*AgentUserInputOption)(nil),                             // 311: superverse.v2.AgentUserInputOption
-	(*AgentUserInputAnswer)(nil),                             // 312: superverse.v2.AgentUserInputAnswer
-	(*AgentTodoList)(nil),                                    // 313: superverse.v2.AgentTodoList
-	(*AgentTodoItem)(nil),                                    // 314: superverse.v2.AgentTodoItem
-	(*AgentEvent)(nil),                                       // 315: superverse.v2.AgentEvent
-	(*AgentInputConsumption)(nil),                            // 316: superverse.v2.AgentInputConsumption
-	(*AgentAnswerQuestionsInput)(nil),                        // 317: superverse.v2.AgentAnswerQuestionsInput
-	(*GetPreviewRequest)(nil),                                // 318: superverse.v2.GetPreviewRequest
-	(*GetPreviewResponse)(nil),                               // 319: superverse.v2.GetPreviewResponse
-	(*StartPreviewRequest)(nil),                              // 320: superverse.v2.StartPreviewRequest
-	(*StartPreviewResponse)(nil),                             // 321: superverse.v2.StartPreviewResponse
-	(*StopPreviewRequest)(nil),                               // 322: superverse.v2.StopPreviewRequest
-	(*StopPreviewResponse)(nil),                              // 323: superverse.v2.StopPreviewResponse
-	(*PreparePreviewSourceRequest)(nil),                      // 324: superverse.v2.PreparePreviewSourceRequest
-	(*PreparePreviewSourceResponse)(nil),                     // 325: superverse.v2.PreparePreviewSourceResponse
-	(*GetPreviewDefinitionsRequest)(nil),                     // 326: superverse.v2.GetPreviewDefinitionsRequest
-	(*GetPreviewDefinitionsResponse)(nil),                    // 327: superverse.v2.GetPreviewDefinitionsResponse
-	(*UpdatePreviewAutoDeployRequest)(nil),                   // 328: superverse.v2.UpdatePreviewAutoDeployRequest
-	(*UpdatePreviewAutoDeployResponse)(nil),                  // 329: superverse.v2.UpdatePreviewAutoDeployResponse
-	(*PreviewSnapshot)(nil),                                  // 330: superverse.v2.PreviewSnapshot
-	(*AppliedPreviewConfiguration)(nil),                      // 331: superverse.v2.AppliedPreviewConfiguration
-	(*PreviewStartRecord)(nil),                               // 332: superverse.v2.PreviewStartRecord
-	(*PreviewDeploymentSnapshot)(nil),                        // 333: superverse.v2.PreviewDeploymentSnapshot
-	(*PreparedPreviewSourceSnapshot)(nil),                    // 334: superverse.v2.PreparedPreviewSourceSnapshot
-	(*ListReleaseCandidatesRequest)(nil),                     // 335: superverse.v2.ListReleaseCandidatesRequest
-	(*ListReleaseCandidatesResponse)(nil),                    // 336: superverse.v2.ListReleaseCandidatesResponse
-	(*PrepareReleaseRequest)(nil),                            // 337: superverse.v2.PrepareReleaseRequest
-	(*PrepareReleaseResponse)(nil),                           // 338: superverse.v2.PrepareReleaseResponse
-	(*StartReleaseBuildRequest)(nil),                         // 339: superverse.v2.StartReleaseBuildRequest
-	(*StartReleaseBuildResponse)(nil),                        // 340: superverse.v2.StartReleaseBuildResponse
-	(*RecoverReleaseBuildRequest)(nil),                       // 341: superverse.v2.RecoverReleaseBuildRequest
-	(*RecoverReleaseBuildResponse)(nil),                      // 342: superverse.v2.RecoverReleaseBuildResponse
-	(*CancelReleaseBuildRequest)(nil),                        // 343: superverse.v2.CancelReleaseBuildRequest
-	(*CancelReleaseBuildResponse)(nil),                       // 344: superverse.v2.CancelReleaseBuildResponse
-	(*GetReleaseBuildLogRequest)(nil),                        // 345: superverse.v2.GetReleaseBuildLogRequest
-	(*GetReleaseBuildLogResponse)(nil),                       // 346: superverse.v2.GetReleaseBuildLogResponse
-	(*ListReleasesRequest)(nil),                              // 347: superverse.v2.ListReleasesRequest
-	(*ListReleasesResponse)(nil),                             // 348: superverse.v2.ListReleasesResponse
-	(*GetReleaseRequest)(nil),                                // 349: superverse.v2.GetReleaseRequest
-	(*GetReleaseResponse)(nil),                               // 350: superverse.v2.GetReleaseResponse
-	(*WatchReleaseRequest)(nil),                              // 351: superverse.v2.WatchReleaseRequest
-	(*WatchReleaseResponse)(nil),                             // 352: superverse.v2.WatchReleaseResponse
-	(*ReleaseCandidate)(nil),                                 // 353: superverse.v2.ReleaseCandidate
-	(*ReleaseSnapshot)(nil),                                  // 354: superverse.v2.ReleaseSnapshot
-	(*PreparedReleaseSourceSnapshot)(nil),                    // 355: superverse.v2.PreparedReleaseSourceSnapshot
-	(*ReleaseBuildRevisionSnapshot)(nil),                     // 356: superverse.v2.ReleaseBuildRevisionSnapshot
-	(*Cancellation)(nil),                                     // 357: superverse.v2.Cancellation
-	(*PreviewValidation)(nil),                                // 358: superverse.v2.PreviewValidation
-	(*DeriveLiveConfigurationRequest)(nil),                   // 359: superverse.v2.DeriveLiveConfigurationRequest
-	(*DeriveLiveConfigurationResponse)(nil),                  // 360: superverse.v2.DeriveLiveConfigurationResponse
-	(*StartDeploymentRequest)(nil),                           // 361: superverse.v2.StartDeploymentRequest
-	(*StartDeploymentResponse)(nil),                          // 362: superverse.v2.StartDeploymentResponse
-	(*CancelDeploymentRequest)(nil),                          // 363: superverse.v2.CancelDeploymentRequest
-	(*CancelDeploymentResponse)(nil),                         // 364: superverse.v2.CancelDeploymentResponse
-	(*GetDeploymentRequest)(nil),                             // 365: superverse.v2.GetDeploymentRequest
-	(*GetDeploymentResponse)(nil),                            // 366: superverse.v2.GetDeploymentResponse
-	(*ListDeploymentsRequest)(nil),                           // 367: superverse.v2.ListDeploymentsRequest
-	(*ListDeploymentsResponse)(nil),                          // 368: superverse.v2.ListDeploymentsResponse
-	(*WatchDeploymentRequest)(nil),                           // 369: superverse.v2.WatchDeploymentRequest
-	(*WatchDeploymentResponse)(nil),                          // 370: superverse.v2.WatchDeploymentResponse
-	(*DeploymentSnapshot)(nil),                               // 371: superverse.v2.DeploymentSnapshot
-	(*GetFlowDefinitionsRequest)(nil),                        // 372: superverse.v2.GetFlowDefinitionsRequest
-	(*GetFlowDefinitionsResponse)(nil),                       // 373: superverse.v2.GetFlowDefinitionsResponse
-	(*GetFlowCatalogRequest)(nil),                            // 374: superverse.v2.GetFlowCatalogRequest
-	(*GetFlowCatalogResponse)(nil),                           // 375: superverse.v2.GetFlowCatalogResponse
-	(*SearchFlowsRequest)(nil),                               // 376: superverse.v2.SearchFlowsRequest
-	(*SearchFlowsResponse)(nil),                              // 377: superverse.v2.SearchFlowsResponse
-	(*GetFlowDisplayRequest)(nil),                            // 378: superverse.v2.GetFlowDisplayRequest
-	(*GetFlowDisplayResponse)(nil),                           // 379: superverse.v2.GetFlowDisplayResponse
-	(*UpdateFlowDisplayFieldRequest)(nil),                    // 380: superverse.v2.UpdateFlowDisplayFieldRequest
-	(*UpdateFlowDisplayFieldResponse)(nil),                   // 381: superverse.v2.UpdateFlowDisplayFieldResponse
-	(*InvokeFlowActionRequest)(nil),                          // 382: superverse.v2.InvokeFlowActionRequest
-	(*InvokeFlowActionResponse)(nil),                         // 383: superverse.v2.InvokeFlowActionResponse
-	(*StartFlowRequest)(nil),                                 // 384: superverse.v2.StartFlowRequest
-	(*StartFlowResponse)(nil),                                // 385: superverse.v2.StartFlowResponse
-	(*RecoverFlowStartRequest)(nil),                          // 386: superverse.v2.RecoverFlowStartRequest
-	(*RecoverFlowStartResponse)(nil),                         // 387: superverse.v2.RecoverFlowStartResponse
-	(*GetFlowSummaryRequest)(nil),                            // 388: superverse.v2.GetFlowSummaryRequest
-	(*GetFlowSummaryResponse)(nil),                           // 389: superverse.v2.GetFlowSummaryResponse
-	(*GetFlowStateRequest)(nil),                              // 390: superverse.v2.GetFlowStateRequest
-	(*GetFlowStateResponse)(nil),                             // 391: superverse.v2.GetFlowStateResponse
-	(*GetFlowHistoryRequest)(nil),                            // 392: superverse.v2.GetFlowHistoryRequest
-	(*GetFlowHistoryResponse)(nil),                           // 393: superverse.v2.GetFlowHistoryResponse
-	(*WaitFlowHistoryRequest)(nil),                           // 394: superverse.v2.WaitFlowHistoryRequest
-	(*WaitFlowHistoryResponse)(nil),                          // 395: superverse.v2.WaitFlowHistoryResponse
-	(*ReadFlowStreamRequest)(nil),                            // 396: superverse.v2.ReadFlowStreamRequest
-	(*ReadFlowStreamResponse)(nil),                           // 397: superverse.v2.ReadFlowStreamResponse
-	(*LoadFlowBlobsRequest)(nil),                             // 398: superverse.v2.LoadFlowBlobsRequest
-	(*LoadFlowBlobsResponse)(nil),                            // 399: superverse.v2.LoadFlowBlobsResponse
-	(*StopFlowRequest)(nil),                                  // 400: superverse.v2.StopFlowRequest
-	(*StopFlowResponse)(nil),                                 // 401: superverse.v2.StopFlowResponse
-	(*DeleteFlowChannelMessageRequest)(nil),                  // 402: superverse.v2.DeleteFlowChannelMessageRequest
-	(*DeleteFlowChannelMessageResponse)(nil),                 // 403: superverse.v2.DeleteFlowChannelMessageResponse
-	(*TimeTravelFlowRequest)(nil),                            // 404: superverse.v2.TimeTravelFlowRequest
-	(*TimeTravelFlowResponse)(nil),                           // 405: superverse.v2.TimeTravelFlowResponse
-	(*ListConnectionsRequest)(nil),                           // 406: superverse.v2.ListConnectionsRequest
-	(*ListConnectionsResponse)(nil),                          // 407: superverse.v2.ListConnectionsResponse
-	(*SelectTeamSpaceConnectionRequest)(nil),                 // 408: superverse.v2.SelectTeamSpaceConnectionRequest
-	(*SelectTeamSpaceConnectionResponse)(nil),                // 409: superverse.v2.SelectTeamSpaceConnectionResponse
-	(*ReleaseUnusedConnectionsRequest)(nil),                  // 410: superverse.v2.ReleaseUnusedConnectionsRequest
-	(*ReleaseUnusedConnectionsResponse)(nil),                 // 411: superverse.v2.ReleaseUnusedConnectionsResponse
-	(*StartConnectorUiSessionRequest)(nil),                   // 412: superverse.v2.StartConnectorUiSessionRequest
-	(*StartConnectorUiSessionResponse)(nil),                  // 413: superverse.v2.StartConnectorUiSessionResponse
-	(*InvokeProviderCommandRequest)(nil),                     // 414: superverse.v2.InvokeProviderCommandRequest
-	(*InvokeProviderCommandResponse)(nil),                    // 415: superverse.v2.InvokeProviderCommandResponse
-	(*SaveTriggerBindingRequest)(nil),                        // 416: superverse.v2.SaveTriggerBindingRequest
-	(*SaveTriggerBindingResponse)(nil),                       // 417: superverse.v2.SaveTriggerBindingResponse
-	(*SaveOperationConfigurationRequest)(nil),                // 418: superverse.v2.SaveOperationConfigurationRequest
-	(*SaveOperationConfigurationResponse)(nil),               // 419: superverse.v2.SaveOperationConfigurationResponse
-	(*GetApplicationEnvironmentRequest)(nil),                 // 420: superverse.v2.GetApplicationEnvironmentRequest
-	(*GetApplicationEnvironmentResponse)(nil),                // 421: superverse.v2.GetApplicationEnvironmentResponse
-	(*SaveApplicationEnvironmentRequest)(nil),                // 422: superverse.v2.SaveApplicationEnvironmentRequest
-	(*SaveApplicationEnvironmentResponse)(nil),               // 423: superverse.v2.SaveApplicationEnvironmentResponse
-	(*FlowApiTarget)(nil),                                    // 424: superverse.v2.FlowApiTarget
-	(*FlowApiContext)(nil),                                   // 425: superverse.v2.FlowApiContext
-	(*FlowApiDocument)(nil),                                  // 426: superverse.v2.FlowApiDocument
-	(*FlowSearchFilter)(nil),                                 // 427: superverse.v2.FlowSearchFilter
-	(*FlowBlobReference)(nil),                                // 428: superverse.v2.FlowBlobReference
-	(*ModelCredentialInfo)(nil),                              // 429: superverse.v2.ModelCredentialInfo
-	(*GetModelCredentialInfoRequest)(nil),                    // 430: superverse.v2.GetModelCredentialInfoRequest
-	(*GetModelCredentialInfoResponse)(nil),                   // 431: superverse.v2.GetModelCredentialInfoResponse
-	(*SetModelCredentialRequest)(nil),                        // 432: superverse.v2.SetModelCredentialRequest
-	(*SetModelCredentialResponse)(nil),                       // 433: superverse.v2.SetModelCredentialResponse
-	(*DeleteModelCredentialRequest)(nil),                     // 434: superverse.v2.DeleteModelCredentialRequest
-	(*DeleteModelCredentialResponse)(nil),                    // 435: superverse.v2.DeleteModelCredentialResponse
-	(*ListModelCredentialModelsRequest)(nil),                 // 436: superverse.v2.ListModelCredentialModelsRequest
-	(*ModelCredentialModel)(nil),                             // 437: superverse.v2.ModelCredentialModel
-	(*ListModelCredentialModelsResponse)(nil),                // 438: superverse.v2.ListModelCredentialModelsResponse
-	nil,                           // 439: superverse.v2.InvokeProviderCommandRequest.ParametersEntry
-	nil,                           // 440: superverse.v2.SaveApplicationEnvironmentRequest.ValuesEntry
-	nil,                           // 441: superverse.v2.SaveApplicationEnvironmentRequest.SecretsEntry
-	(*timestamppb.Timestamp)(nil), // 442: google.protobuf.Timestamp
-	(*structpb.Struct)(nil),       // 443: google.protobuf.Struct
+	(ModelCredentialSaveNotice)(0),                           // 45: superverse.v2.ModelCredentialSaveNotice
+	(ModelDiscoveryResult)(0),                                // 46: superverse.v2.ModelDiscoveryResult
+	(EnvironmentEvent_Kind)(0),                               // 47: superverse.v2.EnvironmentEvent.Kind
+	(RecentTriggerEvent_Fate)(0),                             // 48: superverse.v2.RecentTriggerEvent.Fate
+	(ConfigurationItemKey_Kind)(0),                           // 49: superverse.v2.ConfigurationItemKey.Kind
+	(ConfigurationItem_State)(0),                             // 50: superverse.v2.ConfigurationItem.State
+	(ConfigurationRequirementGap_Kind)(0),                    // 51: superverse.v2.ConfigurationRequirementGap.Kind
+	(ConnectorContribution_Kind)(0),                          // 52: superverse.v2.ConnectorContribution.Kind
+	(ConnectorContribution_Status)(0),                        // 53: superverse.v2.ConnectorContribution.Status
+	(ConnectorContribution_Location)(0),                      // 54: superverse.v2.ConnectorContribution.Location
+	(ConnectorContribution_ReleaseCandidateStatus)(0),        // 55: superverse.v2.ConnectorContribution.ReleaseCandidateStatus
+	(ConnectorContribution_ReleaseCandidateFailureReason)(0), // 56: superverse.v2.ConnectorContribution.ReleaseCandidateFailureReason
+	(AgentMockScenario_Category)(0),                          // 57: superverse.v2.AgentMockScenario.Category
+	(AgentMockScenarioInput_Kind)(0),                         // 58: superverse.v2.AgentMockScenarioInput.Kind
+	(AgentMessage_Role)(0),                                   // 59: superverse.v2.AgentMessage.Role
+	(AgentNotification_Kind)(0),                              // 60: superverse.v2.AgentNotification.Kind
+	(AgentNotification_Source)(0),                            // 61: superverse.v2.AgentNotification.Source
+	(AgentNotification_TaskStatus)(0),                        // 62: superverse.v2.AgentNotification.TaskStatus
+	(AgentNotification_Outcome)(0),                           // 63: superverse.v2.AgentNotification.Outcome
+	(AgentNotification_Owner)(0),                             // 64: superverse.v2.AgentNotification.Owner
+	(AgentNotification_ConnectorEvent)(0),                    // 65: superverse.v2.AgentNotification.ConnectorEvent
+	(AgentNotification_EvolvePhase)(0),                       // 66: superverse.v2.AgentNotification.EvolvePhase
+	(AgentToolExecutionMetrics_Outcome)(0),                   // 67: superverse.v2.AgentToolExecutionMetrics.Outcome
+	(AgentDescription_Status)(0),                             // 68: superverse.v2.AgentDescription.Status
+	(AgentStartingExample_Choice)(0),                         // 69: superverse.v2.AgentStartingExample.Choice
+	(AgentBackgroundCommand_Status)(0),                       // 70: superverse.v2.AgentBackgroundCommand.Status
+	(AgentBackgroundCommand_EndReason)(0),                    // 71: superverse.v2.AgentBackgroundCommand.EndReason
+	(AgentSubagent_Kind)(0),                                  // 72: superverse.v2.AgentSubagent.Kind
+	(AgentSubagent_Status)(0),                                // 73: superverse.v2.AgentSubagent.Status
+	(AgentPendingUserInput_Kind)(0),                          // 74: superverse.v2.AgentPendingUserInput.Kind
+	(AgentFlowDesignWait_Kind)(0),                            // 75: superverse.v2.AgentFlowDesignWait.Kind
+	(AgentFlowDesignTransition_End)(0),                       // 76: superverse.v2.AgentFlowDesignTransition.End
+	(AgentRequirementConnection_Status)(0),                   // 77: superverse.v2.AgentRequirementConnection.Status
+	(AgentTodoItem_Status)(0),                                // 78: superverse.v2.AgentTodoItem.Status
+	(AgentEvent_Kind)(0),                                     // 79: superverse.v2.AgentEvent.Kind
+	(PreviewValidation_Kind)(0),                              // 80: superverse.v2.PreviewValidation.Kind
+	(*CallerContext)(nil),                                    // 81: superverse.v2.CallerContext
+	(*CommitVersion)(nil),                                    // 82: superverse.v2.CommitVersion
+	(*Failure)(nil),                                          // 83: superverse.v2.Failure
+	(*ResourceProgress)(nil),                                 // 84: superverse.v2.ResourceProgress
+	(*PhaseTiming)(nil),                                      // 85: superverse.v2.PhaseTiming
+	(*FlowDefinition)(nil),                                   // 86: superverse.v2.FlowDefinition
+	(*AppManifestSnapshot)(nil),                              // 87: superverse.v2.AppManifestSnapshot
+	(*ObjectReference)(nil),                                  // 88: superverse.v2.ObjectReference
+	(*ConnectorRequirement)(nil),                             // 89: superverse.v2.ConnectorRequirement
+	(*ConnectorTriggerBinding)(nil),                          // 90: superverse.v2.ConnectorTriggerBinding
+	(*RegisterAccountRequest)(nil),                           // 91: superverse.v2.RegisterAccountRequest
+	(*RegisterAccountResponse)(nil),                          // 92: superverse.v2.RegisterAccountResponse
+	(*LoginRequest)(nil),                                     // 93: superverse.v2.LoginRequest
+	(*LoginResponse)(nil),                                    // 94: superverse.v2.LoginResponse
+	(*LogoutRequest)(nil),                                    // 95: superverse.v2.LogoutRequest
+	(*LogoutResponse)(nil),                                   // 96: superverse.v2.LogoutResponse
+	(*GetCurrentAccountRequest)(nil),                         // 97: superverse.v2.GetCurrentAccountRequest
+	(*GetCurrentAccountResponse)(nil),                        // 98: superverse.v2.GetCurrentAccountResponse
+	(*AccountSnapshot)(nil),                                  // 99: superverse.v2.AccountSnapshot
+	(*AccountLogin)(nil),                                     // 100: superverse.v2.AccountLogin
+	(*CreateTeamSpaceRequest)(nil),                           // 101: superverse.v2.CreateTeamSpaceRequest
+	(*CreateTeamSpaceResponse)(nil),                          // 102: superverse.v2.CreateTeamSpaceResponse
+	(*ListTeamSpacesRequest)(nil),                            // 103: superverse.v2.ListTeamSpacesRequest
+	(*ListTeamSpacesResponse)(nil),                           // 104: superverse.v2.ListTeamSpacesResponse
+	(*GetTeamSpaceRequest)(nil),                              // 105: superverse.v2.GetTeamSpaceRequest
+	(*GetTeamSpaceResponse)(nil),                             // 106: superverse.v2.GetTeamSpaceResponse
+	(*RenameTeamSpaceRequest)(nil),                           // 107: superverse.v2.RenameTeamSpaceRequest
+	(*RenameTeamSpaceResponse)(nil),                          // 108: superverse.v2.RenameTeamSpaceResponse
+	(*DeleteTeamSpaceRequest)(nil),                           // 109: superverse.v2.DeleteTeamSpaceRequest
+	(*DeleteTeamSpaceResponse)(nil),                          // 110: superverse.v2.DeleteTeamSpaceResponse
+	(*GetTeamSpaceOverviewRequest)(nil),                      // 111: superverse.v2.GetTeamSpaceOverviewRequest
+	(*GetTeamSpaceOverviewResponse)(nil),                     // 112: superverse.v2.GetTeamSpaceOverviewResponse
+	(*TeamSpaceSnapshot)(nil),                                // 113: superverse.v2.TeamSpaceSnapshot
+	(*TeamSpaceOverview)(nil),                                // 114: superverse.v2.TeamSpaceOverview
+	(*ListTeamSpaceMembersRequest)(nil),                      // 115: superverse.v2.ListTeamSpaceMembersRequest
+	(*ListTeamSpaceMembersResponse)(nil),                     // 116: superverse.v2.ListTeamSpaceMembersResponse
+	(*AddTeamSpaceMemberRequest)(nil),                        // 117: superverse.v2.AddTeamSpaceMemberRequest
+	(*AddTeamSpaceMemberResponse)(nil),                       // 118: superverse.v2.AddTeamSpaceMemberResponse
+	(*SetTeamSpaceMemberRoleRequest)(nil),                    // 119: superverse.v2.SetTeamSpaceMemberRoleRequest
+	(*SetTeamSpaceMemberRoleResponse)(nil),                   // 120: superverse.v2.SetTeamSpaceMemberRoleResponse
+	(*RemoveTeamSpaceMemberRequest)(nil),                     // 121: superverse.v2.RemoveTeamSpaceMemberRequest
+	(*RemoveTeamSpaceMemberResponse)(nil),                    // 122: superverse.v2.RemoveTeamSpaceMemberResponse
+	(*TeamSpaceMemberSnapshot)(nil),                          // 123: superverse.v2.TeamSpaceMemberSnapshot
+	(*ConnectorCatalogEntry)(nil),                            // 124: superverse.v2.ConnectorCatalogEntry
+	(*ListConnectorCatalogRequest)(nil),                      // 125: superverse.v2.ListConnectorCatalogRequest
+	(*ListConnectorCatalogResponse)(nil),                     // 126: superverse.v2.ListConnectorCatalogResponse
+	(*TeamSpaceConnectionUsage)(nil),                         // 127: superverse.v2.TeamSpaceConnectionUsage
+	(*TeamSpaceConnectionSnapshot)(nil),                      // 128: superverse.v2.TeamSpaceConnectionSnapshot
+	(*UnroutedEvents)(nil),                                   // 129: superverse.v2.UnroutedEvents
+	(*ListTeamSpaceConnectionsRequest)(nil),                  // 130: superverse.v2.ListTeamSpaceConnectionsRequest
+	(*ListTeamSpaceConnectionsResponse)(nil),                 // 131: superverse.v2.ListTeamSpaceConnectionsResponse
+	(*GetTeamSpaceConnectionRequest)(nil),                    // 132: superverse.v2.GetTeamSpaceConnectionRequest
+	(*GetTeamSpaceConnectionResponse)(nil),                   // 133: superverse.v2.GetTeamSpaceConnectionResponse
+	(*CreateTeamSpaceConnectionRequest)(nil),                 // 134: superverse.v2.CreateTeamSpaceConnectionRequest
+	(*CreateTeamSpaceConnectionResponse)(nil),                // 135: superverse.v2.CreateTeamSpaceConnectionResponse
+	(*UpdateTeamSpaceConnectionRequest)(nil),                 // 136: superverse.v2.UpdateTeamSpaceConnectionRequest
+	(*UpdateTeamSpaceConnectionResponse)(nil),                // 137: superverse.v2.UpdateTeamSpaceConnectionResponse
+	(*DeleteTeamSpaceConnectionRequest)(nil),                 // 138: superverse.v2.DeleteTeamSpaceConnectionRequest
+	(*DeleteTeamSpaceConnectionResponse)(nil),                // 139: superverse.v2.DeleteTeamSpaceConnectionResponse
+	(*StartTeamSpaceConnectionOAuthRequest)(nil),             // 140: superverse.v2.StartTeamSpaceConnectionOAuthRequest
+	(*NewTeamSpaceConnection)(nil),                           // 141: superverse.v2.NewTeamSpaceConnection
+	(*StartTeamSpaceConnectionOAuthResponse)(nil),            // 142: superverse.v2.StartTeamSpaceConnectionOAuthResponse
+	(*CompleteTeamSpaceConnectionOAuthRequest)(nil),          // 143: superverse.v2.CompleteTeamSpaceConnectionOAuthRequest
+	(*CompleteTeamSpaceConnectionOAuthResponse)(nil),         // 144: superverse.v2.CompleteTeamSpaceConnectionOAuthResponse
+	(*StartTeamSpaceConnectionUiSessionRequest)(nil),         // 145: superverse.v2.StartTeamSpaceConnectionUiSessionRequest
+	(*StartTeamSpaceConnectionUiSessionResponse)(nil),        // 146: superverse.v2.StartTeamSpaceConnectionUiSessionResponse
+	(*InvokeTeamSpaceConnectionCommandRequest)(nil),          // 147: superverse.v2.InvokeTeamSpaceConnectionCommandRequest
+	(*InvokeTeamSpaceConnectionCommandResponse)(nil),         // 148: superverse.v2.InvokeTeamSpaceConnectionCommandResponse
+	(*CreateProjectRequest)(nil),                             // 149: superverse.v2.CreateProjectRequest
+	(*CreateProjectResponse)(nil),                            // 150: superverse.v2.CreateProjectResponse
+	(*ListProjectsRequest)(nil),                              // 151: superverse.v2.ListProjectsRequest
+	(*ListProjectsResponse)(nil),                             // 152: superverse.v2.ListProjectsResponse
+	(*GetProjectRequest)(nil),                                // 153: superverse.v2.GetProjectRequest
+	(*GetProjectResponse)(nil),                               // 154: superverse.v2.GetProjectResponse
+	(*DeleteProjectRequest)(nil),                             // 155: superverse.v2.DeleteProjectRequest
+	(*DeleteProjectResponse)(nil),                            // 156: superverse.v2.DeleteProjectResponse
+	(*WatchProjectRequest)(nil),                              // 157: superverse.v2.WatchProjectRequest
+	(*WatchProjectResponse)(nil),                             // 158: superverse.v2.WatchProjectResponse
+	(*ListEnvironmentEventsRequest)(nil),                     // 159: superverse.v2.ListEnvironmentEventsRequest
+	(*ListEnvironmentEventsResponse)(nil),                    // 160: superverse.v2.ListEnvironmentEventsResponse
+	(*EnvironmentEvent)(nil),                                 // 161: superverse.v2.EnvironmentEvent
+	(*ListRecentTriggerEventsRequest)(nil),                   // 162: superverse.v2.ListRecentTriggerEventsRequest
+	(*ListRecentTriggerEventsResponse)(nil),                  // 163: superverse.v2.ListRecentTriggerEventsResponse
+	(*RecentTriggerEvent)(nil),                               // 164: superverse.v2.RecentTriggerEvent
+	(*GetProjectConfigurationRequest)(nil),                   // 165: superverse.v2.GetProjectConfigurationRequest
+	(*GetProjectConfigurationResponse)(nil),                  // 166: superverse.v2.GetProjectConfigurationResponse
+	(*ValidateProjectConfigurationRequest)(nil),              // 167: superverse.v2.ValidateProjectConfigurationRequest
+	(*ValidateProjectConfigurationResponse)(nil),             // 168: superverse.v2.ValidateProjectConfigurationResponse
+	(*RemoveLiveRequest)(nil),                                // 169: superverse.v2.RemoveLiveRequest
+	(*RemoveLiveResponse)(nil),                               // 170: superverse.v2.RemoveLiveResponse
+	(*ManagedRepositorySource)(nil),                          // 171: superverse.v2.ManagedRepositorySource
+	(*ExampleReference)(nil),                                 // 172: superverse.v2.ExampleReference
+	(*Repository)(nil),                                       // 173: superverse.v2.Repository
+	(*ProjectSnapshot)(nil),                                  // 174: superverse.v2.ProjectSnapshot
+	(*ProjectExample)(nil),                                   // 175: superverse.v2.ProjectExample
+	(*ProjectLive)(nil),                                      // 176: superverse.v2.ProjectLive
+	(*ActiveDeploymentReference)(nil),                        // 177: superverse.v2.ActiveDeploymentReference
+	(*SetupSnapshot)(nil),                                    // 178: superverse.v2.SetupSnapshot
+	(*ProjectConfigurationTarget)(nil),                       // 179: superverse.v2.ProjectConfigurationTarget
+	(*ProjectConfigurationSnapshot)(nil),                     // 180: superverse.v2.ProjectConfigurationSnapshot
+	(*ConfigurationItemKey)(nil),                             // 181: superverse.v2.ConfigurationItemKey
+	(*ConfigurationItem)(nil),                                // 182: superverse.v2.ConfigurationItem
+	(*ConfigurationRequirementGap)(nil),                      // 183: superverse.v2.ConfigurationRequirementGap
+	(*ProjectConfigurationValidation)(nil),                   // 184: superverse.v2.ProjectConfigurationValidation
+	(*ListProjectMembersRequest)(nil),                        // 185: superverse.v2.ListProjectMembersRequest
+	(*ListProjectMembersResponse)(nil),                       // 186: superverse.v2.ListProjectMembersResponse
+	(*AddProjectMemberRequest)(nil),                          // 187: superverse.v2.AddProjectMemberRequest
+	(*AddProjectMemberResponse)(nil),                         // 188: superverse.v2.AddProjectMemberResponse
+	(*SetProjectMemberRoleRequest)(nil),                      // 189: superverse.v2.SetProjectMemberRoleRequest
+	(*SetProjectMemberRoleResponse)(nil),                     // 190: superverse.v2.SetProjectMemberRoleResponse
+	(*RemoveProjectMemberRequest)(nil),                       // 191: superverse.v2.RemoveProjectMemberRequest
+	(*RemoveProjectMemberResponse)(nil),                      // 192: superverse.v2.RemoveProjectMemberResponse
+	(*ProjectMemberSnapshot)(nil),                            // 193: superverse.v2.ProjectMemberSnapshot
+	(*GetSessionRequest)(nil),                                // 194: superverse.v2.GetSessionRequest
+	(*GetSessionResponse)(nil),                               // 195: superverse.v2.GetSessionResponse
+	(*WatchSessionRequest)(nil),                              // 196: superverse.v2.WatchSessionRequest
+	(*WatchSessionResponse)(nil),                             // 197: superverse.v2.WatchSessionResponse
+	(*ListArchivedMessagesRequest)(nil),                      // 198: superverse.v2.ListArchivedMessagesRequest
+	(*RenewWorkspaceRequest)(nil),                            // 199: superverse.v2.RenewWorkspaceRequest
+	(*RenewWorkspaceResponse)(nil),                           // 200: superverse.v2.RenewWorkspaceResponse
+	(*ListArchivedMessagesResponse)(nil),                     // 201: superverse.v2.ListArchivedMessagesResponse
+	(*SessionSnapshot)(nil),                                  // 202: superverse.v2.SessionSnapshot
+	(*ConnectorContribution)(nil),                            // 203: superverse.v2.ConnectorContribution
+	(*SessionWorkspaceSnapshot)(nil),                         // 204: superverse.v2.SessionWorkspaceSnapshot
+	(*SessionProgress)(nil),                                  // 205: superverse.v2.SessionProgress
+	(*CreateRemoteAgentPairingRequest)(nil),                  // 206: superverse.v2.CreateRemoteAgentPairingRequest
+	(*CreateRemoteAgentPairingResponse)(nil),                 // 207: superverse.v2.CreateRemoteAgentPairingResponse
+	(*ListRemoteAgentConnectionsRequest)(nil),                // 208: superverse.v2.ListRemoteAgentConnectionsRequest
+	(*ListRemoteAgentConnectionsResponse)(nil),               // 209: superverse.v2.ListRemoteAgentConnectionsResponse
+	(*RevokeRemoteAgentConnectionRequest)(nil),               // 210: superverse.v2.RevokeRemoteAgentConnectionRequest
+	(*RevokeRemoteAgentConnectionResponse)(nil),              // 211: superverse.v2.RevokeRemoteAgentConnectionResponse
+	(*SetSessionExecutorRequest)(nil),                        // 212: superverse.v2.SetSessionExecutorRequest
+	(*SetSessionExecutorResponse)(nil),                       // 213: superverse.v2.SetSessionExecutorResponse
+	(*SessionExecutor)(nil),                                  // 214: superverse.v2.SessionExecutor
+	(*RemoteSessionExecutor)(nil),                            // 215: superverse.v2.RemoteSessionExecutor
+	(*RemoteAgentBinding)(nil),                               // 216: superverse.v2.RemoteAgentBinding
+	(*RemoteAgentConnection)(nil),                            // 217: superverse.v2.RemoteAgentConnection
+	(*CreateAttachmentUploadRequest)(nil),                    // 218: superverse.v2.CreateAttachmentUploadRequest
+	(*CreateAttachmentUploadResponse)(nil),                   // 219: superverse.v2.CreateAttachmentUploadResponse
+	(*AttachmentUploadTarget)(nil),                           // 220: superverse.v2.AttachmentUploadTarget
+	(*UploadHeader)(nil),                                     // 221: superverse.v2.UploadHeader
+	(*CompleteAttachmentUploadRequest)(nil),                  // 222: superverse.v2.CompleteAttachmentUploadRequest
+	(*CompleteAttachmentUploadResponse)(nil),                 // 223: superverse.v2.CompleteAttachmentUploadResponse
+	(*DeleteAttachmentRequest)(nil),                          // 224: superverse.v2.DeleteAttachmentRequest
+	(*DeleteAttachmentResponse)(nil),                         // 225: superverse.v2.DeleteAttachmentResponse
+	(*GetAttachmentDownloadsRequest)(nil),                    // 226: superverse.v2.GetAttachmentDownloadsRequest
+	(*GetAttachmentDownloadsResponse)(nil),                   // 227: superverse.v2.GetAttachmentDownloadsResponse
+	(*AttachmentDownload)(nil),                               // 228: superverse.v2.AttachmentDownload
+	(*Attachment)(nil),                                       // 229: superverse.v2.Attachment
+	(*AttachmentSummary)(nil),                                // 230: superverse.v2.AttachmentSummary
+	(*AttachmentFailure)(nil),                                // 231: superverse.v2.AttachmentFailure
+	(*GetEvolveRequest)(nil),                                 // 232: superverse.v2.GetEvolveRequest
+	(*GetEvolveResponse)(nil),                                // 233: superverse.v2.GetEvolveResponse
+	(*Evolve)(nil),                                           // 234: superverse.v2.Evolve
+	(*EvolveLive)(nil),                                       // 235: superverse.v2.EvolveLive
+	(*EvolveGoals)(nil),                                      // 236: superverse.v2.EvolveGoals
+	(*EvolveGoal)(nil),                                       // 237: superverse.v2.EvolveGoal
+	(*EvolveSchedule)(nil),                                   // 238: superverse.v2.EvolveSchedule
+	(*EvolveReview)(nil),                                     // 239: superverse.v2.EvolveReview
+	(*EvolveExport)(nil),                                     // 240: superverse.v2.EvolveExport
+	(*EvolveProposal)(nil),                                   // 241: superverse.v2.EvolveProposal
+	(*EvolveProposalDecisionRecord)(nil),                     // 242: superverse.v2.EvolveProposalDecisionRecord
+	(*EvolveGoalValue)(nil),                                  // 243: superverse.v2.EvolveGoalValue
+	(*StartEvolveReviewRequest)(nil),                         // 244: superverse.v2.StartEvolveReviewRequest
+	(*StartEvolveReviewResponse)(nil),                        // 245: superverse.v2.StartEvolveReviewResponse
+	(*DecideEvolveProposalRequest)(nil),                      // 246: superverse.v2.DecideEvolveProposalRequest
+	(*DecideEvolveProposalResponse)(nil),                     // 247: superverse.v2.DecideEvolveProposalResponse
+	(*GetEvolveProposalRequest)(nil),                         // 248: superverse.v2.GetEvolveProposalRequest
+	(*GetEvolveProposalResponse)(nil),                        // 249: superverse.v2.GetEvolveProposalResponse
+	(*SendMessageRequest)(nil),                               // 250: superverse.v2.SendMessageRequest
+	(*SendMessageResponse)(nil),                              // 251: superverse.v2.SendMessageResponse
+	(*AnswerQuestionsRequest)(nil),                           // 252: superverse.v2.AnswerQuestionsRequest
+	(*AnswerQuestionsResponse)(nil),                          // 253: superverse.v2.AnswerQuestionsResponse
+	(*UpdateSessionModelRequest)(nil),                        // 254: superverse.v2.UpdateSessionModelRequest
+	(*UpdateSessionModelResponse)(nil),                       // 255: superverse.v2.UpdateSessionModelResponse
+	(*DeleteQueuedMessageRequest)(nil),                       // 256: superverse.v2.DeleteQueuedMessageRequest
+	(*DeleteQueuedMessageResponse)(nil),                      // 257: superverse.v2.DeleteQueuedMessageResponse
+	(*SteerQueuedMessageRequest)(nil),                        // 258: superverse.v2.SteerQueuedMessageRequest
+	(*SteerQueuedMessageResponse)(nil),                       // 259: superverse.v2.SteerQueuedMessageResponse
+	(*ResolveToolApprovalRequest)(nil),                       // 260: superverse.v2.ResolveToolApprovalRequest
+	(*ResolveToolApprovalResponse)(nil),                      // 261: superverse.v2.ResolveToolApprovalResponse
+	(*InterruptAgentRequest)(nil),                            // 262: superverse.v2.InterruptAgentRequest
+	(*InterruptAgentResponse)(nil),                           // 263: superverse.v2.InterruptAgentResponse
+	(*GetFlowDesignRequest)(nil),                             // 264: superverse.v2.GetFlowDesignRequest
+	(*GetFlowDesignResponse)(nil),                            // 265: superverse.v2.GetFlowDesignResponse
+	(*ListMockScenariosRequest)(nil),                         // 266: superverse.v2.ListMockScenariosRequest
+	(*ListAgentModelsRequest)(nil),                           // 267: superverse.v2.ListAgentModelsRequest
+	(*ListAgentModelsResponse)(nil),                          // 268: superverse.v2.ListAgentModelsResponse
+	(*AgentModelChoice)(nil),                                 // 269: superverse.v2.AgentModelChoice
+	(*ListMockScenariosResponse)(nil),                        // 270: superverse.v2.ListMockScenariosResponse
+	(*AgentMockScenario)(nil),                                // 271: superverse.v2.AgentMockScenario
+	(*AgentMockScenarioArgument)(nil),                        // 272: superverse.v2.AgentMockScenarioArgument
+	(*AgentMockScenarioInput)(nil),                           // 273: superverse.v2.AgentMockScenarioInput
+	(*AgentSnapshot)(nil),                                    // 274: superverse.v2.AgentSnapshot
+	(*AgentHistoryPage)(nil),                                 // 275: superverse.v2.AgentHistoryPage
+	(*AgentSequencedMessage)(nil),                            // 276: superverse.v2.AgentSequencedMessage
+	(*Actor)(nil),                                            // 277: superverse.v2.Actor
+	(*AgentMessage)(nil),                                     // 278: superverse.v2.AgentMessage
+	(*AgentAttachment)(nil),                                  // 279: superverse.v2.AgentAttachment
+	(*AgentNotification)(nil),                                // 280: superverse.v2.AgentNotification
+	(*AgentModelCallMetrics)(nil),                            // 281: superverse.v2.AgentModelCallMetrics
+	(*AgentToolExecutionMetrics)(nil),                        // 282: superverse.v2.AgentToolExecutionMetrics
+	(*AgentToolCall)(nil),                                    // 283: superverse.v2.AgentToolCall
+	(*AgentPendingUserMessage)(nil),                          // 284: superverse.v2.AgentPendingUserMessage
+	(*AgentUserMessage)(nil),                                 // 285: superverse.v2.AgentUserMessage
+	(*AgentDescription)(nil),                                 // 286: superverse.v2.AgentDescription
+	(*AgentStartingExample)(nil),                             // 287: superverse.v2.AgentStartingExample
+	(*AgentStartingExampleBuild)(nil),                        // 288: superverse.v2.AgentStartingExampleBuild
+	(*AgentMockProgress)(nil),                                // 289: superverse.v2.AgentMockProgress
+	(*AgentBackgroundCommand)(nil),                           // 290: superverse.v2.AgentBackgroundCommand
+	(*AgentSubagent)(nil),                                    // 291: superverse.v2.AgentSubagent
+	(*AgentPendingApproval)(nil),                             // 292: superverse.v2.AgentPendingApproval
+	(*AgentPendingTimer)(nil),                                // 293: superverse.v2.AgentPendingTimer
+	(*AgentPendingUserInput)(nil),                            // 294: superverse.v2.AgentPendingUserInput
+	(*AgentRequirements)(nil),                                // 295: superverse.v2.AgentRequirements
+	(*AgentRequirementsDraft)(nil),                           // 296: superverse.v2.AgentRequirementsDraft
+	(*AgentRequirementsDraftConnection)(nil),                 // 297: superverse.v2.AgentRequirementsDraftConnection
+	(*AgentRequirementsDraftFlow)(nil),                       // 298: superverse.v2.AgentRequirementsDraftFlow
+	(*AgentFlowDesignReference)(nil),                         // 299: superverse.v2.AgentFlowDesignReference
+	(*AgentFlowDesign)(nil),                                  // 300: superverse.v2.AgentFlowDesign
+	(*AgentFlowDesignFlow)(nil),                              // 301: superverse.v2.AgentFlowDesignFlow
+	(*AgentFlowDesignStep)(nil),                              // 302: superverse.v2.AgentFlowDesignStep
+	(*AgentFlowDesignWait)(nil),                              // 303: superverse.v2.AgentFlowDesignWait
+	(*AgentFlowDesignTransition)(nil),                        // 304: superverse.v2.AgentFlowDesignTransition
+	(*AgentFlowDesignChannel)(nil),                           // 305: superverse.v2.AgentFlowDesignChannel
+	(*AgentFlowDesignAction)(nil),                            // 306: superverse.v2.AgentFlowDesignAction
+	(*AgentFlowDesignAttribute)(nil),                         // 307: superverse.v2.AgentFlowDesignAttribute
+	(*AgentRequirementFeature)(nil),                          // 308: superverse.v2.AgentRequirementFeature
+	(*AgentRequirementConnection)(nil),                       // 309: superverse.v2.AgentRequirementConnection
+	(*AgentConfirmedRequirements)(nil),                       // 310: superverse.v2.AgentConfirmedRequirements
+	(*AgentUserInputQuestion)(nil),                           // 311: superverse.v2.AgentUserInputQuestion
+	(*AgentUserInputOption)(nil),                             // 312: superverse.v2.AgentUserInputOption
+	(*AgentUserInputAnswer)(nil),                             // 313: superverse.v2.AgentUserInputAnswer
+	(*AgentTodoList)(nil),                                    // 314: superverse.v2.AgentTodoList
+	(*AgentTodoItem)(nil),                                    // 315: superverse.v2.AgentTodoItem
+	(*AgentEvent)(nil),                                       // 316: superverse.v2.AgentEvent
+	(*AgentInputConsumption)(nil),                            // 317: superverse.v2.AgentInputConsumption
+	(*AgentAnswerQuestionsInput)(nil),                        // 318: superverse.v2.AgentAnswerQuestionsInput
+	(*GetPreviewRequest)(nil),                                // 319: superverse.v2.GetPreviewRequest
+	(*GetPreviewResponse)(nil),                               // 320: superverse.v2.GetPreviewResponse
+	(*StartPreviewRequest)(nil),                              // 321: superverse.v2.StartPreviewRequest
+	(*StartPreviewResponse)(nil),                             // 322: superverse.v2.StartPreviewResponse
+	(*StopPreviewRequest)(nil),                               // 323: superverse.v2.StopPreviewRequest
+	(*StopPreviewResponse)(nil),                              // 324: superverse.v2.StopPreviewResponse
+	(*PreparePreviewSourceRequest)(nil),                      // 325: superverse.v2.PreparePreviewSourceRequest
+	(*PreparePreviewSourceResponse)(nil),                     // 326: superverse.v2.PreparePreviewSourceResponse
+	(*GetPreviewDefinitionsRequest)(nil),                     // 327: superverse.v2.GetPreviewDefinitionsRequest
+	(*GetPreviewDefinitionsResponse)(nil),                    // 328: superverse.v2.GetPreviewDefinitionsResponse
+	(*UpdatePreviewAutoDeployRequest)(nil),                   // 329: superverse.v2.UpdatePreviewAutoDeployRequest
+	(*UpdatePreviewAutoDeployResponse)(nil),                  // 330: superverse.v2.UpdatePreviewAutoDeployResponse
+	(*PreviewSnapshot)(nil),                                  // 331: superverse.v2.PreviewSnapshot
+	(*AppliedPreviewConfiguration)(nil),                      // 332: superverse.v2.AppliedPreviewConfiguration
+	(*PreviewStartRecord)(nil),                               // 333: superverse.v2.PreviewStartRecord
+	(*PreviewDeploymentSnapshot)(nil),                        // 334: superverse.v2.PreviewDeploymentSnapshot
+	(*PreparedPreviewSourceSnapshot)(nil),                    // 335: superverse.v2.PreparedPreviewSourceSnapshot
+	(*ListReleaseCandidatesRequest)(nil),                     // 336: superverse.v2.ListReleaseCandidatesRequest
+	(*ListReleaseCandidatesResponse)(nil),                    // 337: superverse.v2.ListReleaseCandidatesResponse
+	(*PrepareReleaseRequest)(nil),                            // 338: superverse.v2.PrepareReleaseRequest
+	(*PrepareReleaseResponse)(nil),                           // 339: superverse.v2.PrepareReleaseResponse
+	(*StartReleaseBuildRequest)(nil),                         // 340: superverse.v2.StartReleaseBuildRequest
+	(*StartReleaseBuildResponse)(nil),                        // 341: superverse.v2.StartReleaseBuildResponse
+	(*RecoverReleaseBuildRequest)(nil),                       // 342: superverse.v2.RecoverReleaseBuildRequest
+	(*RecoverReleaseBuildResponse)(nil),                      // 343: superverse.v2.RecoverReleaseBuildResponse
+	(*CancelReleaseBuildRequest)(nil),                        // 344: superverse.v2.CancelReleaseBuildRequest
+	(*CancelReleaseBuildResponse)(nil),                       // 345: superverse.v2.CancelReleaseBuildResponse
+	(*GetReleaseBuildLogRequest)(nil),                        // 346: superverse.v2.GetReleaseBuildLogRequest
+	(*GetReleaseBuildLogResponse)(nil),                       // 347: superverse.v2.GetReleaseBuildLogResponse
+	(*ListReleasesRequest)(nil),                              // 348: superverse.v2.ListReleasesRequest
+	(*ListReleasesResponse)(nil),                             // 349: superverse.v2.ListReleasesResponse
+	(*GetReleaseRequest)(nil),                                // 350: superverse.v2.GetReleaseRequest
+	(*GetReleaseResponse)(nil),                               // 351: superverse.v2.GetReleaseResponse
+	(*WatchReleaseRequest)(nil),                              // 352: superverse.v2.WatchReleaseRequest
+	(*WatchReleaseResponse)(nil),                             // 353: superverse.v2.WatchReleaseResponse
+	(*ReleaseCandidate)(nil),                                 // 354: superverse.v2.ReleaseCandidate
+	(*ReleaseSnapshot)(nil),                                  // 355: superverse.v2.ReleaseSnapshot
+	(*PreparedReleaseSourceSnapshot)(nil),                    // 356: superverse.v2.PreparedReleaseSourceSnapshot
+	(*ReleaseBuildRevisionSnapshot)(nil),                     // 357: superverse.v2.ReleaseBuildRevisionSnapshot
+	(*Cancellation)(nil),                                     // 358: superverse.v2.Cancellation
+	(*PreviewValidation)(nil),                                // 359: superverse.v2.PreviewValidation
+	(*DeriveLiveConfigurationRequest)(nil),                   // 360: superverse.v2.DeriveLiveConfigurationRequest
+	(*DeriveLiveConfigurationResponse)(nil),                  // 361: superverse.v2.DeriveLiveConfigurationResponse
+	(*StartDeploymentRequest)(nil),                           // 362: superverse.v2.StartDeploymentRequest
+	(*StartDeploymentResponse)(nil),                          // 363: superverse.v2.StartDeploymentResponse
+	(*CancelDeploymentRequest)(nil),                          // 364: superverse.v2.CancelDeploymentRequest
+	(*CancelDeploymentResponse)(nil),                         // 365: superverse.v2.CancelDeploymentResponse
+	(*GetDeploymentRequest)(nil),                             // 366: superverse.v2.GetDeploymentRequest
+	(*GetDeploymentResponse)(nil),                            // 367: superverse.v2.GetDeploymentResponse
+	(*ListDeploymentsRequest)(nil),                           // 368: superverse.v2.ListDeploymentsRequest
+	(*ListDeploymentsResponse)(nil),                          // 369: superverse.v2.ListDeploymentsResponse
+	(*WatchDeploymentRequest)(nil),                           // 370: superverse.v2.WatchDeploymentRequest
+	(*WatchDeploymentResponse)(nil),                          // 371: superverse.v2.WatchDeploymentResponse
+	(*DeploymentSnapshot)(nil),                               // 372: superverse.v2.DeploymentSnapshot
+	(*GetFlowDefinitionsRequest)(nil),                        // 373: superverse.v2.GetFlowDefinitionsRequest
+	(*GetFlowDefinitionsResponse)(nil),                       // 374: superverse.v2.GetFlowDefinitionsResponse
+	(*GetFlowCatalogRequest)(nil),                            // 375: superverse.v2.GetFlowCatalogRequest
+	(*GetFlowCatalogResponse)(nil),                           // 376: superverse.v2.GetFlowCatalogResponse
+	(*SearchFlowsRequest)(nil),                               // 377: superverse.v2.SearchFlowsRequest
+	(*SearchFlowsResponse)(nil),                              // 378: superverse.v2.SearchFlowsResponse
+	(*GetFlowDisplayRequest)(nil),                            // 379: superverse.v2.GetFlowDisplayRequest
+	(*GetFlowDisplayResponse)(nil),                           // 380: superverse.v2.GetFlowDisplayResponse
+	(*UpdateFlowDisplayFieldRequest)(nil),                    // 381: superverse.v2.UpdateFlowDisplayFieldRequest
+	(*UpdateFlowDisplayFieldResponse)(nil),                   // 382: superverse.v2.UpdateFlowDisplayFieldResponse
+	(*InvokeFlowActionRequest)(nil),                          // 383: superverse.v2.InvokeFlowActionRequest
+	(*InvokeFlowActionResponse)(nil),                         // 384: superverse.v2.InvokeFlowActionResponse
+	(*StartFlowRequest)(nil),                                 // 385: superverse.v2.StartFlowRequest
+	(*StartFlowResponse)(nil),                                // 386: superverse.v2.StartFlowResponse
+	(*RecoverFlowStartRequest)(nil),                          // 387: superverse.v2.RecoverFlowStartRequest
+	(*RecoverFlowStartResponse)(nil),                         // 388: superverse.v2.RecoverFlowStartResponse
+	(*GetFlowSummaryRequest)(nil),                            // 389: superverse.v2.GetFlowSummaryRequest
+	(*GetFlowSummaryResponse)(nil),                           // 390: superverse.v2.GetFlowSummaryResponse
+	(*GetFlowStateRequest)(nil),                              // 391: superverse.v2.GetFlowStateRequest
+	(*GetFlowStateResponse)(nil),                             // 392: superverse.v2.GetFlowStateResponse
+	(*GetFlowHistoryRequest)(nil),                            // 393: superverse.v2.GetFlowHistoryRequest
+	(*GetFlowHistoryResponse)(nil),                           // 394: superverse.v2.GetFlowHistoryResponse
+	(*WaitFlowHistoryRequest)(nil),                           // 395: superverse.v2.WaitFlowHistoryRequest
+	(*WaitFlowHistoryResponse)(nil),                          // 396: superverse.v2.WaitFlowHistoryResponse
+	(*ReadFlowStreamRequest)(nil),                            // 397: superverse.v2.ReadFlowStreamRequest
+	(*ReadFlowStreamResponse)(nil),                           // 398: superverse.v2.ReadFlowStreamResponse
+	(*LoadFlowBlobsRequest)(nil),                             // 399: superverse.v2.LoadFlowBlobsRequest
+	(*LoadFlowBlobsResponse)(nil),                            // 400: superverse.v2.LoadFlowBlobsResponse
+	(*StopFlowRequest)(nil),                                  // 401: superverse.v2.StopFlowRequest
+	(*StopFlowResponse)(nil),                                 // 402: superverse.v2.StopFlowResponse
+	(*DeleteFlowChannelMessageRequest)(nil),                  // 403: superverse.v2.DeleteFlowChannelMessageRequest
+	(*DeleteFlowChannelMessageResponse)(nil),                 // 404: superverse.v2.DeleteFlowChannelMessageResponse
+	(*TimeTravelFlowRequest)(nil),                            // 405: superverse.v2.TimeTravelFlowRequest
+	(*TimeTravelFlowResponse)(nil),                           // 406: superverse.v2.TimeTravelFlowResponse
+	(*ListConnectionsRequest)(nil),                           // 407: superverse.v2.ListConnectionsRequest
+	(*ListConnectionsResponse)(nil),                          // 408: superverse.v2.ListConnectionsResponse
+	(*SelectTeamSpaceConnectionRequest)(nil),                 // 409: superverse.v2.SelectTeamSpaceConnectionRequest
+	(*SelectTeamSpaceConnectionResponse)(nil),                // 410: superverse.v2.SelectTeamSpaceConnectionResponse
+	(*ReleaseUnusedConnectionsRequest)(nil),                  // 411: superverse.v2.ReleaseUnusedConnectionsRequest
+	(*ReleaseUnusedConnectionsResponse)(nil),                 // 412: superverse.v2.ReleaseUnusedConnectionsResponse
+	(*StartConnectorUiSessionRequest)(nil),                   // 413: superverse.v2.StartConnectorUiSessionRequest
+	(*StartConnectorUiSessionResponse)(nil),                  // 414: superverse.v2.StartConnectorUiSessionResponse
+	(*InvokeProviderCommandRequest)(nil),                     // 415: superverse.v2.InvokeProviderCommandRequest
+	(*InvokeProviderCommandResponse)(nil),                    // 416: superverse.v2.InvokeProviderCommandResponse
+	(*SaveTriggerBindingRequest)(nil),                        // 417: superverse.v2.SaveTriggerBindingRequest
+	(*SaveTriggerBindingResponse)(nil),                       // 418: superverse.v2.SaveTriggerBindingResponse
+	(*SaveOperationConfigurationRequest)(nil),                // 419: superverse.v2.SaveOperationConfigurationRequest
+	(*SaveOperationConfigurationResponse)(nil),               // 420: superverse.v2.SaveOperationConfigurationResponse
+	(*GetApplicationEnvironmentRequest)(nil),                 // 421: superverse.v2.GetApplicationEnvironmentRequest
+	(*GetApplicationEnvironmentResponse)(nil),                // 422: superverse.v2.GetApplicationEnvironmentResponse
+	(*SaveApplicationEnvironmentRequest)(nil),                // 423: superverse.v2.SaveApplicationEnvironmentRequest
+	(*SaveApplicationEnvironmentResponse)(nil),               // 424: superverse.v2.SaveApplicationEnvironmentResponse
+	(*FlowApiTarget)(nil),                                    // 425: superverse.v2.FlowApiTarget
+	(*FlowApiContext)(nil),                                   // 426: superverse.v2.FlowApiContext
+	(*FlowApiDocument)(nil),                                  // 427: superverse.v2.FlowApiDocument
+	(*FlowSearchFilter)(nil),                                 // 428: superverse.v2.FlowSearchFilter
+	(*FlowBlobReference)(nil),                                // 429: superverse.v2.FlowBlobReference
+	(*ModelCredentialInfo)(nil),                              // 430: superverse.v2.ModelCredentialInfo
+	(*GetModelCredentialInfoRequest)(nil),                    // 431: superverse.v2.GetModelCredentialInfoRequest
+	(*GetModelCredentialInfoResponse)(nil),                   // 432: superverse.v2.GetModelCredentialInfoResponse
+	(*SetModelCredentialRequest)(nil),                        // 433: superverse.v2.SetModelCredentialRequest
+	(*SetModelCredentialResponse)(nil),                       // 434: superverse.v2.SetModelCredentialResponse
+	(*DeleteModelCredentialRequest)(nil),                     // 435: superverse.v2.DeleteModelCredentialRequest
+	(*DeleteModelCredentialResponse)(nil),                    // 436: superverse.v2.DeleteModelCredentialResponse
+	(*ListModelCredentialModelsRequest)(nil),                 // 437: superverse.v2.ListModelCredentialModelsRequest
+	(*ModelCredentialModel)(nil),                             // 438: superverse.v2.ModelCredentialModel
+	(*ListModelCredentialModelsResponse)(nil),                // 439: superverse.v2.ListModelCredentialModelsResponse
+	nil,                           // 440: superverse.v2.InvokeProviderCommandRequest.ParametersEntry
+	nil,                           // 441: superverse.v2.SaveApplicationEnvironmentRequest.ValuesEntry
+	nil,                           // 442: superverse.v2.SaveApplicationEnvironmentRequest.SecretsEntry
+	(*timestamppb.Timestamp)(nil), // 443: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),       // 444: google.protobuf.Struct
 }
 var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	0,   // 0: superverse.v2.Failure.remedy:type_name -> superverse.v2.FailureRemedy
 	1,   // 1: superverse.v2.Failure.owner:type_name -> superverse.v2.FailureOwner
-	442, // 2: superverse.v2.ResourceProgress.created_at:type_name -> google.protobuf.Timestamp
-	442, // 3: superverse.v2.PhaseTiming.started_at:type_name -> google.protobuf.Timestamp
-	443, // 4: superverse.v2.FlowDefinition.definition:type_name -> google.protobuf.Struct
-	88,  // 5: superverse.v2.AppManifestSnapshot.connectors:type_name -> superverse.v2.ConnectorRequirement
-	443, // 6: superverse.v2.AppManifestSnapshot.environment:type_name -> google.protobuf.Struct
-	87,  // 7: superverse.v2.AppManifestSnapshot.manifest_object:type_name -> superverse.v2.ObjectReference
-	87,  // 8: superverse.v2.AppManifestSnapshot.connector_contract_object:type_name -> superverse.v2.ObjectReference
-	87,  // 9: superverse.v2.AppManifestSnapshot.environment_contract_object:type_name -> superverse.v2.ObjectReference
-	89,  // 10: superverse.v2.ConnectorRequirement.trigger_bindings:type_name -> superverse.v2.ConnectorTriggerBinding
-	99,  // 11: superverse.v2.RegisterAccountResponse.login:type_name -> superverse.v2.AccountLogin
-	99,  // 12: superverse.v2.LoginResponse.login:type_name -> superverse.v2.AccountLogin
-	80,  // 13: superverse.v2.LogoutRequest.caller:type_name -> superverse.v2.CallerContext
-	80,  // 14: superverse.v2.GetCurrentAccountRequest.caller:type_name -> superverse.v2.CallerContext
-	98,  // 15: superverse.v2.GetCurrentAccountResponse.account:type_name -> superverse.v2.AccountSnapshot
-	98,  // 16: superverse.v2.AccountLogin.account:type_name -> superverse.v2.AccountSnapshot
-	442, // 17: superverse.v2.AccountLogin.expires_at:type_name -> google.protobuf.Timestamp
-	80,  // 18: superverse.v2.CreateTeamSpaceRequest.caller:type_name -> superverse.v2.CallerContext
+	443, // 2: superverse.v2.ResourceProgress.created_at:type_name -> google.protobuf.Timestamp
+	443, // 3: superverse.v2.PhaseTiming.started_at:type_name -> google.protobuf.Timestamp
+	444, // 4: superverse.v2.FlowDefinition.definition:type_name -> google.protobuf.Struct
+	89,  // 5: superverse.v2.AppManifestSnapshot.connectors:type_name -> superverse.v2.ConnectorRequirement
+	444, // 6: superverse.v2.AppManifestSnapshot.environment:type_name -> google.protobuf.Struct
+	88,  // 7: superverse.v2.AppManifestSnapshot.manifest_object:type_name -> superverse.v2.ObjectReference
+	88,  // 8: superverse.v2.AppManifestSnapshot.connector_contract_object:type_name -> superverse.v2.ObjectReference
+	88,  // 9: superverse.v2.AppManifestSnapshot.environment_contract_object:type_name -> superverse.v2.ObjectReference
+	90,  // 10: superverse.v2.ConnectorRequirement.trigger_bindings:type_name -> superverse.v2.ConnectorTriggerBinding
+	100, // 11: superverse.v2.RegisterAccountResponse.login:type_name -> superverse.v2.AccountLogin
+	100, // 12: superverse.v2.LoginResponse.login:type_name -> superverse.v2.AccountLogin
+	81,  // 13: superverse.v2.LogoutRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 14: superverse.v2.GetCurrentAccountRequest.caller:type_name -> superverse.v2.CallerContext
+	99,  // 15: superverse.v2.GetCurrentAccountResponse.account:type_name -> superverse.v2.AccountSnapshot
+	99,  // 16: superverse.v2.AccountLogin.account:type_name -> superverse.v2.AccountSnapshot
+	443, // 17: superverse.v2.AccountLogin.expires_at:type_name -> google.protobuf.Timestamp
+	81,  // 18: superverse.v2.CreateTeamSpaceRequest.caller:type_name -> superverse.v2.CallerContext
 	4,   // 19: superverse.v2.ListTeamSpacesRequest.statuses:type_name -> superverse.v2.TeamSpaceStatus
-	80,  // 20: superverse.v2.ListTeamSpacesRequest.caller:type_name -> superverse.v2.CallerContext
-	112, // 21: superverse.v2.ListTeamSpacesResponse.team_spaces:type_name -> superverse.v2.TeamSpaceSnapshot
-	80,  // 22: superverse.v2.GetTeamSpaceRequest.caller:type_name -> superverse.v2.CallerContext
-	112, // 23: superverse.v2.GetTeamSpaceResponse.team_space:type_name -> superverse.v2.TeamSpaceSnapshot
-	80,  // 24: superverse.v2.RenameTeamSpaceRequest.caller:type_name -> superverse.v2.CallerContext
-	112, // 25: superverse.v2.RenameTeamSpaceResponse.team_space:type_name -> superverse.v2.TeamSpaceSnapshot
-	80,  // 26: superverse.v2.DeleteTeamSpaceRequest.caller:type_name -> superverse.v2.CallerContext
-	112, // 27: superverse.v2.DeleteTeamSpaceResponse.team_space:type_name -> superverse.v2.TeamSpaceSnapshot
-	80,  // 28: superverse.v2.GetTeamSpaceOverviewRequest.caller:type_name -> superverse.v2.CallerContext
-	113, // 29: superverse.v2.GetTeamSpaceOverviewResponse.overview:type_name -> superverse.v2.TeamSpaceOverview
+	81,  // 20: superverse.v2.ListTeamSpacesRequest.caller:type_name -> superverse.v2.CallerContext
+	113, // 21: superverse.v2.ListTeamSpacesResponse.team_spaces:type_name -> superverse.v2.TeamSpaceSnapshot
+	81,  // 22: superverse.v2.GetTeamSpaceRequest.caller:type_name -> superverse.v2.CallerContext
+	113, // 23: superverse.v2.GetTeamSpaceResponse.team_space:type_name -> superverse.v2.TeamSpaceSnapshot
+	81,  // 24: superverse.v2.RenameTeamSpaceRequest.caller:type_name -> superverse.v2.CallerContext
+	113, // 25: superverse.v2.RenameTeamSpaceResponse.team_space:type_name -> superverse.v2.TeamSpaceSnapshot
+	81,  // 26: superverse.v2.DeleteTeamSpaceRequest.caller:type_name -> superverse.v2.CallerContext
+	113, // 27: superverse.v2.DeleteTeamSpaceResponse.team_space:type_name -> superverse.v2.TeamSpaceSnapshot
+	81,  // 28: superverse.v2.GetTeamSpaceOverviewRequest.caller:type_name -> superverse.v2.CallerContext
+	114, // 29: superverse.v2.GetTeamSpaceOverviewResponse.overview:type_name -> superverse.v2.TeamSpaceOverview
 	4,   // 30: superverse.v2.TeamSpaceSnapshot.status:type_name -> superverse.v2.TeamSpaceStatus
 	5,   // 31: superverse.v2.TeamSpaceSnapshot.caller_role:type_name -> superverse.v2.TeamSpaceRole
-	82,  // 32: superverse.v2.TeamSpaceSnapshot.failure:type_name -> superverse.v2.Failure
-	442, // 33: superverse.v2.TeamSpaceSnapshot.created_at:type_name -> google.protobuf.Timestamp
-	442, // 34: superverse.v2.TeamSpaceSnapshot.updated_at:type_name -> google.protobuf.Timestamp
-	112, // 35: superverse.v2.TeamSpaceOverview.team_space:type_name -> superverse.v2.TeamSpaceSnapshot
-	80,  // 36: superverse.v2.ListTeamSpaceMembersRequest.caller:type_name -> superverse.v2.CallerContext
-	122, // 37: superverse.v2.ListTeamSpaceMembersResponse.members:type_name -> superverse.v2.TeamSpaceMemberSnapshot
+	83,  // 32: superverse.v2.TeamSpaceSnapshot.failure:type_name -> superverse.v2.Failure
+	443, // 33: superverse.v2.TeamSpaceSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	443, // 34: superverse.v2.TeamSpaceSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	113, // 35: superverse.v2.TeamSpaceOverview.team_space:type_name -> superverse.v2.TeamSpaceSnapshot
+	81,  // 36: superverse.v2.ListTeamSpaceMembersRequest.caller:type_name -> superverse.v2.CallerContext
+	123, // 37: superverse.v2.ListTeamSpaceMembersResponse.members:type_name -> superverse.v2.TeamSpaceMemberSnapshot
 	5,   // 38: superverse.v2.AddTeamSpaceMemberRequest.role:type_name -> superverse.v2.TeamSpaceRole
-	80,  // 39: superverse.v2.AddTeamSpaceMemberRequest.caller:type_name -> superverse.v2.CallerContext
-	122, // 40: superverse.v2.AddTeamSpaceMemberResponse.members:type_name -> superverse.v2.TeamSpaceMemberSnapshot
+	81,  // 39: superverse.v2.AddTeamSpaceMemberRequest.caller:type_name -> superverse.v2.CallerContext
+	123, // 40: superverse.v2.AddTeamSpaceMemberResponse.members:type_name -> superverse.v2.TeamSpaceMemberSnapshot
 	5,   // 41: superverse.v2.SetTeamSpaceMemberRoleRequest.role:type_name -> superverse.v2.TeamSpaceRole
-	80,  // 42: superverse.v2.SetTeamSpaceMemberRoleRequest.caller:type_name -> superverse.v2.CallerContext
-	122, // 43: superverse.v2.SetTeamSpaceMemberRoleResponse.members:type_name -> superverse.v2.TeamSpaceMemberSnapshot
-	80,  // 44: superverse.v2.RemoveTeamSpaceMemberRequest.caller:type_name -> superverse.v2.CallerContext
-	122, // 45: superverse.v2.RemoveTeamSpaceMemberResponse.members:type_name -> superverse.v2.TeamSpaceMemberSnapshot
+	81,  // 42: superverse.v2.SetTeamSpaceMemberRoleRequest.caller:type_name -> superverse.v2.CallerContext
+	123, // 43: superverse.v2.SetTeamSpaceMemberRoleResponse.members:type_name -> superverse.v2.TeamSpaceMemberSnapshot
+	81,  // 44: superverse.v2.RemoveTeamSpaceMemberRequest.caller:type_name -> superverse.v2.CallerContext
+	123, // 45: superverse.v2.RemoveTeamSpaceMemberResponse.members:type_name -> superverse.v2.TeamSpaceMemberSnapshot
 	5,   // 46: superverse.v2.TeamSpaceMemberSnapshot.role:type_name -> superverse.v2.TeamSpaceRole
-	442, // 47: superverse.v2.TeamSpaceMemberSnapshot.added_at:type_name -> google.protobuf.Timestamp
-	80,  // 48: superverse.v2.ListConnectorCatalogRequest.caller:type_name -> superverse.v2.CallerContext
-	123, // 49: superverse.v2.ListConnectorCatalogResponse.connectors:type_name -> superverse.v2.ConnectorCatalogEntry
+	443, // 47: superverse.v2.TeamSpaceMemberSnapshot.added_at:type_name -> google.protobuf.Timestamp
+	81,  // 48: superverse.v2.ListConnectorCatalogRequest.caller:type_name -> superverse.v2.CallerContext
+	124, // 49: superverse.v2.ListConnectorCatalogResponse.connectors:type_name -> superverse.v2.ConnectorCatalogEntry
 	3,   // 50: superverse.v2.TeamSpaceConnectionUsage.scope:type_name -> superverse.v2.ProjectScope
 	8,   // 51: superverse.v2.TeamSpaceConnectionSnapshot.client_source:type_name -> superverse.v2.ConnectionClientSource
 	7,   // 52: superverse.v2.TeamSpaceConnectionSnapshot.credential_status:type_name -> superverse.v2.CredentialStatus
-	442, // 53: superverse.v2.TeamSpaceConnectionSnapshot.credential_issued_at:type_name -> google.protobuf.Timestamp
-	442, // 54: superverse.v2.TeamSpaceConnectionSnapshot.credential_expires_at:type_name -> google.protobuf.Timestamp
+	443, // 53: superverse.v2.TeamSpaceConnectionSnapshot.credential_issued_at:type_name -> google.protobuf.Timestamp
+	443, // 54: superverse.v2.TeamSpaceConnectionSnapshot.credential_expires_at:type_name -> google.protobuf.Timestamp
 	6,   // 55: superverse.v2.TeamSpaceConnectionSnapshot.status:type_name -> superverse.v2.TeamSpaceConnectionStatus
-	82,  // 56: superverse.v2.TeamSpaceConnectionSnapshot.last_failure:type_name -> superverse.v2.Failure
-	442, // 57: superverse.v2.TeamSpaceConnectionSnapshot.created_at:type_name -> google.protobuf.Timestamp
-	442, // 58: superverse.v2.TeamSpaceConnectionSnapshot.updated_at:type_name -> google.protobuf.Timestamp
-	126, // 59: superverse.v2.TeamSpaceConnectionSnapshot.usages:type_name -> superverse.v2.TeamSpaceConnectionUsage
-	128, // 60: superverse.v2.TeamSpaceConnectionSnapshot.unrouted_events:type_name -> superverse.v2.UnroutedEvents
-	442, // 61: superverse.v2.UnroutedEvents.last_at:type_name -> google.protobuf.Timestamp
+	83,  // 56: superverse.v2.TeamSpaceConnectionSnapshot.last_failure:type_name -> superverse.v2.Failure
+	443, // 57: superverse.v2.TeamSpaceConnectionSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	443, // 58: superverse.v2.TeamSpaceConnectionSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	127, // 59: superverse.v2.TeamSpaceConnectionSnapshot.usages:type_name -> superverse.v2.TeamSpaceConnectionUsage
+	129, // 60: superverse.v2.TeamSpaceConnectionSnapshot.unrouted_events:type_name -> superverse.v2.UnroutedEvents
+	443, // 61: superverse.v2.UnroutedEvents.last_at:type_name -> google.protobuf.Timestamp
 	6,   // 62: superverse.v2.ListTeamSpaceConnectionsRequest.statuses:type_name -> superverse.v2.TeamSpaceConnectionStatus
-	80,  // 63: superverse.v2.ListTeamSpaceConnectionsRequest.caller:type_name -> superverse.v2.CallerContext
-	127, // 64: superverse.v2.ListTeamSpaceConnectionsResponse.connections:type_name -> superverse.v2.TeamSpaceConnectionSnapshot
-	80,  // 65: superverse.v2.GetTeamSpaceConnectionRequest.caller:type_name -> superverse.v2.CallerContext
-	127, // 66: superverse.v2.GetTeamSpaceConnectionResponse.connection:type_name -> superverse.v2.TeamSpaceConnectionSnapshot
+	81,  // 63: superverse.v2.ListTeamSpaceConnectionsRequest.caller:type_name -> superverse.v2.CallerContext
+	128, // 64: superverse.v2.ListTeamSpaceConnectionsResponse.connections:type_name -> superverse.v2.TeamSpaceConnectionSnapshot
+	81,  // 65: superverse.v2.GetTeamSpaceConnectionRequest.caller:type_name -> superverse.v2.CallerContext
+	128, // 66: superverse.v2.GetTeamSpaceConnectionResponse.connection:type_name -> superverse.v2.TeamSpaceConnectionSnapshot
 	8,   // 67: superverse.v2.CreateTeamSpaceConnectionRequest.client_source:type_name -> superverse.v2.ConnectionClientSource
-	80,  // 68: superverse.v2.CreateTeamSpaceConnectionRequest.caller:type_name -> superverse.v2.CallerContext
-	80,  // 69: superverse.v2.UpdateTeamSpaceConnectionRequest.caller:type_name -> superverse.v2.CallerContext
-	127, // 70: superverse.v2.UpdateTeamSpaceConnectionResponse.connection:type_name -> superverse.v2.TeamSpaceConnectionSnapshot
-	80,  // 71: superverse.v2.DeleteTeamSpaceConnectionRequest.caller:type_name -> superverse.v2.CallerContext
-	140, // 72: superverse.v2.StartTeamSpaceConnectionOAuthRequest.new_connection:type_name -> superverse.v2.NewTeamSpaceConnection
-	80,  // 73: superverse.v2.StartTeamSpaceConnectionOAuthRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 68: superverse.v2.CreateTeamSpaceConnectionRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 69: superverse.v2.UpdateTeamSpaceConnectionRequest.caller:type_name -> superverse.v2.CallerContext
+	128, // 70: superverse.v2.UpdateTeamSpaceConnectionResponse.connection:type_name -> superverse.v2.TeamSpaceConnectionSnapshot
+	81,  // 71: superverse.v2.DeleteTeamSpaceConnectionRequest.caller:type_name -> superverse.v2.CallerContext
+	141, // 72: superverse.v2.StartTeamSpaceConnectionOAuthRequest.new_connection:type_name -> superverse.v2.NewTeamSpaceConnection
+	81,  // 73: superverse.v2.StartTeamSpaceConnectionOAuthRequest.caller:type_name -> superverse.v2.CallerContext
 	8,   // 74: superverse.v2.NewTeamSpaceConnection.client_source:type_name -> superverse.v2.ConnectionClientSource
-	442, // 75: superverse.v2.StartTeamSpaceConnectionOAuthResponse.expires_at:type_name -> google.protobuf.Timestamp
-	80,  // 76: superverse.v2.CompleteTeamSpaceConnectionOAuthRequest.caller:type_name -> superverse.v2.CallerContext
-	127, // 77: superverse.v2.CompleteTeamSpaceConnectionOAuthResponse.connection:type_name -> superverse.v2.TeamSpaceConnectionSnapshot
-	80,  // 78: superverse.v2.StartTeamSpaceConnectionUiSessionRequest.caller:type_name -> superverse.v2.CallerContext
-	80,  // 79: superverse.v2.InvokeTeamSpaceConnectionCommandRequest.caller:type_name -> superverse.v2.CallerContext
-	170, // 80: superverse.v2.CreateProjectRequest.managed_repository:type_name -> superverse.v2.ManagedRepositorySource
+	443, // 75: superverse.v2.StartTeamSpaceConnectionOAuthResponse.expires_at:type_name -> google.protobuf.Timestamp
+	81,  // 76: superverse.v2.CompleteTeamSpaceConnectionOAuthRequest.caller:type_name -> superverse.v2.CallerContext
+	128, // 77: superverse.v2.CompleteTeamSpaceConnectionOAuthResponse.connection:type_name -> superverse.v2.TeamSpaceConnectionSnapshot
+	81,  // 78: superverse.v2.StartTeamSpaceConnectionUiSessionRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 79: superverse.v2.InvokeTeamSpaceConnectionCommandRequest.caller:type_name -> superverse.v2.CallerContext
+	171, // 80: superverse.v2.CreateProjectRequest.managed_repository:type_name -> superverse.v2.ManagedRepositorySource
 	36,  // 81: superverse.v2.CreateProjectRequest.model:type_name -> superverse.v2.AgentModel
-	80,  // 82: superverse.v2.CreateProjectRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 82: superverse.v2.CreateProjectRequest.caller:type_name -> superverse.v2.CallerContext
 	11,  // 83: superverse.v2.ListProjectsRequest.statuses:type_name -> superverse.v2.ProjectStatus
-	80,  // 84: superverse.v2.ListProjectsRequest.caller:type_name -> superverse.v2.CallerContext
-	173, // 85: superverse.v2.ListProjectsResponse.projects:type_name -> superverse.v2.ProjectSnapshot
-	80,  // 86: superverse.v2.GetProjectRequest.caller:type_name -> superverse.v2.CallerContext
-	173, // 87: superverse.v2.GetProjectResponse.project:type_name -> superverse.v2.ProjectSnapshot
-	80,  // 88: superverse.v2.DeleteProjectRequest.caller:type_name -> superverse.v2.CallerContext
-	173, // 89: superverse.v2.DeleteProjectResponse.project:type_name -> superverse.v2.ProjectSnapshot
-	80,  // 90: superverse.v2.WatchProjectRequest.caller:type_name -> superverse.v2.CallerContext
-	173, // 91: superverse.v2.WatchProjectResponse.snapshot:type_name -> superverse.v2.ProjectSnapshot
-	83,  // 92: superverse.v2.WatchProjectResponse.progress:type_name -> superverse.v2.ResourceProgress
+	81,  // 84: superverse.v2.ListProjectsRequest.caller:type_name -> superverse.v2.CallerContext
+	174, // 85: superverse.v2.ListProjectsResponse.projects:type_name -> superverse.v2.ProjectSnapshot
+	81,  // 86: superverse.v2.GetProjectRequest.caller:type_name -> superverse.v2.CallerContext
+	174, // 87: superverse.v2.GetProjectResponse.project:type_name -> superverse.v2.ProjectSnapshot
+	81,  // 88: superverse.v2.DeleteProjectRequest.caller:type_name -> superverse.v2.CallerContext
+	174, // 89: superverse.v2.DeleteProjectResponse.project:type_name -> superverse.v2.ProjectSnapshot
+	81,  // 90: superverse.v2.WatchProjectRequest.caller:type_name -> superverse.v2.CallerContext
+	174, // 91: superverse.v2.WatchProjectResponse.snapshot:type_name -> superverse.v2.ProjectSnapshot
+	84,  // 92: superverse.v2.WatchProjectResponse.progress:type_name -> superverse.v2.ResourceProgress
 	3,   // 93: superverse.v2.ListEnvironmentEventsRequest.scope:type_name -> superverse.v2.ProjectScope
-	80,  // 94: superverse.v2.ListEnvironmentEventsRequest.caller:type_name -> superverse.v2.CallerContext
-	160, // 95: superverse.v2.ListEnvironmentEventsResponse.events:type_name -> superverse.v2.EnvironmentEvent
-	46,  // 96: superverse.v2.EnvironmentEvent.kind:type_name -> superverse.v2.EnvironmentEvent.Kind
-	442, // 97: superverse.v2.EnvironmentEvent.occurred_at:type_name -> google.protobuf.Timestamp
+	81,  // 94: superverse.v2.ListEnvironmentEventsRequest.caller:type_name -> superverse.v2.CallerContext
+	161, // 95: superverse.v2.ListEnvironmentEventsResponse.events:type_name -> superverse.v2.EnvironmentEvent
+	47,  // 96: superverse.v2.EnvironmentEvent.kind:type_name -> superverse.v2.EnvironmentEvent.Kind
+	443, // 97: superverse.v2.EnvironmentEvent.occurred_at:type_name -> google.protobuf.Timestamp
 	2,   // 98: superverse.v2.EnvironmentEvent.outcome:type_name -> superverse.v2.StartOutcome
-	82,  // 99: superverse.v2.EnvironmentEvent.failure:type_name -> superverse.v2.Failure
-	84,  // 100: superverse.v2.EnvironmentEvent.phase_timings:type_name -> superverse.v2.PhaseTiming
-	81,  // 101: superverse.v2.EnvironmentEvent.version:type_name -> superverse.v2.CommitVersion
+	83,  // 99: superverse.v2.EnvironmentEvent.failure:type_name -> superverse.v2.Failure
+	85,  // 100: superverse.v2.EnvironmentEvent.phase_timings:type_name -> superverse.v2.PhaseTiming
+	82,  // 101: superverse.v2.EnvironmentEvent.version:type_name -> superverse.v2.CommitVersion
 	3,   // 102: superverse.v2.ListRecentTriggerEventsRequest.scope:type_name -> superverse.v2.ProjectScope
-	80,  // 103: superverse.v2.ListRecentTriggerEventsRequest.caller:type_name -> superverse.v2.CallerContext
-	163, // 104: superverse.v2.ListRecentTriggerEventsResponse.events:type_name -> superverse.v2.RecentTriggerEvent
-	442, // 105: superverse.v2.ListRecentTriggerEventsResponse.buffer_started_at:type_name -> google.protobuf.Timestamp
-	442, // 106: superverse.v2.RecentTriggerEvent.received_at:type_name -> google.protobuf.Timestamp
-	47,  // 107: superverse.v2.RecentTriggerEvent.fate:type_name -> superverse.v2.RecentTriggerEvent.Fate
-	178, // 108: superverse.v2.GetProjectConfigurationRequest.target:type_name -> superverse.v2.ProjectConfigurationTarget
-	80,  // 109: superverse.v2.GetProjectConfigurationRequest.caller:type_name -> superverse.v2.CallerContext
-	179, // 110: superverse.v2.GetProjectConfigurationResponse.configuration:type_name -> superverse.v2.ProjectConfigurationSnapshot
-	178, // 111: superverse.v2.ValidateProjectConfigurationRequest.target:type_name -> superverse.v2.ProjectConfigurationTarget
-	80,  // 112: superverse.v2.ValidateProjectConfigurationRequest.caller:type_name -> superverse.v2.CallerContext
-	179, // 113: superverse.v2.ValidateProjectConfigurationResponse.configuration:type_name -> superverse.v2.ProjectConfigurationSnapshot
-	80,  // 114: superverse.v2.RemoveLiveRequest.caller:type_name -> superverse.v2.CallerContext
-	173, // 115: superverse.v2.RemoveLiveResponse.project:type_name -> superverse.v2.ProjectSnapshot
-	171, // 116: superverse.v2.ManagedRepositorySource.example:type_name -> superverse.v2.ExampleReference
+	81,  // 103: superverse.v2.ListRecentTriggerEventsRequest.caller:type_name -> superverse.v2.CallerContext
+	164, // 104: superverse.v2.ListRecentTriggerEventsResponse.events:type_name -> superverse.v2.RecentTriggerEvent
+	443, // 105: superverse.v2.ListRecentTriggerEventsResponse.buffer_started_at:type_name -> google.protobuf.Timestamp
+	443, // 106: superverse.v2.RecentTriggerEvent.received_at:type_name -> google.protobuf.Timestamp
+	48,  // 107: superverse.v2.RecentTriggerEvent.fate:type_name -> superverse.v2.RecentTriggerEvent.Fate
+	179, // 108: superverse.v2.GetProjectConfigurationRequest.target:type_name -> superverse.v2.ProjectConfigurationTarget
+	81,  // 109: superverse.v2.GetProjectConfigurationRequest.caller:type_name -> superverse.v2.CallerContext
+	180, // 110: superverse.v2.GetProjectConfigurationResponse.configuration:type_name -> superverse.v2.ProjectConfigurationSnapshot
+	179, // 111: superverse.v2.ValidateProjectConfigurationRequest.target:type_name -> superverse.v2.ProjectConfigurationTarget
+	81,  // 112: superverse.v2.ValidateProjectConfigurationRequest.caller:type_name -> superverse.v2.CallerContext
+	180, // 113: superverse.v2.ValidateProjectConfigurationResponse.configuration:type_name -> superverse.v2.ProjectConfigurationSnapshot
+	81,  // 114: superverse.v2.RemoveLiveRequest.caller:type_name -> superverse.v2.CallerContext
+	174, // 115: superverse.v2.RemoveLiveResponse.project:type_name -> superverse.v2.ProjectSnapshot
+	172, // 116: superverse.v2.ManagedRepositorySource.example:type_name -> superverse.v2.ExampleReference
 	11,  // 117: superverse.v2.ProjectSnapshot.status:type_name -> superverse.v2.ProjectStatus
-	172, // 118: superverse.v2.ProjectSnapshot.repository:type_name -> superverse.v2.Repository
-	177, // 119: superverse.v2.ProjectSnapshot.setup:type_name -> superverse.v2.SetupSnapshot
-	86,  // 120: superverse.v2.ProjectSnapshot.app_manifest:type_name -> superverse.v2.AppManifestSnapshot
-	175, // 121: superverse.v2.ProjectSnapshot.live:type_name -> superverse.v2.ProjectLive
-	82,  // 122: superverse.v2.ProjectSnapshot.failure:type_name -> superverse.v2.Failure
-	442, // 123: superverse.v2.ProjectSnapshot.created_at:type_name -> google.protobuf.Timestamp
-	442, // 124: superverse.v2.ProjectSnapshot.updated_at:type_name -> google.protobuf.Timestamp
-	176, // 125: superverse.v2.ProjectSnapshot.active_deployment:type_name -> superverse.v2.ActiveDeploymentReference
-	82,  // 126: superverse.v2.ProjectSnapshot.session_start_failure:type_name -> superverse.v2.Failure
+	173, // 118: superverse.v2.ProjectSnapshot.repository:type_name -> superverse.v2.Repository
+	178, // 119: superverse.v2.ProjectSnapshot.setup:type_name -> superverse.v2.SetupSnapshot
+	87,  // 120: superverse.v2.ProjectSnapshot.app_manifest:type_name -> superverse.v2.AppManifestSnapshot
+	176, // 121: superverse.v2.ProjectSnapshot.live:type_name -> superverse.v2.ProjectLive
+	83,  // 122: superverse.v2.ProjectSnapshot.failure:type_name -> superverse.v2.Failure
+	443, // 123: superverse.v2.ProjectSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	443, // 124: superverse.v2.ProjectSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	177, // 125: superverse.v2.ProjectSnapshot.active_deployment:type_name -> superverse.v2.ActiveDeploymentReference
+	83,  // 126: superverse.v2.ProjectSnapshot.session_start_failure:type_name -> superverse.v2.Failure
 	14,  // 127: superverse.v2.ProjectSnapshot.caller_role:type_name -> superverse.v2.ProjectRole
-	174, // 128: superverse.v2.ProjectSnapshot.example:type_name -> superverse.v2.ProjectExample
-	81,  // 129: superverse.v2.ProjectLive.version:type_name -> superverse.v2.CommitVersion
+	175, // 128: superverse.v2.ProjectSnapshot.example:type_name -> superverse.v2.ProjectExample
+	82,  // 129: superverse.v2.ProjectLive.version:type_name -> superverse.v2.CommitVersion
 	12,  // 130: superverse.v2.SetupSnapshot.status:type_name -> superverse.v2.SetupStatus
-	82,  // 131: superverse.v2.SetupSnapshot.failure:type_name -> superverse.v2.Failure
+	83,  // 131: superverse.v2.SetupSnapshot.failure:type_name -> superverse.v2.Failure
 	3,   // 132: superverse.v2.ProjectConfigurationTarget.scope:type_name -> superverse.v2.ProjectScope
 	3,   // 133: superverse.v2.ProjectConfigurationSnapshot.scope:type_name -> superverse.v2.ProjectScope
 	13,  // 134: superverse.v2.ProjectConfigurationSnapshot.status:type_name -> superverse.v2.ConfigurationStatus
-	86,  // 135: superverse.v2.ProjectConfigurationSnapshot.app_manifest:type_name -> superverse.v2.AppManifestSnapshot
-	183, // 136: superverse.v2.ProjectConfigurationSnapshot.validation:type_name -> superverse.v2.ProjectConfigurationValidation
-	182, // 137: superverse.v2.ProjectConfigurationSnapshot.requirement_gaps:type_name -> superverse.v2.ConfigurationRequirementGap
-	181, // 138: superverse.v2.ProjectConfigurationSnapshot.items:type_name -> superverse.v2.ConfigurationItem
-	48,  // 139: superverse.v2.ConfigurationItemKey.kind:type_name -> superverse.v2.ConfigurationItemKey.Kind
-	180, // 140: superverse.v2.ConfigurationItem.key:type_name -> superverse.v2.ConfigurationItemKey
-	49,  // 141: superverse.v2.ConfigurationItem.state:type_name -> superverse.v2.ConfigurationItem.State
+	87,  // 135: superverse.v2.ProjectConfigurationSnapshot.app_manifest:type_name -> superverse.v2.AppManifestSnapshot
+	184, // 136: superverse.v2.ProjectConfigurationSnapshot.validation:type_name -> superverse.v2.ProjectConfigurationValidation
+	183, // 137: superverse.v2.ProjectConfigurationSnapshot.requirement_gaps:type_name -> superverse.v2.ConfigurationRequirementGap
+	182, // 138: superverse.v2.ProjectConfigurationSnapshot.items:type_name -> superverse.v2.ConfigurationItem
+	49,  // 139: superverse.v2.ConfigurationItemKey.kind:type_name -> superverse.v2.ConfigurationItemKey.Kind
+	181, // 140: superverse.v2.ConfigurationItem.key:type_name -> superverse.v2.ConfigurationItemKey
+	50,  // 141: superverse.v2.ConfigurationItem.state:type_name -> superverse.v2.ConfigurationItem.State
 	10,  // 142: superverse.v2.ConfigurationItem.warnings:type_name -> superverse.v2.ConfigurationItemWarning
 	9,   // 143: superverse.v2.ConfigurationItem.follow_refusal:type_name -> superverse.v2.ConfigurationFollowRefusal
-	50,  // 144: superverse.v2.ConfigurationRequirementGap.kind:type_name -> superverse.v2.ConfigurationRequirementGap.Kind
+	51,  // 144: superverse.v2.ConfigurationRequirementGap.kind:type_name -> superverse.v2.ConfigurationRequirementGap.Kind
 	9,   // 145: superverse.v2.ConfigurationRequirementGap.follow_refusal:type_name -> superverse.v2.ConfigurationFollowRefusal
-	80,  // 146: superverse.v2.ListProjectMembersRequest.caller:type_name -> superverse.v2.CallerContext
-	192, // 147: superverse.v2.ListProjectMembersResponse.members:type_name -> superverse.v2.ProjectMemberSnapshot
+	81,  // 146: superverse.v2.ListProjectMembersRequest.caller:type_name -> superverse.v2.CallerContext
+	193, // 147: superverse.v2.ListProjectMembersResponse.members:type_name -> superverse.v2.ProjectMemberSnapshot
 	14,  // 148: superverse.v2.AddProjectMemberRequest.role:type_name -> superverse.v2.ProjectRole
-	80,  // 149: superverse.v2.AddProjectMemberRequest.caller:type_name -> superverse.v2.CallerContext
-	192, // 150: superverse.v2.AddProjectMemberResponse.members:type_name -> superverse.v2.ProjectMemberSnapshot
+	81,  // 149: superverse.v2.AddProjectMemberRequest.caller:type_name -> superverse.v2.CallerContext
+	193, // 150: superverse.v2.AddProjectMemberResponse.members:type_name -> superverse.v2.ProjectMemberSnapshot
 	14,  // 151: superverse.v2.SetProjectMemberRoleRequest.role:type_name -> superverse.v2.ProjectRole
-	80,  // 152: superverse.v2.SetProjectMemberRoleRequest.caller:type_name -> superverse.v2.CallerContext
-	192, // 153: superverse.v2.SetProjectMemberRoleResponse.members:type_name -> superverse.v2.ProjectMemberSnapshot
-	80,  // 154: superverse.v2.RemoveProjectMemberRequest.caller:type_name -> superverse.v2.CallerContext
-	192, // 155: superverse.v2.RemoveProjectMemberResponse.members:type_name -> superverse.v2.ProjectMemberSnapshot
+	81,  // 152: superverse.v2.SetProjectMemberRoleRequest.caller:type_name -> superverse.v2.CallerContext
+	193, // 153: superverse.v2.SetProjectMemberRoleResponse.members:type_name -> superverse.v2.ProjectMemberSnapshot
+	81,  // 154: superverse.v2.RemoveProjectMemberRequest.caller:type_name -> superverse.v2.CallerContext
+	193, // 155: superverse.v2.RemoveProjectMemberResponse.members:type_name -> superverse.v2.ProjectMemberSnapshot
 	14,  // 156: superverse.v2.ProjectMemberSnapshot.role:type_name -> superverse.v2.ProjectRole
-	442, // 157: superverse.v2.ProjectMemberSnapshot.added_at:type_name -> google.protobuf.Timestamp
-	80,  // 158: superverse.v2.GetSessionRequest.caller:type_name -> superverse.v2.CallerContext
-	201, // 159: superverse.v2.GetSessionResponse.session:type_name -> superverse.v2.SessionSnapshot
-	80,  // 160: superverse.v2.WatchSessionRequest.caller:type_name -> superverse.v2.CallerContext
-	201, // 161: superverse.v2.WatchSessionResponse.snapshot:type_name -> superverse.v2.SessionSnapshot
-	204, // 162: superverse.v2.WatchSessionResponse.progress:type_name -> superverse.v2.SessionProgress
-	80,  // 163: superverse.v2.ListArchivedMessagesRequest.caller:type_name -> superverse.v2.CallerContext
-	80,  // 164: superverse.v2.RenewWorkspaceRequest.caller:type_name -> superverse.v2.CallerContext
-	274, // 165: superverse.v2.ListArchivedMessagesResponse.history:type_name -> superverse.v2.AgentHistoryPage
+	443, // 157: superverse.v2.ProjectMemberSnapshot.added_at:type_name -> google.protobuf.Timestamp
+	81,  // 158: superverse.v2.GetSessionRequest.caller:type_name -> superverse.v2.CallerContext
+	202, // 159: superverse.v2.GetSessionResponse.session:type_name -> superverse.v2.SessionSnapshot
+	81,  // 160: superverse.v2.WatchSessionRequest.caller:type_name -> superverse.v2.CallerContext
+	202, // 161: superverse.v2.WatchSessionResponse.snapshot:type_name -> superverse.v2.SessionSnapshot
+	205, // 162: superverse.v2.WatchSessionResponse.progress:type_name -> superverse.v2.SessionProgress
+	81,  // 163: superverse.v2.ListArchivedMessagesRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 164: superverse.v2.RenewWorkspaceRequest.caller:type_name -> superverse.v2.CallerContext
+	275, // 165: superverse.v2.ListArchivedMessagesResponse.history:type_name -> superverse.v2.AgentHistoryPage
 	15,  // 166: superverse.v2.SessionSnapshot.status:type_name -> superverse.v2.SessionStatus
-	273, // 167: superverse.v2.SessionSnapshot.agent:type_name -> superverse.v2.AgentSnapshot
-	442, // 168: superverse.v2.SessionSnapshot.created_at:type_name -> google.protobuf.Timestamp
-	82,  // 169: superverse.v2.SessionSnapshot.failure:type_name -> superverse.v2.Failure
-	442, // 170: superverse.v2.SessionSnapshot.updated_at:type_name -> google.protobuf.Timestamp
-	203, // 171: superverse.v2.SessionSnapshot.workspace:type_name -> superverse.v2.SessionWorkspaceSnapshot
-	330, // 172: superverse.v2.SessionSnapshot.preview:type_name -> superverse.v2.PreviewSnapshot
-	202, // 173: superverse.v2.SessionSnapshot.connector_contributions:type_name -> superverse.v2.ConnectorContribution
-	51,  // 174: superverse.v2.ConnectorContribution.kind:type_name -> superverse.v2.ConnectorContribution.Kind
-	52,  // 175: superverse.v2.ConnectorContribution.status:type_name -> superverse.v2.ConnectorContribution.Status
-	53,  // 176: superverse.v2.ConnectorContribution.location:type_name -> superverse.v2.ConnectorContribution.Location
-	54,  // 177: superverse.v2.ConnectorContribution.release_candidate_status:type_name -> superverse.v2.ConnectorContribution.ReleaseCandidateStatus
-	55,  // 178: superverse.v2.ConnectorContribution.release_candidate_failure_kind:type_name -> superverse.v2.ConnectorContribution.ReleaseCandidateFailureReason
+	274, // 167: superverse.v2.SessionSnapshot.agent:type_name -> superverse.v2.AgentSnapshot
+	443, // 168: superverse.v2.SessionSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	83,  // 169: superverse.v2.SessionSnapshot.failure:type_name -> superverse.v2.Failure
+	443, // 170: superverse.v2.SessionSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	204, // 171: superverse.v2.SessionSnapshot.workspace:type_name -> superverse.v2.SessionWorkspaceSnapshot
+	331, // 172: superverse.v2.SessionSnapshot.preview:type_name -> superverse.v2.PreviewSnapshot
+	203, // 173: superverse.v2.SessionSnapshot.connector_contributions:type_name -> superverse.v2.ConnectorContribution
+	52,  // 174: superverse.v2.ConnectorContribution.kind:type_name -> superverse.v2.ConnectorContribution.Kind
+	53,  // 175: superverse.v2.ConnectorContribution.status:type_name -> superverse.v2.ConnectorContribution.Status
+	54,  // 176: superverse.v2.ConnectorContribution.location:type_name -> superverse.v2.ConnectorContribution.Location
+	55,  // 177: superverse.v2.ConnectorContribution.release_candidate_status:type_name -> superverse.v2.ConnectorContribution.ReleaseCandidateStatus
+	56,  // 178: superverse.v2.ConnectorContribution.release_candidate_failure_kind:type_name -> superverse.v2.ConnectorContribution.ReleaseCandidateFailureReason
 	16,  // 179: superverse.v2.SessionWorkspaceSnapshot.status:type_name -> superverse.v2.WorkspaceStatus
 	17,  // 180: superverse.v2.SessionWorkspaceSnapshot.workspace_state:type_name -> superverse.v2.WorkspaceState
-	442, // 181: superverse.v2.SessionWorkspaceSnapshot.updated_at:type_name -> google.protobuf.Timestamp
-	82,  // 182: superverse.v2.SessionWorkspaceSnapshot.failure:type_name -> superverse.v2.Failure
-	442, // 183: superverse.v2.SessionWorkspaceSnapshot.expires_at:type_name -> google.protobuf.Timestamp
-	84,  // 184: superverse.v2.SessionWorkspaceSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
-	315, // 185: superverse.v2.SessionProgress.activity:type_name -> superverse.v2.AgentEvent
-	295, // 186: superverse.v2.SessionProgress.requirements_draft:type_name -> superverse.v2.AgentRequirementsDraft
-	442, // 187: superverse.v2.SessionProgress.created_at:type_name -> google.protobuf.Timestamp
-	80,  // 188: superverse.v2.CreateRemoteAgentPairingRequest.caller:type_name -> superverse.v2.CallerContext
-	442, // 189: superverse.v2.CreateRemoteAgentPairingResponse.expires_at:type_name -> google.protobuf.Timestamp
-	276, // 190: superverse.v2.CreateRemoteAgentPairingResponse.current_owner:type_name -> superverse.v2.Actor
-	80,  // 191: superverse.v2.ListRemoteAgentConnectionsRequest.caller:type_name -> superverse.v2.CallerContext
-	216, // 192: superverse.v2.ListRemoteAgentConnectionsResponse.connections:type_name -> superverse.v2.RemoteAgentConnection
-	276, // 193: superverse.v2.ListRemoteAgentConnectionsResponse.current_owner:type_name -> superverse.v2.Actor
-	80,  // 194: superverse.v2.RevokeRemoteAgentConnectionRequest.caller:type_name -> superverse.v2.CallerContext
-	80,  // 195: superverse.v2.SetSessionExecutorRequest.caller:type_name -> superverse.v2.CallerContext
+	443, // 181: superverse.v2.SessionWorkspaceSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	83,  // 182: superverse.v2.SessionWorkspaceSnapshot.failure:type_name -> superverse.v2.Failure
+	443, // 183: superverse.v2.SessionWorkspaceSnapshot.expires_at:type_name -> google.protobuf.Timestamp
+	85,  // 184: superverse.v2.SessionWorkspaceSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
+	316, // 185: superverse.v2.SessionProgress.activity:type_name -> superverse.v2.AgentEvent
+	296, // 186: superverse.v2.SessionProgress.requirements_draft:type_name -> superverse.v2.AgentRequirementsDraft
+	443, // 187: superverse.v2.SessionProgress.created_at:type_name -> google.protobuf.Timestamp
+	81,  // 188: superverse.v2.CreateRemoteAgentPairingRequest.caller:type_name -> superverse.v2.CallerContext
+	443, // 189: superverse.v2.CreateRemoteAgentPairingResponse.expires_at:type_name -> google.protobuf.Timestamp
+	277, // 190: superverse.v2.CreateRemoteAgentPairingResponse.current_owner:type_name -> superverse.v2.Actor
+	81,  // 191: superverse.v2.ListRemoteAgentConnectionsRequest.caller:type_name -> superverse.v2.CallerContext
+	217, // 192: superverse.v2.ListRemoteAgentConnectionsResponse.connections:type_name -> superverse.v2.RemoteAgentConnection
+	277, // 193: superverse.v2.ListRemoteAgentConnectionsResponse.current_owner:type_name -> superverse.v2.Actor
+	81,  // 194: superverse.v2.RevokeRemoteAgentConnectionRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 195: superverse.v2.SetSessionExecutorRequest.caller:type_name -> superverse.v2.CallerContext
 	18,  // 196: superverse.v2.SessionExecutor.mode:type_name -> superverse.v2.SessionExecutorMode
-	214, // 197: superverse.v2.SessionExecutor.remote:type_name -> superverse.v2.RemoteSessionExecutor
-	214, // 198: superverse.v2.SessionExecutor.suspended:type_name -> superverse.v2.RemoteSessionExecutor
-	276, // 199: superverse.v2.RemoteSessionExecutor.owner:type_name -> superverse.v2.Actor
-	215, // 200: superverse.v2.RemoteSessionExecutor.binding:type_name -> superverse.v2.RemoteAgentBinding
-	442, // 201: superverse.v2.RemoteSessionExecutor.activated_at:type_name -> google.protobuf.Timestamp
-	442, // 202: superverse.v2.RemoteSessionExecutor.last_seen_at:type_name -> google.protobuf.Timestamp
-	276, // 203: superverse.v2.RemoteAgentConnection.owner:type_name -> superverse.v2.Actor
+	215, // 197: superverse.v2.SessionExecutor.remote:type_name -> superverse.v2.RemoteSessionExecutor
+	215, // 198: superverse.v2.SessionExecutor.suspended:type_name -> superverse.v2.RemoteSessionExecutor
+	277, // 199: superverse.v2.RemoteSessionExecutor.owner:type_name -> superverse.v2.Actor
+	216, // 200: superverse.v2.RemoteSessionExecutor.binding:type_name -> superverse.v2.RemoteAgentBinding
+	443, // 201: superverse.v2.RemoteSessionExecutor.activated_at:type_name -> google.protobuf.Timestamp
+	443, // 202: superverse.v2.RemoteSessionExecutor.last_seen_at:type_name -> google.protobuf.Timestamp
+	277, // 203: superverse.v2.RemoteAgentConnection.owner:type_name -> superverse.v2.Actor
 	19,  // 204: superverse.v2.RemoteAgentConnection.status:type_name -> superverse.v2.RemoteAgentConnectionStatus
-	215, // 205: superverse.v2.RemoteAgentConnection.binding:type_name -> superverse.v2.RemoteAgentBinding
-	442, // 206: superverse.v2.RemoteAgentConnection.created_at:type_name -> google.protobuf.Timestamp
-	442, // 207: superverse.v2.RemoteAgentConnection.last_seen_at:type_name -> google.protobuf.Timestamp
-	80,  // 208: superverse.v2.CreateAttachmentUploadRequest.caller:type_name -> superverse.v2.CallerContext
-	228, // 209: superverse.v2.CreateAttachmentUploadResponse.attachment:type_name -> superverse.v2.Attachment
-	219, // 210: superverse.v2.CreateAttachmentUploadResponse.upload:type_name -> superverse.v2.AttachmentUploadTarget
-	220, // 211: superverse.v2.AttachmentUploadTarget.headers:type_name -> superverse.v2.UploadHeader
-	80,  // 212: superverse.v2.CompleteAttachmentUploadRequest.caller:type_name -> superverse.v2.CallerContext
-	228, // 213: superverse.v2.CompleteAttachmentUploadResponse.attachment:type_name -> superverse.v2.Attachment
-	80,  // 214: superverse.v2.DeleteAttachmentRequest.caller:type_name -> superverse.v2.CallerContext
-	228, // 215: superverse.v2.DeleteAttachmentResponse.attachment:type_name -> superverse.v2.Attachment
+	216, // 205: superverse.v2.RemoteAgentConnection.binding:type_name -> superverse.v2.RemoteAgentBinding
+	443, // 206: superverse.v2.RemoteAgentConnection.created_at:type_name -> google.protobuf.Timestamp
+	443, // 207: superverse.v2.RemoteAgentConnection.last_seen_at:type_name -> google.protobuf.Timestamp
+	81,  // 208: superverse.v2.CreateAttachmentUploadRequest.caller:type_name -> superverse.v2.CallerContext
+	229, // 209: superverse.v2.CreateAttachmentUploadResponse.attachment:type_name -> superverse.v2.Attachment
+	220, // 210: superverse.v2.CreateAttachmentUploadResponse.upload:type_name -> superverse.v2.AttachmentUploadTarget
+	221, // 211: superverse.v2.AttachmentUploadTarget.headers:type_name -> superverse.v2.UploadHeader
+	81,  // 212: superverse.v2.CompleteAttachmentUploadRequest.caller:type_name -> superverse.v2.CallerContext
+	229, // 213: superverse.v2.CompleteAttachmentUploadResponse.attachment:type_name -> superverse.v2.Attachment
+	81,  // 214: superverse.v2.DeleteAttachmentRequest.caller:type_name -> superverse.v2.CallerContext
+	229, // 215: superverse.v2.DeleteAttachmentResponse.attachment:type_name -> superverse.v2.Attachment
 	22,  // 216: superverse.v2.GetAttachmentDownloadsRequest.disposition:type_name -> superverse.v2.AttachmentDisposition
-	80,  // 217: superverse.v2.GetAttachmentDownloadsRequest.caller:type_name -> superverse.v2.CallerContext
-	227, // 218: superverse.v2.GetAttachmentDownloadsResponse.downloads:type_name -> superverse.v2.AttachmentDownload
+	81,  // 217: superverse.v2.GetAttachmentDownloadsRequest.caller:type_name -> superverse.v2.CallerContext
+	228, // 218: superverse.v2.GetAttachmentDownloadsResponse.downloads:type_name -> superverse.v2.AttachmentDownload
 	21,  // 219: superverse.v2.Attachment.kind:type_name -> superverse.v2.AttachmentKind
 	20,  // 220: superverse.v2.Attachment.status:type_name -> superverse.v2.AttachmentStatus
-	229, // 221: superverse.v2.Attachment.summary:type_name -> superverse.v2.AttachmentSummary
-	230, // 222: superverse.v2.Attachment.failure:type_name -> superverse.v2.AttachmentFailure
-	80,  // 223: superverse.v2.GetEvolveRequest.caller:type_name -> superverse.v2.CallerContext
-	233, // 224: superverse.v2.GetEvolveResponse.evolve:type_name -> superverse.v2.Evolve
-	234, // 225: superverse.v2.Evolve.live:type_name -> superverse.v2.EvolveLive
-	235, // 226: superverse.v2.Evolve.goals:type_name -> superverse.v2.EvolveGoals
-	237, // 227: superverse.v2.Evolve.schedule:type_name -> superverse.v2.EvolveSchedule
-	238, // 228: superverse.v2.Evolve.reviews:type_name -> superverse.v2.EvolveReview
-	442, // 229: superverse.v2.Evolve.next_manual_review_at:type_name -> google.protobuf.Timestamp
-	240, // 230: superverse.v2.Evolve.proposals:type_name -> superverse.v2.EvolveProposal
-	442, // 231: superverse.v2.EvolveLive.committed_at:type_name -> google.protobuf.Timestamp
+	230, // 221: superverse.v2.Attachment.summary:type_name -> superverse.v2.AttachmentSummary
+	231, // 222: superverse.v2.Attachment.failure:type_name -> superverse.v2.AttachmentFailure
+	81,  // 223: superverse.v2.GetEvolveRequest.caller:type_name -> superverse.v2.CallerContext
+	234, // 224: superverse.v2.GetEvolveResponse.evolve:type_name -> superverse.v2.Evolve
+	235, // 225: superverse.v2.Evolve.live:type_name -> superverse.v2.EvolveLive
+	236, // 226: superverse.v2.Evolve.goals:type_name -> superverse.v2.EvolveGoals
+	238, // 227: superverse.v2.Evolve.schedule:type_name -> superverse.v2.EvolveSchedule
+	239, // 228: superverse.v2.Evolve.reviews:type_name -> superverse.v2.EvolveReview
+	443, // 229: superverse.v2.Evolve.next_manual_review_at:type_name -> google.protobuf.Timestamp
+	241, // 230: superverse.v2.Evolve.proposals:type_name -> superverse.v2.EvolveProposal
+	443, // 231: superverse.v2.EvolveLive.committed_at:type_name -> google.protobuf.Timestamp
 	23,  // 232: superverse.v2.EvolveGoals.status:type_name -> superverse.v2.EvolveGoalsStatus
-	236, // 233: superverse.v2.EvolveGoals.goals:type_name -> superverse.v2.EvolveGoal
-	442, // 234: superverse.v2.EvolveGoals.read_at:type_name -> google.protobuf.Timestamp
+	237, // 233: superverse.v2.EvolveGoals.goals:type_name -> superverse.v2.EvolveGoal
+	443, // 234: superverse.v2.EvolveGoals.read_at:type_name -> google.protobuf.Timestamp
 	25,  // 235: superverse.v2.EvolveGoal.kind:type_name -> superverse.v2.EvolveGoalKind
 	26,  // 236: superverse.v2.EvolveGoal.direction:type_name -> superverse.v2.EvolveGoalDirection
 	24,  // 237: superverse.v2.EvolveSchedule.period:type_name -> superverse.v2.EvolveReviewPeriod
-	442, // 238: superverse.v2.EvolveSchedule.next_at:type_name -> google.protobuf.Timestamp
+	443, // 238: superverse.v2.EvolveSchedule.next_at:type_name -> google.protobuf.Timestamp
 	27,  // 239: superverse.v2.EvolveReview.trigger:type_name -> superverse.v2.EvolveReviewTrigger
-	442, // 240: superverse.v2.EvolveReview.requested_at:type_name -> google.protobuf.Timestamp
-	442, // 241: superverse.v2.EvolveReview.started_at:type_name -> google.protobuf.Timestamp
-	442, // 242: superverse.v2.EvolveReview.finished_at:type_name -> google.protobuf.Timestamp
-	442, // 243: superverse.v2.EvolveReview.window_from:type_name -> google.protobuf.Timestamp
-	442, // 244: superverse.v2.EvolveReview.window_to:type_name -> google.protobuf.Timestamp
+	443, // 240: superverse.v2.EvolveReview.requested_at:type_name -> google.protobuf.Timestamp
+	443, // 241: superverse.v2.EvolveReview.started_at:type_name -> google.protobuf.Timestamp
+	443, // 242: superverse.v2.EvolveReview.finished_at:type_name -> google.protobuf.Timestamp
+	443, // 243: superverse.v2.EvolveReview.window_from:type_name -> google.protobuf.Timestamp
+	443, // 244: superverse.v2.EvolveReview.window_to:type_name -> google.protobuf.Timestamp
 	28,  // 245: superverse.v2.EvolveReview.status:type_name -> superverse.v2.EvolveReviewStatus
 	29,  // 246: superverse.v2.EvolveReview.reason:type_name -> superverse.v2.EvolveReviewReason
-	239, // 247: superverse.v2.EvolveReview.export:type_name -> superverse.v2.EvolveExport
-	242, // 248: superverse.v2.EvolveReview.values:type_name -> superverse.v2.EvolveGoalValue
+	240, // 247: superverse.v2.EvolveReview.export:type_name -> superverse.v2.EvolveExport
+	243, // 248: superverse.v2.EvolveReview.values:type_name -> superverse.v2.EvolveGoalValue
 	31,  // 249: superverse.v2.EvolveProposal.kind:type_name -> superverse.v2.EvolveProposalKind
 	32,  // 250: superverse.v2.EvolveProposal.status:type_name -> superverse.v2.EvolveProposalStatus
-	442, // 251: superverse.v2.EvolveProposal.status_at:type_name -> google.protobuf.Timestamp
-	442, // 252: superverse.v2.EvolveProposal.offered_at:type_name -> google.protobuf.Timestamp
-	241, // 253: superverse.v2.EvolveProposal.decision:type_name -> superverse.v2.EvolveProposalDecisionRecord
-	442, // 254: superverse.v2.EvolveProposal.applied_at:type_name -> google.protobuf.Timestamp
-	442, // 255: superverse.v2.EvolveProposal.live_at:type_name -> google.protobuf.Timestamp
+	443, // 251: superverse.v2.EvolveProposal.status_at:type_name -> google.protobuf.Timestamp
+	443, // 252: superverse.v2.EvolveProposal.offered_at:type_name -> google.protobuf.Timestamp
+	242, // 253: superverse.v2.EvolveProposal.decision:type_name -> superverse.v2.EvolveProposalDecisionRecord
+	443, // 254: superverse.v2.EvolveProposal.applied_at:type_name -> google.protobuf.Timestamp
+	443, // 255: superverse.v2.EvolveProposal.live_at:type_name -> google.protobuf.Timestamp
 	33,  // 256: superverse.v2.EvolveProposalDecisionRecord.decision:type_name -> superverse.v2.EvolveProposalDecision
-	442, // 257: superverse.v2.EvolveProposalDecisionRecord.decided_at:type_name -> google.protobuf.Timestamp
-	80,  // 258: superverse.v2.StartEvolveReviewRequest.caller:type_name -> superverse.v2.CallerContext
+	443, // 257: superverse.v2.EvolveProposalDecisionRecord.decided_at:type_name -> google.protobuf.Timestamp
+	81,  // 258: superverse.v2.StartEvolveReviewRequest.caller:type_name -> superverse.v2.CallerContext
 	30,  // 259: superverse.v2.StartEvolveReviewResponse.refusal:type_name -> superverse.v2.EvolveReviewRefusal
 	33,  // 260: superverse.v2.DecideEvolveProposalRequest.decision:type_name -> superverse.v2.EvolveProposalDecision
-	80,  // 261: superverse.v2.DecideEvolveProposalRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 261: superverse.v2.DecideEvolveProposalRequest.caller:type_name -> superverse.v2.CallerContext
 	34,  // 262: superverse.v2.DecideEvolveProposalResponse.refusal:type_name -> superverse.v2.EvolveProposalRefusal
-	240, // 263: superverse.v2.DecideEvolveProposalResponse.proposal:type_name -> superverse.v2.EvolveProposal
-	80,  // 264: superverse.v2.GetEvolveProposalRequest.caller:type_name -> superverse.v2.CallerContext
-	80,  // 265: superverse.v2.SendMessageRequest.caller:type_name -> superverse.v2.CallerContext
-	317, // 266: superverse.v2.AnswerQuestionsRequest.input:type_name -> superverse.v2.AgentAnswerQuestionsInput
-	80,  // 267: superverse.v2.AnswerQuestionsRequest.caller:type_name -> superverse.v2.CallerContext
+	241, // 263: superverse.v2.DecideEvolveProposalResponse.proposal:type_name -> superverse.v2.EvolveProposal
+	81,  // 264: superverse.v2.GetEvolveProposalRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 265: superverse.v2.SendMessageRequest.caller:type_name -> superverse.v2.CallerContext
+	318, // 266: superverse.v2.AnswerQuestionsRequest.input:type_name -> superverse.v2.AgentAnswerQuestionsInput
+	81,  // 267: superverse.v2.AnswerQuestionsRequest.caller:type_name -> superverse.v2.CallerContext
 	36,  // 268: superverse.v2.UpdateSessionModelRequest.model:type_name -> superverse.v2.AgentModel
-	80,  // 269: superverse.v2.UpdateSessionModelRequest.caller:type_name -> superverse.v2.CallerContext
-	80,  // 270: superverse.v2.DeleteQueuedMessageRequest.caller:type_name -> superverse.v2.CallerContext
-	80,  // 271: superverse.v2.SteerQueuedMessageRequest.caller:type_name -> superverse.v2.CallerContext
-	80,  // 272: superverse.v2.ResolveToolApprovalRequest.caller:type_name -> superverse.v2.CallerContext
-	80,  // 273: superverse.v2.InterruptAgentRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 269: superverse.v2.UpdateSessionModelRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 270: superverse.v2.DeleteQueuedMessageRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 271: superverse.v2.SteerQueuedMessageRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 272: superverse.v2.ResolveToolApprovalRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 273: superverse.v2.InterruptAgentRequest.caller:type_name -> superverse.v2.CallerContext
 	35,  // 274: superverse.v2.GetFlowDesignRequest.slot:type_name -> superverse.v2.AgentFlowDesignSlot
-	80,  // 275: superverse.v2.GetFlowDesignRequest.caller:type_name -> superverse.v2.CallerContext
-	299, // 276: superverse.v2.GetFlowDesignResponse.design:type_name -> superverse.v2.AgentFlowDesign
-	80,  // 277: superverse.v2.ListMockScenariosRequest.caller:type_name -> superverse.v2.CallerContext
-	80,  // 278: superverse.v2.ListAgentModelsRequest.caller:type_name -> superverse.v2.CallerContext
-	268, // 279: superverse.v2.ListAgentModelsResponse.models:type_name -> superverse.v2.AgentModelChoice
+	81,  // 275: superverse.v2.GetFlowDesignRequest.caller:type_name -> superverse.v2.CallerContext
+	300, // 276: superverse.v2.GetFlowDesignResponse.design:type_name -> superverse.v2.AgentFlowDesign
+	81,  // 277: superverse.v2.ListMockScenariosRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 278: superverse.v2.ListAgentModelsRequest.caller:type_name -> superverse.v2.CallerContext
+	269, // 279: superverse.v2.ListAgentModelsResponse.models:type_name -> superverse.v2.AgentModelChoice
 	36,  // 280: superverse.v2.AgentModelChoice.model:type_name -> superverse.v2.AgentModel
 	43,  // 281: superverse.v2.AgentModelChoice.provider:type_name -> superverse.v2.ModelProvider
-	270, // 282: superverse.v2.ListMockScenariosResponse.scenarios:type_name -> superverse.v2.AgentMockScenario
-	271, // 283: superverse.v2.AgentMockScenario.arguments:type_name -> superverse.v2.AgentMockScenarioArgument
-	272, // 284: superverse.v2.AgentMockScenario.inputs:type_name -> superverse.v2.AgentMockScenarioInput
-	56,  // 285: superverse.v2.AgentMockScenario.category:type_name -> superverse.v2.AgentMockScenario.Category
-	57,  // 286: superverse.v2.AgentMockScenarioInput.kind:type_name -> superverse.v2.AgentMockScenarioInput.Kind
-	274, // 287: superverse.v2.AgentSnapshot.history:type_name -> superverse.v2.AgentHistoryPage
-	285, // 288: superverse.v2.AgentSnapshot.description:type_name -> superverse.v2.AgentDescription
-	283, // 289: superverse.v2.AgentSnapshot.queued:type_name -> superverse.v2.AgentPendingUserMessage
-	283, // 290: superverse.v2.AgentSnapshot.steered:type_name -> superverse.v2.AgentPendingUserMessage
-	275, // 291: superverse.v2.AgentHistoryPage.messages:type_name -> superverse.v2.AgentSequencedMessage
-	277, // 292: superverse.v2.AgentSequencedMessage.message:type_name -> superverse.v2.AgentMessage
-	58,  // 293: superverse.v2.AgentMessage.role:type_name -> superverse.v2.AgentMessage.Role
-	282, // 294: superverse.v2.AgentMessage.tool_calls:type_name -> superverse.v2.AgentToolCall
-	280, // 295: superverse.v2.AgentMessage.model_call:type_name -> superverse.v2.AgentModelCallMetrics
-	281, // 296: superverse.v2.AgentMessage.tool_execution:type_name -> superverse.v2.AgentToolExecutionMetrics
-	279, // 297: superverse.v2.AgentMessage.notification:type_name -> superverse.v2.AgentNotification
-	276, // 298: superverse.v2.AgentMessage.actor:type_name -> superverse.v2.Actor
-	276, // 299: superverse.v2.AgentMessage.steered_by:type_name -> superverse.v2.Actor
-	278, // 300: superverse.v2.AgentMessage.attachments:type_name -> superverse.v2.AgentAttachment
+	271, // 282: superverse.v2.ListMockScenariosResponse.scenarios:type_name -> superverse.v2.AgentMockScenario
+	272, // 283: superverse.v2.AgentMockScenario.arguments:type_name -> superverse.v2.AgentMockScenarioArgument
+	273, // 284: superverse.v2.AgentMockScenario.inputs:type_name -> superverse.v2.AgentMockScenarioInput
+	57,  // 285: superverse.v2.AgentMockScenario.category:type_name -> superverse.v2.AgentMockScenario.Category
+	58,  // 286: superverse.v2.AgentMockScenarioInput.kind:type_name -> superverse.v2.AgentMockScenarioInput.Kind
+	275, // 287: superverse.v2.AgentSnapshot.history:type_name -> superverse.v2.AgentHistoryPage
+	286, // 288: superverse.v2.AgentSnapshot.description:type_name -> superverse.v2.AgentDescription
+	284, // 289: superverse.v2.AgentSnapshot.queued:type_name -> superverse.v2.AgentPendingUserMessage
+	284, // 290: superverse.v2.AgentSnapshot.steered:type_name -> superverse.v2.AgentPendingUserMessage
+	276, // 291: superverse.v2.AgentHistoryPage.messages:type_name -> superverse.v2.AgentSequencedMessage
+	278, // 292: superverse.v2.AgentSequencedMessage.message:type_name -> superverse.v2.AgentMessage
+	59,  // 293: superverse.v2.AgentMessage.role:type_name -> superverse.v2.AgentMessage.Role
+	283, // 294: superverse.v2.AgentMessage.tool_calls:type_name -> superverse.v2.AgentToolCall
+	281, // 295: superverse.v2.AgentMessage.model_call:type_name -> superverse.v2.AgentModelCallMetrics
+	282, // 296: superverse.v2.AgentMessage.tool_execution:type_name -> superverse.v2.AgentToolExecutionMetrics
+	280, // 297: superverse.v2.AgentMessage.notification:type_name -> superverse.v2.AgentNotification
+	277, // 298: superverse.v2.AgentMessage.actor:type_name -> superverse.v2.Actor
+	277, // 299: superverse.v2.AgentMessage.steered_by:type_name -> superverse.v2.Actor
+	279, // 300: superverse.v2.AgentMessage.attachments:type_name -> superverse.v2.AgentAttachment
 	21,  // 301: superverse.v2.AgentAttachment.kind:type_name -> superverse.v2.AttachmentKind
-	59,  // 302: superverse.v2.AgentNotification.kind:type_name -> superverse.v2.AgentNotification.Kind
-	60,  // 303: superverse.v2.AgentNotification.source:type_name -> superverse.v2.AgentNotification.Source
-	61,  // 304: superverse.v2.AgentNotification.task_status:type_name -> superverse.v2.AgentNotification.TaskStatus
-	62,  // 305: superverse.v2.AgentNotification.outcome:type_name -> superverse.v2.AgentNotification.Outcome
-	63,  // 306: superverse.v2.AgentNotification.owner:type_name -> superverse.v2.AgentNotification.Owner
-	64,  // 307: superverse.v2.AgentNotification.connector_event:type_name -> superverse.v2.AgentNotification.ConnectorEvent
-	81,  // 308: superverse.v2.AgentNotification.version:type_name -> superverse.v2.CommitVersion
+	60,  // 302: superverse.v2.AgentNotification.kind:type_name -> superverse.v2.AgentNotification.Kind
+	61,  // 303: superverse.v2.AgentNotification.source:type_name -> superverse.v2.AgentNotification.Source
+	62,  // 304: superverse.v2.AgentNotification.task_status:type_name -> superverse.v2.AgentNotification.TaskStatus
+	63,  // 305: superverse.v2.AgentNotification.outcome:type_name -> superverse.v2.AgentNotification.Outcome
+	64,  // 306: superverse.v2.AgentNotification.owner:type_name -> superverse.v2.AgentNotification.Owner
+	65,  // 307: superverse.v2.AgentNotification.connector_event:type_name -> superverse.v2.AgentNotification.ConnectorEvent
+	82,  // 308: superverse.v2.AgentNotification.version:type_name -> superverse.v2.CommitVersion
 	0,   // 309: superverse.v2.AgentNotification.remedy:type_name -> superverse.v2.FailureRemedy
-	65,  // 310: superverse.v2.AgentNotification.evolve_phase:type_name -> superverse.v2.AgentNotification.EvolvePhase
-	66,  // 311: superverse.v2.AgentToolExecutionMetrics.outcome:type_name -> superverse.v2.AgentToolExecutionMetrics.Outcome
-	284, // 312: superverse.v2.AgentPendingUserMessage.value:type_name -> superverse.v2.AgentUserMessage
-	276, // 313: superverse.v2.AgentPendingUserMessage.steered_by:type_name -> superverse.v2.Actor
-	276, // 314: superverse.v2.AgentUserMessage.actor:type_name -> superverse.v2.Actor
-	278, // 315: superverse.v2.AgentUserMessage.attachments:type_name -> superverse.v2.AgentAttachment
-	67,  // 316: superverse.v2.AgentDescription.status:type_name -> superverse.v2.AgentDescription.Status
+	66,  // 310: superverse.v2.AgentNotification.evolve_phase:type_name -> superverse.v2.AgentNotification.EvolvePhase
+	67,  // 311: superverse.v2.AgentToolExecutionMetrics.outcome:type_name -> superverse.v2.AgentToolExecutionMetrics.Outcome
+	285, // 312: superverse.v2.AgentPendingUserMessage.value:type_name -> superverse.v2.AgentUserMessage
+	277, // 313: superverse.v2.AgentPendingUserMessage.steered_by:type_name -> superverse.v2.Actor
+	277, // 314: superverse.v2.AgentUserMessage.actor:type_name -> superverse.v2.Actor
+	279, // 315: superverse.v2.AgentUserMessage.attachments:type_name -> superverse.v2.AgentAttachment
+	68,  // 316: superverse.v2.AgentDescription.status:type_name -> superverse.v2.AgentDescription.Status
 	36,  // 317: superverse.v2.AgentDescription.model:type_name -> superverse.v2.AgentModel
-	291, // 318: superverse.v2.AgentDescription.pending_approval:type_name -> superverse.v2.AgentPendingApproval
-	292, // 319: superverse.v2.AgentDescription.pending_timer:type_name -> superverse.v2.AgentPendingTimer
-	293, // 320: superverse.v2.AgentDescription.pending_user_input:type_name -> superverse.v2.AgentPendingUserInput
-	313, // 321: superverse.v2.AgentDescription.todo_list:type_name -> superverse.v2.AgentTodoList
+	292, // 318: superverse.v2.AgentDescription.pending_approval:type_name -> superverse.v2.AgentPendingApproval
+	293, // 319: superverse.v2.AgentDescription.pending_timer:type_name -> superverse.v2.AgentPendingTimer
+	294, // 320: superverse.v2.AgentDescription.pending_user_input:type_name -> superverse.v2.AgentPendingUserInput
+	314, // 321: superverse.v2.AgentDescription.todo_list:type_name -> superverse.v2.AgentTodoList
 	36,  // 322: superverse.v2.AgentDescription.context_model:type_name -> superverse.v2.AgentModel
-	309, // 323: superverse.v2.AgentDescription.confirmed_requirements:type_name -> superverse.v2.AgentConfirmedRequirements
-	289, // 324: superverse.v2.AgentDescription.background_commands:type_name -> superverse.v2.AgentBackgroundCommand
-	288, // 325: superverse.v2.AgentDescription.mock_progress:type_name -> superverse.v2.AgentMockProgress
-	290, // 326: superverse.v2.AgentDescription.subagents:type_name -> superverse.v2.AgentSubagent
-	276, // 327: superverse.v2.AgentDescription.model_changed_by:type_name -> superverse.v2.Actor
-	276, // 328: superverse.v2.AgentDescription.preview_auto_deploy_changed_by:type_name -> superverse.v2.Actor
-	213, // 329: superverse.v2.AgentDescription.executor:type_name -> superverse.v2.SessionExecutor
-	286, // 330: superverse.v2.AgentDescription.starting_example:type_name -> superverse.v2.AgentStartingExample
-	68,  // 331: superverse.v2.AgentStartingExample.choice:type_name -> superverse.v2.AgentStartingExample.Choice
-	287, // 332: superverse.v2.AgentStartingExample.first_build:type_name -> superverse.v2.AgentStartingExampleBuild
-	69,  // 333: superverse.v2.AgentBackgroundCommand.status:type_name -> superverse.v2.AgentBackgroundCommand.Status
-	70,  // 334: superverse.v2.AgentBackgroundCommand.end_reason:type_name -> superverse.v2.AgentBackgroundCommand.EndReason
-	71,  // 335: superverse.v2.AgentSubagent.kind:type_name -> superverse.v2.AgentSubagent.Kind
-	72,  // 336: superverse.v2.AgentSubagent.status:type_name -> superverse.v2.AgentSubagent.Status
-	310, // 337: superverse.v2.AgentPendingUserInput.questions:type_name -> superverse.v2.AgentUserInputQuestion
-	73,  // 338: superverse.v2.AgentPendingUserInput.kind:type_name -> superverse.v2.AgentPendingUserInput.Kind
-	294, // 339: superverse.v2.AgentPendingUserInput.requirements:type_name -> superverse.v2.AgentRequirements
-	307, // 340: superverse.v2.AgentRequirements.features:type_name -> superverse.v2.AgentRequirementFeature
-	308, // 341: superverse.v2.AgentRequirements.connections:type_name -> superverse.v2.AgentRequirementConnection
-	298, // 342: superverse.v2.AgentRequirements.design:type_name -> superverse.v2.AgentFlowDesignReference
-	307, // 343: superverse.v2.AgentRequirementsDraft.features:type_name -> superverse.v2.AgentRequirementFeature
-	296, // 344: superverse.v2.AgentRequirementsDraft.connections:type_name -> superverse.v2.AgentRequirementsDraftConnection
-	297, // 345: superverse.v2.AgentRequirementsDraft.flows:type_name -> superverse.v2.AgentRequirementsDraftFlow
-	300, // 346: superverse.v2.AgentFlowDesign.flows:type_name -> superverse.v2.AgentFlowDesignFlow
-	301, // 347: superverse.v2.AgentFlowDesignFlow.steps:type_name -> superverse.v2.AgentFlowDesignStep
-	304, // 348: superverse.v2.AgentFlowDesignFlow.channels:type_name -> superverse.v2.AgentFlowDesignChannel
-	305, // 349: superverse.v2.AgentFlowDesignFlow.actions:type_name -> superverse.v2.AgentFlowDesignAction
-	306, // 350: superverse.v2.AgentFlowDesignFlow.attributes:type_name -> superverse.v2.AgentFlowDesignAttribute
-	302, // 351: superverse.v2.AgentFlowDesignStep.waits_for:type_name -> superverse.v2.AgentFlowDesignWait
-	303, // 352: superverse.v2.AgentFlowDesignStep.next:type_name -> superverse.v2.AgentFlowDesignTransition
-	74,  // 353: superverse.v2.AgentFlowDesignWait.kind:type_name -> superverse.v2.AgentFlowDesignWait.Kind
-	75,  // 354: superverse.v2.AgentFlowDesignTransition.end:type_name -> superverse.v2.AgentFlowDesignTransition.End
-	76,  // 355: superverse.v2.AgentRequirementConnection.status:type_name -> superverse.v2.AgentRequirementConnection.Status
-	294, // 356: superverse.v2.AgentConfirmedRequirements.spec:type_name -> superverse.v2.AgentRequirements
-	276, // 357: superverse.v2.AgentConfirmedRequirements.confirmed_by:type_name -> superverse.v2.Actor
-	311, // 358: superverse.v2.AgentUserInputQuestion.options:type_name -> superverse.v2.AgentUserInputOption
-	314, // 359: superverse.v2.AgentTodoList.items:type_name -> superverse.v2.AgentTodoItem
-	77,  // 360: superverse.v2.AgentTodoItem.status:type_name -> superverse.v2.AgentTodoItem.Status
-	78,  // 361: superverse.v2.AgentEvent.kind:type_name -> superverse.v2.AgentEvent.Kind
-	316, // 362: superverse.v2.AgentEvent.input_consumption:type_name -> superverse.v2.AgentInputConsumption
-	312, // 363: superverse.v2.AgentAnswerQuestionsInput.answers:type_name -> superverse.v2.AgentUserInputAnswer
-	80,  // 364: superverse.v2.GetPreviewRequest.caller:type_name -> superverse.v2.CallerContext
-	330, // 365: superverse.v2.GetPreviewResponse.preview:type_name -> superverse.v2.PreviewSnapshot
-	80,  // 366: superverse.v2.StartPreviewRequest.caller:type_name -> superverse.v2.CallerContext
-	330, // 367: superverse.v2.StartPreviewResponse.preview:type_name -> superverse.v2.PreviewSnapshot
-	80,  // 368: superverse.v2.StopPreviewRequest.caller:type_name -> superverse.v2.CallerContext
-	330, // 369: superverse.v2.StopPreviewResponse.preview:type_name -> superverse.v2.PreviewSnapshot
-	80,  // 370: superverse.v2.PreparePreviewSourceRequest.caller:type_name -> superverse.v2.CallerContext
-	80,  // 371: superverse.v2.GetPreviewDefinitionsRequest.caller:type_name -> superverse.v2.CallerContext
-	330, // 372: superverse.v2.GetPreviewDefinitionsResponse.preview:type_name -> superverse.v2.PreviewSnapshot
-	85,  // 373: superverse.v2.GetPreviewDefinitionsResponse.flow_definitions:type_name -> superverse.v2.FlowDefinition
-	80,  // 374: superverse.v2.UpdatePreviewAutoDeployRequest.caller:type_name -> superverse.v2.CallerContext
+	310, // 323: superverse.v2.AgentDescription.confirmed_requirements:type_name -> superverse.v2.AgentConfirmedRequirements
+	290, // 324: superverse.v2.AgentDescription.background_commands:type_name -> superverse.v2.AgentBackgroundCommand
+	289, // 325: superverse.v2.AgentDescription.mock_progress:type_name -> superverse.v2.AgentMockProgress
+	291, // 326: superverse.v2.AgentDescription.subagents:type_name -> superverse.v2.AgentSubagent
+	277, // 327: superverse.v2.AgentDescription.model_changed_by:type_name -> superverse.v2.Actor
+	277, // 328: superverse.v2.AgentDescription.preview_auto_deploy_changed_by:type_name -> superverse.v2.Actor
+	214, // 329: superverse.v2.AgentDescription.executor:type_name -> superverse.v2.SessionExecutor
+	287, // 330: superverse.v2.AgentDescription.starting_example:type_name -> superverse.v2.AgentStartingExample
+	69,  // 331: superverse.v2.AgentStartingExample.choice:type_name -> superverse.v2.AgentStartingExample.Choice
+	288, // 332: superverse.v2.AgentStartingExample.first_build:type_name -> superverse.v2.AgentStartingExampleBuild
+	70,  // 333: superverse.v2.AgentBackgroundCommand.status:type_name -> superverse.v2.AgentBackgroundCommand.Status
+	71,  // 334: superverse.v2.AgentBackgroundCommand.end_reason:type_name -> superverse.v2.AgentBackgroundCommand.EndReason
+	72,  // 335: superverse.v2.AgentSubagent.kind:type_name -> superverse.v2.AgentSubagent.Kind
+	73,  // 336: superverse.v2.AgentSubagent.status:type_name -> superverse.v2.AgentSubagent.Status
+	311, // 337: superverse.v2.AgentPendingUserInput.questions:type_name -> superverse.v2.AgentUserInputQuestion
+	74,  // 338: superverse.v2.AgentPendingUserInput.kind:type_name -> superverse.v2.AgentPendingUserInput.Kind
+	295, // 339: superverse.v2.AgentPendingUserInput.requirements:type_name -> superverse.v2.AgentRequirements
+	308, // 340: superverse.v2.AgentRequirements.features:type_name -> superverse.v2.AgentRequirementFeature
+	309, // 341: superverse.v2.AgentRequirements.connections:type_name -> superverse.v2.AgentRequirementConnection
+	299, // 342: superverse.v2.AgentRequirements.design:type_name -> superverse.v2.AgentFlowDesignReference
+	308, // 343: superverse.v2.AgentRequirementsDraft.features:type_name -> superverse.v2.AgentRequirementFeature
+	297, // 344: superverse.v2.AgentRequirementsDraft.connections:type_name -> superverse.v2.AgentRequirementsDraftConnection
+	298, // 345: superverse.v2.AgentRequirementsDraft.flows:type_name -> superverse.v2.AgentRequirementsDraftFlow
+	301, // 346: superverse.v2.AgentFlowDesign.flows:type_name -> superverse.v2.AgentFlowDesignFlow
+	302, // 347: superverse.v2.AgentFlowDesignFlow.steps:type_name -> superverse.v2.AgentFlowDesignStep
+	305, // 348: superverse.v2.AgentFlowDesignFlow.channels:type_name -> superverse.v2.AgentFlowDesignChannel
+	306, // 349: superverse.v2.AgentFlowDesignFlow.actions:type_name -> superverse.v2.AgentFlowDesignAction
+	307, // 350: superverse.v2.AgentFlowDesignFlow.attributes:type_name -> superverse.v2.AgentFlowDesignAttribute
+	303, // 351: superverse.v2.AgentFlowDesignStep.waits_for:type_name -> superverse.v2.AgentFlowDesignWait
+	304, // 352: superverse.v2.AgentFlowDesignStep.next:type_name -> superverse.v2.AgentFlowDesignTransition
+	75,  // 353: superverse.v2.AgentFlowDesignWait.kind:type_name -> superverse.v2.AgentFlowDesignWait.Kind
+	76,  // 354: superverse.v2.AgentFlowDesignTransition.end:type_name -> superverse.v2.AgentFlowDesignTransition.End
+	77,  // 355: superverse.v2.AgentRequirementConnection.status:type_name -> superverse.v2.AgentRequirementConnection.Status
+	295, // 356: superverse.v2.AgentConfirmedRequirements.spec:type_name -> superverse.v2.AgentRequirements
+	277, // 357: superverse.v2.AgentConfirmedRequirements.confirmed_by:type_name -> superverse.v2.Actor
+	312, // 358: superverse.v2.AgentUserInputQuestion.options:type_name -> superverse.v2.AgentUserInputOption
+	315, // 359: superverse.v2.AgentTodoList.items:type_name -> superverse.v2.AgentTodoItem
+	78,  // 360: superverse.v2.AgentTodoItem.status:type_name -> superverse.v2.AgentTodoItem.Status
+	79,  // 361: superverse.v2.AgentEvent.kind:type_name -> superverse.v2.AgentEvent.Kind
+	317, // 362: superverse.v2.AgentEvent.input_consumption:type_name -> superverse.v2.AgentInputConsumption
+	313, // 363: superverse.v2.AgentAnswerQuestionsInput.answers:type_name -> superverse.v2.AgentUserInputAnswer
+	81,  // 364: superverse.v2.GetPreviewRequest.caller:type_name -> superverse.v2.CallerContext
+	331, // 365: superverse.v2.GetPreviewResponse.preview:type_name -> superverse.v2.PreviewSnapshot
+	81,  // 366: superverse.v2.StartPreviewRequest.caller:type_name -> superverse.v2.CallerContext
+	331, // 367: superverse.v2.StartPreviewResponse.preview:type_name -> superverse.v2.PreviewSnapshot
+	81,  // 368: superverse.v2.StopPreviewRequest.caller:type_name -> superverse.v2.CallerContext
+	331, // 369: superverse.v2.StopPreviewResponse.preview:type_name -> superverse.v2.PreviewSnapshot
+	81,  // 370: superverse.v2.PreparePreviewSourceRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 371: superverse.v2.GetPreviewDefinitionsRequest.caller:type_name -> superverse.v2.CallerContext
+	331, // 372: superverse.v2.GetPreviewDefinitionsResponse.preview:type_name -> superverse.v2.PreviewSnapshot
+	86,  // 373: superverse.v2.GetPreviewDefinitionsResponse.flow_definitions:type_name -> superverse.v2.FlowDefinition
+	81,  // 374: superverse.v2.UpdatePreviewAutoDeployRequest.caller:type_name -> superverse.v2.CallerContext
 	38,  // 375: superverse.v2.PreviewSnapshot.status:type_name -> superverse.v2.PreviewStatus
-	82,  // 376: superverse.v2.PreviewSnapshot.failure:type_name -> superverse.v2.Failure
-	334, // 377: superverse.v2.PreviewSnapshot.prepared_source:type_name -> superverse.v2.PreparedPreviewSourceSnapshot
-	333, // 378: superverse.v2.PreviewSnapshot.automatic_deployment:type_name -> superverse.v2.PreviewDeploymentSnapshot
-	182, // 379: superverse.v2.PreviewSnapshot.configuration_gaps:type_name -> superverse.v2.ConfigurationRequirementGap
-	84,  // 380: superverse.v2.PreviewSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
-	331, // 381: superverse.v2.PreviewSnapshot.applied_configuration:type_name -> superverse.v2.AppliedPreviewConfiguration
-	332, // 382: superverse.v2.PreviewSnapshot.recent_starts:type_name -> superverse.v2.PreviewStartRecord
-	81,  // 383: superverse.v2.PreviewSnapshot.serving_version:type_name -> superverse.v2.CommitVersion
-	442, // 384: superverse.v2.AppliedPreviewConfiguration.applied_at:type_name -> google.protobuf.Timestamp
-	442, // 385: superverse.v2.PreviewStartRecord.admitted_at:type_name -> google.protobuf.Timestamp
-	442, // 386: superverse.v2.PreviewStartRecord.ended_at:type_name -> google.protobuf.Timestamp
+	83,  // 376: superverse.v2.PreviewSnapshot.failure:type_name -> superverse.v2.Failure
+	335, // 377: superverse.v2.PreviewSnapshot.prepared_source:type_name -> superverse.v2.PreparedPreviewSourceSnapshot
+	334, // 378: superverse.v2.PreviewSnapshot.automatic_deployment:type_name -> superverse.v2.PreviewDeploymentSnapshot
+	183, // 379: superverse.v2.PreviewSnapshot.configuration_gaps:type_name -> superverse.v2.ConfigurationRequirementGap
+	85,  // 380: superverse.v2.PreviewSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
+	332, // 381: superverse.v2.PreviewSnapshot.applied_configuration:type_name -> superverse.v2.AppliedPreviewConfiguration
+	333, // 382: superverse.v2.PreviewSnapshot.recent_starts:type_name -> superverse.v2.PreviewStartRecord
+	82,  // 383: superverse.v2.PreviewSnapshot.serving_version:type_name -> superverse.v2.CommitVersion
+	443, // 384: superverse.v2.AppliedPreviewConfiguration.applied_at:type_name -> google.protobuf.Timestamp
+	443, // 385: superverse.v2.PreviewStartRecord.admitted_at:type_name -> google.protobuf.Timestamp
+	443, // 386: superverse.v2.PreviewStartRecord.ended_at:type_name -> google.protobuf.Timestamp
 	2,   // 387: superverse.v2.PreviewStartRecord.outcome:type_name -> superverse.v2.StartOutcome
-	84,  // 388: superverse.v2.PreviewStartRecord.phase_timings:type_name -> superverse.v2.PhaseTiming
-	81,  // 389: superverse.v2.PreviewStartRecord.version:type_name -> superverse.v2.CommitVersion
+	85,  // 388: superverse.v2.PreviewStartRecord.phase_timings:type_name -> superverse.v2.PhaseTiming
+	82,  // 389: superverse.v2.PreviewStartRecord.version:type_name -> superverse.v2.CommitVersion
 	37,  // 390: superverse.v2.PreviewDeploymentSnapshot.status:type_name -> superverse.v2.PreviewDeploymentStatus
-	82,  // 391: superverse.v2.PreviewDeploymentSnapshot.failure:type_name -> superverse.v2.Failure
-	442, // 392: superverse.v2.PreviewDeploymentSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	83,  // 391: superverse.v2.PreviewDeploymentSnapshot.failure:type_name -> superverse.v2.Failure
+	443, // 392: superverse.v2.PreviewDeploymentSnapshot.updated_at:type_name -> google.protobuf.Timestamp
 	39,  // 393: superverse.v2.PreparedPreviewSourceSnapshot.status:type_name -> superverse.v2.PreviewSourceStatus
-	87,  // 394: superverse.v2.PreparedPreviewSourceSnapshot.definitions:type_name -> superverse.v2.ObjectReference
-	82,  // 395: superverse.v2.PreparedPreviewSourceSnapshot.failure:type_name -> superverse.v2.Failure
-	81,  // 396: superverse.v2.PreparedPreviewSourceSnapshot.version:type_name -> superverse.v2.CommitVersion
-	80,  // 397: superverse.v2.ListReleaseCandidatesRequest.caller:type_name -> superverse.v2.CallerContext
-	353, // 398: superverse.v2.ListReleaseCandidatesResponse.candidates:type_name -> superverse.v2.ReleaseCandidate
-	80,  // 399: superverse.v2.PrepareReleaseRequest.caller:type_name -> superverse.v2.CallerContext
-	80,  // 400: superverse.v2.StartReleaseBuildRequest.caller:type_name -> superverse.v2.CallerContext
-	80,  // 401: superverse.v2.RecoverReleaseBuildRequest.caller:type_name -> superverse.v2.CallerContext
-	80,  // 402: superverse.v2.CancelReleaseBuildRequest.caller:type_name -> superverse.v2.CallerContext
-	80,  // 403: superverse.v2.GetReleaseBuildLogRequest.caller:type_name -> superverse.v2.CallerContext
+	88,  // 394: superverse.v2.PreparedPreviewSourceSnapshot.definitions:type_name -> superverse.v2.ObjectReference
+	83,  // 395: superverse.v2.PreparedPreviewSourceSnapshot.failure:type_name -> superverse.v2.Failure
+	82,  // 396: superverse.v2.PreparedPreviewSourceSnapshot.version:type_name -> superverse.v2.CommitVersion
+	81,  // 397: superverse.v2.ListReleaseCandidatesRequest.caller:type_name -> superverse.v2.CallerContext
+	354, // 398: superverse.v2.ListReleaseCandidatesResponse.candidates:type_name -> superverse.v2.ReleaseCandidate
+	81,  // 399: superverse.v2.PrepareReleaseRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 400: superverse.v2.StartReleaseBuildRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 401: superverse.v2.RecoverReleaseBuildRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 402: superverse.v2.CancelReleaseBuildRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 403: superverse.v2.GetReleaseBuildLogRequest.caller:type_name -> superverse.v2.CallerContext
 	40,  // 404: superverse.v2.ListReleasesRequest.statuses:type_name -> superverse.v2.ReleaseStatus
-	80,  // 405: superverse.v2.ListReleasesRequest.caller:type_name -> superverse.v2.CallerContext
-	354, // 406: superverse.v2.ListReleasesResponse.releases:type_name -> superverse.v2.ReleaseSnapshot
-	80,  // 407: superverse.v2.GetReleaseRequest.caller:type_name -> superverse.v2.CallerContext
-	354, // 408: superverse.v2.GetReleaseResponse.release:type_name -> superverse.v2.ReleaseSnapshot
-	85,  // 409: superverse.v2.GetReleaseResponse.flow_definitions:type_name -> superverse.v2.FlowDefinition
-	80,  // 410: superverse.v2.WatchReleaseRequest.caller:type_name -> superverse.v2.CallerContext
-	354, // 411: superverse.v2.WatchReleaseResponse.snapshot:type_name -> superverse.v2.ReleaseSnapshot
-	83,  // 412: superverse.v2.WatchReleaseResponse.progress:type_name -> superverse.v2.ResourceProgress
-	442, // 413: superverse.v2.ReleaseCandidate.committed_at:type_name -> google.protobuf.Timestamp
-	81,  // 414: superverse.v2.ReleaseCandidate.version:type_name -> superverse.v2.CommitVersion
+	81,  // 405: superverse.v2.ListReleasesRequest.caller:type_name -> superverse.v2.CallerContext
+	355, // 406: superverse.v2.ListReleasesResponse.releases:type_name -> superverse.v2.ReleaseSnapshot
+	81,  // 407: superverse.v2.GetReleaseRequest.caller:type_name -> superverse.v2.CallerContext
+	355, // 408: superverse.v2.GetReleaseResponse.release:type_name -> superverse.v2.ReleaseSnapshot
+	86,  // 409: superverse.v2.GetReleaseResponse.flow_definitions:type_name -> superverse.v2.FlowDefinition
+	81,  // 410: superverse.v2.WatchReleaseRequest.caller:type_name -> superverse.v2.CallerContext
+	355, // 411: superverse.v2.WatchReleaseResponse.snapshot:type_name -> superverse.v2.ReleaseSnapshot
+	84,  // 412: superverse.v2.WatchReleaseResponse.progress:type_name -> superverse.v2.ResourceProgress
+	443, // 413: superverse.v2.ReleaseCandidate.committed_at:type_name -> google.protobuf.Timestamp
+	82,  // 414: superverse.v2.ReleaseCandidate.version:type_name -> superverse.v2.CommitVersion
 	40,  // 415: superverse.v2.ReleaseSnapshot.status:type_name -> superverse.v2.ReleaseStatus
-	82,  // 416: superverse.v2.ReleaseSnapshot.failure:type_name -> superverse.v2.Failure
-	442, // 417: superverse.v2.ReleaseSnapshot.created_at:type_name -> google.protobuf.Timestamp
-	355, // 418: superverse.v2.ReleaseSnapshot.prepared_source:type_name -> superverse.v2.PreparedReleaseSourceSnapshot
-	356, // 419: superverse.v2.ReleaseSnapshot.build_revisions:type_name -> superverse.v2.ReleaseBuildRevisionSnapshot
+	83,  // 416: superverse.v2.ReleaseSnapshot.failure:type_name -> superverse.v2.Failure
+	443, // 417: superverse.v2.ReleaseSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	356, // 418: superverse.v2.ReleaseSnapshot.prepared_source:type_name -> superverse.v2.PreparedReleaseSourceSnapshot
+	357, // 419: superverse.v2.ReleaseSnapshot.build_revisions:type_name -> superverse.v2.ReleaseBuildRevisionSnapshot
 	40,  // 420: superverse.v2.PreparedReleaseSourceSnapshot.status:type_name -> superverse.v2.ReleaseStatus
-	86,  // 421: superverse.v2.PreparedReleaseSourceSnapshot.app_manifest:type_name -> superverse.v2.AppManifestSnapshot
-	82,  // 422: superverse.v2.PreparedReleaseSourceSnapshot.failure:type_name -> superverse.v2.Failure
-	84,  // 423: superverse.v2.PreparedReleaseSourceSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
-	81,  // 424: superverse.v2.PreparedReleaseSourceSnapshot.version:type_name -> superverse.v2.CommitVersion
+	87,  // 421: superverse.v2.PreparedReleaseSourceSnapshot.app_manifest:type_name -> superverse.v2.AppManifestSnapshot
+	83,  // 422: superverse.v2.PreparedReleaseSourceSnapshot.failure:type_name -> superverse.v2.Failure
+	85,  // 423: superverse.v2.PreparedReleaseSourceSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
+	82,  // 424: superverse.v2.PreparedReleaseSourceSnapshot.version:type_name -> superverse.v2.CommitVersion
 	40,  // 425: superverse.v2.ReleaseBuildRevisionSnapshot.status:type_name -> superverse.v2.ReleaseStatus
-	82,  // 426: superverse.v2.ReleaseBuildRevisionSnapshot.failure:type_name -> superverse.v2.Failure
+	83,  // 426: superverse.v2.ReleaseBuildRevisionSnapshot.failure:type_name -> superverse.v2.Failure
 	41,  // 427: superverse.v2.ReleaseBuildRevisionSnapshot.auto_deploy_status:type_name -> superverse.v2.AutoDeployStatus
-	82,  // 428: superverse.v2.ReleaseBuildRevisionSnapshot.auto_deploy_failure:type_name -> superverse.v2.Failure
-	442, // 429: superverse.v2.ReleaseBuildRevisionSnapshot.created_at:type_name -> google.protobuf.Timestamp
-	84,  // 430: superverse.v2.ReleaseBuildRevisionSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
-	358, // 431: superverse.v2.ReleaseBuildRevisionSnapshot.preview_validation:type_name -> superverse.v2.PreviewValidation
-	357, // 432: superverse.v2.ReleaseBuildRevisionSnapshot.cancellation:type_name -> superverse.v2.Cancellation
-	442, // 433: superverse.v2.Cancellation.requested_at:type_name -> google.protobuf.Timestamp
-	79,  // 434: superverse.v2.PreviewValidation.kind:type_name -> superverse.v2.PreviewValidation.Kind
-	442, // 435: superverse.v2.PreviewValidation.started_at:type_name -> google.protobuf.Timestamp
-	80,  // 436: superverse.v2.DeriveLiveConfigurationRequest.caller:type_name -> superverse.v2.CallerContext
-	179, // 437: superverse.v2.DeriveLiveConfigurationResponse.configuration:type_name -> superverse.v2.ProjectConfigurationSnapshot
-	80,  // 438: superverse.v2.StartDeploymentRequest.caller:type_name -> superverse.v2.CallerContext
-	80,  // 439: superverse.v2.CancelDeploymentRequest.caller:type_name -> superverse.v2.CallerContext
-	80,  // 440: superverse.v2.GetDeploymentRequest.caller:type_name -> superverse.v2.CallerContext
-	371, // 441: superverse.v2.GetDeploymentResponse.deployment:type_name -> superverse.v2.DeploymentSnapshot
+	83,  // 428: superverse.v2.ReleaseBuildRevisionSnapshot.auto_deploy_failure:type_name -> superverse.v2.Failure
+	443, // 429: superverse.v2.ReleaseBuildRevisionSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	85,  // 430: superverse.v2.ReleaseBuildRevisionSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
+	359, // 431: superverse.v2.ReleaseBuildRevisionSnapshot.preview_validation:type_name -> superverse.v2.PreviewValidation
+	358, // 432: superverse.v2.ReleaseBuildRevisionSnapshot.cancellation:type_name -> superverse.v2.Cancellation
+	443, // 433: superverse.v2.Cancellation.requested_at:type_name -> google.protobuf.Timestamp
+	80,  // 434: superverse.v2.PreviewValidation.kind:type_name -> superverse.v2.PreviewValidation.Kind
+	443, // 435: superverse.v2.PreviewValidation.started_at:type_name -> google.protobuf.Timestamp
+	81,  // 436: superverse.v2.DeriveLiveConfigurationRequest.caller:type_name -> superverse.v2.CallerContext
+	180, // 437: superverse.v2.DeriveLiveConfigurationResponse.configuration:type_name -> superverse.v2.ProjectConfigurationSnapshot
+	81,  // 438: superverse.v2.StartDeploymentRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 439: superverse.v2.CancelDeploymentRequest.caller:type_name -> superverse.v2.CallerContext
+	81,  // 440: superverse.v2.GetDeploymentRequest.caller:type_name -> superverse.v2.CallerContext
+	372, // 441: superverse.v2.GetDeploymentResponse.deployment:type_name -> superverse.v2.DeploymentSnapshot
 	42,  // 442: superverse.v2.ListDeploymentsRequest.statuses:type_name -> superverse.v2.DeploymentStatus
-	80,  // 443: superverse.v2.ListDeploymentsRequest.caller:type_name -> superverse.v2.CallerContext
-	371, // 444: superverse.v2.ListDeploymentsResponse.deployments:type_name -> superverse.v2.DeploymentSnapshot
-	80,  // 445: superverse.v2.WatchDeploymentRequest.caller:type_name -> superverse.v2.CallerContext
-	371, // 446: superverse.v2.WatchDeploymentResponse.snapshot:type_name -> superverse.v2.DeploymentSnapshot
-	83,  // 447: superverse.v2.WatchDeploymentResponse.progress:type_name -> superverse.v2.ResourceProgress
+	81,  // 443: superverse.v2.ListDeploymentsRequest.caller:type_name -> superverse.v2.CallerContext
+	372, // 444: superverse.v2.ListDeploymentsResponse.deployments:type_name -> superverse.v2.DeploymentSnapshot
+	81,  // 445: superverse.v2.WatchDeploymentRequest.caller:type_name -> superverse.v2.CallerContext
+	372, // 446: superverse.v2.WatchDeploymentResponse.snapshot:type_name -> superverse.v2.DeploymentSnapshot
+	84,  // 447: superverse.v2.WatchDeploymentResponse.progress:type_name -> superverse.v2.ResourceProgress
 	42,  // 448: superverse.v2.DeploymentSnapshot.status:type_name -> superverse.v2.DeploymentStatus
-	82,  // 449: superverse.v2.DeploymentSnapshot.failure:type_name -> superverse.v2.Failure
-	442, // 450: superverse.v2.DeploymentSnapshot.created_at:type_name -> google.protobuf.Timestamp
-	84,  // 451: superverse.v2.DeploymentSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
-	81,  // 452: superverse.v2.DeploymentSnapshot.version:type_name -> superverse.v2.CommitVersion
-	357, // 453: superverse.v2.DeploymentSnapshot.cancellation:type_name -> superverse.v2.Cancellation
-	425, // 454: superverse.v2.GetFlowDefinitionsRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 455: superverse.v2.GetFlowDefinitionsRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 456: superverse.v2.GetFlowDefinitionsResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 457: superverse.v2.GetFlowCatalogRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 458: superverse.v2.GetFlowCatalogRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 459: superverse.v2.GetFlowCatalogResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 460: superverse.v2.SearchFlowsRequest.context:type_name -> superverse.v2.FlowApiContext
-	427, // 461: superverse.v2.SearchFlowsRequest.filters:type_name -> superverse.v2.FlowSearchFilter
-	80,  // 462: superverse.v2.SearchFlowsRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 463: superverse.v2.SearchFlowsResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 464: superverse.v2.GetFlowDisplayRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 465: superverse.v2.GetFlowDisplayRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 466: superverse.v2.GetFlowDisplayResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 467: superverse.v2.UpdateFlowDisplayFieldRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 468: superverse.v2.UpdateFlowDisplayFieldRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 469: superverse.v2.UpdateFlowDisplayFieldResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 470: superverse.v2.InvokeFlowActionRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 471: superverse.v2.InvokeFlowActionRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 472: superverse.v2.InvokeFlowActionResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 473: superverse.v2.StartFlowRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 474: superverse.v2.StartFlowRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 475: superverse.v2.StartFlowResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 476: superverse.v2.RecoverFlowStartRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 477: superverse.v2.RecoverFlowStartRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 478: superverse.v2.RecoverFlowStartResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 479: superverse.v2.GetFlowSummaryRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 480: superverse.v2.GetFlowSummaryRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 481: superverse.v2.GetFlowSummaryResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 482: superverse.v2.GetFlowStateRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 483: superverse.v2.GetFlowStateRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 484: superverse.v2.GetFlowStateResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 485: superverse.v2.GetFlowHistoryRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 486: superverse.v2.GetFlowHistoryRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 487: superverse.v2.GetFlowHistoryResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 488: superverse.v2.WaitFlowHistoryRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 489: superverse.v2.WaitFlowHistoryRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 490: superverse.v2.WaitFlowHistoryResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 491: superverse.v2.ReadFlowStreamRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 492: superverse.v2.ReadFlowStreamRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 493: superverse.v2.ReadFlowStreamResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 494: superverse.v2.LoadFlowBlobsRequest.context:type_name -> superverse.v2.FlowApiContext
-	428, // 495: superverse.v2.LoadFlowBlobsRequest.values:type_name -> superverse.v2.FlowBlobReference
-	80,  // 496: superverse.v2.LoadFlowBlobsRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 497: superverse.v2.LoadFlowBlobsResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 498: superverse.v2.StopFlowRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 499: superverse.v2.StopFlowRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 500: superverse.v2.StopFlowResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 501: superverse.v2.DeleteFlowChannelMessageRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 502: superverse.v2.DeleteFlowChannelMessageRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 503: superverse.v2.DeleteFlowChannelMessageResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 504: superverse.v2.TimeTravelFlowRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 505: superverse.v2.TimeTravelFlowRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 506: superverse.v2.TimeTravelFlowResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 507: superverse.v2.ListConnectionsRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 508: superverse.v2.ListConnectionsRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 509: superverse.v2.ListConnectionsResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 510: superverse.v2.SelectTeamSpaceConnectionRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 511: superverse.v2.SelectTeamSpaceConnectionRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 512: superverse.v2.SelectTeamSpaceConnectionResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 513: superverse.v2.ReleaseUnusedConnectionsRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 514: superverse.v2.ReleaseUnusedConnectionsRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 515: superverse.v2.ReleaseUnusedConnectionsResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 516: superverse.v2.StartConnectorUiSessionRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 517: superverse.v2.StartConnectorUiSessionRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 518: superverse.v2.StartConnectorUiSessionResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 519: superverse.v2.InvokeProviderCommandRequest.context:type_name -> superverse.v2.FlowApiContext
-	439, // 520: superverse.v2.InvokeProviderCommandRequest.parameters:type_name -> superverse.v2.InvokeProviderCommandRequest.ParametersEntry
-	80,  // 521: superverse.v2.InvokeProviderCommandRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 522: superverse.v2.InvokeProviderCommandResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 523: superverse.v2.SaveTriggerBindingRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 524: superverse.v2.SaveTriggerBindingRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 525: superverse.v2.SaveTriggerBindingResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 526: superverse.v2.SaveOperationConfigurationRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 527: superverse.v2.SaveOperationConfigurationRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 528: superverse.v2.SaveOperationConfigurationResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 529: superverse.v2.GetApplicationEnvironmentRequest.context:type_name -> superverse.v2.FlowApiContext
-	80,  // 530: superverse.v2.GetApplicationEnvironmentRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 531: superverse.v2.GetApplicationEnvironmentResponse.document:type_name -> superverse.v2.FlowApiDocument
-	425, // 532: superverse.v2.SaveApplicationEnvironmentRequest.context:type_name -> superverse.v2.FlowApiContext
-	440, // 533: superverse.v2.SaveApplicationEnvironmentRequest.values:type_name -> superverse.v2.SaveApplicationEnvironmentRequest.ValuesEntry
-	441, // 534: superverse.v2.SaveApplicationEnvironmentRequest.secrets:type_name -> superverse.v2.SaveApplicationEnvironmentRequest.SecretsEntry
-	80,  // 535: superverse.v2.SaveApplicationEnvironmentRequest.caller:type_name -> superverse.v2.CallerContext
-	426, // 536: superverse.v2.SaveApplicationEnvironmentResponse.document:type_name -> superverse.v2.FlowApiDocument
+	83,  // 449: superverse.v2.DeploymentSnapshot.failure:type_name -> superverse.v2.Failure
+	443, // 450: superverse.v2.DeploymentSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	85,  // 451: superverse.v2.DeploymentSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
+	82,  // 452: superverse.v2.DeploymentSnapshot.version:type_name -> superverse.v2.CommitVersion
+	358, // 453: superverse.v2.DeploymentSnapshot.cancellation:type_name -> superverse.v2.Cancellation
+	426, // 454: superverse.v2.GetFlowDefinitionsRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 455: superverse.v2.GetFlowDefinitionsRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 456: superverse.v2.GetFlowDefinitionsResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 457: superverse.v2.GetFlowCatalogRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 458: superverse.v2.GetFlowCatalogRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 459: superverse.v2.GetFlowCatalogResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 460: superverse.v2.SearchFlowsRequest.context:type_name -> superverse.v2.FlowApiContext
+	428, // 461: superverse.v2.SearchFlowsRequest.filters:type_name -> superverse.v2.FlowSearchFilter
+	81,  // 462: superverse.v2.SearchFlowsRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 463: superverse.v2.SearchFlowsResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 464: superverse.v2.GetFlowDisplayRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 465: superverse.v2.GetFlowDisplayRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 466: superverse.v2.GetFlowDisplayResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 467: superverse.v2.UpdateFlowDisplayFieldRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 468: superverse.v2.UpdateFlowDisplayFieldRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 469: superverse.v2.UpdateFlowDisplayFieldResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 470: superverse.v2.InvokeFlowActionRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 471: superverse.v2.InvokeFlowActionRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 472: superverse.v2.InvokeFlowActionResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 473: superverse.v2.StartFlowRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 474: superverse.v2.StartFlowRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 475: superverse.v2.StartFlowResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 476: superverse.v2.RecoverFlowStartRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 477: superverse.v2.RecoverFlowStartRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 478: superverse.v2.RecoverFlowStartResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 479: superverse.v2.GetFlowSummaryRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 480: superverse.v2.GetFlowSummaryRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 481: superverse.v2.GetFlowSummaryResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 482: superverse.v2.GetFlowStateRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 483: superverse.v2.GetFlowStateRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 484: superverse.v2.GetFlowStateResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 485: superverse.v2.GetFlowHistoryRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 486: superverse.v2.GetFlowHistoryRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 487: superverse.v2.GetFlowHistoryResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 488: superverse.v2.WaitFlowHistoryRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 489: superverse.v2.WaitFlowHistoryRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 490: superverse.v2.WaitFlowHistoryResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 491: superverse.v2.ReadFlowStreamRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 492: superverse.v2.ReadFlowStreamRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 493: superverse.v2.ReadFlowStreamResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 494: superverse.v2.LoadFlowBlobsRequest.context:type_name -> superverse.v2.FlowApiContext
+	429, // 495: superverse.v2.LoadFlowBlobsRequest.values:type_name -> superverse.v2.FlowBlobReference
+	81,  // 496: superverse.v2.LoadFlowBlobsRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 497: superverse.v2.LoadFlowBlobsResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 498: superverse.v2.StopFlowRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 499: superverse.v2.StopFlowRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 500: superverse.v2.StopFlowResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 501: superverse.v2.DeleteFlowChannelMessageRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 502: superverse.v2.DeleteFlowChannelMessageRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 503: superverse.v2.DeleteFlowChannelMessageResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 504: superverse.v2.TimeTravelFlowRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 505: superverse.v2.TimeTravelFlowRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 506: superverse.v2.TimeTravelFlowResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 507: superverse.v2.ListConnectionsRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 508: superverse.v2.ListConnectionsRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 509: superverse.v2.ListConnectionsResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 510: superverse.v2.SelectTeamSpaceConnectionRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 511: superverse.v2.SelectTeamSpaceConnectionRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 512: superverse.v2.SelectTeamSpaceConnectionResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 513: superverse.v2.ReleaseUnusedConnectionsRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 514: superverse.v2.ReleaseUnusedConnectionsRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 515: superverse.v2.ReleaseUnusedConnectionsResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 516: superverse.v2.StartConnectorUiSessionRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 517: superverse.v2.StartConnectorUiSessionRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 518: superverse.v2.StartConnectorUiSessionResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 519: superverse.v2.InvokeProviderCommandRequest.context:type_name -> superverse.v2.FlowApiContext
+	440, // 520: superverse.v2.InvokeProviderCommandRequest.parameters:type_name -> superverse.v2.InvokeProviderCommandRequest.ParametersEntry
+	81,  // 521: superverse.v2.InvokeProviderCommandRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 522: superverse.v2.InvokeProviderCommandResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 523: superverse.v2.SaveTriggerBindingRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 524: superverse.v2.SaveTriggerBindingRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 525: superverse.v2.SaveTriggerBindingResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 526: superverse.v2.SaveOperationConfigurationRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 527: superverse.v2.SaveOperationConfigurationRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 528: superverse.v2.SaveOperationConfigurationResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 529: superverse.v2.GetApplicationEnvironmentRequest.context:type_name -> superverse.v2.FlowApiContext
+	81,  // 530: superverse.v2.GetApplicationEnvironmentRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 531: superverse.v2.GetApplicationEnvironmentResponse.document:type_name -> superverse.v2.FlowApiDocument
+	426, // 532: superverse.v2.SaveApplicationEnvironmentRequest.context:type_name -> superverse.v2.FlowApiContext
+	441, // 533: superverse.v2.SaveApplicationEnvironmentRequest.values:type_name -> superverse.v2.SaveApplicationEnvironmentRequest.ValuesEntry
+	442, // 534: superverse.v2.SaveApplicationEnvironmentRequest.secrets:type_name -> superverse.v2.SaveApplicationEnvironmentRequest.SecretsEntry
+	81,  // 535: superverse.v2.SaveApplicationEnvironmentRequest.caller:type_name -> superverse.v2.CallerContext
+	427, // 536: superverse.v2.SaveApplicationEnvironmentResponse.document:type_name -> superverse.v2.FlowApiDocument
 	3,   // 537: superverse.v2.FlowApiTarget.scope:type_name -> superverse.v2.ProjectScope
-	424, // 538: superverse.v2.FlowApiContext.target:type_name -> superverse.v2.FlowApiTarget
+	425, // 538: superverse.v2.FlowApiContext.target:type_name -> superverse.v2.FlowApiTarget
 	44,  // 539: superverse.v2.ModelCredentialInfo.status:type_name -> superverse.v2.ModelCredentialStatus
-	276, // 540: superverse.v2.ModelCredentialInfo.set_by:type_name -> superverse.v2.Actor
+	277, // 540: superverse.v2.ModelCredentialInfo.set_by:type_name -> superverse.v2.Actor
 	43,  // 541: superverse.v2.ModelCredentialInfo.provider:type_name -> superverse.v2.ModelProvider
 	43,  // 542: superverse.v2.GetModelCredentialInfoRequest.provider:type_name -> superverse.v2.ModelProvider
-	80,  // 543: superverse.v2.GetModelCredentialInfoRequest.caller:type_name -> superverse.v2.CallerContext
-	429, // 544: superverse.v2.GetModelCredentialInfoResponse.credential:type_name -> superverse.v2.ModelCredentialInfo
+	81,  // 543: superverse.v2.GetModelCredentialInfoRequest.caller:type_name -> superverse.v2.CallerContext
+	430, // 544: superverse.v2.GetModelCredentialInfoResponse.credential:type_name -> superverse.v2.ModelCredentialInfo
 	43,  // 545: superverse.v2.SetModelCredentialRequest.provider:type_name -> superverse.v2.ModelProvider
-	80,  // 546: superverse.v2.SetModelCredentialRequest.caller:type_name -> superverse.v2.CallerContext
-	429, // 547: superverse.v2.SetModelCredentialResponse.credential:type_name -> superverse.v2.ModelCredentialInfo
-	43,  // 548: superverse.v2.DeleteModelCredentialRequest.provider:type_name -> superverse.v2.ModelProvider
-	80,  // 549: superverse.v2.DeleteModelCredentialRequest.caller:type_name -> superverse.v2.CallerContext
-	429, // 550: superverse.v2.DeleteModelCredentialResponse.credential:type_name -> superverse.v2.ModelCredentialInfo
-	43,  // 551: superverse.v2.ListModelCredentialModelsRequest.provider:type_name -> superverse.v2.ModelProvider
-	80,  // 552: superverse.v2.ListModelCredentialModelsRequest.caller:type_name -> superverse.v2.CallerContext
-	45,  // 553: superverse.v2.ListModelCredentialModelsResponse.result:type_name -> superverse.v2.ModelDiscoveryResult
-	437, // 554: superverse.v2.ListModelCredentialModelsResponse.models:type_name -> superverse.v2.ModelCredentialModel
-	90,  // 555: superverse.v2.AccountService.RegisterAccount:input_type -> superverse.v2.RegisterAccountRequest
-	92,  // 556: superverse.v2.AccountService.Login:input_type -> superverse.v2.LoginRequest
-	94,  // 557: superverse.v2.AccountService.Logout:input_type -> superverse.v2.LogoutRequest
-	96,  // 558: superverse.v2.AccountService.GetCurrentAccount:input_type -> superverse.v2.GetCurrentAccountRequest
-	100, // 559: superverse.v2.TeamSpaceService.CreateTeamSpace:input_type -> superverse.v2.CreateTeamSpaceRequest
-	102, // 560: superverse.v2.TeamSpaceService.ListTeamSpaces:input_type -> superverse.v2.ListTeamSpacesRequest
-	104, // 561: superverse.v2.TeamSpaceService.GetTeamSpace:input_type -> superverse.v2.GetTeamSpaceRequest
-	106, // 562: superverse.v2.TeamSpaceService.RenameTeamSpace:input_type -> superverse.v2.RenameTeamSpaceRequest
-	108, // 563: superverse.v2.TeamSpaceService.DeleteTeamSpace:input_type -> superverse.v2.DeleteTeamSpaceRequest
-	110, // 564: superverse.v2.TeamSpaceService.GetTeamSpaceOverview:input_type -> superverse.v2.GetTeamSpaceOverviewRequest
-	114, // 565: superverse.v2.TeamSpaceMemberService.ListTeamSpaceMembers:input_type -> superverse.v2.ListTeamSpaceMembersRequest
-	116, // 566: superverse.v2.TeamSpaceMemberService.AddTeamSpaceMember:input_type -> superverse.v2.AddTeamSpaceMemberRequest
-	118, // 567: superverse.v2.TeamSpaceMemberService.SetTeamSpaceMemberRole:input_type -> superverse.v2.SetTeamSpaceMemberRoleRequest
-	120, // 568: superverse.v2.TeamSpaceMemberService.RemoveTeamSpaceMember:input_type -> superverse.v2.RemoveTeamSpaceMemberRequest
-	124, // 569: superverse.v2.TeamSpaceConnectionService.ListConnectorCatalog:input_type -> superverse.v2.ListConnectorCatalogRequest
-	129, // 570: superverse.v2.TeamSpaceConnectionService.ListTeamSpaceConnections:input_type -> superverse.v2.ListTeamSpaceConnectionsRequest
-	131, // 571: superverse.v2.TeamSpaceConnectionService.GetTeamSpaceConnection:input_type -> superverse.v2.GetTeamSpaceConnectionRequest
-	133, // 572: superverse.v2.TeamSpaceConnectionService.CreateTeamSpaceConnection:input_type -> superverse.v2.CreateTeamSpaceConnectionRequest
-	135, // 573: superverse.v2.TeamSpaceConnectionService.UpdateTeamSpaceConnection:input_type -> superverse.v2.UpdateTeamSpaceConnectionRequest
-	137, // 574: superverse.v2.TeamSpaceConnectionService.DeleteTeamSpaceConnection:input_type -> superverse.v2.DeleteTeamSpaceConnectionRequest
-	139, // 575: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionOAuth:input_type -> superverse.v2.StartTeamSpaceConnectionOAuthRequest
-	142, // 576: superverse.v2.TeamSpaceConnectionService.CompleteTeamSpaceConnectionOAuth:input_type -> superverse.v2.CompleteTeamSpaceConnectionOAuthRequest
-	144, // 577: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionUiSession:input_type -> superverse.v2.StartTeamSpaceConnectionUiSessionRequest
-	146, // 578: superverse.v2.TeamSpaceConnectionService.InvokeTeamSpaceConnectionCommand:input_type -> superverse.v2.InvokeTeamSpaceConnectionCommandRequest
-	148, // 579: superverse.v2.ProjectService.CreateProject:input_type -> superverse.v2.CreateProjectRequest
-	150, // 580: superverse.v2.ProjectService.ListProjects:input_type -> superverse.v2.ListProjectsRequest
-	152, // 581: superverse.v2.ProjectService.GetProject:input_type -> superverse.v2.GetProjectRequest
-	154, // 582: superverse.v2.ProjectService.DeleteProject:input_type -> superverse.v2.DeleteProjectRequest
-	156, // 583: superverse.v2.ProjectService.WatchProject:input_type -> superverse.v2.WatchProjectRequest
-	164, // 584: superverse.v2.ProjectService.GetProjectConfiguration:input_type -> superverse.v2.GetProjectConfigurationRequest
-	166, // 585: superverse.v2.ProjectService.ValidateProjectConfiguration:input_type -> superverse.v2.ValidateProjectConfigurationRequest
-	168, // 586: superverse.v2.ProjectService.RemoveLive:input_type -> superverse.v2.RemoveLiveRequest
-	158, // 587: superverse.v2.ProjectService.ListEnvironmentEvents:input_type -> superverse.v2.ListEnvironmentEventsRequest
-	161, // 588: superverse.v2.ProjectService.ListRecentTriggerEvents:input_type -> superverse.v2.ListRecentTriggerEventsRequest
-	184, // 589: superverse.v2.ProjectMemberService.ListProjectMembers:input_type -> superverse.v2.ListProjectMembersRequest
-	186, // 590: superverse.v2.ProjectMemberService.AddProjectMember:input_type -> superverse.v2.AddProjectMemberRequest
-	188, // 591: superverse.v2.ProjectMemberService.SetProjectMemberRole:input_type -> superverse.v2.SetProjectMemberRoleRequest
-	190, // 592: superverse.v2.ProjectMemberService.RemoveProjectMember:input_type -> superverse.v2.RemoveProjectMemberRequest
-	193, // 593: superverse.v2.SessionService.GetSession:input_type -> superverse.v2.GetSessionRequest
-	195, // 594: superverse.v2.SessionService.WatchSession:input_type -> superverse.v2.WatchSessionRequest
-	197, // 595: superverse.v2.SessionService.ListArchivedMessages:input_type -> superverse.v2.ListArchivedMessagesRequest
-	198, // 596: superverse.v2.SessionService.RenewWorkspace:input_type -> superverse.v2.RenewWorkspaceRequest
-	205, // 597: superverse.v2.RemoteAgentService.CreateRemoteAgentPairing:input_type -> superverse.v2.CreateRemoteAgentPairingRequest
-	207, // 598: superverse.v2.RemoteAgentService.ListRemoteAgentConnections:input_type -> superverse.v2.ListRemoteAgentConnectionsRequest
-	209, // 599: superverse.v2.RemoteAgentService.RevokeRemoteAgentConnection:input_type -> superverse.v2.RevokeRemoteAgentConnectionRequest
-	211, // 600: superverse.v2.RemoteAgentService.SetSessionExecutor:input_type -> superverse.v2.SetSessionExecutorRequest
-	217, // 601: superverse.v2.AttachmentService.CreateAttachmentUpload:input_type -> superverse.v2.CreateAttachmentUploadRequest
-	221, // 602: superverse.v2.AttachmentService.CompleteAttachmentUpload:input_type -> superverse.v2.CompleteAttachmentUploadRequest
-	223, // 603: superverse.v2.AttachmentService.DeleteAttachment:input_type -> superverse.v2.DeleteAttachmentRequest
-	225, // 604: superverse.v2.AttachmentService.GetAttachmentDownloads:input_type -> superverse.v2.GetAttachmentDownloadsRequest
-	231, // 605: superverse.v2.EvolveService.GetEvolve:input_type -> superverse.v2.GetEvolveRequest
-	243, // 606: superverse.v2.EvolveService.StartEvolveReview:input_type -> superverse.v2.StartEvolveReviewRequest
-	245, // 607: superverse.v2.EvolveService.DecideEvolveProposal:input_type -> superverse.v2.DecideEvolveProposalRequest
-	247, // 608: superverse.v2.EvolveService.GetEvolveProposal:input_type -> superverse.v2.GetEvolveProposalRequest
-	249, // 609: superverse.v2.AgentService.SendMessage:input_type -> superverse.v2.SendMessageRequest
-	251, // 610: superverse.v2.AgentService.AnswerQuestions:input_type -> superverse.v2.AnswerQuestionsRequest
-	253, // 611: superverse.v2.AgentService.UpdateSessionModel:input_type -> superverse.v2.UpdateSessionModelRequest
-	255, // 612: superverse.v2.AgentService.DeleteQueuedMessage:input_type -> superverse.v2.DeleteQueuedMessageRequest
-	257, // 613: superverse.v2.AgentService.SteerQueuedMessage:input_type -> superverse.v2.SteerQueuedMessageRequest
-	259, // 614: superverse.v2.AgentService.ResolveToolApproval:input_type -> superverse.v2.ResolveToolApprovalRequest
-	261, // 615: superverse.v2.AgentService.InterruptAgent:input_type -> superverse.v2.InterruptAgentRequest
-	265, // 616: superverse.v2.AgentService.ListMockScenarios:input_type -> superverse.v2.ListMockScenariosRequest
-	266, // 617: superverse.v2.AgentService.ListAgentModels:input_type -> superverse.v2.ListAgentModelsRequest
-	263, // 618: superverse.v2.AgentService.GetFlowDesign:input_type -> superverse.v2.GetFlowDesignRequest
-	318, // 619: superverse.v2.PreviewService.GetPreview:input_type -> superverse.v2.GetPreviewRequest
-	320, // 620: superverse.v2.PreviewService.StartPreview:input_type -> superverse.v2.StartPreviewRequest
-	322, // 621: superverse.v2.PreviewService.StopPreview:input_type -> superverse.v2.StopPreviewRequest
-	324, // 622: superverse.v2.PreviewService.PreparePreviewSource:input_type -> superverse.v2.PreparePreviewSourceRequest
-	326, // 623: superverse.v2.PreviewService.GetPreviewDefinitions:input_type -> superverse.v2.GetPreviewDefinitionsRequest
-	328, // 624: superverse.v2.PreviewService.UpdatePreviewAutoDeploy:input_type -> superverse.v2.UpdatePreviewAutoDeployRequest
-	335, // 625: superverse.v2.ReleaseService.ListReleaseCandidates:input_type -> superverse.v2.ListReleaseCandidatesRequest
-	337, // 626: superverse.v2.ReleaseService.PrepareRelease:input_type -> superverse.v2.PrepareReleaseRequest
-	339, // 627: superverse.v2.ReleaseService.StartReleaseBuild:input_type -> superverse.v2.StartReleaseBuildRequest
-	341, // 628: superverse.v2.ReleaseService.RecoverReleaseBuild:input_type -> superverse.v2.RecoverReleaseBuildRequest
-	347, // 629: superverse.v2.ReleaseService.ListReleases:input_type -> superverse.v2.ListReleasesRequest
-	359, // 630: superverse.v2.ReleaseService.DeriveLiveConfiguration:input_type -> superverse.v2.DeriveLiveConfigurationRequest
-	349, // 631: superverse.v2.ReleaseService.GetRelease:input_type -> superverse.v2.GetReleaseRequest
-	351, // 632: superverse.v2.ReleaseService.WatchRelease:input_type -> superverse.v2.WatchReleaseRequest
-	343, // 633: superverse.v2.ReleaseService.CancelReleaseBuild:input_type -> superverse.v2.CancelReleaseBuildRequest
-	345, // 634: superverse.v2.ReleaseService.GetReleaseBuildLog:input_type -> superverse.v2.GetReleaseBuildLogRequest
-	361, // 635: superverse.v2.DeploymentService.StartDeployment:input_type -> superverse.v2.StartDeploymentRequest
-	365, // 636: superverse.v2.DeploymentService.GetDeployment:input_type -> superverse.v2.GetDeploymentRequest
-	367, // 637: superverse.v2.DeploymentService.ListDeployments:input_type -> superverse.v2.ListDeploymentsRequest
-	369, // 638: superverse.v2.DeploymentService.WatchDeployment:input_type -> superverse.v2.WatchDeploymentRequest
-	363, // 639: superverse.v2.DeploymentService.CancelDeployment:input_type -> superverse.v2.CancelDeploymentRequest
-	372, // 640: superverse.v2.FlowRunService.GetFlowDefinitions:input_type -> superverse.v2.GetFlowDefinitionsRequest
-	374, // 641: superverse.v2.FlowRunService.GetFlowCatalog:input_type -> superverse.v2.GetFlowCatalogRequest
-	376, // 642: superverse.v2.FlowRunService.SearchFlows:input_type -> superverse.v2.SearchFlowsRequest
-	378, // 643: superverse.v2.FlowRunService.GetFlowDisplay:input_type -> superverse.v2.GetFlowDisplayRequest
-	380, // 644: superverse.v2.FlowRunService.UpdateFlowDisplayField:input_type -> superverse.v2.UpdateFlowDisplayFieldRequest
-	382, // 645: superverse.v2.FlowRunService.InvokeFlowAction:input_type -> superverse.v2.InvokeFlowActionRequest
-	384, // 646: superverse.v2.FlowRunService.StartFlow:input_type -> superverse.v2.StartFlowRequest
-	386, // 647: superverse.v2.FlowRunService.RecoverFlowStart:input_type -> superverse.v2.RecoverFlowStartRequest
-	388, // 648: superverse.v2.FlowDiagnosticsService.GetFlowSummary:input_type -> superverse.v2.GetFlowSummaryRequest
-	390, // 649: superverse.v2.FlowDiagnosticsService.GetFlowState:input_type -> superverse.v2.GetFlowStateRequest
-	392, // 650: superverse.v2.FlowDiagnosticsService.GetFlowHistory:input_type -> superverse.v2.GetFlowHistoryRequest
-	394, // 651: superverse.v2.FlowDiagnosticsService.WaitFlowHistory:input_type -> superverse.v2.WaitFlowHistoryRequest
-	396, // 652: superverse.v2.FlowDiagnosticsService.ReadFlowStream:input_type -> superverse.v2.ReadFlowStreamRequest
-	398, // 653: superverse.v2.FlowDiagnosticsService.LoadFlowBlobs:input_type -> superverse.v2.LoadFlowBlobsRequest
-	400, // 654: superverse.v2.FlowDiagnosticsService.StopFlow:input_type -> superverse.v2.StopFlowRequest
-	402, // 655: superverse.v2.FlowDiagnosticsService.DeleteFlowChannelMessage:input_type -> superverse.v2.DeleteFlowChannelMessageRequest
-	404, // 656: superverse.v2.FlowDiagnosticsService.TimeTravelFlow:input_type -> superverse.v2.TimeTravelFlowRequest
-	406, // 657: superverse.v2.ConnectorService.ListConnections:input_type -> superverse.v2.ListConnectionsRequest
-	408, // 658: superverse.v2.ConnectorService.SelectTeamSpaceConnection:input_type -> superverse.v2.SelectTeamSpaceConnectionRequest
-	410, // 659: superverse.v2.ConnectorService.ReleaseUnusedConnections:input_type -> superverse.v2.ReleaseUnusedConnectionsRequest
-	412, // 660: superverse.v2.ConnectorService.StartConnectorUiSession:input_type -> superverse.v2.StartConnectorUiSessionRequest
-	414, // 661: superverse.v2.ConnectorService.InvokeProviderCommand:input_type -> superverse.v2.InvokeProviderCommandRequest
-	416, // 662: superverse.v2.ConnectorService.SaveTriggerBinding:input_type -> superverse.v2.SaveTriggerBindingRequest
-	418, // 663: superverse.v2.ConnectorService.SaveOperationConfiguration:input_type -> superverse.v2.SaveOperationConfigurationRequest
-	420, // 664: superverse.v2.ApplicationEnvironmentService.GetApplicationEnvironment:input_type -> superverse.v2.GetApplicationEnvironmentRequest
-	422, // 665: superverse.v2.ApplicationEnvironmentService.SaveApplicationEnvironment:input_type -> superverse.v2.SaveApplicationEnvironmentRequest
-	430, // 666: superverse.v2.ModelCredentialService.GetModelCredentialInfo:input_type -> superverse.v2.GetModelCredentialInfoRequest
-	432, // 667: superverse.v2.ModelCredentialService.SetModelCredential:input_type -> superverse.v2.SetModelCredentialRequest
-	434, // 668: superverse.v2.ModelCredentialService.DeleteModelCredential:input_type -> superverse.v2.DeleteModelCredentialRequest
-	436, // 669: superverse.v2.ModelCredentialService.ListModelCredentialModels:input_type -> superverse.v2.ListModelCredentialModelsRequest
-	91,  // 670: superverse.v2.AccountService.RegisterAccount:output_type -> superverse.v2.RegisterAccountResponse
-	93,  // 671: superverse.v2.AccountService.Login:output_type -> superverse.v2.LoginResponse
-	95,  // 672: superverse.v2.AccountService.Logout:output_type -> superverse.v2.LogoutResponse
-	97,  // 673: superverse.v2.AccountService.GetCurrentAccount:output_type -> superverse.v2.GetCurrentAccountResponse
-	101, // 674: superverse.v2.TeamSpaceService.CreateTeamSpace:output_type -> superverse.v2.CreateTeamSpaceResponse
-	103, // 675: superverse.v2.TeamSpaceService.ListTeamSpaces:output_type -> superverse.v2.ListTeamSpacesResponse
-	105, // 676: superverse.v2.TeamSpaceService.GetTeamSpace:output_type -> superverse.v2.GetTeamSpaceResponse
-	107, // 677: superverse.v2.TeamSpaceService.RenameTeamSpace:output_type -> superverse.v2.RenameTeamSpaceResponse
-	109, // 678: superverse.v2.TeamSpaceService.DeleteTeamSpace:output_type -> superverse.v2.DeleteTeamSpaceResponse
-	111, // 679: superverse.v2.TeamSpaceService.GetTeamSpaceOverview:output_type -> superverse.v2.GetTeamSpaceOverviewResponse
-	115, // 680: superverse.v2.TeamSpaceMemberService.ListTeamSpaceMembers:output_type -> superverse.v2.ListTeamSpaceMembersResponse
-	117, // 681: superverse.v2.TeamSpaceMemberService.AddTeamSpaceMember:output_type -> superverse.v2.AddTeamSpaceMemberResponse
-	119, // 682: superverse.v2.TeamSpaceMemberService.SetTeamSpaceMemberRole:output_type -> superverse.v2.SetTeamSpaceMemberRoleResponse
-	121, // 683: superverse.v2.TeamSpaceMemberService.RemoveTeamSpaceMember:output_type -> superverse.v2.RemoveTeamSpaceMemberResponse
-	125, // 684: superverse.v2.TeamSpaceConnectionService.ListConnectorCatalog:output_type -> superverse.v2.ListConnectorCatalogResponse
-	130, // 685: superverse.v2.TeamSpaceConnectionService.ListTeamSpaceConnections:output_type -> superverse.v2.ListTeamSpaceConnectionsResponse
-	132, // 686: superverse.v2.TeamSpaceConnectionService.GetTeamSpaceConnection:output_type -> superverse.v2.GetTeamSpaceConnectionResponse
-	134, // 687: superverse.v2.TeamSpaceConnectionService.CreateTeamSpaceConnection:output_type -> superverse.v2.CreateTeamSpaceConnectionResponse
-	136, // 688: superverse.v2.TeamSpaceConnectionService.UpdateTeamSpaceConnection:output_type -> superverse.v2.UpdateTeamSpaceConnectionResponse
-	138, // 689: superverse.v2.TeamSpaceConnectionService.DeleteTeamSpaceConnection:output_type -> superverse.v2.DeleteTeamSpaceConnectionResponse
-	141, // 690: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionOAuth:output_type -> superverse.v2.StartTeamSpaceConnectionOAuthResponse
-	143, // 691: superverse.v2.TeamSpaceConnectionService.CompleteTeamSpaceConnectionOAuth:output_type -> superverse.v2.CompleteTeamSpaceConnectionOAuthResponse
-	145, // 692: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionUiSession:output_type -> superverse.v2.StartTeamSpaceConnectionUiSessionResponse
-	147, // 693: superverse.v2.TeamSpaceConnectionService.InvokeTeamSpaceConnectionCommand:output_type -> superverse.v2.InvokeTeamSpaceConnectionCommandResponse
-	149, // 694: superverse.v2.ProjectService.CreateProject:output_type -> superverse.v2.CreateProjectResponse
-	151, // 695: superverse.v2.ProjectService.ListProjects:output_type -> superverse.v2.ListProjectsResponse
-	153, // 696: superverse.v2.ProjectService.GetProject:output_type -> superverse.v2.GetProjectResponse
-	155, // 697: superverse.v2.ProjectService.DeleteProject:output_type -> superverse.v2.DeleteProjectResponse
-	157, // 698: superverse.v2.ProjectService.WatchProject:output_type -> superverse.v2.WatchProjectResponse
-	165, // 699: superverse.v2.ProjectService.GetProjectConfiguration:output_type -> superverse.v2.GetProjectConfigurationResponse
-	167, // 700: superverse.v2.ProjectService.ValidateProjectConfiguration:output_type -> superverse.v2.ValidateProjectConfigurationResponse
-	169, // 701: superverse.v2.ProjectService.RemoveLive:output_type -> superverse.v2.RemoveLiveResponse
-	159, // 702: superverse.v2.ProjectService.ListEnvironmentEvents:output_type -> superverse.v2.ListEnvironmentEventsResponse
-	162, // 703: superverse.v2.ProjectService.ListRecentTriggerEvents:output_type -> superverse.v2.ListRecentTriggerEventsResponse
-	185, // 704: superverse.v2.ProjectMemberService.ListProjectMembers:output_type -> superverse.v2.ListProjectMembersResponse
-	187, // 705: superverse.v2.ProjectMemberService.AddProjectMember:output_type -> superverse.v2.AddProjectMemberResponse
-	189, // 706: superverse.v2.ProjectMemberService.SetProjectMemberRole:output_type -> superverse.v2.SetProjectMemberRoleResponse
-	191, // 707: superverse.v2.ProjectMemberService.RemoveProjectMember:output_type -> superverse.v2.RemoveProjectMemberResponse
-	194, // 708: superverse.v2.SessionService.GetSession:output_type -> superverse.v2.GetSessionResponse
-	196, // 709: superverse.v2.SessionService.WatchSession:output_type -> superverse.v2.WatchSessionResponse
-	200, // 710: superverse.v2.SessionService.ListArchivedMessages:output_type -> superverse.v2.ListArchivedMessagesResponse
-	199, // 711: superverse.v2.SessionService.RenewWorkspace:output_type -> superverse.v2.RenewWorkspaceResponse
-	206, // 712: superverse.v2.RemoteAgentService.CreateRemoteAgentPairing:output_type -> superverse.v2.CreateRemoteAgentPairingResponse
-	208, // 713: superverse.v2.RemoteAgentService.ListRemoteAgentConnections:output_type -> superverse.v2.ListRemoteAgentConnectionsResponse
-	210, // 714: superverse.v2.RemoteAgentService.RevokeRemoteAgentConnection:output_type -> superverse.v2.RevokeRemoteAgentConnectionResponse
-	212, // 715: superverse.v2.RemoteAgentService.SetSessionExecutor:output_type -> superverse.v2.SetSessionExecutorResponse
-	218, // 716: superverse.v2.AttachmentService.CreateAttachmentUpload:output_type -> superverse.v2.CreateAttachmentUploadResponse
-	222, // 717: superverse.v2.AttachmentService.CompleteAttachmentUpload:output_type -> superverse.v2.CompleteAttachmentUploadResponse
-	224, // 718: superverse.v2.AttachmentService.DeleteAttachment:output_type -> superverse.v2.DeleteAttachmentResponse
-	226, // 719: superverse.v2.AttachmentService.GetAttachmentDownloads:output_type -> superverse.v2.GetAttachmentDownloadsResponse
-	232, // 720: superverse.v2.EvolveService.GetEvolve:output_type -> superverse.v2.GetEvolveResponse
-	244, // 721: superverse.v2.EvolveService.StartEvolveReview:output_type -> superverse.v2.StartEvolveReviewResponse
-	246, // 722: superverse.v2.EvolveService.DecideEvolveProposal:output_type -> superverse.v2.DecideEvolveProposalResponse
-	248, // 723: superverse.v2.EvolveService.GetEvolveProposal:output_type -> superverse.v2.GetEvolveProposalResponse
-	250, // 724: superverse.v2.AgentService.SendMessage:output_type -> superverse.v2.SendMessageResponse
-	252, // 725: superverse.v2.AgentService.AnswerQuestions:output_type -> superverse.v2.AnswerQuestionsResponse
-	254, // 726: superverse.v2.AgentService.UpdateSessionModel:output_type -> superverse.v2.UpdateSessionModelResponse
-	256, // 727: superverse.v2.AgentService.DeleteQueuedMessage:output_type -> superverse.v2.DeleteQueuedMessageResponse
-	258, // 728: superverse.v2.AgentService.SteerQueuedMessage:output_type -> superverse.v2.SteerQueuedMessageResponse
-	260, // 729: superverse.v2.AgentService.ResolveToolApproval:output_type -> superverse.v2.ResolveToolApprovalResponse
-	262, // 730: superverse.v2.AgentService.InterruptAgent:output_type -> superverse.v2.InterruptAgentResponse
-	269, // 731: superverse.v2.AgentService.ListMockScenarios:output_type -> superverse.v2.ListMockScenariosResponse
-	267, // 732: superverse.v2.AgentService.ListAgentModels:output_type -> superverse.v2.ListAgentModelsResponse
-	264, // 733: superverse.v2.AgentService.GetFlowDesign:output_type -> superverse.v2.GetFlowDesignResponse
-	319, // 734: superverse.v2.PreviewService.GetPreview:output_type -> superverse.v2.GetPreviewResponse
-	321, // 735: superverse.v2.PreviewService.StartPreview:output_type -> superverse.v2.StartPreviewResponse
-	323, // 736: superverse.v2.PreviewService.StopPreview:output_type -> superverse.v2.StopPreviewResponse
-	325, // 737: superverse.v2.PreviewService.PreparePreviewSource:output_type -> superverse.v2.PreparePreviewSourceResponse
-	327, // 738: superverse.v2.PreviewService.GetPreviewDefinitions:output_type -> superverse.v2.GetPreviewDefinitionsResponse
-	329, // 739: superverse.v2.PreviewService.UpdatePreviewAutoDeploy:output_type -> superverse.v2.UpdatePreviewAutoDeployResponse
-	336, // 740: superverse.v2.ReleaseService.ListReleaseCandidates:output_type -> superverse.v2.ListReleaseCandidatesResponse
-	338, // 741: superverse.v2.ReleaseService.PrepareRelease:output_type -> superverse.v2.PrepareReleaseResponse
-	340, // 742: superverse.v2.ReleaseService.StartReleaseBuild:output_type -> superverse.v2.StartReleaseBuildResponse
-	342, // 743: superverse.v2.ReleaseService.RecoverReleaseBuild:output_type -> superverse.v2.RecoverReleaseBuildResponse
-	348, // 744: superverse.v2.ReleaseService.ListReleases:output_type -> superverse.v2.ListReleasesResponse
-	360, // 745: superverse.v2.ReleaseService.DeriveLiveConfiguration:output_type -> superverse.v2.DeriveLiveConfigurationResponse
-	350, // 746: superverse.v2.ReleaseService.GetRelease:output_type -> superverse.v2.GetReleaseResponse
-	352, // 747: superverse.v2.ReleaseService.WatchRelease:output_type -> superverse.v2.WatchReleaseResponse
-	344, // 748: superverse.v2.ReleaseService.CancelReleaseBuild:output_type -> superverse.v2.CancelReleaseBuildResponse
-	346, // 749: superverse.v2.ReleaseService.GetReleaseBuildLog:output_type -> superverse.v2.GetReleaseBuildLogResponse
-	362, // 750: superverse.v2.DeploymentService.StartDeployment:output_type -> superverse.v2.StartDeploymentResponse
-	366, // 751: superverse.v2.DeploymentService.GetDeployment:output_type -> superverse.v2.GetDeploymentResponse
-	368, // 752: superverse.v2.DeploymentService.ListDeployments:output_type -> superverse.v2.ListDeploymentsResponse
-	370, // 753: superverse.v2.DeploymentService.WatchDeployment:output_type -> superverse.v2.WatchDeploymentResponse
-	364, // 754: superverse.v2.DeploymentService.CancelDeployment:output_type -> superverse.v2.CancelDeploymentResponse
-	373, // 755: superverse.v2.FlowRunService.GetFlowDefinitions:output_type -> superverse.v2.GetFlowDefinitionsResponse
-	375, // 756: superverse.v2.FlowRunService.GetFlowCatalog:output_type -> superverse.v2.GetFlowCatalogResponse
-	377, // 757: superverse.v2.FlowRunService.SearchFlows:output_type -> superverse.v2.SearchFlowsResponse
-	379, // 758: superverse.v2.FlowRunService.GetFlowDisplay:output_type -> superverse.v2.GetFlowDisplayResponse
-	381, // 759: superverse.v2.FlowRunService.UpdateFlowDisplayField:output_type -> superverse.v2.UpdateFlowDisplayFieldResponse
-	383, // 760: superverse.v2.FlowRunService.InvokeFlowAction:output_type -> superverse.v2.InvokeFlowActionResponse
-	385, // 761: superverse.v2.FlowRunService.StartFlow:output_type -> superverse.v2.StartFlowResponse
-	387, // 762: superverse.v2.FlowRunService.RecoverFlowStart:output_type -> superverse.v2.RecoverFlowStartResponse
-	389, // 763: superverse.v2.FlowDiagnosticsService.GetFlowSummary:output_type -> superverse.v2.GetFlowSummaryResponse
-	391, // 764: superverse.v2.FlowDiagnosticsService.GetFlowState:output_type -> superverse.v2.GetFlowStateResponse
-	393, // 765: superverse.v2.FlowDiagnosticsService.GetFlowHistory:output_type -> superverse.v2.GetFlowHistoryResponse
-	395, // 766: superverse.v2.FlowDiagnosticsService.WaitFlowHistory:output_type -> superverse.v2.WaitFlowHistoryResponse
-	397, // 767: superverse.v2.FlowDiagnosticsService.ReadFlowStream:output_type -> superverse.v2.ReadFlowStreamResponse
-	399, // 768: superverse.v2.FlowDiagnosticsService.LoadFlowBlobs:output_type -> superverse.v2.LoadFlowBlobsResponse
-	401, // 769: superverse.v2.FlowDiagnosticsService.StopFlow:output_type -> superverse.v2.StopFlowResponse
-	403, // 770: superverse.v2.FlowDiagnosticsService.DeleteFlowChannelMessage:output_type -> superverse.v2.DeleteFlowChannelMessageResponse
-	405, // 771: superverse.v2.FlowDiagnosticsService.TimeTravelFlow:output_type -> superverse.v2.TimeTravelFlowResponse
-	407, // 772: superverse.v2.ConnectorService.ListConnections:output_type -> superverse.v2.ListConnectionsResponse
-	409, // 773: superverse.v2.ConnectorService.SelectTeamSpaceConnection:output_type -> superverse.v2.SelectTeamSpaceConnectionResponse
-	411, // 774: superverse.v2.ConnectorService.ReleaseUnusedConnections:output_type -> superverse.v2.ReleaseUnusedConnectionsResponse
-	413, // 775: superverse.v2.ConnectorService.StartConnectorUiSession:output_type -> superverse.v2.StartConnectorUiSessionResponse
-	415, // 776: superverse.v2.ConnectorService.InvokeProviderCommand:output_type -> superverse.v2.InvokeProviderCommandResponse
-	417, // 777: superverse.v2.ConnectorService.SaveTriggerBinding:output_type -> superverse.v2.SaveTriggerBindingResponse
-	419, // 778: superverse.v2.ConnectorService.SaveOperationConfiguration:output_type -> superverse.v2.SaveOperationConfigurationResponse
-	421, // 779: superverse.v2.ApplicationEnvironmentService.GetApplicationEnvironment:output_type -> superverse.v2.GetApplicationEnvironmentResponse
-	423, // 780: superverse.v2.ApplicationEnvironmentService.SaveApplicationEnvironment:output_type -> superverse.v2.SaveApplicationEnvironmentResponse
-	431, // 781: superverse.v2.ModelCredentialService.GetModelCredentialInfo:output_type -> superverse.v2.GetModelCredentialInfoResponse
-	433, // 782: superverse.v2.ModelCredentialService.SetModelCredential:output_type -> superverse.v2.SetModelCredentialResponse
-	435, // 783: superverse.v2.ModelCredentialService.DeleteModelCredential:output_type -> superverse.v2.DeleteModelCredentialResponse
-	438, // 784: superverse.v2.ModelCredentialService.ListModelCredentialModels:output_type -> superverse.v2.ListModelCredentialModelsResponse
-	670, // [670:785] is the sub-list for method output_type
-	555, // [555:670] is the sub-list for method input_type
-	555, // [555:555] is the sub-list for extension type_name
-	555, // [555:555] is the sub-list for extension extendee
-	0,   // [0:555] is the sub-list for field type_name
+	81,  // 546: superverse.v2.SetModelCredentialRequest.caller:type_name -> superverse.v2.CallerContext
+	430, // 547: superverse.v2.SetModelCredentialResponse.credential:type_name -> superverse.v2.ModelCredentialInfo
+	45,  // 548: superverse.v2.SetModelCredentialResponse.notice:type_name -> superverse.v2.ModelCredentialSaveNotice
+	43,  // 549: superverse.v2.DeleteModelCredentialRequest.provider:type_name -> superverse.v2.ModelProvider
+	81,  // 550: superverse.v2.DeleteModelCredentialRequest.caller:type_name -> superverse.v2.CallerContext
+	430, // 551: superverse.v2.DeleteModelCredentialResponse.credential:type_name -> superverse.v2.ModelCredentialInfo
+	43,  // 552: superverse.v2.ListModelCredentialModelsRequest.provider:type_name -> superverse.v2.ModelProvider
+	81,  // 553: superverse.v2.ListModelCredentialModelsRequest.caller:type_name -> superverse.v2.CallerContext
+	46,  // 554: superverse.v2.ListModelCredentialModelsResponse.result:type_name -> superverse.v2.ModelDiscoveryResult
+	438, // 555: superverse.v2.ListModelCredentialModelsResponse.models:type_name -> superverse.v2.ModelCredentialModel
+	91,  // 556: superverse.v2.AccountService.RegisterAccount:input_type -> superverse.v2.RegisterAccountRequest
+	93,  // 557: superverse.v2.AccountService.Login:input_type -> superverse.v2.LoginRequest
+	95,  // 558: superverse.v2.AccountService.Logout:input_type -> superverse.v2.LogoutRequest
+	97,  // 559: superverse.v2.AccountService.GetCurrentAccount:input_type -> superverse.v2.GetCurrentAccountRequest
+	101, // 560: superverse.v2.TeamSpaceService.CreateTeamSpace:input_type -> superverse.v2.CreateTeamSpaceRequest
+	103, // 561: superverse.v2.TeamSpaceService.ListTeamSpaces:input_type -> superverse.v2.ListTeamSpacesRequest
+	105, // 562: superverse.v2.TeamSpaceService.GetTeamSpace:input_type -> superverse.v2.GetTeamSpaceRequest
+	107, // 563: superverse.v2.TeamSpaceService.RenameTeamSpace:input_type -> superverse.v2.RenameTeamSpaceRequest
+	109, // 564: superverse.v2.TeamSpaceService.DeleteTeamSpace:input_type -> superverse.v2.DeleteTeamSpaceRequest
+	111, // 565: superverse.v2.TeamSpaceService.GetTeamSpaceOverview:input_type -> superverse.v2.GetTeamSpaceOverviewRequest
+	115, // 566: superverse.v2.TeamSpaceMemberService.ListTeamSpaceMembers:input_type -> superverse.v2.ListTeamSpaceMembersRequest
+	117, // 567: superverse.v2.TeamSpaceMemberService.AddTeamSpaceMember:input_type -> superverse.v2.AddTeamSpaceMemberRequest
+	119, // 568: superverse.v2.TeamSpaceMemberService.SetTeamSpaceMemberRole:input_type -> superverse.v2.SetTeamSpaceMemberRoleRequest
+	121, // 569: superverse.v2.TeamSpaceMemberService.RemoveTeamSpaceMember:input_type -> superverse.v2.RemoveTeamSpaceMemberRequest
+	125, // 570: superverse.v2.TeamSpaceConnectionService.ListConnectorCatalog:input_type -> superverse.v2.ListConnectorCatalogRequest
+	130, // 571: superverse.v2.TeamSpaceConnectionService.ListTeamSpaceConnections:input_type -> superverse.v2.ListTeamSpaceConnectionsRequest
+	132, // 572: superverse.v2.TeamSpaceConnectionService.GetTeamSpaceConnection:input_type -> superverse.v2.GetTeamSpaceConnectionRequest
+	134, // 573: superverse.v2.TeamSpaceConnectionService.CreateTeamSpaceConnection:input_type -> superverse.v2.CreateTeamSpaceConnectionRequest
+	136, // 574: superverse.v2.TeamSpaceConnectionService.UpdateTeamSpaceConnection:input_type -> superverse.v2.UpdateTeamSpaceConnectionRequest
+	138, // 575: superverse.v2.TeamSpaceConnectionService.DeleteTeamSpaceConnection:input_type -> superverse.v2.DeleteTeamSpaceConnectionRequest
+	140, // 576: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionOAuth:input_type -> superverse.v2.StartTeamSpaceConnectionOAuthRequest
+	143, // 577: superverse.v2.TeamSpaceConnectionService.CompleteTeamSpaceConnectionOAuth:input_type -> superverse.v2.CompleteTeamSpaceConnectionOAuthRequest
+	145, // 578: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionUiSession:input_type -> superverse.v2.StartTeamSpaceConnectionUiSessionRequest
+	147, // 579: superverse.v2.TeamSpaceConnectionService.InvokeTeamSpaceConnectionCommand:input_type -> superverse.v2.InvokeTeamSpaceConnectionCommandRequest
+	149, // 580: superverse.v2.ProjectService.CreateProject:input_type -> superverse.v2.CreateProjectRequest
+	151, // 581: superverse.v2.ProjectService.ListProjects:input_type -> superverse.v2.ListProjectsRequest
+	153, // 582: superverse.v2.ProjectService.GetProject:input_type -> superverse.v2.GetProjectRequest
+	155, // 583: superverse.v2.ProjectService.DeleteProject:input_type -> superverse.v2.DeleteProjectRequest
+	157, // 584: superverse.v2.ProjectService.WatchProject:input_type -> superverse.v2.WatchProjectRequest
+	165, // 585: superverse.v2.ProjectService.GetProjectConfiguration:input_type -> superverse.v2.GetProjectConfigurationRequest
+	167, // 586: superverse.v2.ProjectService.ValidateProjectConfiguration:input_type -> superverse.v2.ValidateProjectConfigurationRequest
+	169, // 587: superverse.v2.ProjectService.RemoveLive:input_type -> superverse.v2.RemoveLiveRequest
+	159, // 588: superverse.v2.ProjectService.ListEnvironmentEvents:input_type -> superverse.v2.ListEnvironmentEventsRequest
+	162, // 589: superverse.v2.ProjectService.ListRecentTriggerEvents:input_type -> superverse.v2.ListRecentTriggerEventsRequest
+	185, // 590: superverse.v2.ProjectMemberService.ListProjectMembers:input_type -> superverse.v2.ListProjectMembersRequest
+	187, // 591: superverse.v2.ProjectMemberService.AddProjectMember:input_type -> superverse.v2.AddProjectMemberRequest
+	189, // 592: superverse.v2.ProjectMemberService.SetProjectMemberRole:input_type -> superverse.v2.SetProjectMemberRoleRequest
+	191, // 593: superverse.v2.ProjectMemberService.RemoveProjectMember:input_type -> superverse.v2.RemoveProjectMemberRequest
+	194, // 594: superverse.v2.SessionService.GetSession:input_type -> superverse.v2.GetSessionRequest
+	196, // 595: superverse.v2.SessionService.WatchSession:input_type -> superverse.v2.WatchSessionRequest
+	198, // 596: superverse.v2.SessionService.ListArchivedMessages:input_type -> superverse.v2.ListArchivedMessagesRequest
+	199, // 597: superverse.v2.SessionService.RenewWorkspace:input_type -> superverse.v2.RenewWorkspaceRequest
+	206, // 598: superverse.v2.RemoteAgentService.CreateRemoteAgentPairing:input_type -> superverse.v2.CreateRemoteAgentPairingRequest
+	208, // 599: superverse.v2.RemoteAgentService.ListRemoteAgentConnections:input_type -> superverse.v2.ListRemoteAgentConnectionsRequest
+	210, // 600: superverse.v2.RemoteAgentService.RevokeRemoteAgentConnection:input_type -> superverse.v2.RevokeRemoteAgentConnectionRequest
+	212, // 601: superverse.v2.RemoteAgentService.SetSessionExecutor:input_type -> superverse.v2.SetSessionExecutorRequest
+	218, // 602: superverse.v2.AttachmentService.CreateAttachmentUpload:input_type -> superverse.v2.CreateAttachmentUploadRequest
+	222, // 603: superverse.v2.AttachmentService.CompleteAttachmentUpload:input_type -> superverse.v2.CompleteAttachmentUploadRequest
+	224, // 604: superverse.v2.AttachmentService.DeleteAttachment:input_type -> superverse.v2.DeleteAttachmentRequest
+	226, // 605: superverse.v2.AttachmentService.GetAttachmentDownloads:input_type -> superverse.v2.GetAttachmentDownloadsRequest
+	232, // 606: superverse.v2.EvolveService.GetEvolve:input_type -> superverse.v2.GetEvolveRequest
+	244, // 607: superverse.v2.EvolveService.StartEvolveReview:input_type -> superverse.v2.StartEvolveReviewRequest
+	246, // 608: superverse.v2.EvolveService.DecideEvolveProposal:input_type -> superverse.v2.DecideEvolveProposalRequest
+	248, // 609: superverse.v2.EvolveService.GetEvolveProposal:input_type -> superverse.v2.GetEvolveProposalRequest
+	250, // 610: superverse.v2.AgentService.SendMessage:input_type -> superverse.v2.SendMessageRequest
+	252, // 611: superverse.v2.AgentService.AnswerQuestions:input_type -> superverse.v2.AnswerQuestionsRequest
+	254, // 612: superverse.v2.AgentService.UpdateSessionModel:input_type -> superverse.v2.UpdateSessionModelRequest
+	256, // 613: superverse.v2.AgentService.DeleteQueuedMessage:input_type -> superverse.v2.DeleteQueuedMessageRequest
+	258, // 614: superverse.v2.AgentService.SteerQueuedMessage:input_type -> superverse.v2.SteerQueuedMessageRequest
+	260, // 615: superverse.v2.AgentService.ResolveToolApproval:input_type -> superverse.v2.ResolveToolApprovalRequest
+	262, // 616: superverse.v2.AgentService.InterruptAgent:input_type -> superverse.v2.InterruptAgentRequest
+	266, // 617: superverse.v2.AgentService.ListMockScenarios:input_type -> superverse.v2.ListMockScenariosRequest
+	267, // 618: superverse.v2.AgentService.ListAgentModels:input_type -> superverse.v2.ListAgentModelsRequest
+	264, // 619: superverse.v2.AgentService.GetFlowDesign:input_type -> superverse.v2.GetFlowDesignRequest
+	319, // 620: superverse.v2.PreviewService.GetPreview:input_type -> superverse.v2.GetPreviewRequest
+	321, // 621: superverse.v2.PreviewService.StartPreview:input_type -> superverse.v2.StartPreviewRequest
+	323, // 622: superverse.v2.PreviewService.StopPreview:input_type -> superverse.v2.StopPreviewRequest
+	325, // 623: superverse.v2.PreviewService.PreparePreviewSource:input_type -> superverse.v2.PreparePreviewSourceRequest
+	327, // 624: superverse.v2.PreviewService.GetPreviewDefinitions:input_type -> superverse.v2.GetPreviewDefinitionsRequest
+	329, // 625: superverse.v2.PreviewService.UpdatePreviewAutoDeploy:input_type -> superverse.v2.UpdatePreviewAutoDeployRequest
+	336, // 626: superverse.v2.ReleaseService.ListReleaseCandidates:input_type -> superverse.v2.ListReleaseCandidatesRequest
+	338, // 627: superverse.v2.ReleaseService.PrepareRelease:input_type -> superverse.v2.PrepareReleaseRequest
+	340, // 628: superverse.v2.ReleaseService.StartReleaseBuild:input_type -> superverse.v2.StartReleaseBuildRequest
+	342, // 629: superverse.v2.ReleaseService.RecoverReleaseBuild:input_type -> superverse.v2.RecoverReleaseBuildRequest
+	348, // 630: superverse.v2.ReleaseService.ListReleases:input_type -> superverse.v2.ListReleasesRequest
+	360, // 631: superverse.v2.ReleaseService.DeriveLiveConfiguration:input_type -> superverse.v2.DeriveLiveConfigurationRequest
+	350, // 632: superverse.v2.ReleaseService.GetRelease:input_type -> superverse.v2.GetReleaseRequest
+	352, // 633: superverse.v2.ReleaseService.WatchRelease:input_type -> superverse.v2.WatchReleaseRequest
+	344, // 634: superverse.v2.ReleaseService.CancelReleaseBuild:input_type -> superverse.v2.CancelReleaseBuildRequest
+	346, // 635: superverse.v2.ReleaseService.GetReleaseBuildLog:input_type -> superverse.v2.GetReleaseBuildLogRequest
+	362, // 636: superverse.v2.DeploymentService.StartDeployment:input_type -> superverse.v2.StartDeploymentRequest
+	366, // 637: superverse.v2.DeploymentService.GetDeployment:input_type -> superverse.v2.GetDeploymentRequest
+	368, // 638: superverse.v2.DeploymentService.ListDeployments:input_type -> superverse.v2.ListDeploymentsRequest
+	370, // 639: superverse.v2.DeploymentService.WatchDeployment:input_type -> superverse.v2.WatchDeploymentRequest
+	364, // 640: superverse.v2.DeploymentService.CancelDeployment:input_type -> superverse.v2.CancelDeploymentRequest
+	373, // 641: superverse.v2.FlowRunService.GetFlowDefinitions:input_type -> superverse.v2.GetFlowDefinitionsRequest
+	375, // 642: superverse.v2.FlowRunService.GetFlowCatalog:input_type -> superverse.v2.GetFlowCatalogRequest
+	377, // 643: superverse.v2.FlowRunService.SearchFlows:input_type -> superverse.v2.SearchFlowsRequest
+	379, // 644: superverse.v2.FlowRunService.GetFlowDisplay:input_type -> superverse.v2.GetFlowDisplayRequest
+	381, // 645: superverse.v2.FlowRunService.UpdateFlowDisplayField:input_type -> superverse.v2.UpdateFlowDisplayFieldRequest
+	383, // 646: superverse.v2.FlowRunService.InvokeFlowAction:input_type -> superverse.v2.InvokeFlowActionRequest
+	385, // 647: superverse.v2.FlowRunService.StartFlow:input_type -> superverse.v2.StartFlowRequest
+	387, // 648: superverse.v2.FlowRunService.RecoverFlowStart:input_type -> superverse.v2.RecoverFlowStartRequest
+	389, // 649: superverse.v2.FlowDiagnosticsService.GetFlowSummary:input_type -> superverse.v2.GetFlowSummaryRequest
+	391, // 650: superverse.v2.FlowDiagnosticsService.GetFlowState:input_type -> superverse.v2.GetFlowStateRequest
+	393, // 651: superverse.v2.FlowDiagnosticsService.GetFlowHistory:input_type -> superverse.v2.GetFlowHistoryRequest
+	395, // 652: superverse.v2.FlowDiagnosticsService.WaitFlowHistory:input_type -> superverse.v2.WaitFlowHistoryRequest
+	397, // 653: superverse.v2.FlowDiagnosticsService.ReadFlowStream:input_type -> superverse.v2.ReadFlowStreamRequest
+	399, // 654: superverse.v2.FlowDiagnosticsService.LoadFlowBlobs:input_type -> superverse.v2.LoadFlowBlobsRequest
+	401, // 655: superverse.v2.FlowDiagnosticsService.StopFlow:input_type -> superverse.v2.StopFlowRequest
+	403, // 656: superverse.v2.FlowDiagnosticsService.DeleteFlowChannelMessage:input_type -> superverse.v2.DeleteFlowChannelMessageRequest
+	405, // 657: superverse.v2.FlowDiagnosticsService.TimeTravelFlow:input_type -> superverse.v2.TimeTravelFlowRequest
+	407, // 658: superverse.v2.ConnectorService.ListConnections:input_type -> superverse.v2.ListConnectionsRequest
+	409, // 659: superverse.v2.ConnectorService.SelectTeamSpaceConnection:input_type -> superverse.v2.SelectTeamSpaceConnectionRequest
+	411, // 660: superverse.v2.ConnectorService.ReleaseUnusedConnections:input_type -> superverse.v2.ReleaseUnusedConnectionsRequest
+	413, // 661: superverse.v2.ConnectorService.StartConnectorUiSession:input_type -> superverse.v2.StartConnectorUiSessionRequest
+	415, // 662: superverse.v2.ConnectorService.InvokeProviderCommand:input_type -> superverse.v2.InvokeProviderCommandRequest
+	417, // 663: superverse.v2.ConnectorService.SaveTriggerBinding:input_type -> superverse.v2.SaveTriggerBindingRequest
+	419, // 664: superverse.v2.ConnectorService.SaveOperationConfiguration:input_type -> superverse.v2.SaveOperationConfigurationRequest
+	421, // 665: superverse.v2.ApplicationEnvironmentService.GetApplicationEnvironment:input_type -> superverse.v2.GetApplicationEnvironmentRequest
+	423, // 666: superverse.v2.ApplicationEnvironmentService.SaveApplicationEnvironment:input_type -> superverse.v2.SaveApplicationEnvironmentRequest
+	431, // 667: superverse.v2.ModelCredentialService.GetModelCredentialInfo:input_type -> superverse.v2.GetModelCredentialInfoRequest
+	433, // 668: superverse.v2.ModelCredentialService.SetModelCredential:input_type -> superverse.v2.SetModelCredentialRequest
+	435, // 669: superverse.v2.ModelCredentialService.DeleteModelCredential:input_type -> superverse.v2.DeleteModelCredentialRequest
+	437, // 670: superverse.v2.ModelCredentialService.ListModelCredentialModels:input_type -> superverse.v2.ListModelCredentialModelsRequest
+	92,  // 671: superverse.v2.AccountService.RegisterAccount:output_type -> superverse.v2.RegisterAccountResponse
+	94,  // 672: superverse.v2.AccountService.Login:output_type -> superverse.v2.LoginResponse
+	96,  // 673: superverse.v2.AccountService.Logout:output_type -> superverse.v2.LogoutResponse
+	98,  // 674: superverse.v2.AccountService.GetCurrentAccount:output_type -> superverse.v2.GetCurrentAccountResponse
+	102, // 675: superverse.v2.TeamSpaceService.CreateTeamSpace:output_type -> superverse.v2.CreateTeamSpaceResponse
+	104, // 676: superverse.v2.TeamSpaceService.ListTeamSpaces:output_type -> superverse.v2.ListTeamSpacesResponse
+	106, // 677: superverse.v2.TeamSpaceService.GetTeamSpace:output_type -> superverse.v2.GetTeamSpaceResponse
+	108, // 678: superverse.v2.TeamSpaceService.RenameTeamSpace:output_type -> superverse.v2.RenameTeamSpaceResponse
+	110, // 679: superverse.v2.TeamSpaceService.DeleteTeamSpace:output_type -> superverse.v2.DeleteTeamSpaceResponse
+	112, // 680: superverse.v2.TeamSpaceService.GetTeamSpaceOverview:output_type -> superverse.v2.GetTeamSpaceOverviewResponse
+	116, // 681: superverse.v2.TeamSpaceMemberService.ListTeamSpaceMembers:output_type -> superverse.v2.ListTeamSpaceMembersResponse
+	118, // 682: superverse.v2.TeamSpaceMemberService.AddTeamSpaceMember:output_type -> superverse.v2.AddTeamSpaceMemberResponse
+	120, // 683: superverse.v2.TeamSpaceMemberService.SetTeamSpaceMemberRole:output_type -> superverse.v2.SetTeamSpaceMemberRoleResponse
+	122, // 684: superverse.v2.TeamSpaceMemberService.RemoveTeamSpaceMember:output_type -> superverse.v2.RemoveTeamSpaceMemberResponse
+	126, // 685: superverse.v2.TeamSpaceConnectionService.ListConnectorCatalog:output_type -> superverse.v2.ListConnectorCatalogResponse
+	131, // 686: superverse.v2.TeamSpaceConnectionService.ListTeamSpaceConnections:output_type -> superverse.v2.ListTeamSpaceConnectionsResponse
+	133, // 687: superverse.v2.TeamSpaceConnectionService.GetTeamSpaceConnection:output_type -> superverse.v2.GetTeamSpaceConnectionResponse
+	135, // 688: superverse.v2.TeamSpaceConnectionService.CreateTeamSpaceConnection:output_type -> superverse.v2.CreateTeamSpaceConnectionResponse
+	137, // 689: superverse.v2.TeamSpaceConnectionService.UpdateTeamSpaceConnection:output_type -> superverse.v2.UpdateTeamSpaceConnectionResponse
+	139, // 690: superverse.v2.TeamSpaceConnectionService.DeleteTeamSpaceConnection:output_type -> superverse.v2.DeleteTeamSpaceConnectionResponse
+	142, // 691: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionOAuth:output_type -> superverse.v2.StartTeamSpaceConnectionOAuthResponse
+	144, // 692: superverse.v2.TeamSpaceConnectionService.CompleteTeamSpaceConnectionOAuth:output_type -> superverse.v2.CompleteTeamSpaceConnectionOAuthResponse
+	146, // 693: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionUiSession:output_type -> superverse.v2.StartTeamSpaceConnectionUiSessionResponse
+	148, // 694: superverse.v2.TeamSpaceConnectionService.InvokeTeamSpaceConnectionCommand:output_type -> superverse.v2.InvokeTeamSpaceConnectionCommandResponse
+	150, // 695: superverse.v2.ProjectService.CreateProject:output_type -> superverse.v2.CreateProjectResponse
+	152, // 696: superverse.v2.ProjectService.ListProjects:output_type -> superverse.v2.ListProjectsResponse
+	154, // 697: superverse.v2.ProjectService.GetProject:output_type -> superverse.v2.GetProjectResponse
+	156, // 698: superverse.v2.ProjectService.DeleteProject:output_type -> superverse.v2.DeleteProjectResponse
+	158, // 699: superverse.v2.ProjectService.WatchProject:output_type -> superverse.v2.WatchProjectResponse
+	166, // 700: superverse.v2.ProjectService.GetProjectConfiguration:output_type -> superverse.v2.GetProjectConfigurationResponse
+	168, // 701: superverse.v2.ProjectService.ValidateProjectConfiguration:output_type -> superverse.v2.ValidateProjectConfigurationResponse
+	170, // 702: superverse.v2.ProjectService.RemoveLive:output_type -> superverse.v2.RemoveLiveResponse
+	160, // 703: superverse.v2.ProjectService.ListEnvironmentEvents:output_type -> superverse.v2.ListEnvironmentEventsResponse
+	163, // 704: superverse.v2.ProjectService.ListRecentTriggerEvents:output_type -> superverse.v2.ListRecentTriggerEventsResponse
+	186, // 705: superverse.v2.ProjectMemberService.ListProjectMembers:output_type -> superverse.v2.ListProjectMembersResponse
+	188, // 706: superverse.v2.ProjectMemberService.AddProjectMember:output_type -> superverse.v2.AddProjectMemberResponse
+	190, // 707: superverse.v2.ProjectMemberService.SetProjectMemberRole:output_type -> superverse.v2.SetProjectMemberRoleResponse
+	192, // 708: superverse.v2.ProjectMemberService.RemoveProjectMember:output_type -> superverse.v2.RemoveProjectMemberResponse
+	195, // 709: superverse.v2.SessionService.GetSession:output_type -> superverse.v2.GetSessionResponse
+	197, // 710: superverse.v2.SessionService.WatchSession:output_type -> superverse.v2.WatchSessionResponse
+	201, // 711: superverse.v2.SessionService.ListArchivedMessages:output_type -> superverse.v2.ListArchivedMessagesResponse
+	200, // 712: superverse.v2.SessionService.RenewWorkspace:output_type -> superverse.v2.RenewWorkspaceResponse
+	207, // 713: superverse.v2.RemoteAgentService.CreateRemoteAgentPairing:output_type -> superverse.v2.CreateRemoteAgentPairingResponse
+	209, // 714: superverse.v2.RemoteAgentService.ListRemoteAgentConnections:output_type -> superverse.v2.ListRemoteAgentConnectionsResponse
+	211, // 715: superverse.v2.RemoteAgentService.RevokeRemoteAgentConnection:output_type -> superverse.v2.RevokeRemoteAgentConnectionResponse
+	213, // 716: superverse.v2.RemoteAgentService.SetSessionExecutor:output_type -> superverse.v2.SetSessionExecutorResponse
+	219, // 717: superverse.v2.AttachmentService.CreateAttachmentUpload:output_type -> superverse.v2.CreateAttachmentUploadResponse
+	223, // 718: superverse.v2.AttachmentService.CompleteAttachmentUpload:output_type -> superverse.v2.CompleteAttachmentUploadResponse
+	225, // 719: superverse.v2.AttachmentService.DeleteAttachment:output_type -> superverse.v2.DeleteAttachmentResponse
+	227, // 720: superverse.v2.AttachmentService.GetAttachmentDownloads:output_type -> superverse.v2.GetAttachmentDownloadsResponse
+	233, // 721: superverse.v2.EvolveService.GetEvolve:output_type -> superverse.v2.GetEvolveResponse
+	245, // 722: superverse.v2.EvolveService.StartEvolveReview:output_type -> superverse.v2.StartEvolveReviewResponse
+	247, // 723: superverse.v2.EvolveService.DecideEvolveProposal:output_type -> superverse.v2.DecideEvolveProposalResponse
+	249, // 724: superverse.v2.EvolveService.GetEvolveProposal:output_type -> superverse.v2.GetEvolveProposalResponse
+	251, // 725: superverse.v2.AgentService.SendMessage:output_type -> superverse.v2.SendMessageResponse
+	253, // 726: superverse.v2.AgentService.AnswerQuestions:output_type -> superverse.v2.AnswerQuestionsResponse
+	255, // 727: superverse.v2.AgentService.UpdateSessionModel:output_type -> superverse.v2.UpdateSessionModelResponse
+	257, // 728: superverse.v2.AgentService.DeleteQueuedMessage:output_type -> superverse.v2.DeleteQueuedMessageResponse
+	259, // 729: superverse.v2.AgentService.SteerQueuedMessage:output_type -> superverse.v2.SteerQueuedMessageResponse
+	261, // 730: superverse.v2.AgentService.ResolveToolApproval:output_type -> superverse.v2.ResolveToolApprovalResponse
+	263, // 731: superverse.v2.AgentService.InterruptAgent:output_type -> superverse.v2.InterruptAgentResponse
+	270, // 732: superverse.v2.AgentService.ListMockScenarios:output_type -> superverse.v2.ListMockScenariosResponse
+	268, // 733: superverse.v2.AgentService.ListAgentModels:output_type -> superverse.v2.ListAgentModelsResponse
+	265, // 734: superverse.v2.AgentService.GetFlowDesign:output_type -> superverse.v2.GetFlowDesignResponse
+	320, // 735: superverse.v2.PreviewService.GetPreview:output_type -> superverse.v2.GetPreviewResponse
+	322, // 736: superverse.v2.PreviewService.StartPreview:output_type -> superverse.v2.StartPreviewResponse
+	324, // 737: superverse.v2.PreviewService.StopPreview:output_type -> superverse.v2.StopPreviewResponse
+	326, // 738: superverse.v2.PreviewService.PreparePreviewSource:output_type -> superverse.v2.PreparePreviewSourceResponse
+	328, // 739: superverse.v2.PreviewService.GetPreviewDefinitions:output_type -> superverse.v2.GetPreviewDefinitionsResponse
+	330, // 740: superverse.v2.PreviewService.UpdatePreviewAutoDeploy:output_type -> superverse.v2.UpdatePreviewAutoDeployResponse
+	337, // 741: superverse.v2.ReleaseService.ListReleaseCandidates:output_type -> superverse.v2.ListReleaseCandidatesResponse
+	339, // 742: superverse.v2.ReleaseService.PrepareRelease:output_type -> superverse.v2.PrepareReleaseResponse
+	341, // 743: superverse.v2.ReleaseService.StartReleaseBuild:output_type -> superverse.v2.StartReleaseBuildResponse
+	343, // 744: superverse.v2.ReleaseService.RecoverReleaseBuild:output_type -> superverse.v2.RecoverReleaseBuildResponse
+	349, // 745: superverse.v2.ReleaseService.ListReleases:output_type -> superverse.v2.ListReleasesResponse
+	361, // 746: superverse.v2.ReleaseService.DeriveLiveConfiguration:output_type -> superverse.v2.DeriveLiveConfigurationResponse
+	351, // 747: superverse.v2.ReleaseService.GetRelease:output_type -> superverse.v2.GetReleaseResponse
+	353, // 748: superverse.v2.ReleaseService.WatchRelease:output_type -> superverse.v2.WatchReleaseResponse
+	345, // 749: superverse.v2.ReleaseService.CancelReleaseBuild:output_type -> superverse.v2.CancelReleaseBuildResponse
+	347, // 750: superverse.v2.ReleaseService.GetReleaseBuildLog:output_type -> superverse.v2.GetReleaseBuildLogResponse
+	363, // 751: superverse.v2.DeploymentService.StartDeployment:output_type -> superverse.v2.StartDeploymentResponse
+	367, // 752: superverse.v2.DeploymentService.GetDeployment:output_type -> superverse.v2.GetDeploymentResponse
+	369, // 753: superverse.v2.DeploymentService.ListDeployments:output_type -> superverse.v2.ListDeploymentsResponse
+	371, // 754: superverse.v2.DeploymentService.WatchDeployment:output_type -> superverse.v2.WatchDeploymentResponse
+	365, // 755: superverse.v2.DeploymentService.CancelDeployment:output_type -> superverse.v2.CancelDeploymentResponse
+	374, // 756: superverse.v2.FlowRunService.GetFlowDefinitions:output_type -> superverse.v2.GetFlowDefinitionsResponse
+	376, // 757: superverse.v2.FlowRunService.GetFlowCatalog:output_type -> superverse.v2.GetFlowCatalogResponse
+	378, // 758: superverse.v2.FlowRunService.SearchFlows:output_type -> superverse.v2.SearchFlowsResponse
+	380, // 759: superverse.v2.FlowRunService.GetFlowDisplay:output_type -> superverse.v2.GetFlowDisplayResponse
+	382, // 760: superverse.v2.FlowRunService.UpdateFlowDisplayField:output_type -> superverse.v2.UpdateFlowDisplayFieldResponse
+	384, // 761: superverse.v2.FlowRunService.InvokeFlowAction:output_type -> superverse.v2.InvokeFlowActionResponse
+	386, // 762: superverse.v2.FlowRunService.StartFlow:output_type -> superverse.v2.StartFlowResponse
+	388, // 763: superverse.v2.FlowRunService.RecoverFlowStart:output_type -> superverse.v2.RecoverFlowStartResponse
+	390, // 764: superverse.v2.FlowDiagnosticsService.GetFlowSummary:output_type -> superverse.v2.GetFlowSummaryResponse
+	392, // 765: superverse.v2.FlowDiagnosticsService.GetFlowState:output_type -> superverse.v2.GetFlowStateResponse
+	394, // 766: superverse.v2.FlowDiagnosticsService.GetFlowHistory:output_type -> superverse.v2.GetFlowHistoryResponse
+	396, // 767: superverse.v2.FlowDiagnosticsService.WaitFlowHistory:output_type -> superverse.v2.WaitFlowHistoryResponse
+	398, // 768: superverse.v2.FlowDiagnosticsService.ReadFlowStream:output_type -> superverse.v2.ReadFlowStreamResponse
+	400, // 769: superverse.v2.FlowDiagnosticsService.LoadFlowBlobs:output_type -> superverse.v2.LoadFlowBlobsResponse
+	402, // 770: superverse.v2.FlowDiagnosticsService.StopFlow:output_type -> superverse.v2.StopFlowResponse
+	404, // 771: superverse.v2.FlowDiagnosticsService.DeleteFlowChannelMessage:output_type -> superverse.v2.DeleteFlowChannelMessageResponse
+	406, // 772: superverse.v2.FlowDiagnosticsService.TimeTravelFlow:output_type -> superverse.v2.TimeTravelFlowResponse
+	408, // 773: superverse.v2.ConnectorService.ListConnections:output_type -> superverse.v2.ListConnectionsResponse
+	410, // 774: superverse.v2.ConnectorService.SelectTeamSpaceConnection:output_type -> superverse.v2.SelectTeamSpaceConnectionResponse
+	412, // 775: superverse.v2.ConnectorService.ReleaseUnusedConnections:output_type -> superverse.v2.ReleaseUnusedConnectionsResponse
+	414, // 776: superverse.v2.ConnectorService.StartConnectorUiSession:output_type -> superverse.v2.StartConnectorUiSessionResponse
+	416, // 777: superverse.v2.ConnectorService.InvokeProviderCommand:output_type -> superverse.v2.InvokeProviderCommandResponse
+	418, // 778: superverse.v2.ConnectorService.SaveTriggerBinding:output_type -> superverse.v2.SaveTriggerBindingResponse
+	420, // 779: superverse.v2.ConnectorService.SaveOperationConfiguration:output_type -> superverse.v2.SaveOperationConfigurationResponse
+	422, // 780: superverse.v2.ApplicationEnvironmentService.GetApplicationEnvironment:output_type -> superverse.v2.GetApplicationEnvironmentResponse
+	424, // 781: superverse.v2.ApplicationEnvironmentService.SaveApplicationEnvironment:output_type -> superverse.v2.SaveApplicationEnvironmentResponse
+	432, // 782: superverse.v2.ModelCredentialService.GetModelCredentialInfo:output_type -> superverse.v2.GetModelCredentialInfoResponse
+	434, // 783: superverse.v2.ModelCredentialService.SetModelCredential:output_type -> superverse.v2.SetModelCredentialResponse
+	436, // 784: superverse.v2.ModelCredentialService.DeleteModelCredential:output_type -> superverse.v2.DeleteModelCredentialResponse
+	439, // 785: superverse.v2.ModelCredentialService.ListModelCredentialModels:output_type -> superverse.v2.ListModelCredentialModelsResponse
+	671, // [671:786] is the sub-list for method output_type
+	556, // [556:671] is the sub-list for method input_type
+	556, // [556:556] is the sub-list for extension type_name
+	556, // [556:556] is the sub-list for extension extendee
+	0,   // [0:556] is the sub-list for field type_name
 }
 
 func init() { file_superverse_v2_superverse_proto_init() }
@@ -34345,7 +34415,7 @@ func file_superverse_v2_superverse_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_superverse_v2_superverse_proto_rawDesc), len(file_superverse_v2_superverse_proto_rawDesc)),
-			NumEnums:      80,
+			NumEnums:      81,
 			NumMessages:   362,
 			NumExtensions: 0,
 			NumServices:   19,

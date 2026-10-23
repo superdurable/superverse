@@ -130,12 +130,17 @@ func (s *server) SetModelCredential(ctx context.Context, request *pb.SetModelCre
 			return nil, status.Error(codes.InvalidArgument, "a custom endpoint is required for a custom model ID")
 		}
 	}
-	info, err := s.sessions.ModelCredentials.Mutate(ctx, caller.FlowID, input, key)
+	info, rateLimited, err := s.sessions.ModelCredentials.MutateWithNotice(ctx, caller.FlowID, input, key)
 	key = ""
 	if err != nil {
 		return nil, credentialError(err)
 	}
-	return &pb.SetModelCredentialResponse{Credential: credentialDocument(info, credentialProvider(request.GetProvider()))}, nil
+	response := &pb.SetModelCredentialResponse{Credential: credentialDocument(info, credentialProvider(request.GetProvider()))}
+	if rateLimited {
+		response.Notice = pb.ModelCredentialSaveNotice_MODEL_CREDENTIAL_SAVE_NOTICE_RATE_LIMITED_UNVERIFIED
+		response.NoticeMessage = "The endpoint rate-limited the test request; the key is saved but unverified and will be checked on the first model call."
+	}
+	return response, nil
 }
 
 func (s *server) DeleteModelCredential(ctx context.Context, request *pb.DeleteModelCredentialRequest) (*pb.DeleteModelCredentialResponse, error) {
@@ -182,14 +187,13 @@ func credentialDocument(info modelcredential.Info, provider modelcredential.Prov
 
 func credentialError(err error) error {
 	if probe, ok := errors.AsType[*openaicompat.CredentialProbeError](err); ok {
-		code := codes.Unavailable
-		if probe.Reason == "provider_transport_timeout" {
-			code = codes.DeadlineExceeded
-		}
 		if probe.Reason == "provider_request_canceled" {
-			code = codes.Canceled
+			return status.Error(codes.Canceled, "endpoint test canceled; the key was not saved")
 		}
-		return status.Errorf(code, "model credential probe: %s (HTTP %d)", probe.Reason, probe.Status)
+		if probe.Reason == "provider_transport_timeout" {
+			return status.Error(codes.FailedPrecondition, "The endpoint test timed out; the key was not saved. Check the endpoint and try again.")
+		}
+		return status.Error(codes.FailedPrecondition, "The endpoint could not be reached or is temporarily unavailable; the key was not saved. Check the endpoint and try again.")
 	}
 	if errors.Is(err, openaicompat.ErrModelCapacity) {
 		return status.Error(codes.ResourceExhausted, "model credential validation is busy; try again shortly")
@@ -205,7 +209,7 @@ func credentialError(err error) error {
 	}
 	if rejected, ok := errors.AsType[*conversation.ModelRejectedError](err); ok {
 		if rejected.Status != 0 {
-			return status.Errorf(codes.FailedPrecondition, "the provider rejected this credential (HTTP %d)", rejected.Status)
+			return status.Errorf(codes.FailedPrecondition, "the provider rejected this credential (HTTP %d): %s", rejected.Status, rejected.Hint)
 		}
 		return status.Error(codes.FailedPrecondition, "the provider rejected this credential")
 	}

@@ -14,6 +14,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 )
@@ -131,7 +132,7 @@ func CredentialProbeFailure(status int) error {
 	default:
 		failure := providerFailure(nil, status)
 		if _, retryable := failure.(*retryableError); retryable {
-			return &CredentialProbeError{Reason: "provider_http_retryable", Status: status}
+			return &CredentialProbeError{Reason: "provider_http_retryable", Status: status, RetryAfter: 2 * time.Second}
 		}
 		return failure
 	}
@@ -140,8 +141,9 @@ func CredentialProbeFailure(status int) error {
 // CredentialProbeError contains only a closed reason and bounded HTTP status.
 // It never retains the request, endpoint, credential or provider response text.
 type CredentialProbeError struct {
-	Reason string
-	Status int
+	RetryAfter time.Duration
+	Reason     string
+	Status     int
 }
 
 func (failure *CredentialProbeError) Error() string { return failure.Reason }

@@ -36,7 +36,7 @@ export async function saveModelCredential(
     { projectId, provider, expectedRevision: revision, requestId, apiKey, ...endpoint },
     { signal },
   );
-  return info(response.credential);
+  return { credential: info(response.credential), notice: response.notice, noticeMessage: response.noticeMessage };
 }
 export async function deleteModelCredential(
   projectId: string,

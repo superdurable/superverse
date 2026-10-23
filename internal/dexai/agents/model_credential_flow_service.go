@@ -12,7 +12,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/openaicompat"
 	"log/slog"
+	"net/http"
 
 	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	sessionagent "github.com/superdurable/superversev2/internal/dexai/agents/session"
@@ -33,6 +35,19 @@ type ModelCredentialFlowService struct {
 // Mutate reserves a writer, changes the hard-delete value once and confirms exact readback.
 // An ambiguous mutation keeps the provider disabled until the same operation reconciles.
 func (s *ModelCredentialFlowService) Mutate(ctx context.Context, flowID agentloop.FlowID, input modelcredential.Mutation, key string) (modelcredential.Info, error) {
+	info, _, err := s.MutateWithNotice(ctx, flowID, input, key)
+	return info, err
+}
+
+// MutateWithNotice reports a rate-limited probe without recording transient validation state in Dex.
+// Rate limiting does not establish authentication; the first model call still checks the key.
+func (s *ModelCredentialFlowService) MutateWithNotice(ctx context.Context, flowID agentloop.FlowID, input modelcredential.Mutation, key string) (modelcredential.Info, bool, error) {
+	rateLimited := false
+	info, err := s.mutate(ctx, flowID, input, key, &rateLimited)
+	return info, rateLimited, err
+}
+
+func (s *ModelCredentialFlowService) mutate(ctx context.Context, flowID agentloop.FlowID, input modelcredential.Mutation, key string, rateLimited *bool) (modelcredential.Info, error) {
 	current, err := s.Sessions.ReadModelCredentialInfo(ctx, flowID, input.Provider)
 	if err != nil {
 		return modelcredential.Info{}, err
@@ -47,7 +62,9 @@ func (s *ModelCredentialFlowService) Mutate(ctx context.Context, flowID agentloo
 		} else {
 			validationErr = s.Compatible.ValidateCredential(ctx, input.Provider.Catalog(), key)
 		}
-		if validationErr != nil {
+		if probe, ok := errors.AsType[*openaicompat.CredentialProbeError](validationErr); ok && probe.Status == http.StatusTooManyRequests {
+			*rateLimited = true
+		} else if validationErr != nil {
 			return current, validationErr
 		}
 	}

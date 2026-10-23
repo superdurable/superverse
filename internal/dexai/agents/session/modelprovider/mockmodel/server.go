@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/superdurable/superversev2/internal/comm"
@@ -97,9 +98,9 @@ func startHandler(ctx context.Context, h *handler, listen string) (baseURL strin
 	return "http://" + listener.Addr().String(), stop, nil
 }
 
-// handler serves the Messages and compatible streamed endpoints. It keeps no state:
-// the reply depends only on the request.
+// handler serves model protocols with fixed-size counters for retry fixtures.
 type handler struct {
+	retry     [16]atomic.Int32
 	custom    bool
 	logger    *slog.Logger
 	probe     *CredentialProbeForTest
@@ -144,6 +145,9 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		parts := strings.SplitN(strings.TrimPrefix(r.URL.Path, "/custom/"), "/", 2)
 		if len(parts) != 2 {
 			http.NotFound(w, r)
+			return
+		}
+		if h.probeRetryFixture(w, r, parts[0]) {
 			return
 		}
 		if r.Method == http.MethodGet && parts[1] == "v1/models" {
@@ -393,6 +397,7 @@ const CredentialProbeRequestIDForTest = requestID
 // CredentialProbeForTest is a test-only counter for synthetic credentials at the existing model endpoint.
 // It never stores request headers, request bodies, history or an unbounded list.
 type CredentialProbeForTest struct {
+	retry                 *[16]atomic.Int32
 	mu                    sync.Mutex
 	key                   string
 	requests              int
@@ -921,7 +926,9 @@ func StartCustomEndpointProbeForTest(ctx context.Context, logger *slog.Logger, f
 		fault = faults[0]
 	}
 	probe := &CredentialProbeForTest{key: apiKey}
-	base, stop, err := startHandler(ctx, &handler{logger: logger, probe: probe, custom: true, wireFault: fault}, "")
+	h := &handler{logger: logger, probe: probe, custom: true, wireFault: fault}
+	probe.retry = &h.retry
+	base, stop, err := startHandler(ctx, h, "")
 	return base, probe, stop, err
 }
 

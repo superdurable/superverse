@@ -36,13 +36,7 @@ type PickerProps = {
  */
 export function SessionAgentPicker(props: PickerProps) {
   const state = useRemoteAgentStatus();
-  return (
-    <AgentPickerMenu
-      key={`${state.session?.projectId}:${state.executor?.epoch}:${state.executor?.generation}:${state.remote?.connectionId ?? "platform"}:${state.session?.status}:${props.canManage}`}
-      {...state}
-      {...props}
-    />
-  );
+  return <AgentPickerMenu key={state.session?.projectId} {...state} {...props} />;
 }
 
 /** The binding does not distinguish every provider, so the display stays agent-neutral. */
@@ -71,6 +65,7 @@ function AgentPickerMenu({
   const trigger = useRef<HTMLButtonElement>(null);
   const card = useRef<HTMLDivElement>(null);
   const popover = usePopover(anchor);
+  const [opened, setOpened] = useState(false);
   const [connect, setConnect] = useState(false);
   const action = useSingleFlight<"platform" | "local">();
   const choice = useModelChoice(modelRevision, onSelect, () => session?.refresh(undefined, true) ?? Promise.resolve());
@@ -156,7 +151,10 @@ function AgentPickerMenu({
         aria-haspopup="dialog"
         aria-expanded={popover.open}
         title={label}
-        onClick={popover.toggle}
+        onClick={() => {
+          setOpened(true);
+          popover.toggle();
+        }}
         className="flex h-7 max-w-[min(14rem,50vw)] items-center gap-1 rounded-[7px] px-1.5 text-[12px] text-ink-dim hover:bg-hover hover:text-ink focus-visible:shadow-(--focus-ring) focus-visible:outline-none aria-expanded:bg-hover aria-expanded:text-ink"
       >
         {switchPending && (
@@ -170,15 +168,15 @@ function AgentPickerMenu({
         </span>
         <Glyph name="chevronDown" className="size-3.5 shrink-0" />
       </button>
-      {popover.open && (
+      {(popover.open || opened) && (
         <PopoverCard
           anchorRef={anchor}
           cardRef={card}
           label="Choose agent"
           align="end"
-          autoFocus
+          autoFocus={popover.open}
           tabIndex={-1}
-          className="w-80 max-w-[90vw] p-2"
+          className={`w-80 max-w-[90vw] p-2 ${popover.open ? "" : "hidden"}`}
         >
           <div className="grid gap-1 text-[12px]">
             {remote && (

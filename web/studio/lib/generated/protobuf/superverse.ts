@@ -665,6 +665,7 @@ export interface ProtoGrpcType {
       ManagedRepositorySource: MessageTypeDefinition<_superverse_v2_ManagedRepositorySource, _superverse_v2_ManagedRepositorySource__Output>
       ModelCredentialInfo: MessageTypeDefinition<_superverse_v2_ModelCredentialInfo, _superverse_v2_ModelCredentialInfo__Output>
       ModelCredentialModel: MessageTypeDefinition<_superverse_v2_ModelCredentialModel, _superverse_v2_ModelCredentialModel__Output>
+      ModelCredentialSaveNotice: EnumTypeDefinition
       ModelCredentialService: SubtypeConstructor<typeof grpc.Client, _superverse_v2_ModelCredentialServiceClient> & { service: _superverse_v2_ModelCredentialServiceDefinition }
       ModelCredentialStatus: EnumTypeDefinition
       ModelDiscoveryResult: EnumTypeDefinition

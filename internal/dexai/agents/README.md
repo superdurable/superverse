@@ -5,7 +5,7 @@ Purpose: Coordinates each Project's one Session across its Project, Session Agen
 
 Callers: `internal/dexai/agents/remoteagent`, `internal/dexai/api`, `internal/dexai/api/boundary`, `internal/dexai/api/modelcredential`, `internal/dexai/bootstrap` and `internal/dexai/studio/runs` import this package.
 
-Dependencies: it imports `gen/superverse/v2`, `internal/comm/**` (2) and `internal/dexai/**` (26) and calls the Dex Flow API.
+Dependencies: it imports `gen/superverse/v2`, `internal/comm/**` (2) and `internal/dexai/**` (27) and calls the Dex Flow API.
 
 ```mermaid
 flowchart LR
@@ -18,7 +18,7 @@ flowchart LR
   c5["internal/dexai/studio/runs"] --> self
   self --> d0["gen/superverse/v2"]
   self --> d1["internal/comm/** (2)"]
-  self --> d2["internal/dexai/** (26)"]
+  self --> d2["internal/dexai/** (27)"]
   self --> e0(["Dex Flow API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->

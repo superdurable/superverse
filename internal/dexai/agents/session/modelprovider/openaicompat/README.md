@@ -3,16 +3,17 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Encodes frozen tools and canonical conversation into Responses or Chat Completions, validates streamed replies, and retains bounded private encrypted replay.
 
-Callers: `internal/dexai/agents/session/modelprovider`, `internal/dexai/agents/session/modelprovider/mockmodel` and `internal/dexai/api/modelcredential` import this package.
+Callers: `internal/dexai/agents`, `internal/dexai/agents/session/modelprovider`, `internal/dexai/agents/session/modelprovider/mockmodel` and `internal/dexai/api/modelcredential` import this package.
 
 Dependencies: it imports `internal/comm` and `internal/dexai/agents/session/conversation` and calls the Dex Flow API.
 
 ```mermaid
 flowchart LR
   self["internal/dexai/agents/session/modelprovider/openaicompat"]
-  c0["internal/dexai/agents/session/modelprovider"] --> self
-  c1["internal/dexai/agents/session/modelprovider/mockmodel"] --> self
-  c2["internal/dexai/api/modelcredential"] --> self
+  c0["internal/dexai/agents"] --> self
+  c1["internal/dexai/agents/session/modelprovider"] --> self
+  c2["internal/dexai/agents/session/modelprovider/mockmodel"] --> self
+  c3["internal/dexai/api/modelcredential"] --> self
   self --> d0["internal/comm"]
   self --> d1["internal/dexai/agents/session/conversation"]
   self --> e0(["Dex Flow API"])

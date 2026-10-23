@@ -8,7 +8,7 @@
 
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   MOCK_MODEL_API_KEY,
   ModelCredentialStatus,
@@ -18,7 +18,7 @@ import {
 } from "@/lib/api/model-credential";
 import { useSessionResource } from "@/lib/session/SessionProvider";
 import type { useModelCredential } from "@/lib/session/credentials/use-model-credential";
-import { CustomEndpointFields } from "./CustomEndpointFields";
+import { CustomEndpointFields, customBudgetError } from "./CustomEndpointFields";
 import type { StartingCredential } from "@/lib/session/credentials/starting-credential";
 import { useSingleFlight } from "@/lib/browser/use-single-flight";
 
@@ -31,7 +31,9 @@ export function ModelCredentialEntry({
   mockEndpoint = false,
   allowCustom = false,
   stage,
+  onLocked,
 }: {
+  onLocked?: (locked: boolean) => void;
   stage?: { provider: StartingCredential["provider"]; onSave: (value: StartingCredential) => void };
   canManage: boolean;
   providerName?: string;
@@ -48,12 +50,19 @@ export function ModelCredentialEntry({
   const outputField = useRef<HTMLInputElement>(null);
   const contextEdited = useRef(false);
   const hints = useRef(new Map<string, string>());
+  const [dirty, setDirty] = useState(false);
+  const [generation, setGeneration] = useState(0);
+  const [notice, setNotice] = useState("");
   const [custom, setCustom] = useState(false);
   const [models, setModels] = useState<string[]>([]);
   const [discoveryNote, setDiscoveryNote] = useState("");
   const [editing, setEditing] = useState(false);
   const [confirm, setConfirm] = useState<"replace" | "delete" | null>(null);
   const action = useSingleFlight<"save" | "delete" | "discover">();
+  useEffect(() => {
+    onLocked?.(dirty || action.busy !== null);
+  }, [dirty, action.busy, onLocked]);
+  useEffect(() => () => onLocked?.(false), [onLocked]);
   const credential = chosenCredential ?? session?.credential;
   if (!credential || (!session && !stage)) return null;
   const projectId = session?.projectId ?? "";
@@ -67,21 +76,9 @@ export function ModelCredentialEntry({
     const contextWindow = contextField.current?.value ?? "32768";
     const maxOutputTokens = outputField.current?.value || "4096";
     if (custom && !retry) {
-      const context = Number(contextWindow),
-        output = Number(maxOutputTokens);
-      if (!/^\d+$/.test(contextWindow) || !Number.isSafeInteger(context) || context < 32768 || context > 1000000) {
-        action.setError("Context window must contain 32768 to 1000000 tokens.");
-        return;
-      }
-      if (
-        !/^\d+$/.test(maxOutputTokens) ||
-        !Number.isSafeInteger(output) ||
-        output < 1 ||
-        output > Math.min(65536, Math.floor(context / 8))
-      ) {
-        action.setError(
-          "Maximum output tokens must be from 1 to the smaller of 65536 and one eighth of the context window.",
-        );
+      const error = customBudgetError(contextWindow, maxOutputTokens);
+      if (error) {
+        action.setError(error);
         return;
       }
     }
@@ -101,16 +98,18 @@ export function ModelCredentialEntry({
           maxOutputTokens: custom ? maxOutputTokens : "0",
         },
       });
+      setDirty(false);
       action.setError("");
       setDiscoveryNote("Key ready for the new Project. Build will validate it before sending.");
       return;
     }
-    if (field.current) field.current.value = "";
     const operation = retry
       ? credential.pending
       : { kind: "save" as const, revision: info?.revision ?? "0", requestId: crypto.randomUUID() };
     if (!operation) return;
+    setNotice("");
     credential.setPending(operation);
+    setEditing(true);
     setConfirm(null);
     void action.run("save", async (signal) => {
       try {
@@ -128,7 +127,10 @@ export function ModelCredentialEntry({
             maxOutputTokens: custom ? maxOutputTokens : "0",
           },
         );
-        credential.setInfo(next);
+        credential.setInfo(next.credential);
+        setNotice(next.noticeMessage);
+        if (field.current) field.current.value = "";
+        setDirty(false);
         credential.setPending(null);
         setEditing(false);
       } catch (reason) {
@@ -229,7 +231,12 @@ export function ModelCredentialEntry({
     else save();
   };
   return (
-    <div className="my-1 grid gap-2 rounded-md border border-line p-2.25 text-xs" data-model-credential>
+    <div
+      key={generation}
+      className="my-1 grid gap-2 rounded-md border border-line p-2.25 text-xs"
+      data-model-credential
+      onChange={() => setDirty(true)}
+    >
       <p className="font-medium text-ink">
         {custom || info?.baseUrl ? "Custom endpoint API key" : keyHint} ·{" "}
         {active
@@ -248,14 +255,14 @@ export function ModelCredentialEntry({
       <p className="text-ink-faint">
         {mockEndpoint && !custom
           ? `This local endpoint accepts the test key ${MOCK_MODEL_API_KEY}. No model charge.`
-          : `All Builders of this Project use this key. ${providerName} bills your account. Saving tests the key with a small billable request.`}
+          : `All Builders of this Project use this key. ${custom || info?.baseUrl ? "Your endpoint’s provider" : providerName} bills your account. Saving tests the key with a small billable request.`}
       </p>
       {stage && (
         <p className="text-ink-faint">
           Kept only in memory until this Project is created. Reloading requires entering the key again.
         </p>
       )}
-      {canManage && !credential.pending && (
+      {canManage && (!credential.pending || dirty || action.busy !== null) && (
         <>
           {(!active || editing) && (
             <>
@@ -307,7 +314,7 @@ export function ModelCredentialEntry({
               )}
               <button
                 type="button"
-                disabled={action.busy !== null || (!stage && info === null)}
+                disabled={action.busy !== null || (!stage && (info === null || credential.pending !== null))}
                 onClick={() => change("replace")}
                 className="rounded border border-accent-rule px-2 py-1 text-accent hover:bg-accent-subtle"
               >
@@ -352,7 +359,24 @@ export function ModelCredentialEntry({
           )}
         </>
       )}
-      {canManage && credential.pending && (
+      {dirty && (
+        <button
+          type="button"
+          disabled={action.busy !== null || !!credential.pending}
+          onClick={() => {
+            setDirty(false);
+            setEditing(false);
+            setCustom(false);
+            setGeneration((value) => value + 1);
+            clearDiscovery();
+            action.setError("");
+          }}
+        >
+          Discard changes
+        </button>
+      )}
+      {notice && <p role="status">{notice}</p>}
+      {canManage && credential.pending && action.busy === null && (
         <button
           type="button"
           disabled={action.busy !== null}

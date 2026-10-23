@@ -56,7 +56,7 @@ func TestCustomEndpointKindSessionDexIntegration(t *testing.T) {
 				for _, probe := range []struct {
 					path, reason string
 					code         codes.Code
-				}{{"probe-429", "provider_http_retryable", codes.Unavailable}, {"probe-timeout", "provider_transport_timeout", codes.DeadlineExceeded}} {
+				}{{"probe-timeout", "timed out", codes.FailedPrecondition}} {
 					revision := uint64(1)
 					_, err := api.SetModelCredential(ctx, &pb.SetModelCredentialRequest{ProjectId: session.identity.ProjectID, Provider: candidate.provider, RequestId: flowid.RandomID(20), ExpectedRevision: &revision, ApiKey: mockmodel.APIKeyForTest, BaseUrl: "http://127.0.0.1:18083/custom/" + probe.path + "/v1", CustomModelId: mockmodel.CustomDiscoveredModelIDForTest, Caller: caller})
 					if status.Code(err) != probe.code || !strings.Contains(status.Convert(err).Message(), probe.reason) {

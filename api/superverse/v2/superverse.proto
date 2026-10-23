@@ -4084,8 +4084,15 @@ message SetModelCredentialRequest {
   int64 max_output_tokens = 9;
   CallerContext caller = 100;
 }
+// Transient save outcome, not a durable assertion that authentication succeeded.
+enum ModelCredentialSaveNotice {
+  MODEL_CREDENTIAL_SAVE_NOTICE_UNSPECIFIED = 0;
+  MODEL_CREDENTIAL_SAVE_NOTICE_RATE_LIMITED_UNVERIFIED = 1;
+}
 message SetModelCredentialResponse {
   ModelCredentialInfo credential = 1;
+  ModelCredentialSaveNotice notice = 2;
+  string notice_message = 3;
 }
 message DeleteModelCredentialRequest {
   string project_id = 1;

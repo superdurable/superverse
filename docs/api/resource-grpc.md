@@ -258,7 +258,7 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 | RPC | Request | Response |
 | --- | --- | --- |
 | GetModelCredentialInfo | `project_id 1, ModelProvider provider 2` | `ModelCredentialInfo credential 1` |
-| SetModelCredential | `project_id 1, ModelProvider provider 2, request_id 3, optional uint64 expected_revision 4, api_key 5, base_url 6, custom_model_id 7, int64 context_window 8, int64 max_output_tokens 9` | `ModelCredentialInfo credential 1` |
+| SetModelCredential | `project_id 1, ModelProvider provider 2, request_id 3, optional uint64 expected_revision 4, api_key 5, base_url 6, custom_model_id 7, int64 context_window 8, int64 max_output_tokens 9` | `ModelCredentialInfo credential 1, ModelCredentialSaveNotice notice 2, notice_message 3` |
 | DeleteModelCredential | `project_id 1, ModelProvider provider 2, request_id 3, optional uint64 expected_revision 4` | `ModelCredentialInfo credential 1` |
 | ListModelCredentialModels | `project_id 1, ModelProvider provider 2, api_key 3, base_url 4, optional uint64 expected_revision 5` | `repeated model_ids 1, ModelDiscoveryResult result 2, repeated ModelCredentialModel models 3` |
 
