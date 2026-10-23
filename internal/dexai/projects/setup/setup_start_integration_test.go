@@ -32,6 +32,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/app/apptemplate"
 	"github.com/superdurable/superversev2/internal/dexai/projects"
 	"github.com/superdurable/superversev2/internal/dexai/projects/infra"
+	infradocker "github.com/superdurable/superversev2/internal/dexai/projects/infra/docker"
 	"github.com/superdurable/superversev2/internal/dexai/projects/projecttest"
 	"github.com/superdurable/superversev2/internal/dexai/projects/repobinding"
 	"github.com/superdurable/superversev2/internal/dexai/projects/setup"
@@ -130,11 +131,11 @@ func newProjectObjects(t *testing.T) projectObjects {
 			},
 		}
 	}
-	// change pauses or unpauses the project's MinIO container in state, if the
-	// lane runs one.
+	// change pauses or unpauses only this Native instance's Project storage.
+	instance := dexflowtest.NativeInstanceForTest(t)
 	change := func(ctx context.Context, project, state, command string) (bool, error) {
 		labels := storageLabels(project)
-		id, err := run(ctx, "docker", "ps", "--quiet", "--filter", "label="+labels[0], "--filter", "label="+labels[1], "--filter", "status="+state)
+		id, err := run(ctx, "docker", "ps", "--quiet", "--filter", "label="+labels[0], "--filter", "label="+labels[1], "--filter", "label="+infradocker.NativeInstanceLabel+"="+instance, "--filter", "status="+state)
 		if err != nil || id == "" {
 			return false, err
 		}
@@ -244,6 +245,17 @@ type storageScenario struct {
 
 func startStorageScenario(ctx context.Context, t *testing.T, name string) *storageScenario {
 	t.Helper()
+	s, input := prepareStorageScenario(ctx, t, name)
+	if err := s.projects.Create(ctx, input); err != nil {
+		t.Fatalf("actual Project start requires reconciliation (%T)", err)
+	}
+	return s
+}
+
+// prepareStorageScenario creates the real owner and TeamSpace before saturation,
+// retaining cleanup ownership while leaving Project and Setup admission to the caller.
+func prepareStorageScenario(ctx context.Context, t *testing.T, name string) (*storageScenario, projects.ProjectStart) {
+	t.Helper()
 	settings := requireSetupSettings(t)
 	owner := registerOwner(ctx, t, settings)
 	projectFlow, setupFlow, repositoryFlow := &projects.ProjectFlow{}, &setup.ProjectSetupFlow{}, &repobinding.RepositoryBindingFlow{}
@@ -262,10 +274,7 @@ func startStorageScenario(ctx context.Context, t *testing.T, name string) *stora
 	t.Cleanup(func() { s.deleteProject(context.WithoutCancel(ctx), t) })
 	t.Logf("cleanup ownership before admission: Project=project-%s Setup=%s", projectID, s.setupFlowID)
 	s.holdStorage(ctx, t)
-	if err := s.projects.Create(ctx, input); err != nil {
-		t.Fatalf("actual Project start requires reconciliation (%T)", err)
-	}
-	return s
+	return s, input
 }
 
 // holdStorage holds the Project's storage from the moment the lane runs it,

@@ -298,6 +298,7 @@ func loadConfig(ctx context.Context, logger *slog.Logger, settings serverconfig.
 	c.dexClient = dex.ClientOptions{FlowServiceAddress: settings.Dex.ServerAddress}
 	c.dexWorker = dex.WorkerOptions{FlowServiceAddress: settings.Dex.ServerAddress, Pull: &dex.PullWorkerOptions{
 		MaxConcurrentTasks:             settings.Dex.Pull.MaxConcurrentTasks,
+		ReservedRPCTasks:               &settings.Dex.Pull.ReservedRPCTasks,
 		IdleStreamsPerQueue:            settings.Dex.Pull.IdleStreamsPerQueue,
 		StopDrainTimeout:               settings.Dex.Pull.StopDrainTimeout,
 		StopOnPermanentStreamRejection: true,

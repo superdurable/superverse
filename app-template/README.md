@@ -1,5 +1,9 @@
 # Application template
 
+## Live Worker capacity
+
+The template uses Dex Go SDK 1.15.0. Live supplies `maxConcurrentTasks: 4`; the Worker leaves `ReservedRPCTasks` unset and inherits the SDK default of one RPC slot. Steps are declined once total busy handlers reach three, while RPCs may use all four slots. The runtime YAML has no reserve field. This SDK-side admission works with Project Dex Server 1.13.0; the Live SDK floor remains 1.13.0. Preview retains push mode.
+
 ## Local verification model transport
 
 The shared configuration loader exposes `LocalModelHTTPClient` for example LLM connections.

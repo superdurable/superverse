@@ -7,7 +7,7 @@ ARG GO_IMAGE
 ARG NODE_IMAGE
 # The pinned Dex CLI, which coding-toolchain installs and coding-base checks
 # through its shim.
-ARG DEXCLI_VERSION=1.14.2
+ARG DEXCLI_VERSION=1.15.1
 
 FROM --platform=${BUILDPLATFORM} ${GO_IMAGE} AS sandboxd-build
 ARG GO_IMAGE

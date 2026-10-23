@@ -100,6 +100,9 @@ func (c Config) Validate() error {
 	if !between(c.Dex.Pull.MaxConcurrentTasks, 1, 256) {
 		fail("dex.pull.maxConcurrentTasks must be an integer from 1 to 256")
 	}
+	if c.Dex.Pull.ReservedRPCTasks < 0 || c.Dex.Pull.ReservedRPCTasks >= c.Dex.Pull.MaxConcurrentTasks {
+		fail("dex.pull.reservedRPCTasks must be an integer from 0 to maxConcurrentTasks-1")
+	}
 	if !between(c.Dex.Pull.IdleStreamsPerQueue, 1, 8) {
 		fail("dex.pull.idleStreamsPerQueue must be an integer from 1 to 8")
 	}

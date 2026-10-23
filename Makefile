@@ -28,7 +28,7 @@ export GOWORK := off
 
 # Shared developer tooling; disposable caches default outside the checkout.
 TOOL_CACHE ?= /tmp/superverse-v2-tools
-DEXCLI_VERSION := v1.14.2
+DEXCLI_VERSION := v1.15.1
 DEXCLI_BINARY ?= $(TOOL_CACHE)/dexcli-$(DEXCLI_VERSION)
 OSV_SCANNER_VERSION := v2.5.1
 OSV_SCANNER_BINARY ?= $(TOOL_CACHE)/osv-scanner-$(OSV_SCANNER_VERSION)

@@ -43,6 +43,7 @@ const (
 	DefaultProjectIDLength                 = 4
 	DefaultDexServerAddress                = "127.0.0.1:8801"
 	DefaultDexPullMaxConcurrentTasks       = 256
+	DefaultDexPullReservedRPCTasks         = 32
 	DefaultDexPullIdleStreamsPerQueue      = 1
 	DefaultDexPullStopDrainTimeout         = 60 * time.Second
 	DefaultEffort                          = conversation.EffortMedium
@@ -217,6 +218,7 @@ type DexConfig struct {
 // DexPullConfig bounds this process's outbound Worker task streams and drain.
 type DexPullConfig struct {
 	MaxConcurrentTasks  int           `yaml:"maxConcurrentTasks"`
+	ReservedRPCTasks    int           `yaml:"reservedRPCTasks"`
 	IdleStreamsPerQueue int           `yaml:"idleStreamsPerQueue"`
 	StopDrainTimeout    time.Duration `yaml:"stopDrainTimeout"`
 }
@@ -601,7 +603,7 @@ func Default() Config {
 			GRPCAddress: DefaultGRPCAddress, HealthAddress: DefaultHealthAddress, BlobCacheDir: DefaultBlobCacheDir,
 			ProjectIDLength: DefaultProjectIDLength,
 		},
-		Dex:    DexConfig{ServerAddress: DefaultDexServerAddress, Pull: DexPullConfig{MaxConcurrentTasks: DefaultDexPullMaxConcurrentTasks, IdleStreamsPerQueue: DefaultDexPullIdleStreamsPerQueue, StopDrainTimeout: DefaultDexPullStopDrainTimeout}},
+		Dex:    DexConfig{ServerAddress: DefaultDexServerAddress, Pull: DexPullConfig{MaxConcurrentTasks: DefaultDexPullMaxConcurrentTasks, ReservedRPCTasks: DefaultDexPullReservedRPCTasks, IdleStreamsPerQueue: DefaultDexPullIdleStreamsPerQueue, StopDrainTimeout: DefaultDexPullStopDrainTimeout}},
 		Studio: StudioConfig{RunsDexConnections: DefaultRunsDexConnections},
 		Agent: AgentConfig{
 			Providers: modelprovider.ProviderConfig{MockListen: DefaultProviderMockListen},

@@ -116,11 +116,11 @@ Use constructor-injected typed interfaces for former Agent-to-Control-Plane
 callbacks. Do not replace those callbacks with
 self-gRPC calls. The BFF calls the business gRPC API using generated clients.
 
-Every platform server replica runs a listener-free pull Worker on Dex Server and Go SDK 1.14.2.
+Every platform server replica runs a listener-free pull Worker on Dex Server and Go SDK 1.15.0.
 It opens outbound streams to `dex.serverAddress`; the Dex Client starts platform Flows with the
 Worker's pull target. Project Live applications use separate web and pull Worker processes on their Project Dex.
 FDG, HTTP route and Live pointer activate before old Worker drain; HTTP stays for retirement.
-Preview retains Sandbox-local push.
+Preview retains Sandbox-local push. The platform reserves 32 of its 256 handler slots for RPCs: Steps are declined once total busy handlers reach 224, while RPCs may use the full cap. New application templates use Go SDK 1.15.0 and inherit its one-slot RPC reserve with the Live task cap of four; the Live SDK floor remains 1.13.0. The reserve is SDK-local and works with the approved Project Dex 1.13.0 server.
 Readiness waits for all platform Worker queues to acknowledge registration, probes
 `PullRegistrationState().IsReady` and Dex health, and turns false before shutdown starts.
 A permanent rejection without a registered stream is fatal and identifies its queue and gRPC code.
@@ -323,8 +323,10 @@ records that the later package moves changed no Flow.
 | Source | Authority |
 | --- | --- |
 | Dex skills | `dex-skills/`, Superverse-owned source (the current contract) |
-| Platform | Go SDK `v1.14.2`, Server `v1.14.2`, CLI `v1.14.2`; kept at the newest stable release |
+| Platform | Go SDK `v1.15.0`, Server `v1.15.0`, CLI `v1.15.1`; kept at the newest stable release |
 | New-project template | The examples of `app-template/` (a shared base and one folder per example): the default text summary, served as `app-template@<tree ID>`, and each example a person picks, served as `app-template/<id>@<tree ID>` (the current contract) |
+
+Dex interpreter version 6 requires every node of one logical Dex to stop before nodes of the new version start. Platform Dex uses Recreate at every replica count; Project Live Dex remains single-replica Recreate, and Preview runs one supervised engine.
 
 Do not upgrade generated application dependencies merely because the
 platform uses a newer Dex Server. Preserve their declared template versions.

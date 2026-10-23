@@ -24,11 +24,9 @@ metadata:
 spec:
   replicas: {{ .Values.dex.replicas }}
   revisionHistoryLimit: 3
-  # The memory Stream store lives in the one Dex process, which a rollout replaces; several
-  # replicas need the shared Stream store that dex.sharedStreamStore declares.
-  {{- if eq (int .Values.dex.replicas) 1 }}
+  # Interpreter versions cannot coexist within one Dex. Stop every old Pod before replacement.
+  # Multiple replicas still require the shared Stream store that dex.sharedStreamStore declares.
   strategy: {type: Recreate}
-  {{- end }}
   selector:
     matchLabels: {app: {{ include "v2.product" $ }}-dex}
   template:
