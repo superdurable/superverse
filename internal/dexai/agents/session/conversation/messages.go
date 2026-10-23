@@ -161,13 +161,14 @@ func (role *MessageRole) UnmarshalJSON(data []byte) error {
 // a notification or a marker. It never carries thinking, tool arguments, tool
 // results or a notification's report.
 type AgentMessage struct {
-	ExecutorChanged bool        `json:"executor_changed,omitempty"`
-	Via             *string     `json:"via,omitempty"`
-	Imported        bool        `json:"imported,omitempty"`
-	SteeredBy       *Actor      `json:"steered_by,omitempty"`
-	Actor           *Actor      `json:"actor,omitempty"`
-	Role            MessageRole `json:"role"`
-	Content         string      `json:"content"`
+	NotificationContinuesTurn bool        `json:"notification_continues_turn,omitempty"`
+	ExecutorChanged           bool        `json:"executor_changed,omitempty"`
+	Via                       *string     `json:"via,omitempty"`
+	Imported                  bool        `json:"imported,omitempty"`
+	SteeredBy                 *Actor      `json:"steered_by,omitempty"`
+	Actor                     *Actor      `json:"actor,omitempty"`
+	Role                      MessageRole `json:"role"`
+	Content                   string      `json:"content"`
 	// Attachments summarize the files a user message carries.
 	Attachments         []AttachmentSummary   `json:"attachments,omitempty"`
 	ToolCalls           []ToolCallSummary     `json:"tool_calls"`

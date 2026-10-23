@@ -131,6 +131,9 @@ func TestSessionMockBackgroundCommandDexIntegration(t *testing.T) {
 	if len(notifications) != 1 {
 		t.Fatalf("expected one notification, got %d", len(notifications))
 	}
+	if notifications[0].Message.NotificationContinuesTurn {
+		t.Fatal("the idle notification must begin a separate display group")
+	}
 	notification := notifications[0].Message.Notification
 	commands := agent.Description.BackgroundCommands
 	if len(commands) != 1 || notification == nil || notification.Kind != conversation.NotificationKindTask || notification.Source != conversation.NotificationSourceCommand ||
@@ -145,6 +148,33 @@ func TestSessionMockBackgroundCommandDexIntegration(t *testing.T) {
 	if command.Status != agenttasks.BackgroundCommandExited || command.EndReason != agenttasks.BackgroundCommandEndExit || command.ExitCode == nil || *command.ExitCode != 0 ||
 		command.OutputBytes != int64(len("background-done\n")) || command.Description != "Build in the background" {
 		t.Fatalf("the background command's record is wrong: %+v", command)
+	}
+}
+
+// An active platform turn consumes the real BackgroundCommandFlow notification
+// after foreground work and retains its append-time display relationship in history.
+func TestSessionMockBackgroundActiveTurnDexIntegration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
+	defer cancel()
+	session := newMockSession(t, ctx, mockInput(t, "background-active-turn", 1).Content)
+	session.waitForSnapshot(ctx, "one completed turn with its background notification", func(agent agentloop.AgentSnapshot) bool {
+		return len(replies(agent.History)) >= 4 && agent.Description.Status == agentloop.AgentStatusWaitingForMessage
+	})
+	agent, messages := session.history(ctx)
+	requireNoFailure(t, conversation.HistoryPage{Messages: messages})
+	if agent.Description.Turn != 1 {
+		t.Fatalf("background completion must stay in the original turn, got %d", agent.Description.Turn)
+	}
+	notifications := ofRole(messages, conversation.MessageRoleNotification)
+	if len(notifications) != 1 || !notifications[0].Message.NotificationContinuesTurn {
+		t.Fatalf("expected one canonical active-turn notification, got %+v", notifications)
+	}
+	assistant := ofRole(messages, conversation.MessageRoleAssistant)
+	if len(assistant) != 4 || notifications[0].Sequence <= assistant[1].Sequence || notifications[0].Sequence >= assistant[2].Sequence {
+		t.Fatal("the notification must be between the foreground work and its same-turn response")
+	}
+	if !strings.Contains(assistant[3].Message.Content, "Both commands finished in one turn") {
+		t.Fatalf("unexpected turn result: %q", assistant[3].Message.Content)
 	}
 }
 

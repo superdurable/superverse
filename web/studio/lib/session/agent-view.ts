@@ -87,6 +87,7 @@ function agentMessageView(value: AgentMessage__Output) {
     ...(value.via ? { via: value.via } : {}),
     ...(value.imported ? { imported: value.imported } : {}),
     ...(value.executorChanged ? { executorChanged: value.executorChanged } : {}),
+    ...(value.notificationContinuesTurn ? { notificationContinuesTurn: true } : {}),
     toolCalls: value.toolCalls.map((call) => ({ id: call.id, name: call.name, target: call.target })),
     toolCallId: value.toolCallId ?? null,
     toolName: value.toolName ?? null,

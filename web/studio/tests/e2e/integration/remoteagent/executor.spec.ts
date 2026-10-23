@@ -88,7 +88,9 @@ test("Studio pairs a remote executor, renders its reply and takes over with the 
   });
 });
 
-test("a command notification starts remote work after idle without inheriting the preceding turn", async ({ page }) => {
+test("notifications start a separate Worked summary after idle and stay in the active remote turn", async ({
+  page,
+}) => {
   test.setTimeout(600_000);
   await runRemoteCase(page, async (scope) => {
     const client = await scope.connect();
@@ -153,6 +155,7 @@ test("a command notification starts remote work after idle without inheriting th
     const notice = history.findLast((entry) => entry.message?.role === "ROLE_NOTIFICATION");
     expect(reply?.sequence).toBeDefined();
     expect(notice?.sequence).toBeDefined();
+    expect(notice?.message?.notificationContinuesTurn ?? false).toBe(false);
     expect(BigInt(string(reply?.sequence, "Reply sequence"))).toBeGreaterThan(
       BigInt(string(notice?.sequence, "Notification sequence")),
     );
@@ -170,5 +173,76 @@ test("a command notification starts remote work after idle without inheriting th
         exact: true,
       }),
     ).toBeVisible();
+    await page.reload();
+    await expect(turn.getByText("Background task finished", { exact: true })).toBeVisible();
+    await expect(turn.getByText(before, { exact: true })).toHaveCount(0);
+    await expect(turn.getByTestId("work-log")).toHaveCount(1);
+    await expect(turn.getByRole("button", { name: /^Worked.* · 1 step$/ })).toBeVisible();
+
+    await client.post("report", {
+      ...fence,
+      sequence: 7,
+      events: [{ kind: "user_message", text: `Keep working through a background notification ${randomUUID()}` }],
+    });
+    const activeBefore = `Still working before notification ${randomUUID()}`;
+    const activeAfter = `Finished the same remote turn ${randomUUID()}`;
+    await client.post("report", { ...fence, sequence: 8, events: [{ kind: "assistant_message", text: activeBefore }] });
+    await client.post("report", {
+      ...fence,
+      sequence: 9,
+      toolCall: {
+        name: "bash",
+        arguments: {
+          command: "sleep 5; printf 'active notification command completed\\n'",
+          description: "Finish a real background command during the remote turn",
+          run_in_background: true,
+        },
+      },
+    });
+    // Keep the remote turn open while the real BackgroundCommandFlow reports its completion.
+    let hasResult = false;
+    let hasNotice = false;
+    await expect
+      .poll(
+        async () => {
+          const entries = await sync();
+          hasResult ||= result(entries, 9);
+          hasNotice ||= entries.some((entry) => entry.kind === "notification");
+          return hasResult && hasNotice;
+        },
+        { timeout: 300_000 },
+      )
+      .toBe(true);
+    await expect
+      .poll(async () => (await readSession(page, scope.fixture.projectId)).agent?.description?.status)
+      .not.toBe("STATUS_WAITING_FOR_MESSAGE");
+    await client.post("report", {
+      ...fence,
+      sequence: 10,
+      toolCall: {
+        name: "bash",
+        arguments: { command: "printf 'same turn continues\\n'", description: "Continue after the background notice" },
+      },
+    });
+    await expect.poll(async () => result(await sync(), 10), { timeout: 60_000 }).toBe(true);
+    await client.post("report", { ...fence, sequence: 11, events: [{ kind: "assistant_message", text: activeAfter }] });
+    await client.post("report", { ...fence, sequence: 12, turnCompleted: true });
+    const activeHistory = (await readSession(page, scope.fixture.projectId)).agent?.history?.messages ?? [];
+    expect(
+      activeHistory.findLast((entry) => entry.message?.role === "ROLE_NOTIFICATION")?.message
+        ?.notificationContinuesTurn,
+    ).toBe(true);
+    const activeTurn = page
+      .getByRole("region", { name: "Conversation turn", exact: true })
+      .filter({ hasText: activeAfter });
+    const assertOneTurn = async () => {
+      await expect(activeTurn.getByText(activeBefore, { exact: true })).toBeVisible();
+      await expect(activeTurn.getByText("Background task finished", { exact: true })).toBeVisible();
+      await expect(activeTurn.getByTestId("work-log")).toHaveCount(1);
+      await expect(activeTurn.getByRole("button", { name: /^Worked.* · 2 steps$/ })).toBeVisible();
+    };
+    await assertOneTurn();
+    await page.reload();
+    await assertOneTurn();
   });
 });

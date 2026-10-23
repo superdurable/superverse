@@ -2365,6 +2365,9 @@ message AgentMessage {
   repeated AgentAttachment attachments = 16;
   // Visible executor boundary; starts a new display turn without becoming model input.
   bool executor_changed = 17;
+  // Set only for a notification consumed during an already active turn.
+  // False (including older entries) retains the notification display boundary.
+  bool notification_continues_turn = 18;
 }
 
 // What a message shows of one attached file: never its content, an object key or a URL

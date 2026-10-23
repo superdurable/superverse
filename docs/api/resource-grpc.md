@@ -1044,7 +1044,11 @@ A Session notification is an automated report of something that happened outside
 Agent's turn, such as a background command that ended or a failed Preview or Live
 deployment. The history projects it as `ROLE_NOTIFICATION` whose `content` is its summary
 and whose `notification` carries its ID, kind, source, time and, for a task, the task ID and
-status; the report the model reads is not projected. It is never a user message. A
+status; the report the model reads is not projected. It is never a user message.
+`AgentMessage.notification_continues_turn` is true only when the Session consumed the notification
+inside an active turn; Studio retains its card and includes its work in that turn's single Worked
+summary. False, including older entries without the field, retains the notification display boundary.
+The flag records consumption, not the producer's occurrence time or a client inference from text. A
 `delivery` notification also carries its `outcome` (`failure` when the application owns
 the failure, otherwise `notice`), the `owner` who must act (application, configuration or
 platform), the failure's `code` and `phase`, the `commit` it concerns, the `resource_id`

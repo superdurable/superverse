@@ -523,6 +523,10 @@ func publishNotification(ctx dex.Context, notification conversation.SessionNotif
 // that resolves an earlier notice enters the conversation. A task's end holds
 // the Sandbox for another Sandbox hold. The caller holds the Workspace lock.
 func (flow *SessionAgentFlow) appendNotifications(ctx dex.Context, notifications []conversation.SessionNotification) ([]conversation.SessionNotification, []conversation.Sequence) {
+	return flow.appendConsumedNotifications(ctx, notifications, true)
+}
+
+func (flow *SessionAgentFlow) appendConsumedNotifications(ctx dex.Context, notifications []conversation.SessionNotification, continuesTurn bool) ([]conversation.SessionNotification, []conversation.Sequence) {
 	head := comm.Must(headCommitAttribute.Get(ctx))
 	recorded, sequences := make([]conversation.SessionNotification, 0, len(notifications)), make([]conversation.Sequence, 0, len(notifications))
 	for _, notification := range notifications {
@@ -533,7 +537,9 @@ func (flow *SessionAgentFlow) appendNotifications(ctx dex.Context, notifications
 			holdSandbox(ctx, "", flow.sandboxHold)
 		}
 		notification = notification.AtHead(head)
-		recorded, sequences = append(recorded, notification), append(sequences, appendEntry(ctx, conversation.NotificationEntry(notification)))
+		entry := conversation.NotificationEntry(notification)
+		entry.Meta.NotificationContinuesTurn = continuesTurn
+		recorded, sequences = append(recorded, notification), append(sequences, appendEntry(ctx, entry))
 	}
 	if len(notifications) > 0 {
 		writeSnapshotRequired(ctx)
@@ -550,7 +556,7 @@ func (flow *SessionAgentFlow) consumeIdleNotifications(ctx dex.Context, notifica
 		notifications = agentloop.WithoutEvolve(notifications)
 	}
 	notifications = agentloop.WithoutLapsedReviews(comm.Must(agentStateAttribute.Get(ctx)), notifications, flow.automaticTurns, isStopped)
-	recorded, sequences := flow.appendNotifications(ctx, notifications)
+	recorded, sequences := flow.appendConsumedNotifications(ctx, notifications, false)
 	state, decision := agentloop.ConsumeIdleNotifications(comm.Must(agentStateAttribute.Get(ctx)), recorded, sequences, flow.automaticTurns, isStopped, time.Now().UTC())
 	comm.MustDo(agentStateAttribute.Set(ctx, state))
 	if decision.Paused {

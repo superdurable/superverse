@@ -54,6 +54,7 @@
     ],
     "/superverse.v2.AgentService/SteerQueuedMessage": [],
     "/superverse.v2.AgentService/UpdateSessionModel": [
+      "native-e2e",
       "native-integration"
     ],
     "/superverse.v2.ApplicationEnvironmentService/GetApplicationEnvironment": [
@@ -339,6 +340,7 @@
       "native-e2e"
     ],
     "/superverse.v2.RemoteAgentService/CreateRemoteAgentPairing": [
+      "native-e2e",
       "native-integration"
     ],
     "/superverse.v2.RemoteAgentService/ListRemoteAgentConnections": [

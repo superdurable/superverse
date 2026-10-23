@@ -133,6 +133,11 @@ A background command's end reaches SessionNotifications through AwaitBackgroundC
 which waits for the [`BackgroundCommandFlow`](backgroundcommand/README.md) SubFlow that
 follows the command in the ledger and then records the end. While the command runs the
 Session holds only that wait, so its turns and its move to a new run never wait for it;
+Notification entries consumed by CheckSteered or AwaitRemoteAgent carry
+`Meta.NotificationContinuesTurn`; AwaitUser leaves it false. This append-time fact is
+projected in the public message and keeps a notification inside its active display turn
+without another lifecycle owner; missing historical values preserve the old boundary.
+
 CheckSteered and AwaitUser deliver notifications, and AwaitUser opens a bounded number
 of automatic turns. InterruptAgent is the Stop button. Its existing AgentInterrupt Attribute owns
 the first actor and MarkerWritten: AwaitUser writes before new input/notifications,

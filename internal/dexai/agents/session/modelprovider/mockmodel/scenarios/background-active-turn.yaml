@@ -1,0 +1,37 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# A real background command ends while a foreground command keeps the same turn active.
+name: background-active-turn
+title: "Background notification during a turn"
+description: "Consumes a background completion inside the running platform turn and reads its output."
+category: agent_feature
+arguments: {task: cmd-aaaaaaaaaaaa}
+inputs:
+  - label: "Keep working through a background completion"
+    message: "Keep working while a background command finishes."
+    replies:
+      - text: "Starting a short background command."
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 2; echo active-background-done", description: "Finish during the active turn", run_in_background: true}
+      - text: "Continuing foreground work in the same turn."
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 10; echo foreground-done", description: "Keep the turn active through background completion"}
+        expect_result_contains:
+          - "foreground-done"
+      - text: "Reading the completed background command in the same turn."
+        notification: task
+        tool_uses:
+          - name: read_task_output
+            input: {task_id: "{{task}}"}
+        expect_result_contains:
+          - "exited with code 0"
+          - "active-background-done"
+      - text: "Both commands finished in one turn."

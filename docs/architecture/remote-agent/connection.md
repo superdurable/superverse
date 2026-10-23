@@ -384,7 +384,10 @@ new delivery. The context is at most 128 KiB with shortened text and explicit re
 truncation disclosure. Idle reads use the existing bounded long poll and no message-map
 loads; they never invoke a model or extend the Sandbox deadline.
 
-Studio starts a display turn at each delivered user message, notification or typed executor
-boundary. Notification timing uses the canonical entry's consumption timestamp, rather than
-the producer's occurrence time or the preceding turn's end. A notification that starts remote
-work on the same connection therefore does not count the intervening idle time as work.
+Studio starts a display turn at a delivered user message, an idle-consumed notification or a
+typed executor boundary. A notification consumed during active work retains its card inside
+that turn and shares its single Worked summary. The Session records that consumption fact as
+`notification_continues_turn` on the canonical entry and projects it in `AgentMessage`, for both
+platform and remote turns. Older entries lack the flag and retain their existing display boundaries.
+Notification timing uses the entry's consumption timestamp, rather than the producer's occurrence
+time or the preceding turn's end, so idle time before a notification-driven turn is not counted as work.

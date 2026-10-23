@@ -227,11 +227,12 @@ function groupDurableTurns(messages: readonly SequencedMessage[]) {
   const sequenceToTurn = new Map<number, ConversationTurn>();
   let current: ConversationTurn | null = null;
   for (const entry of messages) {
-    // Notifications are delivered inputs too. Their canonical creation time is
-    // consumption time, so an automatic turn does not inherit the prior idle gap.
+    // Only an idle notification opens a display turn. The durable consumption
+    // flag keeps active-turn notifications with their work, including after reload.
+    // Older entries have no flag and retain their existing display boundary.
     if (
       entry.message.role === "user" ||
-      entry.message.role === "notification" ||
+      (entry.message.role === "notification" && !entry.message.notificationContinuesTurn) ||
       entry.message.executorChanged ||
       current === null
     ) {

@@ -18370,8 +18370,11 @@ type AgentMessage struct {
 	Attachments []*AgentAttachment `protobuf:"bytes,16,rep,name=attachments,proto3" json:"attachments,omitempty"`
 	// Visible executor boundary; starts a new display turn without becoming model input.
 	ExecutorChanged bool `protobuf:"varint,17,opt,name=executor_changed,json=executorChanged,proto3" json:"executor_changed,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// Set only for a notification consumed during an already active turn.
+	// False (including older entries) retains the notification display boundary.
+	NotificationContinuesTurn bool `protobuf:"varint,18,opt,name=notification_continues_turn,json=notificationContinuesTurn,proto3" json:"notification_continues_turn,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *AgentMessage) Reset() {
@@ -18519,6 +18522,13 @@ func (x *AgentMessage) GetAttachments() []*AgentAttachment {
 func (x *AgentMessage) GetExecutorChanged() bool {
 	if x != nil {
 		return x.ExecutorChanged
+	}
+	return false
+}
+
+func (x *AgentMessage) GetNotificationContinuesTurn() bool {
+	if x != nil {
+		return x.NotificationContinuesTurn
 	}
 	return false
 }
@@ -31251,7 +31261,7 @@ const file_superverse_v2_superverse_proto_rawDesc = "" +
 	"\x05Actor\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x01 \x01(\tR\taccountId\x12\x14\n" +
-	"\x05email\x18\x02 \x01(\tR\x05email\"\x87\b\n" +
+	"\x05email\x18\x02 \x01(\tR\x05email\"\xc7\b\n" +
 	"\fAgentMessage\x124\n" +
 	"\x04role\x18\x01 \x01(\x0e2 .superverse.v2.AgentMessage.RoleR\x04role\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\tR\acontent\x12;\n" +
@@ -31276,7 +31286,8 @@ const file_superverse_v2_superverse_proto_rawDesc = "" +
 	"\x03via\x18\x0e \x01(\tH\x04R\x03via\x88\x01\x01\x12\x1a\n" +
 	"\bimported\x18\x0f \x01(\bR\bimported\x12@\n" +
 	"\vattachments\x18\x10 \x03(\v2\x1e.superverse.v2.AgentAttachmentR\vattachments\x12)\n" +
-	"\x10executor_changed\x18\x11 \x01(\bR\x0fexecutorChanged\"v\n" +
+	"\x10executor_changed\x18\x11 \x01(\bR\x0fexecutorChanged\x12>\n" +
+	"\x1bnotification_continues_turn\x18\x12 \x01(\bR\x19notificationContinuesTurn\"v\n" +
 	"\x04Role\x12\x14\n" +
 	"\x10ROLE_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vROLE_SYSTEM\x10\x01\x12\r\n" +

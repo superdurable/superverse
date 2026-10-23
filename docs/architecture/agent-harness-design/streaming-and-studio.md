@@ -275,6 +275,9 @@ sections below describe that chat column and the Preview it controls.
 - A **reasoning area** per model call fills live from `ReasoningSummary`. It can be
   collapsed. It is open while streaming and is not restored after a reload.
 - **Markers** from the table above separate segments and show a stop.
+- A notification with canonical `notification_continues_turn` stays in the active turn's group,
+  including its notification card, so the turn has one Worked summary. An idle-consumed notification
+  begins a group at its consumption timestamp. Older entries retain the previous boundaries.
 - A **work log** per turn lists model calls and tool calls. The header shows the turn's
   model and tool call counts and wait, work and turn durations. Each tool row shows the
   tool name, its **target**, a status (running, complete, failed, unknown), the attempt count

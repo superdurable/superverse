@@ -484,7 +484,7 @@ func agentHistoryPage(page conversation.HistoryPage) *pb.AgentHistoryPage {
 // agentMessage maps the public view of one entry with its timestamps and optional message identities.
 func agentMessage(value conversation.SequencedMessage) *pb.AgentSequencedMessage {
 	m := value.Message
-	message := &pb.AgentMessage{ExecutorChanged: m.ExecutorChanged, Actor: agentActor(m.Actor), SteeredBy: agentActor(m.SteeredBy), Via: m.Via, Imported: m.Imported, Role: boundary.Enum[pb.AgentMessage_Role](m.Role), Content: m.Content, ToolCallId: agentStringPointer(m.ToolCallID), ToolName: agentStringPointer(m.ToolName), AnsweredInputCallId: agentStringPointer(m.AnsweredInputCallID), CreatedAt: m.CreatedAt.Format(time.RFC3339Nano), StartedAt: agentDatePointer(m.StartedAt)}
+	message := &pb.AgentMessage{NotificationContinuesTurn: m.NotificationContinuesTurn, ExecutorChanged: m.ExecutorChanged, Actor: agentActor(m.Actor), SteeredBy: agentActor(m.SteeredBy), Via: m.Via, Imported: m.Imported, Role: boundary.Enum[pb.AgentMessage_Role](m.Role), Content: m.Content, ToolCallId: agentStringPointer(m.ToolCallID), ToolName: agentStringPointer(m.ToolName), AnsweredInputCallId: agentStringPointer(m.AnsweredInputCallID), CreatedAt: m.CreatedAt.Format(time.RFC3339Nano), StartedAt: agentDatePointer(m.StartedAt)}
 	if metrics := m.ModelCall; metrics != nil {
 		message.ModelCall = &pb.AgentModelCallMetrics{Model: metrics.Model, ServedModel: metrics.ServedModel, Effort: string(metrics.Effort),
 			DurationMs: metrics.DurationMS, FirstEventMs: metrics.FirstEventMS, InputTokens: metrics.InputTokens,

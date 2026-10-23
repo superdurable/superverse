@@ -11613,7 +11613,7 @@
         "endColumn": 38
       },
       "metadata": {
-        "function": "SessionAgentFlow.appendNotifications",
+        "function": "SessionAgentFlow.appendConsumedNotifications",
         "phase": "execute",
         "via": "helper"
       }
@@ -11649,7 +11649,7 @@
         "endColumn": 120
       },
       "metadata": {
-        "function": "SessionAgentFlow.appendNotifications",
+        "function": "SessionAgentFlow.appendConsumedNotifications",
         "phase": "execute",
         "via": "helper"
       }
@@ -11667,7 +11667,7 @@
         "endColumn": 43
       },
       "metadata": {
-        "function": "SessionAgentFlow.appendNotifications",
+        "function": "SessionAgentFlow.appendConsumedNotifications",
         "phase": "execute",
         "via": "helper"
       }

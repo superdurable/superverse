@@ -185,6 +185,12 @@ configuration is complete, but still opens no turn ([Consumption](#consumption))
 
 When notifications are recorded the Session writes the existing `snapshot_required` activity so
 that connected Studio clients re-read the Snapshot.
+The same append records `Entry.Meta.NotificationContinuesTurn` for consumption in `CheckSteered`
+or `AwaitRemoteAgent`, and leaves it false in `AwaitUser`. The public `AgentMessage` projects it as
+`notification_continues_turn`: an active-turn notification keeps its card inside the existing turn's
+Worked summary after reload as well as live. The entry log is the sole owner; no Stream event, cache,
+SQL column or second turn lifecycle is introduced. Older entries without the flag retain their
+previous notification boundaries; open executions need no Step or Flow identity migration.
 
 ### What the model sees
 

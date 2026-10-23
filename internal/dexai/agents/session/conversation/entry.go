@@ -119,6 +119,8 @@ type Entry struct {
 
 // EntryMeta is what the UI and metrics read of an entry; the model never sees it.
 type EntryMeta struct {
+	// NotificationContinuesTurn records consumption during an already active turn.
+	NotificationContinuesTurn bool `json:"notification_continues_turn,omitempty"`
 	// ExecutorChanged marks a visible executor boundary, never a model input.
 	ExecutorChanged bool `json:"executor_changed,omitempty"`
 	// ModelStopReason records only output limits for safe compatible history projection.
@@ -356,7 +358,7 @@ func readBlock(block json.RawMessage) blockHeader {
 // summary; never thinking, tool arguments, tool results, attachment objects or
 // a notification's report.
 func (entry Entry) PublicMessage() (AgentMessage, bool) {
-	message := AgentMessage{ExecutorChanged: entry.Meta.ExecutorChanged, Actor: entry.Meta.Actor, Via: entry.Meta.Via, Imported: entry.Meta.Imported, SteeredBy: entry.Meta.SteeredBy, CreatedAt: entry.CreatedAt, StartedAt: entry.StartedAt, ToolCalls: []ToolCallSummary{}}
+	message := AgentMessage{NotificationContinuesTurn: entry.Meta.NotificationContinuesTurn, ExecutorChanged: entry.Meta.ExecutorChanged, Actor: entry.Meta.Actor, Via: entry.Meta.Via, Imported: entry.Meta.Imported, SteeredBy: entry.Meta.SteeredBy, CreatedAt: entry.CreatedAt, StartedAt: entry.StartedAt, ToolCalls: []ToolCallSummary{}}
 	switch {
 	case entry.Display == EntryDisplayHidden:
 		return AgentMessage{}, false
