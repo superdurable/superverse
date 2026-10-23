@@ -72,8 +72,9 @@ spec:
          object.spec.template.spec.volumes.all(v, !has(v.hostPath) && !has(v.persistentVolumeClaim) && !has(v.projected)) &&
          (object.metadata.name == 'dex' ?
            (object.spec.template.spec.serviceAccountName == 'dex' && object.spec.template.spec.containers[0].image == {{ .Values.hostedProjects.dexImage | quote }}) :
-           ({{- include "v2.generationNameCEL" (dict "name" "object.metadata.name") | nindent 12 }} &&
-            object.spec.template.spec.serviceAccountName == object.metadata.name &&
+           ({{- include "v2.generationNameCEL" (dict "name" "object.spec.template.spec.serviceAccountName") | nindent 12 }} &&
+            (object.metadata.name == object.spec.template.spec.serviceAccountName ||
+             object.metadata.name == object.spec.template.spec.serviceAccountName + '-worker') &&
             object.spec.template.spec.runtimeClassName in ['runsc-live', 'runsc'] &&
             object.spec.template.spec.containers[0].image.startsWith({{ printf "%s@sha256:" .Values.hostedProjects.applicationRepository | quote }}) &&
             object.spec.template.spec.containers[0].securityContext.runAsNonRoot == true &&

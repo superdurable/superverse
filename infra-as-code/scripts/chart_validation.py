@@ -272,6 +272,45 @@ class Render:
         self.check_ingresses()
         self.check_coding_profile()
         self.check_credential_read()
+        self.check_hosted_generation_admission()
+
+    def check_hosted_generation_admission(self):
+        """Assert the rendered CEL source exactly; this is not CEL evaluation or hosted acceptance."""
+        key = ("ValidatingAdmissionPolicy", "", self.product + "-project-environment-activation")
+        if not self.hosted:
+            self.fail_if(key in self.resources, "hosted project activation policy must not render on Kind")
+            return
+        policy = self.resources[key]
+        expressions = [item["expression"] for item in policy["spec"]["validations"]
+                       if "request.resource.resource != 'deployments'" in item["expression"]]
+        self.fail_if(len(expressions) != 1, "expected exactly one hosted Deployment validation")
+        images = environment_values(self.environment)["hostedProjects"]
+        # The ServiceAccount must be a generation; the Deployment is exactly that
+        # generation or its -worker. One shared block constrains both processes.
+        expected = """
+            request.operation == 'DELETE' || request.resource.resource != 'deployments' ||
+            (object.spec.replicas == 1 && object.spec.strategy.type == 'Recreate' &&
+             object.spec.template.spec.automountServiceAccountToken == false &&
+             (!has(object.spec.template.spec.hostNetwork) || object.spec.template.spec.hostNetwork == false) &&
+             (!has(object.spec.template.spec.hostPID) || object.spec.template.spec.hostPID == false) &&
+             (!has(object.spec.template.spec.hostIPC) || object.spec.template.spec.hostIPC == false) &&
+             (!has(object.spec.template.spec.initContainers) || size(object.spec.template.spec.initContainers) == 0) &&
+             size(object.spec.template.spec.containers) == 1 &&
+             object.spec.template.spec.containers.all(c, c.securityContext.allowPrivilegeEscalation == false && c.securityContext.capabilities.drop == ['ALL'] && (!has(c.securityContext.privileged) || c.securityContext.privileged == false)) &&
+             object.spec.template.spec.volumes.all(v, !has(v.hostPath) && !has(v.persistentVolumeClaim) && !has(v.projected)) &&
+             (object.metadata.name == 'dex' ?
+               (object.spec.template.spec.serviceAccountName == 'dex' && object.spec.template.spec.containers[0].image == DEX_IMAGE) :
+               (object.spec.template.spec.serviceAccountName.matches('^app-[a-z0-9]([a-z0-9-]{0,34}[a-z0-9])?-[1-9][0-9]{0,19}$') &&
+                (object.metadata.name == object.spec.template.spec.serviceAccountName ||
+                 object.metadata.name == object.spec.template.spec.serviceAccountName + '-worker') &&
+                object.spec.template.spec.runtimeClassName in ['runsc-live', 'runsc'] &&
+                object.spec.template.spec.containers[0].image.startsWith(APPLICATION_IMAGE_PREFIX) &&
+                object.spec.template.spec.containers[0].securityContext.runAsNonRoot == true &&
+                object.spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem == true)))
+        """.replace("DEX_IMAGE", json.dumps(images["dexImage"])).replace(
+            "APPLICATION_IMAGE_PREFIX", json.dumps(images["applicationRepository"] + "@sha256:"))
+        self.fail_if(re.sub(r"\s+", "", expressions[0]) != re.sub(r"\s+", "", expected),
+                     "hosted Deployment CEL must bind only web/base-SA or -worker/base-SA with all shared restrictions")
 
     def check_node_capacity(self):
         """Every hosted pool prefers diversified Spot, can fall back, and can consolidate back."""

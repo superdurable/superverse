@@ -204,6 +204,14 @@ change when a new deployment updates the Project's existing `live` HTTPRoute.
 Namespace identity remains immutable. The hosted project activation policy has
 no whole-label-map UPDATE equality rule and does not require this correction.
 
+Hosted application Deployments admit the exact generation name with its own
+ServiceAccount, or that generation's `-worker` Deployment with the base
+generation ServiceAccount. Other suffixes are rejected. Both processes retain
+the same gVisor, owned immutable image and restricted Pod requirements. The
+Worker shares the generation's NetworkPolicy; the Live HTTPRoute continues to
+target only the web generation Service. Helm applies this policy during the
+standard release; no manual deployment step is required.
+
 Do not deploy during an ongoing E2E. Old content-addressed profile ConfigMaps and
 their exact read Roles are retained for existing Sessions. New profiles are immutable
 and use the accepted coding digest. Cluster deletion remains explicit:
