@@ -9,6 +9,7 @@
 """Kind lane: one owned local cluster, never the current kubectl context, never a hosted mutation."""
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -20,7 +21,7 @@ from kind.acceptance import e2e
 from kind.builder import builder
 from kind.cluster import CLUSTER, FORWARDS, NAMESPACE, PORTS, STATE_FILE, kind_nodes, kubectl, port_forward_argv, require_kind_version, verify_owner
 from kind.images import build
-from kind.locks import kind_action_lock
+from kind.locks import KIND_ACCEPTANCE_DIRECTORY, kind_action_lock
 from kind.queue import queue
 from kind import server_config
 from local_prune import after_run
@@ -61,6 +62,23 @@ def stop(_args):
     verify_owner()
     for node in kind_nodes():
         run(["docker", "stop", "--time", "60", node], timeout=180)
+
+
+def stop_when_unused():
+    """Stop the node after an E2E run unless another Kind command or port-forward is about to use it; best effort.
+
+    A failed acceptance keeps its fence and the node, so the run stays inspectable until it is reconciled.
+    """
+    try:
+        listing = subprocess.run(["pgrep", "-f", r"sv2 kind|kubectl.*kind-" + CLUSTER], capture_output=True, text=True, timeout=30)
+        others = {int(pid) for pid in listing.stdout.split()} - {os.getpid(), os.getppid()}
+        if others or (KIND_ACCEPTANCE_DIRECTORY / "e2e-admission.json").exists():
+            return
+        print("Stopping the Kind node: no other Kind command uses it; the next one starts it again")
+        for node in kind_nodes():
+            run(["docker", "stop", "--time", "60", node], timeout=180)
+    except Exception as error:  # noqa: BLE001 - the run's result must not depend on its clean-up
+        print(f"Stopping the idle Kind node did not complete: {error}; run `sv2 kind stop` later")
 
 
 def delete(args):
@@ -122,3 +140,4 @@ def main():
         # A finished acceptance run reclaims the lanes' unused images and build cache; outside the lock, so the Kind node is pruned too.
         if admitted and args.command == "e2e":
             after_run("Kind e2e")
+            stop_when_unused()

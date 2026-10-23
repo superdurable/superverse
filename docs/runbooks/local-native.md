@@ -396,6 +396,8 @@ The Kind node runs every platform Pod and holds several GiB, so it runs only whi
 command except `delete` starts a stopped node and waits for its API server, and the node's Docker restart policy is `no`,
 so the engine does not start it either. `./infra-as-code/sv2 kind stop` stops it (its state, images and data stay); the
 long-running `sv2 kind ports` ends with it, and `sv2 kind builder` keeps the node counted as in use until it ends.
+`sv2 kind e2e` stops the node itself when it ends, unless another `sv2 kind` command or Kind port-forward runs or a
+failed acceptance keeps its fence for reconciliation.
 
 ## Actual acceptance
 
