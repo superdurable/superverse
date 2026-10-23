@@ -17,6 +17,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -156,7 +157,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			<-r.Context().Done()
 			return
 		}
-		if parts[0] == "probe-timeout" {
+		if parts[0] == "probe-timeout" || parts[0] == "fast-list-slow-probe" {
 			// Let net/http observe client disconnects while the fixture waits.
 			_, _ = io.Copy(io.Discard, http.MaxBytesReader(w, r.Body, maximumRequestBytes))
 			<-r.Context().Done()
@@ -839,6 +840,14 @@ func (h *handler) discover(w http.ResponseWriter, r *http.Request, fixture strin
 		ids = nil
 	case "many":
 		ids = []string{customDiscoveredModelID, customManualModelID}
+	case "models-401", "models-403", "models-429", "models-501":
+		code, _ := strconv.Atoi(strings.TrimPrefix(fixture, "models-"))
+		w.WriteHeader(code)
+		return
+	case "models-405":
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	case "fast-list-slow-probe":
 	case "unsupported":
 		w.WriteHeader(http.StatusNotFound)
 		return

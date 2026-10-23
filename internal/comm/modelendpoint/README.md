@@ -52,7 +52,11 @@ uses an origin-bound GET of that root plus `/models`, with transient authenticat
 a ten-second overall deadline, a 1 MiB body bound, at most 100 distinct IDs and
 256 bytes per ID. Unsupported listings and empty lists are explicit outcomes.
 Excess counts, pagination and malformed IDs fail closed. Provider response bodies
-and endpoint paths never enter the returned error. Discovery admits at most 32
+and endpoint paths never enter the returned error. `DiscoverWithStatus` uses the same parser and returns the upstream HTTP status
+without retaining error bodies; credential validation uses it to distinguish
+authentication failures from unsupported model listings. Transport timeout and
+cancellation remain classifiable without returning request URLs or raw errors.
+Discovery admits at most 32
 concurrent calls per process with no waiting goroutines or tenant scans.
 
 The server-created built-in mock has a separate client bound to its own listener,

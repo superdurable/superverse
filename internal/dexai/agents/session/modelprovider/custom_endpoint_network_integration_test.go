@@ -186,6 +186,67 @@ func TestCustomEndpointDiscoveryNetworkIntegration(t *testing.T) {
 	}
 }
 
+// Model-list validation uses the approved mock model over its real HTTP listener.
+func TestCustomEndpointModelListValidationNetworkIntegration(t *testing.T) {
+	base, _, stop, err := mockmodel.StartCustomEndpointProbeForTest(t.Context(), slog.Default())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer stop()
+	config := modelprovider.ProviderConfig{Enabled: []conversation.Provider{conversation.ProviderQwen}, MockEndpoint: true, CustomEndpoints: true}
+	runtime, err := modelprovider.NewCompatibleProviders(t.Context(), config, modelendpoint.Config{AllowLocalLoopback: true}, base, slog.Default(), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer runtime.Close()
+	for _, test := range []struct {
+		fixture, model              string
+		status                      int
+		invalid, missing, retryable bool
+	}{
+		{fixture: "fast-list-slow-probe", model: mockmodel.CustomDiscoveredModelIDForTest},
+		{fixture: "models-401", model: mockmodel.CustomDiscoveredModelIDForTest, status: 401, invalid: true},
+		{fixture: "models-403", model: mockmodel.CustomDiscoveredModelIDForTest, status: 403, invalid: true},
+		{fixture: "one", model: mockmodel.CustomManualModelIDForTest, status: 200, missing: true},
+		{fixture: "empty", model: mockmodel.CustomManualModelIDForTest, status: 200, missing: true},
+		{fixture: "unsupported", model: mockmodel.CustomManualModelIDForTest},
+		{fixture: "models-405", model: mockmodel.CustomManualModelIDForTest},
+		{fixture: "models-429", model: mockmodel.CustomManualModelIDForTest, status: 429, retryable: true},
+		{fixture: "models-501", model: mockmodel.CustomManualModelIDForTest, status: 501, retryable: true},
+	} {
+		t.Run(test.fixture+"/"+test.model, func(t *testing.T) {
+			endpoint, err := runtime.ResolveCustom(t.Context(), conversation.ProviderQwen, base+"/custom/"+test.fixture+"/v1", test.model, mockmodel.APIKeyForTest)
+			if err != nil {
+				t.Fatal(err)
+			}
+			ctx, cancel := context.WithTimeout(t.Context(), time.Second)
+			defer cancel()
+			started := time.Now()
+			err = runtime.ValidateCustom(ctx, conversation.ProviderQwen, endpoint, mockmodel.APIKeyForTest)
+			if test.invalid || test.missing {
+				rejected, ok := errors.AsType[*conversation.ModelRejectedError](err)
+				want := conversation.InvalidProviderKey.Rejected().Code
+				if test.missing {
+					want = conversation.ProviderModelNotFound.Rejected(test.status).Code
+				}
+				if !ok || rejected.Code != want || rejected.Status != test.status {
+					t.Fatalf("wrong rejection: %v", err)
+				}
+			} else if test.retryable {
+				probe, ok := errors.AsType[*openaicompat.CredentialProbeError](err)
+				if !ok || probe.Reason != "provider_http_retryable" || probe.Status != test.status {
+					t.Fatalf("wrong retryable failure: %v", err)
+				}
+			} else if err != nil {
+				t.Fatal(err)
+			}
+			if time.Since(started) >= time.Second {
+				t.Fatal("model-list validation exceeded its short test deadline")
+			}
+		})
+	}
+}
+
 // A single shared pool survives more requests than both admission and connection
 // budgets, including failures and cancellation, while another stream stays open.
 func TestCustomEndpointAdmissionRecoveryNetworkIntegration(t *testing.T) {

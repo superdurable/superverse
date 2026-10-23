@@ -133,6 +133,26 @@ func (p *CompatibleProviders) ValidateCustom(ctx context.Context, provider conve
 			p.logger.InfoContext(ctx, "model credential probe finished", "probe_id", probeID, "elapsed_ms", time.Since(started).Milliseconds(), "open_connections", p.pool.OpenConnections())
 		}
 	}()
+	if provider.APIStyle() == conversation.OpenAIChatCompletions {
+		ids, result, status, err := p.pool.DiscoverWithStatus(ctx, endpoint.BaseURL, key, false)
+		if status != 0 && status != http.StatusOK && status != http.StatusNotFound && status != http.StatusMethodNotAllowed {
+			return openaicompat.CredentialProbeFailure(status)
+		}
+		if err != nil {
+			if errors.Is(err, modelendpoint.ErrDiscoveryBounds) {
+				return conversation.ProviderProtocolRejected.Rejected(status)
+			}
+			return openaicompat.CredentialProbeTransportFailure(err)
+		}
+		if result != modelendpoint.DiscoveryUnsupported {
+			for _, id := range ids {
+				if id == endpoint.EffectiveModelID {
+					return nil
+				}
+			}
+			return conversation.ProviderModelNotFound.Rejected(status)
+		}
+	}
 	client, err := p.pool.Client(ctx, endpoint.BaseURL)
 	if err != nil {
 		return err

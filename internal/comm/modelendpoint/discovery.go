@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -54,25 +55,32 @@ func ValidModelID(value string) bool {
 
 // Discover reads IDs only, never pagination URLs or provider error bodies.
 func (p *Pool) Discover(ctx context.Context, base, key string, messages bool) ([]string, DiscoveryResult, error) {
+	ids, result, _, err := p.DiscoverWithStatus(ctx, base, key, messages)
+	return ids, result, err
+}
+
+// DiscoverWithStatus shares discovery bounds and parsing while retaining only the HTTP status.
+func (p *Pool) DiscoverWithStatus(ctx context.Context, base, key string, messages bool) ([]string, DiscoveryResult, int, error) {
+	httpStatus := 0
 	select {
 	case discoverySlots <- struct{}{}:
 		defer func() { <-discoverySlots }()
 	default:
-		return nil, "", errDiscoveryCapacity
+		return nil, "", httpStatus, errDiscoveryCapacity
 	}
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	canonical, err := p.CanonicalBaseURL(base)
 	if err != nil {
-		return nil, "", err
+		return nil, "", httpStatus, err
 	}
 	client, err := p.Client(ctx, canonical)
 	if err != nil {
-		return nil, "", err
+		return nil, "", httpStatus, err
 	}
 	call, err := http.NewRequestWithContext(ctx, http.MethodGet, canonical+"/models", nil)
 	if err != nil {
-		return nil, "", errDiscovery
+		return nil, "", httpStatus, errDiscovery
 	}
 	call.Header.Set("Authorization", "Bearer "+key)
 	if messages {
@@ -81,21 +89,22 @@ func (p *Pool) Discover(ctx context.Context, base, key string, messages bool) ([
 	}
 	response, err := client.Do(call)
 	if err != nil {
-		return nil, "", errDiscovery
+		return nil, "", httpStatus, discoveryTransportError(err)
 	}
 	defer response.Body.Close()
+	httpStatus = response.StatusCode
 	if response.StatusCode == http.StatusNotFound || response.StatusCode == http.StatusMethodNotAllowed || response.StatusCode == http.StatusNotImplemented {
-		return nil, DiscoveryUnsupported, nil
+		return nil, DiscoveryUnsupported, httpStatus, nil
 	}
 	if response.StatusCode != http.StatusOK {
-		return nil, "", errDiscovery
+		return nil, "", httpStatus, errDiscovery
 	}
 	raw, err := io.ReadAll(io.LimitReader(response.Body, maximumDiscoveryBytes+1))
 	if err != nil {
-		return nil, "", errDiscovery
+		return nil, "", httpStatus, discoveryTransportError(err)
 	}
 	if len(raw) > maximumDiscoveryBytes {
-		return nil, "", ErrDiscoveryBounds
+		return nil, "", httpStatus, ErrDiscoveryBounds
 	}
 	var body struct {
 		Data []struct {
@@ -104,16 +113,16 @@ func (p *Pool) Discover(ctx context.Context, base, key string, messages bool) ([
 		HasMore bool `json:"has_more"`
 	}
 	if json.Unmarshal(raw, &body) != nil {
-		return nil, "", errDiscovery
+		return nil, "", httpStatus, errDiscovery
 	}
 	if len(body.Data) > 100 || body.HasMore {
-		return nil, "", ErrDiscoveryBounds
+		return nil, "", httpStatus, ErrDiscoveryBounds
 	}
 	ids := make([]string, 0, len(body.Data))
 	seen := make(map[string]bool, len(body.Data))
 	for _, model := range body.Data {
 		if !ValidModelID(model.ID) || strings.Contains(model.ID, key) || strings.Contains(model.ID, canonical) {
-			return nil, "", ErrDiscoveryBounds
+			return nil, "", httpStatus, ErrDiscoveryBounds
 		}
 		if !seen[model.ID] {
 			ids = append(ids, model.ID)
@@ -121,7 +130,19 @@ func (p *Pool) Discover(ctx context.Context, base, key string, messages bool) ([
 		}
 	}
 	if len(ids) == 0 {
-		return ids, DiscoveryEmpty, nil
+		return ids, DiscoveryEmpty, httpStatus, nil
 	}
-	return ids, DiscoverySupported, nil
+	return ids, DiscoverySupported, httpStatus, nil
+}
+
+// Keep transport classification without retaining request URLs or credential-bearing errors.
+func discoveryTransportError(err error) error {
+	var timeout net.Error
+	if errors.Is(err, context.DeadlineExceeded) || errors.As(err, &timeout) && timeout.Timeout() {
+		return context.DeadlineExceeded
+	}
+	if errors.Is(err, context.Canceled) {
+		return context.Canceled
+	}
+	return errDiscovery
 }

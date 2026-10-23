@@ -235,8 +235,14 @@ client, bound to exactly that origin. The custom/official endpoint pool never
 receives this loopback capability. The built-in client owns one bounded pool
 per mock-enabled replica; its listener owner closes both together.
 
-Custom credential probes classify HTTP 401/403 as invalid keys and 404 as an
-unknown model. HTTP 429 and server failures remain retryable; provider response
+Custom Chat Completions credentials are validated through authenticated GET
+`/models` using the shared bounded discovery parser. A successful list must contain
+the exact effective model ID; an absent ID (including an empty list) is an unknown
+model. Only HTTP 404/405 on the listing falls back to the existing completion
+probe. Messages and Responses retain their existing probes. The entire validation,
+including any fallback, shares one ten-second deadline and a 32-probe process limit.
+Custom credential probes classify HTTP 401/403 as invalid keys and completion
+HTTP 404 as an unknown model. HTTP 429 and server failures remain retryable; provider response
 bodies and endpoint details never enter these errors. Every production router
 uses the shared validated endpoint pool, including its Messages adapter.
 

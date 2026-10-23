@@ -185,7 +185,10 @@ func credentialError(err error) error {
 	if errors.Is(err, modelcredential.ErrPending) {
 		return status.Error(codes.Unavailable, "model credential operation is pending reconciliation")
 	}
-	if _, ok := errors.AsType[*conversation.ModelRejectedError](err); ok {
+	if rejected, ok := errors.AsType[*conversation.ModelRejectedError](err); ok {
+		if rejected.Status != 0 {
+			return status.Errorf(codes.FailedPrecondition, "the provider rejected this credential (HTTP %d)", rejected.Status)
+		}
 		return status.Error(codes.FailedPrecondition, "the provider rejected this credential")
 	}
 	if errors.Is(err, context.DeadlineExceeded) {
