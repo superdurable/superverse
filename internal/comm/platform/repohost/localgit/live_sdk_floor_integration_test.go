@@ -112,7 +112,17 @@ func TestLiveSDKFloorLocalBuilderIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	startBuilder := func(t *testing.T, metadataTimeout string, native, uncertainRemove bool) *buildlocal.Builder {
+	var sdkVersion string
+	for _, line := range strings.Split(string(original), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) == 2 && fields[0] == "github.com/superdurable/dex/sdk-go" {
+			sdkVersion = fields[1]
+		}
+	}
+	if sdkVersion == "" {
+		t.Fatal("template has no Dex SDK requirement")
+	}
+	startBuilder := func(t *testing.T, preparationTimeout string, native, uncertainRemove bool) *buildlocal.Builder {
 		t.Helper()
 		listener, err := net.Listen("tcp", "127.0.0.1:0")
 		if err != nil {
@@ -132,7 +142,7 @@ func TestLiveSDKFloorLocalBuilderIntegration(t *testing.T) {
 spec = importlib.util.spec_from_file_location("localbuilder", sys.argv.pop(1))
 builder = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(builder)
-builder.METADATA_TIMEOUT = float(sys.argv.pop(1))
+builder.DEPENDENCY_PREPARATION_TIMEOUT = float(sys.argv.pop(1))
 uncertain_remove = sys.argv.pop(1) == "true"
 fault_receipt = builder.Path(sys.argv.pop(1))
 if uncertain_remove:
@@ -147,20 +157,18 @@ if uncertain_remove:
             raise builder.subprocess.TimeoutExpired(argv, kwargs.get("timeout", 10))
         return result
     builder.subprocess.run = lost_remove
-if builder.METADATA_TIMEOUT < 120:
+if builder.DEPENDENCY_PREPARATION_TIMEOUT < 600:
     # Delay the real metadata container after it starts, keeping Git/Docker/Go real.
     original = builder.Job.command
     def delayed(self, argv, **kwargs):
-        if argv[:2] == ["docker", "run"] and argv[-3:] == ["mod", "edit", "-json"]:
+        if argv[:2] == ["docker", "run"] and argv[-1] == builder.DEPENDENCY_PREPARATION_SCRIPT:
             argv = list(argv)
-            argv[argv.index("--entrypoint") + 1] = "sh"
-            index = argv.index(self.tool_image) + 1
-            argv[index:index] = ["-c", 'printf "metadata-timeout-started api_token=synthetic-timeout-secret\\n" >&2; sleep 600; exec go "$@"', "metadata"]
+            argv[-1] = 'printf "metadata-timeout-started api_token=synthetic-timeout-secret\\n" >&2; sleep 600;\n' + argv[-1]
         return original(self, argv, **kwargs)
     builder.Job.command = delayed
-builder.main()`, filepath.Join(root, "internal/dexai/delivery/releases/build/localbuilder/server.py"), metadataTimeout, fmt.Sprint(uncertainRemove), filepath.Join(scratch, "remove-response-lost"),
+builder.main()`, filepath.Join(root, "internal/dexai/delivery/releases/build/localbuilder/server.py"), preparationTimeout, fmt.Sprint(uncertainRemove), filepath.Join(scratch, "remove-response-lost"),
 			"--port", fmt.Sprint(port), "--token-file", tokenFile, "--tool-image", tool, "--app-manifest-tool", manifestTool,
-			"--git-base-url", base, "--target", "docker", "--registry", registry, "--state-dir", filepath.Join(scratch, "build-state-"+metadataTimeout))
+			"--git-base-url", base, "--target", "docker", "--registry", registry, "--state-dir", filepath.Join(scratch, "build-state-"+preparationTimeout))
 		for _, variable := range os.Environ() {
 			if !strings.HasPrefix(variable, "SUPERVERSE_LOCAL_NATIVE=") {
 				process.Env = append(process.Env, variable)
@@ -194,7 +202,7 @@ builder.main()`, filepath.Join(root, "internal/dexai/delivery/releases/build/loc
 		}
 		return builder
 	}
-	builder := startBuilder(t, "120", false, false)
+	builder := startBuilder(t, "600", false, false)
 	profile := build.NewProfiles().Default()
 	for _, scenario := range []struct {
 		name, module    string
@@ -202,12 +210,12 @@ builder.main()`, filepath.Join(root, "internal/dexai/delivery/releases/build/loc
 		metadataFailure bool
 		timeout         bool
 	}{
-		{"old", strings.Replace(string(original), "sdk-go v1.14.1", "sdk-go v1.12.0", 1), true, false, false},
+		{"old", strings.Replace(string(original), "sdk-go "+sdkVersion, "sdk-go v1.12.0", 1), true, false, false},
 		{"local", string(original) + "\nreplace github.com/superdurable/dex/sdk-go => ./local-dex\n", true, false, false},
-		{"missing", strings.Replace(string(original), "\tgithub.com/superdurable/dex/sdk-go v1.14.1\n", "", 1), true, false, false},
-		{"unparseable", strings.Replace(string(original), "sdk-go v1.14.1", "sdk-go not-a-version", 1), false, true, false},
+		{"missing", strings.Replace(string(original), "\tgithub.com/superdurable/dex/sdk-go "+sdkVersion+"\n", "", 1), true, false, false},
+		{"unparseable", strings.Replace(string(original), "sdk-go "+sdkVersion, "sdk-go not-a-version", 1), false, true, false},
 		{"replaced-old", string(original) + "\nreplace github.com/superdurable/dex/sdk-go => github.com/superdurable/dex/sdk-go v1.12.0\n", true, false, false},
-		{"replaced-supported", strings.Replace(string(original), "sdk-go v1.14.1", "sdk-go v1.12.0", 1) + "\nreplace github.com/superdurable/dex/sdk-go => github.com/superdurable/dex/sdk-go v1.14.1\n", false, false, false},
+		{"replaced-supported", strings.Replace(string(original), "sdk-go "+sdkVersion, "sdk-go v1.12.0", 1) + "\nreplace github.com/superdurable/dex/sdk-go => github.com/superdurable/dex/sdk-go " + sdkVersion + "\n", false, false, false},
 		{"metadata-stderr", string(original) + "\n" + strings.Repeat("无效指令\n", 300) + "api_token=synthetic-secret-value\n", false, true, false},
 		{"metadata-timeout", string(original), false, true, true},
 		{"metadata-late-create", string(original), false, true, true},
@@ -322,6 +330,24 @@ builder.main()`, filepath.Join(root, "internal/dexai/delivery/releases/build/loc
 				}
 			} else if result.State != build.BuildReady {
 				t.Fatalf("valid SDK source failed: category=%s hint=%q", result.FailureCategory.Name(), result.Failure)
+			}
+			if scenario.name != "cancelled" {
+				page, err := builder.ReadLog(ctx, request, build.LogRead{Tail: true, MaximumBytes: 64 << 10})
+				if err != nil {
+					t.Fatal(err)
+				}
+				outcome := "ok"
+				if scenario.metadataFailure {
+					outcome = "platform failure"
+					if scenario.timeout {
+						outcome = "timed out"
+					}
+				} else if scenario.rejected {
+					outcome = "rejected"
+				}
+				if !strings.Contains(page.Text, "Dex SDK check: "+outcome) {
+					t.Fatalf("SDK check outcome %q was not recorded", outcome)
+				}
 			}
 			wait("source cleanup", func() bool {
 				err := builder.CleanupRelease(ctx, request)

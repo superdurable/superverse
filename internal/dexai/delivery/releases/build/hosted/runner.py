@@ -37,6 +37,51 @@ def blocking_diagnostics(graph):
 
 MAX_ARTIFACT = 32 * 1024 * 1024
 MAX_IMAGE_ARCHIVE = 2 * 1024 * 1024 * 1024
+DEPENDENCY_PREPARATION_TIMEOUT = 600
+SDK_METADATA_LIMIT = 1024 * 1024
+DEPENDENCY_PREPARATION_SCRIPT = r'''# Fixed Go commands only: no project script or application code executes.
+# Download failures still emit declaration metadata so invalid/local replacements
+# retain their application rejection instead of becoming dependency failures.
+download=0
+go -C /workspace mod download >&2 || download=$?
+if [ "$download" -eq 0 ]; then
+    go -C /workspace/tools/openapi mod download >&2 || download=$?
+fi
+declared=0
+env GOPROXY=off GOSUMDB=off GOVCS='*:off' GOFLAGS=-mod=readonly GOTOOLCHAIN=local \
+    go mod edit -json >/tmp/sv2-sdk-declared.json || declared=$?
+resolved=125
+: >/tmp/sv2-sdk-resolved.json
+if [ "$download" -eq 0 ] && [ "$declared" -eq 0 ]; then
+    resolved=0
+    env GOPROXY=off GOSUMDB=off GOVCS='*:off' GOFLAGS=-mod=readonly GOTOOLCHAIN=local \
+        go list -m -json -e -mod=readonly github.com/superdurable/dex/sdk-go \
+        >/tmp/sv2-sdk-resolved.json || resolved=$?
+fi
+printf 'SV2_SDK_METADATA_V1 %s %s %s\n' "$download" "$declared" "$resolved"
+head -c 1048577 /tmp/sv2-sdk-declared.json
+printf '\nSV2_SDK_RESOLVED_V1\n'
+head -c 1048577 /tmp/sv2-sdk-resolved.json
+printf '\nSV2_SDK_END_V1\n'
+'''
+
+
+def dependency_metadata(output):
+    """Read the fixed protocol; never retain or log dependency metadata."""
+    if isinstance(output, bytes):
+        output = output.decode()
+    output = output.rstrip("\n")
+    if len(output.encode()) > 2 * SDK_METADATA_LIMIT + 256:
+        raise ValueError("dependency metadata exceeds its bound")
+    header, body = output.split("\n", 1)
+    match = re.fullmatch(r"SV2_SDK_METADATA_V1 ([0-9]{1,3}) ([0-9]{1,3}) ([0-9]{1,3})", header)
+    if match is None or not body.endswith("\nSV2_SDK_END_V1"):
+        raise ValueError("invalid dependency metadata protocol")
+    declared, resolved = body[:-len("\nSV2_SDK_END_V1")].split("\nSV2_SDK_RESOLVED_V1\n")
+    if any(len(value.encode()) > SDK_METADATA_LIMIT for value in (declared, resolved)):
+        raise ValueError("dependency metadata exceeds its bound")
+    return tuple(map(int, match.groups())), declared, resolved
+
 SOURCE_DEADLINE = None
 FAILURE_CATEGORY = "hostPreparation"
 PROCESS_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
@@ -50,10 +95,14 @@ def digest(data):
     return "sha256:" + hashlib.sha256(data).hexdigest()
 
 
+class SourceDeadlineExceeded(ValueError):
+    pass
+
+
 def run(argv, *, cwd=None, timeout=1800, input_bytes=None):
     if SOURCE_DEADLINE is not None:
         timeout = min(timeout, SOURCE_DEADLINE - time.monotonic())
-        if timeout <= 0: raise ValueError("source preparation deadline exceeded")
+        if timeout <= 0: raise SourceDeadlineExceeded("source preparation deadline exceeded")
     # App-controlled output is never copied into CloudWatch or exception text.
     def output_limit():
         resource.setrlimit(resource.RLIMIT_FSIZE, (16 * 1024 * 1024, 16 * 1024 * 1024))
@@ -170,13 +219,13 @@ def _remove_container(name, owner):
         raise ValueError("build container cleanup is incomplete")
 
 
-def tool_command(options, command, timeout=1800):
+def tool_command(options, command, timeout=1800, deadline=None):
     owner = uuid.uuid4().hex
     name = "sv2-tool-" + owner
     try:
         run(["docker", "create", "--name", name, "--label", "superverse-v2.build-owner=" + owner,
-             "--log-driver", "none", *options, *command], timeout=30)
-        return run(["docker", "start", "--attach", name], timeout=timeout)
+             "--log-driver", "none", *options, *command], timeout=30 if deadline is None else max(0.001, deadline - time.monotonic()))
+        return run(["docker", "start", "--attach", name], timeout=timeout if deadline is None else max(0.001, deadline - time.monotonic()))
     finally:
         remove_container(name, owner)
 
@@ -342,19 +391,49 @@ def validate_live_sdk(metadata, *, resolved):
         raise ValueError("Live requires Dex Go SDK v1.13.0 or later")
 
 
-def check_live_sdk(container, arguments, *, resolved):
+def check_live_sdk(metadata, status, *, resolved):
     global FAILURE_CATEGORY
-    try:
-        metadata = tool_command(container, arguments, timeout=30)
-    except CommandFailed as error:
-        if error.status == 1:
-            FAILURE_CATEGORY = "unsupportedDexSDK"
-        raise
+    if status:
+        FAILURE_CATEGORY = "hostPreparation"
+        print("Dex SDK check: platform failure", flush=True)
+        raise ValueError("METADATA_COMMAND_FAILED")
     try:
         validate_live_sdk(json.loads(metadata), resolved=resolved)
     except (ValueError, TypeError, KeyError):
         FAILURE_CATEGORY = "unsupportedDexSDK"
+        print("Dex SDK check: rejected", flush=True)
         raise
+    print("Dex SDK check: ok", flush=True)
+
+
+def prepare_dependencies(container, tool):
+    global FAILURE_CATEGORY
+    FAILURE_CATEGORY = "dependencyDownload"
+    deadline = time.monotonic() + DEPENDENCY_PREPARATION_TIMEOUT
+    try:
+        output = tool_command(container, ["--network", "bridge", "--dns", "1.1.1.1", "--dns", "8.8.8.8",
+                              "--sysctl", "net.ipv6.conf.all.disable_ipv6=1", "--sysctl", "net.ipv6.conf.default.disable_ipv6=1",
+                              "--entrypoint", "/bin/sh", tool, "-c", DEPENDENCY_PREPARATION_SCRIPT],
+                              timeout=DEPENDENCY_PREPARATION_TIMEOUT, deadline=deadline)
+    except (subprocess.TimeoutExpired, SourceDeadlineExceeded):
+        FAILURE_CATEGORY = "dexSDKCheckTimeout"
+        print("Dex SDK check: timed out", flush=True)
+        raise ValueError("Dex SDK check timed out") from None
+    except CommandFailed:
+        print("Dex SDK check: platform failure", flush=True)
+        raise
+    try:
+        (download, declared_status, resolved_status), declared, resolved = dependency_metadata(output)
+    except (ValueError, UnicodeError):
+        FAILURE_CATEGORY = "hostPreparation"
+        print("Dex SDK check: platform failure", flush=True)
+        raise ValueError("invalid dependency metadata output") from None
+    check_live_sdk(declared, declared_status, resolved=False)
+    if download:
+        FAILURE_CATEGORY = "dependencyDownload"
+        print("Dex SDK check: platform failure", flush=True)
+        raise CommandFailed(download)
+    check_live_sdk(resolved, resolved_status, resolved=True)
 
 
 def main():
@@ -419,16 +498,8 @@ def main():
         # loading, downloading `all` can rewrite go.sum for dependency-only
         # packages; accepted source is read only. Offline strict FDG checks below
         # still reject missing dependencies or checksums.
-        check_live_sdk(container, ["--network", "none", "--entrypoint", "go", tool,
-                       "mod", "edit", "-json"], resolved=False)
         with measured(timings, "DEPENDENCY_PREPARATION"):
-            FAILURE_CATEGORY = "dependencyDownload"
-            for module in ("/workspace", "/workspace/tools/openapi"):
-                tool_command(container, ["--network", "bridge", "--dns", "1.1.1.1", "--dns", "8.8.8.8",
-                     "--sysctl", "net.ipv6.conf.all.disable_ipv6=1", "--sysctl", "net.ipv6.conf.default.disable_ipv6=1", "--entrypoint", "go", tool,
-                     "-C", module, "mod", "download"], timeout=600)
-        check_live_sdk(container, ["--network", "none", "--entrypoint", "go", tool,
-                       "list", "-m", "-json", "-e", "-mod=readonly", "github.com/superdurable/dex/sdk-go"], resolved=True)
+            prepare_dependencies(container, tool)
         with measured(timings, "ANALYSIS"):
             FAILURE_CATEGORY = "invalidFlowDefinition"
             manifest_artifacts = json.loads(tool_command(container, ["--network", "none", "--entrypoint", "app-manifest", tool,

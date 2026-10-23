@@ -600,4 +600,4 @@ generated graph is `docs/flows/sv2-releases-flow.json`.
 | `project_release_flow_client.go`, `project_release_flow_client_build.go` | Release client: prepare, build, recover, reads and cleanup |
 | `build/` | Builder port and wire types, embedded build profiles, local and hosted builders |
 
-Live source preparation resolves `github.com/superdurable/dex/sdk-go` with the isolated Go toolchain after replacements. The selected version must be at least `v1.13.0`; missing, local-path, malformed and older selections produce the typed application rejection `unsupported-dex-sdk` with an upgrade hint. Preliminary module metadata rejects invalid replacements before downloads; the offline selected module check follows dependency preparation. No selected version is retained in state, artifacts or logs.
+The [Live SDK floor and failure policy](build/README.md#live-sdk-floor) governs source preparation; the [local builder](build/localbuilder/README.md) and [hosted runner](build/hosted/README.md) own execution and cleanup.

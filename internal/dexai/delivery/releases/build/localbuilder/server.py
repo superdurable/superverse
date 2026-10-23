@@ -20,7 +20,6 @@ import os
 from pathlib import Path
 import re
 import shutil
-import shlex
 import signal
 import subprocess
 import tempfile
@@ -65,7 +64,51 @@ MODULE_PATH = re.compile(r"[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:/[A-Za-z0-9._-]+)+")
 CLONE_URL = re.compile(r"(?:https://[A-Za-z0-9.-]+|http://host\.docker\.internal)(?::[0-9]+)?(?:/[A-Za-z0-9._-]+)+\.git")
 SOURCE_TIMEOUT = 240
 # Includes cold Docker container startup; source-only work still shares SOURCE_TIMEOUT.
-METADATA_TIMEOUT = 120
+DEPENDENCY_PREPARATION_TIMEOUT = 600
+SDK_METADATA_LIMIT = 1024 * 1024
+DEPENDENCY_PREPARATION_SCRIPT = r'''# Fixed Go commands only: no project script or application code executes.
+# Download failures still emit declaration metadata so invalid/local replacements
+# retain their application rejection instead of becoming dependency failures.
+download=0
+go -C /workspace mod download >&2 || download=$?
+if [ "$download" -eq 0 ]; then
+    go -C /workspace/tools/openapi mod download >&2 || download=$?
+fi
+declared=0
+env GOPROXY=off GOSUMDB=off GOVCS='*:off' GOFLAGS=-mod=readonly GOTOOLCHAIN=local \
+    go mod edit -json >/tmp/sv2-sdk-declared.json || declared=$?
+resolved=125
+: >/tmp/sv2-sdk-resolved.json
+if [ "$download" -eq 0 ] && [ "$declared" -eq 0 ]; then
+    resolved=0
+    env GOPROXY=off GOSUMDB=off GOVCS='*:off' GOFLAGS=-mod=readonly GOTOOLCHAIN=local \
+        go list -m -json -e -mod=readonly github.com/superdurable/dex/sdk-go \
+        >/tmp/sv2-sdk-resolved.json || resolved=$?
+fi
+printf 'SV2_SDK_METADATA_V1 %s %s %s\n' "$download" "$declared" "$resolved"
+head -c 1048577 /tmp/sv2-sdk-declared.json
+printf '\nSV2_SDK_RESOLVED_V1\n'
+head -c 1048577 /tmp/sv2-sdk-resolved.json
+printf '\nSV2_SDK_END_V1\n'
+'''
+
+
+def dependency_metadata(output):
+    """Read the fixed protocol; never retain or log dependency metadata."""
+    if isinstance(output, bytes):
+        output = output.decode()
+    output = output.rstrip("\n")
+    if len(output.encode()) > 2 * SDK_METADATA_LIMIT + 256:
+        raise ValueError("dependency metadata exceeds its bound")
+    header, body = output.split("\n", 1)
+    match = re.fullmatch(r"SV2_SDK_METADATA_V1 ([0-9]{1,3}) ([0-9]{1,3}) ([0-9]{1,3})", header)
+    if match is None or not body.endswith("\nSV2_SDK_END_V1"):
+        raise ValueError("invalid dependency metadata protocol")
+    declared, resolved = body[:-len("\nSV2_SDK_END_V1")].split("\nSV2_SDK_RESOLVED_V1\n")
+    if any(len(value.encode()) > SDK_METADATA_LIMIT for value in (declared, resolved)):
+        raise ValueError("dependency metadata exceeds its bound")
+    return tuple(map(int, match.groups())), declared, resolved
+
 MAX_FAILURE_STDERR_BYTES = 2048
 # The job log keeps the end of the build commands' output for log-read pages of at most LOG_PAGE bytes.
 MAX_JOB_LOG = 256 * 1024
@@ -513,7 +556,7 @@ class Job:
         yield
         self.measure(code, started, clock)
 
-    def command(self, argv, *, cwd=None, environment=None, timeout=1800, log_output=True):
+    def command(self, argv, *, cwd=None, environment=None, timeout=1800, log_output=True, capture_stderr=False):
         self.command_kind = "docker run" if argv[:2] == ["docker", "run"] else Path(argv[0]).name if Path(argv[0]).name in ("git", "docker", "app-manifest") else "trusted tool"
         if self.cancelled.is_set():
             raise ValueError("build cancelled")
@@ -565,7 +608,8 @@ class Job:
             if container_name is not None:
                 with self.lock:
                     self.containers.discard(container_name)
-            return output.decode().strip()
+            decoded = output.decode().strip()
+            return (decoded, errors) if capture_stderr else decoded
         except subprocess.TimeoutExpired as error:
             errors = error.stderr or b""
             try:
@@ -647,20 +691,50 @@ class Job:
                 # running; reconcile the independently recorded container too.
                 self.cleanup_containers_locked()
 
-    def check_live_sdk(self, argv, *, resolved):
-        try:
-            metadata = self.command(argv, timeout=METADATA_TIMEOUT, log_output=False)
-        except (CommandFailed, CommandDeadlineExceeded, OSError) as error:
-            if isinstance(error, OSError):
-                error = CommandFailed("launch error", str(error).encode())
-            # Only trusted logical command arguments are retained, never Docker mounts or environment.
-            command = shlex.join(["docker", "run", "<tool-image>", "go", *argv[argv.index(self.tool_image) + 1:]])
-            raise MetadataCommandFailure(command, error, self.failure_secrets) from error
+    def check_live_sdk(self, metadata, *, resolved):
         try:
             validate_live_sdk(json.loads(metadata), resolved=resolved)
         except (ValueError, TypeError, KeyError):
             self.sdk_rejected = True
+            append_job_log(self.request, b"Dex SDK check: rejected\n")
             raise
+        append_job_log(self.request, b"Dex SDK check: ok\n")
+
+    def metadata_failure(self, command, error):
+        if isinstance(error, OSError):
+            error = CommandFailed("launch error", str(error).encode())
+        outcome = "timed out" if isinstance(error, CommandDeadlineExceeded) else "platform failure"
+        append_job_log(self.request, ("Dex SDK check: " + outcome + "\n").encode())
+        # The upstream wrapper redacts the complete stderr before its bounded tail.
+        return MetadataCommandFailure(command, error, self.failure_secrets)
+
+    def prepare_dependencies(self, container):
+        logical = "docker run <tool-image> fixed dependency preparation: go mod download; go mod edit -json; go list -m -json -e -mod=readonly github.com/superdurable/dex/sdk-go"
+        try:
+            output, errors = self.command([*container, "--network", "bridge", "--entrypoint", "/bin/sh",
+                                           self.tool_image, "-c", DEPENDENCY_PREPARATION_SCRIPT],
+                                          timeout=DEPENDENCY_PREPARATION_TIMEOUT,
+                                          log_output=False, capture_stderr=True)
+        except (CommandFailed, CommandDeadlineExceeded, OSError) as error:
+            raise self.metadata_failure(logical, error) from error
+        except UnicodeError:
+            raise self.metadata_failure(logical, CommandFailed("invalid metadata encoding")) from None
+        try:
+            (download, declared_status, resolved_status), declared, resolved = dependency_metadata(output)
+        except (ValueError, UnicodeError):
+            raise self.metadata_failure(logical, CommandFailed("invalid metadata output")) from None
+        if declared_status:
+            raise self.metadata_failure("go mod edit -json", CommandFailed(declared_status, errors))
+        self.check_live_sdk(declared, resolved=False)
+        if download:
+            # Preserve the download failure class; metadata failures above are redacted.
+            append_job_log(self.request, errors)
+            append_job_log(self.request, b"Dex SDK check: platform failure\n")
+            raise CommandFailed(download, errors)
+        if resolved_status:
+            raise self.metadata_failure("go list -m -json -e -mod=readonly github.com/superdurable/dex/sdk-go",
+                                        CommandFailed(resolved_status, errors))
+        self.check_live_sdk(resolved, resolved=True)
 
     def render(self, checkout):
         manifest_path = checkout / "dex-app.yaml"
@@ -693,21 +767,14 @@ class Job:
                          "-e", "GONOSUMDB=" + self.redirect.get("GONOSUMDB", "none"), *redirect, "-e", "GOWORK=off",
                          "-v", f"{checkout}:/workspace:ro", "-v", f"{output}:/out:rw",
                          "-v", f"{module_cache}:/dependencies:rw", "-w", "/workspace"]
-            # Go's fixed download command reads the exact module files; no shell,
-            # go generate, project command, host credential or Docker socket is passed.
+            # Fixed trusted commands read the exact module files; no project script,
+            # go generate, host credential or Docker socket is passed.
             # With lazy module loading, `all` also resolves dependency-only
             # packages and can add unused checksums to go.sum. Prepare the
             # modules declared by each accepted lockfile without modifying the
             # read-only source; offline strict FDG analysis proves sufficiency.
-            self.check_live_sdk([*container, "--network", "none", "--entrypoint", "go", self.tool_image,
-                                 "mod", "edit", "-json"], resolved=False)
             with self.phase("DEPENDENCY_PREPARATION"):
-                for module in ("/workspace", "/workspace/tools/openapi"):
-                    self.command([*container, "--network", "bridge", "--entrypoint", "go", self.tool_image,
-                                  "-C", module, "mod", "download"], timeout=600)
-            self.check_live_sdk([*container, "--network", "none", "--entrypoint", "go", self.tool_image,
-                                 "list", "-m", "-json", "-e", "-mod=readonly", "github.com/superdurable/dex/sdk-go"],
-                                resolved=True)
+                self.prepare_dependencies(container)
             with self.phase("ANALYSIS"):
                 for index, entry in enumerate(manifest["flowDefinitions"]):
                     source = entry.get("sourcePath") if isinstance(entry, dict) else None

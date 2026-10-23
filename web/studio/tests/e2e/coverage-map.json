@@ -17,7 +17,6 @@
       "components/agent/interaction/PendingQuestionBatch.tsx",
       "components/agent/interaction/RecordedRequirements.tsx",
       "components/agent/interaction/RequirementsCard.tsx",
-      "components/agent/interaction/TimerCard.tsx",
       "components/agent/interaction/TodoProgress.tsx",
       "components/build/DesignSurface.tsx",
       "components/build/FlowSurface.tsx",

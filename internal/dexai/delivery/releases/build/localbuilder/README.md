@@ -56,8 +56,8 @@ cancellation and Release cleanup also reconcile names of ended jobs, including
 after a builder restart; no newer attempt starts while their outcome is unknown.
 An admitted cancellation stays pending when child or container cleanup is
 unconfirmed, while Inspect retains UNKNOWN and its owned cleanup identity.
-Each SDK metadata probe has up to 120 seconds for tool-container startup under
-load, within the same shared four-minute source deadline.
+SDK metadata shares the dependency container and its command budget, within the
+same four-minute source deadline; no separate metadata-container startup is admitted.
 A cancellation of a build revision that has no state yet records the attempt
 FAILED `CANCELLED`, so a Start of that attempt arriving later is refused.
 
@@ -142,13 +142,27 @@ so its fixed tool image and executable match the accepted build. Never delete a 
 MISSING result: retry the same Release through its explicit preparation
 admission, which advances the attempt after known failure.
 
+Dependency preparation creates one owned bridge tool container for both fixed
+module downloads and both SDK metadata commands. Only metadata commands disable
+module/checksum/VCS fetching with `GOPROXY=off`, `GOSUMDB=off`, `GOVCS=*:off`, readonly
+module mode and the local toolchain; they execute no application code. The shared
+600-second dependency command remains capped by the unchanged 240-second source
+deadline; separate metadata containers and their 120-second startup deadlines
+are removed. Fixed delimited stdout bounds each metadata document to 1 MiB and
+is parsed only in memory. Declared metadata is checked even after a download
+fails, so unsupported selections retain their typed SDK rejection. Metadata
+command/parser failures keep `METADATA_COMMAND_FAILED`; command deadlines keep
+`METADATA_COMMAND_TIMEOUT`. The existing wrapper redacts stderr before its
+bounded tail, and existing owned naming and late-create UNKNOWN reconciliation
+remain unchanged. Fixed SDK outcomes are recorded without metadata stdout.
+
 Private local state is under `<state-dir>/<environment>/<project>/<release>/<buildRevisionId>/`. Inspect reconciles the request, published image and four payloads, and returns the bounded failure classification of a FAILED or UNKNOWN build (`BUILD_FAILED`, `COMMAND_TIMEOUT`, `CANCELLED`, `CANCEL_OUTCOME_UNKNOWN` or `NATIVE_CANCEL_OUTCOME_UNKNOWN`). Metadata command failures retain `METADATA_COMMAND_TIMEOUT` or `METADATA_COMMAND_FAILED` with the logical command, deadline or exit status, and at most 2,048 bytes of redacted stderr tail; metadata stdout remains suppressed. Redaction precedes truncation and removes the repository credential, credential assignments, authorization headers, credential-bearing URLs and recognized token/private-key forms. Only an explicit cancellation request sets `CANCELLED`; command timeout stops and reconciles owned work without setting cancellation. Unproven cleanup retains UNKNOWN. Running state without a live owning helper thread is UNKNOWN and requires inspection; automatic restart never assumes it succeeded or starts duplicate work. A failed build can be rerun only with an explicitly higher attempt. Cancel confirms process termination before reporting completion. Release cleanup removes private fixture files after Flow-owned S3 artifact cleanup. Immutable node images are an owned-cluster cache and are removed with that disposable cluster, and registry images stay in the Native registry's volume; neither is an application serving resource. SIGTERM/interrupt cancels child process groups.
 
 Inspect also returns the `phaseTimings` that the job measured and that
 `state.json` keeps with its terminal state, as `build.BuildPhaseTiming`
 entries: QUEUE from start admission until the job thread begins,
 HOST_PREPARATION for the Git fetch and checkout, DEPENDENCY_PREPARATION for the
-module downloads, ANALYSIS for the trusted AppManifest tool and the FDG
+module downloads and SDK checks, ANALYSIS for the trusted AppManifest tool and the FDG
 analysis, COMPILATION for `docker build` and IMAGE_PUBLICATION for the Kind load
 and the digest tags, or the push and the digest the registry holds. ANALYSIS is entered twice, around the module downloads, and
 reports its first start with the summed work. Source preparation ends with
@@ -178,4 +192,4 @@ Hosted CodeBuild/ECR transport is implemented separately in `../hosted/README.md
 Builds use the application's own `go.mod` with `GOWORK=off` and the published
 `go-react-v1` recipe, `bp3` for a new local build ([the current contract](../../../../../../docs/architecture/superverse-v2.md)).
 
-Live source preparation resolves `github.com/superdurable/dex/sdk-go` with the isolated Go toolchain after replacements. The selected version must be at least `v1.13.0`; missing, local-path, malformed and older selections produce the typed application rejection `unsupported-dex-sdk` with an upgrade hint. Both metadata commands (`go mod edit -json` and `go list -m -json`) have a 120-second deadline, including host Docker startup. This is four times the former deadline to accommodate cold-host contention; the source-only attempt still caps all work at four minutes. A metadata subprocess failure is a platform build failure with its retained diagnostic, rather than an SDK-version rejection. Preliminary module metadata rejects invalid replacements before downloads; the offline selected module check follows dependency preparation. Successful metadata checks retain no selected version in state, artifacts or logs. A metadata command failure retains its bounded, redacted diagnostic, which can identify invalid source declarations.
+The [Live SDK floor and failure policy](../README.md#live-sdk-floor) governs selections. Successful metadata checks retain no selected version in state, artifacts or logs. Failed commands retain the bounded, redacted diagnostic described above, which can identify invalid source declarations.

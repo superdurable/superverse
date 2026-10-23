@@ -28,6 +28,7 @@ const (
 	FailureHostPreparation
 	FailureUnclassifiedPlatform
 	FailureUnsupportedDexSDK
+	FailureDexSDKCheckTimeout
 )
 
 type failureCategoryData struct {
@@ -45,11 +46,12 @@ var failureCategories = map[FailureCategory]failureCategoryData{
 	FailureHostPreparation:       {"host-preparation-failed", FailureClassPlatform, ""},
 	FailureUnclassifiedPlatform:  {"unclassified-platform-failure", FailureClassPlatform, ""},
 	FailureUnsupportedDexSDK:     {"unsupported-dex-sdk", FailureClassApplication, "Live requires github.com/superdurable/dex/sdk-go v1.13.0 or later; upgrade the dependency and use a versioned module replacement."},
+	FailureDexSDKCheckTimeout:    {"dex-sdk-check-timed-out", FailureClassPlatform, "Dex SDK check timed out; retry the build or inspect platform tool-container startup."},
 }
 
 func init() {
 	names := map[string]bool{}
-	for category := FailureUnsupportedBuildTools; category <= FailureUnsupportedDexSDK; category++ {
+	for category := FailureUnsupportedBuildTools; category <= FailureDexSDKCheckTimeout; category++ {
 		data, ok := failureCategories[category]
 		if !ok || data.name == "" || names[data.name] || (data.class != FailureClassApplication && data.class != FailureClassPlatform) {
 			panic("invalid hosted failure category catalog")
@@ -86,6 +88,7 @@ func FailureCategoryNames() map[string]string {
 		"hostPreparation":       FailureHostPreparation.Name(),
 		"unclassifiedPlatform":  FailureUnclassifiedPlatform.Name(),
 		"unsupportedDexSDK":     FailureUnsupportedDexSDK.Name(),
+		"dexSDKCheckTimeout":    FailureDexSDKCheckTimeout.Name(),
 	}
 }
 
