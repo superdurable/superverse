@@ -16,6 +16,10 @@ It is the lane of every change that touches no Kind path; `make required-lanes` 
 - Docker Desktop or OrbStack on macOS, with the containerd image store (Docker Desktop: *Use containerd for pulling
   and storing images*; OrbStack uses it by default): the Sandbox runs the coding image by the digest that the store
   records. Containers reach the host processes through `host.docker.internal`, which both provide.
+- On OrbStack, run `orb config set network_bridge false`, then restart OrbStack after all lanes stop.
+  Direct Mac bridge mirroring has an observed eight-network ceiling ([upstream report](https://github.com/orbstack/orbstack/issues/2728));
+  Native creates Project and Session networks, and exceeding it caused 30-second container-start waits.
+  Host-side lane processes use published loopback ports, so direct container-IP/domain access is unnecessary.
 - `docker` with Compose, `helm` (it renders the coding profile from the chart), `go`, `aws` (it creates the platform
   buckets), Node/npm with `npm --prefix web/studio ci` done once, and the pinned `dexcli` from `make install-dexcli`
   (or the binary that `DEXCLI` names).
