@@ -19,11 +19,10 @@ import (
 	"time"
 
 	"github.com/superdurable/superversev2/internal/comm"
+	"github.com/superdurable/superversev2/internal/comm/dexflow/engineindex"
 )
 
 const (
-	// v2WorkQueuePermissionsIndex indexes the Action permissions a Flow's current state awaits.
-	v2WorkQueuePermissionsIndex = "DexWorkQueuePermissions"
 	// engineWorkflowVisibilityQuery limits a search to Flow executions.
 	engineWorkflowVisibilityQuery = `WorkflowType = "Engine"`
 	// v2StartPermission is the permission Start awaits; the Inbox includes it.
@@ -74,7 +73,7 @@ const (
 // come from the validated contract, and every literal is quoted, so a filter
 // value can never change the query's structure.
 func CompileQuery(flowType string, workQueuePermissions []string, filters []SearchFilter, definition V2Definition) (string, error) {
-	conditions := []string{"FlowType = " + quoteVisibilityString(flowType)}
+	conditions := []string{string(engineindex.FlowType) + " = " + quoteVisibilityString(flowType)}
 	if len(workQueuePermissions) > 0 {
 		conditions = append(conditions, compileWorkQueuePermissions(workQueuePermissions))
 	}
@@ -121,7 +120,8 @@ func InboxPermissions(bundle *Bundle) []string {
 
 // compileWorkQueuePermissions matches Flows that await any of permissions.
 func compileWorkQueuePermissions(permissions []string) string {
-	fieldExpression := quoteVisibilityField(v2WorkQueuePermissionsIndex)
+	// The engine indexes the Action permissions a Flow's current state awaits.
+	fieldExpression := quoteVisibilityField(string(engineindex.WorkQueuePermissions))
 	parts := make([]string, 0, len(permissions))
 	for _, permission := range permissions {
 		parts = append(parts, fieldExpression+" = "+quoteVisibilityString(permission))

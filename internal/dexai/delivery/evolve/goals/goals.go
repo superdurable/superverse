@@ -87,6 +87,9 @@ type Goal struct {
 	Direction Direction  `yaml:"direction,omitempty" json:"direction,omitempty"`
 	Guardrail *Guardrail `yaml:"guardrail,omitempty" json:"guardrail,omitempty"`
 	Target    *float64   `yaml:"target,omitempty" json:"target,omitempty"`
+	// Within, such as 7d, 12h or 90m, is how long after its decision point a
+	// run's outcome may come, or when its per-run number is read.
+	Within string `yaml:"within,omitempty" json:"within,omitempty"`
 }
 
 // Guardrail is a limit a goal's metric must keep.
@@ -127,26 +130,53 @@ var (
 	yamlLineRef = regexp.MustCompile(`line (\d+)`)
 )
 
-// Parse reads the one goals block of a goals file, decodes it strictly and validates it.
-func Parse(file []byte) (Spec, []Problem) {
-	block, offset, problems := goalsBlock(file)
+// Parse reads the one goals block of a goals file, decodes it strictly and
+// validates it; a within shorter than durations accepts is a problem.
+func Parse(file []byte, durations Durations) (Spec, []Problem) {
+	spec, at, problems := decode(file)
 	if len(problems) > 0 {
 		return Spec{}, problems
+	}
+	return spec, validate(spec, at, durations)
+}
+
+// Warnings lists what a check reports of a goals file without refusing it:
+// each within under an hour, which only the server of a local profile accepts
+// (evolve.allowShortDurations).
+func Warnings(file []byte) []Problem {
+	spec, at, problems := decode(file)
+	if len(problems) > 0 {
+		return nil
+	}
+	var warnings []Problem
+	for i, goal := range spec.Goals {
+		if within, err := parseWithin(goal.Within, MinuteDurations); err == nil && within < HourDurations.shortest {
+			warnings = append(warnings, Problem{Line: at.goal(i, "within"), Message: "only test profiles accept durations under an hour"})
+		}
+	}
+	return warnings
+}
+
+// decode reads the one goals block of a goals file strictly, with the lines of its keys.
+func decode(file []byte) (Spec, lines, []Problem) {
+	block, offset, problems := goalsBlock(file)
+	if len(problems) > 0 {
+		return Spec{}, lines{}, problems
 	}
 	var spec Spec
 	decoder := yaml.NewDecoder(bytes.NewReader(block))
 	decoder.KnownFields(true)
 	if err := decoder.Decode(&spec); err != nil {
 		if errors.Is(err, io.EOF) {
-			return Spec{}, []Problem{{Line: offset, Message: "the goals block is empty"}}
+			return Spec{}, lines{}, []Problem{{Line: offset, Message: "the goals block is empty"}}
 		}
-		return Spec{}, decodeProblems(err, offset)
+		return Spec{}, lines{}, decodeProblems(err, offset)
 	}
 	var root yaml.Node
 	if err := yaml.Unmarshal(block, &root); err != nil {
-		return Spec{}, decodeProblems(err, offset)
+		return Spec{}, lines{}, decodeProblems(err, offset)
 	}
-	return spec, validate(spec, lines{root: &root, offset: offset})
+	return spec, lines{root: &root, offset: offset}, nil
 }
 
 // goalsBlock returns the body of the one ```yaml goals fence and the file line before its first body line.

@@ -25,25 +25,145 @@ import (
 
 // Record is one run of one Flow, compacted from its state and history: one line of an export.
 type Record struct {
-	FlowType       string             `json:"flow_type"`
-	FlowID         string             `json:"flow_id"`
-	Status         string             `json:"status"`
-	StartedAt      time.Time          `json:"started_at"`
-	ClosedAt       *time.Time         `json:"closed_at"`
-	ReleaseAtStart string             `json:"release_at_start,omitempty"`
-	MovedAt        []string           `json:"moved_at,omitempty"`
-	Variant        *string            `json:"variant"`
-	Fields         map[string]any     `json:"fields"`
-	Steps          map[string]int     `json:"steps"`
-	Actions        map[string]int     `json:"actions"`
-	WaitHours      map[string]float64 `json:"wait_h"`
+	FlowType       string     `json:"flow_type"`
+	FlowID         string     `json:"flow_id"`
+	Status         string     `json:"status"`
+	StartedAt      time.Time  `json:"started_at"`
+	ClosedAt       *time.Time `json:"closed_at"`
+	ReleaseAtStart string     `json:"release_at_start,omitempty"`
+	MovedAt        []string   `json:"moved_at,omitempty"`
+	Variant        *string    `json:"variant"`
+	// Fields are the allow-listed Attributes' current values: the last write wins.
+	Fields map[string]any `json:"fields"`
+	// FieldTimelines are the distinct values each field took, in write order, which FieldAsOf reads.
+	FieldTimelines map[string]FieldTimeline `json:"field_timeline,omitempty"`
+	Steps          map[string]int           `json:"steps"`
+	// StepsFirstAt is when the run first entered each Step.
+	StepsFirstAt map[string]time.Time `json:"steps_first_at,omitempty"`
+	Actions      map[string]int       `json:"actions"`
+	// ActionsFirstAt is when the run first had each Action accepted, for at most 64 Actions.
+	ActionsFirstAt map[string]time.Time `json:"actions_first_at,omitempty"`
+	WaitHours      map[string]float64   `json:"wait_h"`
 	// ActiveSteps are the Step types an open run is in at the export time: entered, not yet finished.
-	ActiveSteps   []string    `json:"active_steps,omitempty"`
-	Path          []PathEntry `json:"path"`
-	PathTruncated bool        `json:"path_truncated,omitempty"`
+	ActiveSteps []string `json:"active_steps,omitempty"`
+	// Indexed are the allow-listed Attributes' values in the engine's search index when the export searched.
+	Indexed map[string]any `json:"indexed,omitempty"`
+	// IndexedActiveSteps are the Step types the engine's search index listed as active for an open run.
+	IndexedActiveSteps []string    `json:"indexed_active_steps,omitempty"`
+	Path               []PathEntry `json:"path"`
+	PathTruncated      bool        `json:"path_truncated,omitempty"`
 	// HistoryTruncated is set when the run's history exceeded the export's event limit.
-	HistoryTruncated bool    `json:"history_truncated,omitempty"`
-	AI               AIUsage `json:"ai"`
+	HistoryTruncated bool `json:"history_truncated,omitempty"`
+	// HistoryCutAt is set with HistoryTruncated: the record holds no event from this time on.
+	HistoryCutAt *time.Time `json:"history_cut_at,omitempty"`
+	// HistoryFrom is set when the run continues earlier runs of its FlowID that
+	// the event limit left unread: the record holds the run from this time
+	// only, with the Attributes and active Steps it carried in. Its start is
+	// unknown, so StartedAt is this time and ReleaseAtStart is empty.
+	HistoryFrom *time.Time `json:"history_from,omitempty"`
+	// FieldsFromState is set when Fields and Variant are the run's current Attributes, read from its state because its history was truncated.
+	FieldsFromState bool `json:"fields_from_state,omitempty"`
+	// Timelines is set on every record that carries field timelines and first
+	// times; a record exported before them has neither.
+	Timelines bool    `json:"timelines,omitempty"`
+	AI        AIUsage `json:"ai"`
+}
+
+// HistoryComplete reports whether the record holds every event of the run up
+// to the export: none was cut at the event limit or left unread before it.
+func (r Record) HistoryComplete() bool { return !r.HistoryTruncated && r.HistoryFrom == nil }
+
+// HistoryCovers reports whether the record holds every event of the run up to
+// time at: its history starts with the run and is not cut at or before at.
+func (r Record) HistoryCovers(at time.Time) bool {
+	if r.HistoryFrom != nil {
+		return false
+	}
+	if r.HistoryTruncated {
+		return r.HistoryCutAt != nil && at.Before(*r.HistoryCutAt)
+	}
+	return true
+}
+
+// FieldTimeline is the distinct values one field took, in write order; a nil value is a deletion.
+type FieldTimeline struct {
+	Values []TimedValue `json:"values"`
+	// CutAt is set when the timeline is incomplete: from then on the field's value is unknown.
+	CutAt *time.Time `json:"cut_at,omitempty"`
+}
+
+// TimedValue is a value with the event time of its write, written as [value, "time"].
+type TimedValue struct {
+	Value any
+	At    time.Time
+}
+
+// MarshalJSON writes the value as a two-element array.
+func (v TimedValue) MarshalJSON() ([]byte, error) {
+	return json.Marshal([2]any{v.Value, v.At.UTC().Format(time.RFC3339Nano)})
+}
+
+// UnmarshalJSON reads the two-element array form.
+func (v *TimedValue) UnmarshalJSON(data []byte) error {
+	var pair [2]json.RawMessage
+	if err := json.Unmarshal(data, &pair); err != nil {
+		return err
+	}
+	var at string
+	if err := json.Unmarshal(pair[1], &at); err != nil {
+		return fmt.Errorf("field value time: %w", err)
+	}
+	parsed, err := time.Parse(time.RFC3339Nano, at)
+	if err != nil {
+		return fmt.Errorf("field value time: %w", err)
+	}
+	v.At = parsed
+	return json.Unmarshal(pair[0], &v.Value)
+}
+
+// FieldAsOf returns a field's value at time at, the value of its latest write
+// at or before at (the later one in write order on a tie): present is false
+// before its first write and after a deletion, and known is false before
+// HistoryFrom and from the time its timeline was cut. A record exported before
+// timelines (Timelines false) answers its current value.
+func (r Record) FieldAsOf(name string, at time.Time) (value any, present, known bool) {
+	if !r.Timelines {
+		value, present = r.Fields[name]
+		return value, present, true
+	}
+	timeline := r.FieldTimelines[name]
+	if (r.HistoryFrom != nil && at.Before(*r.HistoryFrom)) || (timeline.CutAt != nil && !at.Before(*timeline.CutAt)) {
+		return nil, false, false
+	}
+	latest := -1
+	for i, written := range timeline.Values {
+		if !written.At.After(at) && (latest < 0 || !written.At.Before(timeline.Values[latest].At)) {
+			latest = i
+		}
+	}
+	if latest < 0 {
+		return nil, false, true
+	}
+	return timeline.Values[latest].Value, timeline.Values[latest].Value != nil, true
+}
+
+// FieldMatchedBy reports whether a field held a value that match accepts at
+// some time at or before at, with the earliest such write the record holds,
+// which is the first only when HistoryFrom is nil. known is false when the
+// record cannot tell: no such write is held, and the run's history before
+// HistoryFrom is unread or the timeline was cut at or before at.
+func (r Record) FieldMatchedBy(name string, at time.Time, match func(any) bool) (matched bool, first time.Time, known bool) {
+	timeline := r.FieldTimelines[name]
+	for _, written := range timeline.Values {
+		if written.Value != nil && !written.At.After(at) && match(written.Value) && (!matched || written.At.Before(first)) {
+			matched, first = true, written.At
+		}
+	}
+	if matched {
+		return true, first, true
+	}
+	cut := timeline.CutAt != nil && !at.Before(*timeline.CutAt)
+	return false, time.Time{}, r.HistoryFrom == nil && !cut
 }
 
 // PathEntry is one entry into a Step, written as ["StepType", "time"].
@@ -236,11 +356,16 @@ func decodeOne(data []byte, target any, strict bool) error {
 	return nil
 }
 
-// Write encodes one record as a JSON line.
+// Write encodes one record as a JSON line, with <, > and & escaped as every
+// earlier export wrote them, so a part or a runs.jsonl that a retry writes
+// again has the same bytes, and refuses a line longer than Read accepts.
 func Write(w io.Writer, record Record) error {
 	line, err := json.Marshal(record)
 	if err != nil {
 		return err
+	}
+	if len(line)+1 > maxLineBytes {
+		return fmt.Errorf("the record of %s takes %d bytes, more than the %d a line holds", record.FlowID, len(line)+1, maxLineBytes)
 	}
 	_, err = w.Write(append(line, '\n'))
 	return err

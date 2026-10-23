@@ -18,6 +18,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/superdurable/superversev2/internal/comm/dexflow/engineindex"
 )
 
 // TemporalAccess is how a project Dex and the data-plane check reach the
@@ -76,7 +78,10 @@ func DescribeTemporalNamespace(ctx context.Context, connection *grpc.ClientConn,
 var projectSearchAttributes = []struct {
 	Name        string
 	KeywordList bool
-}{{"FlowType", false}, {"DexParentFlowID", false}, {"ActiveStepTypes", true}, {"keyword1", false}, {"keyword2", false}, {"keyword3", false}}
+}{
+	{string(engineindex.FlowType), false}, {string(engineindex.ParentFlowID), false}, {string(engineindex.ActiveStepTypes), true},
+	{"keyword1", false}, {"keyword2", false}, {"keyword3", false},
+}
 
 // LocalTemporalNamespace is the Temporal namespace of a project whose own
 // Temporal start-dev runs in its Live scope: app-<project>.

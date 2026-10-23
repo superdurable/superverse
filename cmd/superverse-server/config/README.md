@@ -336,7 +336,7 @@ and where agent reviews run ([the package](../../../internal/dexai/delivery/evol
 | Key | Meaning | Default | Range or rule |
 | --- | --- | --- | --- |
 | `maxRunsPerExport` | Most runs one review exports; the export is marked truncated beyond | `5000` | 1 to 20000 |
-| `maxHistoryEventsPerRun` | Most history events read per run; a longer run's record is marked truncated | `2000` | 100 to 10000 |
+| `maxHistoryEventsPerRun` | Most history events read per run, across the runs the engine continued it through; a longer run's record is marked truncated, or starts at the oldest run read | `2000` | 100 to 10000 |
 | `maxReadsPerExport` | Most reads of the Live engine one export makes | `40000` | 100 to 200000 |
 | `maxConcurrentExports` | Exports one server replica runs at once; the others wait, heartbeating. Every running or waiting export Step holds one of the replica's `dex.pull.maxConcurrentTasks` slots | `4` | 1 to 8 |
 | `keepExports` | A Project's newest exports kept in storage; a review deletes older ones when it begins | `4` | 1 to 25 |
@@ -344,6 +344,7 @@ and where agent reviews run ([the package](../../../internal/dexai/delivery/evol
 | `priceTableAsOf` | The date of `modelPrices`, which each export's manifest carries | empty | `YYYY-MM-DD`, required with `modelPrices` |
 | `reviewAccess` | Which Projects get agent reviews after measurement: `none`, `listed` (the TeamSpaces below) or `all`. Measurement runs for every Project with valid goals | `listed` | one of the three |
 | `reviewTeamSpaces` | TeamSpace IDs with agent reviews under `listed`, kept in private environment configuration | empty | at most 100 canonical TeamSpace IDs, each once |
+| `allowShortDurations` | Accept a goal's `within` from one minute instead of one hour, so test applications measure in minutes; `native.yaml` and `local-kind.yaml` set it | `false` | only in the local lanes (`localKind`) |
 
 ### `native`
 

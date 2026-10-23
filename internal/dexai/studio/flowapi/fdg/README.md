@@ -5,7 +5,7 @@ Purpose: Defines and validates the Flow Definition Graph 2.0 contract for the Fl
 
 Callers: `internal/dexai/agents/diagnostics`, `internal/dexai/api`, `internal/dexai/delivery/evolve/runexport/history`, `internal/dexai/studio/confighost`, `internal/dexai/studio/confighost/connectormanifest`, `internal/dexai/studio/flowapi` and `internal/dexai/studio/runs` import this package.
 
-Dependencies: it imports `internal/comm` and `internal/dexai/app/appmanifest` and calls the Dex Flow API.
+Dependencies: it imports `internal/comm`, `internal/comm/dexflow/engineindex` and `internal/dexai/app/appmanifest` and calls the Dex Flow API.
 
 ```mermaid
 flowchart LR
@@ -18,7 +18,8 @@ flowchart LR
   c5["internal/dexai/studio/flowapi"] --> self
   c6["internal/dexai/studio/runs"] --> self
   self --> d0["internal/comm"]
-  self --> d1["internal/dexai/app/appmanifest"]
+  self --> d1["internal/comm/dexflow/engineindex"]
+  self --> d2["internal/dexai/app/appmanifest"]
   self --> e0(["Dex Flow API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->

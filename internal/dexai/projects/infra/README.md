@@ -5,7 +5,7 @@ Purpose: Declares the roles through which the platform consumes a project's stor
 
 Callers: `cmd/superverse-server/config` and `internal/dexai/**` (28) import this package.
 
-Dependencies: it imports `gen/superverse/v2`, `internal/comm`, `internal/comm/flowid`, `internal/comm/platform`, `internal/comm/platform/deploymentnames` and `internal/comm/platform/objectstore` and calls the AWS S3, MinIO admin and Temporal WorkflowService APIs.
+Dependencies: it imports `gen/superverse/v2`, `internal/comm`, `internal/comm/dexflow/engineindex`, `internal/comm/flowid`, `internal/comm/platform`, `internal/comm/platform/deploymentnames` and `internal/comm/platform/objectstore` and calls the AWS S3, MinIO admin and Temporal WorkflowService APIs.
 
 ```mermaid
 flowchart LR
@@ -14,10 +14,11 @@ flowchart LR
   c1["internal/dexai/** (28)"] --> self
   self --> d0["gen/superverse/v2"]
   self --> d1["internal/comm"]
-  self --> d2["internal/comm/flowid"]
-  self --> d3["internal/comm/platform"]
-  self --> d4["internal/comm/platform/deploymentnames"]
-  self --> d5["internal/comm/platform/objectstore"]
+  self --> d2["internal/comm/dexflow/engineindex"]
+  self --> d3["internal/comm/flowid"]
+  self --> d4["internal/comm/platform"]
+  self --> d5["internal/comm/platform/deploymentnames"]
+  self --> d6["internal/comm/platform/objectstore"]
   self --> e0(["AWS S3 API"])
   self --> e1(["MinIO admin API"])
   self --> e2(["Temporal WorkflowService API"])

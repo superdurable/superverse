@@ -15,11 +15,12 @@ internal/dexai/delivery/deployments/kube/**
 internal/dexai/bootstrap/kubernetes.go
 
 # The Sandbox's runtime: the coding image with sandboxd and its helpers. Native runs the same image, but only Kind
-# applies the Pod's restrictions. The image's superverse-evolve compiles the goals evaluator and the run record from
-# the source tree.
+# applies the Pod's restrictions. The image's superverse-evolve compiles the goals evaluator, the run record and the
+# engine's search index names from the source tree.
 sandbox/coding/**
 internal/dexai/delivery/evolve/goals/**
 internal/dexai/delivery/evolve/runexport/*.go
+internal/comm/dexflow/engineindex/**
 
 # The deployment: the chart with the coding profile, the Kind lane's values and scripts, and the
 # Kubernetes Terraform root.

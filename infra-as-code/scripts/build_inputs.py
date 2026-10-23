@@ -12,6 +12,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import shutil
 import stat
 
@@ -83,10 +84,19 @@ def component_inputs(component):
     raise ValueError("Unknown image component: " + component)
 
 
+# A COPY line of the image-commands stage of sandbox/coding/Dockerfile that copies one package's Go files from the
+# source tree; scripts/check-package-layers.py keeps these lines to its IMAGE_BUILT packages.
+IMAGE_SOURCE_COPY = re.compile(r"^COPY (internal/\S+)/\*\.go \./\1/$")
+
+
 def evolve_measurement_sources():
-    """The goals evaluator and run record the image's superverse-evolve compiles from the source tree, without the
-    Dex history reader below runexport (sandbox/coding/Dockerfile, image-commands)."""
-    directories = ("internal/dexai/delivery/evolve/goals", "internal/dexai/delivery/evolve/runexport")
+    """The Go files of the source-tree packages the image's superverse-evolve compiles (the goals evaluator, the review
+    folder's reader, the run record and the engine's search index names), without the Dex history reader below
+    runexport: every package the image-commands stage of sandbox/coding/Dockerfile copies, so the image's identity
+    follows each file its build reads."""
+    dockerfile = (ROOT / "sandbox/coding/Dockerfile").read_text(encoding="utf-8")
+    directories = [match.group(1) for match in map(IMAGE_SOURCE_COPY.match, dockerfile.splitlines()) if match]
+    require(directories, "sandbox/coding/Dockerfile copies no Go package of the source tree")
     return {path.relative_to(ROOT).as_posix() for directory in directories for path in (ROOT / directory).glob("*.go")
             if not path.name.endswith("_test.go")}
 

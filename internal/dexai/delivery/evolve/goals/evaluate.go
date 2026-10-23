@@ -26,9 +26,11 @@ const fewRuns = 20
 
 // Metrics is the evaluation of every goal over one export.
 type Metrics struct {
-	EvaluatedAt time.Time   `json:"evaluated_at"`
-	Runs        int         `json:"runs"`
-	Goals       []GoalValue `json:"goals"`
+	EvaluatedAt time.Time `json:"evaluated_at"`
+	Runs        int       `json:"runs"`
+	// Superseded counts the records left out because the export holds a newer run of the same FlowID.
+	Superseded int         `json:"superseded,omitempty"`
+	Goals      []GoalValue `json:"goals"`
 }
 
 // GoalValue is one goal's value overall, per release at start and per trial arm.
@@ -39,20 +41,27 @@ type GoalValue struct {
 	Kind      Kind            `json:"kind"`
 	Statement string          `json:"statement"`
 	Metric    string          `json:"metric"`
+	Within    string          `json:"within,omitempty"`
 	Direction Direction       `json:"direction,omitempty"`
 	Guardrail *GuardrailValue `json:"guardrail,omitempty"`
 	Target    *float64        `json:"target,omitempty"`
 	Value     *float64        `json:"value"`
 	Runs      int             `json:"runs"`
 	FewRuns   bool            `json:"few_runs"`
+	// Maturing counts the runs, open or closed, left out because within has not passed since their decision point, and the open ones that have not reached it.
+	Maturing int `json:"maturing,omitempty"`
+	// Undated counts, per term, the runs left out because a time or an event the goal needs is not in their record.
+	Undated   int             `json:"undated,omitempty"`
 	ByRelease map[string]cell `json:"by_release,omitempty"`
 	ByVariant map[string]cell `json:"by_variant,omitempty"`
 }
 
 // cell is a value over a subset of the runs.
 type cell struct {
-	Value *float64 `json:"value"`
-	Runs  int      `json:"runs"`
+	Value    *float64 `json:"value"`
+	Runs     int      `json:"runs"`
+	Maturing int      `json:"maturing,omitempty"`
+	Undated  int      `json:"undated,omitempty"`
 }
 
 // GuardrailValue is a guardrail and whether the value keeps it; Holds is absent without a value.
@@ -62,21 +71,33 @@ type GuardrailValue struct {
 	Holds *bool    `json:"holds,omitempty"`
 }
 
-// Evaluate computes every goal over the records; at is the time open runs are measured to.
+// Evaluate computes every goal over the records, keeping each FlowID's newest
+// run (runexport.Canonical); at is the time open runs are measured to, the
+// export's time, since the records know nothing later.
 func Evaluate(spec Spec, records []runexport.Record, at time.Time) (Metrics, error) {
-	result := Metrics{EvaluatedAt: at.UTC(), Runs: len(records)}
+	newest := runexport.Canonical(records)
+	result := Metrics{EvaluatedAt: at.UTC(), Runs: len(newest), Superseded: len(records) - len(newest)}
 	for _, goal := range spec.Goals {
 		m, err := compileMetric(goal.Metric, spec)
 		if err != nil {
 			return Metrics{}, fmt.Errorf("goal %s: %w", goal.ID, err)
 		}
 		e := evaluator{spec: spec, at: at}
-		value, runs := e.metric(m, records)
+		if goal.Within != "" {
+			// The goals' reader checked the within; a local profile's accepts one from a minute.
+			if e.within, err = parseWithin(goal.Within, MinuteDurations); err != nil {
+				return Metrics{}, fmt.Errorf("goal %s: %w", goal.ID, err)
+			}
+			if !m.dated() {
+				return Metrics{}, fmt.Errorf("goal %s: within %q does not apply to %s", goal.ID, goal.Within, goal.Metric)
+			}
+		}
+		v := e.metric(m, newest)
 		gv := GoalValue{
-			ID: goal.ID, Digest: definitionDigest(goal), Kind: goal.Kind, Statement: goal.Statement, Metric: goal.Metric, Direction: goal.Direction,
-			Target: goal.Target, Value: value, Runs: runs, FewRuns: runs < fewRuns,
-			ByRelease: e.split(m, records, func(r runexport.Record) string { return r.ReleaseAtStart }),
-			ByVariant: e.split(m, records, func(r runexport.Record) string {
+			ID: goal.ID, Digest: definitionDigest(goal), Kind: goal.Kind, Statement: goal.Statement, Metric: goal.Metric, Within: goal.Within,
+			Direction: goal.Direction, Target: goal.Target, Value: v.value, Runs: v.runs, FewRuns: v.runs < fewRuns, Maturing: v.maturing, Undated: v.undated,
+			ByRelease: e.split(m, newest, func(r runexport.Record) string { return r.ReleaseAtStart }),
+			ByVariant: e.split(m, newest, func(r runexport.Record) string {
 				if r.Variant == nil {
 					return ""
 				}
@@ -85,8 +106,8 @@ func Evaluate(spec Spec, records []runexport.Record, at time.Time) (Metrics, err
 		}
 		if goal.Guardrail != nil {
 			gv.Guardrail = &GuardrailValue{Max: goal.Guardrail.Max, Min: goal.Guardrail.Min}
-			if value != nil {
-				holds := (goal.Guardrail.Max == nil || *value <= *goal.Guardrail.Max) && (goal.Guardrail.Min == nil || *value >= *goal.Guardrail.Min)
+			if v.value != nil {
+				holds := keeps(*goal.Guardrail, *v.value)
 				gv.Guardrail.Holds = &holds
 			}
 		}
@@ -96,16 +117,18 @@ func Evaluate(spec Spec, records []runexport.Record, at time.Time) (Metrics, err
 }
 
 // definitionDigest is a short digest of what a goal's value means: its metric,
-// its direction or guardrail and its target. Two goals with one ID and the same
-// digest measure the same thing; another digest is another definition, such as
-// a looser guardrail, whose values never stand for this one's.
+// its within, its direction or guardrail and its target. Two goals with one ID
+// and the same digest measure the same thing; another digest is another
+// definition, such as a looser guardrail, whose values never stand for this
+// one's. A goal without within has the digest it had before within existed.
 func definitionDigest(goal Goal) string {
 	definition, err := json.Marshal(struct {
 		Metric    string     `json:"metric"`
+		Within    string     `json:"within,omitempty"`
 		Direction Direction  `json:"direction,omitempty"`
 		Guardrail *Guardrail `json:"guardrail,omitempty"`
 		Target    *float64   `json:"target,omitempty"`
-	}{goal.Metric, goal.Direction, goal.Guardrail, goal.Target})
+	}{goal.Metric, goal.Within, goal.Direction, goal.Guardrail, goal.Target})
 	if err != nil {
 		panic("goals: a goal definition does not encode: " + err.Error())
 	}
@@ -119,6 +142,16 @@ var DefinitionDigestForTest = definitionDigest
 type evaluator struct {
 	spec Spec
 	at   time.Time
+	// within is the goal's within, zero without one; it applies to a dated metric's one term.
+	within time.Duration
+}
+
+// measured is a goal's value, the runs it rests on and the runs within or a missing time left out.
+type measured struct {
+	value    *float64
+	runs     int
+	maturing int
+	undated  int
 }
 
 // split evaluates the metric per key; runs without a key are left out, and a single key is no split.
@@ -134,21 +167,33 @@ func (e evaluator) split(m metric, records []runexport.Record, key func(runexpor
 	}
 	cells := make(map[string]cell, len(groups))
 	for k, group := range groups {
-		value, runs := e.metric(m, group)
-		cells[k] = cell{Value: value, Runs: runs}
+		v := e.metric(m, group)
+		cells[k] = cell{Value: v.value, Runs: v.runs, Maturing: v.maturing, Undated: v.undated}
 	}
 	return cells
 }
 
-// metric returns the value and the run count it rests on: a ratio rests on its denominator's runs.
-func (e evaluator) metric(m metric, records []runexport.Record) (*float64, int) {
-	return ratio(m, func(t term) []share {
+// metric evaluates a goal's metric over the records from each run's goalShare:
+// a ratio rests on its denominator's runs, and a run left out of a term counts
+// once for each term.
+func (e evaluator) metric(m metric, records []runexport.Record) measured {
+	var result measured
+	result.value, result.runs = ratio(m, func(t term) []share {
 		shares := make([]share, 0, len(records))
 		for _, record := range records {
-			shares = append(shares, e.share(t, record, nil))
+			s, status := e.goalShare(t, record)
+			switch status {
+			case runMaturing:
+				result.maturing++
+			case runUndated:
+				result.undated++
+			case runCounts:
+				shares = append(shares, s)
+			}
 		}
 		return shares
 	})
+	return result
 }
 
 // share is one run's part in a term: the chance the term selects it, the chance that it is also
@@ -181,7 +226,8 @@ func ratioSides(m metric, numerator, denominator func(term) []share) (*float64, 
 	return &result, runs
 }
 
-// share is a run's part in a term from its recorded facts, with numbers replacing recorded per-run numbers by name.
+// share is a run's part in a term from its recorded facts as they are at the export, with numbers
+// replacing recorded per-run numbers by name; the backtest reads runs with it.
 func (e evaluator) share(t term, record runexport.Record, numbers map[string]float64) share {
 	if t.where != nil && !e.holds(*t.where, record) {
 		return share{}
@@ -297,18 +343,7 @@ func (e evaluator) outcome(name string, record runexport.Record) bool {
 		return record.Actions[o.Action] > 0
 	}
 	value, ok := record.Fields[o.Attribute]
-	if !ok {
-		return false
-	}
-	if o.Equals != nil {
-		return sameValue(value, o.Equals)
-	}
-	for _, candidate := range o.In {
-		if sameValue(value, candidate) {
-			return true
-		}
-	}
-	return false
+	return ok && matches(o, value)
 }
 
 // numberWith is a run's value of a per-run number, taken from numbers by its name when present
@@ -320,10 +355,14 @@ func (e evaluator) numberWith(n number, record runexport.Record, numbers map[str
 	return e.number(n, record)
 }
 
-// number is a run's recorded value of a per-run number.
+// number is a run's recorded value of a per-run number; a run whose start its
+// record does not hold has no duration.
 func (e evaluator) number(n number, record runexport.Record) (float64, bool) {
 	switch n.kind {
 	case numberDuration:
+		if record.HistoryFrom != nil {
+			return 0, false
+		}
 		end := e.at
 		if record.ClosedAt != nil {
 			end = *record.ClosedAt
@@ -357,6 +396,8 @@ func numeric(value any) (float64, bool) {
 	case float64:
 		return v, true
 	case int:
+		return float64(v), true
+	case int64:
 		return float64(v), true
 	case json.Number:
 		f, err := v.Float64()

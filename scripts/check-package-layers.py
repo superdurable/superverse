@@ -26,9 +26,10 @@ MODULE = "github.com/superdurable/superversev2/"
 SHARED_ROOTS = ("internal/comm", "internal/dexai/app", "internal/comm/platform", "internal/dexai/studio/flowapi",
                 "internal/dexai/agents/session/toolinput/generated", "internal/dexai/agents/remoteagent/bridgeapi")
 # The coding image builds these packages from the source tree into its own superverse-evolve command
-# (sandbox/coding/Dockerfile), with no module but yaml.v3: they import only the standard library,
-# gopkg.in/yaml.v3 and each other.
-IMAGE_BUILT = ("internal/dexai/delivery/evolve/goals", "internal/dexai/delivery/evolve/runexport")
+# (sandbox/coding/Dockerfile, which copies each with one COPY line that the image's build inputs read),
+# with no module but yaml.v3: they import only the standard library, gopkg.in/yaml.v3 and each other.
+IMAGE_BUILT = ("internal/comm/dexflow/engineindex", "internal/dexai/delivery/evolve/goals",
+               "internal/dexai/delivery/evolve/goals/reviewfolder", "internal/dexai/delivery/evolve/runexport")
 IMAGE_MODULES = ("gopkg.in/yaml.v3",)
 # The server configuration schema is read only where the process starts, validates and composes from it.
 CONFIG = "cmd/superverse-server/config"
@@ -88,6 +89,7 @@ LEVELS = {
     "internal/dexai/api/watch": 1,
     "internal/dexai/delivery/deliverydao": 1,
     "internal/dexai/delivery/evolve/goals": 2,
+    "internal/dexai/delivery/evolve/goals/reviewfolder": 3,
     "internal/dexai/delivery/evolve/runexport/history": 2,
     "internal/dexai/delivery/evolve/runexport": 1,
     "internal/dexai/delivery/releases/build": 1,
@@ -276,6 +278,17 @@ def image_module_violations(root):
                    f"and superverse-evolve does not build offline")
 
 
+def image_copy_violations(root):
+    """The image-commands stage of sandbox/coding/Dockerfile copies the Go files of exactly the IMAGE_BUILT packages,
+    one COPY line each; infra-as-code/scripts/build_inputs.py reads these lines as the coding image's source inputs."""
+    pattern = re.compile(r"^COPY (internal/\S+)/\*\.go \./\1/$")
+    with open(os.path.join(root, "sandbox/coding/Dockerfile"), encoding="utf-8") as dockerfile:
+        copied = sorted(match.group(1) for match in map(pattern.match, dockerfile.read().splitlines()) if match)
+    if copied != sorted(IMAGE_BUILT):
+        yield (f"sandbox/coding/Dockerfile copies the Go files of {', '.join(copied) or 'no package'}; it copies those of "
+               f"exactly {', '.join(sorted(IMAGE_BUILT))}, each as COPY <package>/*.go ./<package>/")
+
+
 def main():
     listing = subprocess.check_output(
         # The tags select the files of the live and hosted tests, so the Kubernetes boundary covers them.
@@ -315,12 +328,14 @@ def main():
             failures.extend(image_violations(package, imported))
         failures.extend(sorted(set(memory_safety_violations())))
         failures.extend(image_module_violations(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        failures.extend(image_copy_violations(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     if failures:
         print("\n".join(failures), file=sys.stderr)
         return 1
     print("Package layers: shared packages stay below business packages, each business package imports only lower levels, "
           "only the Kubernetes and Docker packages import their API clients, the packages the coding image builds import only "
-          "the standard library and yaml.v3 at the root's pinned version, and the file extractor depends on memory-safe Go only")
+          "the standard library and yaml.v3 at the root's pinned version and are the ones its Dockerfile copies, and the file "
+          "extractor depends on memory-safe Go only")
     return 0
 
 

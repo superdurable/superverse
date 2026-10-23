@@ -322,7 +322,8 @@ func (c Config) validateAttachments() []error {
 // modelID admits an API model ID as model connectors report it.
 var modelID = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$`)
 
-// validateEvolve checks the export bounds, the price table and the review access.
+// validateEvolve checks the export bounds, the price table, the review access
+// and the local lanes' short goal durations.
 func (c Config) validateEvolve() []error {
 	var problems []error
 	fail := func(format string, args ...any) { problems = append(problems, fmt.Errorf(format, args...)) }
@@ -354,6 +355,9 @@ func (c Config) validateEvolve() []error {
 	}
 	if err := e.ReviewAccess.Validate(); err != nil {
 		fail("evolve.reviewAccess: %v", err)
+	}
+	if e.AllowShortDurations && !c.LocalKind {
+		fail("evolve.allowShortDurations is restricted to the local lanes")
 	}
 	if len(e.ReviewTeamSpaces) > MaxEvolveReviewTeamSpaces {
 		fail("evolve.reviewTeamSpaces must contain at most %d TeamSpace IDs", MaxEvolveReviewTeamSpaces)

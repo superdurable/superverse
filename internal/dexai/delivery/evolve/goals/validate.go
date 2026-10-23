@@ -13,6 +13,8 @@ import (
 	"regexp"
 	"sort"
 	"unicode/utf8"
+
+	"github.com/superdurable/superversev2/internal/comm/dexflow/engineindex"
 )
 
 // Limits of a goals block.
@@ -31,7 +33,7 @@ var (
 	kinds    = map[Kind]bool{KindOutcome: true, KindExperience: true, KindCost: true}
 )
 
-func validate(spec Spec, at lines) []Problem {
+func validate(spec Spec, at lines, durations Durations) []Problem {
 	var problems []Problem
 	add := func(line int, format string, args ...any) {
 		problems = append(problems, Problem{Line: line, Message: fmt.Sprintf(format, args...)})
@@ -59,6 +61,8 @@ func validate(spec Spec, at lines) []Problem {
 	for _, field := range spec.Fields {
 		if !attrName.MatchString(field) {
 			add(at.top("fields"), "%q is not an Attribute name", field)
+		} else if engineindex.Is(field) {
+			add(at.top("fields"), "%q is a search index of the engine, not an Attribute", field)
 		}
 	}
 	if duplicate := firstDuplicate(spec.Fields); duplicate != "" {
@@ -94,8 +98,16 @@ func validate(spec Spec, at lines) []Problem {
 		if goal.Statement == "" || utf8.RuneCountInString(goal.Statement) > maxStatementLen {
 			add(at.goal(i, "statement"), "statement has 1 to %d characters", maxStatementLen)
 		}
-		if _, err := compileMetric(goal.Metric, spec); err != nil {
+		m, err := compileMetric(goal.Metric, spec)
+		if err != nil {
 			add(at.goal(i, "metric"), "metric: %s", err)
+		}
+		if goal.Within != "" {
+			if _, err := parseWithin(goal.Within, durations); err != nil {
+				add(at.goal(i, "within"), "%s", err)
+			} else if m.numerator.fn != "" && !m.dated() {
+				add(at.goal(i, "within"), "within fits only a goal whose metric is one rate(…), count(…) or a per-run number")
+			}
 		}
 		switch {
 		case goal.Direction != "" && goal.Guardrail != nil:
@@ -130,6 +142,8 @@ func outcomeProblem(name string, outcome outcomeDefinition) string {
 		return "equals and in apply only to an attribute"
 	case outcome.Attribute != "" && !attrName.MatchString(outcome.Attribute):
 		return fmt.Sprintf("%q is not an Attribute name", outcome.Attribute)
+	case engineindex.Is(outcome.Attribute):
+		return fmt.Sprintf("%q is a search index of the engine, not an Attribute", outcome.Attribute)
 	case outcome.Step != "" && !typeName.MatchString(outcome.Step):
 		return fmt.Sprintf("%q is not a Step type name", outcome.Step)
 	case outcome.Action != "" && !typeName.MatchString(outcome.Action):

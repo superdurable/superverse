@@ -656,12 +656,18 @@ the operator's engine for the objects.
   mock model: `NewEvolveProjectForTest` deploys a throwaway Project's HEAD to
   Live as `NewLiveProjectForTest` does and keeps its Session, which pushes the
   `evolve-goals` scenario's valid and refused `.superverse/goals.md` through
-  the commit gate. The first Live deployment's announcement starts the
+  the commit gate; the valid one gives its count a `within` of `3m`, which
+  only the local profiles accept (`evolve.allowShortDurations`), and a run
+  counts in it only once those 3 minutes have passed since it left its first
+  Step, however soon it completed, so the first test waits them out before
+  Review now. The first Live deployment's announcement starts the
   Project's EvolveFlow, which finds no goals; the pushed commits are announced
   through the EvolveFlow client; Review now runs through `EvolveService` on the
   lane's API, so the lane records both RPCs. The review exports Live
   `TextSummaryFlow` runs started through Studio Runs, and the parts, manifest
-  and metrics are read back from the artifact bucket. The second test deletes
+  and metrics are read back from the artifact bucket; each record carries its
+  whole history's field timelines and first times, and the search's indexed
+  status, only for the listed field. The second test deletes
   the Project while its review runs and finds EvolveFlow completed and the
   export gone. `TestEvolveRemoteSessionSkipDexIntegration` activates a local
   agent through the real remote agent endpoint

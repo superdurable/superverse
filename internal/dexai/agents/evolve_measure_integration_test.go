@@ -18,6 +18,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"maps"
 	"net/http"
 	"slices"
 	"strings"
@@ -61,6 +62,10 @@ const (
 	// The goals of the evolve-goals scenario's valid file.
 	goalRequests  = "requests"
 	evolveGoalSum = 4
+	// requestsWithin is the within of the requests goal: a run counts in it
+	// only once this long has passed since it left its first Step, however
+	// soon it completed.
+	requestsWithin = 3 * time.Minute
 )
 
 // TestEvolveMeasurementDexIntegration deploys the HEAD of a throwaway
@@ -71,18 +76,21 @@ const (
 //     template's commit through the Git host and found no goals file; a
 //     repeated and an older announcement change nothing, and Review now is
 //     refused NO_GOALS;
-//   - the announcement of a pushed commit with a valid goals file stores the
-//     parsed goals and activates the weekly schedule at the Project's hour;
+//   - the announcement of a pushed commit with a valid goals file, whose
+//     count of requests has a within of 3m that only the local profiles
+//     accept, stores the parsed goals and activates the weekly schedule at
+//     the Project's hour;
 //   - two Review now requests at once start one review and refuse the other
 //     REVIEW_RUNNING; the admitted request repeated answers its review;
 //   - the review exports the Live runs into parts whose records hold each
 //     run's Steps, path, release and allow-listed fields (AI usage where the
 //     model ran), writes the manifest, whose source is the Live runs of this
 //     review, and metrics.json, records the goal values with their definition
-//     digests and the runs digest, and, with agent reviews on for every
-//     Project of the lane, waits for the agent; the Session takes the
-//     review's notification and its turn ends; the next Review now is
-//     RATE_LIMITED;
+//     digests and the runs digest (the requests counted: a run counts only
+//     once its 3m passed, however soon it completed, and the test waits them
+//     out before Review now), and, with agent reviews on for every Project of
+//     the lane, waits for the agent; the Session takes the review's
+//     notification and its turn ends; the next Review now is RATE_LIMITED;
 //   - the review refuses reports whose backtest is not bound to its export
 //     and goals, or that a gate refuses, stores no proposal for them, then
 //     offers one whose files are bound, under another document; a decision
@@ -133,6 +141,12 @@ func TestEvolveMeasurementDexIntegration(t *testing.T) {
 	}
 
 	startLiveSummaries(ctx, t, project.LiveProjectForTest, liveSummaries)
+	// The review measures as of its start: once requestsWithin has passed since the runs, with a margin, each counts.
+	select {
+	case <-ctx.Done():
+		t.Fatalf("the test ran out of time before the requests goal's within passed: %v", ctx.Err())
+	case <-time.After(requestsWithin + 30*time.Second):
+	}
 	reviewID, admittedRequest := startConcurrentReviews(ctx, t, api, caller, project.ProjectID)
 	if repeated := startReview(ctx, t, api, caller, project.ProjectID, admittedRequest); repeated.GetReviewId() != reviewID {
 		t.Fatalf("the repeated Review now %s answered %v, not review %s", admittedRequest, repeated, reviewID)
@@ -517,14 +531,17 @@ func requireStoredExport(ctx context.Context, t *testing.T, project agents.LiveP
 				record.ReleaseAtStart != project.ReleaseID || record.StartedAt.Before(review.Window.From) {
 				t.Fatalf("the record of %s in %s does not hold the run: %+v", record.FlowID, part.Name, record)
 			}
-			for field := range record.Fields {
-				if field != "summary-status" {
-					t.Fatalf("the record of %s carries %s, which the goals do not list", record.FlowID, field)
+			for _, carried := range [][]string{slices.Collect(maps.Keys(record.Fields)), slices.Collect(maps.Keys(record.FieldTimelines)), slices.Collect(maps.Keys(record.Indexed))} {
+				for _, field := range carried {
+					if field != "summary-status" {
+						t.Fatalf("the record of %s carries %s, which the goals do not list", record.FlowID, field)
+					}
 				}
 			}
 			if record.Steps["SaveSummaryResult"] > 0 && (record.AI.Calls == 0 || record.AI.InputTokens == 0) {
 				t.Fatalf("the record of %s saved a summary without the model's usage: %+v", record.FlowID, record.AI)
 			}
+			requireSummaryTimes(t, record)
 		}
 	}
 	if records != liveSummaries {
@@ -532,6 +549,36 @@ func requireStoredExport(ctx context.Context, t *testing.T, project agents.LiveP
 	}
 	if digest, count, err := runexport.WriteCanonical(io.Discard, all); err != nil || digest != review.Export.RunsSHA256 || count != review.Export.Records {
 		t.Fatalf("the runs of review %s digest to %s over %d runs, not the recorded %s over %d (%T)", review.ID, digest, count, review.Export.RunsSHA256, review.Export.Records, err)
+	}
+}
+
+// requireSummaryTimes checks the times and search facts of a summary run's
+// record: it carries timelines over its whole history, its first
+// PrepareSummary is its first path entry, the status's timeline ends at its
+// current value, and the search's status, which the template indexes as
+// keyword1, is present and one of the values it took.
+func requireSummaryTimes(t *testing.T, record runexport.Record) {
+	t.Helper()
+	if !record.Timelines || !record.HistoryComplete() || record.HistoryFrom != nil {
+		t.Fatalf("the record of %s does not carry its whole history's timelines: %+v", record.FlowID, record)
+	}
+	if first := record.StepsFirstAt["PrepareSummary"]; !first.Equal(record.Path[0].At) {
+		t.Fatalf("the record of %s dates its first PrepareSummary %v, not at its first path entry %v", record.FlowID, first, record.Path[0].At)
+	}
+	statuses := record.FieldTimelines["summary-status"].Values
+	if len(statuses) == 0 || statuses[len(statuses)-1].Value != record.Fields["summary-status"] {
+		t.Fatalf("the status timeline of %s does not end at its status %v: %+v", record.FlowID, record.Fields["summary-status"], statuses)
+	}
+	indexed, ok := record.Indexed["summary-status"]
+	if !ok {
+		t.Fatalf("the record of %s lacks the search's keyword1 status, which the template indexes: %+v", record.FlowID, record.Indexed)
+	}
+	took := false
+	for _, written := range statuses {
+		took = took || written.Value == indexed
+	}
+	if !took {
+		t.Fatalf("the indexed status %v of %s is none of the values it took: %+v", indexed, record.FlowID, statuses)
 	}
 }
 

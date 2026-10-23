@@ -240,8 +240,9 @@ func pointTime(record runexport.Record, point decisionPoint) (time.Time, bool) {
 // heldBefore reports whether an outcome already held for a run before time at, and whether the
 // record can tell. It is the one place outcome times enter the backtest. A Step outcome holds from
 // the run's first entry into the Step, which its path records (an entry a truncated path dropped
-// is older than every entry it kept, so older than any landmark on it). Attribute and Action
-// outcomes carry no time in the record yet, so a landmark cannot place them.
+// is older than every entry it kept, so older than any landmark on it). The backtest does not read
+// the record's Action first times or field timelines yet, so a landmark cannot place an Attribute or
+// Action outcome.
 func (e evaluator) heldBefore(name string, record runexport.Record, at time.Time) (held, timed bool) {
 	step := e.spec.Outcomes[name].Step
 	if step == "" {

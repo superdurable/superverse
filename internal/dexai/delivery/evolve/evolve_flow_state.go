@@ -272,14 +272,15 @@ func reviewNumber(key string) int64 {
 	return n
 }
 
-// readGoals turns a goals file read at commit into the Goals to store; found
-// is false when the Live build has no goals file.
-func readGoals(commit string, file []byte, found bool, at time.Time) Goals {
+// readGoals turns a goals file read at commit into the Goals to store, with a
+// within no shorter than durations accepts; found is false when the Live build
+// has no goals file.
+func readGoals(commit string, file []byte, found bool, durations goals.Durations, at time.Time) Goals {
 	read := Goals{Commit: commit, Status: GoalsNone, ReadAt: at}
 	if !found {
 		return read
 	}
-	spec, problems := goals.Parse(file)
+	spec, problems := goals.Parse(file, durations)
 	if len(problems) > 0 {
 		read.Status = GoalsInvalid
 		for _, problem := range problems[:min(len(problems), maximumGoalsErrors)] {

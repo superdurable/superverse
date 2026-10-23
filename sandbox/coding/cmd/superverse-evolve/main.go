@@ -24,13 +24,15 @@ import (
 	"strings"
 
 	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve/goals"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve/goals/reviewfolder"
 )
 
 const usage = `superverse-evolve measures an agent review over its placed folder of Live runs.
 
 Commands:
   check [file]                                  validate a goals file (default .superverse/goals.md);
-                                                every problem with its line
+                                                every problem with its line, and a within under an
+                                                hour as a warning
   metrics --review <id>                         evaluate every goal over the review's runs, as JSON
   compare --review <id> --before <file> --after <file> [--strata <f1,f2>] [--target <goal id>]
           [--before-commit <commit>] [--out <file>]
@@ -85,7 +87,7 @@ func command(args []string, stdout, stderr io.Writer) error {
 	}
 	switch args[0] {
 	case "check":
-		return runCheck(args[1:], stdout)
+		return runCheck(args[1:], stdout, stderr)
 	case "metrics":
 		return runMetrics(args[1:], stdout)
 	case "compare":
@@ -129,7 +131,7 @@ func required(set *flag.FlagSet, names ...string) error {
 	return nil
 }
 
-func runCheck(args []string, stdout io.Writer) error {
+func runCheck(args []string, stdout, stderr io.Writer) error {
 	set := flags("check")
 	if err := parse(set, args, 1); err != nil {
 		return err
@@ -142,7 +144,7 @@ func runCheck(args []string, stdout io.Writer) error {
 	if err != nil {
 		return err
 	}
-	spec, problems := goals.Parse(file)
+	spec, problems := goals.Parse(file, goals.MinuteDurations)
 	if len(problems) != 0 {
 		var message bytes.Buffer
 		fmt.Fprintf(&message, "%s has %d problem(s):", path, len(problems))
@@ -151,22 +153,25 @@ func runCheck(args []string, stdout io.Writer) error {
 		}
 		return errors.New(message.String())
 	}
+	for _, warning := range goals.Warnings(file) {
+		fmt.Fprintf(stderr, "%s: warning: %s\n", path, warning)
+	}
 	fmt.Fprintf(stdout, "%s: %d goal(s) over %v; the export reads %v\n", path, len(spec.Goals), spec.Flows, spec.ExportFields())
 	return nil
 }
 
 // readFolder reads the review's placed folder in the repository of the
 // current directory.
-func readFolder(reviewID string) (goals.ReviewFolder, error) {
+func readFolder(reviewID string) (reviewfolder.Folder, error) {
 	root, err := git("rev-parse", "--show-toplevel")
 	if err != nil {
-		return goals.ReviewFolder{}, fmt.Errorf("find the repository root: %w", err)
+		return reviewfolder.Folder{}, fmt.Errorf("find the repository root: %w", err)
 	}
-	return goals.ReadReviewFolder(root, reviewID)
+	return reviewfolder.Read(root, reviewID)
 }
 
 // bind completes the folder's binding with the before and base commits.
-func bind(folder goals.ReviewFolder, beforeCommit string) (*goals.ExportBinding, error) {
+func bind(folder reviewfolder.Folder, beforeCommit string) (*goals.ExportBinding, error) {
 	binding := folder.Binding
 	binding.BeforeCommit = binding.GoalsCommit
 	if beforeCommit != "" {

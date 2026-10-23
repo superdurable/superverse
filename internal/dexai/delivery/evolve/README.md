@@ -101,7 +101,7 @@ results on as Step input.
 | `ReviewSeq` | int64 | The last review number |
 | `Active` | string | The review in progress, or empty; one review runs at a time |
 | `ManualRequests` | `ManualRequests{RequestIDs (newest 16), LastAt}` | Review now duplicates and the once-a-day limit |
-| `Reviews` | AttributeMap of `ReviewRecord`, key `r-<n>`, for example `r-12` | Trigger (`schedule`, `manual`) with the request and actor; times; window; the goals commit, and the goals spec copied at `RecordReviewStart` until the review ends; status (`exporting`, `measured`, `waiting_agent`, `proposal`, `no_change`, `expired`, `skipped`, `failed`) with a reason; the export's parts, runs, bytes, truncation and deletion, with the SHA-256 and count of the runs its metrics evaluated, one per FlowID (`runexport.WriteCanonical`, the bytes of a placed `runs.jsonl`); a goal summary of at most 2 KiB, each value with the digest of the goal's definition (`goals.definitionDigest`: metric, direction or guardrail, target); the agent review's model usage per model (calls, input and output tokens), its billable record |
+| `Reviews` | AttributeMap of `ReviewRecord`, key `r-<n>`, for example `r-12` | Trigger (`schedule`, `manual`) with the request and actor; times; window; the goals commit, and the goals spec copied at `RecordReviewStart` until the review ends; status (`exporting`, `measured`, `waiting_agent`, `proposal`, `no_change`, `expired`, `skipped`, `failed`) with a reason; the export's parts, runs, bytes, truncation and deletion, with the SHA-256 and count of the runs its metrics evaluated, one per FlowID (`runexport.WriteCanonical`, the bytes of a placed `runs.jsonl`); a goal summary of at most 2 KiB, each value with the digest of the goal's definition (`goals.definitionDigest`: metric, `within`, direction or guardrail, target); the agent review's model usage per model (calls, input and output tokens), its billable record |
 | `Proposals` | AttributeMap of `ProposalRecord`, key = its review's key, for example `r-12` | Kind (`change`, `trial`, `undo` with `Undoes` naming a review); title (one line of at most 120 characters); summary (2 KiB); the change subagent's agent ID; the summary of the change's backtest (`goals.BacktestSummary`, at most 8 KiB as JSON, separate from the 2 KiB summary text): its export binding, the runs by label, the calibration, the estimation's interval and sample sizes, the gates that fired and each goal's comparison without its known value; the stored document's exact object; status (below) with its time; `Revision`, which every change increments; `NotifyFailed`; the decision `{Decision, Actor, At, Reason, Revision}`; the applied commit and time; the Live revision and time it went live, and `PreviousLiveReleaseID`, the Live release that ran just before that revision when its build lacked the change, which Studio's Undo rolls Live back to (empty when not known, as in records from before it) |
 | `CommandLock` | bool | Holds no state; its lock serializes the writes |
 
@@ -133,7 +133,7 @@ work follows, returns a Step movement.
 
 | Step | Options | Does |
 |---|---|---|
-| `ReadGoals(revision, review)` | start Step; provider options, 10 minutes of retries, failure → `CommitGoals` | Reads `.superverse/goals.md` at the build commit from the Project's bound repository after `repohost.CheckInstallation`; `ErrNotFound` is no goals. Parses it with `goals.Parse`. For every `applied` or `live` proposal, asks `repohost.Host.IsAncestor` whether the build commit holds its applied commit; a commit the repository no longer has is not held. With the release Live ran before, asks the same of its build for each `applied` proposal the new build holds. A review's reading of a revision whose own reading is still pending checks no proposal. For a superseded revision it ends, or begins again the review that waited for these goals |
+| `ReadGoals(revision, review)` | start Step; provider options, 10 minutes of retries, failure → `CommitGoals` | Reads `.superverse/goals.md` at the build commit from the Project's bound repository after `repohost.CheckInstallation`; `ErrNotFound` is no goals. Parses it with `goals.Parse`, accepting a goal's `within` from an hour, or from a minute under `evolve.allowShortDurations` (local profiles only). For every `applied` or `live` proposal, asks `repohost.Host.IsAncestor` whether the build commit holds its applied commit; a commit the repository no longer has is not held. With the release Live ran before, asks the same of its build for each `applied` proposal the new build holds. A review's reading of a revision whose own reading is still pending checks no proposal. For a superseded revision it ends, or begins again the review that waited for these goals |
 | `CommitGoals(revision, review)` | locked state | Only for the newest revision: stores the goals or the read failure, recomputes `Schedule`, cancels `AwaitSchedule` and starts it again while active. Moves an `applied` proposal the build holds to `live`, recording the reading's previous release as its `PreviousLiveReleaseID` when that release's build lacked its commit, and a `live` one it lacks (a rollback) to `undone`; a live `undo` makes the proposal it undoes `undone`. A read failure moves nothing. Begins again the review that waited (also for a superseded revision) |
 | `AwaitSchedule` | WaitFor a business timer at `NextAt`; locked state | Moves `NextAt` to the next cycle, then allocates `r-<n>` and starts `BeginReview`, or records it `skipped` (`previous_review_running`) |
 | `BeginReview(id)` | no lock; 2-minute attempts for 10 minutes; heartbeats | Reads the Project's current Live deployment (`CurrentLive`, one bounded Live call), `no_live` without a ready one; with valid goals of that build's commit, deletes the exports of earlier reviews beyond `evolve.keepExports`; deletes the exact stored documents of the proposals to prune |
@@ -234,6 +234,11 @@ per run, at most 20 reads a second and 2 searches a second.
 2. It reads and compacts each run with the goals' fields, the Live redaction (configured values
    and the application's environment, as `read_live_app_runs` redacts), `evolve.modelPrices` and
    the Live release timeline up to the review's start; a run the engine no longer holds is left out.
+   A run the engine continued from earlier runs of its FlowID is read back through them, within
+   the same `evolve.maxHistoryEventsPerRun` events across the chain and at most 32 history pages of
+   the earlier runs, so one record stays a short Live call; each history page is one more paced
+   read counted against `evolve.maxReadsPerExport`. A run whose own history exceeds the limit
+   also has its current allow-listed Attributes read from its state, one more paced read.
 3. It writes the records as `<projectID>/evolve/exports/<reviewID>/part-<nnnn>-<attempt>.jsonl.gz`.
    The attempt number keeps a retried part from writing another part's key, since an object is
    written once; the Step output records each part's key, run count and SHA-256, and only parts
@@ -246,7 +251,9 @@ the goals commit), the window, the Flow types, the parts, the run count, truncat
 releases of the window and the price table date. Its times
 come from the review record and its timeline stops at the review's start, so a retry that finds no
 manifest writes the same bytes; one that finds it keeps it. A FlowID that two parts hold counts once
-in the metrics, with its newest run.
+in the metrics, with its newest run: `ComputeMetrics` evaluates the canonical runs
+(`runexport.Canonical`), the runs its digest and the placed `runs.jsonl` hold, so `metrics.json`
+counts no superseded run on the platform.
 
 ## Dependencies and callers
 

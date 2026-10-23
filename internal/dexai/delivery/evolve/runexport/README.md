@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Declares the run record and manifest of an export of an application's runs, and reads and writes records as JSON Lines.
 
-Callers: `cmd/dexai-cli`, `internal/dexai/agents`, `internal/dexai/agents/diagnostics`, `internal/dexai/bootstrap`, `internal/dexai/delivery/evolve`, `internal/dexai/delivery/evolve/goals` and `internal/dexai/delivery/evolve/runexport/history` import this package.
+Callers: `cmd/dexai-cli`, `internal/dexai/agents`, `internal/dexai/agents/diagnostics`, `internal/dexai/bootstrap`, `internal/dexai/delivery/evolve`, `internal/dexai/delivery/evolve/goals`, `internal/dexai/delivery/evolve/goals/reviewfolder` and `internal/dexai/delivery/evolve/runexport/history` import this package.
 
 Dependencies: it imports no other package of this module and calls no remote API.
 
@@ -16,17 +16,42 @@ flowchart LR
   c3["internal/dexai/bootstrap"] --> self
   c4["internal/dexai/delivery/evolve"] --> self
   c5["internal/dexai/delivery/evolve/goals"] --> self
-  c6["internal/dexai/delivery/evolve/runexport/history"] --> self
+  c6["internal/dexai/delivery/evolve/goals/reviewfolder"] --> self
+  c7["internal/dexai/delivery/evolve/runexport/history"] --> self
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 
 A `Record` is one run of one Flow, compacted from its state and history: its identity,
 status and times; the release that was Live when it started and the releases that became
 Live while it was open; its trial arm (the `evolve-variant` Attribute); the allow-listed scalar
-Attributes (`fields`); how often it entered each Step and had each Action accepted; how long
-it waited in each Step; for an open run, the Step types it is in at the export time (`ActiveSteps`, which a proposal's open-run check reads); the ordered Step entries (at most 200, the newest kept);
-and the token usage and price of its model connector Steps. No Step or Action input is
-recorded.
+Attributes (`fields`, the last write wins); how often it entered each Step and had each Action
+accepted, with the time of the first of each (`steps_first_at`, `actions_first_at`, the latter
+for at most 64 Actions); how long it waited in each Step; for an open run, the Step types it is
+in at the export time (`ActiveSteps`, which a proposal's open-run check reads); the ordered Step
+entries (at most 200, the newest kept); and the token usage and price of its model connector
+Steps. No Step or Action input is recorded.
+
+`field_timeline` keeps, per allow-listed field, the distinct values it took in write order, each
+with the event time of its write (`[value, time]`; `null` is a deletion), at most 16 per field and
+256 KiB of encoded values per record: the oldest are kept and `cut_at` is the time of the first
+value left out. `FieldAsOf` reads a field's value at a time from it, the latest write at or before
+that time, and answers unknown from `cut_at` on; `FieldMatchedBy` tells whether a field held a
+matching value by a time and its earliest such write. Every record that carries timelines and
+first times sets `timelines`; a record exported before them answers its current value.
+
+The search that finds a run also supplies `indexed`, the values the engine's search index held
+for allow-listed Attributes, keyed by Attribute, and, for an open run, `indexed_active_steps`, the
+engine's `ActiveStepTypes` index. Both are fresh at the search and need no history read.
+
+A FlowID's runs form a chain when the engine continues a long Flow in a new run. A record holds
+the whole chain when its history was read back to the first run; otherwise it starts at the
+oldest run read (`history_from`, also its `started_at`, with no `release_at_start`), with the
+Attributes and the Step executions under way that run carried in, and answers unknown before that
+time. A run whose own history is longer than the export's event limit is cut there
+(`history_truncated`, `history_cut_at`): the record holds no event from the cut on, every field's
+timeline is cut there, and its fields and trial arm are the run's current Attributes, read from its
+state (`fields_from_state`). A Step or Action that is not in a record may lie in the unread part of
+its history, which `HistoryComplete` and `HistoryCovers` let the evaluator tell.
 
 A `Manifest` describes one export: its source, its window, its Flow types, its parts with their
 run counts and SHA-256, whether it was truncated, the Live release timeline of the window and
@@ -56,7 +81,9 @@ and evaluates only the parts it exported (see [the evolve package](../README.md)
 `Read` decodes a JSON Lines stream strictly, for the server's own export parts; `ReadPlaced`
 decodes a placed or exported `runs.jsonl` accepting record fields it does not know, so a coding
 image or `dexai` older than the server that wrote the file still reads it; `Write` appends one
-record. `Canonical` keeps one
+record as `encoding/json` marshals it (`<`, `>` and `&` escaped, as every earlier export wrote
+them, so a stored part or a runs object written again on retry has the same bytes) and refuses a
+line longer than `Read` accepts (1 MiB). `Canonical` keeps one
 run per FlowID, its newest by start, ordered newest first and then by FlowID; `WriteCanonical`
 writes those runs as JSON lines and returns their SHA-256 and count, which a review records as
 its runs digest and a placed `runs.jsonl` reproduces byte for byte. The package imports only the

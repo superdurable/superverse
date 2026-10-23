@@ -7,9 +7,10 @@
 # SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 # The application's goals: the first input writes a valid .superverse/goals.md
-# for the template's TextSummaryFlow and pushes it through the real commit
-# gate, the second replaces it with a file that the goals parser refuses and
-# pushes that. Goal measurement reads the goals file of the Live build's
+# for the template's TextSummaryFlow, with a within of 3m that only the local
+# profiles accept (evolve.allowShortDurations), and pushes it through the real
+# commit gate, the second replaces it with a file that the goals parser refuses
+# and pushes that. Goal measurement reads the goals file of the Live build's
 # commit, so neither push changes what Live measures until a Live deployment
 # names its commit. Where agent reviews run, a review of the first goals
 # notifies the Session, whose turn only answers it; the test reports it.
@@ -47,6 +48,7 @@ inputs:
                     kind: outcome
                     statement: The application receives summary requests.
                     metric: count(started)
+                    within: 3m
                     direction: up
                   - id: saved-share
                     kind: outcome

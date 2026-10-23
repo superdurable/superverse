@@ -3,9 +3,9 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Parses and validates an application's goals file, evaluates each goal over an export of its runs, and gates a proposal by its backtest and its open runs.
 
-Callers: `cmd/dexai-cli`, `internal/dexai/agents/session/sandboxtools`, `internal/dexai/api/evolve`, `internal/dexai/delivery/evolve` and `sandbox/coding/cmd/superverse-evolve` import this package.
+Callers: `cmd/dexai-cli`, `internal/dexai/agents/session/sandboxtools`, `internal/dexai/api/evolve`, `internal/dexai/delivery/evolve`, `internal/dexai/delivery/evolve/goals/reviewfolder` and `sandbox/coding/cmd/superverse-evolve` import this package.
 
-Dependencies: it imports `internal/dexai/delivery/evolve/runexport`.
+Dependencies: it imports `internal/comm/dexflow/engineindex` and `internal/dexai/delivery/evolve/runexport`.
 
 ```mermaid
 flowchart LR
@@ -14,8 +14,10 @@ flowchart LR
   c1["internal/dexai/agents/session/sandboxtools"] --> self
   c2["internal/dexai/api/evolve"] --> self
   c3["internal/dexai/delivery/evolve"] --> self
-  c4["sandbox/coding/cmd/superverse-evolve"] --> self
-  self --> d0["internal/dexai/delivery/evolve/runexport"]
+  c4["internal/dexai/delivery/evolve/goals/reviewfolder"] --> self
+  c5["sandbox/coding/cmd/superverse-evolve"] --> self
+  self --> d0["internal/comm/dexflow/engineindex"]
+  self --> d1["internal/dexai/delivery/evolve/runexport"]
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 
@@ -27,8 +29,11 @@ finds that block, decodes it strictly (an unknown key is an error) and validates
 The block names the Flow types a review reads, the Attributes the export may carry
 (`fields`), named outcomes read from each run (an Attribute's value, a Step entered or an
 Action accepted), and one to eight goals. Each goal has a kind (`outcome`, `experience`,
-`cost`), a statement, a metric and either a direction or a guardrail. `ExportFields` is the
-set of Attributes an export reads: the fields plus every outcome's Attribute.
+`cost`), a statement, a metric, either a direction or a guardrail, and optionally `within`.
+`ExportFields` is the set of Attributes an export reads: the fields plus every outcome's
+Attribute. A field in `fields` or an outcome's Attribute may not be named like one of the
+engine's search indexes ([`engineindex`](../../../../comm/dexflow/engineindex/README.md)), whose
+values a run's search entry carries beside the application's own.
 
 The metric language is closed: `count(o)`, `rate(o, of p)`, `sum`, `mean`, `p50`, `p90` and
 `max` of a per-run number, each with an optional `where <condition>`, and the ratio `a / b`.
@@ -37,14 +42,73 @@ Keywords take no colon, so a metric stays a plain YAML value. The per-run number
 `wait_h.<Step>`, `ai.calls`, `ai.input_tokens`, `ai.output_tokens`, `ai.usd` and
 `field.<name>`.
 
-`Evaluate` computes every goal over a list of `runexport.Record`s: the value, the number of
-runs it rests on (a rate rests on its denominator, a ratio on its denominator's runs),
-whether it rests on fewer than 20 runs (`fewRuns`), whether a guardrail holds, and the same value
-per release at the run's start and per trial arm when there are at least two. Steps,
-Actions and waits a run never had count as zero; a run without a number (no AI price, no
-numeric field) is left out of that number's aggregate. Each value carries the definition digest, a
-short SHA-256 of the goal's metric, direction or guardrail and target, so a value is never read
-under another definition of the same goal ID; the backtest comparison gives each goal the same
+An outcome holds for a run, as of the export, when its Attribute's current value matches `equals`
+or `in`, or the run ever entered its Step or had its Action accepted. It first held at the run's
+first entry into the Step, the Action's first acceptance, or the first write of a matching value
+to the Attribute (`runexport` keeps these times).
+
+**Decision points.** Every term reads a `where <field> = <value>` as of the run's decision point,
+from the record's field timeline, so a value written later (a closing reason, a final stage) never
+selects the runs; a `where` on an outcome reads the run as of the export. In `rate(o, of p)`, `p`
+holds when it ever held: for an Attribute, when any value in its field timeline matched, so a run
+whose stage moved on from `contacted` stays in the denominator; the time `p` first held is the
+run's decision point. The decision point of a `count(o)` or of a per-run number is when the run
+first left its Flow's first Step: its path's second entry, or its close when it closed in that
+Step. An open run still in its first Step has no decision point yet, and a goal without `within`
+reads its `where` field as it is now. Without `within`, `o`, `p` and a per-run number are read as
+of the export (an Attribute's current value).
+
+**Within.** `within` (a number of days `d`, hours `h` or minutes `m`, such as `7d`, `12h` or
+`90m`, from 1h to 90d) applies to a goal whose metric is one `rate(o, of p)`, one `count(o)` or one
+`sum`, `mean`, `p50`, `p90` or `max` of a per-run number, and not to a ratio. `Parse` takes the
+shortest `within` its reader accepts: `HourDurations` on the server, `MinuteDurations` (from 1m)
+on the server of a local profile with `evolve.allowShortDurations` and in the readers of the coding
+image and `dexai`, where `Warnings` reports each value under an hour as
+`only test profiles accept durations under an hour`. The file's problems say
+`within: "7 days" is not a time; write it as 7d or 12h`, `within must be between 1h and 90d` and
+`within fits only a goal whose metric is one rate(…), count(…) or a per-run number`. A run counts
+only once its decision point plus `within` has passed, open or closed; a younger run, however soon
+it closed, or an open run that has not reached its decision point, is left out and counted as
+`maturing`, so recent values do not lean toward the runs that close fast. A counted
+run is a hit of a rate or a count when `o` held at or before its decision point plus `within`: its
+Step entered, its Action accepted or a matching value written by then, whatever the value is now,
+so a run that closed early without `o` is a miss. A per-run number is read as it stood then: the
+recorded number of a run that closed by then, otherwise its duration up to then, its entries into
+a Step on its path, its acceptances of an Action that the Action's first time tells, or a field's
+value in its timeline. Without `within` nothing is maturing. The evaluator measures as of the
+export's time; a later time would count an open run's outcome after the export, which the records
+cannot show, as a miss.
+
+**Undated runs.** A run is left out and counted as `undated`, per term, when its record cannot
+tell what the goal needs: the time `p` first held (its history was read from a continuation on,
+`history_from`, or an Action's first time was not kept); when a counted or numbered run left its
+first Step, for a `where` field or `within` (its history was read from a continuation on, its path
+was cut to its newest entries, or its history was cut before it left); the field's value at the
+decision point (its timeline was cut before it); whether a Step or Action outcome held, when the
+record shows none and its history is incomplete (cut at the event limit, or read from a
+continuation on, since the event may lie in the unread part); whether an Attribute outcome held by
+the end of `within`, when its timeline was cut before then; a per-run number as it stood at the end
+of `within` in a run still open then, for waits and AI usage, whose times a record does not keep,
+and for a Step or Action whose entries or acceptances by then the record cannot tell; or, for
+`duration_h`, the run's start.
+
+**Records exported before timelines** (no `timelines` in the record) keep the earlier rule: every
+`where` and every Attribute outcome reads current values, `p` is never required to have a time
+without `within`, and with `within` only a Step outcome is dated, from the run's first path entry
+into it when the path was not truncated, and a field number of a run open at the end of `within`
+is undated; the rest are undated.
+
+`Evaluate` first keeps each FlowID's newest started run (`runexport.Canonical`) and counts the
+others as `superseded` (none on the platform, whose `ComputeMetrics` evaluates the canonical
+runs). It then computes every goal over the list of `runexport.Record`s: the value, the number of
+runs it rests on (a rate rests on its denominator, a ratio on its denominator's runs), whether it
+rests on fewer than 20 runs (`fewRuns`), whether a guardrail
+holds, `maturing` and `undated`, and the same per release at the run's start and per trial arm
+when there are at least two. Steps, Actions and waits a run never had count as zero; a run
+without a number (no AI price, no numeric field) is left out of that number's aggregate. Each
+value carries the definition digest, a short SHA-256 of the goal's metric, `within`, direction or
+guardrail and target (a goal without `within` keeps the digest it had before `within` existed),
+so a value is never read under another definition of the same goal ID; the backtest comparison gives each goal the same
 digest.
 
 ## Backtest comparison
@@ -121,8 +185,9 @@ left out of everything else.
   chain would revisit a point. A decision the run's after line does not take is not checked.
 - **Outcome times** come from one function, `heldBefore`: a Step outcome holds from the run's
   first entry into the Step, from its path (entries a truncated path dropped are older than
-  every entry it kept). Attribute and Action outcomes have no time in the record yet, so a
-  chance that reads one is unknown and the outcome is listed in `untimed_outcomes`.
+  every entry it kept). The backtest does not read the record's Action first times or field
+  timelines yet, so a chance that reads an Attribute or Action outcome is unknown and the
+  outcome is listed in `untimed_outcomes`.
 - **Per goal and run**, an unchanged run is known. A changed run is unknown when the after line
   lacks a number the goal's metric reads; otherwise known when the metric reads no outcome
   (no `count` or `rate`, no outcome in `where`); when it reads one, known when the landmark
@@ -132,7 +197,10 @@ left out of everything else.
 - **Labels**: `same` (decisions equal), `changed_exact` (known for every goal),
   `changed_estimated` (no goal unknown), `unknown` (some goal unknown).
 - **Values**: `before` is `Evaluate` over every record; `baseline` the before value over the
-  runs the after value covers (the compared runs not unknown for the goal); `after` uses the
+  runs the after value covers (the compared runs not unknown for the goal), with every run read
+  as it is at the export, as the after side reads it: no `within`, and a rate's `of` and every
+  field `where` as they are at the export rather than at the decision point, so for a goal that
+  uses them `baseline` over every run may differ from `before`; `after` uses the
   recorded facts of unchanged runs, the after numbers of known changed runs, and for an
   estimated run its after numbers with the chance of each outcome condition the metric reads
   decided at its landmark or taken from its at-risk pools, so its count, rate and selection are
@@ -195,15 +263,13 @@ file without a review, as `dexai evolve` does for runs exported outside the plat
 accepts a backtest only when its binding, its goal set and each goal's definition digest are
 the review's own.
 
-`ReadReviewFolder` reads a review's folder as `place_evolve_export` placed it under
-`.local/superverse-evolve/<review>/` of a repository root: it refuses a manifest that names no
-Live source, no Project or another review, and a `runs.jsonl` whose SHA-256 is not the manifest's
-`runs_sha256`, and returns the Live build's goals (`goals.md`), the runs, `metrics.json`'s
-evaluation time and the binding of what it read. The coding image's `superverse-evolve` reads
-only through it and completes the binding with the before and base commits.
+[`reviewfolder`](reviewfolder/README.md) reads a review's folder as `place_evolve_export` placed
+it and returns the binding of what it read, which the coding image's `superverse-evolve`
+completes with the before and base commits.
 
-The package imports only the standard library, the YAML library and `runexport`, so the
-coding image builds the same code for the agent's `superverse-evolve`
+The package imports only the standard library, the YAML library, `runexport` and the engine's
+search index names (`engineindex`), so the coding image builds the same code for the agent's
+`superverse-evolve`
 ([its contract](../../../../../sandbox/coding/cmd/superverse-evolve/README.md));
 `scripts/check-package-layers.py` keeps it so. Only Live published runs count (owner rule
 2026-10-22): on the platform it evaluates only an export of the Project's Live runs that

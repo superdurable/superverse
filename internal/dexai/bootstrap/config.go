@@ -371,6 +371,7 @@ func evolveSettings(settings serverconfig.EvolveConfig, retentionDays int32) evo
 		MaxRunsPerExport: settings.MaxRunsPerExport, MaxHistoryEventsPerRun: settings.MaxHistoryEventsPerRun, MaxReadsPerExport: settings.MaxReadsPerExport,
 		MaxConcurrentExports: settings.MaxConcurrentExports, KeepExports: settings.KeepExports, ModelPrices: prices, PriceTableAsOf: settings.PriceTableAsOf,
 		ReviewAccess: settings.ReviewAccess, ReviewTeamSpaces: settings.ReviewTeamSpaces, RetentionDays: int(retentionDays),
+		AllowShortDurations: settings.AllowShortDurations,
 	}
 }
 

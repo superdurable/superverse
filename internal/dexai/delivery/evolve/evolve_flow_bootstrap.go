@@ -16,6 +16,7 @@ import (
 
 	"github.com/superdurable/superversev2/internal/comm/platform/objectstore"
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve/goals"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve/runexport/history"
 	"github.com/superdurable/superversev2/internal/dexai/projects"
 )
@@ -60,6 +61,17 @@ type Settings struct {
 	ReviewTeamSpaces []string
 	// RetentionDays is how long the Live engine keeps closed runs, the window of a review.
 	RetentionDays int
+	// AllowShortDurations accepts a goal's within from a minute instead of an
+	// hour, for test applications; only local profiles set it.
+	AllowShortDurations bool
+}
+
+// goalDurations is the shortest within the goals reader accepts.
+func (s Settings) goalDurations() goals.Durations {
+	if s.AllowShortDurations {
+		return goals.MinuteDurations
+	}
+	return goals.HourDurations
 }
 
 // ReviewsOn reports whether agent reviews run for a Project of teamSpaceID.

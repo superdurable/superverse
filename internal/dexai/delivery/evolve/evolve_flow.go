@@ -296,7 +296,7 @@ func (s ReadGoals) Execute(ctx dex.Context, in goalsReading) (*dex.StepDecision,
 			return nil, dex.ErrorWithStack(err)
 		}
 	}
-	read := readGoals(in.Commit, file, found, time.Now().UTC())
+	read := readGoals(in.Commit, file, found, s.f.settings.goalDurations(), time.Now().UTC())
 	in.Goals = &read
 	return dex.GoTo(CommitGoals{f: s.f}, in), nil
 }

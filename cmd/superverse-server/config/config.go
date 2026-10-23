@@ -580,6 +580,9 @@ type EvolveConfig struct {
 	PriceTableAsOf   string              `yaml:"priceTableAsOf"`
 	ReviewAccess     evolve.ReviewAccess `yaml:"reviewAccess"`
 	ReviewTeamSpaces []string            `yaml:"reviewTeamSpaces"`
+	// AllowShortDurations accepts a goal's within from a minute, for test
+	// applications; only the local lanes' profiles set it.
+	AllowShortDurations bool `yaml:"allowShortDurations"`
 }
 
 // ModelPrice is one model's list price per million tokens, in US dollars.

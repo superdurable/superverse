@@ -112,10 +112,12 @@ RUN --mount=type=cache,id=coding-sandbox-app-go-mod,target=/go/pkg/mod \
 
 # The image's own commands build in a module named like the repository, so the
 # paths under sandbox/coding/ and its internal packages are those of the source
-# tree. superverse-evolve also compiles the goals evaluator and the run record
-# from the source tree (internal/dexai/delivery/evolve/goals and runexport,
-# which import only the standard library, yaml.v3 and each other), with
-# yaml.v3 from the module proxy above, so the build needs no network.
+# tree. superverse-evolve also compiles the goals evaluator, the review
+# folder's reader, the run record and the engine's search index names from the
+# source tree (internal/dexai/delivery/evolve/goals, goals/reviewfolder and
+# runexport, and internal/comm/dexflow/engineindex, which import only the
+# standard library, yaml.v3 and each other), with yaml.v3 from the module proxy
+# above, so the build needs no network.
 # scripts/check-package-layers.py checks that go.mod.imported and
 # go.sum.imported pin the root's yaml.v3 and that app-template/go.sum holds it.
 FROM --platform=${BUILDPLATFORM} ${GO_IMAGE} AS image-commands
@@ -125,7 +127,9 @@ COPY sandbox/coding/go.mod.imported ./go.mod
 COPY sandbox/coding/go.sum.imported ./go.sum
 COPY sandbox/coding/cmd/ ./sandbox/coding/cmd/
 COPY sandbox/coding/internal/ ./sandbox/coding/internal/
+COPY internal/comm/dexflow/engineindex/*.go ./internal/comm/dexflow/engineindex/
 COPY internal/dexai/delivery/evolve/goals/*.go ./internal/dexai/delivery/evolve/goals/
+COPY internal/dexai/delivery/evolve/goals/reviewfolder/*.go ./internal/dexai/delivery/evolve/goals/reviewfolder/
 COPY internal/dexai/delivery/evolve/runexport/*.go ./internal/dexai/delivery/evolve/runexport/
 COPY --from=app-dependencies /out/go-module-proxy/ /go-module-proxy/
 ARG TARGETOS

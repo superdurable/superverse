@@ -43,7 +43,7 @@ const (
 	// The Live engine reads an export makes per second: every read, and searches among them.
 	readsPerSecond    = 20
 	searchesPerSecond = 2
-	exporterVersion   = "EvolveFlow/1"
+	exporterVersion   = "EvolveFlow/2"
 )
 
 // partTooLargeError is a part whose compressed runs exceed one object.
@@ -307,6 +307,13 @@ func (p pacedFlows) GetHistoryEvents(ctx context.Context, in *dexpb.GetHistoryEv
 		return nil, err
 	}
 	return p.FlowServiceClient.GetHistoryEvents(ctx, in, opts...)
+}
+
+func (p pacedFlows) GetAttributes(ctx context.Context, in *dexpb.GetAttributesRequest, opts ...grpc.CallOption) (*dexpb.GetAttributesResponse, error) {
+	if err := p.pace.read(ctx, false); err != nil {
+		return nil, err
+	}
+	return p.FlowServiceClient.GetAttributes(ctx, in, opts...)
 }
 
 func (p pacedFlows) LoadBlobs(ctx context.Context, in *dexpb.LoadBlobsRequest, opts ...grpc.CallOption) (*dexpb.LoadBlobsResponse, error) {

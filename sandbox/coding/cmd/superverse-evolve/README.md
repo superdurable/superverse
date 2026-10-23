@@ -18,7 +18,7 @@ superverse-evolve open-runs --review <id> --before-defs <dir|file> --after-defs 
 
 | Command | Does |
 | --- | --- |
-| `check [file]` | Parses and validates a goals file (default `.superverse/goals.md`) and prints every problem with its line; it measures nothing |
+| `check [file]` | Parses and validates a goals file (default `.superverse/goals.md`) and prints every problem with its line; a `within` under an hour, which only test profiles accept, is a warning on standard error. It measures nothing |
 | `metrics --review <id>` | Evaluates every goal of the folder's `goals.md` over its `runs.jsonl` at `metrics.json`'s `evaluated_at`, as `metrics.json`; it reproduces the review's values |
 | `compare --review <id> ...` | The backtest comparison of the before and after decision lines over the folder's runs, as `backtest.json`, evaluated at `metrics.json`'s `evaluated_at`, so its before values are the review's |
 | `open-runs --review <id> ...` | The open-run gate: the Live build's and the proposal's Flow definitions against the open runs' `active_steps`, as `open-runs.json` |

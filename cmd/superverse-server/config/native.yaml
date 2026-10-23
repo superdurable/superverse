@@ -121,6 +121,7 @@ accounts:
     - admin@superverse.test
 
 # Agent reviews run for every Project of the local lanes, whose tests drive them with the mock model;
-# the hosted default is the listed TeamSpaces.
+# the hosted default is the listed TeamSpaces. Test applications' goals may give within in minutes.
 evolve:
   reviewAccess: all
+  allowShortDurations: true
