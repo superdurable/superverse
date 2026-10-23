@@ -35,6 +35,8 @@ export const STORAGE_KEYS = {
   projectIntent: "superversev2.project-intent.v1",
   /** A local-agent Project keeps its pending first-message admission separately from other Projects. */
   localProjectIntent: (projectId: string) => `superversev2.local-project-intent.v1:${projectId}`,
+  /** A provider-backed creation's first Send crossed the RPC boundary; no credential or message content. */
+  platformFirstDelivery: (projectId: string) => `superversev2.platform-first-delivery.v1:${projectId}`,
   /** The publish wizard's unsent reason to publish without running on Preview, in session storage. */
   publishSkipReason: (projectId: string) => `superversev2.publish-skip-reason.v1:${projectId}`,
   /** The card version whose Flow design the Flow tab last showed of a Project, so a reload does not move the person. */

@@ -895,9 +895,13 @@ the Project is READY. The Session starts with the default profile on the Project
 commit, on the model CreateProject named (the server's default when it named none), and with
 CreateProject's first message, if any, queued once by its start Step
 ([durable creation](#durable-creation)). The person chooses the model and the first message on
-the creation page, which preselects Sonnet, or the mock model for the platform administrator
-where `ListMockScenarios` offers it, and CreateProject carries both, so the Session starts
-working without an open browser. A new SessionSnapshot has no
+the start form through the authenticated `ListAgentModels` catalog, including Mock only
+where offered. Studio carries Mock's first message in CreateProject. For a provider-backed
+model, Studio creates without an initial message, keeps the description as an editable draft,
+and calls `SetModelCredential` for the accepted Project before its first `SendMessage`.
+The key crosses navigation only in memory; reload before admission requires re-entry and
+never automatically sends the draft. Local-agent creation retains its pairing path.
+A new SessionSnapshot has no
 `workspace`. The Session requests its workspace on first demand: its first model call, which
 does not wait for it (the repository context reaches the conversation once the workspace is
 ready), a tool dispatch that needs the workspace, an accepted StartPreview or

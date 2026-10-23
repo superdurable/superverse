@@ -11,8 +11,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { acceptStartingCredential, takeStartingCredential } from "@/lib/session/credentials/starting-credential";
 import { createProject } from "@/lib/api/project";
-import { readStoredPreference, STORAGE_KEYS, writeStoredPreference } from "@/lib/browser/storage";
+import { readStoredPreference, STORAGE_KEYS, writeStoredPreference, writeStored } from "@/lib/browser/storage";
 import { errorMessage } from "@/lib/api/transport/api-error";
 import {
   clearPendingProjectCreation,
@@ -93,7 +94,9 @@ export function ProjectCreationPage() {
     setError(null);
     const attachmentIds = (pending.attachments ?? []).map((attachment) => attachment.attachmentId);
     const sendsMessage =
-      pending.executor === PROJECT_EXECUTOR.SUPERVERSE && (pending.prompt !== "" || attachmentIds.length > 0);
+      pending.executor === PROJECT_EXECUTOR.SUPERVERSE &&
+      pending.model === "mock" &&
+      (pending.prompt !== "" || attachmentIds.length > 0);
     try {
       const projectId = await createProject(
         {
@@ -121,6 +124,18 @@ export function ProjectCreationPage() {
         storeCreationProjectIntent(intent);
         writeStoredPreference(STORAGE_KEYS.composerDraft(projectId), pending.draft ?? pending.prompt);
         releaseProjectIntent(projectId);
+      }
+      if (pending.executor === PROJECT_EXECUTOR.SUPERVERSE && pending.model !== "mock") {
+        writeStoredPreference(STORAGE_KEYS.composerDraft(projectId), pending.draft ?? pending.prompt);
+        if (pending.attachments?.length)
+          writeStored("session", STORAGE_KEYS.composerAttachments(projectId), JSON.stringify(pending.attachments));
+        acceptStartingCredential({
+          projectId,
+          credential: takeStartingCredential(pending.idempotencyKey),
+          messageId: pending.messageIdempotencyKey,
+          sendFirstMessage: !pending.example,
+          attachmentIds,
+        });
       }
       clearPendingProjectCreation();
       // The Project's first message took the start page's files.

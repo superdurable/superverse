@@ -5,7 +5,7 @@ Purpose: The Project pages: the start form, Project creation, Project details, t
 
 Importers: `app` and `mock/surface` import this directory.
 
-Imports: it imports `components/build`, `components/flow/scope`, `components/frame`, `components/project/**` (5), `components/publishing/**` (2), `components/session/**` (5), `components/shell/palette`, `components/teamspace`, `components/ui/**` (5), `lib/api/**` (3), `lib/browser`, `lib/flow`, `lib/generated/protobuf`, `lib/project/**` (4), `lib/session/**` (4), `lib/shared/**` (3) and `lib/teamspace`.
+Imports: it imports `components/build`, `components/flow/scope`, `components/frame`, `components/project/**` (5), `components/publishing/**` (2), `components/session/**` (5), `components/shell/palette`, `components/teamspace`, `components/ui/**` (5), `lib/api/**` (3), `lib/browser`, `lib/flow`, `lib/generated/protobuf`, `lib/project/**` (4), `lib/session/**` (5), `lib/shared/**` (3) and `lib/teamspace`.
 
 ```mermaid
 flowchart LR
@@ -26,7 +26,7 @@ flowchart LR
   self --> d11["lib/flow"]
   self --> d12["lib/generated/protobuf"]
   self --> d13["lib/project/** (4)"]
-  self --> d14["lib/session/** (4)"]
+  self --> d14["lib/session/** (5)"]
   self --> d15["lib/shared/** (3)"]
   self --> d16["lib/teamspace"]
 ```
@@ -62,3 +62,9 @@ ProjectSurface puts the Project into the Builder frame (`components/frame`): the
 Session's chat in the chat column and, for the surface the URL names, the Flow,
 Runs, Inbox, Interface or the open tool (ProjectToolContent). Preview Runs and
 Inbox read the running Preview; Live ones read the Release Live serves.
+
+ProjectStartForm obtains model choices from the authenticated catalog and reuses
+the composer provider/key/endpoint controls. Provider-backed creation omits the
+initial message, opens its editable draft and transfers the in-memory key to the
+Session's first-message admission. Mock retains server-side initial delivery;
+local-agent pairing and example draft behavior remain unchanged.

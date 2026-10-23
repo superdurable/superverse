@@ -19,6 +19,7 @@ import {
 import { useSessionResource } from "@/lib/session/SessionProvider";
 import type { useModelCredential } from "@/lib/session/credentials/use-model-credential";
 import { CustomEndpointFields } from "./CustomEndpointFields";
+import type { StartingCredential } from "@/lib/session/credentials/starting-credential";
 import { useSingleFlight } from "@/lib/browser/use-single-flight";
 
 /** A write-only password field and ModelKeyInfo metadata; the saved key is never returned. */
@@ -29,7 +30,9 @@ export function ModelCredentialEntry({
   credential: chosenCredential,
   mockEndpoint = false,
   allowCustom = false,
+  stage,
 }: {
+  stage?: { provider: StartingCredential["provider"]; onSave: (value: StartingCredential) => void };
   canManage: boolean;
   providerName?: string;
   keyHint?: string;
@@ -51,11 +54,12 @@ export function ModelCredentialEntry({
   const [editing, setEditing] = useState(false);
   const [confirm, setConfirm] = useState<"replace" | "delete" | null>(null);
   const action = useSingleFlight<"save" | "delete" | "discover">();
-  if (!session) return null;
-  const credential = chosenCredential ?? session.credential,
-    info = credential.info;
+  const credential = chosenCredential ?? session?.credential;
+  if (!credential || (!session && !stage)) return null;
+  const projectId = session?.projectId ?? "";
+  const info = credential.info;
   const running =
-    session.resource?.agent?.description?.subagents.filter(
+    session?.resource?.agent?.description?.subagents.filter(
       (agent) => !agent.lost && (agent.status === "STATUS_STARTING" || agent.status === "STATUS_RUNNING"),
     ).length ?? 0;
   const active = info?.status === ModelCredentialStatus.MODEL_CREDENTIAL_STATUS_ACTIVE;
@@ -82,6 +86,25 @@ export function ModelCredentialEntry({
       }
     }
     const key = field.current?.value ?? "";
+    if (stage) {
+      if (!key.trim()) {
+        action.setError("Enter an API key first.");
+        return;
+      }
+      stage.onSave({
+        provider: stage.provider,
+        apiKey: key,
+        endpoint: {
+          baseUrl: custom ? (endpointField.current?.value ?? "") : "",
+          customModelId: custom ? (modelField.current?.value ?? "") : "",
+          contextWindow: custom ? contextWindow : "0",
+          maxOutputTokens: custom ? maxOutputTokens : "0",
+        },
+      });
+      action.setError("");
+      setDiscoveryNote("Key ready for the new Project. Build will validate it before sending.");
+      return;
+    }
     if (field.current) field.current.value = "";
     const operation = retry
       ? credential.pending
@@ -92,7 +115,7 @@ export function ModelCredentialEntry({
     void action.run("save", async (signal) => {
       try {
         const next = await saveModelCredential(
-          session.projectId,
+          projectId,
           credential.provider,
           operation.revision,
           operation.requestId,
@@ -126,7 +149,7 @@ export function ModelCredentialEntry({
     void action.run("delete", async (signal) => {
       try {
         const next = await deleteModelCredential(
-          session.projectId,
+          projectId,
           credential.provider,
           operation.revision,
           operation.requestId,
@@ -154,11 +177,17 @@ export function ModelCredentialEntry({
     setDiscoveryNote("");
   };
   const discover = () => {
+    if (stage) {
+      setDiscoveryNote(
+        "Create the Project to discover models and validate this key before sending. You can also enter a model ID now.",
+      );
+      return;
+    }
     const baseUrl = endpointField.current?.value ?? "";
     const key = field.current?.value ?? "";
     void action.run("discover", async (signal) => {
       const response = await listModelCredentialModels(
-        session.projectId,
+        projectId,
         credential.provider,
         baseUrl,
         key,
@@ -221,6 +250,11 @@ export function ModelCredentialEntry({
           ? `This local endpoint accepts the test key ${MOCK_MODEL_API_KEY}. No model charge.`
           : `All Builders of this Project use this key. ${providerName} bills your account. Saving tests the key with a small billable request.`}
       </p>
+      {stage && (
+        <p className="text-ink-faint">
+          Kept only in memory until this Project is created. Reloading requires entering the key again.
+        </p>
+      )}
       {canManage && !credential.pending && (
         <>
           {(!active || editing) && (
@@ -273,11 +307,11 @@ export function ModelCredentialEntry({
               )}
               <button
                 type="button"
-                disabled={action.busy !== null || info === null}
+                disabled={action.busy !== null || (!stage && info === null)}
                 onClick={() => change("replace")}
                 className="rounded border border-accent-rule px-2 py-1 text-accent hover:bg-accent-subtle"
               >
-                {action.busy === "save" ? "Saving…" : "Save key"}
+                {action.busy === "save" ? "Saving…" : stage ? "Use this key for the new Project" : "Save key"}
               </button>
             </>
           )}

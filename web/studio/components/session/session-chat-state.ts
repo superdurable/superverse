@@ -17,7 +17,6 @@ import type {
 } from "@/lib/session/agent-types";
 import type { KnownSessionStatus } from "@/lib/session/session-status";
 import { withoutMockMarkersInMessages } from "@/lib/session/mock-scenarios";
-import { ModelCredentialStatus } from "@/lib/api/model-credential";
 import { studioRoutes } from "@/lib/shared/studio-routes";
 import { openPublishPopover } from "@/components/publishing/publish/publish-opener";
 
@@ -25,17 +24,6 @@ import { openPublishPopover } from "@/components/publishing/publish/publish-open
 export function firstMessageDisabledReason(description: AgentDescription | null, queued: number) {
   return description !== null && description.lastSequence === 0 && queued > 0
     ? "Your description waits for the agent…"
-    : null;
-}
-
-/** Real platform models require the active Project key; remote and mock execution do not. */
-export function credentialDisabledReason(
-  remote: boolean,
-  model: AgentDescription["model"] | undefined,
-  status: ModelCredentialStatus | undefined,
-) {
-  return !remote && model !== "mock" && status !== ModelCredentialStatus.MODEL_CREDENTIAL_STATUS_ACTIVE
-    ? "Set your key or connect your local agent"
     : null;
 }
 

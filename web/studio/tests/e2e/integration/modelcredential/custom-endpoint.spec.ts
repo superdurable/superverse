@@ -128,3 +128,56 @@ test("Builder discovers a custom Qwen endpoint and runs tools, a child and compa
     await deleteProject(page, projectId);
   }
 });
+
+test("Start form stages a custom endpoint and budgets before first-message admission", async ({ page }) => {
+  test.setTimeout(8 * 60_000);
+  const endpoint = process.env.SUPERVERSE_E2E_CUSTOM_ENDPOINT;
+  if (!endpoint || process.env.SUPERVERSE_E2E_BYOK_FIXTURE !== "true")
+    throw new Error("Requires the custom endpoint fixture");
+  await register(page);
+  const teamSpaceId = new URL(page.url()).pathname.split("/")[2];
+  await page.goto(`/t/${teamSpaceId}/projects/start`);
+  await page.getByRole("button", { name: "Model", exact: true }).click();
+  const panel = page.getByRole("dialog", { name: "Choose model" });
+  await panel.getByRole("button", { name: "Qwen", exact: true }).click();
+  await panel.getByLabel("Use a custom endpoint", { exact: true }).check();
+  await panel.getByLabel("Custom endpoint API key", { exact: true }).fill(MOCK_MODEL_API_KEY);
+  await panel.getByLabel("Endpoint API base URL", { exact: true }).fill(endpoint.replace("/many/", "/one/"));
+  await panel.getByLabel("Context window (tokens)", { exact: true }).fill("131072");
+  await panel.getByLabel("Maximum output tokens", { exact: true }).fill("8192");
+  await panel.getByRole("button", { name: "Discover models", exact: true }).click();
+  await expect(panel.getByRole("status")).toContainText("Create the Project to discover models");
+  await panel.getByRole("button", { name: "Use this key for the new Project", exact: true }).click();
+  await panel.getByRole("option", { name: "Custom Chat endpoint", exact: true }).click();
+  await page
+    .getByRole("textbox", { name: "Describe a change", exact: true })
+    .fill("Inspect the manifest. [[scenario:custom-endpoint#1]]");
+  const admitted = page.waitForResponse(rpcAnswered("SetModelCredential"));
+  const sent = page.waitForRequest((request) => new URL(request.url()).pathname === "/api/rpc/SendMessage");
+  const created = page.waitForResponse(rpcAnswered("CreateProject"));
+  await page.getByRole("button", { name: "Build", exact: true }).click();
+  const response = await created;
+  expect(response.ok()).toBe(true);
+  expect(response.request().postDataJSON().initialMessage).toBeUndefined();
+  const projectId = (await response.json()).projectId as string;
+  try {
+    expect((await admitted).ok()).toBe(true);
+    await sent;
+    const state = await rpcResult(page.request, "GetModelCredentialInfo", {
+      projectId,
+      provider: "MODEL_PROVIDER_QWEN",
+    });
+    expect(state.credential?.effectiveModelId).toBe("self-hosted-qwen");
+    expect(state.credential?.contextWindow).toBe("131072");
+    expect(state.credential?.maxOutputTokens).toBe("8192");
+    expect(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).not.toContain(
+      MOCK_MODEL_API_KEY,
+    );
+    await page.reload();
+    await page.getByRole("button", { name: /^Agent:/ }).click();
+    await page.getByRole("button", { name: "Qwen", exact: true }).click();
+    await expect(page.getByText("Custom endpoint · self-hosted-qwen", { exact: true })).toBeVisible();
+  } finally {
+    await deleteProject(page, projectId);
+  }
+});

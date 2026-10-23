@@ -101,14 +101,6 @@ const AGENT_MODEL_DETAILS = {
   "minimax-m3": { label: "MiniMax M3", description: "Provider unavailable", selectable: false },
 } as const satisfies Record<AgentModel, { label: string; description: string; selectable: boolean }>;
 
-/** The models a Session can switch between, in picker order; Studio offers mock only where the server allows it. */
-export const AGENT_MODEL_OPTIONS = (Object.keys(AGENT_MODEL_DETAILS) as AgentModel[])
-  .filter((value) => AGENT_MODEL_DETAILS[value].selectable)
-  .map((value) => ({
-    value,
-    ...AGENT_MODEL_DETAILS[value],
-  }));
-
 /** Whether a stored name is a model the picker offers. */
 export function isAgentModel(name: string): name is AgentModel {
   return Object.hasOwn(AGENT_MODEL_DETAILS, name);

@@ -296,8 +296,13 @@ and the Bridge sends Orca one text block of at most 256 KiB
 
 ## CreateProject
 
-The start page's first message travels with `CreateProject`
-(`internal/dexai/api/project.go:78-125`):
+For Mock, the start page's first message travels with `CreateProject`.
+For a provider-backed model, Studio instead retains its text and ready attachment
+identities as the accepted Project's editable composer draft, admits the Project's
+key, and delivers through the ordinary attachment tray and `SendMessage`. A failed
+key retains the draft and files; the key itself is never serialized. Reload never
+automatically sends this draft. The API still supports attached initial messages
+for authorized callers as follows (`internal/dexai/api/project.go`):
 
 - **Admission**: `CreateProjectRequest.initial_attachment_ids` (field 12) names at most
   `attachments.maxPerMessage` distinct attachments, only with `message_id`. After the creator's

@@ -50,6 +50,10 @@ Other topics own what the Session uses:
   started once per Project, the first message is admitted exactly once; the start needs no open
   browser. A Session started without a message (a Project created without one, or an open
   execution started before this field existed) waits for the first `SendMessage`.
+  Studio uses this existing message-free start for provider-backed onboarding:
+  it admits the accepted Project's key through SetModelCredential before delivering
+  the editable browser draft. Mock retains the initial-message path. No new Flow
+  primitive or start identity is introduced by that UI ordering.
 - A retried or replayed `StartProjectSession` joins the running execution. The FlowID is never
   started again: the Step runs only on the READY transition, and Project IDs are never
   reused. No explicit rerun exists. Only an authorized `dexcli flow time-travel` runs a

@@ -2032,13 +2032,15 @@ package or management iframe; the user application's Preview and Live frames (th
 - The Project has one Preview with one URL. Its credentials/configuration are
   scope-isolated from Live and are not silently copied from Live.
 - The Builder's chat opens the Project's one Session directly: "Setting up your project..." while
-  Setup runs, "Starting the agent..." until the Session answers, which already
-  works on the first message: CreateProject carried it with the model the person
-  chose on the creation page, and the Session started on that model with the
-  message queued once, whether or not the tab stays open. The creation page shows the Session's model
-  picker under Advanced, preselected on Sonnet, or for the platform administrator
-  on the mock model where the server offers it, and the mock composer replaces
-  the text box when the mock model is chosen. In the chat the model picker is in the
+  Setup runs, "Starting the agent..." until the Session answers. The start form reuses
+  the composer's authenticated provider/model and credential controls. Mock's first
+  message travels with CreateProject and starts without an open browser. For a
+  provider-backed model, CreateProject carries the model alone; Studio admits the
+  accepted Project's in-memory key with SetModelCredential before sending its editable
+  first-message draft. A failed key keeps the draft; reload drops the transient key
+  and automatic delivery. Custom endpoint and context/output controls are shared
+  with the composer, with discovery authorized only for the accepted Project. The
+  mock composer replaces the text box where the mock model or a mock endpoint is offered. In the chat the model picker is in the
   composer's menu, each turn is one line with its work log under More details, and
   notices that the template's own commit lacks settings are left out. There is no Session list, start
   action, `?session=` or Session Stop.

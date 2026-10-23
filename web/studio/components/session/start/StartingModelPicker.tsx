@@ -8,44 +8,86 @@
 
 "use client";
 
-import { useId } from "react";
+import { useRef, useState } from "react";
 import { cx } from "@/components/ui/cx";
-import { Dropdown } from "@/components/ui/menu/Dropdown";
-import { AGENT_MODEL_OPTIONS, type AgentModel } from "@/lib/session/agent-types";
+import { PopoverCard, usePopover } from "@/components/ui/Popover";
+import type { ModelProvider } from "@/lib/api/model-credential";
+import { agentModelLabel, type AgentModel } from "@/lib/session/agent-types";
+import { agentModelInput, agentModelProvider } from "@/lib/session/model/agent-model";
+import type { useAgentModels } from "@/lib/session/model/agent-model-catalog";
+import { useModelCredential } from "@/lib/session/credentials/use-model-credential";
+import type { StartingCredential } from "@/lib/session/credentials/starting-credential";
+import { ProviderModelChoices } from "@/components/session/executor/ProviderModelPicker";
+import { ModelCredentialEntry } from "@/components/session/executor/ModelCredentialEntry";
 
-/** Chooses the model of a Project whose Superverse Session has not started yet. */
+/** Reuses the composer picker; pre-Project keys stay in the start form's memory. */
 export function StartingModelPicker({
   model,
-  mockSelectable,
+  catalog,
   disabled,
   onSelect,
+  onCredential,
   className,
 }: {
   model: AgentModel | null;
-  mockSelectable: boolean;
+  catalog: ReturnType<typeof useAgentModels>;
   disabled: boolean;
   onSelect: (model: AgentModel) => void;
+  onCredential: (credential: StartingCredential | null) => void;
   className?: string;
 }) {
-  const selectId = useId();
-  const options = AGENT_MODEL_OPTIONS.filter(({ value }) => value !== "mock" || mockSelectable || model === "mock");
+  const [provider, setProvider] = useState<ModelProvider>(
+    agentModelProvider(model ? agentModelInput(model) : undefined),
+  );
+  const credential = useModelCredential("", provider, false, undefined);
+  const anchor = useRef<HTMLDivElement>(null);
+  const card = useRef<HTMLDivElement>(null);
+  const popover = usePopover(anchor);
   return (
-    <div className={cx("bg-panel px-3 py-2 text-[13px] text-ink-faint", className)}>
-      <div className="flex items-center gap-2">
-        <label className="font-medium text-ink-dim" htmlFor={selectId}>
-          Model
-        </label>
-        <Dropdown
-          id={selectId}
-          label="Model"
-          inline
-          disabled={disabled}
-          value={model}
-          placeholder="Not selected yet"
-          onChange={onSelect}
-          items={options.map((option) => ({ value: option.value, label: option.label, sub: option.description }))}
-        />
-      </div>
+    <div ref={anchor} className={cx("bg-panel px-3 py-2 text-[13px] text-ink-faint", className)}>
+      <button
+        type="button"
+        aria-label="Model"
+        aria-haspopup="dialog"
+        aria-expanded={popover.open}
+        disabled={disabled}
+        onClick={popover.toggle}
+        className="text-ink-dim"
+      >
+        Model · {model ? agentModelLabel(model) : "Loading models…"}
+      </button>
+      {popover.open && (
+        <PopoverCard anchorRef={anchor} cardRef={card} label="Choose model" autoFocus className="w-80 max-w-[90vw] p-2">
+          <ProviderModelChoices
+            choiceRole="option"
+            model={model}
+            catalog={catalog}
+            provider={provider}
+            chooseProvider={(next) => {
+              setProvider(next);
+              onCredential(null);
+            }}
+            canManage
+            disabled={disabled}
+            onSelect={(value) => {
+              onSelect(value);
+              popover.close();
+            }}
+            credentialEntry={(selected, choices) => (
+              <ModelCredentialEntry
+                key={selected.provider}
+                canManage
+                credential={credential}
+                providerName={selected.providerName}
+                keyHint={selected.keyHint}
+                mockEndpoint={selected.mockEndpoint}
+                allowCustom={choices.some((choice) => choice.model.endsWith("_CUSTOM"))}
+                stage={{ provider: selected.provider, onSave: onCredential }}
+              />
+            )}
+          />
+        </PopoverCard>
+      )}
     </div>
   );
 }

@@ -68,3 +68,9 @@ defaults; advisory discovery can prefill an untouched unsaved context only.
 Manual input and saved declarations take precedence. Provider/Project changes
 remount drafts, and origin changes discard discovery hints. The server owns
 validation, authorization and revision admission.
+
+ProviderModelChoices is the shared catalog-driven provider/model view for the
+composer and Project start. ModelCredentialEntry accepts an explicit in-memory
+staging binding before a Project exists; Save stages the key without a network
+mutation. Discovery explains that it needs the accepted Project. The same
+Project-scoped entry then owns discovery, validation and admission.

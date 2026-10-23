@@ -28,7 +28,9 @@ import { Composer } from "@/components/session/composer/Composer";
 import { AttachmentDropZone } from "@/components/session/composer/attachments/AttachmentDropZone";
 import { MockComposer } from "@/components/session/mock/MockComposer";
 import { StartingModelPicker } from "@/components/session/start/StartingModelPicker";
-import { useStartingModel } from "@/components/session/start/use-starting-model";
+import { useAgentModels, usesMockEndpoint } from "@/lib/session/model/agent-model-catalog";
+import { agentModelView, agentModelInput, agentModelProvider } from "@/lib/session/model/agent-model";
+import { stageStartingCredential, type StartingCredential } from "@/lib/session/credentials/starting-credential";
 import { Banner } from "@/components/ui/Banner";
 import { cx } from "@/components/ui/cx";
 import { MoreDetails } from "@/components/ui/reveal/MoreDetails";
@@ -67,8 +69,13 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
   const [editedName, setEditedName] = useState<string | null>(null);
   const [chosen, setChosen] = useState<AgentModel | null>(null);
   const [executor, setExecutor] = useState<ProjectExecutor>(PROJECT_EXECUTOR.SUPERVERSE);
-  const startingModel = useStartingModel(mockScenarios);
-  // Null only while the administrator's offer of the mock model is being read.
+  const catalog = useAgentModels();
+  const credential = useRef<StartingCredential | null>(null);
+  const startingModel =
+    catalog?.models.map((option) => agentModelView(option.model)).find((value) => value === "mock") ??
+    catalog?.models.map((option) => agentModelView(option.model)).find((value) => value !== null) ??
+    null;
+  // Null until the authenticated model catalog arrives.
   const model = chosen ?? startingModel;
   const [formError, setFormError] = useState<string | null>(null);
   const [transitioning, setTransitioning] = useState(false);
@@ -121,18 +128,28 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
       throw new Error("An example carries no attachments");
     }
     try {
+      const requestId = newRequestId();
+      const selectedCredential =
+        executor === PROJECT_EXECUTOR.SUPERVERSE &&
+        model &&
+        model !== "mock" &&
+        credential.current?.provider === agentModelProvider(agentModelInput(model))
+          ? credential.current
+          : null;
       storePendingProjectCreation({
         teamSpaceId,
         name: projectName,
         prompt,
         executor,
         model: executor === PROJECT_EXECUTOR.SUPERVERSE ? model : null,
-        idempotencyKey: newRequestId(),
+        idempotencyKey: requestId,
         messageIdempotencyKey: newRequestId(),
         ...(from ? { example: { exampleId: from.example.id } } : {}),
         ...(from?.draft ? { draft: from.draft } : {}),
         ...(!from && attachments.remembered.length > 0 ? { attachments: [...attachments.remembered] } : {}),
       });
+      stageStartingCredential(requestId, selectedCredential);
+      credential.current = null;
     } catch (reason) {
       setFormError(reason instanceof Error ? reason.message : "Could not keep the project request in this browser");
       throw reason;
@@ -197,14 +214,17 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
             <StartingModelPicker
               className="mt-3 rounded-lg border border-line-soft"
               model={model}
-              mockSelectable={mockScenarios?.selectable ?? false}
+              catalog={catalog}
+              onCredential={(value) => {
+                credential.current = value;
+              }}
               disabled={transitioning || model === null}
               onSelect={setChosen}
             />
           )}
         </fieldset>
         <AttachmentDropZone tray={attachments} className="mt-6">
-          {executor === PROJECT_EXECUTOR.SUPERVERSE && model === "mock" ? (
+          {executor === PROJECT_EXECUTOR.SUPERVERSE && usesMockEndpoint(catalog, model) ? (
             <MockComposer
               catalog={mockScenarios}
               progress={null}

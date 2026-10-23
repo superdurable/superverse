@@ -9,15 +9,20 @@ Home (`/`) lists the account's Projects; an account without one sees the start
 form there, which also lives at `/projects/start`. An account without a Teamspace gets one,
 named from its email. The start form asks what process Dex should run: the description is the
 first Agent message, a template from the gallery fills it in, and the project name (derived from
-the description) and the Session's model sit under Advanced. A new Project opens on its
+the description) sits under Advanced. Agent and model selection use the composer's
+shared authenticated provider catalog and key/endpoint controls. Provider keys stay
+in client memory until the accepted Project admits them, before its first message;
+failed admission leaves an editable draft, and reload requires re-entry. Mock and
+local-agent creation retain their existing paths. A new Project opens on its
 conversation alone and switches once to the Builder when the agent's first requirements card
 arrives. Under the composer a grid of starting points lists the built examples on every model, from
 the catalog Studio bundles ([`lib/examples`](lib/examples/README.md), the same index the server
 embeds): a few of each category before the person types, the six closest to the description while
 they type, ranked by the search the server shortlists with and re-ranked at word boundaries, and
 Browse all examples to search and filter the whole catalog. Build with no example opened sends the
-description, and a server whose closest-example pick is on may start that Project from the example
-it finds clearly closest; Studio then names no example, and its Flow tab draws that example's real
+description. When Mock carries it in CreateProject, a server whose closest-example pick is on
+may start that Project from the example it finds clearly closest; provider-backed creation
+starts from the default template unless the Builder explicitly opens an example. Studio then names no example, and its Flow tab draws that example's real
 Flow definitions from the start until the agent pushes, then waits for that push's processes, with
 the stage still Building. Studio shows the real flow whenever one exists: it draws a card's Flow
 design only before the first build of a Project that started from the default template, and once a

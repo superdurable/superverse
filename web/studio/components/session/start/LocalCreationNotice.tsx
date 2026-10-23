@@ -8,10 +8,10 @@
 
 import { ProjectCreationPairing } from "@/components/project/creation/ProjectCreationPairing";
 import { Button } from "@/components/ui/Button";
-import type { useLocalCreation } from "./use-local-creation";
+import type { useStartingCreation } from "./use-starting-creation";
 
 /** An uncertain creation send requires checking the real conversation before an explicit manual retry. */
-export function LocalCreationNotice({ creation }: { creation: ReturnType<typeof useLocalCreation> }) {
+export function LocalCreationNotice({ creation }: { creation: ReturnType<typeof useStartingCreation> }) {
   return (
     <>
       {creation.waitingForConnection && <ProjectCreationPairing projectId={creation.projectId} />}

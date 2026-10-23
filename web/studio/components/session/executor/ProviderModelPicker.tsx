@@ -8,7 +8,8 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import type { AgentModelChoice, useAgentModels } from "@/lib/session/model/agent-model-catalog";
 import { ModelProvider } from "@/lib/api/model-credential";
 import { useModelCredential } from "@/lib/session/credentials/use-model-credential";
 import { POPOVER_ITEM } from "@/components/ui/Popover";
@@ -39,7 +40,52 @@ export function ProviderModelPicker({
     session?.resource?.agent?.description?.modelCredentialVersion,
   );
   if (!session) return null;
-  const catalog = session.modelCatalog;
+  return (
+    <ProviderModelChoices
+      model={model}
+      canManage={canManage}
+      disabled={disabled}
+      onSelect={onSelect}
+      catalog={session.modelCatalog}
+      provider={provider}
+      chooseProvider={chooseProvider}
+      credentialEntry={(selected, choices) => (
+        <ModelCredentialEntry
+          key={`${session.projectId}/${selected.provider}`}
+          canManage={canManage}
+          credential={credential}
+          providerName={selected.providerName}
+          keyHint={selected.keyHint}
+          mockEndpoint={selected.mockEndpoint}
+          allowCustom={choices.some((choice) => choice.model.endsWith("_CUSTOM"))}
+        />
+      )}
+    />
+  );
+}
+
+/** Shared authenticated catalog view; the caller owns Project or pre-Project credential admission. */
+export function ProviderModelChoices({
+  model,
+  canManage,
+  disabled,
+  onSelect,
+  catalog,
+  provider,
+  chooseProvider,
+  credentialEntry,
+  choiceRole,
+}: {
+  model: AgentModel | null;
+  canManage: boolean;
+  disabled: boolean;
+  onSelect: (model: AgentModel) => void;
+  catalog: ReturnType<typeof useAgentModels>;
+  provider: ModelProvider;
+  chooseProvider: (provider: ModelProvider) => void;
+  choiceRole?: "option";
+  credentialEntry: (selected: AgentModelChoice, choices: readonly AgentModelChoice[]) => ReactNode;
+}) {
   if (!catalog)
     return (
       <p role="status" className="px-2.25 text-xs text-ink-faint">
@@ -72,45 +118,42 @@ export function ProviderModelPicker({
           </button>
         ))}
       </div>
-      {selected && (
-        <ModelCredentialEntry
-          key={`${session.projectId}/${selected.provider}`}
-          canManage={canManage}
-          credential={credential}
-          providerName={selected.providerName}
-          keyHint={selected.keyHint}
-          mockEndpoint={selected.mockEndpoint}
-          allowCustom={choices.some((choice) => choice.model.endsWith("_CUSTOM"))}
-        />
-      )}
-      {choices.map((option) => {
-        const value = agentModelView(option.model);
-        if (!value) return null;
-        return (
+      {selected && credentialEntry(selected, choices)}
+      <div role={choiceRole ? "listbox" : undefined} aria-label="Models">
+        {choices.map((option) => {
+          const value = agentModelView(option.model);
+          if (!value) return null;
+          return (
+            <button
+              key={value}
+              role={choiceRole}
+              aria-selected={choiceRole ? value === model : undefined}
+              type="button"
+              className={POPOVER_ITEM}
+              aria-current={value === model ? "page" : undefined}
+              disabled={!canManage || disabled}
+              onClick={() => onSelect(value)}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+        {mock && (
           <button
-            key={value}
             type="button"
             className={POPOVER_ITEM}
-            aria-current={value === model ? "page" : undefined}
+            role={choiceRole}
+            aria-selected={choiceRole ? model === "mock" : undefined}
+            aria-label={mock.label}
+            aria-current={model === "mock" ? "page" : undefined}
             disabled={!canManage || disabled}
-            onClick={() => onSelect(value)}
+            onClick={() => onSelect("mock")}
           >
-            {option.label}
+            {mock.label}
+            <span className="text-xs text-ink-faint">Testing, no model cost</span>
           </button>
-        );
-      })}
-      {mock && (
-        <button
-          type="button"
-          className={POPOVER_ITEM}
-          aria-current={model === "mock" ? "page" : undefined}
-          disabled={!canManage || disabled}
-          onClick={() => onSelect("mock")}
-        >
-          {mock.label}
-          <span className="text-xs text-ink-faint">Testing, no model cost</span>
-        </button>
-      )}
+        )}
+      </div>
     </>
   );
 }

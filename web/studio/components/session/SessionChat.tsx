@@ -35,7 +35,6 @@ import { PendingActionDock } from "./PendingActionDock";
 import {
   EXAMPLE_GREETING_SEQUENCE,
   composerDisabledReason,
-  credentialDisabledReason,
   firstMessageDisabledReason,
   composerPlaceholder,
   lifecycleMessage,
@@ -51,6 +50,7 @@ import { LiveNote, SeeOnPreview, useLiveChange, type LiveViewing } from "./LiveN
 import { StartupStatus } from "./start/StartupSteps";
 import { useChatSend } from "./start/use-chat-send";
 import { useComposerText } from "./start/use-first-turn-composer";
+import { useStartingCreation } from "./start/use-starting-creation";
 import { useLocalCreation } from "./start/use-local-creation";
 import { LocalCreationNotice } from "./start/LocalCreationNotice";
 import { useSessionAttachments } from "./use-session-attachments";
@@ -72,9 +72,7 @@ export function SessionChat({ canManage, live, dock }: { canManage: boolean; liv
     state.snapshot?.description?.status === AgentStatus.WAITING_FOR_MESSAGE,
   );
   const markSent = liveChange.markSent;
-  const localCreation = useLocalCreation(state, composerText, setComposerText);
-  const sendMessage = localCreation.send;
-  const send = useChatSend({ send: sendMessage, about, clearAbout, markSent });
+  const local = useLocalCreation(state, composerText, setComposerText);
   const template = useTemplateCommit();
   // An example the server matched to the first message greets with nothing and records no version 1 of its own.
   const startedFromExample =
@@ -159,7 +157,6 @@ export function SessionChat({ canManage, live, dock }: { canManage: boolean; liv
   const pendingTimer = description?.pendingTimer ?? null;
   const agentReady = description !== null && description.status !== AgentStatus.INITIALIZING;
   const agentInteractionDisabled = !productInteractive || !agentReady || !state.snapshotCurrent;
-  // Stop shows while a turn or a background task runs; it stops all of them.
   const canStop = productInteractive && agentReady && description !== null && hasRunningWork(description);
   const stopCommand = state.stop;
   const stop = useCallback(() => stopCommand().catch(() => undefined), [stopCommand]);
@@ -174,7 +171,10 @@ export function SessionChat({ canManage, live, dock }: { canManage: boolean; liv
     () => pendingWaitsOf(pendingApproval, pendingInput, pendingTimer),
     [pendingApproval, pendingInput, pendingTimer],
   );
-  const attachments = useSessionAttachments(state.projectId, remotelyExecuted || localCreation.pending);
+  const attachments = useSessionAttachments(state.projectId, remotelyExecuted || local.pending);
+  const localCreation = useStartingCreation(state, composerText, setComposerText, local, attachments.tray);
+  const sendMessage = localCreation.send;
+  const send = useChatSend({ send: sendMessage, about, clearAbout, markSent });
   const placeholder = composerPlaceholder({
     pendingInputKind: pendingInput?.kind ?? null,
     answerAwaitingReconciliation,
@@ -190,12 +190,12 @@ export function SessionChat({ canManage, live, dock }: { canManage: boolean; liv
       snapshotCurrent: state.snapshotCurrent,
       blockedByPending,
       placeholder,
-    }) ??
-    firstMessageWaits ??
-    credentialDisabledReason(remotelyExecuted, description?.model, state.credential.info?.status);
-  // A local scenario endpoint takes ordered scenario inputs from the mock composer.
+    }) ?? firstMessageWaits;
   const runsMock =
-    !remotelyExecuted && !localCreation.pending && usesMockEndpoint(state.modelCatalog, description?.model);
+    !remotelyExecuted &&
+    !localCreation.pending &&
+    !composerText &&
+    usesMockEndpoint(state.modelCatalog, description?.model);
   const modelMenu = localCreation.waitingForConnection ? (
     <span className="px-1.5 text-[12px] text-ink-dim">Local agent · not connected</span>
   ) : (
@@ -357,7 +357,7 @@ export function SessionChat({ canManage, live, dock }: { canManage: boolean; liv
             lastSequence={description?.lastSequence ?? 0}
             pendingInput={pendingInput}
             busy={state.mutating}
-            disabledReason={mockDisabledReason}
+            disabledReason={mockDisabledReason ?? localCreation.sendDisabledReason}
             onSend={(text, attachmentIds) => {
               markSent();
               return sendMessage(text, attachmentIds);

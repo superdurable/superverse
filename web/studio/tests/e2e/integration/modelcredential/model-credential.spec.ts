@@ -51,8 +51,13 @@ test("Project Anthropic key entry, replacement and deletion gate the platform co
       .toBe("SESSION_STATUS_ACTIVE");
     await page.goto(`/p/${projectId}/flow`);
     const composer = page.getByRole("textbox", { name: "Message the agent", exact: true });
-    await expect(composer).toBeDisabled();
-    await expect(page.getByText("Set your key or connect your local agent", { exact: true })).toBeVisible();
+    await expect(composer).toBeEditable();
+    await expect(page.getByRole("button", { name: "Send", exact: true })).toBeDisabled();
+    await expect(
+      page.getByText("Set this provider's API key in the Agent picker to send. Your draft stays editable.", {
+        exact: true,
+      }),
+    ).toBeVisible();
     const picker = page.locator("[data-session-executor]").getByRole("button", { name: /^Agent:/ });
     await picker.click();
     const key = page.getByLabel("Anthropic API key", { exact: true });
@@ -105,9 +110,122 @@ test("Project Anthropic key entry, replacement and deletion gate the platform co
     expect((await deleted).ok()).toBe(true);
     await expect(page.getByText("Anthropic API key · Not set", { exact: true })).toBeVisible();
     await page.keyboard.press("Escape");
-    await expect(composer).toBeDisabled();
-    await expect(page.getByText("Set your key or connect your local agent", { exact: true })).toBeVisible();
+    await expect(composer).toBeEditable();
+    await expect(page.getByRole("button", { name: "Send", exact: true })).toBeDisabled();
+    await expect(
+      page.getByText("Set this provider's API key in the Agent picker to send. Your draft stays editable.", {
+        exact: true,
+      }),
+    ).toBeVisible();
   } finally {
     await deleteProject(page, projectId);
   }
 });
+
+for (const { invalid, loseResponse } of [
+  { invalid: false, loseResponse: false },
+  { invalid: true, loseResponse: false },
+  { invalid: false, loseResponse: true },
+]) {
+  test(`Start form admits the Project key before the first message${invalid ? " and keeps a failed key draft after reload" : loseResponse ? " and fences a lost response after reload" : ""}`, async ({
+    page,
+  }) => {
+    test.setTimeout(8 * 60_000);
+    if (process.env.SUPERVERSE_E2E_BYOK_FIXTURE !== "true")
+      throw new Error("Requires the real Native credential fixture");
+    await register(page);
+    const teamSpaceId = new URL(page.url()).pathname.split("/")[2];
+    await page.goto(`/t/${teamSpaceId}/projects/start`);
+    await page.getByRole("button", { name: "Model", exact: true }).click();
+    const panel = page.getByRole("dialog", { name: "Choose model" });
+    await panel
+      .getByLabel("Anthropic API key", { exact: true })
+      .fill(invalid ? "synthetic-invalid-start-key" : "synthetic-byok-studio-1234");
+    await panel.getByRole("button", { name: "Use this key for the new Project", exact: true }).click();
+    await panel.getByRole("option", { name: "Claude Haiku 4.5", exact: true }).click();
+    const prompt = "Inspect this process and report readiness.";
+    await page.getByRole("textbox", { name: "Describe a change", exact: true }).fill(prompt);
+    const order: string[] = [];
+    page.on("request", (request) => {
+      const method = new URL(request.url()).pathname.split("/").pop();
+      if (method === "SetModelCredential" || method === "SendMessage") order.push(method);
+    });
+    if (loseResponse)
+      await page.route("**/api/rpc/SendMessage", async (route) => {
+        const admitted = await route.fetch();
+        expect(admitted.ok()).toBe(true);
+        await route.abort("failed");
+      });
+    const created = page.waitForResponse(rpcAnswered("CreateProject"));
+    await page.getByRole("button", { name: "Build", exact: true }).click();
+    const response = await created;
+    expect(response.ok()).toBe(true);
+    const creation = response.request().postDataJSON();
+    expect(creation.initialMessage).toBeUndefined();
+    expect(JSON.stringify(creation)).not.toContain("synthetic-");
+    const projectId = (await response.json()).projectId as string;
+    try {
+      await expect(page).toHaveURL(new RegExp(`/p/${projectId}/flow`));
+      const composer = page.getByRole("textbox", { name: "Message the agent", exact: true });
+      if (invalid) {
+        await expect(page.getByRole("alert").filter({ hasText: /key|credential/i })).toBeVisible({ timeout: 120000 });
+        await expect(composer).toHaveValue(prompt);
+        await expect(composer).toBeEditable();
+        await composer.fill(prompt + " Keep this edit.");
+        await page.reload();
+        await expect(composer).toHaveValue(prompt + " Keep this edit.");
+        await expect(composer).toBeEditable();
+        await expect(page.getByRole("button", { name: "Send", exact: true })).toBeDisabled();
+        expect(order).toEqual(["SetModelCredential"]);
+      } else if (loseResponse) {
+        await expect(
+          page.getByText(
+            "Your first message may already have arrived. Check the conversation before sending it again.",
+            { exact: true },
+          ),
+        ).toBeVisible({ timeout: 120000 });
+        await page.unroute("**/api/rpc/SendMessage");
+        await page.reload();
+        await expect(composer).toHaveValue(prompt);
+        await expect(composer).toBeEditable();
+        await expect(page.getByRole("button", { name: "Send", exact: true })).toBeDisabled();
+        await expect(
+          page.getByRole("button", { name: "I checked the conversation; enable manual sending", exact: true }),
+        ).toBeVisible();
+        expect(order).toEqual(["SetModelCredential", "SendMessage"]);
+      } else {
+        await expect.poll(() => order, { timeout: 120000 }).toEqual(["SetModelCredential", "SendMessage"]);
+        await expect(composer).toHaveValue("");
+        const info = await rpcResult(page.request, "GetModelCredentialInfo", {
+          projectId,
+          provider: "MODEL_PROVIDER_ANTHROPIC",
+        });
+        expect(info.credential?.status).toBe("MODEL_CREDENTIAL_STATUS_ACTIVE");
+      }
+      expect(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).not.toContain(
+        invalid ? "synthetic-invalid-start-key" : "synthetic-byok-studio-1234",
+      );
+    } catch (reason) {
+      await test.info().attach("first-message-admission", {
+        body: JSON.stringify({
+          order,
+          draft: await page
+            .getByRole("textbox", { name: "Message the agent", exact: true })
+            .inputValue()
+            .catch(() => null),
+          sendDisabled: await page
+            .getByRole("button", { name: "Send", exact: true })
+            .isDisabled()
+            .catch(() => null),
+          credential: (
+            await rpcResult(page.request, "GetModelCredentialInfo", { projectId, provider: "MODEL_PROVIDER_ANTHROPIC" })
+          ).credential?.status,
+        }),
+        contentType: "application/json",
+      });
+      throw reason;
+    } finally {
+      await deleteProject(page, projectId);
+    }
+  });
+}
