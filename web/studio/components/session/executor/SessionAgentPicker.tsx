@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { Glyph } from "@/components/ui/Glyph";
 import { PopoverCard, POPOVER_ITEM, usePopover } from "@/components/ui/Popover";
 import { RemoteAgentDialog } from "@/components/session/remoteagent/RemoteAgentDialog";
+import { confirmCredentialSwitch } from "./credential-switch";
 import { ProviderModelPicker } from "./ProviderModelPicker";
 import { setSessionExecutor } from "@/lib/api/agent";
 import { useSingleFlight } from "@/lib/browser/use-single-flight";
@@ -178,7 +179,7 @@ function AgentPickerMenu({
           tabIndex={-1}
           className={`w-80 max-w-[90vw] p-2 ${popover.open ? "" : "hidden"}`}
         >
-          <div className="grid gap-1 text-[12px]">
+          <div className="grid gap-1 text-[12px]" onClickCapture={confirmCredentialSwitch}>
             {remote && (
               <div
                 className="rounded-md bg-accent-wash px-2.25 py-1.75"
@@ -243,6 +244,7 @@ function AgentPickerMenu({
                       type="button"
                       className={POPOVER_ITEM}
                       disabled={action.busy !== null}
+                      data-discard-credential
                       onClick={() => void resumeLocal()}
                     >
                       {action.busy === "local" ? "Switching…" : "Use the local agent"}
@@ -256,6 +258,7 @@ function AgentPickerMenu({
                 <button
                   type="button"
                   className={POPOVER_ITEM}
+                  data-discard-credential
                   onClick={() => {
                     popover.close();
                     setConnect(true);

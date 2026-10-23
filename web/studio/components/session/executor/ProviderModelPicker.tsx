@@ -45,7 +45,7 @@ export function ProviderModelPicker({
     <ProviderModelChoices
       model={model}
       canManage={canManage}
-      disabled={disabled || locked}
+      disabled={disabled}
       credentialLocked={locked}
       onSelect={onSelect}
       catalog={session.modelCatalog}
@@ -110,12 +110,6 @@ export function ProviderModelChoices({
   const mock = catalog.models.find((option) => agentModelView(option.model) === "mock");
   return (
     <>
-      {credentialLocked && (
-        <p role="status" className="px-2.25 text-xs text-ink-faint">
-          Save or discard your key changes before switching provider or model. Wait for any current key action to
-          finish.
-        </p>
-      )}
       <div className="flex flex-wrap gap-1 px-2.25" aria-label="Model providers">
         {groups.map((option) => (
           <button
@@ -158,7 +152,8 @@ export function ProviderModelChoices({
             aria-selected={choiceRole ? model === "mock" : undefined}
             aria-label={mock.label}
             aria-current={model === "mock" ? "page" : undefined}
-            disabled={!canManage || disabled || credentialLocked}
+            data-discard-credential
+            disabled={!canManage || disabled}
             onClick={() => onSelect("mock")}
           >
             {mock.label}

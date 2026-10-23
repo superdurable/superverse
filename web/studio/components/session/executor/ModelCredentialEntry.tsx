@@ -7,7 +7,6 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 "use client";
-
 import { useEffect, useRef, useState } from "react";
 import {
   MOCK_MODEL_API_KEY,
@@ -20,9 +19,8 @@ import { useSessionResource } from "@/lib/session/SessionProvider";
 import type { useModelCredential } from "@/lib/session/credentials/use-model-credential";
 import { CustomEndpointFields, customBudgetError } from "./CustomEndpointFields";
 import type { StartingCredential } from "@/lib/session/credentials/starting-credential";
+import { useCredentialDraft } from "./use-credential-draft";
 import { useSingleFlight } from "@/lib/browser/use-single-flight";
-
-/** A write-only password field and ModelKeyInfo metadata; the saved key is never returned. */
 export function ModelCredentialEntry({
   canManage,
   providerName = "Anthropic",
@@ -50,7 +48,6 @@ export function ModelCredentialEntry({
   const outputField = useRef<HTMLInputElement>(null);
   const contextEdited = useRef(false);
   const hints = useRef(new Map<string, string>());
-  const [dirty, setDirty] = useState(false);
   const [generation, setGeneration] = useState(0);
   const [notice, setNotice] = useState("");
   const [custom, setCustom] = useState(false);
@@ -58,6 +55,7 @@ export function ModelCredentialEntry({
   const [discoveryNote, setDiscoveryNote] = useState("");
   const [editing, setEditing] = useState(false);
   const [confirm, setConfirm] = useState<"replace" | "delete" | null>(null);
+  const { root, dirty, setDirty, clean, update, input, key: readKey } = useCredentialDraft(editing, generation);
   const action = useSingleFlight<"save" | "delete" | "discover">();
   useEffect(() => {
     onLocked?.(dirty || action.busy !== null);
@@ -65,8 +63,8 @@ export function ModelCredentialEntry({
   useEffect(() => () => onLocked?.(false), [onLocked]);
   const credential = chosenCredential ?? session?.credential;
   if (!credential || (!session && !stage)) return null;
-  const projectId = session?.projectId ?? "";
-  const info = credential.info;
+  const projectId = session?.projectId ?? "",
+    info = credential.info;
   const running =
     session?.resource?.agent?.description?.subagents.filter(
       (agent) => !agent.lost && (agent.status === "STATUS_STARTING" || agent.status === "STATUS_RUNNING"),
@@ -82,7 +80,7 @@ export function ModelCredentialEntry({
         return;
       }
     }
-    const key = field.current?.value ?? "";
+    const key = readKey();
     if (stage) {
       if (!key.trim()) {
         action.setError("Enter an API key first.");
@@ -98,7 +96,8 @@ export function ModelCredentialEntry({
           maxOutputTokens: custom ? maxOutputTokens : "0",
         },
       });
-      setDirty(false);
+      if (field.current) field.current.value = "";
+      clean();
       action.setError("");
       setDiscoveryNote("Key ready for the new Project. Build will validate it before sending.");
       return;
@@ -109,7 +108,6 @@ export function ModelCredentialEntry({
     if (!operation) return;
     setNotice("");
     credential.setPending(operation);
-    setEditing(true);
     setConfirm(null);
     void action.run("save", async (signal) => {
       try {
@@ -130,7 +128,7 @@ export function ModelCredentialEntry({
         credential.setInfo(next.credential);
         setNotice(next.noticeMessage);
         if (field.current) field.current.value = "";
-        setDirty(false);
+        clean();
         credential.setPending(null);
         setEditing(false);
       } catch (reason) {
@@ -186,7 +184,7 @@ export function ModelCredentialEntry({
       return;
     }
     const baseUrl = endpointField.current?.value ?? "";
-    const key = field.current?.value ?? "";
+    const key = readKey();
     void action.run("discover", async (signal) => {
       const response = await listModelCredentialModels(
         projectId,
@@ -212,6 +210,7 @@ export function ModelCredentialEntry({
       if (response.modelIds.length === 1 && modelField.current) {
         modelField.current.value = response.modelIds[0];
         applyHint(response.modelIds[0]);
+        update();
       }
       setDiscoveryNote(
         response.modelIds.length > 1
@@ -234,8 +233,12 @@ export function ModelCredentialEntry({
     <div
       key={generation}
       className="my-1 grid gap-2 rounded-md border border-line p-2.25 text-xs"
+      ref={root}
       data-model-credential
-      onChange={() => setDirty(true)}
+      data-credential-dirty={dirty}
+      data-credential-busy={action.busy !== null}
+      onInputCapture={input}
+      onChange={update}
     >
       <p className="font-medium text-ink">
         {custom || info?.baseUrl ? "Custom endpoint API key" : keyHint} ·{" "}
@@ -245,7 +248,7 @@ export function ModelCredentialEntry({
             ? "Pending reconciliation"
             : "Not set"}
       </p>
-      {active && info.baseUrl && <p className="text-ink-faint">Custom endpoint · {info.effectiveModelId}</p>}
+      {active && info.baseUrl && <p>Custom endpoint · {info.effectiveModelId}</p>}
       {active && (info.setBy?.accountId || info.setBy?.email) && (
         <p className="text-ink-faint">
           Set by {info.setBy?.email || "a Builder"}
@@ -257,11 +260,7 @@ export function ModelCredentialEntry({
           ? `This local endpoint accepts the test key ${MOCK_MODEL_API_KEY}. No model charge.`
           : `All Builders of this Project use this key. ${custom || info?.baseUrl ? "Your endpoint’s provider" : providerName} bills your account. Saving tests the key with a small billable request.`}
       </p>
-      {stage && (
-        <p className="text-ink-faint">
-          Kept only in memory until this Project is created. Reloading requires entering the key again.
-        </p>
-      )}
+      {stage && <p>Kept only in memory until this Project is created. Reloading requires entering the key again.</p>}
       {canManage && (!credential.pending || dirty || action.busy !== null) && (
         <>
           {(!active || editing) && (
@@ -271,7 +270,11 @@ export function ModelCredentialEntry({
                 <input
                   ref={field}
                   type="password"
-                  autoComplete="off"
+                  autoComplete="new-password"
+                  name="project-model-token"
+                  data-1p-ignore
+                  data-lpignore="true"
+                  data-form-type="other"
                   spellCheck={false}
                   disabled={action.busy !== null}
                   className="h-8 rounded border border-line bg-panel px-2 text-ink"
@@ -359,8 +362,10 @@ export function ModelCredentialEntry({
           )}
         </>
       )}
+      {dirty && <p role="status">Save or discard your key changes before switching provider or model.</p>}
       {dirty && (
         <button
+          data-discard-key
           type="button"
           disabled={action.busy !== null || !!credential.pending}
           onClick={() => {

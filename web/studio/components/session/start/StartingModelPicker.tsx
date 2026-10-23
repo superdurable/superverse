@@ -23,12 +23,14 @@ import { ModelCredentialEntry } from "@/components/session/executor/ModelCredent
 /** Reuses the composer picker; pre-Project keys stay in the start form's memory. */
 export function StartingModelPicker({
   model,
+  credentialPanelId,
   catalog,
   disabled,
   onSelect,
   onCredential,
   className,
 }: {
+  credentialPanelId: string;
   model: AgentModel | null;
   catalog: ReturnType<typeof useAgentModels>;
   disabled: boolean;
@@ -63,6 +65,7 @@ export function StartingModelPicker({
       </button>
       {(popover.open || opened) && (
         <PopoverCard
+          id={credentialPanelId}
           anchorRef={anchor}
           cardRef={card}
           label="Choose model"
@@ -79,7 +82,7 @@ export function StartingModelPicker({
               onCredential(null);
             }}
             canManage
-            disabled={disabled || locked}
+            disabled={disabled}
             credentialLocked={locked}
             onSelect={(value) => {
               onSelect(value);

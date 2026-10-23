@@ -9,7 +9,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { newRequestId } from "@/lib/api/transport/api-error";
 import {
   hasPendingProjectCreation,
@@ -27,6 +27,7 @@ import { studioRoutes } from "@/lib/shared/studio-routes";
 import { Composer } from "@/components/session/composer/Composer";
 import { AttachmentDropZone } from "@/components/session/composer/attachments/AttachmentDropZone";
 import { MockComposer } from "@/components/session/mock/MockComposer";
+import { confirmCredentialSwitch } from "@/components/session/executor/credential-switch";
 import { StartingModelPicker } from "@/components/session/start/StartingModelPicker";
 import { useAgentModels, usesMockEndpoint } from "@/lib/session/model/agent-model-catalog";
 import { agentModelView, agentModelInput, agentModelProvider } from "@/lib/session/model/agent-model";
@@ -62,6 +63,7 @@ const READING_MODELS = "Reading the model options…";
  */
 export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
   const router = useRouter();
+  const credentialPanelId = useId();
   const mockScenarios = useMockScenarios();
   const [description, setDescription] = useState("");
   const [picked, setPicked] = useState<ProcessTemplate | null>(null);
@@ -179,7 +181,11 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
           when something goes wrong.
         </p>
         {formError && <Banner className="mt-4">{formError}</Banner>}
-        <fieldset className="mt-6 rounded-lg border border-line-soft bg-panel p-3">
+        <fieldset
+          className="mt-6 rounded-lg border border-line-soft bg-panel p-3"
+          aria-controls={credentialPanelId}
+          onClickCapture={confirmCredentialSwitch}
+        >
           <legend className="px-1 text-body font-medium text-ink">Agent</legend>
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-line-soft p-3 text-reading text-ink-dim has-checked:border-accent-rule has-checked:bg-accent-wash">
@@ -212,6 +218,7 @@ export function ProjectStartForm({ teamSpaceId }: { teamSpaceId: string }) {
           </div>
           {executor === PROJECT_EXECUTOR.SUPERVERSE && (
             <StartingModelPicker
+              credentialPanelId={credentialPanelId}
               className="mt-3 rounded-lg border border-line-soft"
               model={model}
               catalog={catalog}

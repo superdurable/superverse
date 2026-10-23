@@ -3,15 +3,16 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: Shows the composer's Agent picker, SQL-derived remote liveness, offline notice, pairing entry and epoch-fenced return to Superverse.
 
-Importers: `components/session` and `components/session/start` import this directory.
+Importers: `components/project`, `components/session` and `components/session/start` import this directory.
 
 Imports: it imports `components/session/remoteagent`, `components/ui`, `lib/api`, `lib/browser`, `lib/session`, `lib/session/credentials`, `lib/session/model` and `lib/shared`.
 
 ```mermaid
 flowchart LR
   self["components/session/executor"]
-  c0["components/session"] --> self
-  c1["components/session/start"] --> self
+  c0["components/project"] --> self
+  c1["components/session"] --> self
+  c2["components/session/start"] --> self
   self --> d0["components/session/remoteagent"]
   self --> d1["components/ui"]
   self --> d2["lib/api"]
