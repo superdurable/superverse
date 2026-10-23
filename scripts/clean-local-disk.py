@@ -11,8 +11,9 @@
 
 Every rule names what it removes, the condition and the protection; there is no judgement per run. Rules, in order:
 
-1. Git worktrees of this repository that are clean, whose work reached origin/main (or whose PR is merged or closed)
-   and that no process uses: `git worktree remove`.
+1. Git worktrees of this repository under /tmp (scratchpads included) or `.claude/worktrees` that are clean, whose
+   work reached origin/main (or whose PR is merged or closed), idle for 6 hours and that no process uses:
+   `git worktree remove`. The branch stays.
 2. Orca worktrees of this repository that are clean, whose branch's PR is merged, that Orca has not used and nothing
    changed for 24 hours, that are not pinned and that no process uses: `orca worktree rm`, so Orca forgets them too.
    Nothing else in an Orca worktree is touched.
@@ -61,7 +62,8 @@ REPORT_BYTES = 100 * 1024 ** 2  # smaller removals are counted in the summary on
 GO_CACHE_LIMIT_BYTES = 30 * GIB
 GO_CACHE_UNUSED_HOURS = 24  # Go touches a cache file when it uses it, so the modification time is the last use
 # The repository's Makefile builds and tests with this cache (GOCACHE ?= /tmp/superverse-v2-go-cache).
-LANE_GO_CACHES = (Path(tempfile.gettempdir()) / "superverse-v2-go-cache", Path(tempfile.gettempdir()) / "superversev2-go-cache")
+# The Makefile names /tmp itself, which is not tempfile.gettempdir() on macOS (TMPDIR is under /var/folders).
+LANE_GO_CACHES = (Path("/tmp/superverse-v2-go-cache"), Path("/tmp/superversev2-go-cache"))
 NPM_CACHE_LIMIT_BYTES = 5 * GIB
 
 # Age limits in hours; `LOW_DISK_AGE_HOURS` replaces all of them below the low-disk threshold.
@@ -83,8 +85,11 @@ PLAYWRIGHT_ORPHAN_HOURS = 1
 BROWSER_EXECUTABLE = re.compile(r"(Chrom(e|ium)[^/]*|chrome-headless-shell)$")
 
 REGENERABLE_DIRECTORIES = ("web/studio/node_modules", "web/studio/.next")
-SCRATCH_ROOT = Path(tempfile.gettempdir()) / f"claude-{os.getuid()}"
-REMOVABLE_WORKTREE_ROOTS = (SCRATCH_ROOT, HOME / "Documents" / "superdurable" / "superversev2" / ".claude" / "worktrees")
+# Claude's scratchpads and the hand-made worktrees live in /tmp itself, which is not tempfile.gettempdir() on macOS; Git
+# lists them under the resolved /private/tmp.
+SHARED_TEMPORARY = Path("/tmp").resolve()
+SCRATCH_ROOT = SHARED_TEMPORARY / f"claude-{os.getuid()}"
+REMOVABLE_WORKTREE_ROOTS = (SHARED_TEMPORARY, HOME / "Documents" / "superdurable" / "superversev2" / ".claude" / "worktrees")
 TEMPORARY_ROOT = Path(tempfile.gettempdir())
 TEMPORARY_PATTERN = re.compile(r"^sv2-[\w.-]+$")
 # Orca runs its workers here and a worktree can look idle between steps: only a merged, long-idle one is removed, by Orca.
