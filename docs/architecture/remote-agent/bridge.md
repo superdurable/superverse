@@ -38,8 +38,8 @@ and offline until a Builder reconnects or explicitly switches in Studio.
 
 `dexai status` enumerates endpoint, Project and connection identity. A targeted
 `dexai disconnect --connection <id>` removes only the selected connection.
-Legacy flat direct bindings remain resumable through `dexai serve`; new connects
-use their own foreground lifecycle. Failed cleanup retains enough private state
+Only isolated per-connection state is discovered; foreground connections do not
+resume after exit. Pair again to reconnect. Failed cleanup retains enough private state
 for explicit disconnect instead of releasing the slot while its credential may
 remain usable. Agent history retention belongs to the local provider.
 

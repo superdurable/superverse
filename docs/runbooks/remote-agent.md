@@ -106,8 +106,8 @@ retrying forever; no token is printed.
 
 Normal exit deletes its private directory after revocation; failed cleanup keeps
 an offline record for disconnect to finish. At most eight connections share a
-state root, including retained records. `dexai serve` resumes only legacy flat
-bindings; new foreground connections do not resume after exit.
+state root, including retained records. Foreground connections use isolated
+per-connection state and do not resume after exit; pair again to reconnect.
 For Claude Code on macOS, dexai checks installation and sign-in first and offers
 setup when needed. It runs headless while Studio remains the conversation
 surface. The pairing dialog and creation card link to `/help/local-agent` for
