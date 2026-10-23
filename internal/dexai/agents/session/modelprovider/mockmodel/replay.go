@@ -44,6 +44,12 @@ func followMessagesReplay(messages []requestMessage, model conversation.Model, c
 	if err != nil {
 		return selection{}, err
 	}
+	if compaction && model != "" && modelprovider.ProfileOf(model).Capabilities.Replay == conversation.ReplayEncryptedOpaque {
+		messages, err = compactionHistory(messages)
+		if err != nil {
+			return selection{}, err
+		}
+	}
 	return walk(messages, func(message requestMessage, sel selection) error {
 		expected, err := sel.nextReply()
 		if err != nil {
@@ -300,7 +306,7 @@ func compactionHistory(messages []requestMessage) ([]requestMessage, error) {
 			if json.Unmarshal(raw, &header) != nil {
 				return nil, fmt.Errorf("invalid compaction history")
 			}
-			if header.Type == "mock_reasoning" || header.Type == "mock_signature" || conversation.IsOpaqueReplay(raw) || strings.Contains(string(raw), "mock-encrypted-") {
+			if header.Type == "mock_reasoning" || header.Type == "mock_signature" || header.Type == conversation.BlockTypeThinking.String() || header.Type == conversation.BlockTypeRedactedThinking.String() || conversation.IsOpaqueReplay(raw) || strings.Contains(string(raw), "mock-encrypted-") {
 				return nil, fmt.Errorf("compaction history contains private replay")
 			}
 			if text, found := strings.CutPrefix(header.Text, conversation.RecordedToolHistoryPrefix); found {
@@ -409,7 +415,7 @@ func (request messagesRequest) validateMessagesProfile(r *http.Request, body []b
 		want = `{"type":"adaptive","display":"omitted"}`
 	}
 	var maxTokens int64
-	if json.Unmarshal(fields["max_tokens"], &maxTokens) != nil || maxTokens != modelprovider.ProfileOf(model).MaximumOutputTokens() {
+	if json.Unmarshal(fields["max_tokens"], &maxTokens) != nil || (request.Stream && maxTokens != modelprovider.ProfileOf(model).MaximumOutputTokens() || !request.Stream && maxTokens != 64) {
 		return errors.New("compatible request has the wrong output budget")
 	}
 	allowed[control] = true

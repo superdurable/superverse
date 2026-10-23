@@ -35,7 +35,7 @@ func NewMessagesClientForTest(client *http.Client) *MessagesClientForTest {
 	return newMessagesClient(client, slog.Default())
 }
 func CompleteMessagesKeyForTest(ctx context.Context, client *MessagesClientForTest, request conversation.ModelRequest, key string) (conversation.ModelReply, error) {
-	return client.completeWithKey(ctx, request, key)
+	return client.complete(ctx, request, key, request.Model.Details().Provider.BaseURL(), false)
 }
 
 // NewProviderHTTPClientForTest is the model provider transport. Redirects are refused

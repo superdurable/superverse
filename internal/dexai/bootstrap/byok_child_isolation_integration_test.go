@@ -10,8 +10,11 @@ package bootstrap
 
 import (
 	"context"
+	"fmt"
+	"google.golang.org/grpc/status"
 	"reflect"
 	"testing"
+	"time"
 
 	pb "github.com/superdurable/superversev2/gen/superverse/v2"
 	"github.com/superdurable/superversev2/internal/comm/dexflow/dexflowtest"
@@ -23,19 +26,20 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/mockmodel"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/subagent"
+	"github.com/superdurable/superversev2/internal/dexai/api/boundary"
 )
 
 // Real start_agent calls create provider-B worktrees and child model/tool calls.
 // Provider A mutates while those B children execute actual Sandbox commands.
-func exerciseBYOKChildIsolation(t *testing.T, ctx context.Context, sessions *sessionagent.SessionAgentFlowClient, children *subagent.SubagentFlowClient, api pb.ModelCredentialServiceClient, agent pb.AgentServiceClient, project string, caller *pb.CallerContext, key string, probe *mockmodel.CredentialProbeForTest, wait func(string, func() bool)) agenttasks.SubagentIdentity {
+func exerciseBYOKChildIsolation(t *testing.T, ctx context.Context, sessions *sessionagent.SessionAgentFlowClient, children *subagent.SubagentFlowClient, api pb.ModelCredentialServiceClient, agent pb.AgentServiceClient, project string, caller *pb.CallerContext, key string, probe *mockmodel.CredentialProbeForTest, model conversation.Model, wait func(string, func() bool)) agenttasks.SubagentIdentity {
 	t.Helper()
 	owner := agentloop.SessionFlowID(project)
-	provider := modelcredential.ForModel(conversation.ModelGPT6Astra)
+	provider := modelcredential.ForModel(model)
 	snapshot := func() agentloop.AgentDescription {
 		t.Helper()
 		got, err := sessions.GetSnapshot(ctx, owner)
 		if err != nil || got.Agent == nil {
-			t.Fatalf("read actual isolation Session snapshot (%s; agent present=%t)", dexflowtest.ErrorCategory(err), got.Agent != nil)
+			t.Fatalf("read actual isolation Session snapshot (%s; grpc=%s; agent present=%t)", dexflowtest.ErrorCategory(err), status.Code(err), got.Agent != nil)
 		}
 		return got.Agent.Description
 	}
@@ -50,7 +54,7 @@ func exerciseBYOKChildIsolation(t *testing.T, ctx context.Context, sessions *ses
 	saveB := func() {
 		t.Helper()
 		revision := info().Revision
-		if _, err := api.SetModelCredential(ctx, &pb.SetModelCredentialRequest{ProjectId: project, Provider: pb.ModelProvider_MODEL_PROVIDER_OPENAI, RequestId: flowid.RandomID(20), ExpectedRevision: &revision, ApiKey: mockmodel.APIKeyForTest, Caller: caller}); err != nil {
+		if _, err := api.SetModelCredential(ctx, &pb.SetModelCredentialRequest{ProjectId: project, Provider: boundary.Enum[pb.ModelProvider](provider.String()), RequestId: flowid.RandomID(20), ExpectedRevision: &revision, ApiKey: mockmodel.APIKeyForTest, Caller: caller}); err != nil {
 			t.Fatal("save B key through actual mock inference admission")
 		}
 	}
@@ -70,25 +74,48 @@ func exerciseBYOKChildIsolation(t *testing.T, ctx context.Context, sessions *ses
 	live := func(count int) []agenttasks.SubagentIdentity {
 		t.Helper()
 		var found []agenttasks.SubagentIdentity
+		var logged time.Time
 		wait("live provider B child model and Sandbox tool execution", func() bool {
 			found = nil
+			var progress []string
 			for _, record := range snapshot().Subagents {
-				if record.Model != conversation.ModelGPT6Astra || record.Status.Finished() {
+				if record.Model != model || record.Status.Finished() {
+					progress = append(progress, fmt.Sprintf("%s record=%s model=%s", record.AgentID, record.Status, record.Model))
 					continue
 				}
 				id := agenttasks.SubagentIdentity{ProjectID: project, AgentID: record.AgentID}
 				child, err := children.SnapshotForTest(ctx, id)
 				copy, copyErr := children.ReadModelCredential(ctx, id)
-				if err == nil && child.Config != nil && child.Config.Model == conversation.ModelGPT6Astra && child.LastSequence >= 3 && child.Outcome == nil && copyErr == nil && copy != nil && copy.Revision == info().Revision && copy.Key == mockmodel.APIKeyForTest {
+				matchesModel := child.Config != nil && child.Config.Model == model
+				keyMatches := copy != nil && copy.Key == mockmodel.APIKeyForTest
+				progress = append(progress, fmt.Sprintf("%s record=%s sequence=%d outcome=%t model_match=%t key_match=%t state_error=%s copy_error=%s", record.AgentID, record.Status, child.LastSequence, child.Outcome != nil, matchesModel, keyMatches, dexflowtest.ErrorCategory(err), dexflowtest.ErrorCategory(copyErr)))
+				if err == nil && child.Config != nil && child.Config.Model == model && child.LastSequence >= 3 && child.Outcome == nil && copyErr == nil && copy != nil && copy.Revision == info().Revision && copy.Key == mockmodel.APIKeyForTest {
 					found = append(found, id)
 				}
+			}
+			if time.Since(logged) >= 30*time.Second {
+				t.Logf("Provider %s live-child progress: ready=%d expected=%d %v", provider.String(), len(found), count, progress)
+				logged = time.Now()
 			}
 			return len(found) == count
 		})
 		return found
 	}
+	choices, err := agent.ListAgentModels(ctx, &pb.ListAgentModelsRequest{Caller: caller})
+	if err != nil {
+		t.Fatal("read configured isolation models")
+	}
+	var selected pb.AgentModel
+	for _, choice := range choices.GetModels() {
+		if choice.GetLabel() == model.Details().Label {
+			selected = choice.GetModel()
+		}
+	}
+	if selected == pb.AgentModel_AGENT_MODEL_UNSPECIFIED {
+		t.Fatal("isolation model unavailable")
+	}
 	saveB()
-	choose(pb.AgentModel_AGENT_MODEL_GPT_6_ASTRA)
+	choose(selected)
 	firstTurn := snapshot().Turn
 	send(1)
 	first := live(agenttasks.MaximumRunningSubagents)
@@ -129,8 +156,8 @@ func exerciseBYOKChildIsolation(t *testing.T, ctx context.Context, sessions *ses
 		t.Fatal("no in-flight A context for provider fence")
 	}
 	revision = info().Revision
-	if _, err := api.DeleteModelCredential(ctx, &pb.DeleteModelCredentialRequest{ProjectId: project, Provider: pb.ModelProvider_MODEL_PROVIDER_OPENAI, RequestId: flowid.RandomID(20), ExpectedRevision: &revision, Caller: caller}); err != nil {
-		t.Fatal("delete B key through actual API")
+	if _, err := api.DeleteModelCredential(ctx, &pb.DeleteModelCredentialRequest{ProjectId: project, Provider: boundary.Enum[pb.ModelProvider](provider.String()), RequestId: flowid.RandomID(20), ExpectedRevision: &revision, Caller: caller}); err != nil {
+		t.Fatalf("delete B key through actual API (%s)", status.Code(err))
 	}
 	wait("live B child stops reach retained records", func() bool {
 		for _, record := range snapshot().Subagents {
@@ -150,10 +177,10 @@ func exerciseBYOKChildIsolation(t *testing.T, ctx context.Context, sessions *ses
 	release()
 	wait("A request completed after unrelated B deletion", func() bool { return snapshot().Status == agentloop.AgentStatusWaitingForMessage })
 	saveB()
-	choose(pb.AgentModel_AGENT_MODEL_GPT_6_ASTRA)
+	choose(selected)
 	send(3)
 	retained := live(1)
-	t.Log("Live OpenAI child model/tool execution: A mutation preserves B holder, record and key copy; B deletion stops and clears them while in-flight A context stays unchanged")
+	t.Log("Live compatible-provider child model/tool execution: A mutation preserves B holder, record and key copy; B deletion stops and clears them while in-flight A context stays unchanged")
 	return retained[0]
 }
 

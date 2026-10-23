@@ -142,7 +142,7 @@ func subagentNotification(t *testing.T, messages []conversation.SequencedMessage
 // the agent ID. A repeated start of the closed execution joins it, and the
 // Session denies a late admission.
 func TestSessionMockSubagentInvestigateDexIntegration(t *testing.T) {
-	for _, model := range []conversation.Model{conversation.ModelMock, conversation.ModelMockResponses, conversation.ModelMockChat, conversation.ModelGPT6Astra, conversation.ModelGrok47, conversation.ModelGemini4Argon} {
+	for _, model := range []conversation.Model{conversation.ModelMock, conversation.ModelMockResponses, conversation.ModelMockChat, conversation.ModelDeepSeekFlash, conversation.ModelMiniMaxM3, conversation.ModelMuseWonder10, conversation.ModelGPT6Astra, conversation.ModelGrok47, conversation.ModelGemini4Argon} {
 		t.Run(string(model), func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
 			defer cancel()
@@ -206,7 +206,7 @@ func TestSessionMockSubagentInvestigateDexIntegration(t *testing.T) {
 			for _, fingerprint := range []string{record.Fingerprint, "another call"} {
 				admission := agenttasks.SubagentAdmission{AgentID: record.AgentID, Fingerprint: fingerprint, BaseCommit: record.BaseCommit}
 				if answer, err := session.client.AdmitSubagent(ctx, session.id, admission); err != nil || answer.Admitted || answer.Stopped {
-					t.Fatalf("the Session admitted a finished subagent again (%+v, %T)", answer, err)
+					t.Fatalf("the Session admitted a finished subagent again (%+v, %s)", answer, dexflowtest.ErrorCategory(err))
 				}
 			}
 			t.Logf("FlowID=%s started subagent %s, which reported and completed", session.id, identity.FlowID())

@@ -30,7 +30,7 @@ import (
 // TestCompatibleSessionReplayDexIntegration drives both real wire adapters through
 // the existing Worker, real parallel Sandbox reads, archive movement and compaction.
 func TestCompatibleSessionReplayDexIntegration(t *testing.T) {
-	for _, model := range []conversation.Model{conversation.ModelMockResponses, conversation.ModelMockChat, conversation.ModelGPT6Astra, conversation.ModelGrok47, conversation.ModelGemini4Argon} {
+	for _, model := range []conversation.Model{conversation.ModelMockResponses, conversation.ModelMockChat, conversation.ModelMuseWonder10, conversation.ModelGPT6Astra, conversation.ModelGrok47, conversation.ModelGemini4Argon} {
 		t.Run(string(model), func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(t.Context(), 12*time.Minute)
 			defer cancel()
@@ -74,17 +74,23 @@ func TestCompatibleSessionReplayDexIntegration(t *testing.T) {
 			})
 			requireNoFailure(t, second.History)
 			compatiblePublicProjection(t, second)
-			compacted := false
+			var segmentStart conversation.Sequence
 			for _, message := range second.History.Messages {
-				compacted = compacted || message.Sequence > first.Description.LastSequence && message.Message.Content == agentloop.SegmentMarker(agentloop.SegmentReasonCompaction)
+				if message.Sequence > first.Description.LastSequence && message.Message.Content == agentloop.SegmentMarker(agentloop.SegmentReasonCompaction) {
+					segmentStart = message.Sequence
+				}
 			}
-			if !compacted {
+			if segmentStart == 0 {
 				t.Fatal("compatible history did not compact into a new segment")
 			}
 			for _, item := range compatibleCanonicalEntries(ctx, t, session) {
+				// A new Messages reply can already hold its own valid opaque replay.
+				if item.Sequence >= segmentStart {
+					continue
+				}
 				for _, block := range item.Entry.Blocks {
 					if conversation.IsOpaqueReplay(block) {
-						t.Fatal("closed segment retained opaque replay")
+						t.Fatalf("closed segment entry %d retained opaque replay before segment %d", item.Sequence, segmentStart)
 					}
 				}
 			}
@@ -259,4 +265,28 @@ func compatibleCanonicalEntries(ctx context.Context, t *testing.T, session *mock
 		}
 	}
 	return result
+}
+
+// Every enabled Messages profile executes actual Sandbox tools through its Project credential.
+func TestMessagesProviderSessionToolsDexIntegration(t *testing.T) {
+	for _, model := range []conversation.Model{conversation.ModelDeepSeekFlash, conversation.ModelMiniMaxM3, conversation.ModelMuseWonder10} {
+		t.Run(string(model), func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout)
+			defer cancel()
+			session := newSelectableSession(t, ctx, model, mockInput(t, "inspect-basic", 1).Content)
+			snapshot := session.finishedTurn(ctx)
+			requireNoFailure(t, snapshot.History)
+			if snapshot.Description.ContextModel != model {
+				t.Fatal("Messages profile did not own the tool loop")
+			}
+			_, messages := session.history(ctx)
+			for _, tool := range []conversation.ToolName{conversation.ToolGlob, conversation.ToolRead, conversation.ToolGrep, conversation.ToolBash, conversation.ToolWriteTodos} {
+				if toolResult(t, messages, tool, 0).Outcome != conversation.ToolOutcomeSucceeded {
+					t.Fatal("Messages Sandbox tool did not succeed", tool)
+				}
+			}
+			compatiblePublicProjection(t, snapshot)
+			t.Logf("FlowID=%s model=%s completed actual Sandbox tool loop", session.id, model)
+		})
+	}
 }

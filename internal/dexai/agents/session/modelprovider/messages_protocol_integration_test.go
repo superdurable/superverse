@@ -185,7 +185,7 @@ func TestCompatibleMessagesProtocolDexIntegration(t *testing.T) {
 			request = messagesRequest(t, model, "model-failure")
 			_, err = harness.complete(t, t.Context(), request, false)
 			rejected, ok := errors.AsType[*conversation.ModelRejectedError](err)
-			if !ok || rejected.Status != 400 || rejected.Detail != "" {
+			if !ok || rejected.Status != 400 || rejected.Code != conversation.ProviderRequestRejected.Rejected(400).Code || rejected.Detail != "" {
 				t.Fatalf("unsafe 400 classification: %v", err)
 			}
 			if modelprovider.ProfileOf(model).Availability.Selectable() {
@@ -395,6 +395,9 @@ func TestCompatibleMessagesCompactionDexIntegration(t *testing.T) {
 			}
 			entry := conversation.ModelReplyEntry(reply, nil, time.Now())
 			public := entry.WithoutOpaqueReplay()
+			if modelprovider.ProfileOf(model).Capabilities.Replay == conversation.ReplayEncryptedOpaque {
+				public = entry.WithoutProtocolHistory()
+			}
 			changed := len(public.Blocks) != len(entry.Blocks)
 			if changed != (model == conversation.ModelMuseWonder10) {
 				t.Fatal("wrong replay lifecycle policy")
@@ -406,6 +409,9 @@ func TestCompatibleMessagesCompactionDexIntegration(t *testing.T) {
 			results := []json.RawMessage{}
 			for _, call := range reply.ToolCalls {
 				results = append(results, conversation.ToolResultBlock(call.ID, "protocol result", false))
+			}
+			if modelprovider.ProfileOf(model).Capabilities.Replay == conversation.ReplayEncryptedOpaque {
+				results = (conversation.Entry{Blocks: results}).WithoutProtocolHistory().Blocks
 			}
 			results = append(results, conversation.NoticeEntry(conversation.EntryRoleUser, conversation.CompactionInstruction, "").Blocks...)
 			request.Messages = append(request.Messages, conversation.RequestMessage{Role: conversation.EntryRoleUser, Blocks: results, CacheAnchor: -1})

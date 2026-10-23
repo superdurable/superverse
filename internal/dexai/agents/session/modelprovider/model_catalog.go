@@ -119,6 +119,7 @@ func populateCandidateProfiles() {
 	// Earlier models with documented non-thinking paths remain unavailable pending protocol verification.
 	profiles[conversation.ModelKimiK26] = candidate(conversation.ModelKimiK26, 262_144, 16_000, 160_000, 210_000, conversation.ReplayNonThinking, true, "https://platform.kimi.ai/docs/api/chat", adapterBYOKPending)
 	profiles[conversation.ModelGLM52] = candidate(conversation.ModelGLM52, 1_000_000, 64_000, 650_000, 800_000, conversation.ReplayNonThinking, false, "https://docs.bigmodel.cn/cn/guide/models/text/glm-5.2", adapterBYOKPending)
+	// Messages uses 4096 as an example, not a ceiling; confirm this budget by live smoke before hosted enablement.
 	profiles[conversation.ModelMiniMaxM3] = candidate(conversation.ModelMiniMaxM3, 1_000_000, 4_096, 650_000, 800_000, conversation.ReplayNonThinking, true, "https://platform.minimax.io/docs/api-reference/text-anthropic-api", messagesBYOKPending)
 	// Checked 2026-10-22: https://developers.openai.com/api/docs/models/gpt-6-astra; flagship, 1,050,000 context / 128,000 output.
 	profiles[conversation.ModelGPT6Astra] = candidate(conversation.ModelGPT6Astra, 1_050_000, 64_000, 700_000, 850_000, conversation.ReplayEncryptedOpaque, true, "https://developers.openai.com/api/docs/models/gpt-6-astra", adapterBYOKPending)
@@ -126,8 +127,8 @@ func populateCandidateProfiles() {
 	profiles[conversation.ModelDeepSeekFlash] = candidate(conversation.ModelDeepSeekFlash, 1_000_000, 64_000, 650_000, 800_000, conversation.ReplayNonThinking, true, "https://api-docs.deepseek.com/quick_start/pricing/", messagesBYOKPending)
 	// Checked 2026-10-22: https://docs.x.ai/developers/grok-4-7 (updated 2026-10-10); flagship, 500,000 context.
 	profiles[conversation.ModelGrok47] = candidate(conversation.ModelGrok47, 500_000, 32_000, 300_000, 400_000, conversation.ReplayEncryptedOpaque, true, "https://docs.x.ai/developers/grok-4-7", adapterBYOKPending)
-	// Official context: 1,048,576. Messages documents max_tokens=1024 for Spark; Wonder output verification is pending; larger output remains unverified.
-	profiles[conversation.ModelMuseWonder10] = candidate(conversation.ModelMuseWonder10, 1_048_576, 1_024, 650_000, 800_000, conversation.ReplayEncryptedOpaque, true, "https://dev.meta.ai/docs/models", "Wonder encrypted replay and output limit live verification, and Session API keys are pending.")
+	// Official maximum unspecified; the 32,000 output budget must be confirmed by the live smoke before hosted enablement.
+	profiles[conversation.ModelMuseWonder10] = candidate(conversation.ModelMuseWonder10, 1_048_576, 32_000, 650_000, 800_000, conversation.ReplayEncryptedOpaque, true, "https://dev.meta.ai/docs/models", "Wonder encrypted replay and output limit live verification, and Session API keys are pending.")
 	// Checked 2026-10-22: https://ai.google.dev/gemini-api/docs/models/gemini-4-argon (updated 2026-10-14); flagship, 1,048,576 context.
 	profiles[conversation.ModelGemini4Argon] = candidate(conversation.ModelGemini4Argon, 1_048_576, 32_000, 650_000, 800_000, conversation.ReplayEncryptedOpaque, true, "https://ai.google.dev/gemini-api/docs/models/gemini-4-argon", adapterBYOKPending)
 	for _, model := range CompatibleModels() {
@@ -143,7 +144,7 @@ func populateCandidateProfiles() {
 	profiles[conversation.ModelGLM53] = candidate(conversation.ModelGLM53, 1_000_000, 64_000, 650_000, 800_000, conversation.ReplayPlaintextRequired, false, "https://docs.bigmodel.cn/cn/guide/models/text/glm-5.3", "GLM 5.3 requires thinking; no approved opaque replay or non-thinking path exists.")
 	// Official limits: 1,000,000 context / 131,072 output. Region/workspace admission is not implemented.
 	profiles[conversation.ModelQwen38Max] = candidate(conversation.ModelQwen38Max, 1_000_000, 64_000, 650_000, 800_000, conversation.ReplayNonThinking, true, "https://help.aliyun.com/en/model-studio/qwen3-8-max", "Chat adapter, non-thinking verification, regional endpoint admission and Session API keys are pending.")
-	// Official context: 1,000,000. The official request example uses 4096 output tokens.
+	// Official context: 1,000,000. Messages uses 4096 as an example, not a ceiling; confirm the budget by live smoke before hosted enablement.
 	profiles[conversation.ModelMiniMaxM31Flash] = candidate(conversation.ModelMiniMaxM31Flash, 1_000_000, 4_096, 650_000, 800_000, conversation.ReplayPlaintextRequired, true, "https://platform.minimax.io/docs/api-reference/text-anthropic-api", "MiniMax M3.1 Flash requires readable thinking replay and rejects disabled thinking; no compliant replay path exists.")
 }
 
@@ -202,9 +203,12 @@ func (config ProviderConfig) Availability(model conversation.Model) ModelAvailab
 
 // compatibleFlagships owns the enabled-provider to reviewed flagship mapping.
 var compatibleFlagships = map[conversation.Provider]conversation.Model{
-	conversation.ProviderOpenAI: conversation.ModelGPT6Astra,
-	conversation.ProviderXAI:    conversation.ModelGrok47,
-	conversation.ProviderGemini: conversation.ModelGemini4Argon,
+	conversation.ProviderDeepSeek: conversation.ModelDeepSeekFlash,
+	conversation.ProviderMiniMax:  conversation.ModelMiniMaxM3,
+	conversation.ProviderMeta:     conversation.ModelMuseWonder10,
+	conversation.ProviderOpenAI:   conversation.ModelGPT6Astra,
+	conversation.ProviderXAI:      conversation.ModelGrok47,
+	conversation.ProviderGemini:   conversation.ModelGemini4Argon,
 }
 
 // CompatibleModels returns implemented provider flagships in stable catalog order.

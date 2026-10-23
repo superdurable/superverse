@@ -48,12 +48,6 @@ func newMessagesClient(httpClient *http.Client, logger *slog.Logger) *messagesCl
 	return &messagesClient{httpClient: httpClient, logger: logger, slots: make(chan struct{}, maximumMessagesCalls)}
 }
 
-// completeWithKey is the credential injection boundary for BYOK. Availability
-// and Session authorization remain the router's responsibility.
-func (client *messagesClient) completeWithKey(ctx context.Context, request conversation.ModelRequest, key string) (conversation.ModelReply, error) {
-	return client.complete(ctx, request, key, request.Model.Details().Provider.BaseURL(), false)
-}
-
 func (client *messagesClient) complete(ctx context.Context, request conversation.ModelRequest, key, baseURL string, mock bool) (reply conversation.ModelReply, err error) {
 	defer func() {
 		if rejected, ok := errors.AsType[*conversation.ModelRejectedError](err); ok {
@@ -237,4 +231,33 @@ func classifyMessagesError(err error) error {
 	}
 	// No wrapped transport error: net/url errors can contain secret URL data.
 	return errors.New("model provider stream or transport failed")
+}
+
+// validateCredential shares the bounded inference admission, thinking policy and provider authentication.
+func (client *messagesClient) validateCredential(ctx context.Context, key string, model conversation.Model, base string) error {
+	select {
+	case client.slots <- struct{}{}:
+		defer func() { <-client.slots }()
+	default:
+		return errMessagesCapacity
+	}
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	params, err := compatibleMessageParams(ProfileOf(model), conversation.ModelRequest{Model: model,
+		Messages: []conversation.RequestMessage{{Role: conversation.EntryRoleUser, Blocks: []json.RawMessage{comm.Must(json.Marshal(map[string]string{"type": "text", "text": "Reply OK."}))}}}})
+	if err != nil {
+		return err
+	}
+	options := []option.RequestOption{option.WithoutEnvironmentDefaults(), option.WithHTTPClient(client.httpClient), option.WithMaxRetries(0), option.WithBaseURL(base), option.WithJSONSet("max_tokens", 64)}
+	if model.Details().Provider == conversation.ProviderMeta {
+		options = append(options, option.WithAuthToken(key))
+	} else {
+		options = append(options, option.WithAPIKey(key))
+	}
+	sdk := anthropic.NewClient(options...)
+	_, err = sdk.Beta.Messages.New(ctx, params)
+	if err != nil {
+		return classifyMessagesError(err)
+	}
+	return nil
 }

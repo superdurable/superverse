@@ -25,8 +25,7 @@ import (
 // uses the in-process mock Claude API. A segment stays on one selected model.
 type ModelRouter struct {
 	// claude uses the key of each admitted Session request.
-	claude   *claudeClient
-	messages *messagesClient
+	claude *claudeClient
 	// mock is nil when the server configuration does not offer the mock model.
 	mock       map[conversation.APIStyle]conversation.ModelClient
 	compatible *CompatibleProviders
@@ -54,7 +53,6 @@ func NewModelRouter(claude ClaudeClientConfig, mock *MockClientConfig, logger *s
 	if err != nil {
 		return nil, err
 	}
-	router.messages = newMessagesClient(httpClient, logger)
 	if router.claude, err = newClaudeClient(httpClient, ClaudeClientConfig{BaseURL: claude.BaseURL}, logger); err != nil {
 		return nil, err
 	}
@@ -134,8 +132,7 @@ func (router *ModelRouter) Complete(ctx context.Context, request conversation.Mo
 		if request.Model.Details().Provider == conversation.ProviderAnthropic && router.claude != nil {
 			return router.claude.Complete(ctx, request)
 		}
-		// BYOK will supply a request-local key here; no platform key is borrowed.
-		return router.messages.completeWithKey(ctx, request, "")
+		return router.compatible.Complete(ctx, request)
 	case conversation.OpenAIResponses, conversation.OpenAIChatCompletions:
 		return router.compatible.Complete(ctx, request)
 	default:

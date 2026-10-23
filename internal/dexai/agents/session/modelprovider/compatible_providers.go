@@ -23,6 +23,7 @@ import (
 // credential admission. It holds bounded connections and no keys or Flow state.
 type CompatibleProviders struct {
 	messagesBase string
+	mockBase     string
 	config       ProviderConfig
 	logger       *slog.Logger
 	messages     *messagesClient
@@ -34,7 +35,7 @@ type CompatibleProviders struct {
 // scenario endpoint. Every official or local origin uses the same DNS-safe pool.
 func NewCompatibleProviders(ctx context.Context, config ProviderConfig, endpoints modelendpoint.Config, mockURL string, logger *slog.Logger, messagesBase string) (*CompatibleProviders, error) {
 	config.Enabled = slices.Clone(config.Enabled)
-	result := &CompatibleProviders{config: config, logger: logger, pool: modelendpoint.NewPool(endpoints), clients: make(map[conversation.Provider]*openaicompat.Client, len(config.Enabled))}
+	result := &CompatibleProviders{mockBase: mockURL, config: config, logger: logger, pool: modelendpoint.NewPool(endpoints), clients: make(map[conversation.Provider]*openaicompat.Client, len(config.Enabled))}
 	result.messages = newMessagesClient(nil, logger)
 	result.messagesBase = conversation.ProviderAnthropic.BaseURL()
 	if config.MockEndpoint {
@@ -48,6 +49,9 @@ func NewCompatibleProviders(ctx context.Context, config ProviderConfig, endpoint
 			continue
 		}
 		provider := model.Details().Provider
+		if provider.APIStyle() == conversation.AnthropicMessages {
+			continue
+		}
 		baseURL := provider.BaseURL()
 		if config.MockEndpoint {
 			baseURL = strings.TrimRight(mockURL, "/") + "/v1"
@@ -79,6 +83,16 @@ func (providers *CompatibleProviders) Complete(ctx context.Context, request conv
 		if request.Model.IsCustom() {
 			return providers.completeCustom(ctx, request)
 		}
+		if request.Model.Details().Provider.APIStyle() == conversation.AnthropicMessages {
+			base := providers.messagesOrigin(request.Model.Details().Provider)
+			httpClient, err := providers.pool.Client(ctx, base)
+			if err != nil {
+				return conversation.ModelReply{}, err
+			}
+			messages := *providers.messages
+			messages.httpClient = httpClient
+			return messages.complete(ctx, request, request.APIKey, base, providers.config.MockEndpoint)
+		}
 		if client := providers.clients[request.Model.Details().Provider]; client != nil {
 			return client.Complete(ctx, request)
 		}
@@ -99,7 +113,20 @@ func (providers *CompatibleProviders) ValidateCredential(ctx context.Context, pr
 	if err != nil {
 		return conversation.ModelUnavailable.Rejected()
 	}
-	if client := providers.clients[provider]; client != nil && providers.availability(model).Selectable() {
+	if !providers.availability(model).Selectable() {
+		return conversation.ModelUnavailable.Rejected()
+	}
+	if provider.APIStyle() == conversation.AnthropicMessages {
+		base := providers.messagesOrigin(provider)
+		httpClient, err := providers.pool.Client(ctx, base)
+		if err != nil {
+			return err
+		}
+		messages := *providers.messages
+		messages.httpClient = httpClient
+		return messages.validateCredential(ctx, key, model, base)
+	}
+	if client := providers.clients[provider]; client != nil {
 		return client.ValidateCredential(ctx, key, model)
 	}
 	return conversation.ModelUnavailable.Rejected()
@@ -107,3 +134,10 @@ func (providers *CompatibleProviders) ValidateCredential(ctx context.Context, pr
 
 // Close releases the one shared pool after all its Flow and API users stop.
 func (providers *CompatibleProviders) Close() error { return providers.pool.Close() }
+
+func (providers *CompatibleProviders) messagesOrigin(provider conversation.Provider) string {
+	if providers.config.MockEndpoint {
+		return providers.mockBase
+	}
+	return provider.BaseURL()
+}

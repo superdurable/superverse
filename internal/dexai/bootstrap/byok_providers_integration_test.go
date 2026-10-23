@@ -11,6 +11,8 @@ package bootstrap
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/superdurable/dex/sdk-go/dex"
 	serverconfig "github.com/superdurable/superversev2/cmd/superverse-server/config"
 	"github.com/superdurable/superversev2/internal/comm/dexflow/dexflowtest"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
@@ -145,4 +147,75 @@ func TestProviderDNSOutageStartupDexIntegration(t *testing.T) {
 	if err := runtime.ValidateCredential(ctx, conversation.ProviderOpenAI, mockmodel.APIKeyForTest); !errors.As(err, &dns) {
 		t.Fatal("provider call must fail closed at DNS dial:", err)
 	}
+}
+
+// TestMessagesProviderPickerDexIntegration runs the real credential and picker
+// browser specs independently of the longer credential recovery regression.
+func TestMessagesProviderPickerDexIntegration(t *testing.T) {
+	if dexflowtest.LocalLaneForTest(t).String() != "native" {
+		t.Fatal("requires Local Native")
+	}
+	directory := os.Getenv("SUPERVERSE_TEST_BYOK_STUDIO_DIR")
+	if directory == "" {
+		t.Fatal("requires the owned Native production Studio directory")
+	}
+	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Minute)
+	defer cancel()
+	logger := slog.New(slog.DiscardHandler)
+	modelURL, _, stop, err := mockmodel.StartCredentialProbeForTest(ctx, logger, "synthetic-byok-studio-1234")
+	if err != nil {
+		t.Fatal("start credential-capable mock model endpoint")
+	}
+	defer stop()
+	settings, err := serverconfig.Load(strings.Split(os.Getenv("SUPERVERSE_CONFIG_FILE"), ",")...)
+	if err != nil {
+		t.Fatal("load Native configuration")
+	}
+	config, err := loadConfig(ctx, logger, settings)
+	if err != nil {
+		t.Fatal("load Native providers")
+	}
+	socket, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	port := socket.Addr().(*net.TCPAddr).Port
+	_ = socket.Close()
+	target := dex.WorkerTarget{Address: fmt.Sprintf("host.docker.internal:%d", port)}
+	config.dexWorker.Pull = nil
+	config.dexWorker.BindAddress = fmt.Sprintf(":%d", port)
+	config.dexWorker.WorkerTarget = target
+	config.dexClient.WorkerTarget = &target
+	config.agent.Model = conversation.ModelHaiku45
+	config.agent.Claude.BaseURL = modelURL
+	config.blobCache.Dir = t.TempDir()
+	config.rpcCoverageFile = os.Getenv("SUPERVERSE_TEST_RPC_COVERAGE_FILE")
+	var owned resources
+	defer func() {
+		if err := owned.release(); err != nil {
+			t.Errorf("release browser fixture resources (%T)", err)
+		}
+	}()
+	server, err := compose(ctx, config, logger, &owned)
+	if err != nil {
+		t.Fatalf("compose production browser server (%T)", err)
+	}
+	ended := make(chan error, 1)
+	go func() { ended <- server.worker.Start() }()
+	defer func() {
+		shutdown, done := context.WithTimeout(context.Background(), 30*time.Second)
+		defer done()
+		if err := server.worker.Stop(shutdown); err != nil {
+			t.Errorf("stop browser fixture Worker (%T)", err)
+		}
+		<-ended
+	}()
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	served := make(chan error, 1)
+	go func() { served <- server.business.Serve(listener) }()
+	defer func() { server.business.Stop(); <-served }()
+	runBYOKStudioSpec(t, ctx, listener.Addr().String(), directory)
 }

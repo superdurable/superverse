@@ -42,7 +42,7 @@ func newSelectableSession(t *testing.T, ctx context.Context, model conversation.
 	var selected *pb.AgentModelChoice
 	for _, choice := range choices.GetModels() {
 		switch choice.GetModel() {
-		case pb.AgentModel_AGENT_MODEL_DEEPSEEK_FLASH, pb.AgentModel_AGENT_MODEL_MUSE_WONDER_1_0, pb.AgentModel_AGENT_MODEL_QWEN_3_8_MAX, pb.AgentModel_AGENT_MODEL_KIMI_K3, pb.AgentModel_AGENT_MODEL_GLM_5_3:
+		case pb.AgentModel_AGENT_MODEL_QWEN_3_8_MAX, pb.AgentModel_AGENT_MODEL_KIMI_K3, pb.AgentModel_AGENT_MODEL_GLM_5_3, pb.AgentModel_AGENT_MODEL_MINIMAX_M3_1_FLASH:
 			t.Fatal("the catalog exposed an unusable provider")
 		}
 		if choice.GetLabel() == model.Details().Label && choice.GetProviderName() == model.Details().Provider.DisplayName() {

@@ -70,8 +70,22 @@ test("configured provider groups admit Project keys and preserve stored model ma
     const picker = page.getByRole("dialog", { name: "Choose agent" });
     await expect(picker.getByRole("button", { name: /GPT-6 Astra/ })).toHaveCount(0);
     await expect(picker.getByRole("button", { name: "OpenAI", exact: true })).toBeVisible();
-    await expect(picker.getByRole("button", { name: "Qwen", exact: true })).toHaveCount(0);
+    // BYOKENDPOINT enables Qwen's custom endpoint group while its built-in preset remains unavailable.
+    await expect(picker.getByRole("button", { name: "Qwen", exact: true })).toBeVisible();
     for (const option of [
+      {
+        provider: "DeepSeek",
+        label: "DeepSeek V4.1 Flash",
+        key: "DeepSeek API key",
+        model: "AGENT_MODEL_DEEPSEEK_FLASH",
+      },
+      { provider: "MiniMax", label: "MiniMax M3", key: "MiniMax API key", model: "AGENT_MODEL_MINIMAX_M3" },
+      {
+        provider: "Meta Muse AI",
+        label: "Muse Wonder 1.0",
+        key: "Meta Model API key",
+        model: "AGENT_MODEL_MUSE_WONDER_1_0",
+      },
       { provider: "OpenAI", label: "GPT-6 Astra", key: "OpenAI API key", model: "AGENT_MODEL_GPT_6_ASTRA" },
       { provider: "xAI Grok", label: "Grok 4.7", key: "xAI API key", model: "AGENT_MODEL_GROK_4_7" },
       {

@@ -643,10 +643,20 @@ func TestProjectAnthropicCredentialDexIntegration(t *testing.T) {
 		t.Fatalf("set normal-cleanup credential (%s)", status.Code(err))
 	}
 	seedBYOKProviders(t, ctx, sessions, credentials, agentloop.SessionFlowID(normal.ProjectID), normal.ProjectID, normalCaller, firstKey)
-	retainedChild := exerciseBYOKChildIsolation(t, ctx, sessions, children, credentials, agent, normal.ProjectID, normalCaller, firstKey, probe, wait)
+	retainedChild := exerciseBYOKChildIsolation(t, ctx, sessions, children, credentials, agent, normal.ProjectID, normalCaller, firstKey, probe, conversation.ModelGPT6Astra, wait)
 	projecttest.DeleteForTest(ctx, t, projectClient, normal.ProjectID)
 	assertBYOKChildAbsent(t, ctx, sessions, children, agentloop.SessionFlowID(normal.ProjectID), retainedChild, modelcredential.ForModel(conversation.ModelGPT6Astra))
 	assertBYOKProvidersAbsent(t, ctx, sessions, agentloop.SessionFlowID(normal.ProjectID))
+	// Repeat the actual running-child isolation contract on the Messages wire.
+	messagesProject := projecttest.CreateForTest(ctx, t, projectClient, t.Name()+"-messages-isolation")
+	_, messagesCaller := projecttest.LoginForTest(ctx, t, messagesProject.CreatorAccountID)
+	if _, err = credentials.SetModelCredential(ctx, &pb.SetModelCredentialRequest{ProjectId: messagesProject.ProjectID, Provider: pb.ModelProvider_MODEL_PROVIDER_ANTHROPIC, RequestId: "messages-isolation-key", ExpectedRevision: &zero, ApiKey: firstKey, Caller: messagesCaller}); err != nil {
+		t.Fatal("set Messages isolation source key")
+	}
+	messagesChild := exerciseBYOKChildIsolation(t, ctx, sessions, children, credentials, agent, messagesProject.ProjectID, messagesCaller, firstKey, probe, conversation.ModelMuseWonder10, wait)
+	projecttest.DeleteForTest(ctx, t, projectClient, messagesProject.ProjectID)
+	assertBYOKChildAbsent(t, ctx, sessions, children, agentloop.SessionFlowID(messagesProject.ProjectID), messagesChild, modelcredential.ForModel(conversation.ModelMuseWonder10))
+	assertBYOKProvidersAbsent(t, ctx, sessions, agentloop.SessionFlowID(messagesProject.ProjectID))
 	cleanedInfo, err := sessions.ReadModelCredentialInfo(ctx, agentloop.SessionFlowID(normal.ProjectID), modelcredential.Anthropic)
 	if err != nil || cleanedInfo.Status != modelcredential.StatusRevoked || cleanedInfo.SetBy != (conversation.Actor{}) || cleanedInfo.ChangeReason != modelcredential.ProjectDeletionReason {
 		t.Fatal("Project cleanup did not record its system actor and typed reason")

@@ -104,10 +104,10 @@ The closed states are Candidate, Available and Unavailable; the latter two non-c
 carry reasons. The original Claude/mock profiles retain their availability. `ProviderConfig`
 combines implementation capability and strictly parsed `agent.providers.enabled`
 provider identities, derived from one reviewed provider-to-flagship mapping, without changing
-this global catalog. OpenAI GPT-6 Astra, xAI Grok 4.7 and Gemini 4 Argon can be
-admitted; other candidates remain unavailable. Startup, key admission, the
+this global catalog. OpenAI GPT-6 Astra, xAI Grok 4.7, Gemini 4 Argon, DeepSeek Flash,
+MiniMax M3 and Meta Muse Wonder can be admitted; other candidates remain unavailable. Startup, key admission, the
 server model catalog and `ModelRouter` use the same configuration. The local
-profiles enable those three and explicitly route them through the owned mock
+profiles enable those six and explicitly route them through the owned mock
 endpoint; hosted defaults offer none of the additional providers.
 
 The closed replay policies are ClaudeSigned (existing private signed blocks), EncryptedOpaque
@@ -116,7 +116,7 @@ The closed replay policies are ClaudeSigned (existing private signed blocks), En
 dropped when that segment closes; no readable thinking, summary or opaque payload enters public
 history or compaction. Compatible mock replies encode private replay with `conversation.OpaqueReplay`; the catalog itself does not own reply payloads.
 
-The catalog sources below were read on **2026-10-21**, with OpenAI, xAI and Gemini flagship sources rechecked on **2026-10-22**. Those three profiles have Session key admission and mock-endpoint protocol acceptance; hosted availability remains disabled by default. Other entries remain unavailable. Capability flags are conservative
+The catalog sources below were read on **2026-10-21**, with the OpenAI, xAI, Gemini and Messages-provider sources rechecked on **2026-10-22**. Those profiles plus DeepSeek Flash, MiniMax M3 and Meta Wonder have Session key admission and mock-endpoint protocol acceptance; hosted availability remains disabled by default. Other entries remain unavailable. Capability flags are conservative
 request policies, not live claims. Context budgets stay below documented context limits; reply budgets
 are also deliberately conservative. Existing Claude/mock budgets and request behavior are unchanged.
 
@@ -125,19 +125,19 @@ are also deliberately conservative. Existing Claude/mock budgets and request beh
 | OpenAI | `gpt-6-astra` | EncryptedOpaque; [1,050,000 context / 128,000 output](https://developers.openai.com/api/docs/models/gpt-6-astra); request output budget 64,000. |
 | DeepSeek | `deepseek-flash` | NonThinking; [1M context / 384K output](https://api-docs.deepseek.com/quick_start/pricing/), current Flash version V4.1-Flash-1017; request output budget 64,000. |
 | xAI | `grok-4.7` | EncryptedOpaque, Responses only; [500,000 context, no separate text output ceiling](https://docs.x.ai/developers/grok-4-7); request output budget 32,000. |
-| Meta | `muse-wonder-1.0` | EncryptedOpaque pending Wonder verification; [1,048,576 context](https://dev.meta.ai/docs/models). [Messages](https://dev.meta.ai/docs/protocols/messages) documents a 1,024-token Spark example; the candidate uses that provisional request budget and explicitly requires Wonder output verification. |
+| Meta | `muse-wonder-1.0` | EncryptedOpaque; [1,048,576 context](https://dev.meta.ai/docs/models). [Messages](https://dev.meta.ai/docs/protocols/messages) documents a 1,024-token Spark example; that is not a ceiling. The harness uses 32,000 output tokens; the official maximum is unspecified and must be confirmed by live smoke before hosted enablement. Reasoning shares this output budget, so 1,024 is unsuitable for a general Session tool loop. |
 | Gemini | `gemini-4-argon` | EncryptedOpaque via compatible Chat; [1,048,576 unified context / 65,536 synchronous output](https://ai.google.dev/gemini-api/docs/models/gemini-4-argon); request output budget 32,000. |
 | Kimi | `kimi-k3`, `kimi-k2.6` | K3 is PlaintextRequired and unavailable: [always-on preserved thinking](https://platform.kimi.ai/docs/api/chat). K2.6 is the newest [listed API model with non-thinking support and 256K context](https://platform.kimi.ai/docs/models); request output budget 16,000. Coding-subscription routing is not an API-model contract. |
 | GLM | `glm-5.3`, `glm-5.2` | 5.3 is PlaintextRequired and unavailable: [1M context / 128K output, thinking cannot be disabled](https://docs.bigmodel.cn/cn/guide/models/text/glm-5.3). 5.2 has [1M context / 128K output](https://docs.bigmodel.cn/cn/guide/models/text/glm-5.2) and an explicit [disabled thinking switch](https://docs.bigmodel.cn/cn/guide/capabilities/thinking); request output budget 64,000. |
 | Qwen | `qwen3.8-max` | NonThinking pending verification; [1,000,000 context / 131,072 output](https://help.aliyun.com/en/model-studio/qwen3-8-max); request output budget 64,000. The base URL is an inert reviewed workspace/region template; endpoint admission remains pending. |
-| MiniMax | `MiniMax-M3.1-Flash`, `MiniMax-M3` | [Both have 1M context](https://platform.minimax.io/docs/api-reference/text-anthropic-api). M3.1 always thinks and requires readable replay, so is unavailable; M3 explicitly supports disabled thinking. Conservative output budget 4,096 follows the official request example; no larger maximum is claimed. |
+| MiniMax | `MiniMax-M3.1-Flash`, `MiniMax-M3` | [Both have 1M context](https://platform.minimax.io/docs/api-reference/text-anthropic-api). M3.1 always thinks and requires readable replay, so is unavailable; M3 explicitly supports disabled thinking. Conservative output budget 4,096 follows the official request example; this is not a ceiling and must be confirmed by live smoke before hosted enablement. M3.1 Flash remains unavailable even when MiniMax is enabled. |
 
 `make check-proto-enums` additionally checks all Model constants against Models, profiles, dated
 source data and both directions of the explicit AgentModel mapping, including duplicate rejection.
 Studio's Record mappings require every enum and preserve stored selections. Authenticated `ListAgentModels` returns only usable configured models and local mock-endpoint metadata; it creates no persistent
 primitive. SessionModel's revision CAS, segment rollover, subagent frozen selection,
 Flow identities, Step graph, Maps, Channels and Streams are unchanged. There is no database
-migration, per-request control-plane operation or additional tenant scan. The shared endpoint pool bounds active and idle connections across origins to 128 per replica; the adapter bounds concurrent requests to 32 without a wait queue.
+migration, per-request control-plane operation or additional tenant scan. The shared endpoint pool bounds active and idle connections across origins to 128 per replica; the OpenAI adapter bounds concurrent requests to 32 and the shared Messages adapter to 64 without wait queues.
 
 ## Compatible Messages adapter
 

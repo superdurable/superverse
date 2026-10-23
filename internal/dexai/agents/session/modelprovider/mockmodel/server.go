@@ -224,7 +224,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, invalidRequestError, err.Error())
 		return
 	}
-	if !request.Stream && (h.probe != nil || request.Custom) {
+	if !request.Stream && (h.probe != nil || request.Custom || request.catalogModel() != "") {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{"id": "msg_credential_probe", "type": "message", "role": "assistant", "model": request.Model, "content": []map[string]string{{"type": "text", "text": "ok"}}, "stop_reason": "end_turn", "usage": map[string]int{"input_tokens": 1, "output_tokens": 1}})
 		return

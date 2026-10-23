@@ -32,7 +32,7 @@ studio:
 
 agent:
   providers:
-    enabled: [anthropic, openai, xai, gemini, qwen]
+    enabled: [anthropic, openai, xai, gemini, qwen, deepseek, minimax, meta]
     mockEndpoint: true
     customEndpoints: true
   modelEndpoints:

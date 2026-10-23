@@ -1190,7 +1190,6 @@
       "components/ui/pane/PaneResizeHandle.tsx",
       "components/ui/pane/use-resize-handle.ts",
       "components/ui/reveal/MoreDetails.tsx",
-      "components/ui/timings/PhaseTimings.tsx",
       "components/ui/wait/LongWait.tsx",
       "lib/account/AccountProvider.tsx",
       "lib/api/account.ts",

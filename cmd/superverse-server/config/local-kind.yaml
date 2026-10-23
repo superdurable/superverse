@@ -30,7 +30,7 @@ studio:
 
 agent:
   providers:
-    enabled: [anthropic, openai, xai, gemini, qwen]
+    enabled: [anthropic, openai, xai, gemini, qwen, deepseek, minimax, meta]
     mockEndpoint: true
     customEndpoints: true
     mockListen: 127.0.0.1:18083
