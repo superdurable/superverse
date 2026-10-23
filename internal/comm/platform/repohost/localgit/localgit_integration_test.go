@@ -129,6 +129,8 @@ func (g gitClient) commit(dir, path, content, message string) string {
 	return g.must(dir, "rev-parse", "HEAD")
 }
 
+var testProjectCreatedAt = time.Now().UTC().Truncate(time.Second)
+
 // managedRepository creates a Project's repository and commits the template.
 func managedRepository(t *testing.T, host *Host, projectID, setupID string) (repohost.Repository, string) {
 	t.Helper()
@@ -137,7 +139,7 @@ func managedRepository(t *testing.T, host *Host, projectID, setupID string) (rep
 	if err != nil {
 		t.Fatal(err)
 	}
-	commit, err := host.InitializeTemplate(ctx, repository, apptemplate.Current().Revision, apptemplate.Current())
+	commit, err := host.InitializeTemplate(ctx, repository, apptemplate.Current().Revision, apptemplate.Current(), testProjectCreatedAt)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,12 +156,12 @@ func credential(t *testing.T, host *Host, repository repohost.Repository) string
 }
 
 // TestLocalGitHostTemplateAndRepositories covers the repository identities and
-// lifecycle: the managed repository, its IDs, the deterministic template commit,
+// lifecycle: the managed repository, its IDs, the template commit and its durable creation time,
 // reads and archival.
 func TestLocalGitHostTemplateAndRepositories(t *testing.T) {
 	ctx := context.Background()
 	dir := t.TempDir()
-	host, _ := startHost(t, dir)
+	host, base := startHost(t, dir)
 
 	absent, err := host.FindManagedRepository(ctx, setupIdentity("ab12", "setup-1"))
 	if err != nil || absent != nil {
@@ -201,19 +203,19 @@ func TestLocalGitHostTemplateAndRepositories(t *testing.T) {
 	if err != nil || read.ID != first.ID || read.Description != first.Description {
 		t.Fatalf("a restarted host must read the repository: %v %+v", err, read)
 	}
-	replay, err := restarted.InitializeTemplate(ctx, read, apptemplate.Current().Revision, apptemplate.Current())
+	replay, err := restarted.InitializeTemplate(ctx, read, apptemplate.Current().Revision, apptemplate.Current(), testProjectCreatedAt)
 	if err != nil || replay != firstCommit {
 		t.Fatalf("replaying the initialization must return the same commit: %v %s %s", err, replay, firstCommit)
 	}
-	if _, err = restarted.InitializeTemplate(ctx, read, apptemplate.RevisionPrefixForTest+strings.Repeat("0", 40), apptemplate.Current()); err == nil {
+	if _, err = restarted.InitializeTemplate(ctx, read, apptemplate.RevisionPrefixForTest+strings.Repeat("0", 40), apptemplate.Current(), testProjectCreatedAt); err == nil {
 		t.Fatal("a template revision this server does not serve must fail")
 	}
 	second, secondCommit := managedRepository(t, restarted, "cd34", "setup-3")
 	if second.ID != 2 {
 		t.Fatalf("the second repository must have ID 2, got %d", second.ID)
 	}
-	// The template commit has no parent and a fixed author and time, so the same
-	// template is the same commit in every repository and every host.
+	// With the same durable creation time and template, retries create the
+	// same object in every repository and host.
 	if secondCommit != firstCommit {
 		t.Fatalf("the template commit must be deterministic: %s != %s", secondCommit, firstCommit)
 	}
@@ -251,8 +253,21 @@ func TestLocalGitHostTemplateAndRepositories(t *testing.T) {
 		t.Fatalf("another owner has no repository: %v", err)
 	}
 	commits, err := host.ListCommits(ctx, first.FullName, "main")
-	if err != nil || len(commits) != 1 || commits[0].SHA != firstCommit || commits[0].CommittedAt.Year() != 2026 {
+	if err != nil || len(commits) != 1 || commits[0].SHA != firstCommit || !commits[0].CommittedAt.Equal(testProjectCreatedAt) || commits[0].Message != "Start the project from the app template\n" {
 		t.Fatalf("list the template commit: %v %+v", err, commits)
+	}
+	// Read the actual commit through smart HTTP and Git, including both signatures.
+	client := newGitClient(t, base, credential(t, host, first))
+	clone := filepath.Join(t.TempDir(), "template")
+	client.must("", "clone", first.CloneURL, clone)
+	want := "Platform agent\nPlatform agent\n" + testProjectCreatedAt.Format(time.RFC3339) + "\n" + testProjectCreatedAt.Format(time.RFC3339)
+	if got := client.must(clone, "show", "-s", "--format=%an%n%cn%n%aI%n%cI", firstCommit); got != want {
+		t.Fatalf("initial commit author and time: got %q, want %q", got, want)
+	}
+	for _, invalid := range []time.Time{{}, time.Unix(0, 0)} {
+		if _, err = host.InitializeTemplate(ctx, first, apptemplate.Current().Revision, apptemplate.Current(), invalid); err == nil {
+			t.Fatal("zero or epoch creation time must fail")
+		}
 	}
 	if err = host.ValidateReleaseCommit(ctx, first.FullName, "main", firstCommit); err != nil {
 		t.Fatal(err)
@@ -518,14 +533,14 @@ func TestLocalGitHostLockWaitsIntegration(t *testing.T) {
 	if err = host.ArchiveManaged(short, "ab12", "setup-1", repository.FullName); !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("archival must stop waiting with its context: %v", err)
 	}
-	if _, err = host.InitializeTemplate(short, repository, apptemplate.Current().Revision, apptemplate.Current()); !errors.Is(err, context.DeadlineExceeded) {
+	if _, err = host.InitializeTemplate(short, repository, apptemplate.Current().Revision, apptemplate.Current(), testProjectCreatedAt); !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("template initialization must stop waiting with its context: %v", err)
 	}
 	if elapsed := time.Since(waited); elapsed > 5*time.Second {
 		t.Fatalf("the waits must end with their context, they took %s", elapsed)
 	}
 	release()
-	if commit, initErr := host.InitializeTemplate(context.Background(), repository, apptemplate.Current().Revision, apptemplate.Current()); initErr != nil || commit != template {
+	if commit, initErr := host.InitializeTemplate(context.Background(), repository, apptemplate.Current().Revision, apptemplate.Current(), testProjectCreatedAt); initErr != nil || commit != template {
 		t.Fatalf("a released lock must be taken again: %v %s", initErr, commit)
 	}
 

@@ -51,8 +51,9 @@ type Host interface {
 	// InitializeTemplate commits the application template of this server build as
 	// the first commit of an empty managed repository and returns that commit.
 	// The revision must be the template this server serves. A repeated call
-	// returns the same commit.
-	InitializeTemplate(ctx context.Context, target Repository, revision string, template *Template) (string, error)
+	// returns the same commit. createdAt is the owning Project's durable creation
+	// time, used for both author and committer; it must be after the Unix epoch.
+	InitializeTemplate(ctx context.Context, target Repository, revision string, template *Template, createdAt time.Time) (string, error)
 
 	// ReadFile reads one repository-relative file at an exact commit.
 	ReadFile(ctx context.Context, fullName, commit, path string) ([]byte, error)

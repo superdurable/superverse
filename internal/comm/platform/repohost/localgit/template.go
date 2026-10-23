@@ -23,20 +23,16 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost"
 )
 
-// templateSignature is the fixed author and committer of the initial commit. The
-// commit has no parent, so every initialization of one template creates the same
-// commit and the same SHA.
-func templateSignature() object.Signature {
-	return object.Signature{Name: "Superverse", Email: "bot@superdurable.io", When: time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)}
-}
-
 // InitializeTemplate commits the application template embedded in this server
 // build as the first commit of an empty managed repository. The revision the
 // Setup Flow accepted must be this exact template: an older revision fails
 // instead of silently initializing different content. A repository whose main
 // branch already holds the template tree is left as it is and returns that
 // commit. Waiting for a push to finish ends with ctx.
-func (h *Host) InitializeTemplate(ctx context.Context, target repohost.Repository, revision string, template *repohost.Template) (string, error) {
+func (h *Host) InitializeTemplate(ctx context.Context, target repohost.Repository, revision string, template *repohost.Template, createdAt time.Time) (string, error) {
+	if createdAt.Unix() <= 0 {
+		return "", errors.New("project creation time must be after the Unix epoch")
+	}
 	if revision != template.Revision {
 		return "", fmt.Errorf("this server does not serve the accepted application template revision %s", revision)
 	}
@@ -84,8 +80,8 @@ func (h *Host) InitializeTemplate(ctx context.Context, target repohost.Repositor
 	if tree.String() != template.TreeID {
 		return "", fmt.Errorf("written template tree has identity %s instead of %s", tree, template.TreeID)
 	}
-	signature := templateSignature()
-	commit := &object.Commit{Author: signature, Committer: signature, Message: "Initialize Superverse V2 project from " + revision + "\n", TreeHash: tree}
+	signature := object.Signature{Name: "Platform agent", Email: "bot@superdurable.io", When: createdAt.UTC().Truncate(time.Second)}
+	commit := &object.Commit{Author: signature, Committer: signature, Message: "Start the project from the app template\n", TreeHash: tree}
 	encoded := storage.NewEncodedObject()
 	if err = commit.Encode(encoded); err != nil {
 		return "", err

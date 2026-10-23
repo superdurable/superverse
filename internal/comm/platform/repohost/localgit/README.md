@@ -67,7 +67,11 @@ there is one creation lock and at most one repository lock per retained reposito
   no half-created repository. Nothing is deleted: archival marks the record, refuses
   pushes and keeps every read.
 - `InitializeTemplate` writes the embedded template as a commit with no parent and a
-  fixed author and time, so the commit SHA depends on the template alone.
+  `Platform agent` author and committer and the owning Project's durable creation
+  time, rounded to Git's second precision. Its subject is `Start the project from
+  the app template`; the template revision remains in the Project and Setup,
+  rather than the commit message. The template and creation time give retries
+  the same commit SHA. Zero and epoch creation times are rejected.
 
 ## The connectors library's copy
 
@@ -208,7 +212,7 @@ name that Git does not allow 400.
 | `host.go` | The `Host`, its configuration, and the managed repository lifecycle |
 | `repository_store.go` | The directory layout, the repository record, the ID sequence, the locks and the reference files |
 | `repository_read.go` | File, commit and branch reads |
-| `template.go` | The deterministic template commit |
+| `template.go` | The template commit with durable creation time |
 | `token.go` | The signed credentials |
 | `http_handler.go` | Routing and authentication of Git requests |
 | `upload_pack.go` | Ref advertisement and the fetch protocol |

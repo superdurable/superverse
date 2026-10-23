@@ -173,3 +173,24 @@ so the Setup waits until the scenario releases the storage: the deletion
 scenario never does, and the deletion removes the held storage; the restart
 scenario releases it once the new attempt waits. A Setup that passed its
 storage wait before the hold fails the run, never counted as covered.
+
+### Initial commit metadata
+
+The unchanged ProjectSetupFlow contract above remains authoritative for Flow
+identity, Attributes, Channels, Streams, Step recovery, retention and ownership.
+`InitializeTemplate` now reads the owning Project's existing immutable `CreatedAt`
+through `ProjectFlowClient.Read`, the retained `ProjectFlow.GetProject` RPC, and
+passes it to the repository host as both Git signature times. This use of the
+existing typed snapshot RPC reads the owning Project's Attributes, writes no
+primitive and carries no secret.
+It creates no new primitive, schema, lifecycle or resource. The durable time is
+normalized to UTC and whole seconds; a missing, zero or epoch value fails rather
+than publishing a synthetic date. The existing tree/head reconciliation still
+returns already initialized commits unchanged, including historical commits.
+The initial subject is `Start the project from the app template`, authored by
+`Platform agent`; the accepted template revision remains owned by Project and
+Setup. Provider retries use the same template and creation time, and therefore
+the same Git object identity. This adds one retained Project read RPC per
+setup attempt, outside Session tool/request and polling paths, with no cloud
+control-plane call, tenant scan or accumulating resource. Both real Git-host
+integration tests assert the subject, signatures, creation time and replay identity; Native acceptance exercises the complete path.

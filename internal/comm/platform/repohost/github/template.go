@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/superdurable/superversev2/internal/comm/platform/githubapp"
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost"
@@ -25,16 +26,15 @@ type gitObject struct {
 	Type string `json:"type"`
 }
 
-// templateAuthor is the fixed author and committer of the initial commit, so a
-// repeated initialization creates the same Git object.
-var templateAuthor = map[string]string{"name": "Superverse", "email": "bot@superdurable.io", "date": "2026-01-01T00:00:00Z"}
-
 // InitializeTemplate commits the application template embedded in this server
 // build as the first commit of an empty managed repository. The revision the
 // Setup Flow accepted must be this exact template: an older revision fails
 // instead of silently initializing different content. Git object identities
 // make every retry queryable and immutable.
-func (c *Client) InitializeTemplate(ctx context.Context, target repohost.Repository, revision string, template *repohost.Template) (string, error) {
+func (c *Client) InitializeTemplate(ctx context.Context, target repohost.Repository, revision string, template *repohost.Template, createdAt time.Time) (string, error) {
+	if createdAt.Unix() <= 0 {
+		return "", errors.New("project creation time must be after the Unix epoch")
+	}
 	if revision != template.Revision {
 		return "", fmt.Errorf("this server does not serve the accepted application template revision %s", revision)
 	}
@@ -49,7 +49,7 @@ func (c *Client) InitializeTemplate(ctx context.Context, target repohost.Reposit
 		if !errors.As(err, &empty) || (empty.Status != http.StatusNotFound && empty.Status != http.StatusConflict) {
 			return "", err
 		}
-		createErr := c.repositoryRequest(ctx, http.MethodPut, target.FullName, "/contents/.superverse-bootstrap", map[string]any{"message": "Initialize Superverse V2 template transfer", "branch": "main", "content": base64.StdEncoding.EncodeToString(marker)}, nil)
+		createErr := c.repositoryRequest(ctx, http.MethodPut, target.FullName, "/contents/.superverse-bootstrap", map[string]any{"message": "Prepare the app template", "branch": "main", "content": base64.StdEncoding.EncodeToString(marker)}, nil)
 		if head, err = c.head(ctx, target.FullName, "main"); err != nil {
 			return "", errors.Join(createErr, err)
 		}
@@ -89,8 +89,11 @@ func (c *Client) InitializeTemplate(ctx context.Context, target repohost.Reposit
 	if tree.SHA != template.TreeID {
 		return "", fmt.Errorf("uploaded template tree has identity %s instead of %s", tree.SHA, template.TreeID)
 	}
+	// The owning Project persists this time before setup starts, so retries
+	// create the same object even before a branch update succeeds.
+	templateAuthor := map[string]string{"name": "Platform agent", "email": "bot@superdurable.io", "date": createdAt.UTC().Format(time.RFC3339)}
 	var commit gitObject
-	if err = request(http.MethodPost, "/git/commits", map[string]any{"message": "Initialize Superverse V2 project from " + revision, "tree": tree.SHA, "parents": []string{head}, "committer": templateAuthor, "author": templateAuthor}, &commit); err != nil {
+	if err = request(http.MethodPost, "/git/commits", map[string]any{"message": "Start the project from the app template", "tree": tree.SHA, "parents": []string{head}, "committer": templateAuthor, "author": templateAuthor}, &commit); err != nil {
 		return "", err
 	}
 	updateErr := c.repositoryRequest(ctx, http.MethodPatch, target.FullName, "/git/refs/heads/main", map[string]any{"sha": commit.SHA, "force": false}, nil)

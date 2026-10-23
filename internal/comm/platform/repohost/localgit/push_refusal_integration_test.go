@@ -311,7 +311,7 @@ func TestLocalGitHostReferenceWritesIntegration(t *testing.T) {
 	if _, err = host.branchHead(repository.FullName, "main"); err == nil || errors.Is(err, repohost.ErrNotFound) {
 		t.Fatalf("a corrupt reference must be an error, not a missing branch: %v", err)
 	}
-	if _, err = host.InitializeTemplate(ctx, repository, apptemplate.Current().Revision, apptemplate.Current()); err == nil {
+	if _, err = host.InitializeTemplate(ctx, repository, apptemplate.Current().Revision, apptemplate.Current(), testProjectCreatedAt); err == nil {
 		t.Fatal("the template initialization must not write over a corrupt reference")
 	}
 }

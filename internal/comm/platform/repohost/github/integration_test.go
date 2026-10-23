@@ -28,6 +28,8 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/app/apptemplate"
 )
 
+var testProjectCreatedAt = time.Now().UTC().Truncate(time.Second)
+
 // This opt-in test creates only a tagged V2 test repository and archives it on completion.
 func TestApplicationTemplateGitHubIntegration(t *testing.T) {
 	if os.Getenv("SUPERVERSE_TEST_GITHUB_EFFECTS") != "true" {
@@ -67,24 +69,43 @@ func TestApplicationTemplateGitHubIntegration(t *testing.T) {
 	}
 	template := apptemplate.Current()
 	revision := template.Revision
-	if _, err = client.InitializeTemplate(ctx, repository, apptemplate.RevisionPrefixForTest+strings.Repeat("0", 40), apptemplate.Current()); err == nil {
+	if _, err = client.InitializeTemplate(ctx, repository, apptemplate.RevisionPrefixForTest+strings.Repeat("0", 40), apptemplate.Current(), testProjectCreatedAt); err == nil {
 		t.Fatal("a revision this server does not serve must fail before any upload")
 	}
-	commit, err := client.InitializeTemplate(ctx, repository, revision, apptemplate.Current())
+	commit, err := client.InitializeTemplate(ctx, repository, revision, apptemplate.Current(), testProjectCreatedAt)
 	if err != nil {
 		t.Fatal(err)
 	}
 	restarted := newTestClient(t, owner, deploymentnames.EnvironmentTest)
-	repeated, err := restarted.InitializeTemplate(ctx, repository, revision, apptemplate.Current())
+	repeated, err := restarted.InitializeTemplate(ctx, repository, revision, apptemplate.Current(), testProjectCreatedAt)
 	if err != nil || commit != repeated {
 		t.Fatal("initialization replay changed accepted commit", err)
 	}
 	verifyApplicationTemplateGitHubTree(t, ctx, restarted, repository, commit, template)
+	var initial struct {
+		Message           string `json:"message"`
+		Author, Committer struct {
+			Name string    `json:"name"`
+			Date time.Time `json:"date"`
+		}
+	}
+	if err = client.repositoryRequest(ctx, http.MethodGet, repository.FullName, "/git/commits/"+commit, nil, &initial); err != nil {
+		t.Fatal(err)
+	}
+	if initial.Message != "Start the project from the app template" || initial.Author.Name != "Platform agent" || initial.Committer.Name != "Platform agent" ||
+		!initial.Author.Date.Equal(testProjectCreatedAt) || !initial.Committer.Date.Equal(testProjectCreatedAt) {
+		t.Fatalf("unexpected initial commit metadata: %+v", initial)
+	}
+	for _, invalid := range []time.Time{{}, time.Unix(0, 0)} {
+		if _, err = client.InitializeTemplate(ctx, repository, revision, template, invalid); err == nil {
+			t.Fatal("zero or epoch creation time must fail")
+		}
+	}
 	if err = client.ValidateReleaseCommit(ctx, repository.FullName, "main", commit); err != nil {
 		t.Fatal(err)
 	}
 	// The template's root commit is V0, with its subject, from one GraphQL query.
-	if version, describeErr := client.DescribeCommit(ctx, repository.FullName, commit); describeErr != nil || version.Number != 0 || version.Subject == "" {
+	if version, describeErr := client.DescribeCommit(ctx, repository.FullName, commit); describeErr != nil || version.Number != 0 || version.Subject != "Start the project from the app template" {
 		t.Fatalf("the template's root commit must be V0 with a subject: %v %+v", describeErr, version)
 	}
 	if _, describeErr := client.DescribeCommit(ctx, repository.FullName, strings.Repeat("c", 40)); !errors.Is(describeErr, repohost.ErrNotFound) {
@@ -177,7 +198,7 @@ func TestIsAncestorGitHubIntegration(t *testing.T) {
 			t.Errorf("V2 repository archive incomplete: %v", archiveErr)
 		}
 	}()
-	parent, err := client.InitializeTemplate(ctx, repository, apptemplate.Current().Revision, apptemplate.Current())
+	parent, err := client.InitializeTemplate(ctx, repository, apptemplate.Current().Revision, apptemplate.Current(), testProjectCreatedAt)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -87,7 +87,11 @@ func (f *ProjectSetupFlow) initializeTemplate(ctx context.Context, s Setup) (str
 	if err != nil {
 		return "", err
 	}
-	return f.Host.InitializeTemplate(ctx, repohost.Repository{ID: s.Repository.RepositoryID, FullName: s.Repository.FullName, DefaultBranch: s.Repository.DefaultBranch}, s.TemplateRevision, template)
+	project, err := f.Client.Read(ctx, s.ProjectID)
+	if err != nil {
+		return "", fmt.Errorf("read Project %s: %w", s.ProjectID, err)
+	}
+	return f.Host.InitializeTemplate(ctx, repohost.Repository{ID: s.Repository.RepositoryID, FullName: s.Repository.FullName, DefaultBranch: s.Repository.DefaultBranch}, s.TemplateRevision, template, project.CreatedAt)
 }
 
 // reconcileProjectStorage provisions the Project's configuration storage and

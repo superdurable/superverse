@@ -35,6 +35,8 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/app/apptemplate"
 )
 
+var testProjectCreatedAt = time.Now().UTC().Truncate(time.Second)
+
 func TestCommitRecoveryActualGitHubAndSandbox(t *testing.T) {
 	if os.Getenv("SUPERVERSE_TEST_GITHUB_EFFECTS") != "true" {
 		t.Fatal("explicit isolated GitHub effects are required")
@@ -92,7 +94,7 @@ func TestCommitRecoveryActualGitHubAndSandbox(t *testing.T) {
 		}
 	})
 	template := apptemplate.Current()
-	initial, err := github.InitializeTemplate(ctx, managed, template.Revision, apptemplate.Current())
+	initial, err := github.InitializeTemplate(ctx, managed, template.Revision, apptemplate.Current(), testProjectCreatedAt)
 	if err != nil {
 		t.Fatal(err)
 	}

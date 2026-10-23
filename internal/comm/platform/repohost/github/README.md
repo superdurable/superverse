@@ -36,6 +36,14 @@ other 4xx `ErrRejected`, each wrapping the GitHub error. A server error stays un
 and the Step's retry policy asks again. An archive request whose effect is unknown (a
 server error, a conflict, or a 404 on the archive itself) is `ErrOutcomeUnknown`.
 
+Template initialization uses `Start the project from the app template` as its
+subject and `Platform agent` as author and committer. Both signatures use the
+owning Project's persisted creation time at Git's second precision, making
+retried object creation deterministic without a synthetic display date. Zero
+and epoch times are rejected. The bootstrap commit also has a neutral subject;
+its internal ownership marker is unchanged. Project and Setup retain the
+template revision; no commit-message parser depends on it.
+
 | File | Responsibility |
 | --- | --- |
 | `client.go` | The client, repository credentials and the translation of errors |
