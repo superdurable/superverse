@@ -74,7 +74,7 @@ export function ProviderModelPicker({
       </div>
       {selected && (
         <ModelCredentialEntry
-          key={selected.provider}
+          key={`${session.projectId}/${selected.provider}`}
           canManage={canManage}
           credential={credential}
           providerName={selected.providerName}

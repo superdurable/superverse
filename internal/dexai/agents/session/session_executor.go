@@ -512,7 +512,7 @@ func (flow *SessionAgentFlow) segmentRequest(ctx dex.Context, kind agentloop.Mod
 	for index, entry := range transient {
 		entries = append(entries, conversation.SequencedEntry{Sequence: state.LastSequence + conversation.Sequence(index) + 1, Entry: entry})
 	}
-	profile := modelprovider.ProfileOf(segment.Model)
+	profile := comm.Must(modelprovider.ProfileFor(segment.Model, segment.Endpoint))
 	shape := profile.RequestShape()
 	shape.ExecutorContext = segment.ProtocolStartSequence > 0
 	return conversation.ModelRequest{

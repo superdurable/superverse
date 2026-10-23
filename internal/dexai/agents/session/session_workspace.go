@@ -535,7 +535,11 @@ func (flow *SessionAgentFlow) openExecutorSegment(ctx dex.Context, executor remo
 		entries = append(entries, conversation.SequencedEntry{Sequence: sequence, Entry: read(sequence)})
 	}
 	model := comm.Must(sessionModelAttribute.Get(ctx)).Model
-	profile := modelprovider.ProfileOf(model)
+	endpoint := conversation.EndpointSelection{}
+	if !model.IsMock() {
+		endpoint = dexflow.ValueOrZero(modelKeyInfoAttribute.Get(ctx, modelcredential.ForModel(model).String())).Endpoint
+	}
+	profile := comm.Must(modelprovider.ProfileFor(model, endpoint))
 	prompts := agentloop.SessionPromptFor(model).Prompts
 	promptBytes := int64(len(prompts.System))
 	for _, tool := range prompts.Tools {

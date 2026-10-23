@@ -4048,6 +4048,8 @@ message ModelCredentialInfo {
   string custom_model_id = 12 [debug_redact = true];
   string effective_model_id = 13 [debug_redact = true];
   uint32 custom_profile_version = 14;
+  int64 context_window = 15;
+  int64 max_output_tokens = 16;
 }
 
 // Project-owned model authentication; secret fields must never be logged or traced.
@@ -4075,6 +4077,9 @@ message SetModelCredentialRequest {
   string api_key = 5 [debug_redact = true];
   string base_url = 6 [debug_redact = true];
   string custom_model_id = 7 [debug_redact = true];
+  // Custom endpoints only; zero retains the conservative default.
+  int64 context_window = 8;
+  int64 max_output_tokens = 9;
   CallerContext caller = 100;
 }
 message SetModelCredentialResponse {
@@ -4108,7 +4113,14 @@ message ListModelCredentialModelsRequest {
   optional uint64 expected_revision = 5;
   CallerContext caller = 100;
 }
+message ModelCredentialModel {
+  string model_id = 1 [debug_redact = true];
+  // Advisory capacity reported by the endpoint; zero means no admitted hint.
+  int64 context_window = 2;
+}
+
 message ListModelCredentialModelsResponse {
   repeated string model_ids = 1 [debug_redact = true];
   ModelDiscoveryResult result = 2;
+  repeated ModelCredentialModel models = 3;
 }

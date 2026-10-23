@@ -59,3 +59,12 @@ existing single-flight command, refreshes canonical state on completion or
 refusal, and never treats another saved PAIRED row as an automatic target. No
 new polling or browser authority is introduced. Without a suspended target the
 existing pairing dialog is unchanged.
+
+
+CustomEndpointFields renders bounded custom context and optional output inputs.
+ModelCredentialEntry validates integer ranges before clearing the transient key
+and submits decimal int64 strings. Saved values reopen with compatibility
+defaults; advisory discovery can prefill an untouched unsaved context only.
+Manual input and saved declarations take precedence. Provider/Project changes
+remount drafts, and origin changes discard discovery hints. The server owns
+validation, authorization and revision admission.

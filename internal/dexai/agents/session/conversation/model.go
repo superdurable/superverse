@@ -165,6 +165,8 @@ const CredentialContextNotice = "The model endpoint or key changed. Earlier cont
 // EndpointSelection is a frozen non-secret historical execution choice.
 // Current configuration belongs only to ModelKeyInfo/<provider>.
 type EndpointSelection struct {
+	ContextWindow        int64  `json:"context_window,omitempty"`
+	MaxOutputTokens      int64  `json:"max_output_tokens,omitempty"`
 	BaseURL              string `json:"base_url,omitempty"`
 	CustomModelID        string `json:"custom_model_id,omitempty"`
 	EffectiveModelID     string `json:"effective_model_id,omitempty"`

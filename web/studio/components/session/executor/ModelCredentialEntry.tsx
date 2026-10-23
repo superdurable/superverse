@@ -18,6 +18,7 @@ import {
 } from "@/lib/api/model-credential";
 import { useSessionResource } from "@/lib/session/SessionProvider";
 import type { useModelCredential } from "@/lib/session/credentials/use-model-credential";
+import { CustomEndpointFields } from "./CustomEndpointFields";
 import { useSingleFlight } from "@/lib/browser/use-single-flight";
 
 /** A write-only password field and ModelKeyInfo metadata; the saved key is never returned. */
@@ -40,6 +41,10 @@ export function ModelCredentialEntry({
   const field = useRef<HTMLInputElement>(null);
   const endpointField = useRef<HTMLInputElement>(null);
   const modelField = useRef<HTMLInputElement>(null);
+  const contextField = useRef<HTMLInputElement>(null);
+  const outputField = useRef<HTMLInputElement>(null);
+  const contextEdited = useRef(false);
+  const hints = useRef(new Map<string, string>());
   const [custom, setCustom] = useState(false);
   const [models, setModels] = useState<string[]>([]);
   const [discoveryNote, setDiscoveryNote] = useState("");
@@ -55,6 +60,27 @@ export function ModelCredentialEntry({
     ).length ?? 0;
   const active = info?.status === ModelCredentialStatus.MODEL_CREDENTIAL_STATUS_ACTIVE;
   const save = (retry = false) => {
+    const contextWindow = contextField.current?.value ?? "32768";
+    const maxOutputTokens = outputField.current?.value || "4096";
+    if (custom && !retry) {
+      const context = Number(contextWindow),
+        output = Number(maxOutputTokens);
+      if (!/^\d+$/.test(contextWindow) || !Number.isSafeInteger(context) || context < 32768 || context > 1000000) {
+        action.setError("Context window must contain 32768 to 1000000 tokens.");
+        return;
+      }
+      if (
+        !/^\d+$/.test(maxOutputTokens) ||
+        !Number.isSafeInteger(output) ||
+        output < 1 ||
+        output > Math.min(65536, Math.floor(context / 8))
+      ) {
+        action.setError(
+          "Maximum output tokens must be from 1 to the smaller of 65536 and one eighth of the context window.",
+        );
+        return;
+      }
+    }
     const key = field.current?.value ?? "";
     if (field.current) field.current.value = "";
     const operation = retry
@@ -75,6 +101,8 @@ export function ModelCredentialEntry({
           {
             baseUrl: custom ? (endpointField.current?.value ?? "") : "",
             customModelId: custom ? (modelField.current?.value ?? "") : "",
+            contextWindow: custom ? contextWindow : "0",
+            maxOutputTokens: custom ? maxOutputTokens : "0",
           },
         );
         credential.setInfo(next);
@@ -115,6 +143,16 @@ export function ModelCredentialEntry({
       }
     });
   };
+  const applyHint = (model: string) => {
+    const hint = hints.current.get(model);
+    if (!contextEdited.current && !info?.baseUrl && contextField.current) contextField.current.value = hint ?? "32768";
+  };
+  const clearDiscovery = () => {
+    hints.current.clear();
+    if (!contextEdited.current && !info?.baseUrl && contextField.current) contextField.current.value = "32768";
+    setModels([]);
+    setDiscoveryNote("");
+  };
   const discover = () => {
     const baseUrl = endpointField.current?.value ?? "";
     const key = field.current?.value ?? "";
@@ -128,8 +166,22 @@ export function ModelCredentialEntry({
         signal,
       );
       signal.throwIfAborted();
+      if (endpointField.current?.value !== baseUrl) return;
+      hints.current = new Map(
+        (response.models ?? [])
+          .filter((model) => {
+            const value = Number(model.contextWindow);
+            return (
+              /^\d+$/.test(model.contextWindow) && Number.isSafeInteger(value) && value >= 32768 && value <= 1000000
+            );
+          })
+          .map((model) => [model.modelId, model.contextWindow]),
+      );
       setModels(response.modelIds);
-      if (response.modelIds.length === 1 && modelField.current) modelField.current.value = response.modelIds[0];
+      if (response.modelIds.length === 1 && modelField.current) {
+        modelField.current.value = response.modelIds[0];
+        applyHint(response.modelIds[0]);
+      }
       setDiscoveryNote(
         response.modelIds.length > 1
           ? "Choose a model or enter its ID."
@@ -193,80 +245,29 @@ export function ModelCredentialEntry({
                       disabled={action.busy !== null}
                       onChange={(event) => {
                         setCustom(event.target.checked);
-                        setModels([]);
-                        setDiscoveryNote("");
+                        clearDiscovery();
                       }}
                     />
                     Use a custom endpoint
                   </label>
                   {custom && (
-                    <>
-                      <label className="grid gap-1">
-                        Endpoint API base URL
-                        <input
-                          ref={endpointField}
-                          type="url"
-                          maxLength={2048}
-                          defaultValue={info?.baseUrl ?? ""}
-                          disabled={action.busy !== null}
-                          className="h-8 rounded border border-line bg-panel px-2 text-ink"
-                          onChange={() => {
-                            setModels([]);
-                            setDiscoveryNote("");
-                          }}
-                        />
-                      </label>
-                      <label className="grid gap-1">
-                        Model ID (optional)
-                        <input
-                          ref={modelField}
-                          maxLength={256}
-                          defaultValue={info?.customModelId ?? ""}
-                          list={`model-ids-${credential.provider}`}
-                          disabled={action.busy !== null}
-                          className="h-8 rounded border border-line bg-panel px-2 text-ink"
-                        />
-                      </label>
-                      {models.length > 1 && (
-                        <label className="grid gap-1">
-                          Discovered models
-                          <select
-                            aria-label="Discovered models"
-                            defaultValue=""
-                            disabled={action.busy !== null}
-                            className="h-8 rounded border border-line bg-panel px-2 text-ink"
-                            onChange={(event) => {
-                              if (modelField.current) modelField.current.value = event.target.value;
-                            }}
-                          >
-                            <option value="">Choose a model</option>
-                            {models.map((id) => (
-                              <option key={id} value={id}>
-                                {id}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                      )}
-                      <datalist id={`model-ids-${credential.provider}`}>
-                        {models.map((id) => (
-                          <option key={id} value={id} />
-                        ))}
-                      </datalist>
-                      <button
-                        type="button"
-                        disabled={action.busy !== null}
-                        onClick={discover}
-                        className="text-left text-accent"
-                      >
-                        {action.busy === "discover" ? "Discovering…" : "Discover models"}
-                      </button>
-                      <p className="text-ink-faint">
-                        Leave the model ID empty to use the only discovered model. Text and serial tools only. Your
-                        endpoint receives the conversation.
-                      </p>
-                      {discoveryNote && <p role="status">{discoveryNote}</p>}
-                    </>
+                    <CustomEndpointFields
+                      endpointField={endpointField}
+                      modelField={modelField}
+                      contextField={contextField}
+                      outputField={outputField}
+                      info={info}
+                      busy={action.busy}
+                      models={models}
+                      discoveryNote={discoveryNote}
+                      provider={credential.provider}
+                      discover={discover}
+                      clearDiscovery={clearDiscovery}
+                      chooseModel={applyHint}
+                      editContext={() => {
+                        contextEdited.current = true;
+                      }}
+                    />
                   )}
                 </>
               )}
@@ -285,6 +286,8 @@ export function ModelCredentialEntry({
               type="button"
               onClick={() => {
                 setCustom(!!info?.baseUrl);
+                contextEdited.current = false;
+                clearDiscovery();
                 setEditing(true);
               }}
               className="text-left text-accent"

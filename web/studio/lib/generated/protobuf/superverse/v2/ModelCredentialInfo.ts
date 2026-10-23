@@ -19,6 +19,8 @@ export interface ModelCredentialInfo {
   'customModelId'?: (string);
   'effectiveModelId'?: (string);
   'customProfileVersion'?: (number);
+  'contextWindow'?: (number | string | Long);
+  'maxOutputTokens'?: (number | string | Long);
 }
 
 export interface ModelCredentialInfo__Output {
@@ -35,4 +37,6 @@ export interface ModelCredentialInfo__Output {
   'customModelId': (string);
   'effectiveModelId': (string);
   'customProfileVersion': (number);
+  'contextWindow': (string);
+  'maxOutputTokens': (string);
 }

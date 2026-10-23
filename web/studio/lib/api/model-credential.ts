@@ -29,7 +29,7 @@ export async function saveModelCredential(
   requestId: string,
   apiKey: string,
   signal: AbortSignal,
-  endpoint?: { baseUrl: string; customModelId: string },
+  endpoint?: { baseUrl: string; customModelId: string; contextWindow: string; maxOutputTokens: string },
 ) {
   const response = await unary(
     "SetModelCredential",

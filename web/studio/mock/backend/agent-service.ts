@@ -309,6 +309,8 @@ function credentialFixture(store: MockStore, project: string, provider: Credenti
       customModelId: "",
       effectiveModelId: "",
       customProfileVersion: 0,
+      contextWindow: "0",
+      maxOutputTokens: "0",
       provider,
     }
   );
@@ -334,6 +336,8 @@ export const modelCredentialService: MockService<"ModelCredentialService"> = {
       customModelId: request.customModelId,
       effectiveModelId: request.baseUrl ? request.customModelId || "local-development-model" : "",
       customProfileVersion: request.baseUrl ? 1 : 0,
+      contextWindow: request.baseUrl ? (request.contextWindow === "0" ? "32768" : request.contextWindow) : "0",
+      maxOutputTokens: request.baseUrl ? (request.maxOutputTokens === "0" ? "4096" : request.maxOutputTokens) : "0",
       setBy: { accountId: "", email: request.caller?.canonicalEmail ?? "" },
       setAt: new Date().toISOString(),
     };

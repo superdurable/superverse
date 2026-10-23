@@ -62,7 +62,7 @@ func TestCustomEndpointDiscoveryNetworkIntegration(t *testing.T) {
 		{"empty", 0, modelendpoint.DiscoveryEmpty, false}, {"one", 1, modelendpoint.DiscoverySupported, false}, {"many", 2, modelendpoint.DiscoverySupported, false}, {"unsupported", 0, modelendpoint.DiscoveryUnsupported, false}, {"max-count", 100, modelendpoint.DiscoverySupported, false}, {"max-id", 1, modelendpoint.DiscoverySupported, false}, {"key", 0, "", true}, {"pagination", 0, "", true}, {"count", 0, "", true}, {"id", 0, "", true}, {"bytes", 0, "", true},
 	} {
 		t.Run(test.fixture, func(t *testing.T) {
-			ids, result, err := runtime.Discover(t.Context(), conversation.ProviderQwen, base+"/custom/"+test.fixture+"/v1", mockmodel.APIKeyForTest)
+			ids, result, err := runtime.DiscoverForTest(t.Context(), conversation.ProviderQwen, base+"/custom/"+test.fixture+"/v1", mockmodel.APIKeyForTest)
 			if test.bounded {
 				if !errors.Is(err, modelendpoint.ErrDiscoveryBounds) {
 					t.Fatalf("bounds were not refused: %T", err)
@@ -73,6 +73,15 @@ func TestCustomEndpointDiscoveryNetworkIntegration(t *testing.T) {
 				t.Fatalf("discovery result: count=%d result=%s error=%T", len(ids), result, err)
 			}
 		})
+	}
+	models, _, err := runtime.DiscoverModels(t.Context(), conversation.ProviderQwen, base+"/custom/context/v1", mockmodel.APIKeyForTest)
+	if err != nil || len(models) != 5 {
+		t.Fatalf("context hints: count=%d error=%T", len(models), err)
+	}
+	for index, expected := range []int64{131072, 262144, 0, 0, 0} {
+		if models[index].ContextWindow != expected {
+			t.Fatalf("hint %d=%d, want %d", index, models[index].ContextWindow, expected)
+		}
 	}
 	for _, code := range []int{401, 403, 404, 429, 500, 503} {
 		endpoint, err := runtime.ResolveCustom(t.Context(), conversation.ProviderQwen, fmt.Sprintf("%s/custom/probe-%d/v1", base, code), mockmodel.CustomManualModelIDForTest, mockmodel.APIKeyForTest)
@@ -174,7 +183,7 @@ func TestCustomEndpointDiscoveryNetworkIntegration(t *testing.T) {
 		}
 	}
 	started := time.Now()
-	if _, _, err := runtime.Discover(t.Context(), conversation.ProviderQwen, base+"/custom/timeout/v1", mockmodel.APIKeyForTest); err == nil || time.Since(started) > 12*time.Second {
+	if _, _, err := runtime.DiscoverForTest(t.Context(), conversation.ProviderQwen, base+"/custom/timeout/v1", mockmodel.APIKeyForTest); err == nil || time.Since(started) > 12*time.Second {
 		t.Fatal("discovery did not enforce its ten-second deadline")
 	}
 	for _, target := range []string{"https://127.0.0.1", "https://10.0.0.1/v1", "https://169.254.169.254/latest", "https://metadata.google.internal/v1"} {
@@ -293,11 +302,11 @@ func TestCustomEndpointAdmissionRecoveryNetworkIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i := 0; i < 160; i++ {
-		ids, _, err := runtime.Discover(t.Context(), conversation.ProviderQwen, endpoint.BaseURL, mockmodel.APIKeyForTest)
+		ids, _, err := runtime.DiscoverForTest(t.Context(), conversation.ProviderQwen, endpoint.BaseURL, mockmodel.APIKeyForTest)
 		if err != nil || len(ids) != 1 {
 			t.Fatalf("discovery %d failed: %T", i, err)
 		}
-		if _, _, err := runtime.Discover(t.Context(), conversation.ProviderQwen, base+"/custom/count/v1", mockmodel.APIKeyForTest); err == nil {
+		if _, _, err := runtime.DiscoverForTest(t.Context(), conversation.ProviderQwen, base+"/custom/count/v1", mockmodel.APIKeyForTest); err == nil {
 			t.Fatal("bounded discovery succeeded")
 		}
 		rejected := endpoint

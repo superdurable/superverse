@@ -415,7 +415,14 @@ func (request messagesRequest) validateMessagesProfile(r *http.Request, body []b
 		want = `{"type":"adaptive","display":"omitted"}`
 	}
 	var maxTokens int64
-	if json.Unmarshal(fields["max_tokens"], &maxTokens) != nil || (request.Stream && maxTokens != modelprovider.ProfileOf(model).MaximumOutputTokens() || !request.Stream && maxTokens != 64) {
+	expected := modelprovider.ProfileOf(model).MaximumOutputTokens()
+	if json.Unmarshal(fields["max_tokens"], &maxTokens) != nil {
+		return errors.New("compatible output budget is not an integer")
+	}
+	if model.IsCustom() && request.Stream && maxTokens >= 1 && maxTokens <= 65536 {
+		expected = maxTokens
+	}
+	if request.Stream && maxTokens != expected || !request.Stream && maxTokens != 64 {
 		return errors.New("compatible request has the wrong output budget")
 	}
 	allowed[control] = true

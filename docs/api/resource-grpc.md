@@ -258,9 +258,9 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 | RPC | Request | Response |
 | --- | --- | --- |
 | GetModelCredentialInfo | `project_id 1, ModelProvider provider 2` | `ModelCredentialInfo credential 1` |
-| SetModelCredential | `project_id 1, ModelProvider provider 2, request_id 3, optional uint64 expected_revision 4, api_key 5, base_url 6, custom_model_id 7` | `ModelCredentialInfo credential 1` |
+| SetModelCredential | `project_id 1, ModelProvider provider 2, request_id 3, optional uint64 expected_revision 4, api_key 5, base_url 6, custom_model_id 7, int64 context_window 8, int64 max_output_tokens 9` | `ModelCredentialInfo credential 1` |
 | DeleteModelCredential | `project_id 1, ModelProvider provider 2, request_id 3, optional uint64 expected_revision 4` | `ModelCredentialInfo credential 1` |
-| ListModelCredentialModels | `project_id 1, ModelProvider provider 2, api_key 3, base_url 4, optional uint64 expected_revision 5` | `repeated model_ids 1, ModelDiscoveryResult result 2` |
+| ListModelCredentialModels | `project_id 1, ModelProvider provider 2, api_key 3, base_url 4, optional uint64 expected_revision 5` | `repeated model_ids 1, ModelDiscoveryResult result 2, repeated ModelCredentialModel models 3` |
 
 <!-- END GENERATED SERVICE TABLE -->
 
@@ -1987,8 +1987,20 @@ and duplicate UI shells are removed. Implementation receipts record identities, 
 results and gaps.
 
 `ListModelCredentialModels` belongs to the credential service so transient key
-requests share its logging exclusion. It returns only bounded model IDs and a
-closed discovery result. With no transient key, `expected_revision` must match
+requests share its logging exclusion. It retains bounded model_ids and the
+closed discovery result, and adds models containing only model_id and advisory
+context_window (zero means no admitted hint). Existing ID-only clients remain
+compatible. With no transient key, `expected_revision` must match
 the active provider metadata and `base_url` must equal its canonical stored
 endpoint. An API key is never probed against a different URL. `SetModelCredential`
 updates custom endpoint/model metadata and the key as one provider revision.
+
+
+Custom `SetModelCredential` accepts int64 context_window (field 8) and
+max_output_tokens (field 9); ModelCredentialInfo returns normalized values in
+fields 15 and 16. Zero means omitted: 32,768 context and 4,096 output. Context is
+32,768–1,000,000 and output is 1–min(65,536, floor(context/8)). Nonzero budget
+fields require a custom endpoint. Invalid declarations are rejected before the
+provider probe or writer reservation. They share the key/endpoint revision and
+existing replay/readback/child cleanup protocol; replay uses its admitted values.
+The optional discovery context is a suggestion; saving remains authoritative.

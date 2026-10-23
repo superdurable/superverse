@@ -243,6 +243,7 @@ import type { LogoutRequest as _superverse_v2_LogoutRequest, LogoutRequest__Outp
 import type { LogoutResponse as _superverse_v2_LogoutResponse, LogoutResponse__Output as _superverse_v2_LogoutResponse__Output } from './superverse/v2/LogoutResponse';
 import type { ManagedRepositorySource as _superverse_v2_ManagedRepositorySource, ManagedRepositorySource__Output as _superverse_v2_ManagedRepositorySource__Output } from './superverse/v2/ManagedRepositorySource';
 import type { ModelCredentialInfo as _superverse_v2_ModelCredentialInfo, ModelCredentialInfo__Output as _superverse_v2_ModelCredentialInfo__Output } from './superverse/v2/ModelCredentialInfo';
+import type { ModelCredentialModel as _superverse_v2_ModelCredentialModel, ModelCredentialModel__Output as _superverse_v2_ModelCredentialModel__Output } from './superverse/v2/ModelCredentialModel';
 import type { ModelCredentialServiceClient as _superverse_v2_ModelCredentialServiceClient, ModelCredentialServiceDefinition as _superverse_v2_ModelCredentialServiceDefinition } from './superverse/v2/ModelCredentialService';
 import type { NewTeamSpaceConnection as _superverse_v2_NewTeamSpaceConnection, NewTeamSpaceConnection__Output as _superverse_v2_NewTeamSpaceConnection__Output } from './superverse/v2/NewTeamSpaceConnection';
 import type { ObjectReference as _superverse_v2_ObjectReference, ObjectReference__Output as _superverse_v2_ObjectReference__Output } from './superverse/v2/ObjectReference';
@@ -663,6 +664,7 @@ export interface ProtoGrpcType {
       LogoutResponse: MessageTypeDefinition<_superverse_v2_LogoutResponse, _superverse_v2_LogoutResponse__Output>
       ManagedRepositorySource: MessageTypeDefinition<_superverse_v2_ManagedRepositorySource, _superverse_v2_ManagedRepositorySource__Output>
       ModelCredentialInfo: MessageTypeDefinition<_superverse_v2_ModelCredentialInfo, _superverse_v2_ModelCredentialInfo__Output>
+      ModelCredentialModel: MessageTypeDefinition<_superverse_v2_ModelCredentialModel, _superverse_v2_ModelCredentialModel__Output>
       ModelCredentialService: SubtypeConstructor<typeof grpc.Client, _superverse_v2_ModelCredentialServiceClient> & { service: _superverse_v2_ModelCredentialServiceDefinition }
       ModelCredentialStatus: EnumTypeDefinition
       ModelDiscoveryResult: EnumTypeDefinition

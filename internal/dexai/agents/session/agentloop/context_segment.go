@@ -136,7 +136,7 @@ func (segment ContextSegment) estimatedTokens() int64 {
 // AtHardLimit reports whether the context reached the size at which a failed
 // compaction opens an unsummarized segment.
 func (segment ContextSegment) AtHardLimit() bool {
-	return segment.ForceCompaction || segment.estimatedTokens() >= modelprovider.ProfileOf(segment.Model).HardLimit
+	return segment.ForceCompaction || segment.estimatedTokens() >= comm.Must(modelprovider.ProfileFor(segment.Model, segment.Endpoint)).HardLimit
 }
 
 // SessionModel is the model a user selected for the Session and its revision.
@@ -290,7 +290,7 @@ func NewSegmentFor(previous *ContextSegment, first conversation.Sequence, reason
 // window. A turn whose compaction already failed skips it below the hard
 // limit. "" keeps the segment.
 func SegmentChange(segment ContextSegment, selected conversation.Model, settings ModelSettings, turn int64, isTurnStart bool) SegmentReason {
-	profile := modelprovider.ProfileOf(segment.Model)
+	profile := comm.Must(modelprovider.ProfileFor(segment.Model, segment.Endpoint))
 	if isTurnStart && (segment.Model != selected || segment.PromptDigest != SessionPromptFor(segment.Model).Digest ||
 		segment.Effort != modelprovider.ProfileOf(selected).BaseEffort(settings.Effort)) {
 		return SegmentReasonRollover

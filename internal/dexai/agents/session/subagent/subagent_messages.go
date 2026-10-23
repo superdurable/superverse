@@ -116,7 +116,7 @@ func (flow *SubagentFlow) segmentRequest(ctx dex.Context, kind agentloop.ModelCa
 	for index, entry := range transient {
 		entries = append(entries, conversation.SequencedEntry{Sequence: state.LastSequence + conversation.Sequence(index) + 1, Entry: entry})
 	}
-	profile := modelprovider.ProfileOf(segment.Model)
+	profile := comm.Must(modelprovider.ProfileFor(segment.Model, segment.Endpoint))
 	return conversation.ModelRequest{
 		Endpoint: segment.Endpoint, Model: segment.Model, Effort: segment.EffectiveEffort(), Prompts: prompts,
 		Messages:       conversation.AssembleRequest(entries, segment.CacheAnchor, profile.RequestShape()),

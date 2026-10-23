@@ -154,6 +154,7 @@ func checkLongHandoffNotice(text string, selected selection) error {
 // messagesRequest is the part of a Messages API request the mock model
 // reads; the client sends much more, which it ignores.
 type messagesRequest struct {
+	OutputBudget int64                 `json:"max_tokens"`
 	RequestBytes int                   `json:"-"`
 	Custom       bool                  `json:"-"`
 	WireTools    []json.RawMessage     `json:"-"`

@@ -43,19 +43,46 @@ test("Builder discovers a custom Qwen endpoint and runs tools, a child and compa
     await page.getByLabel("Use a custom endpoint", { exact: true }).check();
     await expect(page.getByLabel("Model Studio API key for the endpoint region", { exact: true })).toHaveCount(0);
     await page.getByLabel("Custom endpoint API key", { exact: true }).fill(MOCK_MODEL_API_KEY);
-    await page.getByLabel("Endpoint API base URL", { exact: true }).fill(endpoint);
+    await page.getByLabel("Endpoint API base URL", { exact: true }).fill(endpoint.replace("/many/", "/context/"));
+    const context = page.getByLabel("Context window (tokens)", { exact: true });
+    const output = page.getByLabel("Maximum output tokens", { exact: true });
+    await expect(context).toHaveValue("32768");
+    await expect(output).toHaveValue("");
     const model = page.getByLabel("Model ID (optional)", { exact: true });
     const discovered = page.waitForResponse(rpcAnswered("ListModelCredentialModels"));
     await page.getByRole("button", { name: "Discover models", exact: true }).click();
     expect((await discovered).ok()).toBe(true);
     await page.getByLabel("Discovered models", { exact: true }).selectOption("custom-model");
     await expect(model).toHaveValue("custom-model");
+    await expect(context).toHaveValue("262144");
+    await context.fill("131072");
+    await page.getByLabel("Discovered models", { exact: true }).selectOption("self-hosted-qwen");
+    await expect(context).toHaveValue("131072");
+    await context.fill("16000");
+    await page.getByRole("button", { name: "Save key", exact: true }).click();
+    await expect(page.locator("[data-model-credential]").getByRole("alert")).toContainText("32768 to 1000000");
+    await expect(key).toHaveValue(MOCK_MODEL_API_KEY);
+    await context.fill("131072");
+    await output.fill("16385");
+    await page.getByRole("button", { name: "Save key", exact: true }).click();
+    await expect(page.locator("[data-model-credential]").getByRole("alert")).toContainText("one eighth");
+    await output.fill("8192");
     let saved = page.waitForResponse(rpcAnswered("SetModelCredential"));
     await page.getByRole("button", { name: "Save key", exact: true }).click();
     expect((await saved).ok()).toBe(true);
     await expect(key).toHaveCount(0);
     await page.getByRole("button", { name: "Replace key", exact: true }).click();
     await expect(key).toHaveValue("");
+    await expect(context).toHaveValue("131072");
+    await expect(output).toHaveValue("8192");
+    const declared = await rpcResult(page.request, "GetModelCredentialInfo", {
+      projectId,
+      provider: "MODEL_PROVIDER_QWEN",
+    });
+    expect(declared.credential?.contextWindow).toBe("131072");
+    expect(declared.credential?.maxOutputTokens).toBe("8192");
+    await context.fill("32768");
+    await output.clear();
     await key.fill(MOCK_MODEL_API_KEY);
     await page.getByLabel("Endpoint API base URL", { exact: true }).fill(endpoint.replace("/many/", "/one/"));
     await model.clear();
@@ -69,6 +96,8 @@ test("Builder discovers a custom Qwen endpoint and runs tools, a child and compa
     });
     expect(state.credential?.customModelId).toBe("");
     expect(state.credential?.effectiveModelId).toBe("self-hosted-qwen");
+    expect(state.credential?.contextWindow).toBe("32768");
+    expect(state.credential?.maxOutputTokens).toBe("4096");
     expect(JSON.stringify(state)).not.toContain(MOCK_MODEL_API_KEY);
     await page.getByRole("button", { name: "Custom Chat endpoint", exact: true }).click();
     await expect(page.getByRole("textbox", { name: "Message the agent", exact: true })).toBeEnabled();

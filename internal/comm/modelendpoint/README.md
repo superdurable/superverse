@@ -65,3 +65,12 @@ that starts that listener constructs this client; user and catalog endpoints
 never use it. Hosted `allowLocalLoopback` stays false, so a custom URL naming
 that same listener is refused by the ordinary shared policy. This adds one
 bounded pool per mock-enabled replica, released with its existing listener.
+
+
+`DiscoverModelsWithStatus` uses that same bounded request/parser and returns only
+an ID and advisory integer context capacity per model. It accepts context_length,
+context_window and max_model_len hints in 32,768–1,000,000. Missing, malformed or
+out-of-range values do not invalidate otherwise valid IDs; conflicting aliases
+or duplicate-ID capacities omit the hint. Existing identifier-only discovery
+methods project that result for compatibility. No provider response object,
+additional request, stored hint, per-tenant cache or polling loop is introduced.

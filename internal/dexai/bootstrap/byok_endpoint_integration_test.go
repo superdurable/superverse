@@ -34,12 +34,14 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/dexflow/dexflowtest"
 	"github.com/superdurable/superversev2/internal/comm/flowid"
 	"github.com/superdurable/superversev2/internal/comm/platform/postgres"
+	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	sessionagent "github.com/superdurable/superversev2/internal/dexai/agents/session"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/mockmodel"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/subagent"
 	"github.com/superdurable/superversev2/internal/dexai/projects"
 	"github.com/superdurable/superversev2/internal/dexai/projects/projectdao"
 	"github.com/superdurable/superversev2/internal/dexai/projects/projecttest"
@@ -47,6 +49,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 // All application dependencies stay real; only model inference uses the approved mock.
@@ -406,6 +409,161 @@ func TestCustomEndpointSessionDexIntegration(t *testing.T) {
 			t.Fatal("legacy official context did not roll over to the custom endpoint")
 		}
 		t.Logf("FlowID=%s; official segment without optional fields safely continued through the custom endpoint", id)
+	})
+
+	t.Run("context", func(t *testing.T) {
+		for _, wire := range []struct {
+			model    pb.AgentModel
+			provider pb.ModelProvider
+		}{
+			{pb.AgentModel_AGENT_MODEL_ANTHROPIC_CUSTOM, pb.ModelProvider_MODEL_PROVIDER_ANTHROPIC},
+			{pb.AgentModel_AGENT_MODEL_OPENAI_CUSTOM, pb.ModelProvider_MODEL_PROVIDER_OPENAI},
+			{pb.AgentModel_AGENT_MODEL_QWEN_CUSTOM, pb.ModelProvider_MODEL_PROVIDER_QWEN},
+		} {
+			for _, legacy := range []bool{true, false} {
+				t.Run(fmt.Sprintf("%s/legacy=%t", wire.provider, legacy), func(t *testing.T) {
+					endpointURL, probe, stopEndpoint, err := mockmodel.StartCustomEndpointProbeForTest(ctx, logger)
+					if err != nil {
+						t.Fatal(err)
+					}
+					defer stopEndpoint()
+					project := projecttest.CreateForTest(ctx, t, projectClient, t.Name())
+					_, caller := projecttest.LoginForTest(ctx, t, project.CreatorAccountID)
+					id, zero := agentloop.SessionFlowID(project.ProjectID), uint64(0)
+					provider := modelcredential.ForModel(conversation.ModelAnthropicCustom)
+					if wire.provider == pb.ModelProvider_MODEL_PROVIDER_OPENAI {
+						provider = modelcredential.ForModel(conversation.ModelOpenAICustom)
+					}
+					if wire.provider == pb.ModelProvider_MODEL_PROVIDER_QWEN {
+						provider = modelcredential.ForModel(conversation.ModelQwenCustom)
+					}
+					request := &pb.SetModelCredentialRequest{ProjectId: project.ProjectID, Provider: wire.provider, RequestId: flowid.RandomID(20), ExpectedRevision: &zero, ApiKey: mockmodel.APIKeyForTest, BaseUrl: endpointURL + "/custom/one/v1", Caller: caller}
+					if !legacy {
+						request.ContextWindow, request.MaxOutputTokens = 131072, 8192
+					}
+					// Bounds fail before any network probe or writer admission.
+					for _, invalid := range []struct{ context, output int64 }{{16384, 0}, {1000001, 0}, {32768, 4097}, {131072, -1}} {
+						bad := proto.Clone(request).(*pb.SetModelCredentialRequest)
+						bad.RequestId = flowid.RandomID(20)
+						bad.ContextWindow, bad.MaxOutputTokens = invalid.context, invalid.output
+						if _, err := credentials.SetModelCredential(ctx, bad); status.Code(err) != codes.InvalidArgument {
+							t.Fatalf("invalid budget admitted: %s", status.Code(err))
+						}
+					}
+					saved, err := credentials.SetModelCredential(ctx, request)
+					if err != nil {
+						t.Fatalf("save context: %s", status.Code(err))
+					}
+					wantContext, wantOutput := int64(131072), int64(8192)
+					if legacy {
+						wantContext, wantOutput = 32768, 4096
+					}
+					if saved.GetCredential().GetContextWindow() != wantContext || saved.GetCredential().GetMaxOutputTokens() != wantOutput {
+						t.Fatal("normalized budget metadata mismatch")
+					}
+					replay := proto.Clone(request).(*pb.SetModelCredentialRequest)
+					replay.ContextWindow, replay.MaxOutputTokens = 262144, 16384
+					replayed, err := credentials.SetModelCredential(ctx, replay)
+					if err != nil || replayed.GetCredential().GetContextWindow() != wantContext || replayed.GetCredential().GetMaxOutputTokens() != wantOutput {
+						t.Fatal("operation replay changed its admitted budget")
+					}
+
+					if !legacy && wire.provider == pb.ModelProvider_MODEL_PROVIDER_ANTHROPIC {
+						info, err := sessions.ReadModelCredentialInfo(ctx, id, provider)
+						if err != nil {
+							t.Fatal(err)
+						}
+						valid, err := json.Marshal(info)
+						if err != nil {
+							t.Fatal(err)
+						}
+						info.Endpoint.ContextWindow = 16384
+						invalid, err := json.Marshal(info)
+						if err != nil {
+							t.Fatal(err)
+						}
+						writeMetadata := func(operation string, payload []byte) {
+							t.Helper()
+							_, err := reader.SetAttributes(ctx, &dexpb.SetAttributesRequest{FlowId: string(id), RequestId: operation + "-" + project.ProjectID, Attributes: []*dexpb.AttributeWrite{{Key: "ModelKeyInfo/" + provider.String(), Value: &dexpb.Value{Kind: &dexpb.Value_ObjValue{ObjValue: &dexpb.EncodedObject{Encoding: "json", Payload: payload}}}}}})
+							if err != nil {
+								t.Fatal("write owned metadata fixture")
+							}
+						}
+						// A corrupt nonzero declaration must not masquerade as an omitted default.
+						writeMetadata("invalid-budget", invalid)
+						_, readErr := credentials.GetModelCredentialInfo(ctx, &pb.GetModelCredentialInfoRequest{ProjectId: project.ProjectID, Provider: wire.provider, Caller: caller})
+						writeMetadata("restore-budget", valid)
+						if status.Code(readErr) != codes.Internal {
+							t.Fatalf("invalid stored budget read: %s", status.Code(readErr))
+						}
+					}
+					if legacy {
+						info, err := sessions.ReadModelCredentialInfo(ctx, id, provider)
+						if err != nil {
+							t.Fatal(err)
+						}
+						info.Endpoint.ContextWindow, info.Endpoint.MaxOutputTokens = 0, 0
+						payload, err := json.Marshal(info)
+						if err != nil {
+							t.Fatal(err)
+						}
+						// This owned idle fixture deliberately reproduces an existing key's absent optional fields.
+						_, err = reader.SetAttributes(ctx, &dexpb.SetAttributesRequest{FlowId: string(id), RequestId: "legacy-budget-" + project.ProjectID, Attributes: []*dexpb.AttributeWrite{{Key: "ModelKeyInfo/" + provider.String(), Value: &dexpb.Value{Kind: &dexpb.Value_ObjValue{ObjValue: &dexpb.EncodedObject{Encoding: "json", Payload: payload}}}}}})
+						if err != nil {
+							t.Fatal("seed legacy metadata")
+						}
+					}
+					if _, err := agent.UpdateSessionModel(ctx, &pb.UpdateSessionModelRequest{ProjectId: project.ProjectID, Model: wire.model, ExpectedRevision: &zero, Caller: caller}); err != nil {
+						t.Fatal(err)
+					}
+					send := func(number int, text string) agentloop.AgentSnapshot {
+						t.Helper()
+						if _, err := agent.SendMessage(ctx, &pb.SendMessageRequest{ProjectId: project.ProjectID, MessageId: flowid.RandomID(20), Text: mockInput(t, "custom-context", number).Content, Caller: caller}); err != nil {
+							t.Fatal(err)
+						}
+						return awaitCustomEndpointSnapshot(t, ctx, sessions, id, text)
+					}
+					send(1, "The first custom context boundary completed.")
+					_, _, compactions := probe.CustomBudgetForTest()
+					if legacy && compactions != 1 || !legacy && compactions != 0 {
+						t.Fatalf("23K boundary compacted %d times, legacy=%t", compactions, legacy)
+					}
+					if probe.CustomOutputBudgetForTest() != wantOutput {
+						t.Fatalf("wire output budget=%d, want %d", probe.CustomOutputBudgetForTest(), wantOutput)
+					}
+					if !legacy {
+						send(2, "The declared custom compaction completed.")
+						_, _, after := probe.CustomBudgetForTest()
+						if after != compactions+1 {
+							t.Fatalf("91K boundary compactions=%d", after)
+						}
+						snapshot := send(3, "The declared hard limit recovered without a summary.")
+						unsummarized := false
+						for _, message := range snapshot.History.Messages {
+							unsummarized = unsummarized || message.Message.Content == agentloop.SegmentMarker(agentloop.SegmentReasonUnsummarized)
+						}
+						if !unsummarized {
+							t.Fatal("99K failed compaction did not recover through the declared hard limit")
+						}
+						childSnapshot := send(4, "The declared context child completed.")
+						if len(childSnapshot.Description.Subagents) != 1 {
+							t.Fatal("declared budget child missing")
+						}
+						children := subagent.NewSubagentFlowClientForTest(server.dex, &subagent.SubagentFlow{}, reader)
+						child, err := children.SnapshotForTest(ctx, agenttasks.SubagentIdentity{ProjectID: project.ProjectID, AgentID: childSnapshot.Description.Subagents[0].AgentID})
+						if err != nil || child.Config == nil || child.Config.Endpoint.ContextWindow != wantContext || child.Config.Endpoint.MaxOutputTokens != wantOutput {
+							t.Fatal("child did not freeze the declared endpoint budgets")
+						}
+
+					}
+					info, err := credentials.GetModelCredentialInfo(ctx, &pb.GetModelCredentialInfoRequest{ProjectId: project.ProjectID, Provider: wire.provider, Caller: caller})
+					if err != nil || info.GetCredential().GetContextWindow() != wantContext || info.GetCredential().GetMaxOutputTokens() != wantOutput {
+						t.Fatal("saved/legacy metadata did not round trip")
+					}
+					t.Logf("FlowID=%s; context=%d output=%d compaction=%d hard=%d legacy=%t", id, wantContext, wantOutput, wantContext*11/16, wantContext*3/4, legacy)
+				})
+			}
+		}
 	})
 
 	if directory := os.Getenv("SUPERVERSE_TEST_BYOK_STUDIO_DIR"); directory != "" {

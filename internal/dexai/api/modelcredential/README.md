@@ -5,7 +5,7 @@ Purpose: Defines model credential envelopes, metadata and revision admission.
 
 Callers: `internal/dexai/api` imports this package.
 
-Dependencies: it imports `gen/superverse/v2`, `internal/comm`, `internal/comm/modelendpoint`, `internal/dexai/agents`, `internal/dexai/agents/modelcredential`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/session/modelprovider/openaicompat` and `internal/dexai/api/boundary`.
+Dependencies: it imports `gen/superverse/v2`, `internal/comm`, `internal/comm/modelendpoint`, `internal/dexai/agents`, `internal/dexai/agents/modelcredential`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/session/modelprovider`, `internal/dexai/agents/session/modelprovider/openaicompat` and `internal/dexai/api/boundary`.
 
 ```mermaid
 flowchart LR
@@ -17,8 +17,9 @@ flowchart LR
   self --> d3["internal/dexai/agents"]
   self --> d4["internal/dexai/agents/modelcredential"]
   self --> d5["internal/dexai/agents/session/conversation"]
-  self --> d6["internal/dexai/agents/session/modelprovider/openaicompat"]
-  self --> d7["internal/dexai/api/boundary"]
+  self --> d6["internal/dexai/agents/session/modelprovider"]
+  self --> d7["internal/dexai/agents/session/modelprovider/openaicompat"]
+  self --> d8["internal/dexai/api/boundary"]
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 

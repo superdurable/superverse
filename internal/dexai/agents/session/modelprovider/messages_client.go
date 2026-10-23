@@ -56,7 +56,10 @@ func (client *messagesClient) complete(ctx context.Context, request conversation
 				slog.String("model", request.Model.ProviderModel()), slog.String("code", rejected.Code), slog.Int("status", rejected.Status))
 		}
 	}()
-	profile := ProfileOf(request.Model)
+	profile, err := ProfileFor(request.Model, request.Endpoint)
+	if err != nil {
+		return conversation.ModelReply{}, conversation.ModelUnavailable.Rejected()
+	}
 	if request.Model.Details().Provider.APIStyle() != conversation.AnthropicMessages || profile.Capabilities.Replay == conversation.ReplayPlaintextRequired || profile.Capabilities.Replay == conversation.ReplayClaudeSigned {
 		return conversation.ModelReply{}, conversation.ModelUnavailable.Rejected()
 	}

@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Routes catalog-selected model calls and validates requests, private replay and streamed replies over Claude and compatible APIs.
 
-Callers: `cmd/superverse-server/config`, `cmd/tools/check-proto-enums`, `internal/dexai/agents`, `internal/dexai/agents/session`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/modelprovider/mockmodel`, `internal/dexai/agents/session/subagent`, `internal/dexai/api` and `internal/dexai/bootstrap` import this package.
+Callers: `cmd/superverse-server/config`, `cmd/tools/check-proto-enums`, `internal/dexai/agents`, `internal/dexai/agents/session`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/modelprovider/mockmodel`, `internal/dexai/agents/session/subagent`, `internal/dexai/api`, `internal/dexai/api/modelcredential` and `internal/dexai/bootstrap` import this package.
 
 Dependencies: it imports `internal/comm`, `internal/comm/modelendpoint`, `internal/dexai/agents/session/conversation` and `internal/dexai/agents/session/modelprovider/openaicompat` and calls the Claude and compatible Messages APIs and Dex Flow APIs.
 
@@ -18,7 +18,8 @@ flowchart LR
   c5["internal/dexai/agents/session/modelprovider/mockmodel"] --> self
   c6["internal/dexai/agents/session/subagent"] --> self
   c7["internal/dexai/api"] --> self
-  c8["internal/dexai/bootstrap"] --> self
+  c8["internal/dexai/api/modelcredential"] --> self
+  c9["internal/dexai/bootstrap"] --> self
   self --> d0["internal/comm"]
   self --> d1["internal/comm/modelendpoint"]
   self --> d2["internal/dexai/agents/session/conversation"]
@@ -209,12 +210,21 @@ prompts include every implemented model, independently of runtime enablement;
 configuration never mutates prompt or capability facts.
 
 Custom selections use one version-1 conservative profile per fixed wire family,
-with a 32,768-token context, 4,096 output tokens, a 22,528 compaction threshold
-and a 24,576 hard limit. They offer text and serial tools; images, effort,
+with default context 32,768 and output 4,096. A Builder may declare custom context
+from 32,768 to 1,000,000 and output from 1 to the smaller of 65,536 and one eighth
+of context. The profile derives a compaction ceiling of `floor(context * 11 / 16)`
+and hard limit of `floor(context * 3 / 4)`. The actual compaction trigger remains
+the smaller of that ceiling and `agent.compactionTokens`. Default thresholds
+therefore remain 22,528 and 24,576; absent saved fields preserve those limits. They offer text and serial tools; images, effort,
 parallel tools, strict schemas, prompt cache, thinking controls and reasoning
 replay are disabled. Compatible Responses and Chat Completions discard readable reasoning before any writer or durable state while continuing visible content and serial tools. Parallel tool proposals are refused.
 The frozen system/tool prompt is about 17.7K estimated tokens, leaving about
-4.8K tokens of conversation between compactions. Custom context sizes are fixed.
+4.8K tokens of conversation between compactions at the default size. Declared
+capacity is configuration, not live verification of an endpoint's token limits.
+`ModelKeyInfo/<provider>.Endpoint` owns it; each Session segment and child freezes
+its own selection and output budget. All custom request wires and hard-limit
+recovery derive from that same frozen selection. Malformed declarations fail
+closed, and official model profiles do not accept custom budget overrides.
 
 The API root is supplied explicitly and validated by the shared endpoint pool.
 Only the effective model ID enters the inference JSON model field; it is never

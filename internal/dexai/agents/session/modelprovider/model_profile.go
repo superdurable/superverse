@@ -9,6 +9,7 @@
 package modelprovider
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
@@ -186,3 +187,36 @@ func (profile ModelProfile) RequestShape() conversation.RequestShape {
 
 // MaximumOutputTokens is the reviewed per-reply request budget.
 func (profile ModelProfile) MaximumOutputTokens() int64 { return profile.maxTokens }
+
+// NormalizeCustomEndpointBudget admits a declaration without inferring vendor capacity.
+func NormalizeCustomEndpointBudget(endpoint conversation.EndpointSelection) (conversation.EndpointSelection, error) {
+	if endpoint.ContextWindow == 0 {
+		endpoint.ContextWindow = 32768
+	}
+	if endpoint.MaxOutputTokens == 0 {
+		endpoint.MaxOutputTokens = 4096
+	}
+	if endpoint.ContextWindow < 32768 || endpoint.ContextWindow > 1_000_000 {
+		return conversation.EndpointSelection{}, errors.New("custom context window must contain 32768 to 1000000 tokens")
+	}
+	if endpoint.MaxOutputTokens < 1 || endpoint.MaxOutputTokens > min(int64(65536), endpoint.ContextWindow/8) {
+		return conversation.EndpointSelection{}, errors.New("custom maximum output tokens must be from 1 to the smaller of 65536 and one eighth of the context window")
+	}
+	return endpoint, nil
+}
+
+// ProfileFor derives an immutable execution profile from the frozen endpoint choice.
+// Older saved keys and segments keep their conservative default budgets.
+func ProfileFor(model conversation.Model, endpoint conversation.EndpointSelection) (ModelProfile, error) {
+	profile := ProfileOf(model)
+	if !model.IsCustom() {
+		return profile, nil
+	}
+	endpoint, err := NormalizeCustomEndpointBudget(endpoint)
+	if err != nil {
+		return ModelProfile{}, err
+	}
+	profile.ContextWindow, profile.maxTokens = endpoint.ContextWindow, endpoint.MaxOutputTokens
+	profile.compactionCeiling, profile.HardLimit = endpoint.ContextWindow*11/16, endpoint.ContextWindow*3/4
+	return profile, nil
+}

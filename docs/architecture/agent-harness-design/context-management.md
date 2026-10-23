@@ -954,3 +954,23 @@ one-hour retry budgets and compaction reason semantics remain.
 A fully completed refusal is definitive even when the aggregate Responses reply
 ends with incomplete/max_output_tokens. Refusal takes precedence over the output
 limit and ends the turn; completed ordinary text at that limit still continues.
+
+
+### Custom endpoint context budgets
+
+The current custom budget belongs to `ModelKeyInfo/<provider>.Endpoint`; each
+`ContextSegment.Endpoint` freezes its historical ContextWindow/MaxOutputTokens
+and credential revision. Missing fields in an existing key or open segment mean
+32,768 context and 4,096 output. Custom context is bounded to 32,768–1,000,000;
+output is 1–min(65,536, floor(context/8)), default 4,096. The minimum fits the
+current approximately 17.7K-token platform prompt.
+
+Session and Subagent model requests, compaction admission, failed-compaction hard
+recovery and executor/credential handoff suffix selection use the same derived
+profile. Its compaction ceiling is floor(context*11/16), still capped by the
+operator's agent.compactionTokens; hard limit is floor(context*3/4). Credential
+replacement uses the existing revision and safe rollover, never changes a frozen
+segment in place, and stops affected child copies. No Flow/Step identity,
+Channel, Stream, message-map key, retention or external-effect policy changes.
+The declaration grants no new wire, image, thinking or replay capability and
+does not verify the endpoint's actual capacity.

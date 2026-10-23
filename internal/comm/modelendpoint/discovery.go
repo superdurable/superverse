@@ -59,8 +59,24 @@ func (p *Pool) Discover(ctx context.Context, base, key string, messages bool) ([
 	return ids, result, err
 }
 
-// DiscoverWithStatus shares discovery bounds and parsing while retaining only the HTTP status.
+// DiscoveredModel contains only a bounded identifier and an advisory numeric capacity.
+type DiscoveredModel struct {
+	ID            string
+	ContextWindow int64
+}
+
+// DiscoverWithStatus preserves the identifier-only API for existing consumers.
 func (p *Pool) DiscoverWithStatus(ctx context.Context, base, key string, messages bool) ([]string, DiscoveryResult, int, error) {
+	models, result, status, err := p.DiscoverModelsWithStatus(ctx, base, key, messages)
+	ids := make([]string, 0, len(models))
+	for _, model := range models {
+		ids = append(ids, model.ID)
+	}
+	return ids, result, status, err
+}
+
+// DiscoverModelsWithStatus admits bounded advisory hints without returning provider objects.
+func (p *Pool) DiscoverModelsWithStatus(ctx context.Context, base, key string, messages bool) ([]DiscoveredModel, DiscoveryResult, int, error) {
 	httpStatus := 0
 	select {
 	case discoverySlots <- struct{}{}:
@@ -108,7 +124,10 @@ func (p *Pool) DiscoverWithStatus(ctx context.Context, base, key string, message
 	}
 	var body struct {
 		Data []struct {
-			ID string `json:"id"`
+			ID            string          `json:"id"`
+			ContextLength json.RawMessage `json:"context_length"`
+			ContextWindow json.RawMessage `json:"context_window"`
+			MaxModelLen   json.RawMessage `json:"max_model_len"`
 		} `json:"data"`
 		HasMore bool `json:"has_more"`
 	}
@@ -118,21 +137,26 @@ func (p *Pool) DiscoverWithStatus(ctx context.Context, base, key string, message
 	if len(body.Data) > 100 || body.HasMore {
 		return nil, "", httpStatus, ErrDiscoveryBounds
 	}
-	ids := make([]string, 0, len(body.Data))
-	seen := make(map[string]bool, len(body.Data))
+	models := make([]DiscoveredModel, 0, len(body.Data))
+	seen := make(map[string]int, len(body.Data))
 	for _, model := range body.Data {
 		if !ValidModelID(model.ID) || strings.Contains(model.ID, key) || strings.Contains(model.ID, canonical) {
 			return nil, "", httpStatus, ErrDiscoveryBounds
 		}
-		if !seen[model.ID] {
-			ids = append(ids, model.ID)
-			seen[model.ID] = true
+		hint := discoveryContextHint(model.ContextLength, model.ContextWindow, model.MaxModelLen)
+		if index, exists := seen[model.ID]; exists {
+			if models[index].ContextWindow != hint {
+				models[index].ContextWindow = 0
+			}
+		} else {
+			seen[model.ID] = len(models)
+			models = append(models, DiscoveredModel{ID: model.ID, ContextWindow: hint})
 		}
 	}
-	if len(ids) == 0 {
-		return ids, DiscoveryEmpty, httpStatus, nil
+	if len(models) == 0 {
+		return models, DiscoveryEmpty, httpStatus, nil
 	}
-	return ids, DiscoverySupported, httpStatus, nil
+	return models, DiscoverySupported, httpStatus, nil
 }
 
 // Keep transport classification without retaining request URLs or credential-bearing errors.
@@ -145,4 +169,20 @@ func discoveryTransportError(err error) error {
 		return context.Canceled
 	}
 	return errDiscovery
+}
+
+// Hints are advisory: malformed values never invalidate an otherwise bounded ID.
+func discoveryContextHint(values ...json.RawMessage) int64 {
+	var hint int64
+	for _, raw := range values {
+		var value int64
+		if json.Unmarshal(raw, &value) != nil || value < 32768 || value > 1_000_000 {
+			continue
+		}
+		if hint != 0 && hint != value {
+			return 0
+		}
+		hint = value
+	}
+	return hint
 }

@@ -1,0 +1,64 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+
+name: custom-context
+title: "Declared custom endpoint context"
+description: "A declared window retains 23K usage, compacts at 91K and recovers a failed compaction above its hard limit."
+category: agent_feature
+compaction_summary: "The custom context budget was exercised."
+inputs:
+  - label: "Cross the legacy threshold"
+    message: "Keep working beyond the legacy custom context limit."
+    replies:
+      - text: "Crossing 23K tokens."
+        tool_uses:
+          - name: read
+            input: {path: dex-app.yaml, limit: 20}
+        usage: {input_tokens: 23000, output_tokens: 100}
+      - text: "The first custom context boundary completed."
+  - label: "Cross the declared threshold"
+    message: "Continue through the declared compaction boundary."
+    replies:
+      - text: "Crossing 91K tokens."
+        tool_uses:
+          - name: read
+            input: {path: dex-app.yaml, limit: 20}
+        usage: {input_tokens: 91000, output_tokens: 100}
+      - text: "The declared custom compaction completed."
+  - label: "Recover at the declared hard limit"
+    message: "Recover after the declared context fills."
+    replies:
+      - text: "Crossing 99K tokens."
+        tool_uses:
+          - name: write_todos
+            input:
+              todos:
+                - {content: "Continue after failed compaction [[scenario-step:1]]", status: in_progress}
+        usage: {input_tokens: 99000, output_tokens: 100}
+        compaction_error: {status: 400, type: invalid_request_error, message: "Synthetic compaction rejection."}
+      - text: "The declared hard limit recovered without a summary."
+  - label: "Delegate with the declared budget"
+    message: "Delegate one check with the saved context budget."
+    replies:
+      - text: "Starting the custom context child."
+        tool_uses:
+          - name: start_agent
+            input: {description: "Check the custom context", kind: investigate, prompt: "Inspect the workspace. [[subagent:custom-context/check]]"}
+      - text: "The custom context child is running."
+      - text: "The declared context child completed."
+        notification: task
+subagents:
+  check:
+    kind: investigate
+    replies:
+      - text: "Reading in the custom context child."
+        tool_uses:
+          - name: read
+            input: {path: dex-app.yaml, limit: 20}
+      - text: "The custom context child checked the workspace."

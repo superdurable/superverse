@@ -54,6 +54,7 @@
     ],
     "/superverse.v2.AgentService/SteerQueuedMessage": [],
     "/superverse.v2.AgentService/UpdateSessionModel": [
+      "api-integration",
       "native-e2e",
       "native-integration"
     ],
@@ -194,6 +195,7 @@
       "native-integration"
     ],
     "/superverse.v2.ModelCredentialService/GetModelCredentialInfo": [
+      "api-integration",
       "kind-e2e",
       "native-e2e",
       "native-integration"
@@ -202,6 +204,7 @@
       "native-integration"
     ],
     "/superverse.v2.ModelCredentialService/SetModelCredential": [
+      "api-integration",
       "native-integration"
     ],
     "/superverse.v2.PreviewService/GetPreview": [

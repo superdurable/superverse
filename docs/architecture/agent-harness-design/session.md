@@ -1490,21 +1490,28 @@ Five explicit catalog choices use conservative custom profiles: `anthropic/custo
 (Messages), `openai/custom` and `xai/custom` (Responses), and `gemini/custom` and
 `qwen/custom` (Chat). They follow the validated provider enable list; hosted
 defaults expose none. Other provider namespaces retain their existing availability.
-Each version-1 profile has context 32,768, output 4,096, compaction 22,528 and hard
-limit 24,576. The fixed prompt estimates about 17.7K tokens, leaving about 4.8K
-tokens of conversation between compactions; context size is not user-configurable.
+Each version-1 profile defaults to context 32,768, output 4,096, compaction 22,528
+and hard limit 24,576. A Builder can declare context 32,768–1,000,000 and optional
+output 1–min(65,536, floor(context/8)), default 4,096, while saving the key.
+Compaction is min(agent.compactionTokens, floor(context*11/16)); hard limit is
+floor(context*3/4). The fixed prompt estimates about 17.7K tokens, leaving about 4.8K
+tokens of conversation between compactions at the default context size.
 A custom URL always uses its explicit custom identity; an official catalog
 identity cannot run against custom metadata.
 
 `ModelKeyInfo/<provider>.Endpoint` is the sole owner of the canonical API base
-URL, optional requested model ID, effective model ID and custom profile version.
+URL, optional requested model ID, effective model ID, custom profile version and
+optional int64 ContextWindow/MaxOutputTokens. Absent budget fields retain the
+32,768/4,096 defaults without backfill; these fields add no Map, index or SQL sync.
 The secret map envelope still contains only revision/key. Any endpoint, key or
 model change uses one existing reservation/write/readback/finalization revision.
 A new segment freezes that revision and effective endpoint selection; child
 Start/Config freezes the same non-secret selection. An older execution without
 these optional fields retains its official catalog behavior.
 
-Model discovery returns IDs only. An omitted ID resolves only a single discovered
+Model discovery returns bounded IDs and optional advisory context hints from
+context_length, context_window or max_model_len. Invalid or conflicting hints
+are omitted; only an untouched unsaved Studio default can be prefilled. An omitted ID resolves only a single discovered
 model; multiple results require selection, and unsupported or empty listings
 require manual input. IDs are opaque JSON fields bounded to 256 bytes. The
 Builder-only credential service performs authenticated discovery with a transient

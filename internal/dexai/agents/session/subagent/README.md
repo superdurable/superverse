@@ -247,3 +247,13 @@ the Service copies directly after Start under the Session writer gate. The first
 model Step fails closed and uses its existing bounded retry while a copy arrives.
 There is no credential Channel, confirmation RPC or waiting Step because these
 would duplicate that short readiness boundary. Terminal outcomes delete the copy.
+
+
+Custom endpoint context/output budgets are frozen in Start.Endpoint,
+Config.Endpoint and ContextSegment.Endpoint with the admitted credential revision.
+The Session's ModelKeyInfo/provider remains the sole current configuration owner.
+Absent fields preserve 32,768 context and 4,096 output; declared values use the
+shared execution-profile resolver for model/compaction output, compaction trigger
+and hard-limit recovery. A parent edit stops affected children through existing
+credential cleanup; no child rereads a mutable parent profile. No new primitive,
+instance key, index, query, Stream or retention path is added.

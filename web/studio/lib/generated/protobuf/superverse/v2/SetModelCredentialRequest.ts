@@ -12,6 +12,8 @@ export interface SetModelCredentialRequest {
   'apiKey'?: (string);
   'baseUrl'?: (string);
   'customModelId'?: (string);
+  'contextWindow'?: (number | string | Long);
+  'maxOutputTokens'?: (number | string | Long);
   'caller'?: (_superverse_v2_CallerContext | null);
   '_expectedRevision'?: "expectedRevision";
 }
@@ -24,6 +26,8 @@ export interface SetModelCredentialRequest__Output {
   'apiKey': (string);
   'baseUrl': (string);
   'customModelId': (string);
+  'contextWindow': (string);
+  'maxOutputTokens': (string);
   'caller': (_superverse_v2_CallerContext__Output | null);
   '_expectedRevision'?: "expectedRevision";
 }

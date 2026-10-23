@@ -216,6 +216,13 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	request, err := parseRequest(r, body, acceptedModels...)
 	request.RequestBytes = len(body)
+	var output struct {
+		MaxTokens int64 `json:"max_tokens"`
+		MaxOutput int64 `json:"max_output_tokens"`
+	}
+	if json.Unmarshal(body, &output) == nil {
+		request.OutputBudget = max(output.MaxTokens, output.MaxOutput)
+	}
 	request.Custom = h.custom && r.Header.Get(customHeader) == "true"
 	if (request.Model == customDiscoveredModelID || request.Model == customManualModelID) && !request.Custom {
 		w.WriteHeader(http.StatusBadRequest)
@@ -392,6 +399,7 @@ type CredentialProbeForTest struct {
 	firstCustomBytes      int
 	firstCustomCompaction bool
 	customCompactions     int
+	customOutputBudget    int64
 	gate                  *credentialGate
 }
 
@@ -493,6 +501,13 @@ func (h *handler) serveOpenAI(w http.ResponseWriter, r *http.Request) {
 
 	request, err := parseOpenAIRequest(body, r.URL.Path == openaicompat.ResponsesPath)
 	request.RequestBytes = len(body)
+	var output struct {
+		MaxTokens int64 `json:"max_tokens"`
+		MaxOutput int64 `json:"max_output_tokens"`
+	}
+	if json.Unmarshal(body, &output) == nil {
+		request.OutputBudget = max(output.MaxTokens, output.MaxOutput)
+	}
 	request.Custom = h.custom && r.Header.Get(customHeader) == "true"
 	if (request.Model == customDiscoveredModelID || request.Model == customManualModelID) && !request.Custom {
 		w.WriteHeader(http.StatusBadRequest)
@@ -872,14 +887,25 @@ func (h *handler) discover(w http.ResponseWriter, r *http.Request, fixture strin
 	case "timeout":
 		<-r.Context().Done()
 		return
+	case "context":
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"data": []any{
+			map[string]any{"id": customDiscoveredModelID, "context_length": 131072},
+			map[string]any{"id": customManualModelID, "context_window": 262144},
+			map[string]any{"id": "invalid-hint", "context_length": "999999999999999999999"},
+			map[string]any{"id": "conflict-hint", "context_length": 131072, "max_model_len": 65536},
+			map[string]any{"id": "duplicate-hint", "context_length": 131072},
+			map[string]any{"id": "duplicate-hint", "context_length": 65536},
+		}})
+		return
 	case "one":
 	default:
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	data := make([]map[string]string, 0, len(ids))
+	data := make([]map[string]any, 0, len(ids))
 	for _, id := range ids {
-		data = append(data, map[string]string{"id": id})
+		data = append(data, map[string]any{"id": id})
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{"data": data, "has_more": fixture == "pagination"})
@@ -903,12 +929,20 @@ func (p *CredentialProbeForTest) observeCustom(request messagesRequest) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	compact := isCompaction(request.Messages)
+	p.customOutputBudget = request.OutputBudget
 	if p.firstCustomBytes == 0 {
 		p.firstCustomBytes, p.firstCustomCompaction = request.RequestBytes, compact
 	}
 	if compact {
 		p.customCompactions++
 	}
+}
+
+// CustomOutputBudgetForTest reports the most recent custom inference output limit.
+func (p *CredentialProbeForTest) CustomOutputBudgetForTest() int64 {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.customOutputBudget
 }
 
 // CustomBudgetForTest returns bounded numeric wire measurements without payloads.

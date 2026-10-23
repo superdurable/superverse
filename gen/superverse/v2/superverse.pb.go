@@ -29374,6 +29374,8 @@ type ModelCredentialInfo struct {
 	CustomModelId        string        `protobuf:"bytes,12,opt,name=custom_model_id,json=customModelId,proto3" json:"custom_model_id,omitempty"`
 	EffectiveModelId     string        `protobuf:"bytes,13,opt,name=effective_model_id,json=effectiveModelId,proto3" json:"effective_model_id,omitempty"`
 	CustomProfileVersion uint32        `protobuf:"varint,14,opt,name=custom_profile_version,json=customProfileVersion,proto3" json:"custom_profile_version,omitempty"`
+	ContextWindow        int64         `protobuf:"varint,15,opt,name=context_window,json=contextWindow,proto3" json:"context_window,omitempty"`
+	MaxOutputTokens      int64         `protobuf:"varint,16,opt,name=max_output_tokens,json=maxOutputTokens,proto3" json:"max_output_tokens,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -29499,6 +29501,20 @@ func (x *ModelCredentialInfo) GetCustomProfileVersion() uint32 {
 	return 0
 }
 
+func (x *ModelCredentialInfo) GetContextWindow() int64 {
+	if x != nil {
+		return x.ContextWindow
+	}
+	return 0
+}
+
+func (x *ModelCredentialInfo) GetMaxOutputTokens() int64 {
+	if x != nil {
+		return x.MaxOutputTokens
+	}
+	return 0
+}
+
 type GetModelCredentialInfoRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProjectId     string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
@@ -29610,12 +29626,15 @@ type SetModelCredentialRequest struct {
 	RequestId        string                 `protobuf:"bytes,3,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	ExpectedRevision *uint64                `protobuf:"varint,4,opt,name=expected_revision,json=expectedRevision,proto3,oneof" json:"expected_revision,omitempty"`
 	// Sensitive: transient authentication material, never recorded in a Flow RPC.
-	ApiKey        string         `protobuf:"bytes,5,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
-	BaseUrl       string         `protobuf:"bytes,6,opt,name=base_url,json=baseUrl,proto3" json:"base_url,omitempty"`
-	CustomModelId string         `protobuf:"bytes,7,opt,name=custom_model_id,json=customModelId,proto3" json:"custom_model_id,omitempty"`
-	Caller        *CallerContext `protobuf:"bytes,100,opt,name=caller,proto3" json:"caller,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	ApiKey        string `protobuf:"bytes,5,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
+	BaseUrl       string `protobuf:"bytes,6,opt,name=base_url,json=baseUrl,proto3" json:"base_url,omitempty"`
+	CustomModelId string `protobuf:"bytes,7,opt,name=custom_model_id,json=customModelId,proto3" json:"custom_model_id,omitempty"`
+	// Custom endpoints only; zero retains the conservative default.
+	ContextWindow   int64          `protobuf:"varint,8,opt,name=context_window,json=contextWindow,proto3" json:"context_window,omitempty"`
+	MaxOutputTokens int64          `protobuf:"varint,9,opt,name=max_output_tokens,json=maxOutputTokens,proto3" json:"max_output_tokens,omitempty"`
+	Caller          *CallerContext `protobuf:"bytes,100,opt,name=caller,proto3" json:"caller,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *SetModelCredentialRequest) Reset() {
@@ -29695,6 +29714,20 @@ func (x *SetModelCredentialRequest) GetCustomModelId() string {
 		return x.CustomModelId
 	}
 	return ""
+}
+
+func (x *SetModelCredentialRequest) GetContextWindow() int64 {
+	if x != nil {
+		return x.ContextWindow
+	}
+	return 0
+}
+
+func (x *SetModelCredentialRequest) GetMaxOutputTokens() int64 {
+	if x != nil {
+		return x.MaxOutputTokens
+	}
+	return 0
 }
 
 func (x *SetModelCredentialRequest) GetCaller() *CallerContext {
@@ -29953,17 +29986,71 @@ func (x *ListModelCredentialModelsRequest) GetCaller() *CallerContext {
 	return nil
 }
 
+type ModelCredentialModel struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	ModelId string                 `protobuf:"bytes,1,opt,name=model_id,json=modelId,proto3" json:"model_id,omitempty"`
+	// Advisory capacity reported by the endpoint; zero means no admitted hint.
+	ContextWindow int64 `protobuf:"varint,2,opt,name=context_window,json=contextWindow,proto3" json:"context_window,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModelCredentialModel) Reset() {
+	*x = ModelCredentialModel{}
+	mi := &file_superverse_v2_superverse_proto_msgTypes[357]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModelCredentialModel) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModelCredentialModel) ProtoMessage() {}
+
+func (x *ModelCredentialModel) ProtoReflect() protoreflect.Message {
+	mi := &file_superverse_v2_superverse_proto_msgTypes[357]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModelCredentialModel.ProtoReflect.Descriptor instead.
+func (*ModelCredentialModel) Descriptor() ([]byte, []int) {
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{357}
+}
+
+func (x *ModelCredentialModel) GetModelId() string {
+	if x != nil {
+		return x.ModelId
+	}
+	return ""
+}
+
+func (x *ModelCredentialModel) GetContextWindow() int64 {
+	if x != nil {
+		return x.ContextWindow
+	}
+	return 0
+}
+
 type ListModelCredentialModelsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ModelIds      []string               `protobuf:"bytes,1,rep,name=model_ids,json=modelIds,proto3" json:"model_ids,omitempty"`
-	Result        ModelDiscoveryResult   `protobuf:"varint,2,opt,name=result,proto3,enum=superverse.v2.ModelDiscoveryResult" json:"result,omitempty"`
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	ModelIds      []string                `protobuf:"bytes,1,rep,name=model_ids,json=modelIds,proto3" json:"model_ids,omitempty"`
+	Result        ModelDiscoveryResult    `protobuf:"varint,2,opt,name=result,proto3,enum=superverse.v2.ModelDiscoveryResult" json:"result,omitempty"`
+	Models        []*ModelCredentialModel `protobuf:"bytes,3,rep,name=models,proto3" json:"models,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListModelCredentialModelsResponse) Reset() {
 	*x = ListModelCredentialModelsResponse{}
-	mi := &file_superverse_v2_superverse_proto_msgTypes[357]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[358]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -29975,7 +30062,7 @@ func (x *ListModelCredentialModelsResponse) String() string {
 func (*ListModelCredentialModelsResponse) ProtoMessage() {}
 
 func (x *ListModelCredentialModelsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_superverse_v2_superverse_proto_msgTypes[357]
+	mi := &file_superverse_v2_superverse_proto_msgTypes[358]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -29988,7 +30075,7 @@ func (x *ListModelCredentialModelsResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use ListModelCredentialModelsResponse.ProtoReflect.Descriptor instead.
 func (*ListModelCredentialModelsResponse) Descriptor() ([]byte, []int) {
-	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{357}
+	return file_superverse_v2_superverse_proto_rawDescGZIP(), []int{358}
 }
 
 func (x *ListModelCredentialModelsResponse) GetModelIds() []string {
@@ -30003,6 +30090,13 @@ func (x *ListModelCredentialModelsResponse) GetResult() ModelDiscoveryResult {
 		return x.Result
 	}
 	return ModelDiscoveryResult_MODEL_DISCOVERY_RESULT_UNSPECIFIED
+}
+
+func (x *ListModelCredentialModelsResponse) GetModels() []*ModelCredentialModel {
+	if x != nil {
+		return x.Models
+	}
+	return nil
 }
 
 var File_superverse_v2_superverse_proto protoreflect.FileDescriptor
@@ -32423,7 +32517,7 @@ const file_superverse_v2_superverse_proto_rawDesc = "" +
 	"valuesJson\"7\n" +
 	"\x11FlowBlobReference\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04kind\x18\x02 \x01(\tR\x04kind\"\xb8\x04\n" +
+	"\x04kind\x18\x02 \x01(\tR\x04kind\"\x8b\x05\n" +
 	"\x13ModelCredentialInfo\x12\x1a\n" +
 	"\brevision\x18\x01 \x01(\x04R\brevision\x12<\n" +
 	"\x06status\x18\x02 \x01(\x0e2$.superverse.v2.ModelCredentialStatusR\x06status\x12\x14\n" +
@@ -32438,7 +32532,9 @@ const file_superverse_v2_superverse_proto_rawDesc = "" +
 	"\bbase_url\x18\v \x01(\tB\x03\x80\x01\x01R\abaseUrl\x12+\n" +
 	"\x0fcustom_model_id\x18\f \x01(\tB\x03\x80\x01\x01R\rcustomModelId\x121\n" +
 	"\x12effective_model_id\x18\r \x01(\tB\x03\x80\x01\x01R\x10effectiveModelId\x124\n" +
-	"\x16custom_profile_version\x18\x0e \x01(\rR\x14customProfileVersion\"\xae\x01\n" +
+	"\x16custom_profile_version\x18\x0e \x01(\rR\x14customProfileVersion\x12%\n" +
+	"\x0econtext_window\x18\x0f \x01(\x03R\rcontextWindow\x12*\n" +
+	"\x11max_output_tokens\x18\x10 \x01(\x03R\x0fmaxOutputTokens\"\xae\x01\n" +
 	"\x1dGetModelCredentialInfoRequest\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\tR\tprojectId\x128\n" +
@@ -32447,7 +32543,7 @@ const file_superverse_v2_superverse_proto_rawDesc = "" +
 	"\x1eGetModelCredentialInfoResponse\x12B\n" +
 	"\n" +
 	"credential\x18\x01 \x01(\v2\".superverse.v2.ModelCredentialInfoR\n" +
-	"credential\"\xfc\x02\n" +
+	"credential\"\xcf\x03\n" +
 	"\x19SetModelCredentialRequest\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\tR\tprojectId\x128\n" +
@@ -32457,7 +32553,9 @@ const file_superverse_v2_superverse_proto_rawDesc = "" +
 	"\x11expected_revision\x18\x04 \x01(\x04H\x00R\x10expectedRevision\x88\x01\x01\x12\x1c\n" +
 	"\aapi_key\x18\x05 \x01(\tB\x03\x80\x01\x01R\x06apiKey\x12\x1e\n" +
 	"\bbase_url\x18\x06 \x01(\tB\x03\x80\x01\x01R\abaseUrl\x12+\n" +
-	"\x0fcustom_model_id\x18\a \x01(\tB\x03\x80\x01\x01R\rcustomModelId\x124\n" +
+	"\x0fcustom_model_id\x18\a \x01(\tB\x03\x80\x01\x01R\rcustomModelId\x12%\n" +
+	"\x0econtext_window\x18\b \x01(\x03R\rcontextWindow\x12*\n" +
+	"\x11max_output_tokens\x18\t \x01(\x03R\x0fmaxOutputTokens\x124\n" +
 	"\x06caller\x18d \x01(\v2\x1c.superverse.v2.CallerContextR\x06callerB\x14\n" +
 	"\x12_expected_revision\"`\n" +
 	"\x1aSetModelCredentialResponse\x12B\n" +
@@ -32485,10 +32583,14 @@ const file_superverse_v2_superverse_proto_rawDesc = "" +
 	"\bbase_url\x18\x04 \x01(\tB\x03\x80\x01\x01R\abaseUrl\x120\n" +
 	"\x11expected_revision\x18\x05 \x01(\x04H\x00R\x10expectedRevision\x88\x01\x01\x124\n" +
 	"\x06caller\x18d \x01(\v2\x1c.superverse.v2.CallerContextR\x06callerB\x14\n" +
-	"\x12_expected_revision\"\x82\x01\n" +
+	"\x12_expected_revision\"]\n" +
+	"\x14ModelCredentialModel\x12\x1e\n" +
+	"\bmodel_id\x18\x01 \x01(\tB\x03\x80\x01\x01R\amodelId\x12%\n" +
+	"\x0econtext_window\x18\x02 \x01(\x03R\rcontextWindow\"\xbf\x01\n" +
 	"!ListModelCredentialModelsResponse\x12 \n" +
 	"\tmodel_ids\x18\x01 \x03(\tB\x03\x80\x01\x01R\bmodelIds\x12;\n" +
-	"\x06result\x18\x02 \x01(\x0e2#.superverse.v2.ModelDiscoveryResultR\x06result*\xbc\x02\n" +
+	"\x06result\x18\x02 \x01(\x0e2#.superverse.v2.ModelDiscoveryResultR\x06result\x12;\n" +
+	"\x06models\x18\x03 \x03(\v2#.superverse.v2.ModelCredentialModelR\x06models*\xbc\x02\n" +
 	"\rFailureRemedy\x12\x1e\n" +
 	"\x1aFAILURE_REMEDY_UNSPECIFIED\x10\x00\x12\x1d\n" +
 	"\x19FAILURE_REMEDY_OPEN_SETUP\x10\x01\x12\x1e\n" +
@@ -32951,7 +33053,7 @@ func file_superverse_v2_superverse_proto_rawDescGZIP() []byte {
 }
 
 var file_superverse_v2_superverse_proto_enumTypes = make([]protoimpl.EnumInfo, 80)
-var file_superverse_v2_superverse_proto_msgTypes = make([]protoimpl.MessageInfo, 361)
+var file_superverse_v2_superverse_proto_msgTypes = make([]protoimpl.MessageInfo, 362)
 var file_superverse_v2_superverse_proto_goTypes = []any{
 	(FailureRemedy)(0),                                       // 0: superverse.v2.FailureRemedy
 	(FailureOwner)(0),                                        // 1: superverse.v2.FailureOwner
@@ -33390,21 +33492,22 @@ var file_superverse_v2_superverse_proto_goTypes = []any{
 	(*DeleteModelCredentialRequest)(nil),                     // 434: superverse.v2.DeleteModelCredentialRequest
 	(*DeleteModelCredentialResponse)(nil),                    // 435: superverse.v2.DeleteModelCredentialResponse
 	(*ListModelCredentialModelsRequest)(nil),                 // 436: superverse.v2.ListModelCredentialModelsRequest
-	(*ListModelCredentialModelsResponse)(nil),                // 437: superverse.v2.ListModelCredentialModelsResponse
-	nil,                           // 438: superverse.v2.InvokeProviderCommandRequest.ParametersEntry
-	nil,                           // 439: superverse.v2.SaveApplicationEnvironmentRequest.ValuesEntry
-	nil,                           // 440: superverse.v2.SaveApplicationEnvironmentRequest.SecretsEntry
-	(*timestamppb.Timestamp)(nil), // 441: google.protobuf.Timestamp
-	(*structpb.Struct)(nil),       // 442: google.protobuf.Struct
+	(*ModelCredentialModel)(nil),                             // 437: superverse.v2.ModelCredentialModel
+	(*ListModelCredentialModelsResponse)(nil),                // 438: superverse.v2.ListModelCredentialModelsResponse
+	nil,                           // 439: superverse.v2.InvokeProviderCommandRequest.ParametersEntry
+	nil,                           // 440: superverse.v2.SaveApplicationEnvironmentRequest.ValuesEntry
+	nil,                           // 441: superverse.v2.SaveApplicationEnvironmentRequest.SecretsEntry
+	(*timestamppb.Timestamp)(nil), // 442: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),       // 443: google.protobuf.Struct
 }
 var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	0,   // 0: superverse.v2.Failure.remedy:type_name -> superverse.v2.FailureRemedy
 	1,   // 1: superverse.v2.Failure.owner:type_name -> superverse.v2.FailureOwner
-	441, // 2: superverse.v2.ResourceProgress.created_at:type_name -> google.protobuf.Timestamp
-	441, // 3: superverse.v2.PhaseTiming.started_at:type_name -> google.protobuf.Timestamp
-	442, // 4: superverse.v2.FlowDefinition.definition:type_name -> google.protobuf.Struct
+	442, // 2: superverse.v2.ResourceProgress.created_at:type_name -> google.protobuf.Timestamp
+	442, // 3: superverse.v2.PhaseTiming.started_at:type_name -> google.protobuf.Timestamp
+	443, // 4: superverse.v2.FlowDefinition.definition:type_name -> google.protobuf.Struct
 	88,  // 5: superverse.v2.AppManifestSnapshot.connectors:type_name -> superverse.v2.ConnectorRequirement
-	442, // 6: superverse.v2.AppManifestSnapshot.environment:type_name -> google.protobuf.Struct
+	443, // 6: superverse.v2.AppManifestSnapshot.environment:type_name -> google.protobuf.Struct
 	87,  // 7: superverse.v2.AppManifestSnapshot.manifest_object:type_name -> superverse.v2.ObjectReference
 	87,  // 8: superverse.v2.AppManifestSnapshot.connector_contract_object:type_name -> superverse.v2.ObjectReference
 	87,  // 9: superverse.v2.AppManifestSnapshot.environment_contract_object:type_name -> superverse.v2.ObjectReference
@@ -33415,7 +33518,7 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	80,  // 14: superverse.v2.GetCurrentAccountRequest.caller:type_name -> superverse.v2.CallerContext
 	98,  // 15: superverse.v2.GetCurrentAccountResponse.account:type_name -> superverse.v2.AccountSnapshot
 	98,  // 16: superverse.v2.AccountLogin.account:type_name -> superverse.v2.AccountSnapshot
-	441, // 17: superverse.v2.AccountLogin.expires_at:type_name -> google.protobuf.Timestamp
+	442, // 17: superverse.v2.AccountLogin.expires_at:type_name -> google.protobuf.Timestamp
 	80,  // 18: superverse.v2.CreateTeamSpaceRequest.caller:type_name -> superverse.v2.CallerContext
 	4,   // 19: superverse.v2.ListTeamSpacesRequest.statuses:type_name -> superverse.v2.TeamSpaceStatus
 	80,  // 20: superverse.v2.ListTeamSpacesRequest.caller:type_name -> superverse.v2.CallerContext
@@ -33431,8 +33534,8 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	4,   // 30: superverse.v2.TeamSpaceSnapshot.status:type_name -> superverse.v2.TeamSpaceStatus
 	5,   // 31: superverse.v2.TeamSpaceSnapshot.caller_role:type_name -> superverse.v2.TeamSpaceRole
 	82,  // 32: superverse.v2.TeamSpaceSnapshot.failure:type_name -> superverse.v2.Failure
-	441, // 33: superverse.v2.TeamSpaceSnapshot.created_at:type_name -> google.protobuf.Timestamp
-	441, // 34: superverse.v2.TeamSpaceSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	442, // 33: superverse.v2.TeamSpaceSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	442, // 34: superverse.v2.TeamSpaceSnapshot.updated_at:type_name -> google.protobuf.Timestamp
 	112, // 35: superverse.v2.TeamSpaceOverview.team_space:type_name -> superverse.v2.TeamSpaceSnapshot
 	80,  // 36: superverse.v2.ListTeamSpaceMembersRequest.caller:type_name -> superverse.v2.CallerContext
 	122, // 37: superverse.v2.ListTeamSpaceMembersResponse.members:type_name -> superverse.v2.TeamSpaceMemberSnapshot
@@ -33445,21 +33548,21 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	80,  // 44: superverse.v2.RemoveTeamSpaceMemberRequest.caller:type_name -> superverse.v2.CallerContext
 	122, // 45: superverse.v2.RemoveTeamSpaceMemberResponse.members:type_name -> superverse.v2.TeamSpaceMemberSnapshot
 	5,   // 46: superverse.v2.TeamSpaceMemberSnapshot.role:type_name -> superverse.v2.TeamSpaceRole
-	441, // 47: superverse.v2.TeamSpaceMemberSnapshot.added_at:type_name -> google.protobuf.Timestamp
+	442, // 47: superverse.v2.TeamSpaceMemberSnapshot.added_at:type_name -> google.protobuf.Timestamp
 	80,  // 48: superverse.v2.ListConnectorCatalogRequest.caller:type_name -> superverse.v2.CallerContext
 	123, // 49: superverse.v2.ListConnectorCatalogResponse.connectors:type_name -> superverse.v2.ConnectorCatalogEntry
 	3,   // 50: superverse.v2.TeamSpaceConnectionUsage.scope:type_name -> superverse.v2.ProjectScope
 	8,   // 51: superverse.v2.TeamSpaceConnectionSnapshot.client_source:type_name -> superverse.v2.ConnectionClientSource
 	7,   // 52: superverse.v2.TeamSpaceConnectionSnapshot.credential_status:type_name -> superverse.v2.CredentialStatus
-	441, // 53: superverse.v2.TeamSpaceConnectionSnapshot.credential_issued_at:type_name -> google.protobuf.Timestamp
-	441, // 54: superverse.v2.TeamSpaceConnectionSnapshot.credential_expires_at:type_name -> google.protobuf.Timestamp
+	442, // 53: superverse.v2.TeamSpaceConnectionSnapshot.credential_issued_at:type_name -> google.protobuf.Timestamp
+	442, // 54: superverse.v2.TeamSpaceConnectionSnapshot.credential_expires_at:type_name -> google.protobuf.Timestamp
 	6,   // 55: superverse.v2.TeamSpaceConnectionSnapshot.status:type_name -> superverse.v2.TeamSpaceConnectionStatus
 	82,  // 56: superverse.v2.TeamSpaceConnectionSnapshot.last_failure:type_name -> superverse.v2.Failure
-	441, // 57: superverse.v2.TeamSpaceConnectionSnapshot.created_at:type_name -> google.protobuf.Timestamp
-	441, // 58: superverse.v2.TeamSpaceConnectionSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	442, // 57: superverse.v2.TeamSpaceConnectionSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	442, // 58: superverse.v2.TeamSpaceConnectionSnapshot.updated_at:type_name -> google.protobuf.Timestamp
 	126, // 59: superverse.v2.TeamSpaceConnectionSnapshot.usages:type_name -> superverse.v2.TeamSpaceConnectionUsage
 	128, // 60: superverse.v2.TeamSpaceConnectionSnapshot.unrouted_events:type_name -> superverse.v2.UnroutedEvents
-	441, // 61: superverse.v2.UnroutedEvents.last_at:type_name -> google.protobuf.Timestamp
+	442, // 61: superverse.v2.UnroutedEvents.last_at:type_name -> google.protobuf.Timestamp
 	6,   // 62: superverse.v2.ListTeamSpaceConnectionsRequest.statuses:type_name -> superverse.v2.TeamSpaceConnectionStatus
 	80,  // 63: superverse.v2.ListTeamSpaceConnectionsRequest.caller:type_name -> superverse.v2.CallerContext
 	127, // 64: superverse.v2.ListTeamSpaceConnectionsResponse.connections:type_name -> superverse.v2.TeamSpaceConnectionSnapshot
@@ -33473,7 +33576,7 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	140, // 72: superverse.v2.StartTeamSpaceConnectionOAuthRequest.new_connection:type_name -> superverse.v2.NewTeamSpaceConnection
 	80,  // 73: superverse.v2.StartTeamSpaceConnectionOAuthRequest.caller:type_name -> superverse.v2.CallerContext
 	8,   // 74: superverse.v2.NewTeamSpaceConnection.client_source:type_name -> superverse.v2.ConnectionClientSource
-	441, // 75: superverse.v2.StartTeamSpaceConnectionOAuthResponse.expires_at:type_name -> google.protobuf.Timestamp
+	442, // 75: superverse.v2.StartTeamSpaceConnectionOAuthResponse.expires_at:type_name -> google.protobuf.Timestamp
 	80,  // 76: superverse.v2.CompleteTeamSpaceConnectionOAuthRequest.caller:type_name -> superverse.v2.CallerContext
 	127, // 77: superverse.v2.CompleteTeamSpaceConnectionOAuthResponse.connection:type_name -> superverse.v2.TeamSpaceConnectionSnapshot
 	80,  // 78: superverse.v2.StartTeamSpaceConnectionUiSessionRequest.caller:type_name -> superverse.v2.CallerContext
@@ -33495,7 +33598,7 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	80,  // 94: superverse.v2.ListEnvironmentEventsRequest.caller:type_name -> superverse.v2.CallerContext
 	160, // 95: superverse.v2.ListEnvironmentEventsResponse.events:type_name -> superverse.v2.EnvironmentEvent
 	46,  // 96: superverse.v2.EnvironmentEvent.kind:type_name -> superverse.v2.EnvironmentEvent.Kind
-	441, // 97: superverse.v2.EnvironmentEvent.occurred_at:type_name -> google.protobuf.Timestamp
+	442, // 97: superverse.v2.EnvironmentEvent.occurred_at:type_name -> google.protobuf.Timestamp
 	2,   // 98: superverse.v2.EnvironmentEvent.outcome:type_name -> superverse.v2.StartOutcome
 	82,  // 99: superverse.v2.EnvironmentEvent.failure:type_name -> superverse.v2.Failure
 	84,  // 100: superverse.v2.EnvironmentEvent.phase_timings:type_name -> superverse.v2.PhaseTiming
@@ -33503,8 +33606,8 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	3,   // 102: superverse.v2.ListRecentTriggerEventsRequest.scope:type_name -> superverse.v2.ProjectScope
 	80,  // 103: superverse.v2.ListRecentTriggerEventsRequest.caller:type_name -> superverse.v2.CallerContext
 	163, // 104: superverse.v2.ListRecentTriggerEventsResponse.events:type_name -> superverse.v2.RecentTriggerEvent
-	441, // 105: superverse.v2.ListRecentTriggerEventsResponse.buffer_started_at:type_name -> google.protobuf.Timestamp
-	441, // 106: superverse.v2.RecentTriggerEvent.received_at:type_name -> google.protobuf.Timestamp
+	442, // 105: superverse.v2.ListRecentTriggerEventsResponse.buffer_started_at:type_name -> google.protobuf.Timestamp
+	442, // 106: superverse.v2.RecentTriggerEvent.received_at:type_name -> google.protobuf.Timestamp
 	47,  // 107: superverse.v2.RecentTriggerEvent.fate:type_name -> superverse.v2.RecentTriggerEvent.Fate
 	178, // 108: superverse.v2.GetProjectConfigurationRequest.target:type_name -> superverse.v2.ProjectConfigurationTarget
 	80,  // 109: superverse.v2.GetProjectConfigurationRequest.caller:type_name -> superverse.v2.CallerContext
@@ -33521,8 +33624,8 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	86,  // 120: superverse.v2.ProjectSnapshot.app_manifest:type_name -> superverse.v2.AppManifestSnapshot
 	175, // 121: superverse.v2.ProjectSnapshot.live:type_name -> superverse.v2.ProjectLive
 	82,  // 122: superverse.v2.ProjectSnapshot.failure:type_name -> superverse.v2.Failure
-	441, // 123: superverse.v2.ProjectSnapshot.created_at:type_name -> google.protobuf.Timestamp
-	441, // 124: superverse.v2.ProjectSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	442, // 123: superverse.v2.ProjectSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	442, // 124: superverse.v2.ProjectSnapshot.updated_at:type_name -> google.protobuf.Timestamp
 	176, // 125: superverse.v2.ProjectSnapshot.active_deployment:type_name -> superverse.v2.ActiveDeploymentReference
 	82,  // 126: superverse.v2.ProjectSnapshot.session_start_failure:type_name -> superverse.v2.Failure
 	14,  // 127: superverse.v2.ProjectSnapshot.caller_role:type_name -> superverse.v2.ProjectRole
@@ -33555,7 +33658,7 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	80,  // 154: superverse.v2.RemoveProjectMemberRequest.caller:type_name -> superverse.v2.CallerContext
 	192, // 155: superverse.v2.RemoveProjectMemberResponse.members:type_name -> superverse.v2.ProjectMemberSnapshot
 	14,  // 156: superverse.v2.ProjectMemberSnapshot.role:type_name -> superverse.v2.ProjectRole
-	441, // 157: superverse.v2.ProjectMemberSnapshot.added_at:type_name -> google.protobuf.Timestamp
+	442, // 157: superverse.v2.ProjectMemberSnapshot.added_at:type_name -> google.protobuf.Timestamp
 	80,  // 158: superverse.v2.GetSessionRequest.caller:type_name -> superverse.v2.CallerContext
 	201, // 159: superverse.v2.GetSessionResponse.session:type_name -> superverse.v2.SessionSnapshot
 	80,  // 160: superverse.v2.WatchSessionRequest.caller:type_name -> superverse.v2.CallerContext
@@ -33566,9 +33669,9 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	274, // 165: superverse.v2.ListArchivedMessagesResponse.history:type_name -> superverse.v2.AgentHistoryPage
 	15,  // 166: superverse.v2.SessionSnapshot.status:type_name -> superverse.v2.SessionStatus
 	273, // 167: superverse.v2.SessionSnapshot.agent:type_name -> superverse.v2.AgentSnapshot
-	441, // 168: superverse.v2.SessionSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	442, // 168: superverse.v2.SessionSnapshot.created_at:type_name -> google.protobuf.Timestamp
 	82,  // 169: superverse.v2.SessionSnapshot.failure:type_name -> superverse.v2.Failure
-	441, // 170: superverse.v2.SessionSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	442, // 170: superverse.v2.SessionSnapshot.updated_at:type_name -> google.protobuf.Timestamp
 	203, // 171: superverse.v2.SessionSnapshot.workspace:type_name -> superverse.v2.SessionWorkspaceSnapshot
 	330, // 172: superverse.v2.SessionSnapshot.preview:type_name -> superverse.v2.PreviewSnapshot
 	202, // 173: superverse.v2.SessionSnapshot.connector_contributions:type_name -> superverse.v2.ConnectorContribution
@@ -33579,15 +33682,15 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	55,  // 178: superverse.v2.ConnectorContribution.release_candidate_failure_kind:type_name -> superverse.v2.ConnectorContribution.ReleaseCandidateFailureReason
 	16,  // 179: superverse.v2.SessionWorkspaceSnapshot.status:type_name -> superverse.v2.WorkspaceStatus
 	17,  // 180: superverse.v2.SessionWorkspaceSnapshot.workspace_state:type_name -> superverse.v2.WorkspaceState
-	441, // 181: superverse.v2.SessionWorkspaceSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	442, // 181: superverse.v2.SessionWorkspaceSnapshot.updated_at:type_name -> google.protobuf.Timestamp
 	82,  // 182: superverse.v2.SessionWorkspaceSnapshot.failure:type_name -> superverse.v2.Failure
-	441, // 183: superverse.v2.SessionWorkspaceSnapshot.expires_at:type_name -> google.protobuf.Timestamp
+	442, // 183: superverse.v2.SessionWorkspaceSnapshot.expires_at:type_name -> google.protobuf.Timestamp
 	84,  // 184: superverse.v2.SessionWorkspaceSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
 	315, // 185: superverse.v2.SessionProgress.activity:type_name -> superverse.v2.AgentEvent
 	295, // 186: superverse.v2.SessionProgress.requirements_draft:type_name -> superverse.v2.AgentRequirementsDraft
-	441, // 187: superverse.v2.SessionProgress.created_at:type_name -> google.protobuf.Timestamp
+	442, // 187: superverse.v2.SessionProgress.created_at:type_name -> google.protobuf.Timestamp
 	80,  // 188: superverse.v2.CreateRemoteAgentPairingRequest.caller:type_name -> superverse.v2.CallerContext
-	441, // 189: superverse.v2.CreateRemoteAgentPairingResponse.expires_at:type_name -> google.protobuf.Timestamp
+	442, // 189: superverse.v2.CreateRemoteAgentPairingResponse.expires_at:type_name -> google.protobuf.Timestamp
 	276, // 190: superverse.v2.CreateRemoteAgentPairingResponse.current_owner:type_name -> superverse.v2.Actor
 	80,  // 191: superverse.v2.ListRemoteAgentConnectionsRequest.caller:type_name -> superverse.v2.CallerContext
 	216, // 192: superverse.v2.ListRemoteAgentConnectionsResponse.connections:type_name -> superverse.v2.RemoteAgentConnection
@@ -33599,13 +33702,13 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	214, // 198: superverse.v2.SessionExecutor.suspended:type_name -> superverse.v2.RemoteSessionExecutor
 	276, // 199: superverse.v2.RemoteSessionExecutor.owner:type_name -> superverse.v2.Actor
 	215, // 200: superverse.v2.RemoteSessionExecutor.binding:type_name -> superverse.v2.RemoteAgentBinding
-	441, // 201: superverse.v2.RemoteSessionExecutor.activated_at:type_name -> google.protobuf.Timestamp
-	441, // 202: superverse.v2.RemoteSessionExecutor.last_seen_at:type_name -> google.protobuf.Timestamp
+	442, // 201: superverse.v2.RemoteSessionExecutor.activated_at:type_name -> google.protobuf.Timestamp
+	442, // 202: superverse.v2.RemoteSessionExecutor.last_seen_at:type_name -> google.protobuf.Timestamp
 	276, // 203: superverse.v2.RemoteAgentConnection.owner:type_name -> superverse.v2.Actor
 	19,  // 204: superverse.v2.RemoteAgentConnection.status:type_name -> superverse.v2.RemoteAgentConnectionStatus
 	215, // 205: superverse.v2.RemoteAgentConnection.binding:type_name -> superverse.v2.RemoteAgentBinding
-	441, // 206: superverse.v2.RemoteAgentConnection.created_at:type_name -> google.protobuf.Timestamp
-	441, // 207: superverse.v2.RemoteAgentConnection.last_seen_at:type_name -> google.protobuf.Timestamp
+	442, // 206: superverse.v2.RemoteAgentConnection.created_at:type_name -> google.protobuf.Timestamp
+	442, // 207: superverse.v2.RemoteAgentConnection.last_seen_at:type_name -> google.protobuf.Timestamp
 	80,  // 208: superverse.v2.CreateAttachmentUploadRequest.caller:type_name -> superverse.v2.CallerContext
 	228, // 209: superverse.v2.CreateAttachmentUploadResponse.attachment:type_name -> superverse.v2.Attachment
 	219, // 210: superverse.v2.CreateAttachmentUploadResponse.upload:type_name -> superverse.v2.AttachmentUploadTarget
@@ -33627,35 +33730,35 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	235, // 226: superverse.v2.Evolve.goals:type_name -> superverse.v2.EvolveGoals
 	237, // 227: superverse.v2.Evolve.schedule:type_name -> superverse.v2.EvolveSchedule
 	238, // 228: superverse.v2.Evolve.reviews:type_name -> superverse.v2.EvolveReview
-	441, // 229: superverse.v2.Evolve.next_manual_review_at:type_name -> google.protobuf.Timestamp
+	442, // 229: superverse.v2.Evolve.next_manual_review_at:type_name -> google.protobuf.Timestamp
 	240, // 230: superverse.v2.Evolve.proposals:type_name -> superverse.v2.EvolveProposal
-	441, // 231: superverse.v2.EvolveLive.committed_at:type_name -> google.protobuf.Timestamp
+	442, // 231: superverse.v2.EvolveLive.committed_at:type_name -> google.protobuf.Timestamp
 	23,  // 232: superverse.v2.EvolveGoals.status:type_name -> superverse.v2.EvolveGoalsStatus
 	236, // 233: superverse.v2.EvolveGoals.goals:type_name -> superverse.v2.EvolveGoal
-	441, // 234: superverse.v2.EvolveGoals.read_at:type_name -> google.protobuf.Timestamp
+	442, // 234: superverse.v2.EvolveGoals.read_at:type_name -> google.protobuf.Timestamp
 	25,  // 235: superverse.v2.EvolveGoal.kind:type_name -> superverse.v2.EvolveGoalKind
 	26,  // 236: superverse.v2.EvolveGoal.direction:type_name -> superverse.v2.EvolveGoalDirection
 	24,  // 237: superverse.v2.EvolveSchedule.period:type_name -> superverse.v2.EvolveReviewPeriod
-	441, // 238: superverse.v2.EvolveSchedule.next_at:type_name -> google.protobuf.Timestamp
+	442, // 238: superverse.v2.EvolveSchedule.next_at:type_name -> google.protobuf.Timestamp
 	27,  // 239: superverse.v2.EvolveReview.trigger:type_name -> superverse.v2.EvolveReviewTrigger
-	441, // 240: superverse.v2.EvolveReview.requested_at:type_name -> google.protobuf.Timestamp
-	441, // 241: superverse.v2.EvolveReview.started_at:type_name -> google.protobuf.Timestamp
-	441, // 242: superverse.v2.EvolveReview.finished_at:type_name -> google.protobuf.Timestamp
-	441, // 243: superverse.v2.EvolveReview.window_from:type_name -> google.protobuf.Timestamp
-	441, // 244: superverse.v2.EvolveReview.window_to:type_name -> google.protobuf.Timestamp
+	442, // 240: superverse.v2.EvolveReview.requested_at:type_name -> google.protobuf.Timestamp
+	442, // 241: superverse.v2.EvolveReview.started_at:type_name -> google.protobuf.Timestamp
+	442, // 242: superverse.v2.EvolveReview.finished_at:type_name -> google.protobuf.Timestamp
+	442, // 243: superverse.v2.EvolveReview.window_from:type_name -> google.protobuf.Timestamp
+	442, // 244: superverse.v2.EvolveReview.window_to:type_name -> google.protobuf.Timestamp
 	28,  // 245: superverse.v2.EvolveReview.status:type_name -> superverse.v2.EvolveReviewStatus
 	29,  // 246: superverse.v2.EvolveReview.reason:type_name -> superverse.v2.EvolveReviewReason
 	239, // 247: superverse.v2.EvolveReview.export:type_name -> superverse.v2.EvolveExport
 	242, // 248: superverse.v2.EvolveReview.values:type_name -> superverse.v2.EvolveGoalValue
 	31,  // 249: superverse.v2.EvolveProposal.kind:type_name -> superverse.v2.EvolveProposalKind
 	32,  // 250: superverse.v2.EvolveProposal.status:type_name -> superverse.v2.EvolveProposalStatus
-	441, // 251: superverse.v2.EvolveProposal.status_at:type_name -> google.protobuf.Timestamp
-	441, // 252: superverse.v2.EvolveProposal.offered_at:type_name -> google.protobuf.Timestamp
+	442, // 251: superverse.v2.EvolveProposal.status_at:type_name -> google.protobuf.Timestamp
+	442, // 252: superverse.v2.EvolveProposal.offered_at:type_name -> google.protobuf.Timestamp
 	241, // 253: superverse.v2.EvolveProposal.decision:type_name -> superverse.v2.EvolveProposalDecisionRecord
-	441, // 254: superverse.v2.EvolveProposal.applied_at:type_name -> google.protobuf.Timestamp
-	441, // 255: superverse.v2.EvolveProposal.live_at:type_name -> google.protobuf.Timestamp
+	442, // 254: superverse.v2.EvolveProposal.applied_at:type_name -> google.protobuf.Timestamp
+	442, // 255: superverse.v2.EvolveProposal.live_at:type_name -> google.protobuf.Timestamp
 	33,  // 256: superverse.v2.EvolveProposalDecisionRecord.decision:type_name -> superverse.v2.EvolveProposalDecision
-	441, // 257: superverse.v2.EvolveProposalDecisionRecord.decided_at:type_name -> google.protobuf.Timestamp
+	442, // 257: superverse.v2.EvolveProposalDecisionRecord.decided_at:type_name -> google.protobuf.Timestamp
 	80,  // 258: superverse.v2.StartEvolveReviewRequest.caller:type_name -> superverse.v2.CallerContext
 	30,  // 259: superverse.v2.StartEvolveReviewResponse.refusal:type_name -> superverse.v2.EvolveReviewRefusal
 	33,  // 260: superverse.v2.DecideEvolveProposalRequest.decision:type_name -> superverse.v2.EvolveProposalDecision
@@ -33782,15 +33885,15 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	331, // 381: superverse.v2.PreviewSnapshot.applied_configuration:type_name -> superverse.v2.AppliedPreviewConfiguration
 	332, // 382: superverse.v2.PreviewSnapshot.recent_starts:type_name -> superverse.v2.PreviewStartRecord
 	81,  // 383: superverse.v2.PreviewSnapshot.serving_version:type_name -> superverse.v2.CommitVersion
-	441, // 384: superverse.v2.AppliedPreviewConfiguration.applied_at:type_name -> google.protobuf.Timestamp
-	441, // 385: superverse.v2.PreviewStartRecord.admitted_at:type_name -> google.protobuf.Timestamp
-	441, // 386: superverse.v2.PreviewStartRecord.ended_at:type_name -> google.protobuf.Timestamp
+	442, // 384: superverse.v2.AppliedPreviewConfiguration.applied_at:type_name -> google.protobuf.Timestamp
+	442, // 385: superverse.v2.PreviewStartRecord.admitted_at:type_name -> google.protobuf.Timestamp
+	442, // 386: superverse.v2.PreviewStartRecord.ended_at:type_name -> google.protobuf.Timestamp
 	2,   // 387: superverse.v2.PreviewStartRecord.outcome:type_name -> superverse.v2.StartOutcome
 	84,  // 388: superverse.v2.PreviewStartRecord.phase_timings:type_name -> superverse.v2.PhaseTiming
 	81,  // 389: superverse.v2.PreviewStartRecord.version:type_name -> superverse.v2.CommitVersion
 	37,  // 390: superverse.v2.PreviewDeploymentSnapshot.status:type_name -> superverse.v2.PreviewDeploymentStatus
 	82,  // 391: superverse.v2.PreviewDeploymentSnapshot.failure:type_name -> superverse.v2.Failure
-	441, // 392: superverse.v2.PreviewDeploymentSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	442, // 392: superverse.v2.PreviewDeploymentSnapshot.updated_at:type_name -> google.protobuf.Timestamp
 	39,  // 393: superverse.v2.PreparedPreviewSourceSnapshot.status:type_name -> superverse.v2.PreviewSourceStatus
 	87,  // 394: superverse.v2.PreparedPreviewSourceSnapshot.definitions:type_name -> superverse.v2.ObjectReference
 	82,  // 395: superverse.v2.PreparedPreviewSourceSnapshot.failure:type_name -> superverse.v2.Failure
@@ -33811,11 +33914,11 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	80,  // 410: superverse.v2.WatchReleaseRequest.caller:type_name -> superverse.v2.CallerContext
 	354, // 411: superverse.v2.WatchReleaseResponse.snapshot:type_name -> superverse.v2.ReleaseSnapshot
 	83,  // 412: superverse.v2.WatchReleaseResponse.progress:type_name -> superverse.v2.ResourceProgress
-	441, // 413: superverse.v2.ReleaseCandidate.committed_at:type_name -> google.protobuf.Timestamp
+	442, // 413: superverse.v2.ReleaseCandidate.committed_at:type_name -> google.protobuf.Timestamp
 	81,  // 414: superverse.v2.ReleaseCandidate.version:type_name -> superverse.v2.CommitVersion
 	40,  // 415: superverse.v2.ReleaseSnapshot.status:type_name -> superverse.v2.ReleaseStatus
 	82,  // 416: superverse.v2.ReleaseSnapshot.failure:type_name -> superverse.v2.Failure
-	441, // 417: superverse.v2.ReleaseSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	442, // 417: superverse.v2.ReleaseSnapshot.created_at:type_name -> google.protobuf.Timestamp
 	355, // 418: superverse.v2.ReleaseSnapshot.prepared_source:type_name -> superverse.v2.PreparedReleaseSourceSnapshot
 	356, // 419: superverse.v2.ReleaseSnapshot.build_revisions:type_name -> superverse.v2.ReleaseBuildRevisionSnapshot
 	40,  // 420: superverse.v2.PreparedReleaseSourceSnapshot.status:type_name -> superverse.v2.ReleaseStatus
@@ -33827,13 +33930,13 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	82,  // 426: superverse.v2.ReleaseBuildRevisionSnapshot.failure:type_name -> superverse.v2.Failure
 	41,  // 427: superverse.v2.ReleaseBuildRevisionSnapshot.auto_deploy_status:type_name -> superverse.v2.AutoDeployStatus
 	82,  // 428: superverse.v2.ReleaseBuildRevisionSnapshot.auto_deploy_failure:type_name -> superverse.v2.Failure
-	441, // 429: superverse.v2.ReleaseBuildRevisionSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	442, // 429: superverse.v2.ReleaseBuildRevisionSnapshot.created_at:type_name -> google.protobuf.Timestamp
 	84,  // 430: superverse.v2.ReleaseBuildRevisionSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
 	358, // 431: superverse.v2.ReleaseBuildRevisionSnapshot.preview_validation:type_name -> superverse.v2.PreviewValidation
 	357, // 432: superverse.v2.ReleaseBuildRevisionSnapshot.cancellation:type_name -> superverse.v2.Cancellation
-	441, // 433: superverse.v2.Cancellation.requested_at:type_name -> google.protobuf.Timestamp
+	442, // 433: superverse.v2.Cancellation.requested_at:type_name -> google.protobuf.Timestamp
 	79,  // 434: superverse.v2.PreviewValidation.kind:type_name -> superverse.v2.PreviewValidation.Kind
-	441, // 435: superverse.v2.PreviewValidation.started_at:type_name -> google.protobuf.Timestamp
+	442, // 435: superverse.v2.PreviewValidation.started_at:type_name -> google.protobuf.Timestamp
 	80,  // 436: superverse.v2.DeriveLiveConfigurationRequest.caller:type_name -> superverse.v2.CallerContext
 	179, // 437: superverse.v2.DeriveLiveConfigurationResponse.configuration:type_name -> superverse.v2.ProjectConfigurationSnapshot
 	80,  // 438: superverse.v2.StartDeploymentRequest.caller:type_name -> superverse.v2.CallerContext
@@ -33848,7 +33951,7 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	83,  // 447: superverse.v2.WatchDeploymentResponse.progress:type_name -> superverse.v2.ResourceProgress
 	42,  // 448: superverse.v2.DeploymentSnapshot.status:type_name -> superverse.v2.DeploymentStatus
 	82,  // 449: superverse.v2.DeploymentSnapshot.failure:type_name -> superverse.v2.Failure
-	441, // 450: superverse.v2.DeploymentSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	442, // 450: superverse.v2.DeploymentSnapshot.created_at:type_name -> google.protobuf.Timestamp
 	84,  // 451: superverse.v2.DeploymentSnapshot.phase_timings:type_name -> superverse.v2.PhaseTiming
 	81,  // 452: superverse.v2.DeploymentSnapshot.version:type_name -> superverse.v2.CommitVersion
 	357, // 453: superverse.v2.DeploymentSnapshot.cancellation:type_name -> superverse.v2.Cancellation
@@ -33918,7 +34021,7 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	80,  // 517: superverse.v2.StartConnectorUiSessionRequest.caller:type_name -> superverse.v2.CallerContext
 	426, // 518: superverse.v2.StartConnectorUiSessionResponse.document:type_name -> superverse.v2.FlowApiDocument
 	425, // 519: superverse.v2.InvokeProviderCommandRequest.context:type_name -> superverse.v2.FlowApiContext
-	438, // 520: superverse.v2.InvokeProviderCommandRequest.parameters:type_name -> superverse.v2.InvokeProviderCommandRequest.ParametersEntry
+	439, // 520: superverse.v2.InvokeProviderCommandRequest.parameters:type_name -> superverse.v2.InvokeProviderCommandRequest.ParametersEntry
 	80,  // 521: superverse.v2.InvokeProviderCommandRequest.caller:type_name -> superverse.v2.CallerContext
 	426, // 522: superverse.v2.InvokeProviderCommandResponse.document:type_name -> superverse.v2.FlowApiDocument
 	425, // 523: superverse.v2.SaveTriggerBindingRequest.context:type_name -> superverse.v2.FlowApiContext
@@ -33931,8 +34034,8 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	80,  // 530: superverse.v2.GetApplicationEnvironmentRequest.caller:type_name -> superverse.v2.CallerContext
 	426, // 531: superverse.v2.GetApplicationEnvironmentResponse.document:type_name -> superverse.v2.FlowApiDocument
 	425, // 532: superverse.v2.SaveApplicationEnvironmentRequest.context:type_name -> superverse.v2.FlowApiContext
-	439, // 533: superverse.v2.SaveApplicationEnvironmentRequest.values:type_name -> superverse.v2.SaveApplicationEnvironmentRequest.ValuesEntry
-	440, // 534: superverse.v2.SaveApplicationEnvironmentRequest.secrets:type_name -> superverse.v2.SaveApplicationEnvironmentRequest.SecretsEntry
+	440, // 533: superverse.v2.SaveApplicationEnvironmentRequest.values:type_name -> superverse.v2.SaveApplicationEnvironmentRequest.ValuesEntry
+	441, // 534: superverse.v2.SaveApplicationEnvironmentRequest.secrets:type_name -> superverse.v2.SaveApplicationEnvironmentRequest.SecretsEntry
 	80,  // 535: superverse.v2.SaveApplicationEnvironmentRequest.caller:type_name -> superverse.v2.CallerContext
 	426, // 536: superverse.v2.SaveApplicationEnvironmentResponse.document:type_name -> superverse.v2.FlowApiDocument
 	3,   // 537: superverse.v2.FlowApiTarget.scope:type_name -> superverse.v2.ProjectScope
@@ -33952,241 +34055,242 @@ var file_superverse_v2_superverse_proto_depIdxs = []int32{
 	43,  // 551: superverse.v2.ListModelCredentialModelsRequest.provider:type_name -> superverse.v2.ModelProvider
 	80,  // 552: superverse.v2.ListModelCredentialModelsRequest.caller:type_name -> superverse.v2.CallerContext
 	45,  // 553: superverse.v2.ListModelCredentialModelsResponse.result:type_name -> superverse.v2.ModelDiscoveryResult
-	90,  // 554: superverse.v2.AccountService.RegisterAccount:input_type -> superverse.v2.RegisterAccountRequest
-	92,  // 555: superverse.v2.AccountService.Login:input_type -> superverse.v2.LoginRequest
-	94,  // 556: superverse.v2.AccountService.Logout:input_type -> superverse.v2.LogoutRequest
-	96,  // 557: superverse.v2.AccountService.GetCurrentAccount:input_type -> superverse.v2.GetCurrentAccountRequest
-	100, // 558: superverse.v2.TeamSpaceService.CreateTeamSpace:input_type -> superverse.v2.CreateTeamSpaceRequest
-	102, // 559: superverse.v2.TeamSpaceService.ListTeamSpaces:input_type -> superverse.v2.ListTeamSpacesRequest
-	104, // 560: superverse.v2.TeamSpaceService.GetTeamSpace:input_type -> superverse.v2.GetTeamSpaceRequest
-	106, // 561: superverse.v2.TeamSpaceService.RenameTeamSpace:input_type -> superverse.v2.RenameTeamSpaceRequest
-	108, // 562: superverse.v2.TeamSpaceService.DeleteTeamSpace:input_type -> superverse.v2.DeleteTeamSpaceRequest
-	110, // 563: superverse.v2.TeamSpaceService.GetTeamSpaceOverview:input_type -> superverse.v2.GetTeamSpaceOverviewRequest
-	114, // 564: superverse.v2.TeamSpaceMemberService.ListTeamSpaceMembers:input_type -> superverse.v2.ListTeamSpaceMembersRequest
-	116, // 565: superverse.v2.TeamSpaceMemberService.AddTeamSpaceMember:input_type -> superverse.v2.AddTeamSpaceMemberRequest
-	118, // 566: superverse.v2.TeamSpaceMemberService.SetTeamSpaceMemberRole:input_type -> superverse.v2.SetTeamSpaceMemberRoleRequest
-	120, // 567: superverse.v2.TeamSpaceMemberService.RemoveTeamSpaceMember:input_type -> superverse.v2.RemoveTeamSpaceMemberRequest
-	124, // 568: superverse.v2.TeamSpaceConnectionService.ListConnectorCatalog:input_type -> superverse.v2.ListConnectorCatalogRequest
-	129, // 569: superverse.v2.TeamSpaceConnectionService.ListTeamSpaceConnections:input_type -> superverse.v2.ListTeamSpaceConnectionsRequest
-	131, // 570: superverse.v2.TeamSpaceConnectionService.GetTeamSpaceConnection:input_type -> superverse.v2.GetTeamSpaceConnectionRequest
-	133, // 571: superverse.v2.TeamSpaceConnectionService.CreateTeamSpaceConnection:input_type -> superverse.v2.CreateTeamSpaceConnectionRequest
-	135, // 572: superverse.v2.TeamSpaceConnectionService.UpdateTeamSpaceConnection:input_type -> superverse.v2.UpdateTeamSpaceConnectionRequest
-	137, // 573: superverse.v2.TeamSpaceConnectionService.DeleteTeamSpaceConnection:input_type -> superverse.v2.DeleteTeamSpaceConnectionRequest
-	139, // 574: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionOAuth:input_type -> superverse.v2.StartTeamSpaceConnectionOAuthRequest
-	142, // 575: superverse.v2.TeamSpaceConnectionService.CompleteTeamSpaceConnectionOAuth:input_type -> superverse.v2.CompleteTeamSpaceConnectionOAuthRequest
-	144, // 576: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionUiSession:input_type -> superverse.v2.StartTeamSpaceConnectionUiSessionRequest
-	146, // 577: superverse.v2.TeamSpaceConnectionService.InvokeTeamSpaceConnectionCommand:input_type -> superverse.v2.InvokeTeamSpaceConnectionCommandRequest
-	148, // 578: superverse.v2.ProjectService.CreateProject:input_type -> superverse.v2.CreateProjectRequest
-	150, // 579: superverse.v2.ProjectService.ListProjects:input_type -> superverse.v2.ListProjectsRequest
-	152, // 580: superverse.v2.ProjectService.GetProject:input_type -> superverse.v2.GetProjectRequest
-	154, // 581: superverse.v2.ProjectService.DeleteProject:input_type -> superverse.v2.DeleteProjectRequest
-	156, // 582: superverse.v2.ProjectService.WatchProject:input_type -> superverse.v2.WatchProjectRequest
-	164, // 583: superverse.v2.ProjectService.GetProjectConfiguration:input_type -> superverse.v2.GetProjectConfigurationRequest
-	166, // 584: superverse.v2.ProjectService.ValidateProjectConfiguration:input_type -> superverse.v2.ValidateProjectConfigurationRequest
-	168, // 585: superverse.v2.ProjectService.RemoveLive:input_type -> superverse.v2.RemoveLiveRequest
-	158, // 586: superverse.v2.ProjectService.ListEnvironmentEvents:input_type -> superverse.v2.ListEnvironmentEventsRequest
-	161, // 587: superverse.v2.ProjectService.ListRecentTriggerEvents:input_type -> superverse.v2.ListRecentTriggerEventsRequest
-	184, // 588: superverse.v2.ProjectMemberService.ListProjectMembers:input_type -> superverse.v2.ListProjectMembersRequest
-	186, // 589: superverse.v2.ProjectMemberService.AddProjectMember:input_type -> superverse.v2.AddProjectMemberRequest
-	188, // 590: superverse.v2.ProjectMemberService.SetProjectMemberRole:input_type -> superverse.v2.SetProjectMemberRoleRequest
-	190, // 591: superverse.v2.ProjectMemberService.RemoveProjectMember:input_type -> superverse.v2.RemoveProjectMemberRequest
-	193, // 592: superverse.v2.SessionService.GetSession:input_type -> superverse.v2.GetSessionRequest
-	195, // 593: superverse.v2.SessionService.WatchSession:input_type -> superverse.v2.WatchSessionRequest
-	197, // 594: superverse.v2.SessionService.ListArchivedMessages:input_type -> superverse.v2.ListArchivedMessagesRequest
-	198, // 595: superverse.v2.SessionService.RenewWorkspace:input_type -> superverse.v2.RenewWorkspaceRequest
-	205, // 596: superverse.v2.RemoteAgentService.CreateRemoteAgentPairing:input_type -> superverse.v2.CreateRemoteAgentPairingRequest
-	207, // 597: superverse.v2.RemoteAgentService.ListRemoteAgentConnections:input_type -> superverse.v2.ListRemoteAgentConnectionsRequest
-	209, // 598: superverse.v2.RemoteAgentService.RevokeRemoteAgentConnection:input_type -> superverse.v2.RevokeRemoteAgentConnectionRequest
-	211, // 599: superverse.v2.RemoteAgentService.SetSessionExecutor:input_type -> superverse.v2.SetSessionExecutorRequest
-	217, // 600: superverse.v2.AttachmentService.CreateAttachmentUpload:input_type -> superverse.v2.CreateAttachmentUploadRequest
-	221, // 601: superverse.v2.AttachmentService.CompleteAttachmentUpload:input_type -> superverse.v2.CompleteAttachmentUploadRequest
-	223, // 602: superverse.v2.AttachmentService.DeleteAttachment:input_type -> superverse.v2.DeleteAttachmentRequest
-	225, // 603: superverse.v2.AttachmentService.GetAttachmentDownloads:input_type -> superverse.v2.GetAttachmentDownloadsRequest
-	231, // 604: superverse.v2.EvolveService.GetEvolve:input_type -> superverse.v2.GetEvolveRequest
-	243, // 605: superverse.v2.EvolveService.StartEvolveReview:input_type -> superverse.v2.StartEvolveReviewRequest
-	245, // 606: superverse.v2.EvolveService.DecideEvolveProposal:input_type -> superverse.v2.DecideEvolveProposalRequest
-	247, // 607: superverse.v2.EvolveService.GetEvolveProposal:input_type -> superverse.v2.GetEvolveProposalRequest
-	249, // 608: superverse.v2.AgentService.SendMessage:input_type -> superverse.v2.SendMessageRequest
-	251, // 609: superverse.v2.AgentService.AnswerQuestions:input_type -> superverse.v2.AnswerQuestionsRequest
-	253, // 610: superverse.v2.AgentService.UpdateSessionModel:input_type -> superverse.v2.UpdateSessionModelRequest
-	255, // 611: superverse.v2.AgentService.DeleteQueuedMessage:input_type -> superverse.v2.DeleteQueuedMessageRequest
-	257, // 612: superverse.v2.AgentService.SteerQueuedMessage:input_type -> superverse.v2.SteerQueuedMessageRequest
-	259, // 613: superverse.v2.AgentService.ResolveToolApproval:input_type -> superverse.v2.ResolveToolApprovalRequest
-	261, // 614: superverse.v2.AgentService.InterruptAgent:input_type -> superverse.v2.InterruptAgentRequest
-	265, // 615: superverse.v2.AgentService.ListMockScenarios:input_type -> superverse.v2.ListMockScenariosRequest
-	266, // 616: superverse.v2.AgentService.ListAgentModels:input_type -> superverse.v2.ListAgentModelsRequest
-	263, // 617: superverse.v2.AgentService.GetFlowDesign:input_type -> superverse.v2.GetFlowDesignRequest
-	318, // 618: superverse.v2.PreviewService.GetPreview:input_type -> superverse.v2.GetPreviewRequest
-	320, // 619: superverse.v2.PreviewService.StartPreview:input_type -> superverse.v2.StartPreviewRequest
-	322, // 620: superverse.v2.PreviewService.StopPreview:input_type -> superverse.v2.StopPreviewRequest
-	324, // 621: superverse.v2.PreviewService.PreparePreviewSource:input_type -> superverse.v2.PreparePreviewSourceRequest
-	326, // 622: superverse.v2.PreviewService.GetPreviewDefinitions:input_type -> superverse.v2.GetPreviewDefinitionsRequest
-	328, // 623: superverse.v2.PreviewService.UpdatePreviewAutoDeploy:input_type -> superverse.v2.UpdatePreviewAutoDeployRequest
-	335, // 624: superverse.v2.ReleaseService.ListReleaseCandidates:input_type -> superverse.v2.ListReleaseCandidatesRequest
-	337, // 625: superverse.v2.ReleaseService.PrepareRelease:input_type -> superverse.v2.PrepareReleaseRequest
-	339, // 626: superverse.v2.ReleaseService.StartReleaseBuild:input_type -> superverse.v2.StartReleaseBuildRequest
-	341, // 627: superverse.v2.ReleaseService.RecoverReleaseBuild:input_type -> superverse.v2.RecoverReleaseBuildRequest
-	347, // 628: superverse.v2.ReleaseService.ListReleases:input_type -> superverse.v2.ListReleasesRequest
-	359, // 629: superverse.v2.ReleaseService.DeriveLiveConfiguration:input_type -> superverse.v2.DeriveLiveConfigurationRequest
-	349, // 630: superverse.v2.ReleaseService.GetRelease:input_type -> superverse.v2.GetReleaseRequest
-	351, // 631: superverse.v2.ReleaseService.WatchRelease:input_type -> superverse.v2.WatchReleaseRequest
-	343, // 632: superverse.v2.ReleaseService.CancelReleaseBuild:input_type -> superverse.v2.CancelReleaseBuildRequest
-	345, // 633: superverse.v2.ReleaseService.GetReleaseBuildLog:input_type -> superverse.v2.GetReleaseBuildLogRequest
-	361, // 634: superverse.v2.DeploymentService.StartDeployment:input_type -> superverse.v2.StartDeploymentRequest
-	365, // 635: superverse.v2.DeploymentService.GetDeployment:input_type -> superverse.v2.GetDeploymentRequest
-	367, // 636: superverse.v2.DeploymentService.ListDeployments:input_type -> superverse.v2.ListDeploymentsRequest
-	369, // 637: superverse.v2.DeploymentService.WatchDeployment:input_type -> superverse.v2.WatchDeploymentRequest
-	363, // 638: superverse.v2.DeploymentService.CancelDeployment:input_type -> superverse.v2.CancelDeploymentRequest
-	372, // 639: superverse.v2.FlowRunService.GetFlowDefinitions:input_type -> superverse.v2.GetFlowDefinitionsRequest
-	374, // 640: superverse.v2.FlowRunService.GetFlowCatalog:input_type -> superverse.v2.GetFlowCatalogRequest
-	376, // 641: superverse.v2.FlowRunService.SearchFlows:input_type -> superverse.v2.SearchFlowsRequest
-	378, // 642: superverse.v2.FlowRunService.GetFlowDisplay:input_type -> superverse.v2.GetFlowDisplayRequest
-	380, // 643: superverse.v2.FlowRunService.UpdateFlowDisplayField:input_type -> superverse.v2.UpdateFlowDisplayFieldRequest
-	382, // 644: superverse.v2.FlowRunService.InvokeFlowAction:input_type -> superverse.v2.InvokeFlowActionRequest
-	384, // 645: superverse.v2.FlowRunService.StartFlow:input_type -> superverse.v2.StartFlowRequest
-	386, // 646: superverse.v2.FlowRunService.RecoverFlowStart:input_type -> superverse.v2.RecoverFlowStartRequest
-	388, // 647: superverse.v2.FlowDiagnosticsService.GetFlowSummary:input_type -> superverse.v2.GetFlowSummaryRequest
-	390, // 648: superverse.v2.FlowDiagnosticsService.GetFlowState:input_type -> superverse.v2.GetFlowStateRequest
-	392, // 649: superverse.v2.FlowDiagnosticsService.GetFlowHistory:input_type -> superverse.v2.GetFlowHistoryRequest
-	394, // 650: superverse.v2.FlowDiagnosticsService.WaitFlowHistory:input_type -> superverse.v2.WaitFlowHistoryRequest
-	396, // 651: superverse.v2.FlowDiagnosticsService.ReadFlowStream:input_type -> superverse.v2.ReadFlowStreamRequest
-	398, // 652: superverse.v2.FlowDiagnosticsService.LoadFlowBlobs:input_type -> superverse.v2.LoadFlowBlobsRequest
-	400, // 653: superverse.v2.FlowDiagnosticsService.StopFlow:input_type -> superverse.v2.StopFlowRequest
-	402, // 654: superverse.v2.FlowDiagnosticsService.DeleteFlowChannelMessage:input_type -> superverse.v2.DeleteFlowChannelMessageRequest
-	404, // 655: superverse.v2.FlowDiagnosticsService.TimeTravelFlow:input_type -> superverse.v2.TimeTravelFlowRequest
-	406, // 656: superverse.v2.ConnectorService.ListConnections:input_type -> superverse.v2.ListConnectionsRequest
-	408, // 657: superverse.v2.ConnectorService.SelectTeamSpaceConnection:input_type -> superverse.v2.SelectTeamSpaceConnectionRequest
-	410, // 658: superverse.v2.ConnectorService.ReleaseUnusedConnections:input_type -> superverse.v2.ReleaseUnusedConnectionsRequest
-	412, // 659: superverse.v2.ConnectorService.StartConnectorUiSession:input_type -> superverse.v2.StartConnectorUiSessionRequest
-	414, // 660: superverse.v2.ConnectorService.InvokeProviderCommand:input_type -> superverse.v2.InvokeProviderCommandRequest
-	416, // 661: superverse.v2.ConnectorService.SaveTriggerBinding:input_type -> superverse.v2.SaveTriggerBindingRequest
-	418, // 662: superverse.v2.ConnectorService.SaveOperationConfiguration:input_type -> superverse.v2.SaveOperationConfigurationRequest
-	420, // 663: superverse.v2.ApplicationEnvironmentService.GetApplicationEnvironment:input_type -> superverse.v2.GetApplicationEnvironmentRequest
-	422, // 664: superverse.v2.ApplicationEnvironmentService.SaveApplicationEnvironment:input_type -> superverse.v2.SaveApplicationEnvironmentRequest
-	430, // 665: superverse.v2.ModelCredentialService.GetModelCredentialInfo:input_type -> superverse.v2.GetModelCredentialInfoRequest
-	432, // 666: superverse.v2.ModelCredentialService.SetModelCredential:input_type -> superverse.v2.SetModelCredentialRequest
-	434, // 667: superverse.v2.ModelCredentialService.DeleteModelCredential:input_type -> superverse.v2.DeleteModelCredentialRequest
-	436, // 668: superverse.v2.ModelCredentialService.ListModelCredentialModels:input_type -> superverse.v2.ListModelCredentialModelsRequest
-	91,  // 669: superverse.v2.AccountService.RegisterAccount:output_type -> superverse.v2.RegisterAccountResponse
-	93,  // 670: superverse.v2.AccountService.Login:output_type -> superverse.v2.LoginResponse
-	95,  // 671: superverse.v2.AccountService.Logout:output_type -> superverse.v2.LogoutResponse
-	97,  // 672: superverse.v2.AccountService.GetCurrentAccount:output_type -> superverse.v2.GetCurrentAccountResponse
-	101, // 673: superverse.v2.TeamSpaceService.CreateTeamSpace:output_type -> superverse.v2.CreateTeamSpaceResponse
-	103, // 674: superverse.v2.TeamSpaceService.ListTeamSpaces:output_type -> superverse.v2.ListTeamSpacesResponse
-	105, // 675: superverse.v2.TeamSpaceService.GetTeamSpace:output_type -> superverse.v2.GetTeamSpaceResponse
-	107, // 676: superverse.v2.TeamSpaceService.RenameTeamSpace:output_type -> superverse.v2.RenameTeamSpaceResponse
-	109, // 677: superverse.v2.TeamSpaceService.DeleteTeamSpace:output_type -> superverse.v2.DeleteTeamSpaceResponse
-	111, // 678: superverse.v2.TeamSpaceService.GetTeamSpaceOverview:output_type -> superverse.v2.GetTeamSpaceOverviewResponse
-	115, // 679: superverse.v2.TeamSpaceMemberService.ListTeamSpaceMembers:output_type -> superverse.v2.ListTeamSpaceMembersResponse
-	117, // 680: superverse.v2.TeamSpaceMemberService.AddTeamSpaceMember:output_type -> superverse.v2.AddTeamSpaceMemberResponse
-	119, // 681: superverse.v2.TeamSpaceMemberService.SetTeamSpaceMemberRole:output_type -> superverse.v2.SetTeamSpaceMemberRoleResponse
-	121, // 682: superverse.v2.TeamSpaceMemberService.RemoveTeamSpaceMember:output_type -> superverse.v2.RemoveTeamSpaceMemberResponse
-	125, // 683: superverse.v2.TeamSpaceConnectionService.ListConnectorCatalog:output_type -> superverse.v2.ListConnectorCatalogResponse
-	130, // 684: superverse.v2.TeamSpaceConnectionService.ListTeamSpaceConnections:output_type -> superverse.v2.ListTeamSpaceConnectionsResponse
-	132, // 685: superverse.v2.TeamSpaceConnectionService.GetTeamSpaceConnection:output_type -> superverse.v2.GetTeamSpaceConnectionResponse
-	134, // 686: superverse.v2.TeamSpaceConnectionService.CreateTeamSpaceConnection:output_type -> superverse.v2.CreateTeamSpaceConnectionResponse
-	136, // 687: superverse.v2.TeamSpaceConnectionService.UpdateTeamSpaceConnection:output_type -> superverse.v2.UpdateTeamSpaceConnectionResponse
-	138, // 688: superverse.v2.TeamSpaceConnectionService.DeleteTeamSpaceConnection:output_type -> superverse.v2.DeleteTeamSpaceConnectionResponse
-	141, // 689: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionOAuth:output_type -> superverse.v2.StartTeamSpaceConnectionOAuthResponse
-	143, // 690: superverse.v2.TeamSpaceConnectionService.CompleteTeamSpaceConnectionOAuth:output_type -> superverse.v2.CompleteTeamSpaceConnectionOAuthResponse
-	145, // 691: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionUiSession:output_type -> superverse.v2.StartTeamSpaceConnectionUiSessionResponse
-	147, // 692: superverse.v2.TeamSpaceConnectionService.InvokeTeamSpaceConnectionCommand:output_type -> superverse.v2.InvokeTeamSpaceConnectionCommandResponse
-	149, // 693: superverse.v2.ProjectService.CreateProject:output_type -> superverse.v2.CreateProjectResponse
-	151, // 694: superverse.v2.ProjectService.ListProjects:output_type -> superverse.v2.ListProjectsResponse
-	153, // 695: superverse.v2.ProjectService.GetProject:output_type -> superverse.v2.GetProjectResponse
-	155, // 696: superverse.v2.ProjectService.DeleteProject:output_type -> superverse.v2.DeleteProjectResponse
-	157, // 697: superverse.v2.ProjectService.WatchProject:output_type -> superverse.v2.WatchProjectResponse
-	165, // 698: superverse.v2.ProjectService.GetProjectConfiguration:output_type -> superverse.v2.GetProjectConfigurationResponse
-	167, // 699: superverse.v2.ProjectService.ValidateProjectConfiguration:output_type -> superverse.v2.ValidateProjectConfigurationResponse
-	169, // 700: superverse.v2.ProjectService.RemoveLive:output_type -> superverse.v2.RemoveLiveResponse
-	159, // 701: superverse.v2.ProjectService.ListEnvironmentEvents:output_type -> superverse.v2.ListEnvironmentEventsResponse
-	162, // 702: superverse.v2.ProjectService.ListRecentTriggerEvents:output_type -> superverse.v2.ListRecentTriggerEventsResponse
-	185, // 703: superverse.v2.ProjectMemberService.ListProjectMembers:output_type -> superverse.v2.ListProjectMembersResponse
-	187, // 704: superverse.v2.ProjectMemberService.AddProjectMember:output_type -> superverse.v2.AddProjectMemberResponse
-	189, // 705: superverse.v2.ProjectMemberService.SetProjectMemberRole:output_type -> superverse.v2.SetProjectMemberRoleResponse
-	191, // 706: superverse.v2.ProjectMemberService.RemoveProjectMember:output_type -> superverse.v2.RemoveProjectMemberResponse
-	194, // 707: superverse.v2.SessionService.GetSession:output_type -> superverse.v2.GetSessionResponse
-	196, // 708: superverse.v2.SessionService.WatchSession:output_type -> superverse.v2.WatchSessionResponse
-	200, // 709: superverse.v2.SessionService.ListArchivedMessages:output_type -> superverse.v2.ListArchivedMessagesResponse
-	199, // 710: superverse.v2.SessionService.RenewWorkspace:output_type -> superverse.v2.RenewWorkspaceResponse
-	206, // 711: superverse.v2.RemoteAgentService.CreateRemoteAgentPairing:output_type -> superverse.v2.CreateRemoteAgentPairingResponse
-	208, // 712: superverse.v2.RemoteAgentService.ListRemoteAgentConnections:output_type -> superverse.v2.ListRemoteAgentConnectionsResponse
-	210, // 713: superverse.v2.RemoteAgentService.RevokeRemoteAgentConnection:output_type -> superverse.v2.RevokeRemoteAgentConnectionResponse
-	212, // 714: superverse.v2.RemoteAgentService.SetSessionExecutor:output_type -> superverse.v2.SetSessionExecutorResponse
-	218, // 715: superverse.v2.AttachmentService.CreateAttachmentUpload:output_type -> superverse.v2.CreateAttachmentUploadResponse
-	222, // 716: superverse.v2.AttachmentService.CompleteAttachmentUpload:output_type -> superverse.v2.CompleteAttachmentUploadResponse
-	224, // 717: superverse.v2.AttachmentService.DeleteAttachment:output_type -> superverse.v2.DeleteAttachmentResponse
-	226, // 718: superverse.v2.AttachmentService.GetAttachmentDownloads:output_type -> superverse.v2.GetAttachmentDownloadsResponse
-	232, // 719: superverse.v2.EvolveService.GetEvolve:output_type -> superverse.v2.GetEvolveResponse
-	244, // 720: superverse.v2.EvolveService.StartEvolveReview:output_type -> superverse.v2.StartEvolveReviewResponse
-	246, // 721: superverse.v2.EvolveService.DecideEvolveProposal:output_type -> superverse.v2.DecideEvolveProposalResponse
-	248, // 722: superverse.v2.EvolveService.GetEvolveProposal:output_type -> superverse.v2.GetEvolveProposalResponse
-	250, // 723: superverse.v2.AgentService.SendMessage:output_type -> superverse.v2.SendMessageResponse
-	252, // 724: superverse.v2.AgentService.AnswerQuestions:output_type -> superverse.v2.AnswerQuestionsResponse
-	254, // 725: superverse.v2.AgentService.UpdateSessionModel:output_type -> superverse.v2.UpdateSessionModelResponse
-	256, // 726: superverse.v2.AgentService.DeleteQueuedMessage:output_type -> superverse.v2.DeleteQueuedMessageResponse
-	258, // 727: superverse.v2.AgentService.SteerQueuedMessage:output_type -> superverse.v2.SteerQueuedMessageResponse
-	260, // 728: superverse.v2.AgentService.ResolveToolApproval:output_type -> superverse.v2.ResolveToolApprovalResponse
-	262, // 729: superverse.v2.AgentService.InterruptAgent:output_type -> superverse.v2.InterruptAgentResponse
-	269, // 730: superverse.v2.AgentService.ListMockScenarios:output_type -> superverse.v2.ListMockScenariosResponse
-	267, // 731: superverse.v2.AgentService.ListAgentModels:output_type -> superverse.v2.ListAgentModelsResponse
-	264, // 732: superverse.v2.AgentService.GetFlowDesign:output_type -> superverse.v2.GetFlowDesignResponse
-	319, // 733: superverse.v2.PreviewService.GetPreview:output_type -> superverse.v2.GetPreviewResponse
-	321, // 734: superverse.v2.PreviewService.StartPreview:output_type -> superverse.v2.StartPreviewResponse
-	323, // 735: superverse.v2.PreviewService.StopPreview:output_type -> superverse.v2.StopPreviewResponse
-	325, // 736: superverse.v2.PreviewService.PreparePreviewSource:output_type -> superverse.v2.PreparePreviewSourceResponse
-	327, // 737: superverse.v2.PreviewService.GetPreviewDefinitions:output_type -> superverse.v2.GetPreviewDefinitionsResponse
-	329, // 738: superverse.v2.PreviewService.UpdatePreviewAutoDeploy:output_type -> superverse.v2.UpdatePreviewAutoDeployResponse
-	336, // 739: superverse.v2.ReleaseService.ListReleaseCandidates:output_type -> superverse.v2.ListReleaseCandidatesResponse
-	338, // 740: superverse.v2.ReleaseService.PrepareRelease:output_type -> superverse.v2.PrepareReleaseResponse
-	340, // 741: superverse.v2.ReleaseService.StartReleaseBuild:output_type -> superverse.v2.StartReleaseBuildResponse
-	342, // 742: superverse.v2.ReleaseService.RecoverReleaseBuild:output_type -> superverse.v2.RecoverReleaseBuildResponse
-	348, // 743: superverse.v2.ReleaseService.ListReleases:output_type -> superverse.v2.ListReleasesResponse
-	360, // 744: superverse.v2.ReleaseService.DeriveLiveConfiguration:output_type -> superverse.v2.DeriveLiveConfigurationResponse
-	350, // 745: superverse.v2.ReleaseService.GetRelease:output_type -> superverse.v2.GetReleaseResponse
-	352, // 746: superverse.v2.ReleaseService.WatchRelease:output_type -> superverse.v2.WatchReleaseResponse
-	344, // 747: superverse.v2.ReleaseService.CancelReleaseBuild:output_type -> superverse.v2.CancelReleaseBuildResponse
-	346, // 748: superverse.v2.ReleaseService.GetReleaseBuildLog:output_type -> superverse.v2.GetReleaseBuildLogResponse
-	362, // 749: superverse.v2.DeploymentService.StartDeployment:output_type -> superverse.v2.StartDeploymentResponse
-	366, // 750: superverse.v2.DeploymentService.GetDeployment:output_type -> superverse.v2.GetDeploymentResponse
-	368, // 751: superverse.v2.DeploymentService.ListDeployments:output_type -> superverse.v2.ListDeploymentsResponse
-	370, // 752: superverse.v2.DeploymentService.WatchDeployment:output_type -> superverse.v2.WatchDeploymentResponse
-	364, // 753: superverse.v2.DeploymentService.CancelDeployment:output_type -> superverse.v2.CancelDeploymentResponse
-	373, // 754: superverse.v2.FlowRunService.GetFlowDefinitions:output_type -> superverse.v2.GetFlowDefinitionsResponse
-	375, // 755: superverse.v2.FlowRunService.GetFlowCatalog:output_type -> superverse.v2.GetFlowCatalogResponse
-	377, // 756: superverse.v2.FlowRunService.SearchFlows:output_type -> superverse.v2.SearchFlowsResponse
-	379, // 757: superverse.v2.FlowRunService.GetFlowDisplay:output_type -> superverse.v2.GetFlowDisplayResponse
-	381, // 758: superverse.v2.FlowRunService.UpdateFlowDisplayField:output_type -> superverse.v2.UpdateFlowDisplayFieldResponse
-	383, // 759: superverse.v2.FlowRunService.InvokeFlowAction:output_type -> superverse.v2.InvokeFlowActionResponse
-	385, // 760: superverse.v2.FlowRunService.StartFlow:output_type -> superverse.v2.StartFlowResponse
-	387, // 761: superverse.v2.FlowRunService.RecoverFlowStart:output_type -> superverse.v2.RecoverFlowStartResponse
-	389, // 762: superverse.v2.FlowDiagnosticsService.GetFlowSummary:output_type -> superverse.v2.GetFlowSummaryResponse
-	391, // 763: superverse.v2.FlowDiagnosticsService.GetFlowState:output_type -> superverse.v2.GetFlowStateResponse
-	393, // 764: superverse.v2.FlowDiagnosticsService.GetFlowHistory:output_type -> superverse.v2.GetFlowHistoryResponse
-	395, // 765: superverse.v2.FlowDiagnosticsService.WaitFlowHistory:output_type -> superverse.v2.WaitFlowHistoryResponse
-	397, // 766: superverse.v2.FlowDiagnosticsService.ReadFlowStream:output_type -> superverse.v2.ReadFlowStreamResponse
-	399, // 767: superverse.v2.FlowDiagnosticsService.LoadFlowBlobs:output_type -> superverse.v2.LoadFlowBlobsResponse
-	401, // 768: superverse.v2.FlowDiagnosticsService.StopFlow:output_type -> superverse.v2.StopFlowResponse
-	403, // 769: superverse.v2.FlowDiagnosticsService.DeleteFlowChannelMessage:output_type -> superverse.v2.DeleteFlowChannelMessageResponse
-	405, // 770: superverse.v2.FlowDiagnosticsService.TimeTravelFlow:output_type -> superverse.v2.TimeTravelFlowResponse
-	407, // 771: superverse.v2.ConnectorService.ListConnections:output_type -> superverse.v2.ListConnectionsResponse
-	409, // 772: superverse.v2.ConnectorService.SelectTeamSpaceConnection:output_type -> superverse.v2.SelectTeamSpaceConnectionResponse
-	411, // 773: superverse.v2.ConnectorService.ReleaseUnusedConnections:output_type -> superverse.v2.ReleaseUnusedConnectionsResponse
-	413, // 774: superverse.v2.ConnectorService.StartConnectorUiSession:output_type -> superverse.v2.StartConnectorUiSessionResponse
-	415, // 775: superverse.v2.ConnectorService.InvokeProviderCommand:output_type -> superverse.v2.InvokeProviderCommandResponse
-	417, // 776: superverse.v2.ConnectorService.SaveTriggerBinding:output_type -> superverse.v2.SaveTriggerBindingResponse
-	419, // 777: superverse.v2.ConnectorService.SaveOperationConfiguration:output_type -> superverse.v2.SaveOperationConfigurationResponse
-	421, // 778: superverse.v2.ApplicationEnvironmentService.GetApplicationEnvironment:output_type -> superverse.v2.GetApplicationEnvironmentResponse
-	423, // 779: superverse.v2.ApplicationEnvironmentService.SaveApplicationEnvironment:output_type -> superverse.v2.SaveApplicationEnvironmentResponse
-	431, // 780: superverse.v2.ModelCredentialService.GetModelCredentialInfo:output_type -> superverse.v2.GetModelCredentialInfoResponse
-	433, // 781: superverse.v2.ModelCredentialService.SetModelCredential:output_type -> superverse.v2.SetModelCredentialResponse
-	435, // 782: superverse.v2.ModelCredentialService.DeleteModelCredential:output_type -> superverse.v2.DeleteModelCredentialResponse
-	437, // 783: superverse.v2.ModelCredentialService.ListModelCredentialModels:output_type -> superverse.v2.ListModelCredentialModelsResponse
-	669, // [669:784] is the sub-list for method output_type
-	554, // [554:669] is the sub-list for method input_type
-	554, // [554:554] is the sub-list for extension type_name
-	554, // [554:554] is the sub-list for extension extendee
-	0,   // [0:554] is the sub-list for field type_name
+	437, // 554: superverse.v2.ListModelCredentialModelsResponse.models:type_name -> superverse.v2.ModelCredentialModel
+	90,  // 555: superverse.v2.AccountService.RegisterAccount:input_type -> superverse.v2.RegisterAccountRequest
+	92,  // 556: superverse.v2.AccountService.Login:input_type -> superverse.v2.LoginRequest
+	94,  // 557: superverse.v2.AccountService.Logout:input_type -> superverse.v2.LogoutRequest
+	96,  // 558: superverse.v2.AccountService.GetCurrentAccount:input_type -> superverse.v2.GetCurrentAccountRequest
+	100, // 559: superverse.v2.TeamSpaceService.CreateTeamSpace:input_type -> superverse.v2.CreateTeamSpaceRequest
+	102, // 560: superverse.v2.TeamSpaceService.ListTeamSpaces:input_type -> superverse.v2.ListTeamSpacesRequest
+	104, // 561: superverse.v2.TeamSpaceService.GetTeamSpace:input_type -> superverse.v2.GetTeamSpaceRequest
+	106, // 562: superverse.v2.TeamSpaceService.RenameTeamSpace:input_type -> superverse.v2.RenameTeamSpaceRequest
+	108, // 563: superverse.v2.TeamSpaceService.DeleteTeamSpace:input_type -> superverse.v2.DeleteTeamSpaceRequest
+	110, // 564: superverse.v2.TeamSpaceService.GetTeamSpaceOverview:input_type -> superverse.v2.GetTeamSpaceOverviewRequest
+	114, // 565: superverse.v2.TeamSpaceMemberService.ListTeamSpaceMembers:input_type -> superverse.v2.ListTeamSpaceMembersRequest
+	116, // 566: superverse.v2.TeamSpaceMemberService.AddTeamSpaceMember:input_type -> superverse.v2.AddTeamSpaceMemberRequest
+	118, // 567: superverse.v2.TeamSpaceMemberService.SetTeamSpaceMemberRole:input_type -> superverse.v2.SetTeamSpaceMemberRoleRequest
+	120, // 568: superverse.v2.TeamSpaceMemberService.RemoveTeamSpaceMember:input_type -> superverse.v2.RemoveTeamSpaceMemberRequest
+	124, // 569: superverse.v2.TeamSpaceConnectionService.ListConnectorCatalog:input_type -> superverse.v2.ListConnectorCatalogRequest
+	129, // 570: superverse.v2.TeamSpaceConnectionService.ListTeamSpaceConnections:input_type -> superverse.v2.ListTeamSpaceConnectionsRequest
+	131, // 571: superverse.v2.TeamSpaceConnectionService.GetTeamSpaceConnection:input_type -> superverse.v2.GetTeamSpaceConnectionRequest
+	133, // 572: superverse.v2.TeamSpaceConnectionService.CreateTeamSpaceConnection:input_type -> superverse.v2.CreateTeamSpaceConnectionRequest
+	135, // 573: superverse.v2.TeamSpaceConnectionService.UpdateTeamSpaceConnection:input_type -> superverse.v2.UpdateTeamSpaceConnectionRequest
+	137, // 574: superverse.v2.TeamSpaceConnectionService.DeleteTeamSpaceConnection:input_type -> superverse.v2.DeleteTeamSpaceConnectionRequest
+	139, // 575: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionOAuth:input_type -> superverse.v2.StartTeamSpaceConnectionOAuthRequest
+	142, // 576: superverse.v2.TeamSpaceConnectionService.CompleteTeamSpaceConnectionOAuth:input_type -> superverse.v2.CompleteTeamSpaceConnectionOAuthRequest
+	144, // 577: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionUiSession:input_type -> superverse.v2.StartTeamSpaceConnectionUiSessionRequest
+	146, // 578: superverse.v2.TeamSpaceConnectionService.InvokeTeamSpaceConnectionCommand:input_type -> superverse.v2.InvokeTeamSpaceConnectionCommandRequest
+	148, // 579: superverse.v2.ProjectService.CreateProject:input_type -> superverse.v2.CreateProjectRequest
+	150, // 580: superverse.v2.ProjectService.ListProjects:input_type -> superverse.v2.ListProjectsRequest
+	152, // 581: superverse.v2.ProjectService.GetProject:input_type -> superverse.v2.GetProjectRequest
+	154, // 582: superverse.v2.ProjectService.DeleteProject:input_type -> superverse.v2.DeleteProjectRequest
+	156, // 583: superverse.v2.ProjectService.WatchProject:input_type -> superverse.v2.WatchProjectRequest
+	164, // 584: superverse.v2.ProjectService.GetProjectConfiguration:input_type -> superverse.v2.GetProjectConfigurationRequest
+	166, // 585: superverse.v2.ProjectService.ValidateProjectConfiguration:input_type -> superverse.v2.ValidateProjectConfigurationRequest
+	168, // 586: superverse.v2.ProjectService.RemoveLive:input_type -> superverse.v2.RemoveLiveRequest
+	158, // 587: superverse.v2.ProjectService.ListEnvironmentEvents:input_type -> superverse.v2.ListEnvironmentEventsRequest
+	161, // 588: superverse.v2.ProjectService.ListRecentTriggerEvents:input_type -> superverse.v2.ListRecentTriggerEventsRequest
+	184, // 589: superverse.v2.ProjectMemberService.ListProjectMembers:input_type -> superverse.v2.ListProjectMembersRequest
+	186, // 590: superverse.v2.ProjectMemberService.AddProjectMember:input_type -> superverse.v2.AddProjectMemberRequest
+	188, // 591: superverse.v2.ProjectMemberService.SetProjectMemberRole:input_type -> superverse.v2.SetProjectMemberRoleRequest
+	190, // 592: superverse.v2.ProjectMemberService.RemoveProjectMember:input_type -> superverse.v2.RemoveProjectMemberRequest
+	193, // 593: superverse.v2.SessionService.GetSession:input_type -> superverse.v2.GetSessionRequest
+	195, // 594: superverse.v2.SessionService.WatchSession:input_type -> superverse.v2.WatchSessionRequest
+	197, // 595: superverse.v2.SessionService.ListArchivedMessages:input_type -> superverse.v2.ListArchivedMessagesRequest
+	198, // 596: superverse.v2.SessionService.RenewWorkspace:input_type -> superverse.v2.RenewWorkspaceRequest
+	205, // 597: superverse.v2.RemoteAgentService.CreateRemoteAgentPairing:input_type -> superverse.v2.CreateRemoteAgentPairingRequest
+	207, // 598: superverse.v2.RemoteAgentService.ListRemoteAgentConnections:input_type -> superverse.v2.ListRemoteAgentConnectionsRequest
+	209, // 599: superverse.v2.RemoteAgentService.RevokeRemoteAgentConnection:input_type -> superverse.v2.RevokeRemoteAgentConnectionRequest
+	211, // 600: superverse.v2.RemoteAgentService.SetSessionExecutor:input_type -> superverse.v2.SetSessionExecutorRequest
+	217, // 601: superverse.v2.AttachmentService.CreateAttachmentUpload:input_type -> superverse.v2.CreateAttachmentUploadRequest
+	221, // 602: superverse.v2.AttachmentService.CompleteAttachmentUpload:input_type -> superverse.v2.CompleteAttachmentUploadRequest
+	223, // 603: superverse.v2.AttachmentService.DeleteAttachment:input_type -> superverse.v2.DeleteAttachmentRequest
+	225, // 604: superverse.v2.AttachmentService.GetAttachmentDownloads:input_type -> superverse.v2.GetAttachmentDownloadsRequest
+	231, // 605: superverse.v2.EvolveService.GetEvolve:input_type -> superverse.v2.GetEvolveRequest
+	243, // 606: superverse.v2.EvolveService.StartEvolveReview:input_type -> superverse.v2.StartEvolveReviewRequest
+	245, // 607: superverse.v2.EvolveService.DecideEvolveProposal:input_type -> superverse.v2.DecideEvolveProposalRequest
+	247, // 608: superverse.v2.EvolveService.GetEvolveProposal:input_type -> superverse.v2.GetEvolveProposalRequest
+	249, // 609: superverse.v2.AgentService.SendMessage:input_type -> superverse.v2.SendMessageRequest
+	251, // 610: superverse.v2.AgentService.AnswerQuestions:input_type -> superverse.v2.AnswerQuestionsRequest
+	253, // 611: superverse.v2.AgentService.UpdateSessionModel:input_type -> superverse.v2.UpdateSessionModelRequest
+	255, // 612: superverse.v2.AgentService.DeleteQueuedMessage:input_type -> superverse.v2.DeleteQueuedMessageRequest
+	257, // 613: superverse.v2.AgentService.SteerQueuedMessage:input_type -> superverse.v2.SteerQueuedMessageRequest
+	259, // 614: superverse.v2.AgentService.ResolveToolApproval:input_type -> superverse.v2.ResolveToolApprovalRequest
+	261, // 615: superverse.v2.AgentService.InterruptAgent:input_type -> superverse.v2.InterruptAgentRequest
+	265, // 616: superverse.v2.AgentService.ListMockScenarios:input_type -> superverse.v2.ListMockScenariosRequest
+	266, // 617: superverse.v2.AgentService.ListAgentModels:input_type -> superverse.v2.ListAgentModelsRequest
+	263, // 618: superverse.v2.AgentService.GetFlowDesign:input_type -> superverse.v2.GetFlowDesignRequest
+	318, // 619: superverse.v2.PreviewService.GetPreview:input_type -> superverse.v2.GetPreviewRequest
+	320, // 620: superverse.v2.PreviewService.StartPreview:input_type -> superverse.v2.StartPreviewRequest
+	322, // 621: superverse.v2.PreviewService.StopPreview:input_type -> superverse.v2.StopPreviewRequest
+	324, // 622: superverse.v2.PreviewService.PreparePreviewSource:input_type -> superverse.v2.PreparePreviewSourceRequest
+	326, // 623: superverse.v2.PreviewService.GetPreviewDefinitions:input_type -> superverse.v2.GetPreviewDefinitionsRequest
+	328, // 624: superverse.v2.PreviewService.UpdatePreviewAutoDeploy:input_type -> superverse.v2.UpdatePreviewAutoDeployRequest
+	335, // 625: superverse.v2.ReleaseService.ListReleaseCandidates:input_type -> superverse.v2.ListReleaseCandidatesRequest
+	337, // 626: superverse.v2.ReleaseService.PrepareRelease:input_type -> superverse.v2.PrepareReleaseRequest
+	339, // 627: superverse.v2.ReleaseService.StartReleaseBuild:input_type -> superverse.v2.StartReleaseBuildRequest
+	341, // 628: superverse.v2.ReleaseService.RecoverReleaseBuild:input_type -> superverse.v2.RecoverReleaseBuildRequest
+	347, // 629: superverse.v2.ReleaseService.ListReleases:input_type -> superverse.v2.ListReleasesRequest
+	359, // 630: superverse.v2.ReleaseService.DeriveLiveConfiguration:input_type -> superverse.v2.DeriveLiveConfigurationRequest
+	349, // 631: superverse.v2.ReleaseService.GetRelease:input_type -> superverse.v2.GetReleaseRequest
+	351, // 632: superverse.v2.ReleaseService.WatchRelease:input_type -> superverse.v2.WatchReleaseRequest
+	343, // 633: superverse.v2.ReleaseService.CancelReleaseBuild:input_type -> superverse.v2.CancelReleaseBuildRequest
+	345, // 634: superverse.v2.ReleaseService.GetReleaseBuildLog:input_type -> superverse.v2.GetReleaseBuildLogRequest
+	361, // 635: superverse.v2.DeploymentService.StartDeployment:input_type -> superverse.v2.StartDeploymentRequest
+	365, // 636: superverse.v2.DeploymentService.GetDeployment:input_type -> superverse.v2.GetDeploymentRequest
+	367, // 637: superverse.v2.DeploymentService.ListDeployments:input_type -> superverse.v2.ListDeploymentsRequest
+	369, // 638: superverse.v2.DeploymentService.WatchDeployment:input_type -> superverse.v2.WatchDeploymentRequest
+	363, // 639: superverse.v2.DeploymentService.CancelDeployment:input_type -> superverse.v2.CancelDeploymentRequest
+	372, // 640: superverse.v2.FlowRunService.GetFlowDefinitions:input_type -> superverse.v2.GetFlowDefinitionsRequest
+	374, // 641: superverse.v2.FlowRunService.GetFlowCatalog:input_type -> superverse.v2.GetFlowCatalogRequest
+	376, // 642: superverse.v2.FlowRunService.SearchFlows:input_type -> superverse.v2.SearchFlowsRequest
+	378, // 643: superverse.v2.FlowRunService.GetFlowDisplay:input_type -> superverse.v2.GetFlowDisplayRequest
+	380, // 644: superverse.v2.FlowRunService.UpdateFlowDisplayField:input_type -> superverse.v2.UpdateFlowDisplayFieldRequest
+	382, // 645: superverse.v2.FlowRunService.InvokeFlowAction:input_type -> superverse.v2.InvokeFlowActionRequest
+	384, // 646: superverse.v2.FlowRunService.StartFlow:input_type -> superverse.v2.StartFlowRequest
+	386, // 647: superverse.v2.FlowRunService.RecoverFlowStart:input_type -> superverse.v2.RecoverFlowStartRequest
+	388, // 648: superverse.v2.FlowDiagnosticsService.GetFlowSummary:input_type -> superverse.v2.GetFlowSummaryRequest
+	390, // 649: superverse.v2.FlowDiagnosticsService.GetFlowState:input_type -> superverse.v2.GetFlowStateRequest
+	392, // 650: superverse.v2.FlowDiagnosticsService.GetFlowHistory:input_type -> superverse.v2.GetFlowHistoryRequest
+	394, // 651: superverse.v2.FlowDiagnosticsService.WaitFlowHistory:input_type -> superverse.v2.WaitFlowHistoryRequest
+	396, // 652: superverse.v2.FlowDiagnosticsService.ReadFlowStream:input_type -> superverse.v2.ReadFlowStreamRequest
+	398, // 653: superverse.v2.FlowDiagnosticsService.LoadFlowBlobs:input_type -> superverse.v2.LoadFlowBlobsRequest
+	400, // 654: superverse.v2.FlowDiagnosticsService.StopFlow:input_type -> superverse.v2.StopFlowRequest
+	402, // 655: superverse.v2.FlowDiagnosticsService.DeleteFlowChannelMessage:input_type -> superverse.v2.DeleteFlowChannelMessageRequest
+	404, // 656: superverse.v2.FlowDiagnosticsService.TimeTravelFlow:input_type -> superverse.v2.TimeTravelFlowRequest
+	406, // 657: superverse.v2.ConnectorService.ListConnections:input_type -> superverse.v2.ListConnectionsRequest
+	408, // 658: superverse.v2.ConnectorService.SelectTeamSpaceConnection:input_type -> superverse.v2.SelectTeamSpaceConnectionRequest
+	410, // 659: superverse.v2.ConnectorService.ReleaseUnusedConnections:input_type -> superverse.v2.ReleaseUnusedConnectionsRequest
+	412, // 660: superverse.v2.ConnectorService.StartConnectorUiSession:input_type -> superverse.v2.StartConnectorUiSessionRequest
+	414, // 661: superverse.v2.ConnectorService.InvokeProviderCommand:input_type -> superverse.v2.InvokeProviderCommandRequest
+	416, // 662: superverse.v2.ConnectorService.SaveTriggerBinding:input_type -> superverse.v2.SaveTriggerBindingRequest
+	418, // 663: superverse.v2.ConnectorService.SaveOperationConfiguration:input_type -> superverse.v2.SaveOperationConfigurationRequest
+	420, // 664: superverse.v2.ApplicationEnvironmentService.GetApplicationEnvironment:input_type -> superverse.v2.GetApplicationEnvironmentRequest
+	422, // 665: superverse.v2.ApplicationEnvironmentService.SaveApplicationEnvironment:input_type -> superverse.v2.SaveApplicationEnvironmentRequest
+	430, // 666: superverse.v2.ModelCredentialService.GetModelCredentialInfo:input_type -> superverse.v2.GetModelCredentialInfoRequest
+	432, // 667: superverse.v2.ModelCredentialService.SetModelCredential:input_type -> superverse.v2.SetModelCredentialRequest
+	434, // 668: superverse.v2.ModelCredentialService.DeleteModelCredential:input_type -> superverse.v2.DeleteModelCredentialRequest
+	436, // 669: superverse.v2.ModelCredentialService.ListModelCredentialModels:input_type -> superverse.v2.ListModelCredentialModelsRequest
+	91,  // 670: superverse.v2.AccountService.RegisterAccount:output_type -> superverse.v2.RegisterAccountResponse
+	93,  // 671: superverse.v2.AccountService.Login:output_type -> superverse.v2.LoginResponse
+	95,  // 672: superverse.v2.AccountService.Logout:output_type -> superverse.v2.LogoutResponse
+	97,  // 673: superverse.v2.AccountService.GetCurrentAccount:output_type -> superverse.v2.GetCurrentAccountResponse
+	101, // 674: superverse.v2.TeamSpaceService.CreateTeamSpace:output_type -> superverse.v2.CreateTeamSpaceResponse
+	103, // 675: superverse.v2.TeamSpaceService.ListTeamSpaces:output_type -> superverse.v2.ListTeamSpacesResponse
+	105, // 676: superverse.v2.TeamSpaceService.GetTeamSpace:output_type -> superverse.v2.GetTeamSpaceResponse
+	107, // 677: superverse.v2.TeamSpaceService.RenameTeamSpace:output_type -> superverse.v2.RenameTeamSpaceResponse
+	109, // 678: superverse.v2.TeamSpaceService.DeleteTeamSpace:output_type -> superverse.v2.DeleteTeamSpaceResponse
+	111, // 679: superverse.v2.TeamSpaceService.GetTeamSpaceOverview:output_type -> superverse.v2.GetTeamSpaceOverviewResponse
+	115, // 680: superverse.v2.TeamSpaceMemberService.ListTeamSpaceMembers:output_type -> superverse.v2.ListTeamSpaceMembersResponse
+	117, // 681: superverse.v2.TeamSpaceMemberService.AddTeamSpaceMember:output_type -> superverse.v2.AddTeamSpaceMemberResponse
+	119, // 682: superverse.v2.TeamSpaceMemberService.SetTeamSpaceMemberRole:output_type -> superverse.v2.SetTeamSpaceMemberRoleResponse
+	121, // 683: superverse.v2.TeamSpaceMemberService.RemoveTeamSpaceMember:output_type -> superverse.v2.RemoveTeamSpaceMemberResponse
+	125, // 684: superverse.v2.TeamSpaceConnectionService.ListConnectorCatalog:output_type -> superverse.v2.ListConnectorCatalogResponse
+	130, // 685: superverse.v2.TeamSpaceConnectionService.ListTeamSpaceConnections:output_type -> superverse.v2.ListTeamSpaceConnectionsResponse
+	132, // 686: superverse.v2.TeamSpaceConnectionService.GetTeamSpaceConnection:output_type -> superverse.v2.GetTeamSpaceConnectionResponse
+	134, // 687: superverse.v2.TeamSpaceConnectionService.CreateTeamSpaceConnection:output_type -> superverse.v2.CreateTeamSpaceConnectionResponse
+	136, // 688: superverse.v2.TeamSpaceConnectionService.UpdateTeamSpaceConnection:output_type -> superverse.v2.UpdateTeamSpaceConnectionResponse
+	138, // 689: superverse.v2.TeamSpaceConnectionService.DeleteTeamSpaceConnection:output_type -> superverse.v2.DeleteTeamSpaceConnectionResponse
+	141, // 690: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionOAuth:output_type -> superverse.v2.StartTeamSpaceConnectionOAuthResponse
+	143, // 691: superverse.v2.TeamSpaceConnectionService.CompleteTeamSpaceConnectionOAuth:output_type -> superverse.v2.CompleteTeamSpaceConnectionOAuthResponse
+	145, // 692: superverse.v2.TeamSpaceConnectionService.StartTeamSpaceConnectionUiSession:output_type -> superverse.v2.StartTeamSpaceConnectionUiSessionResponse
+	147, // 693: superverse.v2.TeamSpaceConnectionService.InvokeTeamSpaceConnectionCommand:output_type -> superverse.v2.InvokeTeamSpaceConnectionCommandResponse
+	149, // 694: superverse.v2.ProjectService.CreateProject:output_type -> superverse.v2.CreateProjectResponse
+	151, // 695: superverse.v2.ProjectService.ListProjects:output_type -> superverse.v2.ListProjectsResponse
+	153, // 696: superverse.v2.ProjectService.GetProject:output_type -> superverse.v2.GetProjectResponse
+	155, // 697: superverse.v2.ProjectService.DeleteProject:output_type -> superverse.v2.DeleteProjectResponse
+	157, // 698: superverse.v2.ProjectService.WatchProject:output_type -> superverse.v2.WatchProjectResponse
+	165, // 699: superverse.v2.ProjectService.GetProjectConfiguration:output_type -> superverse.v2.GetProjectConfigurationResponse
+	167, // 700: superverse.v2.ProjectService.ValidateProjectConfiguration:output_type -> superverse.v2.ValidateProjectConfigurationResponse
+	169, // 701: superverse.v2.ProjectService.RemoveLive:output_type -> superverse.v2.RemoveLiveResponse
+	159, // 702: superverse.v2.ProjectService.ListEnvironmentEvents:output_type -> superverse.v2.ListEnvironmentEventsResponse
+	162, // 703: superverse.v2.ProjectService.ListRecentTriggerEvents:output_type -> superverse.v2.ListRecentTriggerEventsResponse
+	185, // 704: superverse.v2.ProjectMemberService.ListProjectMembers:output_type -> superverse.v2.ListProjectMembersResponse
+	187, // 705: superverse.v2.ProjectMemberService.AddProjectMember:output_type -> superverse.v2.AddProjectMemberResponse
+	189, // 706: superverse.v2.ProjectMemberService.SetProjectMemberRole:output_type -> superverse.v2.SetProjectMemberRoleResponse
+	191, // 707: superverse.v2.ProjectMemberService.RemoveProjectMember:output_type -> superverse.v2.RemoveProjectMemberResponse
+	194, // 708: superverse.v2.SessionService.GetSession:output_type -> superverse.v2.GetSessionResponse
+	196, // 709: superverse.v2.SessionService.WatchSession:output_type -> superverse.v2.WatchSessionResponse
+	200, // 710: superverse.v2.SessionService.ListArchivedMessages:output_type -> superverse.v2.ListArchivedMessagesResponse
+	199, // 711: superverse.v2.SessionService.RenewWorkspace:output_type -> superverse.v2.RenewWorkspaceResponse
+	206, // 712: superverse.v2.RemoteAgentService.CreateRemoteAgentPairing:output_type -> superverse.v2.CreateRemoteAgentPairingResponse
+	208, // 713: superverse.v2.RemoteAgentService.ListRemoteAgentConnections:output_type -> superverse.v2.ListRemoteAgentConnectionsResponse
+	210, // 714: superverse.v2.RemoteAgentService.RevokeRemoteAgentConnection:output_type -> superverse.v2.RevokeRemoteAgentConnectionResponse
+	212, // 715: superverse.v2.RemoteAgentService.SetSessionExecutor:output_type -> superverse.v2.SetSessionExecutorResponse
+	218, // 716: superverse.v2.AttachmentService.CreateAttachmentUpload:output_type -> superverse.v2.CreateAttachmentUploadResponse
+	222, // 717: superverse.v2.AttachmentService.CompleteAttachmentUpload:output_type -> superverse.v2.CompleteAttachmentUploadResponse
+	224, // 718: superverse.v2.AttachmentService.DeleteAttachment:output_type -> superverse.v2.DeleteAttachmentResponse
+	226, // 719: superverse.v2.AttachmentService.GetAttachmentDownloads:output_type -> superverse.v2.GetAttachmentDownloadsResponse
+	232, // 720: superverse.v2.EvolveService.GetEvolve:output_type -> superverse.v2.GetEvolveResponse
+	244, // 721: superverse.v2.EvolveService.StartEvolveReview:output_type -> superverse.v2.StartEvolveReviewResponse
+	246, // 722: superverse.v2.EvolveService.DecideEvolveProposal:output_type -> superverse.v2.DecideEvolveProposalResponse
+	248, // 723: superverse.v2.EvolveService.GetEvolveProposal:output_type -> superverse.v2.GetEvolveProposalResponse
+	250, // 724: superverse.v2.AgentService.SendMessage:output_type -> superverse.v2.SendMessageResponse
+	252, // 725: superverse.v2.AgentService.AnswerQuestions:output_type -> superverse.v2.AnswerQuestionsResponse
+	254, // 726: superverse.v2.AgentService.UpdateSessionModel:output_type -> superverse.v2.UpdateSessionModelResponse
+	256, // 727: superverse.v2.AgentService.DeleteQueuedMessage:output_type -> superverse.v2.DeleteQueuedMessageResponse
+	258, // 728: superverse.v2.AgentService.SteerQueuedMessage:output_type -> superverse.v2.SteerQueuedMessageResponse
+	260, // 729: superverse.v2.AgentService.ResolveToolApproval:output_type -> superverse.v2.ResolveToolApprovalResponse
+	262, // 730: superverse.v2.AgentService.InterruptAgent:output_type -> superverse.v2.InterruptAgentResponse
+	269, // 731: superverse.v2.AgentService.ListMockScenarios:output_type -> superverse.v2.ListMockScenariosResponse
+	267, // 732: superverse.v2.AgentService.ListAgentModels:output_type -> superverse.v2.ListAgentModelsResponse
+	264, // 733: superverse.v2.AgentService.GetFlowDesign:output_type -> superverse.v2.GetFlowDesignResponse
+	319, // 734: superverse.v2.PreviewService.GetPreview:output_type -> superverse.v2.GetPreviewResponse
+	321, // 735: superverse.v2.PreviewService.StartPreview:output_type -> superverse.v2.StartPreviewResponse
+	323, // 736: superverse.v2.PreviewService.StopPreview:output_type -> superverse.v2.StopPreviewResponse
+	325, // 737: superverse.v2.PreviewService.PreparePreviewSource:output_type -> superverse.v2.PreparePreviewSourceResponse
+	327, // 738: superverse.v2.PreviewService.GetPreviewDefinitions:output_type -> superverse.v2.GetPreviewDefinitionsResponse
+	329, // 739: superverse.v2.PreviewService.UpdatePreviewAutoDeploy:output_type -> superverse.v2.UpdatePreviewAutoDeployResponse
+	336, // 740: superverse.v2.ReleaseService.ListReleaseCandidates:output_type -> superverse.v2.ListReleaseCandidatesResponse
+	338, // 741: superverse.v2.ReleaseService.PrepareRelease:output_type -> superverse.v2.PrepareReleaseResponse
+	340, // 742: superverse.v2.ReleaseService.StartReleaseBuild:output_type -> superverse.v2.StartReleaseBuildResponse
+	342, // 743: superverse.v2.ReleaseService.RecoverReleaseBuild:output_type -> superverse.v2.RecoverReleaseBuildResponse
+	348, // 744: superverse.v2.ReleaseService.ListReleases:output_type -> superverse.v2.ListReleasesResponse
+	360, // 745: superverse.v2.ReleaseService.DeriveLiveConfiguration:output_type -> superverse.v2.DeriveLiveConfigurationResponse
+	350, // 746: superverse.v2.ReleaseService.GetRelease:output_type -> superverse.v2.GetReleaseResponse
+	352, // 747: superverse.v2.ReleaseService.WatchRelease:output_type -> superverse.v2.WatchReleaseResponse
+	344, // 748: superverse.v2.ReleaseService.CancelReleaseBuild:output_type -> superverse.v2.CancelReleaseBuildResponse
+	346, // 749: superverse.v2.ReleaseService.GetReleaseBuildLog:output_type -> superverse.v2.GetReleaseBuildLogResponse
+	362, // 750: superverse.v2.DeploymentService.StartDeployment:output_type -> superverse.v2.StartDeploymentResponse
+	366, // 751: superverse.v2.DeploymentService.GetDeployment:output_type -> superverse.v2.GetDeploymentResponse
+	368, // 752: superverse.v2.DeploymentService.ListDeployments:output_type -> superverse.v2.ListDeploymentsResponse
+	370, // 753: superverse.v2.DeploymentService.WatchDeployment:output_type -> superverse.v2.WatchDeploymentResponse
+	364, // 754: superverse.v2.DeploymentService.CancelDeployment:output_type -> superverse.v2.CancelDeploymentResponse
+	373, // 755: superverse.v2.FlowRunService.GetFlowDefinitions:output_type -> superverse.v2.GetFlowDefinitionsResponse
+	375, // 756: superverse.v2.FlowRunService.GetFlowCatalog:output_type -> superverse.v2.GetFlowCatalogResponse
+	377, // 757: superverse.v2.FlowRunService.SearchFlows:output_type -> superverse.v2.SearchFlowsResponse
+	379, // 758: superverse.v2.FlowRunService.GetFlowDisplay:output_type -> superverse.v2.GetFlowDisplayResponse
+	381, // 759: superverse.v2.FlowRunService.UpdateFlowDisplayField:output_type -> superverse.v2.UpdateFlowDisplayFieldResponse
+	383, // 760: superverse.v2.FlowRunService.InvokeFlowAction:output_type -> superverse.v2.InvokeFlowActionResponse
+	385, // 761: superverse.v2.FlowRunService.StartFlow:output_type -> superverse.v2.StartFlowResponse
+	387, // 762: superverse.v2.FlowRunService.RecoverFlowStart:output_type -> superverse.v2.RecoverFlowStartResponse
+	389, // 763: superverse.v2.FlowDiagnosticsService.GetFlowSummary:output_type -> superverse.v2.GetFlowSummaryResponse
+	391, // 764: superverse.v2.FlowDiagnosticsService.GetFlowState:output_type -> superverse.v2.GetFlowStateResponse
+	393, // 765: superverse.v2.FlowDiagnosticsService.GetFlowHistory:output_type -> superverse.v2.GetFlowHistoryResponse
+	395, // 766: superverse.v2.FlowDiagnosticsService.WaitFlowHistory:output_type -> superverse.v2.WaitFlowHistoryResponse
+	397, // 767: superverse.v2.FlowDiagnosticsService.ReadFlowStream:output_type -> superverse.v2.ReadFlowStreamResponse
+	399, // 768: superverse.v2.FlowDiagnosticsService.LoadFlowBlobs:output_type -> superverse.v2.LoadFlowBlobsResponse
+	401, // 769: superverse.v2.FlowDiagnosticsService.StopFlow:output_type -> superverse.v2.StopFlowResponse
+	403, // 770: superverse.v2.FlowDiagnosticsService.DeleteFlowChannelMessage:output_type -> superverse.v2.DeleteFlowChannelMessageResponse
+	405, // 771: superverse.v2.FlowDiagnosticsService.TimeTravelFlow:output_type -> superverse.v2.TimeTravelFlowResponse
+	407, // 772: superverse.v2.ConnectorService.ListConnections:output_type -> superverse.v2.ListConnectionsResponse
+	409, // 773: superverse.v2.ConnectorService.SelectTeamSpaceConnection:output_type -> superverse.v2.SelectTeamSpaceConnectionResponse
+	411, // 774: superverse.v2.ConnectorService.ReleaseUnusedConnections:output_type -> superverse.v2.ReleaseUnusedConnectionsResponse
+	413, // 775: superverse.v2.ConnectorService.StartConnectorUiSession:output_type -> superverse.v2.StartConnectorUiSessionResponse
+	415, // 776: superverse.v2.ConnectorService.InvokeProviderCommand:output_type -> superverse.v2.InvokeProviderCommandResponse
+	417, // 777: superverse.v2.ConnectorService.SaveTriggerBinding:output_type -> superverse.v2.SaveTriggerBindingResponse
+	419, // 778: superverse.v2.ConnectorService.SaveOperationConfiguration:output_type -> superverse.v2.SaveOperationConfigurationResponse
+	421, // 779: superverse.v2.ApplicationEnvironmentService.GetApplicationEnvironment:output_type -> superverse.v2.GetApplicationEnvironmentResponse
+	423, // 780: superverse.v2.ApplicationEnvironmentService.SaveApplicationEnvironment:output_type -> superverse.v2.SaveApplicationEnvironmentResponse
+	431, // 781: superverse.v2.ModelCredentialService.GetModelCredentialInfo:output_type -> superverse.v2.GetModelCredentialInfoResponse
+	433, // 782: superverse.v2.ModelCredentialService.SetModelCredential:output_type -> superverse.v2.SetModelCredentialResponse
+	435, // 783: superverse.v2.ModelCredentialService.DeleteModelCredential:output_type -> superverse.v2.DeleteModelCredentialResponse
+	438, // 784: superverse.v2.ModelCredentialService.ListModelCredentialModels:output_type -> superverse.v2.ListModelCredentialModelsResponse
+	670, // [670:785] is the sub-list for method output_type
+	555, // [555:670] is the sub-list for method input_type
+	555, // [555:555] is the sub-list for extension type_name
+	555, // [555:555] is the sub-list for extension extendee
+	0,   // [0:555] is the sub-list for field type_name
 }
 
 func init() { file_superverse_v2_superverse_proto_init() }
@@ -34240,7 +34344,7 @@ func file_superverse_v2_superverse_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_superverse_v2_superverse_proto_rawDesc), len(file_superverse_v2_superverse_proto_rawDesc)),
 			NumEnums:      80,
-			NumMessages:   361,
+			NumMessages:   362,
 			NumExtensions: 0,
 			NumServices:   19,
 		},

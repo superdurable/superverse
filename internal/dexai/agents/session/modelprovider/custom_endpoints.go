@@ -50,7 +50,7 @@ func (p *CompatibleProviders) ResolveCustom(ctx context.Context, provider conver
 	}
 	effective := id
 	if id == "" {
-		ids, _, err := p.Discover(ctx, provider, base, key)
+		ids, _, err := p.pool.Discover(ctx, base, key, provider.APIStyle() == conversation.AnthropicMessages)
 		if err != nil {
 			return conversation.EndpointSelection{}, err
 		}
@@ -65,13 +65,23 @@ func (p *CompatibleProviders) ResolveCustom(ctx context.Context, provider conver
 	return conversation.EndpointSelection{BaseURL: base, CustomModelID: id, EffectiveModelID: effective, CustomProfileVersion: 1}, nil
 }
 
-// Discover uses the same origin-bound transport as inference and credential probes.
-func (p *CompatibleProviders) Discover(ctx context.Context, provider conversation.Provider, base, key string) ([]string, modelendpoint.DiscoveryResult, error) {
+// DiscoverForTest exercises identifier-only discovery through the configured runtime.
+func (p *CompatibleProviders) DiscoverForTest(ctx context.Context, provider conversation.Provider, base, key string) ([]string, modelendpoint.DiscoveryResult, error) {
 	model, err := customModel(provider)
 	if err != nil || !p.availability(model).Selectable() {
 		return nil, "", conversation.ModelUnavailable.Rejected()
 	}
 	return p.pool.Discover(ctx, base, key, provider.APIStyle() == conversation.AnthropicMessages)
+}
+
+// DiscoverModels includes only validated advisory capacities alongside model IDs.
+func (p *CompatibleProviders) DiscoverModels(ctx context.Context, provider conversation.Provider, base, key string) ([]modelendpoint.DiscoveredModel, modelendpoint.DiscoveryResult, error) {
+	model, err := customModel(provider)
+	if err != nil || !p.availability(model).Selectable() {
+		return nil, "", conversation.ModelUnavailable.Rejected()
+	}
+	models, result, _, err := p.pool.DiscoverModelsWithStatus(ctx, base, key, provider.APIStyle() == conversation.AnthropicMessages)
+	return models, result, err
 }
 
 // CanonicalEndpoint validates input before any stored-key endpoint comparison.
@@ -81,6 +91,9 @@ func (p *CompatibleProviders) CanonicalEndpoint(base string) (string, error) {
 
 func (p *CompatibleProviders) completeCustom(ctx context.Context, request conversation.ModelRequest) (conversation.ModelReply, error) {
 	if request.Endpoint.CustomProfileVersion != 1 || request.Endpoint.BaseURL == "" || !modelendpoint.ValidModelID(request.Endpoint.EffectiveModelID) {
+		return conversation.ModelReply{}, conversation.ModelUnavailable.Rejected()
+	}
+	if _, err := ProfileFor(request.Model, request.Endpoint); err != nil {
 		return conversation.ModelReply{}, conversation.ModelUnavailable.Rejected()
 	}
 	httpClient, err := p.pool.Client(ctx, request.Endpoint.BaseURL)
@@ -94,7 +107,10 @@ func (p *CompatibleProviders) completeCustom(ctx context.Context, request conver
 		reply, err := messages.complete(ctx, request, request.APIKey, request.Endpoint.BaseURL, p.config.MockEndpoint)
 		return customReply(reply, err)
 	}
-	profile := ProfileOf(request.Model)
+	profile, err := ProfileFor(request.Model, request.Endpoint)
+	if err != nil {
+		return conversation.ModelReply{}, conversation.ModelUnavailable.Rejected()
+	}
 	client, err := openaicompat.New(httpClient, request.Endpoint.BaseURL, openaicompat.Policy{Provider: provider, WireMode: provider.APIStyle(), MaxTokens: profile.maxTokens, Replay: conversation.ReplayNonThinking}, p.config.MockEndpoint, p.logger)
 	if err != nil {
 		return conversation.ModelReply{}, err

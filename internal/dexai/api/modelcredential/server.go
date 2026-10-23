@@ -17,6 +17,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents"
 	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider/openaicompat"
 	"github.com/superdurable/superversev2/internal/dexai/api/boundary"
 	"google.golang.org/grpc"
@@ -105,13 +106,26 @@ func (s *server) SetModelCredential(ctx context.Context, request *pb.SetModelCre
 	if replay {
 		input.Endpoint = current.Endpoint
 	}
+	if !replay {
+		if request.GetBaseUrl() == "" && (request.GetContextWindow() != 0 || request.GetMaxOutputTokens() != 0) {
+			return nil, status.Error(codes.InvalidArgument, "custom token budgets require a custom endpoint")
+		}
+		if request.GetBaseUrl() != "" {
+			input.Endpoint, err = modelprovider.NormalizeCustomEndpointBudget(conversation.EndpointSelection{ContextWindow: request.GetContextWindow(), MaxOutputTokens: request.GetMaxOutputTokens()})
+			if err != nil {
+				return nil, status.Error(codes.InvalidArgument, err.Error())
+			}
+		}
+	}
 	if key != "" {
 		input.Last4 = key[len(key)-4:]
 		if !replay && request.GetBaseUrl() != "" {
+			budget := input.Endpoint
 			input.Endpoint, err = s.sessions.ModelCredentials.Compatible.ResolveCustom(ctx, input.Provider.Catalog(), request.GetBaseUrl(), request.GetCustomModelId(), key)
 			if err != nil {
 				return nil, status.Error(codes.FailedPrecondition, "custom endpoint validation failed; select or enter a valid model ID")
 			}
+			input.Endpoint.ContextWindow, input.Endpoint.MaxOutputTokens = budget.ContextWindow, budget.MaxOutputTokens
 		} else if !replay && request.GetCustomModelId() != "" {
 			return nil, status.Error(codes.InvalidArgument, "a custom endpoint is required for a custom model ID")
 		}
@@ -153,6 +167,10 @@ func credentialDocument(info modelcredential.Info, provider modelcredential.Prov
 		Last4: info.Last4, SetBy: &pb.Actor{AccountId: info.SetBy.AccountID, Email: info.SetBy.Email},
 		Provider: boundary.Enum[pb.ModelProvider](provider.Catalog().String()), BaseUrl: info.Endpoint.BaseURL,
 		CustomModelId: info.Endpoint.CustomModelID, EffectiveModelId: info.Endpoint.EffectiveModelID, CustomProfileVersion: info.Endpoint.CustomProfileVersion}
+	if info.Endpoint.BaseURL != "" {
+		endpoint := comm.Must(modelprovider.NormalizeCustomEndpointBudget(info.Endpoint))
+		value.ContextWindow, value.MaxOutputTokens = endpoint.ContextWindow, endpoint.MaxOutputTokens
+	}
 	if !info.SetAt.IsZero() {
 		value.SetAt = info.SetAt.Format(time.RFC3339Nano)
 	}
@@ -254,7 +272,7 @@ func (s *server) ListModelCredentialModels(ctx context.Context, request *pb.List
 			}
 		}
 	}
-	ids, result, err := runtime.Discover(ctx, provider.Catalog(), base, key)
+	models, result, err := runtime.DiscoverModels(ctx, provider.Catalog(), base, key)
 	key = ""
 	if err != nil {
 		if errors.Is(err, modelendpoint.ErrDiscoveryBounds) {
@@ -262,5 +280,10 @@ func (s *server) ListModelCredentialModels(ctx context.Context, request *pb.List
 		}
 		return nil, status.Error(codes.Unavailable, "model discovery did not complete")
 	}
-	return &pb.ListModelCredentialModelsResponse{ModelIds: ids, Result: boundary.Enum[pb.ModelDiscoveryResult](result.String())}, nil
+	response := &pb.ListModelCredentialModelsResponse{Result: boundary.Enum[pb.ModelDiscoveryResult](result.String())}
+	for _, model := range models {
+		response.ModelIds = append(response.ModelIds, model.ID)
+		response.Models = append(response.Models, &pb.ModelCredentialModel{ModelId: model.ID, ContextWindow: model.ContextWindow})
+	}
+	return response, nil
 }
