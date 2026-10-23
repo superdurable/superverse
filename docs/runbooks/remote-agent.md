@@ -82,12 +82,22 @@ without a TTY. Version, login and daemon checks finish before the code prompt.
 Claude Code must be at least 2.1.41 for its documented authentication commands;
 its built-in tools are disabled, leaving only platform MCP tools.
 The Builder's installed Codex CLI and
-shared daemon must both be at least 0.162.0; 0.163.0 is the newest verified
+shared daemon must both be at least 0.162.0; 0.164.0 is the newest verified
 version and newer versions connect with a compatibility warning. `dexai`
 starts the daemon with `codex app-server daemon start` when it is absent. If
 startup fails, its error includes the Codex message; try that command directly.
 It never updates, downgrades or restarts an existing daemon. Installation of a
-missing CLI needs the separate confirmation above. The first brief is submitted
+missing CLI needs the separate confirmation above. Before pairing, a known update
+(from Codex's local version cache or managed package) or CLI/daemon version mismatch
+prints update instructions and offers continue or exit. Update outside dexai with
+your installation's command (`npm install -g @openai/codex@latest`,
+`brew upgrade --cask codex`, or the standalone installer). Then use
+`codex app-server daemon update` and `codex app-server daemon restart`, after
+finishing other connections that share the daemon, and verify with
+`codex app-server daemon version`. dexai runs none of those update commands.
+The check makes no release-service lookup; missing or malformed cache data does
+not mean Codex is current. The dexai-owned TUI disables Codex's startup update
+prompt with `-c check_for_update_on_startup=false` for that launch only. The first brief is submitted
 before the Codex TUI opens. Each `dexai connect` owns a fresh private connection
 directory, so run it again in another terminal to connect another Project or
 endpoint; no separate `--state-dir` is needed. Codex opens a separate thread/TUI,
